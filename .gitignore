@@ -1,0 +1,12 @@
+bin/
+obj/
+node_modules/
+dist/
+.vs/
+*.user
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+.idea/
