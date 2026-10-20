@@ -1,7 +1,8 @@
+using BabyRoutine.Infrastructure;
 using BabyRoutine.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton(DatabaseOptions.FromEnvironment());
+builder.Services.AddInfrastructure(DatabaseOptions.FromEnvironment());
 
 var app = builder.Build();
 

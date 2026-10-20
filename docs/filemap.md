@@ -19,3 +19,8 @@
 - README.md — overview, quick start, env vars
 - CONTRIBUTING.md — contribution guide
 - docs/graphify/ — graphify output (gitignored)
+- api/src/BabyRoutine.Domain/ — entities and rules (Babies, Events, EventTypes, Medications, Users, Exceptions, Common)
+- api/src/BabyRoutine.Infrastructure/Persistence/ — DbContext, entity configurations, converters, design-time factory, Migrations/
+- api/migrations/initial.sql — idempotent SQL script of the initial migration
+- api/tests/BabyRoutine.Infrastructure.Tests/ — model-level EF tests (no database needed)
+- api/dotnet-tools.json — local dotnet-ef tool

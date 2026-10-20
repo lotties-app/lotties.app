@@ -57,3 +57,12 @@ Per baby + event type: take last 14 days, compute median interval between starts
 
 ## MVP definition of done
 All goals above work end-to-end against local docker-compose with Auth0 or Keycloak config; offline logging syncs after reconnect; PWA installable; CI green (build, lint, tests).
+
+## Napper import (from real exports)
+Parents can import a Napper CSV export. Findings from a real export (1248 events, 2026-08-31 to 2026-10-20, offset -03:00):
+- Logs CSV columns: `start,end,category,overallHappiness,babyMoodOnWakeUp,babyMoodOnSleep,diaperWeight,diaperContent,breastLeftSeconds,breastRightSeconds,amountPumpedLeft,amountPumpedRight,feedingAmount,temperature,bottleFeedingType,comment,numberOfPauses,pausedMinutes,units,howBabySlept,howBabyWoke,timeToFallAsleep,createdAt,updatedAt`. Timestamps are ISO-8601 with offset; instant events have `start == end`.
+- Categories seen: `BOTTLE`, `CHANGED_DIAPER`, `NAP`, `NIGHT_WAKING`, `MEDICINE`, `BED_TIME`, `WOKE_UP`, `NURSING`. Map to built-in types: BOTTLE->feeding(bottle: `feedingAmount` ml, `bottleFeedingType` FORMULA|BREAST_MILK), NURSING->feeding(breast: left/right seconds, pauses), CHANGED_DIAPER->diaper (`diaperContent` WET|DIRTY|MIXED), NAP/NIGHT_WAKING/BED_TIME/WOKE_UP->sleep family (`howBabySlept`, `howBabyWoke`, moods), MEDICINE->medication.
+- Napper medication is free text in `comment` and often lists several (e.g. "Colidis e Puravit", typos like "Flagas"/"Flygas"). Confirms the need for a medication catalog with multi-select; the importer maps comments to catalog entries via a reviewable mapping step (user confirms unmatched names), never silently.
+- Measurements CSV: `dateOfMeasurement,weightKg,heightCm,headCircumferenceCm` (cm columns may be empty). Add a `Measurement` entity (baby, date, weightKg?, heightCm?, headCircumferenceCm?) and import it; simple list/chart in UI. This promotes basic growth tracking into MVP scope.
+- Import is idempotent: deterministic event ids derived from (baby, category, start, end) so re-importing does not duplicate. Duplicate files must be tolerated (the two log exports provided were byte-identical).
+- Real exports contain a child's personal data: never commit them; `docs/samples/` is gitignored, tests use small synthetic fixtures with the same columns.
