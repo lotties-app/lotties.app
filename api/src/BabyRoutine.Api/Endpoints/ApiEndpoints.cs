@@ -12,6 +12,8 @@ public static class ApiEndpoints
         var api = app.MapGroup(V1Prefix).RequireAuthorization();
         api.MapMeEndpoints();
         api.MapBabyScopedGroup();
+        api.MapBabyScopedGroup().MapEventEndpoints();
+        api.MapBabyScopedGroup().MapPredictionEndpoints();
         return app;
     }
 }

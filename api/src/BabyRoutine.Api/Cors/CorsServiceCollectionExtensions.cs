@@ -1,3 +1,4 @@
+using BabyRoutine.Api.Endpoints;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.Options;
 
@@ -20,5 +21,6 @@ internal static class CorsServiceCollectionExtensions
         cors.AddDefaultPolicy(policy => policy
             .WithOrigins(settings.Value.Origins.ToArray())
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .WithExposedHeaders(EventEndpoints.NextCursorHeader));
 }

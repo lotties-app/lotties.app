@@ -34,6 +34,17 @@ public readonly record struct EventPayload
         return new EventPayload(json);
     }
 
+    /// <summary>
+    /// Whether both payloads hold the same JSON value, ignoring member order and whitespace
+    /// (see <see cref="JsonEquivalence"/>), so a replayed upsert is recognized after a <c>jsonb</c> round trip.
+    /// </summary>
+    public bool IsEquivalentTo(EventPayload other)
+    {
+        using var left = JsonDocument.Parse(Value);
+        using var right = JsonDocument.Parse(other.Value);
+        return JsonEquivalence.AreEquivalent(left.RootElement, right.RootElement);
+    }
+
     public override string ToString() => Value;
 
     private static void EnsureWithinLimit(string json)

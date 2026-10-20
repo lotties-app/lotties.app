@@ -71,18 +71,44 @@ public sealed class Event
             Ids.Required(typeId, nameof(typeId)),
             Ids.Required(createdBy, nameof(createdBy)),
             UtcTime.Normalize(now));
-        created.ApplyDetails(startedAt, endedAt, payload, notes);
+        created.ApplyDetails(ValidateDetails(typeId, startedAt, endedAt, payload, notes));
         return created;
     }
 
-    /// <summary>Replaces the editable details, as for an idempotent upsert of an existing event.</summary>
+    /// <summary>
+    /// Replaces the editable details, as for an idempotent upsert of an existing event. When the details equal the
+    /// stored ones (payload compared as JSON values) nothing changes, not even <see cref="UpdatedAt"/>, so a replayed
+    /// upsert returns the same representation.
+    /// </summary>
     public void Edit(Guid typeId, DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayload payload, string? notes, DateTimeOffset now)
     {
         EnsureNotDeleted();
-        Ids.Required(typeId, nameof(typeId));
-        ApplyDetails(startedAt, endedAt, payload, notes);
-        TypeId = typeId;
+        var details = ValidateDetails(typeId, startedAt, endedAt, payload, notes);
+        if (Matches(details))
+        {
+            return;
+        }
+
+        ApplyDetails(details);
         Touch(now);
+    }
+
+    /// <summary>
+    /// Decides how a client upsert applies to this stored event, before any change is made:
+    /// an event never moves to another baby (<see cref="EventBabyMismatchException"/>); a deleted event stays deleted
+    /// (<see cref="EventUpsertDecision.IgnoreDeleted"/>); a write whose client <paramref name="clientUpdatedAt"/> is older
+    /// than the stored <see cref="UpdatedAt"/> loses (last write wins, <see cref="EventUpsertDecision.IgnoreStale"/>).
+    /// Without a client timestamp, or on a tie, the incoming write is applied.
+    /// </summary>
+    public EventUpsertDecision DecideUpsert(Guid babyId, DateTimeOffset? clientUpdatedAt)
+    {
+        EnsureBelongsTo(babyId);
+        return this switch
+        {
+            { IsDeleted: true } => EventUpsertDecision.IgnoreDeleted,
+            _ when IsNewerThan(clientUpdatedAt) => EventUpsertDecision.IgnoreStale,
+            _ => EventUpsertDecision.Apply,
+        };
     }
 
     /// <summary>Ends a running event.</summary>
@@ -106,15 +132,42 @@ public sealed class Event
         UpdatedAt = DeletedAt.Value;
     }
 
-    private void ApplyDetails(DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayload payload, string? notes)
+    private static EventDetails ValidateDetails(Guid typeId, DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayload payload, string? notes)
     {
         var normalizedStart = UtcTime.Normalize(startedAt);
-        var normalizedEnd = EnsureValidRange(normalizedStart, UtcTime.Normalize(endedAt));
-        var validatedNotes = Text.Optional(notes, nameof(Notes), NotesMaxLength);
-        StartedAt = normalizedStart;
-        EndedAt = normalizedEnd;
-        Payload = payload;
-        Notes = validatedNotes;
+        return new EventDetails(
+            Ids.Required(typeId, nameof(typeId)),
+            normalizedStart,
+            EnsureValidRange(normalizedStart, UtcTime.Normalize(endedAt)),
+            payload,
+            Text.Optional(notes, nameof(Notes), NotesMaxLength));
+    }
+
+    private void ApplyDetails(EventDetails details)
+    {
+        TypeId = details.TypeId;
+        StartedAt = details.StartedAt;
+        EndedAt = details.EndedAt;
+        Payload = details.Payload;
+        Notes = details.Notes;
+    }
+
+    private bool Matches(EventDetails details) =>
+        TypeId == details.TypeId
+        && StartedAt == details.StartedAt
+        && EndedAt == details.EndedAt
+        && string.Equals(Notes, details.Notes, StringComparison.Ordinal)
+        && Payload.IsEquivalentTo(details.Payload);
+
+    private bool IsNewerThan(DateTimeOffset? clientUpdatedAt) =>
+        clientUpdatedAt is { } clientTime && UtcTime.Normalize(clientTime) < UpdatedAt;
+
+    private void EnsureBelongsTo(Guid babyId)
+    {
+        if (BabyId != babyId)
+        {
+            throw new EventBabyMismatchException(Id, babyId);
+        }
     }
 
     private void Touch(DateTimeOffset now) => UpdatedAt = UtcTime.Normalize(now);
@@ -142,4 +195,6 @@ public sealed class Event
 
     private static DateTimeOffset EnsureValidRange(DateTimeOffset startedAt, DateTimeOffset endedAt) =>
         endedAt >= startedAt ? endedAt : throw new InvalidEventTimeRangeException(startedAt, endedAt);
+
+    private readonly record struct EventDetails(Guid TypeId, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, EventPayload Payload, string? Notes);
 }

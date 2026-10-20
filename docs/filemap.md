@@ -34,3 +34,11 @@
 - web/src/events/ — add/edit sheet (EventSheet, EventForm, TypeFields, MedicationChecklist), form model/validation, time helpers, icon map
 - web/src/home/ — home screen parts: QuickActions grid, RunningTimers, BabyHome
 - web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
+- api/src/BabyRoutine.Domain/Events/ — Event (upsert decision, soft delete), EventPayload (+ JSON equivalence), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
+- api/src/BabyRoutine.Application/Events/ — events use cases (idempotent upsert, soft delete, get, paged delta) and record DTOs
+- api/src/BabyRoutine.Api/Endpoints/EventEndpoints.cs — `/babies/{babyId}/events` routes (contract in docs/SPEC.md "Events sync contract")
+- api/src/BabyRoutine.Api/Errors/ — central DomainException -> RFC 7807 ProblemDetails mapping (status codes in DomainExceptionStatusCodes)
+- api/src/BabyRoutine.Api/Serialization/ — EventPayload JSON converter (payload on the wire as a JSON object)
+- api/tests/BabyRoutine.Api.Tests/Support/SqliteDateTimeOffsetModelCustomizer.cs — test-only: timestamps as UTC ticks so SQLite can order/compare them
+- api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine (median intervals/durations, age bands, day/night), options record
+- api/src/BabyRoutine.Application/Predictions/, Api/Endpoints/PredictionEndpoints.cs — prediction service and `GET /predictions` (takes `utcOffsetMinutes`)

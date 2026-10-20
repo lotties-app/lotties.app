@@ -81,4 +81,18 @@ public sealed class EventTypeTests
             () => builtIn.Update("Nap", "bedtime", Color, hasDuration: true, []));
         Assert.Equal("Sleep", builtIn.Name);
     }
+
+    [Fact]
+    public void IsAvailableTo_BuiltIn_AnyBaby()
+    {
+        Assert.True(BuiltInEventTypes.Sleep.IsAvailableTo(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void IsAvailableTo_Custom_OnlyOwningBaby()
+    {
+        var eventType = EventType.CreateCustom(BabyId, Key, "Pumping", "water_drop", Color, hasDuration: false, []);
+
+        Assert.Equal((true, false), (eventType.IsAvailableTo(BabyId), eventType.IsAvailableTo(Guid.NewGuid())));
+    }
 }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,8 @@ namespace BabyRoutine.Api.Tests.Support;
 /// </summary>
 /// <remarks>
 /// The production EF model is used unchanged: <c>jsonb</c> column types are plain type names to SQLite and the
-/// value converters already store JSON as text. SQLite keeps the unique indexes, so user-creation races are real.
+/// value converters already store JSON as text. Only timestamps differ: they are stored as UTC ticks
+/// (<see cref="SqliteDateTimeOffsetModelCustomizer"/>) so SQLite can filter and order them. SQLite keeps the unique indexes, so user-creation races are real.
 /// </remarks>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
@@ -69,7 +71,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         services.RemoveAll<DbContextOptions<BabyRoutineDbContext>>();
         services.RemoveAll<DbContextOptions>();
-        services.AddDbContext<BabyRoutineDbContext>(options => options.UseSqlite(ConnectionString).UseSnakeCaseNamingConvention());
+        services.AddDbContext<BabyRoutineDbContext>(options => options
+            .UseSqlite(ConnectionString)
+            .UseSnakeCaseNamingConvention()
+            .ReplaceService<IModelCustomizer, SqliteDateTimeOffsetModelCustomizer>());
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
         services.PostConfigure<AuthenticationOptions>(UseTestSchemeByDefault);
         services.AddSingleton<IStartupFilter, ProbeEndpointsStartupFilter>();

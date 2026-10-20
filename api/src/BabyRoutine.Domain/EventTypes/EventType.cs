@@ -57,6 +57,9 @@ public sealed class EventType
 
     public bool IsBuiltIn => BabyId is null;
 
+    /// <summary>Whether events of <paramref name="babyId"/> may use this type: built-in templates or the baby's own custom types.</summary>
+    public bool IsAvailableTo(Guid babyId) => IsBuiltIn || BabyId == babyId;
+
     public static EventType CreateCustom(
         Guid babyId,
         EventTypeKey key,

@@ -182,6 +182,75 @@ public sealed class EventTests
         Assert.Equal((first, first), (running.DeletedAt, running.UpdatedAt));
     }
 
+    [Fact]
+    public void Edit_SameDetails_KeepsUpdatedAt()
+    {
+        var created = Event.Create(EventId, BabyId, BuiltInEventTypes.FeedingId, UserId, Start, null, EventPayload.From("""{"method":"bottle","amount":120}"""), "ok", TestClock.Now);
+
+        created.Edit(BuiltInEventTypes.FeedingId, Start, null, EventPayload.From("""{ "amount": 120.0, "method": "bottle" }"""), " ok ", TestClock.Now.AddMinutes(5));
+
+        Assert.Equal(TestClock.Now, created.UpdatedAt);
+    }
+
+    [Fact]
+    public void Edit_PayloadValueChanged_BumpsUpdatedAt()
+    {
+        var created = Event.Create(EventId, BabyId, BuiltInEventTypes.FeedingId, UserId, Start, null, EventPayload.From("""{"amount":120}"""), null, TestClock.Now);
+        var later = TestClock.Now.AddMinutes(5);
+
+        created.Edit(BuiltInEventTypes.FeedingId, Start, null, EventPayload.From("""{"amount":130}"""), null, later);
+
+        Assert.Equal((later, """{"amount":130}"""), (created.UpdatedAt, created.Payload.Value));
+    }
+
+    [Fact]
+    public void DecideUpsert_ActiveWithoutClientTime_Applies()
+    {
+        Assert.Equal(EventUpsertDecision.Apply, CreateRunning().DecideUpsert(BabyId, null));
+    }
+
+    [Fact]
+    public void DecideUpsert_ClientTimeEqualOrNewer_Applies()
+    {
+        var running = CreateRunning();
+
+        Assert.Equal(
+            (EventUpsertDecision.Apply, EventUpsertDecision.Apply),
+            (running.DecideUpsert(BabyId, TestClock.Now), running.DecideUpsert(BabyId, TestClock.Now.AddSeconds(1))));
+    }
+
+    [Fact]
+    public void DecideUpsert_ClientTimeOlderThanStored_IgnoresStale()
+    {
+        Assert.Equal(EventUpsertDecision.IgnoreStale, CreateRunning().DecideUpsert(BabyId, TestClock.Now.AddTicks(-10)));
+    }
+
+    [Fact]
+    public void DecideUpsert_ClientTimeInOtherOffset_ComparesAsUtc()
+    {
+        var sameInstant = TestClock.Now.ToOffset(TimeSpan.FromHours(-3));
+
+        Assert.Equal(EventUpsertDecision.Apply, CreateRunning().DecideUpsert(BabyId, sameInstant));
+    }
+
+    [Fact]
+    public void DecideUpsert_Deleted_IgnoresDeletedEvenWhenClientIsNewer()
+    {
+        var running = CreateRunning();
+        running.SoftDelete(TestClock.Now);
+
+        Assert.Equal(EventUpsertDecision.IgnoreDeleted, running.DecideUpsert(BabyId, TestClock.Now.AddDays(1)));
+    }
+
+    [Fact]
+    public void DecideUpsert_OtherBaby_ThrowsBabyMismatch()
+    {
+        var running = CreateRunning();
+        running.SoftDelete(TestClock.Now);
+
+        Assert.Throws<EventBabyMismatchException>(() => running.DecideUpsert(Guid.NewGuid(), null));
+    }
+
     private static Event CreateRunning() =>
         Event.Create(EventId, BabyId, BuiltInEventTypes.SleepId, UserId, Start, null, EventPayload.Empty, null, TestClock.Now);
 }

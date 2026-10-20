@@ -1,4 +1,6 @@
 using BabyRoutine.Domain.Babies;
+using BabyRoutine.Domain.Events;
+using BabyRoutine.Domain.EventTypes;
 using BabyRoutine.Domain.Users;
 using BabyRoutine.Infrastructure.Persistence;
 using BabyRoutine.Infrastructure.Persistence.Repositories;
@@ -18,6 +20,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddDbContext<BabyRoutineDbContext>(options => options.UseBabyRoutineDatabase(databaseOptions.ToConnectionString()));
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IBabyMembershipRepository, EfBabyMembershipRepository>();
+        services.AddScoped<IEventRepository, EfEventRepository>();
+        services.AddScoped<IEventTypeRepository, EfEventTypeRepository>();
+        services.AddScoped<BabyRoutine.Domain.Predictions.IPredictionHistoryRepository, EfPredictionHistoryRepository>();
         return services;
     }
 }

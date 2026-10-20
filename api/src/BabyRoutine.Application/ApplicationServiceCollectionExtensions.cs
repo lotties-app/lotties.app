@@ -1,4 +1,5 @@
 using BabyRoutine.Application.Babies;
+using BabyRoutine.Application.Events;
 using BabyRoutine.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -17,6 +18,9 @@ public static class ApplicationServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
         services.AddScoped<IBabyAccessService, BabyAccessService>();
+        services.AddScoped<IEventService, EventService>();
+        services.TryAddSingleton(BabyRoutine.Domain.Predictions.PredictionOptions.Default);
+        services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         return services;
     }
 }

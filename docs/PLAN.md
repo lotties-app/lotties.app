@@ -9,11 +9,11 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 | 3 | OIDC JWT auth + membership authorization policies | Careful (done) | 2 | integration tests: 401/403/200 |
 | 4 | Babies, members, invites endpoints | Medium | 3 | integration tests |
 | 5 | Event types + medications endpoints | Medium | 3 | integration tests |
-| 6 | Events endpoints: idempotent upsert, delta pull, soft delete | Careful | 3 | integration tests incl. retry idempotency |
-| 7 | Predictions engine (pure Domain) + endpoint | Careful | 2 | unit tests on fixtures |
+| 6 | Events endpoints: idempotent upsert, delta pull, soft delete | Careful (done) | 3 | integration tests incl. retry idempotency |
+| 7 | Predictions engine (pure Domain) + endpoint | Careful (done) | 2 | unit tests on fixtures |
 | 8 | Web: OIDC login, app shell, routing, API client, theme | Medium (done) | 1 | build, tests |
 | 9 | Web: Dexie store + sync engine (queue, delta pull) | Careful (done) | 8 | tests with fake API, offline simulation |
-| 10 | Web: home screen (quick actions, running timers), add/edit sheet, medication checklist | Medium | 9, 5 | component tests, manual preview |
+| 10 | Web: home screen (quick actions, running timers), add/edit sheet, medication checklist | Medium (done) | 9, 5 | component tests, manual preview |
 | 11 | Web: timeline + filters | Medium | 9 | tests |
 | 12 | Web: settings (custom event types, medications, members/invites) | Medium | 8, 4, 5 | tests |
 | 13 | Web: predictions cards | Light | 7, 10 | tests |
