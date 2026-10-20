@@ -22,6 +22,9 @@ import type {
  *          may be repeated (merge is idempotent).
  * - GET    /babies -> BabyDto[]; /babies/{id}/event-types -> EventTypeDto[] (built-ins + custom);
  *          /babies/{id}/medications -> MedicationDto[].
+ * - PUT    /babies/{id}/medications/{medicationId}  body MedicationUpsertRequest; idempotent upsert
+ *          (client GUID); any 2xx body is ignored. Medication pulls are not delta-based yet.
+ * - Medication event payload: { medications: [{ medicationId, name, dose?: { amount, unit } }] }.
  * - Enum values (field kind, role) are strings, compared case-insensitively.
  */
 
@@ -33,6 +36,8 @@ export const apiPaths = {
   medications: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/medications`,
   event: (babyId: string, eventId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/events/${enc(eventId)}`,
+  medication: (babyId: string, medicationId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/medications/${enc(medicationId)}`,
   eventsDelta: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/events` +
     (since ? `?since=${encodeURIComponent(since)}` : ''),
@@ -101,6 +106,22 @@ export interface EventUpsertRequest {
   endedAt: string | null;
   payload: EventPayload;
   notes: string | null;
+}
+
+export interface MedicationUpsertRequest {
+  name: string;
+  defaultDosage: Dosage | null;
+  notes: string | null;
+  isUsual: boolean;
+}
+
+export function toMedicationUpsertRequest(medication: Medication): MedicationUpsertRequest {
+  return {
+    name: medication.name,
+    defaultDosage: medication.defaultDosage,
+    notes: medication.notes,
+    isUsual: medication.isUsual,
+  };
 }
 
 export type EventsDeltaResponse = EventDto[];

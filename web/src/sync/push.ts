@@ -42,7 +42,10 @@ async function pushOne(ctx: SyncContext, mutation: OutboxMutation): Promise<Push
 }
 
 async function send(ctx: SyncContext, mutation: OutboxMutation): Promise<EventDto | undefined> {
-  const path = apiPaths.event(mutation.babyId, mutation.entityId);
+  const path =
+    mutation.entityType === 'medication'
+      ? apiPaths.medication(mutation.babyId, mutation.entityId)
+      : apiPaths.event(mutation.babyId, mutation.entityId);
   const signal = requestSignal(ctx);
   if (mutation.kind === 'upsert') {
     return ctx.api.request<EventDto | undefined>(path, {
@@ -69,7 +72,7 @@ function isEventDto(value: unknown, id: string): value is EventDto {
 async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
   await db.transaction('rw', db.outbox, db.events, async () => {
     await db.outbox.delete(mutation.id);
-    if (!isEventDto(response, mutation.entityId)) return;
+    if (mutation.entityType !== 'event' || !isEventDto(response, mutation.entityId)) return;
     const stillPending = await db.outbox
       .where('entityId')
       .equals(mutation.entityId)

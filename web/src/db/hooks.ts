@@ -16,6 +16,7 @@ import {
   type CreateEventInput,
   type EditEventChanges,
 } from './eventCommands';
+import { createMedication, type CreateMedicationInput } from './medicationCommands';
 
 /*
  * Reads come straight from Dexie through `useLiveQuery`, which re-runs on any local or synced
@@ -53,6 +54,11 @@ export function useRunningEvents(babyId: string) {
 export function useEvent(id: string) {
   const db = useDatabase();
   return useLiveQuery(() => liveEvent(db, id), [db, id]);
+}
+
+export function useMedicationCommands() {
+  const db = useDatabase();
+  return { create: (input: CreateMedicationInput) => createMedication(db, input) };
 }
 
 /** Event commands bound to the provided database (local write + outbox, picked up by sync). */

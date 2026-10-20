@@ -63,7 +63,8 @@ export type EventPayload = Record<string, unknown>;
 
 /** Payload of a medication event: the catalog entries the parent selected. */
 export interface MedicationEventPayload extends EventPayload {
-  medications: { medicationId: string; dose?: Dosage }[];
+  /** `name` is a snapshot so the timeline stays readable if the catalog entry changes. */
+  medications: { medicationId: string; name: string; dose?: Dosage }[];
 }
 
 /** A logged event. Named `BabyEvent` to avoid clashing with the DOM `Event`. */
@@ -87,7 +88,7 @@ export interface BabyEvent {
 }
 
 export type MutationKind = 'upsert' | 'delete';
-export type MutationEntityType = 'event';
+export type MutationEntityType = 'event' | 'medication';
 /** `dead` = permanently rejected by the server; kept for inspection, never blocks the queue. */
 export type MutationStatus = 'pending' | 'dead';
 

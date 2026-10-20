@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent, deleteEvent, stopEvent } from '../db/eventCommands';
+import { createMedication } from '../db/medicationCommands';
 import {
   BABY_ID,
   SERVER_TIME,
@@ -74,6 +75,24 @@ describe('SyncEngine push', () => {
     });
     expect((await db.events.get(b.id))?.deletedAt).not.toBeNull();
     expect(engine.status.getSnapshot()).toMatchObject({ state: 'idle', pendingCount: 0 });
+  });
+
+  it('pushes medication catalog entries to the medications endpoint', async () => {
+    const med = await createMedication(db, { babyId: BABY_ID, name: 'Gripe water' });
+    const { engine, writes } = setup((call) => (call.method === 'PUT' ? {} : undefined));
+
+    await engine.syncNow();
+
+    expect(writes().map((c) => `${c.method} ${c.path}`)).toEqual([
+      `PUT /api/v1/babies/${BABY_ID}/medications/${med.id}`,
+    ]);
+    expect(writes()[0].body).toEqual({
+      name: 'Gripe water',
+      defaultDosage: null,
+      notes: null,
+      isUsual: false,
+    });
+    expect(await db.outbox.count()).toBe(0);
   });
 
   it('retries transient failures with exponential backoff and keeps order', async () => {

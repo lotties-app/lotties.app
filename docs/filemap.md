@@ -30,3 +30,7 @@
 - web/src/db/ — Dexie schema, local event commands (write + outbox in one transaction), live-query hooks
 - web/src/sync/ — sync engine (outbox push, delta pull, backoff, status); API contract assumptions isolated in contract.ts
 - web/src/auth, config, api, layout, theme, pages — OIDC, runtime config, API client, app shell, theming, placeholder screens
+- web/src/baby/ — selected-baby context/provider (localStorage-backed); layout/BabySwitcher.tsx is the TopBar switcher
+- web/src/events/ — add/edit sheet (EventSheet, EventForm, TypeFields, MedicationChecklist), form model/validation, time helpers, icon map
+- web/src/home/ — home screen parts: QuickActions grid, RunningTimers, BabyHome
+- web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
