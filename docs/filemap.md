@@ -5,6 +5,17 @@
 - docs/SPEC.md — product + architecture spec
 - docs/PLAN.md — task list and status
 - .gitignore — ignores
-- api/ — .NET solution (created by scaffold task)
-- web/ — Vite React app (created by scaffold task)
+- .editorconfig — editor and C# style defaults
+- api/ — .NET solution (`BabyRoutine.sln`): `src/` Domain, Application, Infrastructure, Api; `tests/` xUnit projects
+- api/Directory.Build.props — shared C# build settings (nullable, implicit usings, warnings as errors)
+- api/Dockerfile — API container image (multi-stage, .NET 8)
+- web/ — Vite React 19 + TS + MUI PWA app (Vitest, ESLint, Prettier)
+- web/Dockerfile — web container image (Vite build served by nginx)
+- web/nginx.conf — nginx config with SPA fallback
+- docker-compose.yml — api + web, optional `localdb` postgres profile
+- .env.example — env var template (placeholders only; real `.env` is gitignored)
+- .github/workflows/ci.yml — CI: dotnet build/test, web lint/test/build
+- LICENSE — AGPL-3.0
+- README.md — overview, quick start, env vars
+- CONTRIBUTING.md — contribution guide
 - docs/graphify/ — graphify output (gitignored)

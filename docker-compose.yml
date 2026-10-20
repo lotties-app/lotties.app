@@ -1,0 +1,33 @@
+services:
+  api:
+    build: ./api
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "5000:8080"
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Optional local PostgreSQL for contributors without a database: docker compose --profile localdb up
+  postgres:
+    image: postgres:16
+    profiles: ["localdb"]
+    environment:
+      POSTGRES_DB: ${DB_NAME:-babyroutine}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:

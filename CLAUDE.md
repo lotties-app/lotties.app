@@ -7,7 +7,7 @@ Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec:
 ## Stack
 - `web/`: React 19 + TS + MUI, Vite SPA (no SSR), Dexie offline store.
 - `api/`: .NET 8, layers Domain / Application / Infrastructure / Api; EF Core + Npgsql.
-- Commands (fill in at scaffold): `dotnet build api`, `dotnet test api`, `npm --prefix web run dev|build|test|lint`, `docker compose up`.
+- Commands: `dotnet build api/BabyRoutine.sln`, `dotnet test api/BabyRoutine.sln`, `npm --prefix web run dev|build|test|lint`.
 
 ## Conventions
 - Event model is generic (typed `Event` + JSONB payload); never add a table per event kind.
