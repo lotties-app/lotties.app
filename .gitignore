@@ -10,4 +10,4 @@ dist/
 coverage/
 *.log
 .idea/
-graphify-out/
+docs/graphify/

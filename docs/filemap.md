@@ -7,3 +7,4 @@
 - .gitignore — ignores
 - api/ — .NET solution (created by scaffold task)
 - web/ — Vite React app (created by scaffold task)
+- docs/graphify/ — graphify output (gitignored)
