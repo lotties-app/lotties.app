@@ -5,6 +5,8 @@ import { readConfig, type ConfigResult } from './config/appConfig';
 import { SetupMessage } from './config/SetupMessage';
 import { OidcAuthProvider } from './auth/OidcAuthProvider';
 import { ApiClientProvider } from './api/ApiClientProvider';
+import { DatabaseProvider } from './db/DatabaseProvider';
+import { SyncProvider } from './sync/SyncProvider';
 import { AppRoutes } from './AppRoutes';
 
 const queryClient = new QueryClient();
@@ -16,9 +18,13 @@ export default function App({ configResult = readConfig() }: { configResult?: Co
         <BrowserRouter>
           <OidcAuthProvider config={configResult.config.oidc}>
             <ApiClientProvider baseUrl={configResult.config.apiBaseUrl}>
-              <QueryClientProvider client={queryClient}>
-                <AppRoutes />
-              </QueryClientProvider>
+              <DatabaseProvider>
+                <SyncProvider>
+                  <QueryClientProvider client={queryClient}>
+                    <AppRoutes />
+                  </QueryClientProvider>
+                </SyncProvider>
+              </DatabaseProvider>
             </ApiClientProvider>
           </OidcAuthProvider>
         </BrowserRouter>
