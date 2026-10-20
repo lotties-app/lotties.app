@@ -1,6 +1,7 @@
 # filemap
 
 - CLAUDE.md — agent instructions
+- docs/filemap.md — this index
 - docs/SPEC.md — product + architecture spec
 - docs/PLAN.md — task list and status
 - .gitignore — ignores

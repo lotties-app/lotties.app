@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/PLAN.md`. Navigation: `filemap.md` (update when adding/moving files).
+Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/PLAN.md`. Navigation: `docs/filemap.md` (update when adding/moving files).
 
 ## Stack
 - `web/`: React 19 + TS + MUI, Vite SPA (no SSR), Dexie offline store.

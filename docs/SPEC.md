@@ -24,7 +24,7 @@ SSR, native apps, ML models, push notifications, pro/paid tiers, pediatrician sh
 /api   .NET solution (src/*, tests/*)
 /web   Vite React app
 /docs  SPEC.md, PLAN.md
-docker-compose.yml, LICENSE (AGPL-3.0), README, CONTRIBUTING, CLAUDE.md, filemap.md
+docker-compose.yml, LICENSE (AGPL-3.0), README, CONTRIBUTING, CLAUDE.md
 ```
 
 ## Domain model
