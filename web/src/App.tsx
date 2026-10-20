@@ -1,19 +1,30 @@
-import { useMemo } from 'react';
-import { CssBaseline, ThemeProvider, Typography, Box, useMediaQuery } from '@mui/material';
-import { buildTheme } from './theme';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppThemeProvider } from './theme/AppThemeProvider';
+import { readConfig, type ConfigResult } from './config/appConfig';
+import { SetupMessage } from './config/SetupMessage';
+import { OidcAuthProvider } from './auth/OidcAuthProvider';
+import { ApiClientProvider } from './api/ApiClientProvider';
+import { AppRoutes } from './AppRoutes';
 
-export default function App() {
-  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)');
-  const theme = useMemo(() => buildTheme(prefersDark ? 'dark' : 'light'), [prefersDark]);
+const queryClient = new QueryClient();
 
+export default function App({ configResult = readConfig() }: { configResult?: ConfigResult }) {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box component="main" sx={{ p: 2, minHeight: '100vh' }}>
-        <Typography variant="h4" component="h1">
-          Baby Routine
-        </Typography>
-      </Box>
-    </ThemeProvider>
+    <AppThemeProvider>
+      {configResult.ok ? (
+        <BrowserRouter>
+          <OidcAuthProvider config={configResult.config.oidc}>
+            <ApiClientProvider baseUrl={configResult.config.apiBaseUrl}>
+              <QueryClientProvider client={queryClient}>
+                <AppRoutes />
+              </QueryClientProvider>
+            </ApiClientProvider>
+          </OidcAuthProvider>
+        </BrowserRouter>
+      ) : (
+        <SetupMessage missing={configResult.missing} />
+      )}
+    </AppThemeProvider>
   );
 }
