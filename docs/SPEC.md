@@ -66,3 +66,6 @@ Parents can import a Napper CSV export. Findings from a real export (1248 events
 - Measurements CSV: `dateOfMeasurement,weightKg,heightCm,headCircumferenceCm` (cm columns may be empty). Add a `Measurement` entity (baby, date, weightKg?, heightCm?, headCircumferenceCm?) and import it; simple list/chart in UI. This promotes basic growth tracking into MVP scope.
 - Import is idempotent: deterministic event ids derived from (baby, category, start, end) so re-importing does not duplicate. Duplicate files must be tolerated (the two log exports provided were byte-identical).
 - Real exports contain a child's personal data: never commit them; `docs/samples/` is gitignored, tests use small synthetic fixtures with the same columns.
+
+## Authorization behavior
+Unauthenticated -> 401. Authenticated non-member (or unknown baby) -> 403 (does not reveal baby existence differently). Insufficient role -> 403. Users are provisioned on first authenticated request that needs them.

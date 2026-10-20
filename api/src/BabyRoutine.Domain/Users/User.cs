@@ -36,6 +36,13 @@ public sealed class User
         Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength),
         UtcTime.Normalize(createdAt));
 
+    /// <summary>Creates the user for a first sign-in, taking the display name from the provider's profile claims.</summary>
+    public static User Register(ExternalIdentity identity, DateTimeOffset createdAt)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        return Create(identity.Subject, identity.DisplayName, createdAt);
+    }
+
     public void Rename(string displayName) =>
         DisplayName = Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength);
 

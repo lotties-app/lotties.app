@@ -1,11 +1,14 @@
-using BabyRoutine.Infrastructure;
-using BabyRoutine.Infrastructure.Persistence;
+using BabyRoutine.Api;
+using BabyRoutine.Api.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddInfrastructure(DatabaseOptions.FromEnvironment());
+builder.AddBabyRoutineApi();
 
 var app = builder.Build();
-
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.UseBabyRoutineApi();
+app.MapBabyRoutineApi();
 
 app.Run();
+
+/// <summary>Entry point; public so integration tests can host the API with <c>WebApplicationFactory</c>.</summary>
+public partial class Program;

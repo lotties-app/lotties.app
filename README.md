@@ -39,6 +39,9 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `DB_APP_USER` | Application database user |
 | `DB_APP_PASSWORD` | Application database password |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` | Superuser for the optional `localdb` container only |
+| `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |
+| `AUTH_AUDIENCE` | API audience that access tokens must carry (config `Auth:Audience`); required outside Development |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the API, e.g. the web app URL (config `Cors:AllowedOrigins`) |
 
 Never commit `.env`. See `.env.example` for placeholders.
 

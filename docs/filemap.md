@@ -24,3 +24,9 @@
 - api/migrations/initial.sql — idempotent SQL script of the initial migration
 - api/tests/BabyRoutine.Infrastructure.Tests/ — model-level EF tests (no database needed)
 - api/dotnet-tools.json — local dotnet-ef tool
+- api/src/BabyRoutine.Application/ — use cases: current user provisioning, baby access checks (interfaces for repositories live in Domain)
+- api/src/BabyRoutine.Api/ — Program/ApiHostExtensions, Authentication/, Authorization/ (baby role policies), Cors/, Endpoints/ (health, me, baby-scoped group)
+- api/tests/BabyRoutine.Api.Tests/ — WebApplicationFactory integration tests (SQLite file DB, header-driven test auth; no Docker)
+- web/src/db/ — Dexie schema, local event commands (write + outbox in one transaction), live-query hooks
+- web/src/sync/ — sync engine (outbox push, delta pull, backoff, status); API contract assumptions isolated in contract.ts
+- web/src/auth, config, api, layout, theme, pages — OIDC, runtime config, API client, app shell, theming, placeholder screens
