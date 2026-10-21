@@ -45,3 +45,15 @@ Token values and the MUI mapping are in 02-visual-identity.md section "Token tab
 
 ## 4. Process rules for the build waves
 All strings via i18n (en + pt-BR); no raw codes in UI; every new screen gets pt-BR and dark/light/night checks; screenshots with the harness in e2e/design-review before/after (kept out of git); subagents per the model policy (Opus for logic-heavy/auth, Sonnet for UI build, Haiku for mechanical), never Fable.
+
+## 5. Addendum 2026-10-21 (owner shared more Napper screenshots: "how neat Napper looks")
+Principles taken (not assets; Napper's artwork must not be copied or traced): richer polish than flat editorial: soft depth/glow, big numerals, illustrated category icons, a calm atmosphere at night, clear hierarchy, friendly microcopy.
+Changes to the plan (Wave 4c, after Wave 4):
+1. **Original illustrated icon set** (SVG, soft gradients + highlight + subtle glow, one consistent style, light/dark/night aware): sleep/nap, woke up, bedtime, fell asleep, night waking, bottle, nursing, pumping, solid food, diaper, medication, temperature, bath, tummy time, belly pain, custom. Used for hero places (state card, tiles, More sheet, rows, toast, event sheet header); Tabler stays for UI chrome. Own artwork, documented licence (AGPL-compatible, e.g. CC0/our own).
+2. **Floating pill navigation** with a centre "+" opening the More sheet (reverses the 'no FAB' decision so Day/Insights have quick logging).
+3. **Day**: week strip (7 days with dates, today highlighted, swipe weeks) replaces the date bar; tinted rows with coloured left edge; separators for sleep sessions ('Sleep session ended, 1h 12m').
+4. **Estimated nap sheet** from the nap window: time range, duration, calm guidance text (no medical claims), Skip / Log.
+5. **Day rhythm ring** (24h arc with nap markers and predicted windows) as an alternative view of the state card; shares geometry with the Insights rhythm chart.
+6. **Atmosphere**: subtle star field + glow in the night scheme (respect reduced motion/data saver), soft glow behind hero icons.
+7. **Event sheet hero**: large illustrated icon, large serif time numeral with 'Today', fields below.
+8. **Microcopy**: warm confirmations in our own voice (en + pt-BR), no pressure; no peer-comparison claims from a user base we do not have: show general age ranges from public guidance (sourced) or omit.
