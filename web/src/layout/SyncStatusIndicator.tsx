@@ -1,14 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Chip, CircularProgress, Tooltip } from '@mui/material';
-import CloudDoneIcon from '@mui/icons-material/CloudDone';
-import CloudOffIcon from '@mui/icons-material/CloudOff';
-import CloudSyncIcon from '@mui/icons-material/CloudSync';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import type { ReactElement } from 'react';
 import { useSyncStatus } from '../sync/SyncEngineContext';
 import type { SyncStatus } from '../sync/syncStatus';
 import { syncKind, syncLabel } from './syncPresentation';
+import { Icon } from '../ui/Icon';
 
 type Tone = 'default' | 'warning' | 'error';
 
@@ -23,22 +19,22 @@ function presentSyncStatus(status: SyncStatus): Presentation {
   const label = syncLabel(status);
   switch (syncKind(status)) {
     case 'auth':
-      return { label, tone: 'warning', icon: <ErrorOutlineIcon /> };
+      return { label, tone: 'warning', icon: <Icon name="error" /> };
     case 'syncing':
       return { label, tone: 'default', icon: <CircularProgress size={14} /> };
     case 'waiting':
-      return { label, tone: 'default', icon: <CloudSyncIcon /> };
+      return { label, tone: 'default', icon: <Icon name="cloud-waiting" /> };
     case 'offline':
-      return { label, tone: 'warning', icon: <CloudOffIcon /> };
+      return { label, tone: 'warning', icon: <Icon name="cloud-off" /> };
     case 'error':
-      return { label, tone: 'error', icon: <ErrorOutlineIcon /> };
+      return { label, tone: 'error', icon: <Icon name="error" /> };
     case 'pending':
-      return { label, tone: 'default', icon: <CloudUploadIcon /> };
+      return { label, tone: 'default', icon: <Icon name="cloud-upload" /> };
     case 'synced':
       return {
         label,
         tone: status.deadLetterCount > 0 ? 'error' : 'default',
-        icon: <CloudDoneIcon />,
+        icon: <Icon name="cloud-done" />,
       };
   }
 }

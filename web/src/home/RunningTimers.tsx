@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Card, CardActionArea, Stack, Typography } from '@mui/material';
-import StopIcon from '@mui/icons-material/Stop';
 import type { BabyEvent, EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatElapsed, useNow } from '../events/time';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   events: BabyEvent[];
@@ -37,7 +37,7 @@ function Timer({ event, type, now, onStop, onEdit, readOnly }: TimerProps) {
         aria-label={readOnly ? name : t('home.editNamed', { name })}
         sx={{ display: 'flex', flexGrow: 1, justifyContent: 'flex-start', gap: 2, p: 2 }}
       >
-        <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} fontSize={32} />
+        <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} size={32} />
         <Stack>
           <Typography variant="subtitle1">{name}</Typography>
           <Typography
@@ -52,7 +52,7 @@ function Timer({ event, type, now, onStop, onEdit, readOnly }: TimerProps) {
       </CardActionArea>
       <Button
         color="primary"
-        startIcon={<StopIcon />}
+        startIcon={<Icon name="stop" />}
         onClick={() => onStop(event)}
         disabled={readOnly}
         aria-label={t('home.stopNamed', { name })}

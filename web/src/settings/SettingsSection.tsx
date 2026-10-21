@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   id: string;
@@ -18,7 +18,7 @@ export function SettingsSection({ id, title, defaultExpanded = false, children }
       slotProps={{ transition: { unmountOnExit: true } }}
     >
       <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
+        expandIcon={<Icon name="expand" />}
         aria-controls={`${id}-content`}
         id={`${id}-header`}
         sx={{ minHeight: 56 }}

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ButtonBase, Menu, MenuItem, Stack, Typography } from '@mui/material';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import { BabyAvatar } from '../baby/BabyAvatar';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { formatAge } from '../i18n/format';
+import { Icon } from '../ui/Icon';
 
 const grow = { flexGrow: 1, minWidth: 0 };
 
@@ -18,7 +18,7 @@ function BabyHeading({ baby, switchable }: { baby: Baby; switchable: boolean }) 
           <Typography variant="h5" component="p" noWrap>
             {baby.name}
           </Typography>
-          {switchable && <ExpandMoreRoundedIcon fontSize="small" aria-hidden />}
+          {switchable && <Icon name="expand" size={20} />}
         </Stack>
         <Typography variant="caption" color="text.secondary" noWrap>
           {formatAge(baby.birthDate, new Date())}

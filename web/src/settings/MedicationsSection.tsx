@@ -10,9 +10,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import { canWrite } from '../baby/permissions';
 import { useMedicationCommands, useMedications } from '../db/hooks';
 import type { Baby, Medication } from '../db/models';
@@ -20,6 +17,7 @@ import { t } from '../i18n/i18n';
 import { formatNumber } from '../i18n/format';
 import { ConfirmDialog } from './ConfirmDialog';
 import { MedicationDialog } from './MedicationDialog';
+import { Icon } from '../ui/Icon';
 
 type Editing = { medication: Medication } | 'new' | null;
 
@@ -52,13 +50,13 @@ function MedicationRow({
               aria-label={t('settings.medications.editNamed', { name: medication.name })}
               onClick={onEdit}
             >
-              <EditIcon />
+              <Icon name="edit" />
             </IconButton>
             <IconButton
               aria-label={t('settings.medications.deleteNamed', { name: medication.name })}
               onClick={onDelete}
             >
-              <DeleteIcon />
+              <Icon name="delete" />
             </IconButton>
           </Stack>
         )
@@ -106,7 +104,7 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
       </List>
       {writable ? (
         <Button
-          startIcon={<AddIcon />}
+          startIcon={<Icon name="add" />}
           variant="outlined"
           onClick={() => setEditing('new')}
           sx={{ minHeight: 48, alignSelf: 'flex-start' }}

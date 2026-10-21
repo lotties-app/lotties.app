@@ -4,6 +4,7 @@ import type { BabyRoutineDb } from '../db/database';
 import type { BabyRole } from '../db/models';
 import type { MeasurementDto } from '../sync/contract';
 import { BABY_ID, fakeApi, httpError, testDatabase, type ApiCall } from '../test/fakeApi';
+import { setDateField } from '../test/dateField';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { seedBaby } from '../test/seed';
 import { GrowthPage } from './GrowthPage';
@@ -104,7 +105,7 @@ describe('GrowthPage', () => {
 
     fireEvent.change(within(dialog).getByLabelText('Weight (kg)'), { target: { value: '50' } });
     fireEvent.change(within(dialog).getByLabelText('Height (cm)'), { target: { value: '10' } });
-    fireEvent.change(within(dialog).getByLabelText(/^Date/), { target: { value: '2999-01-01' } });
+    await setDateField(/^Date/, '2999-01-01');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(await within(dialog).findByText('Weight must be between 0.3 and 40 kg.')).toBeTruthy();

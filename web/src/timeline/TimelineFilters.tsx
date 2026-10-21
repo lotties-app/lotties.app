@@ -43,7 +43,7 @@ export function TimelineFilters({ types, selected, onChange }: Props) {
           <Chip
             key={type.id}
             label={names.typeName(type)}
-            icon={<EventTypeIcon name={type.icon} color={safeColor(type.color)} fontSize={18} />}
+            icon={<EventTypeIcon name={type.icon} color={safeColor(type.color)} size={20} />}
             color={active ? 'primary' : 'default'}
             variant={active ? 'filled' : 'outlined'}
             aria-pressed={active}

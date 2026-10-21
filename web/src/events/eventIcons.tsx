@@ -1,15 +1,15 @@
-import { createElement } from 'react';
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import { ICONS } from './iconRegistry';
+import { Icon, type IconSize } from '../ui/Icon';
+import { eventTypeIconName } from './iconRegistry';
 
+/** The icon of an event type (its stored icon name), optionally in the type's own colour. */
 export function EventTypeIcon({
   name,
   color,
-  fontSize,
+  size = 24,
 }: {
   name: string;
   color?: string;
-  fontSize: number;
+  size?: IconSize;
 }) {
-  return createElement(ICONS.get(name) ?? EventNoteIcon, { sx: { fontSize, color } });
+  return <Icon name={eventTypeIconName(name)} size={size} sx={color ? { color } : undefined} />;
 }

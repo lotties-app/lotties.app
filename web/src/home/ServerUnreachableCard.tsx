@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Stack, Typography } from '@mui/material';
-import CloudOffRoundedIcon from '@mui/icons-material/CloudOffRounded';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   offline: boolean;
@@ -20,7 +20,7 @@ export function ServerUnreachableCard({ offline, onRetry }: Props) {
       spacing={2}
       sx={{ py: 4, maxWidth: 420, mx: 'auto', alignItems: 'center', textAlign: 'center' }}
     >
-      <CloudOffRoundedIcon color="action" sx={{ fontSize: 40 }} />
+      <Icon name="cloud-off" size={40} sx={{ color: 'action.active' }} />
       <Typography id="server-unreachable-title" variant="h6" component="h2">
         {t('home.unreachable.title')}
       </Typography>

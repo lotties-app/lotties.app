@@ -5,6 +5,7 @@ import { createEvent } from '../db/eventCommands';
 import { recordLastUsed } from '../events/lastUsedValues';
 import { SyncEngine } from '../sync/SyncEngine';
 import { BABY_ID, fakeApi, httpError, networkError, testDatabase } from '../test/fakeApi';
+import { setDateField } from '../test/dateField';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import {
   DIAPER_DTO,
@@ -119,7 +120,7 @@ describe('HomePage without a baby (M6)', () => {
       expect(writes()).toHaveLength(0);
 
       fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: ' Mia ' } });
-      fireEvent.change(screen.getByLabelText(/^Birth date/), { target: { value: '2026-09-01' } });
+      await setDateField(/^Birth date/, '2026-09-01');
       fireEvent.click(screen.getByRole('button', { name: 'Create baby' }));
 
       await waitFor(() => expect(writes()).toHaveLength(1));
@@ -145,7 +146,7 @@ describe('HomePage without a baby (M6)', () => {
       renderWithDb(db, <HomePage />, { api });
 
       fireEvent.change(await screen.findByLabelText(/^Name/), { target: { value: 'Mia' } });
-      fireEvent.change(screen.getByLabelText(/^Birth date/), { target: { value: '2026-09-01' } });
+      await setDateField(/^Birth date/, '2026-09-01');
       fireEvent.click(screen.getByRole('button', { name: 'Create baby' }));
 
       expect(await screen.findByText('You do not have permission to do this.')).toBeTruthy();

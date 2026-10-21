@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Button, IconButton, Stack, Typography } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { formatNumber } from '../i18n/format';
 import { MAX_IMPORT_LABEL, type FileKind, type PickedFiles } from './importModel';
+import { Icon } from '../ui/Icon';
 
 const KINDS: FileKind[] = ['logs', 'measurements'];
 
@@ -40,7 +39,7 @@ export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props
             <Button
               component="label"
               variant="outlined"
-              startIcon={<UploadFileIcon />}
+              startIcon={<Icon name="upload-file" />}
               sx={{ minHeight: 48, flexShrink: 0 }}
             >
               {kind === 'logs'
@@ -69,7 +68,7 @@ export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props
                 aria-label={t('import.files.remove', { name: file.name })}
                 onClick={() => onRemove(kind)}
               >
-                <CloseIcon />
+                <Icon name="close" />
               </IconButton>
             )}
           </Stack>

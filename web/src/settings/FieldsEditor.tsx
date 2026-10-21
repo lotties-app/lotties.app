@@ -11,10 +11,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
 import type { EventFieldKind } from '../db/models';
 import { FIELD_KINDS, newFieldDraft, type FieldDraft } from './eventTypeModel';
+import { Icon } from '../ui/Icon';
 
 interface FieldCardProps {
   field: FieldDraft;
@@ -39,7 +38,7 @@ function FieldCard({ field, position, onChange, onRemove }: FieldCardProps) {
               aria-label={t('settings.eventTypes.removeField', { field: prefix })}
               onClick={onRemove}
             >
-              <DeleteIcon />
+              <Icon name="delete" />
             </IconButton>
           </Stack>
           <TextField
@@ -146,7 +145,7 @@ export function FieldsEditor({ fields, onChange }: Props) {
         ))}
       </Stack>
       <Button
-        startIcon={<AddIcon />}
+        startIcon={<Icon name="add" />}
         onClick={() => onChange([...fields, newFieldDraft()])}
         sx={{ minHeight: 48, alignSelf: 'flex-start' }}
       >

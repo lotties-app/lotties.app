@@ -19,7 +19,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
 import { createEventType, updateEventType } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
 import { useDatabase } from '../db/DatabaseContext';
@@ -41,6 +40,7 @@ import {
 } from './eventTypeModel';
 import { ErrorNotice } from './ErrorNotice';
 import { useServerAction } from './useServerAction';
+import { Icon } from '../ui/Icon';
 
 /** Localized icon name; icons without a catalog entry keep their identifier. */
 const iconLabel = (name: string) => catalogText('settings', 'icons', name) ?? name;
@@ -71,7 +71,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (icon: strin
             aria-label={iconLabel(name)}
             sx={{ width: 48, height: 48 }}
           >
-            <EventTypeIcon name={name} fontSize={24} />
+            <EventTypeIcon name={name} size={24} />
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
@@ -100,7 +100,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (color: str
               '&:hover': { bgcolor: color },
             }}
           >
-            {color === value && <CheckIcon fontSize="small" />}
+            {color === value && <Icon name="check" size={20} />}
           </IconButton>
         ))}
       </Stack>

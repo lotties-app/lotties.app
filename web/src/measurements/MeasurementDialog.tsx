@@ -11,7 +11,10 @@ import {
   TextField,
 } from '@mui/material';
 import { formatNumber } from '../i18n/format';
-import { useLocale } from '../i18n/useLocale';
+import { DateField } from '../ui/form/DateField';
+import { Field } from '../ui/form/Field';
+import { NumberStepper } from '../ui/form/NumberStepper';
+import { parseLocaleNumber } from '../ui/form/numbers';
 import { useServerAction } from '../settings/useServerAction';
 import type { MeasurementDto } from '../sync/contract';
 import {
@@ -38,7 +41,6 @@ interface Props {
 /** Add / edit dialog. The GUID is fixed when it opens, so a retried save never duplicates. */
 export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
   const { t } = useTranslation();
-  const { locale } = useLocale();
   const actions = useMeasurementActions(babyId);
   const { run, pending, error, online } = useServerAction(MEASUREMENT_ERROR_MESSAGES);
   const [id] = useState(() => measurement?.id ?? crypto.randomUUID());
@@ -67,37 +69,37 @@ export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
             {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
             {error && <Alert severity="error">{error}</Alert>}
             {errors.values && <Alert severity="error">{errors.values}</Alert>}
-            <TextField
-              label={t('growth.date')}
-              type="date"
-              value={form.date}
-              onChange={(e) => set('date')(e.target.value)}
-              error={!!errors.date}
-              helperText={errors.date}
-              required
-              slotProps={{
-                inputLabel: { shrink: true },
-                htmlInput: { min: MIN_DATE, max: todayLocal(), lang: locale },
-              }}
-            />
+            <Field label={t('growth.date')} required group error={errors.date}>
+              <DateField
+                value={form.date}
+                onChange={set('date')}
+                min={MIN_DATE}
+                max={todayLocal()}
+              />
+            </Field>
             {METRICS.map((m) => (
-              <TextField
+              <Field
                 key={m.key}
                 label={t('growth.metricLabel', { label: metricLabel(m), unit: m.unit })}
-                value={form[m.key]}
-                onChange={(e) => set(m.key)(e.target.value)}
-                error={!!errors[m.key]}
-                helperText={
-                  errors[m.key] ??
-                  t('growth.range', {
-                    min: formatNumber(m.min),
-                    max: formatNumber(m.max),
-                    unit: m.unit,
-                  })
+                error={errors[m.key]}
+                help={
+                  errors[m.key]
+                    ? undefined
+                    : t('growth.range', {
+                        min: formatNumber(m.min),
+                        max: formatNumber(m.max),
+                        unit: m.unit,
+                      })
                 }
-                slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-                autoComplete="off"
-              />
+              >
+                <NumberStepper
+                  value={parseLocaleNumber(form[m.key])}
+                  onChange={(next) => set(m.key)(next === null ? '' : String(next))}
+                  step={m.step}
+                  start={m.start}
+                  unit={m.unit}
+                />
+              </Field>
             ))}
             <TextField
               label={t('common.notes')}

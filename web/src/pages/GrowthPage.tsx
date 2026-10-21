@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import { canWrite } from '../baby/permissions';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
@@ -14,6 +13,7 @@ import { ConfirmDialog } from '../settings/ConfirmDialog';
 import { ErrorNotice } from '../settings/ErrorNotice';
 import { useServerAction } from '../settings/useServerAction';
 import type { MeasurementDto } from '../sync/contract';
+import { Icon } from '../ui/Icon';
 
 type Editing = MeasurementDto | 'new' | null;
 
@@ -44,7 +44,7 @@ function Growth({ baby }: { baby: Baby }) {
         {writable && (
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
+            startIcon={<Icon name="add" />}
             disabled={!online}
             onClick={() => setEditing('new')}
             sx={{ minHeight: 48 }}

@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { Chip, ListItemButton, ListItemIcon, ListItemText, Stack, Tooltip } from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import type { BabyEvent, EventType, Medication } from '../db/models';
 import type { EntitySyncState } from '../db/queries';
 import { EventTypeIcon } from '../events/eventIcons';
@@ -9,6 +7,7 @@ import { safeColor } from '../events/safeColor';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { payloadSummary } from './payloadSummary';
 import { describeTimes } from './timelineModel';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   event: BabyEvent;
@@ -28,9 +27,9 @@ function SyncBadge({ state }: { state: EntitySyncState | undefined }) {
   return (
     <Tooltip title={label}>
       {dead ? (
-        <ErrorOutlineIcon color="error" fontSize="small" titleAccess={label} />
+        <Icon name="error" size={20} label={label} sx={{ color: 'error.main' }} />
       ) : (
-        <CloudUploadIcon color="action" fontSize="small" titleAccess={label} />
+        <Icon name="cloud-upload" size={20} label={label} sx={{ color: 'action.active' }} />
       )}
     </Tooltip>
   );
@@ -57,7 +56,7 @@ export function TimelineRow({
       sx={{ gap: 1, '&.Mui-disabled': { opacity: 1 } }}
     >
       <ListItemIcon sx={{ minWidth: 40 }}>
-        <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} fontSize={28} />
+        <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} size={24} />
       </ListItemIcon>
       <ListItemText
         primary={name}

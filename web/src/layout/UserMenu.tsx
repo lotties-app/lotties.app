@@ -9,8 +9,6 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import NightsStayOutlinedIcon from '@mui/icons-material/NightsStayOutlined';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../auth/useAuth';
 import { useDatabase } from '../db/DatabaseContext';
@@ -19,6 +17,7 @@ import { UnsyncedChangesDialog } from '../session/UnsyncedChangesDialog';
 import { unsyncedChangesLabel, usePushThenProceed } from '../session/usePushThenProceed';
 import { useSignOut } from '../session/useSignOut';
 import { useNightFeed } from '../theme/NightFeedContext';
+import { Icon } from '../ui/Icon';
 
 /** Log out: warns first when the outbox still holds changes, which signing out deletes. */
 function useLogoutFlow() {
@@ -74,7 +73,7 @@ export function UserMenu() {
           onClick={nightFeed.toggle}
         >
           <ListItemIcon>
-            <NightsStayOutlinedIcon fontSize="small" />
+            <Icon name="night-mode" size={20} />
           </ListItemIcon>
           {t('layout.nightView')}
           <Switch
@@ -88,7 +87,7 @@ export function UserMenu() {
         </MenuItem>
         <MenuItem sx={{ minHeight: 48 }} onClick={startLogout}>
           <ListItemIcon>
-            <LogoutIcon fontSize="small" />
+            <Icon name="logout" size={20} />
           </ListItemIcon>
           {t('layout.logout')}
         </MenuItem>

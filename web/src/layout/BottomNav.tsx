@@ -2,16 +2,11 @@ import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { BottomNavigationAction, Box, Fab, Paper } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
 import { canWrite } from '../baby/permissions';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { CONTENT_MAX_WIDTH } from '../theme/tokens';
 import { TrackSheet } from '../track/TrackSheet';
+import { Icon } from '../ui/Icon';
 
 interface NavItem {
   to: string;
@@ -21,12 +16,12 @@ interface NavItem {
 }
 
 const START: NavItem[] = [
-  { to: '/', label: 'home', icon: <HomeRoundedIcon /> },
-  { to: '/timeline', label: 'timeline', icon: <TimelineRoundedIcon /> },
+  { to: '/', label: 'home', icon: <Icon name="home" /> },
+  { to: '/timeline', label: 'timeline', icon: <Icon name="timeline" /> },
 ];
 const END: NavItem[] = [
-  { to: '/growth', label: 'growth', icon: <BarChartRoundedIcon /> },
-  { to: '/settings', label: 'settings', icon: <SettingsRoundedIcon /> },
+  { to: '/growth', label: 'growth', icon: <Icon name="chart" /> },
+  { to: '/settings', label: 'settings', icon: <Icon name="settings" /> },
 ];
 
 function isActive(item: NavItem, pathname: string) {
@@ -106,7 +101,7 @@ export function BottomNav() {
                   height: 56,
                 }}
               >
-                {trackOpen ? <CloseRoundedIcon /> : <AddRoundedIcon />}
+                {trackOpen ? <Icon name="close" /> : <Icon name="add" />}
               </Fab>
             )}
           </Box>

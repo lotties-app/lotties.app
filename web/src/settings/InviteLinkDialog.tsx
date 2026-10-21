@@ -11,9 +11,8 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import ShareIcon from '@mui/icons-material/Share';
 import { inviteLink } from './inviteLink';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   token: string;
@@ -67,11 +66,11 @@ export function InviteLinkDialog({ token, onClose }: Props) {
       </DialogContent>
       <DialogActions>
         {canShare && (
-          <Button startIcon={<ShareIcon />} onClick={() => void share()}>
+          <Button startIcon={<Icon name="share" />} onClick={() => void share()}>
             {t('settings.invites.share')}
           </Button>
         )}
-        <Button startIcon={<ContentCopyIcon />} onClick={() => void copy()}>
+        <Button startIcon={<Icon name="copy" />} onClick={() => void copy()}>
           {t('settings.invites.copy')}
         </Button>
         <Button variant="contained" onClick={onClose}>

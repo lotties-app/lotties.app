@@ -57,5 +57,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Developer-only tooling (never in production builds): English strings are fine.
+    files: ['src/dev/**/*.tsx'],
+    rules: { 'i18next/no-literal-string': 'off' },
+  },
   prettier,
 );

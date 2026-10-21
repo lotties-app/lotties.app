@@ -41,8 +41,8 @@ describe('server-provided keys never hit inherited members (review #5)', () => {
   it.each(['constructor', '__proto__', 'toString', 'hasOwnProperty'])(
     'renders the fallback icon for the icon name %s',
     (name) => {
-      render(<EventTypeIcon name={name} fontSize={24} />);
-      expect(screen.getByTestId('EventNoteIcon')).toBeTruthy();
+      const { container } = render(<EventTypeIcon name={name} />);
+      expect(container.querySelector('[data-icon="event"]')).toBeTruthy();
     },
   );
 

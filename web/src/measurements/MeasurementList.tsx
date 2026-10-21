@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { IconButton, List, ListItem, ListItemText, Stack } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import { formatDate, formatNumber } from '../i18n/format';
 import type { MeasurementDto } from '../sync/contract';
 import { METRICS, metricLabel, sortNewestFirst } from './measurementModel';
+import { Icon } from '../ui/Icon';
 
 const dateLabel = (date: string) => formatDate(date);
 
@@ -44,13 +43,13 @@ export function MeasurementList({ measurements, writable, onEdit, onDelete }: Pr
                   aria-label={t('growth.editOn', { date: dateLabel(m.date) })}
                   onClick={() => onEdit(m)}
                 >
-                  <EditIcon />
+                  <Icon name="edit" />
                 </IconButton>
                 <IconButton
                   aria-label={t('growth.deleteOn', { date: dateLabel(m.date) })}
                   onClick={() => onDelete(m)}
                 >
-                  <DeleteIcon />
+                  <Icon name="delete" />
                 </IconButton>
               </Stack>
             )

@@ -10,6 +10,8 @@ import {
   type ChartColors,
   type SchemeTokens,
 } from './tokens';
+import { ALERT_ICON_MAPPING } from '../ui/alertIconMapping';
+import { SelectArrowIcon } from '../ui/muiIcons';
 
 /** The user's choice. `system` follows the OS and falls back to dark when it has no preference. */
 export type ThemeMode = 'system' | 'dark' | 'light';
@@ -308,6 +310,7 @@ export function buildTheme(localization?: Localization) {
           },
         },
         MuiAlert: {
+          defaultProps: { iconMapping: ALERT_ICON_MAPPING },
           styleOverrides: {
             root: ({ theme, ownerState }) => {
               const status = ownerState.color ?? ownerState.severity;
@@ -332,6 +335,7 @@ export function buildTheme(localization?: Localization) {
             }),
           },
         },
+        MuiSelect: { defaultProps: { IconComponent: SelectArrowIcon } },
         MuiTextField: {
           defaultProps: {
             variant: 'filled',

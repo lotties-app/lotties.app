@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Stack, TextField } from '@mui/material';
-import { useLocale } from '../i18n/useLocale';
+import { DateField } from '../ui/form/DateField';
+import { Field } from '../ui/form/Field';
 import type { BabyRequest } from '../sync/contract';
 
 interface Props {
@@ -28,7 +29,6 @@ export function BabyForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
-  const { locale } = useLocale();
   const [name, setName] = useState(initial?.name ?? '');
   const [birthDate, setBirthDate] = useState(initial?.birthDate ?? '');
   const [touched, setTouched] = useState(false);
@@ -60,17 +60,15 @@ export function BabyForm({
         required
         autoComplete="off"
       />
-      <TextField
+      <Field
         label={t('baby.birthDate')}
-        type="date"
-        value={birthDate}
-        onChange={(e) => setBirthDate(e.target.value)}
-        disabled={disabled}
-        error={touched && !!dateError}
-        helperText={touched ? dateError : null}
         required
-        slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: today, lang: locale } }}
-      />
+        group
+        disabled={disabled}
+        error={touched ? dateError : null}
+      >
+        <DateField value={birthDate} onChange={setBirthDate} max={today} disabled={disabled} />
+      </Field>
       <Button
         type="submit"
         variant="contained"

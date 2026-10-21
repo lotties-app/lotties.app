@@ -1,39 +1,37 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge, CircularProgress, IconButton, Tooltip } from '@mui/material';
-import CloudDoneRoundedIcon from '@mui/icons-material/CloudDoneRounded';
-import CloudOffRoundedIcon from '@mui/icons-material/CloudOffRounded';
-import CloudSyncRoundedIcon from '@mui/icons-material/CloudSyncRounded';
-import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import { useSyncStatus } from '../sync/SyncEngineContext';
 import type { SyncStatus } from '../sync/syncStatus';
 import { syncKind, syncLabel } from './syncPresentation';
+import { Icon } from '../ui/Icon';
 
 function SyncIcon({ status }: { status: SyncStatus }) {
   const kind = syncKind(status);
   switch (kind) {
     case 'synced':
       return status.deadLetterCount > 0 ? (
-        <WarningAmberRoundedIcon color="error" />
+        <Icon name="warning" sx={{ color: 'error.main' }} />
       ) : (
-        <CloudDoneRoundedIcon />
+        <Icon name="cloud-done" />
       );
     case 'syncing':
       return <CircularProgress size={20} color="inherit" aria-hidden />;
     case 'waiting':
-      return <CloudSyncRoundedIcon />;
+      return <Icon name="cloud-waiting" />;
     case 'pending':
       return (
         <Badge badgeContent={status.pendingCount} color="primary" max={99}>
-          <CloudUploadRoundedIcon />
+          <Icon name="cloud-upload" />
         </Badge>
       );
     case 'offline':
-      return <CloudOffRoundedIcon />;
+      return <Icon name="cloud-off" />;
     case 'auth':
     case 'error':
-      return <WarningAmberRoundedIcon color={kind === 'error' ? 'error' : 'warning'} />;
+      return (
+        <Icon name="warning" sx={{ color: kind === 'error' ? 'error.main' : 'warning.main' }} />
+      );
   }
 }
 

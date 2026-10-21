@@ -13,7 +13,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { purgeBabyData } from '../db/purge';
@@ -33,6 +32,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorNotice } from './ErrorNotice';
 import { InvitesPanel } from './InvitesPanel';
 import { useServerAction } from './useServerAction';
+import { Icon } from '../ui/Icon';
 
 const ROLES: BabyRole[] = ['Owner', 'Parent', 'Viewer'];
 
@@ -82,7 +82,7 @@ function MemberRow({
             disabled={disabled}
             onClick={onRemove}
           >
-            <PersonRemoveIcon />
+            <Icon name="person-remove" />
           </IconButton>
         </Stack>
       ) : (

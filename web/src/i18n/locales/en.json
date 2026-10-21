@@ -766,5 +766,67 @@
     "install": "Install app",
     "iosHint": "To install, tap Share, then Add to Home Screen.",
     "newVersion": "New version available"
+  },
+  "ui": {
+    "field": {
+      "required": "required",
+      "optional": "optional"
+    },
+    "stepper": {
+      "increase": "Increase",
+      "decrease": "Decrease",
+      "value": "Value",
+      "atMost": "Up to {{value}}",
+      "atLeast": "At least {{value}}",
+      "last": "last",
+      "quickValues": "Quick values"
+    },
+    "duration": {
+      "unit": "min",
+      "invalid": "Enter minutes, like 12 or 12:30.",
+      "tooLong": "Up to {{value}}.",
+      "placeholder": "0"
+    },
+    "time": {
+      "now": "Now",
+      "minutesAgo": "{{count}} min ago",
+      "quick": "Quick times",
+      "day": "Day",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "clock": "Time of day",
+      "ruler": "Adjust time",
+      "rulerValue": "{{time}}, {{relative}}",
+      "invalid": "Enter a time like 14:30.",
+      "future": "The time cannot be in the future.",
+      "beforeMin": "The time cannot be before {{time}}.",
+      "stillRunning": "Still running"
+    },
+    "date": {
+      "choose": "Choose date",
+      "invalid": "Enter a valid date.",
+      "loading": "Loading the date field"
+    },
+    "notes": {
+      "add": "Add a note",
+      "label": "Note",
+      "counter": "{{count}} of {{max}} characters"
+    },
+    "medication": {
+      "find": "Find or add a medication",
+      "add": "Add \"{{name}}\"",
+      "usual": "Usual",
+      "dose": "{{name}} dose",
+      "unit": "Unit",
+      "noneYet": "No medications yet. Type a name to add one.",
+      "noMatch": "No medication matches \"{{query}}\".",
+      "adding": "Adding",
+      "addFailed": "Could not add the medication."
+    },
+    "units": {
+      "drops": "drops",
+      "ml": "ml",
+      "mg": "mg"
+    }
   }
 }

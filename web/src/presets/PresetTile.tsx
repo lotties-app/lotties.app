@@ -1,6 +1,6 @@
-import { createElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ButtonBase, Typography, type Theme } from '@mui/material';
+import { Icon } from '../ui/Icon';
 import { presetIcon } from './presetIcons';
 import { presetLabel } from './presetLabel';
 import type { Preset } from './types';
@@ -54,9 +54,11 @@ export function PresetTile({ preset, status, running, disabled = false, onClick 
         '&.Mui-disabled': { opacity: 0.5 },
       })}
     >
-      {createElement(presetIcon(preset), {
-        sx: (theme: Theme) => ({ fontSize: 36, color: tileColor(theme, preset) }),
-      })}
+      <Icon
+        name={presetIcon(preset)}
+        size={32}
+        sx={(theme: Theme) => ({ color: tileColor(theme, preset) })}
+      />
       <Typography variant="subtitle1" component="span">
         {name}
       </Typography>

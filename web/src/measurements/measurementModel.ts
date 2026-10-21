@@ -10,13 +10,16 @@ export interface MetricInfo {
   unit: string;
   min: number;
   max: number;
+  /** Stepper increment and the value the first press starts from. */
+  step: number;
+  start: number;
 }
 
 /** Ranges mirror the API rules (docs/SPEC.md "Measurements"). */
 export const METRICS: readonly MetricInfo[] = [
-  { key: 'weightKg', unit: 'kg', min: 0.3, max: 40 },
-  { key: 'heightCm', unit: 'cm', min: 20, max: 130 },
-  { key: 'headCircumferenceCm', unit: 'cm', min: 20, max: 60 },
+  { key: 'weightKg', unit: 'kg', min: 0.3, max: 40, step: 0.1, start: 3.5 },
+  { key: 'heightCm', unit: 'cm', min: 20, max: 130, step: 0.5, start: 50 },
+  { key: 'headCircumferenceCm', unit: 'cm', min: 20, max: 60, step: 0.5, start: 35 },
 ];
 
 /** Localized metric name (`Weight`, `Peso`). */

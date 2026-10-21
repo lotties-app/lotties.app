@@ -9,6 +9,9 @@ const vendor = (...packages: string[]) =>
 /** MUI's per-language strings (`@mui/material/locale`). */
 const MUI_LOCALES = /@mui[\\/]material[\\/](esm[\\/])?locale[\\/]/;
 
+/** The date pickers (and date-fns) load on demand with the date field: keep them out of vendor-mui. */
+const LAZY_PICKERS = /@mui[\\/]x-date-pickers[\\/]/;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -73,8 +76,12 @@ export default defineConfig({
             },
             {
               name: 'vendor-mui',
-              // MUI's per-language strings stay out: pt-BR loads them with its own lazy chunk.
-              test: (id: string) => vendor('@mui', '@emotion').test(id) && !MUI_LOCALES.test(id),
+              // MUI's per-language strings stay out: pt-BR loads them with its own lazy chunk. The
+              // date pickers stay out too: they belong to the lazy date field.
+              test: (id: string) =>
+                vendor('@mui', '@emotion').test(id) &&
+                !MUI_LOCALES.test(id) &&
+                !LAZY_PICKERS.test(id),
               priority: 20,
             },
           ],

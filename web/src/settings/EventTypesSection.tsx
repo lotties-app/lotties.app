@@ -13,9 +13,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import { deleteEventType } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
 import { canWrite } from '../baby/permissions';
@@ -28,6 +25,7 @@ import { useEventTypeText } from '../i18n/eventTypeText';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { useServerAction } from './useServerAction';
+import { Icon } from '../ui/Icon';
 
 const EventTypeEditorDialog = lazy(() =>
   import('./EventTypeEditorDialog').then((m) => ({ default: m.EventTypeEditorDialog })),
@@ -58,20 +56,20 @@ function TypeRow({
         writable && (
           <Stack direction="row">
             <IconButton aria-label={t('settings.eventTypes.editNamed', { name })} onClick={onEdit}>
-              <EditIcon />
+              <Icon name="edit" />
             </IconButton>
             <IconButton
               aria-label={t('settings.eventTypes.deleteNamed', { name })}
               onClick={onDelete}
             >
-              <DeleteIcon />
+              <Icon name="delete" />
             </IconButton>
           </Stack>
         )
       }
     >
       <ListItemIcon>
-        <EventTypeIcon name={type.icon} color={safeColor(type.color)} fontSize={28} />
+        <EventTypeIcon name={type.icon} color={safeColor(type.color)} size={24} />
       </ListItemIcon>
       <ListItemText
         primary={
@@ -148,7 +146,7 @@ export function EventTypesSection({ baby }: { baby: Baby }) {
       </List>
       {writable && (
         <Button
-          startIcon={<AddIcon />}
+          startIcon={<Icon name="add" />}
           variant="outlined"
           disabled={!online}
           onClick={() => setEditing('new')}

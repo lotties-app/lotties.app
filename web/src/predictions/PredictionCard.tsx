@@ -42,7 +42,7 @@ export function PredictionCard({ prediction, type, name, now }: Props) {
       sx={{ p: 2 }}
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-        <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} fontSize={28} />
+        <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} size={24} />
         <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
           {t('predictions.next', { name })}
         </Typography>

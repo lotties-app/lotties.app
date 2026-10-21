@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createInvite, listInvites, revokeInvite } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
@@ -22,6 +21,7 @@ import { parseRole, type InviteDto } from '../sync/contract';
 import { ErrorNotice } from './ErrorNotice';
 import { InviteLinkDialog } from './InviteLinkDialog';
 import { useServerAction } from './useServerAction';
+import { Icon } from '../ui/Icon';
 
 const ROLES: BabyRole[] = ['Parent', 'Viewer', 'Owner'];
 const DEFAULT_DAYS = 7;
@@ -39,7 +39,7 @@ function PendingInvite({ invite, onRevoke }: { invite: InviteDto; onRevoke: () =
           aria-label={t('settings.invites.revoke', { role: t(`baby.roles.${role}`) })}
           onClick={onRevoke}
         >
-          <DeleteIcon />
+          <Icon name="delete" />
         </IconButton>
       }
     >
