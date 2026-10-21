@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace BabyRoutine.Infrastructure.Persistence;
@@ -10,5 +11,13 @@ public static class BabyRoutineDbContextOptions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
         return builder.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
+    }
+
+    /// <summary>Same as the connection string overload, on an existing connection the caller owns (startup migrator).</summary>
+    public static DbContextOptionsBuilder UseBabyRoutineDatabase(this DbContextOptionsBuilder builder, DbConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(connection);
+        return builder.UseNpgsql(connection).UseSnakeCaseNamingConvention();
     }
 }

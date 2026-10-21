@@ -40,6 +40,16 @@ public sealed class EnvironmentAliasesTests
     }
 
     [Fact]
+    public void AddEnvironmentAliases_AutoMigrateVariable_MapsToDatabaseSection()
+    {
+        var variables = new Dictionary<string, string> { ["DB_AUTO_MIGRATE"] = "true" };
+
+        var configuration = new ConfigurationBuilder().AddEnvironmentAliases(variables.GetValueOrDefault).Build();
+
+        Assert.Equal("true", configuration["Database:AutoMigrate"]);
+    }
+
+    [Fact]
     public void AddEnvironmentAliases_UnsetVariables_KeepEarlierValues()
     {
         var configuration = new ConfigurationBuilder()

@@ -27,7 +27,7 @@ Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` to your da
 docker compose --profile localdb up --build
 ```
 
-Set `DB_HOST=postgres` and `POSTGRES_PASSWORD` (no default; the container refuses to start without it). The container creates `DB_APP_USER` as superuser with that password, so set `DB_APP_PASSWORD` to the same value. Data lives in the named volume `pgdata`, the port is bound to `127.0.0.1:5432` only, and the api waits for the database healthcheck. Intended for local development, not production.
+Set `DB_HOST=postgres` and `POSTGRES_PASSWORD` (no default; the container refuses to start without it). The container creates `DB_APP_USER` as superuser with that password, so set `DB_APP_PASSWORD` to the same value. Data lives in the named volume `pgdata`, the port is bound to `127.0.0.1:5432` only, and the api waits for the database healthcheck. Intended for local development, not production. Since `DB_APP_USER` is the superuser here, `DB_AUTO_MIGRATE=true` lets the api create the schema at startup (see [Applying migrations](#applying-migrations)).
 
 ## Environment variables
 
@@ -40,6 +40,8 @@ Compose reads `.env` from the repository root.
 | `DB_NAME` | api, localdb | no (`babyroutine`) | Database name |
 | `DB_APP_USER` | api, localdb | yes | Application role |
 | `DB_APP_PASSWORD` | api | yes | Application role password |
+| `DB_AUTO_MIGRATE` | api | no (`false`) | `true` applies pending migrations at startup; see "Applying migrations" |
+| `DB_MIGRATOR_USER`, `DB_MIGRATOR_PASSWORD` | api (only with `DB_AUTO_MIGRATE`), `dotnet ef` | no (falls back to `DB_APP_*`) | Role with DDL rights that applies migrations |
 | `POSTGRES_PASSWORD` | localdb | with `localdb` | Superuser password of the local container (no default) |
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
@@ -292,7 +294,7 @@ stringData:
 
 ### Database
 
-Apply the `PushNotifications` migration (`20261021182304_PushNotifications`, included in the idempotent `code/api/migrations/all.sql`) as the migrator role. It adds `push_subscriptions`, `user_notification_settings`, `baby_notification_preferences`, `notification_deliveries`, `notification_actions` and `job_leases`. Then make sure the app role can use them: if you set `ALTER DEFAULT PRIVILEGES` for the migrator (see "Database roles" and `docs/sql/grant-app-role.sql`) nothing else is needed; otherwise re-run the `GRANT ... ON ALL TABLES` / `ON ALL SEQUENCES` lines after the migration.
+Apply the `PushNotifications` migration (`20261021182304_PushNotifications`) as the migrator role (see [Applying migrations](#applying-migrations)). It adds `push_subscriptions`, `user_notification_settings`, `baby_notification_preferences`, `notification_deliveries`, `notification_actions` and `job_leases`. Then make sure the app role can use them: if you set `ALTER DEFAULT PRIVILEGES` for the migrator (see "Database roles" and `docs/sql/grant-app-role.sql`) nothing else is needed; otherwise re-run the `GRANT ... ON ALL TABLES` / `ON ALL SEQUENCES` lines after the migration.
 
 ### Requirements and behaviour
 
@@ -322,7 +324,7 @@ The OIDC library keeps the user, access token and refresh token in `localStorage
 
 ## Database roles
 
-The API does not run migrations itself. Apply the EF Core migrations with a separate, more privileged role and run the API with a limited role. The idempotent script is `code/api/migrations/all.sql`; tooling reads `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to the app credentials) for `dotnet ef`.
+Apply the EF Core migrations with a separate, more privileged role and run the API with a limited role. By default the API does not run migrations itself; see [Applying migrations](#applying-migrations) for the supported ways. Migration tooling reads `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to the app credentials).
 
 ```sql
 -- Run as a database administrator. Replace the placeholders; use generated passwords.
@@ -338,7 +340,7 @@ GRANT CONNECT ON DATABASE babyroutine TO baby_app;
 ALTER SCHEMA public OWNER TO baby_migrator;
 GRANT USAGE ON SCHEMA public TO baby_app;
 
--- Apply the schema as the migrator, e.g.:  psql -U baby_migrator -d babyroutine -f code/api/migrations/all.sql
+-- Apply the schema as the migrator (see "Applying migrations": dotnet ef, DB_AUTO_MIGRATE, or a generated script).
 
 -- Run once after the migration, and again after each migration that adds tables:
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO baby_app;
@@ -351,7 +353,39 @@ ALTER DEFAULT PRIVILEGES FOR ROLE baby_migrator IN SCHEMA public
   GRANT USAGE ON SEQUENCES TO baby_app;
 ```
 
-Put `baby_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container.
+Put `baby_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container, unless you deliberately opt in to `DB_AUTO_MIGRATE` (below). The same grants are in `docs/sql/grant-app-role.sql`.
+
+### Applying migrations
+
+The migrations are the EF Core code-first migrations in `code/api/src/BabyRoutine.Infrastructure/Persistence/Migrations/`. There is no checked-in SQL script. Supported ways, in order of preference for production:
+
+1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 8.0.32):
+
+   ```bash
+   cd code/api
+   dotnet tool restore
+   DB_HOST=... DB_PORT=5432 DB_NAME=babyroutine DB_MIGRATOR_USER=baby_migrator DB_MIGRATOR_PASSWORD=... \
+     dotnet ef database update --project src/BabyRoutine.Infrastructure
+   ```
+
+   The design-time factory reads `DB_HOST`, `DB_PORT`, `DB_NAME` and `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to `DB_APP_*`).
+
+2. **SQL for a DBA.** Generate the idempotent script on demand and review/apply it with `psql` as the migrator (do not commit the output):
+
+   ```bash
+   cd code/api
+   dotnet tool restore
+   dotnet ef migrations script --idempotent --project src/BabyRoutine.Infrastructure -o out.sql
+   psql -U baby_migrator -d babyroutine -f out.sql
+   ```
+
+3. **`DB_AUTO_MIGRATE=true` (opt-in, for development and self-hosting convenience).** The API applies pending migrations at startup, after the host is built and before it serves requests or starts the push scheduler. It is off by default; accepted values are `true`/`false` (any case) and `1`/`0`, anything else fails startup.
+   - It connects with a separate connection built from `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to `DB_APP_*`, like `dotnet ef`); request handling keeps using the limited app role. The migrator role needs DDL rights (owner of the schema, as in "Database roles"), and the app role gets its privileges from `ALTER DEFAULT PRIVILEGES` (see `docs/sql/grant-app-role.sql`). This means the API container holds the migrator credentials, which is why it is not the production default.
+   - Several instances starting together are serialized by a PostgreSQL session advisory lock (`pg_try_advisory_lock`, fixed key) on the migrator connection: one migrates, the others wait (polling every second, up to 5 minutes) and then find nothing pending. Waiting longer fails startup.
+   - The log lists the pending migration names, the result and the duration; connection strings and passwords are never logged. Any failure (connection, lock timeout, migration error) is logged as critical and stops startup, so the API never serves a half-migrated schema.
+   - It is skipped when the runtime database is not PostgreSQL (the SQLite integration-test host creates its schema itself).
+
+Do not use `EnsureCreated()` against a real database: it creates the tables without the `__EFMigrationsHistory` table, after which migrations can no longer be applied.
 
 ## Podman
 

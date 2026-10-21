@@ -30,3 +30,6 @@ code/keycloak-theme/dev/.runtime/
 
 #CLAUDE.md
 #.claude/
+
+# Migration scripts generated on demand (dotnet ef migrations script); never committed
+code/api/out.sql

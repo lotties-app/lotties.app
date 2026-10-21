@@ -44,6 +44,8 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `DB_NAME` | Database name (default `babyroutine`) |
 | `DB_APP_USER` | Application database user |
 | `DB_APP_PASSWORD` | Application database password |
+| `DB_AUTO_MIGRATE` | `true` applies pending EF Core migrations at API startup (config `Database:AutoMigrate`); default `false`, for development/self-hosting; production applies them with `dotnet ef` (see [docs/DEPLOY.md](docs/DEPLOY.md) "Applying migrations") |
+| `DB_MIGRATOR_USER`, `DB_MIGRATOR_PASSWORD` | Role with DDL rights used to apply migrations (`dotnet ef`, or the API with `DB_AUTO_MIGRATE`); falls back to `DB_APP_*` |
 | `POSTGRES_PASSWORD` | Password of the optional `localdb` container (user is `DB_APP_USER`); no default |
 | `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, `VITE_API_BASE_URL` | Web build arguments (public, compiled into the bundle); see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |

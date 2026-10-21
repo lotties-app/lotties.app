@@ -84,7 +84,7 @@ Sent on demand from Settings to the caller's devices. Key `test:{deliveryId}`, T
 - Settings explainer (and the pre-permission sheet) states: "Reminders come from the prescriptions you entered. They can be late or missing (no connection, phone settings), so don't rely on them alone. Not medical advice."
 
 ## 5. Data model (EF Core code-first, snake_case, migration `PushNotifications`)
-New Domain folder `Domain/Notifications/`. All timestamps `timestamptz` (UTC). Regenerate `code/api/migrations/all.sql`; add model tests in `BabyRoutine.Infrastructure.Tests`.
+New Domain folder `Domain/Notifications/`. All timestamps `timestamptz` (UTC). Add model tests in `BabyRoutine.Infrastructure.Tests`.
 
 `push_subscriptions` (aggregate `PushSubscription`, one per browser endpoint)
 | Column | Type | Notes |
@@ -318,7 +318,7 @@ SSRF allowlist on subscribe and send; endpoints and keys never logged, never ret
 | # | Task | Tier | Deps | Verify |
 |---|---|---|---|---|
 | N1 | Domain `Notifications/`: entities and value objects, `NotificationPlanner`, additive `MedicationStatus.OverdueSlotAt` and `Prediction.AnchorAt`, tests | Careful | none | `dotnet test` |
-| N2 | Infrastructure: EF configurations, migration `PushNotifications`, `all.sql`, repositories, `job_leases`, model tests | Careful | N1 | model + SQLite tests |
+| N2 | Infrastructure: EF configurations, migration `PushNotifications`, repositories, `job_leases`, model tests | Careful | N1 | model + SQLite tests |
 | N3 | Infrastructure: `WebPushSender` (library), `Push` options + validator, env aliases, `--generate-vapid-keys` | Medium | N1 | sender tests (fake handler, decrypt) |
 | N4 | Application + Api: endpoints, rate limit policies, error codes, SPEC "Push notifications" contract section, remove push from SPEC non-goals | Medium | N2, N3 | endpoint tests |
 | N5 | Scheduler: `NotificationDispatcher`, lease, claim/send/retry, housekeeping, metrics | Careful | N2, N3 | scheduler tests with fake sender + fake time |

@@ -14,6 +14,7 @@ var app = builder.Build();
 app.UseBabyRoutineApi();
 app.MapBabyRoutineApi();
 
+await app.MigrateDatabaseIfEnabledAsync();
 app.Run();
 
 /// <summary>Entry point; public so integration tests can host the API with <c>WebApplicationFactory</c>.</summary>

@@ -1,8 +1,9 @@
+using BabyRoutine.Infrastructure.Persistence.AutoMigration;
 using BabyRoutine.Infrastructure.Push;
 
 namespace BabyRoutine.Api.Configuration;
 
-/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets included).</summary>
+/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets and <c>DB_AUTO_MIGRATE</c> included).</summary>
 internal static class EnvironmentAliases
 {
     public static readonly IReadOnlyDictionary<string, string> VariableToKey = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -12,6 +13,7 @@ internal static class EnvironmentAliases
         ["CORS_ALLOWED_ORIGINS"] = "Cors:AllowedOrigins",
     }
     .Concat(PushEnvironmentVariables.VariableToKey)
+    .Concat(DatabaseMigrationSettings.VariableToKey)
     .ToDictionary(alias => alias.Key, alias => alias.Value, StringComparer.Ordinal);
 
     /// <summary>Adds the aliased variables that are set, overriding earlier sources such as appsettings.json.</summary>

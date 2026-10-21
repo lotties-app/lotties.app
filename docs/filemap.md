@@ -26,7 +26,8 @@
 - docs/graphify/ — graphify output (gitignored)
 - code/api/src/BabyRoutine.Domain/ — entities and rules (Babies, Events, EventTypes, Measurements, Medications, Users, Exceptions, Common)
 - code/api/src/BabyRoutine.Infrastructure/Persistence/ — DbContext, entity configurations, converters, design-time factory, Migrations/
-- code/api/migrations/all.sql — idempotent SQL script of the whole migration history (regenerate with `dotnet ef migrations script --idempotent`)
+- code/api/src/BabyRoutine.Infrastructure/Persistence/AutoMigration/ — opt-in startup migration (`DB_AUTO_MIGRATE`): DatabaseMigrationSettings (flag parsing, env alias), IDatabaseMigrator + NpgsqlDatabaseMigrator (advisory lock wait/timeout, pending/applied/duration logs), NpgsqlMigrationSession(+Factory) (unpooled migrator-role connection, pg_try_advisory_lock), StartupDatabaseMigration (skips when off or non-PostgreSQL, fails startup on error); DatabaseMigrationServiceCollectionExtensions.AddDatabaseMigration; called from ApiHostExtensions.MigrateDatabaseIfEnabledAsync in Program.cs. No SQL script is checked in (DEPLOY.md "Applying migrations")
+- code/api/tests/BabyRoutine.Infrastructure.Tests/Persistence/{DatabaseMigrationSettings,NpgsqlDatabaseMigrator}Tests.cs, code/api/tests/BabyRoutine.Api.Tests/Persistence/StartupDatabaseMigrationTests.cs — flag parsing, lock/ordering with fakes, skip behaviour and test-host wiring
 - code/api/tests/BabyRoutine.Infrastructure.Tests/ — model-level EF tests (no database needed)
 - code/api/dotnet-tools.json — local dotnet-ef tool
 - code/api/src/BabyRoutine.Application/ — use cases: current user provisioning, baby access checks (interfaces for repositories live in Domain)

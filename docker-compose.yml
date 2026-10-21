@@ -10,6 +10,11 @@ services:
       DB_NAME: ${DB_NAME:-babyroutine}
       DB_APP_USER: ${DB_APP_USER:?set DB_APP_USER in .env}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
+      # Opt-in: apply pending migrations at startup (docs/DEPLOY.md "Applying migrations"). The migrator
+      # credentials fall back to DB_APP_*; they are only used when DB_AUTO_MIGRATE is true.
+      DB_AUTO_MIGRATE: ${DB_AUTO_MIGRATE:-false}
+      DB_MIGRATOR_USER: ${DB_MIGRATOR_USER:-}
+      DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:-}
       AUTH_AUTHORITY: ${AUTH_AUTHORITY:?set AUTH_AUTHORITY in .env}
       AUTH_AUDIENCE: ${AUTH_AUDIENCE:?set AUTH_AUDIENCE in .env}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
