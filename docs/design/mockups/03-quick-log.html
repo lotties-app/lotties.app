@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quick logging prototype</title>
+<meta name="description" content="Interaction prototype 03-A: one-tap logging with smart defaults, choice trays, receipt toast with undo and time shift, persistent timer bar.">
+<style>
+:root{
+  --page:#0b0a1a;--bg:#15132e;--surface:#1f1c3f;--raised:#2a2468;--toast:#332c7a;--hair:#2a2652;
+  --text:#eceaff;--muted:#a9a5d4;--accent:#7c6cf0;--accent-soft:#c4baff;--on-accent:#ffffff;
+  --sleep-bg:#3a2f7a;--sleep-fg:#c4baff;--feeding-bg:#16423f;--feeding-fg:#7ee0b8;--diaper-bg:#4a3322;--diaper-fg:#ffc58a;
+  --health-bg:#4b2a33;--health-fg:#ff9fb2;--care-bg:#183f55;--care-fg:#8fd8ff;--activity-bg:#4a3d1a;--activity-fg:#ffd77a;
+  --nightWaking-bg:#4a2f55;--nightWaking-fg:#f0b6ff;--warn-bg:#4a3518;--warn-fg:#ffcf8a;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent-soft);outline-offset:2px}
+.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.stage{display:flex;gap:32px;justify-content:center;align-items:flex-start;padding:24px}
+.phone{width:390px;height:844px;border-radius:44px;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 10px #000,0 30px 80px rgba(0,0,0,.6);flex:none}
+@media (max-width:480px){.stage{padding:0;display:block}.phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}.notes{padding:20px}}
+svg{flex:none}
+/* header */
+.top{display:flex;align-items:center;gap:12px;padding:20px 16px 8px 20px}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:600;color:#fff;flex:none}
+.top .who{flex:1;min-width:0}
+.top .name{font-size:20px;font-weight:500;display:flex;align-items:center;gap:6px}
+.top .age{font-size:12px;color:var(--muted)}
+.iconbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.twinswitch{display:flex;gap:6px}
+.twinswitch button{display:flex;align-items:center;gap:6px;height:40px;padding:0 12px 0 4px;border-radius:999px;background:var(--surface);font-size:14px}
+.twinswitch button[aria-pressed="true"]{background:var(--raised);box-shadow:inset 0 0 0 2px var(--accent)}
+.twinswitch .avatar{width:32px;height:32px;font-size:13px}
+/* main */
+main{flex:1;overflow-y:auto;padding:8px 20px 24px;scrollbar-width:none}
+main::-webkit-scrollbar{display:none}
+.card{background:var(--surface);border-radius:20px;padding:16px 18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.hero .big{font-size:30px;font-weight:500;line-height:1.15}
+.hero .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.hero .row{display:flex;align-items:center;gap:14px}
+.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.strip .card{padding:12px}
+.strip .v{font-size:18px;font-weight:500}
+.strip .l{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.sect{display:flex;align-items:center;gap:8px;margin:24px 0 8px;font-size:15px;font-weight:500}
+.sect .grow{flex:1}
+.sect a{color:var(--accent-soft);font-size:13px;text-decoration:none}
+.rows{display:flex;flex-direction:column}
+.rowi{display:grid;grid-template-columns:62px 40px 1fr auto 44px;align-items:center;gap:10px;min-height:60px;border-radius:14px;padding:4px 0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:background .6s}
+.rowi.fresh{background:rgba(124,108,240,.18)}
+.rowi .time{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.rowi .t1{font-size:15px;font-weight:500}
+.rowi .t2{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowi .txt{min-width:0}
+.by{font-size:11px;font-weight:600;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#3b356f;color:var(--accent-soft)}
+.pill{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;background:rgba(124,108,240,.25);color:var(--accent-soft)}
+.circ{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.circ.s{width:32px;height:32px}
+.circ.l{width:48px;height:48px}
+/* bottom stack */
+.bottom{position:relative;flex:none;background:linear-gradient(to bottom,rgba(21,19,46,0),var(--bg) 14px)}
+.bars{display:flex;flex-direction:column;gap:8px;padding:0 12px 8px}
+.bar{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 8px 8px 12px;background:var(--raised);border-radius:18px;box-shadow:0 0 0 1px rgba(196,186,255,.14) inset}
+.bar.attn{background:var(--warn-bg);box-shadow:0 0 0 1px rgba(255,207,138,.35) inset}
+.bar .open{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left;min-height:48px}
+.bar .t1{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar.attn .t1{color:var(--warn-fg)}
+.bar .t2{font-size:20px;font-weight:500}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 16px;border-radius:999px;font-weight:500;font-size:15px;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.tonal{background:rgba(196,186,255,.16);color:var(--text)}
+.btn.warn{background:var(--warn-fg);color:#2b1d05}
+.btn.ghost{color:var(--accent-soft);padding:0 12px}
+.btn.block{width:100%;min-height:56px;font-size:16px}
+.btn:disabled{opacity:.55;cursor:default}
+.sides{display:flex;background:rgba(0,0,0,.25);border-radius:999px;padding:3px}
+.sides button{min-width:56px;min-height:42px;border-radius:999px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;color:var(--muted)}
+.sides button small{font-weight:400;font-size:11px}
+.sides button[aria-pressed="true"]{background:var(--feeding-fg);color:#06281f}
+.dock{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 12px 8px}
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;min-height:84px;padding:8px 4px;border-radius:16px;background:var(--surface);text-align:center;transition:transform .12s var(--ease);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.tile:active{transform:scale(.97)}
+.tile .lab{font-size:13px;font-weight:500;line-height:1.15}
+.tile .st{font-size:11.5px;color:var(--muted);line-height:1.15}
+.tile.on{box-shadow:inset 0 0 0 2px var(--accent)}
+.tile.on .st{color:var(--accent-soft)}
+.nav{display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;height:64px;border-top:1px solid var(--hair);background:var(--bg)}
+.nav button,.nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted);text-decoration:none}
+.nav .act{color:var(--text)}
+.nav .act svg{background:rgba(124,108,240,.28);border-radius:999px;padding:2px 14px;box-sizing:content-box}
+.fabwrap{position:relative}
+.fab{position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(124,108,240,.18),0 8px 20px rgba(0,0,0,.4)}
+/* toast */
+.toast{position:absolute;left:12px;right:12px;bottom:calc(100% + 6px);background:var(--toast);border-radius:20px;padding:12px 12px 10px;box-shadow:0 12px 32px rgba(0,0,0,.5);transform:translateY(8px);opacity:0;transition:opacity .18s var(--ease),transform .18s var(--ease);pointer-events:none;z-index:5}
+.toast.show{opacity:1;transform:none;pointer-events:auto}
+.toast .r1{display:flex;align-items:center;gap:12px}
+.toast .tx{flex:1;min-width:0}
+.toast .tx b{display:block;font-weight:500;font-size:15px}
+.toast .tx span{font-size:13px;color:var(--muted)}
+.toast .r2{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.toast .lbl{font-size:12px;color:var(--muted);margin-right:2px}
+.toast .r2[hidden]{display:none}
+.toast .prog{height:3px;border-radius:2px;background:rgba(255,255,255,.12);margin-top:10px;overflow:hidden}
+.toast .prog i{display:block;height:100%;background:var(--accent-soft);transform-origin:left;width:100%}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:rgba(196,186,255,.12);font-size:14px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+.chip.sm{min-height:36px;padding:0 12px;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+/* overlay / sheet */
+.overlay{position:absolute;inset:0;z-index:20}
+.overlay[hidden]{display:none}
+.scrim{position:absolute;inset:0;background:rgba(5,4,15,.6);animation:fade .18s var(--ease)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:0 20px 24px;animation:up .2s var(--ease);box-shadow:0 -10px 40px rgba(0,0,0,.4)}
+.handle{display:flex;justify-content:center;padding:10px 0 6px;touch-action:none;cursor:grab}
+.handle i{width:36px;height:4px;border-radius:2px;background:#4a4580}
+.sh-head{display:flex;align-items:center;gap:12px;margin:4px 0 16px}
+.sh-head h2{margin:0;font-size:20px;font-weight:500;flex:1}
+.flabel{font-size:12px;font-weight:500;color:var(--muted);margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.choice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:96px;border-radius:18px;background:var(--raised);font-size:15px;font-weight:500;padding:8px 4px;text-align:center}
+.choice:active{transform:scale(.97)}
+.same{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:8px 14px;border-radius:18px;background:var(--raised);text-align:left}
+.same .tx{flex:1}
+.same .tx b{display:block;font-weight:500}
+.same .tx span{font-size:13px;color:var(--muted)}
+.stepper{display:flex;align-items:center;justify-content:center;gap:16px}
+.stepper .val{font-size:34px;font-weight:500;min-width:120px;text-align:center}
+.stepper .val small{font-size:16px;color:var(--muted);font-weight:400;margin-left:4px}
+.round{width:52px;height:52px;border-radius:50%;background:var(--raised);display:grid;place-items:center}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:rgba(0,0,0,.22);padding:4px;border-radius:999px}
+.seg button{min-height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;color:var(--muted);padding:0 6px;text-align:center;line-height:1.1}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--text);box-shadow:inset 0 0 0 1.5px var(--accent-soft)}
+.check{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 12px;border-radius:16px;background:var(--raised);margin-bottom:8px;text-align:left}
+.check .box{width:24px;height:24px;border-radius:7px;border:2px solid var(--muted);display:grid;place-items:center;flex:none}
+.check[aria-checked="true"] .box{background:var(--accent);border-color:var(--accent)}
+.check .tx{flex:1}
+.check .tx span{display:block;font-size:13px;color:var(--muted)}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(126,224,184,.16);color:var(--feeding-fg);margin-left:6px}
+.more{display:flex;justify-content:center;margin-top:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid3 .tile{min-height:96px}
+.fake-input{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 8px 0 16px;border-radius:999px;background:var(--raised);color:var(--muted);text-decoration:none;margin-top:16px}
+.fake-input span{flex:1}
+.intensity{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.intensity button{min-height:64px;border-radius:16px;background:var(--raised);font-size:20px;font-weight:500}
+.anch{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.menu{position:absolute;z-index:30;min-width:200px;background:#2f2970;border-radius:16px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.55)}
+.menu[hidden]{display:none}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;border-radius:10px;text-align:left}
+.menu button:hover,.menu button:focus-visible{background:rgba(255,255,255,.08)}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+/* side notes */
+.notes{max-width:360px;font-size:14px;color:var(--muted)}
+.notes h1{font-size:18px;color:var(--text);font-weight:600;margin:4px 0 8px}
+.notes h2{font-size:14px;color:var(--text);margin:20px 0 6px}
+.notes ol,.notes ul{padding-left:18px;margin:0}
+.notes li{margin:4px 0}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ctl button,.ctl label{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;background:#1d1b38;color:var(--text);font-size:13px;cursor:pointer}
+.ctl button[aria-pressed="true"]{background:var(--accent)}
+.notes a{color:var(--accent-soft)}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+@keyframes fade{from{opacity:0}}
+.phone.rm *,.phone.rm *::before{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (forced-colors:active){.chip,.tile,.choice,.seg button,.btn,.bar{border:1px solid CanvasText}.chip[aria-pressed="true"],.seg button[aria-pressed="true"]{outline:3px solid Highlight}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone" id="phone">
+    <header class="top" id="top"></header>
+    <main id="main"></main>
+    <div class="bottom" id="bottom">
+      <div class="toast" id="toast" role="status" aria-live="off"></div>
+      <div class="bars" id="bars" aria-label="Running timers"></div>
+      <div class="dock" id="dock"></div>
+      <nav class="nav" id="nav"></nav>
+    </div>
+    <div class="overlay" id="overlay" hidden>
+      <div class="scrim" id="scrim"></div>
+      <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+    </div>
+    <div class="menu" id="menu" role="menu" hidden></div>
+    <div class="sr" id="live" aria-live="polite"></div>
+  </div>
+  <aside class="notes" id="notes"></aside>
+</div>
+<script>
+'use strict';
+/* ---------- icons (simple stroke set drawn for this prototype; production uses MUI Rounded) ---------- */
+const IC={
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+ cloud:'<path d="M7 18.5h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 18.5z"/>',
+ zzz:'<path d="M4 7h5l-5 6h5M13 4h4l-4 5h4M14 14h6l-6 6h6"/>',
+ eye:'<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/>',
+ bottle:'<path d="M9 10h6v9a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2zM10 10V8h4v2M11 8V5.2a1 1 0 0 1 2 0V8M9 14h2.5M9 17h2.5"/>',
+ heart:'<path d="M12 20s-7-4.3-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.7 12 20 12 20z"/>',
+ diaper:'<path d="M3.5 7h17v2.5a8.5 8.5 0 0 1-17 0zM8 7v3.5M16 7v3.5M9.5 15.5h5"/>',
+ drop:'<path d="M12 3.5s6 6.4 6 10.6a6 6 0 0 1-12 0c0-4.2 6-10.6 6-10.6z"/>',
+ dirty:'<path d="M5 19.5h14a2.4 2.4 0 0 0-.9-4.6 2.4 2.4 0 0 0-2.1-3.6h-.6A2.6 2.6 0 0 0 13 7.5c0-1.8-1-3-1-3s-4.2.8-4.2 4.1a2.4 2.4 0 0 0-1.3 4.3A2.4 2.4 0 0 0 5 19.5z"/>',
+ mixed:'<path d="M8 4s3.4 3.6 3.4 6.1a3.4 3.4 0 0 1-6.8 0C4.6 7.6 8 4 8 4zM12.5 20h7.5a1.7 1.7 0 0 0-.6-3.3 1.7 1.7 0 0 0-1.5-2.5h-.4A1.8 1.8 0 0 0 16 11.5s-3 .6-3 2.9a1.7 1.7 0 0 0-.5 5.6z"/>',
+ pill:'<path d="M4.9 12.1l7.2-7.2a4.6 4.6 0 0 1 6.5 6.5l-7.2 7.2a4.6 4.6 0 0 1-6.5-6.5zM8.5 8.5l7 7"/>',
+ face:'<circle cx="12" cy="12" r="8.5"/><path d="M9 9.5v.5M15 9.5v.5M8.5 15.5c1.2-1.2 2.3-1.2 3.5 0s2.3 1.2 3.5 0"/>',
+ bath:'<path d="M3 12h18v1.5A5.5 5.5 0 0 1 15.5 19h-7A5.5 5.5 0 0 1 3 13.5zM6 12V6.5a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/>',
+ activity:'<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ minus:'<path d="M5 12h14"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+ undo:'<path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+ edit:'<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
+ more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+ cloudok:'<path d="M7 18.5h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 18.5z"/><path d="M9.5 14l2 2 3.5-3.5"/>',
+ home:'<path d="M4 11l8-6.5 8 6.5V20h-5v-5H9v5H4z"/>',
+ list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+ stop:'<rect x="7" y="7" width="10" height="10" rx="2"/>',
+ swap:'<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+ repeat:'<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/>',
+ trash:'<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+ mic:'<path d="M12 3.5a3 3 0 0 1 3 3V12a3 3 0 0 1-6 0V6.5a3 3 0 0 1 3-3zM5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/>',
+ spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+ warn:'<path d="M12 4l9 16H3zM12 10v4.5M12 17.5v.01"/>',
+ can:'<path d="M7 7h10v12.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5zM8 3.5h8V7H8zM10 12.5h4"/>',
+ today:'<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>'
+};
+const ic=(n,s=24,w=1.8)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`;
+const circ=(cat,icon,cls='',s=22)=>`<span class="circ ${cls}" style="background:var(--${cat}-bg);color:var(--${cat}-fg)">${ic(icon,s)}</span>`;
+
+/* ---------- copy (en, pt-BR) ---------- */
+const T={
+en:{age:'2 months, 3 weeks',awake:'Awake {d}',nextNap:'Next nap around {t}',asleep:'Asleep {d}',since:'Since {t}',today:'Today',sleep:'Sleep',feeds:'Feeds',diapers:'Diapers',latest:'Latest',timeline:'Timeline',
+ n:{wake_up:'Wake up',nap:'Nap',bedtime:'Bedtime',fell_asleep:'Fell asleep',night_waking:'Night waking',bottle:'Bottle',nursing:'Nursing',diaper:'Diaper',medication:'Medication',belly_pain:'Belly pain',bath:'Bath',tummy_time:'Tummy time',night:'Night sleep',woke_up:'Woke up'},
+ notToday:'Not today',justNow:'Just now',agoMin:'{n} min ago',agoH:'{n}h ago',running:'Running {d}',endsSleep:'Ends sleep',
+ undo:'Undo',edit:'Edit',also:'Also {b}',started:'Started',logged:'Logged',woke:'Woke',ended:'Ended',now:'now',min:'{n} min ago',
+ when:'When',nowCap:'Now',m5:'5 min ago',m15:'15 min ago',m30:'30 min ago',other:'Other time',more:'More details',forB:'For',both:'Both',
+ wet:'Wet',dirty:'Dirty',mixed:'Mixed',same:'Same as last time',amount:'Amount',content:'Content',formula:'Formula',breast_milk:'Breast milk',logA:'Log {a}',
+ meds:'Medications',usual:'Usual',otherMeds:'Others',logMeds_one:'Log 1 medication',logMeds_other:'Log {n} medications',pickMed:'Select a medication',
+ intensity:'Intensity',mild:'Mild',severe:'Severe',
+ wakeUp:'Wake up',backAsleep:'Back asleep',stop:'Stop',L:'L',R:'R',left:'Left',right:'Right',sideNext:'{s} side',stillAsleep:'Still asleep? {n} running for {d}',stillGoing:'{n} running for {d}. Still going?',endedAt:'Ended {t}',keep:'Still going',
+ startedAt:'Started {t}',by:'by {who}',adjust:'Adjust start',kind:'Kind',nap:'Nap',night:'Night',discard:'Discard timer',done:'Done',
+ repeat:'Repeat now',del:'Delete',deleted:'Deleted',discarded:'Timer discarded',
+ home:'Home',add:'Add event',growth:'Growth',settings:'Settings',track:'Track',editPins:'Edit pins',cmd:'Type or say “bottle 90”',
+ a11yLogged:'{what}. Undo available.',synced:'Synced',fullEditor:'Full editor',fullEditorBody:'Long-press a tile, tap Edit in the toast or “More details” to open the full event sheet. It is prototyped in 03-event-sheet.html.',open:'Open the event sheet prototype',
+ otherTimeBody:'“Other time” opens the time picker (scrubber and HH:MM entry) shown in 03-event-sheet.html.',
+ nightKind:'night sleep started',napKind:'nap started',twinsHint:'Both babies'},
+pt:{age:'2 meses e 3 semanas',awake:'Tempo acordado: {d}',nextNap:'Próxima soneca por volta de {t}',asleep:'Dormindo há {d}',since:'Desde {t}',today:'Hoje',sleep:'Sono',feeds:'Mamadas',diapers:'Fraldas',latest:'Últimos registros',timeline:'Linha do tempo',
+ n:{wake_up:'Acordou',nap:'Soneca',bedtime:'Hora de dormir',fell_asleep:'Adormeceu',night_waking:'Despertar noturno',bottle:'Mamadeira',nursing:'Amamentação',diaper:'Fralda',medication:'Remédio',belly_pain:'Dor de barriga',bath:'Banho',tummy_time:'Tempo de bruços',night:'Sono da noite',woke_up:'Acordou'},
+ notToday:'Sem registro hoje',justNow:'Agora mesmo',agoMin:'há {n} min',agoH:'há {n} h',running:'Em andamento {d}',endsSleep:'Encerra o sono',
+ undo:'Desfazer',edit:'Editar',also:'Também {b}',started:'Início',logged:'Registrado',woke:'Acordou',ended:'Fim',now:'agora',min:'há {n} min',
+ when:'Quando',nowCap:'Agora',m5:'Há 5 min',m15:'Há 15 min',m30:'Há 30 min',other:'Outro horário',more:'Mais detalhes',forB:'Para',both:'Ambos',
+ wet:'Xixi',dirty:'Cocô',mixed:'Misto',same:'Igual à última vez',amount:'Quantidade',content:'Conteúdo',formula:'Fórmula',breast_milk:'Leite materno',logA:'Registrar {a}',
+ meds:'Remédios',usual:'De uso comum',otherMeds:'Outros',logMeds_one:'Registrar 1 remédio',logMeds_other:'Registrar {n} remédios',pickMed:'Selecione um remédio',
+ intensity:'Intensidade',mild:'Leve',severe:'Forte',
+ wakeUp:'Acordou',backAsleep:'Voltou a dormir',stop:'Parar',L:'E',R:'D',left:'Esquerdo',right:'Direito',sideNext:'Lado {s}',stillAsleep:'Ainda dormindo? {n} há {d}',stillGoing:'{n} há {d}. Ainda em andamento?',endedAt:'Terminou {t}',keep:'Continua',
+ startedAt:'Começou {t}',by:'por {who}',adjust:'Ajustar início',kind:'Tipo',nap:'Soneca',night:'Noite',discard:'Descartar cronômetro',done:'Pronto',
+ repeat:'Repetir agora',del:'Excluir',deleted:'Excluído',discarded:'Cronômetro descartado',
+ home:'Início',add:'Adicionar evento',growth:'Crescimento',settings:'Ajustes',track:'Registrar',editPins:'Editar atalhos',cmd:'Digite ou fale “mamadeira 90”',
+ a11yLogged:'{what}. Dá para desfazer.',synced:'Sincronizado',fullEditor:'Editor completo',fullEditorBody:'Toque longo num atalho, Editar no aviso ou “Mais detalhes” abrem a ficha completa do evento. Ela está no protótipo 03-event-sheet.html.',open:'Abrir o protótipo da ficha',
+ otherTimeBody:'“Outro horário” abre o seletor de hora (régua e digitação HH:MM) do protótipo 03-event-sheet.html.',
+ nightKind:'sono da noite iniciado',napKind:'soneca iniciada',twinsHint:'Os dois bebês'}
+};
+const S={lang:'en',twins:false,baby:'alice',haptics:true,events:[],snooze:{},trayWhen:0,trayFor:null,toast:null,attn:{}};
+const t=(k,v={})=>{let s=k.split('.').reduce((o,p)=>o&&o[p],T[S.lang]);if(s==null)s=k;return String(s).replace(/\{(\w+)\}/g,(_,x)=>v[x]??'');};
+const nm=k=>T[S.lang].n[k]||k;
+const loc=()=>S.lang==='pt'?'pt-BR':'en-US';
+const fmtT=ms=>new Intl.DateTimeFormat(loc(),{hour:'numeric',minute:'2-digit',hourCycle:S.lang==='pt'?'h23':undefined}).format(ms);
+const fmtDur=ms=>{const m=Math.max(1,Math.round(ms/60000));const h=Math.floor(m/60),r=m%60;if(S.lang==='pt')return h?`${h} h${r?` ${r} min`:''}`:`${m} min`;return h?`${h}h${r?` ${r}m`:''}`:`${m} min`;};
+const fmtClock=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=n=>String(n).padStart(2,'0');return h?`${h}:${p(m)}:${p(x)}`:`${m}:${p(x)}`;};
+const BABIES={alice:{name:'Alice',color:'#7c6cf0'},bia:{name:'Bia',color:'#2a9d84'}};
+const PEOPLE={you:'Vini',rafa:'Rafa'};
+const $=s=>document.querySelector(s);
+const MIN=60000,H=3600000;
+const uid=()=>Math.random().toString(36).slice(2,10);
+
+/* ---------- presets ---------- */
+const P={
+ wake_up:{cat:'sleep',icon:'sun',mode:'instant',type:'sleep',payload:{kind:'woke_up'},stopsSleep:true},
+ nap:{cat:'sleep',icon:'cloud',mode:'timer',type:'sleep',payload:{kind:'nap'}},
+ bedtime:{cat:'sleep',icon:'moon',mode:'instant',type:'sleep',payload:{kind:'bed_time'}},
+ fell_asleep:{cat:'sleep',icon:'zzz',mode:'instant',type:'sleep',payload:{kind:'fell_asleep'},startsSleep:true},
+ night_waking:{cat:'nightWaking',icon:'eye',mode:'timer',type:'sleep',payload:{kind:'night_waking'}},
+ bottle:{cat:'feeding',icon:'bottle',mode:'tray',type:'feeding',payload:{method:'bottle'}},
+ nursing:{cat:'feeding',icon:'heart',mode:'timer',type:'feeding',payload:{method:'breast'}},
+ diaper:{cat:'diaper',icon:'diaper',mode:'tray',type:'diaper',payload:{}},
+ medication:{cat:'health',icon:'pill',mode:'tray',type:'medication',payload:{}},
+ belly_pain:{cat:'health',icon:'face',mode:'tray',type:'belly_pain',payload:{}},
+ bath:{cat:'care',icon:'bath',mode:'instant',type:'bath',payload:{}},
+ tummy_time:{cat:'activity',icon:'activity',mode:'timer',type:'tummy_time',payload:{}}
+};
+const PINNED=['wake_up','bottle','diaper','nap'];
+const MEDS=[{id:'m1',name:'Colidis',dose:'5',unit:'drops',unitPt:'gotas',usual:true},{id:'m2',name:'Puravit',dose:'1',unit:'ml',unitPt:'ml',usual:true},{id:'m3',name:'Paracetamol',dose:'2.5',unit:'ml',unitPt:'ml',usual:false}];
+const THRESH={nap:3*H,night:14*H,night_waking:2*H,nursing:60*MIN,tummy_time:30*MIN};
+const TYPICAL={nap:80*MIN,night:10*H,night_waking:20*MIN,nursing:18*MIN,tummy_time:10*MIN};
+
+function presetOf(e){
+  if(e.type==='sleep')return {nap:'nap',night:'nap',woke_up:'wake_up',bed_time:'bedtime',fell_asleep:'fell_asleep',night_waking:'night_waking'}[e.payload.kind]||'nap';
+  if(e.type==='feeding')return e.payload.method==='bottle'?'bottle':'nursing';
+  return e.type;
+}
+const timerKey=e=>e.type==='sleep'?e.payload.kind:(e.type==='feeding'?'nursing':e.type);
+const isSleepRun=e=>e.type==='sleep'&&e.end===null&&(e.payload.kind==='nap'||e.payload.kind==='night');
+
+function seed(){
+  const n=Date.now(),a=(m)=>n-m*MIN;
+  S.events=[
+   {id:uid(),baby:'alice',type:'medication',start:a(400),end:a(400),payload:{medications:[{id:'m1',dose:'5'},{id:'m2',dose:'1'}]},by:'you'},
+   {id:uid(),baby:'alice',type:'feeding',start:a(318),end:a(300),payload:{method:'breast',left:480,right:360,lastSide:'right'},by:'you'},
+   {id:uid(),baby:'alice',type:'diaper',start:a(250),end:a(250),payload:{content:'dirty'},by:'rafa'},
+   {id:uid(),baby:'alice',type:'feeding',start:a(190),end:a(190),payload:{method:'bottle',amount:90,content:'formula'},by:'rafa'},
+   {id:uid(),baby:'alice',type:'sleep',start:a(165),end:a(85),payload:{kind:'nap'},by:'you'},
+   {id:uid(),baby:'alice',type:'sleep',start:a(85),end:a(85),payload:{kind:'woke_up'},by:'you'},
+   {id:uid(),baby:'alice',type:'diaper',start:a(70),end:a(70),payload:{content:'wet'},by:'you'},
+   {id:uid(),baby:'bia',type:'feeding',start:a(150),end:a(150),payload:{method:'bottle',amount:120,content:'formula'},by:'rafa'},
+   {id:uid(),baby:'bia',type:'diaper',start:a(40),end:a(40),payload:{content:'wet'},by:'rafa'},
+   {id:uid(),baby:'bia',type:'sleep',start:a(25),end:null,payload:{kind:'nap'},by:'rafa'}
+  ];
+  S.snooze={};S.attn={};
+}
+
+/* ---------- describe ---------- */
+function describe(e){
+  const p=presetOf(e),pr=P[p];let title=nm(p),detail='';
+  if(e.type==='sleep'){
+    if(e.payload.kind==='night')title=nm('night');
+    if(e.payload.kind==='woke_up')title=nm('woke_up');
+    if(['nap','night','night_waking'].includes(e.payload.kind)&&e.end)detail=fmtDur(e.end-e.start);
+  }else if(e.type==='feeding'){
+    if(e.payload.method==='bottle')detail=`${e.payload.amount} ml · ${t(e.payload.content)}`;
+    else{const s=sideSecs(e);detail=e.end?`${t('L')} ${fmtDur(s.left*1000)} · ${t('R')} ${fmtDur(s.right*1000)}`:t('sideNext',{s:t(e.payload.side||'left')});}
+  }else if(e.type==='diaper')detail=t(e.payload.content);
+  else if(e.type==='medication')detail=(e.payload.medications||[]).map(m=>{const md=MEDS.find(x=>x.id===m.id);return `${md.name} ${m.dose} ${S.lang==='pt'?md.unitPt:md.unit}`}).join(', ');
+  else if(e.type==='belly_pain')detail=`${e.payload.intensity}/5`;
+  else if(e.type==='tummy_time'&&e.end)detail=fmtDur(e.end-e.start);
+  return {title,detail,cat:pr.cat,icon:e.type==='sleep'&&e.payload.kind==='night'?'moon':pr.icon};
+}
+function sideSecs(e){
+  if(!e.payload.segs)return {left:e.payload.left||0,right:e.payload.right||0};
+  const r={left:0,right:0};const n=Date.now();
+  for(const s of e.payload.segs)r[s.side]+=Math.floor(((s.to??n)-s.from)/1000);
+  return r;
+}
+
+/* ---------- undo-able transactions ---------- */
+function tx(){return {created:new Set(),before:new Map()};}
+function touch(k,e){if(!k.created.has(e.id)&&!k.before.has(e.id))k.before.set(e.id,structuredClone(e));}
+function create(k,e){const ev={id:uid(),by:'you',...e};S.events.push(ev);k.created.add(ev.id);return ev;}
+function undo(k){
+  S.events=S.events.filter(e=>!k.created.has(e.id));
+  for(const [id,old] of k.before){const i=S.events.findIndex(e=>e.id===id);if(i>=0)S.events[i]=old;else S.events.push(old);}
+}
+const running=(baby)=>S.events.filter(e=>e.end===null&&(!baby||e.baby===baby));
+
+function stopTimer(k,e,when){
+  touch(k,e);
+  if(e.payload.segs){const last=e.payload.segs[e.payload.segs.length-1];if(last.to==null)last.to=when;const s=sideSecs(e);e.payload.left=s.left;e.payload.right=s.right;e.payload.lastSide=last.side;}
+  e.end=Math.max(when,e.start+MIN);
+}
+function lastNursingSide(baby){const l=S.events.filter(e=>e.baby===baby&&e.type==='feeding'&&e.payload.method==='breast'&&e.end).sort((a,b)=>b.start-a.start)[0];return l?l.payload.lastSide:null;}
+function inferKind(when){const h=new Date(when).getHours();return h>=19||h<5?'night':'nap';}
+
+/* ---------- running a preset ---------- */
+function runPreset(id,{babies,when=Date.now(),payload}={}){
+  const pr=P[id];babies=babies||[S.baby];
+  const k=tx();let toast=null;const targets=[];
+  for(const b of babies){
+    if(pr.mode==='timer'){
+      const match=running(b).find(e=>presetOf(e)===id||(id==='nap'&&isSleepRun(e)));
+      if(match){stopTimer(k,match,when);targets.push({id:match.id,f:'end'});toast={mode:'ended',ev:match};continue;}
+      const pl={...pr.payload};
+      if(id==='nursing'){const side=lastNursingSide(b)==='left'?'right':'left';pl.side=side;pl.segs=[{side,from:when,to:null}];}
+      if(id==='nap'){for(const r of running(b).filter(isSleepRun))stopTimer(k,r,when);}
+      const ev=create(k,{baby:b,type:pr.type,start:when,end:null,payload:pl});targets.push({id:ev.id,f:'start'});toast={mode:'started',ev};
+    }else{
+      let stopped=null;
+      if(pr.stopsSleep){for(const r of running(b).filter(e=>e.type==='sleep')){if(isSleepRun(r))stopped=r;stopTimer(k,r,when);targets.push({id:r.id,f:'end'});}}
+      const ev=create(k,{baby:b,type:pr.type,start:when,end:when,payload:{...pr.payload,...(payload||{})}});targets.push({id:ev.id,f:'both'});
+      toast={mode:pr.stopsSleep?'woke':'logged',ev,stopped};
+      if(pr.startsSleep&&!running(b).some(isSleepRun)){const kind=inferKind(when);const tm=create(k,{baby:b,type:'sleep',start:when,end:null,payload:{kind}});targets.push({id:tm.id,f:'start'});toast.sub=t(kind==='night'?'nightKind':'napKind');}
+    }
+  }
+  haptic(10);
+  showToast({...toast,k,targets,babies,presetId:id,base:when});
+  render();
+}
+function commitTray(id,payload,babies){
+  const pr=P[id];const when=Date.now()-S.trayWhen*MIN;const k=tx();const targets=[];let ev;
+  for(const b of babies){ev=create(k,{baby:b,type:pr.type,start:when,end:when,payload:{...pr.payload,...payload}});targets.push({id:ev.id,f:'both'});}
+  closeSheet(false);haptic(10);
+  showToast({mode:'logged',ev,k,targets,babies,presetId:id,base:when,offset:S.trayWhen});
+  render();
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null,toastLeft=0,toastPaused=false,toastLast=0;
+const TOAST_MS=6000;
+function showToast(d){
+  S.toast={...d,offset:d.offset||0};toastLeft=TOAST_MS;toastLast=performance.now();renderToast();
+  const el=$('#toast');el.classList.add('show');
+  const what=toastTitle(S.toast);$('#live').textContent='';setTimeout(()=>{$('#live').textContent=t('a11yLogged',{what:`${what.title}${what.sub?', '+what.sub:''}`});},50);
+  clearInterval(toastTimer);toastTimer=setInterval(()=>{const n=performance.now();if(!toastPaused)toastLeft-=n-toastLast;toastLast=n;const bar=$('#toast .prog i');if(bar)bar.style.transform=`scaleX(${Math.max(0,toastLeft/TOAST_MS)})`;if(toastLeft<=0)hideToast();},100);
+}
+function hideToast(){clearInterval(toastTimer);$('#toast').classList.remove('show');S.toast=null;}
+function toastTitle(d){
+  const e=S.events.find(x=>x.id===d.ev.id)||d.ev;const ds=describe(e);
+  let title=ds.title,sub='';
+  if(d.mode==='started'){if(ds.detail)title=`${ds.title} · ${ds.detail}`;sub=t('started')+' · '+offLabel(d.offset);}
+  else if(d.mode==='ended'){title=`${ds.title} · ${ds.detail||fmtDur(e.end-e.start)}`;sub=t('ended')+' · '+offLabel(d.offset);}
+  else if(d.mode==='woke'){const st=d.stopped&&S.events.find(x=>x.id===d.stopped.id);title=nm('woke_up')+(st?` · ${describe(st).title} ${fmtDur(st.end-st.start)}`:'');sub=t('woke')+' · '+offLabel(d.offset);}
+  else{title=ds.detail?`${ds.title} · ${ds.detail}`:ds.title;sub=t('logged')+' · '+offLabel(d.offset);}
+  if(d.sub)sub+=' · '+d.sub;
+  if(S.twins)sub+=' · '+d.babies.map(b=>BABIES[b].name).join(' + ');
+  return {title,sub,cat:ds.cat,icon:ds.icon};
+}
+const offLabel=o=>{const d=S.toast||{};const when=(d.base??Date.now())-o*MIN;const ago=Date.now()-when;return ago<90000?t('now'):ago<H?t('min',{n:Math.round(ago/MIN)}):fmtT(when);};
+function renderToast(){
+  const d=S.toast;if(!d)return;const h=toastTitle(d);
+  const offs=[0,5,10,15];
+  const lbl={started:t('started'),ended:t('ended'),woke:t('woke'),logged:t('logged')}[d.mode];
+  const other=S.twins&&d.babies.length===1?Object.keys(BABIES).find(b=>b!==d.babies[0]):null;
+  const hideChips=d.deleted||!d.targets.length;
+  $('#toast').innerHTML=`<div class="r1">${circ(h.cat,h.icon)}<div class="tx"><b>${h.title}</b><span>${h.sub}</span></div>
+   <button class="btn tonal" data-act="undo">${ic('undo',20)}${t('undo')}</button></div>
+   <div class="r2"${hideChips?' hidden':''}><span class="lbl">${lbl}</span>${offs.map(o=>`<button class="chip sm tnum" aria-pressed="${d.offset===o}" data-off="${o}">${d.offset===o?ic('check',16,2.2):''}${o?`−${o} min`:t('nowCap')}</button>`).join('')}
+   ${other?`<button class="chip sm" data-act="also">${ic('plus',16)}${t('also',{b:BABIES[other].name})}</button>`:''}
+   <button class="chip sm" data-act="edit">${ic('edit',16)}${t('edit')}</button></div>
+   <div class="prog"><i></i></div>`;
+}
+$('#toast').addEventListener('click',ev=>{
+  const b=ev.target.closest('button');if(!b||!S.toast)return;const d=S.toast;
+  if(b.dataset.act==='undo'){undo(d.k);hideToast();haptic([10,40,10]);$('#live').textContent=t('undo');render();return;}
+  if(b.dataset.act==='edit'){hideToast();openInfo(t('fullEditor'),t('fullEditorBody'),true);return;}
+  if(b.dataset.act==='also'){const other=Object.keys(BABIES).find(x=>x!==d.babies[0]);const src=S.events.find(x=>x.id===d.ev.id);if(src){const {id:_drop,...rest}=structuredClone(src);const c=create(d.k,{...rest,baby:other});d.targets.push({id:c.id,f:d.mode==='started'?'start':'both'});d.babies=[d.babies[0],other];}haptic(10);renderToast();render();resetToast();return;}
+  if(b.dataset.off!=null){const off=+b.dataset.off;d.offset=off;const tm=d.base-off*MIN;
+    for(const g of d.targets){const e=S.events.find(x=>x.id===g.id);if(!e)continue;
+      if(g.f==='start'){e.start=tm;if(e.payload.segs)e.payload.segs[0].from=tm;}
+      else if(g.f==='end'){e.end=Math.max(tm,e.start+MIN);if(e.payload.segs){const l=e.payload.segs[e.payload.segs.length-1];l.to=e.end;}}
+      else{e.start=tm;e.end=tm;}}
+    haptic(5);renderToast();render();resetToast();}
+});
+function resetToast(){toastLeft=TOAST_MS;}
+['pointerenter','focusin','pointerdown'].forEach(n=>$('#toast').addEventListener(n,()=>toastPaused=true));
+['pointerleave','focusout'].forEach(n=>$('#toast').addEventListener(n,()=>toastPaused=false));
+
+/* ---------- haptics ---------- */
+function haptic(p){if(S.haptics&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+
+/* ---------- render ---------- */
+function render(){renderTop();renderMain();renderBars();renderDock();renderNav();renderNotes();if(S.toast)renderToast();tick();}
+function renderTop(){
+  const b=BABIES[S.baby];
+  $('#top').innerHTML=S.twins
+   ?`<div class="twinswitch" role="group" aria-label="Baby">${Object.entries(BABIES).map(([id,x])=>`<button aria-pressed="${S.baby===id}" data-baby="${id}"><span class="avatar" style="background:${x.color}">${x.name[0]}</span>${x.name}</button>`).join('')}</div><div style="flex:1"></div><button class="iconbtn" aria-label="${t('synced')}">${ic('cloudok')}</button>`
+   :`<span class="avatar" style="background:${b.color}">${b.name[0]}</span><div class="who"><div class="name">${b.name}</div><div class="age">${t('age')}</div></div><button class="iconbtn" aria-label="${t('synced')}">${ic('cloudok')}</button>`;
+}
+function todayStats(b){
+  const mid=new Date();mid.setHours(0,0,0,0);const m=mid.getTime(),n=Date.now();
+  const ev=S.events.filter(e=>e.baby===b&&e.start>=m);
+  const sleep=S.events.filter(e=>e.baby===b&&e.type==='sleep'&&['nap','night'].includes(e.payload.kind)).reduce((s,e)=>s+Math.max(0,Math.min(e.end??n,n)-Math.max(e.start,m)),0);
+  return {sleep,feeds:ev.filter(e=>e.type==='feeding').length,diapers:ev.filter(e=>e.type==='diaper').length};
+}
+function renderMain(){
+  const b=S.baby;const run=running(b).find(isSleepRun);
+  let hero;
+  if(run)hero=`<div class="card hero"><div class="row">${circ('sleep','cloud','l',26)}<div><div class="big tnum" data-el="${run.start}" data-fmt="asleep"></div><div class="sub">${t('since',{t:fmtT(run.start)})}</div></div></div></div>`;
+  else{const lw=S.events.filter(e=>e.baby===b&&e.type==='sleep'&&e.end&&['nap','night','woke_up'].includes(e.payload.kind)).sort((a,z)=>z.end-a.end)[0];const since=lw?lw.end:Date.now()-60*MIN;
+    hero=`<div class="card hero"><div class="row">${circ('sleep','sun','l',26)}<div><div class="big tnum" data-el="${since}" data-fmt="awake"></div><div class="sub">${t('nextNap',{t:fmtT(since+110*MIN)})}</div></div></div></div>`;}
+  const st=todayStats(b);
+  const evs=S.events.filter(e=>S.twins||e.baby===b).sort((a,z)=>z.start-a.start).slice(0,7);
+  $('#main').innerHTML=`${hero}
+   <div class="strip"><div class="card"><div class="l">${ic('cloud',14)}${t('sleep')}</div><div class="v tnum" data-sleep="${b}">${fmtDur(st.sleep)}</div></div>
+   <div class="card"><div class="l">${ic('bottle',14)}${t('feeds')}</div><div class="v tnum">${st.feeds}</div></div>
+   <div class="card"><div class="l">${ic('diaper',14)}${t('diapers')}</div><div class="v tnum">${st.diapers}</div></div></div>
+   <div class="sect">${ic('clock',18)}<span class="grow">${t('latest')}</span><a href="#" onclick="return false">${t('timeline')}</a></div>
+   <div class="rows">${evs.map(rowHtml).join('')}</div>`;
+}
+function rowHtml(e){
+  const d=describe(e);const run=e.end===null;const fresh=S.toast&&S.toast.k&&S.toast.k.created.has(e.id);
+  return `<div class="rowi${fresh?' fresh':''}" data-row="${e.id}" tabindex="-1"><span class="time tnum">${fmtT(e.start)}</span>${circ(d.cat,d.icon,'',20)}
+   <div class="txt"><div class="t1">${d.title}${S.twins?` <span class="pill" style="background:${BABIES[e.baby].color}33;color:#fff">${BABIES[e.baby].name}</span>`:''}</div><div class="t2">${run?`<span class="pill tnum" data-el="${e.start}" data-fmt="clock"></span>`:d.detail}</div></div>
+   ${e.by!=='you'?`<span class="by" title="${PEOPLE[e.by]}" aria-label="${t('by',{who:PEOPLE[e.by]})}">${PEOPLE[e.by][0]}</span>`:'<span></span>'}
+   <button class="iconbtn" data-menu="${e.id}" aria-label="${d.title}, ${fmtT(e.start)}: actions">${ic('more',20)}</button></div>`;
+}
+function renderBars(){
+  const list=running(S.twins?null:S.baby).sort((a,b)=>a.start-b.start);
+  $('#bars').innerHTML=list.slice(0,2).map(barHtml).join('')+(list.length>2?`<div class="note" style="text-align:center">+${list.length-2}</div>`:'');
+}
+function barHtml(e){
+  const d=describe(e);const key=timerKey(e);const attn=S.attn[e.id];const who=e.by!=='you'?` · ${t('by',{who:PEOPLE[e.by]})}`:'';
+  const babyTag=S.twins?`${BABIES[e.baby].name} · `:'';
+  let actions;
+  if(attn){const sug=Math.min(Date.now(),e.start+(TYPICAL[key]||30*MIN));
+    actions=`<button class="btn warn" data-endat="${e.id}" data-t="${sug}">${t('endedAt',{t:fmtT(sug)})}</button>`;}
+  else if(e.type==='sleep'&&e.payload.kind!=='night_waking')actions=`<button class="btn primary" data-wake="${e.baby}">${ic('sun',20)}${t('wakeUp')}</button>`;
+  else if(e.type==='sleep')actions=`<button class="btn primary" data-stop="${e.id}">${ic('zzz',20)}${t('backAsleep')}</button>`;
+  else if(key==='nursing'){const cur=e.payload.segs[e.payload.segs.length-1].side;
+    actions=`<div class="sides" role="group" aria-label="${nm('nursing')}">${['left','right'].map(s=>`<button aria-pressed="${cur===s}" data-side="${e.id}" data-s="${s}" aria-label="${t(s)}"><span>${t(s==='left'?'L':'R')}</span><small class="tnum" data-side-el="${e.id}:${s}"></small></button>`).join('')}</div><button class="iconbtn" style="background:rgba(255,255,255,.1);color:var(--text)" data-stop="${e.id}" aria-label="${t('stop')} ${d.title}">${ic('stop',22)}</button>`;}
+  else actions=`<button class="btn primary" data-stop="${e.id}">${ic('stop',20)}${t('stop')}</button>`;
+  const line=attn?babyTag+(e.type==='sleep'?t('stillAsleep',{n:d.title,d:fmtDur(Date.now()-e.start)}):t('stillGoing',{n:d.title,d:fmtDur(Date.now()-e.start)})):`${babyTag}${d.title} · ${t('since',{t:fmtT(e.start)})}${who}`;
+  return `<div class="bar${attn?' attn':''}" data-bar="${e.id}"><button class="open" data-timer="${e.id}" aria-label="${d.title}, ${t('since',{t:fmtT(e.start)})}. ${t('adjust')}">${circ(attn?'diaper':d.cat,attn?'warn':d.icon,'',22)}<span style="min-width:0"><span class="t1" style="display:block">${line}</span><span class="t2 tnum" data-el="${e.start}" data-fmt="clock" aria-hidden="true"></span></span></button>${actions}${attn?`<button class="btn ghost" data-keep="${e.id}">${t('keep')}</button>`:''}</div>`;
+}
+function tileStatus(id){
+  const b=S.baby;const pr=P[id];
+  if(id==='wake_up'){const r=running(b).find(isSleepRun);if(r)return {on:true,html:`${t('endsSleep')}`};}
+  const r=running(b).find(e=>presetOf(e)===id||(id==='nap'&&isSleepRun(e)));
+  if(r)return {on:true,html:`<span class="tnum" data-el="${r.start}" data-fmt="clock"></span>`};
+  const last=S.events.filter(e=>e.baby===b&&presetOf(e)===id).sort((a,z)=>z.start-a.start)[0];
+  if(!last)return {on:false,html:t('notToday')};
+  const ago=Date.now()-last.start;
+  return {on:false,html:ago<MIN?t('justNow'):ago<H?t('agoMin',{n:Math.floor(ago/MIN)}):ago<12*H?t('agoH',{n:Math.floor(ago/H)}):fmtT(last.start)};
+}
+function tileHtml(id){const pr=P[id];const s=tileStatus(id);
+  return `<button class="tile${s.on?' on':''}" data-preset="${id}" aria-label="${nm(id)}. ${s.on?t('running',{d:''}):''}">${circ(pr.cat,pr.icon,'s',20)}<span class="lab">${nm(id)}</span><span class="st">${s.html}</span></button>`;}
+function renderDock(){$('#dock').innerHTML=PINNED.map(tileHtml).join('');}
+function renderNav(){
+  $('#nav').innerHTML=`<a href="#" class="act" aria-current="page" onclick="return false">${ic('home',22)}${t('home')}</a><a href="#" onclick="return false">${ic('list',22)}${t('timeline')}</a>
+  <div class="fabwrap"><button class="fab" id="fab" aria-label="${t('add')}" aria-haspopup="dialog">${ic('plus',28,2.2)}</button></div>
+  <a href="#" onclick="return false">${ic('chart',22)}${t('growth')}</a><a href="#" onclick="return false">${ic('gear',22)}${t('settings')}</a>`;
+}
+function tick(){
+  const n=Date.now();
+  document.querySelectorAll('[data-el]').forEach(el=>{const ms=n-(+el.dataset.el);const f=el.dataset.fmt;
+    el.textContent=f==='asleep'?t('asleep',{d:fmtDur(ms)}):f==='awake'?t('awake',{d:fmtDur(ms)}):fmtClock(ms);});
+  document.querySelectorAll('[data-side-el]').forEach(el=>{const [id,s]=el.dataset.sideEl.split(':');const e=S.events.find(x=>x.id===id);if(e)el.textContent=fmtClock(sideSecs(e)[s]*1000);});
+  document.querySelectorAll('[data-sleep]').forEach(el=>{el.textContent=fmtDur(todayStats(el.dataset.sleep).sleep);});
+  let changed=false;
+  for(const e of running()){const lim=THRESH[timerKey(e)];const a=!!(lim&&n-e.start>lim&&!(S.snooze[e.id]>n));if(!!S.attn[e.id]!==a){S.attn[e.id]=a;changed=true;}}
+  if(changed){renderBars();tick();}
+}
+setInterval(tick,1000);
+
+/* ---------- interactions ---------- */
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('button,a');if(!b)return;
+  if(b.dataset.baby){S.baby=b.dataset.baby;render();return;}
+  if(b.id==='fab'){openTrack(b);return;}
+  if(b.dataset.preset){onPreset(b.dataset.preset,b);return;}
+  if(b.dataset.wake){runPreset('wake_up',{babies:[b.dataset.wake]});return;}
+  if(b.dataset.stop){const e=S.events.find(x=>x.id===b.dataset.stop);const k=tx();stopTimer(k,e,Date.now());haptic(10);showToast({mode:'ended',ev:e,k,targets:[{id:e.id,f:'end'}],babies:[e.baby],base:Date.now()});render();return;}
+  if(b.dataset.side){const e=S.events.find(x=>x.id===b.dataset.side);const segs=e.payload.segs;const cur=segs[segs.length-1];if(cur.side!==b.dataset.s){const n=Date.now();cur.to=n;segs.push({side:b.dataset.s,from:n,to:null});e.payload.side='both';haptic(8);renderBars();tick();$(`[data-side="${e.id}"][data-s="${b.dataset.s}"]`)?.focus();}return;}
+  if(b.dataset.endat){const e=S.events.find(x=>x.id===b.dataset.endat);const k=tx();const when=+b.dataset.t;stopTimer(k,e,when);delete S.attn[e.id];showToast({mode:'ended',ev:e,k,targets:[{id:e.id,f:'end'}],babies:[e.baby],base:when});render();return;}
+  if(b.dataset.keep){S.snooze[b.dataset.keep]=Date.now()+H;S.attn[b.dataset.keep]=false;renderBars();tick();return;}
+  if(b.dataset.timer){openTimer(b.dataset.timer,b);return;}
+  if(b.dataset.menu){openMenu(b.dataset.menu,b);return;}
+});
+function onPreset(id,trigger){
+  const pr=P[id];
+  if(pr.mode==='tray'){openTray(id,trigger);return;}
+  runPreset(id,{});
+}
+/* long-press on tiles = full sheet; long-press on rows = menu */
+let lp=null,lpFired=false,lpXY=null;
+document.addEventListener('pointerdown',ev=>{
+  const tile=ev.target.closest('[data-preset]');const row=ev.target.closest('[data-row]');
+  if(!tile&&!row)return;if(row&&ev.target.closest('button'))return;lpFired=false;lpXY=[ev.clientX,ev.clientY];
+  lp=setTimeout(()=>{lpFired=true;haptic(15);if(tile){openInfo(t('fullEditor'),t('fullEditorBody'),true);}else openMenu(row.dataset.row,row);},500);
+});
+['pointerup','pointercancel'].forEach(n=>document.addEventListener(n,()=>{clearTimeout(lp);},true));
+document.addEventListener('pointermove',ev=>{if(lpXY&&Math.hypot(ev.clientX-lpXY[0],ev.clientY-lpXY[1])>10)clearTimeout(lp);},true);
+document.addEventListener('click',ev=>{if(lpFired&&ev.target.closest('[data-preset]')){ev.stopImmediatePropagation();ev.preventDefault();lpFired=false;}},true);
+document.addEventListener('contextmenu',ev=>{const row=ev.target.closest('[data-row]');if(row){ev.preventDefault();openMenu(row.dataset.row,row);}else if(ev.target.closest('[data-preset]'))ev.preventDefault();});
+
+/* ---------- sheet plumbing ---------- */
+let returnFocus=null;
+function openSheet(html,label){
+  returnFocus=document.activeElement;
+  $('#sheet').innerHTML=`<div class="handle" id="handle" aria-hidden="true"><i></i></div>${html}`;
+  $('#sheet').setAttribute('aria-label',label);
+  $('#overlay').hidden=false;
+  const f=$('#sheet').querySelector('[data-autofocus]')||$('#sheet').querySelector('button');f&&f.focus();
+  dragToClose();
+}
+function closeSheet(restore=true){timerId=null;$('#overlay').hidden=true;$('#sheet').innerHTML='';if(restore&&returnFocus&&document.contains(returnFocus))returnFocus.focus();}
+$('#scrim').addEventListener('click',()=>closeSheet());
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'){if(!$('#menu').hidden)closeMenu();else if(!$('#overlay').hidden)closeSheet();}});
+function dragToClose(){const h=$('#handle');const sh=$('#sheet');let y0=null;
+  h.addEventListener('pointerdown',e=>{y0=e.clientY;h.setPointerCapture(e.pointerId);});
+  h.addEventListener('pointermove',e=>{if(y0==null)return;const dy=Math.max(0,e.clientY-y0);sh.style.transform=`translateY(${dy}px)`;});
+  h.addEventListener('pointerup',e=>{const dy=e.clientY-y0;y0=null;sh.style.transform='';if(dy>80)closeSheet();});}
+const xBtn=()=>`<button class="iconbtn" data-close aria-label="Close">${ic('x',22)}</button>`;
+$('#sheet').addEventListener('click',ev=>{if(ev.target.closest('[data-close]'))closeSheet();});
+
+function forRow(){
+  if(!S.twins)return '';
+  const cur=S.trayFor||S.baby;
+  return `<div class="flabel">${t('forB')}</div><div class="seg" role="group">${Object.entries(BABIES).map(([id,x])=>`<button data-for="${id}" aria-pressed="${cur===id}">${x.name}</button>`).join('')}<button data-for="both" aria-pressed="${cur==='both'}">${t('both')}</button></div>`;
+}
+const trayBabies=()=>{const f=S.trayFor||S.baby;return f==='both'?Object.keys(BABIES):[f];};
+function whenRow(){
+  const opts=[[0,'nowCap'],[5,'m5'],[15,'m15'],[30,'m30']];
+  return `<div class="flabel">${ic('clock',14)}${t('when')}</div><div class="chips" role="group" aria-label="${t('when')}">${opts.map(([o,k])=>`<button class="chip" data-when="${o}" aria-pressed="${S.trayWhen===o}">${S.trayWhen===o?ic('check',16,2.2):''}${t(k)}</button>`).join('')}<button class="chip" data-othertime>${ic('today',16)}${t('other')}</button></div>`;
+}
+function head(id){const pr=P[id];return `<div class="sh-head">${xBtn()}${circ(pr.cat,pr.icon,'',22)}<h2>${nm(id)}</h2></div>`;}
+const moreLink=()=>`<div class="more"><button class="btn ghost" data-moredetails>${ic('edit',18)}${t('more')}</button></div>`;
+
+/* ---------- trays ---------- */
+let trayState={};
+function openTray(id,trigger){
+  S.trayWhen=0;S.trayFor=null;trayState={id};
+  if(id==='bottle'){const last=lastOf('bottle');trayState.amount=last?last.payload.amount:90;trayState.content=last?last.payload.content:'formula';}
+  if(id==='medication'){const last=lastOf('medication');trayState.sel=new Set(last?last.payload.medications.map(m=>m.id):[]);trayState.sel=new Set();}
+  openSheet(trayHtml(id),nm(id));
+}
+function lastOf(id){return S.events.filter(e=>e.baby===(S.trayFor&&S.trayFor!=='both'?S.trayFor:S.baby)&&presetOf(e)===id).sort((a,z)=>z.start-a.start)[0];}
+function trayHtml(id){
+  if(id==='diaper')return `${head(id)}${forRow()}${whenRow()}<div class="flabel">${t('content')}</div><div class="choices">
+    ${[['wet','drop'],['dirty','dirty'],['mixed','mixed']].map(([v,i],ix)=>`<button class="choice" data-diaper="${v}" ${ix===0?'data-autofocus':''}>${circ('diaper',i,'l',26)}${t(v)}</button>`).join('')}</div>${moreLink()}`;
+  if(id==='bottle'){const last=lastOf('bottle');const s=trayState;
+    return `${head(id)}${forRow()}${last?`<button class="same" data-same="bottle" data-autofocus>${circ('feeding','repeat','',20)}<span class="tx"><b>${t('same')}</b><span>${last.payload.amount} ml · ${t(last.payload.content)} · ${fmtT(last.start)}</span></span>${ic('check',20)}</button>`:''}
+    <div class="flabel">${t('amount')}</div>
+    <div class="stepper"><button class="round" data-amt="-10" aria-label="−10 ml">${ic('minus',22)}</button><div class="val tnum" aria-live="polite">${s.amount}<small>ml</small></div><button class="round" data-amt="10" aria-label="+10 ml">${ic('plus',22)}</button></div>
+    <div class="chips" style="justify-content:center;margin-top:10px">${[60,90,120,150].map(a=>`<button class="chip tnum" data-amtset="${a}" aria-pressed="${s.amount===a}">${a}</button>`).join('')}</div>
+    <div class="flabel">${t('content')}</div><div class="seg" role="group">${[['formula','can'],['breast_milk','drop']].map(([v,i])=>`<button data-content="${v}" aria-pressed="${s.content===v}">${ic(i,18)}${t(v)}</button>`).join('')}</div>
+    ${whenRow()}<div style="margin-top:20px"><button class="btn primary block" data-logbottle>${t('logA',{a:`${s.amount} ml`})}</button></div>${moreLink()}`;}
+  if(id==='medication'){const last=lastOf('medication');const s=trayState;const n=s.sel.size;
+    const row=m=>`<button class="check" role="checkbox" aria-checked="${s.sel.has(m.id)}" data-med="${m.id}"><span class="box">${s.sel.has(m.id)?ic('check',16,2.6):''}</span><span class="tx">${m.name}${m.usual?`<span class="tag">${t('usual')}</span>`:''}<span>${m.dose} ${S.lang==='pt'?m.unitPt:m.unit}</span></span></button>`;
+    return `${head(id)}${forRow()}${last?`<button class="same" data-same="medication" data-autofocus>${circ('health','repeat','',20)}<span class="tx"><b>${t('same')}</b><span>${describe(last).detail}</span></span>${ic('check',20)}</button>`:''}
+    <div class="flabel">${t('usual')}</div>${MEDS.filter(m=>m.usual).map(row).join('')}<div class="flabel">${t('otherMeds')}</div>${MEDS.filter(m=>!m.usual).map(row).join('')}
+    ${whenRow()}<div style="margin-top:20px"><button class="btn primary block" data-logmeds ${n?'':'disabled'}>${n?(n===1?t('logMeds_one'):t('logMeds_other',{n})):t('pickMed')}</button></div>${moreLink()}`;}
+  if(id==='belly_pain')return `${head(id)}${forRow()}${whenRow()}<div class="flabel">${t('intensity')}</div><div class="intensity">${[1,2,3,4,5].map(i=>`<button data-belly="${i}" ${i===1?'data-autofocus':''} aria-label="${t('intensity')} ${i}/5">${i}</button>`).join('')}</div><div class="anch"><span>${t('mild')}</span><span>${t('severe')}</span></div>${moreLink()}`;
+  return '';
+}
+function rerenderTray(focusSel){const y=$('#sheet').scrollTop;$('#sheet').innerHTML=`<div class="handle" id="handle" aria-hidden="true"><i></i></div>${trayHtml(trayState.id)}`;$('#sheet').scrollTop=y;dragToClose();if(focusSel){const f=$('#sheet').querySelector(focusSel);f&&f.focus();}}
+$('#sheet').addEventListener('click',ev=>{
+  const b=ev.target.closest('button');if(!b||!trayState.id)return;const s=trayState;
+  if(b.dataset.when!=null){S.trayWhen=+b.dataset.when;haptic(5);rerenderTray(`[data-when="${b.dataset.when}"]`);return;}
+  if(b.hasAttribute('data-othertime')){openInfo(t('other'),t('otherTimeBody'),true);return;}
+  if(b.dataset.for){S.trayFor=b.dataset.for;rerenderTray(`[data-for="${b.dataset.for}"]`);return;}
+  if(b.hasAttribute('data-moredetails')){openInfo(t('fullEditor'),t('fullEditorBody'),true);return;}
+  if(b.dataset.diaper){commitTray('diaper',{content:b.dataset.diaper},trayBabies());return;}
+  if(b.dataset.belly){commitTray('belly_pain',{intensity:+b.dataset.belly},trayBabies());return;}
+  if(b.dataset.amt){s.amount=Math.max(10,Math.min(300,s.amount+(+b.dataset.amt)));rerenderTray(`[data-amt="${b.dataset.amt}"]`);return;}
+  if(b.dataset.amtset){s.amount=+b.dataset.amtset;rerenderTray(`[data-amtset="${b.dataset.amtset}"]`);return;}
+  if(b.dataset.content){s.content=b.dataset.content;rerenderTray(`[data-content="${b.dataset.content}"]`);return;}
+  if(b.hasAttribute('data-logbottle')){commitTray('bottle',{amount:s.amount,content:s.content},trayBabies());return;}
+  if(b.dataset.same==='bottle'){const l=lastOf('bottle');commitTray('bottle',{amount:l.payload.amount,content:l.payload.content},trayBabies());return;}
+  if(b.dataset.med){s.sel.has(b.dataset.med)?s.sel.delete(b.dataset.med):s.sel.add(b.dataset.med);haptic(5);rerenderTray(`[data-med="${b.dataset.med}"]`);return;}
+  if(b.hasAttribute('data-logmeds')){commitTray('medication',{medications:[...s.sel].map(id=>({id,dose:MEDS.find(m=>m.id===id).dose}))},trayBabies());return;}
+  if(b.dataset.same==='medication'){const l=lastOf('medication');commitTray('medication',{medications:structuredClone(l.payload.medications)},trayBabies());return;}
+});
+
+/* ---------- info, track sheet, timer sheet, menu ---------- */
+function openInfo(title,body,link){trayState={};openSheet(`<div class="sh-head">${xBtn()}<h2>${title}</h2></div><p style="margin:0;color:var(--muted)">${body}</p>${link?`<p><a class="btn tonal" href="03-event-sheet.html" data-autofocus>${t('open')}</a></p>`:''}`,title);}
+function openTrack(){trayState={};
+  const ids=['wake_up','nap','bedtime','fell_asleep','night_waking','bottle','nursing','diaper','medication','belly_pain','bath','tummy_time'];
+  openSheet(`<div class="sh-head">${xBtn()}<h2>${t('track')}</h2><button class="btn ghost">${t('editPins')}</button></div><div class="grid3">${ids.map(tileHtml).join('')}</div>
+  <a class="fake-input" href="03-command-bar.html">${ic('spark',20)}<span>${t('cmd')}</span><span class="iconbtn" style="color:var(--accent-soft)">${ic('mic',22)}</span></a>`,t('track'));tick();
+}
+$('#sheet').addEventListener('click',ev=>{const b=ev.target.closest('[data-preset]');if(b&&$('#sheet').querySelector('.grid3')){ev.stopPropagation();const id=b.dataset.preset;closeSheet(false);onPreset(id,$('#fab'));}},true);
+let timerId=null;
+function drawTimer(){const id=timerId;const ev=S.events.find(x=>x.id===id);const d=describe(ev);return `<div class="sh-head">${xBtn()}${circ(d.cat,d.icon,'',22)}<h2>${d.title}</h2><button class="btn primary" data-close>${t('done')}</button></div>
+   <div class="card" style="background:var(--raised)"><div class="big tnum" style="font-size:30px" data-el="${ev.start}" data-fmt="clock"></div><div class="note">${t('startedAt',{t:fmtT(ev.start)})}${ev.by!=='you'?' · '+t('by',{who:PEOPLE[ev.by]}):''}</div></div>
+   <div class="flabel">${ic('clock',14)}${t('adjust')}</div><div class="chips">${[-15,-5,-1,1,5].map(m=>`<button class="chip tnum" data-shift="${m}">${m>0?'+':'−'}${Math.abs(m)} min</button>`).join('')}</div>
+   ${ev.type==='sleep'&&ev.payload.kind!=='night_waking'?`<div class="flabel">${t('kind')}</div><div class="seg">${[['nap','cloud'],['night','moon']].map(([k,i])=>`<button data-kind="${k}" aria-pressed="${ev.payload.kind===k}">${ic(i,18)}${t(k)}</button>`).join('')}</div>`:''}
+   <div class="more"><button class="btn ghost" data-discard style="color:var(--health-fg)">${ic('trash',18)}${t('discard')}</button></div>`;}
+function openTimer(id){
+  trayState={};const e=S.events.find(x=>x.id===id);if(!e)return;timerId=id;
+  openSheet(drawTimer(),describe(e).title);tick();
+}
+function redrawTimer(focusSel){const sh=$('#sheet');sh.innerHTML=`<div class="handle" id="handle" aria-hidden="true"><i></i></div>`+drawTimer();dragToClose();render();const f=sh.querySelector(focusSel);f&&f.focus();}
+$('#sheet').addEventListener('click',ev2=>{
+  if(!timerId)return;const b=ev2.target.closest('button');if(!b)return;const ev=S.events.find(x=>x.id===timerId);if(!ev){timerId=null;return;}
+  if(b.dataset.shift){ev.start=Math.min(Date.now(),ev.start+(+b.dataset.shift)*MIN);if(ev.payload.segs)ev.payload.segs[0].from=ev.start;redrawTimer(`[data-shift="${b.dataset.shift}"]`);}
+  else if(b.dataset.kind){ev.payload.kind=b.dataset.kind;redrawTimer(`[data-kind="${b.dataset.kind}"]`);}
+  else if(b.hasAttribute('data-discard')){const k=tx();touch(k,ev);S.events=S.events.filter(x=>x.id!==ev.id);timerId=null;closeSheet(false);showToast({mode:'logged',ev:{...ev},k,targets:[],babies:[ev.baby],base:Date.now(),deleted:true});render();}
+});
+function openMenu(id,anchor){
+  const e=S.events.find(x=>x.id===id);if(!e)return;const m=$('#menu');
+  m.innerHTML=`<button role="menuitem" data-mi="repeat">${ic('repeat',20)}${t('repeat')}</button><button role="menuitem" data-mi="edit">${ic('edit',20)}${t('edit')}</button><button role="menuitem" data-mi="del" style="color:var(--health-fg)">${ic('trash',20)}${t('del')}</button>`;
+  const pr=$('#phone').getBoundingClientRect(),ar=anchor.getBoundingClientRect();
+  m.hidden=false;let top=ar.bottom-pr.top-4;if(top+170>pr.height)top=ar.top-pr.top-170;m.style.top=top+'px';m.style.right='20px';
+  m.dataset.id=id;m.querySelector('button').focus();
+}
+function closeMenu(){$('#menu').hidden=true;}
+document.addEventListener('pointerdown',ev=>{if(!$('#menu').hidden&&!ev.target.closest('#menu'))closeMenu();});
+$('#menu').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;const id=$('#menu').dataset.id;const e=S.events.find(x=>x.id===id);closeMenu();if(!e)return;
+  if(b.dataset.mi==='repeat'){const k=tx();const c=create(k,{baby:e.baby,type:e.type,start:Date.now(),end:e.end===null?null:Date.now(),payload:structuredClone(e.payload)});if(c.payload.segs)c.payload.segs=[{side:c.payload.side==='both'?'left':c.payload.side,from:c.start,to:null}];showToast({mode:c.end===null?'started':'logged',ev:c,k,targets:[{id:c.id,f:c.end===null?'start':'both'}],babies:[e.baby],base:c.start});haptic(10);render();}
+  if(b.dataset.mi==='edit')openInfo(t('fullEditor'),t('fullEditorBody'),true);
+  if(b.dataset.mi==='del'){const k=tx();touch(k,e);S.events=S.events.filter(x=>x.id!==id);showToast({mode:'logged',ev:{...e},k,targets:[],babies:[e.baby],base:Date.now(),deleted:true});render();}
+});
+$('#menu').addEventListener('keydown',ev=>{const items=[...$('#menu').querySelectorAll('button')];const i=items.indexOf(document.activeElement);if(ev.key==='ArrowDown'){items[(i+1)%items.length].focus();ev.preventDefault();}if(ev.key==='ArrowUp'){items[(i-1+items.length)%items.length].focus();ev.preventDefault();}});
+/* deleted toasts read differently */
+const _tt=toastTitle;toastTitle=function(d){const r=_tt(d);if(d.deleted){r.sub=t('deleted');}return r;};
+
+/* ---------- side notes / demo controls ---------- */
+function renderNotes(){
+  const en=S.lang==='en';
+  $('#notes').innerHTML=`<h1>03-A Quick logging</h1>
+  <p>${en?'One tap commits with smart defaults; a receipt toast lets you shift the time or undo for 6 seconds (it pauses while touched or focused).':'Um toque registra com padrões inteligentes; o aviso permite ajustar a hora ou desfazer por 6 segundos.'}</p>
+  <div class="ctl"><button aria-pressed="${S.lang==='en'}" data-lang="en">EN</button><button aria-pressed="${S.lang==='pt'}" data-lang="pt">PT-BR</button>
+  <button aria-pressed="${S.twins}" data-twins>Twins</button><button aria-pressed="${S.haptics}" data-hap>Haptics</button><button aria-pressed="${$('#phone').classList.contains('rm')}" data-rm>Reduced motion</button></div>
+  <div class="ctl"><button data-forgot>${en?'Simulate a forgotten nap (3h 40m)':'Simular soneca esquecida (3h 40min)'}</button><button data-reset>${en?'Reset':'Reiniciar'}</button></div>
+  <h2>${en?'Try':'Experimente'}</h2><ol>
+  <li>${en?'Tap <b>Nap</b>, then tap <b>−10 min</b> in the toast: the timer now started 10 minutes ago (2 taps).':'Toque em <b>Soneca</b> e depois <b>−10 min</b> no aviso (2 toques).'}</li>
+  <li>${en?'Tap <b>Wake up</b> (or the bar\'s button): the nap stops, the toast shows its length.':'Toque em <b>Acordou</b>: a soneca para e o aviso mostra a duração.'}</li>
+  <li>${en?'Tap <b>Diaper</b> → <b>Wet</b> (2 taps). Tap <b>Bottle</b> → <b>Same as last time</b> (2 taps).':'<b>Fralda</b> → <b>Xixi</b> (2 toques). <b>Mamadeira</b> → <b>Igual à última vez</b> (2 toques).'}</li>
+  <li>${en?'<b>+</b> → <b>Nursing</b>: switch L/R in the bar; per-side seconds are captured, Stop gives “L 8 min · R 6 min”.':'<b>+</b> → <b>Amamentação</b>: troque E/D na barra; os segundos por lado são guardados.'}</li>
+  <li>${en?'Long-press (or right-click) a Latest row, or use its ⋯ button: Repeat now, Edit, Delete with undo.':'Toque longo numa linha (ou ⋯): Repetir agora, Editar, Excluir com desfazer.'}</li>
+  <li>${en?'Turn on <b>Twins</b>: trays get a For row, the toast offers “Also Bia”, Bia\'s nap (started by Rafa) shows in the bar.':'Ative <b>Twins</b>: as bandejas ganham “Para”, o aviso oferece “Também Bia”.'}</li></ol>
+  <p style="margin-top:16px">${en?'Icons are simple placeholders drawn for this file; the app uses MUI Rounded icons. Not wired: Timeline, Growth, Settings, Edit pins.':'Ícones simplificados; o app usa MUI Rounded.'}</p>`;
+}
+$('#notes').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.lang){S.lang=b.dataset.lang;document.documentElement.lang=S.lang==='pt'?'pt-BR':'en';}
+  if(b.hasAttribute('data-twins')){S.twins=!S.twins;if(!S.twins)S.baby='alice';}
+  if(b.hasAttribute('data-hap'))S.haptics=!S.haptics;
+  if(b.hasAttribute('data-rm'))$('#phone').classList.toggle('rm');
+  if(b.hasAttribute('data-reset')){seed();hideToast();closeSheet(false);}
+  if(b.hasAttribute('data-forgot')){let r=running(S.baby).find(isSleepRun);if(!r){const k=tx();r=create(k,{baby:S.baby,type:'sleep',start:Date.now(),end:null,payload:{kind:'nap'}});}r.start=Date.now()-220*MIN;delete S.snooze[r.id];}
+  render();});
+
+seed();render();
+</script>
+</body>
+</html>

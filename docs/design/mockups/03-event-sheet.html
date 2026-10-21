@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Event sheet prototype</title>
+<meta name="description" content="Interaction prototype 03-C: the full add/edit event sheet and its field library (segmented, chips, stepper, duration, time scrubber, notes, medication) with states, validation and undo.">
+<style>
+:root{
+  --page:#0b0a1a;--bg:#15132e;--surface:#1f1c3f;--raised:#2a2468;--field:#29245e;--toast:#332c7a;--hair:#2a2652;
+  --text:#eceaff;--muted:#a9a5d4;--accent:#7c6cf0;--accent-soft:#c4baff;--error:#ff9fb2;--error-bg:#4b2a33;
+  --sleep-bg:#3a2f7a;--sleep-fg:#c4baff;--feeding-bg:#16423f;--feeding-fg:#7ee0b8;--diaper-bg:#4a3322;--diaper-fg:#ffc58a;
+  --health-bg:#4b2a33;--health-fg:#ff9fb2;--care-bg:#183f55;--care-fg:#8fd8ff;--activity-bg:#4a3d1a;--activity-fg:#ffd77a;
+  --nightWaking-bg:#4a2f55;--nightWaking-fg:#f0b6ff;--custom-bg:#33305a;--custom-fg:#dcd8ff;--ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent-soft);outline-offset:2px}
+.tnum{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg{flex:none}
+.stage{display:flex;gap:32px;justify-content:center;align-items:flex-start;padding:24px}
+.phone{width:390px;height:844px;border-radius:44px;background:var(--bg);position:relative;overflow:hidden;box-shadow:0 0 0 10px #000,0 30px 80px rgba(0,0,0,.6);flex:none}
+.screen{--s:1;position:absolute;top:0;left:0;width:calc(100% / var(--s));height:calc(100% / var(--s));transform:scale(var(--s));transform-origin:0 0;display:flex;flex-direction:column}
+@media (max-width:480px){.stage{padding:0;display:block}.phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}.notes{padding:20px}}
+/* timeline behind */
+.tl{flex:1;overflow:auto;padding:20px}
+.tl h1{font-size:20px;font-weight:500;margin:4px 0 14px}
+.trow{display:grid;grid-template-columns:56px 36px 1fr;gap:10px;align-items:center;width:100%;min-height:58px;text-align:left;border-radius:14px}
+.trow .time{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.trow b{font-weight:500;display:block}.trow span{font-size:13px;color:var(--muted)}
+.trow.fresh{background:rgba(124,108,240,.2)}
+.circ{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
+.circ.s{width:34px;height:34px}
+/* sheet */
+.overlay{position:absolute;inset:0;z-index:10}
+.overlay[hidden]{display:none}
+.scrim{position:absolute;inset:0;background:rgba(5,4,15,.62)}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:94%;display:flex;flex-direction:column;background:var(--surface);border-radius:24px 24px 0 0;animation:up .2s var(--ease)}
+.handle{display:flex;justify-content:center;padding:10px 0 2px}.handle i{width:36px;height:4px;border-radius:2px;background:#4a4580}
+.head{display:flex;align-items:center;gap:6px;padding:2px 8px 0}
+.iconbtn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:var(--muted);flex:none}
+.typebtn{flex:1;display:flex;align-items:center;gap:10px;min-height:52px;padding:0 6px;border-radius:16px;text-align:left;min-width:0}
+.typebtn .nm{font-size:20px;font-weight:500;display:flex;align-items:center;gap:4px}
+.typebtn .sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.typebtn .tx{min-width:0}
+.body{flex:1;overflow-y:auto;padding:4px 20px 24px;scrollbar-width:none;position:relative}
+.banner{display:flex;align-items:center;gap:10px;background:var(--raised);border-radius:14px;padding:8px 8px 8px 12px;margin:8px 0;font-size:13px}
+.banner span{flex:1}
+.lbl{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--muted);margin:20px 0 8px;letter-spacing:.01em}
+.lbl .opt{font-weight:400;opacity:.8}
+.fieldwrap{border-radius:18px;transition:box-shadow .18s}
+.fieldwrap.err .ctrl{box-shadow:0 0 0 2px var(--error);border-radius:18px}
+.errmsg{display:flex;align-items:center;gap:6px;color:var(--error);font-size:13px;margin-top:6px}
+.enter{animation:enter .18s var(--ease)}
+/* when */
+.pills{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.pills.one{grid-template-columns:1fr}
+.tpill{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:64px;padding:8px 14px;border-radius:16px;background:var(--field);text-align:left;min-width:0}
+.tpill small{font-size:12px;color:var(--muted)}
+.tpill b{font-size:20px;font-weight:500;white-space:nowrap}
+.tpill[aria-expanded="true"]{box-shadow:inset 0 0 0 2px var(--accent)}
+.tpill.run b{color:var(--accent-soft)}
+.durchip{display:flex;flex-direction:column;align-items:center;min-width:64px;min-height:48px;justify-content:center;padding:0 8px;border-radius:999px;background:rgba(196,186,255,.12);font-size:13px;font-weight:500;color:var(--accent-soft)}
+.durchip[aria-expanded="true"]{background:var(--accent);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;background:rgba(196,186,255,.12);font-size:14px;white-space:nowrap}
+.chip.sm{min-height:38px;padding:0 12px;font-size:13px}
+.chip[aria-pressed="true"],.chip[aria-checked="true"]{background:var(--accent);color:#fff}
+.chip .last{font-size:11px;opacity:.75}
+.switchrow{display:flex;align-items:center;gap:12px;min-height:52px;width:100%;text-align:left;margin-top:10px}
+.switchrow span.t{flex:1}
+.sw{width:52px;height:32px;border-radius:999px;background:#3b366f;position:relative;flex:none;transition:background .15s}
+.sw i{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#cfcaf5;transition:transform .15s}
+[aria-checked="true"] .sw{background:var(--accent)}[aria-checked="true"] .sw i{transform:translateX(20px);background:#fff}
+.picker{margin-top:10px;background:var(--bg);border-radius:18px;padding:12px}
+.hhmm{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 0}
+.unit{display:flex;flex-direction:column;align-items:center}
+.unit input{width:84px;height:64px;text-align:center;font-size:36px;font-weight:500;background:var(--field);border:0;border-radius:14px;font-variant-numeric:tabular-nums}
+.unit button{width:84px;height:40px;display:grid;place-items:center;color:var(--muted)}
+.colon{font-size:32px;font-weight:500;padding-bottom:4px}
+.ampm{display:flex;flex-direction:column;gap:4px;margin-left:8px}
+.ampm button{min-width:52px;min-height:40px;border-radius:10px;background:var(--field);font-size:13px;font-weight:600}
+.ampm button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.ruler{position:relative;height:64px;overflow:hidden;border-radius:12px;background:var(--surface);touch-action:none;cursor:ew-resize;margin-top:6px}
+.ruler .center{position:absolute;left:50%;top:6px;bottom:6px;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--accent-soft);z-index:2}
+.tick{position:absolute;bottom:10px;width:1px;background:#5a5594}
+.tick.q{height:12px}.tick.f{height:6px}.tick.h{height:20px;background:#8f8ac0}
+.tlab{position:absolute;top:6px;font-size:11px;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
+.future{position:absolute;top:0;bottom:0;right:-2000px;background:repeating-linear-gradient(135deg,rgba(0,0,0,.35) 0 6px,transparent 6px 12px)}
+.evdot{position:absolute;bottom:30px;width:8px;height:8px;margin-left:-4px;border-radius:50%}
+.rel{text-align:center;font-size:13px;color:var(--muted);margin-top:6px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.days button{min-height:48px;border-radius:12px;background:var(--field);font-size:12px;line-height:1.1}
+.days button[aria-pressed="true"]{background:var(--accent);color:#fff}
+/* field controls */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:rgba(0,0,0,.22);padding:4px;border-radius:18px}
+.seg button{min-height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:var(--muted);padding:4px 6px;text-align:center;line-height:1.15}
+.seg button[aria-checked="true"]{background:var(--raised);color:var(--text);box-shadow:inset 0 0 0 1.5px var(--accent-soft)}
+.seg button{min-width:0}
+.ctrl{container-type:inline-size}
+/* large text or narrow screens: controls reflow instead of clipping */
+@container (max-width:320px){
+  .ctrl .seg{grid-auto-flow:row}.ctrl .seg button{justify-content:flex-start;padding:8px 14px}
+  .ctrl .seg.big button{flex-direction:row;min-height:64px}
+  .ctrl .duo{grid-template-columns:1fr}
+  .ctrl .med .dose{padding-left:12px}
+  .ctrl .pills:not(.one){grid-template-columns:1fr 1fr}.ctrl .pills .durchip{grid-column:1 / -1;order:3}
+}
+.picker{container-type:inline-size}
+@container (max-width:300px){.picker .hhmm{flex-wrap:wrap}.picker .unit input{width:68px}.picker .unit button{width:68px}.picker .ampm{flex-direction:row;margin:4px 0 0;width:100%;justify-content:center}}
+.seg.big{background:none;padding:0;gap:10px}
+.seg.big button{flex-direction:column;min-height:96px;background:var(--field);border-radius:18px;font-size:15px;color:var(--text)}
+.seg.big button[aria-checked="true"]{box-shadow:inset 0 0 0 2.5px var(--accent-soft);background:var(--raised)}
+.num{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--field);border-radius:18px;padding:8px}
+.round{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.07);display:grid;place-items:center;flex:none}
+.num .val{display:flex;align-items:baseline;justify-content:center;gap:4px;flex:1;min-width:0}
+.num input{width:100%;max-width:150px;text-align:center;font-size:34px;font-weight:500;background:none;border:0;font-variant-numeric:tabular-nums}
+.num .u{font-size:16px;color:var(--muted)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini{background:var(--field);border-radius:18px;padding:10px}
+.mini .h{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.mini .r{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.mini .round{width:44px;height:44px}
+.mini input{width:56px;text-align:center;font-size:24px;font-weight:500;background:none;border:0;font-variant-numeric:tabular-nums}
+.mini .u{font-size:12px;color:var(--muted);text-align:center;display:block;margin-top:-2px}
+.text{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:16px;background:var(--field)}
+.text input{flex:1;min-width:0;background:none;border:0;outline:none;font-size:16px;height:48px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.scale button{min-height:60px;border-radius:16px;background:var(--field);font-size:20px;font-weight:500}
+.scale button[aria-checked="true"]{background:var(--accent);color:#fff}
+.anch{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.addnote{display:flex;align-items:center;gap:10px;min-height:52px;width:100%;color:var(--accent-soft);margin-top:16px;padding:0 4px}
+textarea{width:100%;min-height:96px;resize:vertical;background:var(--field);border:0;border-radius:16px;padding:12px 14px;font-size:16px;outline:none}
+.count{text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
+.med{background:var(--field);border-radius:18px;margin-bottom:8px}
+.med .top{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 12px;text-align:left}
+.med .box{width:26px;height:26px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;flex:none}
+.med[data-on="true"] .box{background:var(--accent);border-color:var(--accent)}
+.med .nm{flex:1}.med .nm small{display:block;font-size:12px;color:var(--muted)}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(126,224,184,.16);color:var(--feeding-fg);margin-left:6px;vertical-align:2px}
+.med .dose{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 12px 12px 50px}
+.tpill.run b{white-space:normal;line-height:1.15}
+.med .dose input{width:64px;height:44px;text-align:center;background:var(--bg);border:0;border-radius:12px;font-size:18px;font-weight:500}
+.med .dose .round{width:44px;height:44px}
+.units{display:flex;gap:4px;margin-left:auto}
+.units button{min-height:36px;min-width:44px;padding:0 8px;border-radius:999px;font-size:12px;background:rgba(255,255,255,.06)}
+.units button[aria-checked="true"]{background:var(--accent);color:#fff}
+.addrow{display:flex;align-items:center;gap:10px;min-height:52px;width:100%;padding:0 12px;border-radius:16px;border:1.5px dashed #5a5594;color:var(--accent-soft);margin-bottom:8px}
+.foot{padding:10px 16px 16px;border-top:1px solid var(--hair);background:var(--surface)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:999px;font-weight:500}
+.btn.primary{background:var(--accent);color:#fff}.btn.tonal{background:rgba(196,186,255,.16)}.btn.ghost{color:var(--accent-soft)}.btn.danger{background:var(--error);color:#3b0d18}
+.btn.block{width:100%;min-height:56px;font-size:16px}
+.confirm{display:flex;align-items:center;gap:8px}.confirm span{flex:1;font-size:14px}
+.menu{position:absolute;right:12px;top:64px;z-index:5;min-width:210px;background:#2f2970;border-radius:16px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.55)}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;border-radius:10px;text-align:left}
+.menu button:hover{background:rgba(255,255,255,.08)}
+.types{position:absolute;left:12px;right:12px;top:64px;z-index:5;background:#2f2970;border-radius:18px;padding:8px;box-shadow:0 16px 40px rgba(0,0,0,.55);display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.types button{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 8px;border-radius:12px;text-align:left;font-size:14px}
+.types button[aria-current="true"]{background:rgba(255,255,255,.1)}
+.toast{position:absolute;left:12px;right:12px;bottom:16px;z-index:20;background:var(--toast);border-radius:20px;padding:10px 10px 10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s;pointer-events:none}
+.toast.show{opacity:1;transform:none;pointer-events:auto}
+.toast .tx{flex:1}.toast b{font-weight:500;display:block}.toast span{font-size:13px;color:var(--muted)}
+.notes{max-width:380px;font-size:14px;color:var(--muted)}
+.notes h1{font-size:18px;color:var(--text);margin:4px 0 8px}.notes h2{font-size:14px;color:var(--text);margin:18px 0 6px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ctl button{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;background:#1d1b38;font-size:13px}
+.ctl button[aria-pressed="true"]{background:var(--accent)}
+.notes ul{padding-left:18px}.notes li{margin:4px 0}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+@keyframes enter{from{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (forced-colors:active){.chip,.seg button,.tpill,.num,.mini,.med,.scale button,.btn{border:1px solid CanvasText}.seg button[aria-checked="true"],.chip[aria-pressed="true"],.scale button[aria-checked="true"]{outline:3px solid Highlight}}
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="phone" id="phone"><div class="screen" id="screen">
+  <div class="tl" id="tl"></div>
+  <div class="overlay" id="overlay" hidden>
+    <div class="scrim" id="scrim"></div>
+    <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></section>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="sr" id="live" aria-live="polite"></div>
+</div></div>
+<aside class="notes" id="notes"></aside>
+</div>
+<script>
+'use strict';
+const IC={
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',cloud:'<path d="M7 18.5h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 18.5z"/>',
+ eye:'<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/>',
+ bottle:'<path d="M9 10h6v9a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2zM10 10V8h4v2M11 8V5.2a1 1 0 0 1 2 0V8M9 14h2.5M9 17h2.5"/>',
+ heart:'<path d="M12 20s-7-4.3-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.7 12 20 12 20z"/>',
+ bowl:'<path d="M3.5 11h17a8.5 8.5 0 0 1-17 0zM9 7c0-1.5 1-1.5 1-3M14 7c0-1.5 1-1.5 1-3"/>',
+ diaper:'<path d="M3.5 7h17v2.5a8.5 8.5 0 0 1-17 0zM8 7v3.5M16 7v3.5M9.5 15.5h5"/>',drop:'<path d="M12 3.5s6 6.4 6 10.6a6 6 0 0 1-12 0c0-4.2 6-10.6 6-10.6z"/>',
+ dirty:'<path d="M5 19.5h14a2.4 2.4 0 0 0-.9-4.6 2.4 2.4 0 0 0-2.1-3.6h-.6A2.6 2.6 0 0 0 13 7.5c0-1.8-1-3-1-3s-4.2.8-4.2 4.1a2.4 2.4 0 0 0-1.3 4.3A2.4 2.4 0 0 0 5 19.5z"/>',
+ mixed:'<path d="M8 4s3.4 3.6 3.4 6.1a3.4 3.4 0 0 1-6.8 0C4.6 7.6 8 4 8 4zM12.5 20h7.5a1.7 1.7 0 0 0-.6-3.3 1.7 1.7 0 0 0-1.5-2.5h-.4A1.8 1.8 0 0 0 16 11.5s-3 .6-3 2.9a1.7 1.7 0 0 0-.5 5.6z"/>',
+ pill:'<path d="M4.9 12.1l7.2-7.2a4.6 4.6 0 0 1 6.5 6.5l-7.2 7.2a4.6 4.6 0 0 1-6.5-6.5zM8.5 8.5l7 7"/>',face:'<circle cx="12" cy="12" r="8.5"/><path d="M9 9.5v.5M15 9.5v.5M8.5 15.5c1.2-1.2 2.3-1.2 3.5 0s2.3 1.2 3.5 0"/>',
+ bath:'<path d="M3 12h18v1.5A5.5 5.5 0 0 1 15.5 19h-7A5.5 5.5 0 0 1 3 13.5zM6 12V6.5a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/>',activity:'<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
+ thermo:'<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0zM12 9v7"/>',can:'<path d="M7 7h10v12.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5zM8 3.5h8V7H8zM10 12.5h4"/>',
+ halfL:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>',halfR:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',full:'<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/>',
+ happy:'<circle cx="12" cy="12" r="8.5"/><path d="M8.5 13.5a4 4 0 0 0 7 0M9 9.5v.5M15 9.5v.5"/>',calm:'<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.5h7M8 10h2.5M13.5 10H16"/>',
+ fussy:'<circle cx="12" cy="12" r="8.5"/><path d="M8.5 15.5c2-1.5 5-1.5 7 0M8.5 9l2 1M15.5 9l-2 1"/>',crying:'<circle cx="12" cy="12" r="8.5"/><path d="M9 16c1.5-1.5 4.5-1.5 6 0M9 9.5v.5M15 9.5v.5M8 12.5v2"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',
+ up:'<path d="M6 15l6-6 6 6"/>',down:'<path d="M6 9l6 6 6-6"/>',chev:'<path d="M7 10l5 5 5-5"/>',more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+ undo:'<path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',trash:'<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>',copy:'<path d="M8 8h11v11H8zM5 16V5h11"/>',
+ note:'<path d="M5 4h14v16H5zM8.5 9h7M8.5 13h7M8.5 17h4"/>',clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',warn:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5M12 16v.01"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M10 2.5h4"/>',baby:'<circle cx="12" cy="9" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+ today:'<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>',sliders:'<path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/>',toggle:'<rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="16" cy="12" r="2.5"/>'
+};
+const ic=(n,s=22,w=1.8)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`;
+const circ=(cat,icon,cls='',s=20)=>`<span class="circ ${cls}" style="background:var(--${cat}-bg);color:var(--${cat}-fg)">${ic(icon,s)}</span>`;
+const $=s=>document.querySelector(s);const MIN=60000,H=3600000,DAY=24*H;const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const T={
+en:{timeline:'Timeline',types:{feeding:'Feeding',sleep:'Sleep',diaper:'Diaper',medication:'Medication',belly_pain:'Belly pain',bath:'Bath',tummy_time:'Tummy time'},
+ f:{method:'How',side:'Side',breast_left_seconds:'Left',breast_right_seconds:'Right',amount_ml:'Amount',bottle_feeding_type:'In the bottle',food:'Food',kind:'Kind',mood:'Mood',content:'What was in it',intensity:'How strong',temperature_c:'Water temperature'},
+ o:{breast:'Breast',bottle:'Bottle',solid:'Solid food',left:'Left',right:'Right',both:'Both',formula:'Formula',breast_milk:'Breast milk',nap:'Nap',night:'Night',night_waking:'Night waking',happy:'Happy',calm:'Calm',fussy:'Fussy',crying:'Crying',wet:'Wet',dirty:'Dirty',mixed:'Mixed'},
+ newAt:'New · {t}',startingNow:'New · starting now',loggedBy:'{t} · logged by {who}',loggedYou:'{t} · logged by you',when:'When',started:'Started',start:'Start',end:'End',time:'Time',stillRunning:'Still running',running:'Running',
+ today:'Today',yesterday:'Yesterday',otherDay:'Other day',now:'Now',m5:'5 min ago',m15:'15 min ago',m30:'30 min ago',ago:'{d} ago',justNow:'just now',hour:'Hour',minute:'Minute',am:'AM',pm:'PM',
+ slider:'Time ruler: drag, or use arrow keys (1 min) and Page Up/Down (15 min)',done:'Done',duration:'Duration',future:'Can’t be later than now',endBefore:'End is before the start',
+ optional:'optional',addNote:'Add a note',note:'Note',save:'Save',startTimer:'Start timer',saveMeds_one:'Save · 1 medication',saveMeds_other:'Save · {n} medications',
+ change:'Change type',more:'More',del:'Delete',dup:'Duplicate',discardQ:'Discard your changes?',keep:'Keep editing',discard:'Discard',
+ switched:'Changed to {t}. Details that don’t apply were cleared.',undo:'Undo',fix_one:'1 thing to fix: {first}',fix_other:'{n} things to fix. First: {first}',
+ reqChoice:'Choose one to save',reqNum:'Enter a value to save',reqMed:'Pick at least one medication',max:'Up to {v} {u}',min:'At least {v} {u}',
+ findMed:'Find or add a medication',addMed:'Add “{n}”',usual:'Usual',others:'Others',saved:'Saved',deleted:'Deleted',started2:'Timer started',last:'last',mild:'Mild',severe:'Severe',forB:'For',bothB:'Both',
+ close:'Close',min_:'min',dec:'Decrease',inc:'Increase',suggest:'Recent',meds:'Medications',drops:'drops',ml:'ml',mg:'mg',minutesAbbr:'min',secsNote:'Stored in seconds; typed in minutes'},
+pt:{timeline:'Linha do tempo',types:{feeding:'Alimentação',sleep:'Sono',diaper:'Fralda',medication:'Remédio',belly_pain:'Dor de barriga',bath:'Banho',tummy_time:'Tempo de bruços'},
+ f:{method:'Como',side:'Lado',breast_left_seconds:'Esquerdo',breast_right_seconds:'Direito',amount_ml:'Quantidade',bottle_feeding_type:'Na mamadeira',food:'Alimento',kind:'Tipo',mood:'Humor',content:'O que tinha',intensity:'Intensidade',temperature_c:'Temperatura da água'},
+ o:{breast:'Peito',bottle:'Mamadeira',solid:'Comida sólida',left:'Esquerdo',right:'Direito',both:'Ambos',formula:'Fórmula',breast_milk:'Leite materno',nap:'Soneca',night:'Noite',night_waking:'Despertar noturno',happy:'Feliz',calm:'Em paz',fussy:'Irritável',crying:'Chorando',wet:'Xixi',dirty:'Cocô',mixed:'Misto'},
+ newAt:'Novo · {t}',startingNow:'Novo · começando agora',loggedBy:'{t} · registrado por {who}',loggedYou:'{t} · registrado por você',when:'Quando',started:'Início',start:'Início',end:'Fim',time:'Hora',stillRunning:'Ainda em andamento',running:'Em andamento',
+ today:'Hoje',yesterday:'Ontem',otherDay:'Outro dia',now:'Agora',m5:'Há 5 min',m15:'Há 15 min',m30:'Há 30 min',ago:'há {d}',justNow:'agora mesmo',hour:'Hora',minute:'Minuto',am:'AM',pm:'PM',
+ slider:'Régua de horário: arraste ou use as setas (1 min) e Page Up/Down (15 min)',done:'Pronto',duration:'Duração',future:'Não pode ser depois de agora',endBefore:'O fim está antes do início',
+ optional:'opcional',addNote:'Adicionar observação',note:'Observação',save:'Salvar',startTimer:'Iniciar cronômetro',saveMeds_one:'Salvar · 1 remédio',saveMeds_other:'Salvar · {n} remédios',
+ change:'Trocar tipo',more:'Mais',del:'Excluir',dup:'Duplicar',discardQ:'Descartar as alterações?',keep:'Continuar editando',discard:'Descartar',
+ switched:'Trocado para {t}. Detalhes que não se aplicam foram limpos.',undo:'Desfazer',fix_one:'1 item para corrigir: {first}',fix_other:'{n} itens para corrigir. Primeiro: {first}',
+ reqChoice:'Escolha uma opção para salvar',reqNum:'Informe um valor para salvar',reqMed:'Escolha pelo menos um remédio',max:'Até {v} {u}',min:'No mínimo {v} {u}',
+ findMed:'Buscar ou adicionar remédio',addMed:'Adicionar “{n}”',usual:'De uso comum',others:'Outros',saved:'Salvo',deleted:'Excluído',started2:'Cronômetro iniciado',last:'última',mild:'Leve',severe:'Forte',forB:'Para',bothB:'Ambos',
+ close:'Fechar',min_:'min',dec:'Diminuir',inc:'Aumentar',suggest:'Recentes',meds:'Remédios',drops:'gotas',ml:'ml',mg:'mg',minutesAbbr:'min',secsNote:'Guardado em segundos; digitado em minutos'}
+};
+const S={lang:'en',twins:false,scale:1};
+const t=(k,v={})=>{let s=k.split('.').reduce((o,p)=>o&&o[p],T[S.lang]);if(s==null)s=k;return String(s).replace(/\{(\w+)\}/g,(_,x)=>v[x]??'');};
+const loc=()=>S.lang==='pt'?'pt-BR':'en-US';
+const fmtT=ms=>new Intl.DateTimeFormat(loc(),{hour:'numeric',minute:'2-digit',hourCycle:S.lang==='pt'?'h23':undefined}).format(ms);
+const fmtNum=n=>new Intl.NumberFormat(loc(),{maximumFractionDigits:2}).format(n);
+const fmtDur=ms=>{const m=Math.max(0,Math.round(ms/60000));const h=Math.floor(m/60),r=m%60;if(S.lang==='pt')return h?`${h} h${r?` ${r} min`:''}`:`${m} min`;return h?`${h}h${r?` ${r}m`:''}`:`${m} min`;};
+const dayStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);return d.getTime();};
+function dayLabel(ms){const n=Date.now();if(dayStart(ms)===dayStart(n))return t('today');if(dayStart(ms)===dayStart(n-DAY))return t('yesterday');return new Intl.DateTimeFormat(loc(),{weekday:'short',day:'numeric',month:'short'}).format(ms);}
+const whenText=ms=>`${dayLabel(ms)}, ${fmtT(ms)}`;
+const relText=ms=>{const d=Date.now()-ms;return d<MIN?t('justNow'):t('ago',{d:fmtDur(d)});};
+
+/* ---------- event types (built-ins mirror BuiltInEventTypes.cs; Temperature is a user-made type) ---------- */
+const TYPES={
+ feeding:{cat:'feeding',icon:'bottle',dur:true,fields:[
+  {key:'method',kind:'select',req:true,options:['breast','bottle','solid'],icons:{breast:'heart',bottle:'bottle',solid:'bowl'}},
+  {key:'side',kind:'select',options:['left','right','both'],icons:{left:'halfL',right:'halfR',both:'full'},when:['method','breast']},
+  {key:'breast_left_seconds',kind:'duration',when:['method','breast'],pair:'breast_right_seconds'},
+  {key:'breast_right_seconds',kind:'duration',when:['method','breast'],paired:true},
+  {key:'amount_ml',kind:'number',unit:'ml',min:0,max:400,step:10,quick:[60,90,120,150],when:['method','bottle']},
+  {key:'bottle_feeding_type',kind:'select',options:['formula','breast_milk'],icons:{formula:'can',breast_milk:'drop'},when:['method','bottle']},
+  {key:'food',kind:'text',when:['method','solid'],suggest:{en:['Banana','Pumpkin purée','Avocado'],pt:['Banana','Papinha de abóbora','Abacate']}}]},
+ sleep:{cat:'sleep',icon:'cloud',dur:true,fields:[
+  {key:'kind',kind:'select',options:['nap','night','night_waking'],icons:{nap:'cloud',night:'moon',night_waking:'eye'}},
+  {key:'mood',kind:'chips',options:['happy','calm','fussy','crying'],icons:{happy:'happy',calm:'calm',fussy:'fussy',crying:'crying'}}]},
+ diaper:{cat:'diaper',icon:'diaper',dur:false,fields:[{key:'content',kind:'select',big:true,req:true,options:['wet','dirty','mixed'],icons:{wet:'drop',dirty:'dirty',mixed:'mixed'}}]},
+ medication:{cat:'health',icon:'pill',dur:false,meds:true,fields:[]},
+ belly_pain:{cat:'health',icon:'face',dur:false,fields:[{key:'intensity',kind:'scale',req:true,min:1,max:5}]},
+ bath:{cat:'care',icon:'bath',dur:false,fields:[{key:'temperature_c',kind:'number',unit:'°C',min:20,max:45,step:0.5,quick:[36,36.5,37,37.5]}]},
+ tummy_time:{cat:'activity',icon:'activity',dur:true,fields:[{key:'mood',kind:'chips',options:['happy','calm','fussy','crying'],icons:{happy:'happy',calm:'calm',fussy:'fussy',crying:'crying'}}]},
+ temperature:{custom:true,name:'Temperature',cat:'custom',icon:'thermo',dur:false,fields:[
+  {key:'value',label:'Value',kind:'number',unit:'°C',min:34,max:43,step:0.1,req:true,quick:[36.5,37.5,38,38.5]},
+  {key:'where',label:'Where',kind:'chips',options:['Armpit','Ear','Forehead','Mouth','Rectal']},
+  {key:'gave_med',label:'Gave fever medicine',kind:'bool'}]}
+};
+const typeName=k=>TYPES[k].custom?TYPES[k].name:t('types.'+k);
+const fLabel=(k,f)=>TYPES[k].custom?f.label:t('f.'+f.key);
+const oLabel=(k,f,o)=>TYPES[k].custom?o:t('o.'+o);
+let MEDS=[{id:'m1',name:'Colidis',dose:5,unit:'drops',usual:true},{id:'m2',name:'Puravit',dose:1,unit:'ml',usual:true},{id:'m3',name:'Paracetamol',dose:2.5,unit:'ml',usual:false},{id:'m4',name:'Simeticona',dose:8,unit:'drops',usual:false}];
+const LAST={amount_ml:90,method:'bottle',bottle_feeding_type:'formula'};
+
+/* ---------- timeline data ---------- */
+let EVENTS=[];
+function seed(){const n=Date.now(),a=m=>n-m*MIN;
+  EVENTS=[
+   {id:uid(),type:'feeding',start:a(55),end:a(37),values:{method:'breast',side:'both',breast_left_seconds:480,breast_right_seconds:360},by:'Rafa'},
+   {id:uid(),type:'sleep',start:a(32),end:null,values:{kind:'nap'},by:'you'},
+   {id:uid(),type:'diaper',start:a(70),end:a(70),values:{content:'wet'},by:'you'},
+   {id:uid(),type:'feeding',start:a(190),end:a(190),values:{method:'bottle',amount_ml:90,bottle_feeding_type:'formula'},by:'Rafa'},
+   {id:uid(),type:'medication',start:a(400),end:a(400),values:{},meds:{m1:{dose:5,unit:'drops'},m2:{dose:1,unit:'ml'}},by:'you'}];}
+function detailOf(e){
+  const v=e.values;const k=e.type;
+  if(k==='feeding'){if(v.method==='bottle')return [v.amount_ml!=null?`${fmtNum(v.amount_ml)} ml`:null,v.bottle_feeding_type?t('o.'+v.bottle_feeding_type):null].filter(Boolean).join(' · ');if(v.method==='breast')return `${t('o.left')} ${fmtDur((v.breast_left_seconds||0)*1000)} · ${t('o.right')} ${fmtDur((v.breast_right_seconds||0)*1000)}`;return v.food||t('o.solid');}
+  if(k==='sleep')return [v.kind?t('o.'+v.kind):null,e.end?fmtDur(e.end-e.start):t('running')].filter(Boolean).join(' · ');
+  if(k==='diaper')return v.content?t('o.'+v.content):'';
+  if(k==='medication')return Object.entries(e.meds||{}).map(([id,m])=>`${MEDS.find(x=>x.id===id).name} ${fmtNum(m.dose)} ${t(m.unit)}`).join(', ');
+  if(k==='belly_pain')return v.intensity?`${v.intensity}/5`:'';
+  if(k==='temperature')return v.value!=null?`${fmtNum(v.value)} °C${v.where?' · '+v.where:''}`:'';
+  if(k==='bath')return v.temperature_c!=null?`${fmtNum(v.temperature_c)} °C`:'';
+  return '';
+}
+function renderTL(fresh){
+  const list=[...EVENTS].sort((a,b)=>b.start-a.start);
+  $('#tl').innerHTML=`<h1>${t('timeline')}</h1>${list.map(e=>{const ty=TYPES[e.type];return `<button class="trow${fresh===e.id?' fresh':''}" data-edit="${e.id}"><span class="time tnum">${fmtT(e.start)}</span>${circ(ty.cat,ty.icon,'s',18)}<span><b>${typeName(e.type)}</b><span>${esc(detailOf(e))}</span></span></button>`}).join('')}`;
+}
+$('#tl').addEventListener('click',ev=>{const b=ev.target.closest('[data-edit]');if(b)openEdit(EVENTS.find(e=>e.id===b.dataset.edit));});
+
+/* ---------- form state ---------- */
+let F=null,orig=null,ui=null;
+function blankUi(){return {picker:null,dur:false,types:false,menu:false,confirm:false,errors:{},banner:null,note:false,medQ:'',otherDay:false,visible:new Set(),prev:null};}
+function openNew(type,opts={}){
+  const n=Date.now();const ty=TYPES[type];
+  F={id:null,type,start:opts.start??n,end:ty.dur?(opts.running===false?n:null):n,values:{},meds:{},notes:'',by:'you',for:'alice'};
+  if(type==='feeding'){F.values.method=LAST.method;F.values.amount_ml=LAST.amount_ml;F.values.bottle_feeding_type=LAST.bottle_feeding_type;F.end=n;}
+  if(type==='sleep'){F.values.kind='nap';}
+  orig=JSON.stringify(F);ui=blankUi();show();
+}
+function openEdit(e){F=structuredClone({...e,notes:e.notes||'',meds:e.meds||{}});orig=JSON.stringify(F);ui=blankUi();show();}
+function dirty(){return JSON.stringify(F)!==orig;}
+function visible(f){if(!f.when)return true;return F.values[f.when[0]]===f.when[1];}
+
+/* ---------- rendering ---------- */
+function show(){$('#overlay').hidden=false;render();const f=$('#sheet [data-k="first"]')||$('#sheet .typebtn');f&&f.focus();}
+function render(focusKey){
+  const active=focusKey||document.activeElement?.dataset?.k;
+  const ty=TYPES[F.type];const isNew=!F.id;
+  const sub=isNew?(ty.dur&&F.end===null?t('startingNow'):t('newAt',{t:whenText(F.start)})):(F.by==='you'?t('loggedYou',{t:whenText(F.start)}):t('loggedBy',{t:whenText(F.start),who:F.by}));
+  $('#sheet').innerHTML=`<div class="handle" aria-hidden="true"><i></i></div>
+  <div class="head"><button class="iconbtn" data-k="close" aria-label="${t('close')}">${ic('x')}</button>
+   <button class="typebtn" data-k="type" aria-haspopup="true" aria-expanded="${ui.types}" aria-label="${typeName(F.type)}. ${t('change')}">${circ(ty.cat,ty.icon)}<span class="tx"><span class="nm" id="sheetTitle">${esc(typeName(F.type))}${ic('chev',18)}</span><span class="sub">${esc(sub)}</span></span></button>
+   ${isNew?'':`<button class="iconbtn" data-k="menu" aria-haspopup="menu" aria-label="${t('more')}">${ic('more')}</button>`}</div>
+  ${ui.types?typesMenu():''}${ui.menu?overflowMenu():''}
+  <div class="body" id="body">${ui.banner?`<div class="banner" role="status">${ic('sliders',18)}<span>${esc(ui.banner)}</span><button class="btn ghost" data-k="undoSwitch">${t('undo')}</button></div>`:''}
+   ${S.twins&&isNew?forRow():''}${whenSection()}${fieldsSection()}${ty.meds?medsSection():''}${notesSection()}</div>
+  <div class="foot">${ui.confirm?`<div class="confirm"><span>${t('discardQ')}</span><button class="btn tonal" data-k="keep">${t('keep')}</button><button class="btn danger" data-k="discard">${t('discard')}</button></div>`:`<button class="btn primary block" data-k="save">${saveLabel()}</button>`}</div>`;
+  if(active){const el=$(`#sheet [data-k="${CSS.escape(active)}"]`);if(el)el.focus({preventScroll:true});}
+  wireRuler();
+}
+function saveLabel(){const ty=TYPES[F.type];if(ty.meds){const n=Object.keys(F.meds).length;if(n)return n===1?t('saveMeds_one'):t('saveMeds_other',{n});}if(!F.id&&ty.dur&&F.end===null)return `${ic('timer',20)}${t('startTimer')}`;return t('save');}
+function forRow(){return `<div class="lbl">${ic('baby',14)}${t('forB')}</div><div class="seg" role="radiogroup">${[['alice','Alice'],['bia','Bia'],['both',t('bothB')]].map(([v,l])=>`<button role="radio" aria-checked="${F.for===v}" data-k="for-${v}">${l}</button>`).join('')}</div>`;}
+function typesMenu(){return `<div class="types" role="menu">${Object.keys(TYPES).map(k=>`<button role="menuitemradio" aria-current="${F.type===k}" data-k="settype-${k}">${circ(TYPES[k].cat,TYPES[k].icon,'s',18)}${esc(typeName(k))}</button>`).join('')}</div>`;}
+function overflowMenu(){return `<div class="menu" role="menu"><button role="menuitem" data-k="dup">${ic('copy',20)}${t('dup')}</button><button role="menuitem" data-k="delete" style="color:var(--error)">${ic('trash',20)}${t('del')}</button></div>`;}
+
+function whenSection(){
+  const ty=TYPES[F.type];const err=ui.errors.time;
+  const quick=[[0,'now'],[5,'m5'],[15,'m15'],[30,'m30']].map(([m,k])=>{const on=Math.abs(Date.now()-m*MIN-F.start)<45000;return `<button class="chip sm" aria-pressed="${on}" data-k="q-${m}">${on?ic('check',16,2.2):''}${t(k)}</button>`;}).join('');
+  let pills;
+  const pointInTime=!ty.dur||(F.end!==null&&F.end===F.start&&!ui.forceRange);
+  if(pointInTime){pills=`<div class="pills one"><button class="tpill" data-k="pick-start" aria-expanded="${ui.picker==='start'}"><small>${t('time')}</small><b class="tnum">${whenText(F.start)}</b></button></div>
+    ${ty.dur?`<div class="chips" style="margin-top:8px"><button class="chip sm" data-k="addend">${ic('timer',16)}${S.lang==='pt'?'Adicionar hora de fim':'Add an end time'}</button></div>`:''}`;}
+  else{
+    const running=F.end===null;
+    pills=`<div class="pills"><button class="tpill" data-k="pick-start" aria-expanded="${ui.picker==='start'}"><small>${t('start')}</small><b class="tnum">${fmtT(F.start)}</b><small>${dayLabel(F.start)}</small></button>
+     <button class="durchip tnum" data-k="dur" aria-expanded="${ui.dur}" aria-label="${t('duration')} ${fmtDur((F.end??Date.now())-F.start)}" ${running?'disabled':''}>${ic('timer',16)}${fmtDur((F.end??Date.now())-F.start)}</button>
+     ${running?`<div class="tpill run"><small>${t('end')}</small><b>${t('running')}</b></div>`:`<button class="tpill" data-k="pick-end" aria-expanded="${ui.picker==='end'}"><small>${t('end')}</small><b class="tnum">${fmtT(F.end)}</b><small>${dayLabel(F.end)}</small></button>`}</div>
+     <button class="switchrow" role="switch" aria-checked="${running}" data-k="running"><span class="sw"><i></i></span><span class="t">${t('stillRunning')}</span></button>`;
+  }
+  return `<div class="lbl">${ic('clock',14)}${t('when')}</div><div class="fieldwrap${err?' err':''}"><div class="ctrl">${pills}</div>${err?`<div class="errmsg">${ic('warn',16)}${err}</div>`:''}</div>
+   ${ui.picker?picker(ui.picker):''}${ui.dur?durEditor():''}
+   <div class="chips" style="margin-top:10px" role="group" aria-label="${ty.dur?t('started'):t('time')}">${quick}</div>`;
+}
+function picker(edge){
+  const ms=edge==='start'?F.start:F.end;const d=new Date(ms);const pt=S.lang==='pt';const h=d.getHours();
+  const hh=pt?h:(h%12||12);const isPm=h>=12;
+  const days=[...Array(14)].map((_,i)=>dayStart(Date.now())-i*DAY);
+  return `<div class="picker" role="group" aria-label="${edge==='start'?t('start'):t('end')}">
+   <div class="chips" role="group">${[[0,'today'],[1,'yesterday']].map(([i,k])=>`<button class="chip sm" aria-pressed="${dayStart(ms)===dayStart(Date.now()-i*DAY)&&!ui.otherDay}" data-k="day-${i}">${t(k)}</button>`).join('')}<button class="chip sm" aria-pressed="${ui.otherDay}" data-k="otherday">${ic('today',16)}${t('otherDay')}</button></div>
+   ${ui.otherDay?`<div class="days">${days.map(ds=>`<button aria-pressed="${dayStart(ms)===ds}" data-k="date-${ds}">${new Intl.DateTimeFormat(loc(),{weekday:'narrow'}).format(ds)}<br><b class="tnum">${new Date(ds).getDate()}</b></button>`).join('')}</div>`:''}
+   <div class="hhmm"><div class="unit"><button data-k="h+" aria-label="${t('hour')} +1">${ic('up')}</button><input class="tnum" data-k="hh" inputmode="numeric" maxlength="2" aria-label="${t('hour')}" value="${String(hh).padStart(2,'0')}"><button data-k="h-" aria-label="${t('hour')} −1">${ic('down')}</button></div>
+    <span class="colon">:</span><div class="unit"><button data-k="m+" aria-label="${t('minute')} +1">${ic('up')}</button><input class="tnum" data-k="mm" inputmode="numeric" maxlength="2" aria-label="${t('minute')}" value="${String(d.getMinutes()).padStart(2,'0')}"><button data-k="m-" aria-label="${t('minute')} −1">${ic('down')}</button></div>
+    ${pt?'':`<div class="ampm" role="group"><button data-k="am" aria-pressed="${!isPm}">${t('am')}</button><button data-k="pm" aria-pressed="${isPm}">${t('pm')}</button></div>`}</div>
+   <div class="ruler" id="ruler" role="slider" tabindex="0" data-k="ruler" aria-label="${t('slider')}" aria-valuetext="${fmtT(ms)}, ${relText(ms)}"><div class="center"></div><div id="track"></div></div>
+   <div class="rel tnum" id="rel">${relText(ms)}</div>
+   <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn tonal" data-k="pickdone">${ic('check',18)}${t('done')}</button></div></div>`;
+}
+function durEditor(){const d=Math.round((F.end-F.start)/MIN);
+  return `<div class="picker"><div class="num" style="background:var(--field)"><button class="round" data-k="d-5" aria-label="−5 min">${ic('minus')}</button><div class="val"><span style="font-size:30px;font-weight:500" class="tnum">${fmtDur(d*MIN)}</span></div><button class="round" data-k="d+5" aria-label="+5 min">${ic('plus')}</button></div>
+  <div class="chips" style="margin-top:10px;justify-content:center">${[10,15,20,30,45,60,90].map(m=>`<button class="chip sm tnum" aria-pressed="${d===m}" data-k="dset-${m}">${fmtDur(m*MIN)}</button>`).join('')}</div><p class="rel">${S.lang==='pt'?'Ajustar a duração move o fim; o início fica onde está.':'Changing the duration moves the end; the start stays put.'}</p></div>`;}
+
+function fieldsSection(){
+  const ty=TYPES[F.type];const out=[];const nowVisible=new Set();
+  for(const f of ty.fields){
+    if(!visible(f)||f.paired)continue;nowVisible.add(f.key);
+    const anim=ui.visible.size&&!ui.visible.has(f.key)?' enter':'';
+    const err=ui.errors[f.key];
+    const label=f.kind==='duration'?`${ic('timer',14)}${S.lang==='pt'?'Tempo em cada lado':'Time on each side'} <span class="opt">· ${t('optional')}</span>`:`${esc(fLabel(F.type,f))}${f.req?'':` <span class="opt">· ${t('optional')}</span>`}`;
+    out.push(`<div class="fieldwrap${err?' err':''}${anim}" id="fw-${f.key}"${f.kind==='bool'?' style="margin-top:16px"':''}>${f.kind==='bool'?'':`<div class="lbl" id="l-${f.key}">${label}</div>`}<div class="ctrl">${control(f)}</div>${err?`<div class="errmsg" id="e-${f.key}">${ic('warn',16)}${err}</div>`:''}</div>`);
+  }
+  ui.visible=nowVisible;
+  return out.join('');
+}
+function control(f){
+  const k=F.type;const v=F.values[f.key];
+  if(f.kind==='select')return `<div class="seg${f.big?' big':''}" role="radiogroup" aria-labelledby="l-${f.key}" ${ui.errors[f.key]?`aria-describedby="e-${f.key}" aria-invalid="true"`:''}>${f.options.map((o,i)=>`<button role="radio" aria-checked="${v===o}" tabindex="${v===o||(v==null&&i===0)?0:-1}" data-k="sel-${f.key}-${o}">${f.icons?(f.big?circ(TYPES[k].cat,f.icons[o],'',24):ic(f.icons[o],20)):''}<span>${esc(oLabel(k,f,o))}</span></button>`).join('')}</div>`;
+  if(f.kind==='chips')return `<div class="chips" role="radiogroup" aria-labelledby="l-${f.key}">${f.options.map(o=>`<button class="chip" role="radio" aria-checked="${v===o}" data-k="sel-${f.key}-${o}">${f.icons?ic(f.icons[o],18):''}${esc(oLabel(k,f,o))}</button>`).join('')}</div>`;
+  if(f.kind==='number'){const val=v==null?'':String(v).replace('.',S.lang==='pt'?',':'.');
+    return `<div class="num"><button class="round" data-k="n-${f.key}" aria-label="${t('dec')} ${esc(fLabel(k,f))}">${ic('minus')}</button><div class="val"><input data-k="in-${f.key}" inputmode="decimal" aria-labelledby="l-${f.key}" value="${val}" placeholder="–"><span class="u">${f.unit||''}</span></div><button class="round" data-k="p-${f.key}" aria-label="${t('inc')} ${esc(fLabel(k,f))}">${ic('plus')}</button></div>
+    ${f.quick?`<div class="chips" style="margin-top:8px">${f.quick.map(q=>`<button class="chip sm tnum" aria-pressed="${v===q}" data-k="qv-${f.key}-${q}">${fmtNum(q)}${f.key==='amount_ml'&&q===LAST.amount_ml?` <span class="last">· ${t('last')}</span>`:''}</button>`).join('')}</div>`:''}`;}
+  if(f.kind==='duration'){const pair=[f.key,f.pair];return `<div class="duo">${pair.map(key=>{const secs=F.values[key];const mins=secs==null?'':Math.round(secs/60);return `<div class="mini"><div class="h" id="l-${key}">${ic(key.includes('left')?'halfL':'halfR',16)}${esc(t('f.'+key))}</div><div class="r"><button class="round" data-k="dm-${key}" aria-label="${t('dec')} ${t('f.'+key)}">${ic('minus',20)}</button><span><input data-k="in-${key}" inputmode="numeric" aria-labelledby="l-${key}" value="${mins}" placeholder="0"><span class="u">${t('minutesAbbr')}</span></span><button class="round" data-k="dp-${key}" aria-label="${t('inc')} ${t('f.'+key)}">${ic('plus',20)}</button></div></div>`}).join('')}</div><p class="rel" style="text-align:left">${t('secsNote')}</p>`;}
+  if(f.kind==='text')return `<label class="text">${ic('bowl',20)}<input data-k="in-${f.key}" aria-labelledby="l-${f.key}" value="${esc(v||'')}"></label><div class="chips" style="margin-top:8px">${(f.suggest?.[S.lang]||[]).map(s=>`<button class="chip sm" data-k="txt-${f.key}-${s}">${esc(s)}</button>`).join('')}</div>`;
+  if(f.kind==='scale')return `<div class="scale" role="radiogroup" aria-labelledby="l-${f.key}">${[1,2,3,4,5].map(n=>`<button role="radio" aria-checked="${v===n}" data-k="sc-${f.key}-${n}" aria-label="${n} / 5${n===1?' '+t('mild'):n===5?' '+t('severe'):''}">${n}</button>`).join('')}</div><div class="anch"><span>${t('mild')}</span><span>${t('severe')}</span></div>`;
+  if(f.kind==='bool')return `<button class="switchrow" role="switch" aria-checked="${v===true}" data-k="b-${f.key}" style="margin:0"><span class="sw"><i></i></span><span class="t">${esc(fLabel(k,f))}</span></button>`;
+  return '';
+}
+function medsSection(){
+  const q=ui.medQ.trim().toLowerCase();const list=MEDS.filter(m=>!q||m.name.toLowerCase().includes(q));
+  const card=m=>{const s=F.meds[m.id];return `<div class="med" data-on="${!!s}"><button class="top" role="checkbox" aria-checked="${!!s}" data-k="med-${m.id}"><span class="box">${s?ic('check',16,2.6):''}</span><span class="nm">${esc(m.name)}${m.usual?`<span class="tag">${t('usual')}</span>`:''}<small>${fmtNum(m.dose)} ${t(m.unit)}</small></span></button>
+   ${s?`<div class="dose"><button class="round" data-k="md-${m.id}" aria-label="${t('dec')} ${esc(m.name)}">${ic('minus',18)}</button><input data-k="mi-${m.id}" inputmode="decimal" aria-label="${esc(m.name)} dose" value="${String(s.dose).replace('.',S.lang==='pt'?',':'.')}"><button class="round" data-k="mp-${m.id}" aria-label="${t('inc')} ${esc(m.name)}">${ic('plus',18)}</button>
+   <div class="units" role="radiogroup" aria-label="unit">${['drops','ml','mg'].map(u=>`<button role="radio" aria-checked="${s.unit===u}" data-k="mu-${m.id}-${u}">${t(u)}</button>`).join('')}</div></div>`:''}</div>`;};
+  const err=ui.errors.meds;
+  return `<div class="fieldwrap${err?' err':''}" id="fw-meds"><div class="lbl" id="l-meds">${ic('pill',14)}${t('meds')}</div>
+   <label class="text" style="margin-bottom:10px">${ic('search',20)}<input data-k="medq" placeholder="${t('findMed')}" aria-label="${t('findMed')}" value="${esc(ui.medQ)}"></label>
+   ${q&&!MEDS.some(m=>m.name.toLowerCase()===q)?`<button class="addrow" data-k="addmed">${ic('plus',20)}${t('addMed',{n:esc(ui.medQ.trim())})}</button>`:''}
+   <div class="ctrl">${list.filter(m=>m.usual).map(card).join('')}${list.some(m=>!m.usual)?`<div class="lbl">${t('others')}</div>`:''}${list.filter(m=>!m.usual).map(card).join('')}</div>${err?`<div class="errmsg" id="e-meds">${ic('warn',16)}${err}</div>`:''}</div>`;
+}
+function notesSection(){
+  if(!ui.note&&!F.notes)return `<button class="addnote" data-k="addnote">${ic('note',20)}${t('addNote')}</button>`;
+  return `<div class="lbl" id="l-notes">${ic('note',14)}${t('note')} <span class="opt">· ${t('optional')}</span></div><textarea data-k="notes" aria-labelledby="l-notes" maxlength="2000">${esc(F.notes)}</textarea>${F.notes.length>1800?`<div class="count tnum">${F.notes.length}/2000</div>`:''}`;
+}
+
+/* ---------- ruler ---------- */
+const PX=4;
+function syncRuler(){
+  const r=$('#ruler');if(!r)return;const ms=ui.picker==='start'?F.start:F.end;const w=r.clientWidth||320;const n=Date.now();
+  const from=ms-Math.ceil(w/2/PX+30)*MIN,to=ms+Math.ceil(w/2/PX+30)*MIN;let h='';
+  const x=tm=>w/2+(tm-ms)/MIN*PX;
+  for(let tm=Math.ceil(from/(5*MIN))*5*MIN;tm<=to;tm+=5*MIN){const d=new Date(tm);const m=d.getMinutes();const cls=m===0?'h':m%15===0?'q':'f';h+=`<i class="tick ${cls}" style="left:${x(tm)}px"></i>`;if(m===0)h+=`<span class="tlab tnum" style="left:${x(tm)}px">${fmtT(tm)}</span>`;}
+  if(n<to)h+=`<span class="future" style="left:${x(n)}px"></span>`;
+  for(const e of EVENTS){if(e.id===F.id)continue;if(e.start>from&&e.start<to)h+=`<i class="evdot" style="left:${x(e.start)}px;background:var(--${TYPES[e.type].cat}-fg)" title="${typeName(e.type)}"></i>`;}
+  $('#track').innerHTML=h;
+  r.setAttribute('aria-valuetext',`${fmtT(ms)}, ${relText(ms)}`);$('#rel').textContent=relText(ms);
+  const d=new Date(ms);const hh=$('[data-k="hh"]'),mm=$('[data-k="mm"]');
+  if(hh&&document.activeElement!==hh)hh.value=String(S.lang==='pt'?d.getHours():(d.getHours()%12||12)).padStart(2,'0');
+  if(mm&&document.activeElement!==mm)mm.value=String(d.getMinutes()).padStart(2,'0');
+  document.querySelectorAll('[data-k="am"],[data-k="pm"]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.k==='pm')===(d.getHours()>=12))));
+  const pill=$(`[data-k="pick-${ui.picker}"] b`);if(pill)pill.textContent=TYPES[F.type].dur?fmtT(ms):whenText(ms);
+  const dc=$('[data-k="dur"]');if(dc&&F.end!=null)dc.lastChild.textContent=fmtDur(F.end-F.start);
+}
+function setEdge(ms,{silent}={}){
+  ms=Math.round(ms/MIN)*MIN;const n=Date.now();
+  if(ms>n){ms=Math.floor(n/MIN)*MIN;ui.errors.time=t('future');}else if(ui.errors.time===t('future'))delete ui.errors.time;
+  if(ui.picker==='end'){F.end=ms;}else{const wasPoint=F.end===F.start&&!ui.forceRange;F.start=ms;if(wasPoint)F.end=ms;}
+  if(ui.errors.time===t('endBefore')&&(F.end==null||F.end>=F.start))delete ui.errors.time;
+  if(!silent)render();else syncRuler();
+}
+function wireRuler(){
+  const r=$('#ruler');if(!r)return;syncRuler();
+  let x0=null,base=0;
+  r.addEventListener('pointerdown',e=>{x0=e.clientX;base=ui.picker==='start'?F.start:F.end;r.setPointerCapture(e.pointerId);});
+  r.addEventListener('pointermove',e=>{if(x0==null)return;setEdge(base-(e.clientX-x0)/PX*MIN,{silent:true});});
+  r.addEventListener('pointerup',()=>{x0=null;render('ruler');});
+  r.addEventListener('wheel',e=>{e.preventDefault();const cur=ui.picker==='start'?F.start:F.end;setEdge(cur+Math.sign(e.deltaY||e.deltaX)*MIN,{silent:true});},{passive:false});
+  r.addEventListener('keydown',e=>{const cur=ui.picker==='start'?F.start:F.end;const step={ArrowLeft:-1,ArrowDown:-1,ArrowRight:1,ArrowUp:1,PageDown:-15,PageUp:15}[e.key];
+    if(step){e.preventDefault();setEdge(cur+step*MIN,{silent:true});}if(e.key==='Home'){e.preventDefault();setEdge(Date.now(),{silent:true});}});
+}
+
+/* ---------- validation ---------- */
+function validate(){
+  const ty=TYPES[F.type];const er={};
+  if(ty.dur&&F.end!=null&&F.end<F.start)er.time=t('endBefore');
+  for(const f of ty.fields){if(!visible(f))continue;const v=F.values[f.key];
+    if(f.req&&(v==null||v===''))er[f.key]=f.kind==='number'?t('reqNum'):t('reqChoice');
+    if(f.kind==='number'&&v!=null&&v!==''){if(f.max!=null&&v>f.max)er[f.key]=t('max',{v:fmtNum(f.max),u:f.unit||''});if(f.min!=null&&v<f.min)er[f.key]=t('min',{v:fmtNum(f.min),u:f.unit||''});}}
+  if(ty.meds&&!Object.keys(F.meds).length)er.meds=t('reqMed');
+  return er;
+}
+function payloadValues(){const ty=TYPES[F.type];const v={};for(const f of ty.fields){if(visible(f)&&F.values[f.key]!=null&&F.values[f.key]!=='')v[f.key]=F.values[f.key];if(f.pair&&visible(f)&&F.values[f.pair]!=null)v[f.pair]=F.values[f.pair];}return v;}
+function save(){
+  ui.errors=validate();const keys=Object.keys(ui.errors);
+  if(keys.length){render();const first=keys[0];const fw=$(`#fw-${first}`)||$('#sheet .fieldwrap.err');fw&&fw.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    const target=fw&&fw.querySelector('button,input');target&&target.focus({preventScroll:true});
+    $('#live').textContent=keys.length===1?t('fix_one',{first:ui.errors[first]}):t('fix_other',{n:keys.length,first:ui.errors[first]});return;}
+  // hidden fields are never sent: what is not visible is not saved (mirrors the API's visibleWhen rule)
+  const ev={id:F.id||uid(),type:F.type,start:F.start,end:TYPES[F.type].dur?F.end:F.start,values:payloadValues(),meds:F.meds,notes:F.notes,by:F.by};
+  const before=EVENTS.find(e=>e.id===ev.id);const prev=before?structuredClone(before):null;
+  EVENTS=EVENTS.filter(e=>e.id!==ev.id).concat(ev);
+  if(F.type==='feeding'&&ev.values.method==='bottle'&&ev.values.amount_ml!=null)LAST.amount_ml=ev.values.amount_ml;
+  close(true);renderTL(ev.id);
+  toast(!F.id&&TYPES[F.type].dur&&ev.end===null?t('started2'):t('saved'),`${typeName(ev.type)} · ${detailOf(ev)}`,()=>{EVENTS=EVENTS.filter(e=>e.id!==ev.id);if(prev)EVENTS.push(prev);renderTL();});
+}
+let toastT=null,undoFn=null;
+function toast(title,sub,onUndo){undoFn=onUndo;$('#toast').innerHTML=`<div class="tx"><b>${esc(title)}</b><span>${esc(sub)}</span></div><button class="btn tonal" data-undo>${ic('undo',18)}${t('undo')}</button>`;$('#toast').classList.add('show');$('#live').textContent=`${title}. ${sub}`;clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('show'),6000);}
+$('#toast').addEventListener('click',e=>{if(e.target.closest('[data-undo]')&&undoFn){undoFn();undoFn=null;$('#toast').classList.remove('show');$('#live').textContent=t('undo');}});
+['pointerenter','focusin'].forEach(n=>$('#toast').addEventListener(n,()=>clearTimeout(toastT)));
+$('#toast').addEventListener('pointerleave',()=>{toastT=setTimeout(()=>$('#toast').classList.remove('show'),3000);});
+function close(force){if(!force&&dirty()&&!ui.confirm){ui.confirm=true;render('keep');return;}$('#overlay').hidden=true;$('#sheet').innerHTML='';}
+
+/* ---------- events ---------- */
+let rep=null;
+function stepNum(f,dir){const v=F.values[f.key];const base=v==null||v===''?(f.quick?f.quick[1]:f.min??0):v;let n=Math.round((base+dir*(f.step||1))*100)/100;if(f.min!=null)n=Math.max(f.min,n);if(f.max!=null)n=Math.min(f.max,n);F.values[f.key]=n;delete ui.errors[f.key];}
+function act(k){
+  const ty=TYPES[F.type];
+  if(k==='close'){close(false);return;}
+  if(k==='keep'){ui.confirm=false;render('save');return;}
+  if(k==='discard'){close(true);return;}
+  if(k==='type'){ui.types=!ui.types;ui.menu=false;render(ui.types?`settype-${F.type}`:'type');return;}
+  if(k==='menu'){ui.menu=!ui.menu;ui.types=false;render(ui.menu?'dup':'menu');return;}
+  if(k.startsWith('settype-')){const nt=k.slice(8);ui.types=false;if(nt===F.type){render('type');return;}ui.prev=structuredClone(F);
+    const wasDur=TYPES[F.type].dur;F.type=nt;F.values={};F.meds={};if(!TYPES[nt].dur)F.end=F.start;else if(!wasDur)F.end=F.start+20*MIN;if(nt==='sleep')F.values.kind='nap';
+    ui.banner=t('switched',{t:typeName(nt)});ui.errors={};ui.visible=new Set();render('undoSwitch');return;}
+  if(k==='undoSwitch'){F=ui.prev;ui.prev=null;ui.banner=null;ui.visible=new Set();render('type');return;}
+  if(k==='delete'){const ev=EVENTS.find(e=>e.id===F.id);EVENTS=EVENTS.filter(e=>e.id!==F.id);close(true);renderTL();toast(t('deleted'),`${typeName(ev.type)} · ${detailOf(ev)}`,()=>{EVENTS.push(ev);renderTL(ev.id);});return;}
+  if(k==='dup'){const copy={...structuredClone(F),id:null,start:Date.now(),end:TYPES[F.type].dur?Date.now():Date.now(),by:'you'};ui=blankUi();F=copy;orig='';render('type');return;}
+  if(k==='save'){save();return;}
+  if(k.startsWith('for-')){F.for=k.slice(4);render(k);return;}
+  if(k.startsWith('q-')){const m=+k.slice(2);const wasPoint=F.end===F.start&&!ui.forceRange;F.start=Math.floor((Date.now()-m*MIN)/MIN)*MIN;if(!ty.dur||wasPoint)F.end=F.start;delete ui.errors.time;render(k);return;}
+  if(k==='pick-start'||k==='pick-end'){const e=k.slice(5);ui.picker=ui.picker===e?null:e;ui.dur=false;ui.otherDay=false;render(ui.picker?'ruler':k);return;}
+  if(k==='pickdone'){const e=ui.picker;ui.picker=null;render('pick-'+e);return;}
+  if(k==='dur'){ui.dur=!ui.dur;ui.picker=null;render(k);return;}
+  if(k.startsWith('dset-')){F.end=Math.min(Date.now(),F.start+(+k.slice(5))*MIN);render(k);return;}
+  if(k==='d-5'||k==='d+5'){F.end=Math.min(Date.now(),Math.max(F.start+MIN,F.end+(k==='d+5'?5:-5)*MIN));render(k);return;}
+  if(k==='running'){F.end=F.end===null?Math.floor(Date.now()/MIN)*MIN:null;ui.forceRange=true;ui.picker=null;ui.dur=false;render(k);return;}
+  if(k==='addend'){F.end=Math.min(Date.now(),F.start+15*MIN);if(F.end<=F.start){F.start-=15*MIN;}ui.forceRange=true;ui.dur=true;render('dur');return;}
+  if(k.startsWith('day-')){const i=+k.slice(4);const cur=ui.picker==='start'?F.start:F.end;const d=new Date(cur);const tgt=new Date(dayStart(Date.now()-i*DAY));tgt.setHours(d.getHours(),d.getMinutes());ui.otherDay=false;setEdge(tgt.getTime());return;}
+  if(k==='otherday'){ui.otherDay=!ui.otherDay;render(k);return;}
+  if(k.startsWith('date-')){const ds=+k.slice(5);const cur=ui.picker==='start'?F.start:F.end;const d=new Date(cur);const tgt=new Date(ds);tgt.setHours(d.getHours(),d.getMinutes());setEdge(tgt.getTime());return;}
+  if(['h+','h-','m+','m-'].includes(k)){const cur=ui.picker==='start'?F.start:F.end;setEdge(cur+(k[0]==='h'?H:MIN)*(k[1]==='+'?1:-1),{silent:true});return;}
+  if(k==='am'||k==='pm'){const cur=ui.picker==='start'?F.start:F.end;const h=new Date(cur).getHours();if(k==='pm'&&h<12)setEdge(cur+12*H);else if(k==='am'&&h>=12)setEdge(cur-12*H);else render(k);return;}
+  if(k.startsWith('sel-')){const [,key,...rest]=k.split('-');const o=rest.join('-');const f=ty.fields.find(x=>x.key===key);F.values[key]=(F.values[key]===o&&!f.req)?undefined:o;delete ui.errors[key];if(key==='method')LAST.method=o;render(k);return;}
+  if(k.startsWith('sc-')){const [,key,n]=k.split('-');F.values[key]=+n;delete ui.errors[key];render(k);return;}
+  if(k.startsWith('n-')||k.startsWith('p-')){const f=ty.fields.find(x=>x.key===k.slice(2));stepNum(f,k[0]==='p'?1:-1);render(k);return;}
+  if(k.startsWith('qv-')){const [,key,q]=k.split('-');F.values[key]=+q;delete ui.errors[key];render(k);return;}
+  if(k.startsWith('dm-')||k.startsWith('dp-')){const key=k.slice(3);const cur=F.values[key]||0;F.values[key]=Math.max(0,cur+(k[1]==='p'?60:-60));render(k);return;}
+  if(k.startsWith('txt-')){const [,key,...s]=k.split('-');F.values[key]=s.join('-');render('in-'+key);return;}
+  if(k.startsWith('b-')){const key=k.slice(2);F.values[key]=F.values[key]!==true;render(k);return;}
+  if(k==='addnote'){ui.note=true;render('notes');return;}
+  if(k.startsWith('med-')){const id=k.slice(4);const m=MEDS.find(x=>x.id===id);if(F.meds[id])delete F.meds[id];else F.meds[id]={dose:m.dose,unit:m.unit};delete ui.errors.meds;render(k);return;}
+  if(k.startsWith('md-')||k.startsWith('mp-')){const id=k.slice(3);const s=F.meds[id];const step=s.unit==='drops'?1:s.unit==='mg'?5:0.5;s.dose=Math.max(step,Math.round((s.dose+(k[1]==='p'?step:-step))*100)/100);render(k);return;}
+  if(k.startsWith('mu-')){const [,id,u]=k.split('-');F.meds[id].unit=u;render(k);return;}
+  if(k==='addmed'){const name=ui.medQ.trim();const m={id:uid(),name:name.charAt(0).toUpperCase()+name.slice(1),dose:1,unit:'ml',usual:false};MEDS.push(m);F.meds[m.id]={dose:1,unit:'ml'};ui.medQ='';delete ui.errors.meds;render('mi-'+m.id);return;}
+}
+const sheet=$('#sheet');
+sheet.addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b&&!b.disabled)act(b.dataset.k);});
+// press-and-hold on steppers repeats (after 400 ms, then every 90 ms)
+sheet.addEventListener('pointerdown',e=>{const b=e.target.closest('button[data-k]');if(!b)return;const k=b.dataset.k;if(!/^(h[+-]|m[+-]|n-|p-|dm-|dp-|md-|mp-)/.test(k))return;
+  clearTimeout(rep);rep=setTimeout(function loop(){act(k);rep=setTimeout(loop,90);},400);});
+['pointerup','pointercancel','pointerleave'].forEach(n=>sheet.addEventListener(n,()=>clearTimeout(rep),true));
+sheet.addEventListener('input',e=>{const k=e.target.dataset.k;if(!k)return;const ty=TYPES[F.type];const raw=e.target.value;
+  if(k==='notes'){F.notes=raw;return;}
+  if(k==='medq'){ui.medQ=raw;const pos=e.target.selectionStart;render('medq');const el=$('[data-k="medq"]');el.setSelectionRange(pos,pos);return;}
+  if(k==='hh'&&raw.length===2){$('[data-k="mm"]').focus();$('[data-k="mm"]').select();}
+  if(k.startsWith('in-')){const key=k.slice(3);const f=ty.fields.find(x=>x.key===key)||{kind:'duration'};
+    if(f.kind==='text'){F.values[key]=raw;return;}
+    const n=parseFloat(raw.replace(',','.'));if(f.kind==='duration'){F.values[key]=isNaN(n)?undefined:Math.round(n*60);return;}
+    F.values[key]=isNaN(n)?undefined:n;delete ui.errors[key];}
+  if(k.startsWith('mi-')){const n=parseFloat(raw.replace(',','.'));if(!isNaN(n))F.meds[k.slice(3)].dose=n;}
+});
+sheet.addEventListener('change',e=>{const k=e.target.dataset.k;if(!k)return;
+  if(k==='hh'||k==='mm'){const cur=ui.picker==='start'?F.start:F.end;const d=new Date(cur);let v=parseInt(e.target.value,10);if(isNaN(v)){syncRuler();return;}
+    if(k==='hh'){if(S.lang!=='pt'){const pm=d.getHours()>=12;v=v%12+(pm?12:0);}d.setHours(Math.min(23,v));}else d.setMinutes(Math.min(59,v));setEdge(d.getTime(),{silent:true});return;}
+  if(k.startsWith('in-')||k.startsWith('mi-'))render(k);
+});
+sheet.addEventListener('keydown',e=>{
+  const g=e.target.closest('[role="radiogroup"]');
+  if(g&&['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(e.key)){const items=[...g.querySelectorAll('[role="radio"]')];const i=items.indexOf(e.target);const ni=(i+(e.key==='ArrowRight'||e.key==='ArrowDown'?1:-1)+items.length)%items.length;e.preventDefault();act(items[ni].dataset.k);}
+});
+$('#scrim').addEventListener('click',()=>close(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#overlay').hidden){if(ui.types||ui.menu){ui.types=ui.menu=false;render('type');}else close(false);}});
+
+/* ---------- side panel ---------- */
+const SCEN=[
+ ['Feeding · new (bottle, last used)',()=>openNew('feeding')],
+ ['Nursing · edit (by Rafa)',()=>openEdit(EVENTS.find(e=>e.type==='feeding'&&e.values.method==='breast'))],
+ ['Nap · running',()=>openEdit(EVENTS.find(e=>e.type==='sleep'&&e.end===null))],
+ ['Diaper · new',()=>openNew('diaper')],['Medication · new',()=>openNew('medication')],['Belly pain · new',()=>openNew('belly_pain')],['Bath · new',()=>openNew('bath')],
+ ['Custom type: Temperature',()=>openNew('temperature')]];
+function renderNotes(){
+  const en=S.lang==='en';
+  $('#notes').innerHTML=`<h1>03-C Event sheet and field library</h1><p>${en?'The full sheet opens from long-press, “Edit” in a toast, “More details” in a tray, or a timeline row (try the rows behind the sheet).':'A ficha completa abre com toque longo, “Editar” no aviso, “Mais detalhes” na bandeja ou numa linha da linha do tempo.'}</p>
+  <div class="ctl"><button aria-pressed="${S.lang==='en'}" data-lang="en">EN</button><button aria-pressed="${S.lang==='pt'}" data-lang="pt">PT-BR</button><button aria-pressed="${S.twins}" data-twins>Twins</button>
+  ${[1,1.3,1.6].map(s=>`<button aria-pressed="${S.scale===s}" data-scale="${s}">${Math.round(s*100)}% text</button>`).join('')}</div>
+  <h2>${en?'Scenarios':'Cenários'}</h2><div class="ctl">${SCEN.map(([l],i)=>`<button data-scen="${i}">${l}</button>`).join('')}</div>
+  <h2>${en?'Things to try':'Experimente'}</h2><ul>
+  <li>${en?'Feeding: switch How between Bottle, Breast and Solid. Fields that apply slide in; values of hidden fields are kept while you edit but never saved.':'Alimentação: troque entre Mamadeira, Peito e Sólida; campos ocultos nunca são salvos.'}</li>
+  <li>${en?'Tap a time pill: Today / Yesterday / Other day, big HH:MM you can type or step (hold to repeat), and a ruler you can drag, scroll or arrow-key. Dots on the ruler are other events. The future is hatched and blocked.':'Toque num horário: Hoje/Ontem/Outro dia, HH:MM digitável e régua arrastável. Pontos são outros eventos.'}</li>
+  <li>${en?'Tap the duration between Start and End to set it directly; it moves the end.':'Toque na duração entre Início e Fim para ajustá-la.'}</li>
+  <li>${en?'Diaper or Belly pain: press Save without choosing. The error appears under the field, focus moves there, a screen reader hears “1 thing to fix”.':'Fralda ou Dor de barriga: Salvar sem escolher mostra o erro no campo.'}</li>
+  <li>${en?'Change type from the title. A banner offers Undo. Edit mode: ⋯ has Duplicate and Delete (no confirm dialog, Undo instead).':'Troque o tipo pelo título (com Desfazer). Em edição, ⋯ tem Duplicar e Excluir com Desfazer.'}</li>
+  <li>${en?'Close with unsaved changes: an inline “Discard your changes?” bar, not a modal.':'Fechar com alterações: barra “Descartar?” sem modal.'}</li>
+  <li>${en?'PT-BR and 160% text: labels sit above controls and wrap; nothing is clipped.':'PT-BR e 160%: rótulos acima dos campos, nada cortado.'}</li></ul>`;
+}
+$('#notes').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.lang){S.lang=b.dataset.lang;document.documentElement.lang=S.lang==='pt'?'pt-BR':'en';}
+  if(b.hasAttribute('data-twins'))S.twins=!S.twins;
+  if(b.dataset.scale){S.scale=+b.dataset.scale;$('#screen').style.setProperty('--s',S.scale);}
+  if(b.dataset.scen!=null){SCEN[+b.dataset.scen][1]();renderNotes();return;}
+  renderNotes();renderTL();if(!$('#overlay').hidden)render();});
+seed();renderTL();renderNotes();openNew('feeding');
+</script>
+</body>
+</html>

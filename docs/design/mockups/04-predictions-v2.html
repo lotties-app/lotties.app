@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Predictions v2</title>
+<meta name="description" content="Mockup 04-b: honest next-nap prediction states, the Why sheet, adaptive awake-time guidance, a gentle routine idea and quiet-hours notifications, on synthetic data.">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f5ff; --surface: #ffffff; --raised: #ebe8ff; --hairline: #e0ddf5; --grid: #ebe8f7;
+  --text: #1b1838; --muted: #5d5a82; --accent: #5b4bd6; --accent-soft: #4a3cc0; --on-accent: #ffffff;
+  --c-night: #4c3fb0; --c-nap: #9a8ef0; --c-feed: #0f8a6e; --c-diaper: #b0700f; --c-med: #c0449e;
+  --wash-sleep: rgba(91, 75, 214, 0.10); --wash-feed: rgba(15, 138, 110, 0.10);
+  --tint-sleep: #ebe8ff; --tint-feed: #dcf3ec; --tint-diaper: #fbeedd; --tint-health: #fbe3ef;
+  --shadow: 0 1px 2px rgba(60, 50, 140, 0.06), 0 4px 16px rgba(60, 50, 140, 0.07);
+  --hatch: #c9c4ea;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #15132e; --surface: #1f1c3f; --raised: #2a2468; --hairline: #2a2652; --grid: #2f2b5c;
+    --text: #eceaff; --muted: #9d99c8; --accent: #7c6cf0; --accent-soft: #c4baff; --on-accent: #ffffff;
+    --c-night: #b4a9ff; --c-nap: #7c6cf0; --c-feed: #1fa889; --c-diaper: #c98322; --c-med: #d65fb8;
+    --wash-sleep: rgba(180, 169, 255, 0.10); --wash-feed: rgba(31, 168, 137, 0.12);
+    --tint-sleep: #3a2f7a; --tint-feed: #16423f; --tint-diaper: #4a3322; --tint-health: #4b2a33;
+    --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --hatch: #4a4583;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #15132e; --surface: #1f1c3f; --raised: #2a2468; --hairline: #2a2652; --grid: #2f2b5c;
+  --text: #eceaff; --muted: #9d99c8; --accent: #7c6cf0; --accent-soft: #c4baff; --on-accent: #ffffff;
+  --c-night: #b4a9ff; --c-nap: #7c6cf0; --c-feed: #1fa889; --c-diaper: #c98322; --c-med: #d65fb8;
+  --wash-sleep: rgba(180, 169, 255, 0.10); --wash-feed: rgba(31, 168, 137, 0.12);
+  --tint-sleep: #3a2f7a; --tint-feed: #16423f; --tint-diaper: #4a3322; --tint-health: #4b2a33;
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --hatch: #4a4583;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mockbar {
+  max-width: 390px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12px; color: var(--muted); border-bottom: 1px dashed var(--hairline);
+}
+.mockbar strong { font-weight: 600; margin-right: 4px; }
+.mockbar button, .mockbar select {
+  font: inherit; font-size: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 999px; padding: 6px 10px; cursor: pointer; min-height: 32px;
+}
+.phone { max-width: 390px; margin: 0 auto; padding: 8px 16px 40px; }
+.appbar { display: flex; align-items: center; gap: 12px; padding: 12px 0 8px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--tint-sleep); color: var(--accent-soft); display: grid; place-items: center; font-weight: 600; }
+.appbar h1 { font-size: 20px; font-weight: 500; margin: 0; line-height: 1.2; }
+.appbar .sub { font-size: 12px; color: var(--muted); }
+.card { background: var(--surface); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: var(--shadow); position: relative; }
+.card h2, .section-h { font-size: 15px; font-weight: 500; margin: 0; display: flex; align-items: center; gap: 8px; }
+.section-h { margin: 24px 0 0; }
+.card .take { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.icon { width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; }
+.icon svg { width: 18px; height: 18px; }
+.i-sleep { background: var(--tint-sleep); color: var(--c-night); }
+.i-feed { background: var(--tint-feed); color: var(--c-feed); }
+.i-diaper { background: var(--tint-diaper); color: var(--c-diaper); }
+.i-health { background: var(--tint-health); color: var(--c-med); }
+.muted { color: var(--muted); }
+.cap { font-size: 12px; color: var(--muted); }
+.seg { display: flex; background: var(--raised); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 8px 6px; border-radius: 999px; min-height: 36px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: var(--shadow); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--hairline); background: transparent; color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; min-height: 36px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--raised); border-color: transparent; }
+.btn-text { border: 0; background: none; color: var(--accent-soft); font: inherit; font-size: 13px; font-weight: 500; padding: 8px 0; cursor: pointer; min-height: 36px; }
+:root:not([data-theme="dark"]) .btn-text { color: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-text { color: var(--accent-soft); } }
+.btn { border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 500; border-radius: 999px; padding: 12px 18px; min-height: 44px; cursor: pointer; }
+.btn.ghost { background: var(--raised); color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); min-width: 0; }
+.tile .label { font-size: 12px; color: var(--muted); }
+.tile .value { font-size: 24px; font-weight: 500; margin-top: 2px; letter-spacing: -0.01em; }
+.tile .delta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 12px; height: 8px; border-radius: 2px; }
+.chart { position: relative; margin-top: 12px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: inherit; }
+.tip { position: absolute; z-index: 5; pointer-events: none; background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.4; padding: 8px 10px; border-radius: 10px; max-width: 240px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25); }
+.tip b { font-weight: 600; }
+table.data { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { text-align: right; padding: 6px 4px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data th { color: var(--muted); font-weight: 500; }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 12px; color: var(--muted); margin-top: 24px; text-align: center; }
+details.how { margin-top: 16px; }
+details.how summary { cursor: pointer; font-size: 13px; font-weight: 500; min-height: 36px; display: flex; align-items: center; }
+details.how dl { font-size: 13px; margin: 8px 0 0; }
+details.how dt { font-weight: 500; margin-top: 10px; }
+details.how dd { margin: 2px 0 0; color: var(--muted); }
+.progress { height: 6px; border-radius: 999px; background: var(--raised); overflow: hidden; margin-top: 10px; }
+.progress > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--text); }
+.sheet { background: var(--surface); border-radius: 24px 24px 0 0; padding: 12px 16px 20px; margin-top: 16px; box-shadow: var(--shadow); }
+.sheet .handle { width: 36px; height: 4px; border-radius: 4px; background: var(--hairline); margin: 0 auto 12px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+.switch { appearance: none; width: 44px; height: 26px; border-radius: 999px; background: var(--raised); position: relative; cursor: pointer; flex: none; border: 1px solid var(--hairline); }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); transition: left .18s ease-out, background .18s; }
+.switch:checked { background: var(--accent); border-color: transparent; }
+.switch:checked::after { left: 20px; background: #fff; }
+.list-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+.list-row:last-child { border-bottom: 0; }
+.list-row .t { font-size: 14px; }
+.list-row .s { font-size: 12px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.f-night { fill: var(--c-night); } .f-nap { fill: var(--c-nap); } .f-accent { fill: var(--accent); } .f-text { fill: var(--text); }
+.f-wash { fill: var(--wash-sleep); } .f-window { fill: var(--accent); opacity: .16; } .s-grid { stroke: var(--grid); } .s-text { stroke: var(--text); } .s-surface { stroke: var(--surface); } .s-accent { stroke: var(--accent); }
+.axis { font-size: 12px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.hero-top { display: flex; align-items: center; gap: 10px; }
+.hero-top h2 { flex: 1; }
+.big { font-size: 32px; font-weight: 500; letter-spacing: -0.01em; margin-top: 12px; line-height: 1.1; }
+.rel { font-size: 15px; color: var(--muted); margin-top: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.why-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; }
+.why-row:last-of-type { border-bottom: 0; }
+.why-row .icon { width: 28px; height: 28px; }
+.why-row .icon svg { width: 16px; height: 16px; }
+.state-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 28px 0 0; }
+.actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.halo { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.time-pill { font-variant-numeric: tabular-nums; background: var(--raised); border-radius: 12px; padding: 8px 12px; font-size: 15px; }
+.subtle { background: var(--raised); border-radius: 14px; padding: 12px; font-size: 13px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="mockbar" aria-label="Mockup controls (not part of the product)">
+  <strong>Mockup</strong>
+  <button id="theme" type="button">Theme</button>
+  <label for="state">State</label>
+  <select id="state">
+    <option value="awake">Awake, rhythm known</option>
+    <option value="learning">Learning (2 days logged)</option>
+    <option value="asleep">Asleep now</option>
+    <option value="past">Past the usual window</option>
+    <option value="stale">Gap in the log</option>
+  </select>
+  <span>Synthetic data</span>
+</div>
+
+<main class="phone">
+  <header class="appbar">
+    <div class="avatar" aria-hidden="true">L</div>
+    <div class="grow"><h1 style="font-size:20px">Lia</h1><div class="sub">4 months, 1 week · now 14:10</div></div>
+  </header>
+
+  <div id="hero"></div>
+
+  <p class="state-label">The "Why?" sheet</p>
+  <div id="why"></div>
+
+  <p class="state-label">Awake-time guidance (adapts to age, from Lia's own data)</p>
+  <div id="guide"></div>
+
+  <p class="state-label">A gentle routine idea (opt-in, at most one a week)</p>
+  <section class="card" aria-labelledby="idea-h">
+    <div class="hero-top"><span class="icon i-sleep"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.5.4.8 1 .8 1.6V17h6v-1.1c0-.6.3-1.2.8-1.6A6.5 6.5 0 0 0 12 2.5zM9 19h6v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg></span><h2 id="idea-h">An idea for evenings, if it suits you</h2></div>
+    <p style="margin:10px 0 0;font-size:14px">On 4 of the last 7 days the last nap ended after 17:15. On those days bedtime came about 35 min later. Some families try ending the last nap by about 17:00 to keep evenings steadier.</p>
+    <p class="cap" style="margin-top:8px">Based on your logs. Your family's rhythm is what matters.</p>
+    <div class="actions"><button class="btn ghost" type="button">See the pattern</button><button class="btn-text" type="button">Not for us</button></div>
+  </section>
+
+  <p class="state-label">Notifications that respect sleep</p>
+  <section class="card" aria-labelledby="notif-h">
+    <h2 id="notif-h">Reminders</h2>
+    <div class="list-row"><div class="grow"><div class="t">Quiet hours</div><div class="s">No sound or vibration</div></div><span class="time-pill">20:00</span><span class="cap">to</span><span class="time-pill">07:00</span></div>
+    <div class="list-row"><div class="grow"><div class="t">Also quiet while Lia sleeps</div><div class="s">Whenever a nap or night is running</div></div><input class="switch" type="checkbox" checked aria-label="Also quiet while Lia sleeps"></div>
+    <div class="list-row"><div class="grow"><div class="t">Nap window</div><div class="s">10 min before it opens, daytime only</div></div><input class="switch" type="checkbox" aria-label="Nap window reminder"></div>
+    <div class="list-row"><div class="grow"><div class="t">Medication</div><div class="s">Only for schedules you set yourself</div></div><input class="switch" type="checkbox" checked aria-label="Medication reminders"></div>
+    <div class="list-row"><div class="grow"><div class="t">Weekly summary</div><div class="s">Sundays at 10:00</div></div><input class="switch" type="checkbox" checked aria-label="Weekly summary"></div>
+    <div class="list-row"><div class="grow"><div class="t">Private on the lock screen</div><div class="s">Shows "Baby Routine: a reminder", no names or details</div></div><input class="switch" type="checkbox" checked aria-label="Private on the lock screen"></div>
+    <p class="cap" style="margin:8px 0 0">Reminders need the app installed on your home screen. Nothing is ever sent for a "late" nap or feed.</p>
+  </section>
+  <p class="note">Estimates from your logs, not medical advice.</p>
+</main>
+
+<script>
+/* ==========================================================================
+   SYNTHETIC SAMPLE DATA - not real child data.
+   Generator documented in docs/design/04-insights-delight.md ("Synthetic sample data").
+   Seeded PRNG (mulberry32, seed 20261021): every page renders the same series.
+   Baby "Lia", born 2026-06-12, 30 days ending "now" = Wed 2026-10-21 14:10 local.
+   Shape follows the Napper export / built-in types: sleep kinds nap, bed_time, woke_up,
+   night_waking; bottle feeds (amount_ml, bottle_feeding_type); diapers (WET|DIRTY|MIXED);
+   medication instants. Day 9 misses an afternoon of logging, night 20 has no bedtime marker.
+   ========================================================================== */
+const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const NOW = new Date(2026, 9, 21, 14, 10).getTime();
+const BABY = 'Lia';
+const NDAYS = 30;
+const DAY_START_HOUR = 6; // "baby day" boundary: the usual wake-up hour, so a night is never split
+const midnight = (i) => new Date(2026, 9, 21 - (NDAYS - 1) + i).getTime();
+const dayStart = (i) => midnight(i) + DAY_START_HOUR * HOUR;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeData(seed = 20261021, days = NDAYS) {
+  const rnd = mulberry32(seed);
+  const rand = (a, b) => a + (b - a) * rnd();
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const ev = [];
+  const add = (type, start, end, payload) => ev.push({ type, start, end: end === undefined ? start : end, payload: payload || {} });
+  const diaper = () => { const r = rnd(); return r < 0.18 ? 'DIRTY' : r < 0.28 ? 'MIXED' : 'WET'; };
+  const ml = (a, b) => Math.round(rand(a, b) / 10) * 10;
+  const first = NDAYS - days;
+  const wakes = [];
+  for (let i = 0; i <= NDAYS; i++) wakes.push(midnight(i) + 6.5 * HOUR + clamp(gauss() * 18, -40, 50) * MIN);
+  for (let i = first; i < NDAYS; i++) {
+    const mid = midnight(i), p = i / (NDAYS - 1), wake = wakes[i];
+    if (i > first) add('sleep', wake, wake, { kind: 'woke_up' });
+    let t = wake;
+    const napCount = p < 0.4 ? 4 : (rnd() < 0.35 + p * 0.5 ? 3 : 4);
+    const napsToday = [];
+    for (let n = 0; n < napCount; n++) {
+      const ww = (92 + p * 28 + n * 12 + gauss() * 16) * MIN;
+      const s = t + ww, last = n === napCount - 1;
+      const len = (last ? rand(28, 45) : rand(38, 100)) * MIN;
+      add('sleep', s, s + len, { kind: 'nap' });
+      napsToday.push([s, s + len]);
+      t = s + len;
+    }
+    const awake = (x) => { const hit = napsToday.find(([s, e]) => x >= s - 10 * MIN && x < e); return hit ? hit[1] + rand(4, 12) * MIN : x; };
+    const target = mid + 19.4 * HOUR + gauss() * 14 * MIN;
+    const bed = clamp(Math.max(target, t + 80 * MIN), mid + 18.75 * HOUR, mid + 21 * HOUR);
+    add('diaper', wake + rand(2, 10) * MIN, undefined, { content: 'WET' });
+    add('sleep', bed, bed, { kind: 'bed_time' });
+    let f = wake + rand(5, 20) * MIN;
+    while (f < bed - 70 * MIN) {
+      f = awake(f);
+      add('feeding', f, f + rand(10, 20) * MIN, { method: 'bottle', amount_ml: ml(120, 165), bottle_feeding_type: rnd() < 0.8 ? 'formula' : 'breast_milk' });
+      if (rnd() < 0.92) add('diaper', f + rand(5, 15) * MIN, undefined, { content: diaper() });
+      f += rand(160, 205) * MIN;
+    }
+    const bf = bed - rand(22, 35) * MIN;
+    add('feeding', bf, bf + 15 * MIN, { method: 'bottle', amount_ml: ml(140, 170), bottle_feeding_type: 'formula' });
+    if (rnd() < 0.95) add('medication', awake(wake + rand(30, 60) * MIN), undefined, { medications: [{ name: 'Vitamin D drops' }] });
+    if (rnd() < 0.75 - 0.5 * p) add('medication', awake(mid + rand(17, 18.5) * HOUR), undefined, { medications: [{ name: 'Gas drops' }] });
+    const next = wakes[i + 1];
+    const k = Math.max(0, Math.round(2.7 - 1.5 * p + gauss() * 0.6));
+    let w = bed + (3.9 + 2.2 * p + gauss() * 0.45) * HOUR;
+    for (let j = 0; j < k && w < next - 50 * MIN; j++) {
+      const len = rand(10, 32) * MIN;
+      add('sleep', w, w + len, { kind: 'night_waking' });
+      if (rnd() < 0.85) add('feeding', w + 3 * MIN, w + 18 * MIN, { method: 'bottle', amount_ml: ml(80, 120), bottle_feeding_type: 'formula' });
+      if (rnd() < 0.45) add('diaper', w + 20 * MIN, undefined, { content: 'WET' });
+      const end = w + len, left = k - j - 1;
+      w = end + ((next - end) / (left + 1)) * rand(0.8, 1.15);
+    }
+  }
+  const gapDay = midnight(9), noBedNight = midnight(20);
+  return ev
+    .filter((e) => !(days === NDAYS && e.start >= gapDay + 10 * HOUR && e.start < gapDay + 18 * HOUR ))
+    .filter((e) => !(days === NDAYS && e.type === 'sleep' && e.payload.kind === 'bed_time' && e.start > noBedNight && e.start < noBedNight + DAY))
+    .filter((e) => e.start <= NOW)
+    .map((e) => (e.end > NOW ? { ...e, end: null } : e))
+    .sort((a, b) => a.start - b.start);
+}
+
+/* ---------- Metrics: mirror of Domain SleepSessions + the definitions table in the doc ---------- */
+function buildSleep(ev) {
+  const sleep = ev.filter((e) => e.type === 'sleep');
+  const markers = sleep
+    .filter((e) => e.payload.kind === 'bed_time' || e.payload.kind === 'woke_up')
+    .sort((a, b) => a.start - b.start || (a.payload.kind === 'bed_time') - (b.payload.kind === 'bed_time'));
+  const nights = [];
+  markers.forEach((m, i) => {
+    if (m.payload.kind !== 'bed_time') return;
+    const n = markers[i + 1];
+    if (!n) { if (NOW - m.start <= 16 * HOUR) nights.push({ kind: 'night', start: m.start, end: null }); return; }
+    if (n.payload.kind === 'woke_up' && n.start - m.start <= 16 * HOUR) nights.push({ kind: 'night', start: m.start, end: n.start });
+  });
+  const logged = sleep
+    .filter((e) => !['night_waking', 'bed_time', 'woke_up', 'fell_asleep'].includes(e.payload.kind))
+    .map((e) => ({ kind: e.payload.kind || 'nap', start: e.start, end: e.end }));
+  const wakings = sleep.filter((e) => e.payload.kind === 'night_waking');
+  const sessions = [...logged, ...nights].sort((a, b) => a.start - b.start);
+  sessions.forEach((s) => (s.pieces = asleepPieces(s, wakings)));
+  return { sessions, wakings };
+}
+
+function asleepPieces(session, wakings) {
+  const end = session.end ?? NOW;
+  let pieces = [[session.start, end]];
+  for (const w of wakings) {
+    const ws = w.start, we = w.end ?? NOW;
+    pieces = pieces.flatMap(([s, e]) => (we <= s || ws >= e ? [[s, e]] : [[s, ws], [we, e]].filter(([a, b]) => b - a > 0)));
+  }
+  return pieces.map(([s, e]) => ({ start: s, end: e, kind: session.kind }));
+}
+
+const sum = (xs) => xs.reduce((a, b) => a + b, 0);
+const median = (xs) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const quantile = (xs, q) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); const pos = (s.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos); return s[lo] + (s[hi] - s[lo]) * (pos - lo); };
+const clip = (s, e, a, b) => Math.max(0, Math.min(e, b) - Math.max(s, a));
+
+/** One "baby day" i = [06:00 day i, 06:00 day i+1): the day's naps plus the night that starts that evening. */
+function dayMetrics(ev, sleep, i) {
+  const a = dayStart(i), b = dayStart(i + 1);
+  const inDay = (e) => e.start >= a && e.start < b;
+  const naps = sleep.sessions.filter((s) => s.kind === 'nap' && inDay(s));
+  const night = sleep.sessions.find((s) => s.kind === 'night' && inDay(s)) || null;
+  const nightPieces = night ? night.pieces : [];
+  const feeds = ev.filter((e) => e.type === 'feeding' && inDay(e));
+  const diapers = ev.filter((e) => e.type === 'diaper' && inDay(e));
+  const meds = ev.filter((e) => e.type === 'medication' && inDay(e));
+  const nightEnd = night ? night.end ?? NOW : null;
+  const wakings = night ? sleep.wakings.filter((w) => w.start >= night.start && w.start < nightEnd) : [];
+  const napMs = sum(naps.flatMap((s) => s.pieces).map((p) => p.end - p.start));
+  const nightMs = sum(nightPieces.map((p) => p.end - p.start));
+  // completeness: a finished night, at least one nap, and no daytime hole longer than 5 h
+  const prevNight = sleep.sessions.find((s) => s.kind === 'night' && s.start >= dayStart(i - 1) && s.start < a);
+  const dayFrom = prevNight && prevNight.end ? prevNight.end : a + 1 * HOUR;
+  const dayTo = night ? night.start : Math.min(b, NOW);
+  const marks = ev.filter((e) => e.start >= dayFrom && e.start <= dayTo).flatMap((e) => [e.start, e.end ?? e.start]);
+  marks.push(dayFrom, dayTo); marks.sort((x, y) => x - y);
+  let gap = 0; for (let k = 1; k < marks.length; k++) gap = Math.max(gap, marks[k] - marks[k - 1]);
+  const inProgress = b > NOW;
+  const complete = !inProgress && !!night && !!night.end && naps.length > 0 && gap <= 5 * HOUR;
+  return {
+    i, from: a, to: b, naps, night, napMs, nightMs, totalMs: napMs + nightMs,
+    longestMs: nightPieces.length ? Math.max(...nightPieces.map((p) => p.end - p.start)) : null,
+    wakings: wakings.length,
+    wakingMs: sum(wakings.map((w) => (w.end ?? NOW) - w.start)),
+    bedtime: night ? night.start : null,
+    wokeUp: night && night.end ? night.end : null,
+    feeds: feeds.length,
+    feedMl: sum(feeds.map((f) => f.payload.amount_ml || 0)),
+    nightFeeds: night ? feeds.filter((f) => f.start >= night.start && f.start < nightEnd).length : 0,
+    diapers: diapers.length,
+    wet: diapers.filter((d) => d.payload.content !== 'DIRTY').length,
+    dirty: diapers.filter((d) => d.payload.content !== 'WET').length,
+    meds: meds.flatMap((m) => m.payload.medications.map((x) => x.name)),
+    complete, inProgress,
+  };
+}
+
+function allDays(ev) {
+  const sleep = buildSleep(ev);
+  const days = [];
+  for (let i = 0; i < NDAYS; i++) days.push(dayMetrics(ev, sleep, i));
+  return { sleep, days };
+}
+
+/** "Typical" value = median over fully logged days only; null when fewer than `min` such days. */
+function meanOf(days, key, min = 4) {
+  const xs = days.filter((d) => d.complete && d[key] != null).map((d) => d[key]);
+  return xs.length >= min ? median(xs) : null;
+}
+
+/* ---------- Formatting (production: web/src/i18n/format.ts via Intl) ---------- */
+const pad2 = (n) => String(n).padStart(2, '0');
+function fmtDur(ms) {
+  const m = Math.round(ms / MIN), h = Math.floor(m / 60), r = m % 60;
+  return h ? (r ? `${h}h ${r}m` : `${h}h`) : `${r}m`;
+}
+function fmtTime(t) { const d = new Date(t); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+function fmtDay(t) { return new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' }); }
+function fmtDate(t) { return new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
+function minuteOfDay(t, from = 12) { const d = new Date(t); let m = d.getHours() * 60 + d.getMinutes() - from * 60; if (m < 0) m += 1440; return m; }
+function signedDelta(ms, unit = 'dur') {
+  const v = unit === 'dur' ? fmtDur(Math.abs(ms)) : String(Math.abs(Math.round(ms * 10) / 10));
+  return ms >= 0 ? `+${v}` : `−${v}`;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+/* ---------- Theme toggle (system / light / dark) ---------- */
+function initThemeToggle(btn) {
+  const order = ['system', 'light', 'dark'];
+  let mode = 'system';
+  try { mode = localStorage.getItem('br-mock-theme') || 'system'; } catch (e) { /* storage unavailable */ }
+  const apply = () => {
+    if (mode === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', mode);
+    btn.textContent = `Theme: ${mode}`;
+    try { localStorage.setItem('br-mock-theme', mode); } catch (e) { /* ignore */ }
+    window.dispatchEvent(new Event('br-theme'));
+  };
+  btn.addEventListener('click', () => { mode = order[(order.indexOf(mode) + 1) % order.length]; apply(); });
+  apply();
+}
+
+/* ---------- Tooltip helper ---------- */
+function makeTooltip(host) {
+  const tip = document.createElement('div');
+  tip.className = 'tip'; tip.setAttribute('role', 'status'); tip.hidden = true;
+  host.appendChild(tip);
+  return {
+    show(html, x, y) {
+      tip.innerHTML = html; tip.hidden = false;
+      const hw = host.clientWidth, tw = tip.offsetWidth;
+      tip.style.left = `${Math.max(4, Math.min(hw - tw - 4, x - tw / 2))}px`;
+      tip.style.top = `${Math.max(0, y - tip.offsetHeight - 10)}px`;
+    },
+    hide() { tip.hidden = true; },
+  };
+}
+
+
+const ICON = {
+  moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  baby: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 21c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  ruler: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l14-14M8 16l2 2M11 13l1.5 1.5M14 10l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+};
+
+/* Awake-window samples, as the engine's AwakeWindowStrategy: wake (end of a session) -> next session start.
+   Mockup simplification: day phase only (07:00-19:00), no recency weighting, no outlier step. */
+function awakeModel(ev, lookDays = 14) {
+  const { sessions } = buildSleep(ev);
+  const from = NOW - lookDays * DAY;
+  const gaps = [];
+  for (let k = 1; k < sessions.length; k++) {
+    const a = sessions[k - 1], b = sessions[k];
+    if (!a.end || a.end < from || b.kind !== 'nap') continue;
+    const h = new Date(a.end).getHours();
+    if (h < 7 || h >= 19) continue;
+    const g = b.start - a.end; if (g > MIN && g < 5 * HOUR) gaps.push(g);
+  }
+  const napLens = sessions.filter((s) => s.kind === 'nap' && s.end && s.start >= from).map((s) => s.end - s.start);
+  const last = [...sessions].reverse().find((s) => s.end);
+  const days = new Set(sessions.filter((s) => s.start >= from).map((s) => new Date(s.start).toDateString())).size;
+  return { gaps, q1: quantile(gaps, 0.25), med: median(gaps), q3: quantile(gaps, 0.75), napQ1: quantile(napLens, 0.25), napMed: median(napLens), napQ3: quantile(napLens, 0.75), lastWake: last.end, days, sessions };
+}
+const round5 = (ms) => Math.round(ms / (5 * MIN)) * 5 * MIN;
+const FULLM = awakeModel(makeData());
+const LOWM = awakeModel(makeData(20261021, 2));
+
+/* Window strip: last wake -> now (awake so far) and the likely window, on a 4-hour axis. */
+function stripSVG({ anchor, now, e0, e1, ex, kind = 'awake', axisFrom, axisTo }) {
+  const W = 326, L = 4, R = 4, T = 8, H = 66, PW = W - L - R;
+  const X = (t) => L + ((t - axisFrom) / (axisTo - axisFrom)) * PW;
+  const barY = T + 14, barH = 12;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${kind === 'awake' ? 'Awake' : 'Asleep'} since ${fmtTime(anchor)}; likely ${kind === 'awake' ? 'nap start' : 'wake-up'} between ${fmtTime(e0)} and ${fmtTime(e1)}.">`;
+  for (let t = Math.ceil(axisFrom / HOUR) * HOUR; t <= axisTo; t += HOUR) {
+    s += `<line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${barY + barH + 8}" class="s-grid" stroke-width="1"/><text x="${X(t)}" y="${H - 4}" class="axis" text-anchor="middle">${fmtTime(t)}</text>`;
+  }
+  s += `<rect x="${X(e0)}" y="${T}" width="${Math.max(4, X(e1) - X(e0))}" height="${barH + 28}" rx="8" class="f-window"/>`;
+  s += `<rect x="${X(anchor)}" y="${barY}" width="${Math.max(2, X(now) - X(anchor))}" height="${barH}" rx="6" class="${kind === 'awake' ? 'f-accent' : 'f-nap'}"/>`;
+  if (ex) s += `<circle cx="${X(ex)}" cy="${barY + barH / 2}" r="5" class="f-text s-surface" stroke-width="2"/>`;
+  s += `<line x1="${X(now)}" x2="${X(now)}" y1="${T - 2}" y2="${barY + barH + 10}" class="s-text" stroke-width="2" stroke-linecap="round"/>`;
+  s += `<text x="${X(now)}" y="${T + 1}" class="axis" text-anchor="middle" style="fill:var(--text)" dy="-2"></text>`;
+  return s + '</svg>';
+}
+const legendStrip = (kind) => `<div class="legend"><span><i class="sw" style="background:${kind === 'awake' ? 'var(--accent)' : 'var(--c-nap)'}"></i>${kind === 'awake' ? 'Awake so far' : 'Asleep so far'}</span><span><i class="sw" style="background:var(--accent);opacity:.3"></i>Likely window</span><span><i class="sw" style="background:var(--text);width:2px;height:12px"></i>Now</span></div>`;
+
+function hero(state) {
+  const m = state === 'learning' ? LOWM : FULLM;
+  const anchor = m.lastWake;
+  if (state === 'stale') {
+    return `<section class="card" aria-labelledby="hero-h"><div class="hero-top"><span class="icon i-sleep">${ICON.moon}</span><h2 id="hero-h">Next nap</h2></div>
+      <p style="margin:12px 0 0;font-size:15px">Nothing logged since yesterday 21:40, so the nap window is paused for now.</p>
+      <p class="cap" style="margin-top:6px">Log what Lia is doing now and the window comes back.</p>
+      <div class="actions"><button class="btn" type="button">Lia is asleep</button><button class="btn ghost" type="button">Lia is awake</button></div></section>`;
+  }
+  if (state === 'asleep') {
+    const start = NOW - 12 * MIN;
+    const e0 = Math.floor((start + m.napQ1) / (5 * MIN)) * 5 * MIN, e1 = Math.ceil((start + m.napQ3) / (5 * MIN)) * 5 * MIN, ex = start + m.napMed;
+    return `<section class="card" aria-labelledby="hero-h"><div class="hero-top"><span class="icon i-sleep">${ICON.moon}</span><h2 id="hero-h">Napping</h2><button class="btn-text" type="button">Why?</button></div>
+      <div class="big">0:12</div><div class="rel">since ${fmtTime(start)} · usually wakes ${fmtTime(e0)}${'–'}${fmtTime(e1)}</div>
+      <div class="chart">${stripSVG({ anchor: start, now: NOW, e0, e1, ex, kind: 'asleep', axisFrom: start - 20 * MIN, axisTo: start + 3 * HOUR })}</div>${legendStrip('asleep')}
+      <div class="chips"><span class="pill">Typical nap ${fmtDur(round5(m.napMed))}</span><span class="pill">Next feed around 15:20</span></div></section>`;
+  }
+  const n = m.gaps.length;
+  // Display rule: never narrower than 20 min, and wider while learning, so the window never over-promises.
+  const minHalf = (n < 10 ? 30 : 10) * MIN;
+  const ex = anchor + m.med;
+  const f5 = (t) => Math.floor(t / (5 * MIN)) * 5 * MIN, c5 = (t) => Math.ceil(t / (5 * MIN)) * 5 * MIN;
+  const e0 = f5(Math.min(anchor + m.q1, ex - minHalf)), e1 = c5(Math.max(anchor + m.q3, ex + minHalf));
+  const early = n < 10;
+  if (state === 'past') {
+    const now2 = e1 + 40 * MIN;
+    return `<section class="card" aria-labelledby="hero-h"><div class="hero-top"><span class="icon i-sleep">${ICON.sun}</span><h2 id="hero-h">Awake ${fmtDur(now2 - anchor)}</h2><button class="btn-text" type="button">Why?</button></div>
+      <p style="margin:12px 0 0;font-size:15px">Today's usual nap window was ${fmtTime(e0)}${'–'}${fmtTime(e1)}. Some days run later; log the nap whenever it happens.</p>
+      <div class="chart">${stripSVG({ anchor, now: now2, e0, e1, ex: null, axisFrom: anchor - 15 * MIN, axisTo: anchor + 4 * HOUR })}</div>${legendStrip('awake')}
+      <p class="cap" style="margin-top:8px">Shown for clock ${fmtTime(now2)}. No "overdue", no alerts: the window simply steps aside after 2 hours.</p></section>`;
+  }
+  const rel = Math.max(0, ex - NOW);
+  return `<section class="card" aria-labelledby="hero-h"><div class="hero-top"><span class="icon i-sleep">${ICON.moon}</span><h2 id="hero-h">Next nap</h2><button class="btn-text" type="button">Why?</button></div>
+    <div class="big">${fmtTime(e0)}${'–'}${fmtTime(e1)}</div>
+    <div class="rel">${early ? 'A rough window while Lia’s rhythm is learned' : `likely in about ${fmtDur(round5(rel))}`} · awake since ${fmtTime(anchor)}</div>
+    <div class="chart">${stripSVG({ anchor, now: NOW, e0, e1, ex: early ? null : ex, axisFrom: anchor - 15 * MIN, axisTo: anchor + 4 * HOUR })}</div>${legendStrip('awake')}
+    <div class="chips">${early
+      ? `<span class="pill">Early estimate · ${n} naps so far</span>`
+      : `<span class="pill">Based on ${n} naps · last 14 days</span>`}<span class="pill">Next feed around 15:20</span></div>
+    ${early ? `<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${n}" aria-label="Naps learned"><i style="width:${n * 10}%"></i></div><p class="cap" style="margin-top:6px">The window narrows as you log. About 3 more days to a steady estimate.</p>` : ''}
+    </section>`;
+}
+
+function why(state) {
+  const m = state === 'learning' ? LOWM : FULLM;
+  const row = (icon, cls, text) => `<div class="why-row"><span class="icon ${cls}">${icon}</span><div class="grow">${text}</div></div>`;
+  return `<section class="sheet" aria-labelledby="why-h"><div class="handle" aria-hidden="true"></div>
+    <h2 id="why-h" style="font-size:17px;font-weight:500;margin:0 0 4px">Why this window?</h2>
+    ${row(ICON.sun, 'i-sleep', `Lia last woke up at <b>${fmtTime(m.lastWake)}</b>.`)}
+    ${row(ICON.clock, 'i-sleep', `Lately, Lia's daytime awake time before a nap was <b>${fmtDur(round5(m.q1))}${'–'}${fmtDur(round5(m.q3))}</b> (the middle half of ${m.gaps.length} naps). The window adds that to the wake-up time.`)}
+    ${row(ICON.cal, 'i-sleep', `Only daytime naps from the last 14 days. Recent days count more, so the window keeps up as Lia changes.`)}
+    ${row(ICON.baby, 'i-sleep', `Only days since Lia turned 3 months are used, because rhythms change with age.`)}
+    <details style="margin-top:10px"><summary class="btn-text" style="list-style:none">What's often quoted at 4 months</summary>
+      <div class="subtle">Awake times of roughly 1h 15m to 2h 30m are often quoted for 3 to 6 months. These are rough guides with little research behind them, and many babies sit outside them. Lia's window comes from Lia's own days. <span class="muted">You can hide these guides in Settings.</span></div>
+    </details>
+    <p class="cap" style="margin:12px 0 0">An estimate from your logs, not medical advice.</p></section>`;
+}
+
+function guide() {
+  const m = FULLM;
+  const today = m.sessions.filter((s) => s.start >= midnight(NDAYS - 1) && s.kind === 'nap');
+  const wake = m.sessions.find((s) => s.kind === 'night' && s.end && s.end >= midnight(NDAYS - 1)).end; // this morning's wake-up
+  const ends = [wake, ...today.map((s) => s.end)];
+  const wins = ends.map((e, k) => ({ from: e, to: today[k] ? today[k].start : NOW, live: !today[k] }));
+  const W = 326, L = 92, R = 8, rowH = 30, T = 6, max = 3 * HOUR, PW = W - L - R;
+  const H = T + wins.length * rowH + 22;
+  const X = (ms) => L + (ms / max) * PW;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Today's awake times compared with Lia's typical range of ${fmtDur(round5(m.q1))} to ${fmtDur(round5(m.q3))}.">`;
+  s += `<rect x="${X(m.q1)}" y="${T - 4}" width="${X(m.q3) - X(m.q1)}" height="${wins.length * rowH + 4}" rx="6" class="f-wash"/>`;
+  [0, 1, 2, 3].forEach((h) => { s += `<line x1="${X(h * HOUR)}" x2="${X(h * HOUR)}" y1="${T}" y2="${T + wins.length * rowH}" class="s-grid" stroke-width="1"/><text x="${X(h * HOUR)}" y="${H - 4}" class="axis" text-anchor="middle">${h}h</text>`; });
+  wins.forEach((w, k) => {
+    const y = T + k * rowH + 8, len = w.to - w.from;
+    s += `<text x="0" y="${y + 6}" class="axis" dominant-baseline="middle">${fmtTime(w.from)}${w.live ? ' now' : ''}</text>`;
+    s += `<rect x="${L}" y="${y}" width="${Math.max(3, X(len) - L)}" height="12" rx="4" class="${w.live ? 'f-accent' : 'f-nap'}"/>`;
+    s += `<text x="${X(len) + 6}" y="${y + 6}" class="axis halo" dominant-baseline="middle" style="fill:var(--text)">${fmtDur(len)}</text>`;
+  });
+  s += '</svg>';
+  return `<section class="card" aria-labelledby="g-h"><div class="hero-top"><span class="icon i-sleep">${ICON.clock}</span><h2 id="g-h">Today's awake times</h2></div>
+    <p class="take">The shaded band is Lia's own typical range lately (${fmtDur(round5(m.q1))}${'–'}${fmtDur(round5(m.q3))}). It moves as Lia grows.</p>
+    <div class="chart">${s}</div>
+    <div class="legend"><span><i class="sw" style="background:var(--c-nap)"></i>Before a nap</span><span><i class="sw" style="background:var(--accent)"></i>Right now</span><span><i class="sw" style="background:var(--wash-sleep);outline:1px solid var(--hairline)"></i>Lia's typical range</span></div></section>`;
+}
+
+function render() {
+  const st = document.getElementById('state').value;
+  document.getElementById('hero').innerHTML = hero(st);
+  document.getElementById('why').innerHTML = why(st === 'learning' ? 'learning' : 'awake');
+  document.getElementById('guide').innerHTML = guide();
+}
+document.getElementById('state').addEventListener('change', render);
+initThemeToggle(document.getElementById('theme'));
+render();
+</script>
+</body>
+</html>

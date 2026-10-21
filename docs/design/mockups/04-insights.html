@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Insights screen</title>
+<meta name="description" content="Mockup 04-a: Insights screen for Baby Routine (sleep rhythm, daily totals, feeding, diapers) on synthetic data.">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f5ff; --surface: #ffffff; --raised: #ebe8ff; --hairline: #e0ddf5; --grid: #ebe8f7;
+  --text: #1b1838; --muted: #5d5a82; --accent: #5b4bd6; --accent-soft: #4a3cc0; --on-accent: #ffffff;
+  --c-night: #4c3fb0; --c-nap: #9a8ef0; --c-feed: #0f8a6e; --c-diaper: #b0700f; --c-med: #c0449e;
+  --wash-sleep: rgba(91, 75, 214, 0.10); --wash-feed: rgba(15, 138, 110, 0.10);
+  --tint-sleep: #ebe8ff; --tint-feed: #dcf3ec; --tint-diaper: #fbeedd; --tint-health: #fbe3ef;
+  --shadow: 0 1px 2px rgba(60, 50, 140, 0.06), 0 4px 16px rgba(60, 50, 140, 0.07);
+  --hatch: #c9c4ea;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #15132e; --surface: #1f1c3f; --raised: #2a2468; --hairline: #2a2652; --grid: #2f2b5c;
+    --text: #eceaff; --muted: #9d99c8; --accent: #7c6cf0; --accent-soft: #c4baff; --on-accent: #ffffff;
+    --c-night: #b4a9ff; --c-nap: #7c6cf0; --c-feed: #1fa889; --c-diaper: #c98322; --c-med: #d65fb8;
+    --wash-sleep: rgba(180, 169, 255, 0.10); --wash-feed: rgba(31, 168, 137, 0.12);
+    --tint-sleep: #3a2f7a; --tint-feed: #16423f; --tint-diaper: #4a3322; --tint-health: #4b2a33;
+    --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --hatch: #4a4583;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #15132e; --surface: #1f1c3f; --raised: #2a2468; --hairline: #2a2652; --grid: #2f2b5c;
+  --text: #eceaff; --muted: #9d99c8; --accent: #7c6cf0; --accent-soft: #c4baff; --on-accent: #ffffff;
+  --c-night: #b4a9ff; --c-nap: #7c6cf0; --c-feed: #1fa889; --c-diaper: #c98322; --c-med: #d65fb8;
+  --wash-sleep: rgba(180, 169, 255, 0.10); --wash-feed: rgba(31, 168, 137, 0.12);
+  --tint-sleep: #3a2f7a; --tint-feed: #16423f; --tint-diaper: #4a3322; --tint-health: #4b2a33;
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --hatch: #4a4583;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mockbar {
+  max-width: 390px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12px; color: var(--muted); border-bottom: 1px dashed var(--hairline);
+}
+.mockbar strong { font-weight: 600; margin-right: 4px; }
+.mockbar button, .mockbar select {
+  font: inherit; font-size: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 999px; padding: 6px 10px; cursor: pointer; min-height: 32px;
+}
+.phone { max-width: 390px; margin: 0 auto; padding: 8px 16px 40px; }
+.appbar { display: flex; align-items: center; gap: 12px; padding: 12px 0 8px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--tint-sleep); color: var(--accent-soft); display: grid; place-items: center; font-weight: 600; }
+.appbar h1 { font-size: 20px; font-weight: 500; margin: 0; line-height: 1.2; }
+.appbar .sub { font-size: 12px; color: var(--muted); }
+.card { background: var(--surface); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: var(--shadow); position: relative; }
+.card h2, .section-h { font-size: 15px; font-weight: 500; margin: 0; display: flex; align-items: center; gap: 8px; }
+.section-h { margin: 24px 0 0; }
+.card .take { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.icon { width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; }
+.icon svg { width: 18px; height: 18px; }
+.i-sleep { background: var(--tint-sleep); color: var(--c-night); }
+.i-feed { background: var(--tint-feed); color: var(--c-feed); }
+.i-diaper { background: var(--tint-diaper); color: var(--c-diaper); }
+.i-health { background: var(--tint-health); color: var(--c-med); }
+.muted { color: var(--muted); }
+.cap { font-size: 12px; color: var(--muted); }
+.seg { display: flex; background: var(--raised); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 8px 6px; border-radius: 999px; min-height: 36px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: var(--shadow); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--hairline); background: transparent; color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; min-height: 36px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--raised); border-color: transparent; }
+.btn-text { border: 0; background: none; color: var(--accent-soft); font: inherit; font-size: 13px; font-weight: 500; padding: 8px 0; cursor: pointer; min-height: 36px; }
+:root:not([data-theme="dark"]) .btn-text { color: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-text { color: var(--accent-soft); } }
+.btn { border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 500; border-radius: 999px; padding: 12px 18px; min-height: 44px; cursor: pointer; }
+.btn.ghost { background: var(--raised); color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); min-width: 0; }
+.tile .label { font-size: 12px; color: var(--muted); }
+.tile .value { font-size: 24px; font-weight: 500; margin-top: 2px; letter-spacing: -0.01em; }
+.tile .delta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 12px; height: 8px; border-radius: 2px; }
+.chart { position: relative; margin-top: 12px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: inherit; }
+.tip { position: absolute; z-index: 5; pointer-events: none; background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.4; padding: 8px 10px; border-radius: 10px; max-width: 240px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25); }
+.tip b { font-weight: 600; }
+table.data { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { text-align: right; padding: 6px 4px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data th { color: var(--muted); font-weight: 500; }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 12px; color: var(--muted); margin-top: 24px; text-align: center; }
+details.how { margin-top: 16px; }
+details.how summary { cursor: pointer; font-size: 13px; font-weight: 500; min-height: 36px; display: flex; align-items: center; }
+details.how dl { font-size: 13px; margin: 8px 0 0; }
+details.how dt { font-weight: 500; margin-top: 10px; }
+details.how dd { margin: 2px 0 0; color: var(--muted); }
+.progress { height: 6px; border-radius: 999px; background: var(--raised); overflow: hidden; margin-top: 10px; }
+.progress > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--text); }
+.sheet { background: var(--surface); border-radius: 24px 24px 0 0; padding: 12px 16px 20px; margin-top: 16px; box-shadow: var(--shadow); }
+.sheet .handle { width: 36px; height: 4px; border-radius: 4px; background: var(--hairline); margin: 0 auto 12px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+.switch { appearance: none; width: 44px; height: 26px; border-radius: 999px; background: var(--raised); position: relative; cursor: pointer; flex: none; border: 1px solid var(--hairline); }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); transition: left .18s ease-out, background .18s; }
+.switch:checked { background: var(--accent); border-color: transparent; }
+.switch:checked::after { left: 20px; background: #fff; }
+.list-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+.list-row:last-child { border-bottom: 0; }
+.list-row .t { font-size: 14px; }
+.list-row .s { font-size: 12px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.f-night { fill: var(--c-night); } .f-nap { fill: var(--c-nap); } .f-feed { fill: var(--c-feed); }
+.f-diaper { fill: var(--c-diaper); } .f-med { fill: var(--c-med); } .f-muted { fill: var(--muted); } .f-text { fill: var(--text); }
+.s-night { stroke: var(--c-night); } .s-nap { stroke: var(--c-nap); } .s-feed { stroke: var(--c-feed); }
+.s-grid { stroke: var(--grid); } .s-hair { stroke: var(--hairline); } .s-text { stroke: var(--text); } .s-surface { stroke: var(--surface); }
+.f-wash { fill: var(--wash-sleep); } .f-washfeed { fill: var(--wash-feed); } .f-future { fill: var(--raised); opacity: .45; }
+.hit { fill: transparent; cursor: pointer; }
+.hit:focus { outline: none; }
+.hit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+.axis { font-size: 12px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.sticky { position: sticky; top: 0; z-index: 4; background: var(--bg); padding: 8px 0; }
+.halo { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.jump { display: flex; gap: 8px; margin-bottom: 8px; }
+.jump a { flex: 1; text-align: center; text-decoration: none; color: var(--text); font-size: 13px; border-radius: 999px; padding: 8px 0; background: var(--surface); box-shadow: var(--shadow); }
+.summary { display: flex; gap: 12px; align-items: flex-start; }
+.summary p { margin: 0; font-size: 15px; }
+.layers { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.empty { text-align: center; padding: 18px 8px 6px; }
+.empty .icon { width: 48px; height: 48px; margin-bottom: 8px; }
+.empty p { margin: 0; font-size: 14px; }
+.ring-wrap { display: grid; place-items: center; }
+.ring-wrap svg { max-width: 300px; }
+</style>
+</head>
+<body>
+<div class="mockbar" aria-label="Mockup controls (not part of the product)">
+  <strong>Mockup</strong>
+  <button id="theme" type="button">Theme</button>
+  <button id="dataset" type="button" aria-pressed="false">Data: 30 days</button>
+  <span>Synthetic data, not a real child</span>
+</div>
+
+<main class="phone">
+  <header class="appbar">
+    <div class="avatar" aria-hidden="true">L</div>
+    <div class="grow">
+      <h1>Insights</h1>
+      <div class="sub">Lia · 4 months, 1 week</div>
+    </div>
+  </header>
+
+  <nav class="jump" aria-label="Insights sections">
+    <a href="#sleep">Sleep</a><a href="#feeding">Feeding</a><a href="#diapers">Diapers</a><a href="04-digest-growth-report.html#growth">Growth</a>
+  </nav>
+  <div class="sticky">
+    <div class="seg" role="group" aria-label="Period shown in all charts">
+      <button type="button" data-range="7">7 days</button>
+      <button type="button" data-range="14" aria-pressed="true">14 days</button>
+      <button type="button" data-range="30">30 days</button>
+    </div>
+  </div>
+
+  <div id="app"></div>
+
+  <details class="how card">
+    <summary>How these numbers are calculated</summary>
+    <dl>
+      <dt>A day</dt><dd>Runs from 06:00 to 06:00 (Lia's usual wake-up hour), so each day holds its naps and the night that follows. Today is left out of averages until it ends.</dd>
+      <dt>Night sleep</dt><dd>From bedtime to wake-up, minus the time awake during night wakings.</dd>
+      <dt>Longest stretch</dt><dd>The longest part of the night without a logged waking.</dd>
+      <dt>Partly logged days</dt><dd>Days without a finished night, without naps, or with a gap of more than 5 hours in the daytime log. They are drawn with stripes and left out of averages and comparisons.</dd>
+      <dt>Comparisons</dt><dd>Only with Lia's own previous period, and only when both periods have at least 4 fully logged days. Differences under 15 minutes are called "about the same".</dd>
+    </dl>
+  </details>
+  <p class="note">Patterns from your logs, not medical advice. If something worries you, your pediatrician is the right person to ask.</p>
+</main>
+
+<script>
+/* ==========================================================================
+   SYNTHETIC SAMPLE DATA - not real child data.
+   Generator documented in docs/design/04-insights-delight.md ("Synthetic sample data").
+   Seeded PRNG (mulberry32, seed 20261021): every page renders the same series.
+   Baby "Lia", born 2026-06-12, 30 days ending "now" = Wed 2026-10-21 14:10 local.
+   Shape follows the Napper export / built-in types: sleep kinds nap, bed_time, woke_up,
+   night_waking; bottle feeds (amount_ml, bottle_feeding_type); diapers (WET|DIRTY|MIXED);
+   medication instants. Day 9 misses an afternoon of logging, night 20 has no bedtime marker.
+   ========================================================================== */
+const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const NOW = new Date(2026, 9, 21, 14, 10).getTime();
+const BABY = 'Lia';
+const NDAYS = 30;
+const DAY_START_HOUR = 6; // "baby day" boundary: the usual wake-up hour, so a night is never split
+const midnight = (i) => new Date(2026, 9, 21 - (NDAYS - 1) + i).getTime();
+const dayStart = (i) => midnight(i) + DAY_START_HOUR * HOUR;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeData(seed = 20261021, days = NDAYS) {
+  const rnd = mulberry32(seed);
+  const rand = (a, b) => a + (b - a) * rnd();
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const ev = [];
+  const add = (type, start, end, payload) => ev.push({ type, start, end: end === undefined ? start : end, payload: payload || {} });
+  const diaper = () => { const r = rnd(); return r < 0.18 ? 'DIRTY' : r < 0.28 ? 'MIXED' : 'WET'; };
+  const ml = (a, b) => Math.round(rand(a, b) / 10) * 10;
+  const first = NDAYS - days;
+  const wakes = [];
+  for (let i = 0; i <= NDAYS; i++) wakes.push(midnight(i) + 6.5 * HOUR + clamp(gauss() * 18, -40, 50) * MIN);
+  for (let i = first; i < NDAYS; i++) {
+    const mid = midnight(i), p = i / (NDAYS - 1), wake = wakes[i];
+    if (i > first) add('sleep', wake, wake, { kind: 'woke_up' });
+    let t = wake;
+    const napCount = p < 0.4 ? 4 : (rnd() < 0.35 + p * 0.5 ? 3 : 4);
+    const napsToday = [];
+    for (let n = 0; n < napCount; n++) {
+      const ww = (92 + p * 28 + n * 12 + gauss() * 16) * MIN;
+      const s = t + ww, last = n === napCount - 1;
+      const len = (last ? rand(28, 45) : rand(38, 100)) * MIN;
+      add('sleep', s, s + len, { kind: 'nap' });
+      napsToday.push([s, s + len]);
+      t = s + len;
+    }
+    const awake = (x) => { const hit = napsToday.find(([s, e]) => x >= s - 10 * MIN && x < e); return hit ? hit[1] + rand(4, 12) * MIN : x; };
+    const target = mid + 19.4 * HOUR + gauss() * 14 * MIN;
+    const bed = clamp(Math.max(target, t + 80 * MIN), mid + 18.75 * HOUR, mid + 21 * HOUR);
+    add('diaper', wake + rand(2, 10) * MIN, undefined, { content: 'WET' });
+    add('sleep', bed, bed, { kind: 'bed_time' });
+    let f = wake + rand(5, 20) * MIN;
+    while (f < bed - 70 * MIN) {
+      f = awake(f);
+      add('feeding', f, f + rand(10, 20) * MIN, { method: 'bottle', amount_ml: ml(120, 165), bottle_feeding_type: rnd() < 0.8 ? 'formula' : 'breast_milk' });
+      if (rnd() < 0.92) add('diaper', f + rand(5, 15) * MIN, undefined, { content: diaper() });
+      f += rand(160, 205) * MIN;
+    }
+    const bf = bed - rand(22, 35) * MIN;
+    add('feeding', bf, bf + 15 * MIN, { method: 'bottle', amount_ml: ml(140, 170), bottle_feeding_type: 'formula' });
+    if (rnd() < 0.95) add('medication', awake(wake + rand(30, 60) * MIN), undefined, { medications: [{ name: 'Vitamin D drops' }] });
+    if (rnd() < 0.75 - 0.5 * p) add('medication', awake(mid + rand(17, 18.5) * HOUR), undefined, { medications: [{ name: 'Gas drops' }] });
+    const next = wakes[i + 1];
+    const k = Math.max(0, Math.round(2.7 - 1.5 * p + gauss() * 0.6));
+    let w = bed + (3.9 + 2.2 * p + gauss() * 0.45) * HOUR;
+    for (let j = 0; j < k && w < next - 50 * MIN; j++) {
+      const len = rand(10, 32) * MIN;
+      add('sleep', w, w + len, { kind: 'night_waking' });
+      if (rnd() < 0.85) add('feeding', w + 3 * MIN, w + 18 * MIN, { method: 'bottle', amount_ml: ml(80, 120), bottle_feeding_type: 'formula' });
+      if (rnd() < 0.45) add('diaper', w + 20 * MIN, undefined, { content: 'WET' });
+      const end = w + len, left = k - j - 1;
+      w = end + ((next - end) / (left + 1)) * rand(0.8, 1.15);
+    }
+  }
+  const gapDay = midnight(9), noBedNight = midnight(20);
+  return ev
+    .filter((e) => !(days === NDAYS && e.start >= gapDay + 10 * HOUR && e.start < gapDay + 18 * HOUR ))
+    .filter((e) => !(days === NDAYS && e.type === 'sleep' && e.payload.kind === 'bed_time' && e.start > noBedNight && e.start < noBedNight + DAY))
+    .filter((e) => e.start <= NOW)
+    .map((e) => (e.end > NOW ? { ...e, end: null } : e))
+    .sort((a, b) => a.start - b.start);
+}
+
+/* ---------- Metrics: mirror of Domain SleepSessions + the definitions table in the doc ---------- */
+function buildSleep(ev) {
+  const sleep = ev.filter((e) => e.type === 'sleep');
+  const markers = sleep
+    .filter((e) => e.payload.kind === 'bed_time' || e.payload.kind === 'woke_up')
+    .sort((a, b) => a.start - b.start || (a.payload.kind === 'bed_time') - (b.payload.kind === 'bed_time'));
+  const nights = [];
+  markers.forEach((m, i) => {
+    if (m.payload.kind !== 'bed_time') return;
+    const n = markers[i + 1];
+    if (!n) { if (NOW - m.start <= 16 * HOUR) nights.push({ kind: 'night', start: m.start, end: null }); return; }
+    if (n.payload.kind === 'woke_up' && n.start - m.start <= 16 * HOUR) nights.push({ kind: 'night', start: m.start, end: n.start });
+  });
+  const logged = sleep
+    .filter((e) => !['night_waking', 'bed_time', 'woke_up', 'fell_asleep'].includes(e.payload.kind))
+    .map((e) => ({ kind: e.payload.kind || 'nap', start: e.start, end: e.end }));
+  const wakings = sleep.filter((e) => e.payload.kind === 'night_waking');
+  const sessions = [...logged, ...nights].sort((a, b) => a.start - b.start);
+  sessions.forEach((s) => (s.pieces = asleepPieces(s, wakings)));
+  return { sessions, wakings };
+}
+
+function asleepPieces(session, wakings) {
+  const end = session.end ?? NOW;
+  let pieces = [[session.start, end]];
+  for (const w of wakings) {
+    const ws = w.start, we = w.end ?? NOW;
+    pieces = pieces.flatMap(([s, e]) => (we <= s || ws >= e ? [[s, e]] : [[s, ws], [we, e]].filter(([a, b]) => b - a > 0)));
+  }
+  return pieces.map(([s, e]) => ({ start: s, end: e, kind: session.kind }));
+}
+
+const sum = (xs) => xs.reduce((a, b) => a + b, 0);
+const median = (xs) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const quantile = (xs, q) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); const pos = (s.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos); return s[lo] + (s[hi] - s[lo]) * (pos - lo); };
+const clip = (s, e, a, b) => Math.max(0, Math.min(e, b) - Math.max(s, a));
+
+/** One "baby day" i = [06:00 day i, 06:00 day i+1): the day's naps plus the night that starts that evening. */
+function dayMetrics(ev, sleep, i) {
+  const a = dayStart(i), b = dayStart(i + 1);
+  const inDay = (e) => e.start >= a && e.start < b;
+  const naps = sleep.sessions.filter((s) => s.kind === 'nap' && inDay(s));
+  const night = sleep.sessions.find((s) => s.kind === 'night' && inDay(s)) || null;
+  const nightPieces = night ? night.pieces : [];
+  const feeds = ev.filter((e) => e.type === 'feeding' && inDay(e));
+  const diapers = ev.filter((e) => e.type === 'diaper' && inDay(e));
+  const meds = ev.filter((e) => e.type === 'medication' && inDay(e));
+  const nightEnd = night ? night.end ?? NOW : null;
+  const wakings = night ? sleep.wakings.filter((w) => w.start >= night.start && w.start < nightEnd) : [];
+  const napMs = sum(naps.flatMap((s) => s.pieces).map((p) => p.end - p.start));
+  const nightMs = sum(nightPieces.map((p) => p.end - p.start));
+  // completeness: a finished night, at least one nap, and no daytime hole longer than 5 h
+  const prevNight = sleep.sessions.find((s) => s.kind === 'night' && s.start >= dayStart(i - 1) && s.start < a);
+  const dayFrom = prevNight && prevNight.end ? prevNight.end : a + 1 * HOUR;
+  const dayTo = night ? night.start : Math.min(b, NOW);
+  const marks = ev.filter((e) => e.start >= dayFrom && e.start <= dayTo).flatMap((e) => [e.start, e.end ?? e.start]);
+  marks.push(dayFrom, dayTo); marks.sort((x, y) => x - y);
+  let gap = 0; for (let k = 1; k < marks.length; k++) gap = Math.max(gap, marks[k] - marks[k - 1]);
+  const inProgress = b > NOW;
+  const complete = !inProgress && !!night && !!night.end && naps.length > 0 && gap <= 5 * HOUR;
+  return {
+    i, from: a, to: b, naps, night, napMs, nightMs, totalMs: napMs + nightMs,
+    longestMs: nightPieces.length ? Math.max(...nightPieces.map((p) => p.end - p.start)) : null,
+    wakings: wakings.length,
+    wakingMs: sum(wakings.map((w) => (w.end ?? NOW) - w.start)),
+    bedtime: night ? night.start : null,
+    wokeUp: night && night.end ? night.end : null,
+    feeds: feeds.length,
+    feedMl: sum(feeds.map((f) => f.payload.amount_ml || 0)),
+    nightFeeds: night ? feeds.filter((f) => f.start >= night.start && f.start < nightEnd).length : 0,
+    diapers: diapers.length,
+    wet: diapers.filter((d) => d.payload.content !== 'DIRTY').length,
+    dirty: diapers.filter((d) => d.payload.content !== 'WET').length,
+    meds: meds.flatMap((m) => m.payload.medications.map((x) => x.name)),
+    complete, inProgress,
+  };
+}
+
+function allDays(ev) {
+  const sleep = buildSleep(ev);
+  const days = [];
+  for (let i = 0; i < NDAYS; i++) days.push(dayMetrics(ev, sleep, i));
+  return { sleep, days };
+}
+
+/** "Typical" value = median over fully logged days only; null when fewer than `min` such days. */
+function meanOf(days, key, min = 4) {
+  const xs = days.filter((d) => d.complete && d[key] != null).map((d) => d[key]);
+  return xs.length >= min ? median(xs) : null;
+}
+
+/* ---------- Formatting (production: web/src/i18n/format.ts via Intl) ---------- */
+const pad2 = (n) => String(n).padStart(2, '0');
+function fmtDur(ms) {
+  const m = Math.round(ms / MIN), h = Math.floor(m / 60), r = m % 60;
+  return h ? (r ? `${h}h ${r}m` : `${h}h`) : `${r}m`;
+}
+function fmtTime(t) { const d = new Date(t); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+function fmtDay(t) { return new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' }); }
+function fmtDate(t) { return new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
+function minuteOfDay(t, from = 12) { const d = new Date(t); let m = d.getHours() * 60 + d.getMinutes() - from * 60; if (m < 0) m += 1440; return m; }
+function signedDelta(ms, unit = 'dur') {
+  const v = unit === 'dur' ? fmtDur(Math.abs(ms)) : String(Math.abs(Math.round(ms * 10) / 10));
+  return ms >= 0 ? `+${v}` : `−${v}`;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+/* ---------- Theme toggle (system / light / dark) ---------- */
+function initThemeToggle(btn) {
+  const order = ['system', 'light', 'dark'];
+  let mode = 'system';
+  try { mode = localStorage.getItem('br-mock-theme') || 'system'; } catch (e) { /* storage unavailable */ }
+  const apply = () => {
+    if (mode === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', mode);
+    btn.textContent = `Theme: ${mode}`;
+    try { localStorage.setItem('br-mock-theme', mode); } catch (e) { /* ignore */ }
+    window.dispatchEvent(new Event('br-theme'));
+  };
+  btn.addEventListener('click', () => { mode = order[(order.indexOf(mode) + 1) % order.length]; apply(); });
+  apply();
+}
+
+/* ---------- Tooltip helper ---------- */
+function makeTooltip(host) {
+  const tip = document.createElement('div');
+  tip.className = 'tip'; tip.setAttribute('role', 'status'); tip.hidden = true;
+  host.appendChild(tip);
+  return {
+    show(html, x, y) {
+      tip.innerHTML = html; tip.hidden = false;
+      const hw = host.clientWidth, tw = tip.offsetWidth;
+      tip.style.left = `${Math.max(4, Math.min(hw - tw - 4, x - tw / 2))}px`;
+      tip.style.top = `${Math.max(0, y - tip.offsetHeight - 10)}px`;
+    },
+    hide() { tip.hidden = true; },
+  };
+}
+
+
+const FULL = makeData();
+const LOW = makeData(20261021, 2);
+const state = { range: 14, low: false, layers: { feeds: true, diapers: false, meds: false }, tables: {} };
+
+const ICON = {
+  moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>',
+  bottle: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M10 2.5h4v3l2 2.5v12a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 20V8l2-2.5z"/><path stroke="currentColor" stroke-width="2" d="M8 12h4M8 16h4"/></svg>',
+  drop: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3.5l2.1 5.3 5.6.4-4.3 3.6 1.4 5.5L12 15.3l-4.8 3 1.4-5.5-4.3-3.6 5.6-.4z"/></svg>',
+  trend: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-5 4 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+/* ---------- helpers ---------- */
+const PATTERN = '<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="transparent"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--hatch)" stroke-width="2"/></pattern></defs>';
+function roundTop(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h);
+  if (h <= 0) return '';
+  return `M${x} ${y + h}V${y + r}Q${x} ${y} ${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h}Z`;
+}
+function rangeDays(days, n, offset = 0) { return days.slice(NDAYS - n - offset, NDAYS - offset); }
+function firstLoggedIndex(ev) { return Math.max(0, Math.floor((ev[0].start - dayStart(0)) / DAY)); }
+function compareText(cur, prev, n, unit) {
+  if (cur == null) return 'after 4 fully logged days';
+  if (prev == null) return `no earlier ${n} days to compare`;
+  const d = cur - prev;
+  const small = unit === 'dur' ? Math.abs(d) < 15 * MIN : Math.abs(d) < 0.5;
+  if (small) return `about the same as the ${n} days before`;
+  return unit === 'dur' ? `${signedDelta(d)} vs the ${n} days before` : `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} vs the ${n} days before`;
+}
+function tableHTML(id, cols, rows) {
+  const open = state.tables[id];
+  return `<button class="btn-text" type="button" data-table="${id}" aria-expanded="${!!open}" aria-controls="tbl-${id}">${open ? 'Hide table' : 'Show as table'}</button>
+  <div class="tablewrap" id="tbl-${id}" ${open ? '' : 'hidden'}><table class="data"><thead><tr>${cols.map((c) => `<th scope="col">${c[0]}</th>`).join('')}</tr></thead>
+  <tbody>${rows.map((r) => `<tr>${cols.map((c, k) => (k === 0 ? `<th scope="row">${c[1](r)}</th>` : `<td>${c[1](r)}</td>`)).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const dash = '–';
+const dayName = (d) => (d.i === NDAYS - 1 ? 'Today' : fmtDay(d.from));
+
+/* ---------- 24 h clock ---------- */
+function ringSVG(ev, sleep) {
+  const c = 150, r = 100, from = NOW - DAY;
+  const ang = (t) => { const d = new Date(t); return ((d.getHours() * 60 + d.getMinutes()) / 1440) * 2 * Math.PI - Math.PI / 2; };
+  const pt = (a, rr) => [(c + rr * Math.cos(a)).toFixed(1), (c + rr * Math.sin(a)).toFixed(1)];
+  const arc = (s, e, rr) => {
+    let a0 = ang(s), a1 = ang(e); if (a1 <= a0) a1 += 2 * Math.PI;
+    const [x0, y0] = pt(a0, rr), [x1, y1] = pt(a1, rr);
+    return `M${x0} ${y0}A${rr} ${rr} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`;
+  };
+  const pieces = sleep.sessions.flatMap((s) => s.pieces)
+    .map((p) => ({ ...p, start: Math.max(p.start, from), end: Math.min(p.end, NOW) }))
+    .filter((p) => p.end - p.start > 2 * MIN);
+  const feeds = ev.filter((e) => e.type === 'feeding' && e.start >= from);
+  const diapers = ev.filter((e) => e.type === 'diaper' && e.start >= from);
+  const meds = ev.filter((e) => e.type === 'medication' && e.start >= from);
+  const asleep = sum(pieces.map((p) => p.end - p.start));
+  let s = `<svg viewBox="0 0 300 300" role="img" aria-label="Last 24 hours: asleep ${fmtDur(asleep)} in ${pieces.length} periods, ${feeds.length} feeds, ${diapers.length} diapers, ${meds.length} medications. Details in the table.">`;
+  s += `<circle cx="${c}" cy="${c}" r="${r}" fill="none" class="s-grid" stroke-width="16"/>`;
+  for (let h = 0; h < 24; h += 3) {
+    const a = (h / 24) * 2 * Math.PI - Math.PI / 2;
+    const [x0, y0] = pt(a, r + 10), [x1, y1] = pt(a, r + 14);
+    s += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" class="s-hair" stroke-width="1.5"/>`;
+  }
+  [['00', 0], ['06', 6], ['12', 12], ['18', 18]].forEach(([l, h]) => {
+    const a = (h / 24) * 2 * Math.PI - Math.PI / 2; const [x, y] = pt(a, r + 30);
+    s += `<text x="${x}" y="${y}" class="axis" text-anchor="middle" dominant-baseline="middle">${l}</text>`;
+  });
+  pieces.forEach((p) => { s += `<path d="${arc(p.start, p.end, r)}" fill="none" class="${p.kind === 'night' ? 's-night' : 's-nap'}" stroke-width="16"/>`; });
+  feeds.forEach((f) => { const a = ang(f.start); const [x0, y0] = pt(a, r - 22), [x1, y1] = pt(a, r - 13); s += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" class="s-feed" stroke-width="3" stroke-linecap="round"/>`; });
+  diapers.forEach((d) => { const [x, y] = pt(ang(d.start), r - 32); s += `<circle cx="${x}" cy="${y}" r="4" class="f-diaper s-surface" stroke-width="2"/>`; });
+  const a = ang(NOW); const [nx0, ny0] = pt(a, r - 12), [nx1, ny1] = pt(a, r + 12);
+  s += `<line x1="${nx0}" y1="${ny0}" x2="${nx1}" y2="${ny1}" class="s-text" stroke-width="2" stroke-linecap="round"/>`;
+  const [lx, ly] = pt(a, r + 22);
+  s += `<text x="${lx}" y="${ly}" class="axis" text-anchor="middle" dominant-baseline="middle" style="fill:var(--text)">now</text>`;
+  s += `<text x="${c}" y="${c - 8}" text-anchor="middle" class="f-text" style="font-size:28px;font-weight:500">${fmtDur(asleep)}</text>`;
+  s += `<text x="${c}" y="${c + 16}" text-anchor="middle" class="axis">asleep in the last 24 h</text>`;
+  s += `<text x="${c}" y="${c + 36}" text-anchor="middle" class="axis">${feeds.length} feeds · ${diapers.length} diapers</text>`;
+  s += '</svg>';
+  const rows = [
+    ...pieces.map((p) => ({ t: p.start, what: p.kind === 'night' ? 'Night sleep' : 'Nap', detail: `${fmtTime(p.start)}${dash}${fmtTime(p.end)} · ${fmtDur(p.end - p.start)}` })),
+    ...feeds.map((f) => ({ t: f.start, what: 'Bottle', detail: `${fmtTime(f.start)} · ${f.payload.amount_ml} ml` })),
+    ...diapers.map((d) => ({ t: d.start, what: 'Diaper', detail: `${fmtTime(d.start)} · ${d.payload.content.toLowerCase()}` })),
+    ...meds.map((m) => ({ t: m.start, what: 'Medication', detail: `${fmtTime(m.start)} · ${m.payload.medications[0].name}` })),
+  ].sort((x, y) => x.t - y.t);
+  return { svg: s, rows };
+}
+
+/* ---------- 14-day rhythm (actogram) ---------- */
+function actogramSVG(ev, sleep, list) {
+  const W = 326, L = 52, PW = W - L - 2, top = 20, n = list.length;
+  const rowH = n <= 7 ? 26 : n <= 14 ? 18 : 11;
+  const H = top + n * rowH + 2;
+  const bh = Math.max(5, Math.round(rowH * 0.5));
+  const X = (t, a) => L + ((t - a) / DAY) * PW;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sleep rhythm, one row per day from 06:00 to 06:00, newest on top. Use the table for exact values.">${PATTERN}`;
+  [['06', 0], ['12', 6], ['18', 12], ['00', 18], ['06', 24]].forEach(([l, h], k) => {
+    const x = L + (h / 24) * PW;
+    s += `<text x="${x}" y="12" class="axis" text-anchor="${k === 0 ? 'start' : k === 4 ? 'end' : 'middle'}">${l}</text>`;
+    if (k > 0 && k < 4) s += `<line x1="${x}" x2="${x}" y1="${top - 2}" y2="${H}" class="s-grid" stroke-width="1"/>`;
+  });
+  list.forEach((d, k) => {
+    const y = top + k * rowH, a = d.from, b = d.to;
+    const labelEvery = n > 14 ? 7 : 1;
+    if (!d.complete && !d.inProgress) s += `<rect x="${L}" y="${y + 1}" width="${PW}" height="${rowH - 2}" fill="url(#hatch)" opacity=".9"/>`;
+    if (k % labelEvery === 0 || d.inProgress) s += `<text x="0" y="${y + bh / 2 + 3}" class="axis" dominant-baseline="middle">${dayName(d)}</text>`;
+    if (d.inProgress) s += `<rect x="${X(NOW, a)}" y="${y + 1}" width="${X(b, a) - X(NOW, a)}" height="${rowH - 2}" class="f-future"/>`;
+    sleep.sessions.flatMap((ss) => ss.pieces).forEach((p) => {
+      const s0 = Math.max(p.start, a), s1 = Math.min(p.end, b);
+      if (s1 - s0 < MIN) return;
+      s += `<rect x="${X(s0, a).toFixed(1)}" y="${y + 2}" width="${Math.max(1.5, X(s1, a) - X(s0, a) - 1).toFixed(1)}" height="${bh}" rx="2" class="${p.kind === 'night' ? 'f-night' : 'f-nap'}"/>`;
+    });
+    const ty = y + 2 + bh + 2;
+    if (state.layers.feeds) ev.filter((e) => e.type === 'feeding' && e.start >= a && e.start < b).forEach((f) => { s += `<rect x="${(X(f.start, a) - 1).toFixed(1)}" y="${ty}" width="2.5" height="${Math.max(3, rowH - bh - 6)}" rx="1" class="f-feed"/>`; });
+    if (state.layers.diapers) ev.filter((e) => e.type === 'diaper' && e.start >= a && e.start < b).forEach((f) => { s += `<circle cx="${X(f.start, a).toFixed(1)}" cy="${ty + 2}" r="2.6" class="f-diaper"/>`; });
+    if (state.layers.meds) ev.filter((e) => e.type === 'medication' && e.start >= a && e.start < b).forEach((f) => { const cx = X(f.start, a), cy = ty + 2; s += `<path d="M${cx} ${cy - 3.5}L${cx + 3.5} ${cy}L${cx} ${cy + 3.5}L${cx - 3.5} ${cy}Z" class="f-med"/>`; });
+    const label = d.inProgress
+      ? `Today so far: ${d.naps.length} naps, ${fmtDur(d.napMs)}; ${d.feeds} feeds`
+      : `${fmtDate(d.from)}: ${d.night ? `night ${fmtTime(d.night.start)} to ${d.night.end ? fmtTime(d.night.end) : 'now'}, asleep ${fmtDur(d.nightMs)}, ${d.wakings} wakings` : 'no night logged'}; ${d.naps.length} naps, ${fmtDur(d.napMs)}; ${d.feeds} feeds${d.complete ? '' : '; partly logged, left out of averages'}`;
+    s += `<rect class="hit" tabindex="0" data-tip="${esc(label)}" x="0" y="${y}" width="${W}" height="${rowH}" aria-label="${esc(label)}"/>`;
+  });
+  return s + '</svg>';
+}
+
+/* ---------- daily columns (shared by sleep / feeding / diapers) ---------- */
+function columnsSVG(list, { series, max, ticks, tickFmt, typical, typicalLabel, label, tipFor, unitLabel }) {
+  const W = 326, L = 36, T = 16, B = 22, H = 172, PW = W - L - 4, PH = H - T - B, n = list.length;
+  const slot = PW / n, bw = Math.min(22, slot * 0.64);
+  const Y = (v) => T + PH - (v / max) * PH;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${PATTERN}`;
+  ticks.forEach((tk) => { s += `<line x1="${L}" x2="${W}" y1="${Y(tk)}" y2="${Y(tk)}" class="s-grid" stroke-width="1"/><text x="${L - 6}" y="${Y(tk)}" class="axis" text-anchor="end" dominant-baseline="middle">${tickFmt(tk)}</text>`; });
+  let lastComplete = null;
+  list.forEach((d, k) => {
+    const x = L + k * slot + (slot - bw) / 2;
+    if (d.inProgress) { s += `<text x="${x + bw / 2}" y="${Y(0) - 4}" class="axis" text-anchor="middle">…</text>`; }
+    else {
+      let base = 0;
+      series.forEach((ser, si) => {
+        const v = ser.value(d) || 0; if (v <= 0) return;
+        const gap = si > 0 && base > 0 ? 2 : 0;
+        const y0 = Y(base + v), y1 = Y(base) - gap;
+        const isTop = si === series.length - 1 || series.slice(si + 1).every((o) => !(o.value(d) > 0));
+        const cls = d.complete ? ser.cls : '';
+        const fill = d.complete ? '' : 'fill="url(#hatch)"';
+        s += isTop ? `<path d="${roundTop(x, y0, bw, y1 - y0, 4)}" class="${cls}" ${fill}/>` : `<rect x="${x}" y="${y0}" width="${bw}" height="${Math.max(0, y1 - y0)}" class="${cls}" ${fill}/>`;
+        base += v;
+      });
+      if (d.complete) lastComplete = { d, x, top: Y(base), total: base };
+    }
+    s += `<rect class="hit" tabindex="0" x="${L + k * slot}" y="${T}" width="${slot}" height="${PH}" data-tip="${esc(tipFor(d))}" aria-label="${esc(tipFor(d))}"/>`;
+  });
+  if (typical != null) s += `<line x1="${L}" x2="${W}" y1="${Y(typical)}" y2="${Y(typical)}" class="s-text" stroke-width="1" opacity=".55"/>`;
+  if (lastComplete) s += `<text x="${lastComplete.x + bw / 2}" y="${lastComplete.top - 7}" class="axis halo" text-anchor="middle" style="fill:var(--text)">${unitLabel(lastComplete.total)}</text>`;
+  const lab = (k) => `<text x="${L + k * slot + slot / 2}" y="${H - 4}" class="axis" text-anchor="middle">${fmtDay(list[k].from).split(' ')[1]}</text>`;
+  s += lab(0) + lab(Math.floor((n - 1) / 2)) + lab(n - 1);
+  return s + '</svg>';
+}
+
+/* ---------- longest stretch trend ---------- */
+function stretchSVG(allD, list) {
+  const W = 326, L = 36, T = 18, B = 22, H = 160, PW = W - L - 10, PH = H - T - B, n = list.length, max = 8 * HOUR;
+  const slot = PW / n;
+  const X = (k) => L + k * slot + slot / 2, Y = (v) => T + PH - (v / max) * PH;
+  const pts = list.map((d, k) => ({ d, k, v: d.complete ? d.longestMs : null }));
+  const roll = list.map((d) => {
+    const prior = allD.filter((o) => o.i <= d.i && o.i > d.i - 7 && o.complete && o.longestMs).map((o) => o.longestMs);
+    return prior.length >= 4 ? median(prior) : null;
+  });
+  const valid = pts.filter((p) => p.v);
+  const best = valid.reduce((b, p) => (!b || p.v > b.v ? p : b), null);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Longest night stretch per night with a 7-night median line. ${best ? `Best in this period ${fmtDur(best.v)} on ${fmtDate(best.d.from)}.` : ''}">`;
+  [0, 2, 4, 6, 8].forEach((h) => { s += `<line x1="${L}" x2="${W}" y1="${Y(h * HOUR)}" y2="${Y(h * HOUR)}" class="s-grid" stroke-width="1"/><text x="${L - 6}" y="${Y(h * HOUR)}" class="axis" text-anchor="end" dominant-baseline="middle">${h}h</text>`; });
+  let path = ''; roll.forEach((v, k) => { if (v == null) return; path += `${path ? 'L' : 'M'}${X(k).toFixed(1)} ${Y(v).toFixed(1)}`; });
+  if (path) s += `<path d="${path}" fill="none" class="s-nap" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  valid.forEach((p) => { s += `<circle cx="${X(p.k)}" cy="${Y(p.v)}" r="${n > 14 ? 3.5 : 4.5}" class="f-night s-surface" stroke-width="2"/>`; });
+  if (best) {
+    s += `<circle cx="${X(best.k)}" cy="${Y(best.v)}" r="9" fill="none" class="s-night" stroke-width="1.5"/>`;
+    const right = X(best.k) > W - 90;
+    s += `<text x="${X(best.k) + (right ? -12 : 12)}" y="${Y(best.v) - 10}" class="axis" text-anchor="${right ? 'end' : 'start'}" style="fill:var(--text)">Best: ${fmtDur(best.v)}</text>`;
+  }
+  pts.forEach((p) => { const t = p.v ? `${fmtDate(p.d.from)}: longest stretch ${fmtDur(p.v)}` : `${fmtDate(p.d.from)}: ${p.d.inProgress ? 'tonight' : 'night not fully logged'}`; s += `<rect class="hit" tabindex="0" x="${L + p.k * slot}" y="${T}" width="${slot}" height="${PH}" data-tip="${esc(t)}" aria-label="${esc(t)}"/>`; });
+  const lab = (k) => `<text x="${X(k)}" y="${H - 4}" class="axis" text-anchor="middle">${fmtDay(list[k].from).split(' ')[1]}</text>`;
+  s += lab(0) + lab(Math.floor((n - 1) / 2)) + lab(n - 1);
+  return { svg: s + '</svg>', best };
+}
+
+/* ---------- bedtime / wake-up strip ---------- */
+function timeStripSVG(list, key, title) {
+  const W = 326, L = 44, T = 10, B = 6, H = 84, PW = W - L - 10, PH = H - T - B, n = list.length;
+  const vals = list.map((d) => (d.complete && d[key] ? minuteOfDay(d[key]) : null));
+  const ok = vals.filter((v) => v != null);
+  if (ok.length < 3) return { svg: '', text: '' };
+  const med = median(ok), q1 = quantile(ok, 0.25), q3 = quantile(ok, 0.75);
+  const lo = med - 90, hi = med + 90, slot = PW / n;
+  const Y = (m) => T + ((m - lo) / (hi - lo)) * PH; // earlier at the top, like a day planner
+  const clock = (m) => { const t = (m + 12 * 60) % 1440; return `${pad2(Math.floor(t / 60))}:${pad2(Math.round(t % 60))}`; };
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}: middle half of days between ${clock(q1)} and ${clock(q3)}.">`;
+  s += `<rect x="${L}" y="${Y(q1)}" width="${PW}" height="${Math.max(2, Y(q3) - Y(q1))}" class="f-wash"/>`;
+  for (let m = Math.ceil(lo / 60) * 60; m <= hi; m += 60) s += `<line x1="${L}" x2="${W}" y1="${Y(m)}" y2="${Y(m)}" class="s-grid" stroke-width="1"/><text x="${L - 6}" y="${Y(m)}" class="axis" text-anchor="end" dominant-baseline="middle">${clock(m)}</text>`;
+  vals.forEach((v, k) => {
+    if (v == null) return;
+    s += `<circle cx="${L + k * slot + slot / 2}" cy="${Y(Math.max(lo, Math.min(hi, v)))}" r="${n > 14 ? 3.5 : 4.5}" class="f-night s-surface" stroke-width="2"/>`;
+    const t = `${fmtDate(list[k].from)}: ${title.toLowerCase()} ${clock(v)}`;
+    s += `<rect class="hit" tabindex="0" x="${L + k * slot}" y="${T}" width="${slot}" height="${PH}" data-tip="${esc(t)}" aria-label="${esc(t)}"/>`;
+  });
+  return { svg: s + '</svg>', text: `${clock(q1)}${dash}${clock(q3)}`, spread: q3 - q1 };
+}
+
+/* ---------- render ---------- */
+function render() {
+  const ev = state.low ? LOW : FULL;
+  const { sleep, days } = allDays(ev);
+  const n = state.range;
+  const first = firstLoggedIndex(ev);
+  const list = rangeDays(days, n).filter((d) => d.i >= first);
+  const prev = rangeDays(days, n, n).filter((d) => d.i >= first);
+  const complete = list.filter((d) => d.complete).length;
+  const avg = (key, arr = list) => meanOf(arr, key);
+  const cur = { total: avg('totalMs'), night: avg('nightMs'), nap: avg('napMs'), naps: (() => { const c = list.filter((d) => d.complete); return c.length >= 4 ? sum(c.map((d) => d.naps.length)) / c.length : null; })() };
+  const pre = { total: avg('totalMs', prev), night: avg('nightMs', prev) };
+  const lastNight = [...list].reverse().find((d) => d.complete);
+  const ring = ringSVG(ev, sleep);
+  const stretch = stretchSVG(days, list);
+  let h = '';
+
+  // summary / learning
+  if (complete < 4) {
+    h += `<section class="card" aria-labelledby="learn-h"><div class="summary"><span class="icon i-sleep">${ICON.trend}</span><div class="grow">
+      <h2 id="learn-h">Learning Lia's rhythm</h2>
+      <p class="take">${complete} of 4 fully logged days. Averages and comparisons appear after 4 days, trends after 7. Everything you log already shows below.</p>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="${complete}" aria-label="Fully logged days"><i style="width:${(complete / 4) * 100}%"></i></div></div></div></section>`;
+  } else {
+    const delta = pre.total != null ? cur.total - pre.total : null;
+    const preNap = avg('napMs', prev);
+    const part = pre.night != null && preNap != null ? (Math.abs(cur.nap - preNap) > Math.abs(cur.night - pre.night) ? ', mostly in naps' : ', mostly at night') : '';
+    const cmp = delta == null ? '.' : Math.abs(delta) < 15 * MIN ? `, about the same as the ${n} days before.` : `, ${fmtDur(Math.abs(delta))} ${delta > 0 ? 'more' : 'less'} than the ${n} days before${part}.`;
+    const shift = pre.night != null && preNap != null && cur.night - pre.night >= 15 * MIN && cur.nap - preNap <= -15 * MIN
+      ? ` More of it now happens at night: nights ${signedDelta(cur.night - pre.night)}, naps ${signedDelta(cur.nap - preNap)}.` : '';
+    h += `<section class="card" aria-labelledby="sum-h"><div class="summary"><span class="icon i-sleep">${ICON.star}</span><div class="grow">
+      <h2 id="sum-h" class="cap" style="font-weight:500">Last ${n} days</h2>
+      <p>Lia slept about <b>${fmtDur(cur.total)}</b> a day${cmp}${shift}${stretch.best ? ` Longest night stretch: <b>${fmtDur(stretch.best.v)}</b> on ${fmtDate(stretch.best.d.from)}.` : ''}</p></div></div></section>`;
+  }
+
+  // sleep
+  h += `<h2 class="section-h" id="sleep"><span class="icon i-sleep">${ICON.moon}</span>Sleep</h2>`;
+  h += `<section class="card" aria-labelledby="ring-h"><h2 id="ring-h">Last 24 hours</h2><p class="take">Midnight at the top. Sleep on the ring, feeds as ticks inside, diapers as dots.</p>
+    <div class="chart ring-wrap">${ring.svg}</div>
+    <div class="legend"><span><i class="sw" style="background:var(--c-night)"></i>Night sleep</span><span><i class="sw" style="background:var(--c-nap)"></i>Nap</span><span><i class="sw" style="background:var(--c-feed);width:3px;height:10px"></i>Feed</span><span><i class="sw" style="background:var(--c-diaper);width:8px;height:8px;border-radius:50%"></i>Diaper</span></div>
+    ${tableHTML('ring', [['Time', (r) => r.detail.split(' · ')[0]], ['What', (r) => r.what], ['Detail', (r) => r.detail.split(' · ')[1] || '']], ring.rows)}</section>`;
+
+  const tile = (label, value, delta) => `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="delta">${delta}</div></div>`;
+  h += `<div class="tiles">
+    ${tile('Sleep a day', cur.total ? fmtDur(cur.total) : '—', compareText(cur.total, pre.total, n, 'dur'))}
+    ${tile('Night sleep', cur.night ? fmtDur(cur.night) : '—', compareText(cur.night, pre.night, n, 'dur'))}
+    ${tile('Longest stretch last night', lastNight && lastNight.longestMs ? fmtDur(lastNight.longestMs) : '—', lastNight ? `${lastNight.wakings} ${lastNight.wakings === 1 ? 'waking' : 'wakings'}, ${fmtDur(lastNight.wakingMs)} awake` : 'after the first full night')}
+    ${tile('Naps a day', cur.naps ? cur.naps.toFixed(1) : '—', cur.nap ? `${fmtDur(cur.nap)} in total` : 'after 4 fully logged days')}
+  </div>`;
+
+  h += `<section class="card" aria-labelledby="act-h"><h2 id="act-h">Sleep rhythm</h2>
+    <p class="take">One row per day, newest on top, from 06:00 to 06:00 so nights stay in one piece. Stripes mark partly logged days.</p>
+    <div class="layers" role="group" aria-label="Show on the chart">
+      <button class="chip" type="button" data-layer="feeds" aria-pressed="${state.layers.feeds}">Feeds</button>
+      <button class="chip" type="button" data-layer="diapers" aria-pressed="${state.layers.diapers}">Diapers</button>
+      <button class="chip" type="button" data-layer="meds" aria-pressed="${state.layers.meds}">Medication</button>
+    </div>
+    <div class="chart" data-tipchart>${actogramSVG(ev, sleep, [...list].reverse())}</div>
+    <div class="legend"><span><i class="sw" style="background:var(--c-night)"></i>Night</span><span><i class="sw" style="background:var(--c-nap)"></i>Nap</span>
+      ${state.layers.feeds ? '<span><i class="sw" style="background:var(--c-feed);width:3px;height:10px"></i>Feed</span>' : ''}
+      ${state.layers.diapers ? '<span><i class="sw" style="background:var(--c-diaper);width:7px;height:7px;border-radius:50%"></i>Diaper</span>' : ''}
+      ${state.layers.meds ? '<span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0L10 5L5 10L0 5Z" class="f-med"/></svg>Medication</span>' : ''}
+      <span><svg width="14" height="10" aria-hidden="true">${PATTERN}<rect width="14" height="10" fill="url(#hatch)"/></svg>Partly logged</span></div>
+    ${tableHTML('act', [['Day', dayName], ['Bedtime', (d) => (d.bedtime ? fmtTime(d.bedtime) : dash)], ['Woke', (d) => (d.wokeUp ? fmtTime(d.wokeUp) : dash)], ['Night', (d) => (d.nightMs ? fmtDur(d.nightMs) : dash)], ['Naps', (d) => `${d.naps.length} · ${fmtDur(d.napMs)}`], ['Wakings', (d) => (d.night ? d.wakings : dash)], ['Logged', (d) => (d.inProgress ? 'today' : d.complete ? 'full' : 'partly')]], [...list].reverse())}</section>`;
+
+  if (complete >= 4) {
+    const typical = median(list.filter((d) => d.complete).map((d) => d.totalMs));
+    h += `<section class="card" aria-labelledby="tot-h"><h2 id="tot-h">Sleep per day</h2>
+      <p class="take">Night and naps stacked. The line is Lia's typical day in this period (${fmtDur(typical)}).</p>
+      <div class="chart" data-tipchart>${columnsSVG(list, {
+        series: [{ cls: 'f-night', value: (d) => d.nightMs }, { cls: 'f-nap', value: (d) => d.napMs }],
+        max: 16 * HOUR, ticks: [0, 4, 8, 12, 16].map((x) => x * HOUR), tickFmt: (v) => `${v / HOUR}h`,
+        typical, typicalLabel: `typical ${fmtDur(typical)}`, unitLabel: fmtDur,
+        label: `Sleep per day over the last ${n} days, night and naps stacked; typical ${fmtDur(typical)}.`,
+        tipFor: (d) => (d.inProgress ? 'Today: still in progress' : `${fmtDate(d.from)}: ${fmtDur(d.totalMs)} (night ${fmtDur(d.nightMs)}, naps ${fmtDur(d.napMs)})${d.complete ? '' : ', partly logged'}`),
+      })}</div>
+      <div class="legend"><span><i class="sw" style="background:var(--c-night)"></i>Night</span><span><i class="sw" style="background:var(--c-nap)"></i>Naps</span><span><i class="sw" style="background:var(--text);opacity:.55;height:1px;width:14px"></i>Typical ${fmtDur(typical)}</span></div>
+      ${tableHTML('tot', [['Day', dayName], ['Total', (d) => (d.inProgress ? dash : fmtDur(d.totalMs))], ['Night', (d) => fmtDur(d.nightMs)], ['Naps', (d) => fmtDur(d.napMs)]], list)}</section>`;
+
+    h += `<section class="card" aria-labelledby="str-h"><h2 id="str-h">Longest night stretch</h2>
+      <p class="take">The longest part of each night without a logged waking.${stretch.best ? ` Best in this period: ${fmtDur(stretch.best.v)}, ${fmtDate(stretch.best.d.from)}.` : ''}</p>
+      <div class="chart" data-tipchart>${stretch.svg}</div>
+      <div class="legend"><span><i class="sw" style="background:var(--c-night);width:8px;height:8px;border-radius:50%"></i>Each night</span><span><i class="sw" style="background:var(--c-nap);height:2px;width:14px"></i>7-night median</span></div></section>`;
+
+    const bed = timeStripSVG(list, 'bedtime', 'Bedtime'), wake = timeStripSVG(list, 'wokeUp', 'Wake-up');
+    if (bed.svg) {
+      h += `<section class="card" aria-labelledby="bw-h"><h2 id="bw-h">Bedtime and wake-up</h2>
+        <p class="take">Bedtime was between <b>${bed.text}</b> on half of the nights${bed.spread <= 45 ? ', a steady rhythm' : ''}. Wake-up: <b>${wake.text}</b>. The shaded band holds the middle half.</p>
+        <div class="cap" style="margin-top:12px">Bedtime</div><div class="chart" data-tipchart style="margin-top:4px">${bed.svg}</div>
+        <div class="cap" style="margin-top:8px">Wake-up</div><div class="chart" data-tipchart style="margin-top:4px">${wake.svg}</div></section>`;
+    }
+  } else {
+    h += `<section class="card"><div class="empty"><span class="icon i-sleep">${ICON.trend}</span><p>Sleep trends appear after a week of logging.</p><p class="cap">${complete} fully logged ${complete === 1 ? 'day' : 'days'} so far. No need to log perfectly: gaps are fine.</p></div></section>`;
+  }
+
+  // feeding
+  const feedAvg = avg('feeds'), mlAvg = avg('feedMl'), nightFeedAvg = avg('nightFeeds');
+  const dayFeeds = ev.filter((e) => e.type === 'feeding' && e.start >= list[0].from).filter((e) => { const hr = new Date(e.start).getHours(); return hr >= 7 && hr < 19; });
+  const gaps = []; for (let k = 1; k < dayFeeds.length; k++) { const g = dayFeeds[k].start - dayFeeds[k - 1].start; if (g < 6 * HOUR) gaps.push(g); }
+  const typicalGap = gaps.length >= 5 ? median(gaps) : null;
+  h += `<h2 class="section-h" id="feeding"><span class="icon i-feed">${ICON.bottle}</span>Feeding</h2>`;
+  h += `<div class="tiles">
+    ${tile('Feeds a day', feedAvg ? feedAvg.toFixed(1) : '—', nightFeedAvg != null ? `${nightFeedAvg.toFixed(1)} at night` : 'after 4 fully logged days')}
+    ${tile('Bottle volume a day', mlAvg ? `${Math.round(mlAvg / 10) * 10} ml` : '—', typicalGap ? `typical daytime gap ${fmtDur(typicalGap)}` : '')}
+  </div>`;
+  if (complete >= 4) {
+    const typMl = median(list.filter((d) => d.complete).map((d) => d.feedMl));
+    h += `<section class="card" aria-labelledby="ml-h"><h2 id="ml-h">Bottle volume per day</h2><p class="take">Feed times are on the sleep rhythm chart (Feeds layer).</p>
+      <div class="chart" data-tipchart>${columnsSVG(list, {
+        series: [{ cls: 'f-feed', value: (d) => d.feedMl }], max: 1400, ticks: [0, 400, 800, 1200], tickFmt: (v) => `${v}`,
+        typical: typMl, typicalLabel: `typical ${typMl} ml`, unitLabel: (v) => `${v}`,
+        label: `Bottle volume per day in millilitres over the last ${n} days; typical ${typMl} ml.`,
+        tipFor: (d) => (d.inProgress ? `Today so far: ${d.feeds} feeds, ${d.feedMl} ml` : `${fmtDate(d.from)}: ${d.feeds} feeds, ${d.feedMl} ml (${d.nightFeeds} at night)`),
+      })}</div>
+      <div class="legend"><span><i class="sw" style="background:var(--text);opacity:.55;height:1px;width:14px"></i>Typical ${typMl} ml</span></div>
+      ${tableHTML('ml', [['Day', dayName], ['Feeds', (d) => d.feeds], ['At night', (d) => d.nightFeeds], ['ml', (d) => d.feedMl]], list)}</section>`;
+  }
+
+  // diapers
+  const lastDirty = [...ev].reverse().find((e) => e.type === 'diaper' && e.payload.content !== 'WET');
+  h += `<h2 class="section-h" id="diapers"><span class="icon i-diaper">${ICON.drop}</span>Diapers</h2>`;
+  h += `<section class="card" aria-labelledby="dia-h"><h2 id="dia-h">Changes per day</h2>
+    <p class="take">${avg('diapers') ? `About ${Math.round(avg('diapers'))} a day, ${Math.max(1, Math.round(avg('dirty')))} with poop. ` : ''}${lastDirty ? `Last poop: ${fmtTime(lastDirty.start)}${lastDirty.start < midnight(NDAYS - 1) ? ' yesterday' : ' today'}.` : ''}</p>
+    ${complete >= 4 ? `<div class="chart" data-tipchart>${columnsSVG(list, {
+      series: [{ cls: 'f-diaper', value: (d) => d.diapers }], max: 10, ticks: [0, 5, 10], tickFmt: (v) => `${v}`, typical: null, unitLabel: (v) => `${v}`,
+      label: `Diaper changes per day over the last ${n} days.`,
+      tipFor: (d) => `${d.inProgress ? 'Today so far' : fmtDate(d.from)}: ${d.diapers} changes, ${d.wet} wet, ${d.dirty} with poop`,
+    })}</div>` : ''}
+    ${tableHTML('dia', [['Day', dayName], ['Changes', (d) => d.diapers], ['Wet', (d) => d.wet], ['Poop', (d) => d.dirty]], list)}</section>`;
+
+  document.getElementById('app').innerHTML = h;
+  wire();
+}
+
+function wire() {
+  document.querySelectorAll('[data-tipchart]').forEach((host) => {
+    const tip = makeTooltip(host);
+    const show = (el) => { const hb = host.getBoundingClientRect(), eb = el.getBoundingClientRect(); tip.show(esc(el.dataset.tip), eb.left - hb.left + eb.width / 2, eb.top - hb.top); };
+    host.querySelectorAll('.hit').forEach((el) => {
+      el.addEventListener('pointerenter', () => show(el));
+      el.addEventListener('focus', () => show(el));
+      el.addEventListener('pointerleave', () => tip.hide());
+      el.addEventListener('blur', () => tip.hide());
+    });
+  });
+  document.querySelectorAll('[data-layer]').forEach((b) => b.addEventListener('click', () => { state.layers[b.dataset.layer] = !state.layers[b.dataset.layer]; render(); }));
+  document.querySelectorAll('[data-table]').forEach((b) => b.addEventListener('click', () => { state.tables[b.dataset.table] = !state.tables[b.dataset.table]; render(); document.querySelector(`[data-table="${b.dataset.table}"]`).focus(); }));
+}
+
+document.querySelectorAll('[data-range]').forEach((b) => b.addEventListener('click', () => {
+  state.range = Number(b.dataset.range);
+  document.querySelectorAll('[data-range]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+  render();
+}));
+const ds = document.getElementById('dataset');
+ds.addEventListener('click', () => { state.low = !state.low; ds.textContent = state.low ? 'Data: new baby (2 days)' : 'Data: 30 days'; ds.setAttribute('aria-pressed', String(state.low)); render(); });
+initThemeToggle(document.getElementById('theme'));
+render();
+</script>
+</body>
+</html>

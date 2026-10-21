@@ -1,0 +1,10 @@
+{
+  "name": "baby-routine-design-review",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "One-off heuristic/accessibility review harness (screenshots + axe-core). Not part of the e2e suite.",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0"
+  }
+}
