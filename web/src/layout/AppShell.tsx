@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
+import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
 import { CONTENT_MAX_WIDTH } from '../theme/tokens';
 import { TopBar } from './TopBar';
@@ -45,6 +46,7 @@ export function AppShell() {
           </Box>
         </Box>
         <BottomNav />
+        <DeletedEventSnackbar />
       </Box>
     </SelectedBabyProvider>
   );

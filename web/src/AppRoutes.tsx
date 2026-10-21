@@ -8,9 +8,7 @@ import { HomePage } from './pages/HomePage';
 import { InviteEntry, LegacyInviteEntry } from './invite/InviteEntry';
 
 // Everything except Now is split into route chunks so the first load stays small.
-const TimelinePage = lazy(() =>
-  import('./pages/TimelinePage').then((m) => ({ default: m.TimelinePage })),
-);
+const DayPage = lazy(() => import('./pages/DayPage').then((m) => ({ default: m.DayPage })));
 const InsightsPage = lazy(() =>
   import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage })),
 );
@@ -27,6 +25,8 @@ const InvitePage = lazy(() =>
  */
 const DevUiGallery = import.meta.env.DEV ? lazy(() => import('./dev/UiGallery')) : null;
 const DevNowPreview = import.meta.env.DEV ? lazy(() => import('./dev/NowPreview')) : null;
+const DevDayPreview = import.meta.env.DEV ? lazy(() => import('./dev/DayPreview')) : null;
+const DevSheetPreview = import.meta.env.DEV ? lazy(() => import('./dev/SheetPreview')) : null;
 
 export function AppRoutes() {
   return (
@@ -51,6 +51,26 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevDayPreview && (
+        <Route
+          path="/dev/day"
+          element={
+            <Suspense fallback={null}>
+              <DevDayPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevSheetPreview && (
+        <Route
+          path="/dev/sheet"
+          element={
+            <Suspense fallback={null}>
+              <DevSheetPreview />
+            </Suspense>
+          }
+        />
+      )}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<CallbackPage />} />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
@@ -65,7 +85,7 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
-          <Route path="day" element={<TimelinePage />} />
+          <Route path="day" element={<DayPage />} />
           <Route path="insights" element={<InsightsPage />} />
           {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
           <Route path="timeline" element={<Navigate to="/day" replace />} />

@@ -18,3 +18,4 @@ export {
   type MedicationPickerProps,
 } from './MedicationPicker';
 export { SwitchRow, type SwitchRowProps } from './SwitchRow';
+export { TextInput, type TextInputProps } from './TextInput';

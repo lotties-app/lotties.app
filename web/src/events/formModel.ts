@@ -160,36 +160,58 @@ export function pruneHiddenValues(
   return result;
 }
 
+/** One thing to fix: which control it belongs to (`start`, `end`, `type`, `medications` or a field key). */
+export interface FormProblem {
+  field: string;
+  message: string;
+}
+
 /**
- * Field and time problems of the form, in display order. Only visible fields are checked: a hidden
+ * Field and time problems of the form, in display order, each tied to its control so the sheet can
+ * show it under the field and focus the first one. Only visible fields are checked: a hidden
  * field is never required.
  */
+export function formProblems(
+  form: EventFormState,
+  type: EventType | undefined,
+  names: EventTypeText = eventTypeText,
+): FormProblem[] {
+  const problems: FormProblem[] = [];
+  if (!type) return [{ field: 'type', message: t('events.validation.chooseType') }];
+  const start = fromLocalInput(form.startedAt);
+  if (!start) problems.push({ field: 'start', message: t('events.validation.startRequired') });
+  const end = fromLocalInput(form.endedAt);
+  if (type.hasDuration && start && end && end < start) {
+    problems.push({ field: 'end', message: t('events.validation.endBeforeStart') });
+  }
+  for (const field of shownFields(form, type)) {
+    const message = fieldError(
+      names.fieldLabel(type, field),
+      field,
+      getOwn(form.values, field.key),
+    );
+    if (message) problems.push({ field: field.key, message });
+  }
+  if (isMedicationType(type)) {
+    const selected = Object.values(form.medications);
+    if (selected.length === 0) {
+      problems.push({ field: 'medications', message: t('events.validation.selectMedication') });
+    }
+    for (const m of selected) {
+      const message = doseError(m.name, m);
+      if (message) problems.push({ field: 'medications', message });
+    }
+  }
+  return problems;
+}
+
+/** The messages of `formProblems`. */
 export function validateForm(
   form: EventFormState,
   type: EventType | undefined,
   names: EventTypeText = eventTypeText,
 ): string[] {
-  const errors: string[] = [];
-  if (!type) return [t('events.validation.chooseType')];
-  const start = fromLocalInput(form.startedAt);
-  if (!start) errors.push(t('events.validation.startRequired'));
-  const end = fromLocalInput(form.endedAt);
-  if (type.hasDuration && start && end && end < start) {
-    errors.push(t('events.validation.endBeforeStart'));
-  }
-  for (const field of shownFields(form, type)) {
-    const error = fieldError(names.fieldLabel(type, field), field, getOwn(form.values, field.key));
-    if (error) errors.push(error);
-  }
-  if (isMedicationType(type)) {
-    const selected = Object.values(form.medications);
-    if (selected.length === 0) errors.push(t('events.validation.selectMedication'));
-    for (const m of selected) {
-      const error = doseError(m.name, m);
-      if (error) errors.push(error);
-    }
-  }
-  return errors;
+  return formProblems(form, type, names).map((problem) => problem.message);
 }
 
 function toDose(m: MedicationSelection): Dosage | undefined {
@@ -231,4 +253,49 @@ export function buildTimes(form: EventFormState, type: EventType) {
   const startedAt = fromLocalInput(form.startedAt)!;
   const endedAt = type.hasDuration ? fromLocalInput(form.endedAt) : startedAt;
   return { startedAt, endedAt };
+}
+
+/** Whether `value` is something the (other) type's `field` accepts: same kind, option listed, range kept. */
+function acceptedBy(
+  field: EventFieldDefinition,
+  from: EventFieldDefinition,
+  value: string | boolean,
+) {
+  if (field.kind !== from.kind) return false;
+  if (field.kind === 'select') return typeof value === 'string' && field.options.includes(value);
+  if (field.kind === 'bool') return typeof value === 'boolean';
+  if (field.kind === 'number') {
+    const n = parseNumber(value);
+    if (n === null || Number.isNaN(n)) return false;
+    return (field.min === null || n >= field.min) && (field.max === null || n <= field.max);
+  }
+  return typeof value === 'string';
+}
+
+/**
+ * The form after changing the event type: times and notes stay, values stay where the new type has
+ * a field with the same key that accepts them, everything else (and the medications of another
+ * type) is cleared. `cleared` says whether anything was dropped.
+ */
+export function switchFormType(
+  form: EventFormState,
+  from: EventType | undefined,
+  to: EventType,
+): { form: EventFormState; cleared: boolean } {
+  const kept: EventFormState['values'] = {};
+  let cleared = Object.keys(form.medications).length > 0 && !isMedicationType(to);
+  for (const [key, value] of Object.entries(form.values)) {
+    const source = from?.fields.find((f) => f.key === key);
+    const target = to.fields.find((f) => f.key === key);
+    if (source && target && acceptedBy(target, source, value)) setOwn(kept, key, value);
+    else if (value !== '' && value !== false) cleared = true;
+  }
+  const next: EventFormState = {
+    ...form,
+    typeId: to.id,
+    values: pruneHiddenValues(kept, to),
+    medications: isMedicationType(to) ? form.medications : {},
+  };
+  if (!to.hasDuration) next.endedAt = '';
+  return { form: next, cleared };
 }

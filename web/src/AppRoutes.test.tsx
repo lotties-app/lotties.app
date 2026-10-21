@@ -32,7 +32,7 @@ describe('lazy routes', () => {
     unmount();
 
     const day = renderWithDb(db, <AppRoutes />, { route: '/day' });
-    expect(await screen.findByRole('heading', { name: 'Timeline' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Day' })).toBeTruthy();
     day.unmount();
 
     const insights = renderWithDb(db, <AppRoutes />, { route: '/insights' });

@@ -6,7 +6,7 @@ import { LoginPage } from '../auth/LoginPage';
 import type { BabyRoutineDb } from '../db/database';
 import { HomePage } from '../pages/HomePage';
 import { SettingsPage } from '../pages/SettingsPage';
-import { TimelinePage } from '../pages/TimelinePage';
+import { DayPage } from '../pages/DayPage';
 import { describeReason } from '../predictions/predictionModel';
 import type { PredictionDto } from '../sync/contract';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
@@ -102,15 +102,18 @@ describe('pt-BR screens', () => {
       // Upper-case values written by older clients still resolve.
       event('diaper', DIAPER, at(20, 0, 1), at(20, 0, 1), { content: 'DIRTY' }),
     ]);
-    renderWithDb(db, <TimelinePage />);
+    renderWithDb(db, <DayPage />);
 
-    expect(await screen.findByRole('heading', { name: 'Linha do tempo' })).toBeTruthy();
-    const today = await screen.findByRole('list', { name: 'Hoje' });
-    expect(within(today).getByText('08:00 – 08:45 · 45 min')).toBeTruthy();
-    expect(within(today).getByText('07:00 · Intensidade 3/5')).toBeTruthy();
-    const yesterday = screen.getByRole('list', { name: 'Ontem' });
-    expect(within(yesterday).getByText('20:00 · Cocô')).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Filtrar por tipo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Dia' })).toBeTruthy();
+    const today = await screen.findByRole('list', { name: /^Hoje, / });
+    expect(within(today).getByText('08:00 – 08:45')).toBeTruthy();
+    expect(within(today).getByText('45 min')).toBeTruthy();
+    expect(within(today).getByText('Intensidade 3/5')).toBeTruthy();
+    expect(within(today).getByText('Dor de barriga')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Dia anterior' }));
+    const yesterday = await screen.findByRole('list', { name: /^Ontem, / });
+    expect(within(yesterday).getByText('Cocô')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Filtrar' })).toBeTruthy();
   });
 
   it('translates the settings and switches language instantly', async () => {

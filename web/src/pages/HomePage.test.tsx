@@ -179,10 +179,10 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
     fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
     expect(await screen.findByText('Method is required.')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Breast' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Breast' }));
     // The breast fields expand once the method is chosen.
     expect(await screen.findByText('Side')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Left' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Left' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
 
     await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
@@ -200,9 +200,7 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
 
     fireEvent.click(await screen.findByRole('button', { name: 'Stop Feeding' }));
     await screen.findByRole('heading', { name: 'Finish this feeding' });
-    expect(screen.getByRole('button', { name: 'Bottle' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('radio', { name: 'Bottle' }).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
 
     await waitFor(async () =>
@@ -220,7 +218,7 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
     renderWithDb(db, <HomePage />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Stop Feeding' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Close' }));
 
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Finish this feeding' })).toBeNull(),

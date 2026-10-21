@@ -7,7 +7,7 @@ import type {
 } from '../db/models';
 import { isMedicationType } from '../events/formModel';
 import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
-import { formatNumber } from '../i18n/format';
+import { formatDuration, formatNumber } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import { getOwn } from '../util/ownProperty';
 
@@ -29,8 +29,9 @@ function fieldPart(
   const label = text.fieldLabel(type, field);
   if (field.kind === 'bool') return raw === true ? label : null;
   if (field.kind === 'number') {
+    if (field.unit === 's' && typeof raw === 'number') return formatDuration(raw * 1000);
     const value = typeof raw === 'number' ? formatNumber(raw) : String(raw);
-    if (field.unit) return `${value} ${field.unit}`;
+    if (field.unit) return `${value} ${field.unit === 'C' ? '°C' : field.unit}`;
     return field.max !== null
       ? t('timeline.intensity', { label, value, max: formatNumber(field.max) })
       : t('timeline.labelValue', { label, value });
@@ -49,14 +50,43 @@ function extraPart(key: string, raw: unknown): string | null {
 }
 
 function medicationSummary(payload: EventPayload, catalog: Medication[]): string {
+  return medicationNames(payload, catalog).join(', ');
+}
+
+/** A piece of the detail line, with the field it came from (`null` for values the type lacks). */
+export interface PayloadPart {
+  key: string;
+  text: string;
+}
+
+/** The localized pieces of a payload, in field order; empty values are left out. */
+export function payloadParts(
+  payload: EventPayload,
+  type: EventType | undefined,
+  text: EventTypeText = eventTypeText,
+): PayloadPart[] {
+  const fields = type?.fields ?? [];
+  const known = new Set(fields.map((f) => f.key));
+  const parts: { key: string; text: string | null }[] = [
+    ...(type
+      ? fields.map((f) => ({ key: f.key, text: fieldPart(type, f, getOwn(payload, f.key), text) }))
+      : []),
+    ...Object.entries(payload)
+      .filter(([key]) => !known.has(key))
+      .map(([key, raw]) => ({ key, text: extraPart(key, raw) })),
+  ];
+  return parts.filter((p): p is PayloadPart => !!p.text);
+}
+
+/** Names of the logged medications, falling back to the catalog. */
+export function medicationNames(payload: EventPayload, catalog: Medication[]): string[] {
   const list = (payload as Partial<MedicationEventPayload>).medications;
-  const names = (Array.isArray(list) ? list : []).map(
+  return (Array.isArray(list) ? list : []).map(
     (m) =>
       m.name ||
       catalog.find((c) => c.id === m.medicationId)?.name ||
       t('timeline.unknownMedication'),
   );
-  return names.join(', ');
 }
 
 /**
@@ -70,13 +100,7 @@ export function payloadSummary(
   text: EventTypeText = eventTypeText,
 ): string {
   if (isMedicationType(type)) return medicationSummary(payload, catalog);
-  const fields = type?.fields ?? [];
-  const known = new Set(fields.map((f) => f.key));
-  const parts = [
-    ...(type ? fields.map((f) => fieldPart(type, f, getOwn(payload, f.key), text)) : []),
-    ...Object.entries(payload)
-      .filter(([key]) => !known.has(key))
-      .map(([key, raw]) => extraPart(key, raw)),
-  ];
-  return parts.filter((p): p is string => !!p).join(SEPARATOR);
+  return payloadParts(payload, type, text)
+    .map((part) => part.text)
+    .join(SEPARATOR);
 }

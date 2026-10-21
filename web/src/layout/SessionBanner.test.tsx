@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthApi } from '../auth/AuthContext';
-import { ConfirmDeleteDialog } from '../events/ConfirmDeleteDialog';
 import { UnsyncedChangesDialog } from '../session/UnsyncedChangesDialog';
 import { SyncEngine } from '../sync/SyncEngine';
 import { fakeAuth } from '../test/fakeAuth';
@@ -86,11 +85,6 @@ describe('sync indicator', () => {
 });
 
 describe('dialogs are named by their title', () => {
-  it('names the confirmation dialogs', () => {
-    render(<ConfirmDeleteDialog open onCancel={vi.fn()} onConfirm={vi.fn()} />);
-    expect(screen.getByRole('dialog', { name: 'Delete this event?' })).toBeTruthy();
-  });
-
   it('names the unsynced changes warning', () => {
     render(
       <UnsyncedChangesDialog

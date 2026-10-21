@@ -121,7 +121,7 @@ describe('the sleep toggle', () => {
     await seedMorning(db, 112);
     renderNow({ predictions: sleepPredictions(-5) });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Asleep' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Fell asleep' }));
 
     await holdToast();
     expect(await screen.findByText('Nap from 14:12')).toBeTruthy();
@@ -142,7 +142,7 @@ describe('the sleep toggle', () => {
         [],
       ),
     );
-    expect(await screen.findByRole('button', { name: 'Asleep' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Fell asleep' })).toBeTruthy();
   });
 
   it('the toast time chips move the sleep back ("she fell asleep 10 minutes ago")', async () => {
@@ -151,7 +151,7 @@ describe('the sleep toggle', () => {
     await seedMorning(db, 112);
     renderNow();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Asleep' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Fell asleep' }));
     await holdToast();
     const group = await screen.findByRole('group', { name: 'When it happened' });
     expect(within(group).getByRole('button', { name: 'Now' }).getAttribute('aria-pressed')).toBe(
@@ -182,7 +182,7 @@ describe('the sleep toggle', () => {
     expect(await screen.findByText('Woke up at 14:12')).toBeTruthy();
     await waitFor(async () => expect((await db.events.get(nap.id))?.endedAt).not.toBeNull());
     expect((await allEvents()).some((e) => e.payload.kind === 'woke_up')).toBe(true);
-    expect(await screen.findByRole('button', { name: 'Asleep' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Fell asleep' })).toBeTruthy();
   });
 
   it('at night, Night waking leads, and Back asleep ends the waking and keeps the night', async () => {

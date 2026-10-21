@@ -607,7 +607,7 @@ describe('SettingsPage appearance and sync', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fix: Feeding needs your attention' }));
 
     expect(await screen.findByRole('heading', { name: 'Finish this feeding' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Bottle' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Bottle' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(async () =>

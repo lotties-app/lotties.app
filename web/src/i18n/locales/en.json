@@ -167,23 +167,56 @@
     }
   },
   "timeline": {
-    "title": "Timeline",
     "noBaby": "No baby yet. Events appear here once a baby syncs from the server.",
-    "empty_one": "No events in the last {{count}} day.",
-    "empty_other": "No events in the last {{count}} days.",
-    "loadOlder": "Load older",
-    "filterByType": "Filter by type",
-    "all": "All",
     "today": "Today",
     "yesterday": "Yesterday",
     "since": "Since {{time}}",
-    "range": "{{start}} – {{end}} · {{duration}}",
-    "syncFailed": "Sync failed",
     "notSynced": "Not synced yet",
     "unknownMedication": "Unknown medication",
-    "rowSummary": "{{times}} · {{summary}}",
     "intensity": "{{label}} {{value}}/{{max}}",
     "labelValue": "{{label}} {{value}}"
+  },
+  "day": {
+    "title": "Day",
+    "previous": "Previous day",
+    "next": "Next day",
+    "relativeDate": "{{relative}}, {{date}}",
+    "chooseDate": "Choose a date. Showing {{date}}",
+    "pickTitle": "Choose a day",
+    "pickLabel": "Day",
+    "filter": "Filter",
+    "filterActive": "Filter, {{count}} active",
+    "filterTitle": "Show on this day",
+    "clear": "Clear",
+    "category": {
+      "sleep": "Sleep",
+      "feeding": "Feeding",
+      "diaper": "Diapers",
+      "health": "Health",
+      "care": "Care",
+      "activity": "Activity",
+      "nightWaking": "Night waking",
+      "custom": "Other"
+    },
+    "summary": {
+      "title": "Summary of the day",
+      "sleep": "Sleep",
+      "feeds": "Feeds",
+      "diapers": "Diapers"
+    },
+    "ribbon": {
+      "label": "The day at a glance: {{sleep}}, {{feeds}}, {{diapers}}",
+      "sleep": "{{duration}} of sleep",
+      "noSleep": "no sleep logged"
+    },
+    "empty": {
+      "title": "Nothing logged this day"
+    },
+    "addEvent": "Add event",
+    "noMatches": "No events match this filter.",
+    "editRow": "Edit {{title}}, {{time}}",
+    "stopNamed": "Stop {{title}}",
+    "needsAttention": "Needs attention"
   },
   "events": {
     "addTitle": "Add event",
@@ -191,18 +224,9 @@
     "time": "Time",
     "start": "Start",
     "end": "End",
-    "endHelp": "Leave empty while it is still running.",
-    "deleteTitle": "Delete this event?",
-    "deleteBody": "It will be removed from the timeline on all devices.",
-    "keep": "Keep",
-    "deleteConfirm": "Delete event",
     "saveFailed": "Could not save the event.",
     "medications": "Medications",
-    "newMedication": "New medication",
-    "addMedication": "Add medication",
     "usual": "Usual",
-    "doseLabel": "{{name}} dose",
-    "unitLabel": "{{name}} unit",
     "validation": {
       "chooseType": "Choose an event type.",
       "startRequired": "Start time is required.",
@@ -216,7 +240,24 @@
       "doseUnit": "Dose for {{name}} needs a unit."
     },
     "finishTitle": "Finish this {{name}}",
-    "saveAndStop": "Save and stop"
+    "saveAndStop": "Save and stop",
+    "sheet": {
+      "startingNow": "Starting now",
+      "startingAt": "Starting at {{time}}",
+      "loggedAt": "Logged {{time}}",
+      "startedAt": "Started {{time}}",
+      "changeType": "Change type",
+      "moreActions": "More actions",
+      "typeChanged": "Changed to {{name}}.",
+      "typeChangedCleared": "Changed to {{name}}. Details that don't apply were cleared.",
+      "discardQuestion": "Discard your changes?",
+      "keepEditing": "Keep editing",
+      "discard": "Discard",
+      "problems_one": "{{count}} thing to fix: {{first}}",
+      "problems_other": "{{count}} things to fix. First: {{first}}",
+      "duration": "Duration {{duration}}"
+    },
+    "deleted": "{{name}} deleted"
   },
   "eventTypes": {
     "feeding": {
@@ -839,7 +880,7 @@
       "moreHint": "Bath, pump and more"
     },
     "sleepActions": {
-      "fellAsleep": "Asleep",
+      "fellAsleep": "Fell asleep",
       "bedtime": "Bedtime",
       "wokeUp": "Woke up",
       "nightWaking": "Night waking",

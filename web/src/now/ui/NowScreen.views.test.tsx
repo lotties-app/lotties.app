@@ -74,7 +74,7 @@ describe('loading and empty states', () => {
     renderNow();
 
     expect(await screen.findByRole('heading', { name: "Log Lia's first event" })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Asleep' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Fell asleep' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Feed' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Import' }).getAttribute('href')).toBe(
       '/settings#import',
@@ -89,7 +89,7 @@ describe('loading and empty states', () => {
     await seedNow(db);
     renderNow();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Asleep' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Fell asleep' }));
     expect(await screen.findByText('Asleep · Nap')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: "Log Lia's first event" })).toBeNull();
     expect((await live()).length).toBeGreaterThan(0);
@@ -113,7 +113,7 @@ describe('loading and empty states', () => {
     await seedNow(db, { role: 'Viewer' });
     renderNow({ baby: { ...BABY, role: 'Viewer' } });
     await screen.findByText('Nothing has been logged yet.');
-    expect(screen.queryByRole('button', { name: 'Asleep' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fell asleep' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Import' })).toBeNull();
     expect(screen.getByText(/view-only access/)).toBeTruthy();
   });
@@ -301,7 +301,7 @@ describe('night layout', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Wet' }));
     expect(await screen.findByText('Diaper · Wet')).toBeTruthy();
 
-    fireEvent.click(within(night).getByRole('button', { name: 'Asleep' }));
+    fireEvent.click(within(night).getByRole('button', { name: 'Fell asleep' }));
     expect(await screen.findByText(/^(Nap|Night sleep) from/)).toBeTruthy();
   });
 
@@ -349,7 +349,7 @@ describe('Portuguese (pt-BR)', () => {
     expect(screen.getByRole('button', { name: 'Desfazer' })).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Quando aconteceu' })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dormiu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adormeceu' }));
     expect(await screen.findByText('Dormindo · Soneca')).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Acordou' })).toBeTruthy();
   });
@@ -404,7 +404,7 @@ describe('Portuguese (pt-BR)', () => {
 
     const nursing = await screen.findByRole('region', { name: 'Amamentação' });
     expect(within(nursing).getByRole('button', { name: /^Esquerdo/ })).toBeTruthy();
-    expect(within(nursing).getByRole('button', { name: 'Trocar de lado' })).toBeTruthy();
+    expect(within(nursing).getByRole('button', { name: 'Trocar lado' })).toBeTruthy();
     expect(within(nursing).getByRole('button', { name: 'Terminar' })).toBeTruthy();
     expect(await screen.findByText(/^Ainda em andamento\? .+ está há 7 h/)).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Parar às \d\d:\d\d$/ })).toBeTruthy();

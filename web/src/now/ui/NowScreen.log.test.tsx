@@ -57,10 +57,10 @@ describe('the last-and-log tiles', () => {
     for (const name of [/^Feed/, /^Diaper/, /^Meds/, /^More/]) {
       expect(((await tile(name)) as HTMLButtonElement).disabled).toBe(true);
     }
-    expect((screen.getByRole('button', { name: 'Asleep' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Asleep' }));
+    expect(
+      (screen.getByRole('button', { name: 'Fell asleep' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Fell asleep' }));
     expect(await live()).toHaveLength(3);
   });
 });
@@ -237,8 +237,8 @@ describe('Feed tray', () => {
     fireEvent.click(within(tray).getByRole('radio', { name: 'Solid food' }));
     fireEvent.click(within(tray).getByRole('button', { name: 'Open the form' }));
 
-    expect(await screen.findByRole('heading', { name: 'Add event' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Solid food' }).getAttribute('aria-pressed')).toBe(
+    expect(await screen.findByRole('heading', { name: 'Feeding' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Solid food' }).getAttribute('aria-checked')).toBe(
       'true',
     );
   });
@@ -387,7 +387,7 @@ describe('More sheet', () => {
 
     fireEvent.click(await tile(/^More/));
     fireEvent.click(await screen.findByRole('button', { name: /^Log Bath/ }));
-    expect(await screen.findByRole('heading', { name: 'Add event' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Bath' })).toBeTruthy();
   });
 
   it('the Custom tile opens the event type settings', async () => {

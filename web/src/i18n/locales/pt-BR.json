@@ -167,23 +167,56 @@
     }
   },
   "timeline": {
-    "title": "Linha do tempo",
     "noBaby": "Nenhum bebê ainda. Os eventos aparecem aqui quando um bebê for sincronizado com o servidor.",
-    "empty_one": "Nenhum evento no último {{count}} dia.",
-    "empty_other": "Nenhum evento nos últimos {{count}} dias.",
-    "loadOlder": "Carregar mais antigos",
-    "filterByType": "Filtrar por tipo",
-    "all": "Todos",
     "today": "Hoje",
     "yesterday": "Ontem",
     "since": "Desde {{time}}",
-    "range": "{{start}} – {{end}} · {{duration}}",
-    "syncFailed": "Falha na sincronização",
     "notSynced": "Ainda não sincronizado",
     "unknownMedication": "Remédio desconhecido",
-    "rowSummary": "{{times}} · {{summary}}",
     "intensity": "{{label}} {{value}}/{{max}}",
     "labelValue": "{{label}} {{value}}"
+  },
+  "day": {
+    "title": "Dia",
+    "previous": "Dia anterior",
+    "next": "Próximo dia",
+    "relativeDate": "{{relative}}, {{date}}",
+    "chooseDate": "Escolher a data. Mostrando {{date}}",
+    "pickTitle": "Escolha um dia",
+    "pickLabel": "Dia",
+    "filter": "Filtrar",
+    "filterActive": "Filtrar, filtros ativos: {{count}}",
+    "filterTitle": "Mostrar neste dia",
+    "clear": "Limpar",
+    "category": {
+      "sleep": "Sono",
+      "feeding": "Alimentação",
+      "diaper": "Fraldas",
+      "health": "Saúde",
+      "care": "Cuidados",
+      "activity": "Atividades",
+      "nightWaking": "Despertar noturno",
+      "custom": "Outros"
+    },
+    "summary": {
+      "title": "Resumo do dia",
+      "sleep": "Sono",
+      "feeds": "Mamadas",
+      "diapers": "Fraldas"
+    },
+    "ribbon": {
+      "label": "O dia em resumo: {{sleep}}, {{feeds}}, {{diapers}}",
+      "sleep": "{{duration}} de sono",
+      "noSleep": "nenhum sono registrado"
+    },
+    "empty": {
+      "title": "Nada registrado neste dia"
+    },
+    "addEvent": "Adicionar evento",
+    "noMatches": "Nenhum evento corresponde a este filtro.",
+    "editRow": "Editar {{title}}, {{time}}",
+    "stopNamed": "Parar {{title}}",
+    "needsAttention": "Precisa de atenção"
   },
   "events": {
     "addTitle": "Adicionar evento",
@@ -191,18 +224,9 @@
     "time": "Hora",
     "start": "Início",
     "end": "Fim",
-    "endHelp": "Deixe em branco enquanto ainda estiver em andamento.",
-    "deleteTitle": "Excluir este evento?",
-    "deleteBody": "Ele será removido da linha do tempo em todos os dispositivos.",
-    "keep": "Manter",
-    "deleteConfirm": "Excluir evento",
     "saveFailed": "Não foi possível salvar o evento.",
     "medications": "Remédios",
-    "newMedication": "Novo remédio",
-    "addMedication": "Adicionar remédio",
     "usual": "De uso comum",
-    "doseLabel": "Dose de {{name}}",
-    "unitLabel": "Unidade de {{name}}",
     "validation": {
       "chooseType": "Escolha um tipo de evento.",
       "startRequired": "Informe a hora de início.",
@@ -216,7 +240,24 @@
       "doseUnit": "A dose de {{name}} precisa de uma unidade."
     },
     "finishTitle": "Concluir registro de {{name}}",
-    "saveAndStop": "Salvar e parar"
+    "saveAndStop": "Salvar e parar",
+    "sheet": {
+      "startingNow": "Começando agora",
+      "startingAt": "Começando às {{time}}",
+      "loggedAt": "Registrado às {{time}}",
+      "startedAt": "Começou às {{time}}",
+      "changeType": "Trocar o tipo",
+      "moreActions": "Mais ações",
+      "typeChanged": "Trocado para {{name}}.",
+      "typeChangedCleared": "Trocado para {{name}}. Detalhes que não se aplicam foram limpos.",
+      "discardQuestion": "Descartar as alterações?",
+      "keepEditing": "Continuar editando",
+      "discard": "Descartar",
+      "problems_one": "{{count}} item para corrigir: {{first}}",
+      "problems_other": "{{count}} itens para corrigir. Primeiro: {{first}}",
+      "duration": "Duração: {{duration}}"
+    },
+    "deleted": "{{name}} excluído"
   },
   "eventTypes": {
     "feeding": {
@@ -839,7 +880,7 @@
       "moreHint": "Banho, bomba e mais"
     },
     "sleepActions": {
-      "fellAsleep": "Dormiu",
+      "fellAsleep": "Adormeceu",
       "bedtime": "Hora de dormir",
       "wokeUp": "Acordou",
       "nightWaking": "Despertar noturno",
@@ -959,7 +1000,7 @@
       "right": "Direito",
       "running": "em andamento",
       "done": "feito",
-      "switch": "Trocar de lado",
+      "switch": "Trocar lado",
       "finish": "Terminar"
     },
     "feedTray": {

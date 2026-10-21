@@ -65,6 +65,10 @@ import IconCake from '@tabler/icons-react/dist/esm/icons/IconCake.mjs';
 import IconToolsKitchen2 from '@tabler/icons-react/dist/esm/icons/IconToolsKitchen2.mjs';
 import IconHorseToy from '@tabler/icons-react/dist/esm/icons/IconHorseToy.mjs';
 import IconSeedling from '@tabler/icons-react/dist/esm/icons/IconSeedling.mjs';
+import IconFilter from '@tabler/icons-react/dist/esm/icons/IconFilter.mjs';
+import IconDots from '@tabler/icons-react/dist/esm/icons/IconDots.mjs';
+import IconCloud from '@tabler/icons-react/dist/esm/icons/IconCloud.mjs';
+import IconArrowsHorizontal from '@tabler/icons-react/dist/esm/icons/IconArrowsHorizontal.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -145,6 +149,10 @@ export const ICON_COMPONENTS = {
   utensils: IconToolsKitchen2,
   toy: IconHorseToy,
   seedling: IconSeedling,
+  filter: IconFilter,
+  more: IconDots,
+  cloud: IconCloud,
+  'arrows-horizontal': IconArrowsHorizontal,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

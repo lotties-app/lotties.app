@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useEventCommands } from '../db/hooks';
 import type { BabyEvent, EventType } from '../db/models';
-import type { FinishMode } from './EventForm';
+import type { FinishMode } from './eventSheetTypes';
 import { EventSheet } from './EventSheet';
 import { readLastUsed } from './lastUsedValues';
 import { fixFields, planStop, rememberedFormValues } from './stopPlan';

@@ -114,7 +114,7 @@ describe('bottom navigation', () => {
   it('keeps the old routes working: /timeline goes to Day and /growth to Insights', async () => {
     await seedBaby(db);
     const first = renderShell('/timeline');
-    expect(await screen.findByRole('heading', { name: 'Timeline' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Day' })).toBeTruthy();
     const nav = screen.getByRole('navigation', { name: 'Main' });
     expect(within(nav).getByRole('link', { name: 'Day' }).getAttribute('aria-current')).toBe(
       'page',
@@ -132,7 +132,7 @@ describe('bottom navigation', () => {
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
     fireEvent.click(within(nav).getByRole('link', { name: 'Day' }));
-    expect(await screen.findByRole('heading', { name: 'Timeline' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Day' })).toBeTruthy();
     fireEvent.click(within(nav).getByRole('link', { name: 'Insights' }));
     expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
     fireEvent.click(within(nav).getByRole('link', { name: 'Now' }));

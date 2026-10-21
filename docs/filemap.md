@@ -34,7 +34,7 @@
 - web/src/sync/ — sync engine (outbox push, delta pull, backoff, status); API contract assumptions isolated in contract.ts
 - web/src/auth, config, api, layout, theme, pages — OIDC, runtime config, API client, app shell, theming, placeholder screens
 - web/src/baby/ — selected-baby context/provider (localStorage-backed); layout/BabySwitcher.tsx is the TopBar switcher
-- web/src/events/ — add/edit sheet (EventSheet, EventForm, TypeFields, MedicationChecklist), form model/validation, time helpers, icon map
+- web/src/events/ — event sheet (EventSheet frame + footer/discard bar, SheetHeader type switcher and overflow menu, WhenFields time panels, FieldControl field-to-control mapping, ConditionalFields, useEventSheetForm state/save/type-switch undo, formModel validation, optionIcons, deletedEvents + DeletedEventSnackbar delete undo), time helpers, icon map
 - web/src/home/ServerUnreachableCard.tsx — retry card of Now when the babies cannot be loaded (the old QuickActions/RunningTimers/BabyHome were replaced by web/src/now/ui/)
 - web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
 - api/src/BabyRoutine.Domain/Events/ — Event (upsert decision on ClientUpdatedAt, soft delete), ClientEditTime (client clock bound), EventPayload (+ JSON equivalence, StorableJson jsonb checks), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
@@ -72,7 +72,8 @@
 - api/tests/BabyRoutine.Domain.Tests/EventTypes/{FieldVisibility,EventPayloadValidation}Tests.cs, Events/EventPayloadCheckTests.cs — visibleWhen rules, payload field rules, when an edit is checked
 - api/tests/BabyRoutine.Api.Tests/Imports/ — CSV/parser unit tests, import endpoint and repository tests; Fixtures/ — small synthetic Napper CSVs (never real exports)
 - api/tests/BabyRoutine.Domain.Tests/Imports/ — mapping, medication matching/resolution, planner and id tests
-- web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
+- web/src/timeline/ — payload summaries and event presentation (title/icon/category/detail of an event, `eventPresentation.ts`), `localDayKey`
+- web/src/day/ — Day tab (`DayScreen`: DateBar with swipe, DaySummary + DayRibbon, DayFilterSheet, DayRow with Stop; `dayModel.ts` local-day boundaries, summary, ribbon, filters); route page web/src/pages/DayPage.tsx
 - web/src/predictions/ — predictions query/cache, model, cards and section on Home
 - web/src/layout/SyncStatusIndicator.tsx, web/src/sync/useOnline.ts — sync status chip, online hook
 - web/src/settings/ — settings sections (baby, event types, medications, members, invites, appearance, sync); web/src/baby/ — baby form, create card, role permissions
@@ -96,3 +97,4 @@
 - web/src/now/ui/ — the Now screen (wave 3b), route `/`: NowScreen.tsx (assembly, trays state, first-run/night switch), StateCard (awake/asleep, nap window on DayRuler, learning state, Why sheet via WhySheet, sleep toggle buttons), NursingCard (left/right timers), TimersBar + ForgottenNotice (other timers, "Still running? Stop at"), LogTiles, FeedTraySheet/DiaperTraySheet/MedsTraySheet/BellyPainTraySheet/MoreSheet (on SheetFrame), ToastHost (undo + time-shift chips from QuickLogToastProvider), TodayStrip, CatchUpCard, FirstRun, NightNow (night layout), NowSkeleton, useNowAction; nowKit.ts is the test kit (types, seeds, predictions); tests NowScreen.{state,log,views}.test.tsx
 - web/src/pages/InsightsPage.tsx — third tab: heading, "more insights are coming" note, Growth section (`/growth` and `/timeline` redirect to `/insights` and `/day`); settings sections open by URL hash (SettingsSection.tsx, `/settings#members`)
 - web/src/dev/NowPreview.tsx — developer-only Now preview at /dev/now?state=awake|nap|night|waking|nursing|forgotten|catchup|viewer|empty|learning (seeded local database, no sign-in; not in production builds); e2e/design-review/now-preview.{config,review}.ts capture it to docs/design/screenshots/now-*.png without any session (`cd e2e && npx playwright test -c design-review/now-preview.config.ts`)
+- web/src/dev/DayPreview.tsx, SheetPreview.tsx (+ PreviewToolbar, previewData) — developer-only previews at /dev/day?state=full|empty|busy|viewer&offset=1 and /dev/sheet?state=bottle|breast|solid|diaper|sleep|medication|belly|edit|running|finish (`&scheme=light|dark|night`; seeded local database, no sign-in, not in production builds); e2e/design-review/day-preview.{config,review}.ts capture them to docs/design/screenshots/{day,sheet}-*.png (`cd e2e && npx playwright test -c design-review/day-preview.config.ts`, port 5174)
