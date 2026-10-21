@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Baby Routine app icon, concept D "Moon bassinet" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Baby Routine</title>
+<defs>
+<clipPath id="dm-clip">
+<path d="M0 0H1024V1024H0Z"/>
+</clipPath>
+<mask id="dm-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M0 542H1024V1024H0Z" fill="#000000"/>
+</mask>
+<mask id="dm-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M250 540H774Q794 540 792 560A280 220 0 0 1 232 560Q230 540 250 540Z" fill="#000000" stroke="#000000" stroke-width="32" stroke-linejoin="round"/>
+</mask>
+</defs>
+<g clip-path="url(#dm-clip)">
+<g transform="translate(512 512) scale(1.33) translate(-512.5 -568.5)">
+<g mask="url(#dm-k2)">
+<g mask="url(#dm-h1)">
+<path d="M567.6 420.8A196 196 0 1 0 433 734.9A172 172 0 1 1 567.6 420.8Z" fill="#000000"/>
+</g>
+<path d="M432 500a54 54 0 1 0 108 0a54 54 0 1 0 -108 0Z" fill="#000000"/>
+</g>
+<path d="M250 540H774Q794 540 792 560A280 220 0 0 1 232 560Q230 540 250 540Z" fill="#000000"/>
+<path d="M373 740L373 800A11 11 0 0 0 395 800L395 740A11 11 0 0 0 373 740Z" fill="#000000"/>
+<path d="M629 740L629 800A11 11 0 0 0 651 800L651 740A11 11 0 0 0 629 740Z" fill="#000000"/>
+<path d="M849.8 809.5A1093 1093 0 0 1 174.2 809.5A13 13 0 0 1 182.3 784.8A1067 1067 0 0 0 841.7 784.8A13 13 0 0 1 849.8 809.5Z" fill="#000000"/>
+<path d="M712 274C722 314 722 314 762 324C722 334 722 334 712 374C702 334 702 334 662 324C702 314 702 314 712 274Z" fill="#000000"/>
+</g>
+</g>
+</svg>

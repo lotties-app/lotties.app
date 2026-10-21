@@ -79,6 +79,28 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 3. Set the audience to the client id (Authentik puts it in `aud`), and use it as `AUTH_AUDIENCE`. Post-logout redirect: `${origin}/login`.
 4. Enable refresh token rotation if your version offers it; otherwise lower the refresh token validity.
 
+## Keycloak theme
+
+The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Baby Routine look: `keycloak-theme/` is a Keycloakify 11 login theme named `baby-routine` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `keycloak-theme/README.md`.
+
+1. Get the jar: download the `baby-routine-keycloak-theme` artifact of the *Keycloak theme* workflow, or build it without Java on your machine: `bash keycloak-theme/build-in-podman.sh` (Windows: `powershell -File keycloak-theme/build-in-podman.ps1`, which calls WSL). The result is `keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar` (Keycloak 26 and newer; `KC_TARGETS=all` also builds the 22-25 jar).
+2. Put it in Keycloak's `providers/` folder. Container: mount it read-only at `/opt/keycloak/providers/baby-routine-theme.jar`:
+
+   ```yaml
+   services:
+     keycloak:
+       image: quay.io/keycloak/keycloak:26.8
+       command: start   # or start-dev for tests
+       volumes:
+         - ./baby-routine-theme.jar:/opt/keycloak/providers/baby-routine-theme.jar:ro
+   ```
+
+   In the optimized (production) mode run `kc.sh build` once after adding the jar (with the official image: build your own image `FROM quay.io/keycloak/keycloak` + `COPY` the jar + `RUN /opt/keycloak/bin/kc.sh build`). `start-dev` and a plain `start` after a restart pick it up.
+3. Realm settings > Themes > **Login theme** = `baby-routine`, Save. Enable Realm settings > Localization > Internationalization with `English` and `Portuguese (Brazil)` (the language switcher only appears when more than one language is enabled).
+4. Keep the app client as before (public, PKCE `S256`). The theme changes no flow and no setting of the realm.
+
+Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action.
+
 ## Reverse proxy and TLS
 
 Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud load balancer) and forward to port 80 of the container. The inner nginx already forwards `Host` and `X-Forwarded-*` to the API. Requirements:

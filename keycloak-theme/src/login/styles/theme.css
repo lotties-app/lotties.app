@@ -1,0 +1,933 @@
+/*
+ * Baby Routine login theme. Plain CSS on the design tokens (tokens.generated.css, mirrored from
+ * web/src/theme/tokens.ts). Direction B "Linen and Ink": warm paper (light, "Linen") or warm ink
+ * (dark, the default when the browser has no preference), terracotta accent, Fraunces display serif,
+ * filled 48 px inputs with the label above, 14 px input radius, pill primary button.
+ */
+@import './fonts.css';
+@import './tokens.generated.css';
+
+:root {
+  --br-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --br-font-display: 'Fraunces Variable', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --br-control: 48px;
+  --br-ease: cubic-bezier(0.2, 0, 0, 1);
+  --br-focus: 2px solid var(--br-accent);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html.br-html,
+html {
+  background: var(--br-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body,
+body.br-body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--br-bg);
+  color: var(--br-text);
+  font: 400 1rem/1.5 var(--br-font);
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Layout ---------- */
+
+.br-page {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 24px 16px 32px;
+}
+
+.br-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  isolation: isolate;
+}
+
+/* A soft halo behind the art, in the colour of the cloud. */
+.br-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -8%;
+  left: 50%;
+  width: min(100%, 300px);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, var(--il-moon-mid) 0%, transparent 100%);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.br-art {
+  display: block;
+  width: 168px;
+  height: auto;
+  margin: 0 auto 6px;
+  overflow: visible;
+}
+
+.br-art-shine {
+  fill: #fff;
+  opacity: var(--il-shine);
+}
+
+.br-wordmark {
+  margin: 0;
+  font: 600 1.875rem/1.1 var(--br-font-display);
+  letter-spacing: -0.01em;
+  color: var(--br-text);
+}
+
+.br-tagline {
+  margin: 6px 0 0;
+  max-width: 28ch;
+  color: var(--br-muted);
+  font-size: 0.9375rem;
+  text-wrap: balance;
+}
+
+.br-note {
+  display: none;
+}
+
+.br-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.br-card {
+  background: var(--br-surface);
+  border-radius: var(--br-radius-card);
+  box-shadow: var(--br-card-shadow);
+  padding: 24px 20px;
+}
+
+.br-card-header {
+  margin-bottom: 20px;
+}
+
+.br-footer {
+  margin: 0;
+  text-align: center;
+  color: var(--br-muted);
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 900px) {
+  .br-page {
+    align-content: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 480px);
+    align-items: start;
+    gap: 72px;
+    max-width: 1080px;
+    padding: 48px;
+  }
+
+  .br-hero {
+    position: sticky;
+    top: 48px;
+    margin-top: 24px;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .br-hero::before {
+    left: 150px;
+    width: 440px;
+    top: -60px;
+  }
+
+  .br-art {
+    width: 336px;
+    margin: 0 0 20px;
+  }
+
+  .br-wordmark {
+    font-size: 3rem;
+  }
+
+  .br-tagline {
+    margin-top: 12px;
+    max-width: 24ch;
+    font: 400 1.5rem/1.25 var(--br-font-display);
+    color: var(--br-text);
+  }
+
+  .br-note {
+    display: block;
+    margin: 14px 0 0;
+    max-width: 36ch;
+    color: var(--br-muted);
+  }
+
+  .br-card {
+    padding: 32px;
+  }
+}
+
+@media (max-width: 359px) {
+  .br-page {
+    padding-inline: 12px;
+  }
+  .br-card {
+    padding: 20px 16px;
+  }
+  .br-art {
+    width: 140px;
+  }
+}
+
+/* ---------- Type ---------- */
+
+.br-title {
+  margin: 0;
+  font: 600 1.625rem/1.2 var(--br-font-display);
+  letter-spacing: -0.005em;
+  overflow-wrap: anywhere;
+}
+
+#kc-content-wrapper p,
+.br-body p {
+  margin-block: 0 12px;
+}
+
+#kc-content-wrapper p.instruction,
+#kc-info-message p,
+.instruction {
+  color: var(--br-muted);
+}
+
+h2 {
+  font: 600 1rem/1.3 var(--br-font);
+  margin: 0 0 12px;
+}
+
+a {
+  color: var(--br-ink2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: var(--br-focus);
+  outline-offset: 2px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--br-hairline);
+  margin: 20px 0;
+}
+
+.br-sr-only,
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.br-skip {
+  position: absolute;
+  left: 12px;
+  top: -64px;
+  z-index: 10;
+  padding: 10px 16px;
+  border-radius: var(--br-radius-pill);
+  background: var(--br-selection);
+  color: var(--br-on-selection);
+  font-weight: 600;
+  text-decoration: none;
+}
+.br-skip:focus {
+  top: 12px;
+}
+
+/* ---------- Fields ---------- */
+
+.br-field,
+.form-group {
+  margin: 0 0 16px;
+}
+
+.br-label,
+label.br-label,
+.br-field > label {
+  display: inline-block;
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--br-text);
+}
+
+.br-label-wrap {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.br-label-wrap .br-label {
+  display: inline;
+  margin: 0;
+}
+
+/* Required marker that stock pages print inside the label. */
+.br-label .required,
+.required {
+  color: var(--br-error);
+}
+
+.br-input,
+.br-body input[type='text'],
+.br-body input[type='email'],
+.br-body input[type='password'],
+.br-body input[type='tel'],
+.br-body input[type='number'],
+.br-body input[type='url'],
+.br-body input[type='search'],
+.br-body select,
+.br-body textarea {
+  display: block;
+  width: 100%;
+  min-height: var(--br-control);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--br-radius-input);
+  background: var(--br-raised);
+  color: var(--br-text);
+  font: inherit;
+  font-size: 1rem; /* 16 px: no zoom on focus in iOS Safari */
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.br-body select {
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+}
+
+.br-body textarea,
+.br-textarea {
+  min-height: 96px;
+  padding-block: 12px;
+}
+
+.br-body input::placeholder {
+  color: var(--br-muted);
+  opacity: 1;
+}
+
+.br-body input:focus-visible,
+.br-body select:focus-visible,
+.br-body textarea:focus-visible {
+  outline: var(--br-focus);
+  outline-offset: 0;
+}
+
+.br-body input[aria-invalid='true'],
+.br-body select[aria-invalid='true'],
+.br-body textarea[aria-invalid='true'] {
+  box-shadow: 0 0 0 2px var(--br-error);
+}
+
+.br-body input:disabled,
+.br-body select:disabled {
+  opacity: 0.55;
+}
+
+.br-error-text,
+#input-error,
+span[id^='input-error'] {
+  display: block;
+  margin-top: 6px;
+  color: var(--br-error);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.br-help {
+  display: block;
+  margin-top: 6px;
+  color: var(--br-muted);
+  font-size: 0.875rem;
+}
+
+/* Password field with the visibility toggle. */
+.br-input-group {
+  position: relative;
+  display: flex;
+}
+.br-input-group .br-input,
+.br-input-group input {
+  padding-right: 52px;
+}
+.br-eye {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: var(--br-control);
+  height: var(--br-control);
+  padding: 0;
+  border: 0;
+  border-radius: var(--br-radius-input);
+  background: transparent;
+  color: var(--br-muted);
+  cursor: pointer;
+}
+.br-eye:hover {
+  color: var(--br-text);
+}
+.br-eye:focus-visible {
+  outline: var(--br-focus);
+  outline-offset: -2px;
+}
+
+.br-ico {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  background-color: currentColor;
+  -webkit-mask: var(--ico) center / contain no-repeat;
+  mask: var(--ico) center / contain no-repeat;
+}
+.br-ico-eye {
+  --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+}
+.br-ico-eye-off {
+  --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l18 18M10.6 5.7A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.8M6.5 7.4A16 16 0 0 0 2.5 12S6 18.5 12 18.5a9.6 9.6 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2'/%3E%3C/svg%3E");
+}
+.br-ico-restart {
+  --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 1 0 2.5-5.8M4 4v4.5h4.5'/%3E%3C/svg%3E");
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+}
+
+/* Checkboxes and radios: native control tinted with the accent, 24 px touch rows. */
+.br-body input[type='checkbox'],
+.br-body input[type='radio'] {
+  width: 20px;
+  height: 20px;
+  margin: 0 8px 0 0;
+  accent-color: var(--br-accent);
+  vertical-align: -4px;
+}
+.checkbox label,
+.br-check-label,
+.br-check label,
+.radio label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  cursor: pointer;
+}
+.checkbox,
+.radio,
+.br-check {
+  margin: 0 0 8px;
+}
+
+.br-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  font-size: 0.9375rem;
+}
+#kc-form-options {
+  flex: 1 1 auto;
+}
+#kc-form-options .checkbox {
+  margin: 0;
+}
+
+/* ---------- Buttons ---------- */
+
+.br-btn,
+.br-body input[type='submit'],
+.br-body input[type='button'],
+.br-body button.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--br-control);
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--br-radius-pill);
+  font: 600 1rem/1.2 var(--br-font);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 140ms var(--br-ease), transform 140ms var(--br-ease);
+}
+
+.br-btn--primary {
+  background: var(--br-accent);
+  color: var(--br-on-accent);
+}
+.br-btn--secondary {
+  background: var(--br-selection);
+  color: var(--br-on-selection);
+}
+.br-btn--block {
+  display: flex;
+  width: 100%;
+}
+.br-btn:hover:not(:disabled) {
+  filter: brightness(0.93);
+}
+.br-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+.br-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.br-btn:focus-visible {
+  outline: var(--br-focus);
+  outline-offset: 3px;
+}
+
+#kc-form-buttons {
+  margin-top: 8px;
+}
+/* Primary submit buttons fill the row, except the terms Accept/Decline pair. */
+.br-body input[type='submit'].br-btn--primary:not(#kc-accept),
+.br-body button[type='submit'].br-btn--primary:not(#kc-accept),
+#saveTOTPBtn {
+  display: flex;
+  width: 100%;
+}
+#kc-form-buttons .br-btn + .br-btn,
+.br-buttons .br-btn + .br-btn {
+  margin-top: 10px;
+}
+.br-buttons,
+.br-buttons-wrap {
+  display: block;
+}
+
+/* Cancel buttons and back links that stock pages print as a second submit input. */
+#kc-cancel,
+input[name='cancel-aia'],
+input[name='cancel'] {
+  background: transparent;
+  color: var(--br-text);
+  box-shadow: inset 0 0 0 1.5px var(--br-hairline);
+}
+
+/* ---------- Alerts ---------- */
+
+.br-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--br-radius-input);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+.br-alert-icon {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  margin-top: 0;
+}
+.br-alert-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.br-alert--success {
+  background: var(--br-success-bg);
+  color: var(--br-success);
+}
+.br-alert--warning {
+  background: var(--br-warning-bg);
+  color: var(--br-warning);
+}
+.br-alert--error {
+  background: var(--br-error-bg);
+  color: var(--br-error);
+}
+.br-alert--info {
+  background: var(--br-info-bg);
+  color: var(--br-info);
+}
+
+/* ---------- Language switcher ---------- */
+
+.br-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.br-locale {
+  display: flex;
+  justify-content: flex-end;
+}
+.br-locale-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 3px;
+  list-style: none;
+  border-radius: var(--br-radius-pill);
+  background: var(--br-raised);
+}
+.br-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: var(--br-radius-pill);
+  color: var(--br-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  list-style: none;
+}
+a.br-pill:hover {
+  color: var(--br-text);
+}
+.br-pill[aria-current='true'] {
+  background: var(--br-selection);
+  color: var(--br-on-selection);
+}
+.br-locale-menu {
+  position: relative;
+}
+.br-locale-menu > summary {
+  background: var(--br-raised);
+  color: var(--br-text);
+}
+.br-locale-list {
+  position: absolute;
+  right: 0;
+  z-index: 5;
+  min-width: 180px;
+  margin: 6px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--br-radius-input);
+  background: var(--br-surface);
+  box-shadow: 0 0 0 1px var(--br-hairline), 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+.br-locale-list a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--br-text);
+  text-decoration: none;
+}
+.br-locale-list a[aria-current='true'] {
+  background: var(--br-raised);
+  font-weight: 600;
+}
+
+/* Attempted username with the restart-login link. */
+.br-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--br-radius-pill);
+  background: var(--br-raised);
+  font-weight: 600;
+}
+.br-user-chip__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.br-user-chip a {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--br-muted);
+}
+.br-user-chip a:hover {
+  color: var(--br-text);
+}
+.br-required__note {
+  margin: 10px 0 0;
+  color: var(--br-muted);
+  font-size: 0.875rem;
+}
+
+/* ---------- Sign-up / info area, social providers ---------- */
+
+.br-signup {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--br-hairline);
+  text-align: center;
+  color: var(--br-muted);
+}
+.br-signup p,
+.br-signup span {
+  margin: 0;
+}
+
+.br-social {
+  margin-top: 8px;
+}
+.br-social h2 {
+  color: var(--br-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.br-social-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Authenticator lists (select-authenticator, OTP credential choice) ---------- */
+
+.br-auth-list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+button.br-auth-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: var(--br-radius-tile);
+  background: var(--br-raised);
+  color: var(--br-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 140ms var(--br-ease);
+}
+button.br-auth-item:hover {
+  box-shadow: inset 0 0 0 1.5px var(--br-accent);
+}
+button.br-auth-item:focus-visible {
+  outline: var(--br-focus);
+  outline-offset: 2px;
+}
+/* Keycloak names Font Awesome icons we do not ship: leave them out, the label says it all. */
+.br-auth-item-icon,
+.br-otp-icon-body {
+  display: none;
+}
+.br-auth-item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.br-auth-item-fill {
+  display: none;
+}
+.br-auth-item-heading {
+  font-weight: 600;
+}
+.br-auth-item-desc {
+  margin-top: 2px;
+  color: var(--br-muted);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.br-auth-item-arrow {
+  flex: 0 0 auto;
+  color: var(--br-muted);
+}
+.br-auth-item-arrow-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Several OTP devices: radio cards. The radio itself is visually hidden, the card shows the state. */
+.br-otp-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0 !important;
+  opacity: 0;
+}
+label.br-otp-item {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  margin: 0 0 10px;
+  padding: 10px 16px;
+  border-radius: var(--br-radius-tile);
+  background: var(--br-raised);
+  font-weight: 600;
+  cursor: pointer;
+}
+.br-otp-input:checked + label.br-otp-item {
+  box-shadow: inset 0 0 0 2px var(--br-accent);
+}
+.br-otp-input:focus-visible + label.br-otp-item {
+  outline: var(--br-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- TOTP setup, recovery codes ---------- */
+
+#kc-totp-settings,
+ol {
+  padding-left: 22px;
+}
+#kc-totp-settings li,
+ol li {
+  margin-bottom: 14px;
+}
+#kc-totp-settings ul {
+  padding-left: 18px;
+}
+#kc-totp-supported-apps {
+  color: var(--br-muted);
+}
+/* QR codes need a light quiet zone, also in the dark scheme. */
+#kc-totp-secret-qr-code,
+img[alt*='QR'],
+img[alt*='Figure'] {
+  display: block;
+  margin: 12px auto;
+  padding: 12px;
+  border-radius: var(--br-radius-input);
+  background: #fff;
+}
+#kc-totp-secret-key,
+code,
+.br-codes {
+  display: inline-block;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--br-raised);
+  font: 600 0.9375rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.br-codes {
+  display: block;
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  list-style: none;
+  columns: 2;
+}
+.br-codes li {
+  margin: 0 0 6px;
+}
+.br-codes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ---------- Terms, info and error pages ---------- */
+
+#kc-terms-text {
+  max-height: 320px;
+  overflow: auto;
+  margin-bottom: 20px;
+  padding: 14px;
+  border-radius: var(--br-radius-input);
+  background: var(--br-raised);
+}
+#kc-error-message p,
+#kc-info-message p {
+  margin-bottom: 16px;
+}
+#kc-info-message a,
+#kc-error-message a {
+  font-weight: 600;
+}
+
+/* ---------- Motion, contrast, small screens ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .br-input,
+  .br-body input,
+  .br-body select,
+  .br-body textarea {
+    border: 1px solid ButtonText;
+  }
+  .br-btn {
+    border: 1px solid ButtonText;
+  }
+  .br-pill[aria-current='true'] {
+    border: 2px solid Highlight;
+  }
+}
+
+/* The "back to sign in" link that stock pages print right above the submit button. */
+#kc-form-options + #kc-form-buttons,
+.br-options + #kc-form-buttons {
+  margin-top: 16px;
+}
+#kc-form-options .br-options-wrap {
+  margin-bottom: 4px;
+}

@@ -1,0 +1,51 @@
+{
+  "realm": "babyroutine-dev",
+  "displayName": "Baby Routine (dev)",
+  "enabled": true,
+  "sslRequired": "none",
+  "loginTheme": "baby-routine",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "pt-BR"],
+  "defaultLocale": "en",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "passwordPolicy": "length(8)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyCodeReusable": false,
+  "smtpServer": {
+    "host": "localhost",
+    "port": "2525",
+    "from": "no-reply@babyroutine.test",
+    "fromDisplayName": "Baby Routine (dev)"
+  },
+  "clients": [
+    {
+      "clientId": "baby-routine-web",
+      "name": "Baby Routine web",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:5190/*"],
+      "webOrigins": ["http://localhost:5190"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5190/*"
+      }
+    }
+  ]
+}

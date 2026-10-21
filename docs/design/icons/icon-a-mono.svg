@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Baby Routine app icon, concept A "Cloud cradle" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Baby Routine</title>
+<defs>
+<clipPath id="am-clip">
+<path d="M0 0H1024V1024H0Z"/>
+</clipPath>
+<mask id="am-k1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="#000000" stroke="#000000" stroke-width="36" stroke-linejoin="round"/>
+</mask>
+</defs>
+<g clip-path="url(#am-clip)">
+<g transform="translate(512 512) scale(1.317) translate(-512 -532)">
+<g mask="url(#am-k1)">
+<path d="M495.3 304.9A158 158 0 1 0 658.2 522A136 136 0 0 1 495.3 304.9Z" fill="#000000"/>
+</g>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="#000000"/>
+<path d="M292 288C301.6 326.4 301.6 326.4 340 336C301.6 345.6 301.6 345.6 292 384C282.4 345.6 282.4 345.6 244 336C282.4 326.4 282.4 326.4 292 288Z" fill="#000000"/>
+</g>
+</g>
+</svg>

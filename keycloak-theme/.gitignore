@@ -1,0 +1,7 @@
+node_modules
+dist
+dist_keycloak
+build_keycloak
+.vite
+*.log
+dev/.runtime

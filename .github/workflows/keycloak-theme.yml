@@ -1,0 +1,47 @@
+name: Keycloak theme
+
+# Builds the Keycloak login theme jar (Keycloakify needs Maven and a JDK) and uploads it as an artifact.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'keycloak-theme/**'
+      - '.github/workflows/keycloak-theme.yml'
+      # The theme mirrors these (keycloak-theme/scripts/sync-tokens.ts); the token test must keep passing.
+      - 'web/src/theme/tokens.ts'
+      - 'web/src/ui/illustrations/palette.ts'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: keycloak-theme/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.9
+      - run: npm ci
+        working-directory: keycloak-theme
+      - run: npm test
+        working-directory: keycloak-theme
+      - run: npm run build-keycloak-theme
+        working-directory: keycloak-theme
+      - uses: actions/upload-artifact@v4
+        with:
+          name: baby-routine-keycloak-theme
+          path: keycloak-theme/dist_keycloak/*.jar
+          if-no-files-found: error
+          retention-days: 30
