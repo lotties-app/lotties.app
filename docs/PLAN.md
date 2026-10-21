@@ -32,3 +32,6 @@ Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8;
 | 18 | Bath with OPTIONAL duration (user may add an end time, not required): quick action logs an instant bath; sheet allows adding an end time. Needs a decision on modelling (`durationMode: none/optional/required` on EventType vs allowing EndedAt on any type) | Medium | Decided by user 2026-10-21: optional |
 | 19 | Upgrade to .NET 10 LTS (net8.0 EOL 2026-11-10) | Medium | REVIEW #20 |
 | 20 | Issuer backfill clean-up for legacy user rows; Postgres-specific tests (xmin concurrency, jsonb) via a real database or Testcontainers on Podman | Careful | REVIEW wave-2 doubts |
+
+## UI redesign track (2026-10-21)
+Order: [done] theme+shell+presets (A) -> [running] API conditional fields + breast pump -> i18n foundation (en, pt-BR) -> form rework (conditional fields, MUI X date-time picker, label clipping audit, theme toggle in account menu) -> Home + Track sheet (B) -> fix e2e selectors (6 specs currently fail on the new header) + add pt-BR smoke spec -> Insights/Timeline/Growth polish (pass 2).
