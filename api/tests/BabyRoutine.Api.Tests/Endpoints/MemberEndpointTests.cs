@@ -220,4 +220,39 @@ public sealed class MemberEndpointTests(ApiFactory factory) : IClassFixture<ApiF
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [Fact]
+    public async Task ChangeRole_MembersChangedConcurrently_Returns409ConcurrentModificationAndChangesNothing()
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Owner);
+        var secondOwnerId = await factory.UserIdAsync(baby.MemberSubjects[BabyRole.Owner]);
+        var firstOwnerId = await factory.UserIdAsync(baby.OwnerSubject);
+        var client = factory.CreateClientLosingRaceTo(baby.OwnerSubject, async context =>
+        {
+            var stored = await context.BabyAsync(baby.BabyId);
+            stored.ChangeMemberRole(firstOwnerId, BabyRole.Parent);
+            context.BumpRowVersion(stored);
+        });
+
+        var response = await client.PatchAsJsonAsync(MemberPath(baby.BabyId, secondOwnerId), new { role = "Parent" });
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.Conflict, "concurrent_modification");
+        Assert.True(problem.GetProperty("retryable").GetBoolean());
+        var members = await StoredMembersAsync(baby.BabyId);
+        Assert.Equal(BabyRole.Owner, members.Single(member => member.UserId == secondOwnerId).Role);
+        Assert.Equal(BabyRole.Parent, members.Single(member => member.UserId == firstOwnerId).Role);
+    }
+
+    [Fact]
+    public async Task ChangeRole_AfterAnEarlierChange_StillSucceeds()
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Viewer);
+        var viewerId = await factory.UserIdAsync(baby.SubjectOf(BabyRole.Viewer));
+        var client = As(baby, BabyRole.Owner);
+        await client.PatchAsJsonAsync(MemberPath(baby.BabyId, viewerId), new { role = "Parent" });
+
+        var response = await client.PatchAsJsonAsync(MemberPath(baby.BabyId, viewerId), new { role = "Viewer" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }

@@ -57,6 +57,18 @@ public readonly record struct EventPayload
         return JsonEquivalence.AreEquivalent(left.RootElement, right.RootElement);
     }
 
+    /// <summary>The value of the top-level string member <paramref name="propertyName"/>, or <c>null</c> when it is absent or not a string.</summary>
+    public string? GetString(string propertyName)
+    {
+        ArgumentNullException.ThrowIfNull(propertyName);
+        using var document = JsonDocument.Parse(Value);
+        return document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.TryGetProperty(propertyName, out var member)
+            && member.ValueKind == JsonValueKind.String
+                ? member.GetString()
+                : null;
+    }
+
     public override string ToString() => Value;
 
     private static void EnsureWithinLimit(string json)

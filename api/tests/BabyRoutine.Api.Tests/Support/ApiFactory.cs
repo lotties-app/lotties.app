@@ -20,8 +20,9 @@ namespace BabyRoutine.Api.Tests.Support;
 /// </summary>
 /// <remarks>
 /// The production EF model is used unchanged: <c>jsonb</c> column types are plain type names to SQLite and the
-/// value converters already store JSON as text. Only timestamps differ: they are stored as UTC ticks
-/// (<see cref="SqliteDateTimeOffsetModelCustomizer"/>) so SQLite can filter and order them. SQLite keeps the unique indexes, so user-creation races are real;
+/// value converters already store JSON as text. Only timestamps (stored as UTC ticks so SQLite can filter and order
+/// them) and the <c>xmin</c> row versions (a plain integer concurrency token) differ (<see cref="SqliteModelCustomizer"/>).
+/// SQLite keeps the unique indexes, so user-creation races are real;
 /// <see cref="SqliteUniqueViolationDetector"/> lets the repositories recognize them as PostgreSQL unique violations.
 /// </remarks>
 public sealed class ApiFactory : WebApplicationFactory<Program>
@@ -76,7 +77,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         services.AddDbContext<BabyRoutineDbContext>(options => options
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()
-            .ReplaceService<IModelCustomizer, SqliteDateTimeOffsetModelCustomizer>());
+            .ReplaceService<IModelCustomizer, SqliteModelCustomizer>());
         services.AddSingleton<IUniqueViolationDetector, SqliteUniqueViolationDetector>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
         services.PostConfigure<AuthenticationOptions>(UseTestSchemeByDefault);

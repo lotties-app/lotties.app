@@ -27,7 +27,8 @@ public sealed class NapperImportPlan
         IReadOnlySet<Guid> existingEventIds,
         IReadOnlySet<Guid> existingMeasurementIds,
         MedicationResolver medications,
-        IReadOnlyList<Medication> catalog)
+        IReadOnlyList<Medication> catalog,
+        CancellationToken cancellationToken)
     {
         Events = events;
         Measurements = measurements;
@@ -36,7 +37,7 @@ public sealed class NapperImportPlan
         NewMeasurements = measurements.Candidates.Where(candidate => !existingMeasurementIds.Contains(candidate.Measurement.Id)).ToArray();
         ImportedMeasurements = measurements.Candidates.Where(candidate => existingMeasurementIds.Contains(candidate.Measurement.Id)).ToArray();
         UnmappedTokens = DistinctTokens(NewEvents.SelectMany(candidate => candidate.UnmappedTokens));
-        MedicationSuggestions = Suggest(NewEvents, catalog, medications);
+        MedicationSuggestions = Suggest(NewEvents, catalog, medications, cancellationToken);
         MedicationsToCreate = medications.MedicationsToCreate(NewEvents.SelectMany(candidate => candidate.Medications));
     }
 
@@ -66,7 +67,8 @@ public sealed class NapperImportPlan
         IReadOnlySet<Guid> existingEventIds,
         IReadOnlySet<Guid> existingMeasurementIds,
         MedicationResolver medications,
-        IReadOnlyList<Medication> catalog)
+        IReadOnlyList<Medication> catalog,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(measurements);
@@ -74,7 +76,7 @@ public sealed class NapperImportPlan
         ArgumentNullException.ThrowIfNull(existingMeasurementIds);
         ArgumentNullException.ThrowIfNull(medications);
         ArgumentNullException.ThrowIfNull(catalog);
-        return new NapperImportPlan(events, measurements, existingEventIds, existingMeasurementIds, medications, catalog);
+        return new NapperImportPlan(events, measurements, existingEventIds, existingMeasurementIds, medications, catalog, cancellationToken);
     }
 
     /// <summary>Throws <see cref="UnmappedMedicationsException"/> when a new medicine row names a medication without a mapping.</summary>
@@ -94,24 +96,43 @@ public sealed class NapperImportPlan
     private static IReadOnlyList<string> DistinctTokens(IEnumerable<string> tokens) =>
         tokens.DistinctBy(MedicationNameMatcher.Normalize, StringComparer.Ordinal).ToArray();
 
-    private static IReadOnlyList<MedicationSuggestion> Suggest(IReadOnlyList<NapperEventCandidate> newEvents, IReadOnlyList<Medication> catalog, MedicationResolver medications)
+    /// <remarks>
+    /// Each name is normalized once and matched through length buckets with the bounded edit distance, so the work
+    /// stays small for the at most <see cref="MedicationNameLimits.MaxDistinctNamesPerFile"/> names of a file.
+    /// </remarks>
+    private static IReadOnlyList<MedicationSuggestion> Suggest(
+        IReadOnlyList<NapperEventCandidate> newEvents,
+        IReadOnlyList<Medication> catalog,
+        MedicationResolver medications,
+        CancellationToken cancellationToken)
     {
         var occurrences = newEvents
             .SelectMany(candidate => candidate.MedicationTokens)
             .GroupBy(MedicationNameMatcher.Normalize, StringComparer.Ordinal)
-            .Select(group => new TokenOccurrence(group.First(), group.Count()))
+            .Select(group => new TokenOccurrence(group.First(), group.Key, group.Count()))
             .ToArray();
-        var tokens = occurrences.Select(occurrence => occurrence.Token).ToArray();
+        var catalogIndex = MedicationCatalogIndex.Create(catalog);
+        var tokenIndex = SimilarNameIndex<TokenOccurrence>.Create(occurrences, occurrence => occurrence.NormalizedToken);
         return occurrences
-            .Select(occurrence => new MedicationSuggestion(
-                occurrence.Token,
-                occurrence.Count,
-                MedicationNameMatcher.FindBestMatch(occurrence.Token, catalog),
-                tokens.Where(other => other != occurrence.Token && MedicationNameMatcher.AreSimilar(other, occurrence.Token)).ToArray(),
-                medications.IsMapped(occurrence.Token)))
+            .Select(occurrence => SuggestionFor(occurrence, catalogIndex, tokenIndex, medications, cancellationToken))
             .OrderBy(suggestion => suggestion.Token, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
-    private sealed record TokenOccurrence(string Token, int Count);
+    private static MedicationSuggestion SuggestionFor(
+        TokenOccurrence occurrence,
+        MedicationCatalogIndex catalog,
+        SimilarNameIndex<TokenOccurrence> tokens,
+        MedicationResolver medications,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var similarTokens = tokens.FindSimilar(occurrence.NormalizedToken)
+            .Where(similar => !ReferenceEquals(similar.Item, occurrence))
+            .Select(similar => similar.Item.Token)
+            .ToArray();
+        return new MedicationSuggestion(occurrence.Token, occurrence.Count, catalog.FindBestMatch(occurrence.NormalizedToken), similarTokens, medications.IsMapped(occurrence.Token));
+    }
+
+    private sealed record TokenOccurrence(string Token, string NormalizedToken, int Count);
 }

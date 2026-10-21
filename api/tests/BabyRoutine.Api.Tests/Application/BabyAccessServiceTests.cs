@@ -8,7 +8,7 @@ namespace BabyRoutine.Api.Tests.Application;
 
 public sealed class BabyAccessServiceTests
 {
-    private static readonly User CurrentUser = User.Create("sub", "Ana", TestUsers.Now);
+    private static readonly User CurrentUser = User.Create(User.UnknownIssuer, "sub", "Ana", TestUsers.Now);
 
     [Fact]
     public async Task CheckAsync_NoMembership_ReturnsNotMember()

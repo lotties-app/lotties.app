@@ -86,11 +86,29 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Users_HaveUniqueSubject()
+    public void Users_HaveUniqueIssuerAndSubject()
     {
         using var context = ModelTestContext.Create();
 
-        Assert.Contains("subject", UniqueIndexColumns(context.Entity<User>()));
+        var unique = UniqueIndexColumns(context.Entity<User>());
+
+        Assert.Contains("issuer,subject", unique);
+        Assert.DoesNotContain("subject", unique);
+    }
+
+    [Theory]
+    [InlineData(typeof(Invite))]
+    [InlineData(typeof(Baby))]
+    public void InvitesAndBabies_HaveXminRowVersion(Type entityType)
+    {
+        using var context = ModelTestContext.Create();
+
+        var version = context.DesignTimeModel().FindEntityType(entityType)!.FindProperty("Version")!;
+
+        Assert.True(version.IsShadowProperty());
+        Assert.True(version.IsConcurrencyToken);
+        Assert.Equal(ValueGenerated.OnAddOrUpdate, version.ValueGenerated);
+        Assert.Equal(("xmin", "xid"), (version.GetColumnName(), version.GetColumnType()));
     }
 
     [Fact]

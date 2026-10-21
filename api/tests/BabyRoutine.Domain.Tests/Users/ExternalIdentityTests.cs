@@ -5,10 +5,12 @@ namespace BabyRoutine.Domain.Tests.Users;
 
 public sealed class ExternalIdentityTests
 {
+    private const string Issuer = "https://issuer.example.test/";
+
     [Fact]
     public void DisplayName_NamePresent_UsesTrimmedName()
     {
-        var identity = new ExternalIdentity("sub", "  Ana  ", "ana@example.test");
+        var identity = new ExternalIdentity(Issuer, "sub", "  Ana  ", "ana_p", "ana_n");
 
         Assert.Equal("Ana", identity.DisplayName);
     }
@@ -16,42 +18,58 @@ public sealed class ExternalIdentityTests
     [Theory]
     [InlineData(null)]
     [InlineData("   ")]
-    public void DisplayName_NoName_UsesEmail(string? name)
+    public void DisplayName_NoName_UsesPreferredUsername(string? name)
     {
-        var identity = new ExternalIdentity("sub", name, "ana@example.test");
+        var identity = new ExternalIdentity(Issuer, "sub", name, " ana.souza ", "ana_n");
 
-        Assert.Equal("ana@example.test", identity.DisplayName);
+        Assert.Equal("ana.souza", identity.DisplayName);
     }
 
     [Fact]
-    public void DisplayName_NoNameNorEmail_UsesFallback()
+    public void DisplayName_PreferredUsernameIsAnEmail_UsesNickname()
     {
-        var identity = new ExternalIdentity("sub", null, " ");
+        var identity = new ExternalIdentity(Issuer, "sub", null, "ana@example.test", "ana");
+
+        Assert.Equal("ana", identity.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_NameIsAnEmail_IsNeverShown()
+    {
+        var identity = new ExternalIdentity(Issuer, "sub", "ana@example.test", null, null);
 
         Assert.Equal(ExternalIdentity.FallbackDisplayName, identity.DisplayName);
     }
 
     [Fact]
+    public void DisplayName_NoProfileClaims_UsesParent()
+    {
+        var identity = new ExternalIdentity(Issuer, "sub", null, " ", null);
+
+        Assert.Equal("Parent", identity.DisplayName);
+    }
+
+    [Fact]
     public void DisplayName_TooLong_IsCutToUserLimit()
     {
-        var identity = new ExternalIdentity("sub", new string('a', User.DisplayNameMaxLength + 20), null);
+        var identity = new ExternalIdentity(Issuer, "sub", new string('a', User.DisplayNameMaxLength + 20));
 
         Assert.Equal(User.DisplayNameMaxLength, identity.DisplayName.Length);
     }
 
     [Fact]
-    public void Register_ValidIdentity_CreatesUserWithSubjectAndDisplayName()
+    public void Register_ValidIdentity_CreatesUserWithIssuerSubjectAndDisplayName()
     {
-        var user = User.Register(new ExternalIdentity("auth0|abc", null, "ana@example.test"), TestClock.Now);
+        var user = User.Register(new ExternalIdentity(Issuer, "auth0|abc", null, null, "ana"), TestClock.Now);
 
-        Assert.Equal("auth0|abc", user.Subject);
-        Assert.Equal("ana@example.test", user.DisplayName);
+        Assert.Equal((Issuer, "auth0|abc"), (user.Issuer, user.Subject));
+        Assert.Equal("ana", user.DisplayName);
         Assert.Equal(TestClock.Now, user.CreatedAt);
     }
 
     [Fact]
     public void Register_BlankSubject_ThrowsValidation()
     {
-        Assert.Throws<DomainValidationException>(() => User.Register(new ExternalIdentity(" ", "Ana", null), TestClock.Now));
+        Assert.Throws<DomainValidationException>(() => User.Register(new ExternalIdentity(Issuer, " ", "Ana"), TestClock.Now));
     }
 }

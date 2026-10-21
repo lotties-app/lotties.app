@@ -120,6 +120,24 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task HistoryRepository_ReadsThePayloadKind()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        var bedTime = DateTimeOffset.UtcNow.AddHours(-3);
+        await factory.SeedAsync(context =>
+        {
+            context.Events.Add(Event.Create(Guid.NewGuid(), baby.BabyId, BuiltInEventTypes.SleepId, ownerId, bedTime, bedTime, EventPayload.From("""{"kind":"bed_time","mood":"calm"}"""), null, DateTimeOffset.UtcNow));
+            context.Events.Add(NewEvent(baby.BabyId, ownerId, BuiltInEventTypes.SleepId, bedTime.AddHours(1), bedTime.AddHours(2)));
+            return Task.CompletedTask;
+        });
+
+        var history = await WithHistoryAsync(repository => repository.LoadAsync(baby.BabyId, bedTime.AddMinutes(-1)));
+
+        Assert.Equal([SleepKinds.BedTime, null], history!.Events.OrderBy(item => item.StartedAt).Select(item => item.Kind));
+    }
+
+    [Fact]
     public async Task HistoryRepository_UnknownBaby_ReturnsNull()
     {
         Assert.Null(await WithHistoryAsync(repository => repository.LoadAsync(Guid.NewGuid(), DateTimeOffset.UtcNow)));

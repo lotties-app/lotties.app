@@ -34,14 +34,22 @@ internal static class InviteEndpoints
     }
 
     /// <summary>
-    /// Maps <c>POST /invites/{token}/accept</c> under the API group: the signed-in user joins the invite's baby (200 with
-    /// the baby). 404 unknown token, 410 expired, 409 already used or already a member.
+    /// Maps, under the API group, <c>POST /invites/accept</c> with body <c>{ "token": "..." }</c>: the signed-in user
+    /// joins the invite's baby (200 with the baby). 404 unknown token, 410 expired, 409 already used, already a member
+    /// or a concurrent change of the baby's members. Also maps the deprecated <c>POST /invites/{token}/accept</c>
+    /// (same semantics), which puts the token in the URL path; it is kept until the web client has moved to the body.
     /// </summary>
     public static IEndpointRouteBuilder MapInviteAcceptEndpoints(this IEndpointRouteBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
-        api.MapPost(InvitesPath + "/{token}/accept", AcceptAsync)
+        api.MapPost(InvitesPath + "/accept", AcceptFromBodyAsync)
             .WithName("AcceptInvite")
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status410Gone);
+        api.MapPost(InvitesPath + "/{token}/accept", AcceptFromPathAsync)
+            .WithName("AcceptInviteFromPath")
+            .WithMetadata(new ObsoleteAttribute("Send the token in the body of POST /invites/accept."))
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status410Gone);
@@ -67,6 +75,9 @@ internal static class InviteEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<BabyResponse>> AcceptAsync(string token, IInviteService invites, CancellationToken cancellationToken) =>
+    private static async Task<Ok<BabyResponse>> AcceptFromBodyAsync(AcceptInviteRequest request, IInviteService invites, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await invites.AcceptAsync(request.Token, cancellationToken));
+
+    private static async Task<Ok<BabyResponse>> AcceptFromPathAsync(string token, IInviteService invites, CancellationToken cancellationToken) =>
         TypedResults.Ok(await invites.AcceptAsync(token, cancellationToken));
 }

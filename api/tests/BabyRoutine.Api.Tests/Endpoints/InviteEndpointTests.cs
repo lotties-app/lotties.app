@@ -14,7 +14,12 @@ public sealed class InviteEndpointTests(ApiFactory factory) : IClassFixture<ApiF
 
     private static string InvitePath(Guid babyId, Guid inviteId) => $"{InvitesPath(babyId)}/{inviteId}";
 
+    private const string AcceptFromBodyPath = "/api/v1/invites/accept";
+
     private static string AcceptPath(string token) => $"/api/v1/invites/{token}/accept";
+
+    private static Task<HttpResponseMessage> AcceptFromBodyAsync(HttpClient client, string? token) =>
+        client.PostAsJsonAsync(AcceptFromBodyPath, new { token });
 
     private HttpClient As(SeededBaby baby, BabyRole role) => factory.CreateClientFor(baby.SubjectOf(role));
 
@@ -290,5 +295,116 @@ public sealed class InviteEndpointTests(ApiFactory factory) : IClassFixture<ApiF
         var response = await factory.CreateClientFor(TestUsers.NewSubject()).PostAsync(AcceptPath(storedHash), null);
 
         await response.AssertProblemAsync(HttpStatusCode.NotFound, "invite_not_found");
+    }
+
+    [Fact]
+    public async Task AcceptFromBody_ValidToken_JoinsBabyWithInviteRole()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var created = await CreateInviteAsync(baby, "Viewer");
+        var subject = TestUsers.NewSubject();
+
+        var response = await AcceptFromBodyAsync(factory.CreateClientFor(subject), created.Token);
+
+        var joined = await response.ReadAsync<BabyResponse>();
+        Assert.Equal((baby.BabyId, BabyRole.Viewer), (joined.Id, joined.Role));
+        Assert.Equal(await factory.UserIdAsync(subject), (await StoredInviteAsync(created.Id)).AcceptedBy);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("nope")]
+    [InlineData("0123456789abcdef0123456789abcdef0123456789a")]
+    public async Task AcceptFromBody_MissingUnknownOrMalformedToken_Returns404(string? token)
+    {
+        var response = await AcceptFromBodyAsync(factory.CreateClientFor(TestUsers.NewSubject()), token);
+
+        await response.AssertProblemAsync(HttpStatusCode.NotFound, "invite_not_found");
+    }
+
+    [Fact]
+    public async Task AcceptFromBody_UsedToken_Returns409AlreadyAccepted()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var created = await CreateInviteAsync(baby);
+        await AcceptFromBodyAsync(factory.CreateClientFor(TestUsers.NewSubject()), created.Token);
+
+        var response = await AcceptFromBodyAsync(factory.CreateClientFor(TestUsers.NewSubject()), created.Token);
+
+        await response.AssertProblemAsync(HttpStatusCode.Conflict, "invite_already_accepted");
+    }
+
+    [Fact]
+    public async Task AcceptFromBody_ExpiredToken_Returns410()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var issued = Invite.Issue(baby.BabyId, BabyRole.Parent, await factory.UserIdAsync(baby.OwnerSubject), DateTimeOffset.UtcNow.AddDays(-10), TimeSpan.FromDays(1));
+        await factory.SeedAsync(context =>
+        {
+            context.Invites.Add(issued.Invite);
+            return Task.CompletedTask;
+        });
+
+        var response = await AcceptFromBodyAsync(factory.CreateClientFor(TestUsers.NewSubject()), issued.Token.Value);
+
+        await response.AssertProblemAsync(HttpStatusCode.Gone, "invite_expired");
+    }
+
+    [Fact]
+    public async Task AcceptFromBody_Anonymous_Returns401()
+    {
+        var response = await AcceptFromBodyAsync(factory.CreateClient(), "nope");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Accept_InviteAcceptedConcurrentlyByAnotherUser_Returns409AlreadyAcceptedAndAddsNoMember()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var created = await CreateInviteAsync(baby);
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        var loser = TestUsers.NewSubject();
+        await factory.CreateClientFor(loser).GetAsync("/api/v1/me");
+        var client = factory.CreateClientLosingRaceTo(loser, async context =>
+        {
+            var invite = await context.InviteAsync(created.Id);
+            invite.Accept(ownerId, DateTimeOffset.UtcNow);
+            context.BumpRowVersion(invite);
+        });
+
+        var response = await AcceptFromBodyAsync(client, created.Token);
+
+        await response.AssertProblemAsync(HttpStatusCode.Conflict, "invite_already_accepted");
+        var loserId = await factory.UserIdAsync(loser);
+        Assert.False(await factory.QueryAsync(context => context.BabyMembers.AnyAsync(member => member.BabyId == baby.BabyId && member.UserId == loserId)));
+        Assert.Equal(ownerId, (await StoredInviteAsync(created.Id)).AcceptedBy);
+    }
+
+    [Fact]
+    public async Task Accept_InviteRevokedConcurrently_Returns404()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var created = await CreateInviteAsync(baby);
+        var client = factory.CreateClientLosingRaceTo(TestUsers.NewSubject(), async context => context.Invites.Remove(await context.InviteAsync(created.Id)));
+
+        var response = await AcceptFromBodyAsync(client, created.Token);
+
+        await response.AssertProblemAsync(HttpStatusCode.NotFound, "invite_not_found");
+    }
+
+    [Fact]
+    public async Task Accept_BabyMembersChangedConcurrently_Returns409ConcurrentModificationWithRetryHint()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var created = await CreateInviteAsync(baby);
+        var client = factory.CreateClientLosingRaceTo(TestUsers.NewSubject(), async context => context.BumpRowVersion(await context.BabyAsync(baby.BabyId)));
+
+        var response = await AcceptFromBodyAsync(client, created.Token);
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.Conflict, "concurrent_modification");
+        Assert.True(problem.GetProperty("retryable").GetBoolean());
+        Assert.False((await StoredInviteAsync(created.Id)).IsAccepted);
     }
 }

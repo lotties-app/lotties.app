@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using BabyRoutine.Api.Tests.Support;
 using BabyRoutine.Application.Users;
+using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace BabyRoutine.Api.Tests.Endpoints;
@@ -39,12 +40,55 @@ public sealed class MeEndpointTests(ApiFactory factory) : IClassFixture<ApiFacto
     }
 
     [Fact]
-    public async Task GetMe_NoNameClaim_UsesEmailAsDisplayName()
+    public async Task GetMe_OnlyEmailClaim_NeverUsesOrReturnsTheEmail()
     {
         var response = await factory.CreateClientFor(TestUsers.NewSubject(), email: "bia@example.test").GetAsync("/api/v1/me");
 
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("bia@example.test", text, StringComparison.Ordinal);
         var body = await response.Content.ReadFromJsonAsync<CurrentUserResponse>();
-        Assert.Equal("bia@example.test", body!.DisplayName);
+        Assert.Equal("Parent", body!.DisplayName);
+    }
+
+    [Theory]
+    [InlineData("bia.s", "bia", "bia.s")]
+    [InlineData("bia@example.test", "bia", "bia")]
+    public async Task GetMe_NoNameClaim_UsesPreferredUsernameWithoutAtThenNickname(string preferredUsername, string nickname, string expected)
+    {
+        var response = await factory.CreateClientFor(TestUsers.NewSubject(), email: "bia@example.test", preferredUsername: preferredUsername, nickname: nickname).GetAsync("/api/v1/me");
+
+        var body = await response.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        Assert.Equal(expected, body!.DisplayName);
+    }
+
+    [Fact]
+    public async Task GetMe_SameSubjectFromTwoIssuers_ProvisionsTwoUsers()
+    {
+        var subject = TestUsers.NewSubject();
+
+        var first = await factory.CreateClientFor(subject, name: "Ana", issuer: "https://a.example.test/").GetFromJsonAsync<CurrentUserResponse>("/api/v1/me");
+        var second = await factory.CreateClientFor(subject, name: "Eve", issuer: "https://b.example.test/").GetFromJsonAsync<CurrentUserResponse>("/api/v1/me");
+
+        Assert.NotEqual(first!.Id, second!.Id);
+        Assert.Equal(2, await CountUsersAsync(subject));
+    }
+
+    [Fact]
+    public async Task GetMe_UserStoredWithoutIssuer_IsClaimedAndKeepsItsId()
+    {
+        var subject = TestUsers.NewSubject();
+        var legacy = User.Create(User.UnknownIssuer, subject, "Ana", TestUsers.Now);
+        await factory.SeedAsync(context =>
+        {
+            context.Users.Add(legacy);
+            return Task.CompletedTask;
+        });
+
+        var body = await factory.CreateClientFor(subject, name: "Ana", issuer: "https://a.example.test/").GetFromJsonAsync<CurrentUserResponse>("/api/v1/me");
+
+        Assert.Equal(legacy.Id, body!.Id);
+        var stored = await factory.QueryAsync(context => context.Users.SingleAsync(user => user.Subject == subject));
+        Assert.Equal("https://a.example.test/", stored.Issuer);
     }
 
     [Fact]

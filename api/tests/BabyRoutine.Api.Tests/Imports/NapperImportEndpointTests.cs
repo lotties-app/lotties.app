@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -300,6 +302,44 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
         var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(PreviewPath(baby.BabyId), new { logsCsv = csv.ToString() });
 
         await response.AssertProblemAsync(HttpStatusCode.BadRequest, "import_too_many_rows");
+    }
+
+    [Fact]
+    public async Task Preview_HostileFileWithTensOfThousandsOfMedicationNames_Returns400Quickly()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var csv = new StringBuilder("start,end,category,comment\n");
+        Enumerable.Range(0, NapperImportService.MaxRows).ToList().ForEach(index => csv.Append(CultureInfo.InvariantCulture, $"2025-09-01T08:00:00Z,,MEDICINE,\"m{index}a, m{index}b, m{index}c\"\n"));
+        var stopwatch = Stopwatch.StartNew();
+
+        var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(PreviewPath(baby.BabyId), new { logsCsv = csv.ToString() });
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "import_too_many_medication_names");
+        Assert.Equal(500, problem.GetProperty("maxNames").GetInt32());
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"took {stopwatch.Elapsed}");
+    }
+
+    [Fact]
+    public async Task Import_AfterRenamingAnImportedMedication_ReusesItWithoutConflict()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = As(baby, BabyRole.Owner);
+        const string firstRow = "2025-09-01T08:00:00Z,,MEDICINE,Puravit\n";
+        var mappings = new[] { Create("Puravit", "Puravit") };
+        var first = await (await client.PostAsJsonAsync(ImportPath(baby.BabyId), new { logsCsv = "start,end,category,comment\n" + firstRow, medicationMappings = mappings })).ReadAsync<NapperImportResponse>();
+        var puravit = Assert.Single(first.CreatedMedications);
+        await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/medications/{puravit.Id}", new { name = "Puravit gotas", isUsual = true });
+
+        var response = await client.PostAsJsonAsync(
+            ImportPath(baby.BabyId),
+            new { logsCsv = "start,end,category,comment\n" + firstRow + "2025-09-02T08:00:00Z,,MEDICINE,Puravit\n", medicationMappings = mappings });
+
+        var second = await response.ReadAsync<NapperImportResponse>();
+        Assert.Equal((1, 0), (second.EventsCreated, second.CreatedMedications.Count));
+        Assert.Equal(1, await MedicationCountAsync(baby.BabyId));
+        var newEvent = await factory.QueryAsync(context => context.Events.SingleAsync(stored => stored.BabyId == baby.BabyId && stored.StartedAt == new DateTimeOffset(2025, 9, 2, 8, 0, 0, TimeSpan.Zero)));
+        Assert.Contains(puravit.Id.ToString(), newEvent.Payload.Value, StringComparison.Ordinal);
+        Assert.Contains("Puravit gotas", newEvent.Payload.Value, StringComparison.Ordinal);
     }
 
     [Fact]

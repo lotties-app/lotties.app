@@ -12,27 +12,35 @@ internal sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
 
 internal sealed class FakeUserRepository : IUserRepository
 {
-    private readonly Dictionary<string, User> _bySubject = new(StringComparer.Ordinal);
+    private readonly List<User> _users = [];
 
     /// <summary>When set, <see cref="AddOrGetExistingAsync"/> behaves as if this user won a concurrent insert.</summary>
     public User? ConcurrentWinner { get; set; }
 
     public int AddCalls { get; private set; }
 
-    public void Seed(User user) => _bySubject[user.Subject] = user;
+    public int SaveCalls { get; private set; }
 
-    public Task<User?> FindBySubjectAsync(string subject, CancellationToken cancellationToken = default) =>
-        Task.FromResult(_bySubject.GetValueOrDefault(subject));
+    public void Seed(User user) => _users.Add(user);
+
+    public Task<User?> FindByIdentityAsync(string issuer, string subject, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_users.Find(user => user.Issuer == issuer && user.Subject == subject));
 
     public Task<IReadOnlyList<User>> FindByIdsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<User>>(_bySubject.Values.Where(user => userIds.Contains(user.Id)).ToArray());
+        Task.FromResult<IReadOnlyList<User>>(_users.Where(user => userIds.Contains(user.Id)).ToArray());
 
     public Task<User> AddOrGetExistingAsync(User user, CancellationToken cancellationToken = default)
     {
         AddCalls++;
         var stored = ConcurrentWinner ?? user;
-        _bySubject[stored.Subject] = stored;
+        _users.Add(stored);
         return Task.FromResult(stored);
+    }
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        SaveCalls++;
+        return Task.CompletedTask;
     }
 }
 

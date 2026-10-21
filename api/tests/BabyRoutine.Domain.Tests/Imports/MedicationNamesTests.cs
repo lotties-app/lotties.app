@@ -47,6 +47,38 @@ public sealed class MedicationNamesTests
         Assert.Equal(expected, MedicationNameMatcher.Distance(left, right));
     }
 
+    [Theory]
+    [InlineData("flagas", "flygas", 2, 1)]
+    [InlineData("flagas", "flagyl", 1, 2)]
+    [InlineData("abc", "abcdef", 2, 3)]
+    [InlineData("kitten", "sitting", 3, 3)]
+    [InlineData("kitten", "sitting", 2, 3)]
+    [InlineData("", "", 0, 0)]
+    public void Distance_Bounded_ReturnsDistanceOrBoundPlusOne(string left, string right, int maxDistance, int expected)
+    {
+        Assert.Equal(expected, MedicationNameMatcher.Distance(left, right, maxDistance));
+    }
+
+    [Fact]
+    public void Distance_Bounded_AgreesWithTheFullDistanceWithinTheBound()
+    {
+        var random = new Random(7);
+        var names = Enumerable.Range(0, 300).Select(_ => RandomName(random)).ToArray();
+
+        var disagreements = names.Zip(names.Skip(1))
+            .SelectMany(pair => Enumerable.Range(0, 4).Select(bound => (pair.First, pair.Second, bound)))
+            .Where(item => MedicationNameMatcher.Distance(item.First, item.Second, item.bound) != Math.Min(MedicationNameMatcher.Distance(item.First, item.Second), item.bound + 1))
+            .ToArray();
+
+        Assert.Empty(disagreements);
+    }
+
+    [Fact]
+    public void Distance_NegativeBound_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => MedicationNameMatcher.Distance("a", "b", -1));
+    }
+
     [Fact]
     public void FindBestMatch_EqualIgnoringCaseAndDiacritics_MatchesWithDistanceZero()
     {
@@ -94,4 +126,7 @@ public sealed class MedicationNamesTests
     {
         Assert.Equal(expected, MedicationNameMatcher.AreSimilar(left, right));
     }
+
+    private static string RandomName(Random random) =>
+        new(Enumerable.Range(0, random.Next(0, 12)).Select(_ => "abcde"[random.Next(5)]).ToArray());
 }

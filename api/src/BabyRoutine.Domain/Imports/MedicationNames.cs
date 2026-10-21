@@ -31,6 +31,19 @@ public static partial class MedicationTokenizer
     private static partial Regex Separators();
 }
 
+/// <summary>
+/// Bounds on the medication names of one import, so the typo matching (quadratic in the number of names) stays cheap
+/// whatever the file contains.
+/// </summary>
+public static class MedicationNameLimits
+{
+    /// <summary>Most distinct (normalized) medication names one logs file may contain.</summary>
+    public const int MaxDistinctNamesPerFile = 500;
+
+    /// <summary>Longest medication name read from a comment; a medicine row with a longer name is skipped as an invalid record.</summary>
+    public const int MaxNameLength = 80;
+}
+
 /// <summary>A catalog medication a name was matched to; <see cref="Distance"/> 0 means equal after normalization.</summary>
 public sealed record MedicationMatch(Medication Medication, int Distance);
 
@@ -40,6 +53,9 @@ public sealed record MedicationMatch(Medication Medication, int Distance);
 /// </summary>
 public static partial class MedicationNameMatcher
 {
+    /// <summary>The largest tolerance <see cref="Tolerance"/> ever returns.</summary>
+    public const int MaxTolerance = 2;
+
     /// <summary>Lower case, without diacritics, with inner whitespace collapsed to one space and trimmed.</summary>
     public static string Normalize(string name)
     {
@@ -52,33 +68,23 @@ public static partial class MedicationNameMatcher
     /// <summary>The largest edit distance at which two normalized names still count as the same medication.</summary>
     public static int Tolerance(string left, string right)
     {
-        var shorter = Math.Min(left.Length, right.Length);
-        return shorter switch
+        ArgumentNullException.ThrowIfNull(left);
+        ArgumentNullException.ThrowIfNull(right);
+        return Math.Min(left.Length, right.Length) switch
         {
             <= 3 => 0,
             <= 7 => 1,
-            _ => 2,
+            _ => MaxTolerance,
         };
     }
 
-    public static bool AreSimilar(string left, string right)
-    {
-        var normalizedLeft = Normalize(left);
-        var normalizedRight = Normalize(right);
-        return Distance(normalizedLeft, normalizedRight) <= Tolerance(normalizedLeft, normalizedRight);
-    }
+    public static bool AreSimilar(string left, string right) => AreSimilarNormalized(Normalize(left), Normalize(right));
 
     /// <summary>The closest catalog entry within tolerance (ties broken by name), or <c>null</c>.</summary>
     public static MedicationMatch? FindBestMatch(string name, IReadOnlyList<Medication> catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        var normalized = Normalize(name);
-        return catalog
-            .Select(medication => MatchOrNull(normalized, medication))
-            .OfType<MedicationMatch>()
-            .OrderBy(match => match.Distance)
-            .ThenBy(match => match.Medication.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+        return MedicationCatalogIndex.Create(catalog).FindBestMatch(Normalize(name));
     }
 
     /// <summary>Levenshtein distance (insertions, deletions and substitutions each cost one).</summary>
@@ -86,33 +92,71 @@ public static partial class MedicationNameMatcher
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
-        var previous = Enumerable.Range(0, right.Length + 1).ToArray();
+        return BoundedDistance(left, right, Math.Max(left.Length, right.Length));
+    }
+
+    /// <summary>
+    /// Levenshtein distance when it is at most <paramref name="maxDistance"/>, else <paramref name="maxDistance"/> + 1.
+    /// Costs O(length x maxDistance): names whose lengths differ by more are rejected up front, only the diagonal band
+    /// is computed and the computation stops as soon as a row exceeds the bound.
+    /// </summary>
+    public static int Distance(string left, string right, int maxDistance)
+    {
+        ArgumentNullException.ThrowIfNull(left);
+        ArgumentNullException.ThrowIfNull(right);
+        ArgumentOutOfRangeException.ThrowIfNegative(maxDistance);
+        return Math.Abs(left.Length - right.Length) > maxDistance ? maxDistance + 1 : BoundedDistance(left, right, maxDistance);
+    }
+
+    /// <summary>Whether two already normalized names are within <see cref="Tolerance"/> of each other.</summary>
+    internal static bool AreSimilarNormalized(string normalizedLeft, string normalizedRight) =>
+        DistanceWithinTolerance(normalizedLeft, normalizedRight) is not null;
+
+    /// <summary>The distance of two normalized names when within <see cref="Tolerance"/>, else <c>null</c>.</summary>
+    internal static int? DistanceWithinTolerance(string normalizedLeft, string normalizedRight)
+    {
+        var tolerance = Tolerance(normalizedLeft, normalizedRight);
+        var distance = Distance(normalizedLeft, normalizedRight, tolerance);
+        return distance <= tolerance ? distance : null;
+    }
+
+    private static int BoundedDistance(string left, string right, int maxDistance)
+    {
+        var previous = InitialRow(right.Length, maxDistance);
+        var current = new int[right.Length + 1];
         for (var row = 1; row <= left.Length; row++)
         {
-            previous = NextRow(previous, left[row - 1], right, row);
+            var smallest = FillBandedRow(previous, current, left[row - 1], right, row, maxDistance);
+            if (smallest > maxDistance)
+            {
+                return maxDistance + 1;
+            }
+
+            (previous, current) = (current, previous);
         }
 
-        return previous[right.Length];
+        return Math.Min(previous[right.Length], maxDistance + 1);
     }
 
-    private static MedicationMatch? MatchOrNull(string normalizedName, Medication medication)
-    {
-        var normalizedCatalogName = Normalize(medication.Name);
-        var distance = Distance(normalizedName, normalizedCatalogName);
-        return distance <= Tolerance(normalizedName, normalizedCatalogName) ? new MedicationMatch(medication, distance) : null;
-    }
+    private static int[] InitialRow(int length, int maxDistance) =>
+        Enumerable.Range(0, length + 1).Select(column => Math.Min(column, maxDistance + 1)).ToArray();
 
-    private static int[] NextRow(int[] previous, char leftCharacter, string right, int row)
+    /// <summary>Fills one row of the edit-distance matrix inside the diagonal band; cells beyond the bound hold bound + 1.</summary>
+    private static int FillBandedRow(int[] previous, int[] current, char leftCharacter, string right, int row, int maxDistance)
     {
-        var current = new int[previous.Length];
-        current[0] = row;
-        for (var column = 1; column < previous.Length; column++)
+        var beyond = maxDistance + 1;
+        Array.Fill(current, beyond);
+        current[0] = Math.Min(row, beyond);
+        var smallest = current[0];
+        var last = Math.Min(right.Length, row + maxDistance);
+        for (var column = Math.Max(1, row - maxDistance); column <= last; column++)
         {
             var substitution = previous[column - 1] + (leftCharacter == right[column - 1] ? 0 : 1);
-            current[column] = Math.Min(Math.Min(previous[column] + 1, current[column - 1] + 1), substitution);
+            current[column] = Math.Min(Math.Min(Math.Min(previous[column] + 1, current[column - 1] + 1), substitution), beyond);
+            smallest = Math.Min(smallest, current[column]);
         }
 
-        return current;
+        return smallest;
     }
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]

@@ -7,20 +7,27 @@ namespace BabyRoutine.Api.Tests.Authentication;
 public sealed class ClaimsPrincipalIdentityTests
 {
     [Fact]
-    public void ToExternalIdentity_AuthenticatedWithClaims_MapsSubjectNameAndEmail()
+    public void ToExternalIdentity_AuthenticatedWithClaims_MapsIssuerSubjectAndProfileButNotEmail()
     {
-        var principal = Principal(isAuthenticated: true, (OidcClaims.Subject, "sub"), (OidcClaims.Name, "Ana"), (OidcClaims.Email, "ana@example.test"));
+        var principal = Principal(
+            isAuthenticated: true,
+            (OidcClaims.Issuer, "https://issuer.example.test/"),
+            (OidcClaims.Subject, "sub"),
+            (OidcClaims.Name, "Ana"),
+            (OidcClaims.PreferredUsername, "ana.s"),
+            (OidcClaims.Nickname, "ana"),
+            ("email", "ana@example.test"));
 
-        Assert.Equal(new ExternalIdentity("sub", "Ana", "ana@example.test"), principal.ToExternalIdentity());
+        Assert.Equal(new ExternalIdentity("https://issuer.example.test/", "sub", "Ana", "ana.s", "ana"), principal.ToExternalIdentity());
     }
 
     [Fact]
-    public void ToExternalIdentity_OnlySubject_LeavesProfileNull()
+    public void ToExternalIdentity_OnlySubject_HasUnknownIssuerAndNoProfile()
     {
-        var identity = Principal(isAuthenticated: true, (OidcClaims.Subject, "sub")).ToExternalIdentity();
+        var identity = Principal(isAuthenticated: true, (OidcClaims.Subject, "sub"), ("email", "ana@example.test")).ToExternalIdentity();
 
-        Assert.Null(identity!.Name);
-        Assert.Null(identity.Email);
+        Assert.Equal(new ExternalIdentity(User.UnknownIssuer, "sub", null), identity);
+        Assert.Equal(ExternalIdentity.FallbackDisplayName, identity!.DisplayName);
     }
 
     [Fact]

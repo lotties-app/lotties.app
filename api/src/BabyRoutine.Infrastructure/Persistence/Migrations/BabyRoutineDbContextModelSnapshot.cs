@@ -42,6 +42,12 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_babies");
 
@@ -126,6 +132,12 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("token");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_invites");
@@ -455,6 +467,12 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("display_name");
 
+                    b.Property<string>("Issuer")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("issuer");
+
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -464,9 +482,9 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_users");
 
-                    b.HasIndex("Subject")
+                    b.HasIndex("Issuer", "Subject")
                         .IsUnique()
-                        .HasDatabaseName("ix_users_subject");
+                        .HasDatabaseName("ix_users_issuer_subject");
 
                     b.ToTable("users", (string)null);
                 });

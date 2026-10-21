@@ -6,6 +6,7 @@ namespace BabyRoutine.Domain.Predictions;
 /// Heuristic v1 predictions: pure, deterministic and independent of input order. For each event type with events
 /// in the last <see cref="PredictionOptions.LookBack"/>:
 /// <list type="bullet">
+/// <item>sleep events are first turned into sleep sessions by their payload kind (<see cref="SleepSessions"/>);</item>
 /// <item>gaps are start-to-start intervals, or awake windows (last wake to next start) for sleep;</item>
 /// <item>gaps and durations are narrowed to the current age band and, for feeding and sleep, to the day/night phase,
 /// each only when enough samples remain; too-short samples and outliers are dropped;</item>
@@ -29,7 +30,7 @@ public static class PredictionEngine
         var outcomes = InWindow(events, context, options)
             .GroupBy(item => item.TypeKey)
             .OrderBy(group => group.Key.Value, StringComparer.Ordinal)
-            .Select(group => PredictType(group, context, options))
+            .Select(group => PredictType(group.Key, SessionsOf(group, context, options), context, options))
             .ToArray();
         return new PredictionSet(
             outcomes.Select(outcome => outcome.Prediction).OfType<Prediction>().ToArray(),
@@ -42,13 +43,25 @@ public static class PredictionEngine
         return events.Where(item => item.StartedAt >= windowStart && item.StartedAt <= context.Now);
     }
 
-    private static TypePredictionOutcome PredictType(IGrouping<EventTypeKey, ObservedEvent> group, PredictionContext context, PredictionOptions options)
+    /// <summary>Events of the awake-window type become sleep sessions (<see cref="SleepSessions"/>); other types are kept as they are.</summary>
+    private static IEnumerable<ObservedEvent> SessionsOf(IGrouping<EventTypeKey, ObservedEvent> group, PredictionContext context, PredictionOptions options) =>
+        group.Key == options.AwakeWindowTypeKey
+            ? SleepSessions.Build(group.ToArray(), context.Now, options.MaxNightSessionLength)
+            : group;
+
+    /// <remarks>A type whose events yield no sessions (e.g. only night wakings) is reported with zero samples.</remarks>
+    private static TypePredictionOutcome PredictType(EventTypeKey typeKey, IEnumerable<ObservedEvent> events, PredictionContext context, PredictionOptions options)
     {
-        var chronological = group
+        var chronological = events
             .OrderBy(item => item.StartedAt)
             .ThenBy(item => item.EndedAt ?? DateTimeOffset.MaxValue)
             .ToArray();
-        var strategy = Strategies.First(candidate => candidate.CanHandle(group.Key, options));
-        return new TypePredictor(group.Key, chronological, context, options, strategy).Predict();
+        if (chronological.Length == 0)
+        {
+            return new TypePredictionOutcome(null, new InsufficientPredictionData(typeKey, 0, options.MinimumSamples, options.LookBack));
+        }
+
+        var strategy = Strategies.First(candidate => candidate.CanHandle(typeKey, options));
+        return new TypePredictor(typeKey, chronological, context, options, strategy).Predict();
     }
 }

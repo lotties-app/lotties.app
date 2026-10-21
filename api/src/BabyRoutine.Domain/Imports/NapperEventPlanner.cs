@@ -26,18 +26,26 @@ public sealed record NapperEventPlan(int TotalRows, IReadOnlyList<NapperEventCan
 /// Turns parsed Napper rows into validated <see cref="Event"/>s (built with <see cref="Event.Create"/>, so the usual
 /// event rules apply) with deterministic ids. Rows that would create exactly the same event as an earlier row are
 /// skipped as duplicates; rows that share category, start and end but differ get distinct ids by ordinal. Nothing is
-/// saved: the same plan backs the preview and the import.
+/// saved: the same plan backs the preview and the import. Medicine rows may name at most
+/// <see cref="MedicationNameLimits.MaxDistinctNamesPerFile"/> distinct medications (else
+/// <see cref="ImportTooManyMedicationNamesException"/>), which bounds the typo matching of the plan.
 /// </summary>
 public static class NapperEventPlanner
 {
-    public static NapperEventPlan Plan(NapperImportContext context, IReadOnlyList<NapperLogRow> rows, IReadOnlyList<ImportSkippedRow> unparsedRows)
+    public static NapperEventPlan Plan(
+        NapperImportContext context,
+        IReadOnlyList<NapperLogRow> rows,
+        IReadOnlyList<ImportSkippedRow> unparsedRows,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(rows);
         ArgumentNullException.ThrowIfNull(unparsedRows);
-        var outcomes = rows.Select(row => MapIncluded(row, context.Categories)).ToArray();
-        var identified = new DraftIdentifier(context.BabyId).Identify(outcomes.Select(outcome => outcome.Draft).OfType<NapperEventDraft>());
-        var built = identified.Drafts.Select(draft => Build(context, draft)).ToArray();
+        var outcomes = rows.Select(row => MapIncluded(row, context.Categories, cancellationToken)).ToArray();
+        var drafts = outcomes.Select(outcome => outcome.Draft).OfType<NapperEventDraft>().ToArray();
+        EnsureFewMedicationNames(drafts);
+        var identified = new DraftIdentifier(context.BabyId).Identify(drafts);
+        var built = identified.Drafts.Select(draft => Build(context, draft, cancellationToken)).ToArray();
         var skipped = unparsedRows
             .Concat(outcomes.Select(outcome => outcome.Skip).OfType<ImportSkippedRow>())
             .Concat(identified.Duplicates)
@@ -47,13 +55,30 @@ public static class NapperEventPlanner
         return new NapperEventPlan(rows.Count + unparsedRows.Count, built.Select(result => result.Candidate).OfType<NapperEventCandidate>().ToArray(), skipped);
     }
 
-    private static NapperRowOutcome MapIncluded(NapperLogRow row, IReadOnlySet<string>? categories) =>
-        categories is null || categories.Contains(row.Category)
+    private static NapperRowOutcome MapIncluded(NapperLogRow row, IReadOnlySet<string>? categories, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return categories is null || categories.Contains(row.Category)
             ? NapperEventMapper.Map(row)
             : NapperRowOutcome.Skipped(row, ImportSkipCodes.ExcludedCategory, $"Napper category '{row.Category}' was excluded from the import.");
+    }
 
-    private static BuildResult Build(NapperImportContext context, IdentifiedDraft identified)
+    /// <summary>Stops counting as soon as the limit is exceeded.</summary>
+    private static void EnsureFewMedicationNames(IEnumerable<NapperEventDraft> drafts)
     {
+        var distinctNames = new HashSet<string>(StringComparer.Ordinal);
+        var exceeded = drafts
+            .SelectMany(draft => draft.MedicationTokens)
+            .Any(token => distinctNames.Add(MedicationNameMatcher.Normalize(token)) && distinctNames.Count > MedicationNameLimits.MaxDistinctNamesPerFile);
+        if (exceeded)
+        {
+            throw new ImportTooManyMedicationNamesException(MedicationNameLimits.MaxDistinctNamesPerFile);
+        }
+    }
+
+    private static BuildResult Build(NapperImportContext context, IdentifiedDraft identified, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         var draft = identified.Draft;
         var resolution = context.Medications.Resolve(draft.MedicationTokens);
         if (draft.MedicationTokens.Count > 0 && resolution.Medications.Count == 0 && resolution.Unmapped.Count == 0)

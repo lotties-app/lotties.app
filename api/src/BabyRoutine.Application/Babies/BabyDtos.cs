@@ -73,6 +73,15 @@ public sealed record ChangeMemberRoleRequest
     public required BabyRole Role { get; init; }
 }
 
+/// <summary>
+/// Body of <c>POST /api/v1/invites/accept</c>: the plain invite token, sent in the body so it never appears in a URL
+/// (request logs, proxies, browser history). A missing or malformed token is an unknown invite.
+/// </summary>
+public sealed record AcceptInviteRequest
+{
+    public string? Token { get; init; }
+}
+
 /// <summary>Body of <c>POST /api/v1/babies/{babyId}/invites</c>.</summary>
 public sealed record CreateInviteRequest
 {

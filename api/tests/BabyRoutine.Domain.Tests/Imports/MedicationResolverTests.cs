@@ -1,5 +1,6 @@
 using BabyRoutine.Domain.Exceptions;
 using BabyRoutine.Domain.Imports;
+using BabyRoutine.Domain.Medications;
 using static BabyRoutine.Domain.Tests.Imports.ImportTestData;
 
 namespace BabyRoutine.Domain.Tests.Imports;
@@ -62,6 +63,28 @@ public sealed class MedicationResolverTests
 
         Assert.Equal(puravit.Id, Assert.Single(resolution.Medications).MedicationId);
         Assert.Empty(resolver.MedicationsToCreate(resolution.Medications));
+    }
+
+    [Fact]
+    public void Resolve_CreateWhoseDerivedIdIsInTheCatalogUnderANewName_ReusesThatMedication()
+    {
+        var imported = Medication.Create(ImportIds.Medication(BabyId, "puravit"), BabyId, "Puravit", null, null, isUsual: false, TestClock.Now);
+        imported.Edit("Puravit gotas (renamed)", null, null, isUsual: true);
+        var resolver = Resolver([imported], new MedicationMapping("Puravit", MedicationMappingAction.Create, null, "Puravit"));
+
+        var resolution = resolver.Resolve(["Puravit"]);
+
+        Assert.Equal(new ImportedMedication(imported.Id, "Puravit gotas (renamed)"), Assert.Single(resolution.Medications));
+        Assert.Empty(resolver.MedicationsToCreate(resolution.Medications));
+    }
+
+    [Fact]
+    public void Resolve_CreateMatchingBothADerivedIdAndAnotherEntryByName_PrefersTheDerivedId()
+    {
+        var imported = Medication.Create(ImportIds.Medication(BabyId, "puravit"), BabyId, "Renamed", null, null, isUsual: false, TestClock.Now);
+        var resolver = Resolver([CatalogMedication("Puravit"), imported], new MedicationMapping("Puravit", MedicationMappingAction.Create, null, "Puravit"));
+
+        Assert.Equal(imported.Id, Assert.Single(resolver.Resolve(["Puravit"]).Medications).MedicationId);
     }
 
     [Fact]

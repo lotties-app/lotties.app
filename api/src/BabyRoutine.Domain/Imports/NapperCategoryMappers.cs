@@ -145,6 +145,7 @@ internal sealed class SleepMapper : INapperCategoryMapper
 /// <summary>
 /// <c>MEDICINE</c> -> medication (an instant). The free-text comment is split into medication names
 /// (<see cref="MedicationTokenizer"/>) that the import resolves against the catalog; the comment is not kept as notes.
+/// A row naming a medication longer than <see cref="MedicationNameLimits.MaxNameLength"/> is an invalid record.
 /// </summary>
 internal sealed class MedicineMapper : INapperCategoryMapper
 {
@@ -155,8 +156,12 @@ internal sealed class MedicineMapper : INapperCategoryMapper
     public NapperRowOutcome Map(NapperLogRow row)
     {
         var tokens = MedicationTokenizer.Split(row.Comment);
-        return tokens.Count == 0
-            ? NapperRowOutcome.Skipped(row, ImportSkipCodes.MissingValue, "comment names no medication.")
-            : NapperRowOutcome.Mapped(new NapperEventDraft(row, Type, row.Start, row.Start, EventPayload.Empty, null, tokens));
+        return tokens switch
+        {
+            { Count: 0 } => NapperRowOutcome.Skipped(row, ImportSkipCodes.MissingValue, "comment names no medication."),
+            _ when tokens.Any(token => token.Length > MedicationNameLimits.MaxNameLength) =>
+                NapperRowOutcome.Skipped(row, ImportSkipCodes.InvalidRecord, $"a medication name is longer than {MedicationNameLimits.MaxNameLength} characters."),
+            _ => NapperRowOutcome.Mapped(new NapperEventDraft(row, Type, row.Start, row.Start, EventPayload.Empty, null, tokens)),
+        };
     }
 }

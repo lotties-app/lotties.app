@@ -6,11 +6,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BabyRoutine.Infrastructure.Persistence.Configurations;
 
+/// <remarks>
+/// Single use under concurrency: the <c>xmin</c> row version (<see cref="RowVersions"/>) makes the second of two
+/// concurrent accepts fail on save instead of both succeeding.
+/// </remarks>
 internal sealed class InviteConfiguration : IEntityTypeConfiguration<Invite>
 {
     public void Configure(EntityTypeBuilder<Invite> builder)
     {
         builder.ToTable("invites");
+        builder.HasXminRowVersion();
         builder.HasKey(invite => invite.Id);
         builder.Property(invite => invite.Id).ValueGeneratedNever();
         builder.Property(invite => invite.Token)

@@ -3,6 +3,11 @@ using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Application.Users;
 
+/// <remarks>
+/// Users are found by <c>(issuer, subject)</c>. A user stored before issuers were recorded (issuer
+/// <see cref="User.UnknownIssuer"/>) is claimed by the first sign-in with the same subject, which records the token's
+/// issuer; only then is a new user registered.
+/// </remarks>
 internal sealed class UserProvisioningService : IUserProvisioningService
 {
     private readonly IUserRepository _users;
@@ -19,8 +24,28 @@ internal sealed class UserProvisioningService : IUserProvisioningService
     public async Task<User> EnsureUserAsync(ExternalIdentity identity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
-        var existing = await _users.FindBySubjectAsync(identity.Subject, cancellationToken);
+        var existing = await _users.FindByIdentityAsync(identity.Issuer, identity.Subject, cancellationToken)
+            ?? await ClaimUserWithUnknownIssuerAsync(identity, cancellationToken);
         return existing ?? await RegisterAsync(identity, cancellationToken);
+    }
+
+    private async Task<User?> ClaimUserWithUnknownIssuerAsync(ExternalIdentity identity, CancellationToken cancellationToken)
+    {
+        if (identity.Issuer == User.UnknownIssuer)
+        {
+            return null;
+        }
+
+        var unclaimed = await _users.FindByIdentityAsync(User.UnknownIssuer, identity.Subject, cancellationToken);
+        if (unclaimed is null)
+        {
+            return null;
+        }
+
+        unclaimed.ClaimIssuer(identity.Issuer);
+        await _users.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Recorded the issuer of user {UserId} on sign-in", unclaimed.Id);
+        return unclaimed;
     }
 
     private async Task<User> RegisterAsync(ExternalIdentity identity, CancellationToken cancellationToken)

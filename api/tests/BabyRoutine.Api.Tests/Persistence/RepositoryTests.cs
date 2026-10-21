@@ -1,5 +1,6 @@
 using BabyRoutine.Api.Tests.Support;
 using BabyRoutine.Domain.Babies;
+using BabyRoutine.Domain.Exceptions;
 using BabyRoutine.Domain.Medications;
 using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
     [Fact]
     public async Task AddOrGetExistingAsync_NewSubject_SavesAndReturnsUser()
     {
-        var user = User.Create(TestUsers.NewSubject(), "Ana", TestUsers.Now);
+        var user = User.Create(User.UnknownIssuer, TestUsers.NewSubject(), "Ana", TestUsers.Now);
 
         var saved = await WithUsersAsync(users => users.AddOrGetExistingAsync(user));
 
@@ -25,14 +26,14 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
     public async Task AddOrGetExistingAsync_SubjectInsertedConcurrently_ReturnsWinnerAndKeepsOneRow()
     {
         var subject = TestUsers.NewSubject();
-        var winner = User.Create(subject, "Winner", TestUsers.Now);
+        var winner = User.Create(User.UnknownIssuer, subject, "Winner", TestUsers.Now);
         await factory.SeedAsync(context =>
         {
             context.Users.Add(winner);
             return Task.CompletedTask;
         });
 
-        var resolved = await WithUsersAsync(users => users.AddOrGetExistingAsync(User.Create(subject, "Loser", TestUsers.Now)));
+        var resolved = await WithUsersAsync(users => users.AddOrGetExistingAsync(User.Create(User.UnknownIssuer, subject, "Loser", TestUsers.Now)));
 
         Assert.Equal(winner.Id, resolved.Id);
         Assert.Equal(1, await factory.QueryAsync(context => context.Users.CountAsync(stored => stored.Subject == subject)));
@@ -63,9 +64,19 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
     }
 
     [Fact]
-    public async Task FindBySubjectAsync_UnknownSubject_ReturnsNull()
+    public async Task FindByIdentityAsync_UnknownSubject_ReturnsNull()
     {
-        Assert.Null(await WithUsersAsync(users => users.FindBySubjectAsync(TestUsers.NewSubject())));
+        Assert.Null(await WithUsersAsync(users => users.FindByIdentityAsync(User.UnknownIssuer, TestUsers.NewSubject())));
+    }
+
+    [Fact]
+    public async Task FindByIdentityAsync_SameSubjectOtherIssuer_ReturnsNull()
+    {
+        var user = User.Create("https://a.example.test/", TestUsers.NewSubject(), "Ana", TestUsers.Now);
+        await WithUsersAsync(users => users.AddOrGetExistingAsync(user));
+
+        Assert.Null(await WithUsersAsync(users => users.FindByIdentityAsync("https://b.example.test/", user.Subject)));
+        Assert.Equal(user.Id, (await WithUsersAsync(users => users.FindByIdentityAsync("https://a.example.test/", user.Subject)))!.Id);
     }
 
     [Fact]
@@ -85,6 +96,52 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
         var baby = await factory.SeedBabyAsync();
 
         Assert.Null(await WithMembershipsAsync(memberships => memberships.FindAsync(baby.BabyId, Guid.NewGuid())));
+    }
+
+    [Fact]
+    public async Task InviteRemoveAsync_InviteDeletedConcurrently_IsANoOp()
+    {
+        var (baby, invite) = await SeedInviteAsync();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var invites = scope.ServiceProvider.GetRequiredService<IInviteRepository>();
+        var tracked = await invites.FindForBabyAsync(baby.BabyId, invite.Id);
+        await factory.SeedAsync(async context => context.Invites.Remove(await context.InviteAsync(invite.Id)));
+
+        await invites.RemoveAsync(tracked!);
+
+        Assert.False(await factory.QueryAsync(context => context.Invites.AnyAsync(stored => stored.Id == invite.Id)));
+    }
+
+    [Fact]
+    public async Task InviteRemoveAsync_InviteAcceptedConcurrently_ThrowsAlreadyAcceptedAndKeepsIt()
+    {
+        var (baby, invite) = await SeedInviteAsync();
+        var ownerId = await UserIdAsync(baby.OwnerSubject);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var invites = scope.ServiceProvider.GetRequiredService<IInviteRepository>();
+        var tracked = await invites.FindForBabyAsync(baby.BabyId, invite.Id);
+        await factory.SeedAsync(async context =>
+        {
+            var stored = await context.InviteAsync(invite.Id);
+            stored.Accept(ownerId, TestUsers.Now);
+            context.BumpRowVersion(stored);
+        });
+
+        await Assert.ThrowsAsync<InviteAlreadyAcceptedException>(() => invites.RemoveAsync(tracked!));
+
+        Assert.True(await factory.QueryAsync(context => context.Invites.AnyAsync(stored => stored.Id == invite.Id)));
+    }
+
+    private async Task<(SeededBaby Baby, Invite Invite)> SeedInviteAsync()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var invite = Invite.Issue(baby.BabyId, BabyRole.Parent, await UserIdAsync(baby.OwnerSubject), DateTimeOffset.UtcNow, TimeSpan.FromDays(1)).Invite;
+        await factory.SeedAsync(context =>
+        {
+            context.Invites.Add(invite);
+            return Task.CompletedTask;
+        });
+        return (baby, invite);
     }
 
     private Task<Guid> UserIdAsync(string subject) =>

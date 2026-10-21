@@ -50,6 +50,12 @@ public sealed record PredictionOptions
         BuiltInEventTypes.Sleep.Key,
     };
 
-    /// <summary>The type predicted from the last wake time plus the awake window instead of start-to-start intervals.</summary>
+    /// <summary>
+    /// The type predicted from the last wake time plus the awake window instead of start-to-start intervals. Its
+    /// events are turned into sleep sessions by their payload <c>kind</c> first (see <see cref="SleepSessions"/>).
+    /// </summary>
     public EventTypeKey AwakeWindowTypeKey { get; init; } = BuiltInEventTypes.Sleep.Key;
+
+    /// <summary>Longest night built from a <c>bed_time</c> marker to the next <c>woke_up</c>; longer pairs are ignored.</summary>
+    public TimeSpan MaxNightSessionLength { get; init; } = TimeSpan.FromHours(16);
 }

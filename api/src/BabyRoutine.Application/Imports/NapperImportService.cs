@@ -71,11 +71,11 @@ internal sealed class NapperImportService : INapperImportService
         var measurementRows = ParseMeasurements(request);
         var catalog = await _medications.ListForBabyAsync(babyId, cancellationToken);
         var context = await CreateContextAsync(babyId, request, catalog, cancellationToken);
-        var events = NapperEventPlanner.Plan(context, logs.Rows, logs.Unreadable);
+        var events = NapperEventPlanner.Plan(context, logs.Rows, logs.Unreadable, cancellationToken);
         var measurements = NapperMeasurementPlanner.Plan(context, measurementRows.Rows, measurementRows.Unreadable);
         var existingEventIds = await _imports.FindExistingEventIdsAsync(events.Candidates.Select(candidate => candidate.Event.Id).ToArray(), cancellationToken);
         var existingMeasurementIds = await _imports.FindExistingMeasurementIdsAsync(measurements.Candidates.Select(candidate => candidate.Measurement.Id).ToArray(), cancellationToken);
-        return NapperImportPlan.Create(events, measurements, existingEventIds, existingMeasurementIds, context.Medications, catalog);
+        return NapperImportPlan.Create(events, measurements, existingEventIds, existingMeasurementIds, context.Medications, catalog, cancellationToken);
     }
 
     private async Task<NapperImportContext> CreateContextAsync(Guid babyId, NapperImportRequest request, IReadOnlyList<Medication> catalog, CancellationToken cancellationToken)

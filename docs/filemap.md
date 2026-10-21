@@ -36,8 +36,10 @@
 - web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
 - api/src/BabyRoutine.Domain/Events/ — Event (upsert decision on ClientUpdatedAt, soft delete), ClientEditTime (client clock bound), EventPayload (+ JSON equivalence, StorableJson jsonb checks), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
 - api/src/BabyRoutine.Domain/EventTypes/EventTypeIcons.cs — allowed event type icon names (mirror of web/src/events/iconRegistry.ts)
-- api/src/BabyRoutine.Infrastructure/Persistence/Errors/ — IUniqueViolationDetector (Npgsql detector) + UniqueViolations: repositories tell lost insert races from other DB errors
+- api/src/BabyRoutine.Infrastructure/Persistence/Errors/ — IUniqueViolationDetector (Npgsql detector) + UniqueViolations: repositories tell lost insert races from other DB errors; ConcurrencyConflicts: lost xmin races -> invite_already_accepted / invite_not_found / concurrent_modification
+- api/src/BabyRoutine.Infrastructure/Persistence/Configurations/RowVersions.cs — shadow `xmin` row version (optimistic concurrency) used by invites and babies
 - api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_EventClientUpdatedAt.cs — adds events.client_updated_at, backfilled from updated_at
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_Wave2Hardening.cs — users.issuer ('' for existing rows) + unique (issuer, subject), email-like display names -> 'Parent'; xmin row versions need no DDL
 - api/src/BabyRoutine.Api/Limits/ — RequestLimitsOptions (section RequestLimits) + validator, body size middleware (413), per-user rate limits (429), request timeouts, WithImportLimits
 - api/tests/BabyRoutine.Api.Tests/Support/SqliteUniqueViolationDetector.cs — test-only SQLite unique/PK violation detector
 - api/tests/BabyRoutine.Api.Tests/Limits/, Endpoints/StorageLimitEndpointTests.cs — request limit and DB-limit (NUL, dose) endpoint tests
@@ -45,14 +47,15 @@
 - api/src/BabyRoutine.Api/Endpoints/EventEndpoints.cs — `/babies/{babyId}/events` routes (contract in docs/SPEC.md "Events sync contract")
 - api/src/BabyRoutine.Api/Errors/ — central DomainException -> RFC 7807 ProblemDetails mapping (status codes in DomainExceptionStatusCodes)
 - api/src/BabyRoutine.Api/Serialization/ — EventPayload JSON converter (payload on the wire as a JSON object)
-- api/tests/BabyRoutine.Api.Tests/Support/SqliteDateTimeOffsetModelCustomizer.cs — test-only: timestamps as UTC ticks so SQLite can order/compare them
-- api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine (median intervals/durations, age bands, day/night), options record
+- api/tests/BabyRoutine.Api.Tests/Support/SqliteModelCustomizer.cs — test-only: timestamps as UTC ticks so SQLite can order/compare them; xmin row versions as a plain integer concurrency token
+- api/tests/BabyRoutine.Api.Tests/Support/ConcurrentWrites.cs — test-only: client whose baby-repository save first loses a race to a competing write (row version bump)
+- api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine (median intervals/durations, age bands, day/night), options record, SleepSessions/SleepKinds (sleep sessions from payload kind)
 - api/src/BabyRoutine.Application/Predictions/, Api/Endpoints/PredictionEndpoints.cs — prediction service and `GET /predictions` (takes `utcOffsetMinutes`)
 - api/src/BabyRoutine.Application/{Babies,EventTypes,Measurements,Medications}/ — baby/member/invite, event type, growth measurement and medication use cases and DTOs; Application/Serialization/ — enum JSON converters for DTOs
 - api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication,Measurement}Endpoints.cs — routes for tasks 4-5 and 16 (contract in docs/SPEC.md "Babies, members, invites, event types, medications" and "Measurements")
 - api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,Measurement,EventType}Repository.cs — EF repositories for those features
 - api/tests/BabyRoutine.Api.Tests/Endpoints/{Baby,Member,Invite,EventType,Medication}EndpointTests.cs, Support/HttpAssertions.cs — integration tests
-- api/src/BabyRoutine.Domain/Imports/ — Napper import rules: parsed row records, category mappers (CanHandle strategies) + NapperEventMapper, event/measurement planners, MedicationTokenizer/MedicationNameMatcher (split, normalize, typo distance), MedicationResolver (user mappings), NapperImportPlan, ImportIds (UUID v5), IImportRepository
+- api/src/BabyRoutine.Domain/Imports/ — Napper import rules: parsed row records, category mappers (CanHandle strategies) + NapperEventMapper, event/measurement planners, MedicationTokenizer/MedicationNameMatcher (split, normalize, bounded typo distance), MedicationNameLimits (per-file caps), SimilarNameIndex/MedicationCatalogIndex (length-bucketed matching), MedicationResolver (user mappings), NapperImportPlan, ImportIds (UUID v5), IImportRepository
 - api/src/BabyRoutine.Domain/Common/DeterministicGuid.cs — RFC 4122 v5 name-based UUIDs
 - api/src/BabyRoutine.Application/Imports/ — NapperImportService (preview/import share one plan), DTOs, report mapper, NapperCsvParser; Csv/ — RFC 4180 reader, header table, typed cell reader
 - api/src/BabyRoutine.Infrastructure/Persistence/Repositories/EfImportRepository.cs — chunked id lookups, one-transaction chunked bulk insert

@@ -57,7 +57,7 @@ internal sealed class InviteService : IInviteService
         _logger.LogInformation("Revoked invite {InviteId} of baby {BabyId}", inviteId, babyId);
     }
 
-    public async Task<BabyResponse> AcceptAsync(string token, CancellationToken cancellationToken = default)
+    public async Task<BabyResponse> AcceptAsync(string? token, CancellationToken cancellationToken = default)
     {
         var invite = await FindInviteAsync(token, cancellationToken);
         var user = await _currentUser.GetUserAsync(cancellationToken);
@@ -68,7 +68,7 @@ internal sealed class InviteService : IInviteService
         return BabyResponse.For(baby, member.Role);
     }
 
-    private async Task<Invite> FindInviteAsync(string token, CancellationToken cancellationToken)
+    private async Task<Invite> FindInviteAsync(string? token, CancellationToken cancellationToken)
     {
         if (!InviteToken.TryFrom(token, out var plainToken))
         {

@@ -14,6 +14,11 @@ public interface IBabyRepository
 
     Task AddAsync(Baby baby, CancellationToken cancellationToken = default);
 
-    /// <summary>Saves changes made to babies returned by this repository.</summary>
+    /// <summary>
+    /// Saves changes made to babies returned by this repository. When another request changed the same baby (or
+    /// accepted the same invite) since it was read, nothing is saved and a <see cref="Exceptions.DomainException"/>
+    /// is thrown: <see cref="Exceptions.ConcurrentModificationException"/>, or for an invite
+    /// <see cref="Exceptions.InviteAlreadyAcceptedException"/> / <see cref="Exceptions.InviteNotFoundException"/>.
+    /// </summary>
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

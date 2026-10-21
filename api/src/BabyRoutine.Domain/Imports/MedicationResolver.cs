@@ -28,8 +28,9 @@ public sealed record MedicationTokenResolution(IReadOnlyList<ImportedMedication>
 /// <summary>
 /// Resolves medication tokens through the user's mappings. Mappings are validated up front: an <c>existing</c> target
 /// must be in the baby's catalog, a <c>create</c> needs a valid name, and one token cannot be mapped twice
-/// differently. A <c>create</c> whose normalized name equals a catalog entry reuses that entry; otherwise the new
-/// medication gets a deterministic id, so the same mappings on a re-import never create it twice. Tokens without a
+/// differently. A <c>create</c> reuses the catalog entry that has its deterministic id (a medication an earlier import
+/// created, even if it was renamed since), else the entry whose normalized name equals the name; otherwise the new
+/// medication gets that deterministic id, so the same mappings on a re-import never create it twice. Tokens without a
 /// mapping are reported, never resolved by guessing.
 /// </summary>
 public sealed class MedicationResolver
@@ -47,13 +48,15 @@ public sealed class MedicationResolver
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(mappings);
-        EnsureSingleMappingPerToken(mappings);
+        var normalizedMappings = mappings.Select(mapping => new NormalizedMapping(MedicationNameMatcher.Normalize(mapping.Token), mapping)).ToArray();
+        EnsureSingleMappingPerToken(normalizedMappings);
+        var index = MedicationCatalogIndex.Create(catalog);
         var newMedications = new Dictionary<Guid, Medication>();
-        var byToken = mappings
-            .DistinctBy(mapping => MedicationNameMatcher.Normalize(mapping.Token), StringComparer.Ordinal)
+        var byToken = normalizedMappings
+            .DistinctBy(normalized => normalized.Token, StringComparer.Ordinal)
             .ToDictionary(
-                mapping => MedicationNameMatcher.Normalize(mapping.Token),
-                mapping => Resolve(babyId, catalog, mapping, now, newMedications),
+                normalized => normalized.Token,
+                normalized => Resolve(babyId, index, normalized.Mapping, now, newMedications),
                 StringComparer.Ordinal);
         return new MedicationResolver(byToken, newMedications);
     }
@@ -61,9 +64,10 @@ public sealed class MedicationResolver
     public MedicationTokenResolution Resolve(IReadOnlyList<string> tokens)
     {
         ArgumentNullException.ThrowIfNull(tokens);
-        var unmapped = tokens.Where(token => !_byToken.ContainsKey(MedicationNameMatcher.Normalize(token))).ToArray();
-        var medications = tokens
-            .Select(token => _byToken.GetValueOrDefault(MedicationNameMatcher.Normalize(token)))
+        var lookups = tokens.Select(token => new TokenLookup(token, _byToken.TryGetValue(MedicationNameMatcher.Normalize(token), out var medication), medication)).ToArray();
+        var unmapped = lookups.Where(lookup => !lookup.IsMapped).Select(lookup => lookup.Token).ToArray();
+        var medications = lookups
+            .Select(lookup => lookup.Medication)
             .OfType<ImportedMedication>()
             .DistinctBy(medication => medication.MedicationId)
             .ToArray();
@@ -85,7 +89,7 @@ public sealed class MedicationResolver
             .ToArray();
     }
 
-    private static ImportedMedication? Resolve(Guid babyId, IReadOnlyList<Medication> catalog, MedicationMapping mapping, DateTimeOffset now, Dictionary<Guid, Medication> newMedications) =>
+    private static ImportedMedication? Resolve(Guid babyId, MedicationCatalogIndex catalog, MedicationMapping mapping, DateTimeOffset now, Dictionary<Guid, Medication> newMedications) =>
         mapping.Action switch
         {
             MedicationMappingAction.Existing => FromCatalog(catalog, mapping),
@@ -94,14 +98,14 @@ public sealed class MedicationResolver
             _ => throw new InvalidMedicationMappingException(mapping.Token, $"action {mapping.Action} is not supported."),
         };
 
-    private static ImportedMedication FromCatalog(IReadOnlyList<Medication> catalog, MedicationMapping mapping)
+    private static ImportedMedication FromCatalog(MedicationCatalogIndex catalog, MedicationMapping mapping)
     {
-        var medication = catalog.FirstOrDefault(candidate => candidate.Id == mapping.MedicationId)
+        var medication = catalog.FindById(mapping.MedicationId)
             ?? throw new InvalidMedicationMappingException(mapping.Token, $"medication {mapping.MedicationId} is not in the baby's catalog.");
         return new ImportedMedication(medication.Id, medication.Name);
     }
 
-    private static ImportedMedication FindOrPlanNew(Guid babyId, IReadOnlyList<Medication> catalog, MedicationMapping mapping, DateTimeOffset now, Dictionary<Guid, Medication> newMedications)
+    private static ImportedMedication FindOrPlanNew(Guid babyId, MedicationCatalogIndex catalog, MedicationMapping mapping, DateTimeOffset now, Dictionary<Guid, Medication> newMedications)
     {
         if (string.IsNullOrWhiteSpace(mapping.Name))
         {
@@ -109,31 +113,35 @@ public sealed class MedicationResolver
         }
 
         var normalizedName = MedicationNameMatcher.Normalize(mapping.Name);
-        var existing = catalog.FirstOrDefault(candidate => MedicationNameMatcher.Normalize(candidate.Name) == normalizedName);
+        var derivedId = ImportIds.Medication(babyId, normalizedName);
+        var existing = catalog.FindById(derivedId) ?? catalog.FindByNormalizedName(normalizedName);
         return existing is null
-            ? PlanNew(babyId, mapping.Name, normalizedName, now, newMedications)
+            ? PlanNew(babyId, mapping.Name, derivedId, now, newMedications)
             : new ImportedMedication(existing.Id, existing.Name);
     }
 
-    private static ImportedMedication PlanNew(Guid babyId, string name, string normalizedName, DateTimeOffset now, Dictionary<Guid, Medication> newMedications)
+    private static ImportedMedication PlanNew(Guid babyId, string name, Guid id, DateTimeOffset now, Dictionary<Guid, Medication> newMedications)
     {
-        var id = ImportIds.Medication(babyId, normalizedName);
         var medication = newMedications.GetValueOrDefault(id) ?? Medication.Create(id, babyId, name, null, null, isUsual: false, now);
         newMedications[id] = medication;
         return new ImportedMedication(medication.Id, medication.Name);
     }
 
-    private static void EnsureSingleMappingPerToken(IReadOnlyList<MedicationMapping> mappings)
+    private static void EnsureSingleMappingPerToken(IReadOnlyList<NormalizedMapping> mappings)
     {
         var conflicting = mappings
-            .GroupBy(mapping => MedicationNameMatcher.Normalize(mapping.Token), StringComparer.Ordinal)
-            .FirstOrDefault(group => group.Select(DecisionOf).Distinct(StringComparer.Ordinal).Count() > 1);
+            .GroupBy(normalized => normalized.Token, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Select(normalized => DecisionOf(normalized.Mapping)).Distinct(StringComparer.Ordinal).Count() > 1);
         if (conflicting is not null)
         {
-            throw new InvalidMedicationMappingException(conflicting.First().Token, "the token is mapped more than once with different decisions.");
+            throw new InvalidMedicationMappingException(conflicting.First().Mapping.Token, "the token is mapped more than once with different decisions.");
         }
     }
 
     private static string DecisionOf(MedicationMapping mapping) =>
         string.Join('|', mapping.Action, mapping.MedicationId, mapping.Name is null ? null : MedicationNameMatcher.Normalize(mapping.Name));
+
+    private sealed record NormalizedMapping(string Token, MedicationMapping Mapping);
+
+    private sealed record TokenLookup(string Token, bool IsMapped, ImportedMedication? Medication);
 }

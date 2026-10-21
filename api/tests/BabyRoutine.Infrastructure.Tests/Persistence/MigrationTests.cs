@@ -34,12 +34,12 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsThenClientUpdatedAt()
+    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtThenWave2Hardening()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
@@ -89,7 +89,37 @@ public sealed class MigrationTests
 
         Assert.Contains("CREATE TABLE events", script, StringComparison.Ordinal);
         Assert.Contains("payload jsonb NOT NULL", script, StringComparison.Ordinal);
-        Assert.DoesNotContain("DROP ", script, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(["DROP INDEX ix_users_subject;"], DropStatements(script));
         Assert.DoesNotContain("TRUNCATE", script, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void IdempotentScript_KeysUsersByIssuerAndSubjectWithUnknownIssuerForExistingRows()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var dropped = script.IndexOf("DROP INDEX ix_users_subject;", StringComparison.Ordinal);
+        var added = script.IndexOf("ALTER TABLE users ADD issuer character varying(255) NOT NULL DEFAULT '';", StringComparison.Ordinal);
+        var indexed = script.IndexOf("CREATE UNIQUE INDEX ix_users_issuer_subject ON users (issuer, subject);", StringComparison.Ordinal);
+
+        Assert.True(dropped >= 0 && dropped < added && added < indexed, $"drop {dropped}, add {added}, index {indexed}");
+        Assert.Contains("UPDATE users SET display_name = 'Parent' WHERE display_name LIKE '%@%';", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_RowVersionsUseTheXminSystemColumnWithoutDdl()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+
+        Assert.DoesNotContain("xmin", script, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string[] DropStatements(string script) =>
+        script.Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.StartsWith("DROP ", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 }

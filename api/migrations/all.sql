@@ -401,3 +401,43 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021014553_Wave2Hardening') THEN
+    UPDATE users SET display_name = 'Parent' WHERE display_name LIKE '%@%';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021014553_Wave2Hardening') THEN
+    DROP INDEX ix_users_subject;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021014553_Wave2Hardening') THEN
+    ALTER TABLE users ADD issuer character varying(255) NOT NULL DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021014553_Wave2Hardening') THEN
+    CREATE UNIQUE INDEX ix_users_issuer_subject ON users (issuer, subject);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021014553_Wave2Hardening') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021014553_Wave2Hardening', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

@@ -68,4 +68,14 @@ public sealed class EventPayloadTests
     {
         Assert.False(EventPayload.From(left).IsEquivalentTo(EventPayload.From(right)));
     }
+
+    [Theory]
+    [InlineData("""{"kind":"nap","mood":"calm"}""", "nap")]
+    [InlineData("""{"kind":1}""", null)]
+    [InlineData("""{"other":"nap"}""", null)]
+    [InlineData("{}", null)]
+    public void GetString_ReturnsTopLevelStringMemberOrNull(string json, string? expected)
+    {
+        Assert.Equal(expected, EventPayload.From(json).GetString("kind"));
+    }
 }
