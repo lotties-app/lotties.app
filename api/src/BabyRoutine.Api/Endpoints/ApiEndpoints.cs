@@ -23,6 +23,8 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapEventEndpoints();
         api.MapBabyScopedGroup().MapPredictionEndpoints();
         api.MapBabyScopedGroup().MapImportEndpoints();
+        api.MapPushEndpoints();
+        api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();
         return app;
     }
 }

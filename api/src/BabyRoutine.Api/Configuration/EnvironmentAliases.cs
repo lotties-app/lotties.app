@@ -1,6 +1,8 @@
+using BabyRoutine.Infrastructure.Push;
+
 namespace BabyRoutine.Api.Configuration;
 
-/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys.</summary>
+/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets included).</summary>
 internal static class EnvironmentAliases
 {
     public static readonly IReadOnlyDictionary<string, string> VariableToKey = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -8,7 +10,9 @@ internal static class EnvironmentAliases
         ["AUTH_AUTHORITY"] = "Auth:Authority",
         ["AUTH_AUDIENCE"] = "Auth:Audience",
         ["CORS_ALLOWED_ORIGINS"] = "Cors:AllowedOrigins",
-    };
+    }
+    .Concat(PushEnvironmentVariables.VariableToKey)
+    .ToDictionary(alias => alias.Key, alias => alias.Value, StringComparer.Ordinal);
 
     /// <summary>Adds the aliased variables that are set, overriding earlier sources such as appsettings.json.</summary>
     public static IConfigurationBuilder AddEnvironmentAliases(this IConfigurationBuilder builder, Func<string, string?> readVariable)

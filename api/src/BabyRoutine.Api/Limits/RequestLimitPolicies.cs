@@ -9,6 +9,15 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of shared catalog writes (product creation).</summary>
     public const string CatalogWrite = "catalog-write";
 
+    /// <summary>Rate limit policy of push device, settings and preference writes (per user).</summary>
+    public const string PushWrite = "push-write";
+
+    /// <summary>Rate limit policy of test notifications (per user).</summary>
+    public const string PushTest = "push-test";
+
+    /// <summary>Rate limit policy of the anonymous snooze/dismiss route (per remote address).</summary>
+    public const string PushAction = "push-action";
+
     /// <summary>
     /// Gives an import endpoint the import body size limit (<see cref="RequestLimitsOptions.ImportMaxRequestBodyBytes"/>),
     /// timeout and rate limit instead of the defaults.

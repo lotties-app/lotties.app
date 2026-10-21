@@ -35,6 +35,9 @@ public interface IPushSubscriptionRepository
     /// <summary>Housekeeping: revokes as <see cref="SubscriptionRevokeReason.Gone"/> every active subscription whose expiration time is at or before <paramref name="now"/>; returns how many.</summary>
     Task<int> RevokeExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default);
 
+    /// <summary>How many subscriptions are active at <paramref name="now"/>: not revoked and not past their expiration time (metrics).</summary>
+    Task<int> CountActiveAsync(DateTimeOffset now, CancellationToken cancellationToken = default);
+
     /// <summary>Housekeeping: hard-deletes subscriptions revoked before <paramref name="revokedBefore"/> (their deliveries cascade); returns how many.</summary>
     Task<int> DeleteRevokedBeforeAsync(DateTimeOffset revokedBefore, CancellationToken cancellationToken = default);
 

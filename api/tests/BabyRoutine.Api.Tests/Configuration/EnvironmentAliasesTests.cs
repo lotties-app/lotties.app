@@ -23,6 +23,23 @@ public sealed class EnvironmentAliasesTests
     }
 
     [Fact]
+    public void AddEnvironmentAliases_PushVapidVariables_MapToPushSection()
+    {
+        var variables = new Dictionary<string, string>
+        {
+            ["PUSH_VAPID_PUBLIC_KEY"] = "public",
+            ["PUSH_VAPID_PRIVATE_KEY"] = "private",
+            ["PUSH_VAPID_SUBJECT"] = "mailto:operator@example.test",
+        };
+
+        var configuration = new ConfigurationBuilder().AddEnvironmentAliases(variables.GetValueOrDefault).Build();
+
+        Assert.Equal(
+            ("public", "private", "mailto:operator@example.test"),
+            (configuration["Push:Vapid:PublicKey"], configuration["Push:Vapid:PrivateKey"], configuration["Push:Vapid:Subject"]));
+    }
+
+    [Fact]
     public void AddEnvironmentAliases_UnsetVariables_KeepEarlierValues()
     {
         var configuration = new ConfigurationBuilder()

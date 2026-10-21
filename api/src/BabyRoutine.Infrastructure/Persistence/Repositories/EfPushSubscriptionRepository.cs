@@ -60,6 +60,11 @@ internal sealed class EfPushSubscriptionRepository(BabyRoutineDbContext context,
             now,
             cancellationToken);
 
+    public Task<int> CountActiveAsync(DateTimeOffset now, CancellationToken cancellationToken = default) =>
+        context.PushSubscriptions.CountAsync(
+            subscription => subscription.RevokedAt == null && (subscription.ExpiresAt == null || subscription.ExpiresAt > now),
+            cancellationToken);
+
     public Task<int> DeleteRevokedBeforeAsync(DateTimeOffset revokedBefore, CancellationToken cancellationToken = default) =>
         context.PushSubscriptions
             .Where(subscription => subscription.RevokedAt != null && subscription.RevokedAt < revokedBefore)

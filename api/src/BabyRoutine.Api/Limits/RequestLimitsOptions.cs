@@ -29,6 +29,15 @@ public sealed class RequestLimitsOptions
     /// <summary>Shared catalog product creations per user per fixed one-minute window (default 10).</summary>
     public int CatalogWritePermitsPerMinute { get; set; } = 10;
 
+    /// <summary>Push device, settings and preference writes per user per fixed one-minute window (default 30).</summary>
+    public int PushWritePermitsPerMinute { get; set; } = 30;
+
+    /// <summary>Test notifications per user per fixed one-minute window (default 3).</summary>
+    public int PushTestPermitsPerMinute { get; set; } = 3;
+
+    /// <summary>Anonymous snooze/dismiss requests per remote address per fixed one-minute window (default 20).</summary>
+    public int PushActionPermitsPerMinute { get; set; } = 20;
+
     /// <summary>Names of the settings that are not positive; empty when the options are valid.</summary>
     public IReadOnlyList<string> NonPositiveSettings() =>
         new (string Name, long Value)[]
@@ -40,6 +49,9 @@ public sealed class RequestLimitsOptions
             (nameof(PermitsPerMinute), PermitsPerMinute),
             (nameof(ImportPermitsPerMinute), ImportPermitsPerMinute),
             (nameof(CatalogWritePermitsPerMinute), CatalogWritePermitsPerMinute),
+            (nameof(PushWritePermitsPerMinute), PushWritePermitsPerMinute),
+            (nameof(PushTestPermitsPerMinute), PushTestPermitsPerMinute),
+            (nameof(PushActionPermitsPerMinute), PushActionPermitsPerMinute),
         }
         .Where(setting => setting.Value <= 0)
         .Select(setting => $"{SectionName}:{setting.Name}")

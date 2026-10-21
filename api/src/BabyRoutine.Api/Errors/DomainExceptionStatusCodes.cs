@@ -49,6 +49,10 @@ internal static class DomainExceptionStatusCodes
         [typeof(PrescriptionBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(PrescriptionDeletedException)] = StatusCodes.Status409Conflict,
         [typeof(PrescriptionMedicationNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(PushNotConfiguredException)] = StatusCodes.Status409Conflict,
+        [typeof(PushEndpointNotAllowedException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(NotificationActionNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(SnoozeLimitReachedException)] = StatusCodes.Status409Conflict,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

@@ -4,22 +4,31 @@ using BabyRoutine.Api.Configuration;
 using BabyRoutine.Api.Cors;
 using BabyRoutine.Api.Errors;
 using BabyRoutine.Api.Limits;
+using BabyRoutine.Api.Push;
 using BabyRoutine.Api.Serialization;
 using BabyRoutine.Application;
+using BabyRoutine.Application.Push;
 using BabyRoutine.Infrastructure;
 using BabyRoutine.Infrastructure.Persistence;
+using BabyRoutine.Infrastructure.Push;
 
 namespace BabyRoutine.Api;
 
 public static class ApiHostExtensions
 {
-    /// <summary>Registers configuration aliases, persistence, application services, OIDC auth, baby policies, CORS, problem details, request limits and JSON converters.</summary>
+    /// <summary>Registers configuration aliases, persistence, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits and JSON converters.</summary>
     public static WebApplicationBuilder AddBabyRoutineApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Configuration.AddEnvironmentAliases(Environment.GetEnvironmentVariable);
         builder.Services.AddInfrastructure(DatabaseOptions.FromEnvironment());
         builder.Services.AddApplication();
+        builder.Services.AddPush(builder.Configuration);
+        builder.Services.AddNotificationPersistence();
+        builder.Services.AddPushNotifications();
+        builder.Services.AddSingleton<IPushConfiguration, PushOptionsConfiguration>();
+
+        builder.Services.AddNotificationScheduler();
         builder.Services.AddOidcAuthentication(builder.Configuration);
         builder.Services.AddBabyAuthorization();
         builder.Services.AddApiCors(builder.Configuration);

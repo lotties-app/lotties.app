@@ -29,6 +29,33 @@ public readonly partial record struct NotificationKey
     /// <summary>The base key: this key without its snooze suffix.</summary>
     public NotificationKey Base => IsSnoozeResend ? new NotificationKey(Value[..Value.LastIndexOf(SnoozeMarker, StringComparison.Ordinal)]) : this;
 
+    /// <summary>The snooze number <c>n</c> of a re-send key <c>{base}:s{n}</c>, or <c>null</c> for a base key.</summary>
+    public int? SnoozeNumber =>
+        IsSnoozeResend
+            ? int.Parse(Value.AsSpan(Value.LastIndexOf(SnoozeMarker, StringComparison.Ordinal) + SnoozeMarker.Length), NumberStyles.None, CultureInfo.InvariantCulture)
+            : null;
+
+    /// <summary>
+    /// The prescription and the slot a dose key (<c>dose:{prescriptionId:N}:{slot}</c>, snoozed or not) names; <c>false</c>
+    /// for other kinds. Lets a retry rebuild the payload from the stored key.
+    /// </summary>
+    public bool TryGetDose(out Guid prescriptionId, out DateTimeOffset slot)
+    {
+        var parts = (Value ?? string.Empty).Split(':');
+        var isDose = parts.Length >= 3 && parts[0] == "dose";
+        var hasId = Guid.TryParseExact(isDose ? parts[1] : string.Empty, "N", out var id);
+        var hasSlot = DateTime.TryParseExact(
+            isDose ? parts[2] : string.Empty,
+            InstantFormat,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+            out var utc);
+        var found = isDose && hasId && hasSlot;
+        prescriptionId = found ? id : Guid.Empty;
+        slot = found ? new DateTimeOffset(utc, TimeSpan.Zero) : default;
+        return found;
+    }
+
     public static NotificationKey ForDose(Guid prescriptionId, DateTimeOffset slot) => new($"dose:{prescriptionId:N}:{Instant(slot)}");
 
     public static NotificationKey ForNap(Guid babyId, DateTimeOffset anchor) => new($"nap:{babyId:N}:{Instant(anchor)}");

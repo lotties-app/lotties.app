@@ -141,6 +141,37 @@ public sealed class NotificationDelivery
         return outcome;
     }
 
+    /// <summary>
+    /// The send was refused before reaching a push service (the endpoint's host is no longer on the allowlist): the
+    /// delivery fails without counting an attempt and the outcome is <see cref="DeliveryAttemptOutcome.Invalid"/>, so the
+    /// caller revokes the subscription.
+    /// </summary>
+    public DeliveryAttemptOutcome RecordRefused()
+    {
+        EnsurePending();
+        LastStatusCode = null;
+        Status = DeliveryStatus.Failed;
+        NextAttemptAt = null;
+        return DeliveryAttemptOutcome.Invalid;
+    }
+
+    /// <summary>
+    /// A new action token for a re-send of a pending delivery (only the hash is stored, so a retry cannot repeat the
+    /// earlier plain token); the earlier token stops working. <c>null</c>, changing nothing, for tests (they carry no token).
+    /// </summary>
+    public NotificationActionToken? ReissueActionToken()
+    {
+        EnsurePending();
+        if (Kind == NotificationKind.Test)
+        {
+            return null;
+        }
+
+        var token = NotificationActionToken.Generate();
+        ActionTokenHash = token.Hash();
+        return token;
+    }
+
     /// <summary>A pending delivery past its time to live becomes <see cref="DeliveryStatus.Expired"/>; returns whether it did.</summary>
     public bool ExpireIfPastTimeToLive(DateTimeOffset now)
     {

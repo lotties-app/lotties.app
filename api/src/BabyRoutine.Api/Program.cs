@@ -1,5 +1,11 @@
 using BabyRoutine.Api;
 using BabyRoutine.Api.Endpoints;
+using BabyRoutine.Infrastructure.Push;
+
+if (VapidKeysCommand.TryRun(args, Console.Out))
+{
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddBabyRoutineApi();

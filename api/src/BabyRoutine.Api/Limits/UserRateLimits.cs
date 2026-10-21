@@ -11,7 +11,8 @@ namespace BabyRoutine.Api.Limits;
 /// Fixed one-minute windows per user (the OIDC <c>sub</c>; anonymous requests share a window per remote address):
 /// every request counts against <see cref="RequestLimitsOptions.PermitsPerMinute"/>, import requests also against
 /// <see cref="RequestLimitsOptions.ImportPermitsPerMinute"/>, catalog product creations against
-/// <see cref="RequestLimitsOptions.CatalogWritePermitsPerMinute"/>. A rejected request is a 429 problem with <c>code</c>
+/// <see cref="RequestLimitsOptions.CatalogWritePermitsPerMinute"/>, push writes and tests against their per-user limits, and
+/// the anonymous push action route against <see cref="RequestLimitsOptions.PushActionPermitsPerMinute"/> per remote address. A rejected request is a 429 problem with <c>code</c>
 /// <see cref="ErrorCode"/> and a <c>Retry-After</c> header.
 /// </summary>
 internal static class UserRateLimits
@@ -28,11 +29,20 @@ internal static class UserRateLimits
         rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => PerUser(context, limits.PermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.Import, context => PerUser(context, limits.ImportPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.CatalogWrite, context => PerUser(context, limits.CatalogWritePermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.PushWrite, context => PerUser(context, limits.PushWritePermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.PushTest, context => PerUser(context, limits.PushTestPermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.PushAction, context => PerAddress(context, limits.PushActionPermitsPerMinute));
         rateLimiter.OnRejected = WriteRejectionAsync;
     }
 
     private static RateLimitPartition<string> PerUser(HttpContext context, int permitsPerMinute) =>
-        RateLimitPartition.GetFixedWindowLimiter(PartitionKey(context), _ => new FixedWindowRateLimiterOptions
+        FixedWindow(PartitionKey(context), permitsPerMinute);
+
+    private static RateLimitPartition<string> PerAddress(HttpContext context, int permitsPerMinute) =>
+        FixedWindow($"address:{context.Connection.RemoteIpAddress}", permitsPerMinute);
+
+    private static RateLimitPartition<string> FixedWindow(string partitionKey, int permitsPerMinute) =>
+        RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = permitsPerMinute,
             Window = Window,
