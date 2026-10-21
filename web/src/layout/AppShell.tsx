@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { canWrite } from '../baby/permissions';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
+import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { UndoSnackbar } from '../ui/UndoSnackbar';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
@@ -58,6 +59,7 @@ function ShellBody() {
             </ErrorBoundary>
           </Box>
         </Box>
+        {baby && <MiniTimerBar key={baby.id} baby={baby} />}
         <BottomNav />
         <DeletedEventSnackbar />
         <UndoSnackbar />

@@ -32,6 +32,31 @@ void i18n.use(initReactI18next).init({
   initAsync: false,
 });
 
+/**
+ * Extra catalogs that belong to one lazy part of the app (not the main bundle): one JSON per
+ * language, merged into i18next under their own namespace on first use.
+ */
+const NAMESPACE_LOADERS = {
+  landing: {
+    en: async () => (await import('./locales/landing.en.json')).default,
+    'pt-BR': async () => (await import('./locales/landing.pt-BR.json')).default,
+  },
+} as const satisfies Record<string, Record<Locale, () => Promise<object>>>;
+export type LazyNamespace = keyof typeof NAMESPACE_LOADERS;
+
+export function isNamespaceLoaded(namespace: LazyNamespace, locale: Locale): boolean {
+  return i18n.hasResourceBundle(locale, namespace);
+}
+
+/** Makes `namespace` available in English (the fallback) and in `locale`. */
+export async function loadNamespace(namespace: LazyNamespace, locale: Locale): Promise<void> {
+  for (const language of new Set<Locale>([DEFAULT_LOCALE, locale])) {
+    if (isNamespaceLoaded(namespace, language)) continue;
+    const messages = await NAMESPACE_LOADERS[namespace][language]();
+    i18n.addResourceBundle(language, namespace, messages, true, true);
+  }
+}
+
 const muiLocales = new Map<Locale, Localization>();
 const loading = new Map<Locale, Promise<void>>();
 

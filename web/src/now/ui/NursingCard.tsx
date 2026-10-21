@@ -7,6 +7,8 @@ import { RADIUS } from '../../theme/tokens';
 import { Illustration } from '../../ui/illustrations';
 import { palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
+import { PausedClock, PauseResumeButton } from '../../timers/TimerParts';
+import { useTimerCommands } from '../../timers/useTimerCommands';
 import { nursingElapsed, type BreastSide } from '../nursing';
 import type { NowCommands } from '../useNowCommands';
 import type { NowAction } from './useNowAction';
@@ -27,10 +29,12 @@ function SideButton({
   side,
   seconds,
   active,
+  paused,
   disabled,
   large,
   onPress,
 }: {
+  paused: boolean;
   side: BreastSide;
   seconds: number;
   active: boolean;
@@ -82,7 +86,13 @@ function SideButton({
         {formatElapsed(seconds * 1000)}
       </Typography>
       <Typography variant="caption" component="span" color="text.secondary">
-        {active ? t('now.nursing.running') : seconds > 0 ? t('now.nursing.done') : ''}
+        {active
+          ? paused
+            ? t('timers.paused')
+            : t('now.nursing.running')
+          : seconds > 0
+            ? t('now.nursing.done')
+            : ''}
         {' '}
       </Typography>
     </Box>
@@ -100,6 +110,8 @@ export function NursingCard({ event, commands, action, readOnly, large = false }
   const elapsed = nursingElapsed(event, now);
   const running = elapsed.side ?? 'left';
   const disabled = readOnly;
+  const timers = useTimerCommands();
+  const paused = elapsed.paused;
 
   return (
     <Card component="section" aria-label={t('now.nursing.region')} sx={{ p: 2.5 }}>
@@ -112,6 +124,11 @@ export function NursingCard({ event, commands, action, readOnly, large = false }
           <Typography variant="caption" color="text.secondary">
             {t('now.nursing.started', { time: formatTime(event.startedAt) })}
           </Typography>
+          {paused && (
+            <Box sx={{ mt: 0.5 }}>
+              <PausedClock event={event} nowMs={now.getTime()} compact />
+            </Box>
+          )}
         </Box>
         <Typography
           variant="h4"
@@ -129,6 +146,7 @@ export function NursingCard({ event, commands, action, readOnly, large = false }
             side={side}
             seconds={elapsed[side]}
             active={running === side}
+            paused={paused}
             disabled={disabled}
             large={large}
             onPress={() => {
@@ -148,16 +166,26 @@ export function NursingCard({ event, commands, action, readOnly, large = false }
         >
           {t('now.nursing.switch')}
         </Button>
-        <Button
-          variant="contained"
+        <PauseResumeButton
+          paused={paused}
+          name={t('now.nursing.title')}
+          large
           disabled={disabled}
-          startIcon={<Icon name="check" size={20} />}
-          onClick={() => void action.run(() => commands.stopNursing(event.id))}
-          sx={{ flex: 1.4, minHeight: 56 }}
-        >
-          {t('now.nursing.finish')}
-        </Button>
+          onPress={() =>
+            void action.run(() => (paused ? timers.resume(event.id) : timers.pause(event.id)))
+          }
+        />
       </Box>
+      <Button
+        variant="contained"
+        fullWidth
+        disabled={disabled}
+        startIcon={<Icon name="check" size={20} />}
+        onClick={() => void action.run(() => commands.stopNursing(event.id))}
+        sx={{ mt: 1.5, minHeight: 56 }}
+      >
+        {t('now.nursing.finish')}
+      </Button>
     </Card>
   );
 }

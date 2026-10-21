@@ -33,6 +33,8 @@ interface Wizard {
   choices: Choices;
   /** Key of the mappings the current preview was checked with. */
   checkedKey: string | null;
+  /** The "Enrich existing events" switch of the confirm step. */
+  enrichExisting: boolean;
   result: NapperImportResultDto | null;
 }
 
@@ -42,6 +44,7 @@ const INITIAL: Wizard = {
   preview: null,
   choices: {},
   checkedKey: null,
+  enrichExisting: false,
   result: null,
 };
 
@@ -119,12 +122,12 @@ export function useNapperImport(baby: Baby) {
     });
   };
 
-  const recheck = async () => {
+  const recheck = async (enrich = wizard.enrichExisting) => {
     const sent = wizard.choices;
     const outcome = await call(() =>
-      previewNapperImport(api, baby.id, buildRequest(wizard.files, sent)),
+      previewNapperImport(api, baby.id, buildRequest(wizard.files, sent, enrich)),
     );
-    if (!outcome?.ok) return;
+    if (!outcome?.ok) return outcome === null ? undefined : false;
     const preview = outcome.value;
     setWizard((w) => ({
       ...w,
@@ -132,11 +135,16 @@ export function useNapperImport(baby: Baby) {
       choices: mergeChoices(w.choices, preview.medicationSuggestions ?? []),
       checkedKey: mappingsKey(sent),
     }));
+    return true;
   };
 
   const runImport = async () => {
     const outcome = await call(() =>
-      runNapperImport(api, baby.id, buildRequest(wizard.files, wizard.choices)),
+      runNapperImport(
+        api,
+        baby.id,
+        buildRequest(wizard.files, wizard.choices, wizard.enrichExisting),
+      ),
     );
     if (!outcome) return;
     if (!outcome.ok) {
@@ -145,7 +153,15 @@ export function useNapperImport(baby: Baby) {
     }
     patch({ result: outcome.value, step: STEP.done });
     void queryClient.invalidateQueries({ queryKey: measurementsKey(baby.id) });
+    // Enriched events changed on the server (their `updatedAt` moved): the normal pull brings them.
     void engine.syncNow();
+  };
+
+  /** Turns the switch and asks the server again what the import would do with it. */
+  const setEnrichExisting = async (value: boolean) => {
+    patch({ enrichExisting: value });
+    const outcome = await recheck(value);
+    if (outcome === false) patch({ enrichExisting: !value });
   };
 
   const suggestions = wizard.preview?.medicationSuggestions ?? [];
@@ -173,7 +189,8 @@ export function useNapperImport(baby: Baby) {
     pickFile,
     removeFile,
     startPreview,
-    recheck,
+    recheck: () => recheck(),
+    setEnrichExisting,
     runImport,
     reset: () => {
       setError(null);

@@ -20,6 +20,7 @@ import { DayRuler } from './DayRuler';
 import { NapSheet } from './NapSheet';
 import { RhythmToggle } from './RhythmToggle';
 import { ForgottenNotice } from './ForgottenNotice';
+import { SleepTimerRow } from './SleepTimerRow';
 import type { NowAction } from './useNowAction';
 import { BedtimeLine } from './BedtimeLine';
 import { WhySheet } from './WhySheet';
@@ -489,6 +490,8 @@ export function StateCard({
     state.kind === 'asleep' ? (state.nightWaking?.forgotten ?? state.forgotten) : undefined;
   const forgottenEventId =
     state.kind === 'asleep' ? (state.nightWaking?.eventId ?? state.eventId) : '';
+  /** The running timer the card shows (the sleep, or the night waking inside it). */
+  const timerEvent = model.events.find((candidate) => candidate.id === forgottenEventId);
 
   return (
     <Card component="section" aria-label={t('now.state.region')} sx={{ p: 2.5 }}>
@@ -584,6 +587,14 @@ export function StateCard({
       ) : (
         <>
           <AsleepBlock state={state} />
+          <SleepTimerRow
+            state={state}
+            babyId={babyId}
+            event={timerEvent}
+            type={model.types.find((candidate) => candidate.id === timerEvent?.typeId)}
+            readOnly={model.readOnly}
+            action={action}
+          />
           <RhythmFooter
             view={view}
             onView={setView}

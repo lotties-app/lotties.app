@@ -51,6 +51,7 @@ const toNumber = (value: FieldValue): number | null => {
 const unitLabel = (unit: string): string => (unit === 'C' ? DEGREES_C : unit);
 
 function stepFor(field: EventFieldDefinition): number {
+  if (field.integer === true) return 1;
   if (field.unit === 'ml') return 10;
   if (field.unit === 'C' || field.unit === '°C') return 0.5;
   return 1;
@@ -117,6 +118,7 @@ function NumberControl({ field, value, remembered, onChange }: FieldControlProps
       value={toNumber(value)}
       onChange={(next) => onChange(next === null ? '' : String(next))}
       step={stepFor(field)}
+      {...(field.integer === true ? { decimals: 0 } : {})}
       {...(field.min !== null ? { min: field.min } : {})}
       {...(field.max !== null ? { max: field.max } : {})}
       {...(field.unit ? { unit: unitLabel(field.unit) } : {})}

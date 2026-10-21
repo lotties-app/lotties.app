@@ -7,6 +7,12 @@ import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatTime } from '../i18n/format';
 import { presentEvent } from '../timeline/eventPresentation';
 import { RADIUS } from '../theme/tokens';
+import {
+  effectiveDurationMs,
+  effectiveElapsedSeconds,
+  isPaused,
+  readPause,
+} from '../timers/pauseMath';
 import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
@@ -31,7 +37,8 @@ interface Props {
 const isInstant = (event: BabyEvent, type: EventType | undefined) =>
   type?.hasDuration === false || event.endedAt === event.startedAt;
 
-function LiveTimer({ startedAt }: { startedAt: string }) {
+/** The live clock of a running event: effective time, so a paused timer stands still. */
+function LiveTimer({ event }: { event: BabyEvent }) {
   const now = useNow(1000);
   return (
     <Typography
@@ -41,7 +48,7 @@ function LiveTimer({ startedAt }: { startedAt: string }) {
         fontVariantNumeric: 'tabular-nums',
       }}
     >
-      {formatElapsed(now - Date.parse(startedAt))}
+      {formatElapsed(effectiveElapsedSeconds(event, now) * 1000)}
     </Typography>
   );
 }
@@ -87,8 +94,9 @@ function SyncMark({ state }: { state: EntitySyncState | undefined }) {
   );
 }
 
-function RunningPill({ startedAt }: { startedAt: string }) {
+function RunningPill({ event }: { event: BabyEvent }) {
   const { t } = useTranslation();
+  const paused = isPaused(event);
   return (
     <Box sx={{ display: 'grid', justifyItems: 'end', lineHeight: 1.1 }}>
       <Box
@@ -98,33 +106,41 @@ function RunningPill({ startedAt }: { startedAt: string }) {
           borderRadius: `${RADIUS.pill}px`,
           fontSize: '0.75rem',
           fontWeight: 700,
-          backgroundColor: palette(theme).primary.main,
-          color: palette(theme).primary.contrastText,
+          backgroundColor: paused ? palette(theme).surfaceRaised : palette(theme).primary.main,
+          color: paused ? palette(theme).text.secondary : palette(theme).primary.contrastText,
+          boxShadow: paused ? `inset 0 0 0 1px ${palette(theme).hairline}` : 'none',
         })}
       >
-        {t('common.running')}
+        {paused ? t('timers.paused') : t('common.running')}
       </Box>
-      <LiveTimer startedAt={startedAt} />
+      <LiveTimer event={event} />
     </Box>
   );
 }
 
-function DurationPill({ text }: { text: string }) {
+function DurationPill({ text, pausedText }: { text: string; pausedText?: string }) {
   return (
-    <Box
-      component="span"
-      sx={(theme) => ({
-        px: 1.25,
-        py: 0.25,
-        borderRadius: `${RADIUS.pill}px`,
-        fontSize: '0.8125rem',
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
-        backgroundColor: palette(theme).background.paper,
-        boxShadow: `inset 0 0 0 1px ${palette(theme).hairline}`,
-      })}
-    >
-      {text}
+    <Box sx={{ display: 'grid', justifyItems: 'end', gap: 0.25 }}>
+      <Box
+        component="span"
+        sx={(theme) => ({
+          px: 1.25,
+          py: 0.25,
+          borderRadius: `${RADIUS.pill}px`,
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          backgroundColor: palette(theme).background.paper,
+          boxShadow: `inset 0 0 0 1px ${palette(theme).hairline}`,
+        })}
+      >
+        {text}
+      </Box>
+      {pausedText && (
+        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+          {pausedText}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -231,10 +247,12 @@ export function DayRow({
   if (running) range = t('timeline.since', { time });
   else if (!instant) range = `${time} – ${formatTime(event.endedAt!)}`;
   const detail = view.detail || range;
-  const length =
-    !running && !instant
-      ? formatDuration(Date.parse(event.endedAt!) - Date.parse(event.startedAt))
-      : null;
+  const length = !running && !instant ? formatDuration(effectiveDurationMs(event)) : null;
+  const pausedSeconds = readPause(event.payload).pausedSeconds;
+  const pausedText =
+    length && pausedSeconds > 0
+      ? t('day.pausedFor', { duration: formatDuration(pausedSeconds * 1000) })
+      : undefined;
 
   return (
     <Box
@@ -309,9 +327,9 @@ export function DayRow({
         {(running || length) && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1.5, flexShrink: 0 }}>
             {running ? (
-              <RunningPill startedAt={event.startedAt} />
+              <RunningPill event={event} />
             ) : (
-              <DurationPill text={length!} />
+              <DurationPill text={length!} {...(pausedText ? { pausedText } : {})} />
             )}
             {running && onStop && (
               <ButtonBase

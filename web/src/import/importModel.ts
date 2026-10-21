@@ -88,12 +88,18 @@ export function choiceProblems(choices: Choices): Record<string, string> {
   return problems;
 }
 
-export function buildRequest(files: PickedFiles, choices: Choices): NapperImportRequest {
+export function buildRequest(
+  files: PickedFiles,
+  choices: Choices,
+  enrichExisting = false,
+): NapperImportRequest {
   const mappings = toMappings(choices);
   return {
     ...(files.logs ? { logsCsv: files.logs.text } : {}),
     ...(files.measurements ? { measurementsCsv: files.measurements.text } : {}),
     ...(mappings.length > 0 ? { medicationMappings: mappings } : {}),
+    // Off by default: only an explicit choice lets an import touch events imported earlier.
+    ...(enrichExisting ? { options: { enrichExisting: true } } : {}),
   };
 }
 

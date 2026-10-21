@@ -129,6 +129,10 @@ export interface EventFieldDefinitionDto {
   unit?: string | null;
   /** `null` = always shown; else shown while the select `field` holds one of `equals`. */
   visibleWhen?: FieldVisibilityDto | null;
+  /** Forms must not render the field (additive; absent = false). */
+  hidden?: boolean;
+  /** Number fields: whole numbers only (additive; absent = false). */
+  integer?: boolean;
 }
 
 export interface EventTypeDto {
@@ -380,6 +384,8 @@ function fromFieldDto(dto: EventFieldDefinitionDto): EventFieldDefinition {
     max: dto.max ?? null,
     unit: dto.unit ?? null,
     visibleWhen: fromVisibilityDto(dto.visibleWhen),
+    ...(dto.hidden === true ? { hidden: true } : {}),
+    ...(dto.integer === true ? { integer: true } : {}),
   };
 }
 
@@ -605,6 +611,8 @@ export interface NapperImportRequest {
   logsCsv?: string;
   measurementsCsv?: string;
   medicationMappings?: MedicationMapping[];
+  /** `enrichExisting`: fill missing detail fields of events imported earlier (never times). */
+  options?: { enrichExisting?: boolean };
 }
 
 export interface NapperSkippedRow {
@@ -633,8 +641,27 @@ export interface NapperSummaryBase {
   skippedRows: NapperSkippedRow[];
 }
 
+/** A detail value that could not be mapped to its field; the row itself is still imported. */
+export interface NapperSkippedField {
+  row: number;
+  category: string;
+  /** The Napper column. */
+  field: string;
+  value: string;
+  code: string;
+  reason: string;
+}
+
 export interface NapperLogsSummary extends NapperSummaryBase {
   categories: NapperCategorySummary[];
+  /** Additive: absent on servers that predate it. */
+  skippedFields?: NapperSkippedField[];
+}
+
+/** How many events got this detail field filled by `enrichExisting`. */
+export interface NapperEnrichedField {
+  field: string;
+  count: number;
 }
 
 export type NapperMeasurementsSummary = NapperSummaryBase;
@@ -655,10 +682,15 @@ export interface NapperPreviewDto {
   measurements: NapperMeasurementsSummary | null;
   medicationSuggestions: MedicationSuggestion[];
   unmappedTokens: string[];
+  /** Additive (`enrichExisting`): events that would be enriched, 0 without the option. */
+  eventsEnriched?: number;
+  enrichedFields?: NapperEnrichedField[];
 }
 
 export interface NapperImportResultDto {
   eventsCreated: number;
+  eventsEnriched?: number;
+  enrichedFields?: NapperEnrichedField[];
   measurementsCreated: number;
   createdMedications: { id: string; name: string }[];
   logs: NapperLogsSummary | null;

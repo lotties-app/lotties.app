@@ -16,6 +16,8 @@ export interface NotesRowProps {
   maxLength?: number;
   counterFrom?: number;
   disabled?: boolean;
+  /** Starts open even when empty (opened from a menu item, so the keyboard is expected). */
+  defaultOpened?: boolean;
 }
 
 /**
@@ -28,11 +30,12 @@ export function NotesRow({
   maxLength = NOTES_MAX_LENGTH,
   counterFrom = NOTES_COUNTER_FROM,
   disabled: disabledProp = false,
+  defaultOpened = false,
 }: NotesRowProps) {
   const { t } = useTranslation();
   const { disabled: fieldDisabled, ...control } = useControlAttributes();
   const disabled = disabledProp || fieldDisabled;
-  const [opened, setOpened] = useState(false);
+  const [opened, setOpened] = useState(defaultOpened);
   const expanded = opened || value !== '';
 
   if (!expanded) {

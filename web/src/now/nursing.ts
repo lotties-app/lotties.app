@@ -9,6 +9,7 @@ import {
   type UndoToken,
 } from '../presets/actions';
 import { setOwn, withoutOwn } from '../util/ownProperty';
+import { readPause, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { DAY_MS, payloadNumber, payloadString, typeForKey } from './eventFacts';
 
 /*
@@ -22,7 +23,7 @@ import { DAY_MS, payloadNumber, payloadString, typeForKey } from './eventFacts';
 
 export type BreastSide = 'left' | 'right';
 
-export const SIDE_SINCE_KEY = 'side_since';
+export const SIDE_SINCE_KEY = SEGMENT_START_KEY;
 export const LAST_SIDE_KEY = 'last_side';
 const SECONDS_KEY: Record<BreastSide, string> = {
   left: 'breast_left_seconds',
@@ -57,7 +58,10 @@ const closedSeconds = (event: Pick<BabyEvent, 'payload'>, side: BreastSide) =>
 function segmentStart(event: Pick<BabyEvent, 'payload' | 'startedAt'>): number {
   const since = Date.parse(payloadString(event, SIDE_SINCE_KEY) ?? '');
   if (Number.isFinite(since)) return since;
-  const closed = closedSeconds(event, 'left') + closedSeconds(event, 'right');
+  const closed =
+    closedSeconds(event, 'left') +
+    closedSeconds(event, 'right') +
+    readPause(event.payload).pausedSeconds;
   return Date.parse(event.startedAt) + closed * 1000;
 }
 
@@ -67,26 +71,41 @@ export interface NursingElapsed {
   total: number;
   /** The running side; `null` once stopped. */
   side: BreastSide | null;
+  /** The session is paused: the clocks are frozen. */
+  paused: boolean;
   /** Start of the open segment (UTC ISO); `null` once stopped. */
   sideSince: string | null;
 }
 
-/** Seconds per side at `now` (the open segment included), for the live L/R clocks. */
+/**
+ * Seconds per side at `now` (the open segment included), for the live L/R clocks. While the session
+ * is paused the open segment stops at the pause, and resuming moves its start forward by the pause,
+ * so paused time never counts.
+ */
 export function nursingElapsed(
   event: Pick<BabyEvent, 'payload' | 'startedAt' | 'endedAt'>,
   now: Date,
 ): NursingElapsed {
   const seconds = { left: closedSeconds(event, 'left'), right: closedSeconds(event, 'right') };
   if (event.endedAt !== null) {
-    return { ...seconds, total: seconds.left + seconds.right, side: null, sideSince: null };
+    return {
+      ...seconds,
+      total: seconds.left + seconds.right,
+      side: null,
+      paused: false,
+      sideSince: null,
+    };
   }
   const side = currentSide(event);
   const start = segmentStart(event);
-  seconds[side] += Math.max(0, Math.floor((now.getTime() - start) / 1000));
+  const pausedAt = readPause(event.payload).pausedAt;
+  const until = pausedAt === null ? now.getTime() : Math.min(now.getTime(), Date.parse(pausedAt));
+  seconds[side] += Math.max(0, Math.floor((until - start) / 1000));
   return {
     ...seconds,
     total: seconds.left + seconds.right,
     side,
+    paused: pausedAt !== null,
     sideSince: new Date(start).toISOString(),
   };
 }
@@ -222,7 +241,8 @@ export async function switchSide(
     if (target === side) return { babyId: event.babyId, createdIds: [], stopped: [], at: iso };
     const payload = closeSegment(event, when);
     setOwn<unknown>(payload, 'side', target);
-    setOwn<unknown>(payload, SIDE_SINCE_KEY, iso);
+    // Paused: the new segment starts at the pause point (resuming moves it forward by the pause).
+    setOwn<unknown>(payload, SIDE_SINCE_KEY, readPause(event.payload).pausedAt ?? iso);
     const after = await editEvent(db, eventId, { payload }, at);
     return editedToken(event.babyId, event, after, iso, false);
   });

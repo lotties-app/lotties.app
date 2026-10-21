@@ -225,6 +225,7 @@ function NowContent({
             readOnly={model.readOnly}
             isSnoozed={snooze.isSnoozed}
             onKeepRunning={snooze.keep}
+            action={action}
           />
           <LogTiles
             tiles={model.tiles}

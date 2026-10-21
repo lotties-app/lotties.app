@@ -18,7 +18,8 @@ import { useLocale } from '../i18n/useLocale';
 import { NowScreen } from '../now/ui/NowScreen';
 import { writeLastSeenAt } from '../now/lastSeen';
 import type { PredictionsDto } from '../sync/contract';
-import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE, TUMMY_TIME_TYPE } from '../test/builtInTypes';
+import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { useNightFeed } from '../theme/NightFeedContext';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import { SegmentedControl } from '../ui/form';
@@ -42,6 +43,8 @@ const SCENARIOS = [
   'catchup',
   'viewer',
   'meds',
+  'paused',
+  'timers',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 type Scheme = 'light' | 'dark' | 'night';
@@ -87,7 +90,7 @@ const TYPES: EventType[] = [
     field('intensity', { kind: 'number', isRequired: true, min: 1, max: 5 }),
   ]),
   extraType('bath', 'Bath', 'bathtub'),
-  extraType('tummy_time', 'Tummy time', 'child_care', true),
+  TUMMY_TIME_TYPE,
 ];
 const typeId = (key: string) => TYPES.find((t) => t.key === key)?.id ?? key;
 
@@ -383,6 +386,30 @@ function seedFor(scenario: Scenario, now: number): Seeded {
         ],
         predictions: prediction(now),
       };
+    case 'paused':
+      return {
+        baby,
+        events: [
+          ...morning(now, 400),
+          eventAt(now, 'sleep', 38, null, {
+            kind: 'nap',
+            pause_count: 1,
+            paused_seconds: 240,
+            paused_at: new Date(now - 130 * 1000).toISOString(),
+          }),
+        ],
+        predictions: prediction(now),
+      };
+    case 'timers':
+      return {
+        baby,
+        events: [
+          ...morning(now, 400),
+          eventAt(now, 'sleep', 24, null, { kind: 'nap', pause_count: 1, paused_seconds: 180 }),
+          eventAt(now, 'tummy_time', 5, null, {}),
+        ],
+        predictions: prediction(now),
+      };
     case 'awake':
     case 'viewer':
       return { baby, events: morning(now, 112), predictions: prediction(now) };
@@ -513,6 +540,7 @@ export default function NowPreview() {
               onScenario={(next) => setParams({ state: next }, { replace: true })}
             />
           </Box>
+          {ready?.scenario === scenario && <MiniTimerBar key={scenario} baby={ready.baby} />}
           <BottomNav />
         </Box>
       </AddSheetProvider>

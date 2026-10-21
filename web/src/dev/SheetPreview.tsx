@@ -26,6 +26,7 @@ const SCENARIOS = [
   'edit',
   'running',
   'finish',
+  'sleepdetails',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const MIN = 60_000;
@@ -85,6 +86,17 @@ function opened(scenario: Scenario): Opened {
       };
     case 'running':
       return { event: stored('dev-sheet-run', 'tummy_time', 12, null, {}) };
+    case 'sleepdetails':
+      return {
+        event: stored('dev-sheet-sleep', 'sleep', 95, 30, {
+          kind: 'nap',
+          how_slept: 'held',
+          fall_asleep: 'took_long',
+          time_to_fall_asleep_minutes: 12,
+          pause_count: 1,
+          paused_seconds: 240,
+        }),
+      };
     case 'finish':
       return {
         event: stored('dev-sheet-finish', 'feeding', 14, null, {}),

@@ -1,4 +1,5 @@
 import type { BabyEvent, EventType } from '../db/models';
+import { effectiveMsInWindow } from '../timers/pauseMath';
 import { MINUTE_MS, isSleepKind, sleepSessionKind, typeIdsForKey } from './eventFacts';
 
 /*
@@ -155,7 +156,9 @@ export function buildRing({ events, types, now, windows = [] }: RingInput): Ring
       spans.push({ ...part, id: event.id, kind: waking ? 'waking' : (session ?? 'nap') });
     }
     if (session === null) continue;
-    sleptMinutes += Math.max(0, Math.round((finish - Math.max(begin, frame.start)) / MINUTE_MS));
+    sleptMinutes += Math.round(
+      effectiveMsInWindow(event, frame.start, Math.min(finish, frame.end), nowMs) / MINUTE_MS,
+    );
     if (session === 'night' && event.endedAt !== null && insideDay(finish)) {
       markers.push({
         id: `${event.id}-wake`,

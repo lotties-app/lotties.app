@@ -43,7 +43,6 @@
     "setupBody": "Baby Routine is not configured. Set the following environment variables (see web/.env.example) and restart:",
     "signInFailed": "Sign-in did not work. Please try again.",
     "signInAgainToSync": "Sign in again to sync your changes.",
-    "unsyncedKept": "Sign in again to sync your changes ({{changes}} kept on this device).",
     "renewing": "Reconnecting your account. You can keep logging: changes are saved on this device."
   },
   "layout": {
@@ -175,7 +174,11 @@
     "notSynced": "Not synced yet",
     "unknownMedication": "Unknown medication",
     "intensity": "{{label}} {{value}}/{{max}}",
-    "labelValue": "{{label}} {{value}}"
+    "labelValue": "{{label}} {{value}}",
+    "moodOnWake": "Mood on waking: {{mood}}",
+    "fellAsleepIn": "fell asleep in {{duration}}",
+    "pauses_one": "{{count}} pause",
+    "pauses_other": "{{count}} pauses"
   },
   "day": {
     "title": "Day",
@@ -223,7 +226,8 @@
     "previousWeek": "Previous week",
     "nextWeek": "Next week",
     "chooseMonth": "{{month}}. Choose a date. Showing {{date}}",
-    "sessionEnded": "Sleep session ended, {{duration}}"
+    "sessionEnded": "Sleep session ended, {{duration}}",
+    "pausedFor": "paused {{duration}}"
   },
   "events": {
     "addTitle": "Add event",
@@ -244,7 +248,8 @@
       "fieldMax": "{{label}} must be at most {{max}}.",
       "selectMedication": "Select at least one medication.",
       "doseInvalid": "Dose for {{name}} must be a positive number.",
-      "doseUnit": "Dose for {{name}} needs a unit."
+      "doseUnit": "Dose for {{name}} needs a unit.",
+      "fieldInteger": "{{label}} must be a whole number."
     },
     "finishTitle": "Finish this {{name}}",
     "saveAndStop": "Save and stop",
@@ -265,7 +270,14 @@
       "duration": "Duration {{duration}}",
       "editTime": "Change the time, {{time}} {{day}}"
     },
-    "deleted": "{{name}} deleted"
+    "deleted": "{{name}} deleted",
+    "sleepDetails": {
+      "title": "Sleep details",
+      "optional": "All optional",
+      "filled_one": "{{count}} detail added",
+      "filled_other": "{{count}} details added",
+      "moodAria": "Mood on waking"
+    }
   },
   "eventTypes": {
     "feeding": {
@@ -291,6 +303,15 @@
         },
         "food": {
           "label": "Food"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
         }
       },
       "options": {
@@ -318,6 +339,30 @@
         },
         "mood": {
           "label": "Mood"
+        },
+        "how_slept": {
+          "label": "Where and how"
+        },
+        "fall_asleep": {
+          "label": "Falling asleep"
+        },
+        "time_to_fall_asleep_minutes": {
+          "label": "Time to fall asleep"
+        },
+        "how_woke": {
+          "label": "Waking up"
+        },
+        "mood_on_wake": {
+          "label": "Mood on waking"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
         }
       },
       "options": {
@@ -328,6 +373,31 @@
           "bed_time": "Bedtime",
           "woke_up": "Woke up",
           "fell_asleep": "Fell asleep"
+        },
+        "how_slept": {
+          "in_bed": "In bed",
+          "nursing": "Nursing",
+          "held": "Held",
+          "next_to_me": "Next to me",
+          "bottle": "Bottle",
+          "stroller": "Stroller",
+          "car": "Car",
+          "swing": "Swing",
+          "other": "Other"
+        },
+        "fall_asleep": {
+          "easy": "Fell asleep easily",
+          "took_long": "Took a long time",
+          "fussy": "Fussy"
+        },
+        "how_woke": {
+          "naturally": "Woke naturally",
+          "woken": "Was woken"
+        },
+        "mood_on_wake": {
+          "good": "Good",
+          "neutral": "Neutral",
+          "bad": "Bad"
         }
       }
     },
@@ -351,6 +421,15 @@
       "fields": {
         "temperature_c": {
           "label": "Water temperature"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
         }
       }
     },
@@ -359,6 +438,15 @@
       "fields": {
         "mood": {
           "label": "Mood"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
         }
       }
     },
@@ -381,6 +469,15 @@
         },
         "amount_right_ml": {
           "label": "Right amount"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
         }
       }
     }
@@ -716,7 +813,13 @@
       "skippedList": "Skipped {{label}} rows",
       "row": "Row {{row}}",
       "rowWithCategory": "Row {{row}} ({{category}})",
-      "more": "And {{count}} more."
+      "more": "And {{count}} more.",
+      "showSkippedFields_one": "Show {{count}} detail that could not be read",
+      "showSkippedFields_other": "Show {{count}} details that could not be read",
+      "hideSkippedFields_one": "Hide {{count}} detail that could not be read",
+      "hideSkippedFields_other": "Hide {{count}} details that could not be read",
+      "skippedFieldsList": "Details that could not be read",
+      "skippedField": "Row {{row}} ({{category}}): {{field}}"
     },
     "medications": {
       "none": "No new medication names need a decision.",
@@ -756,7 +859,11 @@
       "note": "Everything is saved together or not at all. Importing the same file again later is safe: nothing is duplicated, and events you deleted are not brought back.",
       "importing": "Importing",
       "importingEllipsis": "Importing…",
-      "import": "Import"
+      "import": "Import",
+      "enrich": {
+        "label": "Enrich existing events",
+        "help": "Fills missing sleep details and pauses on events you already imported. Never changes times or deletes anything."
+      }
     },
     "result": {
       "imported": "Imported {{events}} and {{measurements}}.",
@@ -779,6 +886,13 @@
       "invalidMappingDefault": "a name",
       "conflict": "Another import or sync wrote the same records at the same time. Nothing was saved; try again.",
       "validationFailed": "The server rejected the request. Check the files and the medication names (up to 100 characters)."
+    },
+    "enrich": {
+      "would_one": "{{count}} existing event would get missing details filled.",
+      "would_other": "{{count}} existing events would get missing details filled.",
+      "done_one": "{{count}} existing event got missing details filled.",
+      "done_other": "{{count}} existing events got missing details filled.",
+      "fields": "Fields: {{fields}}."
     }
   },
   "errors": {
@@ -1308,6 +1422,62 @@
       "byPrescriptionFor": "Prescription for {{indication}}",
       "early": "Logged early",
       "kgUsed": "for {{kg}}"
+    }
+  },
+  "timers": {
+    "paused": "Paused",
+    "pausedFor": "paused {{duration}}",
+    "pausedClock": "Paused {{time}}",
+    "pause": "Pause",
+    "resume": "Resume",
+    "pauseNamed": "Pause {{name}}",
+    "resumeNamed": "Resume {{name}}",
+    "stop": "Stop",
+    "stopNamed": "Stop {{name}}",
+    "region": "Running timers",
+    "elapsed": "Elapsed",
+    "announce": {
+      "paused": "{{name}} paused",
+      "resumed": "{{name}} resumed",
+      "running": "{{name}} running, {{duration}}"
+    },
+    "target": {
+      "usualNap": "Usual nap about {{duration}}",
+      "usualNight": "Usual night sleep about {{duration}}",
+      "usual": "Usual length about {{duration}}",
+      "progress": "{{elapsed}} of about {{target}}",
+      "past": "Past the usual length"
+    },
+    "mini": {
+      "open": "Open the {{name}} timer",
+      "expand": "Show all running timers",
+      "collapse": "Hide the list",
+      "list": "All running timers",
+      "count_one": "{{count}} timer",
+      "count_other": "{{count}} timers",
+      "other": "Other timers"
+    },
+    "sheet": {
+      "started": "Started {{time}}",
+      "close": "Close",
+      "more": "More options",
+      "discard": "Discard",
+      "discarded": "{{name}} discarded",
+      "adjustStart": "Adjust start time",
+      "adjustTitle": "Start time",
+      "adjustHint": "When did it start? It cannot be after now.",
+      "adjustDone": "Done",
+      "addNote": "Add a note",
+      "editNote": "Edit note",
+      "noteDone": "Done",
+      "switchToNight": "Switch to night sleep",
+      "switchToNap": "Switch to nap",
+      "switchSide": "Switch side",
+      "editAll": "Edit all details",
+      "sleepDetails": "Sleep details",
+      "pausedNote": "Paused. The clock is waiting.",
+      "pauses_one": "{{count}} pause, {{duration}} in total",
+      "pauses_other": "{{count}} pauses, {{duration}} in total"
     }
   }
 }

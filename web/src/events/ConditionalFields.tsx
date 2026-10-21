@@ -10,6 +10,8 @@ interface Props {
   values: EventFormState['values'];
   /** Compact mode: only these fields and the fields they reveal. */
   only?: readonly string[];
+  /** Field keys drawn elsewhere (the Sleep details section). */
+  exclude?: ReadonlySet<string>;
   /** Problems by field key, shown under the fields. */
   errors?: Readonly<Record<string, string>>;
   /** Last used values by field key (quick-value chips mark them). */
@@ -37,13 +39,23 @@ function dependsOn(
  * takes one of the listed values and collapses (and is dropped from the form) otherwise. The
  * spacing sits inside the collapsing box, so it animates too; reduced motion skips the animation.
  */
-export function ConditionalFields({ type, values, only, errors, remembered, onChange }: Props) {
+export function ConditionalFields({
+  type,
+  values,
+  only,
+  exclude,
+  errors,
+  remembered,
+  onChange,
+}: Props) {
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const shown = new Set(visibleFields(type.fields, (key) => getOwn(values, key)).map((f) => f.key));
   const focus = only ? new Set(only) : null;
+  // Hidden fields (pause keys, deprecated ones) are never drawn.
+  const drawable = type.fields.filter((field) => field.hidden !== true && !exclude?.has(field.key));
   const candidates = focus
-    ? type.fields.filter((field) => dependsOn(type.fields, field, focus))
-    : type.fields;
+    ? drawable.filter((field) => dependsOn(type.fields, field, focus))
+    : drawable;
 
   return candidates.map((field) => {
     const input = (

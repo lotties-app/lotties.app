@@ -84,6 +84,8 @@ export function isMedicationType(type: EventType | undefined): boolean {
 function valuesFromPayload(type: EventType | undefined, payload: EventPayload) {
   const values: EventFormState['values'] = {};
   for (const field of type?.fields ?? []) {
+    // Hidden fields (pause keys, deprecated ones) have no control; `buildPayload` keeps their values.
+    if (field.hidden === true) continue;
     const raw = getOwn(payload, field.key);
     if (raw === undefined || raw === null) continue;
     setOwn(values, field.key, field.kind === 'bool' ? raw === true : String(raw));
@@ -159,6 +161,9 @@ function fieldError(label: string, field: EventFieldDefinition, raw: string | bo
   if (field.kind !== 'number') return null;
   const n = parseNumber(raw);
   if (n === null || Number.isNaN(n)) return t('events.validation.fieldNumber', { label });
+  if (field.integer === true && !Number.isInteger(n)) {
+    return t('events.validation.fieldInteger', { label });
+  }
   if (field.min !== null && n < field.min) {
     return t('events.validation.fieldMin', { label, min: formatNumber(field.min) });
   }
@@ -182,7 +187,9 @@ const formValue = (values: EventFormState['values']) => (key: string) => getOwn(
 
 /** The type's fields shown for the current form values (`visibleWhen` evaluated live). */
 export function shownFields(form: Pick<EventFormState, 'values'>, type: EventType | undefined) {
-  return type ? visibleFields(type.fields, formValue(form.values)) : [];
+  return type
+    ? visibleFields(type.fields, formValue(form.values)).filter((field) => field.hidden !== true)
+    : [];
 }
 
 /**
@@ -287,9 +294,10 @@ export function buildPayload(
     return { medications } satisfies MedicationEventPayload;
   }
   const payload: EventPayload = {};
-  const declared = new Set(type.fields.map((f) => f.key));
+  // Members no field declares (imports) and the values of hidden fields (pause keys) are kept.
+  const editable = new Set(type.fields.filter((f) => f.hidden !== true).map((f) => f.key));
   for (const [key, value] of Object.entries(base)) {
-    if (!declared.has(key)) setOwn(payload, key, value);
+    if (!editable.has(key)) setOwn(payload, key, value);
   }
   for (const field of shownFields(form, type)) {
     const raw = getOwn(form.values, field.key);
@@ -321,6 +329,7 @@ function acceptedBy(
   if (field.kind === 'number') {
     const n = parseNumber(value);
     if (n === null || Number.isNaN(n)) return false;
+    if (field.integer === true && !Number.isInteger(n)) return false;
     return (field.min === null || n >= field.min) && (field.max === null || n <= field.max);
   }
   return typeof value === 'string';

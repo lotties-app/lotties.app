@@ -12,6 +12,7 @@ import {
   sleepSessionKind,
   typeIdsForKey,
 } from './eventFacts';
+import { effectiveElapsedSeconds, pausedSince } from '../timers/pauseMath';
 import { forgottenTimer, type ForgottenTimer } from './timers';
 
 /*
@@ -43,10 +44,18 @@ export interface LearningState {
   requiredSamples: number | null;
 }
 
+/** A running timer that is paused: the clock is frozen and the open pause is shown live. */
+export interface PausedTimer {
+  /** Start of the open pause (UTC ISO). */
+  since: string;
+}
+
 export interface NightWaking {
   eventId: string;
   since: string;
+  /** Effective minutes (pauses excluded). */
   minutes: number;
+  paused?: PausedTimer;
   forgotten?: ForgottenTimer;
 }
 
@@ -68,7 +77,10 @@ export interface AsleepState {
   kind: 'asleep';
   sleepKind: SleepKind;
   since: string;
+  /** Effective minutes asleep: pauses excluded (see timers/pauseMath). */
   minutes: number;
+  /** The sleep timer is paused (the baby stirred): `minutes` stand still. */
+  paused?: PausedTimer;
   /** The running sleep timer; the `fell_asleep` marker when `fromMarker`. */
   eventId: string;
   /**
@@ -158,6 +170,9 @@ function loneFellAsleep(facts: SleepFacts, after: string | undefined, now: Date)
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
 }
 
+const effectiveMinutes = (event: BabyEvent, now: Date) =>
+  Math.floor(effectiveElapsedSeconds(event, now) / 60);
+
 function nightWakingInside(
   sleep: BabyEvent,
   facts: SleepFacts,
@@ -172,10 +187,12 @@ function nightWakingInside(
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt))[0];
   if (!waking) return undefined;
   const forgotten = forgottenTimer(waking, types, events, now);
+  const pausedAt = pausedSince(waking);
   return {
     eventId: waking.id,
     since: waking.startedAt,
-    minutes: minutesBetween(waking.startedAt, now),
+    minutes: effectiveMinutes(waking, now),
+    ...(pausedAt ? { paused: { since: pausedAt } } : {}),
     ...(forgotten ? { forgotten } : {}),
   };
 }
@@ -232,7 +249,8 @@ function asleepFromTimer(
     kind: 'asleep',
     sleepKind: sleepSessionKind(timer) ?? 'nap',
     since: timer.startedAt,
-    minutes: minutesBetween(timer.startedAt, now),
+    minutes: effectiveMinutes(timer, now),
+    ...(pausedSince(timer) ? { paused: { since: pausedSince(timer) as string } } : {}),
     eventId: timer.id,
     fromMarker: false,
     ...(forgotten ? { forgotten } : {}),

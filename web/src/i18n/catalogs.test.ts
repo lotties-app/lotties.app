@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import en from './locales/en.json';
 import ptBR from './locales/pt-BR.json';
+import landingEn from './locales/landing.en.json';
+import landingPtBR from './locales/landing.pt-BR.json';
 
 /** `a.b.c` paths of every string in a catalog. */
 function leaves(node: unknown, prefix = ''): Map<string, string> {
@@ -16,7 +18,14 @@ function leaves(node: unknown, prefix = ''): Map<string, string> {
   return result;
 }
 
-const CATALOGS = { en: leaves(en), 'pt-BR': leaves(ptBR) } as const;
+/** The landing namespace has its own files; its keys are prefixed so one set of rules covers both. */
+const withPrefix = (prefix: string, catalog: Map<string, string>) =>
+  new Map([...catalog].map(([key, text]) => [`${prefix}${key}`, text]));
+
+const CATALOGS = {
+  en: new Map([...leaves(en), ...withPrefix('landing:', leaves(landingEn))]),
+  'pt-BR': new Map([...leaves(ptBR), ...withPrefix('landing:', leaves(landingPtBR))]),
+} as const;
 const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
 const REQUIRED_PLURALS = ['one', 'other'];
 

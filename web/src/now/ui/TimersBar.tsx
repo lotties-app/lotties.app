@@ -2,6 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Box, Button, Card, Stack, Typography } from '@mui/material';
 import type { BabyEvent, EventType } from '../../db/models';
 import { formatElapsed, useNow } from '../../events/time';
+import { effectiveElapsedSeconds, isPaused } from '../../timers/pauseMath';
+import { PausedClock, PauseResumeButton } from '../../timers/TimerParts';
+import { useTimerCommands } from '../../timers/useTimerCommands';
 import { useEventTypeText } from '../../i18n/eventTypeText';
 import { formatDuration, formatTime } from '../../i18n/format';
 import type { PresetActions } from '../../presets/usePresetActions';
@@ -10,6 +13,7 @@ import { illustrationKeyFor } from '../../ui/illustrations/eventKey';
 import { EventIllustration } from '../../ui/illustrations/EventIllustration';
 import { otherTimers, type ForgottenTimer } from '../timers';
 import { ForgottenNotice } from './ForgottenNotice';
+import type { NowAction } from './useNowAction';
 
 interface Props {
   /** Every running timer of the baby. */
@@ -22,6 +26,7 @@ interface Props {
   readOnly: boolean;
   isSnoozed: (eventId: string) => boolean;
   onKeepRunning: (eventId: string) => void;
+  action: NowAction;
 }
 
 interface RowProps {
@@ -33,6 +38,7 @@ interface RowProps {
   readOnly: boolean;
   snoozed: boolean;
   onKeepRunning: (eventId: string) => void;
+  action: NowAction;
 }
 
 function TimerRow({
@@ -44,11 +50,14 @@ function TimerRow({
   readOnly,
   snoozed,
   onKeepRunning,
+  action,
 }: RowProps) {
   const { t } = useTranslation();
   const names = useEventTypeText();
   const name = type ? names.typeName(type) : t('common.event');
-  const elapsed = nowMs - Date.parse(event.startedAt);
+  const commands = useTimerCommands();
+  const paused = isPaused(event);
+  const elapsed = effectiveElapsedSeconds(event, nowMs) * 1000;
   return (
     <Card component="article" aria-label={name} sx={{ p: 1.5 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
@@ -61,11 +70,25 @@ function TimerRow({
             variant="h5"
             component="time"
             dateTime={event.startedAt}
-            sx={{ fontVariantNumeric: 'tabular-nums', display: 'block' }}
+            sx={(theme) => ({
+              fontVariantNumeric: 'tabular-nums',
+              display: 'block',
+              color: paused ? theme.palette.text.secondary : undefined,
+            })}
           >
             {formatElapsed(elapsed)}
           </Typography>
+          {paused && <PausedClock event={event} nowMs={nowMs} compact />}
         </Box>
+        <PauseResumeButton
+          variant="icon"
+          paused={paused}
+          name={name}
+          disabled={readOnly}
+          onPress={() =>
+            void action.run(() => (paused ? commands.resume(event.id) : commands.pause(event.id)))
+          }
+        />
         <Button
           variant="outlined"
           color="inherit"
@@ -112,6 +135,7 @@ export function TimersBar({
   readOnly,
   isSnoozed,
   onKeepRunning,
+  action,
 }: Props) {
   const { t } = useTranslation();
   const nowMs = useNow(1000);
@@ -130,6 +154,7 @@ export function TimersBar({
           readOnly={readOnly}
           snoozed={isSnoozed(event.id)}
           onKeepRunning={onKeepRunning}
+          action={action}
         />
       ))}
     </Stack>

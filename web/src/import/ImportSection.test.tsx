@@ -14,6 +14,7 @@ import { BABY_ID, fakeApi, httpError, testDatabase, type ApiCall } from '../test
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { seedBaby } from '../test/seed';
 import { ApiError } from '../api/ApiError';
+import { useTestLocale } from '../test/locale';
 import { ImportSection } from './ImportSection';
 
 let db: BabyRoutineDb;
@@ -425,6 +426,163 @@ describe('Settings page import section', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Import' }));
     expect(
       await screen.findByText('Only parents and owners can import data into this baby.'),
+    ).toBeTruthy();
+  });
+});
+
+describe('Enrich existing events', () => {
+  const ENRICHED = {
+    eventsEnriched: 3,
+    enrichedFields: [
+      { field: 'how_slept', count: 3 },
+      { field: 'pause_count', count: 2 },
+    ],
+  };
+  const NO_MEDS = { medicationSuggestions: [], unmappedTokens: [] };
+
+  const enrichHandler = (call: ApiCall): unknown => {
+    const body = call.body as NapperImportRequest | undefined;
+    if (call.path === PREVIEW_PATH) {
+      return previewDto({ ...NO_MEDS, ...(body?.options?.enrichExisting ? ENRICHED : {}) });
+    }
+    if (call.path === IMPORT_PATH) {
+      return { ...RESULT, ...(body?.options?.enrichExisting ? ENRICHED : {}) };
+    }
+    return undefined;
+  };
+
+  async function toConfirm() {
+    await toReview();
+    fireEvent.click(next());
+    await screen.findByText('No new medication names need a decision.');
+    fireEvent.click(next());
+    await screen.findByText(/Ready to import/);
+  }
+
+  it('is a switch in the Confirm step, off by default, with its explanation', async () => {
+    await setup(enrichHandler);
+    await toConfirm();
+    const toggle = screen.getByRole('switch', { name: /Enrich existing events/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      screen.getByText(
+        'Fills missing sleep details and pauses on events you already imported. Never changes times or deletes anything.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('sends nothing about enriching unless it is switched on', async () => {
+    const { writes } = await setup(enrichHandler);
+    await toConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    await screen.findByText(/^Imported 2 events/);
+    const body = writes().at(-1)!.body as NapperImportRequest;
+    expect(body.options).toBeUndefined();
+    expect(screen.queryByTestId('enrich-summary')).toBeNull();
+  });
+
+  it('previews what it would fill, sends options.enrichExisting and reports the result', async () => {
+    const { writes, calls } = await setup(enrichHandler);
+    await toConfirm();
+    fireEvent.click(screen.getByRole('switch', { name: /Enrich existing events/ }));
+
+    // The preview is asked again with the option, and its answer is shown.
+    expect(
+      await screen.findByText(
+        '3 existing events would get missing details filled. Fields: Where and how (3), Pauses (2).',
+      ),
+    ).toBeTruthy();
+    expect(writes().at(-1)!.body).toMatchObject({ options: { enrichExisting: true } });
+    expect(
+      screen.getByRole('switch', { name: /Enrich existing events/ }).getAttribute('aria-checked'),
+    ).toBe('true');
+
+    const before = calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    expect(
+      await screen.findByText(
+        '3 existing events got missing details filled. Fields: Where and how (3), Pauses (2).',
+      ),
+    ).toBeTruthy();
+    expect(writes().at(-1)).toMatchObject({
+      path: IMPORT_PATH,
+      body: { options: { enrichExisting: true } },
+    });
+    // The normal sync pull follows, so the enriched events arrive.
+    await waitFor(() =>
+      expect(
+        calls.slice(before).some((c) => c.method === 'GET' && c.path === '/api/v1/babies'),
+      ).toBe(true),
+    );
+  });
+
+  it('switches back off when asking the server fails', async () => {
+    let previews = 0;
+    await setup((call) => {
+      if (call.path === PREVIEW_PATH) {
+        previews += 1;
+        if (previews >= 2) throw httpError(500);
+        return previewDto(NO_MEDS);
+      }
+      return enrichHandler(call);
+    });
+    await toConfirm();
+    fireEvent.click(screen.getByRole('switch', { name: /Enrich existing events/ }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('switch', { name: /Enrich existing events/ }).getAttribute('aria-checked'),
+      ).toBe('false'),
+    );
+  });
+
+  it('lists the details that could not be read in a collapsed list', async () => {
+    await setup((call) =>
+      call.path === PREVIEW_PATH
+        ? previewDto({
+            ...NO_MEDS,
+            logs: {
+              ...previewDto().logs!,
+              skippedFields: [
+                {
+                  row: 7,
+                  category: 'NAP',
+                  field: 'howBabyWoke',
+                  value: 'WOKE_UP_SOMEHOW',
+                  code: 'invalid_value',
+                  reason: 'Not a known value',
+                },
+              ],
+            },
+          })
+        : defaultHandler(call),
+    );
+    await toReview();
+    expect(screen.queryByText('Row 7 (NAP): howBabyWoke')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 detail that could not be read' }));
+    expect(screen.getByText('Row 7 (NAP): howBabyWoke')).toBeTruthy();
+    expect(screen.getByText('WOKE_UP_SOMEHOW · Not a known value')).toBeTruthy();
+  });
+
+  it('is written in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    await setup(enrichHandler);
+    await pick(/Escolher CSV de registros/, csv('logs.csv', LOGS_CSV));
+    fireEvent.click(await screen.findByRole('button', { name: 'Pré-visualizar importação' }));
+    await screen.findByText('Esta é uma pré-visualização: nada foi salvo ainda.');
+    fireEvent.click(screen.getByRole('button', { name: 'Avançar' }));
+    await screen.findByText('Nenhum nome de remédio novo precisa de decisão.');
+    fireEvent.click(screen.getByRole('button', { name: 'Avançar' }));
+    const toggle = await screen.findByRole('switch', { name: /Completar eventos já importados/ });
+    expect(
+      screen.getByText(
+        'Preenche detalhes de sono e pausas que faltam em eventos que você já importou. Nunca altera horários nem apaga nada.',
+      ),
+    ).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(
+      await screen.findByText(
+        '3 eventos já importados receberiam os detalhes que faltam. Campos: Onde e como (3), Pausas (2).',
+      ),
     ).toBeTruthy();
   });
 });

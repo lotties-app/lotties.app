@@ -1,4 +1,10 @@
 import type { BabyEvent, EventType } from '../db/models';
+import {
+  currentPauseSeconds,
+  effectiveElapsedSeconds,
+  LONG_PAUSE_SECONDS,
+  pausedSince,
+} from '../timers/pauseMath';
 import { MINUTE_MS, payloadValue, typeIdsForKey } from './eventFacts';
 
 /*
@@ -84,13 +90,18 @@ export function forgottenTimer(
   const bucket = timerBucket(typeKey, timer);
   const start = Date.parse(timer.startedAt);
   const threshold = THRESHOLD_MINUTES[bucket];
-  if (now.getTime() - start <= threshold * MINUTE_MS) return undefined;
+  // Effective elapsed time (a pause does not count); a pause that lasts over 2 h is forgotten too.
+  const longPause = currentPauseSeconds(timer, now) > LONG_PAUSE_SECONDS;
+  if (!longPause && effectiveElapsedSeconds(timer, now) <= threshold * 60) return undefined;
 
   // Sleep timers end at the next non-sleep activity; others at the next activity of another type.
   const excluded = typeIdsForKey(types, typeKey === 'sleep' ? 'sleep' : (typeKey ?? ''));
   excluded.add(timer.typeId);
   const next = bucket === 'night' ? undefined : nextActivityStart(timer, events, excluded, now);
-  const suggested = next ?? start + TYPICAL_MINUTES[bucket] * MINUTE_MS;
+  // A long pause suggests ending where it began (the baby stopped being asleep or fed then).
+  const pausedAt = longPause ? pausedSince(timer) : null;
+  const suggested =
+    next ?? (pausedAt ? Date.parse(pausedAt) : start + TYPICAL_MINUTES[bucket] * MINUTE_MS);
   const clamped = Math.min(now.getTime(), Math.max(start + MINUTE_MS, suggested));
   return { thresholdMinutes: threshold, suggestedEnd: new Date(clamped).toISOString() };
 }

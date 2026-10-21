@@ -9,6 +9,7 @@ import type { Baby, BabyEvent, EventPayload } from '../db/models';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
+import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { PREVIEW_BABY_ID, PREVIEW_MEDICATIONS, PREVIEW_TYPES, typeIdOf } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
 
@@ -19,7 +20,7 @@ import { PreviewToolbar } from './PreviewToolbar';
  * timer; `busy` seeds about 1,200 events for a speed check.
  */
 
-const SCENARIOS = ['full', 'empty', 'busy', 'viewer'] as const;
+const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers'] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const MIN = 60_000;
 
@@ -75,7 +76,16 @@ function fullDay(day: Date): BabyEvent[] {
         { medicationId: 'm1', name: 'Colidis', dose: { amount: 5, unit: 'drops' } },
       ],
     }),
-    make('sleep', at(day, 12, 10), at(day, 13, 25), { kind: 'nap' }),
+    make('sleep', at(day, 12, 10), at(day, 13, 25), {
+      kind: 'nap',
+      how_slept: 'in_bed',
+      fall_asleep: 'took_long',
+      time_to_fall_asleep_minutes: 12,
+      how_woke: 'naturally',
+      mood_on_wake: 'good',
+      pause_count: 2,
+      paused_seconds: 600,
+    }),
     make('feeding', at(day, 13, 40), at(day, 13, 40), {
       method: 'bottle',
       amount_ml: 90,
@@ -151,6 +161,9 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
     }),
     make('diaper', ago(20), ago(20), { content: 'WET' }),
     make('tummy_time', ago(7), null),
+    ...(scenario === 'timers'
+      ? [make('sleep', ago(42), null, { kind: 'nap', pause_count: 1, paused_seconds: 300 })]
+      : []),
   ]
     .filter((event) => Date.parse(event.startedAt) >= startOfToday)
     // Stable ids: seeding twice (StrictMode runs effects twice) must not duplicate the rows.
@@ -229,6 +242,7 @@ export default function DayPreview() {
               }
             />
           </Box>
+          {ready?.scenario === scenario && <MiniTimerBar key={scenario} baby={ready.baby} />}
           <BottomNav />
           <DeletedEventSnackbar />
         </Box>

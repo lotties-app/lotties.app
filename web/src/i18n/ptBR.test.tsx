@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api/ApiError';
 import { describeApiError } from '../api/errorMessages';
-import { LoginPage } from '../auth/LoginPage';
+import LandingPage from '../landing/LandingPage';
+import { AppThemeProvider } from '../theme/AppThemeProvider';
 import type { BabyRoutineDb } from '../db/database';
 import { HomePage } from '../pages/HomePage';
 import { SettingsPage } from '../pages/SettingsPage';
@@ -61,9 +62,11 @@ function event(
 function renderLogin() {
   render(
     <I18nProvider>
-      <AuthTestWrapper auth={fakeAuth({ isAuthenticated: false, user: null })}>
-        <LoginPage />
-      </AuthTestWrapper>
+      <AppThemeProvider>
+        <AuthTestWrapper auth={fakeAuth({ isAuthenticated: false, user: null })}>
+          <LandingPage />
+        </AuthTestWrapper>
+      </AppThemeProvider>
     </I18nProvider>,
   );
 }
@@ -73,10 +76,16 @@ describe('pt-BR screens', () => {
     await useTestLocale('pt-BR');
   });
 
-  it('translates the sign-in screen and sets the document language', () => {
+  it('translates the landing page and sets the document language', async () => {
     renderLogin();
-    expect(screen.getByRole('button', { name: 'Entrar' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Acompanhe o dia do seu bebê/ }),
+    ).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'Entrar' })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Criar uma conta' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'Como funciona' })).toBeTruthy();
     expect(document.documentElement.lang).toBe('pt-BR');
+    expect(document.title).toBe('Baby Routine: acompanhe o dia do seu bebê, em conjunto');
   });
 
   it('translates the Now screen: the question, the tiles and the navigation', async () => {
@@ -202,14 +211,14 @@ describe('language setting', () => {
   it('follows navigator.languages for the system default (pt maps to pt-BR)', async () => {
     vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(['pt-PT', 'en']);
     renderLogin();
-    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeTruthy();
+    expect((await screen.findAllByRole('button', { name: 'Entrar' })).length).toBeGreaterThan(0);
     await waitFor(() => expect(document.documentElement.lang).toBe('pt-BR'));
   });
 
   it('falls back to English for unsupported languages', async () => {
     vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(['fr-FR']);
     renderLogin();
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
+    expect((await screen.findAllByRole('button', { name: 'Sign in' })).length).toBeGreaterThan(0);
     expect(document.documentElement.lang).toBe('en');
   });
 
@@ -217,6 +226,6 @@ describe('language setting', () => {
     vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
     window.localStorage.setItem(LOCALE_STORAGE_KEY, 'en');
     renderLogin();
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
+    expect((await screen.findAllByRole('button', { name: 'Sign in' })).length).toBeGreaterThan(0);
   });
 });

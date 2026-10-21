@@ -57,6 +57,8 @@ function StepBody({ baby, flow }: { baby: Baby; flow: NapperImport }) {
             choices={flow.choices}
             pending={flow.pending}
             online={flow.online}
+            enrichExisting={flow.enrichExisting}
+            onEnrichChange={(value) => void flow.setEnrichExisting(value)}
             onBack={() => flow.goTo(STEP.medications)}
             onImport={() => void flow.runImport()}
           />

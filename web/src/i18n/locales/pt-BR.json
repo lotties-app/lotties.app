@@ -43,7 +43,6 @@
     "setupBody": "O Baby Routine não está configurado. Defina as variáveis de ambiente abaixo (veja web/.env.example) e reinicie:",
     "signInFailed": "Não foi possível entrar. Tente de novo.",
     "signInAgainToSync": "Entre de novo para sincronizar suas alterações.",
-    "unsyncedKept": "Entre de novo para sincronizar suas alterações ({{changes}} guardadas neste aparelho).",
     "renewing": "Reconectando sua conta. Você pode continuar registrando: as alterações ficam salvas neste aparelho."
   },
   "layout": {
@@ -175,7 +174,11 @@
     "notSynced": "Ainda não sincronizado",
     "unknownMedication": "Remédio desconhecido",
     "intensity": "{{label}} {{value}}/{{max}}",
-    "labelValue": "{{label}} {{value}}"
+    "labelValue": "{{label}} {{value}}",
+    "moodOnWake": "Humor ao acordar: {{mood}}",
+    "fellAsleepIn": "pegou no sono em {{duration}}",
+    "pauses_one": "{{count}} pausa",
+    "pauses_other": "{{count}} pausas"
   },
   "day": {
     "title": "Dia",
@@ -223,7 +226,8 @@
     "previousWeek": "Semana anterior",
     "nextWeek": "Próxima semana",
     "chooseMonth": "{{month}}. Escolher uma data. Mostrando {{date}}",
-    "sessionEnded": "Sessão de sono encerrada, {{duration}}"
+    "sessionEnded": "Sessão de sono encerrada, {{duration}}",
+    "pausedFor": "pausa de {{duration}}"
   },
   "events": {
     "addTitle": "Adicionar evento",
@@ -244,7 +248,8 @@
       "fieldMax": "{{label}} deve ser no máximo {{max}}.",
       "selectMedication": "Selecione pelo menos um remédio.",
       "doseInvalid": "A dose de {{name}} precisa ser um número positivo.",
-      "doseUnit": "A dose de {{name}} precisa de uma unidade."
+      "doseUnit": "A dose de {{name}} precisa de uma unidade.",
+      "fieldInteger": "{{label}} deve ser um número inteiro."
     },
     "finishTitle": "Concluir registro de {{name}}",
     "saveAndStop": "Salvar e parar",
@@ -265,7 +270,14 @@
       "duration": "Duração: {{duration}}",
       "editTime": "Alterar o horário, {{time}} {{day}}"
     },
-    "deleted": "{{name}} excluído"
+    "deleted": "{{name}} excluído",
+    "sleepDetails": {
+      "title": "Detalhes do sono",
+      "optional": "Tudo opcional",
+      "filled_one": "{{count}} detalhe adicionado",
+      "filled_other": "{{count}} detalhes adicionados",
+      "moodAria": "Humor ao acordar"
+    }
   },
   "eventTypes": {
     "feeding": {
@@ -291,6 +303,15 @@
         },
         "food": {
           "label": "Alimento"
+        },
+        "pause_count": {
+          "label": "Pausas"
+        },
+        "paused_seconds": {
+          "label": "Tempo em pausa"
+        },
+        "paused_at": {
+          "label": "Em pausa desde"
         }
       },
       "options": {
@@ -318,6 +339,30 @@
         },
         "mood": {
           "label": "Humor"
+        },
+        "how_slept": {
+          "label": "Onde e como"
+        },
+        "fall_asleep": {
+          "label": "Pegar no sono"
+        },
+        "time_to_fall_asleep_minutes": {
+          "label": "Tempo para dormir"
+        },
+        "how_woke": {
+          "label": "Ao acordar"
+        },
+        "mood_on_wake": {
+          "label": "Humor ao acordar"
+        },
+        "pause_count": {
+          "label": "Pausas"
+        },
+        "paused_seconds": {
+          "label": "Tempo em pausa"
+        },
+        "paused_at": {
+          "label": "Em pausa desde"
         }
       },
       "options": {
@@ -328,6 +373,31 @@
           "bed_time": "Hora de dormir",
           "woke_up": "Acordou",
           "fell_asleep": "Adormeceu"
+        },
+        "how_slept": {
+          "in_bed": "Na cama",
+          "nursing": "Amamentação",
+          "held": "No colo",
+          "next_to_me": "Ao meu lado",
+          "bottle": "Mamadeira",
+          "stroller": "Carrinho de bebê",
+          "car": "No carro",
+          "swing": "No balanço",
+          "other": "Outro"
+        },
+        "fall_asleep": {
+          "easy": "Dormiu fácil",
+          "took_long": "Demorou para dormir",
+          "fussy": "Com agitação"
+        },
+        "how_woke": {
+          "naturally": "Acordou naturalmente",
+          "woken": "Foi acordado(a)"
+        },
+        "mood_on_wake": {
+          "good": "Bem",
+          "neutral": "Neutro",
+          "bad": "Mal"
         }
       }
     },
@@ -351,6 +421,15 @@
       "fields": {
         "temperature_c": {
           "label": "Temperatura da água"
+        },
+        "pause_count": {
+          "label": "Pausas"
+        },
+        "paused_seconds": {
+          "label": "Tempo em pausa"
+        },
+        "paused_at": {
+          "label": "Em pausa desde"
         }
       }
     },
@@ -359,6 +438,15 @@
       "fields": {
         "mood": {
           "label": "Humor"
+        },
+        "pause_count": {
+          "label": "Pausas"
+        },
+        "paused_seconds": {
+          "label": "Tempo em pausa"
+        },
+        "paused_at": {
+          "label": "Em pausa desde"
         }
       }
     },
@@ -381,6 +469,15 @@
         },
         "amount_right_ml": {
           "label": "Quantidade do seio direito"
+        },
+        "pause_count": {
+          "label": "Pausas"
+        },
+        "paused_seconds": {
+          "label": "Tempo em pausa"
+        },
+        "paused_at": {
+          "label": "Em pausa desde"
         }
       }
     }
@@ -716,7 +813,13 @@
       "skippedList": "Linhas ignoradas de {{label}}",
       "row": "Linha {{row}}",
       "rowWithCategory": "Linha {{row}} ({{category}})",
-      "more": "E mais {{count}}."
+      "more": "E mais {{count}}.",
+      "showSkippedFields_one": "Mostrar {{count}} detalhe que não pôde ser lido",
+      "showSkippedFields_other": "Mostrar {{count}} detalhes que não puderam ser lidos",
+      "hideSkippedFields_one": "Ocultar {{count}} detalhe que não pôde ser lido",
+      "hideSkippedFields_other": "Ocultar {{count}} detalhes que não puderam ser lidos",
+      "skippedFieldsList": "Detalhes que não puderam ser lidos",
+      "skippedField": "Linha {{row}} ({{category}}): {{field}}"
     },
     "medications": {
       "none": "Nenhum nome de remédio novo precisa de decisão.",
@@ -756,7 +859,11 @@
       "note": "Tudo é salvo junto ou nada é salvo. Importar o mesmo arquivo depois é seguro: nada é duplicado e os eventos que você excluiu não voltam.",
       "importing": "Importando",
       "importingEllipsis": "Importando…",
-      "import": "Importar"
+      "import": "Importar",
+      "enrich": {
+        "label": "Completar eventos já importados",
+        "help": "Preenche detalhes de sono e pausas que faltam em eventos que você já importou. Nunca altera horários nem apaga nada."
+      }
     },
     "result": {
       "imported": "Foram importados {{events}} e {{measurements}}.",
@@ -779,6 +886,13 @@
       "invalidMappingDefault": "um nome",
       "conflict": "Outra importação ou sincronização gravou os mesmos registros ao mesmo tempo. Nada foi salvo; tente de novo.",
       "validationFailed": "O servidor recusou o pedido. Confira os arquivos e os nomes dos remédios (até 100 caracteres)."
+    },
+    "enrich": {
+      "would_one": "{{count}} evento já importado receberia os detalhes que faltam.",
+      "would_other": "{{count}} eventos já importados receberiam os detalhes que faltam.",
+      "done_one": "{{count}} evento já importado recebeu os detalhes que faltavam.",
+      "done_other": "{{count}} eventos já importados receberam os detalhes que faltavam.",
+      "fields": "Campos: {{fields}}."
     }
   },
   "errors": {
@@ -1308,6 +1422,62 @@
       "byPrescriptionFor": "Receita para {{indication}}",
       "early": "Registrado antes da hora",
       "kgUsed": "para {{kg}}"
+    }
+  },
+  "timers": {
+    "paused": "Pausado",
+    "pausedFor": "pausa de {{duration}}",
+    "pausedClock": "Pausado {{time}}",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "pauseNamed": "Pausar {{name}}",
+    "resumeNamed": "Retomar {{name}}",
+    "stop": "Parar",
+    "stopNamed": "Parar {{name}}",
+    "region": "Cronômetros em andamento",
+    "elapsed": "Decorrido",
+    "announce": {
+      "paused": "{{name}} pausado",
+      "resumed": "{{name}} retomado",
+      "running": "{{name}} em andamento, {{duration}}"
+    },
+    "target": {
+      "usualNap": "Soneca costuma durar cerca de {{duration}}",
+      "usualNight": "Sono da noite costuma durar cerca de {{duration}}",
+      "usual": "Duração habitual: cerca de {{duration}}",
+      "progress": "{{elapsed}} de cerca de {{target}}",
+      "past": "Além da duração habitual"
+    },
+    "mini": {
+      "open": "Abrir o cronômetro de {{name}}",
+      "expand": "Mostrar todos os cronômetros",
+      "collapse": "Ocultar a lista",
+      "list": "Todos os cronômetros em andamento",
+      "count_one": "{{count}} cronômetro",
+      "count_other": "{{count}} cronômetros",
+      "other": "Outros cronômetros"
+    },
+    "sheet": {
+      "started": "Início às {{time}}",
+      "close": "Fechar",
+      "more": "Mais opções",
+      "discard": "Descartar",
+      "discarded": "{{name}} descartado",
+      "adjustStart": "Ajustar a hora de início",
+      "adjustTitle": "Hora de início",
+      "adjustHint": "Quando começou? Não pode ser depois de agora.",
+      "adjustDone": "Pronto",
+      "addNote": "Adicionar uma nota",
+      "editNote": "Editar a nota",
+      "noteDone": "Pronto",
+      "switchToNight": "Mudar para sono da noite",
+      "switchToNap": "Mudar para soneca",
+      "switchSide": "Trocar de lado",
+      "editAll": "Editar todos os detalhes",
+      "sleepDetails": "Detalhes do sono",
+      "pausedNote": "Em pausa. O relógio está esperando.",
+      "pauses_one": "{{count}} pausa, {{duration}} no total",
+      "pauses_other": "{{count}} pausas, {{duration}} no total"
     }
   }
 }

@@ -1,5 +1,5 @@
 import type { EventType, Medication } from '../db/models';
-import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE, TUMMY_TIME_TYPE } from '../test/builtInTypes';
 
 /*
  * Shared by the developer-only previews of the Day screen and the event sheet (`/dev/day`,
@@ -51,8 +51,11 @@ export const PREVIEW_TYPES: EventType[] = [
   ]),
   extraType('bath', 'Bath', 'bathtub', true, [
     field('temperature_c', { kind: 'number', min: 30, max: 42, unit: 'C' }),
+    field('pause_count', { kind: 'number', min: 0, max: 100, hidden: true, integer: true }),
+    field('paused_seconds', { kind: 'number', min: 0, max: 86400, hidden: true, integer: true }),
+    field('paused_at', { hidden: true }),
   ]),
-  extraType('tummy_time', 'Tummy time', 'child_care', true),
+  TUMMY_TIME_TYPE,
 ];
 
 export const typeIdOf = (key: string): string =>

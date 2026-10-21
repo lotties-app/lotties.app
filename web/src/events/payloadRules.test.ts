@@ -51,7 +51,40 @@ describe('the built-in feeding definition from the API', () => {
     [{ method: 'solid' }, ['method', 'food']],
   ])('shows only the fields of the chosen method %j', (payload, shown) => {
     const valueOf = (key: string) => (payload as Record<string, unknown>)[key];
-    expect(keys(visibleFields(FEEDING_TYPE.fields, valueOf))).toEqual(shown);
+    const forms = visibleFields(FEEDING_TYPE.fields, valueOf).filter((f) => f.hidden !== true);
+    expect(keys(forms)).toEqual(shown);
+  });
+
+  it('declares the pause keys as hidden whole numbers', () => {
+    const pause = FEEDING_TYPE.fields.filter((f) => f.key.startsWith('pause'));
+    expect(pause.map((f) => f.key)).toEqual(['pause_count', 'paused_seconds', 'paused_at']);
+    expect(pause.every((f) => f.hidden === true)).toBe(true);
+    expect(FEEDING_TYPE.fields.find((f) => f.key === 'pause_count')?.integer).toBe(true);
+  });
+});
+
+describe('integer number fields', () => {
+  const type = {
+    fields: [
+      {
+        key: 'time_to_fall_asleep_minutes',
+        label: 'T',
+        kind: 'number' as const,
+        isRequired: false,
+        options: [],
+        min: 0,
+        max: 240,
+        unit: 'min',
+        integer: true,
+      },
+    ],
+  };
+
+  it('accepts whole numbers and rejects fractions', () => {
+    expect(validatePayload(type, { time_to_fall_asleep_minutes: 12 }, true)).toEqual([]);
+    expect(validatePayload(type, { time_to_fall_asleep_minutes: 12.5 }, true)).toEqual([
+      { field: 'time_to_fall_asleep_minutes', code: 'integer' },
+    ]);
   });
 });
 

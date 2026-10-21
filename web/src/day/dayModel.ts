@@ -1,5 +1,6 @@
 import type { BabyEvent, EventType } from '../db/models';
 import { MINUTE_MS, sleepSessionKind, typeIdsForKey } from '../now/eventFacts';
+import { effectiveDurationMs, effectiveMsInWindow } from '../timers/pauseMath';
 import { typeCategory } from '../now/typeVisual';
 import { CATEGORY_NAMES, type CategoryName } from '../theme/tokens';
 
@@ -155,7 +156,12 @@ export function summarizeDay(
       const from = Math.max(begin, startMs);
       const to = Math.min(finish, bounds.end.getTime());
       if (to <= from) continue;
-      if (kind !== null) summary.sleepMinutes += Math.round((to - from) / MINUTE_MS);
+      // Effective minutes: a paused stretch is not sleep.
+      if (kind !== null) {
+        summary.sleepMinutes += Math.round(
+          effectiveMsInWindow(event, startMs, bounds.end.getTime(), now) / MINUTE_MS,
+        );
+      }
       summary.spans.push({
         id: event.id,
         from: ratio(from),
@@ -211,7 +217,7 @@ export function withSessionSeparators(
       kind: 'separator' as const,
       id: event.id,
       endedAt: event.endedAt as string,
-      durationMs: Date.parse(event.endedAt as string) - Date.parse(event.startedAt),
+      durationMs: effectiveDurationMs(event),
     }))
     .filter((separator) => separator.durationMs > 0)
     .sort((a, b) => b.endedAt.localeCompare(a.endedAt));

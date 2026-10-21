@@ -44,7 +44,9 @@ export function fixFields(type: EventType, event: BabyEvent, rejectedField?: str
     if (!fields.includes(rejectedField)) fields.push(rejectedField);
   }
   if (fields.length > 0) return fields;
-  return visibleFields(type.fields, (key) => getOwn(event.payload, key)).map((f) => f.key);
+  return visibleFields(type.fields, (key) => getOwn(event.payload, key))
+    .filter((f) => f.hidden !== true)
+    .map((f) => f.key);
 }
 
 /** Remembered values of `fields`, as form values (numbers become text, as typed). */

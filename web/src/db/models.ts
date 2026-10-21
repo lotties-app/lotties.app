@@ -39,6 +39,10 @@ export interface EventFieldDefinition {
   unit: string | null;
   /** `null`/absent = always shown (types stored before this existed have no value). */
   visibleWhen?: FieldVisibility | null;
+  /** Forms never render a hidden field (pause keys, deprecated fields); its value is kept on edits. */
+  hidden?: boolean;
+  /** Number fields only: whole numbers only. */
+  integer?: boolean;
 }
 
 export interface EventType {

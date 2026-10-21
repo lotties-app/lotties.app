@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../api/errorMessages';
 import { useEventCommands } from '../db/hooks';
-import type { EventType } from '../db/models';
+import type { EventPayload, EventType } from '../db/models';
+import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { getOwn, setOwn, withOwn } from '../util/ownProperty';
 import type { EventSheetProps } from './eventSheetTypes';
@@ -33,6 +34,23 @@ function defaultValues(babyId: string, type: EventType | undefined): EventFormSt
     setOwn(values, key, typeof value === 'number' ? String(value) : (value as string | boolean));
   }
   return pruneHiddenValues(values, type);
+}
+
+/**
+ * What an edit keeps of the stored payload besides the form's own values: the reserved pause keys
+ * and the open nursing segment (valid for any type, never drawn), and, with the same type, the
+ * values of its hidden fields (a deprecated `mood`). Other members the form does not know are
+ * dropped, as before.
+ */
+function editBase(stored: EventPayload, type: EventType, sameType: boolean): EventPayload {
+  const keep = new Set<string>([...PAUSE_KEYS, SEGMENT_START_KEY]);
+  if (sameType) for (const field of type.fields) if (field.hidden === true) keep.add(field.key);
+  const kept: EventPayload = {};
+  for (const key of keep) {
+    const value = getOwn(stored, key);
+    if (value !== undefined) setOwn<unknown>(kept, key, value);
+  }
+  return kept;
 }
 
 function startForm({ babyId, types, event, initialTypeId, prefill, finish }: EventSheetProps) {
@@ -111,7 +129,11 @@ export function useEventSheetForm(props: EventSheetProps) {
       return payload;
     }
     const times = buildTimes(form, selected, instant);
-    const payload = buildPayload(form, selected);
+    const payload = buildPayload(
+      form,
+      selected,
+      event ? editBase(event.payload, selected, event.typeId === selected.id) : {},
+    );
     const data = { typeId: selected.id, ...times, payload, notes: form.notes.trim() || null };
     await (event ? commands.edit(event.id, data) : commands.create({ babyId, ...data }));
     return payload;

@@ -21,6 +21,7 @@ import type {
   NapperPreviewDto,
   NapperSummaryBase,
 } from '../sync/contract';
+import { EnrichSummary } from './EnrichSummary';
 import { summaryRange } from './importModel';
 
 const MAX_SHOWN = 100;
@@ -62,6 +63,52 @@ function SkippedRows({ summary, label }: { summary: NapperSummaryBase; label: st
             <ListItem disableGutters>
               <ListItemText
                 secondary={t('import.preview.more', { count: rows.length - MAX_SHOWN })}
+              />
+            </ListItem>
+          )}
+        </List>
+      )}
+    </div>
+  );
+}
+
+function SkippedFields({ summary }: { summary: NapperLogsSummary }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const fields = summary.skippedFields ?? [];
+  if (fields.length === 0) return null;
+  const id = 'skipped-fields';
+  return (
+    <div>
+      <Button
+        size="small"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((o) => !o)}
+        sx={{ minHeight: 40 }}
+      >
+        {open
+          ? t('import.preview.hideSkippedFields', { count: fields.length })
+          : t('import.preview.showSkippedFields', { count: fields.length })}
+      </Button>
+      {open && (
+        <List id={id} dense aria-label={t('import.preview.skippedFieldsList')}>
+          {fields.slice(0, MAX_SHOWN).map((f, i) => (
+            <ListItem key={`${f.row}-${f.field}-${i}`} disableGutters>
+              <ListItemText
+                primary={t('import.preview.skippedField', {
+                  row: f.row,
+                  category: f.category,
+                  field: f.field,
+                })}
+                secondary={f.value ? `${f.value} · ${f.reason || f.code}` : f.reason || f.code}
+              />
+            </ListItem>
+          ))}
+          {fields.length > MAX_SHOWN && (
+            <ListItem disableGutters>
+              <ListItemText
+                secondary={t('import.preview.more', { count: fields.length - MAX_SHOWN })}
               />
             </ListItem>
           )}
@@ -118,6 +165,7 @@ function LogsSummary({ logs }: { logs: NapperLogsSummary }) {
         </Table>
       </TableContainer>
       <SkippedRows summary={logs} label={t('import.preview.labelLog')} />
+      <SkippedFields summary={logs} />
     </Stack>
   );
 }
@@ -150,6 +198,7 @@ export function PreviewStep({ preview, onBack, onNext }: Props) {
         {t('import.preview.notice')}
       </Typography>
       {preview.logs && <LogsSummary logs={preview.logs} />}
+      <EnrichSummary count={preview.eventsEnriched} fields={preview.enrichedFields} done={false} />
       {preview.measurements && <MeasurementsSummary summary={preview.measurements} />}
       <Stack direction="row" spacing={1}>
         <Button onClick={onBack} sx={{ minHeight: 48 }}>

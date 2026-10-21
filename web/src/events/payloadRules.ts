@@ -14,6 +14,8 @@ export type PayloadProblemCode =
   | 'hidden'
   | 'text'
   | 'number'
+  /** A whole number was required (`integer` fields). */
+  | 'integer'
   | 'option'
   | 'bool'
   | 'min'
@@ -88,6 +90,7 @@ function kindProblem(field: EventFieldDefinition, value: unknown): PayloadProble
       return typeof value === 'string' && field.options.includes(value) ? null : 'option';
     case 'number':
       if (typeof value !== 'number' || Number.isNaN(value)) return 'number';
+      if (field.integer === true && !Number.isInteger(value)) return 'integer';
       if (field.min !== null && value < field.min) return 'min';
       if (field.max !== null && value > field.max) return 'max';
       return null;

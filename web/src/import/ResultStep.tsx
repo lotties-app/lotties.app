@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { NapperImportResultDto } from '../sync/contract';
+import { EnrichSummary } from './EnrichSummary';
 
 /** Step 5: what was created. */
 export function ResultStep({
@@ -22,6 +23,7 @@ export function ResultStep({
           measurements: t('import.confirm.measurements', { count: result.measurementsCreated }),
         })}
       </Alert>
+      <EnrichSummary count={result.eventsEnriched} fields={result.enrichedFields} done />
       {result.createdMedications.length > 0 && (
         <Typography>
           {t('import.result.newMedications', {

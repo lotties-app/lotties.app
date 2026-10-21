@@ -1,4 +1,5 @@
 import type { BabyEvent, EventType } from '../db/models';
+import { effectiveDurationSeconds } from '../timers/pauseMath';
 import { MINUTE_MS, pastLiveEvents, sleepSessionKind, typeIdsForKey } from './eventFacts';
 
 /*
@@ -17,10 +18,9 @@ export interface TodayStats {
 const startOfLocalDay = (now: Date) =>
   new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-const lengthMinutes = (event: BabyEvent, now: Date) => {
-  const end = event.endedAt ? Date.parse(event.endedAt) : now.getTime();
-  return Math.max(0, Math.round((end - Date.parse(event.startedAt)) / MINUTE_MS));
-};
+/** Effective minutes: pauses are not sleep (docs/design/SYNTHESIS.md section 6). */
+const lengthMinutes = (event: BabyEvent, now: Date) =>
+  Math.round(effectiveDurationSeconds(event, now) / 60);
 
 export function todayStats(
   events: readonly BabyEvent[],

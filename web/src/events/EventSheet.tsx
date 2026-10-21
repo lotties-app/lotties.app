@@ -25,6 +25,8 @@ import { isMedicationType } from './formModel';
 import { readLastUsed } from './lastUsedValues';
 import { fromLocalInput } from './time';
 import { SheetHeader } from './SheetHeader';
+import { SleepDetails } from './SleepDetails';
+import { SLEEP_DETAIL_SET } from './sleepDetailModel';
 import { useEventSheetForm } from './useEventSheetForm';
 import { WhenFields } from './WhenFields';
 
@@ -307,10 +309,16 @@ export function EventSheet(props: EventSheetProps) {
               type={type}
               values={form.values}
               only={finish?.fields}
+              {...(!finishing && type.key === 'sleep' && type.babyId === null
+                ? { exclude: SLEEP_DETAIL_SET }
+                : {})}
               errors={state.errors}
               remembered={remembered}
               onChange={state.setValue}
             />
+          )}
+          {type && !finishing && (
+            <SleepDetails type={type} values={form.values} onChange={state.setValue} />
           )}
           {!finishing && (
             <Box data-field-key="notes">

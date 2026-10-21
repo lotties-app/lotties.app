@@ -5,6 +5,7 @@ export {
   type SegmentedOption,
   type SegmentedControlProps,
 } from './SegmentedControl';
+export { OptionTiles, type TileOption, type OptionTilesProps } from './OptionTiles';
 export { ChipGroup, type ChipOption, type ChipGroupProps } from './ChipGroup';
 export { NumberStepper, type NumberStepperProps } from './NumberStepper';
 export { DurationField, type DurationFieldProps } from './DurationField';

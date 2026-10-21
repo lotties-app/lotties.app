@@ -1,8 +1,8 @@
 import type { BabyEvent, Dosage, EventType } from '../db/models';
 import type { MemberDto } from '../sync/contract';
+import { effectiveDurationSeconds } from '../timers/pauseMath';
 import { getOwn } from '../util/ownProperty';
 import {
-  MINUTE_MS,
   payloadNumber,
   payloadString,
   payloadValue,
@@ -114,12 +114,8 @@ function addEvent(group: CatchUpGroup, event: BabyEvent, ids: TypeIds, now: Date
   if (ids.sleep.has(event.typeId)) {
     if (isSleepKind(event, 'night_waking')) group.sleep.nightWakings += 1;
     else if (sleepSessionKind(event) !== null) {
-      const end = event.endedAt ? Date.parse(event.endedAt) : now.getTime();
       group.sleep.count += 1;
-      group.sleep.totalMinutes += Math.max(
-        0,
-        Math.round((end - Date.parse(event.startedAt)) / MINUTE_MS),
-      );
+      group.sleep.totalMinutes += Math.round(effectiveDurationSeconds(event, now) / 60);
     }
   } else if (ids.feeding.has(event.typeId)) {
     group.feeds.count += 1;

@@ -8,6 +8,7 @@ import {
   InvalidEventTimeRangeError,
 } from './errors';
 import { toEventUpsertRequest, toUtcIso } from '../sync/contract';
+import { isPaused, normalizePause, withPause, withResume } from '../timers/pauseMath';
 
 /** Injectable clock and id source (tests); defaults to the system clock and `crypto.randomUUID`. */
 export interface CommandOptions {
@@ -50,6 +51,16 @@ function ensureValidRange(event: BabyEvent) {
   if (event.endedAt !== null && event.endedAt < event.startedAt) {
     throw new InvalidEventTimeRangeError(event.id);
   }
+}
+
+/**
+ * The event as the API accepts it: once it ended, an open pause is folded into `paused_seconds`
+ * (stopping while paused finalizes the pause) and `paused_seconds` never exceeds the length; the
+ * pause keys are whole numbers. Events without pause keys are returned unchanged.
+ */
+function withSettledPause(event: BabyEvent): BabyEvent {
+  const payload = normalizePause(event.payload, event.startedAt, event.endedAt);
+  return payload === event.payload ? event : { ...event, payload };
 }
 
 /** Writes `event` and queues the matching mutation atomically. */
@@ -96,7 +107,7 @@ export async function createEvent(
     deletedAt: null,
   };
   ensureValidRange(event);
-  return saveWithMutation(db, event, 'upsert');
+  return saveWithMutation(db, withSettledPause(event), 'upsert');
 }
 
 export async function editEvent(
@@ -120,7 +131,7 @@ export async function editEvent(
       ...editStamp(nowIso(options)),
     };
     ensureValidRange(edited);
-    return saveWithMutation(db, edited, 'upsert');
+    return saveWithMutation(db, withSettledPause(edited), 'upsert');
   });
 }
 
@@ -141,7 +152,55 @@ export async function stopEvent(
       ...editStamp(now),
     };
     ensureValidRange(stopped);
-    return saveWithMutation(db, stopped, 'upsert');
+    return saveWithMutation(db, withSettledPause(stopped), 'upsert');
+  });
+}
+
+async function loadRunning(db: BabyRoutineDb, id: string): Promise<BabyEvent> {
+  const current = await loadLiveEvent(db, id);
+  if (current.endedAt !== null) throw new EventAlreadyStoppedError(id);
+  return current;
+}
+
+/**
+ * Pauses a running timer: `paused_at` = now. Pausing a paused timer changes nothing. The elapsed
+ * time stops counting from then (`effectiveElapsedSeconds`); the timer keeps running as an event.
+ */
+export async function pauseTimer(
+  db: BabyRoutineDb,
+  id: string,
+  options: CommandOptions = {},
+): Promise<BabyEvent> {
+  return db.transaction('rw', db.events, db.outbox, async () => {
+    const current = await loadRunning(db, id);
+    if (isPaused(current)) return current;
+    const now = nowIso(options);
+    return saveWithMutation(
+      db,
+      { ...current, payload: withPause(current.payload, Date.parse(now)), ...editStamp(now) },
+      'upsert',
+    );
+  });
+}
+
+/**
+ * Resumes a paused timer: the pause is added to `paused_seconds`, `pause_count` grows by one and
+ * `paused_at` is removed. Resuming a timer that is not paused changes nothing.
+ */
+export async function resumeTimer(
+  db: BabyRoutineDb,
+  id: string,
+  options: CommandOptions = {},
+): Promise<BabyEvent> {
+  return db.transaction('rw', db.events, db.outbox, async () => {
+    const current = await loadRunning(db, id);
+    if (!isPaused(current)) return current;
+    const now = nowIso(options);
+    return saveWithMutation(
+      db,
+      { ...current, payload: withResume(current.payload, Date.parse(now)), ...editStamp(now) },
+      'upsert',
+    );
   });
 }
 
@@ -169,7 +228,7 @@ export async function finishEvent(
     };
     ensureValidRange(finished);
     await dropDeadUpserts(db, id);
-    return saveWithMutation(db, finished, 'upsert');
+    return saveWithMutation(db, withSettledPause(finished), 'upsert');
   });
 }
 

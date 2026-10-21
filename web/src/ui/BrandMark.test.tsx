@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import axe from 'axe-core';
 import { describe, expect, it } from 'vitest';
-import { LoginPage } from '../auth/LoginPage';
+import LandingPage from '../landing/LandingPage';
 import { SetupMessage } from '../config/SetupMessage';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
@@ -56,18 +56,19 @@ describe('BrandMark', () => {
   });
 });
 
-describe('BrandMark on the sign-in and setup screens', () => {
-  it('sign-in announces the name once, as the page heading', async () => {
+describe('BrandMark on the landing and setup screens', () => {
+  it('landing shows the wordmark once in the header and the big mark as decoration', async () => {
     const { container } = render(
       <I18nProvider>
         <AppThemeProvider>
           <AuthTestWrapper auth={fakeAuth({ isAuthenticated: false, user: null })}>
-            <LoginPage />
+            <LandingPage />
           </AuthTestWrapper>
         </AppThemeProvider>
       </I18nProvider>,
     );
-    expect(screen.getByRole('heading', { level: 1, name: 'Baby Routine' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1 })).toBeTruthy();
+    expect(screen.getAllByText('Baby Routine')).toHaveLength(1);
     expect(screen.queryByRole('img', { name: 'Baby Routine' })).toBeNull();
     expect(container.querySelector('[data-brand-mark="full"]')).not.toBeNull();
     expect(await violations(container)).toEqual([]);

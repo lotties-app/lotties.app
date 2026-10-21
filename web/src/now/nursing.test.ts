@@ -4,6 +4,8 @@ import { EventAlreadyStoppedError } from '../db/errors';
 import { PresetAlreadyRunningError, PresetNotRunnableError, undoPreset } from '../presets/actions';
 import { BUILT_IN_TYPES, FEEDING_T, event } from '../presets/presetFixtures';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
+import { pauseTimer, resumeTimer } from '../db/eventCommands';
+import { effectiveDurationSeconds } from '../timers/pauseMath';
 import {
   nursingElapsed,
   startNursing,
@@ -92,6 +94,7 @@ describe('switchSide and stopNursing', () => {
       right: 243,
       total: 615,
       side: 'right',
+      paused: false,
       sideSince: at(3, 6, 12).toISOString(),
     });
   });
@@ -241,5 +244,49 @@ describe('nursingElapsed and suggestedStartSide', () => {
         FEEDING_T,
       ),
     ).toMatchObject({ lastAt: at(1).toISOString() });
+  });
+});
+
+describe('pausing a nursing session', () => {
+  it('freezes the clocks while paused and excludes the pause after resuming', async () => {
+    const id = await start(at(3, 0), 'left');
+    await pauseTimer(db, id, opts(at(3, 5)));
+    const paused = await load(id);
+    expect(nursingElapsed(paused, at(3, 5)).left).toBe(300);
+    // Ten minutes later the clocks still say five minutes.
+    expect(nursingElapsed(paused, at(3, 15))).toMatchObject({ left: 300, paused: true });
+
+    await resumeTimer(db, id, opts(at(3, 15)));
+    const resumed = await load(id);
+    expect(resumed.payload).toMatchObject({ paused_seconds: 600, pause_count: 1 });
+    expect(nursingElapsed(resumed, at(3, 17)).left).toBe(420);
+  });
+
+  it('switching side while paused starts the new side at the pause point', async () => {
+    const id = await start(at(3, 0), 'left');
+    await pauseTimer(db, id, opts(at(3, 5)));
+    await switchSide(db, id, opts(at(3, 9)));
+    await resumeTimer(db, id, opts(at(3, 10)));
+    const after = await load(id);
+    expect(nursingElapsed(after, at(3, 12))).toMatchObject({
+      left: 300,
+      right: 120,
+      side: 'right',
+    });
+  });
+
+  it('stopping while paused keeps the sides and finalizes the pause', async () => {
+    const id = await start(at(3, 0), 'left');
+    await pauseTimer(db, id, opts(at(3, 6)));
+    await stopNursing(db, id, opts(at(3, 20)));
+    const stopped = await load(id);
+    expect(stopped.payload).toMatchObject({
+      breast_left_seconds: 360,
+      breast_right_seconds: 0,
+      paused_seconds: 840,
+      pause_count: 1,
+    });
+    expect(stopped.payload).not.toHaveProperty('paused_at');
+    expect(effectiveDurationSeconds(stopped)).toBe(360);
   });
 });

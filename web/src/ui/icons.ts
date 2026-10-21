@@ -70,6 +70,18 @@ import IconDots from '@tabler/icons-react/dist/esm/icons/IconDots.mjs';
 import IconCloud from '@tabler/icons-react/dist/esm/icons/IconCloud.mjs';
 import IconArrowsHorizontal from '@tabler/icons-react/dist/esm/icons/IconArrowsHorizontal.mjs';
 
+import IconPlayerPause from '@tabler/icons-react/dist/esm/icons/IconPlayerPause.mjs';
+import IconClockPause from '@tabler/icons-react/dist/esm/icons/IconClockPause.mjs';
+import IconFlag from '@tabler/icons-react/dist/esm/icons/IconFlag.mjs';
+import IconCar from '@tabler/icons-react/dist/esm/icons/IconCar.mjs';
+import IconBabyCarriage from '@tabler/icons-react/dist/esm/icons/IconBabyCarriage.mjs';
+import IconUsers from '@tabler/icons-react/dist/esm/icons/IconUsers.mjs';
+import IconHeartHandshake from '@tabler/icons-react/dist/esm/icons/IconHeartHandshake.mjs';
+import IconBuildingCarousel from '@tabler/icons-react/dist/esm/icons/IconBuildingCarousel.mjs';
+import IconSunrise from '@tabler/icons-react/dist/esm/icons/IconSunrise.mjs';
+import IconBellRinging from '@tabler/icons-react/dist/esm/icons/IconBellRinging.mjs';
+import IconArrowsExchange from '@tabler/icons-react/dist/esm/icons/IconArrowsExchange.mjs';
+
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
  * so the bundle only holds these (about 0.5 KB each). Add a name here before using it; the `Icon`
@@ -153,6 +165,17 @@ export const ICON_COMPONENTS = {
   more: IconDots,
   cloud: IconCloud,
   'arrows-horizontal': IconArrowsHorizontal,
+  pause: IconPlayerPause,
+  'clock-pause': IconClockPause,
+  flag: IconFlag,
+  car: IconCar,
+  stroller: IconBabyCarriage,
+  users: IconUsers,
+  held: IconHeartHandshake,
+  swing: IconBuildingCarousel,
+  sunrise: IconSunrise,
+  bell: IconBellRinging,
+  exchange: IconArrowsExchange,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

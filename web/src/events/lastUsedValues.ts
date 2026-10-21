@@ -46,6 +46,7 @@ export function readLastUsed(babyId: string, typeId: string): Remembered {
 export function recordLastUsed(babyId: string, type: EventType, payload: EventPayload): void {
   const next = readLastUsed(babyId, type.id);
   for (const field of type.fields) {
+    if (field.hidden === true) continue;
     const value = getOwn(payload, field.key);
     if (isRememberable(field, value)) setOwn(next, field.key, value);
   }
