@@ -13,3 +13,10 @@ coverage/
 docs/graphify/
 docs/samples/
 docs/design/screenshots/
+# ml benchmark: venv, caches, local outputs; real data always stays outside the repository
+ml/.venv/
+ml/data/
+ml/out/
+ml/**/__pycache__/
+ml/.pytest_cache/
+ml/*.egg-info/
