@@ -43,6 +43,12 @@ internal static class DomainExceptionStatusCodes
         [typeof(InvalidMedicationMappingException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(ImportConflictException)] = StatusCodes.Status409Conflict,
         [typeof(ConcurrentModificationException)] = StatusCodes.Status409Conflict,
+        [typeof(ProductNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(InvalidProductLinkException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(SubstanceNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(PrescriptionBabyMismatchException)] = StatusCodes.Status409Conflict,
+        [typeof(PrescriptionDeletedException)] = StatusCodes.Status409Conflict,
+        [typeof(PrescriptionMedicationNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

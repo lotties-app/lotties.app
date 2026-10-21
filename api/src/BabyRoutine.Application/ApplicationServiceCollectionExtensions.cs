@@ -28,6 +28,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IEventTypeService, EventTypeService>();
         services.AddScoped<IMedicationService, MedicationService>();
         services.AddScoped<IMeasurementService, MeasurementService>();
+        services.AddScoped<Catalog.ICatalogService, Catalog.CatalogService>();
+        services.AddScoped<Prescriptions.IPrescriptionService, Prescriptions.PrescriptionService>();
+        services.AddScoped<Prescriptions.IMedicationStatusService, Prescriptions.MedicationStatusService>();
         services.AddScoped<Imports.INapperImportService, Imports.NapperImportService>();
         services.TryAddSingleton(BabyRoutine.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();

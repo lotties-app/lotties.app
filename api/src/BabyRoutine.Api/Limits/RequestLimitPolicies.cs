@@ -6,6 +6,9 @@ public static class RequestLimitPolicies
     /// <summary>Timeout and rate limit policy of the import endpoints.</summary>
     public const string Import = "import";
 
+    /// <summary>Rate limit policy of shared catalog writes (product creation).</summary>
+    public const string CatalogWrite = "catalog-write";
+
     /// <summary>
     /// Gives an import endpoint the import body size limit (<see cref="RequestLimitsOptions.ImportMaxRequestBodyBytes"/>),
     /// timeout and rate limit instead of the defaults.

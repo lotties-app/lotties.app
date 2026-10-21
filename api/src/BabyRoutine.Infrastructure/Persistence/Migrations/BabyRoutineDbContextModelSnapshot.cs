@@ -158,6 +158,191 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                     b.ToTable("invites", (string)null);
                 });
 
+            modelBuilder.Entity("BabyRoutine.Domain.Catalog.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character(2)")
+                        .HasColumnName("country")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Form")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("form");
+
+                    b.Property<Guid?>("MergedIntoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("merged_into_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_products");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_products_created_by");
+
+                    b.HasIndex("MergedIntoId")
+                        .HasDatabaseName("ix_products_merged_into_id");
+
+                    b.HasIndex("NormalizedName", "Form", "Country")
+                        .IsUnique()
+                        .HasDatabaseName("ix_products_normalized_name_form_country")
+                        .HasFilter("merged_into_id IS NULL");
+
+                    b.ToTable("products", (string)null);
+                });
+
+            modelBuilder.Entity("BabyRoutine.Domain.Catalog.ProductSubstance", b =>
+                {
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<Guid>("SubstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("substance_id");
+
+                    b.HasKey("ProductId", "SubstanceId")
+                        .HasName("pk_product_substances");
+
+                    b.HasIndex("SubstanceId")
+                        .HasDatabaseName("ix_product_substances_substance_id");
+
+                    b.ToTable("product_substances", (string)null);
+                });
+
+            modelBuilder.Entity("BabyRoutine.Domain.Catalog.Substance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name_en");
+
+                    b.Property<string>("NamePtBr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name_pt_br");
+
+                    b.Property<string>("Synonyms")
+                        .IsRequired()
+                        .HasMaxLength(520)
+                        .HasColumnType("character varying(520)")
+                        .HasColumnName("synonyms");
+
+                    b.HasKey("Id")
+                        .HasName("pk_substances");
+
+                    b.HasIndex("Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_substances_key");
+
+                    b.ToTable("substances", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("2f468145-66a8-4fad-a6c1-45ce69aaeaa3"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Key = "simethicone",
+                            NameEn = "Simethicone",
+                            NamePtBr = "Simeticona",
+                            Synonyms = ""
+                        },
+                        new
+                        {
+                            Id = new Guid("46e6ebde-ff2c-4e67-a132-2ff1ef9b1c66"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Key = "cholecalciferol",
+                            NameEn = "Cholecalciferol",
+                            NamePtBr = "Colecalciferol",
+                            Synonyms = "Vitamin D3"
+                        },
+                        new
+                        {
+                            Id = new Guid("1765da22-94c0-46b7-b321-4feb5f3ad86e"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Key = "paracetamol",
+                            NameEn = "Paracetamol",
+                            NamePtBr = "Paracetamol",
+                            Synonyms = "Acetaminophen"
+                        },
+                        new
+                        {
+                            Id = new Guid("cf40d2c1-711c-4ffa-9754-06f5c6844142"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Key = "ibuprofen",
+                            NameEn = "Ibuprofen",
+                            NamePtBr = "Ibuprofeno",
+                            Synonyms = ""
+                        },
+                        new
+                        {
+                            Id = new Guid("cce5fca3-cf4a-4099-b9fc-ded1a076ca1f"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Key = "metamizole",
+                            NameEn = "Metamizole",
+                            NamePtBr = "Dipirona",
+                            Synonyms = "Dipyrone"
+                        },
+                        new
+                        {
+                            Id = new Guid("d71efa75-1cb2-46fe-a019-b4d4a9df1710"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Key = "limosilactobacillus_reuteri",
+                            NameEn = "Limosilactobacillus reuteri",
+                            NamePtBr = "Limosilactobacillus reuteri",
+                            Synonyms = "Lactobacillus reuteri"
+                        });
+                });
+
             modelBuilder.Entity("BabyRoutine.Domain.EventTypes.EventType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -452,13 +637,98 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("notes");
 
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
                     b.HasKey("Id")
                         .HasName("pk_medications");
 
                     b.HasIndex("BabyId")
                         .HasDatabaseName("ix_medications_baby_id");
 
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_medications_product_id");
+
                     b.ToTable("medications", (string)null);
+                });
+
+            modelBuilder.Entity("BabyRoutine.Domain.Prescriptions.Prescription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<DateTimeOffset>("ClientUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("client_updated_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("instructions");
+
+                    b.Property<string>("IntervalGroup")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("interval_group");
+
+                    b.Property<Guid>("MedicationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("medication_id");
+
+                    b.Property<string>("Prescriber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("prescriber");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_prescriptions");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_prescriptions_created_by");
+
+                    b.HasIndex("BabyId", "MedicationId")
+                        .HasDatabaseName("ix_prescriptions_baby_id_medication_id");
+
+                    b.HasIndex("BabyId", "UpdatedAt")
+                        .HasDatabaseName("ix_prescriptions_baby_id_updated_at");
+
+                    b.ToTable("prescriptions", (string)null);
                 });
 
             modelBuilder.Entity("BabyRoutine.Domain.Users.User", b =>
@@ -539,6 +809,80 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_invites_users_created_by");
                 });
 
+            modelBuilder.Entity("BabyRoutine.Domain.Catalog.Product", b =>
+                {
+                    b.HasOne("BabyRoutine.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_products_users_created_by");
+
+                    b.HasOne("BabyRoutine.Domain.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("MergedIntoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_products_products_merged_into_id");
+                });
+
+            modelBuilder.Entity("BabyRoutine.Domain.Catalog.ProductSubstance", b =>
+                {
+                    b.HasOne("BabyRoutine.Domain.Catalog.Product", null)
+                        .WithMany("Substances")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_product_substances_products_product_id");
+
+                    b.HasOne("BabyRoutine.Domain.Catalog.Substance", null)
+                        .WithMany()
+                        .HasForeignKey("SubstanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_product_substances_substances_substance_id");
+
+                    b.OwnsOne("BabyRoutine.Domain.Catalog.SubstanceStrength", "Strength", b1 =>
+                        {
+                            b1.Property<Guid>("ProductSubstanceProductId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("product_id");
+
+                            b1.Property<Guid>("ProductSubstanceSubstanceId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("substance_id");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(10, 3)
+                                .HasColumnType("numeric(10,3)")
+                                .HasColumnName("strength_amount");
+
+                            b1.Property<decimal?>("PerAmount")
+                                .HasPrecision(10, 3)
+                                .HasColumnType("numeric(10,3)")
+                                .HasColumnName("strength_per_amount");
+
+                            b1.Property<string>("PerUnit")
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("strength_per_unit");
+
+                            b1.Property<string>("Unit")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("strength_unit");
+
+                            b1.HasKey("ProductSubstanceProductId", "ProductSubstanceSubstanceId");
+
+                            b1.ToTable("product_substances");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductSubstanceProductId", "ProductSubstanceSubstanceId")
+                                .HasConstraintName("fk_product_substances_product_substances_product_id_substance_");
+                        });
+
+                    b.Navigation("Strength");
+                });
+
             modelBuilder.Entity("BabyRoutine.Domain.EventTypes.EventType", b =>
                 {
                     b.HasOne("BabyRoutine.Domain.Babies.Baby", null)
@@ -598,6 +942,12 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_medications_babies_baby_id");
 
+                    b.HasOne("BabyRoutine.Domain.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_medications_products_product_id");
+
                     b.OwnsOne("BabyRoutine.Domain.Medications.Dosage", "DefaultDosage", b1 =>
                         {
                             b1.Property<Guid>("MedicationId")
@@ -627,9 +977,115 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                     b.Navigation("DefaultDosage");
                 });
 
+            modelBuilder.Entity("BabyRoutine.Domain.Prescriptions.Prescription", b =>
+                {
+                    b.HasOne("BabyRoutine.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescriptions_babies_baby_id");
+
+                    b.HasOne("BabyRoutine.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescriptions_users_created_by");
+
+                    b.OwnsOne("BabyRoutine.Domain.Prescriptions.DoseRule", "Dose", b1 =>
+                        {
+                            b1.Property<Guid>("PrescriptionId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(10, 3)
+                                .HasColumnType("numeric(10,3)")
+                                .HasColumnName("dose_amount");
+
+                            b1.Property<bool>("PerKg")
+                                .HasColumnType("boolean")
+                                .HasColumnName("dose_per_kg");
+
+                            b1.Property<decimal?>("RoundingStep")
+                                .HasPrecision(10, 3)
+                                .HasColumnType("numeric(10,3)")
+                                .HasColumnName("dose_rounding_step");
+
+                            b1.Property<string>("Unit")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("dose_unit");
+
+                            b1.HasKey("PrescriptionId");
+
+                            b1.ToTable("prescriptions");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PrescriptionId")
+                                .HasConstraintName("fk_prescriptions_prescriptions_id");
+                        });
+
+                    b.OwnsOne("BabyRoutine.Domain.Prescriptions.PrescriptionSchedule", "Schedule", b1 =>
+                        {
+                            b1.Property<Guid>("PrescriptionId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<int?>("EveryMinutes")
+                                .HasColumnType("integer")
+                                .HasColumnName("every_minutes");
+
+                            b1.Property<string>("Indication")
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("indication");
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("kind");
+
+                            b1.Property<int?>("MaxDosesPer24h")
+                                .HasColumnType("integer")
+                                .HasColumnName("max_doses_per_24h");
+
+                            b1.Property<int?>("MinIntervalMinutes")
+                                .HasColumnType("integer")
+                                .HasColumnName("min_interval_minutes");
+
+                            b1.Property<string>("TimesOfDay")
+                                .HasMaxLength(144)
+                                .HasColumnType("character varying(144)")
+                                .HasColumnName("times_of_day");
+
+                            b1.HasKey("PrescriptionId");
+
+                            b1.ToTable("prescriptions");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PrescriptionId")
+                                .HasConstraintName("fk_prescriptions_prescriptions_id");
+                        });
+
+                    b.Navigation("Dose")
+                        .IsRequired();
+
+                    b.Navigation("Schedule")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BabyRoutine.Domain.Babies.Baby", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("BabyRoutine.Domain.Catalog.Product", b =>
+                {
+                    b.Navigation("Substances");
                 });
 #pragma warning restore 612, 618
         }

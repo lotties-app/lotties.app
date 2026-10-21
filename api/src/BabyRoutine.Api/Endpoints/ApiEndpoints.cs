@@ -17,7 +17,9 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapMemberEndpoints();
         api.MapBabyScopedGroup().MapInviteEndpoints();
         api.MapBabyScopedGroup().MapEventTypeEndpoints();
+        api.MapCatalogEndpoints();
         api.MapBabyScopedGroup().MapMedicationEndpoints().MapMeasurementEndpoints();
+        api.MapBabyScopedGroup().MapPrescriptionEndpoints();
         api.MapBabyScopedGroup().MapEventEndpoints();
         api.MapBabyScopedGroup().MapPredictionEndpoints();
         api.MapBabyScopedGroup().MapImportEndpoints();

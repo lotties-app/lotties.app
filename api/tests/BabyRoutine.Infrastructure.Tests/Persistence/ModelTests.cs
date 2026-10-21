@@ -22,7 +22,7 @@ public sealed class ModelTests
             .Order()
             .ToArray();
 
-        Assert.Equal(["babies", "baby_members", "event_types", "events", "invites", "measurements", "medications", "users"], tables);
+        Assert.Equal(["babies", "baby_members", "event_types", "events", "invites", "measurements", "medications", "prescriptions", "product_substances", "products", "substances", "users"], tables);
     }
 
     [Theory]

@@ -500,3 +500,197 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    ALTER TABLE medications ADD product_id uuid;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE TABLE prescriptions (
+        id uuid NOT NULL,
+        baby_id uuid NOT NULL,
+        medication_id uuid NOT NULL,
+        status character varying(16) NOT NULL,
+        dose_amount numeric(10,3) NOT NULL,
+        dose_unit character varying(20) NOT NULL,
+        dose_per_kg boolean NOT NULL,
+        dose_rounding_step numeric(10,3),
+        kind character varying(16) NOT NULL,
+        times_of_day character varying(144),
+        every_minutes integer,
+        min_interval_minutes integer,
+        max_doses_per_24h integer,
+        indication character varying(200),
+        interval_group character varying(50),
+        start_date date NOT NULL,
+        end_date date,
+        prescriber character varying(100),
+        instructions character varying(1000),
+        created_by uuid NOT NULL,
+        created_at timestamp with time zone NOT NULL,
+        updated_at timestamp with time zone NOT NULL,
+        client_updated_at timestamp with time zone NOT NULL,
+        deleted_at timestamp with time zone,
+        CONSTRAINT pk_prescriptions PRIMARY KEY (id),
+        CONSTRAINT fk_prescriptions_babies_baby_id FOREIGN KEY (baby_id) REFERENCES babies (id) ON DELETE RESTRICT,
+        CONSTRAINT fk_prescriptions_users_created_by FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE RESTRICT
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE TABLE products (
+        id uuid NOT NULL,
+        name character varying(100) NOT NULL,
+        normalized_name character varying(100) NOT NULL,
+        form character varying(16) NOT NULL,
+        country character(2) NOT NULL,
+        status character varying(16) NOT NULL,
+        created_by uuid,
+        merged_into_id uuid,
+        created_at timestamp with time zone NOT NULL,
+        CONSTRAINT pk_products PRIMARY KEY (id),
+        CONSTRAINT fk_products_products_merged_into_id FOREIGN KEY (merged_into_id) REFERENCES products (id) ON DELETE RESTRICT,
+        CONSTRAINT fk_products_users_created_by FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE TABLE substances (
+        id uuid NOT NULL,
+        key character varying(50) NOT NULL,
+        name_en character varying(100) NOT NULL,
+        name_pt_br character varying(100) NOT NULL,
+        synonyms character varying(520) NOT NULL,
+        created_at timestamp with time zone NOT NULL,
+        CONSTRAINT pk_substances PRIMARY KEY (id)
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE TABLE product_substances (
+        product_id uuid NOT NULL,
+        substance_id uuid NOT NULL,
+        strength_amount numeric(10,3),
+        strength_unit character varying(20),
+        strength_per_amount numeric(10,3),
+        strength_per_unit character varying(20),
+        CONSTRAINT pk_product_substances PRIMARY KEY (product_id, substance_id),
+        CONSTRAINT fk_product_substances_products_product_id FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+        CONSTRAINT fk_product_substances_substances_substance_id FOREIGN KEY (substance_id) REFERENCES substances (id) ON DELETE RESTRICT
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    INSERT INTO substances (id, created_at, key, name_en, name_pt_br, synonyms)
+    VALUES ('1765da22-94c0-46b7-b321-4feb5f3ad86e', TIMESTAMPTZ '2026-10-21T00:00:00+00:00', 'paracetamol', 'Paracetamol', 'Paracetamol', 'Acetaminophen');
+    INSERT INTO substances (id, created_at, key, name_en, name_pt_br, synonyms)
+    VALUES ('2f468145-66a8-4fad-a6c1-45ce69aaeaa3', TIMESTAMPTZ '2026-10-21T00:00:00+00:00', 'simethicone', 'Simethicone', 'Simeticona', '');
+    INSERT INTO substances (id, created_at, key, name_en, name_pt_br, synonyms)
+    VALUES ('46e6ebde-ff2c-4e67-a132-2ff1ef9b1c66', TIMESTAMPTZ '2026-10-21T00:00:00+00:00', 'cholecalciferol', 'Cholecalciferol', 'Colecalciferol', 'Vitamin D3');
+    INSERT INTO substances (id, created_at, key, name_en, name_pt_br, synonyms)
+    VALUES ('cce5fca3-cf4a-4099-b9fc-ded1a076ca1f', TIMESTAMPTZ '2026-10-21T00:00:00+00:00', 'metamizole', 'Metamizole', 'Dipirona', 'Dipyrone');
+    INSERT INTO substances (id, created_at, key, name_en, name_pt_br, synonyms)
+    VALUES ('cf40d2c1-711c-4ffa-9754-06f5c6844142', TIMESTAMPTZ '2026-10-21T00:00:00+00:00', 'ibuprofen', 'Ibuprofen', 'Ibuprofeno', '');
+    INSERT INTO substances (id, created_at, key, name_en, name_pt_br, synonyms)
+    VALUES ('d71efa75-1cb2-46fe-a019-b4d4a9df1710', TIMESTAMPTZ '2026-10-21T00:00:00+00:00', 'limosilactobacillus_reuteri', 'Limosilactobacillus reuteri', 'Limosilactobacillus reuteri', 'Lactobacillus reuteri');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_medications_product_id ON medications (product_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_prescriptions_baby_id_medication_id ON prescriptions (baby_id, medication_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_prescriptions_baby_id_updated_at ON prescriptions (baby_id, updated_at);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_prescriptions_created_by ON prescriptions (created_by);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_product_substances_substance_id ON product_substances (substance_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_products_created_by ON products (created_by);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE INDEX ix_products_merged_into_id ON products (merged_into_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE UNIQUE INDEX ix_products_normalized_name_form_country ON products (normalized_name, form, country) WHERE merged_into_id IS NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    CREATE UNIQUE INDEX ix_substances_key ON substances (key);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    ALTER TABLE medications ADD CONSTRAINT fk_medications_products_product_id FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021104705_MedicationsPrescriptionsCatalog') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021104705_MedicationsPrescriptionsCatalog', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

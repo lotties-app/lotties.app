@@ -6,6 +6,9 @@ public interface IMeasurementRepository
     /// <summary>The baby's measurements, newest date first; not tracked.</summary>
     Task<IReadOnlyList<Measurement>> ListForBabyAsync(Guid babyId, CancellationToken cancellationToken = default);
 
+    /// <summary>The baby's measurement with a weight on the latest date (newest created first on ties), or <c>null</c>; not tracked.</summary>
+    Task<Measurement?> FindLatestWithWeightAsync(Guid babyId, CancellationToken cancellationToken = default);
+
     /// <summary>The measurement with <paramref name="measurementId"/> whatever baby it belongs to; tracked for changes.</summary>
     Task<Measurement?> FindAsync(Guid measurementId, CancellationToken cancellationToken = default);
 

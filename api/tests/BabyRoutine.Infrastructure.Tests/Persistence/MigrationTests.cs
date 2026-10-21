@@ -34,12 +34,12 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningFellAsleepThenConditionalFields()
+    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningFellAsleepConditionalFieldsThenMedications()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));

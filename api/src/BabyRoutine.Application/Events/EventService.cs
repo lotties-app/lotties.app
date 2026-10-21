@@ -2,6 +2,7 @@ using BabyRoutine.Application.Users;
 using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.EventTypes;
 using BabyRoutine.Domain.Exceptions;
+using BabyRoutine.Domain.Prescriptions;
 using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Application.Events;
@@ -13,12 +14,15 @@ namespace BabyRoutine.Application.Events;
 /// Concurrent creates of one client id resolve to a single row: the loser reloads the winner and applies its request as
 /// an edit. Payloads are checked against the type's field definitions (<see cref="EventType.EnsureValidPayload"/>) on
 /// create and on every edit that changes the type or payload or completes a running event, so an unchanged legacy
-/// payload never blocks an edit of times or notes.
+/// payload never blocks an edit of times or notes. Built-in medication events are checked at the same moments for the
+/// prescription members of their entries (<see cref="MedicationDosePayload"/>): a referenced prescription must be one of
+/// the baby's (soft-deleted included) for the entry's medication.
 /// </remarks>
 internal sealed class EventService : IEventService
 {
     private readonly IEventRepository _events;
     private readonly IEventTypeRepository _eventTypes;
+    private readonly IPrescriptionRepository _prescriptions;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<EventService> _logger;
@@ -26,12 +30,14 @@ internal sealed class EventService : IEventService
     public EventService(
         IEventRepository events,
         IEventTypeRepository eventTypes,
+        IPrescriptionRepository prescriptions,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
         ILogger<EventService> logger)
     {
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _eventTypes = eventTypes ?? throw new ArgumentNullException(nameof(eventTypes));
+        _prescriptions = prescriptions ?? throw new ArgumentNullException(nameof(prescriptions));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -76,6 +82,7 @@ internal sealed class EventService : IEventService
     {
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
         eventType.EnsureValidPayload(request.Payload, request.EndedAt);
+        await EnsurePrescriptionReferencesAsync(babyId, request, cancellationToken);
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var created = Event.Create(
             eventId,
@@ -104,7 +111,7 @@ internal sealed class EventService : IEventService
         }
 
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
-        EnsureValidEditPayload(existing, eventType, request);
+        await EnsureValidEditPayloadAsync(babyId, existing, eventType, request, cancellationToken);
         existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
         return new UpsertEventResult(existing, Created: false);
@@ -129,12 +136,27 @@ internal sealed class EventService : IEventService
         return eventType?.IsAvailableTo(babyId) == true ? eventType : throw new EventTypeNotAvailableException(eventTypeId, babyId);
     }
 
-    private static void EnsureValidEditPayload(Event existing, EventType eventType, UpsertEventRequest request)
+    private async Task EnsureValidEditPayloadAsync(Guid babyId, Event existing, EventType eventType, UpsertEventRequest request, CancellationToken cancellationToken)
     {
-        if (existing.NeedsPayloadCheck(request.TypeId, request.Payload, request.EndedAt))
+        if (!existing.NeedsPayloadCheck(request.TypeId, request.Payload, request.EndedAt))
         {
-            eventType.EnsureValidPayload(request.Payload, request.EndedAt);
+            return;
         }
+
+        eventType.EnsureValidPayload(request.Payload, request.EndedAt);
+        await EnsurePrescriptionReferencesAsync(babyId, request, cancellationToken);
+    }
+
+    private async Task EnsurePrescriptionReferencesAsync(Guid babyId, UpsertEventRequest request, CancellationToken cancellationToken)
+    {
+        var references = request.TypeId == BuiltInEventTypes.MedicationId ? MedicationDosePayload.CheckExtensions(request.Payload) : [];
+        if (references.Count == 0)
+        {
+            return;
+        }
+
+        var found = await _prescriptions.FindManyAsync(references.Select(reference => reference.PrescriptionId).ToArray(), cancellationToken);
+        MedicationDosePayload.EnsureReferencesValid(babyId, references, found);
     }
 
     private static EventSyncCursor? StartingPoint(ListEventChangesRequest request) => request switch

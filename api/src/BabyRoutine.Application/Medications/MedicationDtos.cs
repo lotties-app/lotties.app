@@ -38,6 +38,9 @@ public sealed record MedicationResponse
 
     public bool IsUsual { get; init; }
 
+    /// <summary>The shared catalog product this medication is linked to, if any.</summary>
+    public Guid? ProductId { get; init; }
+
     public DateTimeOffset CreatedAt { get; init; }
 
     public static implicit operator MedicationResponse(Medication medication)
@@ -51,15 +54,22 @@ public sealed record MedicationResponse
             DefaultDosage = medication.DefaultDosage is null ? null : (DosageDto)medication.DefaultDosage,
             Notes = medication.Notes,
             IsUsual = medication.IsUsual,
+            ProductId = medication.ProductId,
             CreatedAt = medication.CreatedAt,
         };
     }
 }
 
-/// <summary>Body of <c>PUT /api/v1/babies/{babyId}/medications/{medicationId}</c>: the full editable state.</summary>
+/// <summary>
+/// Body of <c>PUT /api/v1/babies/{babyId}/medications/{medicationId}</c>: the full editable state. <see cref="Name"/> is
+/// required unless <see cref="ProductId"/> links a catalog product, whose name is then used (the baby's own name, a
+/// nickname, wins when given). Omitting <see cref="ProductId"/> removes the link.
+/// </summary>
 public sealed record UpsertMedicationRequest
 {
-    public required string Name { get; init; }
+    public string? Name { get; init; }
+
+    public Guid? ProductId { get; init; }
 
     public DosageDto? DefaultDosage { get; init; }
 

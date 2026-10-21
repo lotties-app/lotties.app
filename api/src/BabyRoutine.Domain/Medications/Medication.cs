@@ -2,7 +2,10 @@ using BabyRoutine.Domain.Common;
 
 namespace BabyRoutine.Domain.Medications;
 
-/// <summary>A medication in a baby's catalog. Usual medications are listed first when logging.</summary>
+/// <summary>
+/// A medication in a baby's catalog. Usual medications are listed first when logging. It may be linked to a product of
+/// the shared catalog (<see cref="ProductId"/>); the baby's own name (a nickname) stays the one shown.
+/// </summary>
 public sealed class Medication
 {
     public const int NameMaxLength = 100;
@@ -31,25 +34,34 @@ public sealed class Medication
 
     public bool IsUsual { get; private set; }
 
+    /// <summary>The shared catalog product this medication is, if the parent linked one.</summary>
+    public Guid? ProductId { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public static Medication Create(Guid babyId, string name, Dosage? defaultDosage, string? notes, bool isUsual, DateTimeOffset createdAt) =>
         Create(Guid.NewGuid(), babyId, name, defaultDosage, notes, isUsual, createdAt);
 
     /// <summary>Creates a medication with a client-generated id, for idempotent upserts.</summary>
-    public static Medication Create(Guid id, Guid babyId, string name, Dosage? defaultDosage, string? notes, bool isUsual, DateTimeOffset createdAt)
+    public static Medication Create(Guid id, Guid babyId, string name, Dosage? defaultDosage, string? notes, bool isUsual, DateTimeOffset createdAt, Guid? productId = null)
     {
         var medication = new Medication(Ids.Required(id, nameof(id)), Ids.Required(babyId, nameof(babyId)), UtcTime.Normalize(createdAt));
         medication.UpdateDetails(name, defaultDosage, notes);
         medication.IsUsual = isUsual;
+        medication.ProductId = productId;
         return medication;
     }
 
-    /// <summary>Applies the full editable state of the medication (details and the usual flag).</summary>
-    public void Edit(string name, Dosage? defaultDosage, string? notes, bool isUsual)
+    /// <summary>The name to store: the requested one, or the linked product's name when none was given.</summary>
+    public static string? NameOrProductName(string? requestedName, string? productName) =>
+        string.IsNullOrWhiteSpace(requestedName) ? productName : requestedName;
+
+    /// <summary>Applies the full editable state of the medication (details, the usual flag and the product link).</summary>
+    public void Edit(string name, Dosage? defaultDosage, string? notes, bool isUsual, Guid? productId = null)
     {
         UpdateDetails(name, defaultDosage, notes);
         IsUsual = isUsual;
+        ProductId = productId;
     }
 
     public void UpdateDetails(string name, Dosage? defaultDosage, string? notes)

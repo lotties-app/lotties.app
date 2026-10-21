@@ -20,6 +20,15 @@ internal sealed class EfMeasurementRepository(BabyRoutineDbContext context, Uniq
             .ThenBy(measurement => measurement.Id)
             .ToListAsync(cancellationToken);
 
+    public Task<Measurement?> FindLatestWithWeightAsync(Guid babyId, CancellationToken cancellationToken = default) =>
+        context.Measurements
+            .AsNoTracking()
+            .Where(measurement => measurement.BabyId == babyId && measurement.WeightKg != null)
+            .OrderByDescending(measurement => measurement.Date)
+            .ThenByDescending(measurement => measurement.CreatedAt)
+            .ThenBy(measurement => measurement.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<Measurement?> FindAsync(Guid measurementId, CancellationToken cancellationToken = default) =>
         context.Measurements.SingleOrDefaultAsync(measurement => measurement.Id == measurementId, cancellationToken);
 

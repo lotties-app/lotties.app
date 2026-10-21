@@ -1,4 +1,5 @@
 using BabyRoutine.Domain.Babies;
+using BabyRoutine.Domain.Catalog;
 using BabyRoutine.Domain.Medications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,6 +22,8 @@ internal sealed class MedicationConfiguration : IEntityTypeConfiguration<Medicat
             dosage.Property(value => value.Unit).HasMaxLength(Dosage.UnitMaxLength).HasColumnName("default_dose_unit");
         });
         builder.HasIndex(medication => medication.BabyId);
+        builder.HasIndex(medication => medication.ProductId);
+        builder.HasOne<Product>().WithMany().HasForeignKey(medication => medication.ProductId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne<Baby>().WithMany().HasForeignKey(medication => medication.BabyId).OnDelete(DeleteBehavior.Restrict);
     }
 }

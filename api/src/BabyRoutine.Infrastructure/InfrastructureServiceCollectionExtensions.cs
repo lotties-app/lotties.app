@@ -32,6 +32,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IInviteRepository, EfInviteRepository>();
         services.AddScoped<IMedicationRepository, EfMedicationRepository>();
         services.AddScoped<IMeasurementRepository, EfMeasurementRepository>();
+        services.AddScoped<BabyRoutine.Domain.Catalog.ICatalogRepository, EfCatalogRepository>();
+        services.AddScoped<BabyRoutine.Domain.Prescriptions.IPrescriptionRepository, EfPrescriptionRepository>();
+        services.AddScoped<BabyRoutine.Domain.Prescriptions.IMedicationDoseHistoryRepository, EfMedicationDoseHistoryRepository>();
         services.AddScoped<IEventRepository, EfEventRepository>();
         services.AddScoped<IEventTypeRepository, EfEventTypeRepository>();
         services.AddScoped<BabyRoutine.Domain.Imports.IImportRepository, EfImportRepository>();

@@ -1,8 +1,10 @@
 using BabyRoutine.Domain.Babies;
+using BabyRoutine.Domain.Catalog;
 using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.EventTypes;
 using BabyRoutine.Domain.Measurements;
 using BabyRoutine.Domain.Medications;
+using BabyRoutine.Domain.Prescriptions;
 using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,6 +32,15 @@ public sealed class BabyRoutineDbContext(DbContextOptions<BabyRoutineDbContext> 
     public DbSet<Medication> Medications => Set<Medication>();
 
     public DbSet<Measurement> Measurements => Set<Measurement>();
+
+    /// <summary>Prescriptions including soft-deleted ones (no query filter: delta sync must see deletions).</summary>
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+
+    public DbSet<Substance> Substances => Set<Substance>();
+
+    public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<ProductSubstance> ProductSubstances => Set<ProductSubstance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BabyRoutineDbContext).Assembly);

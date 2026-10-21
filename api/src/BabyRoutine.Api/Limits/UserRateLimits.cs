@@ -10,7 +10,8 @@ namespace BabyRoutine.Api.Limits;
 /// <summary>
 /// Fixed one-minute windows per user (the OIDC <c>sub</c>; anonymous requests share a window per remote address):
 /// every request counts against <see cref="RequestLimitsOptions.PermitsPerMinute"/>, import requests also against
-/// <see cref="RequestLimitsOptions.ImportPermitsPerMinute"/>. A rejected request is a 429 problem with <c>code</c>
+/// <see cref="RequestLimitsOptions.ImportPermitsPerMinute"/>, catalog product creations against
+/// <see cref="RequestLimitsOptions.CatalogWritePermitsPerMinute"/>. A rejected request is a 429 problem with <c>code</c>
 /// <see cref="ErrorCode"/> and a <c>Retry-After</c> header.
 /// </summary>
 internal static class UserRateLimits
@@ -26,6 +27,7 @@ internal static class UserRateLimits
         rateLimiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => PerUser(context, limits.PermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.Import, context => PerUser(context, limits.ImportPermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.CatalogWrite, context => PerUser(context, limits.CatalogWritePermitsPerMinute));
         rateLimiter.OnRejected = WriteRejectionAsync;
     }
 

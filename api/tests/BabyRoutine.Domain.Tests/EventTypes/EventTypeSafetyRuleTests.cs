@@ -43,7 +43,14 @@ public sealed class EventTypeSafetyRuleTests
     public void Names_MatchTheWebIconRegistry()
     {
         var registry = File.ReadAllText(FindInRepository(Path.Combine("web", "src", "events", "iconRegistry.ts")));
-        var webNames = System.Text.RegularExpressions.Regex.Matches(registry, @"\b([a-z][a-z_]*)['""]?\s*[:,]\s*[A-Z]\w*Icon\b")
+        // The registry maps each allowed Material name to the Tabler icon that draws it: `name: 'tabler-icon',`
+        // entries inside `Object.entries({ ... } satisfies ...)`.
+        var entries = System.Text.RegularExpressions.Regex.Match(
+            registry,
+            @"Object\.entries\(\{(?<body>.*?)\}\s*satisfies",
+            System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.True(entries.Success, "iconRegistry.ts: the Object.entries({ ... } satisfies ...) block was not found");
+        var webNames = System.Text.RegularExpressions.Regex.Matches(entries.Groups["body"].Value, @"\b([a-z][a-z_]*)\s*:\s*'[a-z0-9-]+'")
             .Select(match => match.Groups[1].Value)
             .Distinct(StringComparer.Ordinal);
 
