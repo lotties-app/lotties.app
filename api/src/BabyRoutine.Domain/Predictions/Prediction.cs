@@ -42,13 +42,19 @@ public sealed record DurationEstimate(TimeSpan Median, int SampleCount);
 
 /// <summary>A prediction for one event type.</summary>
 /// <param name="SampleCount">Number of intervals behind <see cref="NextStart"/>.</param>
+/// <param name="AnchorAt">
+/// The instant (UTC) the next start is measured from: the last start (<see cref="PredictionBasis.StartInterval"/>), the
+/// end of the last sleep session (<see cref="PredictionBasis.AwakeWindow"/>), or the expected end of the one in progress.
+/// Domain only, not on the wire (push reminders key one nap window per anchor).
+/// </param>
 public sealed record Prediction(
     EventTypeKey TypeKey,
     NextStartWindow NextStart,
     DurationEstimate? ExpectedDuration,
     PredictionConfidence Confidence,
     int SampleCount,
-    PredictionReason Reason);
+    PredictionReason Reason,
+    DateTimeOffset AnchorAt);
 
 /// <summary>An event type that has events but too few usable intervals to predict.</summary>
 public sealed record InsufficientPredictionData(EventTypeKey TypeKey, int SampleCount, int RequiredSamples, TimeSpan LookBack)

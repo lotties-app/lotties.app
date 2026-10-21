@@ -63,7 +63,7 @@ internal sealed class TypePredictor
             gaps.Phase,
             duration,
             anchor.FromEventInProgress);
-        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason);
+        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, Utc(anchor.At));
     }
 
     /// <summary>

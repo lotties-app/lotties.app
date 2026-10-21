@@ -15,7 +15,8 @@ public sealed record MedicationStatusInput(
 
 /// <summary>
 /// The computed state of one active prescription (see <see cref="MedicationStatusCalculator"/> for the rules).
-/// <see cref="OverdueBy"/> and <see cref="NextScheduledAt"/> are <c>null</c> for as-needed prescriptions.
+/// <see cref="OverdueBy"/>, <see cref="NextScheduledAt"/> and <see cref="OverdueSlotAt"/> are <c>null</c> for as-needed
+/// prescriptions. <see cref="OverdueSlotAt"/> is the open slot <see cref="OverdueBy"/> counts from (<c>now - OverdueBy</c>).
 /// </summary>
 public sealed record MedicationStatus(
     Prescription Prescription,
@@ -29,7 +30,8 @@ public sealed record MedicationStatus(
     int DosesLast24h,
     bool LimitReached,
     SuggestedDose? SuggestedDose,
-    IReadOnlyList<Guid> GroupMemberIds);
+    IReadOnlyList<Guid> GroupMemberIds,
+    DateTimeOffset? OverdueSlotAt = null);
 
 /// <summary>
 /// Pure status of a baby's active prescriptions, mirrored by the web client offline. It never blocks anything: it
@@ -95,7 +97,8 @@ public static class MedicationStatusCalculator
             recent.Count,
             limitUntil is not null,
             prescription.Dose.SuggestFor(input.LatestWeight, clock.Today),
-            members.Select(member => member.Id).ToArray());
+            members.Select(member => member.Id).ToArray(),
+            schedule.OverdueSlotAt);
     }
 
     private static IReadOnlyList<MedicationDose> MedicationDosesOf(Prescription prescription, IReadOnlyList<MedicationDose> doses) =>
@@ -129,12 +132,14 @@ public static class MedicationStatusCalculator
         };
 }
 
-/// <summary>The scheduled part of a status: the next scheduled time and how late the current dose is.</summary>
-internal sealed record ScheduleState(DateTimeOffset? NextAt, TimeSpan? OverdueBy)
+/// <summary>The scheduled part of a status: the next scheduled time and the open slot the current dose is late for.</summary>
+internal sealed record ScheduleState(DateTimeOffset? NextAt, DateTimeOffset? OverdueSlotAt, DateTimeOffset Now)
 {
-    public static ScheduleState None { get; } = new(null, null);
+    public static ScheduleState None { get; } = new(null, null, default);
 
-    public static ScheduleState Due(DateTimeOffset nextAt, DateTimeOffset now) => new(nextAt, nextAt < now ? now - nextAt : null);
+    public TimeSpan? OverdueBy => OverdueSlotAt is { } slot ? Now - slot : null;
+
+    public static ScheduleState Due(DateTimeOffset nextAt, DateTimeOffset now) => new(nextAt, nextAt < now ? nextAt : null, now);
 }
 
 /// <summary>The current instant seen with the family's UTC offset.</summary>
@@ -162,7 +167,7 @@ internal static class ScheduledSlots
         var open = slots.Where(slot => !taken.Contains(slot.At)).ToArray();
         var next = open.Where(slot => slot.At > clock.Now).Select(slot => (DateTimeOffset?)slot.At).FirstOrDefault();
         var overdue = open.Where(slot => IsOverdue(slot, prescription, clock)).Select(slot => (DateTimeOffset?)slot.At).LastOrDefault();
-        return new ScheduleState(next, overdue is { } late ? clock.Now - late : null);
+        return new ScheduleState(next, overdue, clock.Now);
     }
 
     private static bool IsOverdue(Slot slot, Prescription prescription, LocalClock clock) =>
