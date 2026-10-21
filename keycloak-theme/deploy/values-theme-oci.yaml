@@ -21,7 +21,7 @@
 initContainers:
   - name: br-theme-init
     # CHANGE: ghcr.io/<owner>/lotties-keycloak-theme:<version> (route A) or your own registry (route B).
-    image: cr.homel4b.dev/baby-routine/keycloak-theme:0.3.0   # 0.1.0 pushed 2026-10-21; 0.2.0 (Lotties name) pushed same day; 0.3.0 renames the theme baby-routine -> lotties (build and push before upgrading) (route B, internal Harbor, private)
+    image: cr.homel4b.dev/lotties/keycloak-theme:0.3.0   # 0.1.0 pushed 2026-10-21; 0.2.0 (Lotties name) pushed same day; 0.3.0 renames the theme baby-routine -> lotties (build and push before upgrading) (route B, internal Harbor, private)
     # A fixed version tag never changes, so IfNotPresent is right. Use Always only with a floating tag.
     imagePullPolicy: IfNotPresent
     command: ["sh", "-c", "cp -R /theme/. /target/ && echo lotties theme copied"]
@@ -57,7 +57,7 @@ extraVolumeMounts:
     # Keycloak only reads the theme: mount it read-only.
     readOnly: true
 
-# The theme image is in the PRIVATE internal Harbor project cr.homel4b.dev/baby-routine (anonymous pulls get 401).
+# The theme image is in the PRIVATE internal Harbor project cr.homel4b.dev/lotties (anonymous pulls get 401).
 # The pod needs a pull secret in the `keycloak` namespace. The cluster already has `cr-homel4b` in the namespaces
 # abb, home-apps and infrastructure but NOT in keycloak. Create it there first (you run this; it copies a credential):
 #   kubectl -n infrastructure get secret cr-homel4b -o yaml #     | sed -e 's/namespace: infrastructure/namespace: keycloak/' -e '/resourceVersion:/d' -e '/uid:/d' -e '/creationTimestamp:/d' #     | kubectl -n keycloak apply -f -
