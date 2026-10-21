@@ -63,14 +63,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@v3
-      - name: Build and push ghcr.io/<owner>/baby-routine-keycloak-theme
+      - name: Build and push ghcr.io/<owner>/lotties-keycloak-theme
         uses: docker/build-push-action@v6
         with:
           context: keycloak-theme/deploy
           file: keycloak-theme/deploy/Containerfile.image
           push: true
           build-args: VERSION=${{ steps.v.outputs.version }}
-          tags: ghcr.io/${{ github.repository_owner }}/baby-routine-keycloak-theme:${{ steps.v.outputs.version }}
+          tags: ghcr.io/${{ github.repository_owner }}/lotties-keycloak-theme:${{ steps.v.outputs.version }}
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
       - name: Attach tarball and checksum to the release (tags only)
         if: github.ref_type == 'tag'
@@ -80,4 +80,4 @@ jobs:
         run: |
           cd keycloak-theme/deploy/out
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes "Lotties Keycloak login theme (directory mode)."
-          gh release upload "$TAG" baby-routine-theme.tar.gz baby-routine-theme.tar.gz.sha256 --clobber
+          gh release upload "$TAG" lotties-theme.tar.gz lotties-theme.tar.gz.sha256 --clobber

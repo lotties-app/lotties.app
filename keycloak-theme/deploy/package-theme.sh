@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds the Keycloak theme and packages it in "directory mode" (no jar, no `kc.sh build`):
-#   deploy/out/theme/baby-routine/login/...     plain directory (what Keycloak reads from /opt/.../themes/)
-#   deploy/out/baby-routine-theme.tar.gz        same tree, top-level folder "baby-routine"
-#   deploy/out/baby-routine-theme.tar.gz.sha256 checksum (hex digest + file name, `sha256sum -c` format)
+#   deploy/out/theme/lotties/login/...     plain directory (what Keycloak reads from /opt/.../themes/)
+#   deploy/out/lotties-theme.tar.gz        same tree, top-level folder "lotties"
+#   deploy/out/lotties-theme.tar.gz.sha256 checksum (hex digest + file name, `sha256sum -c` format)
 #
 # Usage (Linux, macOS, WSL; from anywhere):
 #   bash keycloak-theme/deploy/package-theme.sh              # builds the jar with build-in-podman.sh, then packages
@@ -13,7 +13,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 THEME_ROOT="$(cd "$HERE/.." && pwd)"
 OUT="$HERE/out"
-NAME=baby-routine
+NAME=lotties
 
 if [ "${SKIP_BUILD:-0}" != "1" ]; then
   bash "$THEME_ROOT/build-in-podman.sh"
@@ -53,9 +53,9 @@ trap 'rm -rf "$STAGE"' EXIT
 cp -R "$OUT/theme/$NAME" "$STAGE/$NAME"
 find "$STAGE" -type d -exec chmod 755 {} +
 find "$STAGE" -type f -exec chmod 644 {} +
-tar --sort=name --mtime='2000-01-01 00:00:00' --owner=0 --group=0 --numeric-owner     -C "$STAGE" -czf "$OUT/baby-routine-theme.tar.gz" "$NAME"
-(cd "$OUT" && sha256sum baby-routine-theme.tar.gz > baby-routine-theme.tar.gz.sha256)
+tar --sort=name --mtime='2000-01-01 00:00:00' --owner=0 --group=0 --numeric-owner     -C "$STAGE" -czf "$OUT/lotties-theme.tar.gz" "$NAME"
+(cd "$OUT" && sha256sum lotties-theme.tar.gz > lotties-theme.tar.gz.sha256)
 
 echo "Theme directory : $OUT/theme/$NAME  ($(find "$OUT/theme/$NAME" -type f | wc -l) files, $(du -sh "$OUT/theme/$NAME" | cut -f1))"
-echo "Tarball         : $OUT/baby-routine-theme.tar.gz  ($(du -h "$OUT/baby-routine-theme.tar.gz" | cut -f1))"
-echo "sha256          : $(cut -d' ' -f1 "$OUT/baby-routine-theme.tar.gz.sha256")"
+echo "Tarball         : $OUT/lotties-theme.tar.gz  ($(du -h "$OUT/lotties-theme.tar.gz" | cut -f1))"
+echo "sha256          : $(cut -d' ' -f1 "$OUT/lotties-theme.tar.gz.sha256")"

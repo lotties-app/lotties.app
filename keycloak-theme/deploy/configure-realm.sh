@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets a realm's login theme to baby-routine and enables internationalization with en + pt-BR, through the
+# Sets a realm's login theme to lotties and enables internationalization with en + pt-BR, through the
 # Keycloak admin REST API. Idempotent: only changes what differs, prints what it did. Needs curl and jq.
 #
 #   KC_URL=https://auth.example.com KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD=... \
@@ -10,7 +10,7 @@
 #   KC_REALM           realm to configure
 #   KC_ADMIN_USER      admin user of the `master` realm (or KC_ADMIN_REALM to authenticate in another realm)
 #   KC_ADMIN_PASSWORD  its password
-#   KC_THEME           theme name (default baby-routine)
+#   KC_THEME           theme name (default lotties)
 #   KC_DEFAULT_LOCALE  only used when the realm has no default locale yet (default en)
 # --dry-run: reads the realm and prints the intended changes, writes nothing.
 # Existing supported locales are kept; en and pt-BR are added when missing. An existing default locale is kept.
@@ -30,7 +30,7 @@ done
 command -v curl >/dev/null && command -v jq >/dev/null || { echo "curl and jq are required" >&2; exit 2; }
 
 URL="${KC_URL%/}"
-THEME="${KC_THEME:-baby-routine}"
+THEME="${KC_THEME:-lotties}"
 DEFLOC="${KC_DEFAULT_LOCALE:-en}"
 ADMIN_REALM="${KC_ADMIN_REALM:-master}"
 CURL=(curl -sS --max-time 30)

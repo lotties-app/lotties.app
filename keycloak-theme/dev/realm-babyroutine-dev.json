@@ -3,7 +3,7 @@
   "displayName": "Lotties (dev)",
   "enabled": true,
   "sslRequired": "none",
-  "loginTheme": "baby-routine",
+  "loginTheme": "lotties",
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "pt-BR"],
   "defaultLocale": "en",

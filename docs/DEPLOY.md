@@ -82,10 +82,10 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 
 ## Keycloak theme
 
-The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Lotties look: `keycloak-theme/` is a Keycloakify 11 login theme named `baby-routine` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `keycloak-theme/README.md`.
+The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Lotties look: `keycloak-theme/` is a Keycloakify 11 login theme named `lotties` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `keycloak-theme/README.md`.
 
-1. Get the jar: download the `baby-routine-keycloak-theme` artifact of the *Keycloak theme* workflow, or build it without Java on your machine: `bash keycloak-theme/build-in-podman.sh` (Windows: `powershell -File keycloak-theme/build-in-podman.ps1`, which calls WSL). The result is `keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar` (Keycloak 26 and newer; `KC_TARGETS=all` also builds the 22-25 jar).
-2. Put it in Keycloak's `providers/` folder. Container: mount it read-only at `/opt/keycloak/providers/baby-routine-theme.jar`:
+1. Get the jar: download the `lotties-keycloak-theme` artifact of the *Keycloak theme* workflow, or build it without Java on your machine: `bash keycloak-theme/build-in-podman.sh` (Windows: `powershell -File keycloak-theme/build-in-podman.ps1`, which calls WSL). The result is `keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar` (Keycloak 26 and newer; `KC_TARGETS=all` also builds the 22-25 jar).
+2. Put it in Keycloak's `providers/` folder. Container: mount it read-only at `/opt/keycloak/providers/lotties-theme.jar`:
 
    ```yaml
    services:
@@ -93,11 +93,11 @@ The login pages of Keycloak (sign in, register, reset password, verify email, on
        image: quay.io/keycloak/keycloak:26.8
        command: start   # or start-dev for tests
        volumes:
-         - ./baby-routine-theme.jar:/opt/keycloak/providers/baby-routine-theme.jar:ro
+         - ./lotties-theme.jar:/opt/keycloak/providers/lotties-theme.jar:ro
    ```
 
    In the optimized (production) mode run `kc.sh build` once after adding the jar (with the official image: build your own image `FROM quay.io/keycloak/keycloak` + `COPY` the jar + `RUN /opt/keycloak/bin/kc.sh build`). `start-dev` and a plain `start` after a restart pick it up.
-3. Realm settings > Themes > **Login theme** = `baby-routine`, Save. Enable Realm settings > Localization > Internationalization with `English` and `Portuguese (Brazil)` (the language switcher only appears when more than one language is enabled).
+3. Realm settings > Themes > **Login theme** = `lotties`, Save. Enable Realm settings > Localization > Internationalization with `English` and `Portuguese (Brazil)` (the language switcher only appears when more than one language is enabled).
 4. Keep the app client as before (public, PKCE `S256`). The theme changes no flow and no setting of the realm.
 
 Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action.
@@ -113,13 +113,13 @@ bash keycloak-theme/deploy/package-theme.sh        # builds the jar in podman (b
 # SKIP_BUILD=1 reuses keycloak-theme/dist_keycloak/*.jar
 ```
 
-Keycloakify emits only the jar; the script takes the `theme/baby-routine/` folder out of it, checks the structure Keycloak 26 expects (`login/theme.properties` with `parent=keycloak`, `login/*.ftl`, `login/resources/`, `login/messages/`) and writes `deploy/out/theme/baby-routine/` (plain directory), `deploy/out/baby-routine-theme.tar.gz` (top folder `baby-routine/`) and a `.sha256` file (all git-ignored).
+Keycloakify emits only the jar; the script takes the `theme/lotties/` folder out of it, checks the structure Keycloak 26 expects (`login/theme.properties` with `parent=keycloak`, `login/*.ftl`, `login/resources/`, `login/messages/`) and writes `deploy/out/theme/lotties/` (plain directory), `deploy/out/lotties-theme.tar.gz` (top folder `lotties/`) and a `.sha256` file (all git-ignored).
 
 ### 2. Choose a delivery route
 
 | Route | What | Values file |
 | --- | --- | --- |
-| **A** OCI image on ghcr.io | Workflow `.github/workflows/keycloak-theme-image.yml` (manual dispatch, or push a tag `keycloak-theme-v0.1.0`) publishes `ghcr.io/<owner>/baby-routine-keycloak-theme:<version>` and attaches the tarball and checksum to the release | `values-theme-oci.yaml` |
+| **A** OCI image on ghcr.io | Workflow `.github/workflows/keycloak-theme-image.yml` (manual dispatch, or push a tag `keycloak-theme-v0.1.0`) publishes `ghcr.io/<owner>/lotties-keycloak-theme:<version>` and attaches the tarball and checksum to the release | `values-theme-oci.yaml` |
 | **B** your own registry | `bash deploy/build-image.sh`, then push (below) | `values-theme-oci.yaml` with your image |
 | **C** no registry | init container (`curlimages/curl`) downloads the tarball from a URL (release asset), verifies its sha256, unpacks it | `values-theme-url.yaml` |
 | **Multi-theme (recommended for a shared IdP)** | one volume over the whole `themes/` dir, image with N theme folders | `values-theme-multi-oci.yaml` |
@@ -127,12 +127,12 @@ Keycloakify emits only the jar; the script takes the `theme/baby-routine/` folde
 Route B:
 
 ```bash
-IMAGE_REPO=registry.example.com/apps/baby-routine-keycloak-theme bash keycloak-theme/deploy/build-image.sh
+IMAGE_REPO=registry.example.com/apps/lotties-keycloak-theme bash keycloak-theme/deploy/build-image.sh
 podman login registry.example.com
-podman push registry.example.com/apps/baby-routine-keycloak-theme:0.1.0   # or PUSH=1 on the build command
+podman push registry.example.com/apps/lotties-keycloak-theme:0.1.0   # or PUSH=1 on the build command
 ```
 
-Then set that image in the values file (`initContainers[0].image`). A private registry or a private ghcr package needs a pull secret (`global.imagePullSecrets`, see the comments in the values file). Route C: copy the first column of `deploy/out/baby-routine-theme.tar.gz.sha256` into `THEME_SHA256` and the release-asset URL into `THEME_URL`; a wrong checksum fails the init container on purpose (during a rolling update the old pod keeps running).
+Then set that image in the values file (`initContainers[0].image`). A private registry or a private ghcr package needs a pull secret (`global.imagePullSecrets`, see the comments in the values file). Route C: copy the first column of `deploy/out/lotties-theme.tar.gz.sha256` into `THEME_SHA256` and the release-asset URL into `THEME_URL`; a wrong checksum fails the init container on purpose (during a rolling update the old pod keeps running).
 
 ### 3. Review, upgrade, check
 
@@ -151,19 +151,25 @@ helm upgrade keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --versio
   --reuse-values -f keycloak-theme/deploy/values-theme-oci.yaml
 
 kubectl -n keycloak rollout status statefulset/keycloak
-kubectl -n keycloak logs keycloak-0 -c br-theme-init          # "baby-routine theme copied"
-kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/themes/baby-routine/login
+kubectl -n keycloak logs keycloak-0 -c br-theme-init          # "lotties theme copied"
+kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/themes/lotties/login
 ```
 
-The StatefulSet restarts (single replica: a short outage of the IdP, plan it). Rendered with `helm template` against the owner's `values.yaml` plus each values file, the only differences from the current manifest are one initContainer, one volume and one volumeMount at exactly `/opt/bitnami/keycloak/themes/baby-routine` (multi variant: `/opt/bitnami/keycloak/themes`).
+The StatefulSet restarts (single replica: a short outage of the IdP, plan it). Rendered with `helm template` against the owner's `values.yaml` plus each values file, the only differences from the current manifest are one initContainer, one volume and one volumeMount at exactly `/opt/bitnami/keycloak/themes/lotties` (multi variant: `/opt/bitnami/keycloak/themes`).
 
-**Internal registry (route B, done for this project):** the theme image `cr.homel4b.dev/baby-routine/keycloak-theme:0.1.0` was built and pushed to the private Harbor project `baby-routine` with the robot account that is logged in inside WSL (`podman push`). Because the project is private, create the pull secret `cr-homel4b` in the `keycloak` namespace before the upgrade (command in `values-theme-oci.yaml`); the values file already references it under `image.pullSecrets`. To publish a new version: bump `keycloak-theme/package.json`, run `bash keycloak-theme/build-in-podman.sh && bash keycloak-theme/deploy/package-theme.sh && IMAGE_REPO=cr.homel4b.dev/baby-routine/keycloak-theme PUSH=1 bash keycloak-theme/deploy/build-image.sh`, update the tag in the values file and run the upgrade.
+**Internal registry (route B, done for this project):** the theme image `cr.homel4b.dev/baby-routine/keycloak-theme:0.1.0` was built and pushed to the private Harbor project `baby-routine` with the robot account that is logged in inside WSL (`podman push`). Because the project is private, create the pull secret `cr-homel4b` in the `keycloak` namespace before the upgrade (command in `values-theme-oci.yaml`); the values file already references it under `image.pullSecrets`. To publish a new version: bump `keycloak-theme/package.json`, run `bash keycloak-theme/build-in-podman.sh && bash keycloak-theme/deploy/package-theme.sh && IMAGE_REPO=cr.homel4b.dev/baby-routine/keycloak-theme PUSH=1 bash keycloak-theme/deploy/build-image.sh`, update the tag in the values file and run the upgrade. (Images up to 0.2.0 contain the theme under its old name `baby-routine`; from 0.3.0 the theme is named `lotties`, see "Renaming the theme" below. The Harbor project keeps the name `baby-routine`.)
 
-**Rollback:** `helm history keycloak -n keycloak`, then `helm rollback keycloak <previous-revision> -n keycloak`, or use `helm rollback` for a clean revert (re-running the upgrade without the theme file keeps the theme pieces, because `--reuse-values` keeps the previous user values). A realm that still names `baby-routine` while the theme is absent falls back to Keycloak's default look.
+**Renaming the theme (`baby-routine` to `lotties`, image 0.3.0):** the deployed realm still uses the login theme `baby-routine`, so change it in this order to avoid a window where the realm names a theme that is absent:
+
+1. Build and push the 0.3.0 image (contains `themes/lotties`), then `helm upgrade ... --reuse-values -f keycloak-theme/deploy/values-theme-oci.yaml` (the values file now mounts `/opt/bitnami/keycloak/themes/lotties`). Check: `kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/themes/lotties/login`. Until step 2 the realm names the now-absent `baby-routine` theme and shows Keycloak's default look (logins keep working).
+2. `bash keycloak-theme/deploy/configure-realm.sh --dry-run`, then without `--dry-run`: `KC_THEME` now defaults to `lotties`, and the script refuses to run until the server lists that theme.
+3. Rollback: `helm rollback keycloak <previous-revision> -n keycloak` (brings back the 0.2.0 image with `baby-routine`), then `KC_THEME=baby-routine bash keycloak-theme/deploy/configure-realm.sh` to point the realm back.
+
+**Rollback:** `helm history keycloak -n keycloak`, then `helm rollback keycloak <previous-revision> -n keycloak`, or use `helm rollback` for a clean revert (re-running the upgrade without the theme file keeps the theme pieces, because `--reuse-values` keeps the previous user values). A realm that still names `lotties` while the theme is absent falls back to Keycloak's default look.
 
 ### 4. Configure the realm
 
-Admin console: Realm settings > Themes > Login theme = `baby-routine`; Localization > Internationalization on, English + Portuguese (Brazil). Or scripted and idempotent (curl + jq; credentials only from the environment, never printed):
+Admin console: Realm settings > Themes > Login theme = `lotties`; Localization > Internationalization on, English + Portuguese (Brazil). Or scripted and idempotent (curl + jq; credentials only from the environment, never printed):
 
 ```bash
 export KC_URL=https://auth.homel4b.dev KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
@@ -178,15 +184,15 @@ Outside `--dry-run` it refuses to run when `/admin/serverinfo` does not list the
 The Keycloak is used by many apps, so mount **one** volume over the whole `themes/` directory instead of one mount per theme (`values-theme-multi-oci.yaml`): the init container copies `/themes/*` from an image into the `emptyDir`; the image can hold N folders. This hides nothing Keycloak needs: the built-in themes (`base`, `keycloak`, `keycloak.v2`) are inside the server jar, and the image's `themes/` directory only holds a `README.md` (checked on 26.0.5-debian-12-r0).
 
 ```bash
-bash keycloak-theme/deploy/package-multi.sh                      # out/themes/{baby-routine,example-other-app}
-MULTI=1 IMAGE_REPO=registry.example.com/apps/baby-routine-keycloak-themes bash keycloak-theme/deploy/build-image.sh
+bash keycloak-theme/deploy/package-multi.sh                      # out/themes/{lotties,example-other-app}
+MULTI=1 IMAGE_REPO=registry.example.com/apps/lotties-keycloak-themes bash keycloak-theme/deploy/build-image.sh
 ```
 
 Each client (or realm) picks its theme: client attribute `login_theme` (admin console: client > Settings > Login settings > Login theme) or the realm's Login theme; the client's choice wins.
 
 **Adding another theme:** (1) put a ready theme folder in `deploy/themes-extra/<name>/login/...`, or for a pure re-colouring a `deploy/themes-extra/<name>/skin.css`; (2) run `package-multi.sh` and build the image with a **new tag**; (3) set the tag in the values file and `helm upgrade`; (4) set the theme on the app's client. Every theme change restarts the shared IdP pod, so batch changes.
 
-*Skin without rebuild:* `make-child-theme.sh <name> <skin.css>` creates a child theme (`theme.properties` with `parent=baby-routine`, the parent's `.ftl` pages each with one extra `<link>` to `resources/css/skin.css`; JS, fonts, images and messages come from the parent through Keycloak's parent chain). The CSS overrides the theme's CSS variables (`--br-accent`, ...): use `html:root { ... }` for specificity (the theme stylesheet is injected after the skin link) and repeat the values inside `@media (prefers-color-scheme: light)` for the light scheme. The placeholder `example-other-app` (blue accent) is built this way. The extra `<link>` is needed because Keycloakify pages ignore the `styles=` theme property.
+*Skin without rebuild:* `make-child-theme.sh <name> <skin.css>` creates a child theme (`theme.properties` with `parent=lotties`, the parent's `.ftl` pages each with one extra `<link>` to `resources/css/skin.css`; JS, fonts, images and messages come from the parent through Keycloak's parent chain). The CSS overrides the theme's CSS variables (`--br-accent`, ...): use `html:root { ... }` for specificity (the theme stylesheet is injected after the skin link) and repeat the values inside `@media (prefers-color-scheme: light)` for the light scheme. The placeholder `example-other-app` (blue accent) is built this way. The extra `<link>` is needed because Keycloakify pages ignore the `styles=` theme property.
 
 *Hot reload alternative (development only):* a git-sync sidecar writing into the shared volume plus `--spi-theme--cache-themes=false --spi-theme--cache-templates=false` (`KC_SPI_THEME_CACHE_THEMES=false`, `KC_SPI_THEME_CACHE_TEMPLATES=false`) so Keycloak re-reads files. Do not run a production IdP like that: caches off slow every page, and a bad push breaks every app's login page without a rollout and without `helm rollback`. In production every theme change goes through an image tag and a pod restart.
 
@@ -200,8 +206,8 @@ The chart's `/opt/bitnami/keycloak/providers` is on the writable `empty-dir`, so
 
 ### Troubleshooting
 
-- **Theme not listed in the realm's Login theme dropdown:** check the init container log; `ls /opt/bitnami/keycloak/themes/baby-routine/login/theme.properties` in the pod (single layout: the volume is the theme folder itself, `login/` directly inside; multi layout: `themes/baby-routine/login/`); restart the pod after changes. Tarball extraction needs `--strip-components=1`.
-- **Blank page:** the page is a React SPA; open the browser console. 404s on `/resources/<hash>/login/baby-routine/dist/assets/...` mean the `resources/` tree is missing from the volume, or the ingress rewrites `/resources/`: forward `/resources/*` unchanged.
+- **Theme not listed in the realm's Login theme dropdown:** check the init container log; `ls /opt/bitnami/keycloak/themes/lotties/login/theme.properties` in the pod (single layout: the volume is the theme folder itself, `login/` directly inside; multi layout: `themes/lotties/login/`); restart the pod after changes. Tarball extraction needs `--strip-components=1`.
+- **Blank page:** the page is a React SPA; open the browser console. 404s on `/resources/<hash>/login/lotties/dist/assets/...` mean the `resources/` tree is missing from the volume, or the ingress rewrites `/resources/`: forward `/resources/*` unchanged.
 - **Fonts missing:** Fraunces ships in `resources/dist/assets` (woff2); check they are served with 200 and not blocked by a `font-src` CSP set at the ingress.
 - **Edited files do not show:** Keycloak caches themes and templates; restart the pod, or (development only) start with `--spi-theme--cache-themes=false --spi-theme--cache-templates=false`.
 - **Init container in `CrashLoopBackOff`:** image pull (secret), `sha256sum: FAILED` (route C), or a missing scratch `emptyDir` (`br-theme-dl` mounted at `/dl` in route C; the root filesystem is read-only).

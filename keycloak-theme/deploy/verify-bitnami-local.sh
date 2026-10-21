@@ -2,7 +2,7 @@
 # Local, throwaway proof that the theme directory works on the SAME image as the Kubernetes install:
 # docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0, started the way the Bitnami chart runs it
 # (production mode behind a proxy, read-only root filesystem, writable emptyDir-like volumes, theme mounted :ro at
-# /opt/bitnami/keycloak/themes/baby-routine). Containers/volumes are named br-kc-bn*; nothing else is touched.
+# /opt/bitnami/keycloak/themes/lotties). Containers/volumes are named br-kc-bn*; nothing else is touched.
 # Never contacts any cluster. Passwords are generated here (deploy/.runtime, gitignored) and never printed.
 #
 #   bash verify-bitnami-local.sh up        # start container, create the throwaway realm, configure-realm.sh dry-run/apply/re-apply
@@ -22,7 +22,7 @@ MODE="${MODE:-prod}"
 KC_IMAGE="${KC_IMAGE:-docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0}"
 # THEME_TARGET=/opt/bitnami/keycloak/themes mounts a whole multi-theme volume (verify-multi.sh).
 # THEME_DIR may also be a podman volume name (used by verify-init-routes.sh).
-THEME_DIR="${THEME_DIR:-$HERE/out/theme/baby-routine}"
+THEME_DIR="${THEME_DIR:-$HERE/out/theme/lotties}"
 REALM_FILE="$HERE/../dev/realm-babyroutine-dev.json"
 REALM=babyroutine-dev
 BASE="http://localhost:$PORT"
@@ -50,7 +50,7 @@ run_container() {
     -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD="$KC_ADMIN_PASSWORD"
     -e KEYCLOAK_HTTP_PORT="$PORT" -e KC_HTTP_MANAGEMENT_PORT="$MGMT_PORT"
     -e KEYCLOAK_DATABASE_VENDOR=dev-file
-    -v "$THEME_DIR:${THEME_TARGET:-/opt/bitnami/keycloak/themes/baby-routine}:ro")
+    -v "$THEME_DIR:${THEME_TARGET:-/opt/bitnami/keycloak/themes/lotties}:ro")
   if [ "$MODE" = prod ]; then
     # Mirrors the chart: production, proxy headers, TLS terminated outside, read-only root filesystem, and the
     # chart's `empty-dir` mounts (named volumes here; podman seeds them from the image like the prepare-write-dirs init container).
@@ -80,14 +80,14 @@ check() {
   local ok=1 loc html
   for loc in en pt-BR; do
     html="$(curl -fsS "$(login_url "$loc")")"
-    if grep -q "/login/baby-routine/dist/assets/" <<<"$html"; then
-      echo "PASS login page ($loc) references the baby-routine theme assets"
+    if grep -q "/login/lotties/dist/assets/" <<<"$html"; then
+      echo "PASS login page ($loc) references the lotties theme assets"
     else
       echo "FAIL login page ($loc) does not use the theme"; ok=0
     fi
   done
   local js
-  js="$(grep -o '/resources/[^"]*/login/baby-routine/dist/assets/index-[^"]*\.js' <<<"$html" | head -n1 || true)"
+  js="$(grep -o '/resources/[^"]*/login/lotties/dist/assets/index-[^"]*\.js' <<<"$html" | head -n1 || true)"
   if [ -n "$js" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE$js")" = 200 ]; then
     echo "PASS theme script is served (200): $js"
   else

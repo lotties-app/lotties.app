@@ -2,7 +2,7 @@
 
 A **login theme** for [Keycloak](https://www.keycloak.org/) that makes the sign-in, register, reset-password, verify-email, one-time-code and error pages look like the Lotties app. It is optional: the app works with any OpenID Connect provider and with Keycloak's own theme.
 
-- Built with [Keycloakify](https://www.keycloakify.dev/) 11 (React, Vite). Theme name: `baby-routine`.
+- Built with [Keycloakify](https://www.keycloakify.dev/) 11 (React, Vite). Theme name: `lotties`.
 - Lean on purpose: plain CSS on CSS variables, no UI kit. Built size (login page, English): see [Bundle size](#bundle-size).
 - Look: the "Linen and Ink" design tokens of the app (`web/src/theme/tokens.ts`), the Fraunces serif for the wordmark and titles, the app's own nap and bottle illustrations as hero art, filled 48 px inputs with the label above, a terracotta pill primary button, ink secondary buttons, status colours from the tokens, 2 px focus rings.
 - Light and dark follow `prefers-color-scheme` (dark when the browser has no preference, like the app). `prefers-reduced-motion` is respected. Works from 320 px to desktop.
@@ -21,12 +21,12 @@ A **login theme** for [Keycloak](https://www.keycloak.org/) that makes the sign-
          image: quay.io/keycloak/keycloak:26.8
          command: start
          volumes:
-           - ./baby-routine-theme.jar:/opt/keycloak/providers/baby-routine-theme.jar:ro
+           - ./lotties-theme.jar:/opt/keycloak/providers/lotties-theme.jar:ro
      ```
 
    - Package install: `cp keycloak-theme-for-kc-all-other-versions.jar /opt/keycloak/providers/`.
 3. Optimized (production) mode needs a rebuild of Keycloak's augmented image once: `bin/kc.sh build` (container: `FROM quay.io/keycloak/keycloak:26.8`, `COPY` the jar to `/opt/keycloak/providers/`, `RUN /opt/keycloak/bin/kc.sh build`). `start-dev` and a normal `start` after a restart pick the jar up without a separate build step.
-4. In the admin console: **Realm settings > Themes > Login theme = `baby-routine`**, Save.
+4. In the admin console: **Realm settings > Themes > Login theme = `lotties`**, Save.
 5. For the language switcher: **Realm settings > Localization**, turn *Internationalization* on and add *English* and *Portuguese (Brazil)* (`pt-BR`). The switcher is only shown when more than one language is enabled; the default language is the realm default or the browser language.
 6. Optional: replace the placeholder terms text (message key `termsText`) under Localization if you use the *Terms and conditions* required action.
 
@@ -62,7 +62,7 @@ powershell -File build-in-podman.ps1
 
 With Java 17+ and Maven installed locally: `npm ci && npm run build-keycloak-theme`.
 
-CI: `.github/workflows/keycloak-theme.yml` (manual, and on pushes that touch `keycloak-theme/**`) runs the tests, builds the jar with `setup-java` + Maven and uploads it as the `baby-routine-keycloak-theme` artifact.
+CI: `.github/workflows/keycloak-theme.yml` (manual, and on pushes that touch `keycloak-theme/**`) runs the tests, builds the jar with `setup-java` + Maven and uploads it as the `lotties-keycloak-theme` artifact.
 
 ### Bundle size
 
@@ -146,7 +146,7 @@ node dev/flows/run-flows.mjs     # Playwright: every page, light/dark, en/pt-BR,
 bash dev/kc-down.sh              # removes only br-kc-test and br-kc-smtp
 ```
 
-- `dev/realm-babyroutine-dev.json` is imported at start: realm `babyroutine-dev`, login theme `baby-routine`, en + pt-BR, registration, reset password, verify email, a public PKCE client `baby-routine-web` for `http://localhost:5190/*`. It contains no secrets and no users.
+- `dev/realm-babyroutine-dev.json` is imported at start: realm `babyroutine-dev`, login theme `lotties`, en + pt-BR, registration, reset password, verify email, a public PKCE client `baby-routine-web` for `http://localhost:5190/*`. It contains no secrets and no users.
 - `kc-up.sh` generates the admin and test-user passwords at run time into `dev/.runtime/secrets.env` (gitignored, never printed). The flows script creates its own users through the admin API and deletes them afterwards.
 - Screenshots go to `docs/design/screenshots/keycloak-<page>-<locale>-<scheme>-<width>.png` (gitignored). `node dev/preview-mocks.mjs select-authenticator.ftl,...` captures the pages that the default realm cannot reach (select authenticator, recovery code input, username/password steps) from the dev server mocks.
 - Not part of CI.

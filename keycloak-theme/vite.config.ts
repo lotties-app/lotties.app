@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [
     react(),
     keycloakify({
-      themeName: 'baby-routine',
+      themeName: 'lotties',
       accountThemeImplementation: 'none',
       ...(allTargets
         ? {}

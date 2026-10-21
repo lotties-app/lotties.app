@@ -26,7 +26,7 @@ podman run -d --name br-kc-smtp --network host \
 
 podman run -d --name br-kc-test --network host \
   -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD="$KC_ADMIN_PASSWORD" \
-  -v "$JAR:/opt/keycloak/providers/baby-routine-theme.jar:ro" \
+  -v "$JAR:/opt/keycloak/providers/lotties-theme.jar:ro" \
   -v "$ROOT/dev/realm-babyroutine-dev.json:/opt/keycloak/data/import/realm-babyroutine-dev.json:ro" \
   "$KC_IMAGE" start-dev --http-port=8085 --import-realm >/dev/null
 

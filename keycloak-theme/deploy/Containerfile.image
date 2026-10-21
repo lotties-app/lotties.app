@@ -1,16 +1,16 @@
 # Minimal "theme carrier" image for the init container route. Contents: /theme/login/... (the theme directory
-# `baby-routine`), nothing else of interest; busybox only supplies `cp` and a shell for the init container.
+# `lotties`), nothing else of interest; busybox only supplies `cp` and a shell for the init container.
 # Build (after package-theme.sh): bash keycloak-theme/deploy/build-image.sh
 FROM docker.io/library/busybox:1.37.0
 ARG VERSION=dev
-LABEL org.opencontainers.image.title="baby-routine-keycloak-theme" \
+LABEL org.opencontainers.image.title="lotties-keycloak-theme" \
       org.opencontainers.image.description="Lotties Keycloak login theme (directory mode) for init containers" \
       org.opencontainers.image.source="https://github.com/dev-vinicius-andrade/baby-routine" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.version="${VERSION}"
-COPY out/theme/baby-routine/ /theme/
+COPY out/theme/lotties/ /theme/
 # Any uid (Bitnami Keycloak runs as 1001) must be able to read it.
 RUN chmod -R u=rwX,go=rX /theme
 USER 1001:1001
 # Default: copy the theme to /target (mount the shared volume there).
-CMD ["sh", "-c", "cp -R /theme/. /target/ && echo baby-routine theme copied"]
+CMD ["sh", "-c", "cp -R /theme/. /target/ && echo lotties theme copied"]

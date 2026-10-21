@@ -8,8 +8,8 @@
 # server jar; the image's themes/ directory only holds README.md (verified on 26.0.5-debian-12-r0).
 initContainers:
   - name: br-themes-init
-    # CHANGE: ghcr.io/<owner>/baby-routine-keycloak-themes:<version> or your own registry. Bump the tag per change.
-    image: ghcr.io/dev-vinicius-andrade/baby-routine-keycloak-themes:0.1.0
+    # CHANGE: ghcr.io/<owner>/lotties-keycloak-themes:<version> or your own registry. Bump the tag per change.
+    image: ghcr.io/dev-vinicius-andrade/lotties-keycloak-themes:0.1.0
     imagePullPolicy: IfNotPresent
     command: ["sh", "-c", "cp -R /themes/. /target/ && echo themes copied"]
     securityContext:

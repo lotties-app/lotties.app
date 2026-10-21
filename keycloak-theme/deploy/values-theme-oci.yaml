@@ -1,4 +1,4 @@
-# Bitnami keycloak chart 24.0.5: install the baby-routine login theme from an OCI image (routes A and B).
+# Bitnami keycloak chart 24.0.5: install the lotties login theme from an OCI image (routes A and B).
 # Use as an extra values file AFTER your own one:
 #   helm upgrade keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 \
 #     -n keycloak --reuse-values -f values-theme-oci.yaml
@@ -7,9 +7,9 @@
 #
 # How it works
 #   1. Pod volume `br-theme` (emptyDir) is shared between an init container and Keycloak.
-#   2. Init container `br-theme-init` runs the theme image, which copies /theme (the `baby-routine` theme
+#   2. Init container `br-theme-init` runs the theme image, which copies /theme (the `lotties` theme
 #      directory: login/theme.properties, login/*.ftl, login/resources/...) into the volume.
-#   3. Keycloak mounts the volume at /opt/bitnami/keycloak/themes/baby-routine. The themes/ directory of the image
+#   3. Keycloak mounts the volume at /opt/bitnami/keycloak/themes/lotties. The themes/ directory of the image
 #      is read-only (readOnlyRootFilesystem: true), but a volume mounted on a sub-path is fine: the container
 #      runtime creates the mount point before it makes the root filesystem read-only.
 #   4. Keycloak scans themes/ at start, no `kc.sh build` needed (directory themes are not build-time providers).
@@ -20,11 +20,11 @@
 
 initContainers:
   - name: br-theme-init
-    # CHANGE: ghcr.io/<owner>/baby-routine-keycloak-theme:<version> (route A) or your own registry (route B).
-    image: cr.homel4b.dev/baby-routine/keycloak-theme:0.2.0   # 0.1.0 pushed 2026-10-21; 0.2.0 (Lotties name) pushed same day (route B, internal Harbor, private)
+    # CHANGE: ghcr.io/<owner>/lotties-keycloak-theme:<version> (route A) or your own registry (route B).
+    image: cr.homel4b.dev/baby-routine/keycloak-theme:0.3.0   # 0.1.0 pushed 2026-10-21; 0.2.0 (Lotties name) pushed same day; 0.3.0 renames the theme baby-routine -> lotties (build and push before upgrading) (route B, internal Harbor, private)
     # A fixed version tag never changes, so IfNotPresent is right. Use Always only with a floating tag.
     imagePullPolicy: IfNotPresent
-    command: ["sh", "-c", "cp -R /theme/. /target/ && echo baby-routine theme copied"]
+    command: ["sh", "-c", "cp -R /theme/. /target/ && echo lotties theme copied"]
     securityContext:
       runAsNonRoot: true
       runAsUser: 1001
@@ -53,7 +53,7 @@ extraVolumes:
 
 extraVolumeMounts:
   - name: br-theme
-    mountPath: /opt/bitnami/keycloak/themes/baby-routine
+    mountPath: /opt/bitnami/keycloak/themes/lotties
     # Keycloak only reads the theme: mount it read-only.
     readOnly: true
 

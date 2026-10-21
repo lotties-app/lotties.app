@@ -1,6 +1,6 @@
 {
-  "name": "baby-routine-keycloak-theme",
-  "version": "0.2.0",
+  "name": "lotties-keycloak-theme",
+  "version": "0.3.0",
   "private": true,
   "description": "Keycloak login theme for Lotties (Keycloakify 11)",
   "license": "AGPL-3.0-or-later",
