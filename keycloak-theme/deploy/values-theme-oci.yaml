@@ -21,7 +21,7 @@
 initContainers:
   - name: br-theme-init
     # CHANGE: ghcr.io/<owner>/baby-routine-keycloak-theme:<version> (route A) or your own registry (route B).
-    image: ghcr.io/dev-vinicius-andrade/baby-routine-keycloak-theme:0.1.0
+    image: cr.homel4b.dev/baby-routine/keycloak-theme:0.1.0   # pushed 2026-10-21 (route B, internal Harbor, private)
     # A fixed version tag never changes, so IfNotPresent is right. Use Always only with a floating tag.
     imagePullPolicy: IfNotPresent
     command: ["sh", "-c", "cp -R /theme/. /target/ && echo baby-routine theme copied"]
@@ -57,10 +57,13 @@ extraVolumeMounts:
     # Keycloak only reads the theme: mount it read-only.
     readOnly: true
 
-# Private ghcr.io package (the default for a new package is private until you make it public)? Create a pull
-# secret in the namespace and reference it here:
-#   kubectl -n keycloak create secret docker-registry br-ghcr --docker-server=ghcr.io \
-#     --docker-username=<user> --docker-password=<token with read:packages>
-# global:
-#   imagePullSecrets: [br-ghcr]
-# NB: setting global.imagePullSecrets replaces what the chart uses today; keep any existing entries.
+# The theme image is in the PRIVATE internal Harbor project cr.homel4b.dev/baby-routine (anonymous pulls get 401).
+# The pod needs a pull secret in the `keycloak` namespace. The cluster already has `cr-homel4b` in the namespaces
+# abb, home-apps and infrastructure but NOT in keycloak. Create it there first (you run this; it copies a credential):
+#   kubectl -n infrastructure get secret cr-homel4b -o yaml #     | sed -e 's/namespace: infrastructure/namespace: keycloak/' -e '/resourceVersion:/d' -e '/uid:/d' -e '/creationTimestamp:/d' #     | kubectl -n keycloak apply -f -
+# (or `kubectl -n keycloak create secret docker-registry cr-homel4b --docker-server=cr.homel4b.dev ...` with a Harbor robot
+#  account that has pull rights on the baby-routine project.) Then keep these lines:
+image:
+  pullSecrets:
+    - cr-homel4b
+# For a ghcr.io image instead: create `br-ghcr` (docker-registry secret, read:packages token) and use pullSecrets: [br-ghcr].

@@ -156,6 +156,8 @@ kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/them
 
 The StatefulSet restarts (single replica: a short outage of the IdP, plan it). Rendered with `helm template` against the owner's `values.yaml` plus each values file, the only differences from the current manifest are one initContainer, one volume and one volumeMount at exactly `/opt/bitnami/keycloak/themes/baby-routine` (multi variant: `/opt/bitnami/keycloak/themes`).
 
+**Internal registry (route B, done for this project):** the theme image `cr.homel4b.dev/baby-routine/keycloak-theme:0.1.0` was built and pushed to the private Harbor project `baby-routine` with the robot account that is logged in inside WSL (`podman push`). Because the project is private, create the pull secret `cr-homel4b` in the `keycloak` namespace before the upgrade (command in `values-theme-oci.yaml`); the values file already references it under `image.pullSecrets`. To publish a new version: bump `keycloak-theme/package.json`, run `bash keycloak-theme/build-in-podman.sh && bash keycloak-theme/deploy/package-theme.sh && IMAGE_REPO=cr.homel4b.dev/baby-routine/keycloak-theme PUSH=1 bash keycloak-theme/deploy/build-image.sh`, update the tag in the values file and run the upgrade.
+
 **Rollback:** `helm history keycloak -n keycloak`, then `helm rollback keycloak <previous-revision> -n keycloak`, or use `helm rollback` for a clean revert (re-running the upgrade without the theme file keeps the theme pieces, because `--reuse-values` keeps the previous user values). A realm that still names `baby-routine` while the theme is absent falls back to Keycloak's default look.
 
 ### 4. Configure the realm
