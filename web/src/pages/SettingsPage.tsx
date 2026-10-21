@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { AppearanceSection } from '../settings/AppearanceSection';
@@ -17,6 +18,8 @@ const ImportSection = lazy(() =>
 
 export function SettingsPage() {
   const { babies, baby } = useSelectedBaby();
+  // The header's sync icon links to /settings#sync.
+  const { hash } = useLocation();
 
   if (!babies) return <CircularProgress aria-label="Loading" />;
 
@@ -54,7 +57,7 @@ export function SettingsPage() {
       <SettingsSection id="appearance" title="Appearance">
         <AppearanceSection />
       </SettingsSection>
-      <SettingsSection id="sync" title="Sync">
+      <SettingsSection id="sync" title="Sync" defaultExpanded={hash === '#sync'}>
         <SyncSection />
       </SettingsSection>
     </Stack>

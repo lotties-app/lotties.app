@@ -23,9 +23,9 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        // Matches buildTheme() primary colour and the light CssBaseline background.
-        theme_color: '#1976d2',
-        background_color: '#ffffff',
+        // The night background (docs/DESIGN.md section 1); light mode is handled by the media metas.
+        theme_color: '#15132e',
+        background_color: '#15132e',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

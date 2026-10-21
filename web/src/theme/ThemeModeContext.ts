@@ -1,9 +1,13 @@
 import { createContext, useContext } from 'react';
-import type { ColorMode } from './theme';
+import type { ThemeMode } from './theme';
+import type { ResolvedMode } from './tokens';
 
 export interface ThemeModeApi {
-  mode: ColorMode;
-  toggleMode: () => void;
+  /** The user's choice. */
+  mode: ThemeMode;
+  /** What is actually shown (`system` resolved against the OS, dark when it has no preference). */
+  resolved: ResolvedMode;
+  setMode: (mode: ThemeMode) => void;
 }
 
 export const ThemeModeContext = createContext<ThemeModeApi | null>(null);

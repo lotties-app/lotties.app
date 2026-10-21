@@ -1,4 +1,5 @@
 import { clearCachedPredictions } from '../predictions/predictionsCache';
+import { clearPinned } from '../presets/pinnedStorage';
 import { clearSelectedBabyId } from '../baby/selectedBabyStorage';
 import type { BabyRoutineDb } from './database';
 
@@ -21,11 +22,12 @@ export async function deleteBabyRows(db: BabyRoutineDb, babyIds: string[]): Prom
   await db.babies.bulkDelete(babyIds);
 }
 
-/** Per-device leftovers outside IndexedDB: the saved selection and cached predictions. */
+/** Per-device leftovers outside IndexedDB: the saved selection, cached predictions and pinned presets. */
 export function clearBabyDeviceState(babyIds: string[]): void {
   for (const id of babyIds) {
     clearSelectedBabyId(id);
     clearCachedPredictions(id);
+    clearPinned(id);
   }
 }
 

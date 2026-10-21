@@ -1,16 +1,18 @@
 import { forgetSelectedBaby } from '../baby/selectedBabyStorage';
 import { clearAllCachedPredictions } from '../predictions/predictionsCache';
+import { clearAllPinned } from '../presets/pinnedStorage';
 
 /** Which account (its database name, not the raw subject) the entries below belong to. */
 const ACCOUNT_KEY = 'baby-routine.account';
 
 /**
- * Removes the account's localStorage entries: the selected baby and the cached predictions (all
- * keyed by baby). Device preferences such as the theme are kept.
+ * Removes the account's localStorage entries: the selected baby, the cached predictions and the pinned
+ * presets (all keyed by baby). Device preferences such as the theme are kept.
  */
 export function clearAccountDeviceState(): void {
   forgetSelectedBaby();
   clearAllCachedPredictions();
+  clearAllPinned();
   try {
     window.localStorage.removeItem(ACCOUNT_KEY);
   } catch {

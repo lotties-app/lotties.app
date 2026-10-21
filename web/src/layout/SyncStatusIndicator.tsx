@@ -6,6 +6,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import type { ReactElement } from 'react';
 import { useSyncStatus } from '../sync/SyncEngineContext';
 import type { SyncStatus } from '../sync/syncStatus';
+import { syncKind, syncLabel } from './syncPresentation';
 
 type Tone = 'default' | 'warning' | 'error';
 
@@ -15,34 +16,27 @@ interface Presentation {
   icon: ReactElement;
 }
 
-function failedSuffix(status: SyncStatus) {
-  return status.deadLetterCount > 0 ? ` · ${status.deadLetterCount} failed` : '';
-}
-
 /** Label, tone and icon for a sync status. */
 function presentSyncStatus(status: SyncStatus): Presentation {
-  const failed = failedSuffix(status);
-  if (status.authRequired) {
-    return { label: 'Sign in to sync', tone: 'warning', icon: <ErrorOutlineIcon /> };
+  const label = syncLabel(status);
+  switch (syncKind(status)) {
+    case 'auth':
+      return { label, tone: 'warning', icon: <ErrorOutlineIcon /> };
+    case 'syncing':
+      return { label, tone: 'default', icon: <CircularProgress size={14} /> };
+    case 'offline':
+      return { label, tone: 'warning', icon: <CloudOffIcon /> };
+    case 'error':
+      return { label, tone: 'error', icon: <ErrorOutlineIcon /> };
+    case 'pending':
+      return { label, tone: 'default', icon: <CloudUploadIcon /> };
+    case 'synced':
+      return {
+        label,
+        tone: status.deadLetterCount > 0 ? 'error' : 'default',
+        icon: <CloudDoneIcon />,
+      };
   }
-  if (status.state === 'syncing') {
-    return { label: 'Syncing…', tone: 'default', icon: <CircularProgress size={14} /> };
-  }
-  if (status.state === 'offline') {
-    return { label: `Offline${failed}`, tone: 'warning', icon: <CloudOffIcon /> };
-  }
-  if (status.state === 'error') {
-    return { label: `Sync error${failed}`, tone: 'error', icon: <ErrorOutlineIcon /> };
-  }
-  if (status.pendingCount > 0) {
-    return {
-      label: `${status.pendingCount} pending${failed}`,
-      tone: 'default',
-      icon: <CloudUploadIcon />,
-    };
-  }
-  const tone: Tone = status.deadLetterCount > 0 ? 'error' : 'default';
-  return { label: `Synced${failed}`, tone, icon: <CloudDoneIcon /> };
 }
 
 /** Compact sync state chip; the last error is available as a tooltip. */

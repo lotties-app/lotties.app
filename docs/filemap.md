@@ -78,3 +78,4 @@
 - web/src/pwa/ — reload prompt and install-app hook/button; web/scripts/generate-icons.mjs — regenerates PWA icons from web/public/icon.svg
 - web/src/session/ — per-account database naming, logout/leave cleanup, unsynced-changes dialog; web/src/util/ownProperty.ts — safe own-key lookups for server-provided keys
 - web/src/invite/ — invite link hand-off (token in URL fragment, parked in sessionStorage across login)
+- web/src/theme/ (tokens.ts palette/category tokens, theme.ts CSS-variables theme + overrides, mode system|dark|light), web/src/presets/ (Track presets: catalogue, resolve, status, pinnedStorage, actions with undo; pure logic, no UI), web/src/track/TrackSheet.tsx (Track sheet stub, part B), web/src/baby/formatAge.ts + babyColor.ts + BabyAvatar.tsx, web/src/layout/ (header TopBar/BabySwitcher/SyncIconButton, BottomNav with centre Add event button)

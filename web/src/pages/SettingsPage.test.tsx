@@ -551,13 +551,16 @@ describe('SettingsPage viewer', () => {
 });
 
 describe('SettingsPage appearance and sync', () => {
-  it('toggles the theme from the appearance section', async () => {
+  it('changes the theme mode from the appearance section', async () => {
     await setup();
     await openSection('Appearance');
-    const toggle = (await screen.findByRole('switch', { name: 'Dark theme' })) as HTMLInputElement;
-    expect(toggle.checked).toBe(false);
-    fireEvent.click(toggle);
-    await waitFor(() => expect(toggle.checked).toBe(true));
+    const system = (await screen.findByRole('radio', { name: 'System' })) as HTMLInputElement;
+    expect(system.checked).toBe(true);
+    fireEvent.click(screen.getByRole('radio', { name: 'Light' }));
+    await waitFor(() =>
+      expect((screen.getByRole('radio', { name: 'Light' }) as HTMLInputElement).checked).toBe(true),
+    );
+    expect(window.localStorage.getItem('baby-routine.theme')).toBe('light');
   });
 
   it('lists failed changes with Retry and Discard', async () => {
