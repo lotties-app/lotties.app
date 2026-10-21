@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Small synthetic Napper exports; never add real exports (they contain a child's personal data). -->
+    <None Update="Imports\Fixtures\*.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\BabyRoutine.Api\BabyRoutine.Api.csproj" />
   </ItemGroup>
 

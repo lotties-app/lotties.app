@@ -6,8 +6,9 @@ namespace BabyRoutine.Domain.EventTypes;
 /// </summary>
 /// <remarks>
 /// The medication type has no field definitions: its payload is
-/// <c>{"medications":[{"medicationId":"&lt;guid&gt;","dose":"&lt;text, optional&gt;"}]}</c>, referencing the baby's
-/// medication catalog.
+/// <c>{"medications":[{"medicationId":"&lt;guid&gt;","name":"&lt;copy of the name&gt;","dose":{"amount":..,"unit":".."}}]}</c>
+/// (dose optional), referencing the baby's medication catalog. Sleep <c>kind</c> also has the instant markers
+/// <c>bed_time</c> and <c>woke_up</c> (Napper import).
 /// </remarks>
 public static class BuiltInEventTypes
 {
@@ -43,7 +44,7 @@ public static class BuiltInEventTypes
         HexColor.From("#7e57c2"),
         hasDuration: true,
         [
-            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["nap", "night", "night_waking"]),
+            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["nap", "night", "night_waking", "bed_time", "woke_up"]),
             EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text),
         ]);
 

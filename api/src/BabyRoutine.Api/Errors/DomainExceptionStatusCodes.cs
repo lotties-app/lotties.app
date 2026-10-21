@@ -35,6 +35,12 @@ internal static class DomainExceptionStatusCodes
         [typeof(MeasurementBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(MeasurementWithoutValuesException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(EventTypeNotAvailableException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(ImportFileTooLargeException)] = StatusCodes.Status413PayloadTooLarge,
+        [typeof(ImportTooManyRowsException)] = StatusCodes.Status400BadRequest,
+        [typeof(InvalidImportFileException)] = StatusCodes.Status400BadRequest,
+        [typeof(UnmappedMedicationsException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(InvalidMedicationMappingException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(ImportConflictException)] = StatusCodes.Status409Conflict,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

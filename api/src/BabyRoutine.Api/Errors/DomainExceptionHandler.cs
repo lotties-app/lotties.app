@@ -7,7 +7,7 @@ namespace BabyRoutine.Api.Errors;
 /// <summary>
 /// Writes a <see cref="DomainException"/> as an RFC 7807 problem: status from <see cref="DomainExceptionStatusCodes"/>,
 /// <c>detail</c> = the exception message, extension <c>code</c> = <see cref="DomainException.Code"/> and, for
-/// <see cref="DomainValidationException"/>, extension <c>field</c>. Other exceptions are left to the default handler (500).
+/// <see cref="DomainValidationException"/>, extension <c>field</c>; any <see cref="DomainException.Details"/> become extensions too. Other exceptions are left to the default handler (500).
 /// </summary>
 internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetails, ILogger<DomainExceptionHandler> logger) : IExceptionHandler
 {
@@ -35,9 +35,18 @@ internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetai
     private static ProblemDetails BuildProblem(DomainException exception, int status)
     {
         var problem = new ProblemDetails { Status = status, Detail = exception.Message };
+        AddDetails(problem, exception);
         problem.Extensions[CodeExtension] = exception.Code;
         AddField(problem, exception);
         return problem;
+    }
+
+    private static void AddDetails(ProblemDetails problem, DomainException exception)
+    {
+        foreach (var detail in exception.Details)
+        {
+            problem.Extensions[detail.Key] = detail.Value;
+        }
     }
 
     private static void AddField(ProblemDetails problem, DomainException exception)

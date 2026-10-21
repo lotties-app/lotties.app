@@ -28,6 +28,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IMeasurementRepository, EfMeasurementRepository>();
         services.AddScoped<IEventRepository, EfEventRepository>();
         services.AddScoped<IEventTypeRepository, EfEventTypeRepository>();
+        services.AddScoped<BabyRoutine.Domain.Imports.IImportRepository, EfImportRepository>();
         services.AddScoped<BabyRoutine.Domain.Predictions.IPredictionHistoryRepository, EfPredictionHistoryRepository>();
         return services;
     }

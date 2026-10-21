@@ -20,6 +20,7 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapMedicationEndpoints().MapMeasurementEndpoints();
         api.MapBabyScopedGroup().MapEventEndpoints();
         api.MapBabyScopedGroup().MapPredictionEndpoints();
+        api.MapBabyScopedGroup().MapImportEndpoints();
         return app;
     }
 }

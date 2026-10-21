@@ -46,6 +46,14 @@
 - api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication,Measurement}Endpoints.cs — routes for tasks 4-5 and 16 (contract in docs/SPEC.md "Babies, members, invites, event types, medications" and "Measurements")
 - api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,Measurement,EventType}Repository.cs — EF repositories for those features
 - api/tests/BabyRoutine.Api.Tests/Endpoints/{Baby,Member,Invite,EventType,Medication}EndpointTests.cs, Support/HttpAssertions.cs — integration tests
+- api/src/BabyRoutine.Domain/Imports/ — Napper import rules: parsed row records, category mappers (CanHandle strategies) + NapperEventMapper, event/measurement planners, MedicationTokenizer/MedicationNameMatcher (split, normalize, typo distance), MedicationResolver (user mappings), NapperImportPlan, ImportIds (UUID v5), IImportRepository
+- api/src/BabyRoutine.Domain/Common/DeterministicGuid.cs — RFC 4122 v5 name-based UUIDs
+- api/src/BabyRoutine.Application/Imports/ — NapperImportService (preview/import share one plan), DTOs, report mapper, NapperCsvParser; Csv/ — RFC 4180 reader, header table, typed cell reader
+- api/src/BabyRoutine.Infrastructure/Persistence/Repositories/EfImportRepository.cs — chunked id lookups, one-transaction chunked bulk insert
+- api/src/BabyRoutine.Api/Endpoints/ImportEndpoints.cs — `/babies/{babyId}/import/napper[/preview]` (contract in docs/SPEC.md "Napper import API")
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_SleepKindBedWake.cs — adds bed_time/woke_up to the built-in sleep kind options
+- api/tests/BabyRoutine.Api.Tests/Imports/ — CSV/parser unit tests, import endpoint and repository tests; Fixtures/ — small synthetic Napper CSVs (never real exports)
+- api/tests/BabyRoutine.Domain.Tests/Imports/ — mapping, medication matching/resolution, planner and id tests
 - web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
 - web/src/predictions/ — predictions query/cache, model, cards and section on Home
 - web/src/layout/SyncStatusIndicator.tsx, web/src/sync/useOnline.ts — sync status chip, online hook

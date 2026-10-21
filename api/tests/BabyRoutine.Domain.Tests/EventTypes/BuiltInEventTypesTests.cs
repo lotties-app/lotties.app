@@ -60,7 +60,7 @@ public sealed class BuiltInEventTypesTests
         var fields = BuiltInEventTypes.Sleep.Fields;
 
         Assert.Equal(["kind", "mood"], fields.Select(field => field.Key));
-        Assert.Equal(["nap", "night", "night_waking"], fields[0].Options);
+        Assert.Equal(["nap", "night", "night_waking", "bed_time", "woke_up"], fields[0].Options);
         Assert.All(fields, field => Assert.False(field.IsRequired));
     }
 

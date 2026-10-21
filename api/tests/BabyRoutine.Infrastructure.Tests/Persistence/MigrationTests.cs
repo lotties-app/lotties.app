@@ -34,15 +34,27 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_ContainBuiltInFieldFixupsThenMeasurementsAfterInitialCreate()
+    public void Migrations_ContainBuiltInFieldFixupsThenMeasurementsThenSleepKindBedWakeAfterInitialCreate()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
 
         Assert.Single(migrations, migration => migration.EndsWith("_BuiltInFieldFixups", StringComparison.Ordinal));
-        Assert.EndsWith("_AddMeasurements", migrations[^1], StringComparison.Ordinal);
+        Assert.EndsWith("_AddMeasurements", migrations[^2], StringComparison.Ordinal);
+        Assert.EndsWith("_SleepKindBedWake", migrations[^1], StringComparison.Ordinal);
         Assert.EndsWith("_InitialCreate", migrations[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_AddsBedTimeAndWokeUpSleepKinds()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+
+        Assert.Contains("\"night_waking\",\"bed_time\",\"woke_up\"", script, StringComparison.Ordinal);
+        Assert.Contains("SleepKindBedWake", script, StringComparison.Ordinal);
     }
 
     [Fact]
