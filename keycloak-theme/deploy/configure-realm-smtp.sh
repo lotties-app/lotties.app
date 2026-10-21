@@ -2,7 +2,7 @@
 # Points a realm's outgoing email (Realm settings > Email) at an SMTP relay such as Brevo, through the Keycloak
 # admin REST API. Idempotent: prints what differs, writes only when something changed. Needs curl and jq.
 #
-#   KC_URL=https://auth.example.com KC_REALM=baby-routine KC_ADMIN_USER=admin KC_ADMIN_PASSWORD=... \
+#   KC_URL=https://auth.example.com KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD=... \
 #   SMTP_HOST=smtp-relay.brevo.com SMTP_USER=... SMTP_PASSWORD=... SMTP_FROM=no-reply@example.com \
 #     bash configure-realm-smtp.sh [--dry-run]
 #

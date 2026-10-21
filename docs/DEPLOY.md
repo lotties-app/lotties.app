@@ -165,7 +165,7 @@ The StatefulSet restarts (single replica: a short outage of the IdP, plan it). R
 Admin console: Realm settings > Themes > Login theme = `baby-routine`; Localization > Internationalization on, English + Portuguese (Brazil). Or scripted and idempotent (curl + jq; credentials only from the environment, never printed):
 
 ```bash
-export KC_URL=https://auth.homel4b.dev KC_REALM=baby-routine KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
+export KC_URL=https://auth.homel4b.dev KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
 bash keycloak-theme/deploy/configure-realm.sh --dry-run    # prints the intended changes, writes nothing
 bash keycloak-theme/deploy/configure-realm.sh              # applies; a second run says "Nothing to do"
 ```

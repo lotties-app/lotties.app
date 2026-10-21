@@ -2,7 +2,7 @@
 # Sets a realm's login theme to baby-routine and enables internationalization with en + pt-BR, through the
 # Keycloak admin REST API. Idempotent: only changes what differs, prints what it did. Needs curl and jq.
 #
-#   KC_URL=https://auth.example.com KC_REALM=baby-routine KC_ADMIN_USER=admin KC_ADMIN_PASSWORD=... \
+#   KC_URL=https://auth.example.com KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD=... \
 #     bash configure-realm.sh [--dry-run]
 #
 # Env (read from the environment only, the password is never printed and not put on a command line):
