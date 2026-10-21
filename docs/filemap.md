@@ -19,7 +19,7 @@
 - README.md — overview, quick start, env vars
 - CONTRIBUTING.md — contribution guide
 - docs/graphify/ — graphify output (gitignored)
-- api/src/BabyRoutine.Domain/ — entities and rules (Babies, Events, EventTypes, Medications, Users, Exceptions, Common)
+- api/src/BabyRoutine.Domain/ — entities and rules (Babies, Events, EventTypes, Measurements, Medications, Users, Exceptions, Common)
 - api/src/BabyRoutine.Infrastructure/Persistence/ — DbContext, entity configurations, converters, design-time factory, Migrations/
 - api/migrations/all.sql — idempotent SQL script of the whole migration history (regenerate with `dotnet ef migrations script --idempotent`)
 - api/tests/BabyRoutine.Infrastructure.Tests/ — model-level EF tests (no database needed)
@@ -42,9 +42,9 @@
 - api/tests/BabyRoutine.Api.Tests/Support/SqliteDateTimeOffsetModelCustomizer.cs — test-only: timestamps as UTC ticks so SQLite can order/compare them
 - api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine (median intervals/durations, age bands, day/night), options record
 - api/src/BabyRoutine.Application/Predictions/, Api/Endpoints/PredictionEndpoints.cs — prediction service and `GET /predictions` (takes `utcOffsetMinutes`)
-- api/src/BabyRoutine.Application/{Babies,EventTypes,Medications}/ — baby/member/invite, event type and medication use cases and DTOs; Application/Serialization/ — enum JSON converters for DTOs
-- api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication}Endpoints.cs — routes for tasks 4-5 (contract in docs/SPEC.md "Babies, members, invites, event types, medications")
-- api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,EventType}Repository.cs — EF repositories for those features
+- api/src/BabyRoutine.Application/{Babies,EventTypes,Measurements,Medications}/ — baby/member/invite, event type, growth measurement and medication use cases and DTOs; Application/Serialization/ — enum JSON converters for DTOs
+- api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication,Measurement}Endpoints.cs — routes for tasks 4-5 and 16 (contract in docs/SPEC.md "Babies, members, invites, event types, medications" and "Measurements")
+- api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,Measurement,EventType}Repository.cs — EF repositories for those features
 - api/tests/BabyRoutine.Api.Tests/Endpoints/{Baby,Member,Invite,EventType,Medication}EndpointTests.cs, Support/HttpAssertions.cs — integration tests
 - web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
 - web/src/predictions/ — predictions query/cache, model, cards and section on Home

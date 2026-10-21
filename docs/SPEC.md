@@ -61,6 +61,12 @@ Base `/api/v1`; JSON camelCase; roles are strings `Owner|Parent|Viewer` (case-in
 - Built-in fields: feeding `method` (required select breast|bottle|solid), `side`, `amount_ml`, `bottle_feeding_type` (FORMULA|BREAST_MILK), `breast_left_seconds`, `breast_right_seconds`; sleep `kind` (nap|night|night_waking), `mood`; diaper `content` (required select WET|DIRTY|MIXED); bath `temperature_c`; tummy_time `mood`; belly_pain `intensity` (required 1-5). Seed changes ship in migration `BuiltInFieldFixups`.
 - Medications. `GET /babies/{id}/medications` (any member; usual first, then by name) -> `[{id, babyId, name, defaultDosage:{amount,unit}|null, notes, isUsual, createdAt}]`. `PUT /babies/{id}/medications/{medicationId} {name, defaultDosage?, notes?, isUsual}` (Parent/Owner, client GUID, idempotent: 201 created / 200 edited; an id of another baby is 409 `medication_baby_mismatch`). `DELETE` (Parent/Owner) is a hard delete, 204 and idempotent; events keep their own medication copy in the payload, so nothing dangles.
 
+### Measurements (API implemented, task 16)
+
+- `GET /babies/{id}/measurements` (any member; date descending, then newest created) -> `[{id, babyId, date:"YYYY-MM-DD", weightKg|null, heightCm|null, headCircumferenceCm|null, notes|null, createdBy, createdAt, updatedAt}]`.
+- `PUT /babies/{id}/measurements/{measurementId} {date, weightKg?, heightCm?, headCircumferenceCm?, notes?}` (Parent/Owner, client GUID, idempotent, full state: 201 created with Location / 200 edited; a replay with identical state does not bump `updatedAt`). Rules: at least one of the three values (else 422 `measurement_without_values`); weight 0.3-40 kg, height 20-130 cm, head 20-60 cm (else 400 `validation_failed` with the field); values are rounded to 2 decimals; `date` between 2000-01-01 and today+1 (UTC) (else 400); notes max 1000. An id of another baby is 409 `measurement_baby_mismatch`. Several measurements per day are allowed.
+- `DELETE /babies/{id}/measurements/{measurementId}` (Parent/Owner): hard delete, 204 and idempotent (unknown id or another baby's id is a no-op). No soft delete or delta sync: the web client fetches the list online.
+
 ## Predictions (heuristic v1)
 Per baby + event type: take last 14 days, compute median interval between starts and median duration; weight recent days higher; for sleep/feed bucket by age band (0-3m, 3-6m, 6-12m, 12m+) when enough data, else fall back to all data. Output: expected next start window, confidence (by sample count), and a human-readable reason. Pure function in Domain; unit-tested.
 

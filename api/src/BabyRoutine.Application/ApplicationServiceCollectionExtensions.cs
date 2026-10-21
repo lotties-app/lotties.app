@@ -1,6 +1,7 @@
 using BabyRoutine.Application.Babies;
 using BabyRoutine.Application.Events;
 using BabyRoutine.Application.EventTypes;
+using BabyRoutine.Application.Measurements;
 using BabyRoutine.Application.Medications;
 using BabyRoutine.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IInviteService, InviteService>();
         services.AddScoped<IEventTypeService, EventTypeService>();
         services.AddScoped<IMedicationService, MedicationService>();
+        services.AddScoped<IMeasurementService, MeasurementService>();
         services.TryAddSingleton(BabyRoutine.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         return services;

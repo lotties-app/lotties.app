@@ -1,6 +1,7 @@
 using BabyRoutine.Domain.Babies;
 using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.EventTypes;
+using BabyRoutine.Domain.Measurements;
 using BabyRoutine.Domain.Medications;
 using BabyRoutine.Domain.Users;
 using BabyRoutine.Infrastructure.Persistence;
@@ -24,6 +25,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IBabyRepository, EfBabyRepository>();
         services.AddScoped<IInviteRepository, EfInviteRepository>();
         services.AddScoped<IMedicationRepository, EfMedicationRepository>();
+        services.AddScoped<IMeasurementRepository, EfMeasurementRepository>();
         services.AddScoped<IEventRepository, EfEventRepository>();
         services.AddScoped<IEventTypeRepository, EfEventTypeRepository>();
         services.AddScoped<BabyRoutine.Domain.Predictions.IPredictionHistoryRepository, EfPredictionHistoryRepository>();

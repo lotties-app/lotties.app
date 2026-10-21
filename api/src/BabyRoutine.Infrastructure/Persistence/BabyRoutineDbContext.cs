@@ -1,6 +1,7 @@
 using BabyRoutine.Domain.Babies;
 using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.EventTypes;
+using BabyRoutine.Domain.Measurements;
 using BabyRoutine.Domain.Medications;
 using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,8 @@ public sealed class BabyRoutineDbContext(DbContextOptions<BabyRoutineDbContext> 
     public IQueryable<Event> EventsIncludingDeleted => Events.IgnoreQueryFilters();
 
     public DbSet<Medication> Medications => Set<Medication>();
+
+    public DbSet<Measurement> Measurements => Set<Measurement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BabyRoutineDbContext).Assembly);

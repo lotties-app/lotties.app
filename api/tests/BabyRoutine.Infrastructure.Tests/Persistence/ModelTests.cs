@@ -1,6 +1,7 @@
 using BabyRoutine.Domain.Babies;
 using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.EventTypes;
+using BabyRoutine.Domain.Measurements;
 using BabyRoutine.Domain.Medications;
 using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,7 @@ public sealed class ModelTests
             .Order()
             .ToArray();
 
-        Assert.Equal(["babies", "baby_members", "event_types", "events", "invites", "medications", "users"], tables);
+        Assert.Equal(["babies", "baby_members", "event_types", "events", "invites", "measurements", "medications", "users"], tables);
     }
 
     [Theory]
@@ -112,6 +113,17 @@ public sealed class ModelTests
         var role = context.Entity<BabyMember>().FindProperty(nameof(BabyMember.Role))!;
 
         Assert.Equal(typeof(string), role.GetTypeMapping().Converter?.ProviderClrType);
+    }
+
+    [Fact]
+    public void Measurements_HaveNonUniqueBabyDateIndex()
+    {
+        using var context = ModelTestContext.Create();
+
+        var index = context.Entity<Measurement>().GetIndexes()
+            .Single(candidate => Columns(candidate) == "baby_id,date");
+
+        Assert.False(index.IsUnique);
     }
 
     [Fact]

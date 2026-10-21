@@ -301,3 +301,50 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000934_AddMeasurements') THEN
+    CREATE TABLE measurements (
+        id uuid NOT NULL,
+        baby_id uuid NOT NULL,
+        date date NOT NULL,
+        weight_kg numeric(6,2),
+        height_cm numeric(6,2),
+        head_circumference_cm numeric(6,2),
+        notes character varying(1000),
+        created_by uuid NOT NULL,
+        created_at timestamp with time zone NOT NULL,
+        updated_at timestamp with time zone NOT NULL,
+        CONSTRAINT pk_measurements PRIMARY KEY (id),
+        CONSTRAINT fk_measurements_babies_baby_id FOREIGN KEY (baby_id) REFERENCES babies (id) ON DELETE RESTRICT,
+        CONSTRAINT fk_measurements_users_created_by FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE RESTRICT
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000934_AddMeasurements') THEN
+    CREATE INDEX ix_measurements_baby_id_date ON measurements (baby_id, date);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000934_AddMeasurements') THEN
+    CREATE INDEX ix_measurements_created_by ON measurements (created_by);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000934_AddMeasurements') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021000934_AddMeasurements', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

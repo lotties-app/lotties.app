@@ -20,7 +20,7 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 | 14 | PWA polish: manifest, icons, service worker, install prompt | Light | 8 | Lighthouse PWA check |
 | 15 | End-to-end smoke (Playwright) on docker-compose + docs | Medium | all | CI green |
 
-| 16 | Measurements: `Measurement` entity + migration + endpoints; web list/chart | Medium | 2, 8 | tests |
+| 16 | Measurements: `Measurement` entity + migration + endpoints; web list/chart | Medium (API done; web pending) | 2, 8 | tests |
 | 17 | Napper CSV importer (API service + web upload + medication mapping step), synthetic fixtures | Careful | 5, 6, 16 | tests on fixtures incl. idempotent re-import |
 
 Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8; 10-14 after their deps.

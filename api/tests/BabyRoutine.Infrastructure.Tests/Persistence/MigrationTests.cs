@@ -34,13 +34,14 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_ContainBuiltInFieldFixupsAfterInitialCreate()
+    public void Migrations_ContainBuiltInFieldFixupsThenMeasurementsAfterInitialCreate()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
 
-        Assert.EndsWith("_BuiltInFieldFixups", migrations[^1], StringComparison.Ordinal);
+        Assert.Single(migrations, migration => migration.EndsWith("_BuiltInFieldFixups", StringComparison.Ordinal));
+        Assert.EndsWith("_AddMeasurements", migrations[^1], StringComparison.Ordinal);
         Assert.EndsWith("_InitialCreate", migrations[0], StringComparison.Ordinal);
     }
 

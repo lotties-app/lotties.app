@@ -32,6 +32,8 @@ internal static class DomainExceptionStatusCodes
         [typeof(EventTypeKeyTakenException)] = StatusCodes.Status409Conflict,
         [typeof(EventTypeInUseException)] = StatusCodes.Status409Conflict,
         [typeof(MedicationBabyMismatchException)] = StatusCodes.Status409Conflict,
+        [typeof(MeasurementBabyMismatchException)] = StatusCodes.Status409Conflict,
+        [typeof(MeasurementWithoutValuesException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(EventTypeNotAvailableException)] = StatusCodes.Status422UnprocessableEntity,
     }.ToFrozenDictionary();
 

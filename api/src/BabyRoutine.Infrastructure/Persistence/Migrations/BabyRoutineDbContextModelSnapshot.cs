@@ -339,6 +339,64 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                     b.ToTable("events", (string)null);
                 });
 
+            modelBuilder.Entity("BabyRoutine.Domain.Measurements.Measurement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<decimal?>("HeadCircumferenceCm")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("head_circumference_cm");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("height_cm");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("weight_kg");
+
+                    b.HasKey("Id")
+                        .HasName("pk_measurements");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_measurements_created_by");
+
+                    b.HasIndex("BabyId", "Date")
+                        .HasDatabaseName("ix_measurements_baby_id_date");
+
+                    b.ToTable("measurements", (string)null);
+                });
+
             modelBuilder.Entity("BabyRoutine.Domain.Medications.Medication", b =>
                 {
                     b.Property<Guid>("Id")
@@ -480,6 +538,23 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_events_event_types_type_id");
+                });
+
+            modelBuilder.Entity("BabyRoutine.Domain.Measurements.Measurement", b =>
+                {
+                    b.HasOne("BabyRoutine.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurements_babies_baby_id");
+
+                    b.HasOne("BabyRoutine.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurements_users_created_by");
                 });
 
             modelBuilder.Entity("BabyRoutine.Domain.Medications.Medication", b =>
