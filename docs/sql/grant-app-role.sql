@@ -8,6 +8,7 @@ GRANT CONNECT ON DATABASE baby_routine TO k_baby_routine_usr;
 GRANT USAGE ON SCHEMA public TO k_baby_routine_usr;
 
 -- Existing tables (the EF migrations history table is intentionally excluded).
+-- Idempotent: re-run after each migration that adds tables (e.g. PushNotifications) if the default privileges below were not set.
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO k_baby_routine_usr;
 REVOKE ALL ON TABLE public."__EFMigrationsHistory" FROM k_baby_routine_usr;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO k_baby_routine_usr;

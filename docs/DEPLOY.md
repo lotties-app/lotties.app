@@ -44,6 +44,7 @@ Compose reads `.env` from the repository root.
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
 | `CORS_ALLOWED_ORIGINS` | api | no | Only if the web app is served from a different origin than the API |
+| `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
@@ -224,6 +225,90 @@ Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud lo
 - Request bodies up to 6 MB are allowed (CSV import); do not set a lower limit on the proxy.
 
 The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'`, `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy`. `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`.
+
+## Push notifications
+
+Optional, self-hosted Web Push (VAPID, RFC 8291). There is no third-party push vendor: the API sends dose-due and nap-window reminders (and Settings test sends) straight to the browser push services (FCM, Mozilla, Apple, Windows). Contract: `docs/SPEC.md` section "Push notifications".
+
+### Enabling it
+
+Push is on only when all three VAPID values are set; with none set the feature is off (`GET /api/v1/push/config` returns `enabled: false`, the web hides it, other push routes answer 409 `push_not_configured`). Setting only some of them, a key pair that does not match, or a bad subject fails startup.
+
+| Variable / config key | Required | Purpose |
+|----------|---------|---------|
+| `PUSH_VAPID_PUBLIC_KEY` (`Push:Vapid:PublicKey`) | for push | Public key, base64url uncompressed P-256 (public, sent to browsers) |
+| `PUSH_VAPID_PRIVATE_KEY` (`Push:Vapid:PrivateKey`) | for push | Private key, base64url. Secret: never commit or log it |
+| `PUSH_VAPID_SUBJECT` (`Push:Vapid:Subject`) | for push | Operator contact, `mailto:you@example.com` or an `https:` URL |
+| `Push__SchedulerEnabled` (`Push:SchedulerEnabled`) | no (`true`) | Runs the background reminder scheduler in this instance |
+| `Push__TickSeconds` (`Push:TickSeconds`) | no (60) | Scheduler polling interval, 15 to 300 seconds |
+| `Push__AllowedEndpointHosts__0..n` (`Push:AllowedEndpointHosts`) | no | Push service hosts the API may POST to (SSRF guard); empty = the built-in list in SPEC |
+| `Push__MaxSubscriptionsPerUser` | no (10) | Active devices per user |
+| `Push__SendTimeoutSeconds` | no (10) | HTTP timeout of one send |
+| `Push__MaxConcurrentSends` | no (8) | Parallel sends per tick |
+
+Only the three `PUSH_VAPID_*` names are flat aliases; the other settings use the standard .NET `Section__Key` environment form.
+
+### Generating VAPID keys
+
+```sh
+dotnet BabyRoutine.Api.dll --generate-vapid-keys      # published API
+dotnet run --project api/src/BabyRoutine.Api -- --generate-vapid-keys   # from source
+```
+
+It prints `PUSH_VAPID_PUBLIC_KEY=...` and `PUSH_VAPID_PRIVATE_KEY=...` to stdout and exits; it writes no file. Generate once per deployment and keep the pair: changing it invalidates every existing browser subscription (users must re-enable notifications on each device).
+
+Keep the values in the gitignored root `.env` or a secret store, never in the repository. The compose `api` service must pass them through, e.g. add to its `environment:`:
+
+```yaml
+      PUSH_VAPID_PUBLIC_KEY: ${PUSH_VAPID_PUBLIC_KEY:-}
+      PUSH_VAPID_PRIVATE_KEY: ${PUSH_VAPID_PRIVATE_KEY:-}
+      PUSH_VAPID_SUBJECT: ${PUSH_VAPID_SUBJECT:-}
+```
+
+Kubernetes (placeholders only; create the real secret out of band, e.g. `kubectl create secret generic baby-routine-push --from-literal=...`):
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: baby-routine-push
+type: Opaque
+stringData:
+  PUSH_VAPID_PUBLIC_KEY: "<public-key>"
+  PUSH_VAPID_PRIVATE_KEY: "<private-key>"
+  PUSH_VAPID_SUBJECT: "mailto:<operator@example.com>"
+---
+# in the API Deployment container spec:
+#   envFrom:
+#     - secretRef:
+#         name: baby-routine-push
+```
+
+### Database
+
+Apply the `PushNotifications` migration (`20261021182304_PushNotifications`, included in the idempotent `api/migrations/all.sql`) as the migrator role. It adds `push_subscriptions`, `user_notification_settings`, `baby_notification_preferences`, `notification_deliveries`, `notification_actions` and `job_leases`. Then make sure the app role can use them: if you set `ALTER DEFAULT PRIVILEGES` for the migrator (see "Database roles" and `docs/sql/grant-app-role.sql`) nothing else is needed; otherwise re-run the `GRANT ... ON ALL TABLES` / `ON ALL SEQUENCES` lines after the migration.
+
+### Requirements and behaviour
+
+- HTTPS is mandatory (service workers and the Push API need a secure context; localhost excepted).
+- iOS/iPadOS (16.4+): push works only after the user adds the app to the home screen and opens it from there; in a Safari tab the option is unavailable.
+- Single or multiple API instances: the scheduler takes a database lease (`job_leases`, valid for two ticks) so only one instance sends per tick; the others idle and take over if the holder stops. Claims are idempotent, so a duplicate reminder is not sent. You may set `Push__SchedulerEnabled=false` on instances that should never schedule; at least one must keep it on.
+- Reverse proxy: nothing push-specific inbound. The anonymous `POST /api/v1/push/deliveries/{id}/actions` (notification snooze/dismiss from the service worker) must reach the API like any other `/api/` route. Outbound, the API needs HTTPS (443) egress to the push service hosts; an egress proxy or firewall must allow them. `sw.js` must stay `no-cache` (already set by `web/nginx.conf`).
+
+### Verifying
+
+1. Signed in, `GET /api/v1/push/config` returns `{"enabled": true, "publicKey": "..."}`.
+2. In the app, Settings, Notifications: enable notifications on this device, then use the test send; the result shows `sent` per device and a notification appears.
+3. API logs show the scheduler ticking (no endpoints, keys or payloads are logged).
+
+### Troubleshooting
+
+- Startup fails mentioning VAPID: one or two variables set, keys swapped or from different pairs, or subject not `mailto:`/`https:`. Set all three from one generated pair.
+- `enabled: false`: the variables do not reach the API container (check the compose `environment:` / `envFrom`).
+- 422 `push_endpoint_not_allowed` on subscribe: the browser's push host is not in `Push:AllowedEndpointHosts`.
+- Test send `gone`: the browser dropped the subscription (or keys were rotated); re-enable on the device. `failed`: outbound network or push service error.
+- Database errors on push routes (permission denied): the app role lacks grants on the new tables, see Database above.
+- No reminders but test works: the user has no time zone saved (open Settings once), quiet hours, per-baby reminders off, or the scheduler disabled on every instance.
 
 ## Token storage trade-off
 
