@@ -39,7 +39,11 @@
     "backToSignIn": "Back to sign in",
     "signingOut": "Signing out",
     "setupTitle": "Setup required",
-    "setupBody": "Baby Routine is not configured. Set the following environment variables (see web/.env.example) and restart:"
+    "setupBody": "Baby Routine is not configured. Set the following environment variables (see web/.env.example) and restart:",
+    "signInFailed": "Sign-in did not work. Please try again.",
+    "signInAgainToSync": "Sign in again to sync your changes.",
+    "unsyncedKept": "Sign in again to sync your changes ({{changes}} kept on this device).",
+    "renewing": "Reconnecting your account. You can keep logging: changes are saved on this device."
   },
   "layout": {
     "switchBaby": "{{name}}, switch baby",
@@ -63,7 +67,14 @@
     "statusLabel": "Sync status: {{label}}",
     "unauthorized": "Unauthorized: sign in again to resume sync.",
     "pending_one": "{{count}} pending",
-    "pending_other": "{{count}} pending"
+    "pending_other": "{{count}} pending",
+    "waitingForSignIn": "Reconnecting",
+    "waitingForToken": "Waiting for your sign-in to be renewed.",
+    "networkError": "Could not reach the server.",
+    "gaveUp": "The server kept failing after {{attempts}} attempts ({{error}}). Retry later or discard the change.",
+    "attentionSuffix_one": "{{count}} needs your attention",
+    "attentionSuffix_other": "{{count}} need your attention",
+    "rejected": "The server rejected this change."
   },
   "session": {
     "unsyncedChanges_one": "{{count}} unsynced change",
@@ -110,7 +121,12 @@
     "runningTimers": "Running timers",
     "stop": "Stop",
     "stopNamed": "Stop {{name}}",
-    "editNamed": "Edit {{name}}"
+    "editNamed": "Edit {{name}}",
+    "unreachable": {
+      "title": "Couldn't reach the server",
+      "body": "Your babies load once the server answers. Check your connection and try again.",
+      "offline": "You are offline. Your babies load once you are back online."
+    }
   },
   "track": {
     "title": "Track",
@@ -138,6 +154,13 @@
       "lastMinutes": "Last {{count}} min ago",
       "lastHours": "Last {{count}}h ago",
       "untrackedToday": "Not tracked today"
+    },
+    "tileLabel": "{{action}}, {{status}}",
+    "undo": {
+      "action": "Undo",
+      "started": "{{name}} started",
+      "logged": "{{name}} logged",
+      "stopped": "{{name}} stopped"
     }
   },
   "timeline": {
@@ -188,7 +211,9 @@
       "selectMedication": "Select at least one medication.",
       "doseInvalid": "Dose for {{name}} must be a positive number.",
       "doseUnit": "Dose for {{name}} needs a unit."
-    }
+    },
+    "finishTitle": "Finish this {{name}}",
+    "saveAndStop": "Save and stop"
   },
   "eventTypes": {
     "feeding": {
@@ -534,7 +559,12 @@
       "entities": {
         "event": "event",
         "medication": "medication"
-      }
+      },
+      "fix": "Fix",
+      "fixNamed": "Fix: {{label}}",
+      "needsAttention": "{{name}} needs your attention",
+      "attentionHelp_one": "{{count}} change needs a detail before it can sync. Fix it and it is sent again.",
+      "attentionHelp_other": "{{count}} changes need a detail before they can sync. Fix them and they are sent again."
     }
   },
   "growth": {
@@ -718,7 +748,10 @@
       "invalidTimeRange": "The end time must not be before the start time.",
       "medicationNameRequired": "A medication needs a name.",
       "medicationGone": "This medication no longer exists."
-    }
+    },
+    "event_baby_mismatch": "This event already belongs to another baby on the server, so the change was not saved.",
+    "event_type_not_available": "This event type is not available for this baby on the server, so the change was not saved.",
+    "validation_failed": "Some details are missing or not valid."
   },
   "pwa": {
     "install": "Install app",

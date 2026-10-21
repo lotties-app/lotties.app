@@ -11,6 +11,7 @@ import {
   TextField,
 } from '@mui/material';
 import { formatNumber } from '../i18n/format';
+import { useLocale } from '../i18n/useLocale';
 import { useServerAction } from '../settings/useServerAction';
 import type { MeasurementDto } from '../sync/contract';
 import {
@@ -37,6 +38,7 @@ interface Props {
 /** Add / edit dialog. The GUID is fixed when it opens, so a retried save never duplicates. */
 export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
   const { t } = useTranslation();
+  const { locale } = useLocale();
   const actions = useMeasurementActions(babyId);
   const { run, pending, error, online } = useServerAction(MEASUREMENT_ERROR_MESSAGES);
   const [id] = useState(() => measurement?.id ?? crypto.randomUUID());
@@ -75,7 +77,7 @@ export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
               required
               slotProps={{
                 inputLabel: { shrink: true },
-                htmlInput: { min: MIN_DATE, max: todayLocal() },
+                htmlInput: { min: MIN_DATE, max: todayLocal(), lang: locale },
               }}
             />
             {METRICS.map((m) => (

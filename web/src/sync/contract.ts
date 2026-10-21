@@ -6,6 +6,7 @@ import {
   type Dosage,
   type EventFieldDefinition,
   type EventFieldKind,
+  type FieldVisibility,
   type EventPayload,
   type EventType,
   type Medication,
@@ -93,6 +94,11 @@ export interface BabyDto {
   role?: string;
 }
 
+export interface FieldVisibilityDto {
+  field: string;
+  equals: string[];
+}
+
 export interface EventFieldDefinitionDto {
   key: string;
   label: string;
@@ -102,6 +108,8 @@ export interface EventFieldDefinitionDto {
   min?: number | null;
   max?: number | null;
   unit?: string | null;
+  /** `null` = always shown; else shown while the select `field` holds one of `equals`. */
+  visibleWhen?: FieldVisibilityDto | null;
 }
 
 export interface EventTypeDto {
@@ -314,6 +322,14 @@ export function fromBabyDto(dto: BabyDto): Baby {
   return { id: dto.id, name: dto.name, birthDate: dto.birthDate, role: role ?? 'Viewer' };
 }
 
+/** A well-formed condition, else `null` (an unreadable condition never hides a field). */
+function fromVisibilityDto(dto: unknown): FieldVisibility | null {
+  const value = dto as Partial<FieldVisibilityDto> | null | undefined;
+  if (typeof value?.field !== 'string' || !Array.isArray(value.equals)) return null;
+  const equals = value.equals.filter((option): option is string => typeof option === 'string');
+  return { field: value.field, equals };
+}
+
 function fromFieldDto(dto: EventFieldDefinitionDto): EventFieldDefinition {
   return {
     key: dto.key,
@@ -324,6 +340,7 @@ function fromFieldDto(dto: EventFieldDefinitionDto): EventFieldDefinition {
     min: dto.min ?? null,
     max: dto.max ?? null,
     unit: dto.unit ?? null,
+    visibleWhen: fromVisibilityDto(dto.visibleWhen),
   };
 }
 

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useDatabase } from './DatabaseContext';
+import { BABIES_LISTED_KEY, type EventPayload } from './models';
 import {
   allBabies,
   entitySyncStates,
@@ -15,6 +16,7 @@ import {
   createEvent,
   deleteEvent,
   editEvent,
+  finishEvent,
   stopEvent,
   type CreateEventInput,
   type EditEventChanges,
@@ -37,6 +39,18 @@ import {
 export function useBabies() {
   const db = useDatabase();
   return useLiveQuery(() => allBabies(db), [db]);
+}
+
+/**
+ * Whether a babies fetch ever succeeded on this device (so an empty local list really means "no
+ * baby yet", not "could not load"). `undefined` while loading.
+ */
+export function useBabiesListed() {
+  const db = useDatabase();
+  return useLiveQuery(
+    async () => (await db.syncState.get([BABIES_LISTED_KEY, 'babies'])) !== undefined,
+    [db],
+  );
 }
 
 export function useEventTypes(babyId: string) {
@@ -99,6 +113,7 @@ export function useEventCommands() {
     create: (input: CreateEventInput) => createEvent(db, input),
     edit: (id: string, changes: EditEventChanges) => editEvent(db, id, changes),
     stop: (id: string, endedAt?: string) => stopEvent(db, id, endedAt),
+    finish: (id: string, payload: EventPayload) => finishEvent(db, id, payload),
     remove: (id: string) => deleteEvent(db, id),
   };
 }

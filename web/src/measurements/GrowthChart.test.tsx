@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
 import type { MeasurementDto } from '../sync/contract';
+import { labelSize, MIN_LABEL_PX } from './chartScale';
 import { GrowthChart } from './GrowthChart';
 import { METRICS } from './measurementModel';
 
@@ -50,5 +51,45 @@ describe('GrowthChart', () => {
     renderChart([m('2026-10-01', null)]);
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByText('No weight measurements yet.')).toBeTruthy();
+  });
+});
+
+describe('GrowthChart label size (review 05 M13)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const renderedPx = (container: HTMLElement, width: number) =>
+    [...container.querySelectorAll('text')].map(
+      (text) => (Number(text.getAttribute('font-size')) * width) / 480,
+    );
+
+  it.each([256, 320, 416, 480, 1200])('renders labels at 12 px or more at %i px wide', (width) => {
+    expect((labelSize(width) * width) / 480).toBeGreaterThanOrEqual(MIN_LABEL_PX);
+  });
+
+  it('assumes the narrowest phone column before measuring', () => {
+    const { container } = renderChart([m('2026-09-01', 4), m('2026-10-01', 5)]);
+    for (const px of renderedPx(container, 256)) expect(px).toBeGreaterThanOrEqual(MIN_LABEL_PX);
+  });
+
+  it('follows the measured width', () => {
+    let report: (width: number) => void = () => {};
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          report = (width) =>
+            callback([{ contentRect: { width } } as ResizeObserverEntry], this as never);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const { container } = renderChart([m('2026-09-01', 4), m('2026-10-01', 5)]);
+    act(() => report(300));
+    const sizes = renderedPx(container, 300);
+    expect(sizes.length).toBeGreaterThan(2);
+    for (const px of sizes) expect(px).toBeGreaterThanOrEqual(MIN_LABEL_PX);
+    act(() => report(960));
+    expect(Number(container.querySelector('text')?.getAttribute('font-size'))).toBe(11);
   });
 });

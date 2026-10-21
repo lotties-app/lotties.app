@@ -117,7 +117,7 @@ describe('SyncEngine push', () => {
     expect(head).toMatchObject({
       attempts: 1,
       status: 'pending',
-      lastError: 'HTTP 503: Request failed with status 503',
+      lastError: 'The server could not complete the request. Try again later.',
     });
     // attempt 1: ceiling 1000ms, equal jitter with random 0.5 -> 750ms
     expect(head?.nextAttemptAt).toBe('2026-10-20T10:00:00.750Z');
@@ -154,7 +154,12 @@ describe('SyncEngine push', () => {
       expect(calls.filter(isPut).map(eventIdOf)).toEqual([a.id, b.id]);
       const [dead] = await db.outbox.toArray();
       expect(dead).toMatchObject({ entityId: a.id, status: 'dead', attempts: 1 });
-      expect(dead.lastError).toContain(String(status));
+      expect(dead.lastError).toBe(
+        status === 403
+          ? 'You do not have permission to do this.'
+          : 'The server rejected this change.',
+      );
+      expect(dead.lastError).not.toMatch(/HTTP|\d{3}/);
       expect(engine.status.getSnapshot()).toMatchObject({ pendingCount: 0, deadLetterCount: 1 });
     },
   );
@@ -173,7 +178,8 @@ describe('SyncEngine push', () => {
     const [dead] = await db.outbox.toArray();
     expect(dead.status).toBe('dead');
     expect(dead.lastError).toContain(text);
-    expect(dead.lastError).toContain(`HTTP ${status} ${code}`);
+    expect(dead.lastError).not.toContain(String(status));
+    expect(dead.lastError).not.toContain(code);
   });
 
   it('sends the local edit time as updatedAt on PUT', async () => {
@@ -349,7 +355,7 @@ describe('SyncEngine push', () => {
     await engine.whenIdle();
     expect(calls).toHaveLength(1);
     expect(engine.status.getSnapshot()).toMatchObject({ state: 'offline', pendingCount: 2 });
-    expect((await db.outbox.orderBy('id').first())?.lastError).toBe('Failed to fetch');
+    expect((await db.outbox.orderBy('id').first())?.lastError).toBe('Could not reach the server.');
 
     offline = false;
     target.dispatchEvent(new Event('online'));
@@ -422,5 +428,66 @@ describe('SyncEngine single-flight', () => {
     held = false;
     await engine.syncNow();
     expect(calls.filter(isPut)).toHaveLength(1);
+  });
+});
+
+describe('SyncEngine while the access token is renewed (B1)', () => {
+  const pending = () => Object.assign(new Error('pending'), { name: 'TokenRenewalPendingError' });
+
+  it('waits without counting attempts, then retries with backoff and syncs once renewed', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    vi.setSystemTime(new Date('2026-10-20T10:00:00.000Z'));
+    const a = await newEvent();
+    let renewed = false;
+    const { engine, calls } = setup(() => {
+      if (!renewed) throw pending();
+    });
+
+    await engine.syncNow();
+
+    expect(engine.isPaused).toBe(false);
+    expect(engine.status.getSnapshot()).toMatchObject({
+      waitingForToken: true,
+      authRequired: false,
+      state: 'idle',
+      pendingCount: 1,
+      lastError: null,
+    });
+    expect(await db.outbox.get(1)).toMatchObject({
+      attempts: 0,
+      failureCount: 0,
+      status: 'pending',
+    });
+
+    renewed = true;
+    await vi.advanceTimersByTimeAsync(1_000);
+    await engine.whenIdle();
+
+    expect(calls.filter(isPut).map(eventIdOf)).toContain(a.id);
+    expect(await db.outbox.count()).toBe(0);
+    expect(engine.status.getSnapshot()).toMatchObject({ waitingForToken: false, state: 'idle' });
+  });
+
+  it('a pull that waits for the token is not an error either', async () => {
+    const { engine } = setup((call) => {
+      if (call.method === 'GET') throw pending();
+    });
+    await engine.syncNow();
+    expect(engine.status.getSnapshot()).toMatchObject({ waitingForToken: true, state: 'idle' });
+    expect(engine.isPaused).toBe(false);
+  });
+
+  it('pauses for sign-in when the session ended', async () => {
+    await newEvent();
+    const { engine } = setup(() => {
+      throw Object.assign(new Error('ended'), { name: 'SessionEndedError' });
+    });
+    await engine.syncNow();
+    expect(engine.isPaused).toBe(true);
+    expect(engine.status.getSnapshot()).toMatchObject({
+      authRequired: true,
+      waitingForToken: false,
+    });
+    expect(await db.outbox.count()).toBe(1);
   });
 });

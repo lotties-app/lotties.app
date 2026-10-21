@@ -39,7 +39,11 @@
     "backToSignIn": "Voltar para o login",
     "signingOut": "Saindo",
     "setupTitle": "Configuração necessária",
-    "setupBody": "O Baby Routine não está configurado. Defina as variáveis de ambiente abaixo (veja web/.env.example) e reinicie:"
+    "setupBody": "O Baby Routine não está configurado. Defina as variáveis de ambiente abaixo (veja web/.env.example) e reinicie:",
+    "signInFailed": "Não foi possível entrar. Tente de novo.",
+    "signInAgainToSync": "Entre de novo para sincronizar suas alterações.",
+    "unsyncedKept": "Entre de novo para sincronizar suas alterações ({{changes}} guardadas neste aparelho).",
+    "renewing": "Reconectando sua conta. Você pode continuar registrando: as alterações ficam salvas neste aparelho."
   },
   "layout": {
     "switchBaby": "{{name}}, trocar de bebê",
@@ -63,7 +67,14 @@
     "statusLabel": "Status da sincronização: {{label}}",
     "unauthorized": "Sessão expirada: entre de novo para retomar a sincronização.",
     "pending_one": "{{count}} pendente",
-    "pending_other": "{{count}} pendentes"
+    "pending_other": "{{count}} pendentes",
+    "waitingForSignIn": "Reconectando",
+    "waitingForToken": "Aguardando a renovação do seu login.",
+    "networkError": "Não foi possível falar com o servidor.",
+    "gaveUp": "O servidor continuou falhando depois de {{attempts}} tentativas ({{error}}). Tente de novo mais tarde ou descarte a alteração.",
+    "attentionSuffix_one": "{{count}} precisa da sua atenção",
+    "attentionSuffix_other": "{{count}} precisam da sua atenção",
+    "rejected": "O servidor recusou esta alteração."
   },
   "session": {
     "unsyncedChanges_one": "{{count}} alteração não sincronizada",
@@ -110,7 +121,12 @@
     "runningTimers": "Cronômetros em andamento",
     "stop": "Parar",
     "stopNamed": "Parar {{name}}",
-    "editNamed": "Editar {{name}}"
+    "editNamed": "Editar {{name}}",
+    "unreachable": {
+      "title": "Não foi possível falar com o servidor",
+      "body": "Seus bebês aparecem quando o servidor responder. Verifique sua conexão e tente de novo.",
+      "offline": "Você está sem conexão. Seus bebês aparecem quando a conexão voltar."
+    }
   },
   "track": {
     "title": "Registrar",
@@ -138,6 +154,13 @@
       "lastMinutes": "Último há {{count}} min",
       "lastHours": "Último há {{count}} h",
       "untrackedToday": "Sem registro hoje"
+    },
+    "tileLabel": "{{action}}, {{status}}",
+    "undo": {
+      "action": "Desfazer",
+      "started": "Iniciado: {{name}}",
+      "logged": "Registrado: {{name}}",
+      "stopped": "Parado: {{name}}"
     }
   },
   "timeline": {
@@ -188,7 +211,9 @@
       "selectMedication": "Selecione pelo menos um remédio.",
       "doseInvalid": "A dose de {{name}} precisa ser um número positivo.",
       "doseUnit": "A dose de {{name}} precisa de uma unidade."
-    }
+    },
+    "finishTitle": "Concluir registro de {{name}}",
+    "saveAndStop": "Salvar e parar"
   },
   "eventTypes": {
     "feeding": {
@@ -534,7 +559,12 @@
       "entities": {
         "event": "evento",
         "medication": "remédio"
-      }
+      },
+      "fix": "Corrigir",
+      "fixNamed": "Corrigir: {{label}}",
+      "needsAttention": "{{name}} precisa da sua atenção",
+      "attentionHelp_one": "{{count}} alteração precisa de um detalhe antes de sincronizar. Corrija e ela é enviada de novo.",
+      "attentionHelp_other": "{{count}} alterações precisam de um detalhe antes de sincronizar. Corrija e elas são enviadas de novo."
     }
   },
   "growth": {
@@ -718,7 +748,10 @@
       "invalidTimeRange": "A hora de fim não pode ser antes da hora de início.",
       "medicationNameRequired": "Um remédio precisa de um nome.",
       "medicationGone": "Este remédio não existe mais."
-    }
+    },
+    "event_baby_mismatch": "Este evento já pertence a outro bebê no servidor, então a alteração não foi salva.",
+    "event_type_not_available": "Este tipo de evento não está disponível para este bebê no servidor, então a alteração não foi salva.",
+    "validation_failed": "Alguns detalhes estão faltando ou não são válidos."
   },
   "pwa": {
     "install": "Instalar o app",

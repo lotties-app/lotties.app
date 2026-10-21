@@ -74,8 +74,10 @@ describe('giving up on server failures (review #4)', () => {
     expect(putsOfA).toHaveLength(MAX_SERVER_FAILURES);
     const [dead] = await db.outbox.toArray();
     expect(dead).toMatchObject({ entityId: a.id, status: 'dead', failureCount: 8 });
-    expect(dead.lastError).toContain(`Gave up after ${MAX_SERVER_FAILURES} failed attempts`);
-    expect(dead.lastError).toContain('HTTP 500');
+    expect(dead.lastError).toBe(
+      `The server kept failing after ${MAX_SERVER_FAILURES} attempts (The server could not ` +
+        'complete the request. Try again later.). Retry later or discard the change.',
+    );
     expect(calls.some((c) => isPut(c) && eventIdOf(c) === b.id)).toBe(true);
     expect(engine.status.getSnapshot()).toMatchObject({ pendingCount: 0, deadLetterCount: 1 });
   });

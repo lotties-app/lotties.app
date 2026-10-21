@@ -1,6 +1,7 @@
 import { clearCachedPredictions } from '../predictions/predictionsCache';
 import { clearPinned } from '../presets/pinnedStorage';
 import { clearSelectedBabyId } from '../baby/selectedBabyStorage';
+import { clearLastUsedForBaby } from '../events/lastUsedValues';
 import type { BabyRoutineDb } from './database';
 
 /** Tables a transaction must include to use `deleteBabyRows` (all of a baby's local data). */
@@ -22,12 +23,16 @@ export async function deleteBabyRows(db: BabyRoutineDb, babyIds: string[]): Prom
   await db.babies.bulkDelete(babyIds);
 }
 
-/** Per-device leftovers outside IndexedDB: the saved selection, cached predictions and pinned presets. */
+/**
+ * Per-device leftovers outside IndexedDB: the saved selection, cached predictions, pinned presets
+ * and remembered field values.
+ */
 export function clearBabyDeviceState(babyIds: string[]): void {
   for (const id of babyIds) {
     clearSelectedBabyId(id);
     clearCachedPredictions(id);
     clearPinned(id);
+    clearLastUsedForBaby(id);
   }
 }
 

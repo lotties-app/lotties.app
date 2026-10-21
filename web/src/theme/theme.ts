@@ -54,6 +54,7 @@ function paletteFor(mode: 'light' | 'dark', t: SchemeTokens) {
     mode,
     primary: { main: t.accent, contrastText: t.onAccent },
     secondary: { main: t.accentSoft },
+    warning: { main: t.warning, contrastText: t.onWarning },
     background: { default: t.background, paper: t.surface },
     text: { primary: t.text, secondary: t.textMuted },
     divider: t.hairline,
@@ -73,6 +74,12 @@ function colors(theme: Theme) {
 }
 
 const FOCUS_RING = (theme: Theme) => `2px solid ${colors(theme).primary.main}`;
+
+/**
+ * Space the fixed bottom navigation (64 px plus the raised "+" button) covers: focused or
+ * scrolled-to elements stop above it (WCAG 2.4.11 Focus not obscured, review 05 M11).
+ */
+export const BOTTOM_NAV_SCROLL_PADDING = 'calc(88px + env(safe-area-inset-bottom))';
 
 const LIGHT_CARD_SHADOW = '0 1px 2px rgba(27, 24, 56, 0.06), 0 4px 14px rgba(27, 24, 56, 0.07)';
 
@@ -109,6 +116,7 @@ export function buildTheme(localization?: Localization) {
       components: {
         MuiCssBaseline: {
           styleOverrides: {
+            html: { scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING },
             body: { fontVariantNumeric: 'normal' },
             '@media (prefers-reduced-motion: reduce)': {
               '*, *::before, *::after': {

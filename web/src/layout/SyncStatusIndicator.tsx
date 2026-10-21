@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Chip, CircularProgress, Tooltip } from '@mui/material';
 import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
+import CloudSyncIcon from '@mui/icons-material/CloudSync';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import type { ReactElement } from 'react';
@@ -25,6 +26,8 @@ function presentSyncStatus(status: SyncStatus): Presentation {
       return { label, tone: 'warning', icon: <ErrorOutlineIcon /> };
     case 'syncing':
       return { label, tone: 'default', icon: <CircularProgress size={14} /> };
+    case 'waiting':
+      return { label, tone: 'default', icon: <CloudSyncIcon /> };
     case 'offline':
       return { label, tone: 'warning', icon: <CloudOffIcon /> };
     case 'error':

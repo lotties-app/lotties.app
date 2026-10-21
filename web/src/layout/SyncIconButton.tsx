@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Badge, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import CloudDoneRoundedIcon from '@mui/icons-material/CloudDoneRounded';
 import CloudOffRoundedIcon from '@mui/icons-material/CloudOffRounded';
+import CloudSyncRoundedIcon from '@mui/icons-material/CloudSyncRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import { useSyncStatus } from '../sync/SyncEngineContext';
@@ -20,6 +21,8 @@ function SyncIcon({ status }: { status: SyncStatus }) {
       );
     case 'syncing':
       return <CircularProgress size={20} color="inherit" aria-hidden />;
+    case 'waiting':
+      return <CloudSyncRoundedIcon />;
     case 'pending':
       return (
         <Badge badgeContent={status.pendingCount} color="primary" max={99}>
@@ -34,7 +37,10 @@ function SyncIcon({ status }: { status: SyncStatus }) {
   }
 }
 
-/** Header icon button: sync state at a glance, opens Settings > Sync. */
+/**
+ * Header icon button: sync state at a glance, opens Settings > Sync. Changes that need the user's
+ * attention (rejected event details) add a count badge whatever the state.
+ */
 export function SyncIconButton() {
   const { t } = useTranslation();
   const status = useSyncStatus();
@@ -47,7 +53,14 @@ export function SyncIconButton() {
         color="inherit"
         aria-label={t('sync.iconLabel', { label })}
       >
-        <SyncIcon status={status} />
+        <Badge
+          badgeContent={status.attentionCount}
+          color="error"
+          max={99}
+          data-testid="sync-attention-badge"
+        >
+          <SyncIcon status={status} />
+        </Badge>
       </IconButton>
     </Tooltip>
   );

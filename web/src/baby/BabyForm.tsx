@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Stack, TextField } from '@mui/material';
+import { useLocale } from '../i18n/useLocale';
 import type { BabyRequest } from '../sync/contract';
 
 interface Props {
@@ -27,6 +28,7 @@ export function BabyForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
+  const { locale } = useLocale();
   const [name, setName] = useState(initial?.name ?? '');
   const [birthDate, setBirthDate] = useState(initial?.birthDate ?? '');
   const [touched, setTouched] = useState(false);
@@ -67,7 +69,7 @@ export function BabyForm({
         error={touched && !!dateError}
         helperText={touched ? dateError : null}
         required
-        slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: today } }}
+        slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: today, lang: locale } }}
       />
       <Button
         type="submit"

@@ -13,7 +13,11 @@ export interface EventTypeText {
     type: Pick<EventType, 'key' | 'babyId'>,
     field: Pick<EventFieldDefinition, 'key' | 'label'>,
   ) => string;
-  /** Options are looked up in lower case (older data used `FORMULA`, `WET`, ...). */
+  /**
+   * Options are looked up in lower case (older data used `FORMULA`, `WET`, ...). A built-in option
+   * without a translation is humanized (`breast_milk` -> `Breast milk`), never shown as a raw code;
+   * options of user-created types are shown as typed.
+   */
   optionLabel: (
     type: Pick<EventType, 'key' | 'babyId'>,
     field: Pick<EventFieldDefinition, 'key'>,
@@ -23,6 +27,12 @@ export interface EventTypeText {
 
 const isBuiltIn = (type: Pick<EventType, 'babyId'>) => type.babyId === null;
 
+/** `breast_milk` / `BREAST_MILK` -> `Breast milk`. */
+export function humanizeCode(code: string): string {
+  const words = code.replace(/[_-]+/g, ' ').trim().toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export const eventTypeText: EventTypeText = {
   typeName: (type) =>
     (isBuiltIn(type) ? catalogText('eventTypes', type.key, 'name') : undefined) ?? type.name,
@@ -31,9 +41,10 @@ export const eventTypeText: EventTypeText = {
       ? catalogText('eventTypes', type.key, 'fields', field.key, 'label')
       : undefined) ?? field.label,
   optionLabel: (type, field, option) =>
-    (isBuiltIn(type)
-      ? catalogText('eventTypes', type.key, 'options', field.key, option.toLowerCase())
-      : undefined) ?? option,
+    isBuiltIn(type)
+      ? (catalogText('eventTypes', type.key, 'options', field.key, option.toLowerCase()) ??
+        humanizeCode(option))
+      : option,
 };
 
 /** The catalog-backed helpers; subscribes the component to language changes. */

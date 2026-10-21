@@ -99,3 +99,12 @@ export async function seedBaby(
     ]);
   }
 }
+
+/** Marks the babies list as fetched once (Home may then offer "Create baby" for an empty list). */
+export async function seedBabiesListed(db: BabyRoutineDb) {
+  await db.syncState.put({
+    babyId: '*',
+    entity: 'babies',
+    lastSyncedAt: '2026-10-20T12:00:00.000Z',
+  });
+}

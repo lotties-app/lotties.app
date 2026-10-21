@@ -335,3 +335,62 @@ describe('sheetPrefill', () => {
     }
   });
 });
+
+describe('runPreset: payloads and stops that need details (wave 1)', () => {
+  it('uses the given payload (defaults plus remembered values) for the new event', async () => {
+    await runPreset(db, presetById('nursing'), {
+      ...ctx(NOON),
+      payload: { method: 'breast', side: 'left' },
+    });
+    const [event] = await live();
+    expect(event.payload).toEqual({ method: 'breast', side: 'left' });
+  });
+
+  it('Wake-up leaves a sleep timer running when its stop would miss a required field', async () => {
+    await db.eventTypes.put({
+      id: SLEEP,
+      babyId: null,
+      key: 'sleep',
+      name: 'Sleep',
+      icon: 'bedtime',
+      color: '#7e57c2',
+      hasDuration: true,
+      fields: [
+        {
+          key: 'kind',
+          label: 'Kind',
+          kind: 'select',
+          isRequired: false,
+          options: ['nap', 'night', 'woke_up'],
+          min: null,
+          max: null,
+          unit: null,
+          visibleWhen: null,
+        },
+        {
+          key: 'mood',
+          label: 'Mood',
+          kind: 'text',
+          isRequired: true,
+          options: [],
+          min: null,
+          max: null,
+          unit: null,
+          visibleWhen: null,
+        },
+      ],
+    });
+    const nap = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: SLEEP,
+      startedAt: new Date(NOON.getTime() - 3_600_000).toISOString(),
+      payload: { kind: 'nap' },
+    });
+
+    const token = await runPreset(db, presetById('wake_up'), ctx(NOON));
+
+    expect(token.stopped).toEqual([]);
+    expect(token.needsFinish).toEqual([nap.id]);
+    expect((await db.events.get(nap.id))?.endedAt).toBeNull();
+  });
+});

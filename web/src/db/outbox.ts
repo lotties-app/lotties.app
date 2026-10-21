@@ -48,6 +48,46 @@ export async function pendingEntityIds(db: BabyRoutineDb, babyId: string): Promi
   return new Set(mutations.filter((m) => m.status === 'pending').map((m) => m.entityId));
 }
 
+/**
+ * Events of `babyId` whose stop the server rejected (a dead-lettered upsert with an end time): a
+ * pull must not replace them with a running server copy, which would silently restart the timer.
+ */
+export async function rejectedStopIds(db: BabyRoutineDb, babyId: string): Promise<Set<string>> {
+  const mutations = await db.outbox.where('babyId').equals(babyId).toArray();
+  return new Set(
+    mutations
+      .filter(
+        (m) =>
+          m.status === 'dead' &&
+          m.entityType === 'event' &&
+          m.kind === 'upsert' &&
+          !!(m.payload as { endedAt?: string | null } | null)?.endedAt,
+      )
+      .map((m) => m.entityId),
+  );
+}
+
+/** Dead-lettered changes the user has to fix (the server rejected the event's details). */
+export function countAttentionNeeded(db: BabyRoutineDb): Promise<number> {
+  return db.outbox
+    .where('status')
+    .equals('dead')
+    .filter((m) => m.needsAttention === true)
+    .count();
+}
+
+/**
+ * Drops the dead-lettered upserts of an event, inside the transaction of a local edit that queues
+ * its full, fixed state (the new upsert supersedes them).
+ */
+export async function dropDeadUpserts(db: BabyRoutineDb, entityId: string): Promise<void> {
+  await db.outbox
+    .where('entityId')
+    .equals(entityId)
+    .filter((m) => m.status === 'dead' && m.kind === 'upsert' && m.entityType === 'event')
+    .delete();
+}
+
 export function listDeadLetters(db: BabyRoutineDb): Promise<OutboxMutation[]> {
   return db.outbox.where('status').equals('dead').sortBy('id');
 }

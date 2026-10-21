@@ -12,7 +12,7 @@ export function CallbackPage() {
     <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', gap: 2, p: 2 }}>
       {error ? (
         <>
-          <Alert severity="error">{error.message}</Alert>
+          <Alert severity="error">{t('auth.signInFailed')}</Alert>
           <Button component={RouterLink} to="/login" variant="contained">
             {t('auth.backToSignIn')}
           </Button>

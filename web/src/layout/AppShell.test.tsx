@@ -107,7 +107,7 @@ describe('accessibility (axe)', () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, mode);
     await seedBaby(db);
     renderShell();
-    await screen.findByRole('button', { name: 'Start Feeding' });
+    await screen.findByRole('button', { name: /^Log Diaper/ });
     expect(document.documentElement.hasAttribute(`data-${mode}`)).toBe(true);
     expect(await violations()).toEqual([]);
   });

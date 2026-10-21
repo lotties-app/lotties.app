@@ -1,6 +1,6 @@
 import type { BabyRoutineDb } from '../db/database';
-import { editTimeOf, type BabyEvent } from '../db/models';
-import { pendingEntityIds } from '../db/outbox';
+import { BABIES_LISTED_KEY, editTimeOf, type BabyEvent } from '../db/models';
+import { pendingEntityIds, rejectedStopIds } from '../db/outbox';
 import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
 import {
   apiPaths,
@@ -36,6 +36,12 @@ export async function refreshBabies(ctx: SyncContext): Promise<string[]> {
     dropped.push(...known.filter((id) => !kept.has(id)));
     await deleteBabyRows(db, dropped);
     await db.babies.bulkPut(babies);
+    // The list is now known, even when empty: Home may offer "Create baby".
+    await db.syncState.put({
+      babyId: BABIES_LISTED_KEY,
+      entity: 'babies',
+      lastSyncedAt: new Date(ctx.now()).toISOString(),
+    });
   });
   clearBabyDeviceState(dropped);
   return babies.map((b) => b.id);
@@ -88,8 +94,10 @@ function remoteWins(remote: BabyEvent, local: BabyEvent | undefined): boolean {
 
 /**
  * Merges a delta into the local store (see `remoteWins`), skipping events that still have a
- * pending local mutation (they win until pushed). The cursor (server `updatedAt`) is written in
- * the same transaction, so it only advances when the merge commits.
+ * pending local mutation (they win until pushed) and running copies of timers whose stop the
+ * server rejected (the user fixes and re-sends the stop; a running copy would silently restart
+ * them). The cursor (server `updatedAt`) is written in the same transaction, so it only advances
+ * when the merge commits.
  */
 export async function mergeEventDelta(
   db: BabyRoutineDb,
@@ -98,7 +106,12 @@ export async function mergeEventDelta(
 ): Promise<void> {
   await db.transaction('rw', db.events, db.outbox, db.syncState, async () => {
     const pending = await pendingEntityIds(db, babyId);
-    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromEventDto);
+    const stopped = await rejectedStopIds(db, babyId);
+    const resurrects = (dto: EventDto) =>
+      stopped.has(dto.id) && dto.endedAt === null && !dto.deletedAt;
+    const incoming = items
+      .filter((dto) => !pending.has(dto.id) && !resurrects(dto))
+      .map(fromEventDto);
     const locals = await db.events.bulkGet(incoming.map((e) => e.id));
     const winners = incoming.filter((e, i) => remoteWins(e, locals[i]));
     await db.events.bulkPut(winners);
@@ -165,7 +178,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       const perBaby =
         error instanceof RepeatedCursorError || classifyFailure(error) === 'permanent';
       if (!perBaby) throw error;
-      errors.push(`baby ${babyId}: ${describeFailure(error)}`);
+      errors.push(describeFailure(error));
     }
   }
   return errors;

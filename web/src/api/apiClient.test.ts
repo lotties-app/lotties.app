@@ -75,3 +75,78 @@ describe('apiClient', () => {
     expect(error.problem?.title).toBe('Conflict');
   });
 });
+
+describe('apiClient token renewal (B1)', () => {
+  it('awaits the token getter before sending (a pending renewal)', async () => {
+    let release!: (token: string) => void;
+    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse({}));
+    const client = createApiClient({
+      baseUrl: 'http://api',
+      getAccessToken: () => new Promise((resolve) => (release = resolve)),
+      fetchImpl,
+    });
+    const request = client.request('/x');
+    await Promise.resolve();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    release('renewed');
+    await request;
+    expect((fetchImpl.mock.calls[0][1]?.headers as Record<string, string>).Authorization).toBe(
+      'Bearer renewed',
+    );
+  });
+
+  it('renews once after a 401 and retries with the new token', async () => {
+    const onUnauthorized = vi.fn();
+    const renewAccessToken = vi.fn(async () => 'fresh');
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({}, 401))
+      .mockResolvedValueOnce(jsonResponse({ ok: true }));
+    const client = createApiClient({
+      baseUrl: 'http://api',
+      getAccessToken: async () => 'stale',
+      renewAccessToken,
+      onUnauthorized,
+      fetchImpl,
+    });
+
+    await expect(client.request('/x')).resolves.toEqual({ ok: true });
+
+    expect(renewAccessToken).toHaveBeenCalledOnce();
+    const auth = fetchImpl.mock.calls.map(
+      ([, init]) => (init?.headers as Record<string, string>).Authorization,
+    );
+    expect(auth).toEqual(['Bearer stale', 'Bearer fresh']);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('retries only once: a second 401 reaches the unauthorized handler', async () => {
+    const onUnauthorized = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse({}, 401));
+    const client = createApiClient({
+      baseUrl: 'http://api',
+      getAccessToken: async () => 'stale',
+      renewAccessToken: async () => 'fresh',
+      onUnauthorized,
+      fetchImpl,
+    });
+
+    await expect(client.request('/x')).rejects.toMatchObject({ status: 401 });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+
+  it('propagates a renewal that cannot complete (offline) instead of the 401', async () => {
+    const pending = Object.assign(new Error('pending'), { name: 'TokenRenewalPendingError' });
+    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse({}, 401));
+    const client = createApiClient({
+      baseUrl: 'http://api',
+      getAccessToken: async () => 'stale',
+      renewAccessToken: async () => {
+        throw pending;
+      },
+      fetchImpl,
+    });
+    await expect(client.request('/x')).rejects.toBe(pending);
+  });
+});

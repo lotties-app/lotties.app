@@ -12,7 +12,8 @@ import {
 } from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { FEEDING, seedBaby } from '../test/seed';
-import { createEvent } from '../db/eventCommands';
+import { createEvent, stopEvent } from '../db/eventCommands';
+import { FEEDING_TYPE } from '../test/builtInTypes';
 import { SettingsPage } from './SettingsPage';
 
 let db: BabyRoutineDb;
@@ -585,5 +586,36 @@ describe('SettingsPage appearance and sync', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry Save medication' }));
     await waitFor(async () => expect((await db.outbox.get(retryId))?.status).not.toBe('dead'));
+  });
+
+  it('surfaces a stop the server rejected as needing attention, with a Fix action', async () => {
+    await setup();
+    await db.eventTypes.put(FEEDING_TYPE);
+    const running = await createEvent(db, { babyId: BABY_ID, typeId: FEEDING_TYPE.id });
+    await stopEvent(db, running.id);
+    const rejected = (await db.outbox.toArray()).at(-1)!;
+    await db.outbox.update(rejected.id, {
+      status: 'dead',
+      needsAttention: true,
+      rejectedField: 'method',
+      lastError: 'Some details are missing or not valid.',
+    });
+    await openSection('Sync');
+
+    expect(await screen.findByText('Feeding needs your attention')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Fix: Feeding needs your attention' }));
+
+    expect(await screen.findByRole('heading', { name: 'Finish this feeding' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Bottle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(async () =>
+      expect(await db.outbox.where('status').equals('dead').count()).toBe(0),
+    );
+    const queued = (await db.outbox.toArray()).at(-1)!;
+    expect(queued).toMatchObject({ status: 'pending', entityId: running.id });
+    expect(queued.payload).toMatchObject({ payload: { method: 'bottle' } });
+    expect((await db.events.get(running.id))?.endedAt).not.toBeNull();
   });
 });

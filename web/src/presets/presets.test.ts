@@ -8,7 +8,7 @@ import { BUILT_IN_TYPES, DIAPER_T, SLEEP, event, eventType, presetById } from '.
 import { CATEGORY_NAMES } from '../theme/tokens';
 
 describe('catalogue', () => {
-  it('lists the thirteen built-in presets in Track sheet order', () => {
+  it('lists the fourteen built-in presets in Track sheet order', () => {
     expect(BUILT_IN_PRESETS.map((p) => p.id)).toEqual([
       'wake_up',
       'nap',
@@ -17,6 +17,7 @@ describe('catalogue', () => {
       'night_waking',
       'bottle',
       'nursing',
+      'pumping',
       'diaper',
       'medication',
       'belly_pain',
@@ -38,6 +39,7 @@ describe('catalogue', () => {
     expect(shape('night_waking')).toEqual(['sleep', 'timer', { kind: 'night_waking' }]);
     expect(shape('bottle')).toEqual(['feeding', 'sheet', { method: 'bottle' }]);
     expect(shape('nursing')).toEqual(['feeding', 'timer', { method: 'breast' }]);
+    expect(shape('pumping')).toEqual(['breast_pump', 'timer', {}]);
     expect(shape('diaper')).toEqual(['diaper', 'sheet', {}]);
     expect(shape('medication')).toEqual(['medication', 'sheet', {}]);
     expect(shape('belly_pain')).toEqual(['belly_pain', 'sheet', {}]);
@@ -57,6 +59,10 @@ describe('catalogue', () => {
   it('only defaults to pinned ids that exist', () => {
     const ids = BUILT_IN_PRESETS.map((p) => p.id);
     for (const id of DEFAULT_PINNED) expect(ids).toContain(id);
+  });
+
+  it('pins Wake-up, Bottle, Diaper and Nap by default, in that order', () => {
+    expect(DEFAULT_PINNED).toEqual(['wake_up', 'bottle', 'diaper', 'nap']);
   });
 });
 

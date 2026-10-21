@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Paper, Typography, useTheme } from '@mui/material';
 import { formatDate, formatNumber } from '../i18n/format';
+import { CHART_WIDTH, labelSize } from './chartScale';
 import type { MeasurementDto } from '../sync/contract';
 import {
   metricLabel,
@@ -10,9 +12,32 @@ import {
   type SeriesPoint,
 } from './measurementModel';
 
-const W = 480;
+const W = CHART_WIDTH;
 const H = 220;
-const PAD = { top: 16, right: 16, bottom: 28, left: 44 };
+
+/**
+ * Width the chart is drawn at, in CSS pixels (`null` until measured). The SVG scales with its
+ * container, so label sizes are set in viewBox units from it.
+ */
+function useRenderedWidth() {
+  const ref = useRef<SVGSVGElement>(null);
+  const [width, setWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      const next = entry?.contentRect.width;
+      if (next) setWidth(next);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, width };
+}
+
+function padding(font: number) {
+  return { top: 16, right: 16, bottom: Math.round(font * 1.4 + 12), left: Math.round(font * 4) };
+}
 
 const dayMs = (date: string) => Date.parse(`${date}T00:00:00Z`);
 const shortDate = (date: string) => formatDate(date, 'dayMonth');
@@ -21,6 +46,9 @@ const valueText = (value: number) => formatNumber(value);
 function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { ref, width } = useRenderedWidth();
+  const font = labelSize(width);
+  const PAD = padding(font);
   const axis = valueAxis(points);
   const first = points[0];
   const last = points[points.length - 1];
@@ -50,6 +78,7 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
 
   return (
     <svg
+      ref={ref}
       viewBox={`0 0 ${W} ${H}`}
       role="img"
       aria-label={label}
@@ -69,19 +98,19 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
             y={y(tick)}
             textAnchor="end"
             dominantBaseline="middle"
-            fontSize="11"
+            fontSize={font}
             fill={muted}
           >
             {valueText(Math.round(tick * 10) / 10)}
           </text>
         </g>
       ))}
-      <text x={PAD.left} y={H - 8} fontSize="11" fill={muted} textAnchor="start">
+      <text x={PAD.left} y={H - 8} fontSize={font} fill={muted} textAnchor="start">
         {shortDate(first.date)}
       </text>
       {points.length > 1 && (
         <>
-          <text x={W - PAD.right} y={H - 8} fontSize="11" fill={muted} textAnchor="end">
+          <text x={W - PAD.right} y={H - 8} fontSize={font} fill={muted} textAnchor="end">
             {shortDate(last.date)}
           </text>
           <polyline

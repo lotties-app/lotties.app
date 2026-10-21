@@ -1,6 +1,6 @@
 import type { BabyRoutineDb } from './database';
 import type { BabyEvent, EventPayload, MutationKind } from './models';
-import { enqueueMutation } from './outbox';
+import { dropDeadUpserts, enqueueMutation } from './outbox';
 import {
   EventAlreadyStoppedError,
   EventDeletedError,
@@ -142,6 +142,34 @@ export async function stopEvent(
     };
     ensureValidRange(stopped);
     return saveWithMutation(db, stopped, 'upsert');
+  });
+}
+
+/**
+ * Completes an event with fixed details: sets `payload`, stops it now (or at `endedAt`) when it
+ * still runs, and drops the dead-lettered upserts of the event in the same transaction (the new
+ * upsert carries the full, fixed state and supersedes them). Used by "Finish this ..." when a
+ * timer is stopped without its required fields, and by the Fix action of a rejected change.
+ */
+export async function finishEvent(
+  db: BabyRoutineDb,
+  id: string,
+  payload: EventPayload,
+  endedAt?: string,
+  options: CommandOptions = {},
+): Promise<BabyEvent> {
+  return db.transaction('rw', db.events, db.outbox, async () => {
+    const current = await loadLiveEvent(db, id);
+    const now = nowIso(options);
+    const finished: BabyEvent = {
+      ...current,
+      payload,
+      endedAt: current.endedAt ?? (endedAt ? toUtcIso(endedAt) : now),
+      ...editStamp(now),
+    };
+    ensureValidRange(finished);
+    await dropDeadUpserts(db, id);
+    return saveWithMutation(db, finished, 'upsert');
   });
 }
 

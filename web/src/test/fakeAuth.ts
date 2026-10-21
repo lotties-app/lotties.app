@@ -8,9 +8,12 @@ export function fakeAuth(overrides: Partial<AuthApi> = {}): AuthApi {
     isAuthenticated: true,
     isLoading: false,
     error: null,
+    session: 'active',
+    sessionEnded: false,
     login: vi.fn(async () => {}),
     logout: vi.fn(async () => {}),
     getAccessToken: async () => 'token',
+    renewAccessToken: async () => 'token',
     ...overrides,
   };
 }

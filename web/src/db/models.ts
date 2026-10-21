@@ -17,6 +17,12 @@ export interface Baby {
 
 export type EventFieldKind = 'text' | 'number' | 'select' | 'bool';
 
+/** Shows a field only while the select field `field` of the same type holds one of `equals`. */
+export interface FieldVisibility {
+  field: string;
+  equals: string[];
+}
+
 export interface EventFieldDefinition {
   /** Lower snake_case property name inside the event payload. */
   key: string;
@@ -29,6 +35,8 @@ export interface EventFieldDefinition {
   min: number | null;
   max: number | null;
   unit: string | null;
+  /** `null`/absent = always shown (types stored before this existed have no value). */
+  visibleWhen?: FieldVisibility | null;
 }
 
 export interface EventType {
@@ -125,12 +133,26 @@ export interface OutboxMutation {
    */
   failureCount?: number;
   lastError: string | null;
+  /**
+   * The server rejected the event's details (400 `validation_failed`, e.g. a timer stopped without
+   * a required field): the user has to fix the event (Settings > Sync > Fix). Optional.
+   */
+  needsAttention?: boolean;
+  /** Field key the server named in that rejection, if any. */
+  rejectedField?: string | null;
   status: MutationStatus;
   /** Earliest time the next attempt may run (backoff); `null` = now. */
   nextAttemptAt: string | null;
 }
 
-export type SyncEntity = 'events';
+/**
+ * `events`: the per-baby delta cursor. `babies`: stored under `BABIES_LISTED_KEY` once a babies
+ * fetch succeeded on this device (an empty local list then really means "no baby yet").
+ */
+export type SyncEntity = 'events' | 'babies';
+
+/** `babyId` of the `babies` marker row (not a baby id). */
+export const BABIES_LISTED_KEY = '*';
 
 /** Delta-pull cursor per baby and entity. */
 export interface SyncCursor {

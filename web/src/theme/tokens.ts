@@ -34,6 +34,12 @@ export interface SchemeTokens {
   accentSoft: string;
   /** Text/icon colour on top of `accent` (AA). */
   onAccent: string;
+  /**
+   * Warning tone (e.g. the "Overdue" chip, the offline chip): `main` is AA as text on every surface
+   * and `onWarning` is AA on `main`.
+   */
+  warning: string;
+  onWarning: string;
   category: Record<CategoryName, CategoryColors>;
 }
 
@@ -44,9 +50,12 @@ export const NIGHT: SchemeTokens = {
   hairline: '#2a2652',
   text: '#eceaff',
   textMuted: '#9d99c8',
-  accent: '#7c6cf0',
+  // Lightened from #7c6cf0 (4.05:1 as text on surface, review 05 M10) to AA on every surface.
+  accent: '#968af6',
   accentSoft: '#c4baff',
   onAccent: '#100e26',
+  warning: '#ffb74d',
+  onWarning: '#100e26',
   category: {
     sleep: { bg: '#3a2f7a', fg: '#c4baff' },
     feeding: { bg: '#16423f', fg: '#7ee0b8' },
@@ -69,6 +78,9 @@ export const DAY: SchemeTokens = {
   accent: '#5b4bd6',
   accentSoft: '#4a3cc0',
   onAccent: '#ffffff',
+  // MUI's default #ed6c02 gave white text 3.11:1 (review 05 M10).
+  warning: '#a64b00',
+  onWarning: '#ffffff',
   category: {
     sleep: { bg: '#e4e0ff', fg: '#3a2f9a' },
     feeding: { bg: '#d3f2e7', fg: '#0d5c4b' },

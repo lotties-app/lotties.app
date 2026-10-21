@@ -11,6 +11,7 @@ import LocalDrinkRoundedIcon from '@mui/icons-material/LocalDrinkRounded';
 import MedicationRoundedIcon from '@mui/icons-material/MedicationRounded';
 import NightsStayRoundedIcon from '@mui/icons-material/NightsStayRounded';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import OpacityRoundedIcon from '@mui/icons-material/OpacityRounded';
 import SickRoundedIcon from '@mui/icons-material/SickRounded';
 import WbSunnyRoundedIcon from '@mui/icons-material/WbSunnyRounded';
 import { ICONS } from '../events/iconRegistry';
@@ -30,6 +31,7 @@ const PRESET_ICONS: ReadonlyMap<string, ElementType> = new Map<string, ElementTy
     night_waking: NotificationsActiveRoundedIcon,
     bottle: LocalDrinkRoundedIcon,
     nursing: ChildFriendlyRoundedIcon,
+    pumping: OpacityRoundedIcon,
     diaper: BabyChangingStationRoundedIcon,
     medication: MedicationRoundedIcon,
     belly_pain: SickRoundedIcon,

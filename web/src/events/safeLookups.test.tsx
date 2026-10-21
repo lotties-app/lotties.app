@@ -88,7 +88,7 @@ describe('server-provided keys never hit inherited members (review #5)', () => {
   });
 
   it('does not map an unknown problem code `constructor` to a message', () => {
-    expect(describeFailure(httpError(409, 'constructor'))).toBe('HTTP 409 constructor: status 409');
+    expect(describeFailure(httpError(409, 'constructor'))).toBe('The server rejected this change.');
   });
 });
 

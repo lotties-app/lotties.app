@@ -72,6 +72,16 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
     payloadDefaults: { method: 'breast' },
   },
   {
+    // Built-in `breast_pump` type (added after DESIGN.md section 3 was written).
+    id: 'pumping',
+    label: 'Pumping',
+    category: 'feeding',
+    icon: 'pumping',
+    typeKey: 'breast_pump',
+    mode: 'timer',
+    payloadDefaults: {},
+  },
+  {
     id: 'diaper',
     label: 'Diaper',
     category: 'diaper',
@@ -129,5 +139,9 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
   },
 ];
 
-/** Pinned on Home when the user has not chosen (Wake-up, Feeding, Diaper, Nap). */
+/**
+ * Pinned on Home, in this order, when the user has not chosen: Wake-up, Bottle, Diaper, Nap
+ * (DESIGN.md section 3 says "Feeding": Bottle is its one-tap form). Ids, never event type ids, so
+ * the order is the same on every device.
+ */
 export const DEFAULT_PINNED: readonly string[] = ['wake_up', 'bottle', 'diaper', 'nap'];

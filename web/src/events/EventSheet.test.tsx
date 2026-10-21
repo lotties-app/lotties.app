@@ -5,6 +5,9 @@ import { createEvent } from '../db/eventCommands';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import { renderWithDb } from '../test/renderApp';
 import { EVENT_TYPES, FEEDING, MEDICATION, seedBaby } from '../test/seed';
+import { fromEventTypeDto } from '../sync/contract';
+import { FEEDING_DTO, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import axe from 'axe-core';
 import { EventSheet } from './EventSheet';
 
 let db: BabyRoutineDb;
@@ -113,5 +116,138 @@ describe('EventSheet editing', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Delete event' }));
     await waitFor(async () => expect((await db.events.get(event.id))?.deletedAt).not.toBeNull());
     expect(onDone).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('EventSheet conditional fields (visibleWhen)', () => {
+  const types = [FEEDING_TYPE, SLEEP_TYPE];
+  const renderFeeding = (props: Partial<Parameters<typeof EventSheet>[0]> = {}) =>
+    renderSheet({ types, initialTypeId: FEEDING_TYPE.id, ...props });
+
+  it('shows only the method until one is chosen, then only the fields of that method', async () => {
+    renderFeeding();
+    expect(screen.getByRole('button', { name: 'Breast' })).toBeTruthy();
+    for (const label of ['Side', 'Amount', 'Bottle content', 'Food']) {
+      expect(screen.queryByText(label)).toBeNull();
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Breast' }));
+    expect(await screen.findByText('Side')).toBeTruthy();
+    expect(screen.getByLabelText('Left breast')).toBeTruthy();
+    expect(screen.getByLabelText('Right breast')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Solid food' }));
+    expect(await screen.findByLabelText('Food')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('Side')).toBeNull());
+  });
+
+  it('drops the values of fields that become hidden and never sends them', async () => {
+    const onDone = renderFeeding();
+    fireEvent.change(screen.getByLabelText('End'), { target: { value: '2099-01-01T00:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Breast' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Left' }));
+    fireEvent.change(screen.getByLabelText('Left breast'), { target: { value: '300' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bottle' }));
+    fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '90' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Breast milk' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [saved] = await db.events.toArray();
+    expect(saved.payload).toEqual({
+      method: 'bottle',
+      amount_ml: 90,
+      bottle_feeding_type: 'breast_milk',
+    });
+  });
+
+  it('switching back does not resurrect a dropped value', async () => {
+    renderFeeding();
+    fireEvent.click(screen.getByRole('button', { name: 'Breast' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Left' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bottle' }));
+    await waitFor(() => expect(screen.queryByText('Side')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Breast' }));
+    const left = await screen.findByRole('button', { name: 'Left' });
+    expect(left.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('requires only visible fields', async () => {
+    const strict = fromEventTypeDto({
+      ...FEEDING_DTO,
+      id: 'type-strict',
+      fields: FEEDING_DTO.fields!.map((f) => (f.key === 'food' ? { ...f, isRequired: true } : f)),
+    });
+    const onDone = renderSheet({ types: [strict], initialTypeId: strict.id });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Method is required.')).toBeTruthy();
+    expect(screen.queryByText('Food is required.')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Solid food' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Food is required.')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bottle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+  });
+
+  it('removes a hidden value an older event still carries when it is saved', async () => {
+    const event = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      startedAt: '2026-10-20T08:00:00.000Z',
+      endedAt: '2026-10-20T08:10:00.000Z',
+      payload: { method: 'bottle', amount_ml: 60, side: 'left', imported: 'kept' },
+    });
+    const onDone = renderSheet({ types, event });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect((await db.events.get(event.id))?.payload).toEqual({ method: 'bottle', amount_ml: 60 });
+  });
+
+  it('never shows a raw option code for a built-in type', async () => {
+    const future = fromEventTypeDto({
+      ...FEEDING_DTO,
+      id: 'type-future',
+      fields: [{ ...FEEDING_DTO.fields![0], options: ['breast', 'tube_feeding', 'FORMULA_MIX'] }],
+    });
+    renderSheet({ types: [future], initialTypeId: future.id });
+    expect(screen.getByRole('button', { name: 'Tube feeding' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Formula mix' })).toBeTruthy();
+    expect(screen.queryByText(/tube_feeding|FORMULA_MIX/)).toBeNull();
+  });
+
+  it('collapses without animation when the user prefers reduced motion', async () => {
+    const matchMedia = vi.fn((query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    vi.stubGlobal('matchMedia', matchMedia);
+    try {
+      renderFeeding();
+      fireEvent.click(screen.getByRole('button', { name: 'Breast' }));
+      expect(await screen.findByText('Side')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Bottle' }));
+      await waitFor(() => expect(screen.queryByText('Side')).toBeNull(), { timeout: 50 });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('names the sheet by its title', async () => {
+    renderFeeding();
+    const dialog = screen.getByRole('dialog', { name: 'Add event' });
+    expect(dialog).toBeTruthy();
+    const results = await axe.run(dialog, { runOnly: ['aria-dialog-name'] });
+    expect(results.violations).toEqual([]);
   });
 });

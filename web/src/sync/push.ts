@@ -4,7 +4,13 @@ import type { OutboxMutation } from '../db/models';
 import { dropIfSuperseded, peekPendingMutation } from '../db/outbox';
 import { backoffDelay } from './backoff';
 import { apiPaths, fromEventDto, isEventDtoFor, type EventUpsertRequest } from './contract';
-import { classifyFailure, countsTowardGiveUp, describeFailure } from './failures';
+import { t } from '../i18n/i18n';
+import {
+  classifyFailure,
+  countsTowardGiveUp,
+  describeFailure,
+  isPayloadRejection,
+} from './failures';
 import { deadLetter } from './deadLetters';
 import { syncRequest, type SyncContext } from './syncContext';
 
@@ -19,6 +25,8 @@ export type PushOutcome =
   /** The queue head is waiting for its backoff to elapse. */
   | { kind: 'backoff'; retryAt: number; error: string | null }
   | { kind: 'offline'; error: string }
+  /** The access token is being renewed: nothing was sent, retry once it is. */
+  | { kind: 'waitingForToken' }
   | { kind: 'unauthorized' };
 
 /**
@@ -98,10 +106,7 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
 }
 
 function giveUpMessage(lastError: string) {
-  return (
-    `Gave up after ${MAX_SERVER_FAILURES} failed attempts: the server kept answering with an ` +
-    `error (${lastError}). Retry later or discard the change.`
-  );
+  return t('sync.gaveUp', { attempts: MAX_SERVER_FAILURES, error: lastError });
 }
 
 async function recordTransient(
@@ -140,6 +145,8 @@ async function recordFailure(
   switch (kind) {
     case 'unauthorized':
       return { kind: 'unauthorized' };
+    case 'waitingForToken':
+      return { kind: 'waitingForToken' };
     case 'network':
       await ctx.db.outbox.update(mutation.id, { lastError });
       return { kind: 'offline', error: lastError };
@@ -150,6 +157,9 @@ async function recordFailure(
         attempts: mutation.attempts + 1,
         failureCount: mutation.failureCount ?? 0,
         lastError,
+        ...(isPayloadRejection(error) && mutation.entityType === 'event'
+          ? { needsAttention: true, rejectedField: error.problem?.field ?? null }
+          : {}),
       });
       return null;
   }

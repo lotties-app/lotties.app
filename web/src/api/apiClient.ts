@@ -2,8 +2,14 @@ import { ApiError } from './ApiError';
 
 export interface ApiClientOptions {
   baseUrl: string;
+  /** Awaited before every request (it waits for a pending token renewal; its errors propagate). */
   getAccessToken: () => Promise<string | null>;
-  /** Called on a 401 response (e.g. to trigger re-login), unless the request opts out. */
+  /**
+   * Forces a token renewal after a 401; the request is then retried once with the new token.
+   * Its errors (renewal pending, session ended) propagate instead of the 401.
+   */
+  renewAccessToken?: () => Promise<string | null>;
+  /** Called on a 401 response that a renewal did not fix, unless the request opts out. */
   onUnauthorized?: () => void;
   fetchImpl?: typeof fetch;
 }
@@ -44,28 +50,39 @@ async function parseBody(response: Response): Promise<unknown> {
 }
 
 export function createApiClient(options: ApiClientOptions): ApiClient {
-  const { baseUrl, getAccessToken, onUnauthorized } = options;
+  const { baseUrl, getAccessToken, renewAccessToken, onUnauthorized } = options;
 
-  async function requestWithMeta<T>(
+  function send(
+    token: string | null,
+    { method = 'GET', body, signal }: RequestOptions,
     path: string,
-    { method = 'GET', body, signal, skipUnauthorizedHandler = false }: RequestOptions = {},
-  ): Promise<ApiResponse<T>> {
+  ) {
     const headers: Record<string, string> = { Accept: 'application/json' };
-    const token = await getAccessToken();
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined) headers['Content-Type'] = 'application/json';
-
     const doFetch = options.fetchImpl ?? fetch;
-    const response = await doFetch(`${baseUrl}${path}`, {
+    return doFetch(`${baseUrl}${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     });
+  }
+
+  async function requestWithMeta<T>(
+    path: string,
+    requestOptions: RequestOptions = {},
+  ): Promise<ApiResponse<T>> {
+    let response = await send(await getAccessToken(), requestOptions, path);
+    // The token may expire in flight or be refused for clock skew: renew once and retry.
+    if (response.status === 401 && renewAccessToken) {
+      const renewed = await renewAccessToken();
+      if (renewed) response = await send(renewed, requestOptions, path);
+    }
 
     const payload = await parseBody(response);
     if (!response.ok) {
-      if (response.status === 401 && !skipUnauthorizedHandler) onUnauthorized?.();
+      if (response.status === 401 && !requestOptions.skipUnauthorizedHandler) onUnauthorized?.();
       throw new ApiError(response.status, payload);
     }
     return { data: payload as T, status: response.status, headers: response.headers };

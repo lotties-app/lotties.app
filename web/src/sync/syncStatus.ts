@@ -6,8 +6,15 @@ export interface SyncStatus {
   pendingCount: number;
   /** Mutations the server permanently rejected (kept, not blocking). */
   deadLetterCount: number;
+  /** Dead-lettered changes the user has to fix (rejected event details). */
+  attentionCount: number;
   /** A 401 paused sync; it resumes after re-authentication. */
   authRequired: boolean;
+  /**
+   * The access token expired and is being renewed (or cannot be yet, e.g. offline): sync waits
+   * and retries with backoff. Not an auth failure: the user stays signed in.
+   */
+  waitingForToken: boolean;
   lastError: string | null;
   /** End of the last fully successful run (local clock, UTC ISO). */
   lastSyncedAt: string | null;
@@ -17,7 +24,9 @@ export const INITIAL_SYNC_STATUS: SyncStatus = {
   state: 'idle',
   pendingCount: 0,
   deadLetterCount: 0,
+  attentionCount: 0,
   authRequired: false,
+  waitingForToken: false,
   lastError: null,
   lastSyncedAt: null,
 };

@@ -1,9 +1,9 @@
 import { liveQuery, type Subscription } from 'dexie';
 import type { ApiClient } from '../api/apiClient';
 import type { BabyRoutineDb } from '../db/database';
-import { countDeadLetters, countPendingMutations } from '../db/outbox';
+import { countAttentionNeeded, countDeadLetters, countPendingMutations } from '../db/outbox';
 import { t } from '../i18n/i18n';
-import { DEFAULT_BACKOFF, type BackoffOptions } from './backoff';
+import { backoffDelay, DEFAULT_BACKOFF, type BackoffOptions } from './backoff';
 import { discardDeadLetter } from './deadLetters';
 import { classifyFailure, describeFailure } from './failures';
 import { pullAll } from './pull';
@@ -34,6 +34,7 @@ export interface SyncEngineOptions {
 interface QueueCounts {
   pending: number;
   dead: number;
+  attention: number;
 }
 
 function defaultLocks(): LockManager | null {
@@ -64,6 +65,8 @@ export class SyncEngine {
   private rerunRequested = false;
   private paused = false;
   private rejectedToken: string | null = null;
+  /** Consecutive runs that waited for a token renewal (drives their backoff). */
+  private tokenWaits = 0;
   private started = false;
   private lastPending: number | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -195,6 +198,7 @@ export class SyncEngine {
 
     const push = await pushOutbox(this.ctx);
     if (push.kind === 'unauthorized') return this.pauseForAuth();
+    if (push.kind === 'waitingForToken') return this.waitForToken();
     if (push.kind === 'offline') return this.finish('offline', push.error);
     if (push.kind === 'backoff') this.scheduleRetry(push.retryAt);
 
@@ -205,25 +209,53 @@ export class SyncEngine {
       return this.handlePullFailure(error);
     }
     const pushError = push.kind === 'backoff' ? push.error : null;
-    const error = [pushError, ...pullErrors].filter(Boolean).join('; ') || null;
+    const errors = new Set([pushError, ...pullErrors].filter((e): e is string => !!e));
+    const error = [...errors].join(' ') || null;
     await this.finish(error ? 'error' : 'idle', error);
   }
 
   private async handlePullFailure(error: unknown): Promise<void> {
     const kind = classifyFailure(error);
     if (kind === 'unauthorized') return this.pauseForAuth();
+    if (kind === 'waitingForToken') return this.waitForToken();
     await this.finish(kind === 'network' ? 'offline' : 'error', describeFailure(error));
   }
 
   private async finish(state: SyncState, lastError: string | null): Promise<void> {
     const counts = await this.readCounts();
+    this.tokenWaits = 0;
     this.status.update({
       state,
       lastError,
-      pendingCount: counts.pending,
-      deadLetterCount: counts.dead,
+      waitingForToken: false,
+      ...this.countsPatch(counts),
       ...(state === 'idle' ? { lastSyncedAt: new Date(this.ctx.now()).toISOString() } : {}),
     });
+  }
+
+  /**
+   * The expired access token is being renewed: nothing failed and nothing is counted against the
+   * queue. Sync retries with backoff (and as soon as the renewal succeeds, see `SyncProvider`).
+   */
+  private async waitForToken(): Promise<void> {
+    this.tokenWaits += 1;
+    this.scheduleRetry(this.ctx.now() + backoffDelay(this.tokenWaits, this.ctx.backoff));
+    const counts = await this.readCounts();
+    this.status.update({
+      state: 'idle',
+      waitingForToken: true,
+      authRequired: false,
+      lastError: null,
+      ...this.countsPatch(counts),
+    });
+  }
+
+  private countsPatch(counts: QueueCounts) {
+    return {
+      pendingCount: counts.pending,
+      deadLetterCount: counts.dead,
+      attentionCount: counts.attention,
+    };
   }
 
   private async pauseForAuth(): Promise<void> {
@@ -235,17 +267,18 @@ export class SyncEngine {
       state: 'error',
       authRequired: true,
       lastError: t('sync.unauthorized'),
-      pendingCount: counts.pending,
-      deadLetterCount: counts.dead,
+      waitingForToken: false,
+      ...this.countsPatch(counts),
     });
   }
 
   private async readCounts(): Promise<QueueCounts> {
-    const [pending, dead] = await Promise.all([
+    const [pending, dead, attention] = await Promise.all([
       countPendingMutations(this.ctx.db),
       countDeadLetters(this.ctx.db),
+      countAttentionNeeded(this.ctx.db),
     ]);
-    return { pending, dead };
+    return { pending, dead, attention };
   }
 
   private scheduleRetry(retryAt: number): void {
@@ -281,7 +314,7 @@ export class SyncEngine {
   };
 
   private readonly handleCounts = (counts: QueueCounts) => {
-    this.status.update({ pendingCount: counts.pending, deadLetterCount: counts.dead });
+    this.status.update(this.countsPatch(counts));
     const grew = this.lastPending !== null && counts.pending > this.lastPending;
     this.lastPending = counts.pending;
     if (grew) void this.syncNow();

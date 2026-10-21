@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApiClient } from '../api/ApiClientContext';
 import { useAuth } from '../auth/useAuth';
 import { useDatabase } from '../db/DatabaseContext';
@@ -10,7 +10,7 @@ type EngineOverrides = Omit<SyncEngineOptions, 'db' | 'api' | 'getAccessToken'>;
 /**
  * Owns the sync engine: started while the user is authenticated, stopped otherwise.
  * The api client and token getter are re-created on every render upstream, so they are handed
- * to the long-lived engine instead of rebuilding it.
+ * to the long-lived engine instead of rebuilding it. A renewed access token resumes sync at once.
  */
 export function SyncProvider({
   options,
@@ -21,8 +21,9 @@ export function SyncProvider({
 }) {
   const db = useDatabase();
   const api = useApiClient();
-  const { isAuthenticated, getAccessToken } = useAuth();
+  const { isAuthenticated, getAccessToken, session } = useAuth();
   const [engine] = useState(() => new SyncEngine({ ...options, db, api, getAccessToken }));
+  const previousSession = useRef(session);
 
   useEffect(() => {
     engine.setTransport(api, getAccessToken);
@@ -33,6 +34,12 @@ export function SyncProvider({
     engine.start();
     return () => engine.stop();
   }, [engine, isAuthenticated]);
+
+  useEffect(() => {
+    const renewed = previousSession.current !== 'active' && session === 'active';
+    previousSession.current = session;
+    if (renewed && isAuthenticated) void engine.resumeAfterAuth();
+  }, [engine, session, isAuthenticated]);
 
   return <SyncEngineContext value={engine}>{children}</SyncEngineContext>;
 }

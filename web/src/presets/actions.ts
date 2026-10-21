@@ -4,10 +4,12 @@ import {
   createEvent,
   deleteEvent,
   editEvent,
+  finishEvent,
   stopEvent,
   type CommandOptions,
 } from '../db/eventCommands';
 import { eventsStartedSince, runningEvents } from '../db/queries';
+import { planStop } from '../events/stopPlan';
 import { eventMatchesPreset, inferFellAsleepKind } from './status';
 import type { Preset } from './types';
 
@@ -15,6 +17,11 @@ import type { Preset } from './types';
 export interface PresetContext {
   babyId: string;
   options?: CommandOptions;
+  /**
+   * Payload of the tapped preset's event, instead of its `payloadDefaults` (e.g. the defaults plus
+   * remembered values of required fields, see `quickStartPayload`).
+   */
+  payload?: EventPayload;
 }
 
 /** What a preset command changed, enough to undo it. */
@@ -24,6 +31,11 @@ export interface UndoToken {
   createdIds: string[];
   /** Running timers the command stopped, with the end time it set. */
   stopped: { id: string; endedAt: string }[];
+  /**
+   * Running timers left running because stopping them needs details first (required fields the
+   * server would ask for): the UI asks for them ("Finish this ...").
+   */
+  needsFinish?: string[];
 }
 
 /** The tapped preset cannot run as a command (`sheet` and `link` presets open UI instead). */
@@ -59,7 +71,8 @@ function isRunningSleepTimer(preset: Preset, event: BabyEvent) {
  * Runs a `timer` or `instant` preset as one local transaction (events + outbox entries):
  * - `timer`: starts the timer now; throws `PresetAlreadyRunningError` when it already runs;
  * - `instant`: logs the marker (`endedAt = startedAt`);
- * - Wake-up additionally stops every running nap/night timer at the same moment;
+ * - Wake-up additionally stops every running nap/night timer at the same moment (one whose
+ *   required fields are missing is left running and listed in `needsFinish`);
  * - Fell asleep additionally starts a sleep timer (kind inferred, see `inferFellAsleepKind`),
  *   unless a nap/night timer already runs.
  * All events share the tap moment (`ctx.options.now`, default the current time).
@@ -93,7 +106,7 @@ export async function runPreset(
     token.createdIds.push(event.id);
   };
 
-  await db.transaction('rw', db.events, db.outbox, async () => {
+  await db.transaction('rw', db.events, db.outbox, db.eventTypes, async () => {
     const running = await runningEvents(db, ctx.babyId);
 
     if (preset.mode === 'timer') {
@@ -102,13 +115,22 @@ export async function runPreset(
     }
 
     if (preset.stopsSleepTimers) {
+      const type = await db.eventTypes.get(typeId);
       for (const timer of running.filter((e) => isRunningSleepTimer(preset, e))) {
-        const stopped = await stopEvent(db, timer.id, iso, options);
+        const plan = planStop(type, timer.payload);
+        if (plan.kind === 'finish') {
+          (token.needsFinish ??= []).push(timer.id);
+          continue;
+        }
+        const stopped =
+          plan.kind === 'strip'
+            ? await finishEvent(db, timer.id, plan.payload, iso, options)
+            : await stopEvent(db, timer.id, iso, options);
         token.stopped.push({ id: timer.id, endedAt: stopped.endedAt ?? iso });
       }
     }
 
-    await create({ ...preset.payloadDefaults }, preset.mode === 'instant');
+    await create({ ...(ctx.payload ?? preset.payloadDefaults) }, preset.mode === 'instant');
 
     if (preset.startsInferredSleepTimer && !running.some((e) => isRunningSleepTimer(preset, e))) {
       const recent = await eventsStartedSince(

@@ -1,4 +1,5 @@
 import { forgetSelectedBaby } from '../baby/selectedBabyStorage';
+import { clearAllLastUsed } from '../events/lastUsedValues';
 import { clearAllCachedPredictions } from '../predictions/predictionsCache';
 import { clearAllPinned } from '../presets/pinnedStorage';
 
@@ -6,13 +7,15 @@ import { clearAllPinned } from '../presets/pinnedStorage';
 const ACCOUNT_KEY = 'baby-routine.account';
 
 /**
- * Removes the account's localStorage entries: the selected baby, the cached predictions and the pinned
- * presets (all keyed by baby). Device preferences such as the theme are kept.
+ * Removes the account's localStorage entries: the selected baby, the cached predictions, the pinned
+ * presets and the remembered field values (all keyed by baby). Device preferences such as the
+ * theme are kept.
  */
 export function clearAccountDeviceState(): void {
   forgetSelectedBaby();
   clearAllCachedPredictions();
   clearAllPinned();
+  clearAllLastUsed();
   try {
     window.localStorage.removeItem(ACCOUNT_KEY);
   } catch {

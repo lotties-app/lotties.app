@@ -199,7 +199,7 @@ describe('delta cursor', () => {
     const errors = await pullAll(ctx);
 
     expect(eventGets(calls)).toHaveLength(2);
-    expect(errors).toEqual([expect.stringContaining('same cursor twice')]);
+    expect(errors).toEqual(['Something went wrong.']);
     expect(await db.events.count()).toBe(1);
   });
 

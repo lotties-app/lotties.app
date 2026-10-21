@@ -82,8 +82,13 @@ describe('pt-BR screens', () => {
   it('translates the home quick actions and predictions heading', async () => {
     await seedBaby(db);
     renderWithDb(db, <HomePage />);
-    expect(await screen.findByRole('button', { name: 'Iniciar Alimentação' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Registrar Fralda' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'Iniciar Amamentação, Sem registro hoje' }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Registrar Fralda, Sem registro hoje' }),
+    ).toBeTruthy();
+    expect(screen.getByText('Mamadeira')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Próximos previstos' })).toBeTruthy();
   });
 
@@ -171,7 +176,13 @@ describe('pt-BR texts outside components', () => {
     expect(eventTypeText.typeName({ key: 'future', name: 'Future', babyId: null })).toBe('Future');
     const type = { key: 'feeding', babyId: null };
     expect(eventTypeText.optionLabel(type, { key: 'method' }, 'BREAST')).toBe('Peito');
-    expect(eventTypeText.optionLabel(type, { key: 'method' }, 'constructor')).toBe('constructor');
+    // Never an inherited catalog member; an untranslated built-in code is humanized, not raw.
+    expect(eventTypeText.optionLabel(type, { key: 'method' }, 'constructor')).toBe('Constructor');
+    expect(eventTypeText.optionLabel(type, { key: 'method' }, 'tube_FEEDING')).toBe('Tube feeding');
+    const custom = { key: 'feeding', babyId: BABY_ID };
+    expect(eventTypeText.optionLabel(custom, { key: 'method' }, 'tube_feeding')).toBe(
+      'tube_feeding',
+    );
     expect(eventTypeText.fieldLabel(type, { key: 'amount_ml', label: 'Amount' })).toBe(
       'Quantidade',
     );
