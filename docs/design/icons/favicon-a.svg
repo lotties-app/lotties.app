@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-<!-- Baby Routine app icon, concept A "Cloud cradle" (favicon, simplified for 16 px). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
-<title>Baby Routine</title>
+<!-- Lotties app icon, concept A "Cloud cradle" (favicon, simplified for 16 px). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
 <defs>
 <mask id="fa-k" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
 <rect width="32" height="32" fill="#fff"/>

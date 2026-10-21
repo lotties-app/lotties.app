@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 300" width="1220" height="300">
-<!-- Baby Routine app icon, concept C "br monogram" (wordmark lockup, light; the name is live text in Fraunces (SIL OFL 1.1): final art converts it to outlines). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
-<title>Baby Routine</title>
+<!-- Lotties app icon, concept C "br monogram" (wordmark lockup, light; the name is live text in Fraunces (SIL OFL 1.1): final art converts it to outlines). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
 <defs>
 <linearGradient id="clk-tile" x1="0" y1="0" x2="1" y2="1">
 <stop offset="0" stop-color="#fffcf6"/>
@@ -58,5 +58,5 @@
 </g>
 </g>
 </g>
-<text x="324" y="194" font-family="Fraunces, Georgia, serif" font-size="128" font-weight="600" letter-spacing="-1.5" fill="#2a251f">Baby Routine</text>
+<text x="324" y="194" font-family="Fraunces, Georgia, serif" font-size="128" font-weight="600" letter-spacing="-1.5" fill="#2a251f">Lotties</text>
 </svg>

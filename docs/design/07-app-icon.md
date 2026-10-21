@@ -56,7 +56,7 @@ Below 32 px, use the favicon drawing in-app too.
 
 ## Licence
 
-Original work by the Baby Routine contributors, AGPL-3.0-or-later with the project. It is hand-built SVG: no raster, generated or traced art, and no embedded font. The lockups use live Fraunces text (SIL OFL 1.1), and outlining it for final art is allowed. The mockup embeds the woff2 the app already ships, with its notice. Blocking look-alike forks would need a trademark notice, not a licence change.
+Original work by the Lotties contributors, AGPL-3.0-or-later with the project. It is hand-built SVG: no raster, generated or traced art, and no embedded font. The lockups use live Fraunces text (SIL OFL 1.1), and outlining it for final art is allowed. The mockup embeds the woff2 the app already ships, with its notice. Blocking look-alike forks would need a trademark notice, not a licence change.
 
 ## Implementation checklist
 
@@ -75,4 +75,4 @@ Original work by the Baby Routine contributors, AGPL-3.0-or-later with the proje
 - Keycloak theme logo: the lockup with outlined text, or the icon plus Fraunces in the theme CSS.
 - Social preview for the repository: 1200×630 PNG, linen background with the lockup.
 - Header: the favicon drawing at 24-32 px plus `t('app.name')` in `fontFamilyDisplay` 600. `LoginPage`: the icon at 88 px above the name.
-- The "Baby Routine" label may truncate on iOS; `short_name` is the owner's call.
+- The "Lotties" label may truncate on iOS; `short_name` is the owner's call.

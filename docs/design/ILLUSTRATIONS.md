@@ -16,7 +16,7 @@ Wave 4c, SYNTHESIS.md section 5 item 1. Code: `web/src/ui/illustrations/`. Galle
 
 ## Licence
 
-These illustrations are **original works by the Baby Routine project contributors**, drawn by hand as SVG paths and gradients in code, and are licensed under the project licence (**AGPL-3.0-or-later**, see `LICENSE`). No external artwork, icon set, font glyph, traced image or generated raster was used. Competitor apps were only a source of general principles (soft depth, glow, illustrated categories); no shape, composition or colour scheme of theirs was copied, traced or imitated. Every source file carries the same statement in a header comment.
+These illustrations are **original works by the Lotties project contributors**, drawn by hand as SVG paths and gradients in code, and are licensed under the project licence (**AGPL-3.0-or-later**, see `LICENSE`). No external artwork, icon set, font glyph, traced image or generated raster was used. Competitor apps were only a source of general principles (soft depth, glow, illustrated categories); no shape, composition or colour scheme of theirs was copied, traced or imitated. Every source file carries the same statement in a header comment.
 
 ## What they are for
 

@@ -67,7 +67,7 @@ Decided 2026-10-21. Languages: English (`en`, source/fallback) and Brazilian Por
   - Predictions: render the sentence from the structured `basis` and numbers (median gap, sample count, look-back days, age band, day phase), not the server `reason` string; the server `reason` stays English as a debugging fallback only.
 - Copy style per language: English sentence case (see section 6). pt-BR: informal "você", sentence case, no exclamation marks, natural not literal ("Registrar", "Hora de dormir", "Soneca", "Despertar noturno", "Acordou", "Adormeceu", "Cólica/dor de barriga"), units in metric (ml, kg, cm), decimal comma.
 - Tests: a unit test fails when `en` and `pt-BR` catalogs have different key sets or placeholders (including missing plural forms); a lint-level check (`eslint-plugin-i18next` `no-literal-string` in `markup-only` mode, warnings -> errors for new code) or an equivalent test prevents new hard-coded UI strings; render tests for key screens in both locales; the e2e suite runs in English (set the locale explicitly) plus one pt-BR smoke spec.
-- PWA manifest: `lang` en; name stays "Baby Routine" (brand, not translated); `description` may be localized later via a second manifest, out of scope.
+- PWA manifest: `lang` en; name stays "Lotties" (brand, not translated); `description` may be localized later via a second manifest, out of scope.
 - The API's own text is not user-facing except problem `title`/`detail` fallbacks, kept in English.
 
 ## 10. Refinement direction (supersedes looser parts of sections 1-5; decided 2026-10-21 after user feedback: "poor design, make it elegant, more icons, very user friendly, helps parents get better every day")

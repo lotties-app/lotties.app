@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-<!-- Baby Routine app icon, concept A "Cloud cradle" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
-<title>Baby Routine</title>
+<!-- Lotties app icon, concept A "Cloud cradle" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
 <defs>
 <clipPath id="am-clip">
 <path d="M0 0H1024V1024H0Z"/>

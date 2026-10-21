@@ -10,7 +10,7 @@ Owner request: drop the SPA `/login` page (Keycloak's themed page is the sign-in
 - `/auth/callback` unchanged.
 
 ## Landing content (calm, honest, no marketing fluff; en + pt-BR via i18n; only claim what exists)
-Hero: brand mark + 'Baby Routine'; headline 'Track your baby's day, together'; sub 'Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent.'; primary 'Sign in', secondary 'Create an account'; hero art from the illustration set (nap cloud + moon, bottle), a soft glow in light/dark, flat in night.
+Hero: brand mark + 'Lotties'; headline 'Track your baby's day, together'; sub 'Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent.'; primary 'Sign in', secondary 'Create an account'; hero art from the illustration set (nap cloud + moon, bottle), a soft glow in light/dark, flat in night.
 Sections (cards with illustrations, scroll):
 1. Log in two taps: one-tap tiles, timers, undo. 2. Works offline: installs like an app, syncs when the connection is back. 3. Share with your co-parent: invite by link, see who logged what. 4. Gentle predictions: next nap window with a plain explanation; 'Estimates from your logged history, not medical advice'. 5. Bring your history: import from Napper, custom events, medications with safe intervals (the doctor's prescription is the source). 6. Your data, your rules: free and open source (AGPL-3.0), can be self-hosted, no ads, no tracking (verify no analytics exist before claiming).
 Footer: language switch (System/English/Português), theme toggle (System/Light/Dark), link to the source repository (config `VITE_REPO_URL`, hidden when unset), licence, 'Not a medical device', install hint (reuse the PWA install button; iOS hint).

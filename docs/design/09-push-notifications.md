@@ -247,8 +247,8 @@ Licence compatibility: MIT and MPL-2.0 libraries may be used by an AGPL-3.0 appl
 - Explainer sheet: what is sent (kinds), that lock-screen text is generic unless "Show names" is on, the guardrail text of section 4, that it can be turned off anytime.
 - States (pure `pushSupport.ts` + `permissionState.ts`):
   - `server-disabled` (`enabled: false`): the Notifications section is not shown.
-  - `unsupported` (no `serviceWorker`, `PushManager` or `Notification`, or an in-app browser): "This browser can't show notifications from Baby Routine."
-  - `ios-needs-install` (iOS/iPadOS Safari, not standalone): "On iPhone and iPad, notifications work after you add Baby Routine to your Home Screen: tap Share, then Add to Home Screen, and open it from there." with the existing install hint; `ios-too-old` (below 16.4): "Needs iOS 16.4 or later."
+  - `unsupported` (no `serviceWorker`, `PushManager` or `Notification`, or an in-app browser): "This browser can't show notifications from Lotties."
+  - `ios-needs-install` (iOS/iPadOS Safari, not standalone): "On iPhone and iPad, notifications work after you add Lotties to your Home Screen: tap Share, then Add to Home Screen, and open it from there." with the existing install hint; `ios-too-old` (below 16.4): "Needs iOS 16.4 or later."
   - `default`: Turn on button.
   - `denied`: how to allow notifications in the browser or system settings for this site; no repeated prompting.
   - `granted` + subscribed: device switch on; `granted` without subscription: Turn on re-subscribes without a prompt.
@@ -278,8 +278,8 @@ Worker catalog `web/src/i18n/locales/push.{en,pt-BR}.json` (bundled into the wor
 | `nap_window.title` | Nap window | Janela de soneca |
 | `nap_window.body` | The estimated nap window opens around {{time}}. | A janela estimada de soneca abre por volta de {{time}}. |
 | `nap_window.bodyNamed` | {{baby}}: the estimated nap window opens around {{time}}. | {{baby}}: a janela estimada de soneca abre por volta de {{time}}. |
-| `test.title` / `test.body` | Notifications are on / This is a test from Baby Routine. | Notificações ativadas / Este é um teste do Baby Routine. |
-| `generic.title` / `generic.body` | Baby Routine / Open the app for details. | Baby Routine / Abra o app para ver os detalhes. |
+| `test.title` / `test.body` | Notifications are on / This is a test from Lotties. | Notificações ativadas / Este é um teste do Lotties. |
+| `generic.title` / `generic.body` | Lotties / Open the app for details. | Lotties / Abra o app para ver os detalhes. |
 | `action.snooze` / `action.open` | Snooze 30 min / Open | Adiar 30 min / Abrir |
 
 App catalogs (`notifications.*` in `en.json`/`pt-BR.json`): section title, device switch, test button and results, explainer title/body/guardrail, every state message of section 11, per-baby labels and lead options, quiet hours labels, show-names label and help, time zone line, devices list, prompt card, deep-link reminder line, offline notes, plus `errors.push_not_configured`, `errors.push_endpoint_not_allowed`, `errors.notification_action_not_found`, `errors.snooze_limit_reached`. Copy rules of docs/DESIGN.md sections 6 and 9 (sentence case, no exclamation marks, informal "você"). Times only via `web/src/i18n/format.ts` in the app.

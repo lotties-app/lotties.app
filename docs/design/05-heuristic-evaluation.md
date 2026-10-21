@@ -101,7 +101,7 @@ Severity: **B** blocker, **M** major, **m** minor, **n** nit. Effort: S under a 
 | m13 | m | Import review | Raw Napper codes in the table. On phones the table scrolls sideways, hiding two columns, and the scroll region isn't keyboard focusable (axe `scrollable-region-focusable`). | `import-2-review-*` | Translate categories. Stack the numbers per row on phones. `tabIndex=0` on the scroller. | S |
 | m14 | m | pt-BR | "Linha do tempo" wraps to two lines and misaligns the nav. Duration "15m" in en vs "15 min" in pt. "37 C" lacks "°". | `timeline-mobile-*-pt-BR`, `timeline-desktop-dark-pt-BR` | Shorter label ("Histórico"). Localized unit formatting through `formatUnit`. | S |
 | m15 | m | Header | Baby and account avatars are both a letter "E" in a circle, side by side. Long baby names truncate hard. | `home-*` | Account menu as an icon or photo. Drop the second avatar on phones. | S |
-| n1 | n | Home | No h1. Document title is "Baby Routine" on every route (2.4.2). No skip link. | axe `page-has-heading-one` | Visually hidden h1 per page. Per-route `document.title`. | S |
+| n1 | n | Home | No h1. Document title is "Lotties" on every route (2.4.2). No skip link. | axe `page-has-heading-one` | Visually hidden h1 per page. Per-route `document.title`. | S |
 | n2 | n | Import result | "0 records were already imported." | `import-5-result-*` | Omit zero counts. | S |
 | n3 | n | Inputs | Below 44 px (all above 24 px): Timeline chips 32 px, small selects 37 px, Notes 40 px, "Add medication" 40 px. | `summary.md` | 44 px minimum per DESIGN 1. | S |
 
