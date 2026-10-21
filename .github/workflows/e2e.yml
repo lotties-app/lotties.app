@@ -1,0 +1,63 @@
+name: E2E
+
+# Manual only: the suite signs in to a real Keycloak realm and writes to a real PostgreSQL database,
+# so it needs secrets (see docs/E2E.md) and must not run on forks or on every push.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      DB_HOST: ${{ secrets.E2E_DB_HOST }}
+      DB_PORT: ${{ secrets.E2E_DB_PORT }}
+      DB_NAME: ${{ secrets.E2E_DB_NAME }}
+      DB_APP_USER: ${{ secrets.E2E_DB_APP_USER }}
+      DB_APP_PASSWORD: ${{ secrets.E2E_DB_APP_PASSWORD }}
+      AUTH_AUTHORITY: ${{ secrets.E2E_AUTH_AUTHORITY }}
+      AUTH_AUDIENCE: ${{ secrets.E2E_AUTH_AUDIENCE }}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      VITE_OIDC_AUTHORITY: ${{ secrets.E2E_AUTH_AUTHORITY }}
+      VITE_OIDC_CLIENT_ID: ${{ secrets.E2E_OIDC_CLIENT_ID }}
+      VITE_OIDC_AUDIENCE: ${{ secrets.E2E_AUTH_AUDIENCE }}
+      E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            e2e/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm ci
+        working-directory: e2e
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: dotnet build api/src/BabyRoutine.Api
+      - run: npx playwright test
+        working-directory: e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          # Specs that type the password run with tracing off, and .auth/ is never uploaded.
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7

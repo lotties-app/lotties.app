@@ -18,7 +18,7 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 | 12 | Web: settings (custom event types, medications, members/invites) | Medium (done) | 8, 4, 5 | tests |
 | 13 | Web: predictions cards | Light (done) | 7, 10 | tests |
 | 14 | PWA polish: manifest, icons, service worker, install prompt | Light (done) | 8 | Lighthouse PWA check |
-| 15 | End-to-end smoke (Playwright) on docker-compose + docs | Medium | all | CI green |
+| 15 | End-to-end smoke (Playwright) against local API + Keycloak + real DB (done, see docs/E2E.md) | Medium | all | 14 specs green |
 
 | 16 | Measurements: `Measurement` entity + migration + endpoints; web list/chart | Medium (done) | 2, 8 | tests |
 | 17 | Napper CSV importer (API service + web upload + medication mapping step), synthetic fixtures | Careful (done) | 5, 6, 16 | tests on fixtures incl. idempotent re-import |

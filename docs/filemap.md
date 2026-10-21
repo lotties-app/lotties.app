@@ -4,6 +4,7 @@
 - docs/filemap.md — this index
 - docs/SPEC.md — product + architecture spec
 - docs/PLAN.md — task list and status
+- docs/E2E.md — how to run the Playwright smoke suite, required env, coverage
 - .gitignore — ignores
 - .editorconfig — editor and C# style defaults
 - api/ — .NET solution (`BabyRoutine.sln`): `src/` Domain, Application, Infrastructure, Api; `tests/` xUnit projects
@@ -15,6 +16,8 @@
 - docker-compose.yml — api + web, optional `localdb` postgres profile
 - .env.example — env var template (placeholders only; real `.env` is gitignored)
 - .github/workflows/ci.yml — CI: dotnet build/test, web lint/test/build
+- .github/workflows/e2e.yml — manual (workflow_dispatch) Playwright E2E run, needs secrets
+- e2e/ — Playwright smoke suite (own package.json): playwright.config.ts (starts API + web), tests/ (auth.setup + specs), support/ (helpers, root .env loader)
 - LICENSE — AGPL-3.0
 - README.md — overview, quick start, env vars
 - CONTRIBUTING.md — contribution guide
