@@ -1,7 +1,7 @@
 # ml: prediction benchmark
 
 An honest, CPU-only backtest of small models against the heuristic v1 predictions of the API
-(`code/api/src/BabyRoutine.Domain/Predictions`). It answers one question: does a small model predict a baby's next feed,
+(`code/api/src/Lotties.Domain/Predictions`). It answers one question: does a small model predict a baby's next feed,
 diaper, sleep start, wake-up and bed time better than the heuristic, for that baby, without peeking at the future?
 
 Results: [`docs/ml/BENCHMARK.md`](../docs/ml/BENCHMARK.md). Service design: [`docs/ml/ARCHITECTURE.md`](../docs/ml/ARCHITECTURE.md).

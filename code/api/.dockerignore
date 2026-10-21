@@ -1,0 +1,16 @@
+# Build context of the API image (code/api). The image restores and publishes only src/Lotties.Api and
+# its project references, so build output, IDE files and the test projects stay out of the context.
+# Host obj/ folders must never reach the image: their project.assets.json would point at host paths.
+bin/
+obj/
+**/bin/
+**/obj/
+.vs/
+**/.vs/
+*.user
+**/*.user
+**/TestResults/
+out.sql
+tests/
+Dockerfile
+.dockerignore

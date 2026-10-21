@@ -1,5 +1,5 @@
 """Parity tests: the Python port must reproduce the C# heuristic v1 test expectations
-(code/api/tests/BabyRoutine.Domain.Tests/Predictions/PredictionEngineTests.cs and SleepSessionTests.cs)."""
+(code/api/tests/Lotties.Domain.Tests/Predictions/PredictionEngineTests.cs and SleepSessionTests.cs)."""
 
 from __future__ import annotations
 

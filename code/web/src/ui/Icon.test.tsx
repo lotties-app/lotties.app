@@ -59,7 +59,7 @@ describe('CategoryIcon', () => {
 describe('event type icon names', () => {
   const allowlist = [
     ...readFileSync(
-      resolve(process.cwd(), '../api/src/BabyRoutine.Domain/EventTypes/EventTypeIcons.cs'),
+      resolve(process.cwd(), '../api/src/Lotties.Domain/EventTypes/EventTypeIcons.cs'),
       'utf8',
     ).matchAll(/^\s+"([a-z_]+)",?$/gm),
   ].map((m) => m[1]);

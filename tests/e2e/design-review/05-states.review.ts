@@ -220,7 +220,7 @@ for (const combo of SUBSET) {
     await page.waitForTimeout(1200);
     await page.locator('#import-header').evaluate((el) => el.scrollIntoView({ block: 'start' }));
     await shot(page, combo, 'import-1-files-empty');
-    const fixtures = path.join(REPO_ROOT, 'code/api/tests/BabyRoutine.Api.Tests/Imports/Fixtures');
+    const fixtures = path.join(REPO_ROOT, 'code/api/tests/Lotties.Api.Tests/Imports/Fixtures');
     const inputs = page.locator('#import-content input[type=file]');
     await inputs.nth(0).setInputFiles(path.join(fixtures, 'napper-logs.csv'));
     await inputs.nth(1).setInputFiles(path.join(fixtures, 'napper-measurements.csv'));

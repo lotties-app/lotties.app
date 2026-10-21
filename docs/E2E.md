@@ -14,7 +14,7 @@ Playwright starts both servers itself (`webServer`) and reuses them when they al
 
 | Server | Command | URL |
 | --- | --- | --- |
-| API | `dotnet run --project code/api/src/BabyRoutine.Api --no-launch-profile` | `http://localhost:5290/health` |
+| API | `dotnet run --project code/api/src/Lotties.Api --no-launch-profile` | `http://localhost:5290/health` |
 | Web | `npm --prefix code/web run dev -- --port 5173 --strictPort` | `http://localhost:5173` |
 
 The API port is 5290 (override with `E2E_API_URL`): 5000 and 5080 are commonly taken by other local services, and a foreign server answering on the port would be silently reused. The API runs with `RequestLimits__PermitsPerMinute=6000` because the suite polls the API while the app syncs and would otherwise hit the default 300 requests/minute per user (HTTP 429).

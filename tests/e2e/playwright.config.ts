@@ -43,7 +43,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'dotnet run --project code/api/src/BabyRoutine.Api --no-launch-profile',
+      command: 'dotnet run --project code/api/src/Lotties.Api --no-launch-profile',
       cwd: repoRoot,
       url: `${API_URL}/health`,
       reuseExistingServer: !isCI,

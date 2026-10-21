@@ -27,7 +27,7 @@ Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` to your da
 docker compose --profile localdb up --build
 ```
 
-Set `DB_HOST=postgres` and `POSTGRES_PASSWORD` (no default; the container refuses to start without it). The container creates `DB_APP_USER` as superuser with that password, so set `DB_APP_PASSWORD` to the same value. Data lives in the named volume `pgdata`, the port is bound to `127.0.0.1:5432` only, and the api waits for the database healthcheck. Intended for local development, not production. Since `DB_APP_USER` is the superuser here, `DB_AUTO_MIGRATE=true` lets the api create the schema at startup (see [Applying migrations](#applying-migrations)).
+Set `DB_HOST=postgres` and `POSTGRES_PASSWORD` (no default; the container refuses to start without it). The container creates the database `DB_NAME` (default `lotties`) and `DB_APP_USER` (compose default `lotties_app`, but the api requires it to be set) as superuser with that password, so set `DB_APP_PASSWORD` to the same value. Data lives in the named volume `pgdata`, the port is bound to `127.0.0.1:5432` only, and the api waits for the database healthcheck. Intended for local development, not production. Since `DB_APP_USER` is the superuser here, `DB_AUTO_MIGRATE=true` lets the api create the schema at startup (see [Applying migrations](#applying-migrations)).
 
 ## Environment variables
 
@@ -37,7 +37,7 @@ Compose reads `.env` from the repository root.
 |----------|---------|----------|---------|
 | `DB_HOST` | api | yes | Database host (`postgres` with `localdb`) |
 | `DB_PORT` | api | no (5432) | Database port |
-| `DB_NAME` | api, localdb | no (`babyroutine`) | Database name |
+| `DB_NAME` | api, localdb | no (`lotties`) | Database name |
 | `DB_APP_USER` | api, localdb | yes | Application role |
 | `DB_APP_PASSWORD` | api | yes | Application role password |
 | `DB_AUTO_MIGRATE` | api | no (`false`) | `true` applies pending migrations at startup; see "Applying migrations" |
@@ -51,6 +51,7 @@ Compose reads `.env` from the repository root.
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
 | `VITE_API_BASE_URL` | web build | no (empty) | Empty = same origin through nginx |
+| `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer (http/https only); empty hides it |
 | `WEB_PORT` | compose | no (8080) | Host port of the web container |
 | `OIDC_ORIGIN` | web runtime | no | Overrides the CSP OIDC origin derived from `VITE_OIDC_AUTHORITY` |
 
@@ -259,8 +260,8 @@ Only the three `PUSH_VAPID_*` names are flat aliases; the other settings use the
 ### Generating VAPID keys
 
 ```sh
-dotnet BabyRoutine.Api.dll --generate-vapid-keys      # published API
-dotnet run --project code/api/src/BabyRoutine.Api -- --generate-vapid-keys   # from source
+dotnet Lotties.Api.dll --generate-vapid-keys      # published API
+dotnet run --project code/api/src/Lotties.Api -- --generate-vapid-keys   # from source
 ```
 
 It prints `PUSH_VAPID_PUBLIC_KEY=...` and `PUSH_VAPID_PRIVATE_KEY=...` to stdout and exits; it writes no file. Generate once per deployment and keep the pair: changing it invalidates every existing browser subscription (users must re-enable notifications on each device).
@@ -357,7 +358,7 @@ Put `baby_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator cre
 
 ### Applying migrations
 
-The migrations are the EF Core code-first migrations in `code/api/src/BabyRoutine.Infrastructure/Persistence/Migrations/`. There is no checked-in SQL script. Supported ways, in order of preference for production:
+The migrations are the EF Core code-first migrations in `code/api/src/Lotties.Infrastructure/Persistence/Migrations/`. There is no checked-in SQL script. Supported ways, in order of preference for production:
 
 1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 8.0.32):
 
@@ -365,7 +366,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/BabyRoutin
    cd code/api
    dotnet tool restore
    DB_HOST=... DB_PORT=5432 DB_NAME=babyroutine DB_MIGRATOR_USER=baby_migrator DB_MIGRATOR_PASSWORD=... \
-     dotnet ef database update --project src/BabyRoutine.Infrastructure
+     dotnet ef database update --project src/Lotties.Infrastructure
    ```
 
    The design-time factory reads `DB_HOST`, `DB_PORT`, `DB_NAME` and `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to `DB_APP_*`).
@@ -375,7 +376,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/BabyRoutin
    ```bash
    cd code/api
    dotnet tool restore
-   dotnet ef migrations script --idempotent --project src/BabyRoutine.Infrastructure -o out.sql
+   dotnet ef migrations script --idempotent --project src/Lotties.Infrastructure -o out.sql
    psql -U baby_migrator -d babyroutine -f out.sql
    ```
 

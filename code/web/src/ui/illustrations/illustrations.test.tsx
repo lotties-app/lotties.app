@@ -155,7 +155,7 @@ describe('scheme', () => {
 describe('registry', () => {
   const builtInTypeKeys = [
     ...readFileSync(
-      resolve(process.cwd(), '../api/src/BabyRoutine.Domain/EventTypes/BuiltInEventTypes.cs'),
+      resolve(process.cwd(), '../api/src/Lotties.Domain/EventTypes/BuiltInEventTypes.cs'),
       'utf8',
     ).matchAll(/EventTypeKey\.From\("([a-z_]+)"\)/g),
   ].map((m) => m[1]);

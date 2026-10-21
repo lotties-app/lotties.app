@@ -27,8 +27,8 @@ jobs:
           cache-dependency-path: |
             code/api/**/*.csproj
             code/api/Directory.Build.props
-      - run: dotnet build code/api/BabyRoutine.sln
-      - run: dotnet test code/api/BabyRoutine.sln
+      - run: dotnet build code/api/Lotties.sln
+      - run: dotnet test code/api/Lotties.sln
 
   web:
     runs-on: ubuntu-latest

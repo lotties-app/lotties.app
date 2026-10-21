@@ -7,7 +7,7 @@ import {
 
 /*
  * Built-in event types exactly as `GET /babies/{id}/event-types` serves them (copied from
- * code/api/src/BabyRoutine.Domain/EventTypes/BuiltInEventTypes.cs and docs/SPEC.md), mapped through the
+ * code/api/src/Lotties.Domain/EventTypes/BuiltInEventTypes.cs and docs/SPEC.md), mapped through the
  * real DTO mapper. Ids are the API's stable built-in ids.
  */
 

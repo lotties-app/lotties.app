@@ -9,7 +9,7 @@ import { asNeeded, atTimes, dose, every, local, MED_A, MED_B, calc } from './pre
 import type { BabyEvent } from '../db/models';
 
 /*
- * Parity tests: the scenarios of code/api/tests/BabyRoutine.Domain.Tests/Prescriptions/
+ * Parity tests: the scenarios of code/api/tests/Lotties.Domain.Tests/Prescriptions/
  * MedicationStatusCalculatorTests.cs, with the same expectations.
  */
 

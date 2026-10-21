@@ -1,9 +1,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY Directory.Build.props BabyRoutine.sln ./
+# Restore layer: only the API's project graph, so it stays cached until a csproj or Directory.Build.props
+# changes. The solution and the test projects are not needed to publish the API (see .dockerignore).
+COPY Directory.Build.props ./
+COPY src/Lotties.Domain/Lotties.Domain.csproj src/Lotties.Domain/
+COPY src/Lotties.Application/Lotties.Application.csproj src/Lotties.Application/
+COPY src/Lotties.Infrastructure/Lotties.Infrastructure.csproj src/Lotties.Infrastructure/
+COPY src/Lotties.Api/Lotties.Api.csproj src/Lotties.Api/
+RUN dotnet restore src/Lotties.Api/Lotties.Api.csproj
 COPY src ./src
-COPY tests ./tests
-RUN dotnet publish src/BabyRoutine.Api/BabyRoutine.Api.csproj -c Release -o /out --no-self-contained
+RUN dotnet publish src/Lotties.Api/Lotties.Api.csproj -c Release -o /out --no-restore --no-self-contained
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
@@ -16,4 +22,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
 # Built-in non-root user ("app", UID 1654) shipped with the .NET 8 images.
 USER app
-ENTRYPOINT ["dotnet", "BabyRoutine.Api.dll"]
+ENTRYPOINT ["dotnet", "Lotties.Api.dll"]

@@ -3,7 +3,7 @@ import { getOwn } from '../util/ownProperty';
 
 /*
  * Offline mirror of the API's pure `MedicationStatusCalculator`
- * (code/api/src/BabyRoutine.Domain/Prescriptions, docs/SPEC.md "Calculator semantics"). Same rules:
+ * (code/api/src/Lotties.Domain/Prescriptions, docs/SPEC.md "Calculator semantics"). Same rules:
  * - Doses of a prescription: payload entries naming it, or naming its medication; its own doses (for
  *   scheduled slots) exclude entries that name another prescription.
  * - Interval clock: the latest dose of the prescription's medication or of any other active member of

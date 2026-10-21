@@ -7,7 +7,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       DB_HOST: ${DB_HOST:?set DB_HOST in .env}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-babyroutine}
+      DB_NAME: ${DB_NAME:-lotties}
       DB_APP_USER: ${DB_APP_USER:?set DB_APP_USER in .env}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
       # Opt-in: apply pending migrations at startup (docs/DEPLOY.md "Applying migrations"). The migrator
@@ -46,6 +46,8 @@ services:
         VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:?set VITE_OIDC_AUTHORITY in .env}
         VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:?set VITE_OIDC_CLIENT_ID in .env}
         VITE_OIDC_AUDIENCE: ${VITE_OIDC_AUDIENCE:-}
+        # Optional source repository link in the landing footer; empty hides it.
+        VITE_REPO_URL: ${VITE_REPO_URL:-}
     ports:
       - "${WEB_PORT:-8080}:80"
     depends_on:
@@ -60,8 +62,8 @@ services:
     image: postgres:16
     profiles: ["localdb"]
     environment:
-      POSTGRES_DB: ${DB_NAME:-babyroutine}
-      POSTGRES_USER: ${DB_APP_USER:-baby_app}
+      POSTGRES_DB: ${DB_NAME:-lotties}
+      POSTGRES_USER: ${DB_APP_USER:-lotties_app}
       # No default on purpose: the postgres image refuses to initialise with an empty password.
       # (`:?` would break `docker compose up` for users who do not use this profile.)
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}

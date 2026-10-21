@@ -84,7 +84,7 @@ Sent on demand from Settings to the caller's devices. Key `test:{deliveryId}`, T
 - Settings explainer (and the pre-permission sheet) states: "Reminders come from the prescriptions you entered. They can be late or missing (no connection, phone settings), so don't rely on them alone. Not medical advice."
 
 ## 5. Data model (EF Core code-first, snake_case, migration `PushNotifications`)
-New Domain folder `Domain/Notifications/`. All timestamps `timestamptz` (UTC). Add model tests in `BabyRoutine.Infrastructure.Tests`.
+New Domain folder `Domain/Notifications/`. All timestamps `timestamptz` (UTC). Add model tests in `Lotties.Infrastructure.Tests`.
 
 `push_subscriptions` (aggregate `PushSubscription`, one per browser endpoint)
 | Column | Type | Notes |
@@ -227,7 +227,7 @@ Licence compatibility: MIT and MPL-2.0 libraries may be used by an AGPL-3.0 appl
 - Env (the only place for secrets; root `.env` is gitignored, never committed): `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY` (base64url raw P-256 keys), `PUSH_VAPID_SUBJECT` (`mailto:` of the operator or an `https:` URL; Apple rejects invalid subjects). Added to `EnvironmentAliases` as `Push:Vapid:PublicKey|PrivateKey|Subject`.
 - Other settings in section `Push` (`Push__TickSeconds`, `Push__SchedulerEnabled`, `Push__AllowedEndpointHosts__0`, `Push__MaxSubscriptionsPerUser`, `Push__SendTimeoutSeconds`, `Push__MaxConcurrentSends`) with a validator like `RequestLimitsOptionsValidator`.
 - All three VAPID values unset = push disabled (`GET /push/config` says so). Some but not all set, an invalid key, or a public key that does not match the private key = startup fails.
-- Key generation without extra tooling: `dotnet BabyRoutine.Api.dll --generate-vapid-keys` prints a new pair to stdout and exits (no file written; `ECDsa` P-256 from `System.Security.Cryptography`).
+- Key generation without extra tooling: `dotnet Lotties.Api.dll --generate-vapid-keys` prints a new pair to stdout and exits (no file written; `ECDsa` P-256 from `System.Security.Cryptography`).
 - Rotation invalidates every subscription (they are bound to the public key); the web re-subscribes silently on next open because permission stays granted. Document as "rotate only if the private key leaked".
 - To-do for the implementer (task N10): docs/DEPLOY.md section "Push notifications" (generate keys, set the three env vars in the deployment secret, subject, allowlist, `sw.js` must stay `no-cache`, HTTPS required), placeholders in `.env.example`, README env table. This spec does not change DEPLOY.md.
 
@@ -310,7 +310,7 @@ SSRF allowlist on subscribe and send; endpoints and keys never logged, never ret
 - Manual device checklist (task N11, HTTPS staging): Android Chrome (tab and installed), desktop Chrome, Edge, Firefox, macOS Safari, iPhone 16.4+ Home Screen app and Safari tab guidance; enable, test, dose reminder at slot and with lead, snooze action and in-app snooze, dose logged by the co-parent stops theirs, quiet hours, show names off/on on the lock screen, airplane mode then reconnect within TTL, permission denied recovery, logout unsubscribes, account switch transfers the endpoint, VAPID rotation re-subscribes.
 
 ## 18. Observability
-- `Meter` `BabyRoutine.Push` (no exporter dependency; readable with `dotnet-counters`): counters `push.planned{kind}`, `push.sent{kind}`, `push.failed{kind,status}`, `push.gone`, `push.skipped{reason}` (stale, quiet_hours, unavailable, limit, snoozed, dismissed), `push.actions{action}`; histograms `push.tick.duration`, `push.send.duration`; observable gauge `push.subscriptions.active`.
+- `Meter` `Lotties.Push` (no exporter dependency; readable with `dotnet-counters`): counters `push.planned{kind}`, `push.sent{kind}`, `push.failed{kind,status}`, `push.gone`, `push.skipped{reason}` (stale, quiet_hours, unavailable, limit, snoozed, dismissed), `push.actions{action}`; histograms `push.tick.duration`, `push.send.duration`; observable gauge `push.subscriptions.active`.
 - Logs: Information per tick only when something was sent (counts), Warning for ticks over 10 s, lease lost repeatedly, 413, 10-failure revocations; Debug per delivery (delivery id, subscription id, kind, push service host, status). Never endpoints, keys, tokens, payloads or names.
 - Delivery rows answer support questions ("was it sent?") for 14 days.
 
