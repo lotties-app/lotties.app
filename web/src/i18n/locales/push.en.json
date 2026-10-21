@@ -1,0 +1,24 @@
+{
+  "dose_due": {
+    "title": "Medicine reminder",
+    "body": "A scheduled dose for {{time}} is not logged yet.",
+    "bodyNamed": "{{baby}}: {{medication}} scheduled for {{time}}, not logged yet."
+  },
+  "nap_window": {
+    "title": "Nap window",
+    "body": "The estimated nap window opens around {{time}}.",
+    "bodyNamed": "{{baby}}: the estimated nap window opens around {{time}}."
+  },
+  "test": {
+    "title": "Notifications are on",
+    "body": "This is a test from Lotties."
+  },
+  "generic": {
+    "title": "Lotties",
+    "body": "Open the app for details."
+  },
+  "action": {
+    "snooze": "Snooze 30 min",
+    "open": "Open"
+  }
+}
