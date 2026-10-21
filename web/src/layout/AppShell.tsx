@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { canWrite } from '../baby/permissions';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
+import { usePushReconcile } from '../notifications/usePushReconcile';
 import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { UndoSnackbar } from '../ui/UndoSnackbar';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
@@ -26,6 +27,7 @@ function ShellBody() {
   const { t } = useTranslation();
   const { baby } = useSelectedBaby();
   const writable = !!baby && canWrite(baby);
+  usePushReconcile();
   return (
     <AddSheetProvider enabled={writable}>
       <Box

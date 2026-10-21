@@ -1,7 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useApiClient } from '../api/ApiClientContext';
 import { useAuth } from '../auth/useAuth';
 import { useDatabase } from '../db/DatabaseContext';
 import { countUnsyncedMutations } from '../db/outbox';
+import { releaseThisDevice } from '../notifications/pushActions';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 import { useAccountSession } from './AccountSessionContext';
 import { endAccountSession } from './endSession';
@@ -17,12 +19,13 @@ export function useSignOut() {
   const { logout } = useAuth();
   const queryClient = useQueryClient();
   const session = useAccountSession();
+  const api = useApiClient();
 
   const signOut = async () => {
     engine.stop();
     await engine.whenIdle();
     queryClient.clear();
-    await (session ? session.end() : endAccountSession(db, logout));
+    await (session ? session.end() : endAccountSession(db, logout, releaseThisDevice(api)));
   };
 
   return {

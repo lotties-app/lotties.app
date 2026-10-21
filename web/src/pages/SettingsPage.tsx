@@ -12,6 +12,8 @@ import { MembersSection } from '../settings/MembersSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { canWrite } from '../baby/permissions';
+import { usePushConfig } from '../notifications/usePush';
+import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 
 // The importer is only needed when its section is opened, so it loads on demand.
 const ImportSection = lazy(() =>
@@ -22,10 +24,12 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
   // Links open one section: the header's sync icon (#sync), the account menu (#baby, #appearance)
-  // and the first-run cards (#import, #members).
+  // the first-run cards (#import, #members) and the reminder prompts (#notifications).
   const { hash } = useLocation();
   const target = hash.slice(1);
   const wants = (...ids: string[]) => ids.includes(target);
+  // Hidden when the server has push off (or before its config loaded).
+  const push = usePushConfig().data;
 
   useEffect(() => {
     if (target) document.getElementById(`${target}-header`)?.scrollIntoView?.({ block: 'start' });
@@ -83,6 +87,15 @@ export function SettingsPage() {
         </>
       ) : (
         <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
+      )}
+      {push?.enabled && push.publicKey && (
+        <SettingsSection
+          id="notifications"
+          title={t('settings.sections.notifications')}
+          defaultExpanded={wants('notifications')}
+        >
+          <NotificationsSection babies={babies} publicKey={push.publicKey} />
+        </SettingsSection>
       )}
       <SettingsSection
         id="appearance"

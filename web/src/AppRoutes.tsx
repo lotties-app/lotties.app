@@ -29,6 +29,9 @@ const DevDayPreview = import.meta.env.DEV ? lazy(() => import('./dev/DayPreview'
 const DevSheetPreview = import.meta.env.DEV ? lazy(() => import('./dev/SheetPreview')) : null;
 const DevMedsPreview = import.meta.env.DEV ? lazy(() => import('./dev/MedsPreview')) : null;
 const DevLandingPreview = import.meta.env.DEV ? lazy(() => import('./dev/LandingPreview')) : null;
+const DevNotificationsPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/NotificationsPreview'))
+  : null;
 const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
@@ -102,6 +105,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevLandingPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevNotificationsPreview && (
+        <Route
+          path="/dev/notifications"
+          element={
+            <Suspense fallback={null}>
+              <DevNotificationsPreview />
             </Suspense>
           }
         />

@@ -2,7 +2,9 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { flushSync } from 'react-dom';
 import { Box, CircularProgress } from '@mui/material';
+import { useApiClient } from '../api/ApiClientContext';
 import { useAuth } from '../auth/useAuth';
+import { releaseThisDevice } from '../notifications/pushActions';
 import { DatabaseProvider } from '../db/DatabaseProvider';
 import { SyncProvider } from '../sync/SyncProvider';
 import type { SyncEngineOptions } from '../sync/SyncEngine';
@@ -37,6 +39,7 @@ export function AccountDataProvider({ syncOptions, children }: Props) {
 function AccountData({ accountId, syncOptions, children }: Props & { accountId: string }) {
   const { t } = useTranslation();
   const { logout } = useAuth();
+  const api = useApiClient();
   const [ending, setEnding] = useState(false);
   // Claimed before the first render of the children, so they never read the previous account's
   // saved selection. Idempotent, so a StrictMode double call is harmless.
@@ -56,7 +59,7 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
     end: async () => {
       // Unmount every screen first, so no live query touches the database while it is deleted.
       flushSync(() => setEnding(true));
-      await endAccountSession(db, logout);
+      await endAccountSession(db, logout, releaseThisDevice(api));
     },
   };
 

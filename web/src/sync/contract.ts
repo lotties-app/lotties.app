@@ -90,6 +90,17 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/import/napper/preview`,
   predictions: (babyId: string, utcOffsetMinutes: number) =>
     `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}`,
+  pushConfig: () => `${API_PREFIX}/push/config`,
+  pushSubscriptions: () => `${API_PREFIX}/push/subscriptions`,
+  /** Body `{ endpoint }`: the endpoint never travels in a URL. */
+  pushRevokeByEndpoint: () => `${API_PREFIX}/push/subscriptions/revoke`,
+  pushSubscription: (subscriptionId: string) =>
+    `${API_PREFIX}/push/subscriptions/${enc(subscriptionId)}`,
+  pushSettings: () => `${API_PREFIX}/push/settings`,
+  pushPreferences: () => `${API_PREFIX}/push/preferences`,
+  pushTest: () => `${API_PREFIX}/push/test`,
+  notificationPreferences: (babyId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notification-preferences`,
 };
 
 /** Response header carrying the delta paging cursor; absent on the last page. */
