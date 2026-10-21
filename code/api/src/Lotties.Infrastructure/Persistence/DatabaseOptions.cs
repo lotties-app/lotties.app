@@ -48,7 +48,7 @@ public sealed record DatabaseOptions(string Host, int Port, string Name, string 
     private static DatabaseOptions Build(Func<string, string?> readVariable, string user, string password) => new(
         Host: ReadOrDefault(readVariable, "DB_HOST", "localhost"),
         Port: int.TryParse(readVariable("DB_PORT"), out var port) ? port : 5432,
-        Name: ReadOrDefault(readVariable, "DB_NAME", "babyroutine"),
+        Name: ReadOrDefault(readVariable, "DB_NAME", "lotties"),
         User: user,
         Password: password);
 

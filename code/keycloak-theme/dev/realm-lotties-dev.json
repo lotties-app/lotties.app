@@ -1,5 +1,5 @@
 {
-  "realm": "babyroutine-dev",
+  "realm": "lotties-dev",
   "displayName": "Lotties (dev)",
   "enabled": true,
   "sslRequired": "none",
@@ -27,7 +27,7 @@
   "smtpServer": {
     "host": "localhost",
     "port": "2525",
-    "from": "no-reply@babyroutine.test",
+    "from": "no-reply@lotties.test",
     "fromDisplayName": "Lotties (dev)"
   },
   "clients": [

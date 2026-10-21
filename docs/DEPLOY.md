@@ -329,32 +329,32 @@ Apply the EF Core migrations with a separate, more privileged role and run the A
 
 ```sql
 -- Run as a database administrator. Replace the placeholders; use generated passwords.
-CREATE ROLE baby_migrator LOGIN PASSWORD '<generated-migrator-password>';
-CREATE ROLE baby_app      LOGIN PASSWORD '<generated-app-password>';
+CREATE ROLE lotties_migrator LOGIN PASSWORD '<generated-migrator-password>';
+CREATE ROLE lotties_app      LOGIN PASSWORD '<generated-app-password>';
 
-CREATE DATABASE babyroutine OWNER baby_migrator;
-REVOKE ALL ON DATABASE babyroutine FROM PUBLIC;
-GRANT CONNECT ON DATABASE babyroutine TO baby_app;
+CREATE DATABASE lotties OWNER lotties_migrator;
+REVOKE ALL ON DATABASE lotties FROM PUBLIC;
+GRANT CONNECT ON DATABASE lotties TO lotties_app;
 
-\c babyroutine
+\c lotties
 -- The migrator owns the schema objects it creates.
-ALTER SCHEMA public OWNER TO baby_migrator;
-GRANT USAGE ON SCHEMA public TO baby_app;
+ALTER SCHEMA public OWNER TO lotties_migrator;
+GRANT USAGE ON SCHEMA public TO lotties_app;
 
 -- Apply the schema as the migrator (see "Applying migrations": dotnet ef, DB_AUTO_MIGRATE, or a generated script).
 
 -- Run once after the migration, and again after each migration that adds tables:
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO baby_app;
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO baby_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO lotties_app;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO lotties_app;
 
 -- Or make it automatic for objects the migrator creates later:
-ALTER DEFAULT PRIVILEGES FOR ROLE baby_migrator IN SCHEMA public
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO baby_app;
-ALTER DEFAULT PRIVILEGES FOR ROLE baby_migrator IN SCHEMA public
-  GRANT USAGE ON SEQUENCES TO baby_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE lotties_migrator IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO lotties_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE lotties_migrator IN SCHEMA public
+  GRANT USAGE ON SEQUENCES TO lotties_app;
 ```
 
-Put `baby_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container, unless you deliberately opt in to `DB_AUTO_MIGRATE` (below). The same grants are in `docs/sql/grant-app-role.sql`.
+Put `lotties_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container, unless you deliberately opt in to `DB_AUTO_MIGRATE` (below). The same grants are in `docs/sql/grant-app-role.sql`.
 
 ### Applying migrations
 
@@ -365,7 +365,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
    ```bash
    cd code/api
    dotnet tool restore
-   DB_HOST=... DB_PORT=5432 DB_NAME=babyroutine DB_MIGRATOR_USER=baby_migrator DB_MIGRATOR_PASSWORD=... \
+   DB_HOST=... DB_PORT=5432 DB_NAME=lotties DB_MIGRATOR_USER=lotties_migrator DB_MIGRATOR_PASSWORD=... \
      dotnet ef database update --project src/Lotties.Infrastructure
    ```
 
@@ -377,7 +377,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
    cd code/api
    dotnet tool restore
    dotnet ef migrations script --idempotent --project src/Lotties.Infrastructure -o out.sql
-   psql -U baby_migrator -d babyroutine -f out.sql
+   psql -U lotties_migrator -d lotties -f out.sql
    ```
 
 3. **`DB_AUTO_MIGRATE=true` (opt-in, for development and self-hosting convenience).** The API applies pending migrations at startup, after the host is built and before it serves requests or starts the push scheduler. It is off by default; accepted values are `true`/`false` (any case) and `1`/`0`, anything else fails startup.

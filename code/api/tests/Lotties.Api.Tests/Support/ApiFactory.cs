@@ -27,7 +27,7 @@ namespace Lotties.Api.Tests.Support;
 /// </remarks>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
-    private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"babyroutine-tests-{Guid.NewGuid():N}.db");
+    private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"lotties-tests-{Guid.NewGuid():N}.db");
 
     private string ConnectionString => new SqliteConnectionStringBuilder
     {

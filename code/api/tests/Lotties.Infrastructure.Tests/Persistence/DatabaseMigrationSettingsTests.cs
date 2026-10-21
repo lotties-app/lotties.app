@@ -69,20 +69,20 @@ public sealed class DatabaseMigrationSettingsTests
     [Fact]
     public void BuildConnectionString_UsesMigratorCredentialsUnpooled()
     {
-        var options = new DatabaseOptions("db.example.test", 6543, "baby_routine", "migrator", "migrator_secret");
+        var options = new DatabaseOptions("db.example.test", 6543, "lotties", "migrator", "migrator_secret");
 
         var builder = new NpgsqlConnectionStringBuilder(NpgsqlMigrationSessionFactory.BuildConnectionString(options));
 
         Assert.Equal(
-            ("db.example.test", 6543, "baby_routine", "migrator", false, NpgsqlMigrationSessionFactory.ApplicationName),
+            ("db.example.test", 6543, "lotties", "migrator", false, NpgsqlMigrationSessionFactory.ApplicationName),
             (builder.Host, builder.Port, builder.Database, builder.Username, builder.Pooling, builder.ApplicationName));
     }
 
     [Fact]
     public void Target_DescribesDatabaseWithoutCredentials()
     {
-        var factory = new NpgsqlMigrationSessionFactory(new DatabaseOptions("db.example.test", 6543, "baby_routine", "migrator", "migrator_secret"));
+        var factory = new NpgsqlMigrationSessionFactory(new DatabaseOptions("db.example.test", 6543, "lotties", "migrator", "migrator_secret"));
 
-        Assert.Equal("'baby_routine' on db.example.test:6543", factory.Target);
+        Assert.Equal("'lotties' on db.example.test:6543", factory.Target);
     }
 }

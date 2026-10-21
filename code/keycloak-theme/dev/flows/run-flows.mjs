@@ -19,7 +19,7 @@ const secrets = Object.fromEntries(
     .map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).trim()]),
 );
 const KC = 'http://localhost:8085';
-const REALM = 'babyroutine-dev';
+const REALM = 'lotties-dev';
 const OUT = process.env.FLOWS_OUT ?? here('../../../../docs/design/screenshots');
 mkdirSync(OUT, { recursive: true });
 

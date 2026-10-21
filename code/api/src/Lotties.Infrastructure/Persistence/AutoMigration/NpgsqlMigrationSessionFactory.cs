@@ -5,7 +5,7 @@ namespace Lotties.Infrastructure.Persistence.AutoMigration;
 /// <summary>Opens <see cref="NpgsqlMigrationSession"/>s with the migrator <see cref="DatabaseOptions"/> (not the runtime app role).</summary>
 internal sealed class NpgsqlMigrationSessionFactory : IMigrationSessionFactory
 {
-    internal const string ApplicationName = "babyroutine-migrator";
+    internal const string ApplicationName = "lotties-migrator";
 
     private readonly DatabaseOptions _migratorOptions;
 

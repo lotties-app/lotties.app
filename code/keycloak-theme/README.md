@@ -146,7 +146,7 @@ node dev/flows/run-flows.mjs     # Playwright: every page, light/dark, en/pt-BR,
 bash dev/kc-down.sh              # removes only br-kc-test and br-kc-smtp
 ```
 
-- `dev/realm-babyroutine-dev.json` is imported at start: realm `babyroutine-dev`, login theme `lotties`, en + pt-BR, registration, reset password, verify email, a public PKCE client `baby-routine-web` for `http://localhost:5190/*`. It contains no secrets and no users.
+- `dev/realm-lotties-dev.json` is imported at start: realm `lotties-dev`, login theme `lotties`, en + pt-BR, registration, reset password, verify email, a public PKCE client `baby-routine-web` for `http://localhost:5190/*`. It contains no secrets and no users.
 - `kc-up.sh` generates the admin and test-user passwords at run time into `dev/.runtime/secrets.env` (gitignored, never printed). The flows script creates its own users through the admin API and deletes them afterwards.
 - Screenshots go to `docs/design/screenshots/keycloak-<page>-<locale>-<scheme>-<width>.png` (gitignored). `node dev/preview-mocks.mjs select-authenticator.ftl,...` captures the pages that the default realm cannot reach (select authenticator, recovery code input, username/password steps) from the dev server mocks.
 - Not part of CI.

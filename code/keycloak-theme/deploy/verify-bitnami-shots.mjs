@@ -20,7 +20,7 @@ for (const locale of ['en', 'pt-BR']) {
     const bad = [];
     page.on('requestfailed', (r) => bad.push(r.url()));
     page.on('response', (r) => { if (r.status() >= 400) bad.push(`${r.status()} ${r.url()}`); });
-    const url = `${BASE}/realms/babyroutine-dev/protocol/openid-connect/auth?client_id=${CLIENT}&redirect_uri=${encodeURIComponent('http://localhost:5190/')}&response_type=code&scope=openid&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&kc_locale=${locale}`;
+    const url = `${BASE}/realms/lotties-dev/protocol/openid-connect/auth?client_id=${CLIENT}&redirect_uri=${encodeURIComponent('http://localhost:5190/')}&response_type=code&scope=openid&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&kc_locale=${locale}`;
     await page.goto(url, { waitUntil: 'networkidle' });
     await page.waitForSelector('input[name="username"], #username', { timeout: 15000 });
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);

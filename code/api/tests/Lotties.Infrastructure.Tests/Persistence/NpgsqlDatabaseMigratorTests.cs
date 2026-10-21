@@ -104,7 +104,7 @@ public sealed class NpgsqlDatabaseMigratorTests
 
     private sealed class FakeSessionFactory(FakeMigrationSession session) : IMigrationSessionFactory
     {
-        public string Target => "'babyroutine' on localhost:5432";
+        public string Target => "'lotties' on localhost:5432";
 
         public Task<IMigrationSession> OpenAsync(CancellationToken cancellationToken = default)
         {

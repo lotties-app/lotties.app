@@ -8,7 +8,7 @@ public sealed class DatabaseOptionsTests
     {
         ["DB_HOST"] = "db.example.test",
         ["DB_PORT"] = "6543",
-        ["DB_NAME"] = "baby_routine",
+        ["DB_NAME"] = "lotties",
         ["DB_APP_USER"] = "app_user",
         ["DB_APP_PASSWORD"] = "app_secret",
     };
@@ -18,7 +18,7 @@ public sealed class DatabaseOptionsTests
     {
         var options = DatabaseOptions.FromVariables(Reader(BaseVariables));
 
-        Assert.Equal(new DatabaseOptions("db.example.test", 6543, "baby_routine", "app_user", "app_secret"), options);
+        Assert.Equal(new DatabaseOptions("db.example.test", 6543, "lotties", "app_user", "app_secret"), options);
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public sealed class DatabaseOptionsTests
     {
         var options = DatabaseOptions.FromVariables(_ => null);
 
-        Assert.Equal(new DatabaseOptions("localhost", 5432, "babyroutine", string.Empty, string.Empty), options);
+        Assert.Equal(new DatabaseOptions("localhost", 5432, "lotties", string.Empty, string.Empty), options);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public sealed class DatabaseOptionsTests
 
         var options = DatabaseOptions.ForMigratorFromVariables(Reader(variables));
 
-        Assert.Equal(("migrator", "migrator_secret", "baby_routine"), (options.User, options.Password, options.Name));
+        Assert.Equal(("migrator", "migrator_secret", "lotties"), (options.User, options.Password, options.Name));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class DatabaseOptionsTests
     {
         var connectionString = DatabaseOptions.FromVariables(Reader(BaseVariables)).ToConnectionString();
 
-        Assert.Contains("Database=baby_routine", connectionString, StringComparison.Ordinal);
+        Assert.Contains("Database=lotties", connectionString, StringComparison.Ordinal);
         Assert.Contains("Username=app_user", connectionString, StringComparison.Ordinal);
     }
 

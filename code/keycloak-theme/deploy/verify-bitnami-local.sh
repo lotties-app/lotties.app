@@ -23,8 +23,8 @@ KC_IMAGE="${KC_IMAGE:-docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0}"
 # THEME_TARGET=/opt/bitnami/keycloak/themes mounts a whole multi-theme volume (verify-multi.sh).
 # THEME_DIR may also be a podman volume name (used by verify-init-routes.sh).
 THEME_DIR="${THEME_DIR:-$HERE/out/theme/lotties}"
-REALM_FILE="$HERE/../dev/realm-babyroutine-dev.json"
-REALM=babyroutine-dev
+REALM_FILE="$HERE/../dev/realm-lotties-dev.json"
+REALM=lotties-dev
 BASE="http://localhost:$PORT"
 VOLS=(conf lib-quarkus data providers bitnami)
 

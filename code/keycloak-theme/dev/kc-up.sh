@@ -27,15 +27,15 @@ podman run -d --name br-kc-smtp --network host \
 podman run -d --name br-kc-test --network host \
   -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD="$KC_ADMIN_PASSWORD" \
   -v "$JAR:/opt/keycloak/providers/lotties-theme.jar:ro" \
-  -v "$ROOT/dev/realm-babyroutine-dev.json:/opt/keycloak/data/import/realm-babyroutine-dev.json:ro" \
+  -v "$ROOT/dev/realm-lotties-dev.json:/opt/keycloak/data/import/realm-lotties-dev.json:ro" \
   "$KC_IMAGE" start-dev --http-port=8085 --import-realm >/dev/null
 
 echo "waiting for Keycloak..."
 for _ in $(seq 1 90); do
-  if curl -fs http://localhost:8085/realms/babyroutine-dev/.well-known/openid-configuration >/dev/null 2>&1; then break; fi
+  if curl -fs http://localhost:8085/realms/lotties-dev/.well-known/openid-configuration >/dev/null 2>&1; then break; fi
   sleep 2
 done
-curl -fs http://localhost:8085/realms/babyroutine-dev/.well-known/openid-configuration >/dev/null
+curl -fs http://localhost:8085/realms/lotties-dev/.well-known/openid-configuration >/dev/null
 
-echo "Keycloak is up on http://localhost:8085 (realm babyroutine-dev). Admin password: see dev/.runtime/secrets.env"
+echo "Keycloak is up on http://localhost:8085 (realm lotties-dev). Admin password: see dev/.runtime/secrets.env"
 echo "Run the flows: node dev/flows/run-flows.mjs (creates and deletes its own test users)."
