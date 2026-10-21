@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
-import { createEvent, deleteEvent, stopEvent } from '../db/eventCommands';
+import { createApiClient } from '../api/apiClient';
+import { createEvent, deleteEvent, editEvent, stopEvent } from '../db/eventCommands';
 import { createMedication } from '../db/medicationCommands';
 import {
   BABY_ID,
   SERVER_TIME,
   TYPE_ID,
+  echoEvent,
   fakeApi,
   httpError,
   networkError,
@@ -153,6 +155,112 @@ describe('SyncEngine push', () => {
       expect(engine.status.getSnapshot()).toMatchObject({ pendingCount: 0, deadLetterCount: 1 });
     },
   );
+
+  it.each([
+    [409, 'event_baby_mismatch', 'belongs to another baby'],
+    [422, 'event_type_not_available', 'event type is not available'],
+  ])('dead-letters a %i %s with a readable message', async (status, code, text) => {
+    await newEvent();
+    const { engine } = setup((call) => {
+      if (isPut(call)) throw httpError(status, code);
+    });
+
+    await engine.syncNow();
+
+    const [dead] = await db.outbox.toArray();
+    expect(dead.status).toBe('dead');
+    expect(dead.lastError).toContain(text);
+    expect(dead.lastError).toContain(`HTTP ${status} ${code}`);
+  });
+
+  it('sends the local edit time as updatedAt on PUT', async () => {
+    const a = await newEvent();
+    const { engine, writes } = setup();
+
+    await engine.syncNow();
+
+    expect(writes()[0].body).toMatchObject({ typeId: TYPE_ID, updatedAt: a.updatedAt });
+  });
+
+  it('adds updatedAt to upserts queued without it', async () => {
+    const a = await newEvent();
+    await db.outbox.toCollection().modify((m) => {
+      delete (m.payload as { updatedAt?: string }).updatedAt;
+    });
+    const { engine, writes } = setup();
+
+    await engine.syncNow();
+
+    expect(writes()[0].body).toMatchObject({ updatedAt: a.createdAt });
+  });
+
+  it('replaces the local row with the stored copy the server returns', async () => {
+    const a = await newEvent();
+    const stored = '2026-10-20T13:00:00.000Z';
+    const { engine } = setup((call) =>
+      isPut(call) ? { ...echoEvent(call, stored), notes: 'edited by the other parent' } : undefined,
+    );
+
+    await engine.syncNow();
+
+    expect(await db.events.get(a.id)).toMatchObject({
+      notes: 'edited by the other parent',
+      updatedAt: stored,
+    });
+  });
+
+  it('keeps the local row while a newer local edit is still queued', async () => {
+    const a = await newEvent();
+    await editEvent(db, a.id, { notes: 'newer local' });
+    let first = true;
+    const { engine } = setup((call) => {
+      if (!isPut(call)) return undefined;
+      if (first) {
+        first = false;
+        return { ...echoEvent(call), notes: 'server' };
+      }
+      throw httpError(503);
+    });
+
+    await engine.syncNow();
+
+    expect((await db.events.get(a.id))?.notes).toBe('newer local');
+  });
+
+  it('never triggers the login redirect on 401 and pauses with authRequired', async () => {
+    await newEvent();
+    const onUnauthorized = vi.fn();
+    const api = createApiClient({
+      baseUrl: 'http://api',
+      getAccessToken: async () => 'expired',
+      onUnauthorized,
+      fetchImpl: async () => new Response('{}', { status: 401 }),
+    });
+    const engine = new SyncEngine({
+      db,
+      api,
+      locks: null,
+      eventTarget: null,
+      isOnline: () => true,
+    });
+    engines.push(engine);
+
+    await engine.syncNow();
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(engine.isPaused).toBe(true);
+    expect(engine.status.getSnapshot()).toMatchObject({ authRequired: true, state: 'error' });
+  });
+
+  it('opts every sync request out of the 401 handler', async () => {
+    await newEvent();
+    const { engine, calls } = setup();
+
+    await engine.syncNow();
+
+    expect(calls.length).toBeGreaterThan(1);
+    expect(calls.every((c) => c.skipUnauthorizedHandler)).toBe(true);
+  });
 
   it('treats a 404 on DELETE as already deleted', async () => {
     const a = await newEvent();

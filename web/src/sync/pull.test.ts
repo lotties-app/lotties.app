@@ -9,6 +9,8 @@ import {
   networkError,
   serverEvent,
   testDatabase,
+  withHeaders,
+  type ApiCall,
   type ApiHandler,
 } from '../test/fakeApi';
 import { DEFAULT_BACKOFF } from './backoff';
@@ -94,8 +96,12 @@ describe('delta merge (last write wins)', () => {
   });
 });
 
+const eventsPath = `/api/v1/babies/${BABY_ID}/events`;
+const eventGets = (calls: ApiCall[]) =>
+  calls.filter((c) => c.path.startsWith(eventsPath)).map((c) => c.path);
+
 describe('delta cursor', () => {
-  it('pulls without `since` first, stores the raw newest updatedAt and sends it back', async () => {
+  it('pulls without `since` first, stores the raw newest updatedAt and re-pulls with a 5 s overlap', async () => {
     const raw = '2026-10-20T12:00:00.1234567+00:00';
     const { ctx, calls } = ctxWith(
       deltaHandler(
@@ -111,12 +117,90 @@ describe('delta cursor', () => {
     expect(await cursor()).toMatchObject({ lastSyncedAt: raw });
 
     await pullAll(ctx);
-    const eventGets = calls.filter((c) => c.path.includes('/events')).map((c) => c.path);
-    expect(eventGets).toEqual([
-      `/api/v1/babies/${BABY_ID}/events`,
-      `/api/v1/babies/${BABY_ID}/events?since=${encodeURIComponent(raw)}`,
+    expect(eventGets(calls)).toEqual([
+      eventsPath,
+      `${eventsPath}?since=${encodeURIComponent('2026-10-20T11:59:55.123Z')}`,
     ]);
     expect((await cursor())?.lastSyncedAt).toBe(raw);
+  });
+
+  it('re-merges overlap rows idempotently without moving the cursor backwards', async () => {
+    const stored = '2026-10-20T12:00:00.000Z';
+    await db.syncState.put({ babyId: BABY_ID, entity: 'events', lastSyncedAt: stored });
+    await seedLocal({ id: 'seen', notes: 'v1', updatedAt: '2026-10-20T11:59:58.000Z' });
+    const { ctx, calls } = ctxWith(
+      deltaHandler([
+        // Already merged before (same version) and a row that committed late, inside the overlap.
+        serverEvent({ id: 'seen', notes: 'v1', updatedAt: '2026-10-20T11:59:58.000Z' }),
+        serverEvent({ id: 'late', updatedAt: '2026-10-20T11:59:57.000Z' }),
+      ]),
+    );
+
+    await pullAll(ctx);
+
+    expect(eventGets(calls)).toEqual([
+      `${eventsPath}?since=${encodeURIComponent('2026-10-20T11:59:55.000Z')}`,
+    ]);
+    expect(await db.events.get('late')).toBeDefined();
+    expect((await db.events.get('seen'))?.notes).toBe('v1');
+    expect((await cursor())?.lastSyncedAt).toBe(stored);
+  });
+
+  it('follows X-Next-Cursor pages with `after`, keeping rows that share an updatedAt', async () => {
+    const tie = '2026-10-20T12:00:00.000Z';
+    const { ctx, calls } = ctxWith((call) => {
+      if (!call.path.startsWith(eventsPath)) return undefined;
+      if (call.path.includes('after=c%2F1')) {
+        return withHeaders(
+          [serverEvent({ id: 'c', updatedAt: tie }), serverEvent({ id: 'd', updatedAt: tie })],
+          { 'X-Next-Cursor': 'c/2' },
+        );
+      }
+      if (call.path.includes('after=c%2F2')) return [serverEvent({ id: 'e', updatedAt: tie })];
+      return withHeaders(
+        [serverEvent({ id: 'a', updatedAt: tie }), serverEvent({ id: 'b', updatedAt: tie })],
+        { 'X-Next-Cursor': 'c/1' },
+      );
+    });
+
+    await pullAll(ctx);
+
+    expect(eventGets(calls)).toEqual([
+      eventsPath,
+      `${eventsPath}?after=${encodeURIComponent('c/1')}`,
+      `${eventsPath}?after=${encodeURIComponent('c/2')}`,
+    ]);
+    expect((await db.events.toArray()).map((e) => e.id).sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect((await cursor())?.lastSyncedAt).toBe(tie);
+  });
+
+  it('advances the cursor per committed page when a later page fails', async () => {
+    const { ctx } = ctxWith((call) => {
+      if (!call.path.startsWith(eventsPath)) return undefined;
+      if (call.path.includes('after=')) throw networkError();
+      return withHeaders([serverEvent({ id: 'a', updatedAt: '2026-10-20T10:00:00.000Z' })], {
+        'X-Next-Cursor': 'next',
+      });
+    });
+
+    await expect(pullAll(ctx)).rejects.toThrow('Failed to fetch');
+
+    expect(await db.events.get('a')).toBeDefined();
+    expect((await cursor())?.lastSyncedAt).toBe('2026-10-20T10:00:00.000Z');
+  });
+
+  it('stops paging when the server repeats a cursor', async () => {
+    const { ctx, calls } = ctxWith((call) =>
+      call.path.startsWith(eventsPath)
+        ? withHeaders([serverEvent()], { 'X-Next-Cursor': 'same' })
+        : undefined,
+    );
+
+    const errors = await pullAll(ctx);
+
+    expect(eventGets(calls)).toHaveLength(2);
+    expect(errors).toEqual([expect.stringContaining('same cursor twice')]);
+    expect(await db.events.count()).toBe(1);
   });
 
   it('does not advance the cursor when the merge transaction fails', async () => {

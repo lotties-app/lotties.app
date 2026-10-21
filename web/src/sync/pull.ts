@@ -11,12 +11,13 @@ import {
   type EventsDeltaResponse,
   type EventTypeDto,
   type MedicationDto,
+  NEXT_CURSOR_HEADER,
 } from './contract';
 import { classifyFailure, describeFailure } from './failures';
-import { requestSignal, type SyncContext } from './syncContext';
+import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
 
 function get<T>(ctx: SyncContext, path: string) {
-  return ctx.api.request<T>(path, { signal: requestSignal(ctx) });
+  return syncRequest<T>(ctx, path);
 }
 
 /** Replaces the local list of babies the user belongs to. */
@@ -81,19 +82,49 @@ export async function mergeEventDelta(
   });
 }
 
-/** Pulls the events delta since the stored cursor and merges it. */
-export async function pullEvents(ctx: SyncContext, babyId: string): Promise<void> {
-  const cursor = await ctx.db.syncState.get([babyId, 'events']);
-  const items = await get<EventsDeltaResponse>(
-    ctx,
-    apiPaths.eventsDelta(babyId, cursor?.lastSyncedAt),
-  );
-  await mergeEventDelta(ctx.db, babyId, items ?? []);
+/**
+ * Re-pull window: rows whose transaction committed late can carry an `updatedAt` slightly older
+ * than rows already received, so each pull starts this much before the stored cursor.
+ */
+export const PULL_OVERLAP_MS = 5_000;
+
+export class RepeatedCursorError extends Error {
+  constructor(cursor: string) {
+    super(`Events delta paging returned the same cursor twice (${cursor}); stopped.`);
+    this.name = 'RepeatedCursorError';
+  }
+}
+
+function overlappedSince(lastSyncedAt: string | undefined): string | undefined {
+  if (!lastSyncedAt) return undefined;
+  const ms = Date.parse(lastSyncedAt);
+  return Number.isNaN(ms) ? lastSyncedAt : new Date(ms - PULL_OVERLAP_MS).toISOString();
 }
 
 /**
- * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure for one
- * baby is collected and the others continue; network/401/transient failures are rethrown.
+ * Pulls the events delta from the stored cursor (minus the overlap) and follows `X-Next-Cursor`
+ * pages until it is absent. Each page is merged in its own transaction, so the stored cursor only
+ * advances with a committed page and an interrupted pull resumes where it stopped.
+ */
+export async function pullEvents(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'events']);
+  const seen = new Set<string>();
+  let path = apiPaths.eventsDelta(babyId, { since: overlappedSince(cursor?.lastSyncedAt) });
+  for (;;) {
+    const { data, headers } = await syncRequestWithMeta<EventsDeltaResponse>(ctx, path);
+    await mergeEventDelta(ctx.db, babyId, data ?? []);
+    const next = headers.get(NEXT_CURSOR_HEADER);
+    if (!next) return;
+    if (seen.has(next)) throw new RepeatedCursorError(next);
+    seen.add(next);
+    path = apiPaths.eventsDelta(babyId, { after: next });
+  }
+}
+
+/**
+ * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure or a paging
+ * loop for one baby is collected and the others continue; network/401/transient failures are
+ * rethrown.
  */
 export async function pullAll(ctx: SyncContext): Promise<string[]> {
   const errors: string[] = [];
@@ -102,7 +133,9 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await refreshCatalogs(ctx, babyId);
       await pullEvents(ctx, babyId);
     } catch (error) {
-      if (classifyFailure(error) !== 'permanent') throw error;
+      const perBaby =
+        error instanceof RepeatedCursorError || classifyFailure(error) === 'permanent';
+      if (!perBaby) throw error;
       errors.push(`baby ${babyId}: ${describeFailure(error)}`);
     }
   }

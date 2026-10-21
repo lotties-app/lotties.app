@@ -50,4 +50,28 @@ describe('apiClient', () => {
     await expect(client.request('/x')).rejects.toMatchObject({ status: 401 });
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
+
+  it('skips the 401 handler when the request opts out', async () => {
+    const { client, onUnauthorized } = setup(jsonResponse({}, 401));
+    await expect(client.request('/x', { skipUnauthorizedHandler: true })).rejects.toMatchObject({
+      status: 401,
+    });
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('exposes status and headers through requestWithMeta', async () => {
+    const response = new Response('[1]', { status: 200, headers: { 'X-Next-Cursor': 'abc' } });
+    const { client } = setup(response);
+    const result = await client.requestWithMeta<number[]>('/x');
+    expect(result.data).toEqual([1]);
+    expect(result.status).toBe(200);
+    expect(result.headers.get('x-next-cursor')).toBe('abc');
+  });
+
+  it('exposes the problem details code on ApiError', async () => {
+    const { client } = setup(jsonResponse({ title: 'Conflict', code: 'event_baby_mismatch' }, 409));
+    const error = (await client.request('/x').catch((e: unknown) => e)) as ApiError;
+    expect(error.code).toBe('event_baby_mismatch');
+    expect(error.problem?.title).toBe('Conflict');
+  });
 });

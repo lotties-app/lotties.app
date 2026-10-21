@@ -3,12 +3,13 @@ import { Alert, Stack, Typography } from '@mui/material';
 import { useEventCommands, useEventTypes, useRunningEvents } from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
 import { EventSheet } from '../events/EventSheet';
+import { PredictionsSection } from '../predictions/PredictionsSection';
 import { QuickActions } from './QuickActions';
 import { RunningTimers } from './RunningTimers';
 
 type SheetTarget = { event: BabyEvent } | { typeId: string };
 
-/** Home content for one baby: running timers on top, then the quick-action grid. */
+/** Home content for one baby: running timers on top, the quick-action grid, then predictions. */
 export function BabyHome({ baby }: { baby: Baby }) {
   const types = useEventTypes(baby.id);
   const running = useRunningEvents(baby.id);
@@ -52,6 +53,7 @@ export function BabyHome({ baby }: { baby: Baby }) {
           onSelect={onSelect}
         />
       )}
+      <PredictionsSection baby={baby} types={types} />
       {sheet && (
         <EventSheet
           babyId={baby.id}

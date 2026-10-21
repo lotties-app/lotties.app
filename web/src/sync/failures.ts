@@ -25,8 +25,25 @@ export function classifyFailure(error: unknown): FailureKind {
   return 'transient';
 }
 
+/** Readable explanations for API problem `code`s that dead-letter a mutation. */
+const PROBLEM_MESSAGES: Record<string, string> = {
+  event_baby_mismatch:
+    'This event id already belongs to another baby on the server, so the change was not saved.',
+  event_type_not_available:
+    'This event type is not available for this baby on the server, so the change was not saved.',
+};
+
+function describeApiError(error: ApiError): string {
+  const { code } = error;
+  if (!code) return `HTTP ${error.status}: ${error.message}`;
+  const known = PROBLEM_MESSAGES[code];
+  if (known) return `${known} (HTTP ${error.status} ${code})`;
+  const detail = error.problem?.detail ?? error.problem?.title ?? error.message;
+  return `HTTP ${error.status} ${code}: ${detail}`;
+}
+
 export function describeFailure(error: unknown): string {
-  if (error instanceof ApiError) return `HTTP ${error.status}: ${error.message}`;
+  if (error instanceof ApiError) return describeApiError(error);
   const { message, name } = (error ?? {}) as { message?: unknown; name?: unknown };
   if (typeof message === 'string' && message) return message;
   if (typeof name === 'string' && name) return name;

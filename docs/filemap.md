@@ -46,3 +46,6 @@
 - api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication}Endpoints.cs — routes for tasks 4-5 (contract in docs/SPEC.md "Babies, members, invites, event types, medications")
 - api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,EventType}Repository.cs — EF repositories for those features
 - api/tests/BabyRoutine.Api.Tests/Endpoints/{Baby,Member,Invite,EventType,Medication}EndpointTests.cs, Support/HttpAssertions.cs — integration tests
+- web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
+- web/src/predictions/ — predictions query/cache, model, cards and section on Home
+- web/src/layout/SyncStatusIndicator.tsx, web/src/sync/useOnline.ts — sync status chip, online hook

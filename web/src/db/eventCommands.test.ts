@@ -70,6 +70,7 @@ describe('event commands', () => {
         endedAt: null,
         payload: {},
         notes: null,
+        updatedAt: T0.toISOString(),
       },
     });
   });

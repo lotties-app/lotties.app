@@ -3,9 +3,9 @@ import type { BabyRoutineDb } from '../db/database';
 import type { OutboxMutation } from '../db/models';
 import { peekPendingMutation } from '../db/outbox';
 import { backoffDelay } from './backoff';
-import { apiPaths, fromEventDto, type EventDto } from './contract';
+import { apiPaths, fromEventDto, type EventDto, type EventUpsertRequest } from './contract';
 import { classifyFailure, describeFailure } from './failures';
-import { requestSignal, type SyncContext } from './syncContext';
+import { syncRequest, type SyncContext } from './syncContext';
 
 export type PushOutcome =
   | { kind: 'drained' }
@@ -46,16 +46,25 @@ async function send(ctx: SyncContext, mutation: OutboxMutation): Promise<EventDt
     mutation.entityType === 'medication'
       ? apiPaths.medication(mutation.babyId, mutation.entityId)
       : apiPaths.event(mutation.babyId, mutation.entityId);
-  const signal = requestSignal(ctx);
   if (mutation.kind === 'upsert') {
-    return ctx.api.request<EventDto | undefined>(path, {
+    return syncRequest<EventDto | undefined>(ctx, path, {
       method: 'PUT',
-      body: mutation.payload,
-      signal,
+      body: upsertBody(mutation),
     });
   }
-  await ctx.api.request<unknown>(path, { method: 'DELETE', signal });
+  await syncRequest<unknown>(ctx, path, { method: 'DELETE' });
   return undefined;
+}
+
+/**
+ * Event upserts carry the local edit time as `updatedAt` so the server's last-write-wins can drop
+ * stale replays. Mutations queued before that field existed fall back to their enqueue time,
+ * which is the event's `updatedAt` at the moment of the edit.
+ */
+function upsertBody(mutation: OutboxMutation): unknown {
+  if (mutation.entityType !== 'event') return mutation.payload;
+  const body = mutation.payload as Partial<EventUpsertRequest>;
+  return body.updatedAt ? body : { ...body, updatedAt: mutation.createdAt };
 }
 
 /** A DELETE answered with 404 means the server has nothing to delete: the goal is met. */
@@ -68,7 +77,11 @@ function isEventDto(value: unknown, id: string): value is EventDto {
   return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
 }
 
-/** Removes the pushed mutation; adopts the server's copy unless newer local changes are queued. */
+/**
+ * Removes the pushed mutation and adopts the server's copy unless newer local changes are queued.
+ * The server copy wins even when it differs from what was sent (a stale `updatedAt` was ignored
+ * and the stored copy returned, or the event was already deleted on the server).
+ */
 async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
   await db.transaction('rw', db.outbox, db.events, async () => {
     await db.outbox.delete(mutation.id);

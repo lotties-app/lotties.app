@@ -12,14 +12,20 @@ import type {
 
 /*
  * API wire contract (`/api/v1`) used by the sync engine. This is the ONLY place the client
- * assumes the API shapes; align it here when PLAN tasks 4-6 land. Assumed so far:
+ * assumes the API shapes (events: docs/SPEC.md "Events sync contract"; others still assumed until
+ * PLAN tasks 4-5 land):
  * - JSON is camelCase; timestamps are ISO-8601 with any offset and are normalized to UTC `Z`.
- * - PUT    /babies/{id}/events/{eventId}  body EventUpsertRequest; idempotent upsert; replies
- *          200/201 with an EventDto (an empty body is tolerated). The server sets `updatedAt`.
- * - DELETE /babies/{id}/events/{eventId}  soft delete, idempotent; 404 is treated as "already gone".
- * - GET    /babies/{id}/events?since=<updatedAt>  EventDto[] changed after `since`, INCLUDING
- *          soft-deleted ones; no paging; `since` omitted for a full pull. Items equal to `since`
- *          may be repeated (merge is idempotent).
+ *   Errors are RFC 7807 problem details with a stable `code` extension.
+ * - PUT    /babies/{id}/events/{eventId}  body EventUpsertRequest incl. the local edit time as
+ *          `updatedAt` (server last-write-wins: an older one is ignored and the stored copy is
+ *          returned). Replies 200/201 with the stored EventDto (an empty body is tolerated); the
+ *          server stamps `updatedAt` on receipt. 409 `event_baby_mismatch`, 422
+ *          `event_type_not_available`, 400 validation.
+ * - DELETE /babies/{id}/events/{eventId}  soft delete, always 204; 404 is treated as "already gone".
+ * - GET    /babies/{id}/events?since=<updatedAt>&after=<cursor>  EventDto[] with
+ *          `updatedAt >= since` (inclusive, so boundary rows repeat; merge is idempotent),
+ *          INCLUDING soft-deleted ones, ordered by (updatedAt, id), up to 500 per page. While more
+ *          rows follow, header `X-Next-Cursor` holds an opaque cursor passed back as `after`.
  * - GET    /babies -> BabyDto[]; /babies/{id}/event-types -> EventTypeDto[] (built-ins + custom);
  *          /babies/{id}/medications -> MedicationDto[].
  * - PUT    /babies/{id}/medications/{medicationId}  body MedicationUpsertRequest; idempotent upsert
@@ -38,10 +44,22 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/events/${enc(eventId)}`,
   medication: (babyId: string, medicationId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/medications/${enc(medicationId)}`,
-  eventsDelta: (babyId: string, since?: string) =>
-    `${API_PREFIX}/babies/${enc(babyId)}/events` +
-    (since ? `?since=${encodeURIComponent(since)}` : ''),
+  /** `after` (a paging cursor) takes precedence over `since` on the server. */
+  eventsDelta: (babyId: string, page: { since?: string; after?: string } = {}) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/events` + query(page),
+  predictions: (babyId: string, utcOffsetMinutes: number) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}`,
 };
+
+/** Response header carrying the delta paging cursor; absent on the last page. */
+export const NEXT_CURSOR_HEADER = 'X-Next-Cursor';
+
+function query(params: Record<string, string | undefined>): string {
+  const parts = Object.entries(params)
+    .filter((entry): entry is [string, string] => !!entry[1])
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`);
+  return parts.length > 0 ? `?${parts.join('&')}` : '';
+}
 
 function enc(segment: string) {
   return encodeURIComponent(segment);
@@ -106,6 +124,8 @@ export interface EventUpsertRequest {
   endedAt: string | null;
   payload: EventPayload;
   notes: string | null;
+  /** Local edit time (client clock); lets the server ignore writes older than its copy. */
+  updatedAt?: string;
 }
 
 export interface MedicationUpsertRequest {
@@ -126,6 +146,37 @@ export function toMedicationUpsertRequest(medication: Medication): MedicationUps
 
 export type EventsDeltaResponse = EventDto[];
 
+/*
+ * GET /babies/{id}/predictions?utcOffsetMinutes=<minutes east of UTC>  (read by the Home cards
+ * through TanStack Query, not by the sync engine). Times are UTC ISO; lengths whole minutes.
+ */
+export type PredictionConfidence = 'Low' | 'Medium' | 'High';
+
+export interface PredictionDto {
+  typeKey: string;
+  nextStart: { earliest: string; expected: string; latest: string };
+  expectedDuration: { minutes: number; sampleCount: number } | null;
+  confidence: PredictionConfidence;
+  sampleCount: number;
+  /** English explanation of how the estimate was made. */
+  reason: string;
+  basis: Record<string, unknown>;
+}
+
+export interface InsufficientDataDto {
+  typeKey: string;
+  sampleCount: number;
+  requiredSamples: number;
+  reason: string;
+}
+
+export interface PredictionsDto {
+  babyId: string;
+  generatedAt: string;
+  predictions: PredictionDto[];
+  insufficientData: InsufficientDataDto[];
+}
+
 /** Normalizes any ISO-8601 timestamp to UTC `Z` with millisecond precision. */
 export function toUtcIso(value: string): string {
   return new Date(value).toISOString();
@@ -142,6 +193,7 @@ export function toEventUpsertRequest(event: BabyEvent): EventUpsertRequest {
     endedAt: event.endedAt,
     payload: event.payload,
     notes: event.notes,
+    updatedAt: event.updatedAt,
   };
 }
 

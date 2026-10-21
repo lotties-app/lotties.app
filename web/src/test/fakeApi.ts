@@ -1,4 +1,4 @@
-import type { ApiClient } from '../api/apiClient';
+import type { ApiClient, RequestOptions } from '../api/apiClient';
 import { ApiError } from '../api/ApiError';
 import { createDatabase, type BabyRoutineDb } from '../db/database';
 import type { EventDto, EventUpsertRequest } from '../sync/contract';
@@ -7,6 +7,8 @@ export interface ApiCall {
   method: string;
   path: string;
   body?: unknown;
+  /** Whether the caller opted out of the client's 401 login redirect. */
+  skipUnauthorizedHandler?: boolean;
 }
 
 /** Returns a response body, throws to fail, or returns `undefined` to fall back to defaults. */
@@ -16,8 +18,8 @@ export const BABY_ID = 'baby-1';
 export const TYPE_ID = 'type-feeding';
 export const SERVER_TIME = '2026-10-20T12:00:00.000Z';
 
-export function httpError(status: number) {
-  return new ApiError(status, { title: `status ${status}` });
+export function httpError(status: number, code?: string) {
+  return new ApiError(status, { title: `status ${status}`, ...(code ? { code } : {}) });
 }
 
 export function networkError() {
@@ -44,19 +46,49 @@ function defaultResponse(call: ApiCall): unknown {
   if (call.method === 'DELETE') return undefined;
   if (call.path === '/api/v1/babies')
     return [{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01' }];
+  if (call.path.includes('/predictions')) {
+    return { babyId: BABY_ID, generatedAt: SERVER_TIME, predictions: [], insufficientData: [] };
+  }
   return [];
+}
+
+/** A handler result that also sets response headers (e.g. `X-Next-Cursor`). */
+export class FakeResponse {
+  readonly body: unknown;
+  readonly headers: Headers;
+
+  constructor(body: unknown, headers: Record<string, string> = {}) {
+    this.body = body;
+    this.headers = new Headers(headers);
+  }
+}
+
+export function withHeaders(body: unknown, headers: Record<string, string>) {
+  return new FakeResponse(body, headers);
 }
 
 /** Scripted in-memory API client that records every call. */
 export function fakeApi(handler: ApiHandler = () => undefined) {
   const calls: ApiCall[] = [];
+
+  async function requestWithMeta<T>(path: string, options: RequestOptions = {}) {
+    const call: ApiCall = {
+      method: options.method ?? 'GET',
+      path,
+      body: options.body,
+      skipUnauthorizedHandler: options.skipUnauthorizedHandler ?? false,
+    };
+    calls.push(call);
+    const result = await handler(call);
+    const response = result instanceof FakeResponse ? result : new FakeResponse(result);
+    const data = response.body === undefined ? defaultResponse(call) : response.body;
+    return { data: data as T, status: 200, headers: response.headers };
+  }
+
   const api: ApiClient = {
-    request: async <T>(path: string, options: { method?: string; body?: unknown } = {}) => {
-      const call = { method: options.method ?? 'GET', path, body: options.body };
-      calls.push(call);
-      const result = await handler(call);
-      return (result === undefined ? defaultResponse(call) : result) as T;
-    },
+    requestWithMeta,
+    request: async <T>(path: string, options?: RequestOptions) =>
+      (await requestWithMeta<T>(path, options)).data,
   };
   const writes = () => calls.filter((c) => c.method !== 'GET');
   return { api, calls, writes };
