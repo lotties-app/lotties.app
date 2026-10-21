@@ -5,6 +5,8 @@ import { useMedicationCommands, useMedications } from '../../db/hooks';
 import type { Medication } from '../../db/models';
 import { useLocale } from '../../i18n/useLocale';
 import { getOwn, withOwn, withoutOwn } from '../../util/ownProperty';
+import { CatalogResults } from '../../medications/CatalogResults';
+import { useAddFromProduct } from '../../medications/useAddFromProduct';
 import { Icon } from '../Icon';
 import { ChipGroup } from './ChipGroup';
 import { Field } from './Field';
@@ -17,6 +19,10 @@ export interface MedicationDose {
   name: string;
   amount: string;
   unit: string;
+  /** Kept from a logged entry so an edit never drops them. */
+  prescriptionId?: string;
+  kgUsed?: number;
+  override?: true;
 }
 
 /** Checked medications by catalog id (own-property rule: use `getOwn`/`withOwn`). */
@@ -68,6 +74,7 @@ export function MedicationPicker({
   const { locale } = useLocale();
   const medications = useMedications(babyId);
   const commands = useMedicationCommands();
+  const addFromProduct = useAddFromProduct(babyId);
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -106,6 +113,13 @@ export function MedicationPicker({
     } finally {
       setAdding(false);
     }
+  };
+
+  const select = (medication: Medication) => {
+    if (getOwn(selected, medication.id) === undefined) {
+      onChange(withOwn(selected, medication.id, selectionFor(medication)));
+    }
+    setQuery('');
   };
 
   return (
@@ -171,6 +185,21 @@ export function MedicationPicker({
           <Icon name="add" size={20} />
           <span>{t('ui.medication.add', { name: query.trim() })}</span>
         </Box>
+      )}
+      {!disabled && query.trim() !== '' && (
+        <CatalogResults
+          query={query}
+          medications={all}
+          onChooseMedication={select}
+          onChooseProduct={(product) => {
+            addFromProduct(product)
+              .then((created) => {
+                onChange(withOwn(selected, created.id, selectionFor(created)));
+                setQuery('');
+              })
+              .catch(() => setFailed(true));
+          }}
+        />
       )}
       {failed && (
         <Box role="alert" sx={{ fontSize: '0.8125rem', color: 'error.main' }}>

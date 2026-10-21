@@ -66,6 +66,7 @@ describe('medication commands', () => {
       defaultDosage: { amount: 5, unit: 'ml' },
       notes: 'after meals',
       isUsual: false,
+      productId: null,
     });
     expect(queue[2].payload).toBeNull();
   });

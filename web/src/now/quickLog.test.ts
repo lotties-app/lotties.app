@@ -229,6 +229,7 @@ describe('trays', () => {
     });
     expect(medsTray(BABY_ID, TYPES, MEDS, [med], at(14))).toEqual({
       typeId: MED_TYPE.id,
+      prescriptions: [],
       usual: [MEDS[0]],
       others: [MEDS[1]],
       lastUsedIds: [],

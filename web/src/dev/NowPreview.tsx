@@ -6,7 +6,14 @@ import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
 import { createDatabase, type BabyRoutineDb } from '../db/database';
 import { DatabaseProvider } from '../db/DatabaseProvider';
-import type { Baby, BabyEvent, EventPayload, EventType, Medication } from '../db/models';
+import type {
+  Baby,
+  BabyEvent,
+  EventPayload,
+  EventType,
+  Medication,
+  Prescription,
+} from '../db/models';
 import { useLocale } from '../i18n/useLocale';
 import { NowScreen } from '../now/ui/NowScreen';
 import { writeLastSeenAt } from '../now/lastSeen';
@@ -34,6 +41,7 @@ const SCENARIOS = [
   'forgotten',
   'catchup',
   'viewer',
+  'meds',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 type Scheme = 'light' | 'dark' | 'night';
@@ -147,7 +155,28 @@ function prediction(now: number): PredictionsDto {
   return {
     babyId: BABY_ID,
     generatedAt: new Date(now).toISOString(),
+    engineVersion: 'heuristic-1.1',
     insufficientData: [],
+    bedTime: {
+      typeKey: 'sleep',
+      kind: 'night',
+      nextStart: {
+        earliest: new Date(now + 3.6 * 60 * MIN).toISOString(),
+        expected: new Date(now + 4 * 60 * MIN).toISOString(),
+        latest: new Date(now + 4.5 * 60 * MIN).toISOString(),
+      },
+      expectedDuration: { minutes: 600, sampleCount: 9 },
+      confidence: 'Medium',
+      sampleCount: 9,
+      reason: '',
+      basis: {
+        kind: 'BedTimeClock',
+        sampleCount: 9,
+        recentBedTimeCount: 9,
+        lookBackDays: 14,
+        medianClock: '19:50',
+      },
+    },
     predictions: [
       {
         typeKey: 'sleep',
@@ -171,6 +200,65 @@ function prediction(now: number): PredictionsDto {
       },
     ],
   };
+}
+
+/** `HH:mm` of the local clock `minAgo` minutes before `now`. */
+function clockAgo(now: number, minAgo: number): string {
+  const d = new Date(now - minAgo * MIN);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** Prescriptions of the `meds` scenario: waiting, per kg, due now, and an ended course. */
+function prescriptionsFor(now: number): Prescription[] {
+  const base = {
+    babyId: BABY_ID,
+    status: 'active' as const,
+    startDate: '2026-09-01',
+    endDate: null,
+    prescriber: null,
+    instructions: null,
+    indication: null,
+    intervalGroup: null,
+    timesOfDay: null,
+    everyMinutes: null,
+    minIntervalMinutes: null,
+    maxDosesPer24h: null,
+    createdBy: null,
+    createdAt: '2026-09-01T00:00:00.000Z',
+    updatedAt: '2026-09-01T00:00:00.000Z',
+    deletedAt: null,
+  };
+  return [
+    {
+      ...base,
+      id: 'dev-rx-colidis',
+      medicationId: 'm1',
+      kind: 'asNeeded',
+      dose: { amount: 1, unit: 'drops', perKg: true, roundingStep: 1 },
+      minIntervalMinutes: 480,
+      maxDosesPer24h: 3,
+      indication: 'belly pain',
+      intervalGroup: 'colic',
+    },
+    {
+      ...base,
+      id: 'dev-rx-paracetamol',
+      medicationId: 'm3',
+      kind: 'asNeeded',
+      dose: { amount: 2.5, unit: 'ml', perKg: false, roundingStep: null },
+      minIntervalMinutes: 360,
+      indication: 'fever',
+      intervalGroup: 'colic',
+    },
+    {
+      ...base,
+      id: 'dev-rx-vitd',
+      medicationId: 'm2',
+      kind: 'scheduled',
+      dose: { amount: 2, unit: 'drops', perKg: false, roundingStep: null },
+      timesOfDay: [clockAgo(now, 30), '23:00'],
+    },
+  ];
 }
 
 interface Seeded {
@@ -276,6 +364,25 @@ function seedFor(scenario: Scenario, now: number): Seeded {
         predictions: prediction(now),
         lastSeenMinAgo: 600,
       };
+    case 'meds':
+      return {
+        baby,
+        events: [
+          ...morning(now, 112),
+          eventAt(now, 'medication', 120, 120, {
+            medications: [
+              {
+                medicationId: 'm1',
+                name: 'Colidis',
+                dose: { amount: 5, unit: 'drops' },
+                prescriptionId: 'dev-rx-colidis',
+                kgUsed: 4.6,
+              },
+            ],
+          }),
+        ],
+        predictions: prediction(now),
+      };
     case 'awake':
     case 'viewer':
       return { baby, events: morning(now, 112), predictions: prediction(now) };
@@ -289,11 +396,22 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Seeded> {
     db.eventTypes.clear(),
     db.events.clear(),
     db.medications.clear(),
+    db.prescriptions.clear(),
+    db.bodyWeights.clear(),
   ]);
   await db.babies.put(seeded.baby);
   await db.eventTypes.bulkPut(TYPES);
   await db.medications.bulkPut(MEDICATIONS);
   await db.events.bulkPut(seeded.events);
+  if (scenario === 'meds') {
+    await db.prescriptions.bulkPut(prescriptionsFor(Date.now()));
+    const weighed = new Date(Date.now() - 6 * 24 * 60 * MIN);
+    await db.bodyWeights.put({
+      babyId: BABY_ID,
+      kg: 4.6,
+      date: `${weighed.getFullYear()}-${String(weighed.getMonth() + 1).padStart(2, '0')}-${String(weighed.getDate()).padStart(2, '0')}`,
+    });
+  }
   return seeded;
 }
 

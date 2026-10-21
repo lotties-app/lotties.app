@@ -11,9 +11,14 @@ import {
   Stack,
   Switch,
   TextField,
+  Typography,
 } from '@mui/material';
 import { describeApiError } from '../api/errorMessages';
-import { useMedicationCommands } from '../db/hooks';
+import { useMedicationCommands, useMedications } from '../db/hooks';
+import { CatalogResults } from '../medications/CatalogResults';
+import { LinkedProduct } from '../medications/LinkedProduct';
+import { useOnline } from '../sync/useOnline';
+import { Icon } from '../ui/Icon';
 import type { Dosage, Medication } from '../db/models';
 import { t } from '../i18n/i18n';
 
@@ -43,6 +48,10 @@ export function MedicationDialog({ babyId, medication, onClose }: Props) {
   const [unit, setUnit] = useState(medication?.defaultDosage?.unit ?? '');
   const [notes, setNotes] = useState(medication?.notes ?? '');
   const [isUsual, setIsUsual] = useState(medication?.isUsual ?? false);
+  const [productId, setProductId] = useState<string | null>(medication?.productId ?? null);
+  const [linkedName, setLinkedName] = useState<string | null>(null);
+  const catalog = useMedications(babyId) ?? [];
+  const online = useOnline();
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (event: FormEvent) => {
@@ -55,6 +64,7 @@ export function MedicationDialog({ babyId, medication, onClose }: Props) {
       defaultDosage: dosage,
       notes: notes.trim() || null,
       isUsual,
+      productId,
     };
     try {
       if (medication) await commands.update(medication.id, changes);
@@ -81,6 +91,46 @@ export function MedicationDialog({ babyId, medication, onClose }: Props) {
               required
               autoComplete="off"
             />
+            {productId ? (
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: 'center' }}
+                role="group"
+                aria-label={t('medications.dialog.catalog')}
+              >
+                <Icon name="pill" size={20} />
+                <Typography variant="body2" sx={{ flex: 1 }}>
+                  {linkedName ? t('medications.dialog.linked', { name: linkedName }) : null}
+                  {linkedName ? ' · ' : ''}
+                  <LinkedProduct medication={{ productId }} />
+                </Typography>
+                <Button
+                  onClick={() => {
+                    setProductId(null);
+                    setLinkedName(null);
+                  }}
+                >
+                  {t('medications.dialog.unlink')}
+                </Button>
+              </Stack>
+            ) : (
+              <Stack spacing={1}>
+                <Typography variant="caption" color="text.secondary">
+                  {online ? t('medications.dialog.linkHelp') : t('medications.dialog.offlineHelp')}
+                </Typography>
+                <CatalogResults
+                  query={name}
+                  medications={catalog.filter((m) => m.id !== medication?.id)}
+                  onChooseMedication={() => onClose()}
+                  onChooseProduct={(product) => {
+                    setProductId(product.id);
+                    setLinkedName(product.name);
+                    setName(product.name);
+                  }}
+                />
+              </Stack>
+            )}
             <Stack direction="row" spacing={1}>
               <TextField
                 label={t('settings.medications.defaultDose')}

@@ -18,6 +18,10 @@ export interface MedicationSelection {
   /** Dose inputs kept as text while editing. */
   amount: string;
   unit: string;
+  /** Kept from a logged entry so editing the event never drops them. */
+  prescriptionId?: string;
+  kgUsed?: number;
+  override?: true;
 }
 
 export interface EventFormState {
@@ -96,6 +100,9 @@ function medicationsFromPayload(payload: EventPayload) {
       name: m.name ?? '',
       amount: m.dose ? String(m.dose.amount) : '',
       unit: m.dose?.unit ?? '',
+      ...(typeof m.prescriptionId === 'string' ? { prescriptionId: m.prescriptionId } : {}),
+      ...(typeof m.kgUsed === 'number' ? { kgUsed: m.kgUsed } : {}),
+      ...(m.override === true ? { override: true as const } : {}),
     });
   }
   return result;
@@ -268,7 +275,14 @@ export function buildPayload(
   if (isMedicationType(type)) {
     const medications = Object.entries(form.medications).map(([medicationId, m]) => {
       const dose = toDose(m);
-      return { medicationId, name: m.name, ...(dose ? { dose } : {}) };
+      return {
+        medicationId,
+        name: m.name,
+        ...(dose ? { dose } : {}),
+        ...(m.prescriptionId ? { prescriptionId: m.prescriptionId } : {}),
+        ...(m.kgUsed !== undefined ? { kgUsed: m.kgUsed } : {}),
+        ...(m.override ? { override: true as const } : {}),
+      };
     });
     return { medications } satisfies MedicationEventPayload;
   }

@@ -5,16 +5,19 @@ import {
   apiPaths,
   fromEventDto,
   fromMedicationDto,
+  fromPrescriptionDto,
   isEventDtoFor,
   type EventDto,
   type MedicationDto,
+  type PrescriptionDto,
 } from './contract';
 import { syncRequest, type TransportContext } from './syncContext';
 
 /** The server's current copy of a mutation's entity; `dto: null` = the server has none. */
 export type ServerCopy =
   | { entityType: 'event'; dto: EventDto | null }
-  | { entityType: 'medication'; dto: MedicationDto | null };
+  | { entityType: 'medication'; dto: MedicationDto | null }
+  | { entityType: 'prescription'; dto: PrescriptionDto | null };
 
 async function fetchEvent(ctx: TransportContext, babyId: string, id: string) {
   let body: unknown;
@@ -35,6 +38,12 @@ async function fetchMedication(ctx: TransportContext, babyId: string, id: string
   return (list as MedicationDto[]).find((m) => m?.id === id) ?? null;
 }
 
+async function fetchPrescription(ctx: TransportContext, babyId: string, id: string) {
+  const list = await syncRequest<unknown>(ctx, apiPaths.prescriptions(babyId));
+  if (!Array.isArray(list)) throw new Error('Unexpected response for the prescription list.');
+  return (list as PrescriptionDto[]).find((p) => p?.id === id) ?? null;
+}
+
 /**
  * Loads the server copy of the entity a mutation touched (`GET /events/{id}`, or the medication
  * list). Network and server failures are thrown to the caller.
@@ -44,14 +53,19 @@ export async function fetchServerCopy(
   mutation: OutboxMutation,
 ): Promise<ServerCopy> {
   const { babyId, entityId } = mutation;
-  return mutation.entityType === 'event'
-    ? { entityType: 'event', dto: await fetchEvent(ctx, babyId, entityId) }
-    : { entityType: 'medication', dto: await fetchMedication(ctx, babyId, entityId) };
+  switch (mutation.entityType) {
+    case 'event':
+      return { entityType: 'event', dto: await fetchEvent(ctx, babyId, entityId) };
+    case 'prescription':
+      return { entityType: 'prescription', dto: await fetchPrescription(ctx, babyId, entityId) };
+    default:
+      return { entityType: 'medication', dto: await fetchMedication(ctx, babyId, entityId) };
+  }
 }
 
 /** Tables a transaction must include to use `applyServerCopy`. */
 export function serverCopyTables(db: BabyRoutineDb) {
-  return [db.outbox, db.events, db.medications];
+  return [db.outbox, db.events, db.medications, db.prescriptions];
 }
 
 /**
@@ -75,6 +89,11 @@ export async function applyServerCopy(
     .count();
   if (otherPending > 0) return;
 
+  if (copy.entityType === 'prescription') {
+    if (copy.dto) await db.prescriptions.put(fromPrescriptionDto(copy.dto));
+    else await db.prescriptions.delete(mutation.entityId);
+    return;
+  }
   if (copy.entityType === 'medication') {
     if (copy.dto) await db.medications.put(fromMedicationDto(copy.dto));
     else await db.medications.delete(mutation.entityId);

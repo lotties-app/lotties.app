@@ -93,6 +93,7 @@ describe('SyncEngine push', () => {
     ]);
     expect(writes()[0].body).toEqual({
       name: 'Gripe water',
+      productId: null,
       defaultDosage: null,
       notes: null,
       isUsual: false,

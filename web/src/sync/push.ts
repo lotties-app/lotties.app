@@ -1,9 +1,16 @@
 import { ApiError } from '../api/ApiError';
 import type { BabyRoutineDb } from '../db/database';
 import type { OutboxMutation } from '../db/models';
-import { dropIfSuperseded, peekPendingMutation } from '../db/outbox';
+import { dependencyOf, dropIfSuperseded, peekPendingMutation } from '../db/outbox';
 import { backoffDelay } from './backoff';
-import { apiPaths, fromEventDto, isEventDtoFor, type EventUpsertRequest } from './contract';
+import {
+  apiPaths,
+  fromEventDto,
+  fromPrescriptionDto,
+  isEventDtoFor,
+  isPrescriptionDtoFor,
+  type EventUpsertRequest,
+} from './contract';
 import { t } from '../i18n/i18n';
 import {
   classifyFailure,
@@ -43,9 +50,30 @@ export async function pushOutbox(ctx: SyncContext): Promise<PushOutcome> {
     if (await dropIfSuperseded(ctx.db, head)) continue;
     const retryAt = head.nextAttemptAt ? Date.parse(head.nextAttemptAt) : 0;
     if (retryAt > ctx.now()) return { kind: 'backoff', retryAt, error: head.lastError };
-    const outcome = await pushOne(ctx, head);
+    const outcome = await pushOne(ctx, await firstDependency(ctx, head));
     if (outcome) return outcome;
   }
+}
+
+/** The mutation to send for `head`: its dependencies first (event -> prescription -> medication). */
+async function firstDependency(ctx: SyncContext, head: OutboxMutation): Promise<OutboxMutation> {
+  let target = head;
+  for (let depth = 0; depth < 3; depth += 1) {
+    const dependency = await dependencyOf(ctx.db, target);
+    if (!dependency) break;
+    target = dependency;
+  }
+  return target;
+}
+
+/**
+ * The server rejected an event because a prescription it names is missing, while that prescription
+ * is still queued: not a dead letter, the loop pushes the prescription and retries the event.
+ */
+async function waitsForPrescription(ctx: SyncContext, mutation: OutboxMutation, error: unknown) {
+  if (mutation.entityType !== 'event' || !isPayloadRejection(error)) return false;
+  if (!/prescriptionId/.test(error.problem?.field ?? '')) return false;
+  return (await dependencyOf(ctx.db, mutation)) !== undefined;
 }
 
 async function pushOne(ctx: SyncContext, mutation: OutboxMutation): Promise<PushOutcome | null> {
@@ -53,6 +81,7 @@ async function pushOne(ctx: SyncContext, mutation: OutboxMutation): Promise<Push
   try {
     response = await send(ctx, mutation);
   } catch (error) {
+    if (await waitsForPrescription(ctx, mutation, error)) return null;
     if (!isAlreadyDeleted(mutation, error)) return recordFailure(ctx, mutation, error);
   }
   await acknowledge(ctx.db, mutation, response);
@@ -60,15 +89,23 @@ async function pushOne(ctx: SyncContext, mutation: OutboxMutation): Promise<Push
 }
 
 async function send(ctx: SyncContext, mutation: OutboxMutation): Promise<unknown> {
-  const path =
-    mutation.entityType === 'medication'
-      ? apiPaths.medication(mutation.babyId, mutation.entityId)
-      : apiPaths.event(mutation.babyId, mutation.entityId);
+  const path = pathOf(mutation);
   if (mutation.kind === 'upsert') {
     return syncRequest<unknown>(ctx, path, { method: 'PUT', body: upsertBody(mutation) });
   }
   await syncRequest<unknown>(ctx, path, { method: 'DELETE' });
   return undefined;
+}
+
+function pathOf(mutation: OutboxMutation): string {
+  switch (mutation.entityType) {
+    case 'medication':
+      return apiPaths.medication(mutation.babyId, mutation.entityId);
+    case 'prescription':
+      return apiPaths.prescription(mutation.babyId, mutation.entityId);
+    default:
+      return apiPaths.event(mutation.babyId, mutation.entityId);
+  }
 }
 
 /**
@@ -77,7 +114,7 @@ async function send(ctx: SyncContext, mutation: OutboxMutation): Promise<unknown
  * which is the event's edit time at the moment of the edit.
  */
 function upsertBody(mutation: OutboxMutation): unknown {
-  if (mutation.entityType !== 'event') return mutation.payload;
+  if (mutation.entityType === 'medication') return mutation.payload;
   const body = mutation.payload as Partial<EventUpsertRequest>;
   return body.updatedAt ? body : { ...body, updatedAt: mutation.createdAt };
 }
@@ -93,15 +130,24 @@ function isAlreadyDeleted(mutation: OutboxMutation, error: unknown) {
  * and the stored copy returned, or the event was already deleted on the server).
  */
 async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
-  await db.transaction('rw', db.outbox, db.events, async () => {
+  await db.transaction('rw', db.outbox, db.events, db.prescriptions, async () => {
     await db.outbox.delete(mutation.id);
-    if (mutation.entityType !== 'event' || !isEventDtoFor(response, mutation.entityId)) return;
+    const { entityType, entityId } = mutation;
+    const eventCopy =
+      entityType === 'event' && isEventDtoFor(response, entityId) ? response : undefined;
+    const prescriptionCopy =
+      entityType === 'prescription' && isPrescriptionDtoFor(response, entityId)
+        ? response
+        : undefined;
+    if (!eventCopy && !prescriptionCopy) return;
     const stillPending = await db.outbox
       .where('entityId')
-      .equals(mutation.entityId)
+      .equals(entityId)
       .filter((m) => m.status === 'pending')
       .count();
-    if (stillPending === 0) await db.events.put(fromEventDto(response));
+    if (stillPending > 0) return;
+    if (eventCopy) await db.events.put(fromEventDto(eventCopy));
+    if (prescriptionCopy) await db.prescriptions.put(fromPrescriptionDto(prescriptionCopy));
   });
 }
 

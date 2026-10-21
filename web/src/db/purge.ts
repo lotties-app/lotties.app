@@ -7,7 +7,16 @@ import type { BabyRoutineDb } from './database';
 
 /** Tables a transaction must include to use `deleteBabyRows` (all of a baby's local data). */
 export function purgeTables(db: BabyRoutineDb) {
-  return [db.babies, db.events, db.eventTypes, db.medications, db.outbox, db.syncState];
+  return [
+    db.babies,
+    db.events,
+    db.eventTypes,
+    db.medications,
+    db.prescriptions,
+    db.bodyWeights,
+    db.outbox,
+    db.syncState,
+  ];
 }
 
 /**
@@ -19,6 +28,8 @@ export async function deleteBabyRows(db: BabyRoutineDb, babyIds: string[]): Prom
   await db.events.where('babyId').anyOf(babyIds).delete();
   await db.eventTypes.where('babyId').anyOf(babyIds).delete();
   await db.medications.where('babyId').anyOf(babyIds).delete();
+  await db.prescriptions.where('babyId').anyOf(babyIds).delete();
+  await db.bodyWeights.where('babyId').anyOf(babyIds).delete();
   await db.outbox.where('babyId').anyOf(babyIds).delete();
   await db.syncState.where('babyId').anyOf(babyIds).delete();
   await db.babies.bulkDelete(babyIds);

@@ -15,6 +15,8 @@ export interface ProblemDetails {
   maxNames?: number;
   token?: string;
   tokens?: string[];
+  /** The existing catalog product of a 409 `product_exists` (API extension). */
+  product?: unknown;
 }
 
 function asProblem(body: unknown): ProblemDetails | null {

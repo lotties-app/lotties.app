@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Skeleton, Typography } from '@mui/material';
 import { canWrite } from '../baby/permissions';
-import { useEntitySyncStates, useEventsInRange, useEventTypes, useMedications } from '../db/hooks';
+import {
+  useAllPrescriptions,
+  useEntitySyncStates,
+  useEventsInRange,
+  useEventTypes,
+  useMedications,
+} from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
 import { EventSheet } from '../events/EventSheet';
 import type { FormPrefill } from '../events/formModel';
@@ -126,6 +132,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
 
   const types = useEventTypes(baby.id);
   const medications = useMedications(baby.id);
+  const prescriptions = useAllPrescriptions(baby.id);
   const events = useEventsInRange(baby.id, range.from, range.to);
   const syncStates = useEntitySyncStates(baby.id);
   const actions = usePresetActions(baby.id, types ?? []);
@@ -200,6 +207,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
                   event={item.event}
                   type={typeOf(item.event)}
                   medications={medications}
+                  {...(prescriptions ? { prescriptions } : {})}
                   syncState={syncStates?.get(item.event.id)}
                   hasNext={index < items.length - 1}
                   onEdit={setEditing}

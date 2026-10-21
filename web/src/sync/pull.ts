@@ -1,5 +1,12 @@
 import type { BabyRoutineDb } from '../db/database';
-import { BABIES_LISTED_KEY, editTimeOf, type BabyEvent } from '../db/models';
+import { saveLatestWeight } from '../db/bodyWeight';
+import {
+  BABIES_LISTED_KEY,
+  editTimeOf,
+  prescriptionEditTime,
+  type BabyEvent,
+  type Prescription,
+} from '../db/models';
 import { pendingEntityIds, rejectedStopIds } from '../db/outbox';
 import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
 import {
@@ -8,11 +15,14 @@ import {
   fromEventDto,
   fromEventTypeDto,
   fromMedicationDto,
+  fromPrescriptionDto,
   type BabyDto,
   type EventDto,
   type EventsDeltaResponse,
   type EventTypeDto,
   type MedicationDto,
+  type MeasurementDto,
+  type PrescriptionDto,
   NEXT_CURSOR_HEADER,
 } from './contract';
 import { classifyFailure, describeFailure } from './failures';
@@ -164,6 +174,58 @@ export async function pullEvents(ctx: SyncContext, babyId: string): Promise<void
 }
 
 /**
+ * Merges pulled prescriptions like events: a copy with a queued local change is skipped until that
+ * is pushed, a server soft delete is final, otherwise the newer client edit time wins. The delta
+ * cursor moves with the same transaction.
+ */
+export async function mergePrescriptionDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: PrescriptionDto[],
+): Promise<void> {
+  await db.transaction('rw', db.prescriptions, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromPrescriptionDto);
+    const locals = await db.prescriptions.bulkGet(incoming.map((p) => p.id));
+    const wins = (remote: Prescription, local: Prescription | undefined) =>
+      !local ||
+      remote.deletedAt !== null ||
+      Date.parse(prescriptionEditTime(remote)) >= Date.parse(prescriptionEditTime(local));
+    await db.prescriptions.bulkPut(incoming.filter((p, i) => wins(p, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'prescriptions']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'prescriptions', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the prescriptions changed since the stored cursor (minus the overlap), deleted included. */
+export async function pullPrescriptions(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'prescriptions']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  const items = await get<PrescriptionDto[]>(ctx, apiPaths.prescriptions(babyId, since));
+  await mergePrescriptionDelta(ctx.db, babyId, items ?? []);
+}
+
+/**
+ * Keeps the latest weight on the device (growth is online-only) for per-kg suggestions. Best
+ * effort: a failure leaves the stored weight as it was.
+ */
+export async function refreshLatestWeight(ctx: SyncContext, babyId: string): Promise<void> {
+  try {
+    const list = await get<MeasurementDto[]>(ctx, apiPaths.measurements(babyId));
+    if (Array.isArray(list)) await saveLatestWeight(ctx.db, babyId, list);
+  } catch {
+    // Offline or not allowed: keep what is stored.
+  }
+}
+
+/**
  * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure or a paging
  * loop for one baby is collected and the others continue; network/401/transient failures are
  * rethrown.
@@ -173,7 +235,9 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
   for (const babyId of await refreshBabies(ctx)) {
     try {
       await refreshCatalogs(ctx, babyId);
+      await pullPrescriptions(ctx, babyId);
       await pullEvents(ctx, babyId);
+      await refreshLatestWeight(ctx, babyId);
     } catch (error) {
       const perBaby =
         error instanceof RepeatedCursorError || classifyFailure(error) === 'permanent';

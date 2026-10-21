@@ -8,6 +8,7 @@ import {
 } from '../db/hooks';
 import type { Baby, BabyEvent, EventType, Medication } from '../db/models';
 import { useNow } from '../events/time';
+import { useMedicationStatuses, type MedicationStatuses } from '../medications/useMedicationStatus';
 import { usePredictions } from '../predictions/usePredictions';
 import { catchUp, type CatchUp } from './catchUp';
 import { DAY_MS, HOUR_MS } from './eventFacts';
@@ -59,6 +60,8 @@ export interface NowScreenModel {
   acknowledgeCatchUp: () => void;
   types: EventType[];
   medications: Medication[];
+  /** Active prescriptions with their computed state (offline calculator). */
+  meds: MedicationStatuses;
   /** The last 3 days plus running timers, newest first. */
   events: BabyEvent[];
   /** Viewers read; the commands are for Parents and Owners. */
@@ -105,6 +108,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
   const predictions = usePredictions(baby.id).query.data;
   const members = useMembers(baby.id);
   const handover = useHandover(baby.id);
+  const meds = useMedicationStatuses(baby.id);
   const commands = useNowCommands(baby, types ?? EMPTY_TYPES);
 
   const events = useMemo(
@@ -113,7 +117,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
   );
 
   const derived = useMemo(() => {
-    if (!types || !events || !medications) return undefined;
+    if (!types || !events || !medications || !meds) return undefined;
     const now = clockOf(tick, events);
     const state = deriveNowState(events, types, predictions, now);
     return {
@@ -124,27 +128,38 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       trays: {
         feed: feedTrayOptions(baby.id, types, events, now),
         diaper: diaperTray(types),
-        meds: medsTray(baby.id, types, medications, events, now),
+        meds: medsTray(baby.id, types, medications, events, now, meds.statuses),
         bellyPain: bellyPainTray(types),
       },
       forgotten: forgottenTimers(events, types, now),
       catchUp: catchUp(events, members, handover.since, now, { types }),
     };
-  }, [types, events, medications, predictions, members, handover.since, tick, baby.id]);
+  }, [types, events, medications, meds, predictions, members, handover.since, tick, baby.id]);
 
   return useMemo(() => {
-    if (!derived || !types || !events || !medications || !runningTimers) return undefined;
+    if (!derived || !types || !events || !medications || !meds || !runningTimers) return undefined;
     return {
       ...derived,
       running: runningTimers,
       acknowledgeCatchUp: handover.acknowledge,
       types,
       medications,
+      meds,
       events,
       readOnly: !canWrite(baby),
       commands,
     };
-  }, [derived, types, events, medications, runningTimers, handover.acknowledge, baby, commands]);
+  }, [
+    derived,
+    types,
+    events,
+    medications,
+    meds,
+    runningTimers,
+    handover.acknowledge,
+    baby,
+    commands,
+  ]);
 }
 
 const EMPTY_TYPES: EventType[] = [];

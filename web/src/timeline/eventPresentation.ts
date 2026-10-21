@@ -1,4 +1,10 @@
-import type { BabyEvent, EventType, Medication, MedicationEventPayload } from '../db/models';
+import type {
+  BabyEvent,
+  EventType,
+  Medication,
+  MedicationEventPayload,
+  Prescription,
+} from '../db/models';
 import { optionIcon } from '../events/optionIcons';
 import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
 import { t } from '../i18n/i18n';
@@ -8,7 +14,7 @@ import type { CategoryName } from '../theme/tokens';
 import type { IconName } from '../ui/icons';
 import { getOwn } from '../util/ownProperty';
 import { medicationNames, payloadParts } from './payloadSummary';
-import { formatNumber } from '../i18n/format';
+import { formatNumber, formatUnit } from '../i18n/format';
 
 /** The field whose option names the event on a Day row (`Nap`, `Bottle`, `Wet`). */
 const TITLE_FIELD: ReadonlyMap<string, string> = new Map([
@@ -27,11 +33,28 @@ export interface EventPresentation {
 
 const SEPARATOR = ' · ';
 
-function medicationDetail(event: BabyEvent): string {
+/** Dose, the prescription it followed and whether it was logged early, per medication entry. */
+function medicationDetail(event: BabyEvent, prescriptions: readonly Prescription[]): string {
   const list = (event.payload as Partial<MedicationEventPayload>).medications;
   return (Array.isArray(list) ? list : [])
-    .filter((m) => m.dose)
-    .map((m) => `${formatNumber(m.dose!.amount)} ${m.dose!.unit}`)
+    .flatMap((m) => {
+      const prescription = m.prescriptionId
+        ? prescriptions.find((p) => p.id === m.prescriptionId)
+        : undefined;
+      return [
+        m.dose ? `${formatNumber(m.dose.amount)} ${m.dose.unit}` : null,
+        m.kgUsed !== undefined
+          ? t('medications.day.kgUsed', { kg: formatUnit(m.kgUsed, 'kilogram') })
+          : null,
+        m.prescriptionId
+          ? prescription?.indication
+            ? t('medications.day.byPrescriptionFor', { indication: prescription.indication })
+            : t('medications.day.byPrescription')
+          : null,
+        m.override === true ? t('medications.day.early') : null,
+      ];
+    })
+    .filter((part): part is string => part !== null)
     .join(SEPARATOR);
 }
 
@@ -46,6 +69,7 @@ export function presentEvent(
   type: EventType | undefined,
   medications: Medication[] = [],
   text: EventTypeText = eventTypeText,
+  prescriptions: readonly Prescription[] = [],
 ): EventPresentation {
   const base = {
     icon: typeIcon(type),
@@ -57,7 +81,7 @@ export function presentEvent(
     return {
       ...base,
       title: names.length > 0 ? names.join(', ') : typeName,
-      detail: medicationDetail(event),
+      detail: medicationDetail(event, prescriptions),
     };
   }
   const titleKey = type && type.babyId === null ? TITLE_FIELD.get(type.key) : undefined;

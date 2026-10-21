@@ -4,6 +4,7 @@ import type { EventType } from '../../db/models';
 import { RADIUS } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 import { Illustration } from '../../ui/illustrations';
+import type { StateLine } from '../../medications/statusText';
 import { formatTileStatus, tileLabel } from '../nowText';
 import type { QuickTile, TileId } from '../quickLog';
 import { tileDetailText } from '../tileText';
@@ -22,11 +23,13 @@ interface Props {
   now: Date;
   /** Viewers cannot log. */
   readOnly: boolean;
+  /** Where the prescriptions stand ("Next allowed 18:00", "Due now"), shown on the Meds tile. */
+  medsLine?: StateLine | null;
   onOpen: (id: TileId) => void;
 }
 
 /** The "last and log" tiles: Feed, Diaper, Meds, More. A tap opens the matching tray. */
-export function LogTiles({ tiles, types, now, readOnly, onOpen }: Props) {
+export function LogTiles({ tiles, types, now, readOnly, medsLine = null, onOpen }: Props) {
   const { t } = useTranslation();
   return (
     <Box component="section" aria-label={t('now.tiles.region')}>
@@ -74,6 +77,16 @@ export function LogTiles({ tiles, types, now, readOnly, onOpen }: Props) {
                     sx={{ display: 'block' }}
                   >
                     {status}
+                  </Typography>
+                )}
+                {tile.id === 'meds' && medsLine && (
+                  <Typography
+                    variant="caption"
+                    component="span"
+                    color={medsLine.tone === 'due' ? 'warning.main' : 'text.secondary'}
+                    sx={{ display: 'block', fontWeight: medsLine.tone === 'due' ? 600 : 400 }}
+                  >
+                    {medsLine.text}
                   </Typography>
                 )}
                 {detail && (

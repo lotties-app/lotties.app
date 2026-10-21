@@ -10,6 +10,10 @@ import {
   type EventPayload,
   type EventType,
   type Medication,
+  type Prescription,
+  type PrescriptionDose,
+  type PrescriptionKind,
+  type PrescriptionStatus,
 } from '../db/models';
 
 /*
@@ -35,7 +39,15 @@ import {
  *          /babies/{id}/medications -> MedicationDto[].
  * - PUT    /babies/{id}/medications/{medicationId}  body MedicationUpsertRequest; idempotent upsert
  *          (client GUID); any 2xx body is ignored. Medication pulls are not delta-based yet.
- * - Medication event payload: { medications: [{ medicationId, name, dose?: { amount, unit } }] }.
+ * - PUT    /babies/{id}/medications/{medicationId} also carries `productId` (shared catalog link).
+ * - Prescriptions (docs/SPEC.md "Medications: catalog, prescriptions, status"): GET
+ *          /babies/{id}/prescriptions?since= (incl. soft-deleted), PUT/DELETE
+ *          /babies/{id}/prescriptions/{id}. A prescription must reach the server before the events
+ *          that name it (`medications[i].prescriptionId`), and its medication before it.
+ * - Shared catalog: GET /catalog/products?q=, POST /catalog/products (409 `product_exists` carries
+ *          the existing `product`).
+ * - Medication event payload: { medications: [{ medicationId, name, dose?, prescriptionId?, kgUsed?,
+ *          override? }] }.
  * - Enum values (field kind, role) are strings, compared case-insensitively.
  */
 
@@ -63,6 +75,13 @@ export const apiPaths = {
   /** `after` (a paging cursor) takes precedence over `since` on the server. */
   eventsDelta: (babyId: string, page: { since?: string; after?: string } = {}) =>
     `${API_PREFIX}/babies/${enc(babyId)}/events` + query(page),
+  prescriptions: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescriptions` + query({ since }),
+  prescription: (babyId: string, prescriptionId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescriptions/${enc(prescriptionId)}`,
+  catalogProducts: (q?: string, limit?: number) =>
+    `${API_PREFIX}/catalog/products` +
+    query({ q, limit: limit === undefined ? undefined : String(limit) }),
   measurements: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/measurements`,
   measurement: (babyId: string, measurementId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/measurements/${enc(measurementId)}`,
@@ -130,6 +149,7 @@ export interface MedicationDto {
   defaultDosage?: Dosage | null;
   notes?: string | null;
   isUsual: boolean;
+  productId?: string | null;
   createdAt: string;
 }
 
@@ -162,6 +182,8 @@ export interface EventUpsertRequest {
 
 export interface MedicationUpsertRequest {
   name: string;
+  /** Shared catalog link; `null` removes it (the PUT is full state). */
+  productId: string | null;
   defaultDosage: Dosage | null;
   notes: string | null;
   isUsual: boolean;
@@ -170,6 +192,7 @@ export interface MedicationUpsertRequest {
 export function toMedicationUpsertRequest(medication: Medication): MedicationUpsertRequest {
   return {
     name: medication.name,
+    productId: medication.productId ?? null,
     defaultDosage: medication.defaultDosage,
     notes: medication.notes,
     isUsual: medication.isUsual,
@@ -259,11 +282,27 @@ export interface InsufficientDataDto {
   reason: string;
 }
 
+/** The next night's start (heuristic v1.1); `basis.kind` is `BedTimeClock`. */
+export interface BedTimeDto {
+  typeKey: string;
+  kind: string;
+  nextStart: { earliest: string; expected: string; latest: string };
+  expectedDuration: { minutes: number; sampleCount: number } | null;
+  confidence: PredictionConfidence;
+  sampleCount: number;
+  reason: string;
+  basis: Record<string, unknown>;
+}
+
 export interface PredictionsDto {
   babyId: string;
   generatedAt: string;
+  /** Absent on servers before heuristic v1.1. */
+  engineVersion?: string;
   predictions: PredictionDto[];
   insufficientData: InsufficientDataDto[];
+  /** Absent or `null` when no bed time can be estimated. */
+  bedTime?: BedTimeDto | null;
 }
 
 /** Normalizes any ISO-8601 timestamp to UTC `Z` with millisecond precision. */
@@ -365,8 +404,160 @@ export function fromMedicationDto(dto: MedicationDto): Medication {
     defaultDosage: dto.defaultDosage ?? null,
     notes: dto.notes ?? null,
     isUsual: dto.isUsual,
+    productId: dto.productId ?? null,
     createdAt: toUtcIso(dto.createdAt),
   };
+}
+
+/* Prescriptions */
+
+export interface PrescriptionDto {
+  id: string;
+  babyId: string;
+  medicationId: string;
+  status: string;
+  kind: string;
+  dose: { amount: number; unit: string; perKg?: boolean; roundingStep?: number | null };
+  timesOfDay?: string[] | null;
+  everyMinutes?: number | null;
+  minIntervalMinutes?: number | null;
+  maxDosesPer24h?: number | null;
+  indication?: string | null;
+  intervalGroup?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  prescriber?: string | null;
+  instructions?: string | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+  deletedAt?: string | null;
+}
+
+/** Editable fields of a prescription plus the client edit time (`PUT` replaces the terms). */
+export interface PrescriptionUpsertRequest {
+  medicationId: string;
+  status: PrescriptionStatus;
+  kind: PrescriptionKind;
+  dose: PrescriptionDose;
+  timesOfDay: string[] | null;
+  everyMinutes: number | null;
+  minIntervalMinutes: number | null;
+  maxDosesPer24h: number | null;
+  indication: string | null;
+  intervalGroup: string | null;
+  startDate: string;
+  endDate: string | null;
+  prescriber: string | null;
+  instructions: string | null;
+  updatedAt?: string;
+}
+
+export function toPrescriptionUpsertRequest(p: Prescription): PrescriptionUpsertRequest {
+  return {
+    medicationId: p.medicationId,
+    status: p.status,
+    kind: p.kind,
+    dose: p.dose,
+    timesOfDay: p.timesOfDay,
+    everyMinutes: p.everyMinutes,
+    minIntervalMinutes: p.minIntervalMinutes,
+    maxDosesPer24h: p.maxDosesPer24h,
+    indication: p.indication,
+    intervalGroup: p.intervalGroup,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    prescriber: p.prescriber,
+    instructions: p.instructions,
+    updatedAt: p.clientUpdatedAt ?? p.updatedAt,
+  };
+}
+
+export function isPrescriptionDtoFor(value: unknown, id: string): value is PrescriptionDto {
+  const dto = value as Partial<PrescriptionDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    medicationId: dto.medicationId,
+    status: dto.status?.toLowerCase() === 'stopped' ? 'stopped' : 'active',
+    kind: dto.kind?.toLowerCase() === 'scheduled' ? 'scheduled' : 'asNeeded',
+    dose: {
+      amount: dto.dose.amount,
+      unit: dto.dose.unit,
+      perKg: dto.dose.perKg === true,
+      roundingStep: dto.dose.roundingStep ?? null,
+    },
+    timesOfDay: dto.timesOfDay ? [...dto.timesOfDay].sort() : null,
+    everyMinutes: dto.everyMinutes ?? null,
+    minIntervalMinutes: dto.minIntervalMinutes ?? null,
+    maxDosesPer24h: dto.maxDosesPer24h ?? null,
+    indication: dto.indication ?? null,
+    intervalGroup: dto.intervalGroup ?? null,
+    startDate: dto.startDate,
+    endDate: dto.endDate ?? null,
+    prescriber: dto.prescriber ?? null,
+    instructions: dto.instructions ?? null,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+    deletedAt: toUtcIsoOrNull(dto.deletedAt),
+  };
+}
+
+/* Shared medication catalog (instance-wide). */
+
+export type ProductForm = 'drops' | 'syrup' | 'tablet' | 'powder' | 'other';
+
+export interface ProductSubstanceDto {
+  substanceId: string;
+  key: string;
+  nameEn: string;
+  namePtBr: string;
+  strength: {
+    amount: number;
+    unit: string;
+    perAmount?: number | null;
+    perUnit?: string | null;
+  } | null;
+}
+
+export interface ProductDto {
+  id: string;
+  name: string;
+  form: ProductForm;
+  country: string;
+  status: 'seed' | 'community' | 'verified';
+  mergedIntoId: string | null;
+  substances: ProductSubstanceDto[];
+  createdAt: string;
+}
+
+export interface SiblingProductDto {
+  id: string;
+  name: string;
+  form: ProductForm;
+  country: string;
+  status: string;
+}
+
+export interface ProductMatchDto {
+  product: ProductDto;
+  matchedBy: 'name' | 'alias' | 'substance';
+  distance: number;
+  sameActiveIngredient: SiblingProductDto[];
+}
+
+export interface CreateProductRequest {
+  name: string;
+  form: ProductForm;
+  country: string;
+  substances?: { substanceId: string }[];
 }
 
 /** Parses a role string from the API; unknown values degrade to the least privilege. */

@@ -9,7 +9,10 @@ import {
   eventTypesFor,
   liveEvent,
   medicationsFor,
+  latestBodyWeight,
+  allPrescriptionsFor,
   oldestEventStart,
+  prescriptionsFor,
   runningEvents,
 } from './queries';
 import {
@@ -28,6 +31,14 @@ import {
   type CreateMedicationInput,
   type MedicationChanges,
 } from './medicationCommands';
+import {
+  createPrescription,
+  deletePrescription,
+  setPrescriptionStatus,
+  updatePrescription,
+  type PrescriptionTerms,
+} from './prescriptionCommands';
+import type { PrescriptionStatus } from './models';
 
 /*
  * Reads come straight from Dexie through `useLiveQuery`, which re-runs on any local or synced
@@ -116,5 +127,33 @@ export function useEventCommands() {
     finish: (id: string, payload: EventPayload, endedAt?: string) =>
       finishEvent(db, id, payload, endedAt),
     remove: (id: string) => deleteEvent(db, id),
+  };
+}
+
+/** The baby's prescriptions that are not deleted (`undefined` while loading). */
+export function usePrescriptions(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(() => prescriptionsFor(db, babyId), [db, babyId]);
+}
+
+/** Every prescription of the baby, deleted ones included (they still name logged doses). */
+export function useAllPrescriptions(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(() => allPrescriptionsFor(db, babyId), [db, babyId]);
+}
+
+/** The latest known weight of the baby; `null` when none is stored (`undefined` while loading). */
+export function useBodyWeight(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(async () => (await latestBodyWeight(db, babyId)) ?? null, [db, babyId]);
+}
+
+export function usePrescriptionCommands() {
+  const db = useDatabase();
+  return {
+    create: (babyId: string, terms: PrescriptionTerms) => createPrescription(db, babyId, terms),
+    update: (id: string, terms: PrescriptionTerms) => updatePrescription(db, id, terms),
+    setStatus: (id: string, status: PrescriptionStatus) => setPrescriptionStatus(db, id, status),
+    remove: (id: string) => deletePrescription(db, id),
   };
 }

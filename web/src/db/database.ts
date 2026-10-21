@@ -3,8 +3,11 @@ import type {
   Baby,
   BabyEvent,
   EventType,
+  BodyWeightRow,
+  CachedProduct,
   Medication,
   OutboxMutation,
+  Prescription,
   SyncCursor,
   SyncEntity,
 } from './models';
@@ -45,6 +48,15 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
           baby.role ??= 'Parent';
         }),
   },
+  {
+    // Medications M2: prescriptions (synced), cached shared-catalog products, latest weight.
+    version: 3,
+    stores: {
+      prescriptions: 'id, babyId, medicationId, [babyId+updatedAt]',
+      catalogProducts: 'id, usedAt',
+      bodyWeights: 'babyId',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -52,6 +64,9 @@ export class BabyRoutineDb extends Dexie {
   declare eventTypes: EntityTable<EventType, 'id'>;
   declare medications: EntityTable<Medication, 'id'>;
   declare events: EntityTable<BabyEvent, 'id'>;
+  declare prescriptions: EntityTable<Prescription, 'id'>;
+  declare catalogProducts: EntityTable<CachedProduct, 'id'>;
+  declare bodyWeights: EntityTable<BodyWeightRow, 'babyId'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

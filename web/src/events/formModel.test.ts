@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import {
+  buildPayload,
   buildTimes,
   defaultRunning,
   formProblems,
@@ -100,5 +101,35 @@ describe('buildTimes', () => {
   it('leaves a blank end running for a timer', () => {
     const form = { ...feeding({ method: 'breast' }), startedAt: '2026-10-21T10:00' };
     expect(buildTimes(form, FEEDING_TYPE).endedAt).toBeNull();
+  });
+});
+
+describe('medication entries logged under a prescription', () => {
+  it('keep prescriptionId, kgUsed and override when the event is edited', () => {
+    const medType = { ...FEEDING_TYPE, id: 'type-med', key: 'medication', fields: [] };
+    const payload = {
+      medications: [
+        {
+          medicationId: 'm1',
+          name: 'Colidis',
+          dose: { amount: 5, unit: 'drops' },
+          prescriptionId: 'rx-1',
+          kgUsed: 4.6,
+          override: true,
+        },
+      ],
+    };
+    const form = initialForm(
+      [medType],
+      {
+        typeId: medType.id,
+        startedAt: '2026-10-21T10:00:00.000Z',
+        endedAt: '2026-10-21T10:00:00.000Z',
+        payload,
+      },
+      undefined,
+      new Date('2026-10-21T12:00:00.000Z'),
+    );
+    expect(buildPayload(form, medType)).toEqual(payload);
   });
 });

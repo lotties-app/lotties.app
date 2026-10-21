@@ -3,6 +3,7 @@ import type { Dosage, Medication } from './models';
 import { enqueueMutation } from './outbox';
 import { toMedicationUpsertRequest } from '../sync/contract';
 import type { CommandOptions } from './eventCommands';
+import { termsOf, type PrescriptionTerms } from './prescriptionCommands';
 
 export interface CreateMedicationInput {
   babyId: string;
@@ -10,6 +11,8 @@ export interface CreateMedicationInput {
   defaultDosage?: Dosage | null;
   notes?: string | null;
   isUsual?: boolean;
+  /** Shared catalog product this medication is an instance of. */
+  productId?: string | null;
 }
 
 export class InvalidMedicationError extends Error {
@@ -39,6 +42,7 @@ export async function createMedication(
     defaultDosage: input.defaultDosage ?? null,
     notes: input.notes ?? null,
     isUsual: input.isUsual ?? false,
+    productId: input.productId ?? null,
     createdAt: now,
   };
   await db.transaction('rw', db.medications, db.outbox, async () => {
@@ -60,6 +64,8 @@ export interface MedicationChanges {
   defaultDosage: Dosage | null;
   notes: string | null;
   isUsual: boolean;
+  /** `undefined` keeps the current link. */
+  productId?: string | null;
 }
 
 /** Edits a catalog entry locally and queues its upsert (`PUT /babies/{id}/medications/{id}`). */
@@ -75,7 +81,13 @@ export async function updateMedication(
   return db.transaction('rw', db.medications, db.outbox, async () => {
     const current = await db.medications.get(id);
     if (!current) throw new InvalidMedicationError('This medication no longer exists.', 'gone');
-    const updated: Medication = { ...current, ...changes, name };
+    const { productId, ...rest } = changes;
+    const updated: Medication = {
+      ...current,
+      ...rest,
+      name,
+      ...(productId !== undefined ? { productId } : {}),
+    };
     await db.medications.put(updated);
     await enqueueMutation(db, {
       babyId: updated.babyId,
@@ -89,17 +101,33 @@ export async function updateMedication(
   });
 }
 
+/** What a deleted medication took with it, to put back on Undo. */
+export interface DeletedMedication {
+  medication: Medication;
+  /** Terms of its live prescriptions (the server soft deletes them with the medication). */
+  prescriptions: PrescriptionTerms[];
+}
+
 /** Removes a catalog entry locally and queues `DELETE /babies/{id}/medications/{id}`. */
 export async function deleteMedication(
   db: BabyRoutineDb,
   id: string,
   options: CommandOptions = {},
-): Promise<void> {
+): Promise<DeletedMedication | undefined> {
   const now = (options.now?.() ?? new Date()).toISOString();
-  await db.transaction('rw', db.medications, db.outbox, async () => {
+  return db.transaction('rw', db.medications, db.prescriptions, db.outbox, async () => {
     const current = await db.medications.get(id);
-    if (!current) return;
+    if (!current) return undefined;
     await db.medications.delete(id);
+    // The server soft deletes the medication's prescriptions too; mirror that locally.
+    const live = await db.prescriptions
+      .where('medicationId')
+      .equals(id)
+      .filter((p) => p.deletedAt === null)
+      .toArray();
+    await db.prescriptions.bulkPut(
+      live.map((p) => ({ ...p, deletedAt: now, updatedAt: now, clientUpdatedAt: now })),
+    );
     await enqueueMutation(db, {
       babyId: current.babyId,
       kind: 'delete',
@@ -108,5 +136,6 @@ export async function deleteMedication(
       payload: null,
       createdAt: now,
     });
+    return { medication: current, prescriptions: live.map(termsOf) };
   });
 }

@@ -17,8 +17,10 @@ function normalize(body: Partial<PredictionsDto> | undefined, babyId: string): P
   return {
     babyId: body?.babyId ?? babyId,
     generatedAt: body?.generatedAt ?? new Date().toISOString(),
+    ...(typeof body?.engineVersion === 'string' ? { engineVersion: body.engineVersion } : {}),
     predictions: Array.isArray(body?.predictions) ? body.predictions : [],
     insufficientData: Array.isArray(body?.insufficientData) ? body.insufficientData : [],
+    bedTime: body?.bedTime ?? null,
   };
 }
 

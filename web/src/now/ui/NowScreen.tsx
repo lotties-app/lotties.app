@@ -6,6 +6,8 @@ import { isOwner } from '../../baby/permissions';
 import { useOldestEventStart } from '../../db/hooks';
 import type { Baby } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
+import { PrescriptionSheet } from '../../medications/PrescriptionSheet';
+import { tileStateLine } from '../../medications/statusText';
 import { eventTypeText } from '../../i18n/eventTypeText';
 import type { SheetPrefill } from '../../presets/actions';
 import { useAddRequests } from '../../layout/addSheetContext';
@@ -89,6 +91,7 @@ function NowContent({
   const predictions = usePredictions(baby.id).query.data;
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
+  const [addingPrescription, setAddingPrescription] = useState(false);
   useRefreshPredictions(baby.id, model);
   // The "+" of the bottom navigation opens the More sheet here (viewers have no "+").
   useAddRequests(() => {
@@ -124,6 +127,14 @@ function NowContent({
         .filter(Boolean)
         .join(' · ')
     : '';
+
+  const medsLine = tileStateLine(
+    model.meds.statuses.map((status) => ({
+      status,
+      name: model.medications.find((m) => m.id === status.prescription.medicationId)?.name ?? '',
+    })),
+    model.now,
+  );
 
   const medsChosen = (medications: MedicationEntry[]) =>
     choose({ kind: 'medication', medications });
@@ -192,6 +203,7 @@ function NowContent({
             babyName={baby.name}
             action={action}
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
+            bedTime={predictions?.bedTime ?? null}
             onEndAt={endForgottenSleep}
             isSnoozed={snooze.isSnoozed}
             onKeepRunning={snooze.keep}
@@ -219,6 +231,7 @@ function NowContent({
             types={model.types}
             now={model.now}
             readOnly={model.readOnly}
+            medsLine={medsLine}
             onOpen={openTile}
           />
           <TodayStrip stats={stats} />
@@ -256,8 +269,13 @@ function NowContent({
           open
           onClose={close}
           tray={model.trays.meds}
+          now={model.now}
           disabled={disabled}
           onChoose={medsChosen}
+          onAddPrescription={() => {
+            close();
+            setAddingPrescription(true);
+          }}
         />
       )}
       {tray === 'bellyPain' && model.trays.bellyPain && (
@@ -288,6 +306,9 @@ function NowContent({
           prefill={solid}
           onDone={() => setSolid(null)}
         />
+      )}
+      {addingPrescription && !model.readOnly && (
+        <PrescriptionSheet babyId={baby.id} onDone={() => setAddingPrescription(false)} />
       )}
       {!model.readOnly && actions.elements}
     </Stack>

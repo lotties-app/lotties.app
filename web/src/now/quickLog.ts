@@ -16,6 +16,7 @@ import {
 import { validatePayload } from '../events/payloadRules';
 import { PresetNotRunnableError, type SheetPrefill, type UndoToken } from '../presets/actions';
 import { presetStatus, type PresetStatus } from '../presets/status';
+import type { MedicationStatus } from '../medications/statusCalculator';
 import { getOwn } from '../util/ownProperty';
 import {
   MINUTE_MS,
@@ -274,9 +275,17 @@ export function diaperTray(types: readonly EventType[]): DiaperTray | null {
 
 export type MedicationEntry = MedicationEventPayload['medications'][number];
 
+/** An active prescription with its medication and computed state, as the Meds tray lists it. */
+export interface TrayPrescription {
+  status: MedicationStatus;
+  medication: Medication;
+}
+
 export interface MedsTray {
   typeId: string;
-  /** The catalog, usual first (as `medicationsFor` sorts it). */
+  /** Active prescriptions, oldest course first, each with its state (offline calculator). */
+  prescriptions: TrayPrescription[];
+  /** The catalog without an active prescription, usual first (as `medicationsFor` sorts it). */
   usual: Medication[];
   others: Medication[];
   /** Ids this device logged last time that are still in the catalog. */
@@ -303,16 +312,27 @@ export function medsTray(
   medications: readonly Medication[],
   events: readonly BabyEvent[],
   now: Date,
+  statuses: readonly MedicationStatus[] = [],
 ): MedsTray | null {
   const type = typeForKey(types, 'medication');
   if (!type) return null;
+  const prescriptions = statuses.flatMap((status) => {
+    const medication = medications.find((m) => m.id === status.prescription.medicationId);
+    return medication ? [{ status, medication }] : [];
+  });
+  const prescribed = new Set(prescriptions.map((p) => p.medication.id));
+  const free = medications.filter((m) => !prescribed.has(m.id));
   const last = newestOf(pastLiveEvents(events, now), type.id);
-  const entries = last ? medicationEntries(last) : [];
+  // A dose given under a prescription is logged from its own card (confirm step, interval check).
+  const entries = (last ? medicationEntries(last) : []).filter(
+    (m) => m.prescriptionId === undefined,
+  );
   const known = new Set(medications.map((m) => m.id));
   return {
     typeId: type.id,
-    usual: medications.filter((m) => m.isUsual),
-    others: medications.filter((m) => !m.isUsual),
+    prescriptions,
+    usual: free.filter((m) => m.isUsual),
+    others: free.filter((m) => !m.isUsual),
     lastUsedIds: readLastUsedMedications(babyId).filter((id) => known.has(id)),
     same: last && entries.length > 0 ? { medications: entries, at: last.startedAt } : null,
   };

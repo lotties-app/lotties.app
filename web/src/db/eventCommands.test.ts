@@ -33,7 +33,17 @@ describe('schema', () => {
     await db.open();
     expect(db.verno).toBe(SCHEMA_VERSIONS.at(-1)!.version);
     expect(db.tables.map((t) => t.name).sort()).toEqual(
-      ['babies', 'eventTypes', 'events', 'medications', 'outbox', 'syncState'].sort(),
+      [
+        'babies',
+        'bodyWeights',
+        'catalogProducts',
+        'eventTypes',
+        'events',
+        'medications',
+        'outbox',
+        'prescriptions',
+        'syncState',
+      ].sort(),
     );
     const eventIndexes = db.events.schema.indexes.map((i) => i.name);
     expect(eventIndexes).toEqual(

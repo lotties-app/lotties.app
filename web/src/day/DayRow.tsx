@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import type { BabyEvent, EventType, Medication } from '../db/models';
+import type { BabyEvent, EventType, Medication, Prescription } from '../db/models';
 import type { EntitySyncState } from '../db/queries';
 import { formatElapsed, useNow } from '../events/time';
 import { useEventTypeText } from '../i18n/eventTypeText';
@@ -15,6 +15,8 @@ interface Props {
   event: BabyEvent;
   type: EventType | undefined;
   medications: Medication[];
+  /** Prescriptions of the baby, deleted ones included (they name logged doses). */
+  prescriptions?: Prescription[];
   syncState: EntitySyncState | undefined;
   /** Whether the connecting line continues below this row. */
   hasNext: boolean;
@@ -212,6 +214,7 @@ export function DayRow({
   event,
   type,
   medications,
+  prescriptions,
   syncState,
   hasNext,
   onEdit,
@@ -220,7 +223,7 @@ export function DayRow({
 }: Props) {
   const { t } = useTranslation();
   const names = useEventTypeText();
-  const view = presentEvent(event, type, medications, names);
+  const view = presentEvent(event, type, medications, names, prescriptions);
   const running = event.endedAt === null;
   const time = formatTime(event.startedAt);
   const instant = isInstant(event, type);

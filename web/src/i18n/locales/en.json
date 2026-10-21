@@ -428,6 +428,12 @@
       "typicalDuration_one": "Typical duration {{duration}} (from {{count}} sample).",
       "typicalDuration_other": "Typical duration {{duration}} (from {{count}} samples).",
       "inProgress": "Measured from the expected end of the one in progress."
+    },
+    "bedtime": {
+      "line": "Bedtime around {{time}}",
+      "window": "Likely between {{earliest}} and {{latest}}.",
+      "basis_one": "Your baby's usual bedtime was around {{clock}}, from {{count}} recent night.",
+      "basis_other": "Your baby's usual bedtime was around {{clock}}, from {{count}} recent nights."
     }
   },
   "settings": {
@@ -615,7 +621,8 @@
       },
       "entities": {
         "event": "event",
-        "medication": "medication"
+        "medication": "medication",
+        "prescription": "prescription"
       },
       "fix": "Fix",
       "fixNamed": "Fix: {{label}}",
@@ -808,7 +815,14 @@
     },
     "event_baby_mismatch": "This event already belongs to another baby on the server, so the change was not saved.",
     "event_type_not_available": "This event type is not available for this baby on the server, so the change was not saved.",
-    "validation_failed": "Some details are missing or not valid."
+    "validation_failed": "Some details are missing or not valid.",
+    "product_exists": "This product is already in the catalog.",
+    "product_not_found": "This product is no longer in the catalog.",
+    "substance_not_found": "One of the ingredients is not in the catalog.",
+    "invalid_product_link": "This product cannot be linked. It may have been merged into another one.",
+    "prescription_baby_mismatch": "This prescription belongs to another baby.",
+    "prescription_medication_not_found": "The medication of this prescription no longer exists.",
+    "medication_baby_mismatch": "This medication belongs to another baby."
   },
   "pwa": {
     "install": "Install app",
@@ -874,6 +888,7 @@
     },
     "units": {
       "drops": "drops",
+      "drop": "drop",
       "ml": "ml",
       "mg": "mg"
     }
@@ -1102,5 +1117,197 @@
   "insights": {
     "soonTitle": "More insights are coming",
     "soonBody": "Sleep rhythm, feeding and diaper trends will appear here as you keep logging."
+  },
+  "medications": {
+    "forms": {
+      "drops": "Drops",
+      "syrup": "Syrup",
+      "tablet": "Tablet",
+      "powder": "Powder",
+      "other": "Other"
+    },
+    "kind": {
+      "scheduled": "At set times",
+      "asNeeded": "When needed"
+    },
+    "guardrail": "This app is a log and a reminder, not a medical device, and it gives no dosing advice. The prescription from your doctor is the source for every dose and interval.",
+    "sameIngredient": "Contains the same active ingredient as {{names}}: {{substances}}. Ask your doctor or pharmacist before substituting.",
+    "prescriptionDeleted": "Prescription deleted",
+    "dose": {
+      "perKg": "{{dose}} per kg"
+    },
+    "interval": {
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "hours_one": "{{count, number}} hour",
+      "hours_other": "{{count, number}} hours",
+      "hoursShort": "h"
+    },
+    "summary": {
+      "give": "Give {{dose}}",
+      "atTimes": "at {{times}}",
+      "every": "every {{interval}}",
+      "noMoreOften": "no more often than every {{interval}}",
+      "maxDoses_one": "at most {{count}} dose in 24 hours",
+      "maxDoses_other": "at most {{count}} doses in 24 hours",
+      "when": "when {{indication}}",
+      "until": "until {{date}}"
+    },
+    "state": {
+      "courseEnded": "Course ended",
+      "startsOn": "Starts {{date}}",
+      "availableAt": "Available at {{time}}",
+      "limitReached": "Daily limit reached, available at {{time}}",
+      "availableNow": "Available now",
+      "dueNow": "Due now",
+      "dueNowNamed": "{{name}}: due now",
+      "nextAt": "Next at {{time}}",
+      "nextAllowed": "Next allowed {{time}}",
+      "dosesToday": "{{done}} of {{total}} doses today",
+      "dosesIn24h": "{{done}} of {{total}} doses in 24 h",
+      "readyCount_one": "{{count}} prescription ready",
+      "readyCount_other": "{{count}} prescriptions ready"
+    },
+    "early": {
+      "wait": "Too early: next allowed at {{time}}. Log anyway?",
+      "limit": "Daily limit reached: next allowed at {{time}}. Log anyway?",
+      "ended": "This course ended on {{date}}. Log anyway?",
+      "notStarted": "This course starts on {{date}}. Log anyway?"
+    },
+    "confirm": {
+      "title": "Confirm {{name}}",
+      "rule": "Prescription: {{rule}}",
+      "weight": "Latest weight: {{weight}}, weighed on {{date}}.",
+      "calc": "Calculation: {{exact}} {{unit}}.",
+      "calcRounded": "Calculation: {{exact}} {{unit}}, rounded to the nearest {{step}}: {{amount}} {{unit}}.",
+      "noWeight": "No weight on record, so there is no suggestion. Enter the dose from your doctor's prescription.",
+      "stale": "This weight is from {{date}}, more than 30 days ago. Check the weight before giving this dose.",
+      "youConfirm": "This only does the arithmetic on the prescription you entered. Check the amount, then confirm.",
+      "doseToGive": "Dose to give ({{unit}})",
+      "log": "Log {{dose}}",
+      "logAnyway": "Log anyway",
+      "wait": "Wait"
+    },
+    "tray": {
+      "prescriptions": "Prescriptions",
+      "others": "Other medications",
+      "logOne": "Log",
+      "logNamed": "Log {{name}}",
+      "suggested": "{{dose}} suggested ({{rule}})",
+      "perKgNoWeight": "{{rule}}, no weight on record",
+      "addPrescription": "Add prescription"
+    },
+    "catalog": {
+      "title": "From the shared catalog",
+      "titleOffline": "Saved on this device (offline)",
+      "noMatch": "Nothing in the catalog matches \"{{query}}\".",
+      "add": "Add",
+      "inYourList": "In your list",
+      "addNamed": "Add {{name}} from the catalog",
+      "useExisting": "Use {{name}} from your list",
+      "notListed": "Not listed? Add it",
+      "notListedOffline": "Not listed? Go online to add it"
+    },
+    "newProduct": {
+      "title": "Add to the shared catalog",
+      "help": "Other families on this server will find it by name. Use the name and form printed on the package.",
+      "name": "Name",
+      "form": "Form",
+      "country": "Country code",
+      "countryHelp": "Two letters, like BR or US.",
+      "add": "Add to catalog",
+      "nameInvalid": "Enter the name (at least 2 letters or digits).",
+      "formRequired": "Choose a form.",
+      "countryInvalid": "Use a two-letter country code.",
+      "existed": "{{name}} was already in the catalog, so that one is used."
+    },
+    "editor": {
+      "titleNew": "Add prescription",
+      "titleEdit": "Edit prescription",
+      "summaryLabel": "In plain words",
+      "summaryEmpty": "Fill in the dose and when it is given, and the prescription is read back here.",
+      "medication": "Medication",
+      "yourMedications": "Your medications",
+      "change": "Change",
+      "amount": "Dose",
+      "amountPerKg": "Dose per kg",
+      "unit": "Unit",
+      "unitChoices": "Common units",
+      "perKg": "Dose depends on weight (per kg)",
+      "perKgHelp": "The app multiplies the prescribed amount by the latest weight and always asks you to confirm.",
+      "weightOnRecord": "Latest weight: {{weight}} ({{date}}).",
+      "noWeight": "No weight on record yet. Add one under Growth to get a suggestion.",
+      "rounding": "Round to",
+      "roundingNone": "No rounding",
+      "roundingTo": "Nearest {{step}}",
+      "kind": "How it is given",
+      "scheduleBy": "Schedule",
+      "byTimes": "Times of day",
+      "byEvery": "Every few hours",
+      "timesOfDay": "Times of day",
+      "addTime": "Add a time",
+      "timeN": "Time {{n}}",
+      "removeTimeN": "Remove time {{n}}",
+      "everyHours": "Every how many hours",
+      "minInterval": "No more often than every",
+      "minIntervalHelp": "The shortest wait the prescription allows between doses.",
+      "maxDoses": "Most doses in 24 hours",
+      "indication": "What it is for",
+      "indicationPlaceholder": "For example: belly pain",
+      "group": "Shared wait",
+      "groupHelp": "A dose of any medication in the same group restarts the wait for all of them.",
+      "groupChoices": "Existing groups",
+      "groupName": "Group name",
+      "groupPlaceholder": "Name a new group, like colic",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "prescriber": "Prescribed by",
+      "instructions": "Instructions from the doctor",
+      "stop": "Stop",
+      "resume": "Resume",
+      "delete": "Delete",
+      "saveFailed": "Could not save the prescription.",
+      "problems_one": "Fix {{count}} thing to save.",
+      "problems_other": "Fix {{count}} things to save.",
+      "errors": {
+        "medication": "Choose the medication.",
+        "amount": "Enter a dose above zero.",
+        "unit": "Enter a unit (up to {{max}} characters).",
+        "timesRequired": "Add at least one time.",
+        "timesDistinct": "Each time can be listed once.",
+        "interval": "Use between 15 minutes and 7 days.",
+        "maxDoses": "Use a number from 1 to {{max}}.",
+        "tooLong": "Use at most {{max}} characters.",
+        "date": "Choose a valid date.",
+        "endDate": "The end date cannot be before the start date."
+      }
+    },
+    "settings": {
+      "prescriptionsTitle": "Prescriptions",
+      "noPrescriptions": "No prescriptions yet. Add what the doctor prescribed to see when the next dose is allowed.",
+      "stoppedTitle": "Stopped",
+      "editPrescriptionNamed": "Edit prescription for {{name}}",
+      "usualNamed": "Usual: {{name}}",
+      "usual": "Usual",
+      "medicationDeleted": "{{name}} deleted",
+      "prescriptionsList": "Prescriptions",
+      "stoppedList": "Stopped prescriptions",
+      "prescriptionFor": "{{name}} · {{summary}}"
+    },
+    "dialog": {
+      "catalog": "Shared catalog",
+      "find": "Search the shared catalog",
+      "linked": "Linked to {{name}}",
+      "unlink": "Unlink",
+      "linkHelp": "Linking shows the form and active ingredient and avoids duplicate entries.",
+      "offlineHelp": "Offline: only products saved on this device can be found. You can save a plain medication and link it later.",
+      "use": "Use {{name}}"
+    },
+    "day": {
+      "byPrescription": "Prescription",
+      "byPrescriptionFor": "Prescription for {{indication}}",
+      "early": "Logged early",
+      "kgUsed": "for {{kg}}"
+    }
   }
 }

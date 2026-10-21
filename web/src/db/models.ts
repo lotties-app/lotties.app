@@ -4,6 +4,8 @@
  * (`Date#toISOString()`, e.g. `2026-10-20T08:15:00.000Z`) so string order equals time order.
  */
 
+import type { ProductDto } from '../sync/contract';
+
 export type BabyRole = 'Owner' | 'Parent' | 'Viewer';
 
 export interface Baby {
@@ -63,7 +65,71 @@ export interface Medication {
   defaultDosage: Dosage | null;
   notes: string | null;
   isUsual: boolean;
+  /** Link to the shared catalog product (`null`: a plain, local medication). */
+  productId?: string | null;
   createdAt: string;
+}
+
+export type PrescriptionKind = 'scheduled' | 'asNeeded';
+export type PrescriptionStatus = 'active' | 'stopped';
+
+/** The doctor's dose rule; with `perKg` the amount is per kg of body weight. */
+export interface PrescriptionDose {
+  amount: number;
+  unit: string;
+  perKg: boolean;
+  /** Rounding of the per-kg amount to a multiple of this step; only with `perKg`. */
+  roundingStep: number | null;
+}
+
+/** What the doctor prescribed for one medication of a baby (synced like events). */
+export interface Prescription {
+  id: string;
+  babyId: string;
+  medicationId: string;
+  status: PrescriptionStatus;
+  kind: PrescriptionKind;
+  dose: PrescriptionDose;
+  /** `HH:mm` local times of a scheduled prescription (sorted). */
+  timesOfDay: string[] | null;
+  /** Scheduled "every N minutes" alternative to `timesOfDay`. */
+  everyMinutes: number | null;
+  /** As needed: the shortest wait between doses. */
+  minIntervalMinutes: number | null;
+  maxDosesPer24h: number | null;
+  indication: string | null;
+  /** Normalised group label: a dose of any member restarts the wait of all. */
+  intervalGroup: string | null;
+  /** Calendar dates `yyyy-mm-dd`. */
+  startDate: string;
+  endDate: string | null;
+  prescriber: string | null;
+  instructions: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+  deletedAt: string | null;
+}
+
+/** A shared catalog product kept on the device (recently used or found), for offline search. */
+export interface CachedProduct {
+  id: string;
+  /** The `ProductDto` as the API returned it. */
+  product: ProductDto;
+  /** Compact matching key of the name (no case, diacritics, punctuation or repeated letters). */
+  key: string;
+  /** Last time it was found or linked (UTC ISO), newest are kept. */
+  usedAt: string;
+}
+
+/** The latest known weight of a baby (from the growth measurements), for per-kg suggestions. */
+export interface BodyWeightRow {
+  babyId: string;
+  kg: number;
+  /** Calendar date `yyyy-mm-dd`. */
+  date: string;
 }
 
 /** Type-specific event data (a JSON object). */
@@ -72,7 +138,17 @@ export type EventPayload = Record<string, unknown>;
 /** Payload of a medication event: the catalog entries the parent selected. */
 export interface MedicationEventPayload extends EventPayload {
   /** `name` is a snapshot so the timeline stays readable if the catalog entry changes. */
-  medications: { medicationId: string; name: string; dose?: Dosage }[];
+  medications: {
+    medicationId: string;
+    name: string;
+    dose?: Dosage;
+    /** The prescription this dose follows. */
+    prescriptionId?: string;
+    /** Body weight (kg) a per-kg dose was computed from. */
+    kgUsed?: number;
+    /** Logged before the allowed time and confirmed by the parent. */
+    override?: true;
+  }[];
 }
 
 /** A logged event. Named `BabyEvent` to avoid clashing with the DOM `Event`. */
@@ -103,13 +179,18 @@ export interface BabyEvent {
   deletedAt: string | null;
 }
 
+/** The time of a prescription's last edit on the client clock. */
+export function prescriptionEditTime(p: Pick<Prescription, 'clientUpdatedAt' | 'updatedAt'>) {
+  return p.clientUpdatedAt ?? p.updatedAt;
+}
+
 /** The time of the event's last edit on the client clock, for last-write-wins comparisons. */
 export function editTimeOf(event: Pick<BabyEvent, 'clientUpdatedAt' | 'updatedAt'>): string {
   return event.clientUpdatedAt ?? event.updatedAt;
 }
 
 export type MutationKind = 'upsert' | 'delete';
-export type MutationEntityType = 'event' | 'medication';
+export type MutationEntityType = 'event' | 'medication' | 'prescription';
 /** `dead` = permanently rejected by the server; kept for inspection, never blocks the queue. */
 export type MutationStatus = 'pending' | 'dead';
 
@@ -149,7 +230,7 @@ export interface OutboxMutation {
  * `events`: the per-baby delta cursor. `babies`: stored under `BABIES_LISTED_KEY` once a babies
  * fetch succeeded on this device (an empty local list then really means "no baby yet").
  */
-export type SyncEntity = 'events' | 'babies';
+export type SyncEntity = 'events' | 'babies' | 'prescriptions';
 
 /** `babyId` of the `babies` marker row (not a baby id). */
 export const BABIES_LISTED_KEY = '*';

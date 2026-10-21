@@ -3,6 +3,7 @@ import type { BabyEvent, EventType } from '../db/models';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { EVENT_TYPES, MEDICATION } from '../test/seed';
 import { optionIcon } from '../events/optionIcons';
+import { asNeeded } from '../medications/prescriptionFixtures';
 import { presentEvent } from './eventPresentation';
 
 function event(type: EventType, payload: BabyEvent['payload']): BabyEvent {
@@ -105,5 +106,48 @@ describe('optionIcon', () => {
     expect(optionIcon(FEEDING_TYPE, { key: 'side' }, 'nowhere')).toBeUndefined();
     expect(optionIcon({ key: 'feeding', babyId: 'b1' }, { key: 'side' }, 'left')).toBeUndefined();
     expect(optionIcon(FEEDING_TYPE, { key: 'constructor' }, 'left')).toBeUndefined();
+  });
+});
+
+describe('presentEvent for doses given under a prescription', () => {
+  const rx = (indication: string | null) => [{ ...asNeeded('m1', 480), id: 'rx-1', indication }];
+  const dose = (extra = {}) =>
+    event(
+      EVENT_TYPES.find((t) => t.id === MEDICATION)!,
+      {
+        medications: [
+          {
+            medicationId: 'm1',
+            name: 'Colidis',
+            dose: { amount: 5, unit: 'drops' },
+            prescriptionId: 'rx-1',
+            ...extra,
+          },
+        ],
+      },
+    );
+  const medType = EVENT_TYPES.find((t) => t.id === MEDICATION);
+
+  it('shows the dose and the prescription it followed', () => {
+    expect(presentEvent(dose(), medType, [], undefined, rx('belly pain'))).toMatchObject({
+      title: 'Colidis',
+      detail: '5 drops · Prescription for belly pain',
+    });
+    expect(presentEvent(dose(), medType, [], undefined, rx(null)).detail).toBe(
+      '5 drops · Prescription',
+    );
+  });
+
+  it('shows the weight a per-kg dose used and that it was logged early', () => {
+    expect(
+      presentEvent(dose({ kgUsed: 4.6, override: true }), medType, [], undefined, rx(null)).detail,
+    ).toBe('5 drops · for 4.6 kg · Prescription · Logged early');
+  });
+
+  it('keeps a plain dose as it was', () => {
+    const plain = event(medType!, {
+      medications: [{ medicationId: 'm1', name: 'Colidis', dose: { amount: 5, unit: 'drops' } }],
+    });
+    expect(presentEvent(plain, medType).detail).toBe('5 drops');
   });
 });

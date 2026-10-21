@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import type { BabyRoutineDb } from './database';
-import type { Baby, BabyEvent, EventType, Medication } from './models';
+import type { Baby, BabyEvent, EventType, Medication, Prescription } from './models';
 
 /** Live (not deleted) events of a baby with `from <= startedAt < to`, oldest first. */
 export function eventsInRange(
@@ -88,4 +88,21 @@ export function eventTypesFor(db: BabyRoutineDb, babyId: string): Promise<EventT
 export async function medicationsFor(db: BabyRoutineDb, babyId: string): Promise<Medication[]> {
   const list = await db.medications.where('babyId').equals(babyId).toArray();
   return list.sort((a, b) => Number(b.isUsual) - Number(a.isUsual) || a.name.localeCompare(b.name));
+}
+
+/** The baby's prescriptions that are not deleted (active and stopped), newest course first. */
+export async function prescriptionsFor(db: BabyRoutineDb, babyId: string): Promise<Prescription[]> {
+  const list = await db.prescriptions.where('babyId').equals(babyId).toArray();
+  return list
+    .filter((p) => p.deletedAt === null)
+    .sort((a, b) => b.startDate.localeCompare(a.startDate) || a.id.localeCompare(b.id));
+}
+
+/** Every prescription row of the baby, deleted ones included (they still name logged doses). */
+export function allPrescriptionsFor(db: BabyRoutineDb, babyId: string): Promise<Prescription[]> {
+  return db.prescriptions.where('babyId').equals(babyId).toArray();
+}
+
+export function latestBodyWeight(db: BabyRoutineDb, babyId: string) {
+  return db.bodyWeights.get(babyId);
 }

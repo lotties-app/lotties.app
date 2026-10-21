@@ -327,7 +327,6 @@ describe('SettingsPage medications', () => {
     await waitFor(() => expect(within(list).getByText('Puravit D')).toBeTruthy());
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Puravit D' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete medication' }));
     await waitFor(() => expect(within(list).queryByText('Puravit D')).toBeNull());
 
     const queue = await db.outbox.orderBy('id').toArray();

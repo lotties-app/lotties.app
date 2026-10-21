@@ -3,7 +3,7 @@ import { catalogText } from '../i18n/catalog';
 import { eventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatTime } from '../i18n/format';
 import { t } from '../i18n/i18n';
-import type { PredictionDto } from '../sync/contract';
+import type { BedTimeDto, PredictionDto } from '../sync/contract';
 import { localDayKey } from '../timeline/timelineModel';
 
 /** The baby's own type wins over a built-in template with the same key. */
@@ -118,5 +118,54 @@ export function describeReason(prediction: PredictionDto): string {
     );
   }
   if (basis.assumesEventInProgressEnds) sentences.push(t('predictions.basis.inProgress'));
+  return sentences.join(' ');
+}
+
+/** The bed time clock as the server's `basis` states it (`BedTimeClock`), validated. */
+interface BedTimeBasis {
+  medianClock: string;
+  recentBedTimeCount: number;
+  lookBackDays: number;
+}
+
+function readBedTimeBasis(raw: Record<string, unknown> | undefined): BedTimeBasis | null {
+  if (!raw || raw.kind !== 'BedTimeClock') return null;
+  const { medianClock, recentBedTimeCount, lookBackDays } = raw;
+  if (typeof medianClock !== 'string' || !/^\d{2}:\d{2}$/.test(medianClock)) return null;
+  return {
+    medianClock,
+    recentBedTimeCount: typeof recentBedTimeCount === 'number' ? recentBedTimeCount : 0,
+    lookBackDays: typeof lookBackDays === 'number' ? lookBackDays : 0,
+  };
+}
+
+/** `Bedtime around 19:50` (the expected start, local time). */
+export function describeBedTime(bedTime: BedTimeDto, now: Date): string {
+  return t('predictions.bedtime.line', { time: clockWithDay(bedTime.nextStart.expected, now) });
+}
+
+/** The "Why?" text of the bed time: the usual clock and how many recent nights it comes from. */
+export function describeBedTimeReason(bedTime: BedTimeDto, now: Date): string {
+  const basis = readBedTimeBasis(bedTime.basis);
+  if (!basis) return bedTime.reason;
+  const [h, m] = basis.medianClock.split(':').map(Number);
+  const sentences = [
+    t('predictions.bedtime.basis', {
+      clock: formatTime(new Date(2000, 0, 1, h, m)),
+      count: basis.recentBedTimeCount || bedTime.sampleCount,
+    }),
+    t('predictions.bedtime.window', {
+      earliest: clockWithDay(bedTime.nextStart.earliest, now),
+      latest: clockWithDay(bedTime.nextStart.latest, now),
+    }),
+  ];
+  if (bedTime.expectedDuration) {
+    sentences.push(
+      t('predictions.basis.typicalDuration', {
+        duration: formatDuration(bedTime.expectedDuration.minutes * MINUTE_MS),
+        count: bedTime.expectedDuration.sampleCount,
+      }),
+    );
+  }
   return sentences.join(' ');
 }

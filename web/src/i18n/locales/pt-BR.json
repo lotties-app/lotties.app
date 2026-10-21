@@ -428,6 +428,12 @@
       "typicalDuration_one": "Duração típica de {{duration}} (a partir de {{count}} registro).",
       "typicalDuration_other": "Duração típica de {{duration}} (a partir de {{count}} registros).",
       "inProgress": "Calculado a partir do fim previsto do que está em andamento."
+    },
+    "bedtime": {
+      "line": "Hora de dormir por volta das {{time}}",
+      "window": "Provavelmente entre {{earliest}} e {{latest}}.",
+      "basis_one": "A hora de dormir habitual do bebê foi por volta das {{clock}}, com base em {{count}} noite recente.",
+      "basis_other": "A hora de dormir habitual do bebê foi por volta das {{clock}}, com base em {{count}} noites recentes."
     }
   },
   "settings": {
@@ -615,7 +621,8 @@
       },
       "entities": {
         "event": "evento",
-        "medication": "remédio"
+        "medication": "remédio",
+        "prescription": "receita"
       },
       "fix": "Corrigir",
       "fixNamed": "Corrigir: {{label}}",
@@ -808,7 +815,14 @@
     },
     "event_baby_mismatch": "Este evento já pertence a outro bebê no servidor, então a alteração não foi salva.",
     "event_type_not_available": "Este tipo de evento não está disponível para este bebê no servidor, então a alteração não foi salva.",
-    "validation_failed": "Alguns detalhes estão faltando ou não são válidos."
+    "validation_failed": "Alguns detalhes estão faltando ou não são válidos.",
+    "product_exists": "Este produto já está no catálogo.",
+    "product_not_found": "Este produto não está mais no catálogo.",
+    "substance_not_found": "Um dos princípios ativos não está no catálogo.",
+    "invalid_product_link": "Não é possível vincular este produto. Ele pode ter sido unificado com outro.",
+    "prescription_baby_mismatch": "Esta receita pertence a outro bebê.",
+    "prescription_medication_not_found": "O remédio desta receita não existe mais.",
+    "medication_baby_mismatch": "Este remédio pertence a outro bebê."
   },
   "pwa": {
     "install": "Instalar o app",
@@ -874,6 +888,7 @@
     },
     "units": {
       "drops": "gotas",
+      "drop": "gota",
       "ml": "ml",
       "mg": "mg"
     }
@@ -1102,5 +1117,197 @@
   "insights": {
     "soonTitle": "Mais análises a caminho",
     "soonBody": "O ritmo de sono e as tendências de mamadas e fraldas aparecem aqui conforme você registra."
+  },
+  "medications": {
+    "forms": {
+      "drops": "Gotas",
+      "syrup": "Xarope",
+      "tablet": "Comprimido",
+      "powder": "Pó",
+      "other": "Outro"
+    },
+    "kind": {
+      "scheduled": "Em horários fixos",
+      "asNeeded": "Quando precisar"
+    },
+    "guardrail": "Este app é um registro e um lembrete, não um dispositivo médico, e não dá orientação de dose. A receita do seu médico é a fonte de toda dose e todo intervalo.",
+    "sameIngredient": "Contém o mesmo princípio ativo de {{names}}: {{substances}}. Pergunte ao médico ou ao farmacêutico antes de trocar.",
+    "prescriptionDeleted": "Receita excluída",
+    "dose": {
+      "perKg": "{{dose}} por kg"
+    },
+    "interval": {
+      "minutes_one": "{{count}} minuto",
+      "minutes_other": "{{count}} minutos",
+      "hours_one": "{{count, number}} hora",
+      "hours_other": "{{count, number}} horas",
+      "hoursShort": "h"
+    },
+    "summary": {
+      "give": "Dar {{dose}}",
+      "atTimes": "às {{times}}",
+      "every": "a cada {{interval}}",
+      "noMoreOften": "com intervalo mínimo de {{interval}}",
+      "maxDoses_one": "no máximo {{count}} dose em 24 horas",
+      "maxDoses_other": "no máximo {{count}} doses em 24 horas",
+      "when": "quando {{indication}}",
+      "until": "até {{date}}"
+    },
+    "state": {
+      "courseEnded": "Tratamento encerrado",
+      "startsOn": "Começa em {{date}}",
+      "availableAt": "Disponível às {{time}}",
+      "limitReached": "Limite diário atingido, disponível às {{time}}",
+      "availableNow": "Disponível agora",
+      "dueNow": "Na hora",
+      "dueNowNamed": "{{name}}: na hora",
+      "nextAt": "Próxima às {{time}}",
+      "nextAllowed": "Próxima permitida {{time}}",
+      "dosesToday": "{{done}} de {{total}} doses hoje",
+      "dosesIn24h": "{{done}} de {{total}} doses em 24 h",
+      "readyCount_one": "{{count}} receita disponível",
+      "readyCount_other": "{{count}} receitas disponíveis"
+    },
+    "early": {
+      "wait": "Cedo demais: a próxima é permitida às {{time}}. Registrar mesmo assim?",
+      "limit": "Limite diário atingido: a próxima é permitida às {{time}}. Registrar mesmo assim?",
+      "ended": "Este tratamento terminou em {{date}}. Registrar mesmo assim?",
+      "notStarted": "Este tratamento começa em {{date}}. Registrar mesmo assim?"
+    },
+    "confirm": {
+      "title": "Confirmar {{name}}",
+      "rule": "Receita: {{rule}}",
+      "weight": "Último peso: {{weight}}, pesado em {{date}}.",
+      "calc": "Cálculo: {{exact}} {{unit}}.",
+      "calcRounded": "Cálculo: {{exact}} {{unit}}, arredondado para o múltiplo mais próximo de {{step}}: {{amount}} {{unit}}.",
+      "noWeight": "Sem peso registrado, então não há sugestão. Digite a dose que está na receita do médico.",
+      "stale": "Este peso é de {{date}}, há mais de 30 dias. Confira o peso antes de dar esta dose.",
+      "youConfirm": "O app só faz a conta com a receita que você digitou. Confira a quantidade e depois confirme.",
+      "doseToGive": "Dose a dar ({{unit}})",
+      "log": "Registrar {{dose}}",
+      "logAnyway": "Registrar mesmo assim",
+      "wait": "Esperar"
+    },
+    "tray": {
+      "prescriptions": "Receitas",
+      "others": "Outros remédios",
+      "logOne": "Registrar",
+      "logNamed": "Registrar {{name}}",
+      "suggested": "{{dose}} sugerido ({{rule}})",
+      "perKgNoWeight": "{{rule}}, sem peso registrado",
+      "addPrescription": "Adicionar receita"
+    },
+    "catalog": {
+      "title": "Do catálogo compartilhado",
+      "titleOffline": "Salvos neste aparelho (offline)",
+      "noMatch": "Nada no catálogo corresponde a \"{{query}}\".",
+      "add": "Adicionar",
+      "inYourList": "Na sua lista",
+      "addNamed": "Adicionar {{name}} do catálogo",
+      "useExisting": "Usar {{name}} da sua lista",
+      "notListed": "Não está na lista? Adicione",
+      "notListedOffline": "Não está na lista? Conecte-se para adicionar"
+    },
+    "newProduct": {
+      "title": "Adicionar ao catálogo compartilhado",
+      "help": "Outras famílias deste servidor vão encontrar pelo nome. Use o nome e a forma impressos na embalagem.",
+      "name": "Nome",
+      "form": "Forma",
+      "country": "Código do país",
+      "countryHelp": "Duas letras, como BR ou US.",
+      "add": "Adicionar ao catálogo",
+      "nameInvalid": "Digite o nome (pelo menos 2 letras ou números).",
+      "formRequired": "Escolha uma forma.",
+      "countryInvalid": "Use um código de país de duas letras.",
+      "existed": "{{name}} já estava no catálogo, então usamos esse."
+    },
+    "editor": {
+      "titleNew": "Adicionar receita",
+      "titleEdit": "Editar receita",
+      "summaryLabel": "Em palavras simples",
+      "summaryEmpty": "Preencha a dose e quando ela é dada, e a receita aparece escrita aqui.",
+      "medication": "Remédio",
+      "yourMedications": "Seus remédios",
+      "change": "Trocar",
+      "amount": "Dose",
+      "amountPerKg": "Dose por kg",
+      "unit": "Unidade",
+      "unitChoices": "Unidades comuns",
+      "perKg": "A dose depende do peso (por kg)",
+      "perKgHelp": "O app multiplica a quantidade da receita pelo último peso e sempre pede a sua confirmação.",
+      "weightOnRecord": "Último peso: {{weight}} ({{date}}).",
+      "noWeight": "Ainda não há peso registrado. Adicione um em Crescimento para ter uma sugestão.",
+      "rounding": "Arredondar para",
+      "roundingNone": "Sem arredondar",
+      "roundingTo": "Mais próximo de {{step}}",
+      "kind": "Como é dado",
+      "scheduleBy": "Horários",
+      "byTimes": "Horários do dia",
+      "byEvery": "A cada poucas horas",
+      "timesOfDay": "Horários do dia",
+      "addTime": "Adicionar horário",
+      "timeN": "Horário {{n}}",
+      "removeTimeN": "Remover horário {{n}}",
+      "everyHours": "A cada quantas horas",
+      "minInterval": "Não antes de",
+      "minIntervalHelp": "A menor espera que a receita permite entre as doses.",
+      "maxDoses": "Máximo de doses em 24 horas",
+      "indication": "Para que serve",
+      "indicationPlaceholder": "Por exemplo: dor de barriga",
+      "group": "Espera compartilhada",
+      "groupHelp": "Uma dose de qualquer remédio do mesmo grupo reinicia a espera de todos.",
+      "groupChoices": "Grupos existentes",
+      "groupName": "Nome do grupo",
+      "groupPlaceholder": "Dê nome a um novo grupo, como cólica",
+      "startDate": "Data de início",
+      "endDate": "Data de término",
+      "prescriber": "Receitado por",
+      "instructions": "Instruções do médico",
+      "stop": "Parar",
+      "resume": "Retomar",
+      "delete": "Excluir",
+      "saveFailed": "Não foi possível salvar a receita.",
+      "problems_one": "Corrija {{count}} item para salvar.",
+      "problems_other": "Corrija {{count}} itens para salvar.",
+      "errors": {
+        "medication": "Escolha o remédio.",
+        "amount": "Digite uma dose maior que zero.",
+        "unit": "Digite uma unidade (até {{max}} caracteres).",
+        "timesRequired": "Adicione pelo menos um horário.",
+        "timesDistinct": "Cada horário só pode aparecer uma vez.",
+        "interval": "Use de 15 minutos a 7 dias.",
+        "maxDoses": "Use um número de 1 a {{max}}.",
+        "tooLong": "Use no máximo {{max}} caracteres.",
+        "date": "Escolha uma data válida.",
+        "endDate": "A data de término não pode ser antes da data de início."
+      }
+    },
+    "settings": {
+      "prescriptionsTitle": "Receitas",
+      "noPrescriptions": "Nenhuma receita ainda. Adicione o que o médico receitou para ver quando a próxima dose é permitida.",
+      "stoppedTitle": "Paradas",
+      "editPrescriptionNamed": "Editar receita de {{name}}",
+      "usualNamed": "De uso comum: {{name}}",
+      "usual": "De uso comum",
+      "medicationDeleted": "{{name}} excluído",
+      "prescriptionsList": "Receitas",
+      "stoppedList": "Receitas paradas",
+      "prescriptionFor": "{{name}} · {{summary}}"
+    },
+    "dialog": {
+      "catalog": "Catálogo compartilhado",
+      "find": "Buscar no catálogo compartilhado",
+      "linked": "Vinculado a {{name}}",
+      "unlink": "Desvincular",
+      "linkHelp": "Vincular mostra a forma e o princípio ativo e evita registros repetidos.",
+      "offlineHelp": "Offline: só dá para achar os produtos salvos neste aparelho. Você pode salvar um remédio simples e vincular depois.",
+      "use": "Usar {{name}}"
+    },
+    "day": {
+      "byPrescription": "Receita",
+      "byPrescriptionFor": "Receita para {{indication}}",
+      "early": "Registrado antes da hora",
+      "kgUsed": "para {{kg}}"
+    }
   }
 }

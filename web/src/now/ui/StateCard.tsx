@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, ButtonBase, Card, Chip, LinearProgress, Typography } from '@mui/material';
 import { formatDuration, formatTime } from '../../i18n/format';
-import type { PredictionConfidence, PredictionDto } from '../../sync/contract';
+import type { BedTimeDto, PredictionConfidence, PredictionDto } from '../../sync/contract';
 import { RADIUS, type CategoryName } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
@@ -21,6 +21,7 @@ import { NapSheet } from './NapSheet';
 import { RhythmToggle } from './RhythmToggle';
 import { ForgottenNotice } from './ForgottenNotice';
 import type { NowAction } from './useNowAction';
+import { BedtimeLine } from './BedtimeLine';
 import { WhySheet } from './WhySheet';
 
 const MINUTE_MS = 60_000;
@@ -48,6 +49,8 @@ export interface StateCardProps {
   action: NowAction;
   /** The full sleep prediction (typical length), for the Why sheet. */
   prediction?: PredictionDto;
+  /** The next night's start (heuristic v1.1), when the server sent one. */
+  bedTime?: BedTimeDto | null;
   /** Ends a forgotten timer at the suggested time. */
   onEndAt: (eventId: string, endedAt: string) => void;
   isSnoozed: (eventId: string) => boolean;
@@ -442,6 +445,7 @@ export function StateCard({
   babyName,
   action,
   prediction,
+  bedTime,
   onEndAt,
   isSnoozed,
   onKeepRunning,
@@ -567,6 +571,7 @@ export function StateCard({
             </Box>
           ) : null}
           {state.window && napWindowKey(state.window) === skipped && null}
+          {bedTime && <BedtimeLine bedTime={bedTime} now={now} />}
           {state.learning && <LearningBlock learning={state.learning} babyName={babyName} />}
           {(!state.window || napWindowKey(state.window) === skipped) && (
             <RhythmFooter

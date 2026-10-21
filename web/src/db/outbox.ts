@@ -101,6 +101,48 @@ export async function retryDeadLetter(db: BabyRoutineDb, id: number): Promise<vo
     .modify({ status: 'pending', attempts: 0, failureCount: 0, nextAttemptAt: null });
 }
 
+/** Prescription ids an event upsert names (`payload.medications[].prescriptionId`). */
+function prescriptionIdsOf(mutation: OutboxMutation): string[] {
+  if (mutation.entityType !== 'event' || mutation.kind !== 'upsert') return [];
+  const payload = (mutation.payload as { payload?: { medications?: unknown } } | null)?.payload;
+  const list = payload?.medications;
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((entry: unknown) => (entry as { prescriptionId?: unknown } | null)?.prescriptionId)
+    .filter((id): id is string => typeof id === 'string');
+}
+
+/**
+ * The queued mutation that must reach the server before `head`, if any: an event naming a
+ * prescription needs that prescription first, and a prescription needs its medication. Queue order
+ * alone is not enough because a later edit of the same entity absorbs the earlier one
+ * (`dropIfSuperseded`), which can move it behind the mutations that depend on it.
+ */
+export async function dependencyOf(
+  db: BabyRoutineDb,
+  head: OutboxMutation,
+): Promise<OutboxMutation | undefined> {
+  const wanted = new Map<string, MutationEntityType>();
+  for (const id of prescriptionIdsOf(head)) wanted.set(id, 'prescription');
+  if (head.entityType === 'prescription' && head.kind === 'upsert') {
+    const medicationId = (head.payload as { medicationId?: unknown } | null)?.medicationId;
+    if (typeof medicationId === 'string') wanted.set(medicationId, 'medication');
+  }
+  if (wanted.size === 0) return undefined;
+  const pending = await db.outbox
+    .where('entityId')
+    .anyOf([...wanted.keys()])
+    .filter(
+      (m) =>
+        m.id !== head.id &&
+        m.status === 'pending' &&
+        m.babyId === head.babyId &&
+        wanted.get(m.entityId) === m.entityType,
+    )
+    .sortBy('id');
+  return pending[0];
+}
+
 function laterOf(a: string | null, b: string | null): string | null {
   if (!a || !b) return a ?? b;
   return Date.parse(a) >= Date.parse(b) ? a : b;

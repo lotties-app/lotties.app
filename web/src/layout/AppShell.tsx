@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { canWrite } from '../baby/permissions';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
+import { UndoSnackbar } from '../ui/UndoSnackbar';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
 import { CONTENT_MAX_WIDTH } from '../theme/tokens';
@@ -59,6 +60,7 @@ function ShellBody() {
         </Box>
         <BottomNav />
         <DeletedEventSnackbar />
+        <UndoSnackbar />
         {writable && !OWN_ADD_FLOW.includes(pathname) && <OffTabAdd key={baby.id} baby={baby} />}
       </Box>
     </AddSheetProvider>
