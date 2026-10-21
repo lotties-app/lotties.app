@@ -50,6 +50,16 @@ public sealed class EnvironmentAliasesTests
     }
 
     [Fact]
+    public void AddEnvironmentAliases_TrustedProxyNetworksVariable_MapsToForwardedHeadersSection()
+    {
+        var variables = new Dictionary<string, string> { ["FORWARDED_HEADERS_TRUSTED_NETWORKS"] = "10.42.0.0/16" };
+
+        var configuration = new ConfigurationBuilder().AddEnvironmentAliases(variables.GetValueOrDefault).Build();
+
+        Assert.Equal("10.42.0.0/16", configuration["ForwardedHeaders:TrustedNetworks"]);
+    }
+
+    [Fact]
     public void AddEnvironmentAliases_UnsetVariables_KeepEarlierValues()
     {
         var configuration = new ConfigurationBuilder()

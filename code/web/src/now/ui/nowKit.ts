@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import type { BabyRoutineDb } from '../../db/database';
 import type {
   Baby,
@@ -88,6 +89,17 @@ export async function seedNow(db: BabyRoutineDb, options: SeedOptions = {}) {
   await db.babies.put({ ...BABY, role: options.role ?? 'Owner' });
   await db.eventTypes.bulkPut(options.types ?? NOW_TYPES);
   if (options.medications !== false) await db.medications.bulkPut(MEDS);
+}
+
+/**
+ * Pins the clock (Date only: timers and IndexedDB keep running) to today at `hours:minutes` local,
+ * so day/night-dependent behaviour does not follow the hour the suite runs at. Undo with
+ * `vi.useRealTimers()`.
+ */
+export function pinClock(hours: number, minutes = 0) {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  const now = new Date();
+  vi.setSystemTime(new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes));
 }
 
 export const minutesAgo = (minutes: number) =>

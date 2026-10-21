@@ -9,6 +9,7 @@ import {
   BABY,
   learningPredictions,
   nowApi,
+  pinClock,
   putEvent,
   seedMorning,
   seedNow,
@@ -95,9 +96,7 @@ describe('the estimated nap sheet', () => {
 
   it('Log nap now starts the nap timer and closes the sheet', async () => {
     // Early afternoon: a sleep started now is a nap, whatever time the suite runs at.
-    vi.useFakeTimers({ toFake: ['Date'] });
-    const today = new Date();
-    vi.setSystemTime(new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 12));
+    pinClock(14, 12);
     await seedNow(db);
     await seedMorning(db, 112);
     renderNow(sleepPredictions(-5));
@@ -242,6 +241,8 @@ describe('illustrations on the Now screen', () => {
   });
 
   it('puts the drawing of what was logged on the toast', async () => {
+    // Early afternoon: a sleep started now is a nap, whatever time the suite runs at.
+    pinClock(14);
     await seedNow(db);
     await seedMorning(db, 112);
     renderNow(sleepPredictions(40));

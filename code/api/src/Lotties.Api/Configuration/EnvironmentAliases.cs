@@ -3,7 +3,7 @@ using Lotties.Infrastructure.Push;
 
 namespace Lotties.Api.Configuration;
 
-/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets and <c>DB_AUTO_MIGRATE</c> included).</summary>
+/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets, <c>DB_AUTO_MIGRATE</c> and the trusted proxy networks included).</summary>
 internal static class EnvironmentAliases
 {
     public static readonly IReadOnlyDictionary<string, string> VariableToKey = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -11,6 +11,7 @@ internal static class EnvironmentAliases
         ["AUTH_AUTHORITY"] = "Auth:Authority",
         ["AUTH_AUDIENCE"] = "Auth:Audience",
         ["CORS_ALLOWED_ORIGINS"] = "Cors:AllowedOrigins",
+        ["FORWARDED_HEADERS_TRUSTED_NETWORKS"] = "ForwardedHeaders:TrustedNetworks",
     }
     .Concat(PushEnvironmentVariables.VariableToKey)
     .Concat(DatabaseMigrationSettings.VariableToKey)

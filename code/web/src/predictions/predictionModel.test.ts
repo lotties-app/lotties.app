@@ -60,7 +60,8 @@ describe('predictionModel', () => {
 
   it('sends the UTC offset as minutes east of UTC', () => {
     const date = new Date(2026, 9, 20);
-    expect(utcOffsetMinutes(date)).toBe(-date.getTimezoneOffset());
+    // `0 - x`, not `-x`: in a UTC zone the offset is +0, and `-0` would fail toBe (Object.is).
+    expect(utcOffsetMinutes(date)).toBe(0 - date.getTimezoneOffset());
     expect(Object.is(utcOffsetMinutes({ getTimezoneOffset: () => 0 } as Date), 0)).toBe(true);
   });
 });

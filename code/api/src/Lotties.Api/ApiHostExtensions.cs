@@ -4,6 +4,7 @@ using Lotties.Api.Configuration;
 using Lotties.Api.Cors;
 using Lotties.Api.Errors;
 using Lotties.Api.Limits;
+using Lotties.Api.Proxy;
 using Lotties.Api.Push;
 using Lotties.Api.Serialization;
 using Lotties.Application;
@@ -17,7 +18,7 @@ namespace Lotties.Api;
 
 public static class ApiHostExtensions
 {
-    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits and JSON converters.</summary>
+    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers and JSON converters.</summary>
     public static WebApplicationBuilder AddLottiesApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -36,17 +37,20 @@ public static class ApiHostExtensions
         builder.Services.AddApiCors(builder.Configuration);
         builder.Services.AddApiProblemDetails();
         builder.Services.AddRequestLimits(builder.Configuration);
+        builder.Services.AddTrustedProxyHeaders(builder.Configuration);
         builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new EventPayloadJsonConverter()));
         return builder;
     }
 
     /// <summary>
-    /// Adds CORS, problem details (exception and status-code mapping), the request body limit, authentication, the
-    /// per-user rate limiter and request timeouts, and authorization, in that order.
+    /// Adds the trusted proxy headers (client address and scheme), CORS, problem details (exception and status-code
+    /// mapping), the request body limit, authentication, the per-user rate limiter and request timeouts, and
+    /// authorization, in that order.
     /// </summary>
     public static WebApplication UseLottiesApi(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
+        app.UseTrustedProxyHeaders();
         app.UseCors();
         app.UseApiProblemDetails();
         app.UseRequestBodyLimits();

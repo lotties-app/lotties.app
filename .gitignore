@@ -34,3 +34,7 @@ code/keycloak-theme/dev/.runtime/
 # Migration scripts generated on demand (dotnet ef migrations script); never committed
 code/api/out.sql
 
+
+
+# Home lab deploy settings (secrets); see deploy/homelab/.env.example
+deploy/homelab/.env

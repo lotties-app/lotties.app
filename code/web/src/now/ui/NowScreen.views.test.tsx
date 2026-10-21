@@ -16,6 +16,7 @@ import {
   learningPredictions,
   minutesAgo,
   nowApi,
+  pinClock,
   putEvent,
   seedMorning,
   seedNow,
@@ -86,6 +87,8 @@ describe('loading and empty states', () => {
   });
 
   it('the first Asleep logs the first event and the normal screen takes over', async () => {
+    // Early afternoon: a sleep started now is a nap, whatever time the suite runs at.
+    pinClock(14);
     await seedNow(db);
     renderNow();
 
@@ -327,6 +330,8 @@ describe('Portuguese (pt-BR)', () => {
   });
 
   it('translates the state card, the nap window, the tiles and the toast', async () => {
+    // Early afternoon: a sleep started now is a nap, whatever time the suite runs at.
+    pinClock(14);
     await seedNow(db);
     await seedMorning(db, 112);
     renderNow({ predictions: sleepPredictions(-5) });

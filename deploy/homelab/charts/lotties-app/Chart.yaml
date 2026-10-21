@@ -1,0 +1,5 @@
+apiVersion: v2
+name: lotties-app
+description: One Lotties workload (the API or the web app). The release name is the workload name (lotties-api, lotties-web).
+type: application
+version: 0.1.0

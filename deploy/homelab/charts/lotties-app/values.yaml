@@ -1,0 +1,51 @@
+# Defaults for one workload. Each workload overrides them in deploy/homelab/values/<workload>.yaml.
+
+replicaCount: 1
+
+# The release being deployed, shown as a label on the Deployment. Not on the pods: a new number alone restarts nothing.
+appVersion: ""
+
+# Both workloads are stateless: a new pod starts and becomes ready before an old one stops.
+rollingUpdate:
+  maxUnavailable: 0
+  maxSurge: 1
+
+image:
+  repository: "" # set by deploy.sh
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+containerPort: 8080
+
+# The numeric user of the image: the kubelet cannot check "runAsNonRoot" against a user name.
+# 1654 is "app" in the .NET 8 images, 101 is nginx-unprivileged.
+runAsUser: 1654
+
+probe:
+  path: /health
+  periodSeconds: 10
+  # The startup probe allows periodSeconds x startupFailureThreshold before liveness takes over (the API may wait for a
+  # migration lock at start when DB_AUTO_MIGRATE is on).
+  startupFailureThreshold: 30
+
+env: {}
+
+# NAME: { secretName, key, optional }
+secretEnv: {}
+
+# Annotations of the pods. deploy.sh puts a checksum of the API's Secret on the API pods, so a changed Secret starts
+# new pods: a pod only reads its Secret when it starts.
+podAnnotations: {}
+
+# Writable directories besides /tmp (the root filesystem is read-only): a list of { name, mountPath }.
+extraEmptyDirs: []
+
+resources:
+  cpuRequests: "50m"
+  memoryRequests: "128Mi"
+  memoryLimit: "512Mi"
+
+service:
+  port: 8080

@@ -46,6 +46,7 @@ Compose reads `.env` from the repository root.
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
 | `CORS_ALLOWED_ORIGINS` | api | no | Only if the web app is served from a different origin than the API |
+| `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
@@ -54,6 +55,7 @@ Compose reads `.env` from the repository root.
 | `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer (http/https only); empty hides it |
 | `WEB_PORT` | compose | no (8080) | Host port of the web container |
 | `OIDC_ORIGIN` | web runtime | no | Overrides the CSP OIDC origin derived from `VITE_OIDC_AUTHORITY` |
+| `API_UPSTREAM` | web runtime | no (`api:8080`) | `host:port` nginx proxies `/api/` to; resolved per request, so nginx starts even when it does not exist |
 
 `VITE_*` values are compiled into the JavaScript bundle at build time and are public. Change them with `docker compose build web` (or `up --build`). Images contain no secrets; database credentials are injected as run-time environment variables.
 
@@ -226,14 +228,22 @@ The chart's `/opt/bitnami/keycloak/providers` is on the writable `empty-dir`, so
 
 ## Reverse proxy and TLS
 
-Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud load balancer) and forward to port 80 of the container. The inner nginx already forwards `Host` and `X-Forwarded-*` to the API. Requirements:
+Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud load balancer) and forward to port 8080 of the container. The inner nginx already forwards `Host` and `X-Forwarded-*` to the API. Requirements:
 
 - Serve the app over HTTPS only; OIDC and the service worker require a secure context (localhost excepted).
 - Set `Strict-Transport-Security: max-age=31536000; includeSubDomains` at the TLS proxy. It is documented but intentionally not set in `code/web/nginx.conf`, because the container speaks plain HTTP and HSTS over HTTP is ignored (and risky to ship before HTTPS works).
 - Keep the `api` service unpublished (the compose file does not map its port).
 - Request bodies up to 6 MB are allowed (CSV import); do not set a lower limit on the proxy.
 
+Client address: the API applies `X-Forwarded-For` and `X-Forwarded-Proto` (forwarded headers middleware, first in the pipeline) only when the connection comes from a trusted network, `FORWARDED_HEADERS_TRUSTED_NETWORKS` (config `ForwardedHeaders:TrustedNetworks`, comma-separated CIDR; empty or unset = `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16`; loopback is always trusted; an entry that is not CIDR fails startup). Only the last `X-Forwarded-For` entry is used, the one the proxy appended, so a client cannot pick its own address. The per-address rate limit of the anonymous push action route and anything else that reads the remote address then see the client. Narrow the list (for example to the pod network) when other hosts in those ranges can reach the API directly.
+
+The web image is `nginxinc/nginx-unprivileged` (uid 101, port 8080) and runs with a read-only root filesystem when `/tmp` and `/etc/nginx/conf.d` are writable (`emptyDir` or tmpfs with mode 0777). nginx resolves `API_UPSTREAM` per request through the nameservers of `/etc/resolv.conf` (`resolver`, no search domains), so a missing API host gives 502 on `/api/` instead of nginx refusing to start; use a name the DNS server answers as is (a compose service name or a cluster FQDN).
+
 The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'`, `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy`. `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`.
+
+## Home lab (Kubernetes + Traefik)
+
+`deploy/homelab/` deploys the two images to the home lab cluster (context `home-lab-main`, namespace `lotties-app-production`, registry `cr.homel4b.dev/lotties`): one Helm chart for the API and the web releases, an Ingress on the external Traefik for `https://lotties.app` (`/api` to the API, the rest to the web app, certificate from cert-manager), the Secret `lotties-secrets` built from `deploy/homelab/.env`, and `DRY_RUN=1` to see the plan without changing anything. Prerequisites (Harbor project, pull Secret, Keycloak client settings), secrets rotation, migrations, verification and rollback: [deploy/homelab/README.md](../deploy/homelab/README.md).
 
 ## Push notifications
 
@@ -396,6 +406,7 @@ The stack is verified with Podman (6.x) and `podman-compose`; Docker is not requ
 - Podman builds OCI images by default, which drop the Dockerfile `HEALTHCHECK`; the API healthcheck is therefore also declared in `docker-compose.yml`. With plain `podman build`, add `--format docker` if you want the Dockerfile one.
 - Short image names (`postgres:16`, `nginx`) resolve through your registries.conf; if prompted, choose docker.io or use fully qualified names.
 - Rootful Podman inside WSL can fail creating bridge networks with `nftables error` (missing `nft` tables). Workarounds: install/enable nftables in the distro, run Podman rootless, or use `--network host` with a different host port for ad-hoc tests (port 80 may already be taken by another reverse proxy).
+- The unprivileged web image was run like the Kubernetes pod (`--read-only --user 101`, tmpfs `/tmp` and `/etc/nginx/conf.d` with `mode=0777,notmpcopyup`, `--cap-drop ALL`, `--network host`): it starts with the default `API_UPSTREAM=api:8080` and no such host (502 on `/api/`, the rest served), proxies `/api/` to `API_UPSTREAM`, and keeps the CSP, `no-cache` on `/`, `sw.js`, `manifest.webmanifest` and the SPA fallback, `immutable` on `/assets/*`. Podman's default `--tmpfs` is not writable for uid 101 (root-owned, copied up), unlike an `emptyDir`.
 - What was checked by running the built images: nginx starts with the CSP rendered from `VITE_OIDC_AUTHORITY`, `/api/` is proxied to the API (unauthenticated `GET /api/v1/me` returns 401), `/assets/*` is immutable, `sw.js` and `index.html` are `no-cache`, SPA fallback works (`/invite` returns the app), the API runs as the non-root `app` user and its `/health` probe succeeds. Not checked: `podman-compose up` end to end with a real database and identity provider.
 
 ## Keycloak outgoing email (Brevo or any SMTP relay)

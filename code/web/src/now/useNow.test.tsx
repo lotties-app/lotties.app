@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiClientContext } from '../api/ApiClientContext';
 import { AuthContext } from '../auth/AuthContext';
 import type { BabyRoutineDb } from '../db/database';
@@ -15,6 +15,7 @@ import { testQueryClient } from '../test/renderApp';
 import { writeLastSeenAt } from './lastSeen';
 import { QuickLogToastProvider } from './QuickLogToastProvider';
 import { useQuickLogToastContext } from './QuickLogToastContext';
+import { pinClock } from './ui/nowKit';
 import { useNowScreen } from './useNow';
 
 const BABY: Baby = { id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' };
@@ -43,6 +44,7 @@ beforeEach(async () => {
   await db.medications.put(MED);
 });
 afterEach(async () => {
+  vi.useRealTimers();
   await db.delete();
 });
 
@@ -82,6 +84,8 @@ describe('useNowScreen', () => {
   });
 
   it('a sleep command updates the state through the live query and shows the toast', async () => {
+    // Early afternoon: a sleep started now is a nap (woke_up follows), whatever time the suite runs at.
+    pinClock(14);
     const { result } = renderNow();
     await waitFor(() => expect(result.current.model).toBeDefined());
     await act(() => result.current.model!.commands.sleep('fell_asleep', 'nap'));

@@ -5,17 +5,19 @@
 - docs/SPEC.md — product + architecture spec
 - docs/PLAN.md — task list and status
 - docs/E2E.md — how to run the Playwright smoke suite, required env, coverage
-- docs/DEPLOY.md — deployment: compose, env vars, IdP, Keycloak theme, reverse proxy, push notifications (VAPID keys, migration, grants), database roles; docs/sql/grant-app-role.sql — app role grants
+- docs/DEPLOY.md — deployment: compose, env vars, IdP, Keycloak theme, reverse proxy (trusted forwarded headers, unprivileged web image), home lab pointer, push notifications (VAPID keys, migration, grants), database roles; docs/sql/grant-app-role.sql — app role grants
 - .gitignore — ignores
 - .editorconfig — editor and C# style defaults
-- Layout: code/ — application code (code/api, code/web, code/keycloak-theme); tests/ — cross-component suites (tests/e2e); ml/ — Python prediction benchmark; docs/, .github/, docker-compose.yml and the root `.env` stay at the repository root
+- Layout: code/ — application code (code/api, code/web, code/keycloak-theme); tests/ — cross-component suites (tests/e2e); ml/ — Python prediction benchmark; deploy/ — deploy kits (deploy/homelab); docs/, .github/, docker-compose.yml and the root `.env` stay at the repository root
 - code/api/ — .NET solution (`Lotties.sln`): `src/` Domain, Application, Infrastructure, Api; `tests/` xUnit projects
 - code/api/Directory.Build.props — shared C# build settings (nullable, implicit usings, warnings as errors)
 - code/api/Dockerfile — API container image (multi-stage, .NET 8; cached restore layer of the Lotties.Api project graph, then publish --no-restore; non-root `app` user, /health healthcheck)
 - code/api/.dockerignore — keeps bin/, obj/, IDE files, out.sql and the test projects out of the API build context
 - code/web/ — Vite React 19 + TS + MUI PWA app (Vitest, ESLint, Prettier)
-- code/web/Dockerfile — web container image (Vite build served by nginx)
-- code/web/nginx.conf — nginx config with SPA fallback
+- code/web/Dockerfile — web container image (Vite build served by nginx-unprivileged: uid 101, port 8080, read-only root with writable /tmp and /etc/nginx/conf.d; `10-lotties-env.envsh` exports OIDC_ORIGIN and API_UPSTREAM, NGINX_ENVSUBST_FILTER limits the template variables)
+- code/web/nginx.conf — nginx config template: SPA fallback, security headers, cache headers, `/api/` proxied to `API_UPSTREAM` resolved per request (`resolver` from resolv.conf)
+- deploy/homelab/ — home lab Kubernetes deploy kit (README.md): deploy.sh (build/push changed images as src-<hash>, release tags, namespace, pull Secret copy from keycloak, Secret lotties-secrets from .env via files, helm releases lotties-api/lotties-web, Ingress; DRY_RUN=1), deploy.test.sh (pure helpers + runs against kubectl/helm/podman stand-ins), .env.example, charts/lotties-app (Deployment + Service, hardened, extraEmptyDirs), values/{api,web}.yaml, manifests/{namespace,ingress}.yaml (envsubst), .gitattributes (LF scripts)
+- code/api/src/Lotties.Api/Proxy/ — trusted forwarded headers: ForwardedHeadersSettings (section ForwardedHeaders, env FORWARDED_HEADERS_TRUSTED_NETWORKS, default private ranges) + validator (non-CIDR fails startup), AddTrustedProxyHeaders/UseTrustedProxyHeaders (X-Forwarded-For/-Proto, last entry only, first middleware); tests in code/api/tests/Lotties.Api.Tests/Proxy/ (Support/RemoteAddressStartupFilter.cs plays a proxy's connection address)
 - docker-compose.yml — api + web, optional `localdb` postgres profile
 - .env.example — env var template (placeholders only; real `.env` is gitignored)
 - .github/workflows/ci.yml — CI: dotnet build/test, web lint/test/build
