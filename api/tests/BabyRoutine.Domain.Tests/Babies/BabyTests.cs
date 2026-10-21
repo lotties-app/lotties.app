@@ -20,10 +20,30 @@ public sealed class BabyTests
     }
 
     [Fact]
-    public void Create_BirthDateInFuture_ThrowsValidation()
+    public void Create_BirthDateUtcTomorrow_IsAcceptedForTimeZonesAheadOfUtc()
+    {
+        var lateUtcEvening = new DateTimeOffset(2026, 1, 10, 23, 30, 0, TimeSpan.Zero);
+
+        var baby = Baby.Create("Lia", new DateOnly(2026, 1, 11), OwnerId, lateUtcEvening);
+
+        Assert.Equal(new DateOnly(2026, 1, 11), baby.BirthDate);
+    }
+
+    [Fact]
+    public void UpdateDetails_BirthDateUtcTomorrow_IsAccepted()
+    {
+        var baby = Baby.Create("Lia", TestClock.Today, OwnerId, TestClock.Now);
+
+        baby.UpdateDetails("Lia", TestClock.Today.AddDays(1), TestClock.Now);
+
+        Assert.Equal(TestClock.Today.AddDays(1), baby.BirthDate);
+    }
+
+    [Fact]
+    public void Create_BirthDateAfterUtcTomorrow_ThrowsValidation()
     {
         var exception = Assert.Throws<DomainValidationException>(
-            () => Baby.Create("Lia", TestClock.Today.AddDays(1), OwnerId, TestClock.Now));
+            () => Baby.Create("Lia", TestClock.Today.AddDays(2), OwnerId, TestClock.Now));
 
         Assert.Equal(nameof(Baby.BirthDate), exception.Field);
     }
@@ -64,7 +84,7 @@ public sealed class BabyTests
     {
         var baby = Baby.Create("Lia", TestClock.Today, OwnerId, TestClock.Now);
 
-        Assert.Throws<DomainValidationException>(() => baby.UpdateDetails("Other", TestClock.Today.AddDays(1), TestClock.Now));
+        Assert.Throws<DomainValidationException>(() => baby.UpdateDetails("Other", TestClock.Today.AddDays(2), TestClock.Now));
         Assert.Equal("Lia", baby.Name);
         Assert.Equal(TestClock.Today, baby.BirthDate);
     }

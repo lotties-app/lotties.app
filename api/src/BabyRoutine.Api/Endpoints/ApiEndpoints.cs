@@ -8,7 +8,7 @@ public static class ApiEndpoints
     public static WebApplication MapBabyRoutineApi(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
-        app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+        app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous().DisableRateLimiting();
         var api = app.MapGroup(V1Prefix).RequireAuthorization();
         api.MapMeEndpoints();
         api.MapBabyCollectionEndpoints();

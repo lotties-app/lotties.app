@@ -34,16 +34,28 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_ContainBuiltInFieldFixupsThenMeasurementsThenSleepKindBedWakeAfterInitialCreate()
+    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsThenClientUpdatedAt()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt" };
 
-        Assert.Single(migrations, migration => migration.EndsWith("_BuiltInFieldFixups", StringComparison.Ordinal));
-        Assert.EndsWith("_AddMeasurements", migrations[^2], StringComparison.Ordinal);
-        Assert.EndsWith("_SleepKindBedWake", migrations[^1], StringComparison.Ordinal);
-        Assert.EndsWith("_InitialCreate", migrations[0], StringComparison.Ordinal);
+        Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
+        Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void IdempotentScript_BackfillsClientUpdatedAtBeforeMakingItRequired()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var added = script.IndexOf("ALTER TABLE events ADD client_updated_at timestamp with time zone;", StringComparison.Ordinal);
+        var backfilled = script.IndexOf("UPDATE events SET client_updated_at = updated_at", StringComparison.Ordinal);
+        var required = script.IndexOf("ALTER COLUMN client_updated_at SET NOT NULL", StringComparison.Ordinal);
+
+        Assert.True(added >= 0 && added < backfilled && backfilled < required, $"add {added}, backfill {backfilled}, not null {required}");
     }
 
     [Fact]

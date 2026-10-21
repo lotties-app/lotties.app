@@ -53,9 +53,9 @@ public sealed class EventTypeTests
         var eventType = EventType.CreateCustom(BabyId, Key, "Pumping", "water_drop", Color, hasDuration: false, []);
         var field = EventFieldDefinition.Create("amount", "Amount", EventFieldKind.Number, unit: "ml");
 
-        eventType.Update("Pump", "opacity", HexColor.From("#654321"), hasDuration: true, [field]);
+        eventType.Update("Pump", "star", HexColor.From("#654321"), hasDuration: true, [field]);
 
-        Assert.Equal(("Pump", "opacity", "#654321", true), (eventType.Name, eventType.Icon, eventType.Color.Value, eventType.HasDuration));
+        Assert.Equal(("Pump", "star", "#654321", true), (eventType.Name, eventType.Icon, eventType.Color.Value, eventType.HasDuration));
         Assert.Same(field, Assert.Single(eventType.Fields));
         Assert.Equal(Key, eventType.Key);
     }
@@ -67,7 +67,7 @@ public sealed class EventTypeTests
         var duplicate = EventFieldDefinition.Create("a", "A", EventFieldKind.Text);
 
         Assert.Throws<DomainValidationException>(
-            () => eventType.Update("Pump", "opacity", Color, hasDuration: true, [duplicate, duplicate]));
+            () => eventType.Update("Pump", "star", Color, hasDuration: true, [duplicate, duplicate]));
         Assert.Equal("Pumping", eventType.Name);
         Assert.False(eventType.HasDuration);
     }

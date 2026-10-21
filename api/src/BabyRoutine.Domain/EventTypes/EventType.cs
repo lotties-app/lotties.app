@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using BabyRoutine.Domain.Common;
 using BabyRoutine.Domain.Exceptions;
 
@@ -11,6 +12,17 @@ public sealed class EventType
 {
     public const int NameMaxLength = 100;
     public const int IconMaxLength = 64;
+    public const int MaxFields = 30;
+    public const int MaxOptionsPerField = 50;
+
+    /// <summary>
+    /// Field keys that clash with JavaScript object members (the web client reads payloads as plain objects), compared
+    /// ignoring case.
+    /// </summary>
+    public static readonly FrozenSet<string> ReservedFieldKeys = new[]
+    {
+        "constructor", "__proto__", "prototype", "tostring", "valueof", "hasownproperty",
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     private EventType()
     {
@@ -72,7 +84,7 @@ public sealed class EventType
             Ids.Required(babyId, nameof(babyId)),
             key,
             Text.Required(name, nameof(Name), NameMaxLength),
-            Text.Required(icon, nameof(Icon), IconMaxLength),
+            EventTypeIcons.Ensure(icon),
             color,
             hasDuration,
             ValidateFields(fields));
@@ -89,7 +101,7 @@ public sealed class EventType
             null,
             key,
             Text.Required(name, nameof(Name), NameMaxLength),
-            Text.Required(icon, nameof(Icon), IconMaxLength),
+            EventTypeIcons.Ensure(icon),
             color,
             hasDuration,
             ValidateFields(fields));
@@ -98,7 +110,7 @@ public sealed class EventType
     {
         EnsureCustom();
         var validatedName = Text.Required(name, nameof(Name), NameMaxLength);
-        var validatedIcon = Text.Required(icon, nameof(Icon), IconMaxLength);
+        var validatedIcon = EventTypeIcons.Ensure(icon);
         Fields = ValidateFields(fields);
         Name = validatedName;
         Icon = validatedIcon;
@@ -117,13 +129,40 @@ public sealed class EventType
         }
     }
 
+    /// <remarks>
+    /// The count, option and reserved-key rules apply when a type is created or updated, not when stored definitions are
+    /// read back, so rows saved before these rules existed stay readable.
+    /// </remarks>
     private static IReadOnlyList<EventFieldDefinition> ValidateFields(IEnumerable<EventFieldDefinition> fields)
     {
         ArgumentNullException.ThrowIfNull(fields);
         var definitions = fields.ToArray();
+        EnsureFieldCount(definitions);
+        Array.ForEach(definitions, EnsureAllowedField);
         var distinctKeys = definitions.Select(field => field.Key).Distinct(StringComparer.Ordinal).Count();
         return distinctKeys == definitions.Length
             ? Array.AsReadOnly(definitions)
             : throw new DomainValidationException(nameof(Fields), "Field keys must be unique within an event type.");
+    }
+
+    private static void EnsureFieldCount(EventFieldDefinition[] definitions)
+    {
+        if (definitions.Length > MaxFields)
+        {
+            throw new DomainValidationException(nameof(Fields), $"An event type can have at most {MaxFields} fields.");
+        }
+    }
+
+    private static void EnsureAllowedField(EventFieldDefinition field)
+    {
+        if (ReservedFieldKeys.Contains(field.Key))
+        {
+            throw new DomainValidationException(nameof(EventFieldDefinition.Key), $"Field key '{field.Key}' is reserved.");
+        }
+
+        if (field.Options.Count > MaxOptionsPerField)
+        {
+            throw new DomainValidationException(nameof(EventFieldDefinition.Options), $"A select field can have at most {MaxOptionsPerField} options.");
+        }
     }
 }

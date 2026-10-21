@@ -27,6 +27,6 @@ public readonly partial record struct HexColor
 
     public override string ToString() => Value;
 
-    [GeneratedRegex("^#[0-9A-Fa-f]{6}$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^#[0-9A-Fa-f]{6}\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }

@@ -368,3 +368,36 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021010818_EventClientUpdatedAt') THEN
+    ALTER TABLE events ADD client_updated_at timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021010818_EventClientUpdatedAt') THEN
+    UPDATE events SET client_updated_at = updated_at WHERE client_updated_at IS NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021010818_EventClientUpdatedAt') THEN
+    ALTER TABLE events ALTER COLUMN client_updated_at SET NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021010818_EventClientUpdatedAt') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021010818_EventClientUpdatedAt', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

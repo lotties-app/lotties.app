@@ -46,6 +46,27 @@ public sealed class BabyEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         Assert.Contains("\"role\":\"Owner\"", json, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Create_BirthDateServerUtcTomorrow_Returns201()
+    {
+        var tomorrow = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+
+        var response = await factory.CreateClientFor(TestUsers.NewSubject()).PostAsJsonAsync(BabiesPath, new { name = "Lia", birthDate = tomorrow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_BirthDateTwoDaysAhead_Returns400OnBirthDate()
+    {
+        var dayAfterTomorrow = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(2);
+
+        var response = await factory.CreateClientFor(TestUsers.NewSubject()).PostAsJsonAsync(BabiesPath, new { name = "Lia", birthDate = dayAfterTomorrow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) });
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal("BirthDate", problem.GetProperty("field").GetString());
+    }
+
     [Theory]
     [InlineData("""{"name":" ","birthDate":"2026-01-02"}""")]
     [InlineData("""{"name":"Lia","birthDate":"2999-01-01"}""")]

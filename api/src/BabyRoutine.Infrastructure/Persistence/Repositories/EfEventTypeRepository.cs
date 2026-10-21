@@ -1,13 +1,16 @@
 using BabyRoutine.Domain.EventTypes;
+using BabyRoutine.Infrastructure.Persistence.Errors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Infrastructure.Persistence.Repositories;
 
 /// <remarks>
 /// Race safety of <see cref="TryAddAsync"/> relies on the unique index on <c>(baby_id, key)</c>: a concurrent insert
-/// of the same key fails, the rejected entity is detached and <c>false</c> is returned.
+/// of the same key fails with a unique violation, the rejected entity is detached and <c>false</c> is returned. Any
+/// other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfEventTypeRepository(BabyRoutineDbContext context) : IEventTypeRepository
+internal sealed class EfEventTypeRepository(BabyRoutineDbContext context, UniqueViolations uniqueViolations, ILogger<EfEventTypeRepository> logger) : IEventTypeRepository
 {
     public Task<EventType?> FindAsync(Guid eventTypeId, CancellationToken cancellationToken = default) =>
         context.EventTypes.AsNoTracking().SingleOrDefaultAsync(eventType => eventType.Id == eventTypeId, cancellationToken);
@@ -39,11 +42,16 @@ internal sealed class EfEventTypeRepository(BabyRoutineDbContext context) : IEve
             await context.SaveChangesAsync(cancellationToken);
             return true;
         }
+        catch (DbUpdateException exception) when (uniqueViolations.IsUniqueViolation(exception))
+        {
+            context.Entry(eventType).State = EntityState.Detached;
+            return false;
+        }
         catch (DbUpdateException exception)
         {
-            return await WasKeyTakenConcurrentlyAsync(eventType, cancellationToken)
-                ? false
-                : throw new InvalidOperationException($"Saving event type {eventType.Id} failed and its key is not taken.", exception);
+            context.Entry(eventType).State = EntityState.Detached;
+            logger.LogError(exception, "Saving new event type {EventTypeId} failed with a database error that is not a unique violation", eventType.Id);
+            throw;
         }
     }
 
@@ -55,10 +63,4 @@ internal sealed class EfEventTypeRepository(BabyRoutineDbContext context) : IEve
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
-
-    private async Task<bool> WasKeyTakenConcurrentlyAsync(EventType rejected, CancellationToken cancellationToken)
-    {
-        context.Entry(rejected).State = EntityState.Detached;
-        return rejected.BabyId is { } babyId && await KeyExistsAsync(babyId, rejected.Key, cancellationToken);
-    }
 }

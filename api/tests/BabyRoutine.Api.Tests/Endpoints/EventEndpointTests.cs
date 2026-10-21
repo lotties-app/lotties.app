@@ -99,6 +99,104 @@ public sealed class EventEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
     }
 
     [Fact]
+    public async Task Put_OfflineCreateThenStop_StopNewerThanClientCreateIsAppliedThoughOlderThanServerReceipt()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var eventId = Guid.NewGuid();
+        var client = Owner(baby);
+        var createdOffline = DateTimeOffset.UtcNow.AddHours(-2);
+        var created = await ReadEventAsync(await client.PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(updatedAt: createdOffline)));
+
+        var stopped = await ReadEventAsync(await client.PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(endedAt: Start.AddMinutes(15), updatedAt: createdOffline.AddMinutes(15))));
+
+        Assert.True(created.UpdatedAt > createdOffline.AddMinutes(15));
+        Assert.Equal(Truncated(createdOffline), created.ClientUpdatedAt);
+        Assert.Equal(Start.AddMinutes(15), stopped.EndedAt);
+        Assert.Equal(Truncated(createdOffline.AddMinutes(15)), stopped.ClientUpdatedAt);
+        Assert.True(stopped.UpdatedAt >= created.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task Put_OlderClientEditAfterNewerOne_IsIgnoredAndReturnsStored()
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent);
+        var eventId = Guid.NewGuid();
+        var offline = DateTimeOffset.UtcNow.AddHours(-1);
+        await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(updatedAt: offline));
+        var newer = await ReadEventAsync(await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(notes: "newer", updatedAt: offline.AddMinutes(20))));
+
+        var response = await Member(baby, BabyRole.Parent).PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(notes: "older", updatedAt: offline.AddMinutes(10)));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(newer, await ReadEventAsync(response));
+    }
+
+    [Fact]
+    public async Task Put_ClientClockFarAhead_IsClampedToServerTime()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var created = await ReadEventAsync(await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), Body(updatedAt: DateTimeOffset.UtcNow.AddDays(1))));
+
+        Assert.Equal(created.UpdatedAt, created.ClientUpdatedAt);
+    }
+
+    [Fact]
+    public async Task Put_ClientClockFarAhead_DoesNotLockOutLaterEditsFromOtherClients()
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent);
+        var eventId = Guid.NewGuid();
+        await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(updatedAt: DateTimeOffset.UtcNow.AddDays(1)));
+
+        var edited = await ReadEventAsync(await Member(baby, BabyRole.Parent).PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(notes: "later", updatedAt: DateTimeOffset.UtcNow.AddSeconds(1))));
+
+        Assert.Equal("later", edited.Notes);
+    }
+
+    [Fact]
+    public async Task Put_ReplayWithClientUpdatedAt_ReturnsSameRepresentation()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var eventId = Guid.NewGuid();
+        var client = Owner(baby);
+        var body = Body(notes: "edit", updatedAt: DateTimeOffset.UtcNow.AddMinutes(-5));
+        await client.PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(updatedAt: DateTimeOffset.UtcNow.AddMinutes(-10)));
+        var first = await ReadEventAsync(await client.PutAsJsonAsync(EventPath(baby.BabyId, eventId), body));
+
+        var replay = await ReadEventAsync(await client.PutAsJsonAsync(EventPath(baby.BabyId, eventId), body));
+
+        Assert.Equal(first, replay);
+    }
+
+    [Fact]
+    public async Task Delete_AfterClientEditAheadOfServer_StillDeletesAndStampsServerTime()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var eventId = Guid.NewGuid();
+        var client = Owner(baby);
+        await client.PutAsJsonAsync(EventPath(baby.BabyId, eventId), Body(updatedAt: DateTimeOffset.UtcNow.AddMinutes(4)));
+
+        await client.DeleteAsync(EventPath(baby.BabyId, eventId));
+
+        var deleted = await ReadEventAsync(await client.GetAsync(EventPath(baby.BabyId, eventId)));
+        Assert.Equal((deleted.DeletedAt, deleted.DeletedAt), (deleted.UpdatedAt, deleted.ClientUpdatedAt));
+    }
+
+    [Fact]
+    public async Task Delta_OrdersByServerReceiptNotByClientEditTime()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+        var editedRecently = await ReadEventAsync(await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), Body(updatedAt: DateTimeOffset.UtcNow)));
+        var editedLongAgoPushedLater = await ReadEventAsync(await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), Body(updatedAt: DateTimeOffset.UtcNow.AddDays(-1))));
+
+        var items = await ReadEventsAsync(await client.GetAsync(EventsPath(baby.BabyId, $"?since={Uri.EscapeDataString(editedRecently.UpdatedAt.ToString("O"))}")));
+
+        Assert.Equal(new[] { editedRecently.Id, editedLongAgoPushedLater.Id }, items.Select(item => item.Id));
+        Assert.True(items[1].ClientUpdatedAt < items[0].ClientUpdatedAt);
+    }
+
+    [Fact]
     public async Task Put_DeletedEvent_IsNoOpReturningDeletedRepresentation()
     {
         var baby = await factory.SeedBabyAsync();
@@ -527,6 +625,8 @@ public sealed class EventEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
+
+    private static DateTimeOffset Truncated(DateTimeOffset value) => new(value.UtcTicks - (value.UtcTicks % 10), TimeSpan.Zero);
 
     private static string EventsPath(Guid babyId, string query = "") => $"/api/v1/babies/{babyId}/events{query}";
 

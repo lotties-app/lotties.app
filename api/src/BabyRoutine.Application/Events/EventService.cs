@@ -8,8 +8,10 @@ namespace BabyRoutine.Application.Events;
 
 /// <remarks>
 /// Upserts are idempotent: replaying a request finds the stored event, and an edit with unchanged details does not
-/// bump <c>UpdatedAt</c>, so the same request returns the same representation. Concurrent creates of one client id
-/// resolve to a single row: the loser reloads the winner and applies its request as an edit.
+/// bump <c>UpdatedAt</c>, so the same request returns the same representation. Last write wins compares the request's
+/// client <c>updatedAt</c> with the stored <c>ClientUpdatedAt</c>; the server <c>UpdatedAt</c> stays the sync cursor.
+/// Concurrent creates of one client id resolve to a single row: the loser reloads the winner and applies its request as
+/// an edit.
 /// </remarks>
 internal sealed class EventService : IEventService
 {
@@ -81,7 +83,8 @@ internal sealed class EventService : IEventService
             request.EndedAt,
             request.Payload,
             request.Notes,
-            _timeProvider.GetUtcNow());
+            _timeProvider.GetUtcNow(),
+            request.UpdatedAt);
         return await _events.TryAddAsync(created, cancellationToken)
             ? Created(created)
             : await UpdateAsync(babyId, await FindConcurrentWinnerAsync(eventId, cancellationToken), request, cancellationToken);
@@ -89,7 +92,8 @@ internal sealed class EventService : IEventService
 
     private async Task<UpsertEventResult> UpdateAsync(Guid babyId, Event existing, UpsertEventRequest request, CancellationToken cancellationToken)
     {
-        var decision = existing.DecideUpsert(babyId, request.UpdatedAt);
+        var now = _timeProvider.GetUtcNow();
+        var decision = existing.DecideUpsert(babyId, request.UpdatedAt, now);
         if (decision != EventUpsertDecision.Apply)
         {
             _logger.LogInformation("Upsert of event {EventId} ignored: {Decision}", existing.Id, decision);
@@ -97,7 +101,7 @@ internal sealed class EventService : IEventService
         }
 
         await EnsureTypeAvailableAsync(babyId, request.TypeId, cancellationToken);
-        existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, _timeProvider.GetUtcNow());
+        existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
         return new UpsertEventResult(existing, Created: false);
     }

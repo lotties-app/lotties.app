@@ -27,6 +27,7 @@ internal sealed class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(item => item.Notes).HasMaxLength(Event.NotesMaxLength);
         builder.Property(item => item.CreatedAt).IsRequired();
         builder.Property(item => item.UpdatedAt).IsRequired();
+        builder.Property(item => item.ClientUpdatedAt).IsRequired();
         builder.HasIndex(item => new { item.BabyId, item.UpdatedAt });
         builder.HasIndex(item => new { item.BabyId, item.StartedAt });
         builder.HasOne<Baby>().WithMany().HasForeignKey(item => item.BabyId).OnDelete(DeleteBehavior.Restrict);

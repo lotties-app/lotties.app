@@ -283,6 +283,10 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("baby_id");
 
+                    b.Property<DateTimeOffset>("ClientUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("client_updated_at");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");

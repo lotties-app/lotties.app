@@ -1,16 +1,19 @@
 using BabyRoutine.Domain.Exceptions;
 using BabyRoutine.Domain.Imports;
+using BabyRoutine.Infrastructure.Persistence.Errors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Infrastructure.Persistence.Repositories;
 
 /// <remarks>
 /// <see cref="SaveAsync"/> runs one explicit transaction and saves in chunks of <see cref="ChunkSize"/> rows, clearing
 /// the change tracker between chunks so large imports stay cheap. Any failure rolls the whole batch back; a unique
-/// key violation (a concurrent import of the same records) becomes <see cref="ImportConflictException"/>. Id lookups
+/// key violation (a concurrent import of the same records) becomes <see cref="ImportConflictException"/>, any other
+/// database error is logged and rethrown. Id lookups
 /// are chunked to keep the parameter lists bounded.
 /// </remarks>
-internal sealed class EfImportRepository(BabyRoutineDbContext context) : IImportRepository
+internal sealed class EfImportRepository(BabyRoutineDbContext context, UniqueViolations uniqueViolations, ILogger<EfImportRepository> logger) : IImportRepository
 {
     public const int ChunkSize = 500;
 
@@ -49,10 +52,16 @@ internal sealed class EfImportRepository(BabyRoutineDbContext context) : IImport
             await AddInChunksAsync(batch.Measurements, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
-        catch (DbUpdateException exception)
+        catch (DbUpdateException exception) when (uniqueViolations.IsUniqueViolation(exception))
         {
             context.ChangeTracker.Clear();
             throw new ImportConflictException(exception);
+        }
+        catch (DbUpdateException exception)
+        {
+            context.ChangeTracker.Clear();
+            logger.LogError(exception, "Saving an import batch of {EventCount} events failed with a database error that is not a unique violation", batch.Events.Count);
+            throw;
         }
     }
 

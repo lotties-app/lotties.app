@@ -118,11 +118,16 @@ public sealed class Baby
         }
     }
 
+    /// <summary>
+    /// The latest accepted birth date is the server's UTC date plus one day: ahead of UTC (e.g. UTC+10) the parent's
+    /// local "today" is already tomorrow in UTC. Further ahead is the future everywhere.
+    /// </summary>
     private static DateOnly EnsureBirthDateNotInFuture(DateOnly birthDate, DateTimeOffset now)
     {
-        if (birthDate > DateOnly.FromDateTime(now.UtcDateTime))
+        var latest = DateOnly.FromDateTime(now.UtcDateTime).AddDays(1);
+        if (birthDate > latest)
         {
-            throw new DomainValidationException(nameof(BirthDate), "Birth date must not be in the future.");
+            throw new DomainValidationException(nameof(BirthDate), $"Birth date must not be after {latest:yyyy-MM-dd}.");
         }
 
         return birthDate;

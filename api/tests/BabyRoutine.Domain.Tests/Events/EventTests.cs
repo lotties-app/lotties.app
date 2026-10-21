@@ -206,7 +206,7 @@ public sealed class EventTests
     [Fact]
     public void DecideUpsert_ActiveWithoutClientTime_Applies()
     {
-        Assert.Equal(EventUpsertDecision.Apply, CreateRunning().DecideUpsert(BabyId, null));
+        Assert.Equal(EventUpsertDecision.Apply, CreateRunning().DecideUpsert(BabyId, null, TestClock.Now));
     }
 
     [Fact]
@@ -216,13 +216,13 @@ public sealed class EventTests
 
         Assert.Equal(
             (EventUpsertDecision.Apply, EventUpsertDecision.Apply),
-            (running.DecideUpsert(BabyId, TestClock.Now), running.DecideUpsert(BabyId, TestClock.Now.AddSeconds(1))));
+            (running.DecideUpsert(BabyId, TestClock.Now, TestClock.Now), running.DecideUpsert(BabyId, TestClock.Now.AddSeconds(1), TestClock.Now)));
     }
 
     [Fact]
     public void DecideUpsert_ClientTimeOlderThanStored_IgnoresStale()
     {
-        Assert.Equal(EventUpsertDecision.IgnoreStale, CreateRunning().DecideUpsert(BabyId, TestClock.Now.AddTicks(-10)));
+        Assert.Equal(EventUpsertDecision.IgnoreStale, CreateRunning().DecideUpsert(BabyId, TestClock.Now.AddTicks(-10), TestClock.Now));
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class EventTests
     {
         var sameInstant = TestClock.Now.ToOffset(TimeSpan.FromHours(-3));
 
-        Assert.Equal(EventUpsertDecision.Apply, CreateRunning().DecideUpsert(BabyId, sameInstant));
+        Assert.Equal(EventUpsertDecision.Apply, CreateRunning().DecideUpsert(BabyId, sameInstant, TestClock.Now));
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public sealed class EventTests
         var running = CreateRunning();
         running.SoftDelete(TestClock.Now);
 
-        Assert.Equal(EventUpsertDecision.IgnoreDeleted, running.DecideUpsert(BabyId, TestClock.Now.AddDays(1)));
+        Assert.Equal(EventUpsertDecision.IgnoreDeleted, running.DecideUpsert(BabyId, TestClock.Now.AddDays(1), TestClock.Now));
     }
 
     [Fact]
@@ -248,7 +248,7 @@ public sealed class EventTests
         var running = CreateRunning();
         running.SoftDelete(TestClock.Now);
 
-        Assert.Throws<EventBabyMismatchException>(() => running.DecideUpsert(Guid.NewGuid(), null));
+        Assert.Throws<EventBabyMismatchException>(() => running.DecideUpsert(Guid.NewGuid(), null, TestClock.Now));
     }
 
     private static Event CreateRunning() =>

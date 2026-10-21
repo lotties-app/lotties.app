@@ -126,6 +126,48 @@ public sealed class EventTypeEndpointTests(ApiFactory factory) : IClassFixture<A
         await response.AssertProblemAsync(HttpStatusCode.Conflict, "event_type_key_taken");
     }
 
+    [Theory]
+    [InlineData("constructor")]
+    [InlineData("not_an_icon")]
+    public async Task Create_IconNotInAllowlist_Returns400OnIcon(string icon)
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(TypesPath(baby.BabyId), new { key = "pumping", name = "Pumping", icon, color = "#123456", hasDuration = false });
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal("Icon", problem.GetProperty("field").GetString());
+    }
+
+    [Theory]
+    [InlineData("constructor", "Key")]
+    [InlineData("prototype", "Key")]
+    [InlineData("__proto__", "Key")]
+    [InlineData("toString", "Key")]
+    public async Task Create_ReservedFieldKey_Returns400(string fieldKey, string field)
+    {
+        var baby = await factory.SeedBabyAsync();
+        var body = new { key = "pumping", name = "Pumping", icon = "star", color = "#123456", hasDuration = false, fields = new[] { new { key = fieldKey, label = "Label", kind = "text" } } };
+
+        var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(TypesPath(baby.BabyId), body);
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal(field, problem.GetProperty("field").GetString());
+    }
+
+    [Fact]
+    public async Task Update_TooManyFields_Returns400()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var created = await CreateAsync(baby);
+        var fields = Enumerable.Range(0, EventType.MaxFields + 1).Select(index => new { key = $"field_{index}", label = "Label", kind = "bool" });
+
+        var response = await As(baby, BabyRole.Owner).PutAsJsonAsync(TypePath(baby.BabyId, created.Id), new { name = "Pump", icon = "star", color = "#654321", hasDuration = false, fields });
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal("Fields", problem.GetProperty("field").GetString());
+    }
+
     [Fact]
     public async Task Create_KeyOfBuiltIn_Returns409()
     {
@@ -174,10 +216,10 @@ public sealed class EventTypeEndpointTests(ApiFactory factory) : IClassFixture<A
 
         var response = await As(baby, BabyRole.Parent).PutAsJsonAsync(
             TypePath(baby.BabyId, created.Id),
-            new { name = "Pump", icon = "opacity", color = "#654321", hasDuration = false, fields = Array.Empty<object>() });
+            new { name = "Pump", icon = "star", color = "#654321", hasDuration = false, fields = Array.Empty<object>() });
 
         var updated = await response.ReadAsync<EventTypeResponse>();
-        Assert.Equal(("pumping", "Pump", "opacity", "#654321", false), (updated.Key, updated.Name, updated.Icon, updated.Color, updated.HasDuration));
+        Assert.Equal(("pumping", "Pump", "star", "#654321", false), (updated.Key, updated.Name, updated.Icon, updated.Color, updated.HasDuration));
         Assert.Empty(updated.Fields);
         var stored = await factory.QueryAsync(context => context.EventTypes.SingleAsync(type => type.Id == created.Id));
         Assert.Empty(stored.Fields);
@@ -204,7 +246,7 @@ public sealed class EventTypeEndpointTests(ApiFactory factory) : IClassFixture<A
 
         var response = await As(mine, BabyRole.Owner).PutAsJsonAsync(
             TypePath(mine.BabyId, foreign.Id),
-            new { name = "Mine now", icon = "i", color = "#112233", hasDuration = false });
+            new { name = "Mine now", icon = "star", color = "#112233", hasDuration = false });
 
         await response.AssertProblemAsync(HttpStatusCode.NotFound, "event_type_not_found");
     }
@@ -217,7 +259,7 @@ public sealed class EventTypeEndpointTests(ApiFactory factory) : IClassFixture<A
 
         var response = await As(baby, BabyRole.Viewer).PutAsJsonAsync(
             TypePath(baby.BabyId, created.Id),
-            new { name = "Nope", icon = "i", color = "#112233", hasDuration = false });
+            new { name = "Nope", icon = "star", color = "#112233", hasDuration = false });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }

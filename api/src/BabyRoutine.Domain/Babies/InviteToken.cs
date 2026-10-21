@@ -50,6 +50,6 @@ public readonly partial record struct InviteToken
 
     public override string ToString() => Value;
 
-    [GeneratedRegex("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^[A-Za-z0-9_-]+\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }

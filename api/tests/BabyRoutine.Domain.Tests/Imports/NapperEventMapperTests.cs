@@ -31,6 +31,14 @@ public sealed class NapperEventMapperTests
     }
 
     [Fact]
+    public void Map_PayloadTextWithNul_IsSkippedAsInvalidRecord()
+    {
+        var skipped = Skipped(Row("NAP", Offset, Offset.AddHours(1)) with { BabyMoodOnWakeUp = "HAP\0PY" });
+
+        Assert.Equal(ImportSkipCodes.InvalidRecord, skipped.Code);
+    }
+
+    [Fact]
     public void Map_BottleWithoutEnd_IsAnInstant()
     {
         var draft = Mapped(Row("BOTTLE") with { End = null });

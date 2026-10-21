@@ -1,13 +1,15 @@
 using BabyRoutine.Domain.Medications;
+using BabyRoutine.Infrastructure.Persistence.Errors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Infrastructure.Persistence.Repositories;
 
 /// <remarks>
-/// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails, the
-/// rejected entity is detached and <c>false</c> is returned.
+/// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
+/// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfMedicationRepository(BabyRoutineDbContext context) : IMedicationRepository
+internal sealed class EfMedicationRepository(BabyRoutineDbContext context, UniqueViolations uniqueViolations, ILogger<EfMedicationRepository> logger) : IMedicationRepository
 {
     public async Task<IReadOnlyList<Medication>> ListForBabyAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         await context.Medications
@@ -30,11 +32,16 @@ internal sealed class EfMedicationRepository(BabyRoutineDbContext context) : IMe
             await context.SaveChangesAsync(cancellationToken);
             return true;
         }
+        catch (DbUpdateException exception) when (uniqueViolations.IsUniqueViolation(exception))
+        {
+            context.Entry(medication).State = EntityState.Detached;
+            return false;
+        }
         catch (DbUpdateException exception)
         {
-            return await WasInsertedConcurrentlyAsync(medication, cancellationToken)
-                ? false
-                : throw new InvalidOperationException($"Saving medication {medication.Id} failed and no medication with that id exists.", exception);
+            context.Entry(medication).State = EntityState.Detached;
+            logger.LogError(exception, "Saving new medication {MedicationId} failed with a database error that is not a unique violation", medication.Id);
+            throw;
         }
     }
 
@@ -46,10 +53,4 @@ internal sealed class EfMedicationRepository(BabyRoutineDbContext context) : IMe
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
-
-    private async Task<bool> WasInsertedConcurrentlyAsync(Medication rejected, CancellationToken cancellationToken)
-    {
-        context.Entry(rejected).State = EntityState.Detached;
-        return await context.Medications.AsNoTracking().AnyAsync(stored => stored.Id == rejected.Id, cancellationToken);
-    }
 }

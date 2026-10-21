@@ -10,6 +10,6 @@ internal static partial class Slug
     public static bool IsValid(string? value) =>
         value is { Length: > 0 and <= MaxLength } && Pattern().IsMatch(value);
 
-    [GeneratedRegex("^[a-z][a-z0-9_]*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^[a-z][a-z0-9_]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }

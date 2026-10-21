@@ -1,5 +1,6 @@
 using BabyRoutine.Api.Tests.Support;
 using BabyRoutine.Domain.Babies;
+using BabyRoutine.Domain.Medications;
 using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,30 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
     }
 
     [Fact]
+    public async Task MedicationTryAddAsync_SameIdInsertedFirst_ReturnsFalse()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var winner = Medication.Create(Guid.NewGuid(), baby.BabyId, "Colidis", null, null, isUsual: false, TestUsers.Now);
+        await factory.SeedAsync(context =>
+        {
+            context.Medications.Add(winner);
+            return Task.CompletedTask;
+        });
+
+        var added = await WithMedicationsAsync(medications => medications.TryAddAsync(Medication.Create(winner.Id, baby.BabyId, "Loser", null, null, isUsual: false, TestUsers.Now)));
+
+        Assert.False(added);
+    }
+
+    [Fact]
+    public async Task MedicationTryAddAsync_DatabaseErrorOtherThanUniqueViolation_Rethrows()
+    {
+        var orphan = Medication.Create(Guid.NewGuid(), Guid.NewGuid(), "Colidis", null, null, isUsual: false, TestUsers.Now);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => WithMedicationsAsync(medications => medications.TryAddAsync(orphan)));
+    }
+
+    [Fact]
     public async Task FindBySubjectAsync_UnknownSubject_ReturnsNull()
     {
         Assert.Null(await WithUsersAsync(users => users.FindBySubjectAsync(TestUsers.NewSubject())));
@@ -69,6 +94,12 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
     {
         await using var scope = factory.Services.CreateAsyncScope();
         return await action(scope.ServiceProvider.GetRequiredService<IUserRepository>());
+    }
+
+    private async Task<TResult> WithMedicationsAsync<TResult>(Func<IMedicationRepository, Task<TResult>> action)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        return await action(scope.ServiceProvider.GetRequiredService<IMedicationRepository>());
     }
 
     private async Task<TResult> WithMembershipsAsync<TResult>(Func<IBabyMembershipRepository, Task<TResult>> action)

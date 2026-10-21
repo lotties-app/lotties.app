@@ -18,5 +18,5 @@ internal static class ValueObjectConverters
         new(token => token.Value, value => Domain.Babies.InviteToken.From(value));
 
     public static readonly ValueConverter<EventPayload, string> EventPayload =
-        new(payload => payload.Value, value => Domain.Events.EventPayload.From(value));
+        new(payload => payload.Value, value => Domain.Events.EventPayload.Rehydrate(value));
 }

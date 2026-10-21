@@ -22,6 +22,11 @@ public readonly record struct EventPayload
     public string Value => _json ?? EmptyObject;
 
     /// <summary>Parses <paramref name="json"/>; <c>null</c> or blank yields <see cref="Empty"/>.</summary>
+    /// <summary>
+    /// Parses and validates client <paramref name="json"/>: a JSON object of at most <see cref="MaxLength"/> characters
+    /// whose strings and numbers PostgreSQL <c>jsonb</c> can store (see <see cref="StorableJson"/>). <c>null</c> or
+    /// blank yields <see cref="Empty"/>.
+    /// </summary>
     public static EventPayload From(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
@@ -30,9 +35,16 @@ public readonly record struct EventPayload
         }
 
         EnsureWithinLimit(json);
-        EnsureJsonObject(json);
+        EnsureStorableJsonObject(json);
         return new EventPayload(json);
     }
+
+    /// <summary>
+    /// Restores a payload read from storage, which was validated by <see cref="From"/> when written. Not revalidated:
+    /// <c>jsonb</c> may render a stored number longer than it was sent (e.g. <c>1e60</c> as 61 digits).
+    /// </summary>
+    public static EventPayload Rehydrate(string? json) =>
+        string.IsNullOrWhiteSpace(json) ? Empty : new EventPayload(json);
 
     /// <summary>
     /// Whether both payloads hold the same JSON value, ignoring member order and whitespace
@@ -55,12 +67,13 @@ public readonly record struct EventPayload
         }
     }
 
-    private static void EnsureJsonObject(string json)
+    private static void EnsureStorableJsonObject(string json)
     {
         try
         {
             using var document = JsonDocument.Parse(json);
             EnsureObjectRoot(document.RootElement.ValueKind);
+            StorableJson.Ensure(document.RootElement, "Payload");
         }
         catch (JsonException exception)
         {

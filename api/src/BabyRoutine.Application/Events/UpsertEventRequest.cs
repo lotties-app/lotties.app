@@ -19,9 +19,10 @@ public sealed record UpsertEventRequest
     public string? Notes { get; init; }
 
     /// <summary>
-    /// Optional client time of the edit being pushed, for last-write-wins: when it is older than the stored
-    /// <c>updatedAt</c> the upsert is ignored and the stored event is returned. Never stored; the server stamps
-    /// <c>updatedAt</c> from its own clock.
+    /// Optional client time of the edit being pushed, for last-write-wins against the stored <c>clientUpdatedAt</c>:
+    /// strictly older and the upsert is ignored (the stored event is returned); equal or newer and it is applied and
+    /// stored as <c>clientUpdatedAt</c>. A time more than five minutes ahead of the server clock is clamped to the
+    /// server time; absent means the server time. The server <c>updatedAt</c> is always stamped from its own clock.
     /// </summary>
     public DateTimeOffset? UpdatedAt { get; init; }
 }

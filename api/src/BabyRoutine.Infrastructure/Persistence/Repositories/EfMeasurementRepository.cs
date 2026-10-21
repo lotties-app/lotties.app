@@ -1,13 +1,15 @@
 using BabyRoutine.Domain.Measurements;
+using BabyRoutine.Infrastructure.Persistence.Errors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Infrastructure.Persistence.Repositories;
 
 /// <remarks>
-/// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails, the
-/// rejected entity is detached and <c>false</c> is returned.
+/// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
+/// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfMeasurementRepository(BabyRoutineDbContext context) : IMeasurementRepository
+internal sealed class EfMeasurementRepository(BabyRoutineDbContext context, UniqueViolations uniqueViolations, ILogger<EfMeasurementRepository> logger) : IMeasurementRepository
 {
     public async Task<IReadOnlyList<Measurement>> ListForBabyAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         await context.Measurements
@@ -30,11 +32,16 @@ internal sealed class EfMeasurementRepository(BabyRoutineDbContext context) : IM
             await context.SaveChangesAsync(cancellationToken);
             return true;
         }
+        catch (DbUpdateException exception) when (uniqueViolations.IsUniqueViolation(exception))
+        {
+            context.Entry(measurement).State = EntityState.Detached;
+            return false;
+        }
         catch (DbUpdateException exception)
         {
-            return await WasInsertedConcurrentlyAsync(measurement, cancellationToken)
-                ? false
-                : throw new InvalidOperationException($"Saving measurement {measurement.Id} failed and no measurement with that id exists.", exception);
+            context.Entry(measurement).State = EntityState.Detached;
+            logger.LogError(exception, "Saving new measurement {MeasurementId} failed with a database error that is not a unique violation", measurement.Id);
+            throw;
         }
     }
 
@@ -46,10 +53,4 @@ internal sealed class EfMeasurementRepository(BabyRoutineDbContext context) : IM
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
-
-    private async Task<bool> WasInsertedConcurrentlyAsync(Measurement rejected, CancellationToken cancellationToken)
-    {
-        context.Entry(rejected).State = EntityState.Detached;
-        return await context.Measurements.AsNoTracking().AnyAsync(stored => stored.Id == rejected.Id, cancellationToken);
-    }
 }

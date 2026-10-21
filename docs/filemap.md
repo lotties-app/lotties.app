@@ -34,7 +34,13 @@
 - web/src/events/ — add/edit sheet (EventSheet, EventForm, TypeFields, MedicationChecklist), form model/validation, time helpers, icon map
 - web/src/home/ — home screen parts: QuickActions grid, RunningTimers, BabyHome
 - web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
-- api/src/BabyRoutine.Domain/Events/ — Event (upsert decision, soft delete), EventPayload (+ JSON equivalence), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
+- api/src/BabyRoutine.Domain/Events/ — Event (upsert decision on ClientUpdatedAt, soft delete), ClientEditTime (client clock bound), EventPayload (+ JSON equivalence, StorableJson jsonb checks), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
+- api/src/BabyRoutine.Domain/EventTypes/EventTypeIcons.cs — allowed event type icon names (mirror of web/src/events/iconRegistry.ts)
+- api/src/BabyRoutine.Infrastructure/Persistence/Errors/ — IUniqueViolationDetector (Npgsql detector) + UniqueViolations: repositories tell lost insert races from other DB errors
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_EventClientUpdatedAt.cs — adds events.client_updated_at, backfilled from updated_at
+- api/src/BabyRoutine.Api/Limits/ — RequestLimitsOptions (section RequestLimits) + validator, body size middleware (413), per-user rate limits (429), request timeouts, WithImportLimits
+- api/tests/BabyRoutine.Api.Tests/Support/SqliteUniqueViolationDetector.cs — test-only SQLite unique/PK violation detector
+- api/tests/BabyRoutine.Api.Tests/Limits/, Endpoints/StorageLimitEndpointTests.cs — request limit and DB-limit (NUL, dose) endpoint tests
 - api/src/BabyRoutine.Application/Events/ — events use cases (idempotent upsert, soft delete, get, paged delta) and record DTOs
 - api/src/BabyRoutine.Api/Endpoints/EventEndpoints.cs — `/babies/{babyId}/events` routes (contract in docs/SPEC.md "Events sync contract")
 - api/src/BabyRoutine.Api/Errors/ — central DomainException -> RFC 7807 ProblemDetails mapping (status codes in DomainExceptionStatusCodes)

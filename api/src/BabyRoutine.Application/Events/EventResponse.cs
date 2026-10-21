@@ -24,8 +24,11 @@ public sealed record EventResponse
 
     public DateTimeOffset CreatedAt { get; init; }
 
-    /// <summary>Server time of the last change; authoritative for sync.</summary>
+    /// <summary>Server receive time of the last change; the delta-sync cursor.</summary>
     public DateTimeOffset UpdatedAt { get; init; }
+
+    /// <summary>Client edit time of the last applied change (bounded to the server clock plus a small skew); decides conflicts.</summary>
+    public DateTimeOffset ClientUpdatedAt { get; init; }
 
     public DateTimeOffset? DeletedAt { get; init; }
 
@@ -44,6 +47,7 @@ public sealed record EventResponse
             CreatedBy = stored.CreatedBy,
             CreatedAt = stored.CreatedAt,
             UpdatedAt = stored.UpdatedAt,
+            ClientUpdatedAt = stored.ClientUpdatedAt,
             DeletedAt = stored.DeletedAt,
         };
     }

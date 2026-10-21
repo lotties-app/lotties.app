@@ -1,13 +1,16 @@
 using BabyRoutine.Domain.Users;
+using BabyRoutine.Infrastructure.Persistence.Errors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BabyRoutine.Infrastructure.Persistence.Repositories;
 
 /// <remarks>
 /// Race safety relies on the unique index on <c>users.subject</c>: when a concurrent request inserted the same
-/// subject first, the insert fails, the rejected entity is detached and the winning row is returned.
+/// subject first, the insert fails with a unique violation, the rejected entity is detached and the winning row is
+/// returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfUserRepository(BabyRoutineDbContext context) : IUserRepository
+internal sealed class EfUserRepository(BabyRoutineDbContext context, UniqueViolations uniqueViolations, ILogger<EfUserRepository> logger) : IUserRepository
 {
     public Task<User?> FindBySubjectAsync(string subject, CancellationToken cancellationToken = default)
     {
@@ -30,10 +33,16 @@ internal sealed class EfUserRepository(BabyRoutineDbContext context) : IUserRepo
             await context.SaveChangesAsync(cancellationToken);
             return user;
         }
-        catch (DbUpdateException exception)
+        catch (DbUpdateException exception) when (uniqueViolations.IsUniqueViolation(exception))
         {
             return await FindWinnerAfterConflictAsync(user, cancellationToken)
-                ?? throw new InvalidOperationException($"Saving user {user.Id} failed and no user with the same subject exists.", exception);
+                ?? throw new InvalidOperationException($"Saving user {user.Id} hit a unique violation but no user with the same subject exists.", exception);
+        }
+        catch (DbUpdateException exception)
+        {
+            context.Entry(user).State = EntityState.Detached;
+            logger.LogError(exception, "Saving new user {UserId} failed with a database error that is not a unique violation", user.Id);
+            throw;
         }
     }
 
