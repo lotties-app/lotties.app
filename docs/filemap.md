@@ -54,8 +54,9 @@
 - api/src/BabyRoutine.Api/Serialization/ — EventPayload JSON converter (payload on the wire as a JSON object)
 - api/tests/BabyRoutine.Api.Tests/Support/SqliteModelCustomizer.cs — test-only: timestamps as UTC ticks so SQLite can order/compare them; xmin row versions as a plain integer concurrency token
 - api/tests/BabyRoutine.Api.Tests/Support/ConcurrentWrites.cs — test-only: client whose baby-repository save first loses a race to a competing write (row version bump)
-- api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine (median intervals/durations, age bands, day/night), options record, SleepSessions/SleepKinds (sleep sessions from payload kind)
-- api/src/BabyRoutine.Application/Predictions/, Api/Endpoints/PredictionEndpoints.cs — prediction service and `GET /predictions` (takes `utcOffsetMinutes`)
+- api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine heuristic v1.1 (`PredictionEngine.Version`; median intervals/durations, age bands, day/night), options record, SleepSessions/SleepKinds (sleep sessions from payload kind), SleepSessionKind (nap/night classification), DurationEstimator (kind-aware typical durations), BedTimePredictor/BedTimePrediction/EveningClock (bed-time window from recent bed-time clocks)
+- api/src/BabyRoutine.Application/Predictions/, Api/Endpoints/PredictionEndpoints.cs — prediction service and `GET /predictions` (takes `utcOffsetMinutes`; response adds `engineVersion` and `bedTime`)
+- api/tests/BabyRoutine.Domain.Tests/Predictions/ — engine tests; KindAwareSleepTests and BedTimePredictionTests are the v1.1 parity tests with ml/tests/test_heuristic.py, SleepFixtures the shared synthetic sleep days
 - api/src/BabyRoutine.Application/{Babies,EventTypes,Measurements,Medications}/ — baby/member/invite, event type, growth measurement and medication use cases and DTOs; Application/Serialization/ — enum JSON converters for DTOs
 - api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication,Measurement}Endpoints.cs — routes for tasks 4-5 and 16 (contract in docs/SPEC.md "Babies, members, invites, event types, medications" and "Measurements")
 - api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,Measurement,EventType}Repository.cs — EF repositories for those features

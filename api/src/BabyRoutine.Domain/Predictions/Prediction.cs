@@ -10,6 +10,17 @@ public enum PredictionConfidence
     High,
 }
 
+/// <summary>Confidence rules shared by every prediction.</summary>
+internal static class PredictionConfidences
+{
+    public static PredictionConfidence For(int sampleCount, PredictionOptions options) => sampleCount switch
+    {
+        _ when sampleCount >= options.HighConfidenceSamples => PredictionConfidence.High,
+        _ when sampleCount >= options.MediumConfidenceSamples => PredictionConfidence.Medium,
+        _ => PredictionConfidence.Low,
+    };
+}
+
 /// <summary>What the next start was measured from.</summary>
 public enum PredictionBasis
 {
@@ -18,6 +29,9 @@ public enum PredictionBasis
 
     /// <summary>End of the last event (wake time) plus the typical gap until the next start (awake window).</summary>
     AwakeWindow,
+
+    /// <summary>Quantiles of the recent bed-time clocks still later than now (heuristic v1.1, <see cref="BedTimePrediction"/>).</summary>
+    BedTimeClock,
 }
 
 /// <summary>When the next event is expected (UTC): <see cref="Expected"/> is the median, the bounds are quantiles.</summary>
@@ -47,4 +61,10 @@ public sealed record InsufficientPredictionData(EventTypeKey TypeKey, int Sample
 public sealed record PredictionSet(IReadOnlyList<Prediction> Predictions, IReadOnlyList<InsufficientPredictionData> InsufficientData)
 {
     public static PredictionSet Empty { get; } = new(Array.Empty<Prediction>(), Array.Empty<InsufficientPredictionData>());
+
+    /// <summary>The next night's start (bed time), or <c>null</c> when there is none to predict (see <see cref="BedTimePrediction"/>).</summary>
+    public BedTimePrediction? BedTime { get; init; }
+
+    /// <summary>The rules that produced this set (<see cref="PredictionEngine.Version"/>).</summary>
+    public string EngineVersion => PredictionEngine.Version;
 }

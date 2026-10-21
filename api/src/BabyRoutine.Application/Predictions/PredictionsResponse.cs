@@ -1,3 +1,4 @@
+using System.Globalization;
 using BabyRoutine.Domain.Predictions;
 
 namespace BabyRoutine.Application.Predictions;
@@ -9,11 +10,17 @@ public sealed class PredictionsResponse
 
     public DateTimeOffset GeneratedAt { get; set; }
 
+    /// <summary>Version of the prediction rules (e.g. <c>heuristic-1.1</c>).</summary>
+    public string EngineVersion { get; set; } = string.Empty;
+
     /// <summary>One entry per event type that could be predicted, ordered by type key.</summary>
     public IReadOnlyList<PredictionResponse> Predictions { get; set; } = [];
 
     /// <summary>Event types that have recent events but too few intervals to predict.</summary>
     public IReadOnlyList<InsufficientDataResponse> InsufficientData { get; set; } = [];
+
+    /// <summary>The next night's start (bed time), or <c>null</c> when there is none to predict.</summary>
+    public BedTimePredictionResponse? BedTime { get; set; }
 
     public static PredictionsResponse Create(Guid babyId, DateTimeOffset generatedAt, PredictionSet predictions)
     {
@@ -22,8 +29,87 @@ public sealed class PredictionsResponse
         {
             BabyId = babyId,
             GeneratedAt = generatedAt.ToUniversalTime(),
+            EngineVersion = predictions.EngineVersion,
             Predictions = predictions.Predictions.Select(prediction => (PredictionResponse)prediction).ToArray(),
             InsufficientData = predictions.InsufficientData.Select(missing => (InsufficientDataResponse)missing).ToArray(),
+            BedTime = predictions.BedTime is { } bedTime ? (BedTimePredictionResponse)bedTime : null,
+        };
+    }
+}
+
+/// <summary>
+/// The next night's start, predicted from recent bed-time clocks. Same shape as <see cref="PredictionResponse"/> plus
+/// <see cref="Kind"/>, with its own <see cref="Basis"/> (kind <c>BedTimeClock</c>).
+/// </summary>
+public sealed class BedTimePredictionResponse
+{
+    /// <summary>The sleep type key (<c>sleep</c>).</summary>
+    public string TypeKey { get; set; } = string.Empty;
+
+    /// <summary>The sleep payload kind predicted: <c>night</c>.</summary>
+    public string Kind { get; set; } = string.Empty;
+
+    /// <summary>Earliest (q25), expected (median) and latest (q75) bed time, UTC.</summary>
+    public NextStartWindowResponse NextStart { get; set; } = new();
+
+    /// <summary>Typical night duration (finished night sessions only), or <c>null</c> with too few nights.</summary>
+    public ExpectedDurationResponse? ExpectedDuration { get; set; }
+
+    /// <summary><c>Low</c>, <c>Medium</c> or <c>High</c>.</summary>
+    public string Confidence { get; set; } = string.Empty;
+
+    /// <summary>Number of bed-time clocks behind <see cref="NextStart"/>.</summary>
+    public int SampleCount { get; set; }
+
+    /// <summary>English explanation, rendered from <see cref="Basis"/>.</summary>
+    public string Reason { get; set; } = string.Empty;
+
+    public BedTimeBasisResponse Basis { get; set; } = new();
+
+    public static implicit operator BedTimePredictionResponse(BedTimePrediction prediction)
+    {
+        ArgumentNullException.ThrowIfNull(prediction);
+        return new BedTimePredictionResponse
+        {
+            TypeKey = prediction.TypeKey.Value,
+            Kind = prediction.Kind,
+            NextStart = prediction.NextStart,
+            ExpectedDuration = prediction.ExpectedDuration is { } duration ? (ExpectedDurationResponse)duration : null,
+            Confidence = prediction.Confidence.ToString(),
+            SampleCount = prediction.SampleCount,
+            Reason = prediction.Reason.Text,
+            Basis = prediction.Reason,
+        };
+    }
+}
+
+/// <summary>The structured parts of a bed-time prediction's reason, for clients that render their own text.</summary>
+public sealed class BedTimeBasisResponse
+{
+    /// <summary><c>BedTimeClock</c>.</summary>
+    public string Kind { get; set; } = string.Empty;
+
+    /// <summary>Bed times later than now's clock, the samples of the window.</summary>
+    public int SampleCount { get; set; }
+
+    /// <summary>Recent bed times considered (one per evening, at most 14).</summary>
+    public int RecentBedTimeCount { get; set; }
+
+    public int LookBackDays { get; set; }
+
+    /// <summary>Local clock time (<c>HH:mm</c>, family offset) of the expected bed time.</summary>
+    public string MedianClock { get; set; } = string.Empty;
+
+    public static implicit operator BedTimeBasisResponse(BedTimeReason reason)
+    {
+        ArgumentNullException.ThrowIfNull(reason);
+        return new BedTimeBasisResponse
+        {
+            Kind = reason.Basis.ToString(),
+            SampleCount = reason.SampleCount,
+            RecentBedTimeCount = reason.RecentBedTimeCount,
+            LookBackDays = WholeDays.Of(reason.LookBack),
+            MedianClock = reason.MedianClock.ToString("HH:mm", CultureInfo.InvariantCulture),
         };
     }
 }
@@ -130,7 +216,7 @@ public sealed class PredictionBasisResponse
         {
             Kind = reason.Basis.ToString(),
             MedianGapMinutes = WholeMinutes.Of(reason.MedianGap),
-            LookBackDays = (int)Math.Round(reason.LookBack.TotalDays, MidpointRounding.AwayFromZero),
+            LookBackDays = WholeDays.Of(reason.LookBack),
             AgeBand = reason.AgeBand is { } band ? AgeBands.Label(band) : null,
             DayPhase = reason.Phase is { } phase ? DayPhases.Label(phase) : null,
             AssumesEventInProgressEnds = reason.AssumesEventInProgressEnds,
@@ -165,4 +251,9 @@ public sealed class InsufficientDataResponse
 internal static class WholeMinutes
 {
     public static int Of(TimeSpan value) => (int)Math.Round(value.TotalMinutes, MidpointRounding.AwayFromZero);
+}
+
+internal static class WholeDays
+{
+    public static int Of(TimeSpan value) => (int)Math.Round(value.TotalDays, MidpointRounding.AwayFromZero);
 }

@@ -1,6 +1,6 @@
 namespace BabyRoutine.Domain.Predictions;
 
-/// <summary>Recency-weighted quantiles and plain medians over samples. Pure and order independent.</summary>
+/// <summary>Recency-weighted quantiles, plain medians and interpolated quantiles. Pure and order independent.</summary>
 internal static class WeightedStatistics
 {
     private const double Half = 0.5;
@@ -22,6 +22,30 @@ internal static class WeightedStatistics
 
     public static TimeSpan WeightedMedian(IReadOnlyList<TimedSample> samples, DateTimeOffset now, TimeSpan halfLife) =>
         Quantile(samples, Median, now, halfLife);
+
+    /// <summary>
+    /// Unweighted quantile with linear interpolation between the two closest ranks (the numpy default), used for
+    /// clock times where recency weighting is not wanted.
+    /// </summary>
+    public static TimeSpan InterpolatedQuantile(IReadOnlyList<TimeSpan> values, double quantile)
+    {
+        if (values.Count == 0)
+        {
+            throw new ArgumentException("At least one value is required.", nameof(values));
+        }
+
+        var ordered = values.Order().ToArray();
+        var position = quantile * (ordered.Length - 1);
+        var lower = (int)Math.Floor(position);
+        var upper = Math.Min(lower + 1, ordered.Length - 1);
+        var fraction = position - lower;
+        var ticks = ordered[lower].Ticks + ((ordered[upper].Ticks - ordered[lower].Ticks) * fraction);
+        return TimeSpan.FromTicks((long)Math.Round(ticks, MidpointRounding.AwayFromZero));
+    }
+
+    /// <summary>Rounds to the whole minute, midpoint away from zero.</summary>
+    public static TimeSpan RoundToMinute(TimeSpan value) =>
+        TimeSpan.FromMinutes(Math.Round(value.TotalMinutes, MidpointRounding.AwayFromZero));
 
     /// <summary>The lower middle sample length, without weights.</summary>
     public static TimeSpan PlainMedian(IReadOnlyList<TimedSample> samples)

@@ -16,6 +16,8 @@ internal sealed class TypePredictor
     private readonly PredictionOptions _options;
     private readonly INextStartStrategy _strategy;
     private readonly SampleSelector _selector;
+    private readonly DurationEstimator _durations;
+    private readonly bool _classifiesSleepKinds;
 
     public TypePredictor(
         EventTypeKey typeKey,
@@ -30,11 +32,13 @@ internal sealed class TypePredictor
         _options = options;
         _strategy = strategy;
         _selector = new SampleSelector(context, options, options.DayNightTypeKeys.Contains(typeKey));
+        _durations = new DurationEstimator(chronological, _selector, context, options);
+        _classifiesSleepKinds = typeKey == options.AwakeWindowTypeKey;
     }
 
     public TypePredictionOutcome Predict()
     {
-        var anchor = _strategy.FindAnchor(_events, _context.Now, start => EstimateDuration(start)?.Median);
+        var anchor = _strategy.FindAnchor(_events, _context.Now, TypicalDurationOfRunning);
         var gaps = _selector.Select(_strategy.CollectGaps(_events), anchor.At);
         return gaps.Samples.Count < _options.MinimumSamples
             ? new TypePredictionOutcome(null, new InsufficientPredictionData(_typeKey, gaps.Samples.Count, _options.MinimumSamples, _options.LookBack))
@@ -48,7 +52,7 @@ internal sealed class TypePredictor
             Utc(anchor.At + Quantile(gaps.Samples, _options.WindowLowerQuantile)),
             Utc(anchor.At + median),
             Utc(anchor.At + Quantile(gaps.Samples, _options.WindowUpperQuantile)));
-        var duration = EstimateDuration(window.Expected);
+        var duration = _durations.Estimate(window.Expected, kind: null);
         var count = gaps.Samples.Count;
         var reason = new PredictionReason(
             _strategy.Basis,
@@ -59,33 +63,19 @@ internal sealed class TypePredictor
             gaps.Phase,
             duration,
             anchor.FromEventInProgress);
-        return new Prediction(_typeKey, window, duration, ConfidenceFor(count), count, reason);
+        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason);
     }
 
-    /// <summary>Median duration of finished events, measured for the phase of <paramref name="start"/>; running events are ignored.</summary>
-    private DurationEstimate? EstimateDuration(DateTimeOffset start)
-    {
-        var durations = _events
-            .Where(item => item.EndedAt is not null)
-            .Select(item => new TimedSample(item.EndedAt!.Value - item.StartedAt, item.StartedAt));
-        var selection = _selector.Select(durations, start);
-        return selection.Samples.Count < _options.MinimumSamples
-            ? null
-            : new DurationEstimate(Quantile(selection.Samples, MedianQuantile), selection.Samples.Count);
-    }
-
-    private PredictionConfidence ConfidenceFor(int sampleCount) => sampleCount switch
-    {
-        _ when sampleCount >= _options.HighConfidenceSamples => PredictionConfidence.High,
-        _ when sampleCount >= _options.MediumConfidenceSamples => PredictionConfidence.Medium,
-        _ => PredictionConfidence.Low,
-    };
+    /// <summary>
+    /// Typical length of the running event. Heuristic v1.1: a running sleep is measured only against finished
+    /// sessions of the same kind (naps for a nap, nights for a night), so an evening nap is not expected to last a
+    /// night and an early bed time is not expected to last a nap.
+    /// </summary>
+    private TimeSpan? TypicalDurationOfRunning(ObservedEvent running) =>
+        _durations.Estimate(running.StartedAt, _classifiesSleepKinds ? SleepSessionKinds.Of(running) : null)?.Median;
 
     private TimeSpan Quantile(IReadOnlyList<TimedSample> samples, double quantile) =>
-        RoundToMinute(WeightedStatistics.Quantile(samples, quantile, _context.Now, _options.RecencyHalfLife));
-
-    private static TimeSpan RoundToMinute(TimeSpan value) =>
-        TimeSpan.FromMinutes(Math.Round(value.TotalMinutes, MidpointRounding.AwayFromZero));
+        WeightedStatistics.RoundToMinute(WeightedStatistics.Quantile(samples, quantile, _context.Now, _options.RecencyHalfLife));
 
     private static DateTimeOffset Utc(DateTimeOffset value) => value.ToUniversalTime();
 }

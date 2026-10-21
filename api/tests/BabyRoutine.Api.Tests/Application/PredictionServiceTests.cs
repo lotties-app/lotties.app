@@ -10,6 +10,7 @@ public sealed class PredictionServiceTests
     private static readonly Guid BabyId = Guid.NewGuid();
     private static readonly DateTimeOffset Now = new(2026, 1, 10, 9, 0, 0, TimeSpan.FromHours(-3));
     private static readonly EventTypeKey TummyTime = BuiltInEventTypes.TummyTime.Key;
+    private static readonly EventTypeKey Sleep = BuiltInEventTypes.Sleep.Key;
 
     [Fact]
     public async Task GetAsync_UnknownBaby_ReturnsNull()
@@ -54,6 +55,50 @@ public sealed class PredictionServiceTests
         Assert.Equal(14, prediction.Basis.LookBackDays);
         Assert.StartsWith("Median every 3h over the last 14 days", prediction.Reason);
         Assert.Empty(response.InsufficientData);
+    }
+
+    [Fact]
+    public async Task GetAsync_RecentNights_MapsBedTimeAndEngineVersion()
+    {
+        var events = Enumerable.Range(1, 6)
+            .Select(day => new DateTimeOffset(2026, 1, 10 - day, 20, 0, 0, TimeSpan.FromHours(-3)))
+            .SelectMany(bedTime => new[]
+            {
+                new ObservedEvent(Sleep, bedTime, bedTime, SleepKinds.BedTime),
+                new ObservedEvent(Sleep, bedTime.AddHours(10), bedTime.AddHours(10), SleepKinds.WokeUp),
+            })
+            .ToArray();
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), events)));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.Equal("heuristic-1.1", response!.EngineVersion);
+        var bedTime = response.BedTime!;
+        Assert.Equal("sleep", bedTime.TypeKey);
+        Assert.Equal("night", bedTime.Kind);
+        Assert.Equal(new DateTimeOffset(2026, 1, 10, 23, 0, 0, TimeSpan.Zero), bedTime.NextStart.Expected);
+        Assert.Equal(TimeSpan.Zero, bedTime.NextStart.Expected.Offset);
+        Assert.Equal(600, bedTime.ExpectedDuration!.Minutes);
+        Assert.Equal("Low", bedTime.Confidence);
+        Assert.Equal(6, bedTime.SampleCount);
+        Assert.StartsWith("Median bed time 20:00 over the last 14 days, 6 samples", bedTime.Reason);
+        Assert.Equal("BedTimeClock", bedTime.Basis.Kind);
+        Assert.Equal(6, bedTime.Basis.SampleCount);
+        Assert.Equal(6, bedTime.Basis.RecentBedTimeCount);
+        Assert.Equal(14, bedTime.Basis.LookBackDays);
+        Assert.Equal("20:00", bedTime.Basis.MedianClock);
+    }
+
+    [Fact]
+    public async Task GetAsync_NoNights_HasNoBedTime()
+    {
+        var events = new[] { new ObservedEvent(TummyTime, Now.AddHours(-1), Now.AddMinutes(-40)) };
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), events)));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.Null(response!.BedTime);
+        Assert.Equal("heuristic-1.1", response.EngineVersion);
     }
 
     [Fact]

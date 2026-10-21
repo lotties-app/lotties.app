@@ -2,7 +2,7 @@ using BabyRoutine.Domain.EventTypes;
 
 namespace BabyRoutine.Domain.Predictions;
 
-/// <summary>Tuning constants of the heuristic v1 predictions engine. <see cref="Default"/> holds the shipped values.</summary>
+/// <summary>Tuning constants of the heuristic predictions engine (v1.1). <see cref="Default"/> holds the shipped values.</summary>
 public sealed record PredictionOptions
 {
     public static PredictionOptions Default { get; } = new();
@@ -58,4 +58,16 @@ public sealed record PredictionOptions
 
     /// <summary>Longest night built from a <c>bed_time</c> marker to the next <c>woke_up</c>; longer pairs are ignored.</summary>
     public TimeSpan MaxNightSessionLength { get; init; } = TimeSpan.FromHours(16);
+
+    /// <summary>How many of the most recent bed times (one per evening) the bed-time window is computed from.</summary>
+    public int BedTimeSampleCount { get; init; } = 14;
+
+    /// <summary>Fewest bed times in the look-back window needed to predict the next one.</summary>
+    public int MinimumBedTimeSamples { get; init; } = 5;
+
+    /// <summary>
+    /// Local time when a new evening begins: a bed time between midnight and this time belongs to the previous evening
+    /// (a 00:30 bed time is a late one, not an early one).
+    /// </summary>
+    public TimeOnly EveningDayStartsAt { get; init; } = new(4, 0);
 }

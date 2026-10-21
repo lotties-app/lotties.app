@@ -49,6 +49,18 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Get_Member_ReturnsEngineVersionAndNullBedTimeWithoutNights()
+    {
+        var seeded = await SeedHistoryAsync();
+
+        var response = await factory.CreateClientFor(seeded.Baby.SubjectOf(BabyRole.Viewer)).GetAsync(PathFor(seeded.Baby.BabyId));
+
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("heuristic-1.1", body.RootElement.GetProperty("engineVersion").GetString());
+        Assert.Equal(JsonValueKind.Null, body.RootElement.GetProperty("bedTime").ValueKind);
+    }
+
+    [Fact]
     public async Task Get_WithUtcOffset_Returns200()
     {
         var seeded = await SeedHistoryAsync();
