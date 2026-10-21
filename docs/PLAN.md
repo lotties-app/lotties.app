@@ -35,3 +35,4 @@ Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8;
 
 ## UI redesign track (2026-10-21)
 Order: [done] theme+shell+presets (A) -> [running] API conditional fields + breast pump -> i18n foundation (en, pt-BR) -> form rework (conditional fields, MUI X date-time picker, label clipping audit, theme toggle in account menu) -> Home + Track sheet (B) -> fix e2e selectors (6 specs currently fail on the new header) + add pt-BR smoke spec -> Insights/Timeline/Growth polish (pass 2).
+Timeline redesign (DESIGN section 11) runs after the form rework and before/with Home B; see docs/DESIGN.md.
