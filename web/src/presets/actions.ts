@@ -36,6 +36,24 @@ export interface UndoToken {
    * server would ask for): the UI asks for them ("Finish this ...").
    */
   needsFinish?: string[];
+  /** The command moment (UTC ISO); the time-shift chips move the events relative to it. */
+  at?: string;
+  /** Minutes the events were moved back from `at` by the time-shift chips (0 = not moved). */
+  shiftMinutes?: number;
+  /**
+   * Events the command edited in place (e.g. a nursing side switch or stop), with their state
+   * before the command and the edit stamp (`clientUpdatedAt`) the command left: undo restores
+   * `before` only while the event still carries that stamp (nobody edited it since).
+   */
+  edited?: EditedEvent[];
+}
+
+export interface EditedEvent {
+  id: string;
+  before: Pick<BabyEvent, 'startedAt' | 'endedAt' | 'payload'>;
+  stamp: string;
+  /** The command stopped this running event (the time-shift chips then move its end). */
+  stops?: boolean;
 }
 
 /** The tapped preset cannot run as a command (`sheet` and `link` presets open UI instead). */
@@ -146,9 +164,10 @@ export async function runPreset(
 }
 
 /**
- * Reverts `runPreset`: soft-deletes the created events and re-opens the stopped timers (only
- * those still stopped at the time the command set; a timer the user edited or deleted since is
- * left alone). Events that no longer exist are skipped.
+ * Reverts `runPreset` (and the Now commands, which return the same token): soft-deletes the
+ * created events, re-opens the stopped timers (only those still stopped at the time the command
+ * set; a timer the user edited or deleted since is left alone) and restores edited events that
+ * still carry the command's edit stamp. Events that no longer exist are skipped.
  */
 export async function undoPreset(
   db: BabyRoutineDb,
@@ -164,6 +183,12 @@ export async function undoPreset(
       const current = await db.events.get(id);
       if (current && current.deletedAt === null && current.endedAt === endedAt) {
         await editEvent(db, id, { endedAt: null }, options);
+      }
+    }
+    for (const { id, before, stamp } of [...(token.edited ?? [])].reverse()) {
+      const current = await db.events.get(id);
+      if (current && current.deletedAt === null && current.clientUpdatedAt === stamp) {
+        await editEvent(db, id, { ...before }, options);
       }
     }
   });

@@ -828,5 +828,47 @@
       "ml": "ml",
       "mg": "mg"
     }
+  },
+  "now": {
+    "tiles": {
+      "feed": "Feed",
+      "diaper": "Diaper",
+      "meds": "Meds",
+      "more": "More"
+    },
+    "sleepActions": {
+      "fellAsleep": "Asleep",
+      "bedtime": "Bedtime",
+      "wokeUp": "Woke up",
+      "nightWaking": "Night waking",
+      "upForTheDay": "Up for the day",
+      "backAsleep": "Back asleep"
+    },
+    "shift": {
+      "now": "Now",
+      "minutesAgo": "−{{minutes}} min"
+    },
+    "sides": {
+      "left": "left",
+      "right": "right"
+    },
+    "toast": {
+      "fellAsleepNap": "Nap from {{time}}",
+      "fellAsleepNight": "Night sleep from {{time}}",
+      "bedtime": "Bedtime at {{time}}",
+      "wokeUp": "Woke up at {{time}}",
+      "nightWaking": "Night waking from {{time}}",
+      "backAsleep": "Back asleep at {{time}}",
+      "bottle": "Bottle · {{amount}} ml",
+      "diaper": "Diaper · {{content}}",
+      "medication": "Medication · {{names}}",
+      "bellyPain": "Belly pain · {{intensity}} of 5",
+      "nursingStarted": "Nursing on the {{side}}",
+      "nursingSwitched": "Switched to the {{side}}",
+      "nursingStopped": "Nursing · left {{left}} · right {{right}}"
+    },
+    "catchUp": {
+      "someone": "Someone"
+    }
   }
 }

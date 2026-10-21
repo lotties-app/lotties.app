@@ -2,6 +2,7 @@ import { clearCachedPredictions } from '../predictions/predictionsCache';
 import { clearPinned } from '../presets/pinnedStorage';
 import { clearSelectedBabyId } from '../baby/selectedBabyStorage';
 import { clearLastUsedForBaby } from '../events/lastUsedValues';
+import { clearLastSeen } from '../now/lastSeen';
 import type { BabyRoutineDb } from './database';
 
 /** Tables a transaction must include to use `deleteBabyRows` (all of a baby's local data). */
@@ -24,8 +25,8 @@ export async function deleteBabyRows(db: BabyRoutineDb, babyIds: string[]): Prom
 }
 
 /**
- * Per-device leftovers outside IndexedDB: the saved selection, cached predictions, pinned presets
- * and remembered field values.
+ * Per-device leftovers outside IndexedDB: the saved selection, cached predictions, pinned presets,
+ * remembered field values and the Now "last seen" time.
  */
 export function clearBabyDeviceState(babyIds: string[]): void {
   for (const id of babyIds) {
@@ -33,6 +34,7 @@ export function clearBabyDeviceState(babyIds: string[]): void {
     clearCachedPredictions(id);
     clearPinned(id);
     clearLastUsedForBaby(id);
+    clearLastSeen(id);
   }
 }
 

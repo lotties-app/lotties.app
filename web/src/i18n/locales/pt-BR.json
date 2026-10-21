@@ -828,5 +828,47 @@
       "ml": "ml",
       "mg": "mg"
     }
+  },
+  "now": {
+    "tiles": {
+      "feed": "Mamada",
+      "diaper": "Fralda",
+      "meds": "Remédios",
+      "more": "Mais"
+    },
+    "sleepActions": {
+      "fellAsleep": "Dormiu",
+      "bedtime": "Hora de dormir",
+      "wokeUp": "Acordou",
+      "nightWaking": "Despertar noturno",
+      "upForTheDay": "Acordou de vez",
+      "backAsleep": "Voltou a dormir"
+    },
+    "shift": {
+      "now": "Agora",
+      "minutesAgo": "−{{minutes}} min"
+    },
+    "sides": {
+      "left": "esquerdo",
+      "right": "direito"
+    },
+    "toast": {
+      "fellAsleepNap": "Soneca desde {{time}}",
+      "fellAsleepNight": "Sono da noite desde {{time}}",
+      "bedtime": "Hora de dormir às {{time}}",
+      "wokeUp": "Acordou às {{time}}",
+      "nightWaking": "Despertar noturno desde {{time}}",
+      "backAsleep": "Voltou a dormir às {{time}}",
+      "bottle": "Mamadeira · {{amount}} ml",
+      "diaper": "Fralda · {{content}}",
+      "medication": "Remédio · {{names}}",
+      "bellyPain": "Dor de barriga · {{intensity}} de 5",
+      "nursingStarted": "Amamentação no lado {{side}}",
+      "nursingSwitched": "Trocou para o lado {{side}}",
+      "nursingStopped": "Amamentação · esquerdo {{left}} · direito {{right}}"
+    },
+    "catchUp": {
+      "someone": "Alguém"
+    }
   }
 }

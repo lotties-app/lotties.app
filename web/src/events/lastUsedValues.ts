@@ -99,6 +99,28 @@ export function quickStartPayload(
   return payload;
 }
 
+/** Key of the remembered medication selection (cannot clash with a type id key: ids have no `@`). */
+const medicationsKeyOf = (babyId: string) => `${KEY_PREFIX}${babyId}.@medications`;
+
+/** Medication catalog ids of the baby's last logged medication event on this device. */
+export function readLastUsedMedications(babyId: string): string[] {
+  try {
+    const raw = window.localStorage.getItem(medicationsKeyOf(babyId));
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordLastUsedMedications(babyId: string, medicationIds: readonly string[]): void {
+  try {
+    window.localStorage.setItem(medicationsKeyOf(babyId), JSON.stringify([...medicationIds]));
+  } catch {
+    // Storage unavailable: nothing is remembered.
+  }
+}
+
 /** Forgets one baby's remembered values (the baby left this device). */
 export function clearLastUsedForBaby(babyId: string): void {
   removeKeys((key) => key.startsWith(`${KEY_PREFIX}${babyId}.`));
