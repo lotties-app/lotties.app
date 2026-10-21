@@ -1,5 +1,5 @@
 /*
- * The Baby Routine app icon (concept B "Day disc"), simplified drawing for small sizes, original
+ * The Lotties app icon (concept B "Day disc"), simplified drawing for small sizes, original
  * work by the project contributors (AGPL-3.0-or-later). Same shapes as docs/design/icons/favicon-b.svg
  * and web/src/ui/BrandMark.tsx. Colours come from the --br-mark-* custom properties in theme.css, so
  * light and dark follow `prefers-color-scheme` with no JavaScript.

@@ -1,5 +1,5 @@
 /*
- * Original illustrations of Baby Routine, by the project contributors, licensed under the project
+ * Original illustrations of Lotties, by the project contributors, licensed under the project
  * licence (AGPL-3.0-or-later). See docs/design/ILLUSTRATIONS.md.
  *
  * Care and activity family: diaper, bath, tummy time.

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Baby Routine: track your baby's day, together"
+    "title": "Lotties: track your baby's day, together"
   },
   "skipToContent": "Skip to content",
   "signingIn": {
@@ -81,7 +81,7 @@
   "important": {
     "eyebrow": "Important",
     "title": "Not a medical device",
-    "body": "Estimates come from your logged history and are not medical advice. Baby Routine helps you keep a record and spot patterns; it does not diagnose or recommend treatment.",
+    "body": "Estimates come from your logged history and are not medical advice. Lotties helps you keep a record and spot patterns; it does not diagnose or recommend treatment.",
     "care": "For any health concern, or before giving or changing a medicine, talk to your doctor or pharmacist. In an emergency, call your local emergency number."
   }
 }

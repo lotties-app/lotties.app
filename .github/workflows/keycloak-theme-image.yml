@@ -79,5 +79,5 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           cd keycloak-theme/deploy/out
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes "Baby Routine Keycloak login theme (directory mode)."
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes "Lotties Keycloak login theme (directory mode)."
           gh release upload "$TAG" baby-routine-theme.tar.gz baby-routine-theme.tar.gz.sha256 --clobber

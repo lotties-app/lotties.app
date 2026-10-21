@@ -85,7 +85,7 @@ describe('pt-BR screens', () => {
     expect(screen.getByRole('button', { name: 'Criar uma conta' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'Como funciona' })).toBeTruthy();
     expect(document.documentElement.lang).toBe('pt-BR');
-    expect(document.title).toBe('Baby Routine: acompanhe o dia do seu bebê, em conjunto');
+    expect(document.title).toBe('Lotties: acompanhe o dia do seu bebê, em conjunto');
   });
 
   it('translates the Now screen: the question, the tiles and the navigation', async () => {

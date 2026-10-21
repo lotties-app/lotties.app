@@ -1,5 +1,5 @@
 /*
- * Original illustrations of Baby Routine, by the project contributors, licensed under the project
+ * Original illustrations of Lotties, by the project contributors, licensed under the project
  * licence (AGPL-3.0-or-later). See docs/design/ILLUSTRATIONS.md.
  *
  * Path builders on the 96 x 96 illustration grid. Every shape is a closed path, so gradients in

@@ -16,9 +16,9 @@ async function violations(container: HTMLElement) {
 }
 
 describe('BrandMark', () => {
-  it('is an image named Baby Routine when alone', async () => {
+  it('is an image named Lotties when alone', async () => {
     const { container } = renderUi(<BrandMark />);
-    expect(screen.getByRole('img', { name: 'Baby Routine' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Lotties' })).toBeTruthy();
     expect(await violations(container)).toEqual([]);
   });
 
@@ -39,7 +39,7 @@ describe('BrandMark', () => {
   it('hides the icon when the name is shown, so the name is announced once', async () => {
     const { container } = renderUi(<BrandMark showName />);
     expect(screen.queryByRole('img')).toBeNull();
-    expect(screen.getAllByText('Baby Routine')).toHaveLength(1);
+    expect(screen.getAllByText('Lotties')).toHaveLength(1);
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
     expect(await violations(container)).toEqual([]);
   });
@@ -68,15 +68,15 @@ describe('BrandMark on the landing and setup screens', () => {
       </I18nProvider>,
     );
     expect(await screen.findByRole('heading', { level: 1 })).toBeTruthy();
-    expect(screen.getAllByText('Baby Routine')).toHaveLength(1);
-    expect(screen.queryByRole('img', { name: 'Baby Routine' })).toBeNull();
+    expect(screen.getAllByText('Lotties')).toHaveLength(1);
+    expect(screen.queryByRole('img', { name: 'Lotties' })).toBeNull();
     expect(container.querySelector('[data-brand-mark="full"]')).not.toBeNull();
     expect(await violations(container)).toEqual([]);
   });
 
   it('setup message shows the wordmark once above its heading', async () => {
     const { container } = renderUi(<SetupMessage missing={['VITE_OIDC_AUTHORITY']} />);
-    expect(screen.getAllByText('Baby Routine')).toHaveLength(1);
+    expect(screen.getAllByText('Lotties')).toHaveLength(1);
     expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
     expect(await violations(container)).toEqual([]);
   });

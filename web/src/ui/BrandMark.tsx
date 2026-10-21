@@ -179,7 +179,7 @@ export interface BrandMarkProps {
   /** Icon edge in px; at 32 or less the simplified drawing is used. Default 32. */
   size?: number;
   /**
-   * Shows the name "Baby Routine" next to the icon, as live text in the display font. The icon is
+   * Shows the name "Lotties" next to the icon, as live text in the display font. The icon is
    * then decorative, so a screen reader hears the name once.
    */
   showName?: boolean;

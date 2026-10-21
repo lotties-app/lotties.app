@@ -1,6 +1,6 @@
 /*
  * Hero art of the login theme: the "nap" (cloud with a crescent moon) and "bottle" illustrations of
- * Baby Routine, original works by the project contributors, licensed under the project licence
+ * Lotties, original works by the project contributors, licensed under the project licence
  * (AGPL-3.0-or-later). Shapes are the same as web/src/ui/illustrations/{sleep,feeding}.tsx; colours
  * come from CSS custom properties (tokens.generated.css), so light and dark follow
  * `prefers-color-scheme` with no JavaScript. Gradient recipe: docs/design/ILLUSTRATIONS.md.

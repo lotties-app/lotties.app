@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Baby Routine",
+    "name": "Lotties",
     "loadingPage": "Carregando a página"
   },
   "common": {
@@ -40,7 +40,7 @@
     "backToSignIn": "Voltar para o login",
     "signingOut": "Saindo",
     "setupTitle": "Configuração necessária",
-    "setupBody": "O Baby Routine não está configurado. Defina as variáveis de ambiente abaixo (veja web/.env.example) e reinicie:",
+    "setupBody": "Lotties não está configurado. Defina as variáveis de ambiente abaixo (veja web/.env.example) e reinicie:",
     "signInFailed": "Não foi possível entrar. Tente de novo.",
     "signInAgainToSync": "Entre de novo para sincronizar suas alterações.",
     "renewing": "Reconectando sua conta. Você pode continuar registrando: as alterações ficam salvas neste aparelho."
@@ -693,7 +693,7 @@
       "copyFailed": "Não foi possível copiar automaticamente. Selecione o link e copie.",
       "share": "Compartilhar",
       "copy": "Copiar link",
-      "shareTitle": "Convite do Baby Routine"
+      "shareTitle": "Convite Lotties"
     },
     "sync": {
       "status": "Status: {{state}}",

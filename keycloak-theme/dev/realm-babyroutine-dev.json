@@ -1,6 +1,6 @@
 {
   "realm": "babyroutine-dev",
-  "displayName": "Baby Routine (dev)",
+  "displayName": "Lotties (dev)",
   "enabled": true,
   "sslRequired": "none",
   "loginTheme": "baby-routine",
@@ -28,12 +28,12 @@
     "host": "localhost",
     "port": "2525",
     "from": "no-reply@babyroutine.test",
-    "fromDisplayName": "Baby Routine (dev)"
+    "fromDisplayName": "Lotties (dev)"
   },
   "clients": [
     {
       "clientId": "baby-routine-web",
-      "name": "Baby Routine web",
+      "name": "Lotties web",
       "enabled": true,
       "publicClient": true,
       "protocol": "openid-connect",

@@ -1,5 +1,5 @@
 /*
- * Original illustrations of Baby Routine, by the project contributors, licensed under the project
+ * Original illustrations of Lotties, by the project contributors, licensed under the project
  * licence (AGPL-3.0-or-later). See docs/design/ILLUSTRATIONS.md.
  *
  * Sleep family: nap, night sleep, woke up, bedtime, fell asleep, night waking.

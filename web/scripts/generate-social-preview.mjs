@@ -49,7 +49,7 @@ p { margin-top: 18px; font-size: 44px; font-weight: 400; line-height: 1.2; color
 .rule { width: 96px; height: 6px; border-radius: 3px; background: #a8482a; margin-top: 28px; }
 </style></head><body>
 ${icon}
-<div class="text"><h1>Baby Routine</h1><div class="rule"></div><p>Track your baby's day, together</p></div>
+<div class="text"><h1>Lotties</h1><div class="rule"></div><p>Track your baby's day, together</p></div>
 </body></html>`;
 
 const out = join(root, 'docs', 'design', 'social-preview.png');

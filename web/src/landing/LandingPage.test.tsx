@@ -35,7 +35,7 @@ function renderLanding(auth: AuthApi = fakeAuth({ isAuthenticated: false, user: 
 beforeEach(() => {
   installState = { canInstall: false, showIosHint: false };
   install.mockReset();
-  document.title = 'Baby Routine';
+  document.title = 'Lotties';
 });
 
 describe('LandingPage', () => {
@@ -55,7 +55,7 @@ describe('LandingPage', () => {
     expect(screen.getByRole('heading', { name: /Not a medical device/ })).toBeTruthy();
     expect(screen.getAllByText(/Not a medical device/).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/AGPL-3\.0/, { selector: 'footer p' })).toBeTruthy();
-    expect(document.title).toBe("Baby Routine: track your baby's day, together");
+    expect(document.title).toBe("Lotties: track your baby's day, together");
   });
 
   it('starts sign-in from the header and the hero, and registration from the secondary button', async () => {

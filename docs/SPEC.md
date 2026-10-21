@@ -1,4 +1,4 @@
-# Baby Routine — Spec
+# Lotties — Spec
 
 Open-source (AGPL-3.0) PWA. Parents log baby events, share a baby with a co-parent, and get explainable behavior predictions. Reference app: Napper; this one adds what Napper lacks.
 

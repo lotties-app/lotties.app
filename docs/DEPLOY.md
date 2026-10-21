@@ -1,4 +1,4 @@
-# Deploying Baby Routine
+# Deploying Lotties
 
 The stack is two containers behind your own reverse proxy (or exposed directly for testing):
 
@@ -81,7 +81,7 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 
 ## Keycloak theme
 
-The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Baby Routine look: `keycloak-theme/` is a Keycloakify 11 login theme named `baby-routine` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `keycloak-theme/README.md`.
+The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Lotties look: `keycloak-theme/` is a Keycloakify 11 login theme named `baby-routine` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `keycloak-theme/README.md`.
 
 1. Get the jar: download the `baby-routine-keycloak-theme` artifact of the *Keycloak theme* workflow, or build it without Java on your machine: `bash keycloak-theme/build-in-podman.sh` (Windows: `powershell -File keycloak-theme/build-in-podman.ps1`, which calls WSL). The result is `keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar` (Keycloak 26 and newer; `KC_TARGETS=all` also builds the 22-25 jar).
 2. Put it in Keycloak's `providers/` folder. Container: mount it read-only at `/opt/keycloak/providers/baby-routine-theme.jar`:

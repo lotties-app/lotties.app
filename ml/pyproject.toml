@@ -1,7 +1,7 @@
 [project]
 name = "baby-routine-ml"
 version = "0.1.0"
-description = "Benchmark of small CPU-only models against the heuristic v1 predictions of Baby Routine."
+description = "Benchmark of small CPU-only models against the heuristic v1 predictions of Lotties."
 readme = "README.md"
 license = { text = "AGPL-3.0-only" }
 requires-python = ">=3.11"

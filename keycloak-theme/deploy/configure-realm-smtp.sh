@@ -13,7 +13,7 @@
 #   SMTP_USER       SMTP login (for Brevo: the login shown under SMTP & API > SMTP, not your account email)
 #   SMTP_PASSWORD   SMTP key/password (for Brevo: an SMTP key, not the account password)
 #   SMTP_FROM       sender address; its domain must be verified (SPF + DKIM) at the provider
-#   SMTP_FROM_NAME  default "Baby Routine"
+#   SMTP_FROM_NAME  default "Lotties"
 #   SMTP_REPLY_TO   optional
 #   SMTP_SECURITY   starttls (default) | ssl | none
 #   REALM_VERIFY_EMAIL=1   also turn on "Verify email" for new users (leave unset to keep the current value)
@@ -66,7 +66,7 @@ PORT="${SMTP_PORT:-587}"
 # The password comes in through jq's environment access, not argv.
 SMTP="$(SMTP_PASSWORD="$SMTP_PASSWORD" jq -nc \
   --arg host "$SMTP_HOST" --arg port "$PORT" --arg user "$SMTP_USER" --arg from "$SMTP_FROM" \
-  --arg fromName "${SMTP_FROM_NAME:-Baby Routine}" --arg replyTo "${SMTP_REPLY_TO:-}" \
+  --arg fromName "${SMTP_FROM_NAME:-Lotties}" --arg replyTo "${SMTP_REPLY_TO:-}" \
   --arg starttls "$STARTTLS" --arg ssl "$SSL" '
   {host: $host, port: $port, auth: "true", user: $user, password: env.SMTP_PASSWORD,
    from: $from, fromDisplayName: $fromName, starttls: $starttls, ssl: $ssl}

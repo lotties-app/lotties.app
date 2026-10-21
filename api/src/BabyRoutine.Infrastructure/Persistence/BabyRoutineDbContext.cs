@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BabyRoutine.Infrastructure.Persistence;
 
-/// <summary>EF Core context for the Baby Routine PostgreSQL database.</summary>
+/// <summary>EF Core context for the Lotties PostgreSQL database.</summary>
 public sealed class BabyRoutineDbContext(DbContextOptions<BabyRoutineDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();

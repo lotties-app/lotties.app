@@ -3,7 +3,7 @@ import type { ClassKey } from 'keycloakify/login';
 /**
  * With `doUseDefaultCss: false` Keycloakify renders no PatternFly classes. Instead of rewriting every
  * page, each class key a stock page uses is mapped to one of our own `br-*` classes (styles/theme.css).
- * That way every page, including the ones we never touch, gets the Baby Routine look.
+ * That way every page, including the ones we never touch, gets the Lotties look.
  */
 export const classes: { [key in ClassKey]?: string } = {
   kcHtmlClass: 'br-html',

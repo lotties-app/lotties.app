@@ -1,6 +1,6 @@
-# Baby Routine Keycloak theme
+# Lotties Keycloak theme
 
-A **login theme** for [Keycloak](https://www.keycloak.org/) that makes the sign-in, register, reset-password, verify-email, one-time-code and error pages look like the Baby Routine app. It is optional: the app works with any OpenID Connect provider and with Keycloak's own theme.
+A **login theme** for [Keycloak](https://www.keycloak.org/) that makes the sign-in, register, reset-password, verify-email, one-time-code and error pages look like the Lotties app. It is optional: the app works with any OpenID Connect provider and with Keycloak's own theme.
 
 - Built with [Keycloakify](https://www.keycloakify.dev/) 11 (React, Vite). Theme name: `baby-routine`.
 - Lean on purpose: plain CSS on CSS variables, no UI kit. Built size (login page, English): see [Bundle size](#bundle-size).
@@ -153,7 +153,7 @@ bash dev/kc-down.sh              # removes only br-kc-test and br-kc-smtp
 
 ## Licence and notices
 
-- Baby Routine and this theme: **AGPL-3.0-or-later** (repository `LICENSE`). The hero illustrations (`src/login/art/`) are original works of the Baby Routine contributors, see `docs/design/ILLUSTRATIONS.md`.
+- Lotties and this theme: **AGPL-3.0-or-later** (repository `LICENSE`). The hero illustrations (`src/login/art/`) are original works of the Lotties contributors, see `docs/design/ILLUSTRATIONS.md`.
 - `src/login/Template.tsx` is derived from the default login `Template.tsx` of [Keycloakify](https://github.com/keycloakify/keycloakify) (MIT, Copyright (c) Keycloakify contributors, Joseph Garrone); the stock pages we render come from the `keycloakify` package (MIT).
 - Fraunces (Undercase Type) is distributed through `@fontsource-variable/fraunces` under the SIL Open Font License 1.1.
 - Reference studied while designing the project structure: `keycloakify-andradev-theme` (MIT, based on the Keycloakify starter by garronej, `Copyright (c) 2024 Joseph Garrone`). No file of it was copied; if you copy one, keep its licence notice here:

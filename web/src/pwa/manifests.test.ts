@@ -16,7 +16,7 @@ describe('web manifests', () => {
     } = LIGHT_MANIFEST;
     const { icons: darkIcons, theme_color: dt, background_color: db, ...darkRest } = DARK_MANIFEST;
     expect(darkRest).toEqual(lightRest);
-    expect(lightRest).toMatchObject({ id: '/', start_url: '/', scope: '/', name: 'Baby Routine' });
+    expect(lightRest).toMatchObject({ id: '/', start_url: '/', scope: '/', name: 'Lotties' });
     expect(darkIcons).not.toEqual(lightIcons);
     expect([lt, lb]).toEqual([LIGHT.themeColor, LIGHT.background]);
     expect([dt, db]).toEqual([DARK.themeColor, DARK.background]);

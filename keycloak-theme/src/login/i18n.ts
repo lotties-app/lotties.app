@@ -20,13 +20,13 @@ const { useI18n, ofTypeI18n } = i18nBuilder
       passwordNew: 'New password',
       // Placeholder: replace it in Realm settings > Localization (a realm override wins over the theme).
       termsText:
-        "<p>Baby Routine is a small, open source app to keep track of a baby's day. Please keep your sign-in details private and use the app only to care for the babies you share with others.</p>",
-      appName: 'Baby Routine',
+        "<p>Lotties is a small, open source app to keep track of a baby's day. Please keep your sign-in details private and use the app only to care for the babies you share with others.</p>",
+      appName: 'Lotties',
       heroTagline: "Track your baby's day, together",
       heroNote: 'Sleep, feeds and diapers in one calm place.',
       heroArtLabel: 'A cloud with a crescent moon, and a feeding bottle',
       skipToContent: 'Skip to the form',
-      pageFooter: 'Baby Routine is free and open source software.',
+      pageFooter: 'Lotties is free and open source software.',
     },
     'pt-BR': {
       loginAccountTitle: 'Bem-vindo de volta',
@@ -37,13 +37,13 @@ const { useI18n, ofTypeI18n } = i18nBuilder
       registerTitle: 'Crie sua conta',
       passwordNew: 'Nova senha',
       termsText:
-        '<p>O Baby Routine é um app pequeno e de código aberto para acompanhar o dia de um bebê. Mantenha seus dados de acesso em sigilo e use o app apenas para cuidar dos bebês que você compartilha com outras pessoas.</p>',
-      appName: 'Baby Routine',
+        '<p>Lotties é um app pequeno e de código aberto para acompanhar o dia de um bebê. Mantenha seus dados de acesso em sigilo e use o app apenas para cuidar dos bebês que você compartilha com outras pessoas.</p>',
+      appName: 'Lotties',
       heroTagline: 'Acompanhe o dia do seu bebê, em conjunto',
       heroNote: 'Sono, mamadas e fraldas em um só lugar tranquilo.',
       heroArtLabel: 'Uma nuvem com uma lua crescente e uma mamadeira',
       skipToContent: 'Pular para o formulário',
-      pageFooter: 'O Baby Routine é um software livre e de código aberto.',
+      pageFooter: 'Lotties é um software livre e de código aberto.',
     },
   })
   .build();
