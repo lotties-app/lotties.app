@@ -24,6 +24,7 @@ COPY nginx.conf /etc/nginx/templates/default.conf.template
 # It defaults to the origin of VITE_OIDC_AUTHORITY and can be overridden at run time via the
 # OIDC_ORIGIN environment variable. *.envsh files are sourced by the nginx entrypoint before envsubst runs.
 RUN origin="$(printf '%s' "$VITE_OIDC_AUTHORITY" | sed -E 's#^(https?://[^/]+).*#\1#')" \
- && printf 'export OIDC_ORIGIN="${OIDC_ORIGIN:-%s}"\n' "$origin" > /docker-entrypoint.d/10-oidc-origin.envsh
+ && printf 'export OIDC_ORIGIN="${OIDC_ORIGIN:-%s}"\n' "$origin" > /docker-entrypoint.d/10-oidc-origin.envsh \
+ && chmod +x /docker-entrypoint.d/10-oidc-origin.envsh
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

@@ -126,3 +126,13 @@ ALTER DEFAULT PRIVILEGES FOR ROLE baby_migrator IN SCHEMA public
 ```
 
 Put `baby_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container.
+
+## Podman
+
+The stack is verified with Podman (6.x) and `podman-compose`; Docker is not required.
+
+- Use `podman-compose up --build` (or `podman compose`) in place of `docker compose`. Image and `build:` syntax are the same.
+- Podman builds OCI images by default, which drop the Dockerfile `HEALTHCHECK`; the API healthcheck is therefore also declared in `docker-compose.yml`. With plain `podman build`, add `--format docker` if you want the Dockerfile one.
+- Short image names (`postgres:16`, `nginx`) resolve through your registries.conf; if prompted, choose docker.io or use fully qualified names.
+- Rootful Podman inside WSL can fail creating bridge networks with `nftables error` (missing `nft` tables). Workarounds: install/enable nftables in the distro, run Podman rootless, or use `--network host` with a different host port for ad-hoc tests (port 80 may already be taken by another reverse proxy).
+- What was checked by running the built images: nginx starts with the CSP rendered from `VITE_OIDC_AUTHORITY`, `/api/` is proxied to the API (unauthenticated `GET /api/v1/me` returns 401), `/assets/*` is immutable, `sw.js` and `index.html` are `no-cache`, SPA fallback works (`/invite` returns the app), the API runs as the non-root `app` user and its `/health` probe succeeds. Not checked: `podman-compose up` end to end with a real database and identity provider.
