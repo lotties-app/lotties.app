@@ -27,3 +27,6 @@ code/keycloak-theme/dist/
 code/keycloak-theme/dist_keycloak/
 code/keycloak-theme/build_keycloak/
 code/keycloak-theme/dev/.runtime/
+
+#CLAUDE.md
+#.claude/
