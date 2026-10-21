@@ -79,17 +79,19 @@ describe('pt-BR screens', () => {
     expect(document.documentElement.lang).toBe('pt-BR');
   });
 
-  it('translates the home quick actions and predictions heading', async () => {
+  it('translates the Now screen: the question, the tiles and the navigation', async () => {
     await seedBaby(db);
+    const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    await db.events.put(event('wet', DIAPER, hourAgo, hourAgo, { content: 'WET' }));
     renderWithDb(db, <HomePage />);
+    expect(await screen.findByRole('heading', { name: 'Agora' })).toBeTruthy();
     expect(
-      await screen.findByRole('button', { name: 'Iniciar Amamentação, Sem registro hoje' }),
+      await screen.findByRole('heading', { name: 'O que Lia está fazendo agora?' }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Registrar Fralda, Sem registro hoje' }),
-    ).toBeTruthy();
-    expect(screen.getByText('Mamadeira')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Próximos previstos' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dormindo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Mamada/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Fralda/ }).textContent).toMatch(/Xixi/);
+    expect(screen.getByRole('button', { name: /^Mais/ })).toBeTruthy();
   });
 
   it('translates the timeline: day labels, type names, options and durations', async () => {

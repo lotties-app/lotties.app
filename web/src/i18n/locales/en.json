@@ -27,11 +27,11 @@
   },
   "nav": {
     "main": "Main",
-    "home": "Home",
     "timeline": "Timeline",
     "growth": "Growth",
-    "settings": "Settings",
-    "addEvent": "Add event"
+    "now": "Now",
+    "day": "Day",
+    "insights": "Insights"
   },
   "auth": {
     "signIn": "Sign in",
@@ -57,7 +57,10 @@
     "nightView": "Night view",
     "nightViewPrompt": "Switch to night view?",
     "nightViewSwitch": "Switch",
-    "nightViewNotNow": "Not now"
+    "nightViewNotNow": "Not now",
+    "babyProfile": "Baby profile",
+    "settings": "Settings",
+    "appearanceLanguage": "Appearance and language"
   },
   "sync": {
     "signInToSync": "Sign in to sync",
@@ -131,10 +134,6 @@
       "body": "Your babies load once the server answers. Check your connection and try again.",
       "offline": "You are offline. Your babies load once you are back online."
     }
-  },
-  "track": {
-    "title": "Track",
-    "placeholder": "Quick actions will appear here."
   },
   "presets": {
     "wake_up": "Wake-up",
@@ -384,7 +383,7 @@
   },
   "settings": {
     "title": "Settings",
-    "createBabyFirst": "Create a baby on the Home screen to unlock these settings.",
+    "createBabyFirst": "Create a baby on the Now screen to unlock these settings.",
     "sections": {
       "baby": "Baby",
       "eventTypes": "Event types",
@@ -582,7 +581,7 @@
     "edit": "Edit measurement",
     "none": "No measurements yet.",
     "loadFailed": "Could not load measurements. Try again later.",
-    "createBabyFirst": "Create a baby on the Home screen to track growth.",
+    "createBabyFirst": "Create a baby on the Now screen to track growth.",
     "deleteTitle": "Delete this measurement?",
     "deleteBody": "This removes it from the list and the charts.",
     "deleteConfirm": "Delete measurement",
@@ -834,7 +833,10 @@
       "feed": "Feed",
       "diaper": "Diaper",
       "meds": "Meds",
-      "more": "More"
+      "more": "More",
+      "region": "Quick log",
+      "title": "Log",
+      "moreHint": "Bath, pump and more"
     },
     "sleepActions": {
       "fellAsleep": "Asleep",
@@ -865,10 +867,164 @@
       "bellyPain": "Belly pain · {{intensity}} of 5",
       "nursingStarted": "Nursing on the {{side}}",
       "nursingSwitched": "Switched to the {{side}}",
-      "nursingStopped": "Nursing · left {{left}} · right {{right}}"
+      "nursingStopped": "Nursing · left {{left}} · right {{right}}",
+      "shiftGroup": "When it happened"
     },
     "catchUp": {
-      "someone": "Someone"
+      "someone": "Someone",
+      "title": "Since you last looked",
+      "logged_one": "{{name}} logged {{count}} thing since {{time}}",
+      "logged_other": "{{name}} logged {{count}} things since {{time}}",
+      "sleeps_one": "{{count}} sleep",
+      "sleeps_other": "{{count}} sleeps",
+      "total": "{{duration}} total",
+      "nightWakings_one": "{{count}} night waking",
+      "nightWakings_other": "{{count}} night wakings",
+      "feeds_one": "{{count}} feed",
+      "feeds_other": "{{count}} feeds",
+      "diapers_one": "{{count}} diaper",
+      "diapers_other": "{{count}} diapers",
+      "wet_one": "{{count}} wet",
+      "wet_other": "{{count}} wet",
+      "dirty_one": "{{count}} dirty",
+      "dirty_other": "{{count}} dirty",
+      "mixed_one": "{{count}} mixed",
+      "mixed_other": "{{count}} mixed",
+      "last": "last {{time}}",
+      "nextFrom": "next from {{time}}",
+      "times_one": "{{count}} time",
+      "times_other": "{{count}} times",
+      "shareHeader": "{{name}}: since {{time}}",
+      "share": "Share as text",
+      "gotIt": "Got it",
+      "copied": "Copied to the clipboard.",
+      "shareFailed": "Could not share. Try again."
+    },
+    "sheet": {
+      "close": "Close"
+    },
+    "state": {
+      "region": "Current state",
+      "awake": "Awake",
+      "asleepNap": "Asleep · Nap",
+      "asleepNight": "Asleep · Night",
+      "asleepNapLower": "nap",
+      "asleepNightLower": "night sleep",
+      "nightWaking": "Night waking",
+      "since": "since {{time}}",
+      "sinceAfterNap": "since {{time}}, after a nap",
+      "sinceAfterNight": "since {{time}}, after the night",
+      "wakingSince": "since {{time}} · night sleep since {{sleepTime}}"
+    },
+    "ask": {
+      "title": "What is {{name}} doing now?",
+      "hint": "This starts the day. You can change it anytime.",
+      "sleeping": "Sleeping",
+      "awake": "Awake"
+    },
+    "nap": {
+      "title": "Nap window",
+      "range": "{{from}} – {{to}}",
+      "opensIn": "opens in {{duration}}",
+      "open": "open now",
+      "past": "past the usual window"
+    },
+    "ruler": {
+      "withWindow": "Awake since {{since}}, now {{now}}. Nap window {{from}} to {{to}}.",
+      "noWindow": "Awake since {{since}}, now {{now}}."
+    },
+    "learning": {
+      "title": "Learning {{name}}'s rhythm",
+      "body": "Log a few days and predictions appear here.",
+      "stale": "Predictions refresh after the next sleep.",
+      "progress": "{{done}} of {{total}} sleeps logged"
+    },
+    "why": {
+      "title": "Why this window?",
+      "noBasis": "Based on your logged history."
+    },
+    "forgotten": {
+      "keep": "Still going",
+      "asleep": "Still asleep? The {{kind}} has run for {{duration}}",
+      "waking": "Still awake? The night waking has run for {{duration}}",
+      "running": "Still running? {{name}} has run for {{duration}}",
+      "wokeAt": "Woke up at {{time}}",
+      "stopAt": "Stop at {{time}}"
+    },
+    "nursing": {
+      "region": "Nursing",
+      "title": "Nursing",
+      "started": "started {{time}}",
+      "left": "Left",
+      "right": "Right",
+      "running": "running",
+      "done": "done",
+      "switch": "Switch side",
+      "finish": "Finish"
+    },
+    "feedTray": {
+      "title": "Feed",
+      "method": "Feeding method",
+      "amount": "Amount",
+      "otherAmount": "Other amount",
+      "content": "In the bottle",
+      "log": "Log {{amount}} ml",
+      "logContent": "Log {{amount}} ml {{content}}",
+      "lastSide": "Last time you used the {{side}} side.",
+      "alreadyRunning": "Nursing is already running.",
+      "startOn": "Start on the {{side}}",
+      "solidHint": "Solid food opens the form so you can note what was eaten.",
+      "solidOpen": "Open the form"
+    },
+    "diaperTray": {
+      "title": "Diaper",
+      "hint": "One tap logs it. You can fix the time right after."
+    },
+    "medsTray": {
+      "title": "Medication",
+      "same": "Same as last time: {{names}}",
+      "none": "No medications yet.",
+      "open": "Add them in Settings",
+      "choose": "Which ones?",
+      "log_one": "Log {{count}} medication",
+      "log_other": "Log {{count}} medications",
+      "pick": "Choose a medication"
+    },
+    "bellyTray": {
+      "title": "Belly pain",
+      "hint": "How strong is it?",
+      "mild": "Mild",
+      "severe": "Severe"
+    },
+    "more": {
+      "title": "More"
+    },
+    "today": {
+      "title": "Today",
+      "lastNight": "Last night",
+      "naps": "Naps",
+      "feeds": "Feeds",
+      "diapers": "Diapers"
+    },
+    "firstRun": {
+      "title": "Log {{name}}'s first event",
+      "body": "One tap is enough. You can fix the time right after.",
+      "viewer": "Nothing has been logged yet.",
+      "learning": "Log a few days and predictions appear here. Importing history skips the wait.",
+      "importTitle": "Coming from Napper?",
+      "importBody": "Bring the history in about 2 minutes.",
+      "importAction": "Import",
+      "inviteTitle": "Share {{name}} with someone",
+      "inviteBody": "You'll both see the same day.",
+      "inviteAction": "Invite"
+    },
+    "night": {
+      "region": "Night view",
+      "screenOn": "The screen stays on while this view is open."
     }
+  },
+  "insights": {
+    "soonTitle": "More insights are coming",
+    "soonBody": "Sleep rhythm, feeding and diaper trends will appear here as you keep logging."
   }
 }

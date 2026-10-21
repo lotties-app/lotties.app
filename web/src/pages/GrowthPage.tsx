@@ -17,7 +17,9 @@ import { Icon } from '../ui/Icon';
 
 type Editing = MeasurementDto | 'new' | null;
 
-function Growth({ baby }: { baby: Baby }) {
+type HeadingLevel = 'h1' | 'h2';
+
+function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
   const { t } = useTranslation();
   const { query, online } = useMeasurements(baby.id);
   const actions = useMeasurementActions(baby.id);
@@ -38,7 +40,7 @@ function Growth({ baby }: { baby: Baby }) {
   return (
     <Stack spacing={2}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h5" component="h1">
+        <Typography variant="h5" component={heading}>
           {t('nav.growth')}
         </Typography>
         {writable && (
@@ -97,12 +99,16 @@ function Growth({ baby }: { baby: Baby }) {
   );
 }
 
-export function GrowthPage() {
+/**
+ * Growth measurements. Inside Insights the section heading is an `h2` (the page owns the `h1`);
+ * the legacy `/growth` route redirects there.
+ */
+export function GrowthPage({ heading = 'h1' }: { heading?: HeadingLevel }) {
   const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
   if (!babies) return <CircularProgress aria-label={t('common.loading')} />;
   if (!baby) {
     return <Alert severity="info">{t('growth.createBabyFirst')}</Alert>;
   }
-  return <Growth key={baby.id} baby={baby} />;
+  return <Growth key={baby.id} baby={baby} heading={heading} />;
 }

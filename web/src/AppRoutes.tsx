@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { LoginPage } from './auth/LoginPage';
 import { CallbackPage } from './auth/CallbackPage';
@@ -7,12 +7,12 @@ import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { InviteEntry, LegacyInviteEntry } from './invite/InviteEntry';
 
-// Everything except Home is split into route chunks so the first load stays small.
+// Everything except Now is split into route chunks so the first load stays small.
 const TimelinePage = lazy(() =>
   import('./pages/TimelinePage').then((m) => ({ default: m.TimelinePage })),
 );
-const GrowthPage = lazy(() =>
-  import('./pages/GrowthPage').then((m) => ({ default: m.GrowthPage })),
+const InsightsPage = lazy(() =>
+  import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage })),
 );
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
@@ -22,10 +22,11 @@ const InvitePage = lazy(() =>
 );
 
 /**
- * Developer UI gallery: registered only in development. `import.meta.env.DEV` is a build-time
+ * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
  * constant, so production builds drop the branch and the gallery chunk is never emitted.
  */
 const DevUiGallery = import.meta.env.DEV ? lazy(() => import('./dev/UiGallery')) : null;
+const DevNowPreview = import.meta.env.DEV ? lazy(() => import('./dev/NowPreview')) : null;
 
 export function AppRoutes() {
   return (
@@ -36,6 +37,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevUiGallery />
+            </Suspense>
+          }
+        />
+      )}
+      {DevNowPreview && (
+        <Route
+          path="/dev/now"
+          element={
+            <Suspense fallback={null}>
+              <DevNowPreview />
             </Suspense>
           }
         />
@@ -54,8 +65,11 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
-          <Route path="timeline" element={<TimelinePage />} />
-          <Route path="growth" element={<GrowthPage />} />
+          <Route path="day" element={<TimelinePage />} />
+          <Route path="insights" element={<InsightsPage />} />
+          {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
+          <Route path="timeline" element={<Navigate to="/day" replace />} />
+          <Route path="growth" element={<Navigate to="/insights" replace />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>

@@ -1,114 +1,109 @@
-import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
-import { BottomNavigationAction, Box, Fab, Paper } from '@mui/material';
-import { canWrite } from '../baby/permissions';
-import { useSelectedBaby } from '../baby/SelectedBabyContext';
-import { CONTENT_MAX_WIDTH } from '../theme/tokens';
-import { TrackSheet } from '../track/TrackSheet';
+import { Box, Paper } from '@mui/material';
+import { CONTENT_MAX_WIDTH, RADIUS } from '../theme/tokens';
+import { palette } from '../ui/form/styles';
 import { Icon } from '../ui/Icon';
+import type { IconName } from '../ui/icons';
 
 interface NavItem {
   to: string;
   /** Catalog key under `nav`. */
-  label: 'home' | 'timeline' | 'growth' | 'settings';
-  icon: ReactElement;
+  label: 'now' | 'day' | 'insights';
+  icon: IconName;
+  /** Route prefixes that mark the tab as current. */
+  matches: readonly string[];
 }
 
-const START: NavItem[] = [
-  { to: '/', label: 'home', icon: <Icon name="home" /> },
-  { to: '/timeline', label: 'timeline', icon: <Icon name="timeline" /> },
-];
-const END: NavItem[] = [
-  { to: '/growth', label: 'growth', icon: <Icon name="chart" /> },
-  { to: '/settings', label: 'settings', icon: <Icon name="settings" /> },
+const ITEMS: readonly NavItem[] = [
+  { to: '/', label: 'now', icon: 'clock', matches: [] },
+  { to: '/day', label: 'day', icon: 'calendar', matches: ['/day'] },
+  { to: '/insights', label: 'insights', icon: 'chart', matches: ['/insights'] },
 ];
 
 function isActive(item: NavItem, pathname: string) {
-  return item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
+  if (item.to === '/') return pathname === '/';
+  return item.matches.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-function NavLinks({ items, pathname }: { items: NavItem[]; pathname: string }) {
-  const { t } = useTranslation();
-  return items.map((item) => {
-    const active = isActive(item, pathname);
-    return (
-      <BottomNavigationAction
-        key={item.to}
-        component={Link}
-        to={item.to}
-        showLabel
-        selected={active}
-        aria-current={active ? 'page' : undefined}
-        label={t(`nav.${item.label}`)}
-        icon={item.icon}
-      />
-    );
-  });
-}
-
-/** Home, Timeline, a raised "Add event" action in the middle, Growth, Settings. */
+/**
+ * Now, Day and Insights, with a pill behind the current tab's icon. The bar sits above the home
+ * indicator (safe-area inset). Settings and the baby profile live in the header menu.
+ */
 export function BottomNav() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { baby } = useSelectedBaby();
-  const [trackOpen, setTrackOpen] = useState(false);
-  const canTrack = baby !== undefined && canWrite(baby);
 
   return (
-    <>
-      <Paper
-        component="nav"
-        aria-label={t('nav.main')}
-        elevation={0}
-        square
-        sx={(theme) => ({
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: theme.zIndex.appBar,
-          borderTop: 1,
-          borderColor: 'divider',
-          pb: 'env(safe-area-inset-bottom)',
-        })}
+    <Paper
+      component="nav"
+      aria-label={t('nav.main')}
+      elevation={0}
+      square
+      sx={(theme) => ({
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: theme.zIndex.appBar,
+        borderTop: 1,
+        borderColor: 'divider',
+        pb: 'env(safe-area-inset-bottom)',
+      })}
+    >
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          maxWidth: CONTENT_MAX_WIDTH,
+          mx: 'auto',
+          height: 64,
+        }}
       >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 72px 1fr 1fr',
-            alignItems: 'center',
-            maxWidth: CONTENT_MAX_WIDTH,
-            mx: 'auto',
-            height: 64,
-          }}
-        >
-          <NavLinks items={START} pathname={pathname} />
-          <Box sx={{ position: 'relative', height: '100%' }}>
-            {canTrack && (
-              <Fab
-                color="primary"
-                aria-label={t('nav.addEvent')}
-                aria-haspopup="dialog"
-                aria-expanded={trackOpen}
-                onClick={() => setTrackOpen((open) => !open)}
-                sx={{
-                  position: 'absolute',
-                  top: -20,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+        {ITEMS.map((item) => {
+          const active = isActive(item, pathname);
+          return (
+            <Box
+              key={item.to}
+              component={Link}
+              to={item.to}
+              aria-current={active ? 'page' : undefined}
+              sx={(theme) => ({
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.25,
+                minHeight: 56,
+                textDecoration: 'none',
+                fontSize: '0.75rem',
+                fontWeight: active ? 650 : 500,
+                color: active ? palette(theme).text.primary : palette(theme).text.secondary,
+                '&:focus-visible': {
+                  outline: `2px solid ${palette(theme).primary.main}`,
+                  outlineOffset: -2,
+                },
+              })}
+            >
+              <Box
+                data-active-indicator={active ? 'true' : undefined}
+                sx={(theme) => ({
                   width: 56,
-                  height: 56,
-                }}
+                  height: 30,
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: `${RADIUS.pill}px`,
+                  backgroundColor: active ? palette(theme).surfaceRaised : 'transparent',
+                  color: active ? palette(theme).primary.main : 'inherit',
+                })}
               >
-                {trackOpen ? <Icon name="close" /> : <Icon name="add" />}
-              </Fab>
-            )}
-          </Box>
-          <NavLinks items={END} pathname={pathname} />
-        </Box>
-      </Paper>
-      {canTrack && <TrackSheet open={trackOpen} onClose={() => setTrackOpen(false)} baby={baby} />}
-    </>
+                <Icon name={item.icon} size={24} />
+              </Box>
+              {t(`nav.${item.label}`)}
+            </Box>
+          );
+        })}
+      </Box>
+    </Paper>
   );
 }

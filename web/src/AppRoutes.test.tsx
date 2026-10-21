@@ -24,19 +24,23 @@ const THEO = { id: 'baby-2', name: 'Theo', birthDate: '2026-02-01', role: 'Paren
 const LIA = { id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' };
 
 describe('lazy routes', () => {
-  it('renders the settings, timeline and home routes through Suspense', async () => {
+  it('renders the settings, day, insights and now routes through Suspense', async () => {
     await seedBaby(db);
     const { unmount } = renderWithDb(db, <AppRoutes />, { route: '/settings' });
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
     expect(screen.getByRole('navigation')).toBeTruthy();
     unmount();
 
-    const timeline = renderWithDb(db, <AppRoutes />, { route: '/timeline' });
+    const day = renderWithDb(db, <AppRoutes />, { route: '/day' });
     expect(await screen.findByRole('heading', { name: 'Timeline' })).toBeTruthy();
-    timeline.unmount();
+    day.unmount();
+
+    const insights = renderWithDb(db, <AppRoutes />, { route: '/insights' });
+    expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
+    insights.unmount();
 
     renderWithDb(db, <AppRoutes />, { route: '/' });
-    expect(await screen.findByRole('button', { name: /^Log Diaper/ })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
   });
 });
 
@@ -51,9 +55,9 @@ describe('invite route', () => {
     const { api, writes } = fakeApi(acceptHandler);
     renderWithDb(db, <AppRoutes />, { api, route: '/invite#tok-1' });
 
-    // Home with the joined baby selected: the switcher shows Theo and the quick actions render.
+    // Now with the joined baby selected: the switcher shows Theo and the Now screen renders.
     expect(await screen.findByRole('button', { name: /Theo/ })).toBeTruthy();
-    expect(await screen.findByRole('button', { name: /^Log Diaper/ })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
     expect(writes()).toHaveLength(1);
     expect(writes()[0]).toMatchObject({
       method: 'POST',
@@ -71,7 +75,7 @@ describe('invite route', () => {
     const { api, writes } = fakeApi(acceptHandler);
     renderWithDb(db, <AppRoutes />, { api, route: '/invite/tok-1' });
 
-    expect(await screen.findByRole('button', { name: /^Log Diaper/ })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
     expect(writes()[0]).toMatchObject({
       method: 'POST',
       path: '/api/v1/invites/accept',
@@ -100,7 +104,7 @@ describe('invite route', () => {
     // The provider returns the user to `/invite` (no token in it); the parked token is used.
     const { api, writes } = fakeApi(acceptHandler);
     renderWithDb(db, <AppRoutes />, { api, route: '/invite', auth: fakeAuth() });
-    expect(await screen.findByRole('button', { name: /^Log Diaper/ })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
     expect(writes()[0]).toMatchObject({ body: { token: 'tok-1' } });
     expect(window.sessionStorage.getItem(PENDING_INVITE_KEY)).toBeNull();
   });

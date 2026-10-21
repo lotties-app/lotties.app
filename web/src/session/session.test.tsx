@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dexie from 'dexie';
 import { useContext, useEffect } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ApiClient } from '../api/apiClient';
 import { ApiClientContext } from '../api/ApiClientContext';
@@ -61,17 +62,19 @@ function session(handler?: Parameters<typeof fakeApi>[0]) {
   const online = { value: false };
   const queryClient = new QueryClient();
   const tree = (auth: AuthApi, api: ApiClient = fake.api) => (
-    <AuthContext value={auth}>
-      <ApiClientContext value={api}>
-        <QueryClientProvider client={queryClient}>
-          <AccountDataProvider
-            syncOptions={{ locks: null, eventTarget: null, isOnline: () => online.value }}
-          >
-            <Probe />
-          </AccountDataProvider>
-        </QueryClientProvider>
-      </ApiClientContext>
-    </AuthContext>
+    <MemoryRouter>
+      <AuthContext value={auth}>
+        <ApiClientContext value={api}>
+          <QueryClientProvider client={queryClient}>
+            <AccountDataProvider
+              syncOptions={{ locks: null, eventTarget: null, isOnline: () => online.value }}
+            >
+              <Probe />
+            </AccountDataProvider>
+          </QueryClientProvider>
+        </ApiClientContext>
+      </AuthContext>
+    </MemoryRouter>
   );
   return { ...fake, online, tree };
 }

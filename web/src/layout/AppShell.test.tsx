@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppRoutes } from '../AppRoutes';
@@ -74,41 +74,143 @@ describe('night view quick toggle', () => {
 });
 
 describe('bottom navigation', () => {
-  it('has Home, Timeline, Growth and Settings, with the current page marked', async () => {
+  const tabs = ['Now', 'Day', 'Insights'];
+
+  it('has exactly Now, Day and Insights, and no centre add button', async () => {
     await seedBaby(db);
-    renderShell('/timeline');
+    renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
-    for (const name of ['Home', 'Timeline', 'Growth', 'Settings']) {
-      expect(within(nav).getByRole('link', { name })).toBeTruthy();
-    }
-    expect(within(nav).getByRole('link', { name: 'Timeline' }).getAttribute('aria-current')).toBe(
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(tabs);
+    expect(within(nav).getByRole('link', { name: 'Now' }).getAttribute('href')).toBe('/');
+    expect(within(nav).getByRole('link', { name: 'Day' }).getAttribute('href')).toBe('/day');
+    expect(within(nav).getByRole('link', { name: 'Insights' }).getAttribute('href')).toBe(
+      '/insights',
+    );
+    expect(screen.queryByRole('button', { name: 'Add event' })).toBeNull();
+  });
+
+  it.each([
+    ['/', 'Now'],
+    ['/day', 'Day'],
+    ['/insights', 'Insights'],
+  ])(
+    'marks the current tab on %s (%s) and puts the pill behind its icon',
+    async (route, current) => {
+      await seedBaby(db);
+      renderShell(route);
+      const nav = await screen.findByRole('navigation', { name: 'Main' });
+      for (const name of tabs) {
+        const link = within(nav).getByRole('link', { name });
+        expect(link.getAttribute('aria-current')).toBe(name === current ? 'page' : null);
+        expect(link.querySelector('[data-active-indicator]') !== null).toBe(name === current);
+      }
+    },
+  );
+
+  it('keeps the old routes working: /timeline goes to Day and /growth to Insights', async () => {
+    await seedBaby(db);
+    const first = renderShell('/timeline');
+    expect(await screen.findByRole('heading', { name: 'Timeline' })).toBeTruthy();
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getByRole('link', { name: 'Day' }).getAttribute('aria-current')).toBe(
       'page',
     );
-    expect(within(nav).getByRole('link', { name: 'Home' }).getAttribute('aria-current')).toBeNull();
-  });
-
-  it('opens and closes the Track sheet from the Add event button', async () => {
-    await seedBaby(db);
-    renderShell();
-    const fab = await screen.findByRole('button', { name: 'Add event' });
-    expect(fab.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(fab);
-    expect(await screen.findByRole('heading', { name: 'Track' })).toBeTruthy();
-    fireEvent.keyDown(screen.getByRole('presentation'), { key: 'Escape' });
-    await screen.findByRole('button', { name: 'Add event', hidden: true });
-  });
-
-  it('hides Add event for viewers and when there is no baby', async () => {
-    await seedBaby(db, { role: 'Viewer' });
-    const first = renderShell();
-    await screen.findByRole('navigation', { name: 'Main' });
-    await within(await screen.findByRole('banner')).findByText('Lia');
-    expect(screen.queryByRole('button', { name: 'Add event' })).toBeNull();
     first.unmount();
-    await db.babies.clear();
-    renderShell();
-    await screen.findByRole('navigation', { name: 'Main' });
-    expect(screen.queryByRole('button', { name: 'Add event' })).toBeNull();
+
+    renderShell('/growth');
+    expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Growth', level: 2 })).toBeTruthy();
+  });
+
+  it('navigates between the tabs', async () => {
+    await seedBaby(db);
+    renderShell('/');
+    const nav = await screen.findByRole('navigation', { name: 'Main' });
+    fireEvent.click(within(nav).getByRole('link', { name: 'Day' }));
+    expect(await screen.findByRole('heading', { name: 'Timeline' })).toBeTruthy();
+    fireEvent.click(within(nav).getByRole('link', { name: 'Insights' }));
+    expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
+    fireEvent.click(within(nav).getByRole('link', { name: 'Now' }));
+    expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
+  });
+
+  it('stays visible for viewers (write actions are disabled on the screens, not hidden here)', async () => {
+    await seedBaby(db, { role: 'Viewer' });
+    renderShell('/');
+    const nav = await screen.findByRole('navigation', { name: 'Main' });
+    expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    expect(await screen.findByText(/view-only access/)).toBeTruthy();
+  });
+
+  it('is visible with no baby too, and sits above the home indicator', async () => {
+    renderShell('/');
+    const nav = await screen.findByRole('navigation', { name: 'Main' });
+    expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    const styles = Array.from(document.querySelectorAll('style'), (node) => node.textContent).join(
+      '',
+    );
+    expect(styles).toContain('padding-bottom:env(safe-area-inset-bottom)');
+  });
+});
+
+describe('account menu', () => {
+  it('has Baby profile, Settings, Appearance and language, Night view and Log out', async () => {
+    await seedBaby(db);
+    renderShell('/');
+    await within(await screen.findByRole('banner')).findByText('Lia');
+    fireEvent.click(await screen.findByRole('button', { name: 'User menu' }));
+    const menu = await screen.findByRole('menu');
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Ana', 'Baby profile', 'Settings', 'Appearance and language', 'Log out']);
+    expect(within(menu).getByRole('menuitemcheckbox', { name: 'Night view' })).toBeTruthy();
+  });
+
+  it('Baby profile opens Settings with the baby section expanded', async () => {
+    await seedBaby(db);
+    renderShell('/');
+    await within(await screen.findByRole('banner')).findByText('Lia');
+    fireEvent.click(await screen.findByRole('button', { name: 'User menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Baby profile' }));
+
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeTruthy();
+    const header = await screen.findByRole('button', { name: 'Baby' });
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('Settings opens the page, Appearance and language opens those sections', async () => {
+    await seedBaby(db);
+    renderShell('/');
+    fireEvent.click(await screen.findByRole('button', { name: 'User menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Settings' }));
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'User menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Appearance and language' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Appearance' }).getAttribute('aria-expanded')).toBe(
+        'true',
+      ),
+    );
+    expect(screen.getByRole('button', { name: 'Language' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+  });
+
+  it('has no Baby profile entry without a baby', async () => {
+    renderShell('/');
+    fireEvent.click(await screen.findByRole('button', { name: 'User menu' }));
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).queryByRole('menuitem', { name: 'Baby profile' })).toBeNull();
+    expect(within(menu).getByRole('menuitem', { name: 'Settings' })).toBeTruthy();
   });
 });
 
@@ -136,17 +238,19 @@ describe('accessibility (axe)', () => {
       }
       await seedBaby(db);
       renderShell();
-      await screen.findByRole('button', { name: /^Log Diaper/ });
+      await screen.findByRole('region', {
+        name: mode === 'night' ? 'Night view' : "Log Lia's first event",
+      });
       expect(document.documentElement.hasAttribute(`data-${mode}`)).toBe(true);
       expect(await violations()).toEqual([]);
     },
   );
 
-  it('has no violations with the Track sheet open', async () => {
+  it('has no violations with the account menu open', async () => {
     await seedBaby(db);
     renderShell();
-    fireEvent.click(await screen.findByRole('button', { name: 'Add event' }));
-    await screen.findByRole('heading', { name: 'Track' });
+    fireEvent.click(await screen.findByRole('button', { name: 'User menu' }));
+    await screen.findByRole('menu');
     expect(await violations()).toEqual([]);
   });
 });

@@ -1,0 +1,136 @@
+import { useTranslation } from 'react-i18next';
+import { Box, Button, Card, Stack, Typography } from '@mui/material';
+import type { BabyEvent, EventType } from '../../db/models';
+import { formatElapsed, useNow } from '../../events/time';
+import { useEventTypeText } from '../../i18n/eventTypeText';
+import { formatDuration, formatTime } from '../../i18n/format';
+import type { PresetActions } from '../../presets/usePresetActions';
+import { Icon } from '../../ui/Icon';
+import { CategoryIcon } from '../../ui/CategoryIcon';
+import { otherTimers, type ForgottenTimer } from '../timers';
+import { typeCategory, typeIcon } from '../typeVisual';
+import { ForgottenNotice } from './ForgottenNotice';
+
+interface Props {
+  /** Every running timer of the baby. */
+  running: readonly BabyEvent[];
+  types: readonly EventType[];
+  forgotten: ReadonlyMap<string, ForgottenTimer>;
+  /** The nursing session id, shown by its own card. */
+  nursingId: string | null;
+  actions: PresetActions;
+  readOnly: boolean;
+  isSnoozed: (eventId: string) => boolean;
+  onKeepRunning: (eventId: string) => void;
+}
+
+interface RowProps {
+  event: BabyEvent;
+  type: EventType | undefined;
+  nowMs: number;
+  forgotten: ForgottenTimer | undefined;
+  actions: PresetActions;
+  readOnly: boolean;
+  snoozed: boolean;
+  onKeepRunning: (eventId: string) => void;
+}
+
+function TimerRow({
+  event,
+  type,
+  nowMs,
+  forgotten,
+  actions,
+  readOnly,
+  snoozed,
+  onKeepRunning,
+}: RowProps) {
+  const { t } = useTranslation();
+  const names = useEventTypeText();
+  const name = type ? names.typeName(type) : t('common.event');
+  const elapsed = nowMs - Date.parse(event.startedAt);
+  return (
+    <Card component="article" aria-label={name} sx={{ p: 1.5 }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+        <CategoryIcon name={typeIcon(type)} category={typeCategory(type)} />
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="subtitle1" noWrap>
+            {name}
+          </Typography>
+          <Typography
+            variant="h5"
+            component="time"
+            dateTime={event.startedAt}
+            sx={{ fontVariantNumeric: 'tabular-nums', display: 'block' }}
+          >
+            {formatElapsed(elapsed)}
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          color="inherit"
+          disabled={readOnly}
+          startIcon={<Icon name="stop" size={20} />}
+          aria-label={t('home.stopNamed', { name })}
+          onClick={() => void actions.stop(event, { name })}
+          sx={{ minHeight: 48, minWidth: 96 }}
+        >
+          {t('home.stop')}
+        </Button>
+      </Stack>
+      {forgotten && !snoozed && (
+        <Box sx={{ mt: 1.5 }}>
+          <ForgottenNotice
+            title={t('now.forgotten.running', {
+              name,
+              duration: formatDuration(elapsed),
+            })}
+            endLabel={t('now.forgotten.stopAt', { time: formatTime(forgotten.suggestedEnd) })}
+            onEnd={() => void actions.stop(event, { name, endedAt: forgotten.suggestedEnd })}
+            onKeep={() => onKeepRunning(event.id)}
+            disabled={readOnly}
+          />
+        </Box>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * The other running timers (tummy time, bath, pumping, custom types, an old feeding timer): a
+ * calm card each with a live clock and a neutral Stop. A timer past its threshold gets the
+ * "Still running? Stop at 14:20" note. Stopping a timer that lacks required fields opens the
+ * short finish sheet (never a stop the server would reject).
+ */
+export function TimersBar({
+  running,
+  types,
+  forgotten,
+  nursingId,
+  actions,
+  readOnly,
+  isSnoozed,
+  onKeepRunning,
+}: Props) {
+  const { t } = useTranslation();
+  const nowMs = useNow(1000);
+  const timers = otherTimers(running, types, nursingId);
+  if (timers.length === 0) return null;
+  return (
+    <Stack spacing={1.5} component="section" aria-label={t('home.runningTimers')}>
+      {timers.map((event) => (
+        <TimerRow
+          key={event.id}
+          event={event}
+          type={types.find((candidate) => candidate.id === event.typeId)}
+          nowMs={nowMs}
+          forgotten={forgotten.get(event.id)}
+          actions={actions}
+          readOnly={readOnly}
+          snoozed={isSnoozed(event.id)}
+          onKeepRunning={onKeepRunning}
+        />
+      ))}
+    </Stack>
+  );
+}

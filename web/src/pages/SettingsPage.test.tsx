@@ -619,3 +619,48 @@ describe('SettingsPage appearance and sync', () => {
     expect((await db.events.get(running.id))?.endedAt).not.toBeNull();
   });
 });
+
+describe('SettingsPage links to one section (#hash)', () => {
+  async function renderAt(route: string) {
+    await seedBaby(db, { medications: true });
+    return renderWithDb(db, <SettingsPage />, { route });
+  }
+  const expanded = async (name: string) =>
+    (await screen.findByRole('button', { name })).getAttribute('aria-expanded');
+
+  it('opens the baby section by default', async () => {
+    await renderAt('/settings');
+    expect(await expanded('Baby')).toBe('true');
+    expect(await expanded('Members & invites')).toBe('false');
+  });
+
+  it.each([
+    ['#baby', 'Baby'],
+    ['#members', 'Members & invites'],
+    ['#import', 'Import'],
+    ['#medications', 'Medications'],
+    ['#event-types', 'Event types'],
+    ['#sync', 'Sync'],
+  ])('%s opens %s', async (hash, title) => {
+    await renderAt(`/settings${hash}`);
+    expect(await expanded(title)).toBe('true');
+  });
+
+  it('a link to another section collapses the baby section', async () => {
+    await renderAt('/settings#members');
+    expect(await expanded('Members & invites')).toBe('true');
+    expect(await expanded('Baby')).toBe('false');
+  });
+
+  it('#appearance opens Appearance and Language together', async () => {
+    await renderAt('/settings#appearance');
+    expect(await expanded('Appearance')).toBe('true');
+    expect(await expanded('Language')).toBe('true');
+  });
+
+  it('a section can still be closed by hand', async () => {
+    await renderAt('/settings#members');
+    fireEvent.click(await screen.findByRole('button', { name: 'Members & invites' }));
+    await waitFor(async () => expect(await expanded('Members & invites')).toBe('false'));
+  });
+});

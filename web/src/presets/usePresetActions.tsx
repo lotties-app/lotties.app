@@ -24,8 +24,11 @@ interface Undoable {
 export interface PresetActions {
   /** Runs a preset tap; `running` is the preset's own running timer (the tap then stops it). */
   run: (preset: Preset, running?: BabyEvent) => Promise<void>;
-  /** Stops a running timer, asking for missing required fields first. */
-  stop: (event: BabyEvent) => Promise<void>;
+  /**
+   * Stops a running timer, asking for missing required fields first. `endedAt` ends it then instead
+   * of now (a forgotten timer); `name` offers Undo afterwards.
+   */
+  stop: (event: BabyEvent, options?: { endedAt?: string; name?: string }) => Promise<void>;
   /** Sheets, the Undo snackbar and the error snackbar; render them. */
   elements: ReactNode;
 }
@@ -53,8 +56,8 @@ export function usePresetActions(babyId: string, types: EventType[]): PresetActi
     }
   };
 
-  const stopTimer = async (event: BabyEvent, name?: string) => {
-    const stopped = await stopper.stop(event);
+  const stopTimer = async (event: BabyEvent, name?: string, endedAt?: string) => {
+    const stopped = await stopper.stop(event, endedAt);
     if (!stopped?.endedAt || !name) return;
     setUndoable({
       token: { babyId, createdIds: [], stopped: [{ id: stopped.id, endedAt: stopped.endedAt }] },
@@ -130,5 +133,9 @@ export function usePresetActions(babyId: string, types: EventType[]): PresetActi
     </>
   );
 
-  return { run, stop: (event) => attempt(() => stopTimer(event)), elements };
+  return {
+    run,
+    stop: (event, options) => attempt(() => stopTimer(event, options?.name, options?.endedAt)),
+    elements,
+  };
 }

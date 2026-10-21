@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { ButtonBase, Typography, type Theme } from '@mui/material';
-import { Icon } from '../ui/Icon';
+import { ButtonBase, Box, Typography } from '@mui/material';
+import { RADIUS } from '../theme/tokens';
+import { CategoryIcon } from '../ui/CategoryIcon';
+import { palette } from '../ui/form/styles';
 import { presetIcon } from './presetIcons';
 import { presetLabel } from './presetLabel';
 import type { Preset } from './types';
@@ -15,13 +17,6 @@ interface Props {
   onClick: (preset: Preset) => void;
 }
 
-/** Category foreground token (AA on the page), or the custom type's own colour. */
-function tileColor(theme: Theme, preset: Preset): string {
-  if (preset.customColor) return preset.customColor;
-  const categories = theme.vars?.palette.category ?? theme.palette.category;
-  return categories[preset.category].fg;
-}
-
 function useActionName(preset: Preset, running: boolean): string {
   const { t } = useTranslation();
   const name = presetLabel(preset);
@@ -31,7 +26,10 @@ function useActionName(preset: Preset, running: boolean): string {
   return t('home.log', { name });
 }
 
-/** One preset: icon, name and status line. Interim tile until the wave 3 redesign. */
+/**
+ * One preset in the More sheet: a category-tinted icon, the name and a status line. A running
+ * timer is marked with an accent ring and the live "Running 0:42" line (never disabled).
+ */
 export function PresetTile({ preset, status, running, disabled = false, onClick }: Props) {
   const { t } = useTranslation();
   const name = presetLabel(preset);
@@ -42,35 +40,37 @@ export function PresetTile({ preset, status, running, disabled = false, onClick 
       disabled={disabled}
       aria-label={status ? t('presets.tileLabel', { action, status }) : action}
       sx={(theme) => ({
-        minHeight: 96,
-        borderRadius: 2,
-        border: running ? 2 : 1,
-        borderColor: running ? 'primary.main' : tileColor(theme, preset),
-        borderStyle: preset.mode === 'link' ? 'dashed' : 'solid',
-        flexDirection: 'column',
-        gap: 0.5,
-        p: 1,
-        textAlign: 'center',
+        minHeight: 80,
+        p: 1.5,
+        gap: 1.5,
+        justifyContent: 'flex-start',
+        textAlign: 'left',
+        borderRadius: `${RADIUS.tile}px`,
+        backgroundColor: palette(theme).surfaceRaised,
+        boxShadow: running ? `inset 0 0 0 2px ${palette(theme).primary.main}` : 'none',
         '&.Mui-disabled': { opacity: 0.5 },
       })}
     >
-      <Icon
+      <CategoryIcon
         name={presetIcon(preset)}
-        size={32}
-        sx={(theme: Theme) => ({ color: tileColor(theme, preset) })}
+        category={preset.category}
+        sx={preset.customColor ? { color: preset.customColor } : undefined}
       />
-      <Typography variant="subtitle1" component="span">
-        {name}
-      </Typography>
-      {status && (
-        <Typography
-          variant="caption"
-          component="span"
-          color={running ? 'primary' : 'text.secondary'}
-        >
-          {status}
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="subtitle1" component="span" sx={{ display: 'block' }}>
+          {name}
         </Typography>
-      )}
+        {status && (
+          <Typography
+            variant="caption"
+            component="span"
+            color={running ? 'primary' : 'text.secondary'}
+            sx={{ display: 'block' }}
+          >
+            {status}
+          </Typography>
+        )}
+      </Box>
     </ButtonBase>
   );
 }

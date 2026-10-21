@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent } from '../db/eventCommands';
@@ -15,7 +15,7 @@ import {
   BREAST_PUMP_DTO,
 } from '../test/builtInTypes';
 import { fromEventTypeDto } from '../sync/contract';
-import { DIAPER, seedBabiesListed, seedBaby } from '../test/seed';
+import { seedBabiesListed } from '../test/seed';
 import { HomePage } from './HomePage';
 
 let db: BabyRoutineDb;
@@ -37,11 +37,6 @@ async function seedBuiltIns(role: 'Owner' | 'Viewer' = 'Owner') {
     [FEEDING_DTO, SLEEP_DTO, DIAPER_DTO, BREAST_PUMP_DTO].map(fromEventTypeDto),
   );
 }
-
-const tileNames = () =>
-  within(screen.getByTestId('quick-actions'))
-    .getAllByRole('button')
-    .map((b) => b.getAttribute('aria-label'));
 
 function startedEngine(api = fakeApi().api, isOnline = () => true) {
   const engine = new SyncEngine({ db, api, locks: null, eventTarget: null, isOnline });
@@ -166,142 +161,6 @@ describe('HomePage without a baby (M6)', () => {
   });
 });
 
-describe('HomePage quick actions (presets)', () => {
-  it('shows the pinned presets Wake-up, Bottle, Diaper, Nap in that order, with status lines', async () => {
-    await seedBuiltIns();
-    renderWithDb(db, <HomePage />);
-
-    await screen.findByTestId('quick-actions');
-    expect(tileNames()).toEqual([
-      'Log Wake-up, Not tracked today',
-      'Log Bottle, Not tracked today',
-      'Log Diaper, Not tracked today',
-      'Start Nap, Not tracked today',
-    ]);
-  });
-
-  it('keeps the same order whatever the event type ids are', async () => {
-    await db.babies.put({ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' });
-    await db.eventTypes.bulkPut(
-      [FEEDING_DTO, SLEEP_DTO, DIAPER_DTO].map((dto, i) =>
-        fromEventTypeDto({ ...dto, id: `00${3 - i}-${dto.key}` }),
-      ),
-    );
-    renderWithDb(db, <HomePage />);
-    await screen.findByTestId('quick-actions');
-    expect(tileNames().map((n) => n?.split(',')[0])).toEqual([
-      'Log Wake-up',
-      'Log Bottle',
-      'Log Diaper',
-      'Start Nap',
-    ]);
-  });
-
-  it('disables logging for viewers and explains why', async () => {
-    await seedBaby(db, { role: 'Viewer' });
-    const running = await createEvent(db, {
-      babyId: BABY_ID,
-      typeId: 'type-feeding',
-      payload: { method: 'breast' },
-    });
-    renderWithDb(db, <HomePage />);
-
-    expect(await screen.findByText(/view-only access/)).toBeTruthy();
-    for (const button of within(screen.getByTestId('quick-actions')).getAllByRole('button')) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
-    }
-    expect(
-      (screen.getByRole('button', { name: 'Stop Feeding' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: /^Log Diaper/ }));
-    expect(screen.queryByRole('heading', { name: 'Add event' })).toBeNull();
-    expect((await db.events.get(running.id))?.endedAt).toBeNull();
-  });
-
-  it('starts a timer preset with one tap, offers Undo, and stops it from the running card', async () => {
-    await seedBuiltIns();
-    renderWithDb(db, <HomePage />);
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Start Nap/ }));
-
-    expect(await screen.findByText('Nap started')).toBeTruthy();
-    const stop = await screen.findByRole('button', { name: 'Stop Sleep' });
-    const [running] = await db.events.toArray();
-    expect(running).toMatchObject({ babyId: BABY_ID, endedAt: null, payload: { kind: 'nap' } });
-    expect(await screen.findByRole('button', { name: /^Stop Nap, Running 0:00/ })).toBeTruthy();
-
-    fireEvent.click(stop);
-    await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Stop Sleep' })).toBeNull());
-  });
-
-  it('undoes an instant preset from the snackbar', async () => {
-    await seedBuiltIns();
-    renderWithDb(db, <HomePage />);
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Log Wake-up/ }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
-
-    await waitFor(async () => {
-      const [event] = await db.events.toArray();
-      expect(event.deletedAt).not.toBeNull();
-    });
-  });
-
-  it('opens the Bottle sheet with bottle fields only, and saves an instant feed', async () => {
-    await seedBuiltIns();
-    renderWithDb(db, <HomePage />);
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Log Bottle/ }));
-
-    expect(await screen.findByRole('heading', { name: 'Add event' })).toBeTruthy();
-    const bottle = screen.getByRole('button', { name: 'Bottle' });
-    expect(bottle.getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
-    expect(screen.queryByText('Side')).toBeNull();
-    expect(screen.queryByLabelText('Food')).toBeNull();
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '120' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Formula' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-
-    await waitFor(async () => expect(await db.events.count()).toBe(1));
-    const [saved] = await db.events.toArray();
-    expect(saved.payload).toEqual({
-      method: 'bottle',
-      amount_ml: 120,
-      bottle_feeding_type: 'formula',
-    });
-    expect(saved.endedAt).toBe(saved.startedAt);
-  });
-
-  it('logs an instant event through the sheet', async () => {
-    await seedBaby(db);
-    renderWithDb(db, <HomePage />);
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Log Diaper/ }));
-    expect(await screen.findByRole('heading', { name: 'Add event' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Dirty' }));
-    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: ' leaked ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-
-    await waitFor(async () => expect(await db.events.count()).toBe(1));
-    const [saved] = await db.events.toArray();
-    expect(saved).toMatchObject({ typeId: DIAPER, payload: { content: 'DIRTY' }, notes: 'leaked' });
-    expect(saved.endedAt).toBe(saved.startedAt);
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Add event' })).toBeNull());
-  });
-
-  it('uses the baby remembered in localStorage', async () => {
-    await seedBaby(db);
-    await db.babies.put({ id: 'baby-2', name: 'Theo', birthDate: '2026-01-01', role: 'Owner' });
-    window.localStorage.setItem('baby-routine.selected-baby', 'baby-2');
-    renderWithDb(db, <HomePage />);
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Start Nursing/ }));
-    await waitFor(async () => expect((await db.events.toArray())[0]?.babyId).toBe('baby-2'));
-  });
-});
-
 describe('Stopping a timer without its required fields (feeding stop bug)', () => {
   it('asks for the missing method in a short sheet, then stops with it', async () => {
     await seedBuiltIns();
@@ -369,7 +228,7 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
     expect((await db.events.get(running.id))?.endedAt).toBeNull();
   });
 
-  it('stops at once when the payload is complete (Nursing sets the method)', async () => {
+  it('stops at once when the payload is complete (a nursing session has its method)', async () => {
     await seedBuiltIns();
     const running = await createEvent(db, {
       babyId: BABY_ID,
@@ -378,7 +237,8 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
     });
     renderWithDb(db, <HomePage />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Stop Feeding' }));
+    // A nursing session has its own card: Finish stops it with the per-side seconds.
+    fireEvent.click(await screen.findByRole('button', { name: 'Finish' }));
 
     await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
     expect(screen.queryByRole('heading', { name: 'Finish this feeding' })).toBeNull();

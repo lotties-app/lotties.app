@@ -113,7 +113,8 @@ export function useEventCommands() {
     create: (input: CreateEventInput) => createEvent(db, input),
     edit: (id: string, changes: EditEventChanges) => editEvent(db, id, changes),
     stop: (id: string, endedAt?: string) => stopEvent(db, id, endedAt),
-    finish: (id: string, payload: EventPayload) => finishEvent(db, id, payload),
+    finish: (id: string, payload: EventPayload, endedAt?: string) =>
+      finishEvent(db, id, payload, endedAt),
     remove: (id: string) => deleteEvent(db, id),
   };
 }

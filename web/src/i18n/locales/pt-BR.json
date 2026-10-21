@@ -27,11 +27,11 @@
   },
   "nav": {
     "main": "Principal",
-    "home": "Início",
     "timeline": "Linha do tempo",
     "growth": "Crescimento",
-    "settings": "Ajustes",
-    "addEvent": "Adicionar evento"
+    "now": "Agora",
+    "day": "Dia",
+    "insights": "Insights"
   },
   "auth": {
     "signIn": "Entrar",
@@ -57,7 +57,10 @@
     "nightView": "Visual noturno",
     "nightViewPrompt": "Mudar para o visual noturno?",
     "nightViewSwitch": "Mudar",
-    "nightViewNotNow": "Agora não"
+    "nightViewNotNow": "Agora não",
+    "babyProfile": "Perfil do bebê",
+    "settings": "Ajustes",
+    "appearanceLanguage": "Aparência e idioma"
   },
   "sync": {
     "signInToSync": "Entre para sincronizar",
@@ -131,10 +134,6 @@
       "body": "Seus bebês aparecem quando o servidor responder. Verifique sua conexão e tente de novo.",
       "offline": "Você está sem conexão. Seus bebês aparecem quando a conexão voltar."
     }
-  },
-  "track": {
-    "title": "Registrar",
-    "placeholder": "As ações rápidas vão aparecer aqui."
   },
   "presets": {
     "wake_up": "Acordou",
@@ -384,7 +383,7 @@
   },
   "settings": {
     "title": "Ajustes",
-    "createBabyFirst": "Cadastre um bebê na tela inicial para liberar estes ajustes.",
+    "createBabyFirst": "Cadastre um bebê na tela Agora para liberar estes ajustes.",
     "sections": {
       "baby": "Bebê",
       "eventTypes": "Tipos de evento",
@@ -582,7 +581,7 @@
     "edit": "Editar medida",
     "none": "Nenhuma medida ainda.",
     "loadFailed": "Não foi possível carregar as medidas. Tente de novo mais tarde.",
-    "createBabyFirst": "Cadastre um bebê na tela inicial para acompanhar o crescimento.",
+    "createBabyFirst": "Cadastre um bebê na tela Agora para acompanhar o crescimento.",
     "deleteTitle": "Excluir esta medida?",
     "deleteBody": "Ela some da lista e dos gráficos.",
     "deleteConfirm": "Excluir medida",
@@ -834,7 +833,10 @@
       "feed": "Mamada",
       "diaper": "Fralda",
       "meds": "Remédios",
-      "more": "Mais"
+      "more": "Mais",
+      "region": "Registro rápido",
+      "title": "Registrar",
+      "moreHint": "Banho, bomba e mais"
     },
     "sleepActions": {
       "fellAsleep": "Dormiu",
@@ -865,10 +867,164 @@
       "bellyPain": "Dor de barriga · {{intensity}} de 5",
       "nursingStarted": "Amamentação no lado {{side}}",
       "nursingSwitched": "Trocou para o lado {{side}}",
-      "nursingStopped": "Amamentação · esquerdo {{left}} · direito {{right}}"
+      "nursingStopped": "Amamentação · esquerdo {{left}} · direito {{right}}",
+      "shiftGroup": "Quando aconteceu"
     },
     "catchUp": {
-      "someone": "Alguém"
+      "someone": "Alguém",
+      "title": "Desde a sua última olhada",
+      "logged_one": "{{name}} registrou {{count}} coisa desde {{time}}",
+      "logged_other": "{{name}} registrou {{count}} coisas desde {{time}}",
+      "sleeps_one": "{{count}} sono",
+      "sleeps_other": "{{count}} sonos",
+      "total": "{{duration}} no total",
+      "nightWakings_one": "{{count}} despertar noturno",
+      "nightWakings_other": "{{count}} despertares noturnos",
+      "feeds_one": "{{count}} mamada",
+      "feeds_other": "{{count}} mamadas",
+      "diapers_one": "{{count}} fralda",
+      "diapers_other": "{{count}} fraldas",
+      "wet_one": "{{count}} xixi",
+      "wet_other": "{{count}} xixi",
+      "dirty_one": "{{count}} cocô",
+      "dirty_other": "{{count}} cocô",
+      "mixed_one": "{{count}} misto",
+      "mixed_other": "{{count}} mistos",
+      "last": "última às {{time}}",
+      "nextFrom": "próxima a partir das {{time}}",
+      "times_one": "{{count}} vez",
+      "times_other": "{{count}} vezes",
+      "shareHeader": "{{name}}: desde {{time}}",
+      "share": "Compartilhar como texto",
+      "gotIt": "Entendi",
+      "copied": "Copiado para a área de transferência.",
+      "shareFailed": "Não foi possível compartilhar. Tente de novo."
+    },
+    "sheet": {
+      "close": "Fechar"
+    },
+    "state": {
+      "region": "Estado atual",
+      "awake": "Acordado",
+      "asleepNap": "Dormindo · Soneca",
+      "asleepNight": "Dormindo · Noite",
+      "asleepNapLower": "soneca",
+      "asleepNightLower": "sono da noite",
+      "nightWaking": "Despertar noturno",
+      "since": "desde {{time}}",
+      "sinceAfterNap": "desde {{time}}, depois de uma soneca",
+      "sinceAfterNight": "desde {{time}}, depois da noite",
+      "wakingSince": "desde {{time}} · sono da noite desde {{sleepTime}}"
+    },
+    "ask": {
+      "title": "O que {{name}} está fazendo agora?",
+      "hint": "Isso começa o dia. Você pode mudar quando quiser.",
+      "sleeping": "Dormindo",
+      "awake": "Acordado"
+    },
+    "nap": {
+      "title": "Janela da soneca",
+      "range": "{{from}} – {{to}}",
+      "opensIn": "abre em {{duration}}",
+      "open": "aberta agora",
+      "past": "passou da janela usual"
+    },
+    "ruler": {
+      "withWindow": "Acordado desde {{since}}, agora {{now}}. Janela da soneca das {{from}} às {{to}}.",
+      "noWindow": "Acordado desde {{since}}, agora {{now}}."
+    },
+    "learning": {
+      "title": "Aprendendo o ritmo de {{name}}",
+      "body": "Registre alguns dias e as previsões aparecem aqui.",
+      "stale": "As previsões voltam depois do próximo sono.",
+      "progress": "{{done}} de {{total}} sonos registrados"
+    },
+    "why": {
+      "title": "Por que essa janela?",
+      "noBasis": "Com base no seu histórico de registros."
+    },
+    "forgotten": {
+      "keep": "Ainda continua",
+      "asleep": "Ainda dormindo? A {{kind}} está há {{duration}}",
+      "waking": "Ainda acordado? O despertar noturno está há {{duration}}",
+      "running": "Ainda em andamento? {{name}} está há {{duration}}",
+      "wokeAt": "Acordou às {{time}}",
+      "stopAt": "Parar às {{time}}"
+    },
+    "nursing": {
+      "region": "Amamentação",
+      "title": "Amamentação",
+      "started": "começou às {{time}}",
+      "left": "Esquerdo",
+      "right": "Direito",
+      "running": "em andamento",
+      "done": "feito",
+      "switch": "Trocar de lado",
+      "finish": "Terminar"
+    },
+    "feedTray": {
+      "title": "Mamada",
+      "method": "Forma de alimentação",
+      "amount": "Quantidade",
+      "otherAmount": "Outra quantidade",
+      "content": "Na mamadeira",
+      "log": "Registrar {{amount}} ml",
+      "logContent": "Registrar {{amount}} ml de {{content}}",
+      "lastSide": "Da última vez foi o lado {{side}}.",
+      "alreadyRunning": "A amamentação já está em andamento.",
+      "startOn": "Começar no lado {{side}}",
+      "solidHint": "Comida sólida abre o formulário para anotar o que foi comido.",
+      "solidOpen": "Abrir o formulário"
+    },
+    "diaperTray": {
+      "title": "Fralda",
+      "hint": "Um toque registra. Dá para corrigir o horário logo em seguida."
+    },
+    "medsTray": {
+      "title": "Remédio",
+      "same": "Igual à última vez: {{names}}",
+      "none": "Ainda não há remédios cadastrados.",
+      "open": "Cadastre em Ajustes",
+      "choose": "Quais?",
+      "log_one": "Registrar {{count}} remédio",
+      "log_other": "Registrar {{count}} remédios",
+      "pick": "Escolha um remédio"
+    },
+    "bellyTray": {
+      "title": "Dor de barriga",
+      "hint": "Qual a intensidade?",
+      "mild": "Leve",
+      "severe": "Forte"
+    },
+    "more": {
+      "title": "Mais"
+    },
+    "today": {
+      "title": "Hoje",
+      "lastNight": "Última noite",
+      "naps": "Sonecas",
+      "feeds": "Mamadas",
+      "diapers": "Fraldas"
+    },
+    "firstRun": {
+      "title": "Registre o primeiro evento de {{name}}",
+      "body": "Um toque basta. Dá para corrigir o horário logo em seguida.",
+      "viewer": "Nada foi registrado ainda.",
+      "learning": "Registre alguns dias e as previsões aparecem aqui. Importar o histórico pula a espera.",
+      "importTitle": "Vindo do Napper?",
+      "importBody": "Traga o histórico em cerca de 2 minutos.",
+      "importAction": "Importar",
+      "inviteTitle": "Compartilhe {{name}} com alguém",
+      "inviteBody": "Vocês verão o mesmo dia.",
+      "inviteAction": "Convidar"
+    },
+    "night": {
+      "region": "Visual noturno",
+      "screenOn": "A tela fica ligada enquanto esta tela está aberta."
     }
+  },
+  "insights": {
+    "soonTitle": "Mais análises a caminho",
+    "soonBody": "O ritmo de sono e as tendências de mamadas e fraldas aparecem aqui conforme você registra."
   }
 }

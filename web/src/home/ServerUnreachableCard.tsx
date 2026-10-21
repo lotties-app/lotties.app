@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Stack, Typography } from '@mui/material';
-import { Icon } from '../ui/Icon';
+import { Button, Card, Stack, Typography } from '@mui/material';
+import { CategoryIcon } from '../ui/CategoryIcon';
 
 interface Props {
   offline: boolean;
@@ -8,28 +8,29 @@ interface Props {
 }
 
 /**
- * Home when the babies could not be loaded yet (API unreachable, 5xx, offline on a fresh device):
+ * Now when the babies could not be loaded yet (API unreachable, 5xx, offline on a fresh device):
  * a calm retry card instead of "Create baby", which would invite duplicate babies.
  */
 export function ServerUnreachableCard({ offline, onRetry }: Props) {
   const { t } = useTranslation();
   return (
-    <Stack
+    <Card
       component="section"
       aria-labelledby="server-unreachable-title"
-      spacing={2}
-      sx={{ py: 4, maxWidth: 420, mx: 'auto', alignItems: 'center', textAlign: 'center' }}
+      sx={{ p: 3, my: 2, maxWidth: 420, mx: 'auto' }}
     >
-      <Icon name="cloud-off" size={40} sx={{ color: 'action.active' }} />
-      <Typography id="server-unreachable-title" variant="h6" component="h2">
-        {t('home.unreachable.title')}
-      </Typography>
-      <Typography color="text.secondary">
-        {offline ? t('home.unreachable.offline') : t('home.unreachable.body')}
-      </Typography>
-      <Button variant="outlined" onClick={onRetry} sx={{ minHeight: 48 }}>
-        {t('common.retry')}
-      </Button>
-    </Stack>
+      <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
+        <CategoryIcon name="cloud-off" category="custom" size={32} />
+        <Typography id="server-unreachable-title" variant="h4" component="h2">
+          {t('home.unreachable.title')}
+        </Typography>
+        <Typography color="text.secondary">
+          {offline ? t('home.unreachable.offline') : t('home.unreachable.body')}
+        </Typography>
+        <Button variant="outlined" onClick={onRetry} sx={{ minHeight: 48 }}>
+          {t('common.retry')}
+        </Button>
+      </Stack>
+    </Card>
   );
 }
