@@ -22,8 +22,8 @@ ml/.pytest_cache/
 ml/*.egg-info/
 
 # keycloak-theme: build outputs and the throwaway local Keycloak runtime (generated passwords)
-keycloak-theme/node_modules/
-keycloak-theme/dist/
-keycloak-theme/dist_keycloak/
-keycloak-theme/build_keycloak/
-keycloak-theme/dev/.runtime/
+code/keycloak-theme/node_modules/
+code/keycloak-theme/dist/
+code/keycloak-theme/dist_keycloak/
+code/keycloak-theme/build_keycloak/
+code/keycloak-theme/dev/.runtime/

@@ -4,7 +4,7 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 
 | # | Task | Tier | Deps | Verify |
 |---|------|------|------|--------|
-| 1 | Scaffold: `api/` solution (Domain, Application, Infrastructure, Api, test projects), `web/` Vite React TS MUI PWA shell, docker-compose, LICENSE AGPL-3.0, README, CONTRIBUTING, CI workflow, lint/format | Light (done) | — | `dotnet build`, `npm run build`, `docker compose config` |
+| 1 | Scaffold: `code/api/` solution (Domain, Application, Infrastructure, Api, test projects), `code/web/` Vite React TS MUI PWA shell, docker-compose, LICENSE AGPL-3.0, README, CONTRIBUTING, CI workflow, lint/format | Light (done) | — | `dotnet build`, `npm run build`, `docker compose config` |
 | 2 | API domain + EF Core model + migrations (User, Baby, BabyMember, Invite, EventType, Event, Medication), built-in type seeds | Careful (done; DB grants for app/readonly users pending) | 1 | migration applies on Testcontainers Postgres; unit tests |
 | 3 | OIDC JWT auth + membership authorization policies | Careful (done) | 2 | integration tests: 401/403/200 |
 | 4 | Babies, members, invites endpoints | Medium (done) | 3 | integration tests |

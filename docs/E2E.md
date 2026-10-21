@@ -1,27 +1,27 @@
 # End-to-end smoke tests
 
-Playwright suite in `e2e/` (Chromium only, one worker). It drives the real SPA against the real API and PostgreSQL database, and signs in through the real Keycloak login page. There is no mocking of auth or of the server (one spec hides the baby list from the first sync to reach the "create the first baby" screen).
+Playwright suite in `tests/e2e/` (Chromium only, one worker). It drives the real SPA against the real API and PostgreSQL database, and signs in through the real Keycloak login page. There is no mocking of auth or of the server (one spec hides the baby list from the first sync to reach the "create the first baby" screen).
 
 ## Run
 
 ```
-npm --prefix e2e install
-(cd e2e && npx playwright install chromium)      # once
-(cd e2e && npx playwright test)
+npm --prefix tests/e2e install
+(cd tests/e2e && npx playwright install chromium)      # once
+(cd tests/e2e && npx playwright test)
 ```
 
 Playwright starts both servers itself (`webServer`) and reuses them when they already answer (locally only):
 
 | Server | Command | URL |
 | --- | --- | --- |
-| API | `dotnet run --project api/src/BabyRoutine.Api --no-launch-profile` | `http://localhost:5290/health` |
-| Web | `npm --prefix web run dev -- --port 5173 --strictPort` | `http://localhost:5173` |
+| API | `dotnet run --project code/api/src/BabyRoutine.Api --no-launch-profile` | `http://localhost:5290/health` |
+| Web | `npm --prefix code/web run dev -- --port 5173 --strictPort` | `http://localhost:5173` |
 
 The API port is 5290 (override with `E2E_API_URL`): 5000 and 5080 are commonly taken by other local services, and a foreign server answering on the port would be silently reused. The API runs with `RequestLimits__PermitsPerMinute=6000` because the suite polls the API while the app syncs and would otherwise hit the default 300 requests/minute per user (HTTP 429).
 
 ## Required environment
 
-Read from the gitignored root `.env` (never printed; only the variables below are loaded, see `e2e/support/loadEnv.ts`) or from the process environment, which wins:
+Read from the gitignored root `.env` (never printed; only the variables below are loaded, see `tests/e2e/support/loadEnv.ts`) or from the process environment, which wins:
 
 | Variable | Used for |
 | --- | --- |
@@ -35,7 +35,7 @@ The loader is not `dotenv`: `dotenv` treats an unquoted `#` in a value as a comm
 
 ## How it works
 
-- `setup` project (`tests/auth.setup.ts`) logs in on Keycloak (`#username`, `#password`, `#kc-login`, tolerating first-login screens) and saves `e2e/.auth/user.json`. The app keeps the OIDC user in localStorage, so that file is the whole session; the per-account IndexedDB is recreated from the server on first load.
+- `setup` project (`tests/auth.setup.ts`) logs in on Keycloak (`#username`, `#password`, `#kc-login`, tolerating first-login screens) and saves `tests/e2e/.auth/user.json`. The app keeps the OIDC user in localStorage, so that file is the whole session; the per-account IndexedDB is recreated from the server on first load.
 - Every other spec reuses that storage state. Specs that log in or out themselves (`login-redirect.spec.ts`, `logout.spec.ts`) start without it, use their own Keycloak session and run with tracing off (traces record typed values such as the password).
 - Each spec creates its own baby through the API (`support/app.ts`, `createAndOpenBaby`) and selects it via the app's `baby-routine.selected-baby` localStorage key, so specs are independent. The create-a-baby-through-the-UI spec is the exception.
 - Server state is asserted with `expect.poll` against `GET /api/v1/babies/{id}/events` using the access token from localStorage. No fixed sleeps.

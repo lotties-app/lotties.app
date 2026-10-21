@@ -5,11 +5,11 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'keycloak-theme/**'
+      - 'code/keycloak-theme/**'
       - '.github/workflows/keycloak-theme.yml'
-      # The theme mirrors these (keycloak-theme/scripts/sync-tokens.ts); the token test must keep passing.
-      - 'web/src/theme/tokens.ts'
-      - 'web/src/ui/illustrations/palette.ts'
+      # The theme mirrors these (code/keycloak-theme/scripts/sync-tokens.ts); the token test must keep passing.
+      - 'code/web/src/theme/tokens.ts'
+      - 'code/web/src/ui/illustrations/palette.ts'
 
 permissions:
   contents: read
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: keycloak-theme/package-lock.json
+          cache-dependency-path: code/keycloak-theme/package-lock.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -34,14 +34,14 @@ jobs:
         with:
           maven-version: 3.9.9
       - run: npm ci
-        working-directory: keycloak-theme
+        working-directory: code/keycloak-theme
       - run: npm test
-        working-directory: keycloak-theme
+        working-directory: code/keycloak-theme
       - run: npm run build-keycloak-theme
-        working-directory: keycloak-theme
+        working-directory: code/keycloak-theme
       - uses: actions/upload-artifact@v4
         with:
           name: lotties-keycloak-theme
-          path: keycloak-theme/dist_keycloak/*.jar
+          path: code/keycloak-theme/dist_keycloak/*.jar
           if-no-files-found: error
           retention-days: 30

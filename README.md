@@ -10,8 +10,8 @@ Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routine
 
 ## Stack
 
-- **web/**: React 19, TypeScript, MUI, Vite, PWA (vite-plugin-pwa)
-- **api/**: .NET 8 Web API (Domain / Application / Infrastructure / Api), EF Core + Npgsql
+- **code/web/**: React 19, TypeScript, MUI, Vite, PWA (vite-plugin-pwa)
+- **code/api/**: .NET 8 Web API (Domain / Application / Infrastructure / Api), EF Core + Npgsql
 - **Database**: PostgreSQL 16
 - **Auth**: generic OIDC (Auth0 default; Keycloak/Authentik via config)
 - **Deploy**: docker compose (api + web behind nginx, optional local Postgres)
@@ -22,15 +22,15 @@ Prerequisites: .NET 8 SDK, Node 22, and optionally Docker.
 
 ```bash
 # API
-dotnet build api/BabyRoutine.sln
-dotnet test api/BabyRoutine.sln
+dotnet build code/api/BabyRoutine.sln
+dotnet test code/api/BabyRoutine.sln
 
 # Web
-npm --prefix web ci
-npm --prefix web run dev
-npm --prefix web run test -- --run
-npm --prefix web run lint
-npm --prefix web run build
+npm --prefix code/web ci
+npm --prefix code/web run dev
+npm --prefix code/web run test -- --run
+npm --prefix code/web run lint
+npm --prefix code/web run build
 ```
 
 With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker compose up --build`. Add `--profile localdb` to start a local PostgreSQL container too. Full deployment guide (identity provider setup, TLS, database roles): [docs/DEPLOY.md](docs/DEPLOY.md).

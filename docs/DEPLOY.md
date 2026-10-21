@@ -82,9 +82,9 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 
 ## Keycloak theme
 
-The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Lotties look: `keycloak-theme/` is a Keycloakify 11 login theme named `lotties` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `keycloak-theme/README.md`.
+The login pages of Keycloak (sign in, register, reset password, verify email, one-time codes, errors) can use the Lotties look: `code/keycloak-theme/` is a Keycloakify 11 login theme named `lotties` (design tokens mirrored from the app, Fraunces serif, the nap and bottle illustrations, light and dark by `prefers-color-scheme`, English and Brazilian Portuguese). It is optional: without it Keycloak keeps its own theme and everything still works. Full guide: `code/keycloak-theme/README.md`.
 
-1. Get the jar: download the `lotties-keycloak-theme` artifact of the *Keycloak theme* workflow, or build it without Java on your machine: `bash keycloak-theme/build-in-podman.sh` (Windows: `powershell -File keycloak-theme/build-in-podman.ps1`, which calls WSL). The result is `keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar` (Keycloak 26 and newer; `KC_TARGETS=all` also builds the 22-25 jar).
+1. Get the jar: download the `lotties-keycloak-theme` artifact of the *Keycloak theme* workflow, or build it without Java on your machine: `bash code/keycloak-theme/build-in-podman.sh` (Windows: `powershell -File code/keycloak-theme/build-in-podman.ps1`, which calls WSL). The result is `code/keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar` (Keycloak 26 and newer; `KC_TARGETS=all` also builds the 22-25 jar).
 2. Put it in Keycloak's `providers/` folder. Container: mount it read-only at `/opt/keycloak/providers/lotties-theme.jar`:
 
    ```yaml
@@ -104,13 +104,13 @@ Replace the placeholder terms text (message key `termsText`) in Realm settings >
 
 ## Installing the Keycloak theme on Kubernetes (Bitnami chart)
 
-Target: Helm release `keycloak` (chart `bitnami/keycloak` 24.0.5, app 26.0.5, image `docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0`), production mode, `readOnlyRootFilesystem: true`, `runAsUser`/`fsGroup` 1001. `/opt/bitnami/keycloak/themes` is not writable, so the theme is installed in **directory mode**: an init container fills an `emptyDir`, Keycloak mounts it under `themes/`. No jar, no `kc.sh build`, no image rebuild. Everything below lives in `keycloak-theme/deploy/` and was verified against the real 26.0.5 Bitnami image (see "What was verified").
+Target: Helm release `keycloak` (chart `bitnami/keycloak` 24.0.5, app 26.0.5, image `docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0`), production mode, `readOnlyRootFilesystem: true`, `runAsUser`/`fsGroup` 1001. `/opt/bitnami/keycloak/themes` is not writable, so the theme is installed in **directory mode**: an init container fills an `emptyDir`, Keycloak mounts it under `themes/`. No jar, no `kc.sh build`, no image rebuild. Everything below lives in `code/keycloak-theme/deploy/` and was verified against the real 26.0.5 Bitnami image (see "What was verified").
 
 ### 1. Package the theme
 
 ```bash
-bash keycloak-theme/deploy/package-theme.sh        # builds the jar in podman (build-in-podman.sh), unpacks theme/ from it
-# SKIP_BUILD=1 reuses keycloak-theme/dist_keycloak/*.jar
+bash code/keycloak-theme/deploy/package-theme.sh        # builds the jar in podman (build-in-podman.sh), unpacks theme/ from it
+# SKIP_BUILD=1 reuses code/keycloak-theme/dist_keycloak/*.jar
 ```
 
 Keycloakify emits only the jar; the script takes the `theme/lotties/` folder out of it, checks the structure Keycloak 26 expects (`login/theme.properties` with `parent=keycloak`, `login/*.ftl`, `login/resources/`, `login/messages/`) and writes `deploy/out/theme/lotties/` (plain directory), `deploy/out/lotties-theme.tar.gz` (top folder `lotties/`) and a `.sha256` file (all git-ignored).
@@ -127,7 +127,7 @@ Keycloakify emits only the jar; the script takes the `theme/lotties/` folder out
 Route B:
 
 ```bash
-IMAGE_REPO=registry.example.com/apps/lotties-keycloak-theme bash keycloak-theme/deploy/build-image.sh
+IMAGE_REPO=registry.example.com/apps/lotties-keycloak-theme bash code/keycloak-theme/deploy/build-image.sh
 podman login registry.example.com
 podman push registry.example.com/apps/lotties-keycloak-theme:0.1.0   # or PUSH=1 on the build command
 ```
@@ -141,14 +141,14 @@ Each values file is a second `-f` after yours. Helm replaces lists instead of me
 ```bash
 # render only, no cluster contact
 helm template keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 -n keycloak \
-  -f values.yaml --set image.repository=bitnamilegacy/keycloak --set global.security.allowInsecureImages=true -f keycloak-theme/deploy/values-theme-oci.yaml | grep -n -B2 -A8 br-theme
+  -f values.yaml --set image.repository=bitnamilegacy/keycloak --set global.security.allowInsecureImages=true -f code/keycloak-theme/deploy/values-theme-oci.yaml | grep -n -B2 -A8 br-theme
 
 # the change itself (the owner runs it). IMPORTANT: use --reuse-values. The running release carries user values
 # that are NOT in helms/home-lab/main/keycloak/values.yaml: image.repository=bitnamilegacy/keycloak and
 # global.security.allowInsecureImages=true. A plain `-f values.yaml` upgrade would drop them and switch Keycloak
 # back to the default Bitnami image. Check first: `helm get values keycloak -n keycloak` (it contains secrets: never paste it anywhere).
 helm upgrade keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 -n keycloak \
-  --reuse-values -f keycloak-theme/deploy/values-theme-oci.yaml
+  --reuse-values -f code/keycloak-theme/deploy/values-theme-oci.yaml
 
 kubectl -n keycloak rollout status statefulset/keycloak
 kubectl -n keycloak logs keycloak-0 -c br-theme-init          # "lotties theme copied"
@@ -157,13 +157,13 @@ kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/them
 
 The StatefulSet restarts (single replica: a short outage of the IdP, plan it). Rendered with `helm template` against the owner's `values.yaml` plus each values file, the only differences from the current manifest are one initContainer, one volume and one volumeMount at exactly `/opt/bitnami/keycloak/themes/lotties` (multi variant: `/opt/bitnami/keycloak/themes`).
 
-**Internal registry (route B, done for this project):** the theme image `cr.homel4b.dev/lotties/keycloak-theme:0.1.0` is published in the private Harbor project `lotties` (moved from `baby-routine` on 2026-10-21; images 0.1.0 to 0.3.0 were first pushed under the old project) with the robot account that is logged in inside WSL (`podman push`). Because the project is private, create the pull secret `cr-homel4b` in the `keycloak` namespace before the upgrade (command in `values-theme-oci.yaml`); the values file already references it under `image.pullSecrets`. To publish a new version: bump `keycloak-theme/package.json`, run `bash keycloak-theme/build-in-podman.sh && bash keycloak-theme/deploy/package-theme.sh && IMAGE_REPO=cr.homel4b.dev/lotties/keycloak-theme PUSH=1 bash keycloak-theme/deploy/build-image.sh`, update the tag in the values file and run the upgrade. (Images up to 0.2.0 contain the theme under its old name `baby-routine`; from 0.3.0 the theme is named `lotties`, see "Renaming the theme" below.)
+**Internal registry (route B, done for this project):** the theme image `cr.homel4b.dev/lotties/keycloak-theme:0.1.0` is published in the private Harbor project `lotties` (moved from `baby-routine` on 2026-10-21; images 0.1.0 to 0.3.0 were first pushed under the old project) with the robot account that is logged in inside WSL (`podman push`). Because the project is private, create the pull secret `cr-homel4b` in the `keycloak` namespace before the upgrade (command in `values-theme-oci.yaml`); the values file already references it under `image.pullSecrets`. To publish a new version: bump `code/keycloak-theme/package.json`, run `bash code/keycloak-theme/build-in-podman.sh && bash code/keycloak-theme/deploy/package-theme.sh && IMAGE_REPO=cr.homel4b.dev/lotties/keycloak-theme PUSH=1 bash code/keycloak-theme/deploy/build-image.sh`, update the tag in the values file and run the upgrade. (Images up to 0.2.0 contain the theme under its old name `baby-routine`; from 0.3.0 the theme is named `lotties`, see "Renaming the theme" below.)
 
 **Renaming the theme (`baby-routine` to `lotties`, image 0.3.0):** the deployed realm still uses the login theme `baby-routine`, so change it in this order to avoid a window where the realm names a theme that is absent:
 
-1. Build and push the 0.3.0 image (contains `themes/lotties`), then `helm upgrade ... --reuse-values -f keycloak-theme/deploy/values-theme-oci.yaml` (the values file now mounts `/opt/bitnami/keycloak/themes/lotties`). Check: `kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/themes/lotties/login`. Until step 2 the realm names the now-absent `baby-routine` theme and shows Keycloak's default look (logins keep working).
-2. `bash keycloak-theme/deploy/configure-realm.sh --dry-run`, then without `--dry-run`: `KC_THEME` now defaults to `lotties`, and the script refuses to run until the server lists that theme.
-3. Rollback: `helm rollback keycloak <previous-revision> -n keycloak` (brings back the 0.2.0 image with `baby-routine`), then `KC_THEME=baby-routine bash keycloak-theme/deploy/configure-realm.sh` to point the realm back.
+1. Build and push the 0.3.0 image (contains `themes/lotties`), then `helm upgrade ... --reuse-values -f code/keycloak-theme/deploy/values-theme-oci.yaml` (the values file now mounts `/opt/bitnami/keycloak/themes/lotties`). Check: `kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/themes/lotties/login`. Until step 2 the realm names the now-absent `baby-routine` theme and shows Keycloak's default look (logins keep working).
+2. `bash code/keycloak-theme/deploy/configure-realm.sh --dry-run`, then without `--dry-run`: `KC_THEME` now defaults to `lotties`, and the script refuses to run until the server lists that theme.
+3. Rollback: `helm rollback keycloak <previous-revision> -n keycloak` (brings back the 0.2.0 image with `baby-routine`), then `KC_THEME=baby-routine bash code/keycloak-theme/deploy/configure-realm.sh` to point the realm back.
 
 **Rollback:** `helm history keycloak -n keycloak`, then `helm rollback keycloak <previous-revision> -n keycloak`, or use `helm rollback` for a clean revert (re-running the upgrade without the theme file keeps the theme pieces, because `--reuse-values` keeps the previous user values). A realm that still names `lotties` while the theme is absent falls back to Keycloak's default look.
 
@@ -173,8 +173,8 @@ Admin console: Realm settings > Themes > Login theme = `lotties`; Localization >
 
 ```bash
 export KC_URL=https://auth.homel4b.dev KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
-bash keycloak-theme/deploy/configure-realm.sh --dry-run    # prints the intended changes, writes nothing
-bash keycloak-theme/deploy/configure-realm.sh              # applies; a second run says "Nothing to do"
+bash code/keycloak-theme/deploy/configure-realm.sh --dry-run    # prints the intended changes, writes nothing
+bash code/keycloak-theme/deploy/configure-realm.sh              # applies; a second run says "Nothing to do"
 ```
 
 Outside `--dry-run` it refuses to run when `/admin/serverinfo` does not list the theme yet. Existing supported locales and the default locale are kept; `en` and `pt-BR` are added.
@@ -184,8 +184,8 @@ Outside `--dry-run` it refuses to run when `/admin/serverinfo` does not list the
 The Keycloak is used by many apps, so mount **one** volume over the whole `themes/` directory instead of one mount per theme (`values-theme-multi-oci.yaml`): the init container copies `/themes/*` from an image into the `emptyDir`; the image can hold N folders. This hides nothing Keycloak needs: the built-in themes (`base`, `keycloak`, `keycloak.v2`) are inside the server jar, and the image's `themes/` directory only holds a `README.md` (checked on 26.0.5-debian-12-r0).
 
 ```bash
-bash keycloak-theme/deploy/package-multi.sh                      # out/themes/{lotties,example-other-app}
-MULTI=1 IMAGE_REPO=registry.example.com/apps/lotties-keycloak-themes bash keycloak-theme/deploy/build-image.sh
+bash code/keycloak-theme/deploy/package-multi.sh                      # out/themes/{lotties,example-other-app}
+MULTI=1 IMAGE_REPO=registry.example.com/apps/lotties-keycloak-themes bash code/keycloak-theme/deploy/build-image.sh
 ```
 
 Each client (or realm) picks its theme: client attribute `login_theme` (admin console: client > Settings > Login settings > Login theme) or the realm's Login theme; the client's choice wins.
@@ -219,14 +219,14 @@ The chart's `/opt/bitnami/keycloak/providers` is on the writable `empty-dir`, so
 
 ### What was verified (local, throwaway, no cluster contact)
 
-`deploy/verify-bitnami-local.sh` runs the real `docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0` in podman as `br-kc-bn`: production mode (`KEYCLOAK_PRODUCTION=true`, proxy headers), `--read-only`, uid 1001, capabilities dropped, the chart's writable mounts as volumes, the theme mounted `:ro`. `verify-init-routes.sh A|C` fills the theme volume with the same commands and security context as the values files; `verify-multi.sh` checks the multi layout with two clients; `verify-bitnami-shots.mjs` (Playwright from `e2e/node_modules`) writes `docs/design/screenshots/keycloak-bn-*.png`.
+`deploy/verify-bitnami-local.sh` runs the real `docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0` in podman as `br-kc-bn`: production mode (`KEYCLOAK_PRODUCTION=true`, proxy headers), `--read-only`, uid 1001, capabilities dropped, the chart's writable mounts as volumes, the theme mounted `:ro`. `verify-init-routes.sh A|C` fills the theme volume with the same commands and security context as the values files; `verify-multi.sh` checks the multi layout with two clients; `verify-bitnami-shots.mjs` (Playwright from `tests/e2e/node_modules`) writes `docs/design/screenshots/keycloak-bn-*.png`.
 
 ## Reverse proxy and TLS
 
 Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud load balancer) and forward to port 80 of the container. The inner nginx already forwards `Host` and `X-Forwarded-*` to the API. Requirements:
 
 - Serve the app over HTTPS only; OIDC and the service worker require a secure context (localhost excepted).
-- Set `Strict-Transport-Security: max-age=31536000; includeSubDomains` at the TLS proxy. It is documented but intentionally not set in `web/nginx.conf`, because the container speaks plain HTTP and HSTS over HTTP is ignored (and risky to ship before HTTPS works).
+- Set `Strict-Transport-Security: max-age=31536000; includeSubDomains` at the TLS proxy. It is documented but intentionally not set in `code/web/nginx.conf`, because the container speaks plain HTTP and HSTS over HTTP is ignored (and risky to ship before HTTPS works).
 - Keep the `api` service unpublished (the compose file does not map its port).
 - Request bodies up to 6 MB are allowed (CSV import); do not set a lower limit on the proxy.
 
@@ -258,7 +258,7 @@ Only the three `PUSH_VAPID_*` names are flat aliases; the other settings use the
 
 ```sh
 dotnet BabyRoutine.Api.dll --generate-vapid-keys      # published API
-dotnet run --project api/src/BabyRoutine.Api -- --generate-vapid-keys   # from source
+dotnet run --project code/api/src/BabyRoutine.Api -- --generate-vapid-keys   # from source
 ```
 
 It prints `PUSH_VAPID_PUBLIC_KEY=...` and `PUSH_VAPID_PRIVATE_KEY=...` to stdout and exits; it writes no file. Generate once per deployment and keep the pair: changing it invalidates every existing browser subscription (users must re-enable notifications on each device).
@@ -292,14 +292,14 @@ stringData:
 
 ### Database
 
-Apply the `PushNotifications` migration (`20261021182304_PushNotifications`, included in the idempotent `api/migrations/all.sql`) as the migrator role. It adds `push_subscriptions`, `user_notification_settings`, `baby_notification_preferences`, `notification_deliveries`, `notification_actions` and `job_leases`. Then make sure the app role can use them: if you set `ALTER DEFAULT PRIVILEGES` for the migrator (see "Database roles" and `docs/sql/grant-app-role.sql`) nothing else is needed; otherwise re-run the `GRANT ... ON ALL TABLES` / `ON ALL SEQUENCES` lines after the migration.
+Apply the `PushNotifications` migration (`20261021182304_PushNotifications`, included in the idempotent `code/api/migrations/all.sql`) as the migrator role. It adds `push_subscriptions`, `user_notification_settings`, `baby_notification_preferences`, `notification_deliveries`, `notification_actions` and `job_leases`. Then make sure the app role can use them: if you set `ALTER DEFAULT PRIVILEGES` for the migrator (see "Database roles" and `docs/sql/grant-app-role.sql`) nothing else is needed; otherwise re-run the `GRANT ... ON ALL TABLES` / `ON ALL SEQUENCES` lines after the migration.
 
 ### Requirements and behaviour
 
 - HTTPS is mandatory (service workers and the Push API need a secure context; localhost excepted).
 - iOS/iPadOS (16.4+): push works only after the user adds the app to the home screen and opens it from there; in a Safari tab the option is unavailable.
 - Single or multiple API instances: the scheduler takes a database lease (`job_leases`, valid for two ticks) so only one instance sends per tick; the others idle and take over if the holder stops. Claims are idempotent, so a duplicate reminder is not sent. You may set `Push__SchedulerEnabled=false` on instances that should never schedule; at least one must keep it on.
-- Reverse proxy: nothing push-specific inbound. The anonymous `POST /api/v1/push/deliveries/{id}/actions` (notification snooze/dismiss from the service worker) must reach the API like any other `/api/` route. Outbound, the API needs HTTPS (443) egress to the push service hosts; an egress proxy or firewall must allow them. `sw.js` must stay `no-cache` (already set by `web/nginx.conf`).
+- Reverse proxy: nothing push-specific inbound. The anonymous `POST /api/v1/push/deliveries/{id}/actions` (notification snooze/dismiss from the service worker) must reach the API like any other `/api/` route. Outbound, the API needs HTTPS (443) egress to the push service hosts; an egress proxy or firewall must allow them. `sw.js` must stay `no-cache` (already set by `code/web/nginx.conf`).
 
 ### Verifying
 
@@ -322,7 +322,7 @@ The OIDC library keeps the user, access token and refresh token in `localStorage
 
 ## Database roles
 
-The API does not run migrations itself. Apply the EF Core migrations with a separate, more privileged role and run the API with a limited role. The idempotent script is `api/migrations/all.sql`; tooling reads `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to the app credentials) for `dotnet ef`.
+The API does not run migrations itself. Apply the EF Core migrations with a separate, more privileged role and run the API with a limited role. The idempotent script is `code/api/migrations/all.sql`; tooling reads `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to the app credentials) for `dotnet ef`.
 
 ```sql
 -- Run as a database administrator. Replace the placeholders; use generated passwords.
@@ -338,7 +338,7 @@ GRANT CONNECT ON DATABASE babyroutine TO baby_app;
 ALTER SCHEMA public OWNER TO baby_migrator;
 GRANT USAGE ON SCHEMA public TO baby_app;
 
--- Apply the schema as the migrator, e.g.:  psql -U baby_migrator -d babyroutine -f api/migrations/all.sql
+-- Apply the schema as the migrator, e.g.:  psql -U baby_migrator -d babyroutine -f code/api/migrations/all.sql
 
 -- Run once after the migration, and again after each migration that adds tables:
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO baby_app;
@@ -365,4 +365,4 @@ The stack is verified with Podman (6.x) and `podman-compose`; Docker is not requ
 
 ## Keycloak outgoing email (Brevo or any SMTP relay)
 
-`keycloak-theme/deploy/configure-realm-smtp.sh` sets the realm's Email settings through the admin API (idempotent, `--dry-run` first). Credentials come from the environment only: `SMTP_HOST` (Brevo: `smtp-relay.brevo.com`), `SMTP_PORT` (587, STARTTLS), `SMTP_USER` (the SMTP login from Brevo's SMTP & API page), `SMTP_PASSWORD` (an SMTP key), `SMTP_FROM` (a sender on a domain verified with SPF and DKIM at the provider), plus the `KC_*` admin variables from `configure-realm.sh`. Set `REALM_VERIFY_EMAIL=1` to also require email verification for new users. Never put these values in the repo.
+`code/keycloak-theme/deploy/configure-realm-smtp.sh` sets the realm's Email settings through the admin API (idempotent, `--dry-run` first). Credentials come from the environment only: `SMTP_HOST` (Brevo: `smtp-relay.brevo.com`), `SMTP_PORT` (587, STARTTLS), `SMTP_USER` (the SMTP login from Brevo's SMTP & API page), `SMTP_PASSWORD` (an SMTP key), `SMTP_FROM` (a sender on a domain verified with SPF and DKIM at the provider), plus the `KC_*` admin variables from `configure-realm.sh`. Set `REALM_VERIFY_EMAIL=1` to also require email verification for new users. Never put these values in the repo.

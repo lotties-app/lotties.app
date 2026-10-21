@@ -17,7 +17,7 @@ Inputs: five independent reviews in this folder (01 UX strategy, 02 visual ident
 
 ### Visual identity (from 02)
 Adopt **direction B "Linen and Ink"**: warm paper/ink palette with a terracotta accent, a serif (Fraunces or Newsreader, SIL OFL, self-hosted variable subset) for names, numbers and times, thin outline icons (Tabler Icons, MIT, via `@tabler/icons-react`, one family everywhere, replacing @mui/icons-material usage progressively), the "day ruler" (awake-window bar) instead of a progress ring. Default colour scheme: follow the system; when the system gives no preference use DARK (night parents), using B's warm dark scheme. Add the third scheme **Night feed** (near-black, one warm tone, blue channel <= 0x78, text ~45% brightness, no motion), offered by a banner/toggle in the header menu between 22:00 and 05:00 and a Settings option (Off / Ask / Auto). Fallback if B tests badly with the owner: A "Dusk". Do not build C (mascot trademark risk).
-Token values and the MUI mapping are in 02-visual-identity.md section "Token table (B)": implement them as the single source of truth in `web/src/theme/tokens.ts`.
+Token values and the MUI mapping are in 02-visual-identity.md section "Token table (B)": implement them as the single source of truth in `code/web/src/theme/tokens.ts`.
 
 ### Interaction decisions (resolving 03 vs DESIGN.md)
 - Time entry: inline time panel (chips Now/5/15/30 min ago + typed HH:MM + a compact ruler) replaces the MUI X date-time picker for event times. Pure dates (birth date, measurements) use a themed, localized date control (not the browser's native control, which ignores the app locale: finding m5).
@@ -41,10 +41,10 @@ Token values and the MUI mapping are in 02-visual-identity.md section "Token tab
 4. **Wave 4 (Day + event sheet)**: Day timeline per DESIGN section 11 and the new event sheet.
 5. **Wave 5 (Insights)**: sleep rhythm chart, summary tiles, sleep/feeding/diaper charts, Growth inside Insights, low-data states, "how this is calculated".
 6. **Wave 6 (handover, medicine intervals (API: min interval per medication), night view polish, visit summary, command bar)**.
-7. **Wave 7**: repair and extend e2e (selectors, pt-BR smoke, axe in CI), measure again with the heuristic harness (e2e/design-review), fix remaining violations.
+7. **Wave 7**: repair and extend e2e (selectors, pt-BR smoke, axe in CI), measure again with the heuristic harness (tests/e2e/design-review), fix remaining violations.
 
 ## 4. Process rules for the build waves
-All strings via i18n (en + pt-BR); no raw codes in UI; every new screen gets pt-BR and dark/light/night checks; screenshots with the harness in e2e/design-review before/after (kept out of git); subagents per the model policy (Opus for logic-heavy/auth, Sonnet for UI build, Haiku for mechanical), never Fable.
+All strings via i18n (en + pt-BR); no raw codes in UI; every new screen gets pt-BR and dark/light/night checks; screenshots with the harness in tests/e2e/design-review before/after (kept out of git); subagents per the model policy (Opus for logic-heavy/auth, Sonnet for UI build, Haiku for mechanical), never Fable.
 
 ## 5. Addendum 2026-10-21 (owner shared more Napper screenshots: "how neat Napper looks")
 Principles taken (not assets; Napper's artwork must not be copied or traced): richer polish than flat editorial: soft depth/glow, big numerals, illustrated category icons, a calm atmosphere at night, clear hierarchy, friendly microcopy.

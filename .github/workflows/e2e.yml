@@ -41,23 +41,23 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
-            web/package-lock.json
-            e2e/package-lock.json
+            code/web/package-lock.json
+            tests/e2e/package-lock.json
       - run: npm ci
-        working-directory: web
+        working-directory: code/web
       - run: npm ci
-        working-directory: e2e
+        working-directory: tests/e2e
       - run: npx playwright install --with-deps chromium
-        working-directory: e2e
-      - run: dotnet build api/src/BabyRoutine.Api
+        working-directory: tests/e2e
+      - run: dotnet build code/api/src/BabyRoutine.Api
       - run: npx playwright test
-        working-directory: e2e
+        working-directory: tests/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report
           # Specs that type the password run with tracing off, and .auth/ is never uploaded.
           path: |
-            e2e/playwright-report
-            e2e/test-results
+            tests/e2e/playwright-report
+            tests/e2e/test-results
           retention-days: 7

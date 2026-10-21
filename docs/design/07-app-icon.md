@@ -60,7 +60,7 @@ Original work by the Lotties contributors, AGPL-3.0-or-later with the project. I
 
 ## Implementation checklist
 
-- Copy the chosen art to `web/public/` as `icon.svg`, `icon-maskable.svg`, `icon-mono.svg` and `favicon.svg`.
+- Copy the chosen art to `code/web/public/` as `icon.svg`, `icon-maskable.svg`, `icon-mono.svg` and `favicon.svg`.
 - Change `generate-icons.mjs` to read the maskable file instead of string-replacing `#bg`/`#glyph`. It writes:
   - `icon-192/512.png` and `icon-maskable-512.png`;
   - `apple-touch-icon.png` (180) from the full-bleed art, since iOS masks it and turns transparent corners black;

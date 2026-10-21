@@ -2,7 +2,7 @@
 # Add `--profile localdb` to also start a local PostgreSQL. See docs/DEPLOY.md.
 services:
   api:
-    build: ./api
+    build: ./code/api
     environment:
       ASPNETCORE_URLS: http://+:8080
       DB_HOST: ${DB_HOST:?set DB_HOST in .env}
@@ -34,7 +34,7 @@ services:
 
   web:
     build:
-      context: ./web
+      context: ./code/web
       args:
         # Empty = same origin (nginx proxies /api/ to the api service).
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}

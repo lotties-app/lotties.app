@@ -1,4 +1,4 @@
-"""Faithful Python port of the C# heuristic v1 (``api/src/BabyRoutine.Domain/Predictions``).
+"""Faithful Python port of the C# heuristic v1 (``code/api/src/BabyRoutine.Domain/Predictions``).
 
 Mirrors ``PredictionEngine``, ``TypePredictor``, ``AwakeWindowStrategy`` / ``StartIntervalStrategy``,
 ``SampleSelector``, ``WeightedStatistics``, ``SleepSessions``, ``AgeBands`` and ``DayPhases`` with

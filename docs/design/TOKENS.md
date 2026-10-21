@@ -1,6 +1,6 @@
 # Design tokens (direction B "Linen and Ink")
 
-Single source of truth: `web/src/theme/tokens.ts` (plain data, contrast-tested in `tokens.test.ts`). `web/src/theme/theme.ts` maps it onto MUI palettes; components read `theme.vars.palette.*` (CSS variables `--mui-palette-*`) and never hardcode colours. Values come from `docs/design/02-visual-identity.md` section 8 and 6.
+Single source of truth: `code/web/src/theme/tokens.ts` (plain data, contrast-tested in `tokens.test.ts`). `code/web/src/theme/theme.ts` maps it onto MUI palettes; components read `theme.vars.palette.*` (CSS variables `--mui-palette-*`) and never hardcode colours. Values come from `docs/design/02-visual-identity.md` section 8 and 6.
 
 ## Schemes
 

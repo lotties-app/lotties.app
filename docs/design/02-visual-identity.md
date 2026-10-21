@@ -123,7 +123,7 @@ Fallback: A, if the owner wants continuity with today's dark-first look.
 
 ## 8. Tokens for B, ready to implement
 
-The new fields extend `SchemeTokens` (`web/src/theme/tokens.ts`) and add a `nightFeed` scheme. MUI `cssVariables` emits them as `--mui-palette-*`.
+The new fields extend `SchemeTokens` (`code/web/src/theme/tokens.ts`) and add a `nightFeed` scheme. MUI `cssVariables` emits them as `--mui-palette-*`.
 
 | Token | MUI palette path | Linen (light) | Ink (dark) | Lamplight (night) |
 |---|---|---|---|---|

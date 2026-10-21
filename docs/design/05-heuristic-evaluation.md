@@ -11,7 +11,7 @@ Evaluated 2026-10-21 against the running app (`main` at 66871c7: web dev server 
   - axe-core 4.10 (wcag2a/aa, wcag21a/aa, wcag22aa, best-practice) on 441 states.
   - In-page audits: target sizes, clipped text, overflow, raw codes, English text on pt-BR screens.
   - 200% text, 320 px reflow, landscape, reduced motion, focus order and focus obscured by the nav, rendered font sizes, Playwright timings.
-- **Harness and raw numbers.** Harness in `e2e/design-review/`; raw numbers in `e2e/design-review/output/summary.md` (gitignored).
+- **Harness and raw numbers.** Harness in `tests/e2e/design-review/`; raw numbers in `tests/e2e/design-review/output/summary.md` (gitignored).
 - **Limits.**
   - No Lighthouse.
   - Timings come from the Vite dev server (unbundled modules, local API), so they are not production numbers.
@@ -73,7 +73,7 @@ Severity: **B** blocker, **M** major, **m** minor, **n** nit. Effort: S under a 
 |---|---|---|---|---|---|---|
 | B1 | B | App start | **Cold start after the ~5 min access token expires lands on "Sign in" despite a stored offline refresh token.** Reproduced naturally by the harness and deterministically by back-dating `expires_at`. Offline, the user is locked out of local data, which defeats the offline-first PWA. | `session-expired-coldstart-*`, `login-*` | Before redirecting in `RequireAuth`, if the stored user is expired and has a refresh token, call `signinSilent()`. When offline, let the cached account through read/write (sync resumes later). | M |
 | M1 | M | FAB / Track | The primary centre action opens a placeholder. When open, its "x" is hidden under the drawer. | `track-sheet-*` | Until the Track sheet ships, hide the FAB or make it open the Add event sheet. | S (L for the real sheet) |
-| M2 | M | Event sheet | `visibleWhen` from the API is ignored (no reference in `web/src`): every method's fields always show. Invites contradictory data such as an amount on a breast feed. | `sheet-bottle-*`, `sheet-breast-*`, `sheet-*-bottom-*` | Implement conditional visibility in `TypeFields`. Clear hidden values on save. | M |
+| M2 | M | Event sheet | `visibleWhen` from the API is ignored (no reference in `code/web/src`): every method's fields always show. Invites contradictory data such as an amount on a breast feed. | `sheet-bottle-*`, `sheet-breast-*`, `sheet-*-bottom-*` | Implement conditional visibility in `TypeFields`. Clear hidden values on save. | M |
 | M3 | M | Home | Tiles come from Dexie in primary-key (GUID) order: Belly pain, Diaper, Tummy time, Sleep, Bath, Medication, Pump, Feeding. All 8 have equal weight and no status line. | `home-*`, `home-empty-*` | Use the preset catalogue order and the pinned four plus "See all" (DESIGN 3-4). Add the "Last 2h ago" status. | S (order), M (presets) |
 | M4 | M | Home | Tapping a duration type starts a timer at once, with no Undo. You can't log a feed that already happened without starting a timer and editing it. | `home-running-*` | Undo snackbar for 5 s (DESIGN 5). Make the Bottle preset an instant sheet. | M |
 | M5 | M | Home predictions | "Overdue" badges, "yesterday" wording, a band where expected = latest ("04:26, between 03:11 and 04:26"), medication and tummy-time predictions, a list of unpredicted types. Contradicts DESIGN 4 (calm stale state, never "yesterday") and 10 (never guilt-inducing). | `home-full-mobile-dark-en`, `home-prediction-why-*` | One hero prediction (sleep, else feeding) plus compact chips. Hide stale predictions. Limit to sleep, feeding and diaper. Explain in plain words. | M |
@@ -168,7 +168,7 @@ Best-practice findings: `heading-order` (29 screens), `page-has-heading-one` (11
 | Open event sheet | 101 ms (52) | |
 | Open Track sheet | 50 ms | |
 
-- **Production bundle** (`web/dist`, built today): 1.15 MB of JS, about 345 KB gzipped across all chunks. `vendor-mui` alone is 391 KB raw.
+- **Production bundle** (`code/web/dist`, built today): 1.15 MB of JS, about 345 KB gzipped across all chunks. `vendor-mui` alone is 391 KB raw.
 - **Feels instant** thanks to Dexie. Two gaps:
   - Spinners instead of skeletons.
   - A cold sync costs about 4 requests per followed baby. With 18 babies, two fresh tabs hit the 300 requests/minute limit (HTTP 429) and Home rendered with no tiles. Batch or throttle the cold sync.

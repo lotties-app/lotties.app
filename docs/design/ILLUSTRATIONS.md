@@ -1,6 +1,6 @@
 # Illustrated category icons (style guide)
 
-Wave 4c, SYNTHESIS.md section 5 item 1. Code: `web/src/ui/illustrations/`. Gallery: `/dev/illustrations` (development only). Screenshots: `cd e2e && npx playwright test -c design-review/illustrations.config.ts` (port 5175) writes `docs/design/screenshots/illustrations-*.png` (gitignored).
+Wave 4c, SYNTHESIS.md section 5 item 1. Code: `code/web/src/ui/illustrations/`. Gallery: `/dev/illustrations` (development only). Screenshots: `cd tests/e2e && npx playwright test -c design-review/illustrations.config.ts` (port 5175) writes `docs/design/screenshots/illustrations-*.png` (gitignored).
 
 ## Where they are used (wave 4c-2) and the size grid
 
@@ -65,7 +65,7 @@ Gradient ids come from `useId`, so any number of copies can share a page.
 
 ## Colour
 
-Colours are **derived from the design tokens** (`web/src/theme/tokens.ts`) at runtime by `palette.ts`; nothing is hardcoded per drawing except white highlights. Each material names a hue (a category, `accent` or `cream`) and gets a tone: `hi`, `mid`, `lo`, `deep`.
+Colours are **derived from the design tokens** (`code/web/src/theme/tokens.ts`) at runtime by `palette.ts`; nothing is hardcoded per drawing except white highlights. Each material names a hue (a category, `accent` or `cream`) and gets a tone: `hi`, `mid`, `lo`, `deep`.
 
 - **Dark** (Ink): `mid` is the category `fg` of the dark scheme; `hi` leans 55% to white; `lo` is halfway to the light scheme's ink of the same hue.
 - **Light** (Linen): the category colours slightly deeper: 30% from the light ink towards the dark pastel, 25% more chroma; `hi` 68% towards the pastel; `lo` is the ink. Secondary parts can be `lift`ed towards the pastel (food, bubbles, gold accents) where they do not carry the silhouette.

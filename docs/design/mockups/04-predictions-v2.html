@@ -374,7 +374,7 @@ function meanOf(days, key, min = 4) {
   return xs.length >= min ? median(xs) : null;
 }
 
-/* ---------- Formatting (production: web/src/i18n/format.ts via Intl) ---------- */
+/* ---------- Formatting (production: code/web/src/i18n/format.ts via Intl) ---------- */
 const pad2 = (n) => String(n).padStart(2, '0');
 function fmtDur(ms) {
   const m = Math.round(ms / MIN), h = Math.floor(m / 60), r = m % 60;

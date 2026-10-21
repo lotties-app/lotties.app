@@ -25,10 +25,10 @@ jobs:
           dotnet-version: 8.0.x
           cache: true
           cache-dependency-path: |
-            api/**/*.csproj
-            api/Directory.Build.props
-      - run: dotnet build api/BabyRoutine.sln
-      - run: dotnet test api/BabyRoutine.sln
+            code/api/**/*.csproj
+            code/api/Directory.Build.props
+      - run: dotnet build code/api/BabyRoutine.sln
+      - run: dotnet test code/api/BabyRoutine.sln
 
   web:
     runs-on: ubuntu-latest
@@ -38,17 +38,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: code/web/package-lock.json
       - run: npm ci
-        working-directory: web
+        working-directory: code/web
       - run: npm run lint
-        working-directory: web
+        working-directory: code/web
       - run: npm run test -- --run
-        working-directory: web
+        working-directory: code/web
       - run: npm run build
-        working-directory: web
+        working-directory: code/web
       # Informational: reports known vulnerabilities in production dependencies without failing the build.
       - name: npm audit (informational)
         run: npm audit --omit=dev --audit-level=high
-        working-directory: web
+        working-directory: code/web
         continue-on-error: true
