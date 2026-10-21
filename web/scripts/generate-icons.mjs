@@ -20,7 +20,10 @@ const source = await readFile(join(publicDir, 'icon.svg'), 'utf8');
 // Maskable icons are cropped by the OS into circles/squircles, so the glyph is
 // scaled to 80% around the centre (the W3C safe zone is the central 80%).
 const maskableSvg = source
-  .replace('<rect id="bg" width="512" height="512" rx="112"', '<rect id="bg" width="512" height="512" rx="0"')
+  .replace(
+    '<rect id="bg" width="512" height="512" rx="112"',
+    '<rect id="bg" width="512" height="512" rx="0"',
+  )
   .replace(
     '<g id="glyph">',
     '<g id="glyph" transform="translate(256 256) scale(0.8) translate(-256 -256)">',
