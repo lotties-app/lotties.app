@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/PLAN.md`. Navigation: `docs/filemap.md` (update when adding/moving files).
+Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/PLAN.md`. Open review findings: `docs/REVIEW.md`. Deploy: `docs/DEPLOY.md`. Navigation: `docs/filemap.md` (update when adding/moving files).
 
 ## Stack
 - `web/`: React 19 + TS + MUI, Vite SPA (no SSR), Dexie offline store.
@@ -18,3 +18,8 @@ Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec:
 - All AI-produced docs, plans, specs, reports and graphs go in `docs/` (graphify writes to `docs/graphify`, set via `.claude/settings.json`). Only CLAUDE.md, README, LICENSE, CONTRIBUTING stay at root.
 - Use skills `develop:dotnet8` (api) and `refactor:react` (web).
 - Subagents: Opus plans/orchestrates, Sonnet medium-hard, Haiku simple, never Fable.
+- Secrets live only in the gitignored root `.env` (never read, print or commit it); the API reads `DB_*`, `AUTH_*`, `CORS_ALLOWED_ORIGINS` from env. No Docker/nginx on the dev machine: compose/Dockerfile/nginx changes can only be reviewed by eye.
+- Sync contract: server `updatedAt` is the delta cursor; conflicts compare client `updatedAt` against stored `ClientUpdatedAt` (see SPEC "Events sync contract"). Never compare client clock with server `updatedAt`.
+- Web local data is per account (Dexie DB named from issuer+sub); logout/leave must warn about unsynced outbox and clear it. Server-provided keys (icons, field keys) go through `util/ownProperty.ts`.
+- API tests run on SQLite (no Docker/Postgres): Postgres-only behavior (jsonb, xmin) is verified by the model/snapshot tests only. EF migrations are generated, applied manually by the migrator role; regenerate `api/migrations/all.sql`.
+- Real Napper exports contain a child's data: never commit them (`docs/samples/` is gitignored); tests use synthetic fixtures.
