@@ -27,7 +27,7 @@ npm --prefix web run lint
 npm --prefix web run build
 ```
 
-With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker compose up`. Add `--profile localdb` to start a local PostgreSQL container too.
+With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker compose up --build`. Add `--profile localdb` to start a local PostgreSQL container too. Full deployment guide (identity provider setup, TLS, database roles): [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Environment variables
 
@@ -38,10 +38,11 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `DB_NAME` | Database name (default `babyroutine`) |
 | `DB_APP_USER` | Application database user |
 | `DB_APP_PASSWORD` | Application database password |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` | Superuser for the optional `localdb` container only |
+| `POSTGRES_PASSWORD` | Password of the optional `localdb` container (user is `DB_APP_USER`); no default |
+| `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, `VITE_API_BASE_URL` | Web build arguments (public, compiled into the bundle); see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |
 | `AUTH_AUDIENCE` | API audience that access tokens must carry (config `Auth:Audience`); required outside Development |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the API, e.g. the web app URL (config `Cors:AllowedOrigins`) |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the API, e.g. the web app URL (config `Cors:AllowedOrigins`); not needed when the web container proxies `/api/` (default) |
 
 Never commit `.env`. See `.env.example` for placeholders.
 
