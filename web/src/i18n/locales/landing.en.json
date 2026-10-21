@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Baby Routine: track your baby's day, together"
+  },
+  "skipToContent": "Skip to content",
+  "signingIn": {
+    "text": "Taking you to sign in"
+  },
+  "header": {
+    "signIn": "Sign in"
+  },
+  "notice": {
+    "failedTitle": "Sign-in did not work",
+    "failedBody": "Something went wrong on the way to the sign-in page. Nothing was changed. Please try again.",
+    "retry": "Try again",
+    "endedTitle": "Your session ended",
+    "ended_one": "{{count}} change is waiting to sync on this device. Sign in to sync it.",
+    "ended_other": "{{count}} changes are waiting to sync on this device. Sign in to sync them.",
+    "endedUnknown": "Sign in to carry on. Whatever you saved on this device is kept and syncs after you sign in.",
+    "signIn": "Sign in"
+  },
+  "hero": {
+    "headline": "Track your baby's day, together",
+    "sub": "Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent.",
+    "signIn": "Sign in",
+    "register": "Create an account"
+  },
+  "features": {
+    "title": "What it does",
+    "log": {
+      "title": "Log in two taps",
+      "body": "One-tap tiles, timers for naps and feeds, and an undo for the moment your thumb slips."
+    },
+    "offline": {
+      "title": "Works offline",
+      "body": "Installs like an app and keeps working without a connection. Everything syncs when it is back."
+    },
+    "share": {
+      "title": "Share with your co-parent",
+      "body": "Invite someone with a link and see who logged what, so nobody has to ask."
+    },
+    "predict": {
+      "title": "Gentle predictions",
+      "body": "See the next nap window with a plain explanation of how it was worked out. Estimates from your logged history, not medical advice."
+    },
+    "history": {
+      "title": "Bring your history",
+      "body": "Import from Napper, add your own event types, and track medicines with safe intervals. The doctor's prescription is always the source."
+    },
+    "data": {
+      "title": "Your data, your rules",
+      "body": "Free and open source (AGPL-3.0) and can be self-hosted. No ads, no tracking."
+    }
+  },
+  "steps": {
+    "title": "How it works",
+    "one": {
+      "title": "Sign in",
+      "body": "Create an account or sign in. It takes a minute."
+    },
+    "two": {
+      "title": "Add your baby",
+      "body": "Log sleep, feeds, diapers and medicines as they happen."
+    },
+    "three": {
+      "title": "Invite your co-parent",
+      "body": "Share a link. You both see the same day."
+    }
+  },
+  "footer": {
+    "language": "Language",
+    "languageSystem": "System",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "source": "Source code",
+    "licence": "Free and open source software, licensed under the AGPL-3.0.",
+    "notMedical": "Not a medical device."
+  },
+  "important": {
+    "eyebrow": "Important",
+    "title": "Not a medical device",
+    "body": "Estimates come from your logged history and are not medical advice. Baby Routine helps you keep a record and spot patterns; it does not diagnose or recommend treatment.",
+    "care": "For any health concern, or before giving or changing a medicine, talk to your doctor or pharmacist. In an emergency, call your local emergency number."
+  }
+}

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
-import { LoginPage } from './auth/LoginPage';
+import { LandingGate } from './landing/LandingGate';
 import { CallbackPage } from './auth/CallbackPage';
 import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
@@ -28,6 +28,7 @@ const DevNowPreview = import.meta.env.DEV ? lazy(() => import('./dev/NowPreview'
 const DevDayPreview = import.meta.env.DEV ? lazy(() => import('./dev/DayPreview')) : null;
 const DevSheetPreview = import.meta.env.DEV ? lazy(() => import('./dev/SheetPreview')) : null;
 const DevMedsPreview = import.meta.env.DEV ? lazy(() => import('./dev/MedsPreview')) : null;
+const DevLandingPreview = import.meta.env.DEV ? lazy(() => import('./dev/LandingPreview')) : null;
 const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
@@ -95,7 +96,18 @@ export function AppRoutes() {
           }
         />
       )}
-      <Route path="/login" element={<LoginPage />} />
+      {DevLandingPreview && (
+        <Route
+          path="/dev/landing"
+          element={
+            <Suspense fallback={null}>
+              <DevLandingPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {/* The sign-in page is gone (the landing page and the identity provider replace it). */}
+      <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/auth/callback" element={<CallbackPage />} />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
       <Route path="/invite" element={<InviteEntry />}>
@@ -106,15 +118,17 @@ export function AppRoutes() {
         </Route>
       </Route>
       <Route path="/invite/:token" element={<LegacyInviteEntry />} />
-      <Route element={<RequireAuth />}>
-        <Route element={<AppShell />}>
-          <Route index element={<HomePage />} />
-          <Route path="day" element={<DayPage />} />
-          <Route path="insights" element={<InsightsPage />} />
-          {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
-          <Route path="timeline" element={<Navigate to="/day" replace />} />
-          <Route path="growth" element={<Navigate to="/insights" replace />} />
-          <Route path="settings" element={<SettingsPage />} />
+      <Route element={<LandingGate />}>
+        <Route element={<RequireAuth />}>
+          <Route element={<AppShell />}>
+            <Route index element={<HomePage />} />
+            <Route path="day" element={<DayPage />} />
+            <Route path="insights" element={<InsightsPage />} />
+            {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
+            <Route path="timeline" element={<Navigate to="/day" replace />} />
+            <Route path="growth" element={<Navigate to="/insights" replace />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

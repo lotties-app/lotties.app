@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Baby Routine: acompanhe o dia do seu bebê, em conjunto"
+  },
+  "skipToContent": "Ir para o conteúdo",
+  "signingIn": {
+    "text": "Levando você para a página de entrada"
+  },
+  "header": {
+    "signIn": "Entrar"
+  },
+  "notice": {
+    "failedTitle": "Não foi possível entrar",
+    "failedBody": "Algo deu errado a caminho da página de entrada. Nada foi alterado. Tente novamente.",
+    "retry": "Tentar novamente",
+    "endedTitle": "Sua sessão terminou",
+    "ended_one": "{{count}} alteração aguarda sincronização neste aparelho. Entre para sincronizá-la.",
+    "ended_other": "{{count}} alterações aguardam sincronização neste aparelho. Entre para sincronizá-las.",
+    "endedUnknown": "Entre para continuar. O que você salvou neste aparelho foi mantido e sincroniza depois que você entrar.",
+    "signIn": "Entrar"
+  },
+  "hero": {
+    "headline": "Acompanhe o dia do seu bebê, em conjunto",
+    "sub": "Sono, mamadas, fraldas e remédios em um só lugar tranquilo. Funciona sem internet e compartilha com quem cuida junto com você.",
+    "signIn": "Entrar",
+    "register": "Criar uma conta"
+  },
+  "features": {
+    "title": "O que ele faz",
+    "log": {
+      "title": "Registre em dois toques",
+      "body": "Atalhos de um toque, cronômetros para sonecas e mamadas, e um desfazer para quando o dedo escorrega."
+    },
+    "offline": {
+      "title": "Funciona sem internet",
+      "body": "Instala como um aplicativo e continua funcionando sem conexão. Tudo sincroniza quando ela voltar."
+    },
+    "share": {
+      "title": "Compartilhe com quem cuida junto",
+      "body": "Convide alguém por um link e veja quem registrou o quê, sem precisar perguntar."
+    },
+    "predict": {
+      "title": "Previsões gentis",
+      "body": "Veja a próxima janela de soneca com uma explicação simples de como ela foi calculada. Estimativas feitas com o seu histórico, não são orientação médica."
+    },
+    "history": {
+      "title": "Traga o seu histórico",
+      "body": "Importe do Napper, crie seus próprios tipos de evento e acompanhe remédios com intervalos seguros. A receita do médico é sempre a fonte."
+    },
+    "data": {
+      "title": "Seus dados, suas regras",
+      "body": "Gratuito e de código aberto (AGPL-3.0), pode ser hospedado por você. Sem anúncios, sem rastreamento."
+    }
+  },
+  "steps": {
+    "title": "Como funciona",
+    "one": {
+      "title": "Entre",
+      "body": "Crie uma conta ou entre. Leva um minuto."
+    },
+    "two": {
+      "title": "Cadastre seu bebê",
+      "body": "Registre sono, mamadas, fraldas e remédios conforme acontecem."
+    },
+    "three": {
+      "title": "Convide quem cuida junto",
+      "body": "Compartilhe um link. Vocês dois veem o mesmo dia."
+    }
+  },
+  "footer": {
+    "language": "Idioma",
+    "languageSystem": "Sistema",
+    "theme": "Tema",
+    "themeSystem": "Sistema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "source": "Código-fonte",
+    "licence": "Software livre e de código aberto, sob a licença AGPL-3.0.",
+    "notMedical": "Não é um dispositivo médico."
+  },
+  "important": {
+    "eyebrow": "Importante",
+    "title": "Não é um dispositivo médico",
+    "body": "As estimativas vêm do seu histórico registrado e não são orientação médica. O Baby Routine ajuda a registrar e a perceber padrões; não faz diagnósticos nem recomenda tratamentos.",
+    "care": "Diante de qualquer preocupação com a saúde, ou antes de dar ou mudar um remédio, fale com o pediatra ou o farmacêutico. Em caso de emergência, ligue para o número de emergência da sua região."
+  }
+}

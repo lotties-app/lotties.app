@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppRoutes } from './AppRoutes';
 import type { BabyRoutineDb } from './db/database';
@@ -97,8 +97,8 @@ describe('invite route', () => {
 
     expect(window.sessionStorage.getItem(PENDING_INVITE_KEY)).toBe('tok-1');
     expect(window.location.href).not.toContain('tok-1');
-    fireEvent.click(await screen.findByRole('button', { name: 'Sign in' }));
-    expect(signedOut.login).toHaveBeenCalledWith('/invite');
+    await waitFor(() => expect(signedOut.login).toHaveBeenCalledWith('/invite'));
+    expect(await screen.findByText('Taking you to sign in')).toBeTruthy();
     first.unmount();
 
     // The provider returns the user to `/invite` (no token in it); the parked token is used.
@@ -128,16 +128,95 @@ describe('invite route', () => {
     expect(await db.babies.count()).toBe(1);
   });
 
-  it('asks signed-out users to sign in first (route is protected)', async () => {
+  it('sends signed-out users to sign in first (route is protected)', async () => {
     const { fakeAuth } = await import('./test/fakeAuth');
     const { api, writes } = fakeApi();
-    renderWithDb(db, <AppRoutes />, {
-      api,
-      route: '/invite/tok-1',
-      auth: fakeAuth({ isAuthenticated: false }),
-    });
+    const signedOut = fakeAuth({ isAuthenticated: false });
+    renderWithDb(db, <AppRoutes />, { api, route: '/invite/tok-1', auth: signedOut });
 
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
+    await waitFor(() => expect(signedOut.login).toHaveBeenCalledWith('/invite'));
     expect(writes()).toHaveLength(0);
+  });
+});
+
+describe('landing and sign-in routing', () => {
+  async function signedOutAuth(overrides = {}) {
+    const { fakeAuth } = await import('./test/fakeAuth');
+    return fakeAuth({ isAuthenticated: false, user: null, ...overrides });
+  }
+
+  const HEADLINE = /Track your baby.s day, together/;
+
+  it('shows the landing page at / when signed out, without starting a sign-in', async () => {
+    const auth = await signedOutAuth();
+    renderWithDb(db, <AppRoutes />, { auth });
+
+    expect(await screen.findByRole('heading', { level: 1, name: HEADLINE })).toBeTruthy();
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(auth.login).not.toHaveBeenCalled();
+  });
+
+  it('shows the Now screen at / when signed in', async () => {
+    await seedBaby(db);
+    renderWithDb(db, <AppRoutes />);
+    expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { level: 1, name: HEADLINE })).toBeNull();
+  });
+
+  it('redirects a deep link straight to sign-in with its path, with a calm placeholder', async () => {
+    const auth = await signedOutAuth();
+    renderWithDb(db, <AppRoutes />, { auth, route: '/day?d=2026-10-01' });
+
+    await waitFor(() => expect(auth.login).toHaveBeenCalledWith('/day?d=2026-10-01'));
+    expect(auth.login).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('Taking you to sign in')).toBeTruthy();
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+  });
+
+  it('redirects the old /login path to the landing page', async () => {
+    const auth = await signedOutAuth();
+    renderWithDb(db, <AppRoutes />, { auth, route: '/login' });
+    expect(await screen.findByRole('heading', { level: 1, name: HEADLINE })).toBeTruthy();
+    expect(auth.login).not.toHaveBeenCalled();
+  });
+
+  it('shows the landing page with an error card after a failed sign-in, and does not loop', async () => {
+    const auth = await signedOutAuth({ error: new Error('access_denied') });
+    renderWithDb(db, <AppRoutes />, { auth, route: '/settings' });
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Sign-in did not work')).toBeTruthy();
+    expect(auth.login).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    // The retry goes back to the page the visitor wanted.
+    expect(auth.login).toHaveBeenCalledWith('/settings', undefined);
+    expect(auth.login).toHaveBeenCalledTimes(1);
+  });
+
+  it('explains an ended session on the landing page instead of redirecting', async () => {
+    const auth = await signedOutAuth({ sessionEnded: true });
+    renderWithDb(db, <AppRoutes />, { auth, route: '/day' });
+
+    expect(await screen.findByText('Your session ended')).toBeTruthy();
+    expect(auth.login).not.toHaveBeenCalled();
+  });
+
+  it('starts sign-in and registration from the hero buttons', async () => {
+    const auth = await signedOutAuth();
+    renderWithDb(db, <AppRoutes />, { auth });
+    await screen.findByRole('heading', { level: 1 });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Sign in' })[1]);
+    expect(auth.login).toHaveBeenLastCalledWith('/', undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    expect(auth.login).toHaveBeenLastCalledWith('/', { register: true });
+  });
+
+  it('waits while the stored session is still being read', async () => {
+    const auth = await signedOutAuth({ isLoading: true });
+    renderWithDb(db, <AppRoutes />, { auth });
+    expect(await screen.findByLabelText('Loading')).toBeTruthy();
+    expect(auth.login).not.toHaveBeenCalled();
   });
 });

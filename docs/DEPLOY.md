@@ -223,7 +223,7 @@ Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud lo
 - Keep the `api` service unpublished (the compose file does not map its port).
 - Request bodies up to 6 MB are allowed (CSV import); do not set a lower limit on the proxy.
 
-The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'`, `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy`. `sw.js`, `manifest.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`.
+The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'`, `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy`. `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`.
 
 ## Token storage trade-off
 

@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+import type { LoginOptions } from './signinRequest';
 
 export interface AuthUser {
   name?: string;
@@ -33,8 +34,11 @@ export interface AuthApi {
    * unsynced changes) was kept and syncs after the next sign-in.
    */
   sessionEnded: boolean;
-  /** Starts the OIDC redirect; `returnTo` is restored after the callback. */
-  login: (returnTo?: string) => Promise<void>;
+  /**
+   * Starts the OIDC redirect (in the app's language); `returnTo` is restored after the callback.
+   * `register` opens the identity provider's account creation instead of its sign-in form.
+   */
+  login: (returnTo?: string, options?: LoginOptions) => Promise<void>;
   /** Ends the OIDC session (removes the stored OIDC user). Local data is cleared by `useSignOut`. */
   logout: () => Promise<void>;
   /**

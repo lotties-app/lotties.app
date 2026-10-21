@@ -146,15 +146,16 @@ describe('cold start after the access token expired (B1)', () => {
 
     render(<App configResult={CONFIG} />);
 
+    expect(await screen.findByText('Your session ended', {}, SLOW)).toBeTruthy();
     expect(
       await screen.findByText(
-        'Sign in again to sync your changes (1 unsynced change kept on this device).',
+        '1 change is waiting to sync on this device. Sign in to sync it.',
         {},
         SLOW,
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    expect(window.location.pathname).toBe('/login');
+    expect(screen.getAllByRole('button', { name: 'Sign in' }).length).toBeGreaterThan(0);
+    expect(window.location.pathname).toBe('/');
     expect(window.localStorage.getItem(`oidc.user:${AUTHORITY}:${CLIENT_ID}`)).toBeNull();
     expect(await Dexie.exists(accountDatabaseName(ACCOUNT))).toBe(true);
     const kept = openAccountDatabase(ACCOUNT);

@@ -1,0 +1,86 @@
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Box, Button } from '@mui/material';
+import { useAuth } from '../auth/useAuth';
+import { useEndedSessionUnsynced } from '../auth/useEndedSessionUnsynced';
+import type { LoginRedirectState } from '../auth/loginRedirect';
+import { useLandingCatalog } from '../i18n/useLandingCatalog';
+import { FeatureGrid } from './FeatureGrid';
+import { Hero } from './Hero';
+import { ImportantNotice } from './ImportantNotice';
+import { LandingFooter } from './LandingFooter';
+import { LandingHeader } from './LandingHeader';
+import { SessionNotice, type NoticeKind } from './SessionNotice';
+import { StepsStrip } from './StepsStrip';
+
+/** Visible only while it has keyboard focus. */
+const SKIP_LINK_SX = {
+  position: 'absolute',
+  left: 8,
+  top: -100,
+  zIndex: 'tooltip',
+  bgcolor: 'background.paper',
+  color: 'text.primary',
+  px: 2,
+  py: 1.5,
+  borderRadius: 2,
+  '&:focus': { top: 8 },
+} as const;
+
+/**
+ * The public home page (route `/` while signed out). Sign in and Create an account start the
+ * identity provider redirect straight away; a failed or ended sign-in explains itself in a card
+ * above the hero. Loaded as its own chunk, so the signed-in app never pays for it.
+ */
+export default function LandingPage({ unsyncedOverride }: { unsyncedOverride?: number | null }) {
+  const { t } = useTranslation('landing');
+  const ready = useLandingCatalog();
+  const { login, error, sessionEnded } = useAuth();
+  const state = useLocation().state as LoginRedirectState | null;
+  const from = state?.from ?? '/';
+  const [startFailed, setStartFailed] = useState(false);
+  const countedUnsynced = useEndedSessionUnsynced();
+  const unsynced = unsyncedOverride === undefined ? countedUnsynced : unsyncedOverride;
+
+  const title = ready ? t('meta.title') : null;
+  useEffect(() => {
+    if (!title) return;
+    const previous = document.title;
+    document.title = title;
+    return () => {
+      document.title = previous;
+    };
+  }, [title]);
+
+  if (!ready) return <Box sx={{ minHeight: '100dvh' }} />;
+
+  const start = (register: boolean) => {
+    setStartFailed(false);
+    login(from, register ? { register: true } : undefined).catch(() => setStartFailed(true));
+  };
+  const kind: NoticeKind | null =
+    error || state?.failed || startFailed ? 'failed' : sessionEnded ? 'ended' : null;
+
+  return (
+    <Box sx={{ position: 'relative', minHeight: '100dvh', bgcolor: 'background.default' }}>
+      <Button component="a" href="#landing-main" sx={SKIP_LINK_SX}>
+        {t('skipToContent')}
+      </Button>
+      <LandingHeader onSignIn={() => start(false)} />
+      <Box component="main" id="landing-main" tabIndex={-1} sx={{ outline: 'none' }}>
+        <Hero
+          notice={
+            kind && <SessionNotice kind={kind} unsynced={unsynced} onSignIn={() => start(false)} />
+          }
+          onSignIn={() => start(false)}
+          onRegister={() => start(true)}
+        />
+        <FeatureGrid />
+        <ImportantNotice />
+        <StepsStrip />
+      </Box>
+      <LandingFooter />
+    </Box>
+  );
+}

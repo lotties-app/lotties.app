@@ -7,10 +7,7 @@ import { accountDatabaseName } from '../session/accountDatabase';
 import { AuthContext, accountIdOf, type AuthApi, type SessionState } from './AuthContext';
 import { forgetEndedSession, readEndedSession, rememberEndedSession } from './endedSession';
 import { SessionRenewal, type RenewalStatus } from './sessionRenewal';
-
-interface LoginState {
-  returnTo?: string;
-}
+import { registerRedirect, signinArgs, type LoginState } from './signinRequest';
 
 interface Props {
   config: AppConfig['oidc'];
@@ -51,7 +48,7 @@ export function OidcAuthProvider({ config, userManager: injected, children }: Pr
 
   return (
     <OidcProvider userManager={userManager} onSigninCallback={handleSigninCallback}>
-      <OidcBridge authority={config.authority} userManager={userManager}>
+      <OidcBridge authority={config.authority} audience={config.audience} userManager={userManager}>
         {children}
       </OidcBridge>
     </OidcProvider>
@@ -93,10 +90,12 @@ function useRenewal(userManager: UserManager, authority: string) {
 
 function OidcBridge({
   authority,
+  audience,
   userManager,
   children,
 }: {
   authority: string;
+  audience?: string;
   userManager: UserManager;
   children: ReactNode;
 }) {
@@ -135,7 +134,10 @@ function OidcBridge({
     error: oidc.error ?? null,
     session: sessionOf(status),
     sessionEnded: !isAuthenticated && (status === 'ended' || endedEarlier),
-    login: (returnTo) => oidc.signinRedirect({ state: { returnTo } satisfies LoginState }),
+    login: (returnTo, options) =>
+      options?.register
+        ? registerRedirect(userManager, signinArgs(returnTo, audience))
+        : oidc.signinRedirect(signinArgs(returnTo, audience)),
     logout: async () => {
       try {
         await oidc.signoutRedirect();

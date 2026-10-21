@@ -13,7 +13,7 @@ export function CallbackPage() {
       {error ? (
         <>
           <Alert severity="error">{t('auth.signInFailed')}</Alert>
-          <Button component={RouterLink} to="/login" variant="contained">
+          <Button component={RouterLink} to="/" variant="contained">
             {t('auth.backToSignIn')}
           </Button>
         </>
