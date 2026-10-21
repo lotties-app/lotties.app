@@ -32,12 +32,14 @@ export default defineConfig({
       ],
       // Light variant; the dark one is emitted by darkManifestPlugin (pwa-manifest.ts).
       manifest: LIGHT_MANIFEST,
-      workbox: {
-        // Only built, hashed assets are precached. API calls and the OIDC callback are never
-        // cached: no runtimeCaching rules exist, and navigations under these paths skip the fallback.
+      // Our own TypeScript worker (src/pwa/sw/sw.ts, built to sw.js): precache, cleanup,
+      // navigation fallback and SKIP_WAITING. Only built, hashed assets are precached; API calls
+      // and the OIDC callback are never cached (no runtime caching, see src/pwa/sw/navigation.ts).
+      strategies: 'injectManifest',
+      srcDir: 'src/pwa/sw',
+      filename: 'sw.ts',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/auth\/callback/],
       },
     }),
     // After VitePWA: it also removes the duplicate manifest link VitePWA injects.
