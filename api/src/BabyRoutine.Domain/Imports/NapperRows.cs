@@ -44,7 +44,23 @@ public sealed record NapperLogRow
     public string? TimeToFallAsleep { get; init; }
 
     public string? Comment { get; init; }
+
+    /// <summary>
+    /// Optional detail cells that could not be read (column name -> raw text), e.g. a <c>numberOfPauses</c> that is not
+    /// a number. Their typed property is <c>null</c>; the row is still imported and the mapper reports them as
+    /// <see cref="ImportSkippedField"/>s where it would have used them.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> InvalidCells { get; init; } = EmptyCells;
+
+    private static readonly IReadOnlyDictionary<string, string> EmptyCells = new Dictionary<string, string>(StringComparer.Ordinal);
 }
+
+/// <summary>
+/// A detail value of an imported row that could not be mapped to its payload field (unknown option, unreadable or out
+/// of range number). The row is still imported without it and the raw value is kept as a notes line.
+/// <see cref="Field"/> is the Napper column name; <see cref="Code"/> is <see cref="ImportSkipCodes.InvalidValue"/>.
+/// </summary>
+public sealed record ImportSkippedField(int Row, string? Category, string Field, string Value, string Code, string Reason);
 
 /// <summary>One parsed row of a Napper measurements export; <see cref="RowNumber"/> is the 1-based data record number.</summary>
 public sealed record NapperMeasurementRow(int RowNumber, DateOnly Date, decimal? WeightKg, decimal? HeightCm, decimal? HeadCircumferenceCm);

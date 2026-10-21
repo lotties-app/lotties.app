@@ -64,6 +64,110 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task List_SleepFields_ExposeHiddenAndIntegerFlags()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var response = await Owner(baby).GetAsync(TypesPath(baby.BabyId));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var sleep = document.RootElement.EnumerateArray().Single(type => type.GetProperty("key").GetString() == "sleep");
+        var fields = sleep.GetProperty("fields").EnumerateArray().ToDictionary(field => field.GetProperty("key").GetString()!);
+        Assert.Equal((true, false), (fields["mood"].GetProperty("hidden").GetBoolean(), fields["mood"].GetProperty("integer").GetBoolean()));
+        Assert.Equal((false, true), (fields["time_to_fall_asleep_minutes"].GetProperty("hidden").GetBoolean(), fields["time_to_fall_asleep_minutes"].GetProperty("integer").GetBoolean()));
+        Assert.Equal((true, true), (fields["paused_seconds"].GetProperty("hidden").GetBoolean(), fields["paused_seconds"].GetProperty("integer").GetBoolean()));
+        Assert.Equal("""{"field":"kind","equals":["nap","night"]}""", fields["how_slept"].GetProperty("visibleWhen").GetRawText());
+    }
+
+    [Fact]
+    public async Task Put_PausedRunningSleep_IsAcceptedButStoppingItWithTheOpenPauseIs400()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var eventId = Guid.NewGuid();
+        var paused = new { kind = "nap", pause_count = 1, paused_seconds = 120, paused_at = "2026-01-10T08:20:00.000Z" };
+
+        var started = await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, eventId), EventBody(BuiltInEventTypes.SleepId, paused, endedAt: null));
+        var stopped = await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, eventId), EventBody(BuiltInEventTypes.SleepId, paused, Start.AddMinutes(30)));
+
+        Assert.Equal(HttpStatusCode.Created, started.StatusCode);
+        await AssertFieldProblemAsync(stopped, "paused_at");
+    }
+
+    [Fact]
+    public async Task Put_StoppedSleepPausedLongerThanItLasted_Is400()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var response = await Owner(baby).PutAsJsonAsync(
+            EventPath(baby.BabyId, Guid.NewGuid()),
+            EventBody(BuiltInEventTypes.SleepId, new { kind = "nap", pause_count = 2, paused_seconds = 1801 }, Start.AddMinutes(30)));
+
+        await AssertFieldProblemAsync(response, "paused_seconds");
+    }
+
+    [Fact]
+    public async Task Put_NapWithSleepDetailsAndPauses_IsStored()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var payload = new { kind = "nap", how_slept = "stroller", fall_asleep = "fussy", time_to_fall_asleep_minutes = 20, how_woke = "woken", mood_on_wake = "neutral", pause_count = 2, paused_seconds = 300 };
+
+        var response = await Owner(baby).PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.SleepId, payload, Start.AddMinutes(45)));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_NightWakingWithSleepDetails_Is400()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var response = await Owner(baby).PutAsJsonAsync(
+            EventPath(baby.BabyId, Guid.NewGuid()),
+            EventBody(BuiltInEventTypes.SleepId, new { kind = "night_waking", how_woke = "woken" }, Start.AddMinutes(10)));
+
+        await AssertFieldProblemAsync(response, "how_woke");
+    }
+
+    [Fact]
+    public async Task Create_CustomTypeWithHiddenIntegerField_RoundTripsTheFlags()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var body = new
+        {
+            key = "reading",
+            name = "Reading",
+            icon = "star",
+            color = "#123abc",
+            hasDuration = true,
+            fields = new object[] { new { key = "pages", label = "Pages", kind = "number", min = 0, integer = true, hidden = true } },
+        };
+
+        var created = await (await Owner(baby).PostAsJsonAsync(TypesPath(baby.BabyId), body)).ReadAsync<EventTypeResponse>();
+
+        var pages = Assert.Single(created.Fields);
+        Assert.Equal((true, true), (pages.Hidden, pages.Integer));
+    }
+
+    [Fact]
+    public async Task Create_CustomTypeWithIntegerTextField_Is400()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var body = new
+        {
+            key = "diary",
+            name = "Diary",
+            icon = "star",
+            color = "#123abc",
+            hasDuration = false,
+            fields = new object[] { new { key = "entry", label = "Entry", kind = "text", integer = true } },
+        };
+
+        var response = await Owner(baby).PostAsJsonAsync(TypesPath(baby.BabyId), body);
+
+        await AssertFieldProblemAsync(response, "IsInteger");
+    }
+
+    [Fact]
     public async Task List_BreastPumpBuiltIn_IsADurationTypeWithLeftAndRightAmounts()
     {
         var baby = await factory.SeedBabyAsync();
@@ -72,8 +176,9 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
 
         var pump = types.Single(type => type.Key == "breast_pump");
         Assert.Equal((BuiltInEventTypes.BreastPumpId, (Guid?)null, "Breast pump", "opacity", "#26c6da", true), (pump.Id, pump.BabyId, pump.Name, pump.Icon, pump.Color, pump.HasDuration));
-        Assert.Equal(["amount_left_ml", "amount_right_ml"], pump.Fields.Select(field => field.Key));
-        Assert.All(pump.Fields, field => Assert.Equal((EventFieldKind.Number, 0m, "ml"), (field.Kind, field.Min!.Value, field.Unit)));
+        Assert.Equal(["amount_left_ml", "amount_right_ml", "pause_count", "paused_seconds", "paused_at"], pump.Fields.Select(field => field.Key));
+        Assert.All(pump.Fields.Take(2), field => Assert.Equal((EventFieldKind.Number, 0m, "ml", false), (field.Kind, field.Min!.Value, field.Unit, field.Hidden)));
+        Assert.All(pump.Fields.Skip(2), field => Assert.True(field.Hidden));
     }
 
     [Fact]

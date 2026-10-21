@@ -7,10 +7,11 @@ namespace BabyRoutine.Domain.Tests.EventTypes;
 /// <summary><see cref="EventType.EnsureValidPayload"/>: kinds, options, ranges, required fields and hidden fields.</summary>
 public sealed class EventPayloadValidationTests
 {
+    private static readonly DateTimeOffset Started = new(2026, 1, 10, 8, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset Ended = new(2026, 1, 10, 8, 30, 0, TimeSpan.Zero);
 
     private static void Ensure(EventType eventType, string json, DateTimeOffset? endedAt) =>
-        eventType.EnsureValidPayload(EventPayload.From(json), endedAt);
+        eventType.EnsureValidPayload(EventPayload.From(json), Started, endedAt);
 
     private static DomainValidationException Rejected(EventType eventType, string json, DateTimeOffset? endedAt = null) =>
         Assert.Throws<DomainValidationException>(() => Ensure(eventType, json, endedAt ?? Ended));

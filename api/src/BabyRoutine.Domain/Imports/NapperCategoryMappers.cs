@@ -42,8 +42,9 @@ internal sealed class BottleMapper : INapperCategoryMapper
 }
 
 /// <summary>
-/// <c>NURSING</c> -> feeding, method <c>breast</c>, left/right seconds and the side they imply (left, right or both).
-/// When Napper stored the session as an instant, the end becomes start plus the nursed seconds.
+/// <c>NURSING</c> -> feeding, method <c>breast</c>, left/right seconds and the side they imply (left, right or both),
+/// plus the pauses (<see cref="NapperDetails.AddPauses"/>). When Napper stored the session as an instant, the end becomes
+/// start plus the nursed seconds.
 /// </summary>
 internal sealed class NursingMapper : INapperCategoryMapper
 {
@@ -53,14 +54,19 @@ internal sealed class NursingMapper : INapperCategoryMapper
 
     public NapperRowOutcome Map(NapperLogRow row)
     {
+        var end = EndOf(row);
+        var details = new NapperDetails(row);
         var payload = new PayloadBuilder()
             .With("method", "breast")
             .With("side", SideOf(row.BreastLeftSeconds, row.BreastRightSeconds))
             .With("breast_left_seconds", row.BreastLeftSeconds)
-            .With("breast_right_seconds", row.BreastRightSeconds)
-            .Build();
-        var notes = NapperNotes.Compose(row.Comment, NapperNotes.Line("Pauses", row.NumberOfPauses), NapperNotes.Line("Paused minutes", row.PausedMinutes));
-        return NapperRowOutcome.Mapped(new NapperEventDraft(row, Type, row.Start, EndOf(row), payload, notes, []));
+            .With("breast_right_seconds", row.BreastRightSeconds);
+        var built = details.AddPauses(payload, row.Start, end).Build();
+        var draft = new NapperEventDraft(row, Type, row.Start, end, built, NapperNotes.Compose(row.Comment, details.NotesLines), [])
+        {
+            SkippedFields = details.SkippedFields,
+        };
+        return NapperRowOutcome.Mapped(draft);
     }
 
     private static string? SideOf(int? leftSeconds, int? rightSeconds) => (leftSeconds > 0, rightSeconds > 0) switch
@@ -125,17 +131,19 @@ internal sealed class DiaperMapper : INapperCategoryMapper
 
 /// <summary>
 /// <c>NAP</c>, <c>NIGHT_WAKING</c> (durations) and <c>BED_TIME</c>, <c>WOKE_UP</c> (instants) -> sleep with
-/// <c>kind</c> nap|night_waking|bed_time|woke_up. <c>mood</c> is the mood on wake-up (else how the baby slept); the
-/// other sleep attributes go to the notes.
+/// <c>kind</c> nap|night_waking|bed_time|woke_up. Naps get the sleep detail fields
+/// (<see cref="NapperDetails.AddSleepDetails"/>); the other kinds have no detail fields, so their sleep columns become
+/// notes lines. Durations (naps and night wakings) get their pauses. The deprecated free-text <c>mood</c> is no longer
+/// written.
 /// </summary>
 internal sealed class SleepMapper : INapperCategoryMapper
 {
     private static readonly FrozenDictionary<string, SleepKind> Kinds = new Dictionary<string, SleepKind>(StringComparer.Ordinal)
     {
-        ["NAP"] = new("nap", IsInstant: false),
-        ["NIGHT_WAKING"] = new("night_waking", IsInstant: false),
-        ["BED_TIME"] = new("bed_time", IsInstant: true),
-        ["WOKE_UP"] = new("woke_up", IsInstant: true),
+        ["NAP"] = new("nap", IsInstant: false, HasDetails: true),
+        ["NIGHT_WAKING"] = new("night_waking", IsInstant: false, HasDetails: false),
+        ["BED_TIME"] = new("bed_time", IsInstant: true, HasDetails: false),
+        ["WOKE_UP"] = new("woke_up", IsInstant: true, HasDetails: false),
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
     public EventType Type => BuiltInEventTypes.Sleep;
@@ -150,21 +158,19 @@ internal sealed class SleepMapper : INapperCategoryMapper
             return NapperRowOutcome.Skipped(row, ImportSkipCodes.MissingValue, "end is empty (the sleep is still running in Napper).");
         }
 
-        var moodOnWakeUp = NonBlank(row.BabyMoodOnWakeUp);
-        var payload = new PayloadBuilder().With("kind", kind.Value).With("mood", moodOnWakeUp ?? NonBlank(row.HowBabySlept)).Build();
-        var notes = NapperNotes.Compose(
-            row.Comment,
-            NapperNotes.Line("Mood on sleep", row.BabyMoodOnSleep),
-            moodOnWakeUp is null ? null : NapperNotes.Line("How baby slept", row.HowBabySlept),
-            NapperNotes.Line("How baby woke", row.HowBabyWoke),
-            NapperNotes.Line("Time to fall asleep", row.TimeToFallAsleep));
         var end = kind.IsInstant ? row.Start : row.End!.Value;
-        return NapperRowOutcome.Mapped(new NapperEventDraft(row, Type, row.Start, end, payload, notes, []));
+        var details = new NapperDetails(row);
+        var payload = new PayloadBuilder().With("kind", kind.Value);
+        var withSleep = kind.HasDetails ? details.AddSleepDetails(payload) : details.AddSleepNotes(payload);
+        var withPauses = kind.IsInstant ? withSleep : details.AddPauses(withSleep, row.Start, end);
+        var draft = new NapperEventDraft(row, Type, row.Start, end, withPauses.Build(), NapperNotes.Compose(row.Comment, details.NotesLines), [])
+        {
+            SkippedFields = details.SkippedFields,
+        };
+        return NapperRowOutcome.Mapped(draft);
     }
 
-    private static string? NonBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private sealed record SleepKind(string Value, bool IsInstant);
+    private sealed record SleepKind(string Value, bool IsInstant, bool HasDetails);
 }
 
 /// <summary>

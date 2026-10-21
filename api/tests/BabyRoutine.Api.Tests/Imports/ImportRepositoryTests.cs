@@ -71,6 +71,80 @@ public sealed class ImportRepositoryTests(ApiFactory factory) : IClassFixture<Ap
         Assert.False(await factory.QueryAsync(context => context.Medications.AnyAsync(stored => stored.Id == medication.Id)));
     }
 
+    private static Event NewNap(Guid babyId, Guid userId) =>
+        Event.Create(Guid.NewGuid(), babyId, BuiltInEventTypes.SleepId, userId, TestUsers.Now, TestUsers.Now.AddHours(1), EventPayload.From("""{"kind":"nap"}"""), "note", TestUsers.Now);
+
+    private static EventEnrichment Enrichment(Event stored, string enriched, params string[] fields) =>
+        new(stored.Id, stored.Payload, new EnrichedPayload(EventPayload.From(enriched), fields), TestUsers.Now.AddDays(1));
+
+    private Task SaveAsync(ImportBatch batch) => WithImportsAsync(async imports =>
+    {
+        await imports.SaveAsync(batch);
+        return true;
+    });
+
+    [Fact]
+    public async Task SaveAsync_Enrichment_ReplacesThePayloadAndStampsBothUpdateTimes()
+    {
+        var (babyId, userId) = await SeedAsync();
+        var nap = NewNap(babyId, userId);
+        await SaveAsync(new ImportBatch([], [nap], []));
+
+        await SaveAsync(new ImportBatch([], [], []) { Enrichments = [Enrichment(nap, """{"kind":"nap","pause_count":1}""", "pause_count")] });
+
+        var stored = await factory.QueryAsync(context => context.Events.SingleAsync(item => item.Id == nap.Id));
+        Assert.Equal(("""{"kind":"nap","pause_count":1}""", "note", nap.StartedAt), (stored.Payload.Value.Replace(" ", string.Empty, StringComparison.Ordinal), stored.Notes, stored.StartedAt));
+        Assert.Equal((TestUsers.Now.AddDays(1), TestUsers.Now.AddDays(1)), (stored.UpdatedAt, stored.ClientUpdatedAt));
+    }
+
+    [Fact]
+    public async Task SaveAsync_EnrichmentOfAnEventChangedSinceThePlan_RollsBackTheInsertsAndThrowsConflict()
+    {
+        var (babyId, userId) = await SeedAsync();
+        var nap = NewNap(babyId, userId);
+        await SaveAsync(new ImportBatch([], [nap], []));
+        var stale = Enrichment(nap, """{"kind":"nap","pause_count":1}""", "pause_count") with
+        {
+            ExpectedPayload = EventPayload.From("""{"kind":"night"}"""),
+        };
+        var fresh = NewEvent(Guid.NewGuid(), babyId, userId);
+
+        await Assert.ThrowsAsync<ImportConflictException>(() => SaveAsync(new ImportBatch([], [fresh], []) { Enrichments = [stale] }));
+
+        Assert.False(await factory.QueryAsync(context => context.EventsIncludingDeleted.AnyAsync(item => item.Id == fresh.Id)));
+        Assert.Equal("""{"kind":"nap"}""", (await factory.QueryAsync(context => context.Events.SingleAsync(item => item.Id == nap.Id))).Payload.Value.Replace(" ", string.Empty, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SaveAsync_EnrichmentOfASoftDeletedEvent_ThrowsConflictAndSavesNothing()
+    {
+        var (babyId, userId) = await SeedAsync();
+        var nap = NewNap(babyId, userId);
+        var enrichment = Enrichment(nap, """{"kind":"nap","pause_count":1}""", "pause_count");
+        nap.SoftDelete(TestUsers.Now);
+        await SaveAsync(new ImportBatch([], [nap], []));
+
+        await Assert.ThrowsAsync<ImportConflictException>(() => SaveAsync(new ImportBatch([], [], []) { Enrichments = [enrichment] }));
+
+        Assert.Equal("""{"kind":"nap"}""", (await factory.QueryAsync(context => context.EventsIncludingDeleted.SingleAsync(item => item.Id == nap.Id))).Payload.Value.Replace(" ", string.Empty, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task FindEventsAsync_ReturnsOnlyTheBabysEventsThatAreNotDeleted()
+    {
+        var (babyId, userId) = await SeedAsync();
+        var (otherBabyId, otherUserId) = await SeedAsync();
+        var kept = NewNap(babyId, userId);
+        var deleted = NewNap(babyId, userId);
+        deleted.SoftDelete(TestUsers.Now);
+        var foreign = NewNap(otherBabyId, otherUserId);
+        await SaveAsync(new ImportBatch([], [kept, deleted, foreign], []));
+
+        var found = await WithImportsAsync(imports => imports.FindEventsAsync(babyId, [kept.Id, deleted.Id, foreign.Id, Guid.NewGuid()]));
+
+        Assert.Equal([kept.Id], found.Select(item => item.Id));
+    }
+
     [Fact]
     public async Task FindExistingEventIdsAsync_ReturnsOnlyStoredIdsIncludingSoftDeleted()
     {

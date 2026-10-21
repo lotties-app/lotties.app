@@ -1,3 +1,5 @@
+using BabyRoutine.Domain.Events;
+
 namespace BabyRoutine.Domain.EventTypes;
 
 /// <summary>
@@ -10,7 +12,10 @@ namespace BabyRoutine.Domain.EventTypes;
 /// (dose optional), referencing the baby's medication catalog. Sleep <c>kind</c> also has the instant markers
 /// <c>bed_time</c> and <c>woke_up</c> (Napper import). Feeding details depend on <c>method</c> (<see cref="FieldVisibilityCondition"/>):
 /// <c>side</c> and the breast seconds for <c>breast</c>, <c>amount_ml</c> and <c>bottle_feeding_type</c> for <c>bottle</c>,
-/// <c>food</c> for <c>solid</c>.
+/// <c>food</c> for <c>solid</c>. Every type with a duration (and bath, which clients may time) declares the hidden pause
+/// keys of <see cref="PauseFields"/>. Sleep has optional detail fields (<see cref="SleepDetailFields"/>) for the
+/// <c>nap</c> and <c>night</c> kinds; its free-text <c>mood</c> is deprecated (replaced by <c>mood_on_wake</c>), hidden
+/// from forms and kept only so older events stay valid and readable.
 /// </remarks>
 public static class BuiltInEventTypes
 {
@@ -38,6 +43,7 @@ public static class BuiltInEventTypes
             EventFieldDefinition.Create("breast_left_seconds", "Left breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
             EventFieldDefinition.Create("breast_right_seconds", "Right breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
             EventFieldDefinition.Create("food", "Food", EventFieldKind.Text, visibleWhen: WhenMethodIs("solid")),
+            .. PauseFieldDefinitions(),
         ]);
 
     public static EventType Sleep { get; } = EventType.CreateBuiltIn(
@@ -49,7 +55,13 @@ public static class BuiltInEventTypes
         hasDuration: true,
         [
             EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["nap", "night", "night_waking", "bed_time", "woke_up", "fell_asleep"]),
-            EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text),
+            EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text, isHidden: true),
+            EventFieldDefinition.Create(SleepDetailFields.HowSlept, "How slept", EventFieldKind.Select, options: SleepDetailFields.HowSleptOptions, visibleWhen: WhenSleepDetailsApply()),
+            EventFieldDefinition.Create(SleepDetailFields.FallAsleep, "Falling asleep", EventFieldKind.Select, options: SleepDetailFields.FallAsleepOptions, visibleWhen: WhenSleepDetailsApply()),
+            EventFieldDefinition.Create(SleepDetailFields.TimeToFallAsleepMinutes, "Time to fall asleep", EventFieldKind.Number, min: 0, max: SleepDetailFields.MaxTimeToFallAsleepMinutes, unit: "min", visibleWhen: WhenSleepDetailsApply(), isInteger: true),
+            EventFieldDefinition.Create(SleepDetailFields.HowWoke, "How woke", EventFieldKind.Select, options: SleepDetailFields.HowWokeOptions, visibleWhen: WhenSleepDetailsApply()),
+            EventFieldDefinition.Create(SleepDetailFields.MoodOnWake, "Mood on waking", EventFieldKind.Select, options: SleepDetailFields.MoodOptions, visibleWhen: WhenSleepDetailsApply()),
+            .. PauseFieldDefinitions(),
         ]);
 
     public static EventType Diaper { get; } = EventType.CreateBuiltIn(
@@ -72,6 +84,7 @@ public static class BuiltInEventTypes
         hasDuration: false,
         [
             EventFieldDefinition.Create("temperature_c", "Water temperature", EventFieldKind.Number, min: 0, max: 60, unit: "C"),
+            .. PauseFieldDefinitions(),
         ]);
 
     public static EventType TummyTime { get; } = EventType.CreateBuiltIn(
@@ -83,6 +96,7 @@ public static class BuiltInEventTypes
         hasDuration: true,
         [
             EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text),
+            .. PauseFieldDefinitions(),
         ]);
 
     public static EventType Medication { get; } = EventType.CreateBuiltIn(
@@ -115,10 +129,21 @@ public static class BuiltInEventTypes
         [
             EventFieldDefinition.Create("amount_left_ml", "Left amount", EventFieldKind.Number, min: 0, unit: "ml"),
             EventFieldDefinition.Create("amount_right_ml", "Right amount", EventFieldKind.Number, min: 0, unit: "ml"),
+            .. PauseFieldDefinitions(),
         ]);
 
     public static IReadOnlyList<EventType> All { get; } = Array.AsReadOnly(
         new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump });
 
     private static FieldVisibilityCondition WhenMethodIs(string method) => FieldVisibilityCondition.Create("method", [method]);
+
+    private static FieldVisibilityCondition WhenSleepDetailsApply() => FieldVisibilityCondition.Create("kind", SleepDetailFields.Kinds);
+
+    /// <summary>The reserved pause keys (<see cref="PauseFields"/>), hidden from forms: timers fill them on pause/resume.</summary>
+    private static EventFieldDefinition[] PauseFieldDefinitions() =>
+    [
+        EventFieldDefinition.Create(PauseFields.PauseCount, "Pauses", EventFieldKind.Number, min: 0, max: PauseFields.MaxPauseCount, isHidden: true, isInteger: true),
+        EventFieldDefinition.Create(PauseFields.PausedSeconds, "Paused time", EventFieldKind.Number, min: 0, max: PauseFields.MaxPausedSeconds, unit: "s", isHidden: true, isInteger: true),
+        EventFieldDefinition.Create(PauseFields.PausedAt, "Paused at", EventFieldKind.Text, isHidden: true),
+    ];
 }

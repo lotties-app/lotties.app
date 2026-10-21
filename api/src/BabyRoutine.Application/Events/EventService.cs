@@ -81,7 +81,7 @@ internal sealed class EventService : IEventService
     private async Task<UpsertEventResult> CreateAsync(Guid babyId, Guid eventId, UpsertEventRequest request, CancellationToken cancellationToken)
     {
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
-        eventType.EnsureValidPayload(request.Payload, request.EndedAt);
+        eventType.EnsureValidPayload(request.Payload, request.StartedAt, request.EndedAt);
         await EnsurePrescriptionReferencesAsync(babyId, request, cancellationToken);
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var created = Event.Create(
@@ -143,7 +143,7 @@ internal sealed class EventService : IEventService
             return;
         }
 
-        eventType.EnsureValidPayload(request.Payload, request.EndedAt);
+        eventType.EnsureValidPayload(request.Payload, request.StartedAt, request.EndedAt);
         await EnsurePrescriptionReferencesAsync(babyId, request, cancellationToken);
     }
 

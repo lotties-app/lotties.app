@@ -68,7 +68,7 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
         var preview = await (await As(baby, BabyRole.Owner).PostAsJsonAsync(PreviewPath(baby.BabyId), Body())).ReadAsync<NapperImportPreviewResponse>();
 
         var logs = preview.Logs!;
-        Assert.Equal((17, 13, 0, 4), (logs.TotalRows, logs.ToCreate, logs.AlreadyImported, logs.Skipped));
+        Assert.Equal((21, 17, 0, 4), (logs.TotalRows, logs.ToCreate, logs.AlreadyImported, logs.Skipped));
         Assert.Equal(new DateTimeOffset(2025, 9, 1, 11, 0, 0, TimeSpan.Zero), logs.From);
         Assert.Equal(new DateTimeOffset(2025, 9, 2, 22, 0, 0, TimeSpan.Zero), logs.To);
         Assert.Equal(
@@ -124,7 +124,7 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
         var imported = await (await client.PostAsJsonAsync(ImportPath(baby.BabyId), Body(FullMappings(catalog)))).ReadAsync<NapperImportResponse>();
 
         Assert.Equal((preview.Logs!.ToCreate, preview.Measurements!.ToCreate), (imported.EventsCreated, imported.MeasurementsCreated));
-        Assert.Equal((13, 3), (await EventCountAsync(baby.BabyId), await MeasurementCountAsync(baby.BabyId)));
+        Assert.Equal((17, 3), (await EventCountAsync(baby.BabyId), await MeasurementCountAsync(baby.BabyId)));
         Assert.Equal(["Colicaliv", "Puravit"], imported.CreatedMedications.Select(medication => medication.Name).Order());
         Assert.Equal(4, await MedicationCountAsync(baby.BabyId));
         Assert.Equal(preview.Logs.SkippedRows, imported.Logs!.SkippedRows);
@@ -164,8 +164,8 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
 
         Assert.Equal((0, 0), (second.EventsCreated, second.MeasurementsCreated));
         Assert.Empty(second.CreatedMedications);
-        Assert.Equal((13, 3), (second.Logs!.AlreadyImported, second.Measurements!.AlreadyImported));
-        Assert.Equal((13, 3, 4), (await EventCountAsync(baby.BabyId), await MeasurementCountAsync(baby.BabyId), await MedicationCountAsync(baby.BabyId)));
+        Assert.Equal((17, 3), (second.Logs!.AlreadyImported, second.Measurements!.AlreadyImported));
+        Assert.Equal((17, 3, 4), (await EventCountAsync(baby.BabyId), await MeasurementCountAsync(baby.BabyId), await MedicationCountAsync(baby.BabyId)));
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
 
         var imported = await (await As(baby, BabyRole.Owner).PostAsJsonAsync(ImportPath(baby.BabyId), Body(ignoreAll))).ReadAsync<NapperImportResponse>();
 
-        Assert.Equal(9, imported.EventsCreated);
+        Assert.Equal(13, imported.EventsCreated);
         Assert.Equal(4, imported.Logs!.SkippedRows.Count(skipped => skipped.Code == "medications_ignored"));
         Assert.Empty(imported.CreatedMedications);
     }
@@ -287,7 +287,7 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
         var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(ImportPath(baby.BabyId), Body(options: new { categories = new[] { "nap", "BED_TIME" } }));
 
         var imported = await response.ReadAsync<NapperImportResponse>();
-        Assert.Equal(2, imported.EventsCreated);
+        Assert.Equal(5, imported.EventsCreated);
         Assert.Contains(imported.Logs!.SkippedRows, skipped => skipped.Code == "excluded_category");
     }
 

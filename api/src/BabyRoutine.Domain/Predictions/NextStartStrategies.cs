@@ -34,9 +34,9 @@ internal sealed class AwakeWindowStrategy : INextStartStrategy
             .Select(pair => new TimedSample(pair.Second.StartedAt - pair.First.EndedAt!.Value, pair.First.EndedAt.Value));
 
     /// <remarks>
-    /// While the last sleep is running the wake time is estimated as its start plus the typical duration of sleeps of
-    /// its kind (see <see cref="TypePredictor"/>), and never
-    /// earlier than <paramref name="now"/> because the baby is still asleep.
+    /// While the last sleep is running the wake time is estimated as its start plus the typical (effective) duration of
+    /// sleeps of its kind (see <see cref="TypePredictor"/>) plus the pauses it already had, and never earlier than
+    /// <paramref name="now"/> because the baby is still asleep.
     /// </remarks>
     public NextStartAnchor FindAnchor(IReadOnlyList<ObservedEvent> chronological, DateTimeOffset now, Func<ObservedEvent, TimeSpan?> typicalDurationOf)
     {
@@ -46,7 +46,7 @@ internal sealed class AwakeWindowStrategy : INextStartStrategy
             return new NextStartAnchor(wokeAt, false);
         }
 
-        var expectedWake = last.StartedAt + (typicalDurationOf(last) ?? TimeSpan.Zero);
+        var expectedWake = last.StartedAt + (typicalDurationOf(last) ?? TimeSpan.Zero) + last.Paused;
         return new NextStartAnchor(expectedWake > now ? expectedWake : now, true);
     }
 }

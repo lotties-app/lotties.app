@@ -33,6 +33,8 @@ public sealed record FieldVisibilityConditionDto
 /// One field of an event type. <see cref="Kind"/> is written as <c>text</c>, <c>number</c>, <c>select</c> or <c>bool</c>.
 /// <see cref="Options"/> apply to select fields, <see cref="Min"/>, <see cref="Max"/> and <see cref="Unit"/> to number fields.
 /// <see cref="VisibleWhen"/> (any kind, <c>null</c> when the field is always shown) makes the field depend on a select field.
+/// <see cref="Hidden"/> fields are validated like any other but forms must not render them; <see cref="Integer"/>
+/// (number fields) accepts whole numbers only. Both default to <c>false</c>.
 /// </summary>
 public sealed record EventFieldDefinitionDto
 {
@@ -55,6 +57,10 @@ public sealed record EventFieldDefinitionDto
 
     public FieldVisibilityConditionDto? VisibleWhen { get; init; }
 
+    public bool Hidden { get; init; }
+
+    public bool Integer { get; init; }
+
     public static implicit operator EventFieldDefinitionDto(EventFieldDefinition field)
     {
         ArgumentNullException.ThrowIfNull(field);
@@ -69,6 +75,8 @@ public sealed record EventFieldDefinitionDto
             Max = field.Max,
             Unit = field.Unit,
             VisibleWhen = field.VisibleWhen is null ? null : (FieldVisibilityConditionDto)field.VisibleWhen,
+            Hidden = field.IsHidden,
+            Integer = field.IsInteger,
         };
     }
 
@@ -77,7 +85,7 @@ public sealed record EventFieldDefinitionDto
     {
         ArgumentNullException.ThrowIfNull(dto);
         var visibleWhen = dto.VisibleWhen is null ? null : (FieldVisibilityCondition)dto.VisibleWhen;
-        return EventFieldDefinition.Create(dto.Key, dto.Label, dto.Kind, dto.IsRequired, dto.Options, dto.Min, dto.Max, dto.Unit, visibleWhen);
+        return EventFieldDefinition.Create(dto.Key, dto.Label, dto.Kind, dto.IsRequired, dto.Options, dto.Min, dto.Max, dto.Unit, visibleWhen, dto.Hidden, dto.Integer);
     }
 }
 

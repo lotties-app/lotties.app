@@ -7,6 +7,8 @@ namespace BabyRoutine.Domain.Imports;
 /// The event a Napper row maps to, before it gets an id and is validated as an <see cref="Event"/>. Instant types
 /// have <see cref="EndedAt"/> equal to <see cref="StartedAt"/>. Medicine rows carry their medication names in
 /// <see cref="MedicationTokens"/>; their payload is built once the tokens are resolved against the catalog.
+/// <see cref="SkippedFields"/> are detail values the mapping could not use (kept as notes lines instead); they do not
+/// take part in duplicate detection.
 /// </summary>
 public sealed record NapperEventDraft(
     NapperLogRow Source,
@@ -17,6 +19,8 @@ public sealed record NapperEventDraft(
     string? Notes,
     IReadOnlyList<string> MedicationTokens)
 {
+    public IReadOnlyList<ImportSkippedField> SkippedFields { get; init; } = [];
+
     /// <summary>Equal for two rows that would create exactly the same event.</summary>
     internal string ContentKey =>
         string.Join('\u001f', Type.Id, StartedAt.UtcTicks, EndedAt.UtcTicks, Payload.Value, Notes, string.Join('\u001e', MedicationTokens));

@@ -124,11 +124,16 @@ public sealed class EventType
     /// values match their field kind, select values are options, numbers are within range, hidden fields
     /// (<see cref="EventFieldDefinition.VisibleWhen"/> not met) hold no value and, once the event is complete (an
     /// instant type, or <paramref name="endedAt"/> set: a running timer may still be filled in), visible required fields
-    /// are present. Members no field declares are left alone. Throws <see cref="DomainValidationException"/> with the
+    /// are present. Members no field declares are left alone, except the reserved pause keys, which every type checks
+    /// (<see cref="EventPauseRules"/>: whole numbers in range, <c>paused_seconds</c> within <paramref name="startedAt"/> to
+    /// <paramref name="endedAt"/>, no <c>paused_at</c> once ended). Throws <see cref="DomainValidationException"/> with the
     /// field key.
     /// </summary>
-    public void EnsureValidPayload(EventPayload payload, DateTimeOffset? endedAt) =>
+    public void EnsureValidPayload(EventPayload payload, DateTimeOffset startedAt, DateTimeOffset? endedAt)
+    {
         EventPayloadFieldRules.Ensure(Fields, payload, isComplete: !HasDuration || endedAt is not null);
+        EventPauseRules.Ensure(payload, startedAt, endedAt);
+    }
 
     /// <summary>Throws <see cref="BuiltInEventTypeReadOnlyException"/> for built-in templates, which can never be deleted.</summary>
     public void EnsureDeletable() => EnsureCustom();

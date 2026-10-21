@@ -11,6 +11,7 @@ public sealed record NapperImportContext(Guid BabyId, Guid CreatedBy, DateTimeOf
 /// <summary>
 /// A row that maps to a valid event with its deterministic id. <see cref="MedicationTokens"/> are the names of a
 /// medicine row; <see cref="UnmappedTokens"/> those of them without a mapping (left out of <see cref="Event"/>'s payload).
+/// <see cref="SkippedFields"/> are the row's detail values that could not be mapped.
 /// </summary>
 public sealed record NapperEventCandidate(
     int RowNumber,
@@ -18,7 +19,10 @@ public sealed record NapperEventCandidate(
     Event Event,
     IReadOnlyList<string> MedicationTokens,
     IReadOnlyList<string> UnmappedTokens,
-    IReadOnlyList<ImportedMedication> Medications);
+    IReadOnlyList<ImportedMedication> Medications)
+{
+    public IReadOnlyList<ImportSkippedField> SkippedFields { get; init; } = [];
+}
 
 /// <summary>The events a logs export maps to and the rows that are skipped, in file order.</summary>
 public sealed record NapperEventPlan(int TotalRows, IReadOnlyList<NapperEventCandidate> Candidates, IReadOnlyList<ImportSkippedRow> Skipped);
@@ -97,9 +101,13 @@ public static class NapperEventPlanner
         try
         {
             var payload = draft.MedicationTokens.Count > 0 ? MedicationPayload(resolution.Medications) : draft.Payload;
-            draft.Type.EnsureValidPayload(payload, draft.EndedAt);
+            draft.Type.EnsureValidPayload(payload, draft.StartedAt, draft.EndedAt);
             var created = Event.Create(identified.Id, context.BabyId, draft.Type.Id, context.CreatedBy, draft.StartedAt, draft.EndedAt, payload, draft.Notes, context.Now);
-            return BuildResult.Built(new NapperEventCandidate(draft.Source.RowNumber, draft.Source.Category, created, draft.MedicationTokens, resolution.Unmapped, resolution.Medications));
+            var candidate = new NapperEventCandidate(draft.Source.RowNumber, draft.Source.Category, created, draft.MedicationTokens, resolution.Unmapped, resolution.Medications)
+            {
+                SkippedFields = draft.SkippedFields,
+            };
+            return BuildResult.Built(candidate);
         }
         catch (DomainException exception)
         {

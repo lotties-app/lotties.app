@@ -7,7 +7,10 @@ namespace BabyRoutine.Domain.EventTypes;
 /// Definition of one field in an event's payload. <see cref="Options"/> apply only to
 /// <see cref="EventFieldKind.Select"/>; <see cref="Min"/>, <see cref="Max"/> and <see cref="Unit"/> only to
 /// <see cref="EventFieldKind.Number"/>. <see cref="VisibleWhen"/> (any kind) shows the field only for some values of
-/// another select field; a hidden field is never required and must not hold a value.
+/// another select field; a field hidden that way is never required and must not hold a value. <see cref="IsHidden"/> is
+/// unrelated: such a field is validated like any other but clients do not render it in their forms (it is filled by
+/// dedicated UI, e.g. timer pauses, or kept only so older events stay valid). <see cref="IsInteger"/> (number fields
+/// only) accepts whole numbers only.
 /// </summary>
 public sealed class EventFieldDefinition
 {
@@ -24,7 +27,9 @@ public sealed class EventFieldDefinition
         decimal? min,
         decimal? max,
         string? unit,
-        FieldVisibilityCondition? visibleWhen)
+        FieldVisibilityCondition? visibleWhen,
+        bool isHidden,
+        bool isInteger)
     {
         Key = key;
         Label = label;
@@ -35,6 +40,8 @@ public sealed class EventFieldDefinition
         Max = max;
         Unit = unit;
         VisibleWhen = visibleWhen;
+        IsHidden = isHidden;
+        IsInteger = isInteger;
     }
 
     /// <summary>Lower snake_case property name inside the event payload.</summary>
@@ -57,6 +64,12 @@ public sealed class EventFieldDefinition
     /// <summary>When set, the field applies only while the referenced select field holds one of the listed values.</summary>
     public FieldVisibilityCondition? VisibleWhen { get; }
 
+    /// <summary>Validated like any field, but not rendered by client forms.</summary>
+    public bool IsHidden { get; }
+
+    /// <summary>Number fields only: the value must be a whole number.</summary>
+    public bool IsInteger { get; }
+
     public static EventFieldDefinition Create(
         string key,
         string label,
@@ -66,7 +79,9 @@ public sealed class EventFieldDefinition
         decimal? min = null,
         decimal? max = null,
         string? unit = null,
-        FieldVisibilityCondition? visibleWhen = null)
+        FieldVisibilityCondition? visibleWhen = null,
+        bool isHidden = false,
+        bool isInteger = false)
     {
         var validatedKind = EnsureDefined(kind);
         var validatedKey = EnsureKey(key);
@@ -79,7 +94,9 @@ public sealed class EventFieldDefinition
             ValidateNumberOnly(validatedKind, min, nameof(Min)),
             ValidateMax(validatedKind, min, max),
             ValidateUnit(validatedKind, unit),
-            EnsureNotSelfReferencing(validatedKey, visibleWhen));
+            EnsureNotSelfReferencing(validatedKey, visibleWhen),
+            isHidden,
+            ValidateIntegerFlag(validatedKind, isInteger));
     }
 
     private static string EnsureKey(string? key)
@@ -134,6 +151,11 @@ public sealed class EventFieldDefinition
             ? validated
             : throw new DomainValidationException(nameof(Max), "Max must be greater than or equal to Min.");
     }
+
+    private static bool ValidateIntegerFlag(EventFieldKind kind, bool isInteger) =>
+        !isInteger || kind == EventFieldKind.Number
+            ? isInteger
+            : throw new DomainValidationException(nameof(IsInteger), "Only number fields can be integer.");
 
     private static string? ValidateUnit(EventFieldKind kind, string? unit)
     {

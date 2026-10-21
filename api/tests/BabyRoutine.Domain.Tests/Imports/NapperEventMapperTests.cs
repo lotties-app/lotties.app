@@ -64,11 +64,14 @@ public sealed class NapperEventMapperTests
     }
 
     [Fact]
-    public void Map_PayloadTextWithNul_IsSkippedAsInvalidRecord()
+    public void Map_UnknownValueWithNul_IsKeptForTheNotesWhichThePlanRejects()
     {
-        var skipped = Skipped(Row("NAP", Offset, Offset.AddHours(1)) with { BabyMoodOnWakeUp = "HAP\0PY" });
+        var row = Row("NAP", Offset, Offset.AddHours(1)) with { BabyMoodOnWakeUp = "HAP\0PY" };
 
-        Assert.Equal(ImportSkipCodes.InvalidRecord, skipped.Code);
+        var plan = NapperEventPlanner.Plan(Context(), [row], []);
+
+        Assert.Contains("HAP\0PY", Mapped(row).Notes, StringComparison.Ordinal);
+        Assert.Equal(ImportSkipCodes.InvalidRecord, Assert.Single(plan.Skipped).Code);
     }
 
     [Fact]
@@ -98,7 +101,69 @@ public sealed class NapperEventMapperTests
         var draft = Mapped(Row("NURSING") with { BreastLeftSeconds = 600, BreastRightSeconds = 540, NumberOfPauses = 2 });
 
         Assert.Equal(Offset.AddSeconds(1140), draft.EndedAt);
-        Assert.Equal("Pauses: 2", draft.Notes);
+        Assert.Equal("2", Text(draft.Payload, "pause_count"));
+        Assert.Null(draft.Notes);
+    }
+
+    [Theory]
+    [InlineData("NURSING")]
+    [InlineData("NAP")]
+    [InlineData("NIGHT_WAKING")]
+    public void Map_PausesOfTimedRows_GoToPauseCountAndPausedSecondsInsteadOfNotes(string category)
+    {
+        var draft = Mapped(Row(category, Offset, Offset.AddMinutes(40)) with { NumberOfPauses = 3, PausedMinutes = 5.5m });
+
+        Assert.Equal(("3", "330"), (Text(draft.Payload, "pause_count"), Text(draft.Payload, "paused_seconds")));
+        Assert.Null(draft.Notes);
+        Assert.Empty(draft.SkippedFields);
+    }
+
+    [Fact]
+    public void Map_ZeroPauses_AddNothing()
+    {
+        var draft = Mapped(Row("NAP", Offset, Offset.AddMinutes(40)) with { NumberOfPauses = 0, PausedMinutes = 0m });
+
+        Assert.Equal((null, null), (Text(draft.Payload, "pause_count"), Text(draft.Payload, "paused_seconds")));
+    }
+
+    [Theory]
+    [InlineData(101, null, "numberOfPauses")]
+    [InlineData(-1, null, "numberOfPauses")]
+    [InlineData(null, 41, "pausedMinutes")]
+    [InlineData(null, -2, "pausedMinutes")]
+    public void Map_PausesOutOfRangeOrLongerThanTheEvent_AreSkippedFieldsKeptInNotes(int? count, int? minutes, string column)
+    {
+        var draft = Mapped(Row("NAP", Offset, Offset.AddMinutes(40), rowNumber: 4) with { NumberOfPauses = count, PausedMinutes = minutes });
+
+        var skipped = Assert.Single(draft.SkippedFields);
+        Assert.Equal((4, "NAP", column, ImportSkipCodes.InvalidValue), (skipped.Row, skipped.Category, skipped.Field, skipped.Code));
+        Assert.Equal((null, null), (Text(draft.Payload, "pause_count"), Text(draft.Payload, "paused_seconds")));
+        Assert.NotNull(draft.Notes);
+    }
+
+    [Fact]
+    public void Map_UnreadablePauseCell_IsASkippedFieldNotASkippedRow()
+    {
+        var row = Row("NURSING", Offset, Offset.AddMinutes(20)) with
+        {
+            InvalidCells = new Dictionary<string, string> { ["numberOfPauses"] = "many" },
+            PausedMinutes = 2m,
+        };
+
+        var draft = Mapped(row);
+
+        Assert.Equal(("numberOfPauses", "many"), (Assert.Single(draft.SkippedFields).Field, draft.SkippedFields[0].Value));
+        Assert.Equal((null, "120"), (Text(draft.Payload, "pause_count"), Text(draft.Payload, "paused_seconds")));
+        Assert.Equal("Pauses: many", draft.Notes);
+    }
+
+    [Fact]
+    public void Map_BedTimeWithPauseColumns_IgnoresThemBecauseItIsAnInstant()
+    {
+        var draft = Mapped(Row("BED_TIME") with { NumberOfPauses = 2, PausedMinutes = 3m });
+
+        Assert.Equal((null, null), (Text(draft.Payload, "pause_count"), Text(draft.Payload, "paused_seconds")));
+        Assert.Empty(draft.SkippedFields);
     }
 
     [Fact]
@@ -165,28 +230,126 @@ public sealed class NapperEventMapperTests
     }
 
     [Fact]
-    public void Map_NapWithMoods_PutsWakeUpMoodInPayloadAndTheRestInNotes()
+    public void Map_NapWithKnownDetails_FillsTheSleepDetailFieldsAndOnlyMoodOnSleepGoesToNotes()
     {
         var draft = Mapped(Row("NAP", Offset, Offset.AddHours(1)) with
         {
-            BabyMoodOnWakeUp = "HAPPY",
-            BabyMoodOnSleep = "CALM",
-            HowBabySlept = "GOOD",
-            HowBabyWoke = "SMILING",
+            BabyMoodOnWakeUp = "GOOD",
+            BabyMoodOnSleep = "NEUTRAL",
+            HowBabySlept = "WORN_OR_HELD",
+            HowBabyWoke = "WOKE_UP_NATURALLY",
+            TimeToFallAsleep = "15",
             Comment = "In the stroller",
         });
 
-        Assert.Equal("HAPPY", Text(draft.Payload, "mood"));
-        Assert.Equal("In the stroller\nMood on sleep: CALM\nHow baby slept: GOOD\nHow baby woke: SMILING", draft.Notes);
+        Assert.Equal(
+            ("held", "naturally", "good", "15", null),
+            (Text(draft.Payload, "how_slept"), Text(draft.Payload, "how_woke"), Text(draft.Payload, "mood_on_wake"), Text(draft.Payload, "time_to_fall_asleep_minutes"), Text(draft.Payload, "mood")));
+        Assert.Equal("In the stroller\nMood on sleep: NEUTRAL", draft.Notes);
+        Assert.Empty(draft.SkippedFields);
+        BuiltInEventTypes.Sleep.EnsureValidPayload(draft.Payload, draft.StartedAt, draft.EndedAt);
+    }
+
+    [Theory]
+    [InlineData("IN_BED", "in_bed")]
+    [InlineData("WORN_OR_HELD", "held")]
+    [InlineData("BOTTLE", "bottle")]
+    [InlineData("NURSING", "nursing")]
+    [InlineData("STROLLER", "stroller")]
+    [InlineData("CAR", "car")]
+    [InlineData("SWING", "swing")]
+    [InlineData("NEXT_TO_ME", "next_to_me")]
+    [InlineData("CO_SLEEPING", "next_to_me")]
+    [InlineData(" in bed ", "in_bed")]
+    [InlineData("co-sleeping", "next_to_me")]
+    public void Map_HowBabySlept_IsTheMatchingOption(string napper, string option)
+    {
+        var draft = Mapped(Row("NAP", Offset, Offset.AddHours(1)) with { HowBabySlept = napper });
+
+        Assert.Equal(option, Text(draft.Payload, "how_slept"));
+        Assert.Null(draft.Notes);
     }
 
     [Fact]
-    public void Map_NapWithoutWakeUpMood_UsesHowBabySleptAsMood()
+    public void Map_UnknownHowBabySlept_IsOtherWithTheRawValueInNotes()
     {
-        var draft = Mapped(Row("NAP", Offset, Offset.AddHours(1)) with { HowBabySlept = "GOOD" });
+        var draft = Mapped(Row("NAP", Offset, Offset.AddHours(1)) with { HowBabySlept = "HAMMOCK" });
 
-        Assert.Equal("GOOD", Text(draft.Payload, "mood"));
-        Assert.Null(draft.Notes);
+        Assert.Equal("other", Text(draft.Payload, "how_slept"));
+        Assert.Equal("How baby slept: HAMMOCK", draft.Notes);
+        Assert.Empty(draft.SkippedFields);
+    }
+
+    [Theory]
+    [InlineData("WOKE_UP_NATURALLY", "naturally")]
+    [InlineData("naturally", "naturally")]
+    [InlineData("WOKEN_UP", "woken")]
+    [InlineData("WOKE_UP_BY_PARENT", "woken")]
+    [InlineData("CHILD_WOKEN", "woken")]
+    public void Map_HowBabyWoke_IsNaturallyOrWoken(string napper, string option)
+    {
+        Assert.Equal(option, Text(Mapped(Row("NAP", Offset, Offset.AddHours(1)) with { HowBabyWoke = napper }).Payload, "how_woke"));
+    }
+
+    [Theory]
+    [InlineData("GOOD", "good")]
+    [InlineData("neutral", "neutral")]
+    [InlineData("BAD", "bad")]
+    public void Map_MoodOnWakeUp_IsTheMoodOption(string napper, string option)
+    {
+        Assert.Equal(option, Text(Mapped(Row("NAP", Offset, Offset.AddHours(1)) with { BabyMoodOnWakeUp = napper }).Payload, "mood_on_wake"));
+    }
+
+    [Theory]
+    [InlineData("10", "10")]
+    [InlineData("12.5", "13")]
+    [InlineData("240", "240")]
+    [InlineData("0", "0")]
+    [InlineData("600", "10")]
+    [InlineData("930", "16")]
+    [InlineData("14400", "240")]
+    public void Map_TimeToFallAsleep_IsMinutesUpTo240ElseSecondsRounded(string napper, string minutes)
+    {
+        Assert.Equal(minutes, Text(Mapped(Row("NAP", Offset, Offset.AddHours(1)) with { TimeToFallAsleep = napper }).Payload, "time_to_fall_asleep_minutes"));
+    }
+
+    [Theory]
+    [InlineData("babyMoodOnWakeUp", "HAPPY", "Mood on wake-up: HAPPY")]
+    [InlineData("howBabyWoke", "SMILING", "How baby woke: SMILING")]
+    [InlineData("timeToFallAsleep", "soon", "Time to fall asleep: soon")]
+    [InlineData("timeToFallAsleep", "-5", "Time to fall asleep: -5")]
+    [InlineData("timeToFallAsleep", "14431", "Time to fall asleep: 14431")]
+    public void Map_UnusableNapDetail_IsASkippedFieldKeptInNotesAndTheRowIsImported(string column, string value, string notes)
+    {
+        var row = column switch
+        {
+            "babyMoodOnWakeUp" => Row("NAP", Offset, Offset.AddHours(1), rowNumber: 3) with { BabyMoodOnWakeUp = value },
+            "howBabyWoke" => Row("NAP", Offset, Offset.AddHours(1), rowNumber: 3) with { HowBabyWoke = value },
+            _ => Row("NAP", Offset, Offset.AddHours(1), rowNumber: 3) with { TimeToFallAsleep = value },
+        };
+
+        var draft = Mapped(row);
+
+        var skipped = Assert.Single(draft.SkippedFields);
+        Assert.Equal((3, "NAP", column, value, ImportSkipCodes.InvalidValue), (skipped.Row, skipped.Category, skipped.Field, skipped.Value, skipped.Code));
+        Assert.Equal(notes, draft.Notes);
+        Assert.Equal("nap", Text(draft.Payload, "kind"));
+    }
+
+    [Fact]
+    public void Map_NightWaking_KeepsSleepColumnsAsNotesBecauseItsKindHasNoDetailFields()
+    {
+        var draft = Mapped(Row("NIGHT_WAKING", Offset, Offset.AddMinutes(20)) with
+        {
+            BabyMoodOnWakeUp = "BAD",
+            HowBabySlept = "IN_BED",
+            HowBabyWoke = "CRYING",
+            TimeToFallAsleep = "5",
+        });
+
+        Assert.Equal("""{"kind":"night_waking"}""", draft.Payload.Value);
+        Assert.Equal("Mood on wake-up: BAD\nHow baby slept: IN_BED\nHow baby woke: CRYING\nTime to fall asleep: 5", draft.Notes);
+        Assert.Empty(draft.SkippedFields);
     }
 
     [Fact]

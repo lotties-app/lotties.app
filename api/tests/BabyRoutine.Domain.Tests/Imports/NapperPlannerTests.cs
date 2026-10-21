@@ -135,7 +135,7 @@ public sealed class NapperPlannerTests
 
         Assert.Empty(plan.Skipped);
         Assert.All(plan.Candidates, candidate =>
-            BuiltInEventTypes.All.Single(type => type.Id == candidate.Event.TypeId).EnsureValidPayload(candidate.Event.Payload, candidate.Event.EndedAt));
+            BuiltInEventTypes.All.Single(type => type.Id == candidate.Event.TypeId).EnsureValidPayload(candidate.Event.Payload, candidate.Event.StartedAt, candidate.Event.EndedAt));
     }
 
     [Fact]

@@ -40,10 +40,10 @@ public sealed class BuiltInEventTypesTests
     {
         var fields = BuiltInEventTypes.Feeding.Fields;
 
-        Assert.Equal(["method", "side", "amount_ml", "bottle_feeding_type", "breast_left_seconds", "breast_right_seconds", "food"], fields.Select(field => field.Key));
+        Assert.Equal(["method", "side", "amount_ml", "bottle_feeding_type", "breast_left_seconds", "breast_right_seconds", "food", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
         Assert.Equal(["breast", "bottle", "solid"], fields[0].Options);
         Assert.Equal(["formula", "breast_milk"], fields[3].Options);
-        Assert.Equal([true, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
+        Assert.Equal([true, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
         Assert.Equal((EventFieldKind.Number, EventFieldKind.Text), (fields[2].Kind, fields[6].Kind));
     }
 
@@ -68,7 +68,7 @@ public sealed class BuiltInEventTypesTests
     [Fact]
     public void BreastPump_HasOptionalNonNegativeLeftAndRightAmounts()
     {
-        var fields = BuiltInEventTypes.BreastPump.Fields;
+        var fields = BuiltInEventTypes.BreastPump.Fields.Take(2).ToArray();
 
         Assert.Equal(["amount_left_ml", "amount_right_ml"], fields.Select(field => field.Key));
         Assert.All(fields, field => Assert.Equal((EventFieldKind.Number, false, 0m, (decimal?)null, "ml", (FieldVisibilityCondition?)null), (field.Kind, field.IsRequired, field.Min, field.Max, field.Unit, field.VisibleWhen)));
@@ -85,21 +85,73 @@ public sealed class BuiltInEventTypesTests
     }
 
     [Fact]
-    public void Sleep_HasOptionalKindAndMood()
+    public void Sleep_HasOptionalKindDeprecatedMoodDetailsAndPauses()
     {
         var fields = BuiltInEventTypes.Sleep.Fields;
 
-        Assert.Equal(["kind", "mood"], fields.Select(field => field.Key));
+        Assert.Equal(
+            ["kind", "mood", "how_slept", "fall_asleep", "time_to_fall_asleep_minutes", "how_woke", "mood_on_wake", "pause_count", "paused_seconds", "paused_at"],
+            fields.Select(field => field.Key));
         Assert.Equal(["nap", "night", "night_waking", "bed_time", "woke_up", "fell_asleep"], fields[0].Options);
         Assert.All(fields, field => Assert.False(field.IsRequired));
+        Assert.Equal((EventFieldKind.Text, true, (FieldVisibilityCondition?)null), (fields[1].Kind, fields[1].IsHidden, fields[1].VisibleWhen));
+    }
+
+    [Theory]
+    [InlineData("how_slept", "in_bed,nursing,held,next_to_me,bottle,stroller,car,swing,other")]
+    [InlineData("fall_asleep", "easy,took_long,fussy")]
+    [InlineData("how_woke", "naturally,woken")]
+    [InlineData("mood_on_wake", "good,neutral,bad")]
+    public void Sleep_DetailSelects_HaveTheirOptionsAndShowOnlyForNapAndNight(string key, string options)
+    {
+        var field = BuiltInEventTypes.Sleep.Fields.Single(field => field.Key == key);
+
+        Assert.Equal((EventFieldKind.Select, false), (field.Kind, field.IsHidden));
+        Assert.Equal(options.Split(','), field.Options);
+        Assert.Equal("kind", field.VisibleWhen!.Field);
+        Assert.Equal(["nap", "night"], field.VisibleWhen.Values);
+    }
+
+    [Fact]
+    public void Sleep_TimeToFallAsleep_IsAWholeNumberOfMinutesUpToFourHoursForNapAndNight()
+    {
+        var field = BuiltInEventTypes.Sleep.Fields.Single(field => field.Key == "time_to_fall_asleep_minutes");
+
+        Assert.Equal((EventFieldKind.Number, 0m, 240m, "min", true, false), (field.Kind, field.Min!.Value, field.Max!.Value, field.Unit, field.IsInteger, field.IsHidden));
+        Assert.Equal(["nap", "night"], field.VisibleWhen!.Values);
+    }
+
+    [Theory]
+    [InlineData("sleep")]
+    [InlineData("feeding")]
+    [InlineData("tummy_time")]
+    [InlineData("bath")]
+    [InlineData("breast_pump")]
+    public void TimedTypes_DeclareHiddenPauseFieldsLast(string key)
+    {
+        var fields = BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields.TakeLast(3).ToArray();
+
+        Assert.Equal(
+            [("pause_count", EventFieldKind.Number, 0m, (decimal?)100m, true), ("paused_seconds", EventFieldKind.Number, 0m, 86400m, true), ("paused_at", EventFieldKind.Text, (decimal?)null, (decimal?)null, false)],
+            fields.Select(field => (field.Key, field.Kind, field.Min, field.Max, field.IsInteger)));
+        Assert.All(fields, field => Assert.Equal((true, false, (FieldVisibilityCondition?)null), (field.IsHidden, field.IsRequired, field.VisibleWhen)));
+    }
+
+    [Theory]
+    [InlineData("diaper")]
+    [InlineData("medication")]
+    [InlineData("belly_pain")]
+    public void InstantTypes_DeclareNoPauseFields(string key)
+    {
+        Assert.DoesNotContain(BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields, field => field.Key.StartsWith("pause", StringComparison.Ordinal));
     }
 
     [Theory]
     [InlineData("bath", "temperature_c")]
     [InlineData("tummy_time", "mood")]
-    public void BathAndTummyTime_HaveOneOptionalField(string key, string fieldKey)
+    public void BathAndTummyTime_HaveOneOptionalVisibleFieldBesidesPauses(string key, string fieldKey)
     {
-        var field = Assert.Single(BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields);
+        var field = Assert.Single(BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields, field => !field.IsHidden);
 
         Assert.Equal((fieldKey, false), (field.Key, field.IsRequired));
     }

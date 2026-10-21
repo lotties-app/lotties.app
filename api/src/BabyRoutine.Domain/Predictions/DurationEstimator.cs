@@ -1,9 +1,9 @@
 namespace BabyRoutine.Domain.Predictions;
 
 /// <summary>
-/// Typical (recency-weighted median) duration of finished events, narrowed like every other sample by
-/// <see cref="SampleSelector"/> (age band, then day/night phase of the reference start, each only with enough samples).
-/// Running events are ignored.
+/// Typical (recency-weighted median) effective duration of finished events (pauses excluded, see
+/// <see cref="ObservedEvent.EffectiveDuration"/>), narrowed like every other sample by <see cref="SampleSelector"/> (age
+/// band, then day/night phase of the reference start, each only with enough samples). Running events are ignored.
 /// </summary>
 internal sealed class DurationEstimator(IReadOnlyList<ObservedEvent> events, SampleSelector selector, PredictionContext context, PredictionOptions options)
 {
@@ -17,7 +17,7 @@ internal sealed class DurationEstimator(IReadOnlyList<ObservedEvent> events, Sam
         var durations = events
             .Where(item => item.EndedAt is not null)
             .Where(item => kind is null || SleepSessionKinds.Of(item) == kind)
-            .Select(item => new TimedSample(item.EndedAt!.Value - item.StartedAt, item.StartedAt));
+            .Select(item => new TimedSample(item.EffectiveDuration!.Value, item.StartedAt));
         var selection = selector.Select(durations, start);
         return selection.Samples.Count < options.MinimumSamples
             ? null

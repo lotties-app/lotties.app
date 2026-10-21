@@ -11,11 +11,15 @@ internal static class NapperImportReports
         Measurements = hasMeasurements ? Measurements(plan) : null,
         MedicationSuggestions = plan.MedicationSuggestions.Select(suggestion => (MedicationSuggestionResponse)suggestion).ToArray(),
         UnmappedTokens = plan.UnmappedTokens,
+        EventsEnriched = plan.Enrichments.Count,
+        EnrichedFields = EnrichedFields(plan),
     };
 
     public static NapperImportResponse Imported(NapperImportPlan plan, bool hasLogs, bool hasMeasurements) => new()
     {
         EventsCreated = plan.NewEvents.Count,
+        EventsEnriched = plan.Enrichments.Count,
+        EnrichedFields = EnrichedFields(plan),
         MeasurementsCreated = plan.NewMeasurements.Count,
         CreatedMedications = plan.MedicationsToCreate.Select(medication => new CreatedMedicationResponse { Id = medication.Id, Name = medication.Name }).ToArray(),
         Logs = hasLogs ? Logs(plan) : null,
@@ -35,7 +39,18 @@ internal static class NapperImportReports
             To = importable.Length == 0 ? null : importable.Max(stored => stored.EndedAt ?? stored.StartedAt),
             Categories = Categories(plan),
             SkippedRows = plan.Events.Skipped.Select(skipped => (ImportSkippedRowResponse)skipped).ToArray(),
+            SkippedFields = plan.Events.Candidates.SelectMany(candidate => candidate.SkippedFields).Select(skipped => (ImportSkippedFieldResponse)skipped).ToArray(),
         };
+    }
+
+    /// <summary>Per filled field, in <see cref="NapperEventEnricher.EnrichableFields"/> order; fields never filled are left out.</summary>
+    private static IReadOnlyList<EnrichedFieldCount> EnrichedFields(NapperImportPlan plan)
+    {
+        var filled = plan.Enrichments.SelectMany(enrichment => enrichment.Enriched.FilledFields).ToArray();
+        return NapperEventEnricher.EnrichableFields
+            .Select(field => new EnrichedFieldCount { Field = field, Count = filled.Count(key => key == field) })
+            .Where(count => count.Count > 0)
+            .ToArray();
     }
 
     private static IReadOnlyList<NapperCategorySummary> Categories(NapperImportPlan plan)

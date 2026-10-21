@@ -11,7 +11,9 @@ internal sealed record ParsedRows<TRow>(IReadOnlyList<TRow> Rows, IReadOnlyList<
 
 /// <summary>
 /// Reads Napper CSV exports into typed rows (column names as in docs/SPEC.md "Napper import"). A row whose cells
-/// cannot be read is reported, never aborting the file; a file without the required columns is rejected.
+/// cannot be read is reported, never aborting the file; a file without the required columns is rejected. The optional
+/// pause cells (<c>numberOfPauses</c>, <c>pausedMinutes</c>) are read leniently: an unreadable one never skips the row
+/// (it is reported as a skipped field where the mapping uses it).
 /// </summary>
 internal static class NapperCsvParser
 {
@@ -53,14 +55,15 @@ internal static class NapperCsvParser
             BreastRightSeconds = cells.Integer("breastRightSeconds"),
             AmountPumpedLeft = cells.Number("amountPumpedLeft"),
             AmountPumpedRight = cells.Number("amountPumpedRight"),
-            NumberOfPauses = cells.Integer("numberOfPauses"),
-            PausedMinutes = cells.Number("pausedMinutes"),
+            NumberOfPauses = cells.LenientInteger("numberOfPauses"),
+            PausedMinutes = cells.LenientNumber("pausedMinutes"),
             BabyMoodOnWakeUp = cells.Text("babyMoodOnWakeUp"),
             BabyMoodOnSleep = cells.Text("babyMoodOnSleep"),
             HowBabySlept = cells.Text("howBabySlept"),
             HowBabyWoke = cells.Text("howBabyWoke"),
             TimeToFallAsleep = cells.Text("timeToFallAsleep"),
             Comment = cells.Text("comment"),
+            InvalidCells = cells.InvalidCells,
         };
         return RowResult<NapperLogRow>.From(row, cells.Error, csvRow.RowNumber, category);
     }

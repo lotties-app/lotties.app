@@ -53,6 +53,53 @@ public sealed record NapperImportOptionsDto
 {
     /// <summary>Napper categories to import (case-insensitive); <c>null</c> imports all. Rows of other categories are skipped as <c>excluded_category</c>.</summary>
     public IReadOnlyList<string>? Categories { get; init; }
+
+    /// <summary>
+    /// Also fill the missing detail fields (sleep details, <c>pause_count</c>, <c>paused_seconds</c>) of events this file
+    /// imported before, never overwriting a value, never changing times, type, notes or deleted events.
+    /// </summary>
+    public bool EnrichExisting { get; init; }
+}
+
+/// <summary>
+/// A detail value of an imported row that was left out of its payload field (kept as a notes line instead).
+/// <see cref="Field"/> is the Napper column; <see cref="Code"/> is <c>invalid_value</c>.
+/// </summary>
+public sealed record ImportSkippedFieldResponse
+{
+    public int Row { get; init; }
+
+    public string? Category { get; init; }
+
+    public string Field { get; init; } = string.Empty;
+
+    public string Value { get; init; } = string.Empty;
+
+    public string Code { get; init; } = string.Empty;
+
+    public string Reason { get; init; } = string.Empty;
+
+    public static implicit operator ImportSkippedFieldResponse(ImportSkippedField skipped)
+    {
+        ArgumentNullException.ThrowIfNull(skipped);
+        return new ImportSkippedFieldResponse
+        {
+            Row = skipped.Row,
+            Category = skipped.Category,
+            Field = skipped.Field,
+            Value = skipped.Value,
+            Code = skipped.Code,
+            Reason = skipped.Reason,
+        };
+    }
+}
+
+/// <summary>How many already imported events got the payload field <see cref="Field"/> filled.</summary>
+public sealed record EnrichedFieldCount
+{
+    public string Field { get; init; } = string.Empty;
+
+    public int Count { get; init; }
 }
 
 /// <summary>A source row that is not imported. <see cref="Code"/>: see <see cref="ImportSkipCodes"/>.</summary>
@@ -91,7 +138,8 @@ public sealed record NapperCategorySummary
 
 /// <summary>
 /// What the logs export maps to. <see cref="From"/>/<see cref="To"/> span the importable rows (new and already
-/// imported; UTC). <c>totalRows = toCreate + alreadyImported + skipped</c>.
+/// imported; UTC). <c>totalRows = toCreate + alreadyImported + skipped</c>. <see cref="SkippedFields"/> lists the detail
+/// values of importable rows that could not be mapped (the rows themselves are imported).
 /// </summary>
 public sealed record NapperLogsSummary
 {
@@ -110,6 +158,8 @@ public sealed record NapperLogsSummary
     public IReadOnlyList<NapperCategorySummary> Categories { get; init; } = [];
 
     public IReadOnlyList<ImportSkippedRowResponse> SkippedRows { get; init; } = [];
+
+    public IReadOnlyList<ImportSkippedFieldResponse> SkippedFields { get; init; } = [];
 }
 
 /// <summary>What the measurements export maps to; dates span the importable rows.</summary>
@@ -181,7 +231,8 @@ public sealed record MedicationSuggestionResponse
 
 /// <summary>
 /// Report of <c>POST .../import/napper/preview</c>; nothing is written. <see cref="UnmappedTokens"/> lists the
-/// medication names the import would reject (422) with the mappings of the request.
+/// medication names the import would reject (422) with the mappings of the request. <see cref="EventsEnriched"/> and
+/// <see cref="EnrichedFields"/> are what <c>options.enrichExisting</c> would fill (0 and empty without it).
 /// </summary>
 public sealed record NapperImportPreviewResponse
 {
@@ -192,6 +243,10 @@ public sealed record NapperImportPreviewResponse
     public IReadOnlyList<MedicationSuggestionResponse> MedicationSuggestions { get; init; } = [];
 
     public IReadOnlyList<string> UnmappedTokens { get; init; } = [];
+
+    public int EventsEnriched { get; init; }
+
+    public IReadOnlyList<EnrichedFieldCount> EnrichedFields { get; init; } = [];
 }
 
 /// <summary>A catalog medication created by the import.</summary>
@@ -204,11 +259,16 @@ public sealed record CreatedMedicationResponse
 
 /// <summary>
 /// Result of <c>POST .../import/napper</c>. The summaries are the preview of the same request (their
-/// <c>toCreate</c> counts are what was created).
+/// <c>toCreate</c> counts are what was created). <see cref="EventsEnriched"/>/<see cref="EnrichedFields"/>: already
+/// imported events whose missing detail fields were filled (<c>options.enrichExisting</c>).
 /// </summary>
 public sealed record NapperImportResponse
 {
     public int EventsCreated { get; init; }
+
+    public int EventsEnriched { get; init; }
+
+    public IReadOnlyList<EnrichedFieldCount> EnrichedFields { get; init; } = [];
 
     public int MeasurementsCreated { get; init; }
 

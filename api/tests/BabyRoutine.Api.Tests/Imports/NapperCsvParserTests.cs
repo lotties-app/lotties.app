@@ -25,6 +25,26 @@ public sealed class NapperCsvParserTests
     }
 
     [Fact]
+    public void ParseLogs_UnreadablePauseCells_KeepTheRowAndRecordTheRawText()
+    {
+        var parsed = Logs("start,end,category,numberOfPauses,pausedMinutes\n2025-09-01T09:00:00Z,2025-09-01T10:00:00Z,NAP,many,\"2,5\"\n");
+
+        var row = Assert.Single(parsed.Rows);
+        Assert.Empty(parsed.Unreadable);
+        Assert.Equal(((int?)null, (decimal?)2.5m), (row.NumberOfPauses, row.PausedMinutes));
+        Assert.Equal(new Dictionary<string, string> { ["numberOfPauses"] = "many" }, row.InvalidCells);
+    }
+
+    [Fact]
+    public void ParseLogs_ReadablePauseCells_HaveNoInvalidCells()
+    {
+        var row = Assert.Single(Logs("start,end,category,numberOfPauses,pausedMinutes\n2025-09-01T09:00:00Z,2025-09-01T10:00:00Z,NAP,2,5.5\n").Rows);
+
+        Assert.Equal((2, 5.5m), (row.NumberOfPauses!.Value, row.PausedMinutes!.Value));
+        Assert.Empty(row.InvalidCells);
+    }
+
+    [Fact]
     public void ParseLogs_ColumnsInAnyOrderAndCase_AreFoundByName()
     {
         var parsed = Logs("Category,COMMENT,End,start\nnap,ok,2025-09-01T10:00:00Z,2025-09-01T09:00:00Z\n");

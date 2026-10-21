@@ -14,6 +14,38 @@ public sealed class EventFieldDefinitionTests
     }
 
     [Fact]
+    public void Create_WithoutFlags_IsVisibleAndNotInteger()
+    {
+        var field = EventFieldDefinition.Create("amount", "Amount", EventFieldKind.Number);
+
+        Assert.Equal((false, false), (field.IsHidden, field.IsInteger));
+    }
+
+    [Fact]
+    public void Create_HiddenIntegerNumber_KeepsBothFlags()
+    {
+        var field = EventFieldDefinition.Create("pause_count", "Pauses", EventFieldKind.Number, isHidden: true, isInteger: true);
+
+        Assert.Equal((true, true), (field.IsHidden, field.IsInteger));
+    }
+
+    [Fact]
+    public void Create_HiddenText_IsAllowed()
+    {
+        Assert.True(EventFieldDefinition.Create("paused_at", "Paused at", EventFieldKind.Text, isHidden: true).IsHidden);
+    }
+
+    [Theory]
+    [InlineData(EventFieldKind.Text)]
+    [InlineData(EventFieldKind.Bool)]
+    public void Create_IntegerOnNonNumber_ThrowsValidationNamingIsInteger(EventFieldKind kind)
+    {
+        var exception = Assert.Throws<DomainValidationException>(() => EventFieldDefinition.Create("flag", "Flag", kind, isInteger: true));
+
+        Assert.Equal(nameof(EventFieldDefinition.IsInteger), exception.Field);
+    }
+
+    [Fact]
     public void Create_SelectWithoutOptions_ThrowsValidation()
     {
         Assert.Throws<DomainValidationException>(() => EventFieldDefinition.Create("side", "Side", EventFieldKind.Select));

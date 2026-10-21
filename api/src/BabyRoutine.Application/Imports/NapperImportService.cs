@@ -10,7 +10,9 @@ namespace BabyRoutine.Application.Imports;
 /// <summary>
 /// Preview and import share one plan (<see cref="BuildPlanAsync"/>), so the preview of a request reports exactly
 /// what its import creates. Ids are deterministic (<see cref="ImportIds"/>): rows whose record already exists are
-/// counted as already imported, which makes re-importing an export a no-op.
+/// counted as already imported, which makes re-importing an export a no-op. With <c>options.enrichExisting</c> the plan
+/// also fills the missing detail fields of those already imported events (<see cref="NapperEventEnricher"/>), saved in
+/// the same transaction as the inserts.
 /// </summary>
 internal sealed class NapperImportService : INapperImportService
 {
@@ -55,11 +57,12 @@ internal sealed class NapperImportService : INapperImportService
         plan.EnsureMedicationsMapped();
         await _imports.SaveAsync(plan.ToBatch(), cancellationToken);
         _logger.LogInformation(
-            "Imported Napper export into baby {BabyId}: {EventCount} events, {MeasurementCount} measurements, {MedicationCount} new medications",
+            "Imported Napper export into baby {BabyId}: {EventCount} events, {MeasurementCount} measurements, {MedicationCount} new medications, {EnrichedCount} events enriched",
             babyId,
             plan.NewEvents.Count,
             plan.NewMeasurements.Count,
-            plan.MedicationsToCreate.Count);
+            plan.MedicationsToCreate.Count,
+            plan.Enrichments.Count);
         return NapperImportReports.Imported(plan, HasLogs(request), HasMeasurements(request));
     }
 
@@ -75,7 +78,26 @@ internal sealed class NapperImportService : INapperImportService
         var measurements = NapperMeasurementPlanner.Plan(context, measurementRows.Rows, measurementRows.Unreadable);
         var existingEventIds = await _imports.FindExistingEventIdsAsync(events.Candidates.Select(candidate => candidate.Event.Id).ToArray(), cancellationToken);
         var existingMeasurementIds = await _imports.FindExistingMeasurementIdsAsync(measurements.Candidates.Select(candidate => candidate.Measurement.Id).ToArray(), cancellationToken);
-        return NapperImportPlan.Create(events, measurements, existingEventIds, existingMeasurementIds, context.Medications, catalog, cancellationToken);
+        var enrichments = await PlanEnrichmentsAsync(babyId, request, events, existingEventIds, context.Now, cancellationToken);
+        return NapperImportPlan.Create(events, measurements, existingEventIds, existingMeasurementIds, context.Medications, catalog, enrichments, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<EventEnrichment>> PlanEnrichmentsAsync(
+        Guid babyId,
+        NapperImportRequest request,
+        NapperEventPlan events,
+        IReadOnlySet<Guid> existingEventIds,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (request.Options?.EnrichExisting != true)
+        {
+            return [];
+        }
+
+        var alreadyImported = events.Candidates.Where(candidate => existingEventIds.Contains(candidate.Event.Id)).ToArray();
+        var stored = await _imports.FindEventsAsync(babyId, alreadyImported.Select(candidate => candidate.Event.Id).ToArray(), cancellationToken);
+        return NapperEventEnricher.Plan(alreadyImported, stored, now, cancellationToken);
     }
 
     private async Task<NapperImportContext> CreateContextAsync(Guid babyId, NapperImportRequest request, IReadOnlyList<Medication> catalog, CancellationToken cancellationToken)

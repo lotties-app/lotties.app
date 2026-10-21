@@ -161,6 +161,26 @@ public sealed class Event
     }
 
     /// <summary>
+    /// Server-side enrichment (the import's "enrich existing events"): replaces the payload with
+    /// <paramref name="enriched"/> only while the stored payload still equals <paramref name="expected"/> (compared as JSON
+    /// values) and the event is not deleted, so a change made after the enrichment was planned is never overwritten.
+    /// Times, type and notes are untouched. A server-side change: <see cref="UpdatedAt"/> and <see cref="ClientUpdatedAt"/>
+    /// become <paramref name="now"/>, so clients receive it in the delta pull and a client edit made earlier loses to it.
+    /// Returns <c>false</c> (nothing changed) when the event is deleted or its payload changed meanwhile.
+    /// </summary>
+    public bool TryEnrichPayload(EventPayload expected, EventPayload enriched, DateTimeOffset now)
+    {
+        if (IsDeleted || !Payload.IsEquivalentTo(expected))
+        {
+            return false;
+        }
+
+        Payload = enriched;
+        Touch(now, UtcTime.Normalize(now));
+        return true;
+    }
+
+    /// <summary>
     /// Marks the event deleted; a delete always wins, whatever the client times. <see cref="UpdatedAt"/> and
     /// <see cref="ClientUpdatedAt"/> become the deletion time. Repeating it is a no-op so retried deletes stay idempotent.
     /// </summary>

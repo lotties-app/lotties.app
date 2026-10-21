@@ -34,12 +34,12 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningFellAsleepConditionalFieldsThenMedications()
+    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningFellAsleepConditionalFieldsMedicationsThenPauses()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
@@ -105,6 +105,21 @@ public sealed class MigrationTests
         Assert.Contains("WHERE type_id = 'e6428ccb-7061-4cf4-a5d0-67c89a396a5f'", script, StringComparison.Ordinal);
         Assert.Contains("AND payload ->> 'bottle_feeding_type' IN ('FORMULA', 'BREAST_MILK');", script, StringComparison.Ordinal);
         Assert.Contains("updated_at = now()", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_SeedsHiddenPauseKeysAndSleepDetailsWithoutTouchingEvents()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var start = script.IndexOf("PauseAndSleepDetailFields", StringComparison.Ordinal);
+        var section = script[start..];
+
+        Assert.Contains("{\"key\":\"paused_at\",\"label\":\"Paused at\",\"kind\":\"text\",\"isRequired\":false,\"hidden\":true}", section, StringComparison.Ordinal);
+        Assert.Contains("\"key\":\"how_slept\"", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"mood\",\"label\":\"Mood\",\"kind\":\"text\",\"isRequired\":false,\"hidden\":true}", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE events", section, StringComparison.Ordinal);
     }
 
     [Fact]

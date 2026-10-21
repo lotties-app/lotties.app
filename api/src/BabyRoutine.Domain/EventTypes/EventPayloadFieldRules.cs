@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using BabyRoutine.Domain.Common;
 using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.Exceptions;
 
@@ -12,7 +13,8 @@ namespace BabyRoutine.Domain.EventTypes;
 /// A visible required field must hold a value once the event is complete (a running timer may still be filled in),
 /// except bool fields, where no value means <c>false</c>. Values must match their kind: text a string, number a number
 /// within <see cref="EventFieldDefinition.Min"/>/<see cref="EventFieldDefinition.Max"/>, select one of the options,
-/// bool <c>true</c>/<c>false</c>. Members no field declares are not checked.
+/// bool <c>true</c>/<c>false</c>; an integer number field takes whole numbers only. Members no field declares are not
+/// checked. <see cref="EventFieldDefinition.IsHidden"/> does not change any of this (it only tells forms not to render).
 /// </summary>
 internal static class EventPayloadFieldRules
 {
@@ -109,6 +111,11 @@ internal static class EventPayloadFieldRules
         }
 
         var number = value.TryGetDouble(out var parsed) ? parsed : Overflowed(value);
+        if (field.IsInteger && !WholeNumbers.IsWhole(number))
+        {
+            throw new DomainValidationException(field.Key, $"'{field.Key}' must be a whole number.");
+        }
+
         if (field.Min is { } min && number < (double)min)
         {
             throw new DomainValidationException(field.Key, $"'{field.Key}' must be at least {min.ToString(CultureInfo.InvariantCulture)}.");

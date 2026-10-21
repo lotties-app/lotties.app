@@ -113,6 +113,6 @@ public sealed class MedicationNameLimitTests
         cancellation.Cancel();
 
         Assert.ThrowsAny<OperationCanceledException>(() =>
-            NapperImportPlan.Create(events, NapperMeasurementPlan.Empty, new HashSet<Guid>(), new HashSet<Guid>(), Resolver(), [], cancellation.Token));
+            NapperImportPlan.Create(events, NapperMeasurementPlan.Empty, new HashSet<Guid>(), new HashSet<Guid>(), Resolver(), [], cancellationToken: cancellation.Token));
     }
 }

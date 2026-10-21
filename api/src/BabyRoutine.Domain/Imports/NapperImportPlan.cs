@@ -11,13 +11,20 @@ namespace BabyRoutine.Domain.Imports;
 /// </summary>
 public sealed record MedicationSuggestion(string Token, int Occurrences, MedicationMatch? Match, IReadOnlyList<string> SimilarTokens, bool IsMapped);
 
-/// <summary>Records to save in one transaction: new catalog medications first, then events, then measurements.</summary>
-public sealed record ImportBatch(IReadOnlyList<Medication> Medications, IReadOnlyList<Event> Events, IReadOnlyList<Measurement> Measurements);
+/// <summary>
+/// Records to save in one transaction: new catalog medications first, then events, then measurements, then the
+/// enrichments of already imported events.
+/// </summary>
+public sealed record ImportBatch(IReadOnlyList<Medication> Medications, IReadOnlyList<Event> Events, IReadOnlyList<Measurement> Measurements)
+{
+    public IReadOnlyList<EventEnrichment> Enrichments { get; init; } = [];
+}
 
 /// <summary>
 /// The full outcome of an import before anything is written: which candidates are new and which were imported
 /// before (their deterministic id already exists, soft-deleted events included, so a deleted import is not
-/// resurrected), the medication names still lacking a mapping and the medications to create.
+/// resurrected), the medication names still lacking a mapping, the medications to create and, when asked for, the
+/// enrichments of already imported events (<see cref="NapperEventEnricher"/>).
 /// </summary>
 public sealed class NapperImportPlan
 {
@@ -28,9 +35,11 @@ public sealed class NapperImportPlan
         IReadOnlySet<Guid> existingMeasurementIds,
         MedicationResolver medications,
         IReadOnlyList<Medication> catalog,
+        IReadOnlyList<EventEnrichment> enrichments,
         CancellationToken cancellationToken)
     {
         Events = events;
+        Enrichments = enrichments;
         Measurements = measurements;
         NewEvents = events.Candidates.Where(candidate => !existingEventIds.Contains(candidate.Event.Id)).ToArray();
         ImportedEvents = events.Candidates.Where(candidate => existingEventIds.Contains(candidate.Event.Id)).ToArray();
@@ -61,6 +70,9 @@ public sealed class NapperImportPlan
     /// <summary>Catalog medications the import creates (only those referenced by new events).</summary>
     public IReadOnlyList<Medication> MedicationsToCreate { get; }
 
+    /// <summary>Already imported events whose missing detail fields the import fills (empty unless asked for).</summary>
+    public IReadOnlyList<EventEnrichment> Enrichments { get; }
+
     public static NapperImportPlan Create(
         NapperEventPlan events,
         NapperMeasurementPlan measurements,
@@ -68,6 +80,7 @@ public sealed class NapperImportPlan
         IReadOnlySet<Guid> existingMeasurementIds,
         MedicationResolver medications,
         IReadOnlyList<Medication> catalog,
+        IReadOnlyList<EventEnrichment>? enrichments = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(events);
@@ -76,7 +89,7 @@ public sealed class NapperImportPlan
         ArgumentNullException.ThrowIfNull(existingMeasurementIds);
         ArgumentNullException.ThrowIfNull(medications);
         ArgumentNullException.ThrowIfNull(catalog);
-        return new NapperImportPlan(events, measurements, existingEventIds, existingMeasurementIds, medications, catalog, cancellationToken);
+        return new NapperImportPlan(events, measurements, existingEventIds, existingMeasurementIds, medications, catalog, enrichments ?? [], cancellationToken);
     }
 
     /// <summary>Throws <see cref="UnmappedMedicationsException"/> when a new medicine row names a medication without a mapping.</summary>
@@ -91,7 +104,10 @@ public sealed class NapperImportPlan
     public ImportBatch ToBatch() => new(
         MedicationsToCreate,
         NewEvents.Select(candidate => candidate.Event).ToArray(),
-        NewMeasurements.Select(candidate => candidate.Measurement).ToArray());
+        NewMeasurements.Select(candidate => candidate.Measurement).ToArray())
+    {
+        Enrichments = Enrichments,
+    };
 
     private static IReadOnlyList<string> DistinctTokens(IEnumerable<string> tokens) =>
         tokens.DistinctBy(MedicationNameMatcher.Normalize, StringComparer.Ordinal).ToArray();
