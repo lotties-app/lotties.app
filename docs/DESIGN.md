@@ -69,3 +69,32 @@ Decided 2026-10-21. Languages: English (`en`, source/fallback) and Brazilian Por
 - Tests: a unit test fails when `en` and `pt-BR` catalogs have different key sets or placeholders (including missing plural forms); a lint-level check (`eslint-plugin-i18next` `no-literal-string` in `markup-only` mode, warnings -> errors for new code) or an equivalent test prevents new hard-coded UI strings; render tests for key screens in both locales; the e2e suite runs in English (set the locale explicitly) plus one pt-BR smoke spec.
 - PWA manifest: `lang` en; name stays "Baby Routine" (brand, not translated); `description` may be localized later via a second manifest, out of scope.
 - The API's own text is not user-facing except problem `title`/`detail` fallbacks, kept in English.
+
+## 10. Refinement direction (supersedes looser parts of sections 1-5; decided 2026-10-21 after user feedback: "poor design, make it elegant, more icons, very user friendly, helps parents get better every day")
+Personality: calm, warm, supportive, confident. Never clinical, never guilt-inducing. One clear thing per screen; progressive disclosure (show only what applies); log anything in two taps; every action is forgiving (Undo).
+- Spacing and layout: 4/8 px grid, 20px screen gutters, 16px between cards, 24px between sections; generous whitespace; single column max 480px. Section headers: 15/500 with a small leading icon and an optional trailing text action.
+- Surfaces: soft layered dark (subtle top inner highlight `rgba(255,255,255,0.04)`, no heavy borders); cards 20px radius; hairlines only as dividers. Light theme: warm off-white with soft indigo-tinted shadows. Contrast stays AA; avoid pure white text on dark (use `#eceaff`).
+- Icons everywhere, one family: `@mui/icons-material` Rounded variants (no new dependency), 24px default, always inside tinted category circles for primary objects (presets, event rows, section headers, empty states), plain 20px inline icons for field labels and segmented options. Every segmented/chip option that represents a thing has an icon (breast, bottle, solid food, left/right, wet/dirty/mixed, nap/night, mood). No emoji.
+- Typography: system UI stack with `font-feature-settings: "tnum"` for numbers; hero 32/500, title 20/500, section 15/500, body 15/400, caption 12/400 muted. Never below 12px.
+- Motion: gentle 180ms ease-out expand/collapse for conditional fields, sheet slide, pressed-state scale 0.98; reduced-motion respected.
+- Empty and first-run states: friendly composed icon illustrations (tinted circles, no external art), one sentence, one action. Skeletons instead of spinners.
+- Language of the product: encouraging and factual ("Charlotte slept 11h 40m yesterday, 20 minutes more than her average"). Never judge or alarm; predictions and insights always carry a quiet "estimate, not medical advice".
+
+### Add/edit event sheet (replaces the current form everywhere)
+Full-height modal bottom sheet on mobile (dialog on md+), sticky footer. Labels are always OUTSIDE the input (12px medium muted text above the control), never floating/notched, so nothing is ever clipped; inputs are filled (surface-raised), 48px high, 14px radius, helper text only when needed.
+1. Header: tinted category icon circle + event type name (20/500) + a quiet subtitle ("Starting now" / "Logged 06:34"); a small chip-style type switcher (tap the name to change type) instead of a big select; close (X) at the left, overflow menu (Delete, in edit mode) at the right.
+2. When: row of quick chips `Now · 5 min ago · 15 min ago · 30 min ago · Pick time` (relative labels localized); `Pick time` opens a themed MUI X date-time picker (mobile dialog with clock/calendar styled to the theme; desktop popover); selected time shown as a large pill ("Today, 06:34"). Duration types show Start and End as two time pills with a live computed duration between them ("23 min"), and a `Still running` switch replacing the confusing "leave empty" helper text.
+3. Type fields rendered from the definitions with conditional visibility (`visibleWhen`), expanded with a gentle animation:
+   - select fields with <= 4 options: segmented chips with icons (never raw option codes: translated labels);
+   - number fields: big centred value with − / + steppers and quick-value chips where the field defines them (bottle amount: 60, 90, 120, 150 ml; remembers the last used amount per baby), unit shown as suffix; `inputMode="decimal"`;
+   - duration-in-seconds fields (breast left/right) as minutes input with a stopwatch icon ("min") or mm:ss pills;
+   - text: single line; notes: collapsed row "Add a note" that expands.
+4. Medication: checklist cards with a pill icon, usual medications first, dose inline.
+5. Footer: full-width primary pill `Save` (spinner while saving), `Cancel` only as the X; Delete lives in the overflow menu with a confirm.
+6. Defaults: smart (method = last used, amount = last used, start = now); validation messages inline under the field, friendly.
+
+### Navigation and chrome
+Bottom bar as specified; add subtle active indicator pill behind the active item icon; FAB with soft glow ring in dark; header avatar and sync icon as specified. Pull-to-refresh style "Sync now" is not needed (sync is automatic).
+
+### Home additions (pass 2 of Home)
+Below Today: "Highlights" card with one or two gentle, factual insights computed locally (longest sleep this week, change in total sleep vs last 7 days, average feed interval) hidden until enough data exists; wording per section 10.
