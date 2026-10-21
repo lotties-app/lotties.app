@@ -53,7 +53,11 @@
     "logoutMessage": "Você tem {{changes}} que serão perdidas.",
     "pushNow": "Enviar agora",
     "logoutAnyway": "Sair mesmo assim",
-    "somethingWentWrong": "Algo deu errado."
+    "somethingWentWrong": "Algo deu errado.",
+    "nightView": "Visual noturno",
+    "nightViewPrompt": "Mudar para o visual noturno?",
+    "nightViewSwitch": "Mudar",
+    "nightViewNotNow": "Agora não"
   },
   "sync": {
     "signInToSync": "Entre para sincronizar",
@@ -395,7 +399,12 @@
       "theme": "Tema",
       "system": "Sistema",
       "dark": "Escuro",
-      "light": "Claro"
+      "light": "Claro",
+      "nightFeed": "Mamada noturna",
+      "nightFeedHint": "Cores quentes e suaves para as mamadas da madrugada, das 22:00 às 05:00.",
+      "nightFeedOff": "Desligado",
+      "nightFeedAsk": "Perguntar",
+      "nightFeedAuto": "Automático"
     },
     "language": {
       "label": "Idioma",

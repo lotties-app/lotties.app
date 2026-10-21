@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Avatar, IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
+import {
+  Avatar,
+  IconButton,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Switch,
+  Typography,
+} from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
+import NightsStayOutlinedIcon from '@mui/icons-material/NightsStayOutlined';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../auth/useAuth';
 import { useDatabase } from '../db/DatabaseContext';
@@ -9,6 +18,7 @@ import { countUnsyncedMutations } from '../db/outbox';
 import { UnsyncedChangesDialog } from '../session/UnsyncedChangesDialog';
 import { unsyncedChangesLabel, usePushThenProceed } from '../session/usePushThenProceed';
 import { useSignOut } from '../session/useSignOut';
+import { useNightFeed } from '../theme/NightFeedContext';
 
 /** Log out: warns first when the outbox still holds changes, which signing out deletes. */
 function useLogoutFlow() {
@@ -34,6 +44,7 @@ export function UserMenu() {
   const { user } = useAuth();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const logout = useLogoutFlow();
+  const nightFeed = useNightFeed();
   const label = user?.name ?? user?.email ?? t('common.account');
 
   const startLogout = () => {
@@ -55,6 +66,25 @@ export function UserMenu() {
       <Menu anchorEl={anchor} open={anchor !== null} onClose={() => setAnchor(null)}>
         <MenuItem disabled>
           <Typography variant="body2">{label}</Typography>
+        </MenuItem>
+        <MenuItem
+          sx={{ minHeight: 48 }}
+          role="menuitemcheckbox"
+          aria-checked={nightFeed.active}
+          onClick={nightFeed.toggle}
+        >
+          <ListItemIcon>
+            <NightsStayOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          {t('layout.nightView')}
+          <Switch
+            edge="end"
+            size="small"
+            checked={nightFeed.active}
+            tabIndex={-1}
+            slotProps={{ input: { 'aria-hidden': true, tabIndex: -1 } }}
+            sx={{ ml: 'auto', pointerEvents: 'none' }}
+          />
         </MenuItem>
         <MenuItem sx={{ minHeight: 48 }} onClick={startLogout}>
           <ListItemIcon>

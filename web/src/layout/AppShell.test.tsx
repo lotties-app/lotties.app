@@ -6,6 +6,8 @@ import type { BabyRoutineDb } from '../db/database';
 import { fakeApi, testDatabase } from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { seedBaby } from '../test/seed';
+import { nightPeriodKey } from '../theme/nightFeed';
+import { NIGHT_FEED_STATE_STORAGE_KEY } from '../theme/nightFeedStorage';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 
 let db: BabyRoutineDb;
@@ -51,6 +53,23 @@ describe('header', () => {
     fireEvent.click(link);
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
     expect(await screen.findByText(/^Status:/)).toBeTruthy();
+  });
+});
+
+describe('night view quick toggle', () => {
+  it('switches the night view on and off from the account menu', async () => {
+    await seedBaby(db);
+    renderShell();
+    fireEvent.click(await screen.findByRole('button', { name: 'User menu' }));
+    const item = await screen.findByRole('menuitemcheckbox', { name: 'Night view' });
+    expect(item.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(item);
+    expect(document.documentElement.hasAttribute('data-night')).toBe(true);
+    // The menu stays open so the switch shows the new state.
+    const on = await screen.findByRole('menuitemcheckbox', { name: 'Night view' });
+    expect(on.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(on);
+    expect(document.documentElement.hasAttribute('data-night')).toBe(false);
   });
 });
 
@@ -103,14 +122,25 @@ describe('accessibility (axe)', () => {
     return result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' | ')}`);
   }
 
-  it.each(['dark', 'light'])('the shell has no violations in the %s theme', async (mode) => {
-    window.localStorage.setItem(THEME_STORAGE_KEY, mode);
-    await seedBaby(db);
-    renderShell();
-    await screen.findByRole('button', { name: /^Log Diaper/ });
-    expect(document.documentElement.hasAttribute(`data-${mode}`)).toBe(true);
-    expect(await violations()).toEqual([]);
-  });
+  it.each(['dark', 'light', 'night'])(
+    'the shell has no violations in the %s theme',
+    async (mode) => {
+      if (mode === 'night') {
+        // An explicit "night view on" for the current period (the same state the quick toggle stores).
+        window.localStorage.setItem(
+          NIGHT_FEED_STATE_STORAGE_KEY,
+          JSON.stringify({ override: { on: true, key: nightPeriodKey(new Date()) } }),
+        );
+      } else {
+        window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+      }
+      await seedBaby(db);
+      renderShell();
+      await screen.findByRole('button', { name: /^Log Diaper/ });
+      expect(document.documentElement.hasAttribute(`data-${mode}`)).toBe(true);
+      expect(await violations()).toEqual([]);
+    },
+  );
 
   it('has no violations with the Track sheet open', async () => {
     await seedBaby(db);

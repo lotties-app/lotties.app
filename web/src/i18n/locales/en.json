@@ -53,7 +53,11 @@
     "logoutMessage": "You have {{changes}} that will be lost.",
     "pushNow": "Push now",
     "logoutAnyway": "Logout anyway",
-    "somethingWentWrong": "Something went wrong."
+    "somethingWentWrong": "Something went wrong.",
+    "nightView": "Night view",
+    "nightViewPrompt": "Switch to night view?",
+    "nightViewSwitch": "Switch",
+    "nightViewNotNow": "Not now"
   },
   "sync": {
     "signInToSync": "Sign in to sync",
@@ -395,7 +399,12 @@
       "theme": "Theme",
       "system": "System",
       "dark": "Dark",
-      "light": "Light"
+      "light": "Light",
+      "nightFeed": "Night feed",
+      "nightFeedHint": "Dim, warm colours for night feeds, from 22:00 to 05:00.",
+      "nightFeedOff": "Off",
+      "nightFeedAsk": "Ask",
+      "nightFeedAuto": "Auto"
     },
     "language": {
       "label": "Language",

@@ -26,9 +26,10 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        // The night background (docs/DESIGN.md section 1); light mode is handled by the media metas.
-        theme_color: '#15132e',
-        background_color: '#15132e',
+        // The dark scheme's background (docs/design/TOKENS.md); the app keeps the theme-color meta
+        // in sync with the shown scheme.
+        theme_color: '#1b1814',
+        background_color: '#1b1814',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -43,7 +44,7 @@ export default defineConfig({
       workbox: {
         // Only built, hashed assets are precached. API calls and the OIDC callback are never
         // cached: no runtimeCaching rules exist, and navigations under these paths skip the fallback.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/auth\/callback/],
       },

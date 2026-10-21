@@ -1,11 +1,13 @@
-import { createTheme, type Theme } from '@mui/material/styles';
+import { createColorScheme, createTheme, type Theme } from '@mui/material/styles';
 import type { Localization } from '@mui/material/locale';
 import {
-  DAY,
+  DARK,
+  LIGHT,
   NIGHT,
   RADIUS,
   type CategoryColors,
   type CategoryName,
+  type ChartColors,
   type SchemeTokens,
 } from './tokens';
 
@@ -13,48 +15,86 @@ import {
 export type ThemeMode = 'system' | 'dark' | 'light';
 
 declare module '@mui/material/styles' {
+  /** The night-feed scheme is a third MUI colour scheme (selector: `data-night` on <html>). */
+  interface ColorSchemeOverrides {
+    night: true;
+  }
   interface Palette {
     surfaceRaised: string;
     hairline: string;
     textMuted: string;
     accent: string;
-    accentSoft: string;
     onAccent: string;
+    selection: string;
+    onSelection: string;
+    ink2: string;
     category: Record<CategoryName, CategoryColors>;
+    chart: ChartColors;
+    cardShadow: string;
+    fabShadow: string;
+    scrim: string;
+    grainOpacity: number;
   }
   interface PaletteOptions {
     surfaceRaised?: string;
     hairline?: string;
     textMuted?: string;
     accent?: string;
-    accentSoft?: string;
     onAccent?: string;
+    selection?: string;
+    onSelection?: string;
+    ink2?: string;
     category?: Record<CategoryName, CategoryColors>;
+    chart?: ChartColors;
+    cardShadow?: string;
+    fabShadow?: string;
+    scrim?: string;
+    grainOpacity?: number;
   }
   interface TypographyVariants {
-    /** Hero numbers: 28/500 with tabular numerals. */
+    /** Hero value: serif 48/400 with tabular lining figures. */
     hero: React.CSSProperties;
+    /** Big amount / timer value: serif 64/400. */
+    amount: React.CSSProperties;
+    /** Serif stack used by the display and numeric roles. */
+    fontFamilyDisplay: string;
   }
   interface TypographyVariantsOptions {
     hero?: React.CSSProperties;
+    amount?: React.CSSProperties;
+    fontFamilyDisplay?: string;
   }
 }
 
 declare module '@mui/material/Typography' {
   interface TypographyPropsVariantOverrides {
     hero: true;
+    amount: true;
   }
 }
 
 const FONT_STACK =
   'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif';
 
+/** Fraunces (self-hosted variable subset, src/theme/fonts.css) with system serif fallbacks. */
+export const FONT_DISPLAY =
+  '"Fraunces Variable", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif';
+
+/** Tabular lining figures: times and amounts line up and do not jitter. */
+const NUMERIC = { fontFeatureSettings: '"tnum" 1, "lnum" 1', fontVariantNumeric: 'tabular-nums' };
+
+/** Motion tokens (docs/design/02-visual-identity.md section 8): no overshoot. */
+const EASING = 'cubic-bezier(0.2, 0, 0, 1)';
+
 function paletteFor(mode: 'light' | 'dark', t: SchemeTokens) {
   return {
     mode,
     primary: { main: t.accent, contrastText: t.onAccent },
-    secondary: { main: t.accentSoft },
+    secondary: { main: t.ink2 },
+    success: { main: t.success, contrastText: t.onSuccess },
     warning: { main: t.warning, contrastText: t.onWarning },
+    error: { main: t.error, contrastText: t.onError },
+    info: { main: t.info, contrastText: t.onInfo },
     background: { default: t.background, paper: t.surface },
     text: { primary: t.text, secondary: t.textMuted },
     divider: t.hairline,
@@ -62,9 +102,16 @@ function paletteFor(mode: 'light' | 'dark', t: SchemeTokens) {
     hairline: t.hairline,
     textMuted: t.textMuted,
     accent: t.accent,
-    accentSoft: t.accentSoft,
     onAccent: t.onAccent,
+    selection: t.selection,
+    onSelection: t.onSelection,
+    ink2: t.ink2,
     category: t.category,
+    chart: t.chart,
+    cardShadow: t.cardShadow,
+    fabShadow: t.fabShadow,
+    scrim: t.scrim,
+    grainOpacity: t.grainOpacity,
   };
 }
 
@@ -75,71 +122,117 @@ function colors(theme: Theme) {
 
 const FOCUS_RING = (theme: Theme) => `2px solid ${colors(theme).primary.main}`;
 
+/** Status colours borrow the category pairs: those are already contrast-checked on their tint. */
+const STATUS_CATEGORY = {
+  success: 'feeding',
+  warning: 'diaper',
+  error: 'health',
+  info: 'sleep',
+} as const satisfies Record<string, CategoryName>;
+type Status = keyof typeof STATUS_CATEGORY;
+const isStatus = (value: unknown): value is Status =>
+  typeof value === 'string' && value in STATUS_CATEGORY;
+
 /**
  * Space the fixed bottom navigation (64 px plus the raised "+" button) covers: focused or
  * scrolled-to elements stop above it (WCAG 2.4.11 Focus not obscured, review 05 M11).
  */
 export const BOTTOM_NAV_SCROLL_PADDING = 'calc(88px + env(safe-area-inset-bottom))';
 
-const LIGHT_CARD_SHADOW = '0 1px 2px rgba(27, 24, 56, 0.06), 0 4px 14px rgba(27, 24, 56, 0.07)';
+/** Inputs: filled, 48px, 14px radius. Labels are always shrunk, with room above the value. */
+const FILLED_FIELD_PADDING = { paddingTop: 21, paddingBottom: 6 };
 
 export function buildTheme(localization?: Localization) {
   return createTheme(
     {
       cssVariables: { colorSchemeSelector: 'data' },
       colorSchemes: {
-        dark: { palette: paletteFor('dark', NIGHT) },
-        light: { palette: paletteFor('light', DAY) },
+        light: { palette: paletteFor('light', LIGHT) },
+        dark: { palette: paletteFor('dark', DARK) },
+        // Night feed is built on the dark palette mode; `data-night` replaces `data-dark`. MUI only
+        // completes the light, dark and default schemes itself, so this one is created explicitly.
+        night: createColorScheme({ palette: paletteFor('dark', NIGHT) }),
       },
       shape: { borderRadius: RADIUS.tile },
       typography: {
         fontFamily: FONT_STACK,
-        h5: { fontSize: '1.25rem', fontWeight: 500, lineHeight: 1.3 },
-        h6: { fontSize: '0.9375rem', fontWeight: 500, lineHeight: 1.4 },
-        subtitle1: { fontSize: '0.9375rem', fontWeight: 500, lineHeight: 1.4 },
-        subtitle2: { fontSize: '0.875rem', fontWeight: 500, lineHeight: 1.4 },
-        body1: { fontSize: '0.875rem', fontWeight: 400, lineHeight: 1.5 },
+        fontFamilyDisplay: FONT_DISPLAY,
+        hero: {
+          fontFamily: FONT_DISPLAY,
+          fontSize: '3rem',
+          fontWeight: 400,
+          lineHeight: 1.05,
+          letterSpacing: '-0.01em',
+          ...NUMERIC,
+        },
+        amount: {
+          fontFamily: FONT_DISPLAY,
+          fontSize: '4rem',
+          fontWeight: 400,
+          lineHeight: 1,
+          ...NUMERIC,
+        },
+        h4: { fontFamily: FONT_DISPLAY, fontSize: '2rem', fontWeight: 400, lineHeight: 1.1 },
+        h5: { fontFamily: FONT_DISPLAY, fontSize: '1.375rem', fontWeight: 600, lineHeight: 1.2 },
+        h6: { fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.4 },
+        subtitle1: { fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.4 },
+        subtitle2: { fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.4 },
+        body1: { fontSize: '0.9375rem', fontWeight: 400, lineHeight: 1.5 },
         body2: { fontSize: '0.875rem', fontWeight: 400, lineHeight: 1.5 },
         caption: { fontSize: '0.75rem', fontWeight: 400, lineHeight: 1.4 },
-        button: { fontSize: '0.875rem', fontWeight: 500, textTransform: 'none' },
-        hero: {
-          fontSize: '1.75rem',
-          fontWeight: 500,
-          lineHeight: 1.2,
-          fontVariantNumeric: 'tabular-nums',
+        overline: {
+          fontSize: '0.75rem',
+          fontWeight: 650,
+          lineHeight: 1.4,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
         },
+        button: { fontSize: '0.875rem', fontWeight: 600, textTransform: 'none' },
       },
       transitions: {
-        duration: { shortest: 150, shorter: 175, short: 200, standard: 200 },
-        easing: { easeInOut: 'cubic-bezier(0, 0, 0.2, 1)' },
+        duration: { shortest: 150, shorter: 180, short: 200, standard: 200, complex: 280 },
+        easing: { easeInOut: EASING, easeOut: EASING, easeIn: EASING },
       },
       components: {
         MuiCssBaseline: {
           styleOverrides: {
             html: { scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING },
-            body: { fontVariantNumeric: 'normal' },
+            body: NUMERIC,
+            // Reduced motion and the night view keep opacity changes only.
             '@media (prefers-reduced-motion: reduce)': {
               '*, *::before, *::after': {
-                animationDuration: '0.01ms !important',
-                animationIterationCount: '1 !important',
-                transitionDuration: '0.01ms !important',
+                animation: 'none !important',
+                transitionProperty: 'opacity !important',
+                transitionDuration: '0.12s !important',
                 scrollBehavior: 'auto !important',
               },
             },
+            '[data-night] *, [data-night] *::before, [data-night] *::after': {
+              animation: 'none !important',
+              transitionProperty: 'opacity !important',
+              transitionDuration: '0.12s !important',
+              scrollBehavior: 'auto !important',
+            },
+            '[data-night]': { colorScheme: 'dark' },
           },
         },
         MuiButtonBase: {
           styleOverrides: {
-            root: ({ theme }) => ({ '&.Mui-focusVisible': { outline: FOCUS_RING(theme) } }),
+            root: ({ theme }) => ({
+              '&.Mui-focusVisible': { outline: FOCUS_RING(theme), outlineOffset: 2 },
+            }),
           },
         },
         MuiIconButton: {
           styleOverrides: { root: { minWidth: 44, minHeight: 44 } },
         },
         MuiButton: {
+          defaultProps: { disableElevation: true },
           styleOverrides: {
-            root: { minHeight: 44 },
-            contained: { borderRadius: RADIUS.pill, boxShadow: 'none', paddingInline: 20 },
+            root: { minHeight: 44, borderRadius: RADIUS.button },
+            sizeLarge: { minHeight: 54, fontSize: '1rem' },
+            contained: { boxShadow: 'none', paddingInline: 20 },
+            outlined: ({ theme }) => ({ borderColor: colors(theme).hairline }),
           },
         },
         MuiPaper: {
@@ -150,8 +243,7 @@ export function buildTheme(localization?: Localization) {
             root: ({ theme }) => ({
               borderRadius: RADIUS.card,
               border: 'none',
-              boxShadow: LIGHT_CARD_SHADOW,
-              ...theme.applyStyles('dark', { boxShadow: 'none' }),
+              boxShadow: colors(theme).cardShadow,
             }),
           },
         },
@@ -159,28 +251,45 @@ export function buildTheme(localization?: Localization) {
           styleOverrides: {
             root: ({ theme }) => ({
               borderRadius: RADIUS.card,
-              boxShadow: LIGHT_CARD_SHADOW,
+              boxShadow: colors(theme).cardShadow,
               '&::before': { display: 'none' },
               '&:first-of-type, &:last-of-type': { borderRadius: RADIUS.card },
-              ...theme.applyStyles('dark', { boxShadow: 'none' }),
             }),
           },
         },
         MuiChip: {
           styleOverrides: {
-            root: { borderRadius: RADIUS.pill, fontWeight: 500 },
+            root: ({ theme, ownerState }) => ({
+              borderRadius: RADIUS.pill,
+              fontWeight: 500,
+              ...(ownerState.variant === 'filled' &&
+                (ownerState.color === 'default' || ownerState.color === undefined) && {
+                  backgroundColor: colors(theme).surfaceRaised,
+                  color: colors(theme).text.primary,
+                }),
+              ...(ownerState.variant === 'filled' &&
+                isStatus(ownerState.color) && {
+                  backgroundColor: colors(theme).category[STATUS_CATEGORY[ownerState.color]].bg,
+                  color: colors(theme).category[STATUS_CATEGORY[ownerState.color]].fg,
+                }),
+              ...(ownerState.variant === 'outlined' &&
+                (ownerState.color === 'default' || ownerState.color === undefined) && {
+                  borderColor: colors(theme).hairline,
+                }),
+            }),
             label: { fontSize: '0.75rem' },
           },
         },
         MuiDrawer: {
           styleOverrides: {
-            paper: {
+            paper: ({ theme }) => ({
               '&.MuiDrawer-paperAnchorBottom': {
                 borderTopLeftRadius: RADIUS.sheetTop,
                 borderTopRightRadius: RADIUS.sheetTop,
                 maxHeight: '90dvh',
+                boxShadow: `0 -1px 0 ${colors(theme).hairline}`,
               },
-            },
+            }),
           },
         },
         MuiDialog: {
@@ -191,6 +300,81 @@ export function buildTheme(localization?: Localization) {
             },
           },
         },
+        MuiBackdrop: {
+          styleOverrides: {
+            root: ({ theme }) => ({
+              '&:not(.MuiBackdrop-invisible)': { backgroundColor: colors(theme).scrim },
+            }),
+          },
+        },
+        MuiAlert: {
+          styleOverrides: {
+            root: ({ theme, ownerState }) => {
+              const status = ownerState.color ?? ownerState.severity;
+              if (ownerState.variant !== 'standard' || !isStatus(status)) return {};
+              const pair = colors(theme).category[STATUS_CATEGORY[status]];
+              return {
+                borderRadius: RADIUS.input,
+                backgroundColor: pair.bg,
+                color: pair.fg,
+                '& .MuiAlert-icon': { color: pair.fg },
+              };
+            },
+          },
+        },
+        MuiSnackbarContent: {
+          styleOverrides: {
+            root: ({ theme }) => ({
+              borderRadius: RADIUS.input,
+              backgroundColor: colors(theme).selection,
+              color: colors(theme).onSelection,
+              fontSize: '0.875rem',
+            }),
+          },
+        },
+        MuiTextField: {
+          defaultProps: {
+            variant: 'filled',
+            // Labels never float over the value or clip: always shrunk to the top of the field.
+            slotProps: { inputLabel: { shrink: true } },
+          },
+        },
+        MuiInputLabel: {
+          defaultProps: { shrink: true },
+          styleOverrides: {
+            root: ({ theme }) => ({
+              color: colors(theme).text.secondary,
+              '&.Mui-focused': { color: colors(theme).text.primary },
+              '&.Mui-error': { color: colors(theme).error.main },
+            }),
+          },
+        },
+        MuiFilledInput: {
+          defaultProps: { disableUnderline: true },
+          styleOverrides: {
+            root: ({ theme }) => ({
+              minHeight: 48,
+              borderRadius: RADIUS.input,
+              backgroundColor: colors(theme).surfaceRaised,
+              '&:hover, &.Mui-focused, &.Mui-disabled': {
+                backgroundColor: colors(theme).surfaceRaised,
+              },
+              '&.Mui-focused': { boxShadow: `0 0 0 2px ${colors(theme).primary.main}` },
+              '&.Mui-error': { boxShadow: `0 0 0 2px ${colors(theme).error.main}` },
+              '&.MuiInputBase-multiline': { padding: '21px 12px 6px' },
+            }),
+            input: { ...FILLED_FIELD_PADDING, '&.MuiInputBase-inputMultiline': { padding: 0 } },
+          },
+        },
+        MuiOutlinedInput: {
+          styleOverrides: {
+            root: ({ theme }) => ({
+              minHeight: 48,
+              borderRadius: RADIUS.input,
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: colors(theme).hairline },
+            }),
+          },
+        },
         MuiBottomNavigation: {
           styleOverrides: {
             root: { backgroundColor: 'transparent', height: 64 },
@@ -199,10 +383,23 @@ export function buildTheme(localization?: Localization) {
         MuiBottomNavigationAction: {
           styleOverrides: {
             root: ({ theme }) => ({
+              position: 'relative',
               minHeight: 56,
               minWidth: 0,
               color: colors(theme).text.secondary,
-              '&.Mui-selected': { color: colors(theme).accentSoft },
+              '&.Mui-selected': {
+                color: colors(theme).text.primary,
+                fontWeight: 600,
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  width: 22,
+                  height: 3,
+                  borderRadius: 2,
+                  backgroundColor: colors(theme).primary.main,
+                },
+              },
             }),
             label: { fontSize: '0.75rem', '&.Mui-selected': { fontSize: '0.75rem' } },
           },

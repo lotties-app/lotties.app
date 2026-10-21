@@ -51,7 +51,7 @@ function Timer({ event, type, now, onStop, onEdit, readOnly }: TimerProps) {
         </Stack>
       </CardActionArea>
       <Button
-        color="error"
+        color="primary"
         startIcon={<StopIcon />}
         onClick={() => onStop(event)}
         disabled={readOnly}

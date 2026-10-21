@@ -8,6 +8,7 @@ import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
 import { ErrorBoundary } from './ErrorBoundary';
 import { SessionBanner } from './SessionBanner';
+import { NightFeedBanner } from './NightFeedBanner';
 
 /** Full-bleed page background with a centred content column (max 480px). */
 export function AppShell() {
@@ -34,6 +35,7 @@ export function AppShell() {
         >
           <TopBar />
           <SessionBanner />
+          <NightFeedBanner />
           <Box component="main" sx={{ flexGrow: 1, px: 2, py: 1, pb: 12, minWidth: 0 }}>
             <ErrorBoundary resetKey={pathname}>
               <Suspense fallback={<CircularProgress aria-label={t('app.loadingPage')} />}>
