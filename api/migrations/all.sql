@@ -746,3 +746,185 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    ALTER TABLE baby_members ADD CONSTRAINT ak_baby_members_baby_id_user_id UNIQUE (baby_id, user_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE TABLE baby_notification_preferences (
+        baby_id uuid NOT NULL,
+        user_id uuid NOT NULL,
+        dose_due boolean NOT NULL,
+        dose_lead_minutes smallint NOT NULL,
+        nap_window boolean NOT NULL,
+        nap_lead_minutes smallint NOT NULL,
+        updated_at timestamp with time zone NOT NULL,
+        CONSTRAINT pk_baby_notification_preferences PRIMARY KEY (baby_id, user_id),
+        CONSTRAINT fk_baby_notification_preferences_baby_members_baby_id_user_id FOREIGN KEY (baby_id, user_id) REFERENCES baby_members (baby_id, user_id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE TABLE job_leases (
+        name character varying(40) NOT NULL,
+        holder_id character varying(64) NOT NULL,
+        lease_until timestamp with time zone NOT NULL,
+        CONSTRAINT pk_job_leases PRIMARY KEY (name)
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE TABLE notification_actions (
+        user_id uuid NOT NULL,
+        base_key character varying(120) NOT NULL,
+        baby_id uuid NOT NULL,
+        action character varying(10) NOT NULL,
+        snoozed_until timestamp with time zone,
+        snooze_count smallint NOT NULL,
+        updated_at timestamp with time zone NOT NULL,
+        CONSTRAINT pk_notification_actions PRIMARY KEY (user_id, base_key)
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE TABLE push_subscriptions (
+        id uuid NOT NULL,
+        user_id uuid NOT NULL,
+        endpoint character varying(2048) NOT NULL,
+        endpoint_hash character(43) NOT NULL,
+        locale character varying(10) NOT NULL,
+        device_label character varying(60),
+        expires_at timestamp with time zone,
+        created_at timestamp with time zone NOT NULL,
+        last_seen_at timestamp with time zone NOT NULL,
+        last_success_at timestamp with time zone,
+        consecutive_failures integer NOT NULL,
+        revoked_at timestamp with time zone,
+        revoked_reason character varying(16),
+        auth character varying(24) NOT NULL,
+        p256dh character varying(88) NOT NULL,
+        CONSTRAINT pk_push_subscriptions PRIMARY KEY (id),
+        CONSTRAINT fk_push_subscriptions_users_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE TABLE user_notification_settings (
+        user_id uuid NOT NULL,
+        time_zone character varying(64) NOT NULL,
+        quiet_hours_enabled boolean NOT NULL,
+        quiet_start time without time zone NOT NULL,
+        quiet_end time without time zone NOT NULL,
+        quiet_includes_medicine boolean NOT NULL,
+        show_names boolean NOT NULL,
+        updated_at timestamp with time zone NOT NULL,
+        CONSTRAINT pk_user_notification_settings PRIMARY KEY (user_id),
+        CONSTRAINT fk_user_notification_settings_users_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE TABLE notification_deliveries (
+        id uuid NOT NULL,
+        subscription_id uuid NOT NULL,
+        user_id uuid NOT NULL,
+        baby_id uuid,
+        kind character varying(24) NOT NULL,
+        base_key character varying(120) NOT NULL,
+        dedupe_key character varying(124) NOT NULL,
+        due_at timestamp with time zone NOT NULL,
+        expires_at timestamp with time zone NOT NULL,
+        status character varying(12) NOT NULL,
+        attempts smallint NOT NULL,
+        next_attempt_at timestamp with time zone,
+        last_status_code smallint,
+        action_token_hash character(43),
+        created_at timestamp with time zone NOT NULL,
+        sent_at timestamp with time zone,
+        CONSTRAINT pk_notification_deliveries PRIMARY KEY (id),
+        CONSTRAINT fk_notification_deliveries_push_subscriptions_subscription_id FOREIGN KEY (subscription_id) REFERENCES push_subscriptions (id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE INDEX ix_baby_notification_preferences_baby_id ON baby_notification_preferences (baby_id) WHERE dose_due OR nap_window;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE INDEX ix_notification_deliveries_created_at ON notification_deliveries (created_at);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE INDEX ix_notification_deliveries_status_next_attempt_at ON notification_deliveries (status, next_attempt_at);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE UNIQUE INDEX ix_notification_deliveries_subscription_id_dedupe_key ON notification_deliveries (subscription_id, dedupe_key);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE INDEX ix_notification_deliveries_user_id_base_key ON notification_deliveries (user_id, base_key);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE UNIQUE INDEX ix_push_subscriptions_endpoint_hash ON push_subscriptions (endpoint_hash);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    CREATE INDEX ix_push_subscriptions_user_id ON push_subscriptions (user_id) WHERE revoked_at IS NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021182304_PushNotifications') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021182304_PushNotifications', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

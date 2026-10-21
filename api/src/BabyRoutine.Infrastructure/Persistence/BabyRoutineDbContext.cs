@@ -4,6 +4,7 @@ using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.EventTypes;
 using BabyRoutine.Domain.Measurements;
 using BabyRoutine.Domain.Medications;
+using BabyRoutine.Domain.Notifications;
 using BabyRoutine.Domain.Prescriptions;
 using BabyRoutine.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,19 @@ public sealed class BabyRoutineDbContext(DbContextOptions<BabyRoutineDbContext> 
     public DbSet<Product> Products => Set<Product>();
 
     public DbSet<ProductSubstance> ProductSubstances => Set<ProductSubstance>();
+
+    /// <summary>Push subscriptions including revoked ones (revocation is soft).</summary>
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+
+    public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
+
+    public DbSet<BabyNotificationPreferences> BabyNotificationPreferences => Set<BabyNotificationPreferences>();
+
+    public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
+
+    public DbSet<NotificationAction> NotificationActions => Set<NotificationAction>();
+
+    public DbSet<JobLease> JobLeases => Set<JobLease>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BabyRoutineDbContext).Assembly);
