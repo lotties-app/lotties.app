@@ -8,6 +8,7 @@ import { ApiClientProvider } from './api/ApiClientProvider';
 import { DatabaseProvider } from './db/DatabaseProvider';
 import { SyncProvider } from './sync/SyncProvider';
 import { AppRoutes } from './AppRoutes';
+import { ReloadPrompt } from './pwa/ReloadPrompt';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ export default function App({ configResult = readConfig() }: { configResult?: Co
       ) : (
         <SetupMessage missing={configResult.missing} />
       )}
+      <ReloadPrompt />
     </AppThemeProvider>
   );
 }

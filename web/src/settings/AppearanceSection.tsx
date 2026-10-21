@@ -1,12 +1,16 @@
-import { FormControlLabel, Switch } from '@mui/material';
+import { FormControlLabel, Stack, Switch } from '@mui/material';
 import { useThemeMode } from '../theme/ThemeModeContext';
+import { InstallAppButton } from '../pwa/InstallAppButton';
 
 export function AppearanceSection() {
   const { mode, toggleMode } = useThemeMode();
   return (
-    <FormControlLabel
-      label="Dark theme"
-      control={<Switch checked={mode === 'dark'} onChange={toggleMode} />}
-    />
+    <Stack spacing={1}>
+      <FormControlLabel
+        label="Dark theme"
+        control={<Switch checked={mode === 'dark'} onChange={toggleMode} />}
+      />
+      <InstallAppButton />
+    </Stack>
   );
 }

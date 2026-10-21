@@ -10,16 +10,38 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: [],
+      // The user decides when to reload; see src/pwa/ReloadPrompt.tsx.
+      registerType: 'prompt',
+      injectRegister: false,
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
         name: 'Baby Routine',
         short_name: 'Baby Routine',
+        description: 'Track baby events offline, share with a co-parent, and see routine predictions.',
         start_url: '/',
+        scope: '/',
         display: 'standalone',
+        orientation: 'portrait',
+        // Matches buildTheme() primary colour and the light CssBaseline background.
         theme_color: '#1976d2',
         background_color: '#ffffff',
-        icons: [],
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          {
+            src: '/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        // Only built, hashed assets are precached. API calls and the OIDC callback are never
+        // cached: no runtimeCaching rules exist, and navigations under these paths skip the fallback.
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/auth\/callback/],
       },
     }),
   ],
