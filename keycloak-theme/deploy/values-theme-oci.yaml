@@ -21,7 +21,7 @@
 initContainers:
   - name: br-theme-init
     # CHANGE: ghcr.io/<owner>/baby-routine-keycloak-theme:<version> (route A) or your own registry (route B).
-    image: cr.homel4b.dev/baby-routine/keycloak-theme:0.1.0   # pushed 2026-10-21 (route B, internal Harbor, private)
+    image: cr.homel4b.dev/baby-routine/keycloak-theme:0.2.0   # 0.1.0 pushed 2026-10-21; 0.2.0 (Lotties name) pushed same day (route B, internal Harbor, private)
     # A fixed version tag never changes, so IfNotPresent is right. Use Always only with a floating tag.
     imagePullPolicy: IfNotPresent
     command: ["sh", "-c", "cp -R /theme/. /target/ && echo baby-routine theme copied"]
