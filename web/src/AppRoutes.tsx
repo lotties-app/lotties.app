@@ -1,11 +1,21 @@
+import { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { LoginPage } from './auth/LoginPage';
 import { CallbackPage } from './auth/CallbackPage';
 import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
-import { TimelinePage } from './pages/TimelinePage';
-import { SettingsPage } from './pages/SettingsPage';
+
+// Everything except Home is split into route chunks so the first load stays small.
+const TimelinePage = lazy(() =>
+  import('./pages/TimelinePage').then((m) => ({ default: m.TimelinePage })),
+);
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
+const InvitePage = lazy(() =>
+  import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
+);
 
 export function AppRoutes() {
   return (
@@ -17,6 +27,7 @@ export function AppRoutes() {
           <Route index element={<HomePage />} />
           <Route path="timeline" element={<TimelinePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="invite/:token" element={<InvitePage />} />
         </Route>
       </Route>
     </Routes>

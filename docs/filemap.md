@@ -49,3 +49,5 @@
 - web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
 - web/src/predictions/ — predictions query/cache, model, cards and section on Home
 - web/src/layout/SyncStatusIndicator.tsx, web/src/sync/useOnline.ts — sync status chip, online hook
+- web/src/settings/ — settings sections (baby, event types, medications, members, invites, appearance, sync); web/src/baby/ — baby form, create card, role permissions
+- web/src/api/managementApi.ts, errorMessages.ts — online management calls and friendly error messages; web/src/pages/InvitePage.tsx — invite accept

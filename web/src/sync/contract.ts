@@ -38,7 +38,17 @@ export const API_PREFIX = '/api/v1';
 
 export const apiPaths = {
   babies: () => `${API_PREFIX}/babies`,
+  baby: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}`,
+  members: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/members`,
+  member: (babyId: string, userId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/members/${enc(userId)}`,
+  invites: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/invites`,
+  invite: (babyId: string, inviteId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/invites/${enc(inviteId)}`,
+  acceptInvite: (token: string) => `${API_PREFIX}/invites/${enc(token)}/accept`,
   eventTypes: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/event-types`,
+  eventType: (babyId: string, typeId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/event-types/${enc(typeId)}`,
   medications: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/medications`,
   event: (babyId: string, eventId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/events/${enc(eventId)}`,
@@ -146,6 +156,63 @@ export function toMedicationUpsertRequest(medication: Medication): MedicationUps
 
 export type EventsDeltaResponse = EventDto[];
 
+/* Online-only management endpoints (docs/SPEC.md "Babies, members, invites, event types, ..."). */
+
+export interface BabyRequest {
+  name: string;
+  /** `yyyy-mm-dd`. */
+  birthDate: string;
+}
+
+export interface MemberDto {
+  userId: string;
+  displayName: string | null;
+  role: string;
+  joinedAt: string;
+}
+
+export interface InviteDto {
+  id: string;
+  babyId: string;
+  role: string;
+  createdBy: string | null;
+  createdAt: string;
+  expiresAt: string;
+}
+
+/** Returned once by `POST /invites`: the only time the plain token is available. */
+export interface CreatedInviteDto extends InviteDto {
+  token: string;
+}
+
+export interface CreateInviteRequest {
+  role: BabyRole;
+  expiresInDays?: number;
+}
+
+export interface EventFieldRequest {
+  key: string;
+  label: string;
+  kind: EventFieldKind;
+  isRequired: boolean;
+  options?: string[];
+  min?: number;
+  max?: number;
+  unit?: string;
+}
+
+export interface EventTypeRequest {
+  name: string;
+  icon: string;
+  color: string;
+  hasDuration: boolean;
+  fields: EventFieldRequest[];
+}
+
+export interface CreateEventTypeRequest extends EventTypeRequest {
+  key: string;
+}
+
 /*
  * GET /babies/{id}/predictions?utcOffsetMinutes=<minutes east of UTC>  (read by the Home cards
  * through TanStack Query, not by the sync engine). Times are UTC ISO; lengths whole minutes.
@@ -222,7 +289,8 @@ function matchEnum<T extends string>(values: readonly T[], raw: string | undefin
 
 export function fromBabyDto(dto: BabyDto): Baby {
   const role = matchEnum(ROLES, dto.role);
-  return { id: dto.id, name: dto.name, birthDate: dto.birthDate, ...(role ? { role } : {}) };
+  // A missing role degrades to the least privilege; the server enforces roles regardless.
+  return { id: dto.id, name: dto.name, birthDate: dto.birthDate, role: role ?? 'Viewer' };
 }
 
 function fromFieldDto(dto: EventFieldDefinitionDto): EventFieldDefinition {
@@ -261,4 +329,9 @@ export function fromMedicationDto(dto: MedicationDto): Medication {
     isUsual: dto.isUsual,
     createdAt: toUtcIso(dto.createdAt),
   };
+}
+
+/** Parses a role string from the API; unknown values degrade to the least privilege. */
+export function parseRole(raw: string | undefined): BabyRole {
+  return matchEnum(ROLES, raw) ?? 'Viewer';
 }

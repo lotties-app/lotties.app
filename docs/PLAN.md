@@ -15,7 +15,7 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 | 9 | Web: Dexie store + sync engine (queue, delta pull) | Careful (done) | 8 | tests with fake API, offline simulation |
 | 10 | Web: home screen (quick actions, running timers), add/edit sheet, medication checklist | Medium (done) | 9, 5 | component tests, manual preview |
 | 11 | Web: timeline + filters | Medium (done) | 9 | tests |
-| 12 | Web: settings (custom event types, medications, members/invites) | Medium | 8, 4, 5 | tests |
+| 12 | Web: settings (custom event types, medications, members/invites) | Medium (done) | 8, 4, 5 | tests |
 | 13 | Web: predictions cards | Light (done) | 7, 10 | tests |
 | 14 | PWA polish: manifest, icons, service worker, install prompt | Light | 8 | Lighthouse PWA check |
 | 15 | End-to-end smoke (Playwright) on docker-compose + docs | Medium | all | CI green |

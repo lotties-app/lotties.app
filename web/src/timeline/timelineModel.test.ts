@@ -91,7 +91,7 @@ describe('payloadSummary', () => {
         unit: null,
       },
       {
-        key: 'amount',
+        key: 'amount_ml',
         label: 'Amount',
         kind: 'number' as const,
         isRequired: false,
@@ -104,7 +104,35 @@ describe('payloadSummary', () => {
   };
 
   it('summarizes type fields with units', () => {
-    expect(payloadSummary({ method: 'bottle', amount: 120 }, bottleType)).toBe('bottle · 120 ml');
+    expect(payloadSummary({ method: 'bottle', amount_ml: 120 }, bottleType)).toBe(
+      'bottle · 120 ml',
+    );
+  });
+
+  it('shows the feeding keys of the API contract and keeps legacy payloads readable', () => {
+    const breast = {
+      ...bottleType,
+      fields: [
+        ...bottleType.fields,
+        {
+          key: 'breast_left_seconds',
+          label: 'Left breast',
+          kind: 'number' as const,
+          isRequired: false,
+          options: [],
+          min: 0,
+          max: null,
+          unit: 's',
+        },
+      ],
+    };
+    expect(
+      payloadSummary({ method: 'bottle', amount_ml: 90, breast_left_seconds: 300 }, breast),
+    ).toBe('bottle · 90 ml · 300 s');
+    // An event stored before the key rename still shows its amount as an unknown value.
+    expect(payloadSummary({ method: 'bottle', amount: 120 }, bottleType)).toBe(
+      'bottle · Amount 120',
+    );
   });
 
   it('shows belly pain intensity out of its maximum', () => {

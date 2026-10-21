@@ -11,7 +11,7 @@ import { clockWithDay } from './predictionModel';
 import { writeCachedPredictions } from './predictionsCache';
 import { PredictionsSection } from './PredictionsSection';
 
-const BABY: Baby = { id: BABY_ID, name: 'Lia', birthDate: '2026-08-01' };
+const BABY: Baby = { id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' };
 const HOUR = 3_600_000;
 
 let db: BabyRoutineDb;

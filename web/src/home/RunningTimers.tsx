@@ -10,6 +10,8 @@ interface Props {
   types: EventType[];
   onStop: (event: BabyEvent) => void;
   onEdit: (event: BabyEvent) => void;
+  /** Viewers cannot stop or edit timers. */
+  readOnly?: boolean;
 }
 
 interface TimerProps {
@@ -18,15 +20,17 @@ interface TimerProps {
   now: number;
   onStop: (event: BabyEvent) => void;
   onEdit: (event: BabyEvent) => void;
+  readOnly: boolean;
 }
 
-function Timer({ event, type, now, onStop, onEdit }: TimerProps) {
+function Timer({ event, type, now, onStop, onEdit, readOnly }: TimerProps) {
   const name = type?.name ?? 'Event';
   return (
     <Card variant="outlined" sx={{ display: 'flex', alignItems: 'stretch' }}>
       <CardActionArea
         onClick={() => onEdit(event)}
-        aria-label={`Edit ${name}`}
+        disabled={readOnly}
+        aria-label={readOnly ? name : `Edit ${name}`}
         sx={{ display: 'flex', flexGrow: 1, justifyContent: 'flex-start', gap: 2, p: 2 }}
       >
         <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} fontSize={32} />
@@ -46,6 +50,7 @@ function Timer({ event, type, now, onStop, onEdit }: TimerProps) {
         color="error"
         startIcon={<StopIcon />}
         onClick={() => onStop(event)}
+        disabled={readOnly}
         aria-label={`Stop ${name}`}
         sx={{ minWidth: 96, borderRadius: 0 }}
       >
@@ -55,7 +60,7 @@ function Timer({ event, type, now, onStop, onEdit }: TimerProps) {
   );
 }
 
-export function RunningTimers({ events, types, onStop, onEdit }: Props) {
+export function RunningTimers({ events, types, onStop, onEdit, readOnly = false }: Props) {
   const now = useNow();
   if (events.length === 0) return null;
   return (
@@ -68,6 +73,7 @@ export function RunningTimers({ events, types, onStop, onEdit }: Props) {
           now={now}
           onStop={onStop}
           onEdit={onEdit}
+          readOnly={readOnly}
         />
       ))}
     </Stack>

@@ -34,6 +34,19 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       syncState: '[babyId+entity]',
     },
   },
+  {
+    // `Baby.role` became required. Rows saved before it existed get the write-capable Parent
+    // role until the next sync replaces them with the server's value (the server enforces roles).
+    version: 2,
+    stores: {},
+    upgrade: (tx) =>
+      tx
+        .table<Baby, string>('babies')
+        .toCollection()
+        .modify((baby) => {
+          baby.role ??= 'Parent';
+        }),
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {

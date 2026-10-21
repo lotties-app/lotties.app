@@ -8,22 +8,26 @@ interface Props {
   /** Duration types that already have a running timer. */
   runningTypeIds: ReadonlySet<string>;
   onSelect: (type: EventType) => void;
+  /** Viewers cannot log events. */
+  readOnly?: boolean;
 }
 
 function QuickAction({
   type,
   running,
+  readOnly,
   onSelect,
 }: {
   type: EventType;
   running: boolean;
+  readOnly: boolean;
   onSelect: (type: EventType) => void;
 }) {
   const color = safeColor(type.color);
   return (
     <ButtonBase
       onClick={() => onSelect(type)}
-      disabled={running}
+      disabled={running || readOnly}
       aria-label={type.hasDuration ? `Start ${type.name}` : `Log ${type.name}`}
       sx={{
         minHeight: 96,
@@ -49,7 +53,7 @@ function QuickAction({
   );
 }
 
-export function QuickActions({ types, runningTypeIds, onSelect }: Props) {
+export function QuickActions({ types, runningTypeIds, onSelect, readOnly = false }: Props) {
   return (
     <Box
       sx={{
@@ -63,6 +67,7 @@ export function QuickActions({ types, runningTypeIds, onSelect }: Props) {
           key={type.id}
           type={type}
           running={type.hasDuration && runningTypeIds.has(type.id)}
+          readOnly={readOnly}
           onSelect={onSelect}
         />
       ))}

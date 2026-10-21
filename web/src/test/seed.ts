@@ -1,5 +1,5 @@
 import type { BabyRoutineDb } from '../db/database';
-import type { Dosage, EventFieldDefinition, EventType, Medication } from '../db/models';
+import type { BabyRole, Dosage, EventFieldDefinition, EventType, Medication } from '../db/models';
 import { BABY_ID } from './fakeApi';
 
 export const FEEDING = 'type-feeding';
@@ -80,8 +80,16 @@ function med(id: string, name: string, isUsual: boolean, defaultDosage: Dosage |
   } satisfies Medication;
 }
 
-export async function seedBaby(db: BabyRoutineDb, extras: { medications?: boolean } = {}) {
-  await db.babies.put({ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01' });
+export async function seedBaby(
+  db: BabyRoutineDb,
+  extras: { medications?: boolean; role?: BabyRole } = {},
+) {
+  await db.babies.put({
+    id: BABY_ID,
+    name: 'Lia',
+    birthDate: '2026-08-01',
+    role: extras.role ?? 'Owner',
+  });
   await db.eventTypes.bulkPut(EVENT_TYPES);
   if (extras.medications) {
     await db.medications.bulkPut([

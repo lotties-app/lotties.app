@@ -8,6 +8,7 @@ import {
   useOldestEventStart,
 } from '../db/hooks';
 import type { Baby, BabyEvent } from '../db/models';
+import { canWrite } from '../baby/permissions';
 import { EventSheet } from '../events/EventSheet';
 import { SyncStatusIndicator } from '../layout/SyncStatusIndicator';
 import { TimelineFilters } from './TimelineFilters';
@@ -60,6 +61,7 @@ export function BabyTimeline({ baby }: { baby: Baby }) {
               medications={medications}
               syncState={syncStates?.get(event.id)}
               onEdit={setEditing}
+              readOnly={!canWrite(baby)}
             />
           ))}
         </List>

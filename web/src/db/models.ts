@@ -11,8 +11,8 @@ export interface Baby {
   name: string;
   /** Calendar date `yyyy-mm-dd`. */
   birthDate: string;
-  /** Current user's role, when the API reports it. */
-  role?: BabyRole;
+  /** The current user's role for this baby (from `GET /babies`). */
+  role: BabyRole;
 }
 
 export type EventFieldKind = 'text' | 'number' | 'select' | 'bool';

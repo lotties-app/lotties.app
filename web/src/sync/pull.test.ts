@@ -238,7 +238,7 @@ describe('delta cursor', () => {
 
 describe('reference data', () => {
   it('replaces babies, event types and medications from the server', async () => {
-    await db.babies.put({ id: 'gone', name: 'Old', birthDate: '2025-01-01' });
+    await db.babies.put({ id: 'gone', name: 'Old', birthDate: '2025-01-01', role: 'Owner' });
     const { ctx } = ctxWith((call) => {
       if (call.path.endsWith('/event-types')) {
         return [
@@ -280,7 +280,7 @@ describe('reference data', () => {
     await pullAll(ctx);
 
     expect(await db.babies.toArray()).toEqual([
-      { id: BABY_ID, name: 'Lia', birthDate: '2026-08-01' },
+      { id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' },
     ]);
     const custom = await db.eventTypes.get('t-custom');
     expect(custom?.fields[0]).toMatchObject({

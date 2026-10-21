@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Stack, Typography } from '@mui/material';
+import { canWrite, VIEWER_NOTICE } from '../baby/permissions';
 import { useEventCommands, useEventTypes, useRunningEvents } from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
 import { EventSheet } from '../events/EventSheet';
@@ -15,6 +16,7 @@ export function BabyHome({ baby }: { baby: Baby }) {
   const running = useRunningEvents(baby.id);
   const commands = useEventCommands();
   const [sheet, setSheet] = useState<SheetTarget | null>(null);
+  const writable = canWrite(baby);
   const [error, setError] = useState<string | null>(null);
 
   if (!types || !running) return null;
@@ -35,12 +37,14 @@ export function BabyHome({ baby }: { baby: Baby }) {
 
   return (
     <Stack spacing={2}>
+      {!writable && <Alert severity="info">{VIEWER_NOTICE}</Alert>}
       {error && <Alert severity="error">{error}</Alert>}
       <RunningTimers
         events={running}
         types={types}
         onStop={(event) => attempt(() => commands.stop(event.id))}
         onEdit={(event) => setSheet({ event })}
+        readOnly={!writable}
       />
       {types.length === 0 ? (
         <Typography color="text.secondary">
@@ -51,10 +55,11 @@ export function BabyHome({ baby }: { baby: Baby }) {
           types={types}
           runningTypeIds={new Set(running.map((e) => e.typeId))}
           onSelect={onSelect}
+          readOnly={!writable}
         />
       )}
       <PredictionsSection baby={baby} types={types} />
-      {sheet && (
+      {sheet && writable && (
         <EventSheet
           babyId={baby.id}
           types={types}

@@ -30,18 +30,29 @@ export async function refreshBabies(ctx: SyncContext): Promise<string[]> {
   return babies.map((b) => b.id);
 }
 
-/** Replaces a baby's event types (custom + built-in templates) and medication catalog. */
+/**
+ * Replaces a baby's event types (custom + built-in templates) and medication catalog. Medications
+ * with a queued local change are left alone until it is pushed, so an offline edit or delete is
+ * not undone by a pull that runs before the push succeeded.
+ */
 export async function refreshCatalogs(ctx: SyncContext, babyId: string): Promise<void> {
   const [types, medications] = await Promise.all([
     get<EventTypeDto[]>(ctx, apiPaths.eventTypes(babyId)),
     get<MedicationDto[]>(ctx, apiPaths.medications(babyId)),
   ]);
   const { db } = ctx;
-  await db.transaction('rw', db.eventTypes, db.medications, async () => {
+  await db.transaction('rw', db.eventTypes, db.medications, db.outbox, async () => {
+    const pending = await pendingEntityIds(db, babyId);
     await db.eventTypes.where('babyId').equals(babyId).delete();
     await db.eventTypes.bulkPut((types ?? []).map(fromEventTypeDto));
-    await db.medications.where('babyId').equals(babyId).delete();
-    await db.medications.bulkPut((medications ?? []).map(fromMedicationDto));
+    await db.medications
+      .where('babyId')
+      .equals(babyId)
+      .filter((m) => !pending.has(m.id))
+      .delete();
+    await db.medications.bulkPut(
+      (medications ?? []).filter((m) => !pending.has(m.id)).map(fromMedicationDto),
+    );
   });
 }
 

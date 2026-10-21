@@ -45,7 +45,7 @@ function defaultResponse(call: ApiCall): unknown {
   if (call.method === 'PUT') return echoEvent(call);
   if (call.method === 'DELETE') return undefined;
   if (call.path === '/api/v1/babies')
-    return [{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01' }];
+    return [{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' }];
   if (call.path.includes('/predictions')) {
     return { babyId: BABY_ID, generatedAt: SERVER_TIME, predictions: [], insufficientData: [] };
   }

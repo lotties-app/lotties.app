@@ -50,3 +50,59 @@ export async function createMedication(
   });
   return medication;
 }
+
+export interface MedicationChanges {
+  name: string;
+  defaultDosage: Dosage | null;
+  notes: string | null;
+  isUsual: boolean;
+}
+
+/** Edits a catalog entry locally and queues its upsert (`PUT /babies/{id}/medications/{id}`). */
+export async function updateMedication(
+  db: BabyRoutineDb,
+  id: string,
+  changes: MedicationChanges,
+  options: CommandOptions = {},
+): Promise<Medication> {
+  const name = changes.name.trim();
+  if (!name) throw new InvalidMedicationError('A medication needs a name.');
+  const now = (options.now?.() ?? new Date()).toISOString();
+  return db.transaction('rw', db.medications, db.outbox, async () => {
+    const current = await db.medications.get(id);
+    if (!current) throw new InvalidMedicationError('This medication no longer exists.');
+    const updated: Medication = { ...current, ...changes, name };
+    await db.medications.put(updated);
+    await enqueueMutation(db, {
+      babyId: updated.babyId,
+      kind: 'upsert',
+      entityType: 'medication',
+      entityId: id,
+      payload: toMedicationUpsertRequest(updated),
+      createdAt: now,
+    });
+    return updated;
+  });
+}
+
+/** Removes a catalog entry locally and queues `DELETE /babies/{id}/medications/{id}`. */
+export async function deleteMedication(
+  db: BabyRoutineDb,
+  id: string,
+  options: CommandOptions = {},
+): Promise<void> {
+  const now = (options.now?.() ?? new Date()).toISOString();
+  await db.transaction('rw', db.medications, db.outbox, async () => {
+    const current = await db.medications.get(id);
+    if (!current) return;
+    await db.medications.delete(id);
+    await enqueueMutation(db, {
+      babyId: current.babyId,
+      kind: 'delete',
+      entityType: 'medication',
+      entityId: id,
+      payload: null,
+      createdAt: now,
+    });
+  });
+}

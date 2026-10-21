@@ -14,6 +14,8 @@ interface Props {
   medications: Medication[];
   syncState: EntitySyncState | undefined;
   onEdit: (event: BabyEvent) => void;
+  /** Viewers can look but not edit. */
+  readOnly?: boolean;
 }
 
 function SyncBadge({ state }: { state: EntitySyncState | undefined }) {
@@ -31,12 +33,24 @@ function SyncBadge({ state }: { state: EntitySyncState | undefined }) {
   );
 }
 
-export function TimelineRow({ event, type, medications, syncState, onEdit }: Props) {
+export function TimelineRow({
+  event,
+  type,
+  medications,
+  syncState,
+  onEdit,
+  readOnly = false,
+}: Props) {
   const name = type?.name ?? 'Event';
   const summary = payloadSummary(event.payload, type, medications);
   const running = event.endedAt === null;
   return (
-    <ListItemButton onClick={() => onEdit(event)} aria-label={`Edit ${name}`} sx={{ gap: 1 }}>
+    <ListItemButton
+      onClick={() => onEdit(event)}
+      disabled={readOnly}
+      aria-label={readOnly ? name : `Edit ${name}`}
+      sx={{ gap: 1, '&.Mui-disabled': { opacity: 1 } }}
+    >
       <ListItemIcon sx={{ minWidth: 40 }}>
         <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} fontSize={28} />
       </ListItemIcon>
