@@ -12,6 +12,7 @@ import {
 import { useMedicationCommands, useMedications } from '../db/hooks';
 import type { Medication } from '../db/models';
 import type { EventFormState, MedicationSelection } from './formModel';
+import { getOwn, withOwn, withoutOwn } from '../util/ownProperty';
 
 type Selected = EventFormState['medications'];
 
@@ -89,43 +90,50 @@ export function MedicationChecklist({ babyId, selected, onChange }: Props) {
   const medications = useMedications(babyId) ?? [];
 
   const toggle = (medication: Medication) => {
-    const { [medication.id]: removed, ...rest } = selected;
-    onChange(removed ? rest : { ...selected, [medication.id]: selectionFor(medication) });
+    const removed = getOwn(selected, medication.id);
+    onChange(
+      removed
+        ? withoutOwn(selected, medication.id)
+        : withOwn(selected, medication.id, selectionFor(medication)),
+    );
   };
 
   return (
     <FormGroup>
       <FormLabel>Medications</FormLabel>
-      {medications.map((medication) => (
-        <div key={medication.id}>
-          <FormControlLabel
-            sx={{ minHeight: 48 }}
-            label={
-              <>
-                {medication.name}
-                {medication.isUsual && <Chip size="small" label="Usual" sx={{ ml: 1 }} />}
-              </>
-            }
-            control={
-              <Checkbox
-                checked={medication.id in selected}
-                onChange={() => toggle(medication)}
-                slotProps={{ input: { 'aria-label': medication.name } }}
-              />
-            }
-          />
-          {medication.id in selected && (
-            <DoseFields
-              name={medication.name}
-              value={selected[medication.id]}
-              onChange={(value) => onChange({ ...selected, [medication.id]: value })}
+      {medications.map((medication) => {
+        const selection = getOwn(selected, medication.id);
+        return (
+          <div key={medication.id}>
+            <FormControlLabel
+              sx={{ minHeight: 48 }}
+              label={
+                <>
+                  {medication.name}
+                  {medication.isUsual && <Chip size="small" label="Usual" sx={{ ml: 1 }} />}
+                </>
+              }
+              control={
+                <Checkbox
+                  checked={selection !== undefined}
+                  onChange={() => toggle(medication)}
+                  slotProps={{ input: { 'aria-label': medication.name } }}
+                />
+              }
             />
-          )}
-        </div>
-      ))}
+            {selection && (
+              <DoseFields
+                name={medication.name}
+                value={selection}
+                onChange={(value) => onChange(withOwn(selected, medication.id, value))}
+              />
+            )}
+          </div>
+        );
+      })}
       <AddMedication
         babyId={babyId}
-        onAdded={(m) => onChange({ ...selected, [m.id]: selectionFor(m) })}
+        onAdded={(m) => onChange(withOwn(selected, m.id, selectionFor(m)))}
       />
     </FormGroup>
   );

@@ -54,22 +54,25 @@ function newEvent() {
 }
 
 describe('SyncEngine push', () => {
-  it('pushes the outbox in queue order, then pulls', async () => {
+  it('pushes the outbox in queue order, coalescing edits of one event, then pulls', async () => {
     const a = await newEvent();
-    await stopEvent(db, a.id);
     const b = await newEvent();
+    await stopEvent(db, a.id);
     await deleteEvent(db, b.id);
+    const c = await newEvent();
     const { engine, calls, writes } = setup();
 
     await engine.syncNow();
 
-    expect(writes().map((c) => `${c.method} ${eventIdOf(c)}`)).toEqual([
+    // a: create + stop -> one PUT of the stopped state, at the position of the stop.
+    // b: create + delete -> only the DELETE. c keeps its place after both.
+    expect(writes().map((call) => `${call.method} ${eventIdOf(call)}`)).toEqual([
       `PUT ${a.id}`,
-      `PUT ${a.id}`,
-      `PUT ${b.id}`,
       `DELETE ${b.id}`,
+      `PUT ${c.id}`,
     ]);
-    expect(calls.findIndex((c) => c.method === 'GET')).toBe(4);
+    expect((writes()[0].body as { endedAt: string | null }).endedAt).not.toBeNull();
+    expect(calls.findIndex((call) => call.method === 'GET')).toBe(3);
     expect(await db.outbox.count()).toBe(0);
     expect(await db.events.get(a.id)).toMatchObject({
       createdBy: 'user-1',
@@ -211,12 +214,13 @@ describe('SyncEngine push', () => {
 
   it('keeps the local row while a newer local edit is still queued', async () => {
     const a = await newEvent();
-    await editEvent(db, a.id, { notes: 'newer local' });
     let first = true;
-    const { engine } = setup((call) => {
+    const { engine } = setup(async (call) => {
       if (!isPut(call)) return undefined;
       if (first) {
         first = false;
+        // A local edit lands while the first PUT is in flight (after coalescing ran).
+        await editEvent(db, a.id, { notes: 'newer local' });
         return { ...echoEvent(call), notes: 'server' };
       }
       throw httpError(503);

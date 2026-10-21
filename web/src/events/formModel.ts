@@ -6,6 +6,7 @@ import type {
   EventType,
   MedicationEventPayload,
 } from '../db/models';
+import { getOwn, setOwn } from '../util/ownProperty';
 import { fromLocalInput, toLocalInput } from './time';
 
 export interface MedicationSelection {
@@ -21,9 +22,12 @@ export interface EventFormState {
   startedAt: string;
   endedAt: string;
   notes: string;
-  /** Field values by field key: text for text/number/select, boolean for bool. */
+  /**
+   * Field values by field key: text for text/number/select, boolean for bool. Keys come from the
+   * server, so read and write them with `getOwn`/`withOwn` (util/ownProperty), never `values[key]`.
+   */
   values: Record<string, string | boolean>;
-  /** Checked medications by catalog id. */
+  /** Checked medications by catalog id (same own-property rule as `values`). */
   medications: Record<string, MedicationSelection>;
 }
 
@@ -36,9 +40,9 @@ export function isMedicationType(type: EventType | undefined): boolean {
 function valuesFromPayload(type: EventType | undefined, payload: EventPayload) {
   const values: EventFormState['values'] = {};
   for (const field of type?.fields ?? []) {
-    const raw = payload[field.key];
+    const raw = getOwn(payload, field.key);
     if (raw === undefined || raw === null) continue;
-    values[field.key] = field.kind === 'bool' ? raw === true : String(raw);
+    setOwn(values, field.key, field.kind === 'bool' ? raw === true : String(raw));
   }
   return values;
 }
@@ -47,11 +51,12 @@ function medicationsFromPayload(payload: EventPayload) {
   const result: EventFormState['medications'] = {};
   const list = (payload as Partial<MedicationEventPayload>).medications;
   for (const m of Array.isArray(list) ? list : []) {
-    result[m.medicationId] = {
+    if (typeof m?.medicationId !== 'string') continue;
+    setOwn(result, m.medicationId, {
       name: m.name ?? '',
       amount: m.dose ? String(m.dose.amount) : '',
       unit: m.dose?.unit ?? '',
-    };
+    });
   }
   return result;
 }
@@ -120,7 +125,7 @@ export function validateForm(form: EventFormState, type: EventType | undefined):
     errors.push('End time must not be before the start time.');
   }
   for (const field of type.fields) {
-    const error = fieldError(field, form.values[field.key]);
+    const error = fieldError(field, getOwn(form.values, field.key));
     if (error) errors.push(error);
   }
   if (isMedicationType(type)) {
@@ -150,9 +155,9 @@ export function buildPayload(form: EventFormState, type: EventType): EventPayloa
   }
   const payload: EventPayload = {};
   for (const field of type.fields) {
-    const raw = form.values[field.key];
+    const raw = getOwn(form.values, field.key);
     if (raw === undefined || raw === '') continue;
-    payload[field.key] = field.kind === 'number' ? parseNumber(raw) : raw;
+    setOwn<unknown>(payload, field.key, field.kind === 'number' ? parseNumber(raw) : raw);
   }
   return payload;
 }

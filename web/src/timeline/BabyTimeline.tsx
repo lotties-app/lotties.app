@@ -10,6 +10,7 @@ import {
 import type { Baby, BabyEvent } from '../db/models';
 import { canWrite } from '../baby/permissions';
 import { EventSheet } from '../events/EventSheet';
+import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { SyncStatusIndicator } from '../layout/SyncStatusIndicator';
 import { TimelineFilters } from './TimelineFilters';
 import { TimelineRow } from './TimelineRow';
@@ -49,22 +50,24 @@ export function BabyTimeline({ baby }: { baby: Baby }) {
         <Typography color="text.secondary">No events in the last {days} days.</Typography>
       )}
       {grouped.map((day) => (
-        <List key={day.key} aria-label={day.label} disablePadding>
-          <ListSubheader disableGutters sx={{ bgcolor: 'background.default' }}>
-            {day.label}
-          </ListSubheader>
-          {day.events.map((event) => (
-            <TimelineRow
-              key={event.id}
-              event={event}
-              type={typeOf(event)}
-              medications={medications}
-              syncState={syncStates?.get(event.id)}
-              onEdit={setEditing}
-              readOnly={!canWrite(baby)}
-            />
-          ))}
-        </List>
+        <ErrorBoundary key={day.key}>
+          <List aria-label={day.label} disablePadding>
+            <ListSubheader disableGutters sx={{ bgcolor: 'background.default' }}>
+              {day.label}
+            </ListSubheader>
+            {day.events.map((event) => (
+              <TimelineRow
+                key={event.id}
+                event={event}
+                type={typeOf(event)}
+                medications={medications}
+                syncState={syncStates?.get(event.id)}
+                onEdit={setEditing}
+                readOnly={!canWrite(baby)}
+              />
+            ))}
+          </List>
+        </ErrorBoundary>
       ))}
       {hasOlder && (
         <Button onClick={() => setDays((d) => d + DAYS_PER_PAGE)} sx={{ minHeight: 48 }}>

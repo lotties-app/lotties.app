@@ -37,6 +37,7 @@ export function echoEvent(call: ApiCall, updatedAt = SERVER_TIME): EventDto {
     createdBy: 'user-1',
     createdAt: updatedAt,
     updatedAt,
+    clientUpdatedAt: body.updatedAt ?? updatedAt,
     deletedAt: null,
   };
 }
@@ -114,4 +115,79 @@ export function serverEvent(overrides: Partial<EventDto> = {}): EventDto {
 /** A fresh, uniquely named IndexedDB (fake-indexeddb in tests). */
 export function testDatabase(): BabyRoutineDb {
   return createDatabase(`test-${crypto.randomUUID()}`);
+}
+
+export interface FakeEventServerOptions {
+  /** Server clock at the first request (UTC ISO). */
+  start: string;
+  /** Milliseconds the server clock moves per request. Default 1000. */
+  stepMs?: number;
+  /**
+   * Last-write-wins rule for an upsert's `updatedAt`: `client` compares it with the stored
+   * `clientUpdatedAt` (current API), `server` with the stored server `updatedAt` (the pre-fix API
+   * that dropped offline edits).
+   */
+  compare?: 'client' | 'server';
+}
+
+/**
+ * Stateful in-memory events API with its own moving clock, independent of the client clock:
+ * PUT upserts (with the configured last-write-wins rule), DELETE soft-deletes, GET returns one
+ * event or the `since` delta. Use `server.handler` as (part of) a `fakeApi` handler.
+ */
+export function fakeEventServer({
+  start,
+  stepMs = 1_000,
+  compare = 'client',
+}: FakeEventServerOptions) {
+  const events = new Map<string, EventDto>();
+  let clock = Date.parse(start);
+  const tick = () => {
+    const now = new Date(clock).toISOString();
+    clock += stepMs;
+    return now;
+  };
+  const idOf = (path: string) => /\/events\/([^/?]+)/.exec(path)?.[1];
+
+  function put(id: string, call: ApiCall): EventDto {
+    const now = tick();
+    const body = call.body as EventUpsertRequest;
+    const stored = events.get(id);
+    if (stored?.deletedAt) return stored;
+    const storedEdit = compare === 'client' ? stored?.clientUpdatedAt : stored?.updatedAt;
+    if (stored && body.updatedAt && storedEdit && body.updatedAt < storedEdit) return stored;
+    const next: EventDto = {
+      ...echoEvent(call, now),
+      createdBy: stored?.createdBy ?? 'user-1',
+      createdAt: stored?.createdAt ?? now,
+      clientUpdatedAt: body.updatedAt ?? now,
+    };
+    events.set(id, next);
+    return next;
+  }
+
+  function handler(call: ApiCall): unknown {
+    if (!call.path.includes('/events')) return undefined;
+    const id = idOf(call.path);
+    if (call.method === 'PUT' && id) return put(decodeURIComponent(id), call);
+    if (call.method === 'DELETE' && id) {
+      const stored = events.get(decodeURIComponent(id));
+      const now = tick();
+      if (stored && !stored.deletedAt) {
+        events.set(stored.id, { ...stored, deletedAt: now, updatedAt: now });
+      }
+      return null;
+    }
+    if (id) {
+      const stored = events.get(decodeURIComponent(id));
+      if (!stored) throw httpError(404, 'event_not_found');
+      return stored;
+    }
+    const since = new URL(call.path, 'http://x').searchParams.get('since');
+    return [...events.values()]
+      .filter((e) => !since || e.updatedAt >= since)
+      .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+  }
+
+  return { events, handler, now: () => new Date(clock).toISOString() };
 }

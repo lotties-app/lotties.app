@@ -2,8 +2,10 @@ import { Button, List, ListItem, ListItemText, Stack, Typography, Alert } from '
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useDatabase } from '../db/DatabaseContext';
 import type { OutboxMutation } from '../db/models';
-import { discardDeadLetter, listDeadLetters, retryDeadLetter } from '../db/outbox';
+import { listDeadLetters, retryDeadLetter } from '../db/outbox';
 import { useSyncEngine, useSyncStatus } from '../sync/SyncEngineContext';
+import { ErrorNotice } from './ErrorNotice';
+import { useServerAction } from './useServerAction';
 
 const STATE_LABEL = {
   idle: 'Up to date',
@@ -48,6 +50,8 @@ export function SyncSection() {
   const engine = useSyncEngine();
   const status = useSyncStatus();
   const dead = useLiveQuery(() => listDeadLetters(db), [db]) ?? [];
+  // Discarding restores the server's copy of the record, so it needs the server.
+  const discard = useServerAction();
 
   const retry = async (id: number) => {
     await retryDeadLetter(db, id);
@@ -70,6 +74,7 @@ export function SyncSection() {
       <Typography variant="subtitle1" component="h3">
         Failed changes ({dead.length})
       </Typography>
+      <ErrorNotice message={discard.error} />
       {dead.length === 0 ? (
         <Typography color="text.secondary">Nothing failed.</Typography>
       ) : (
@@ -79,7 +84,7 @@ export function SyncSection() {
               key={m.id}
               mutation={m}
               onRetry={() => void retry(m.id)}
-              onDiscard={() => void discardDeadLetter(db, m.id)}
+              onDiscard={() => void discard.run(() => engine.discardDeadLetter(m.id))}
             />
           ))}
         </List>

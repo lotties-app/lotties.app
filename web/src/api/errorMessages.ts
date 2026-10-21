@@ -1,4 +1,5 @@
 import { ApiError } from './ApiError';
+import { getOwn } from '../util/ownProperty';
 
 const MESSAGES: Record<string, string> = {
   event_type_in_use:
@@ -21,7 +22,9 @@ export const OFFLINE_MESSAGE = 'You are offline. Connect to the internet to do t
 /** A user-facing sentence for a failed online operation (known codes, then status, then network). */
 export function describeApiError(error: unknown, overrides: Record<string, string> = {}): string {
   if (error instanceof ApiError) {
-    const known = error.code ? (overrides[error.code] ?? MESSAGES[error.code]) : undefined;
+    const known = error.code
+      ? (getOwn(overrides, error.code) ?? getOwn(MESSAGES, error.code))
+      : undefined;
     if (known) return known;
     if (error.status === 403) return 'You do not have permission to do this.';
     const detail = error.problem?.detail ?? error.problem?.title;

@@ -1,4 +1,5 @@
 import { ApiError } from '../api/ApiError';
+import { getOwn } from '../util/ownProperty';
 
 /**
  * - `network`: no response (offline, DNS, CORS, abort/timeout) -> stop, resume when online.
@@ -25,6 +26,20 @@ export function classifyFailure(error: unknown): FailureKind {
   return 'transient';
 }
 
+/** "Server not reachable right now" answers from gateways and overloaded servers. */
+const UNAVAILABLE_STATUSES = new Set([408, 429, 502, 503, 504]);
+
+/**
+ * Whether a transient failure counts toward dead-lettering the mutation: errors the server keeps
+ * raising for this request (HTTP 500 and other 5xx, unexpected errors) do; offline errors and
+ * "unavailable right now" statuses (408, 429, 502-504: proxy up, API down or busy) do not, so an
+ * outage never discards the queue.
+ */
+export function countsTowardGiveUp(error: unknown): boolean {
+  if (classifyFailure(error) !== 'transient') return false;
+  return !(error instanceof ApiError && UNAVAILABLE_STATUSES.has(error.status));
+}
+
 /** Readable explanations for API problem `code`s that dead-letter a mutation. */
 const PROBLEM_MESSAGES: Record<string, string> = {
   event_baby_mismatch:
@@ -36,7 +51,7 @@ const PROBLEM_MESSAGES: Record<string, string> = {
 function describeApiError(error: ApiError): string {
   const { code } = error;
   if (!code) return `HTTP ${error.status}: ${error.message}`;
-  const known = PROBLEM_MESSAGES[code];
+  const known = getOwn(PROBLEM_MESSAGES, code);
   if (known) return `${known} (HTTP ${error.status} ${code})`;
   const detail = error.problem?.detail ?? error.problem?.title ?? error.message;
   return `HTTP ${error.status} ${code}: ${detail}`;

@@ -75,5 +75,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    testTimeout: 15000, // jsdom + MUI renders are slow when the machine is busy (CI, parallel builds)
   },
 });

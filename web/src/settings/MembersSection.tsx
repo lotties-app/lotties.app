@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { OFFLINE_MESSAGE } from '../api/errorMessages';
 import { purgeBabyData } from '../db/purge';
 import { changeMemberRole, leaveBaby, listMembers, removeMember } from '../api/managementApi';
@@ -21,6 +22,9 @@ import { useApiClient } from '../api/ApiClientContext';
 import { isOwner } from '../baby/permissions';
 import { useDatabase } from '../db/DatabaseContext';
 import type { Baby, BabyRole } from '../db/models';
+import { countUnsyncedMutations } from '../db/outbox';
+import { UnsyncedChangesDialog } from '../session/UnsyncedChangesDialog';
+import { unsyncedChangesLabel, usePushThenProceed } from '../session/usePushThenProceed';
 import { parseRole, type MemberDto } from '../sync/contract';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -90,7 +94,9 @@ export function MembersSection({ baby }: { baby: Baby }) {
   const { run, pending, error, online, clearError } = useServerAction();
   const manage = isOwner(baby);
   const [removing, setRemoving] = useState<MemberDto | null>(null);
-  const [leaving, setLeaving] = useState(false);
+  const [leaving, setLeaving] = useState<'confirm' | 'unsynced' | null>(null);
+  const countUnsynced = () => countUnsyncedMutations(db, baby.id);
+  const unsynced = useLiveQuery(countUnsynced, [db, baby.id]) ?? 0;
   const members = useQuery({
     queryKey: ['members', baby.id],
     queryFn: () => listMembers(api, baby.id),
@@ -118,15 +124,22 @@ export function MembersSection({ baby }: { baby: Baby }) {
       await purgeBabyData(db, baby.id);
       await engine.syncNow();
     });
-    if (ok) setLeaving(false);
+    if (ok) setLeaving(null);
+  };
+  // Leaving purges the baby's outbox: offer to push its unsynced changes first.
+  const pushFirst = usePushThenProceed(countUnsynced, confirmLeave);
+
+  const startLeave = async () => {
+    setLeaving((await countUnsynced()) > 0 ? 'unsynced' : 'confirm');
   };
 
   const closeDialogs = () => {
     clearError();
+    pushFirst.clearError();
     setRemoving(null);
-    setLeaving(false);
+    setLeaving(null);
   };
-  const dialogOpen = removing !== null || leaving;
+  const dialogOpen = removing !== null || leaving !== null;
 
   return (
     <Stack spacing={2}>
@@ -155,7 +168,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
         color="error"
         variant="outlined"
         disabled={!online}
-        onClick={() => setLeaving(true)}
+        onClick={() => void startLeave()}
         sx={{ minHeight: 48, alignSelf: 'flex-start' }}
       >
         Leave this baby
@@ -171,7 +184,20 @@ export function MembersSection({ baby }: { baby: Baby }) {
           onConfirm={() => void confirmRemove(removing)}
         />
       )}
-      {leaving && (
+      {leaving === 'unsynced' && (
+        <UnsyncedChangesDialog
+          title={`Leave ${baby.name}?`}
+          message={`You have ${unsyncedChangesLabel(unsynced)} for ${baby.name} that will be lost.`}
+          pushLabel="Push first"
+          proceedLabel="Leave anyway"
+          pending={pending || pushFirst.pushing}
+          error={pushFirst.error ?? error}
+          onPush={() => void pushFirst.pushThenProceed()}
+          onProceed={() => void confirmLeave()}
+          onCancel={closeDialogs}
+        />
+      )}
+      {leaving === 'confirm' && (
         <ConfirmDialog
           title={`Leave ${baby.name}?`}
           body="You will need a new invite to follow this baby again."

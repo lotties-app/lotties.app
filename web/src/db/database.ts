@@ -9,8 +9,6 @@ import type {
   SyncEntity,
 } from './models';
 
-export const DEFAULT_DATABASE_NAME = 'baby-routine';
-
 interface SchemaVersion {
   version: number;
   /** Dexie store definitions; only changed tables need to be listed in later versions. */
@@ -57,7 +55,8 @@ export class BabyRoutineDb extends Dexie {
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 
-  constructor(name: string = DEFAULT_DATABASE_NAME) {
+  /** `name` is per account (see session/accountDatabase.ts); there is no shared default store. */
+  constructor(name: string) {
     super(name);
     for (const { version, stores, upgrade } of SCHEMA_VERSIONS) {
       const definition = this.version(version).stores(stores);
@@ -66,6 +65,6 @@ export class BabyRoutineDb extends Dexie {
   }
 }
 
-export function createDatabase(name?: string): BabyRoutineDb {
+export function createDatabase(name: string): BabyRoutineDb {
   return new BabyRoutineDb(name);
 }

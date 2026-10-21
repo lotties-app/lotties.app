@@ -1,4 +1,5 @@
 import type { BabyRoutineDb } from '../db/database';
+import { editTimeOf, type BabyEvent } from '../db/models';
 import { pendingEntityIds } from '../db/outbox';
 import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
 import {
@@ -76,9 +77,19 @@ function newestCursor(items: EventDto[], current: string | undefined): string | 
 }
 
 /**
- * Merges a delta into the local store with last-write-wins on `updatedAt`, skipping events that
- * still have a pending local mutation (they win until pushed). The cursor is written in the same
- * transaction, so it only advances when the merge commits.
+ * Whether a pulled copy replaces the local row: last-write-wins on the client edit clock
+ * (`clientUpdatedAt ?? updatedAt` on both sides; the server's `updatedAt` is only the cursor
+ * clock). A server soft delete is final (the server never undeletes), so it always wins.
+ */
+function remoteWins(remote: BabyEvent, local: BabyEvent | undefined): boolean {
+  if (!local || remote.deletedAt) return true;
+  return Date.parse(editTimeOf(remote)) >= Date.parse(editTimeOf(local));
+}
+
+/**
+ * Merges a delta into the local store (see `remoteWins`), skipping events that still have a
+ * pending local mutation (they win until pushed). The cursor (server `updatedAt`) is written in
+ * the same transaction, so it only advances when the merge commits.
  */
 export async function mergeEventDelta(
   db: BabyRoutineDb,
@@ -89,10 +100,7 @@ export async function mergeEventDelta(
     const pending = await pendingEntityIds(db, babyId);
     const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromEventDto);
     const locals = await db.events.bulkGet(incoming.map((e) => e.id));
-    const winners = incoming.filter((e, i) => {
-      const local = locals[i];
-      return !local || Date.parse(e.updatedAt) >= Date.parse(local.updatedAt);
-    });
+    const winners = incoming.filter((e, i) => remoteWins(e, locals[i]));
     await db.events.bulkPut(winners);
 
     const cursor = await db.syncState.get([babyId, 'events']);

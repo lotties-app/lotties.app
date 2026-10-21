@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthProvider as OidcProvider, useAuth as useOidc } from 'react-oidc-context';
 import { WebStorageStateStore, type User } from 'oidc-client-ts';
 import type { AppConfig } from '../config/appConfig';
-import { AuthContext, type AuthApi } from './AuthContext';
+import { AuthContext, accountIdOf, type AuthApi } from './AuthContext';
 
 interface LoginState {
   returnTo?: string;
@@ -37,17 +37,22 @@ export function OidcAuthProvider({ config, children }: Props) {
       userStore={userStore}
       onSigninCallback={handleSigninCallback}
     >
-      <OidcBridge>{children}</OidcBridge>
+      <OidcBridge authority={config.authority}>{children}</OidcBridge>
     </OidcProvider>
   );
 }
 
-function OidcBridge({ children }: { children: ReactNode }) {
+function OidcBridge({ authority, children }: { authority: string; children: ReactNode }) {
   const oidc = useOidc();
   const profile = oidc.user?.profile;
+  const accountId =
+    oidc.isAuthenticated && profile?.sub
+      ? accountIdOf(profile.iss || authority, profile.sub)
+      : null;
 
   const value: AuthApi = {
     user: profile ? { name: profile.name, email: profile.email, picture: profile.picture } : null,
+    accountId,
     isAuthenticated: oidc.isAuthenticated,
     isLoading: oidc.isLoading,
     error: oidc.error ?? null,

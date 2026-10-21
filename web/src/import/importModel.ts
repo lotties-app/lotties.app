@@ -6,6 +6,7 @@ import type {
   NapperImportRequest,
   NapperSummaryBase,
 } from '../sync/contract';
+import { getOwn, setOwn } from '../util/ownProperty';
 
 export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 export const MAX_IMPORT_LABEL = '5 MB';
@@ -46,7 +47,9 @@ export function choiceFromSuggestion(s: MedicationSuggestion): MappingChoice {
 /** Adds a prefilled choice for every suggestion the user has not decided on yet. */
 export function mergeChoices(current: Choices, suggestions: MedicationSuggestion[]): Choices {
   const merged = { ...current };
-  for (const s of suggestions) merged[s.token] ??= choiceFromSuggestion(s);
+  for (const s of suggestions) {
+    if (getOwn(merged, s.token) === undefined) setOwn(merged, s.token, choiceFromSuggestion(s));
+  }
   return merged;
 }
 
@@ -72,11 +75,11 @@ export function mappingsKey(choices: Choices): string {
 export function choiceProblems(choices: Choices): Record<string, string> {
   const problems: Record<string, string> = {};
   for (const [token, choice] of Object.entries(choices)) {
-    if (choice.action === 'create' && !choice.name.trim()) problems[token] = 'Enter a name.';
+    if (choice.action === 'create' && !choice.name.trim()) setOwn(problems, token, 'Enter a name.');
     else if (choice.action === 'create' && choice.name.trim().length > 100) {
-      problems[token] = 'Use at most 100 characters.';
+      setOwn(problems, token, 'Use at most 100 characters.');
     } else if (choice.action === 'existing' && !choice.medicationId) {
-      problems[token] = 'Pick a medication.';
+      setOwn(problems, token, 'Pick a medication.');
     }
   }
   return problems;

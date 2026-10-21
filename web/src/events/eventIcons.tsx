@@ -11,5 +11,5 @@ export function EventTypeIcon({
   color?: string;
   fontSize: number;
 }) {
-  return createElement(ICONS[name] ?? EventNoteIcon, { sx: { fontSize, color } });
+  return createElement(ICONS.get(name) ?? EventNoteIcon, { sx: { fontSize, color } });
 }

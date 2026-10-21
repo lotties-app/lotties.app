@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogTitle, Drawer, useMediaQuery, useTheme } from '@mui/material';
+import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { EventForm, type EventFormProps } from './EventForm';
 
 /**
@@ -9,7 +10,11 @@ export function EventSheet(props: EventFormProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const title = props.event ? 'Edit event' : 'Add event';
-  const form = <EventForm {...props} />;
+  const form = (
+    <ErrorBoundary>
+      <EventForm {...props} />
+    </ErrorBoundary>
+  );
 
   if (isDesktop) {
     return (

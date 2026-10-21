@@ -2,9 +2,17 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import type { BabyRole } from '../db/models';
-import { BABY_ID, fakeApi, httpError, testDatabase, type ApiCall } from '../test/fakeApi';
+import {
+  BABY_ID,
+  fakeApi,
+  httpError,
+  networkError,
+  testDatabase,
+  type ApiCall,
+} from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
-import { seedBaby } from '../test/seed';
+import { FEEDING, seedBaby } from '../test/seed';
+import { createEvent } from '../db/eventCommands';
 import { SettingsPage } from './SettingsPage';
 
 let db: BabyRoutineDb;
@@ -203,7 +211,8 @@ describe('SettingsPage event types', () => {
     await waitFor(() =>
       expect(calls.some((c) => c.path === `${BASE}/event-types` && c.method === 'GET')).toBe(true),
     );
-  });
+    // Many MUI interactions: ~4 s alone, so the default 5 s timeout flakes under a full parallel run.
+  }, 15_000);
 
   it('blocks saving an invalid definition and lists the problems', async () => {
     const { writes } = await setup();
@@ -462,6 +471,60 @@ describe('SettingsPage members and invites', () => {
     await waitFor(() =>
       expect(writes()[0]).toMatchObject({ method: 'DELETE', path: `${BASE}/members/me` }),
     );
+  });
+});
+
+describe('SettingsPage leaving with unsynced changes (review #17)', () => {
+  const handler = (extra?: (call: ApiCall) => unknown) => (call: ApiCall) => {
+    if (call.method === 'GET' && call.path === `${BASE}/members`) return MEMBERS;
+    if (call.method === 'GET' && call.path === `${BASE}/invites`) return [];
+    return extra?.(call);
+  };
+
+  async function leaveWithPendingEvent(extra?: (call: ApiCall) => unknown) {
+    const fake = await setup(handler(extra), 'Parent');
+    await createEvent(db, { babyId: BABY_ID, typeId: FEEDING });
+    await openSection('Members & invites');
+    await screen.findByText('Bia');
+    fireEvent.click(screen.getByRole('button', { name: 'Leave this baby' }));
+    expect(
+      await screen.findByText('You have 1 unsynced change for Lia that will be lost.'),
+    ).toBeTruthy();
+    return fake;
+  }
+
+  it('offers Push first, which uploads the queue and then leaves', async () => {
+    const { writes } = await leaveWithPendingEvent();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push first' }));
+
+    await waitFor(() =>
+      expect(writes().map((c) => `${c.method} ${c.path.replace(BASE, '')}`)).toEqual([
+        expect.stringMatching(/^PUT \/events\//),
+        'DELETE /members/me',
+      ]),
+    );
+  });
+
+  it('Leave anyway leaves without pushing and purges the queue', async () => {
+    const { writes } = await leaveWithPendingEvent();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leave anyway' }));
+
+    await waitFor(() => expect(writes()).toHaveLength(1));
+    expect(writes()[0]).toMatchObject({ method: 'DELETE', path: `${BASE}/members/me` });
+    await waitFor(async () => expect(await db.outbox.count()).toBe(0));
+  });
+
+  it('keeps the warning when the push cannot upload', async () => {
+    const { writes } = await leaveWithPendingEvent((call) => {
+      if (call.method === 'PUT') throw networkError();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push first' }));
+
+    expect(await screen.findByText(/1 unsynced change could not be uploaded/)).toBeTruthy();
+    expect(writes().every((c) => c.method === 'PUT')).toBe(true);
   });
 });
 

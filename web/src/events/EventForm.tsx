@@ -13,6 +13,7 @@ import {
 import { MedicationChecklist } from './MedicationChecklist';
 import { TypeField } from './TypeFields';
 import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
+import { getOwn, withOwn } from '../util/ownProperty';
 
 export interface EventFormProps {
   babyId: string;
@@ -103,8 +104,8 @@ export function EventForm({ babyId, types, event, initialTypeId, onDone }: Event
           <TypeField
             key={field.key}
             field={field}
-            value={form.values[field.key]}
-            onChange={(value) => patch({ values: { ...form.values, [field.key]: value } })}
+            value={getOwn(form.values, field.key)}
+            onChange={(value) => patch({ values: withOwn(form.values, field.key, value) })}
           />
         ))
       )}

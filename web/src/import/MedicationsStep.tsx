@@ -4,6 +4,7 @@ import type { Baby } from '../db/models';
 import type { MedicationSuggestion } from '../sync/contract';
 import { MappingRow, type CatalogOption } from './MappingRow';
 import type { Choices, MappingChoice } from './importModel';
+import { getOwn } from '../util/ownProperty';
 
 interface Props {
   baby: Baby;
@@ -65,9 +66,9 @@ export function MedicationsStep({
               <MappingRow
                 key={s.token}
                 suggestion={s}
-                choice={choices[s.token] ?? { action: 'ignore' }}
+                choice={getOwn(choices, s.token) ?? { action: 'ignore' }}
                 catalog={catalog}
-                problem={problems[s.token]}
+                problem={getOwn(problems, s.token)}
                 onChange={(choice) => onChange(s.token, choice)}
               />
             ))}

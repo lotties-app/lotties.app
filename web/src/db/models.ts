@@ -81,10 +81,23 @@ export interface BabyEvent {
   /** Server user id; `null` until the server has echoed the event back. */
   createdBy: string | null;
   createdAt: string;
-  /** Local clock until pushed; replaced by the server's clock once synced. */
+  /**
+   * Local edit time until pushed; once synced, the server's receive time (the delta cursor clock).
+   * Never compare it with a local edit time: use `editTimeOf` for last-write-wins.
+   */
   updatedAt: string;
+  /**
+   * Client clock of the last edit (set by every local command and echoed by the server as
+   * `clientUpdatedAt`). Optional: rows from older code or servers fall back to `updatedAt`.
+   */
+  clientUpdatedAt?: string;
   /** Soft delete marker. */
   deletedAt: string | null;
+}
+
+/** The time of the event's last edit on the client clock, for last-write-wins comparisons. */
+export function editTimeOf(event: Pick<BabyEvent, 'clientUpdatedAt' | 'updatedAt'>): string {
+  return event.clientUpdatedAt ?? event.updatedAt;
 }
 
 export type MutationKind = 'upsert' | 'delete';
@@ -103,7 +116,14 @@ export interface OutboxMutation {
   /** Request body snapshot for `upsert`; `null` for `delete`. */
   payload: unknown;
   createdAt: string;
+  /** Failed push attempts (drives the backoff delay). */
   attempts: number;
+  /**
+   * Consecutive server-side failures (HTTP 500 and unknown errors) counted toward giving up; the
+   * mutation is dead-lettered at `MAX_SERVER_FAILURES`. Offline errors never count. Optional for
+   * rows queued before it existed.
+   */
+  failureCount?: number;
   lastError: string | null;
   status: MutationStatus;
   /** Earliest time the next attempt may run (backoff); `null` = now. */

@@ -13,7 +13,10 @@ export interface SyncContext {
   requestTimeoutMs: number;
 }
 
-export function requestSignal(ctx: SyncContext): AbortSignal | undefined {
+/** The part of the context a single request needs. */
+export type TransportContext = Pick<SyncContext, 'api' | 'requestTimeoutMs'>;
+
+export function requestSignal(ctx: TransportContext): AbortSignal | undefined {
   return typeof AbortSignal.timeout === 'function'
     ? AbortSignal.timeout(ctx.requestTimeoutMs)
     : undefined;
@@ -25,12 +28,12 @@ type SyncRequestOptions = Pick<RequestOptions, 'method' | 'body'>;
  * Options every sync request uses: a per-request timeout, and no login redirect on 401 (the
  * engine pauses with `authRequired` and the route guard / UI handles re-login instead).
  */
-function syncOptions(ctx: SyncContext, options: SyncRequestOptions): RequestOptions {
+function syncOptions(ctx: TransportContext, options: SyncRequestOptions): RequestOptions {
   return { ...options, signal: requestSignal(ctx), skipUnauthorizedHandler: true };
 }
 
 export function syncRequest<T>(
-  ctx: SyncContext,
+  ctx: TransportContext,
   path: string,
   options: SyncRequestOptions = {},
 ): Promise<T> {
@@ -38,7 +41,7 @@ export function syncRequest<T>(
 }
 
 export function syncRequestWithMeta<T>(
-  ctx: SyncContext,
+  ctx: TransportContext,
   path: string,
   options: SyncRequestOptions = {},
 ): Promise<ApiResponse<T>> {

@@ -4,6 +4,7 @@ import type { EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
 import type { PredictionConfidence, PredictionDto } from '../sync/contract';
+import { getOwn } from '../util/ownProperty';
 import { describeDuration, describeWindow, isOverdue } from './predictionModel';
 
 const CONFIDENCE_COLOR: Record<PredictionConfidence, 'success' | 'info' | 'default'> = {
@@ -36,7 +37,7 @@ export function PredictionCard({ prediction, type, name, now }: Props) {
         <Chip
           size="small"
           variant="outlined"
-          color={CONFIDENCE_COLOR[prediction.confidence] ?? 'default'}
+          color={getOwn(CONFIDENCE_COLOR, prediction.confidence) ?? 'default'}
           label={`${prediction.confidence} confidence`}
         />
       </Stack>

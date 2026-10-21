@@ -1,13 +1,14 @@
-import type {
-  Baby,
-  BabyEvent,
-  BabyRole,
-  Dosage,
-  EventFieldDefinition,
-  EventFieldKind,
-  EventPayload,
-  EventType,
-  Medication,
+import {
+  editTimeOf,
+  type Baby,
+  type BabyEvent,
+  type BabyRole,
+  type Dosage,
+  type EventFieldDefinition,
+  type EventFieldKind,
+  type EventPayload,
+  type EventType,
+  type Medication,
 } from '../db/models';
 
 /*
@@ -17,10 +18,13 @@ import type {
  * - JSON is camelCase; timestamps are ISO-8601 with any offset and are normalized to UTC `Z`.
  *   Errors are RFC 7807 problem details with a stable `code` extension.
  * - PUT    /babies/{id}/events/{eventId}  body EventUpsertRequest incl. the local edit time as
- *          `updatedAt` (server last-write-wins: an older one is ignored and the stored copy is
- *          returned). Replies 200/201 with the stored EventDto (an empty body is tolerated); the
- *          server stamps `updatedAt` on receipt. 409 `event_baby_mismatch`, 422
+ *          `updatedAt` (server last-write-wins on client clocks: it is compared with the stored
+ *          `clientUpdatedAt`; an older one is ignored and the stored copy is returned). Replies
+ *          200/201 with the stored EventDto (an empty body is tolerated); the server stamps
+ *          `updatedAt` on receipt (the delta cursor) and echoes the edit time as
+ *          `clientUpdatedAt` (optional: absent on older servers). 409 `event_baby_mismatch`, 422
  *          `event_type_not_available`, 400 validation.
+ * - GET    /babies/{id}/events/{eventId}  EventDto (soft-deleted included); 404 when unknown.
  * - DELETE /babies/{id}/events/{eventId}  soft delete, always 204; 404 is treated as "already gone".
  * - GET    /babies/{id}/events?since=<updatedAt>&after=<cursor>  EventDto[] with
  *          `updatedAt >= since` (inclusive, so boundary rows repeat; merge is idempotent),
@@ -130,7 +134,10 @@ export interface EventDto {
   notes: string | null;
   createdBy: string | null;
   createdAt: string;
+  /** Server receive time: the delta cursor clock only. */
   updatedAt: string;
+  /** Client clock of the stored edit (last-write-wins); absent on servers that predate it. */
+  clientUpdatedAt?: string | null;
   deletedAt: string | null;
 }
 
@@ -266,8 +273,14 @@ export function toEventUpsertRequest(event: BabyEvent): EventUpsertRequest {
     endedAt: event.endedAt,
     payload: event.payload,
     notes: event.notes,
-    updatedAt: event.updatedAt,
+    updatedAt: editTimeOf(event),
   };
+}
+
+/** Whether a response body is the `EventDto` of event `id` (bodies may be empty or unexpected). */
+export function isEventDtoFor(value: unknown, id: string): value is EventDto {
+  const dto = value as Partial<EventDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
 }
 
 export function fromEventDto(dto: EventDto): BabyEvent {
@@ -282,6 +295,7 @@ export function fromEventDto(dto: EventDto): BabyEvent {
     createdBy: dto.createdBy ?? null,
     createdAt: toUtcIso(dto.createdAt),
     updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
     deletedAt: toUtcIsoOrNull(dto.deletedAt),
   };
 }

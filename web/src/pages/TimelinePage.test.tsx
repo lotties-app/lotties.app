@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent } from '../db/eventCommands';
 import type { BabyEvent } from '../db/models';
@@ -153,5 +153,29 @@ describe('TimelinePage', () => {
     renderWithDb(db, <TimelinePage />);
 
     expect(await screen.findByRole('status', { name: 'Sync status: Synced' })).toBeTruthy();
+  });
+
+  it('contains a malformed record to its day group (review #5)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await seedEvents();
+    // A corrupted custom type whose `fields` is not a list makes its rows throw while rendering.
+    await db.eventTypes.put({
+      id: 'type-broken',
+      babyId: BABY_ID,
+      key: 'broken',
+      name: 'Broken',
+      icon: 'constructor',
+      color: '#000000',
+      hasDuration: false,
+      fields: 'not a list' as unknown as [],
+    });
+    await db.events.put(synced({ id: 'bad', typeId: 'type-broken', startedAt: at(0, 9) }));
+    renderWithDb(db, <TimelinePage />);
+
+    expect(await screen.findByText('Something went wrong.')).toBeTruthy();
+    expect(screen.queryByRole('list', { name: 'Today' })).toBeNull();
+    const yesterday = await screen.findByRole('list', { name: 'Yesterday' });
+    expect(within(yesterday).getByRole('button', { name: 'Edit Diaper' })).toBeTruthy();
+    vi.restoreAllMocks();
   });
 });

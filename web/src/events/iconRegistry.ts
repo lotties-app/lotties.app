@@ -16,25 +16,30 @@ import ToysIcon from '@mui/icons-material/Toys';
 import VaccinesIcon from '@mui/icons-material/Vaccines';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 
-/** Material icon names (as stored on event types) to components. Unknown names get a fallback. */
-export const ICONS: Record<string, ElementType> = {
-  local_drink: LocalDrinkIcon,
-  bedtime: BedtimeIcon,
-  baby_changing_station: BabyChangingStationIcon,
-  bathtub: BathtubIcon,
-  child_care: ChildCareIcon,
-  medication: MedicationIcon,
-  sick: SickIcon,
-  restaurant: RestaurantIcon,
-  favorite: FavoriteIcon,
-  star: StarIcon,
-  water_drop: WaterDropIcon,
-  toys: ToysIcon,
-  directions_walk: DirectionsWalkIcon,
-  thermostat: ThermostatIcon,
-  vaccines: VaccinesIcon,
-  cake: CakeIcon,
-};
+/**
+ * Material icon names (as stored on event types) to components. A Map, so a server-provided name
+ * such as `constructor` never resolves to an inherited object member. Unknown names get a fallback.
+ */
+export const ICONS: ReadonlyMap<string, ElementType> = new Map<string, ElementType>(
+  Object.entries({
+    local_drink: LocalDrinkIcon,
+    bedtime: BedtimeIcon,
+    baby_changing_station: BabyChangingStationIcon,
+    bathtub: BathtubIcon,
+    child_care: ChildCareIcon,
+    medication: MedicationIcon,
+    sick: SickIcon,
+    restaurant: RestaurantIcon,
+    favorite: FavoriteIcon,
+    star: StarIcon,
+    water_drop: WaterDropIcon,
+    toys: ToysIcon,
+    directions_walk: DirectionsWalkIcon,
+    thermostat: ThermostatIcon,
+    vaccines: VaccinesIcon,
+    cake: CakeIcon,
+  }),
+);
 
 /** Icon names an event type may use (the custom event type picker offers exactly these). */
-export const EVENT_ICON_NAMES: readonly string[] = Object.keys(ICONS);
+export const EVENT_ICON_NAMES: readonly string[] = [...ICONS.keys()];

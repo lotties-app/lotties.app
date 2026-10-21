@@ -6,6 +6,7 @@ import type {
   MedicationEventPayload,
 } from '../db/models';
 import { isMedicationType } from '../events/formModel';
+import { getOwn } from '../util/ownProperty';
 
 const SEPARATOR = ' · ';
 
@@ -52,7 +53,7 @@ export function payloadSummary(
   const fields = type?.fields ?? [];
   const known = new Set(fields.map((f) => f.key));
   const parts = [
-    ...fields.map((f) => fieldPart(f, payload[f.key])),
+    ...fields.map((f) => fieldPart(f, getOwn(payload, f.key))),
     ...Object.entries(payload)
       .filter(([key]) => !known.has(key))
       .map(([key, raw]) => extraPart(key, raw)),

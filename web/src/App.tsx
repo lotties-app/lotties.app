@@ -5,8 +5,7 @@ import { readConfig, type ConfigResult } from './config/appConfig';
 import { SetupMessage } from './config/SetupMessage';
 import { OidcAuthProvider } from './auth/OidcAuthProvider';
 import { ApiClientProvider } from './api/ApiClientProvider';
-import { DatabaseProvider } from './db/DatabaseProvider';
-import { SyncProvider } from './sync/SyncProvider';
+import { AccountDataProvider } from './session/AccountDataProvider';
 import { AppRoutes } from './AppRoutes';
 import { ReloadPrompt } from './pwa/ReloadPrompt';
 
@@ -19,13 +18,11 @@ export default function App({ configResult = readConfig() }: { configResult?: Co
         <BrowserRouter>
           <OidcAuthProvider config={configResult.config.oidc}>
             <ApiClientProvider baseUrl={configResult.config.apiBaseUrl}>
-              <DatabaseProvider>
-                <SyncProvider>
-                  <QueryClientProvider client={queryClient}>
-                    <AppRoutes />
-                  </QueryClientProvider>
-                </SyncProvider>
-              </DatabaseProvider>
+              <AccountDataProvider>
+                <QueryClientProvider client={queryClient}>
+                  <AppRoutes />
+                </QueryClientProvider>
+              </AccountDataProvider>
             </ApiClientProvider>
           </OidcAuthProvider>
         </BrowserRouter>

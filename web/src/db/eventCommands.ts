@@ -38,6 +38,14 @@ function nowIso(options: CommandOptions) {
   return (options.now?.() ?? new Date()).toISOString();
 }
 
+/**
+ * Marks a local edit: `clientUpdatedAt` is the edit time sent as `updatedAt` on push, and the local
+ * `updatedAt` follows it until the server's copy (with its own clock) replaces the row.
+ */
+function editStamp(now: string): Pick<BabyEvent, 'updatedAt' | 'clientUpdatedAt'> {
+  return { updatedAt: now, clientUpdatedAt: now };
+}
+
 function ensureValidRange(event: BabyEvent) {
   if (event.endedAt !== null && event.endedAt < event.startedAt) {
     throw new InvalidEventTimeRangeError(event.id);
@@ -84,6 +92,7 @@ export async function createEvent(
     createdBy: null,
     createdAt: now,
     updatedAt: now,
+    clientUpdatedAt: now,
     deletedAt: null,
   };
   ensureValidRange(event);
@@ -108,7 +117,7 @@ export async function editEvent(
           : changes.endedAt && toUtcIso(changes.endedAt),
       payload: changes.payload ?? current.payload,
       notes: changes.notes === undefined ? current.notes : changes.notes,
-      updatedAt: nowIso(options),
+      ...editStamp(nowIso(options)),
     };
     ensureValidRange(edited);
     return saveWithMutation(db, edited, 'upsert');
@@ -129,7 +138,7 @@ export async function stopEvent(
     const stopped: BabyEvent = {
       ...current,
       endedAt: endedAt ? toUtcIso(endedAt) : now,
-      updatedAt: now,
+      ...editStamp(now),
     };
     ensureValidRange(stopped);
     return saveWithMutation(db, stopped, 'upsert');
@@ -147,6 +156,6 @@ export async function deleteEvent(
     if (!current) throw new EventNotFoundError(id);
     if (current.deletedAt) return current;
     const now = nowIso(options);
-    return saveWithMutation(db, { ...current, deletedAt: now, updatedAt: now }, 'delete');
+    return saveWithMutation(db, { ...current, deletedAt: now, ...editStamp(now) }, 'delete');
   });
 }

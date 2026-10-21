@@ -7,7 +7,8 @@ export interface CachedPredictions {
   fetchedAt: number;
 }
 
-const keyFor = (babyId: string) => `baby-routine.predictions.${babyId}`;
+const PREFIX = 'baby-routine.predictions.';
+const keyFor = (babyId: string) => `${PREFIX}${babyId}`;
 
 function isCached(value: unknown): value is CachedPredictions {
   const v = value as Partial<CachedPredictions> | null;
@@ -35,6 +36,17 @@ export function writeCachedPredictions(babyId: string, cached: CachedPredictions
     window.localStorage.setItem(keyFor(babyId), JSON.stringify(cached));
   } catch {
     // Storage unavailable or full: the cards just have no offline copy.
+  }
+}
+
+/** Drops the cached predictions of every baby (sign-out, account switch). */
+export function clearAllCachedPredictions(): void {
+  try {
+    const storage = window.localStorage;
+    const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i));
+    for (const key of keys) if (key?.startsWith(PREFIX)) storage.removeItem(key);
+  } catch {
+    // Storage unavailable: nothing to clear.
   }
 }
 

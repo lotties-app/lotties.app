@@ -82,11 +82,19 @@ describe('medication commands', () => {
 
   it('pushes the queued edit as PUT and the delete as DELETE on the medication path', async () => {
     const created = await createMedication(db, { babyId: BABY_ID, name: 'Puravit' });
-    await deleteMedication(db, created.id);
-    const { ctx, writes } = ctxWith();
-
+    const { ctx, writes } = ctxWith((call) => (call.method === 'PUT' ? {} : undefined));
     expect(await pushOutbox(ctx)).toEqual({ kind: 'drained' });
 
+    await updateMedication(db, created.id, {
+      name: 'Puravit kids',
+      defaultDosage: null,
+      notes: null,
+      isUsual: true,
+    });
+    await deleteMedication(db, created.id);
+    expect(await pushOutbox(ctx)).toEqual({ kind: 'drained' });
+
+    // The queued edit is superseded by the later delete of the same medication (coalesced).
     const path = `/api/v1/babies/${BABY_ID}/medications/${created.id}`;
     expect(writes().map((c) => [c.method, c.path])).toEqual([
       ['PUT', path],

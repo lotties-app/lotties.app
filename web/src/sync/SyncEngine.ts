@@ -3,6 +3,7 @@ import type { ApiClient } from '../api/apiClient';
 import type { BabyRoutineDb } from '../db/database';
 import { countDeadLetters, countPendingMutations } from '../db/outbox';
 import { DEFAULT_BACKOFF, type BackoffOptions } from './backoff';
+import { discardDeadLetter } from './deadLetters';
 import { classifyFailure, describeFailure } from './failures';
 import { pullAll } from './pull';
 import { pushOutbox } from './push';
@@ -143,6 +144,14 @@ export class SyncEngine {
   /** Resolves when no run is in flight (including queued follow-up runs). */
   whenIdle(): Promise<void> {
     return this.inFlight ?? Promise.resolve();
+  }
+
+  /**
+   * Drops a dead-lettered mutation and restores the server's copy of its entity locally. Needs the
+   * server; throws (and keeps the mutation) when the copy cannot be loaded.
+   */
+  discardDeadLetter(id: number): Promise<void> {
+    return discardDeadLetter(this.ctx, id);
   }
 
   /** Clears a 401 pause (call after the user signed in again) and syncs. */
