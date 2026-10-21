@@ -29,7 +29,10 @@ public static class BuiltInEventTypes
         [
             EventFieldDefinition.Create("method", "Method", EventFieldKind.Select, isRequired: true, options: ["breast", "bottle", "solid"]),
             EventFieldDefinition.Create("side", "Side", EventFieldKind.Select, options: ["left", "right", "both"]),
-            EventFieldDefinition.Create("amount", "Amount", EventFieldKind.Number, min: 0, unit: "ml"),
+            EventFieldDefinition.Create("amount_ml", "Amount", EventFieldKind.Number, min: 0, unit: "ml"),
+            EventFieldDefinition.Create("bottle_feeding_type", "Bottle content", EventFieldKind.Select, options: ["FORMULA", "BREAST_MILK"]),
+            EventFieldDefinition.Create("breast_left_seconds", "Left breast", EventFieldKind.Number, min: 0, unit: "s"),
+            EventFieldDefinition.Create("breast_right_seconds", "Right breast", EventFieldKind.Number, min: 0, unit: "s"),
         ]);
 
     public static EventType Sleep { get; } = EventType.CreateBuiltIn(
@@ -39,7 +42,10 @@ public static class BuiltInEventTypes
         "bedtime",
         HexColor.From("#7e57c2"),
         hasDuration: true,
-        []);
+        [
+            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["nap", "night", "night_waking"]),
+            EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text),
+        ]);
 
     public static EventType Diaper { get; } = EventType.CreateBuiltIn(
         DiaperId,
@@ -48,7 +54,9 @@ public static class BuiltInEventTypes
         "baby_changing_station",
         HexColor.From("#8d6e63"),
         hasDuration: false,
-        []);
+        [
+            EventFieldDefinition.Create("content", "Content", EventFieldKind.Select, isRequired: true, options: ["WET", "DIRTY", "MIXED"]),
+        ]);
 
     public static EventType Bath { get; } = EventType.CreateBuiltIn(
         BathId,
@@ -57,7 +65,9 @@ public static class BuiltInEventTypes
         "bathtub",
         HexColor.From("#26a69a"),
         hasDuration: false,
-        []);
+        [
+            EventFieldDefinition.Create("temperature_c", "Water temperature", EventFieldKind.Number, min: 0, max: 60, unit: "C"),
+        ]);
 
     public static EventType TummyTime { get; } = EventType.CreateBuiltIn(
         TummyTimeId,
@@ -66,7 +76,9 @@ public static class BuiltInEventTypes
         "child_care",
         HexColor.From("#ffa726"),
         hasDuration: true,
-        []);
+        [
+            EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text),
+        ]);
 
     public static EventType Medication { get; } = EventType.CreateBuiltIn(
         MedicationId,

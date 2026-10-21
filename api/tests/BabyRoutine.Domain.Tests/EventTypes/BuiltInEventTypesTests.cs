@@ -34,14 +34,44 @@ public sealed class BuiltInEventTypesTests
     }
 
     [Fact]
-    public void Feeding_HasMethodSideAndAmountFields()
+    public void Feeding_HasRequiredMethodAndOptionalDetailFields()
     {
         var fields = BuiltInEventTypes.Feeding.Fields;
 
-        Assert.Equal(["method", "side", "amount"], fields.Select(field => field.Key));
+        Assert.Equal(["method", "side", "amount_ml", "bottle_feeding_type", "breast_left_seconds", "breast_right_seconds"], fields.Select(field => field.Key));
         Assert.Equal(["breast", "bottle", "solid"], fields[0].Options);
-        Assert.True(fields[0].IsRequired);
+        Assert.Equal(["FORMULA", "BREAST_MILK"], fields[3].Options);
+        Assert.Equal([true, false, false, false, false, false], fields.Select(field => field.IsRequired));
         Assert.Equal(EventFieldKind.Number, fields[2].Kind);
+    }
+
+    [Fact]
+    public void Diaper_HasRequiredContentSelect()
+    {
+        var content = Assert.Single(BuiltInEventTypes.Diaper.Fields);
+
+        Assert.Equal(("content", EventFieldKind.Select, true), (content.Key, content.Kind, content.IsRequired));
+        Assert.Equal(["WET", "DIRTY", "MIXED"], content.Options);
+    }
+
+    [Fact]
+    public void Sleep_HasOptionalKindAndMood()
+    {
+        var fields = BuiltInEventTypes.Sleep.Fields;
+
+        Assert.Equal(["kind", "mood"], fields.Select(field => field.Key));
+        Assert.Equal(["nap", "night", "night_waking"], fields[0].Options);
+        Assert.All(fields, field => Assert.False(field.IsRequired));
+    }
+
+    [Theory]
+    [InlineData("bath", "temperature_c")]
+    [InlineData("tummy_time", "mood")]
+    public void BathAndTummyTime_HaveOneOptionalField(string key, string fieldKey)
+    {
+        var field = Assert.Single(BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields);
+
+        Assert.Equal((fieldKey, false), (field.Key, field.IsRequired));
     }
 
     [Fact]

@@ -26,6 +26,10 @@ public sealed class BabyMember
 
     public DateTimeOffset JoinedAt { get; private set; }
 
+    public bool IsOwner => Role == BabyRole.Owner;
+
+    internal void ChangeRole(BabyRole role) => Role = BabyRoleRules.EnsureDefined(role);
+
     public bool CanWrite => Role.CanWrite();
 
     public bool CanManageMembers => Role.CanManageMembers();

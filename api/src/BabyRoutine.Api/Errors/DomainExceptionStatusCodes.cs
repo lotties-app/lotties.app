@@ -24,6 +24,14 @@ internal static class DomainExceptionStatusCodes
         [typeof(MemberAlreadyExistsException)] = StatusCodes.Status409Conflict,
         [typeof(InviteAlreadyAcceptedException)] = StatusCodes.Status409Conflict,
         [typeof(InviteExpiredException)] = StatusCodes.Status410Gone,
+        [typeof(BabyNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(MemberNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(InviteNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(EventTypeNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(LastOwnerException)] = StatusCodes.Status409Conflict,
+        [typeof(EventTypeKeyTakenException)] = StatusCodes.Status409Conflict,
+        [typeof(EventTypeInUseException)] = StatusCodes.Status409Conflict,
+        [typeof(MedicationBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(EventTypeNotAvailableException)] = StatusCodes.Status422UnprocessableEntity,
     }.ToFrozenDictionary();
 

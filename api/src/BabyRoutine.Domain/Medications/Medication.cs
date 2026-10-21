@@ -33,12 +33,23 @@ public sealed class Medication
 
     public DateTimeOffset CreatedAt { get; private set; }
 
-    public static Medication Create(Guid babyId, string name, Dosage? defaultDosage, string? notes, bool isUsual, DateTimeOffset createdAt)
+    public static Medication Create(Guid babyId, string name, Dosage? defaultDosage, string? notes, bool isUsual, DateTimeOffset createdAt) =>
+        Create(Guid.NewGuid(), babyId, name, defaultDosage, notes, isUsual, createdAt);
+
+    /// <summary>Creates a medication with a client-generated id, for idempotent upserts.</summary>
+    public static Medication Create(Guid id, Guid babyId, string name, Dosage? defaultDosage, string? notes, bool isUsual, DateTimeOffset createdAt)
     {
-        var medication = new Medication(Guid.NewGuid(), Ids.Required(babyId, nameof(babyId)), UtcTime.Normalize(createdAt));
+        var medication = new Medication(Ids.Required(id, nameof(id)), Ids.Required(babyId, nameof(babyId)), UtcTime.Normalize(createdAt));
         medication.UpdateDetails(name, defaultDosage, notes);
         medication.IsUsual = isUsual;
         return medication;
+    }
+
+    /// <summary>Applies the full editable state of the medication (details and the usual flag).</summary>
+    public void Edit(string name, Dosage? defaultDosage, string? notes, bool isUsual)
+    {
+        UpdateDetails(name, defaultDosage, notes);
+        IsUsual = isUsual;
     }
 
     public void UpdateDetails(string name, Dosage? defaultDosage, string? notes)

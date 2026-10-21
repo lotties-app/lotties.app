@@ -249,3 +249,55 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000249_BuiltInFieldFixups') THEN
+    UPDATE event_types SET fields = '[{"key":"content","label":"Content","kind":"select","isRequired":true,"options":["WET","DIRTY","MIXED"]}]'
+    WHERE id = '318d1395-e373-4d89-a3cd-cdd7ad5187ab';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000249_BuiltInFieldFixups') THEN
+    UPDATE event_types SET fields = '[{"key":"mood","label":"Mood","kind":"text","isRequired":false}]'
+    WHERE id = '543cbd04-e226-435c-9639-810ecd066056';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000249_BuiltInFieldFixups') THEN
+    UPDATE event_types SET fields = '[{"key":"kind","label":"Kind","kind":"select","isRequired":false,"options":["nap","night","night_waking"]},{"key":"mood","label":"Mood","kind":"text","isRequired":false}]'
+    WHERE id = '5cbe3692-d4df-4d5f-85d6-2282d9733b35';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000249_BuiltInFieldFixups') THEN
+    UPDATE event_types SET fields = '[{"key":"temperature_c","label":"Water temperature","kind":"number","isRequired":false,"min":0,"max":60,"unit":"C"}]'
+    WHERE id = '833cf001-7e12-4bc6-b7a5-7adabb174aa5';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000249_BuiltInFieldFixups') THEN
+    UPDATE event_types SET fields = '[{"key":"method","label":"Method","kind":"select","isRequired":true,"options":["breast","bottle","solid"]},{"key":"side","label":"Side","kind":"select","isRequired":false,"options":["left","right","both"]},{"key":"amount_ml","label":"Amount","kind":"number","isRequired":false,"min":0,"unit":"ml"},{"key":"bottle_feeding_type","label":"Bottle content","kind":"select","isRequired":false,"options":["FORMULA","BREAST_MILK"]},{"key":"breast_left_seconds","label":"Left breast","kind":"number","isRequired":false,"min":0,"unit":"s"},{"key":"breast_right_seconds","label":"Right breast","kind":"number","isRequired":false,"min":0,"unit":"s"}]'
+    WHERE id = 'e6428ccb-7061-4cf4-a5d0-67c89a396a5f';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021000249_BuiltInFieldFixups') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021000249_BuiltInFieldFixups', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

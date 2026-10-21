@@ -15,6 +15,12 @@ internal sealed class EfUserRepository(BabyRoutineDbContext context) : IUserRepo
         return context.Users.SingleOrDefaultAsync(user => user.Subject == subject, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<User>> FindByIdsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(userIds);
+        return await context.Users.AsNoTracking().Where(user => userIds.Contains(user.Id)).ToListAsync(cancellationToken);
+    }
+
     public async Task<User> AddOrGetExistingAsync(User user, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);

@@ -25,6 +25,7 @@ public sealed class Invite
 
     public Guid BabyId { get; private set; }
 
+    /// <summary>The hash of the plain token handed to the inviter (never the plain token itself).</summary>
     public InviteToken Token { get; private set; }
 
     public BabyRole Role { get; private set; }
@@ -41,23 +42,32 @@ public sealed class Invite
 
     public bool IsAccepted => AcceptedAt is not null;
 
-    public static Invite Create(Guid babyId, BabyRole role, Guid createdBy, DateTimeOffset createdAt, TimeSpan lifetime)
+    /// <summary>
+    /// Issues an invite with a new random token. The invite keeps only the token's hash (<see cref="InviteToken.Hash"/>);
+    /// the plain token is returned in <see cref="IssuedInvite.Token"/> and cannot be recovered later.
+    /// </summary>
+    public static IssuedInvite Issue(Guid babyId, BabyRole role, Guid createdBy, DateTimeOffset createdAt, TimeSpan lifetime)
     {
         Ids.Required(babyId, nameof(babyId));
         Ids.Required(createdBy, nameof(createdBy));
         EnsurePositive(lifetime);
         var normalizedCreatedAt = UtcTime.Normalize(createdAt);
-        return new Invite(
+        var plainToken = InviteToken.Generate();
+        var invite = new Invite(
             Guid.NewGuid(),
             babyId,
-            InviteToken.Generate(),
+            plainToken.Hash(),
             BabyRoleRules.EnsureDefined(role),
             createdBy,
             normalizedCreatedAt,
             UtcTime.Normalize(normalizedCreatedAt + lifetime));
+        return new IssuedInvite(invite, plainToken);
     }
 
     public bool IsExpired(DateTimeOffset now) => UtcTime.Normalize(now) >= ExpiresAt;
+
+    /// <summary>Whether the invite can still be accepted at <paramref name="now"/>.</summary>
+    public bool IsPendingAt(DateTimeOffset now) => !IsAccepted && !IsExpired(now);
 
     /// <summary>Marks the invite as used. Prefer <see cref="Baby.AdmitWith"/>, which also adds the member.</summary>
     public void Accept(Guid userId, DateTimeOffset now)

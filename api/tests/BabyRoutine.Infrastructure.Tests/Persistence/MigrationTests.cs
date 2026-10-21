@@ -34,6 +34,28 @@ public sealed class MigrationTests
     }
 
     [Fact]
+    public void Migrations_ContainBuiltInFieldFixupsAfterInitialCreate()
+    {
+        using var context = ModelTestContext.Create();
+
+        var migrations = context.Database.GetMigrations().ToArray();
+
+        Assert.EndsWith("_BuiltInFieldFixups", migrations[^1], StringComparison.Ordinal);
+        Assert.EndsWith("_InitialCreate", migrations[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_SeedsDiaperContentField()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+
+        Assert.Contains("\"key\":\"content\"", script, StringComparison.Ordinal);
+        Assert.Contains("BuiltInFieldFixups", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void IdempotentScript_CreatesTablesWithoutDestructiveStatements()
     {
         using var context = ModelTestContext.Create();

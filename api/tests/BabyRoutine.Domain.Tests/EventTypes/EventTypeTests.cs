@@ -83,6 +83,20 @@ public sealed class EventTypeTests
     }
 
     [Fact]
+    public void EnsureDeletable_BuiltIn_ThrowsReadOnly()
+    {
+        Assert.Throws<BuiltInEventTypeReadOnlyException>(() => BuiltInEventTypes.Sleep.EnsureDeletable());
+    }
+
+    [Fact]
+    public void EnsureDeletable_Custom_DoesNotThrow()
+    {
+        var eventType = EventType.CreateCustom(BabyId, Key, "Pumping", "water_drop", Color, hasDuration: false, []);
+
+        eventType.EnsureDeletable();
+    }
+
+    [Fact]
     public void IsAvailableTo_BuiltIn_AnyBaby()
     {
         Assert.True(BuiltInEventTypes.Sleep.IsAvailableTo(Guid.NewGuid()));

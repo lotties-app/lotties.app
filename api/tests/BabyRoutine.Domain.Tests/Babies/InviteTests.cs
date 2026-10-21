@@ -10,9 +10,9 @@ public sealed class InviteTests
     private static readonly TimeSpan Lifetime = TimeSpan.FromDays(7);
 
     [Fact]
-    public void Create_Valid_SetsExpiryAndToken()
+    public void Issue_Valid_SetsExpiryAndToken()
     {
-        var invite = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
 
         Assert.Equal(TestClock.Now + Lifetime, invite.ExpiresAt);
         Assert.Equal(BabyRole.Viewer, invite.Role);
@@ -21,10 +21,37 @@ public sealed class InviteTests
     }
 
     [Fact]
-    public void Create_TwoInvites_HaveDifferentTokens()
+    public void Issue_Valid_StoresOnlyTheTokenHash()
     {
-        var first = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
-        var second = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var issued = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+
+        Assert.NotEqual(issued.Token, issued.Invite.Token);
+        Assert.Equal(issued.Token.Hash(), issued.Invite.Token);
+    }
+
+    [Fact]
+    public void IsPendingAt_PendingInvite_ReturnsTrueUntilExpiry()
+    {
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
+
+        Assert.True(invite.IsPendingAt(TestClock.Now));
+        Assert.False(invite.IsPendingAt(invite.ExpiresAt));
+    }
+
+    [Fact]
+    public void IsPendingAt_AcceptedInvite_ReturnsFalse()
+    {
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
+        invite.Accept(Guid.NewGuid(), TestClock.Now);
+
+        Assert.False(invite.IsPendingAt(TestClock.Now));
+    }
+
+    [Fact]
+    public void Issue_TwoInvites_HaveDifferentTokens()
+    {
+        var first = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
+        var second = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
 
         Assert.NotEqual(first.Token, second.Token);
     }
@@ -32,22 +59,22 @@ public sealed class InviteTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void Create_NonPositiveLifetime_ThrowsValidation(int minutes)
+    public void Issue_NonPositiveLifetime_ThrowsValidation(int minutes)
     {
         Assert.Throws<DomainValidationException>(
-            () => Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, TimeSpan.FromMinutes(minutes)));
+            () => Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, TimeSpan.FromMinutes(minutes)));
     }
 
     [Fact]
-    public void Create_EmptyBaby_ThrowsArgument()
+    public void Issue_EmptyBaby_ThrowsArgument()
     {
-        Assert.Throws<ArgumentException>(() => Invite.Create(Guid.Empty, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime));
+        Assert.Throws<ArgumentException>(() => Invite.Issue(Guid.Empty, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime));
     }
 
     [Fact]
     public void IsExpired_BeforeExpiry_ReturnsFalse()
     {
-        var invite = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
 
         Assert.False(invite.IsExpired(invite.ExpiresAt.AddTicks(-10)));
     }
@@ -55,7 +82,7 @@ public sealed class InviteTests
     [Fact]
     public void IsExpired_AtExpiry_ReturnsTrue()
     {
-        var invite = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
 
         Assert.True(invite.IsExpired(invite.ExpiresAt));
     }
@@ -63,7 +90,7 @@ public sealed class InviteTests
     [Fact]
     public void Accept_Valid_RecordsAcceptance()
     {
-        var invite = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
         var userId = Guid.NewGuid();
 
         invite.Accept(userId, TestClock.Now.AddDays(1));
@@ -76,7 +103,7 @@ public sealed class InviteTests
     [Fact]
     public void Accept_Twice_ThrowsAlreadyAccepted()
     {
-        var invite = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
         invite.Accept(Guid.NewGuid(), TestClock.Now);
 
         Assert.Throws<InviteAlreadyAcceptedException>(() => invite.Accept(Guid.NewGuid(), TestClock.Now));
@@ -85,7 +112,7 @@ public sealed class InviteTests
     [Fact]
     public void Accept_Expired_ThrowsExpiredAndStaysUnaccepted()
     {
-        var invite = Invite.Create(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime);
+        var invite = Invite.Issue(BabyId, BabyRole.Viewer, CreatorId, TestClock.Now, Lifetime).Invite;
 
         Assert.Throws<InviteExpiredException>(() => invite.Accept(Guid.NewGuid(), TestClock.Now + Lifetime));
         Assert.False(invite.IsAccepted);

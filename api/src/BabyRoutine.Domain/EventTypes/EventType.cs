@@ -106,6 +106,9 @@ public sealed class EventType
         HasDuration = hasDuration;
     }
 
+    /// <summary>Throws <see cref="BuiltInEventTypeReadOnlyException"/> for built-in templates, which can never be deleted.</summary>
+    public void EnsureDeletable() => EnsureCustom();
+
     private void EnsureCustom()
     {
         if (IsBuiltIn)

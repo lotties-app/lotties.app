@@ -49,6 +49,41 @@ public sealed class MedicationTests
     }
 
     [Fact]
+    public void Create_WithClientId_KeepsTheId()
+    {
+        var id = Guid.NewGuid();
+
+        var medication = Medication.Create(id, BabyId, "Simethicone", null, null, isUsual: false, TestClock.Now);
+
+        Assert.Equal(id, medication.Id);
+    }
+
+    [Fact]
+    public void Create_EmptyClientId_ThrowsArgument()
+    {
+        Assert.Throws<ArgumentException>(() => Medication.Create(Guid.Empty, BabyId, "Simethicone", null, null, isUsual: false, TestClock.Now));
+    }
+
+    [Fact]
+    public void Edit_Valid_ReplacesDetailsAndUsualFlag()
+    {
+        var medication = Medication.Create(BabyId, "Simethicone", null, null, isUsual: false, TestClock.Now);
+
+        medication.Edit(" Paracetamol ", Dosage.Create(2.5m, "ml"), "note", isUsual: true);
+
+        Assert.Equal(("Paracetamol", "note", true, 2.5m), (medication.Name, medication.Notes, medication.IsUsual, medication.DefaultDosage!.Amount));
+    }
+
+    [Fact]
+    public void Edit_InvalidName_ThrowsAndKeepsUsualFlag()
+    {
+        var medication = Medication.Create(BabyId, "Simethicone", null, null, isUsual: false, TestClock.Now);
+
+        Assert.Throws<DomainValidationException>(() => medication.Edit(" ", null, null, isUsual: true));
+        Assert.False(medication.IsUsual);
+    }
+
+    [Fact]
     public void MarkAndUnmarkAsUsual_TogglesFlag()
     {
         var medication = Medication.Create(BabyId, "Simethicone", null, null, isUsual: false, TestClock.Now);

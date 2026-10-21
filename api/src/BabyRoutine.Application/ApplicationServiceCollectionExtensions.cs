@@ -1,5 +1,7 @@
 using BabyRoutine.Application.Babies;
 using BabyRoutine.Application.Events;
+using BabyRoutine.Application.EventTypes;
+using BabyRoutine.Application.Medications;
 using BabyRoutine.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -19,6 +21,11 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
         services.AddScoped<IBabyAccessService, BabyAccessService>();
         services.AddScoped<IEventService, EventService>();
+        services.AddScoped<IBabyService, BabyService>();
+        services.AddScoped<IMemberService, MemberService>();
+        services.AddScoped<IInviteService, InviteService>();
+        services.AddScoped<IEventTypeService, EventTypeService>();
+        services.AddScoped<IMedicationService, MedicationService>();
         services.TryAddSingleton(BabyRoutine.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         return services;

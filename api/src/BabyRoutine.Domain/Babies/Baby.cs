@@ -63,6 +63,24 @@ public sealed class Baby
         return member;
     }
 
+    /// <summary>Changes the role of a member. The last owner cannot be demoted.</summary>
+    public BabyMember ChangeMemberRole(Guid userId, BabyRole role)
+    {
+        var member = GetMember(userId);
+        var newRole = BabyRoleRules.EnsureDefined(role);
+        EnsureOwnerRemains(member, newRole == BabyRole.Owner);
+        member.ChangeRole(newRole);
+        return member;
+    }
+
+    /// <summary>Removes a member (removal by an owner or leaving). The last owner cannot be removed.</summary>
+    public void RemoveMember(Guid userId)
+    {
+        var member = GetMember(userId);
+        EnsureOwnerRemains(member, remainsOwner: false);
+        _members.Remove(member);
+    }
+
     /// <summary>Accepts <paramref name="invite"/> for <paramref name="userId"/> and adds them with the invite's role.</summary>
     public BabyMember AdmitWith(Invite invite, Guid userId, DateTimeOffset now)
     {
@@ -71,6 +89,17 @@ public sealed class Baby
         EnsureNotMember(userId);
         invite.Accept(userId, now);
         return AddMember(userId, invite.Role, now);
+    }
+
+    private BabyMember GetMember(Guid userId) => FindMember(userId) ?? throw new MemberNotFoundException(Id, userId);
+
+    private void EnsureOwnerRemains(BabyMember member, bool remainsOwner)
+    {
+        var isLastOwner = member.IsOwner && _members.Count(other => other.IsOwner) == 1;
+        if (isLastOwner && !remainsOwner)
+        {
+            throw new LastOwnerException(Id, member.UserId);
+        }
     }
 
     private void EnsureNotMember(Guid userId)

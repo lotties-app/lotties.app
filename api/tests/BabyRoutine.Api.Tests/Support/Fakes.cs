@@ -24,6 +24,9 @@ internal sealed class FakeUserRepository : IUserRepository
     public Task<User?> FindBySubjectAsync(string subject, CancellationToken cancellationToken = default) =>
         Task.FromResult(_bySubject.GetValueOrDefault(subject));
 
+    public Task<IReadOnlyList<User>> FindByIdsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<User>>(_bySubject.Values.Where(user => userIds.Contains(user.Id)).ToArray());
+
     public Task<User> AddOrGetExistingAsync(User user, CancellationToken cancellationToken = default)
     {
         AddCalls++;

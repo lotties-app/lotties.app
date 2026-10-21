@@ -11,7 +11,13 @@ public static class ApiEndpoints
         app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
         var api = app.MapGroup(V1Prefix).RequireAuthorization();
         api.MapMeEndpoints();
-        api.MapBabyScopedGroup();
+        api.MapBabyCollectionEndpoints();
+        api.MapInviteAcceptEndpoints();
+        api.MapBabyScopedGroup().MapBabyEndpoints();
+        api.MapBabyScopedGroup().MapMemberEndpoints();
+        api.MapBabyScopedGroup().MapInviteEndpoints();
+        api.MapBabyScopedGroup().MapEventTypeEndpoints();
+        api.MapBabyScopedGroup().MapMedicationEndpoints();
         api.MapBabyScopedGroup().MapEventEndpoints();
         api.MapBabyScopedGroup().MapPredictionEndpoints();
         return app;
