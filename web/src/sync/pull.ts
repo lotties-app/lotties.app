@@ -1,5 +1,6 @@
 import type { BabyRoutineDb } from '../db/database';
 import { pendingEntityIds } from '../db/outbox';
+import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
 import {
   apiPaths,
   fromBabyDto,
@@ -20,13 +21,22 @@ function get<T>(ctx: SyncContext, path: string) {
   return syncRequest<T>(ctx, path);
 }
 
-/** Replaces the local list of babies the user belongs to. */
+/**
+ * Replaces the local list of babies the user belongs to. A baby that is no longer listed (the
+ * user left or was removed) is purged from this device, outbox and cached state included.
+ */
 export async function refreshBabies(ctx: SyncContext): Promise<string[]> {
   const babies = ((await get<BabyDto[]>(ctx, apiPaths.babies())) ?? []).map(fromBabyDto);
-  await ctx.db.transaction('rw', ctx.db.babies, async () => {
-    await ctx.db.babies.clear();
-    await ctx.db.babies.bulkPut(babies);
+  const { db } = ctx;
+  const kept = new Set(babies.map((b) => b.id));
+  const dropped: string[] = [];
+  await db.transaction('rw', purgeTables(db), async () => {
+    const known = (await db.babies.toCollection().primaryKeys()) as string[];
+    dropped.push(...known.filter((id) => !kept.has(id)));
+    await deleteBabyRows(db, dropped);
+    await db.babies.bulkPut(babies);
   });
+  clearBabyDeviceState(dropped);
   return babies.map((b) => b.id);
 }
 

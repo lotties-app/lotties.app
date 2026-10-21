@@ -10,6 +10,9 @@ import { HomePage } from './pages/HomePage';
 const TimelinePage = lazy(() =>
   import('./pages/TimelinePage').then((m) => ({ default: m.TimelinePage })),
 );
+const GrowthPage = lazy(() =>
+  import('./pages/GrowthPage').then((m) => ({ default: m.GrowthPage })),
+);
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
@@ -26,6 +29,7 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
           <Route path="timeline" element={<TimelinePage />} />
+          <Route path="growth" element={<GrowthPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="invite/:token" element={<InvitePage />} />
         </Route>

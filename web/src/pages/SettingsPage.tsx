@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { AppearanceSection } from '../settings/AppearanceSection';
@@ -8,6 +9,11 @@ import { MembersSection } from '../settings/MembersSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { canWrite } from '../baby/permissions';
+
+// The importer is only needed when its section is opened, so it loads on demand.
+const ImportSection = lazy(() =>
+  import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
+);
 
 export function SettingsPage() {
   const { babies, baby } = useSelectedBaby();
@@ -32,6 +38,11 @@ export function SettingsPage() {
           </SettingsSection>
           <SettingsSection id="medications" title="Medications">
             <MedicationsSection baby={baby} />
+          </SettingsSection>
+          <SettingsSection id="import" title="Import">
+            <Suspense fallback={<CircularProgress aria-label="Loading" />}>
+              <ImportSection baby={baby} />
+            </Suspense>
           </SettingsSection>
           <SettingsSection id="members" title="Members & invites">
             <MembersSection baby={baby} />

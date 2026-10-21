@@ -15,3 +15,12 @@ export function writeSelectedBabyId(id: string): void {
     // Storage unavailable: the selection just lasts for this session.
   }
 }
+
+/** Forgets the saved selection, but only when it points at `id`. */
+export function clearSelectedBabyId(id: string): void {
+  try {
+    if (window.localStorage.getItem(KEY) === id) window.localStorage.removeItem(KEY);
+  } catch {
+    // Storage unavailable: nothing was saved anyway.
+  }
+}

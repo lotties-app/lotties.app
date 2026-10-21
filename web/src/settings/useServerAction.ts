@@ -12,7 +12,7 @@ export interface ServerAction {
 }
 
 /** Wraps an online-only server call with pending/error state and an offline guard. */
-export function useServerAction(): ServerAction {
+export function useServerAction(messages?: Record<string, string>): ServerAction {
   const online = useOnline();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function useServerAction(): ServerAction {
       await action();
       return true;
     } catch (e) {
-      setError(describeApiError(e));
+      setError(describeApiError(e, messages));
       return false;
     } finally {
       setPending(false);

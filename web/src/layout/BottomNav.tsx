@@ -2,11 +2,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 const ITEMS = [
   { to: '/', label: 'Home', icon: <HomeIcon /> },
   { to: '/timeline', label: 'Timeline', icon: <TimelineIcon /> },
+  { to: '/growth', label: 'Growth', icon: <ShowChartIcon /> },
   { to: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 

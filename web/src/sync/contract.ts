@@ -57,6 +57,12 @@ export const apiPaths = {
   /** `after` (a paging cursor) takes precedence over `since` on the server. */
   eventsDelta: (babyId: string, page: { since?: string; after?: string } = {}) =>
     `${API_PREFIX}/babies/${enc(babyId)}/events` + query(page),
+  measurements: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/measurements`,
+  measurement: (babyId: string, measurementId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/measurements/${enc(measurementId)}`,
+  importNapper: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/napper`,
+  importNapperPreview: (babyId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/import/napper/preview`,
   predictions: (babyId: string, utcOffsetMinutes: number) =>
     `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}`,
 };
@@ -334,4 +340,104 @@ export function fromMedicationDto(dto: MedicationDto): Medication {
 /** Parses a role string from the API; unknown values degrade to the least privilege. */
 export function parseRole(raw: string | undefined): BabyRole {
   return matchEnum(ROLES, raw) ?? 'Viewer';
+}
+
+/* Growth measurements (docs/SPEC.md "Measurements"): online-only, fetched as a whole list. */
+
+export interface MeasurementDto {
+  id: string;
+  babyId: string;
+  /** Calendar date `yyyy-mm-dd`. */
+  date: string;
+  weightKg: number | null;
+  heightCm: number | null;
+  headCircumferenceCm: number | null;
+  notes: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Full state of a measurement (`PUT` replaces it). */
+export interface MeasurementRequest {
+  date: string;
+  weightKg: number | null;
+  heightCm: number | null;
+  headCircumferenceCm: number | null;
+  notes: string | null;
+}
+
+/* Napper import (docs/SPEC.md "Napper import API"). */
+
+export type MedicationMappingAction = 'existing' | 'create' | 'ignore';
+
+export interface MedicationMapping {
+  token: string;
+  action: MedicationMappingAction;
+  medicationId?: string;
+  name?: string;
+}
+
+export interface NapperImportRequest {
+  logsCsv?: string;
+  measurementsCsv?: string;
+  medicationMappings?: MedicationMapping[];
+}
+
+export interface NapperSkippedRow {
+  row: number;
+  category?: string | null;
+  code: string;
+  reason: string;
+}
+
+export interface NapperCategorySummary {
+  category: string;
+  eventTypeKey: string | null;
+  total: number;
+  toCreate: number;
+  alreadyImported: number;
+  skipped: number;
+}
+
+export interface NapperSummaryBase {
+  totalRows: number;
+  toCreate: number;
+  alreadyImported: number;
+  skipped: number;
+  from: string | null;
+  to: string | null;
+  skippedRows: NapperSkippedRow[];
+}
+
+export interface NapperLogsSummary extends NapperSummaryBase {
+  categories: NapperCategorySummary[];
+}
+
+export type NapperMeasurementsSummary = NapperSummaryBase;
+
+export interface MedicationSuggestion {
+  token: string;
+  occurrences: number;
+  suggestion: 'existing' | 'create';
+  medicationId: string | null;
+  medicationName: string;
+  distance: number | null;
+  similarTokens: string[];
+  isMapped: boolean;
+}
+
+export interface NapperPreviewDto {
+  logs: NapperLogsSummary | null;
+  measurements: NapperMeasurementsSummary | null;
+  medicationSuggestions: MedicationSuggestion[];
+  unmappedTokens: string[];
+}
+
+export interface NapperImportResultDto {
+  eventsCreated: number;
+  measurementsCreated: number;
+  createdMedications: { id: string; name: string }[];
+  logs: NapperLogsSummary | null;
+  measurements: NapperMeasurementsSummary | null;
 }

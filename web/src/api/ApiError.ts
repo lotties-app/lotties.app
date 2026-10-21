@@ -8,6 +8,11 @@ export interface ProblemDetails {
   code?: string;
   /** Offending input field for validation problems (API extension). */
   field?: string;
+  /** Import error extensions (API): size limits and the offending medication tokens. */
+  maxBytes?: number;
+  maxRows?: number;
+  token?: string;
+  tokens?: string[];
 }
 
 function asProblem(body: unknown): ProblemDetails | null {

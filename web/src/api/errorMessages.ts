@@ -12,14 +12,16 @@ const MESSAGES: Record<string, string> = {
   invite_expired: 'This invite has expired. Ask for a new invite link.',
   invite_already_accepted: 'This invite was already used. Ask for a new invite link.',
   member_already_exists: 'You are already a member of this baby.',
+  measurement_without_values: 'Enter at least one of weight, height or head circumference.',
+  measurement_baby_mismatch: 'This measurement belongs to another baby.',
 };
 
 export const OFFLINE_MESSAGE = 'You are offline. Connect to the internet to do this.';
 
 /** A user-facing sentence for a failed online operation (known codes, then status, then network). */
-export function describeApiError(error: unknown): string {
+export function describeApiError(error: unknown, overrides: Record<string, string> = {}): string {
   if (error instanceof ApiError) {
-    const known = error.code ? MESSAGES[error.code] : undefined;
+    const known = error.code ? (overrides[error.code] ?? MESSAGES[error.code]) : undefined;
     if (known) return known;
     if (error.status === 403) return 'You do not have permission to do this.';
     const detail = error.problem?.detail ?? error.problem?.title;

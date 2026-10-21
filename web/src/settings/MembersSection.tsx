@@ -15,6 +15,7 @@ import {
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { OFFLINE_MESSAGE } from '../api/errorMessages';
+import { purgeBabyData } from '../db/purge';
 import { changeMemberRole, leaveBaby, listMembers, removeMember } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
 import { isOwner } from '../baby/permissions';
@@ -114,7 +115,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
   const confirmLeave = async () => {
     const ok = await run(async () => {
       await leaveBaby(api, baby.id);
-      await db.babies.delete(baby.id);
+      await purgeBabyData(db, baby.id);
       await engine.syncNow();
     });
     if (ok) setLeaving(false);

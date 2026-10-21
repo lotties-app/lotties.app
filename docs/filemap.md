@@ -59,3 +59,6 @@
 - web/src/layout/SyncStatusIndicator.tsx, web/src/sync/useOnline.ts — sync status chip, online hook
 - web/src/settings/ — settings sections (baby, event types, medications, members, invites, appearance, sync); web/src/baby/ — baby form, create card, role permissions
 - web/src/api/managementApi.ts, errorMessages.ts — online management calls and friendly error messages; web/src/pages/InvitePage.tsx — invite accept
+- web/src/measurements/, pages/GrowthPage.tsx — growth: measurement list/dialog, dependency-free SVG chart (online-only)
+- web/src/import/ — Napper import wizard (files, preview, medication mapping, confirm, result); api/measurementsApi.ts — measurements and import calls
+- web/src/db/purge.ts — purges a baby's local data when leaving or when a refresh drops it

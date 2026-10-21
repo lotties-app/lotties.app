@@ -37,3 +37,11 @@ export function writeCachedPredictions(babyId: string, cached: CachedPredictions
     // Storage unavailable or full: the cards just have no offline copy.
   }
 }
+
+export function clearCachedPredictions(babyId: string): void {
+  try {
+    window.localStorage.removeItem(keyFor(babyId));
+  } catch {
+    // Storage unavailable: nothing to clear.
+  }
+}
