@@ -387,7 +387,7 @@ describe('SettingsPage members and invites', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create invite link' }));
 
     const dialog = await screen.findByRole('dialog');
-    const link = `${window.location.origin}/invite/secret-token`;
+    const link = `${window.location.origin}/invite#secret-token`;
     expect((within(dialog).getByLabelText('Invite link') as HTMLInputElement).value).toBe(link);
     expect(writes()[0]).toMatchObject({
       method: 'POST',

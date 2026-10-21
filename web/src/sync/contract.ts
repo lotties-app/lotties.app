@@ -49,7 +49,8 @@ export const apiPaths = {
   invites: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/invites`,
   invite: (babyId: string, inviteId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/invites/${enc(inviteId)}`,
-  acceptInvite: (token: string) => `${API_PREFIX}/invites/${enc(token)}/accept`,
+  /** Body `{ token }`; the deprecated `/invites/{token}/accept` path is no longer used. */
+  acceptInvite: () => `${API_PREFIX}/invites/accept`,
   eventTypes: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/event-types`,
   eventType: (babyId: string, typeId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/event-types/${enc(typeId)}`,

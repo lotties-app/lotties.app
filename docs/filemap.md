@@ -73,3 +73,4 @@
 - web/src/db/purge.ts — purges a baby's local data when leaving or when a refresh drops it
 - web/src/pwa/ — reload prompt and install-app hook/button; web/scripts/generate-icons.mjs — regenerates PWA icons from web/public/icon.svg
 - web/src/session/ — per-account database naming, logout/leave cleanup, unsynced-changes dialog; web/src/util/ownProperty.ts — safe own-key lookups for server-provided keys
+- web/src/invite/ — invite link hand-off (token in URL fragment, parked in sessionStorage across login)

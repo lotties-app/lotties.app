@@ -11,6 +11,8 @@ export interface ProblemDetails {
   /** Import error extensions (API): size limits and the offending medication tokens. */
   maxBytes?: number;
   maxRows?: number;
+  /** Medication-name import limit (API extension, `import_too_many_medication_names`). */
+  maxNames?: number;
   token?: string;
   tokens?: string[];
 }

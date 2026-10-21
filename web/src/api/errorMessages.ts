@@ -15,6 +15,9 @@ const MESSAGES: Record<string, string> = {
   member_already_exists: 'You are already a member of this baby.',
   measurement_without_values: 'Enter at least one of weight, height or head circumference.',
   measurement_baby_mismatch: 'This measurement belongs to another baby.',
+  concurrent_modification: 'Something changed at the same time, please try again.',
+  rate_limited: 'Too many requests, please wait a moment.',
+  request_body_too_large: 'The data is too large to send. Try a smaller change.',
 };
 
 export const OFFLINE_MESSAGE = 'You are offline. Connect to the internet to do this.';
@@ -26,6 +29,14 @@ export function describeApiError(error: unknown, overrides: Record<string, strin
       ? (getOwn(overrides, error.code) ?? getOwn(MESSAGES, error.code))
       : undefined;
     if (known) return known;
+    if (
+      error.code === 'import_too_many_medication_names' &&
+      error.problem?.maxNames !== undefined
+    ) {
+      return `This import has more than ${error.problem.maxNames} different medication names. Fix or split the file and try again.`;
+    }
+    if (error.status === 429) return 'Too many requests, please wait a moment.';
+    if (error.status === 413) return 'The data is too large to send. Try a smaller change.';
     if (error.status === 403) return 'You do not have permission to do this.';
     const detail = error.problem?.detail ?? error.problem?.title;
     if (error.status >= 400 && error.status < 500 && detail) return detail;

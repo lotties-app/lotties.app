@@ -67,8 +67,11 @@ export async function revokeInvite(api: ApiClient, babyId: string, inviteId: str
   await api.request<unknown>(apiPaths.invite(babyId, inviteId), { method: 'DELETE' });
 }
 
+/** The token travels in the body, never in the URL path (access logs record paths). */
 export async function acceptInvite(api: ApiClient, token: string): Promise<Baby> {
-  return fromBabyDto(await api.request<BabyDto>(apiPaths.acceptInvite(token), { method: 'POST' }));
+  return fromBabyDto(
+    await api.request<BabyDto>(apiPaths.acceptInvite(), { method: 'POST', body: { token } }),
+  );
 }
 
 export async function createEventType(

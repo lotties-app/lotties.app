@@ -22,7 +22,7 @@ Status column: `todo` / `wave-N` (assigned) / `done`. Source file:line reference
 | 16 | Low | Users keyed by `sub` only (no issuer) | Unique (issuer, sub) | done |
 | 17 | Low | Leaving a baby discards unsynced queue without warning | Warn / push first | done |
 | 18 | Low | Email used as display name when no `name` claim | Do not expose email | done |
-| 19 | Low | Invite token in URL path ends up in logs | Accept via POST body; keep link fragment (`/invite#token`) | API done; web pending |
+| 19 | Low | Invite token in URL path ends up in logs | Accept via POST body; keep link fragment (`/invite#token`) | done |
 | 20 | Low | .NET 8 EOL 2026-11-10; very new web majors | Plan upgrade to .NET 10 LTS; pin/lock web versions | todo |
 
 Reviewed with no findings: route protection and role policies, IDOR across all baby-scoped resources, invite token entropy/hashing, user provisioning races, JWT validation, CORS, error leakage, injection, CSV parser, delta paging ties, soft deletes, migrations snapshot test, import transaction, prediction math, web XSS and redirects, service worker caching, git history secrets.

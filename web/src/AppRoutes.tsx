@@ -5,6 +5,7 @@ import { LoginPage } from './auth/LoginPage';
 import { CallbackPage } from './auth/CallbackPage';
 import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
+import { InviteEntry, LegacyInviteEntry } from './invite/InviteEntry';
 
 // Everything except Home is split into route chunks so the first load stays small.
 const TimelinePage = lazy(() =>
@@ -25,13 +26,21 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<CallbackPage />} />
+      {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
+      <Route path="/invite" element={<InviteEntry />}>
+        <Route element={<RequireAuth />}>
+          <Route element={<AppShell />}>
+            <Route index element={<InvitePage />} />
+          </Route>
+        </Route>
+      </Route>
+      <Route path="/invite/:token" element={<LegacyInviteEntry />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
           <Route path="timeline" element={<TimelinePage />} />
           <Route path="growth" element={<GrowthPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="invite/:token" element={<InvitePage />} />
         </Route>
       </Route>
     </Routes>

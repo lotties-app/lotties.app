@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { describeApiError } from '../api/errorMessages';
 import { acceptInvite } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
 import { useBabyActions } from '../baby/useBabyActions';
+import { takePendingInvite } from '../invite/inviteToken';
 
-/** `/invite/:token`: joins the baby the invite belongs to, then goes Home with it selected. */
+const MISSING_TOKEN_MESSAGE =
+  'This invite link is not valid. It may have been revoked or mistyped.';
+
+/**
+ * `/invite` (signed in): joins the baby the parked invite token belongs to, then goes Home with it
+ * selected. The token was parked by `InviteEntry` before any sign-in redirect.
+ */
 export function InvitePage() {
-  const { token = '' } = useParams();
   const api = useApiClient();
   const { adopt } = useBabyActions();
   const navigate = useNavigate();
@@ -19,13 +25,17 @@ export function InvitePage() {
     // A token is single-use: guard against the double effect run in StrictMode.
     if (started.current) return;
     started.current = true;
-    acceptInvite(api, token)
+    const token = takePendingInvite();
+    const request = token
+      ? acceptInvite(api, token)
+      : Promise.reject(new Error(MISSING_TOKEN_MESSAGE));
+    request
       .then(async (baby) => {
         await adopt(baby);
         navigate('/', { replace: true });
       })
       .catch((e: unknown) => setError(describeApiError(e)));
-  }, [api, token, adopt, navigate]);
+  }, [api, adopt, navigate]);
 
   if (!error) {
     return (
