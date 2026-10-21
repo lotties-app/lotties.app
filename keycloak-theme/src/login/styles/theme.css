@@ -91,6 +91,51 @@ body.br-body {
   opacity: var(--il-shine);
 }
 
+/* App icon next to the wordmark; colours of docs/design/icons/favicon-b.svg (dark unless the browser says light). */
+:root {
+  --br-mark-tile: #24201b;
+  --br-mark-day: #e58f68;
+  --br-mark-night: #f2eadc;
+  --br-mark-ruler: #cac0b0;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --br-mark-tile: #f5efe4;
+    --br-mark-day: #b04c29;
+    --br-mark-night: #2a251f;
+    --br-mark-ruler: #2a251f;
+  }
+}
+
+.br-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.br-mark {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.br-mark-tile {
+  fill: var(--br-mark-tile);
+}
+
+.br-mark-day {
+  fill: var(--br-mark-day);
+}
+
+.br-mark-night {
+  fill: var(--br-mark-night);
+}
+
+.br-mark-ruler {
+  fill: var(--br-mark-ruler);
+}
+
 .br-wordmark {
   margin: 0;
   font: 600 1.875rem/1.1 var(--br-font-display);
@@ -168,6 +213,15 @@ body.br-body {
 
   .br-wordmark {
     font-size: 3rem;
+  }
+
+  .br-brand {
+    gap: 16px;
+  }
+
+  .br-mark {
+    width: 56px;
+    height: 56px;
   }
 
   .br-tagline {

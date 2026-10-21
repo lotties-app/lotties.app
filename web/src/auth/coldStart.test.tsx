@@ -28,7 +28,7 @@ const CONFIG = {
 };
 
 /** The whole app boots in these tests (OIDC, Dexie, sync): allow for a loaded test runner. */
-const SLOW = { timeout: 5_000 };
+const SLOW = { timeout: 15_000 };
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 

@@ -8,6 +8,9 @@ import { useInitialize } from 'keycloakify/login/Template.useInitialize';
 import type { I18n } from './i18n';
 import type { KcContext } from './KcContext';
 import { HeroArt } from './art/HeroArt';
+import { BrandMark } from './art/BrandMark';
+import faviconPng from './art/favicon.png';
+import faviconSvg from './art/favicon.svg';
 
 const GLYPHS = {
   success: 'M8 12.5l3 3 5-6',
@@ -55,6 +58,25 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
     document.documentElement.lang = currentLanguage.languageTag;
   }, [documentTitle, currentLanguage.languageTag]);
 
+  // The app icon as the tab icon (the stock template has none of ours): SVG (light and dark tab
+  // strips via its own media query) with the 32 px PNG for browsers without SVG icons.
+  useEffect(() => {
+    const links = [
+      { type: 'image/svg+xml', href: faviconSvg, sizes: undefined },
+      { type: 'image/png', href: faviconPng, sizes: '32x32' },
+    ].map(({ type, href, sizes }) => {
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = type;
+      link.href = href;
+      if (sizes) link.setAttribute('sizes', sizes);
+      return link;
+    });
+    document.querySelectorAll('link[rel~="icon"]').forEach((el) => el.remove());
+    document.head.append(...links);
+    return () => links.forEach((link) => link.remove());
+  }, []);
+
   // Stock pages set positive tabindex values (2, 3, 4...), which jump ahead of the skip link and the
   // language switcher. DOM order already is the visual order, so drop them.
   useEffect(() => {
@@ -95,7 +117,10 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
       </a>
       <aside className="br-hero">
         <HeroArt label={msgStr('heroArtLabel')} />
-        <p className="br-wordmark">{msg('appName')}</p>
+        <div className="br-brand">
+          <BrandMark className="br-mark" />
+          <p className="br-wordmark">{msg('appName')}</p>
+        </div>
         <p className="br-tagline">{msg('heroTagline')}</p>
         <p className="br-note">{msg('heroNote')}</p>
       </aside>

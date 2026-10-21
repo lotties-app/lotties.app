@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="docs/design/icons/icon-b.svg" alt="Baby Routine app icon" width="96" height="96">
+</p>
+
+<p align="center"><strong>Baby Routine</strong><br>Track your baby's day, together</p>
+
 # Baby Routine
 
 Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routines, share them with your family, and see simple predictions for the next ones. Works offline and syncs when you reconnect.

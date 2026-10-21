@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Alert, Box, Button, Container, Typography } from '@mui/material';
+import { BrandMark } from '../ui/BrandMark';
 import Dexie from 'dexie';
 import { createDatabase } from '../db/database';
 import { countUnsyncedMutations } from '../db/outbox';
@@ -61,6 +62,7 @@ export function LoginPage() {
   return (
     <Container maxWidth="xs" sx={{ minHeight: '100dvh', display: 'grid', alignContent: 'center' }}>
       <Box sx={{ textAlign: 'center' }}>
+        <BrandMark size={88} decorative sx={{ display: 'flex', justifyContent: 'center', mb: 2 }} />
         <Typography variant="h4" component="h1" gutterBottom>
           {t('app.name')}
         </Typography>

@@ -1,11 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect id="bg" width="512" height="512" rx="112" fill="#1976d2"/>
-  <g id="glyph">
-    <rect x="226" y="104" width="60" height="56" rx="26" fill="#ffffff"/>
-    <rect x="194" y="152" width="124" height="34" rx="12" fill="#ffffff"/>
-    <rect x="166" y="180" width="180" height="262" rx="60" fill="#ffffff"/>
-    <rect x="206" y="250" width="100" height="10" rx="5" fill="#1976d2"/>
-    <rect x="206" y="304" width="100" height="10" rx="5" fill="#1976d2"/>
-    <rect x="206" y="358" width="60" height="10" rx="5" fill="#1976d2"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Baby Routine app icon, concept B "Day disc" (light). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Baby Routine</title>
+<defs>
+<linearGradient id="bla-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#fffcf6"/>
+<stop offset="0.55" stop-color="#f5efe4"/>
+<stop offset="1" stop-color="#ebe2d0"/>
+</linearGradient>
+<clipPath id="bla-clip">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z"/>
+</clipPath>
+<linearGradient id="bla-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#dc7c55"/>
+<stop offset="0.5" stop-color="#ca552d"/>
+<stop offset="1" stop-color="#bc502c"/>
+</linearGradient>
+<radialGradient id="bla-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#a8482a" stop-opacity="0"/>
+<stop offset="1" stop-color="#a8482a" stop-opacity="0.36"/>
+</radialGradient>
+<linearGradient id="bla-ink" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#5d554a"/>
+<stop offset="0.5" stop-color="#3a332b"/>
+<stop offset="1" stop-color="#342d26"/>
+</linearGradient>
+<radialGradient id="bla-ink-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#2a251f" stop-opacity="0"/>
+<stop offset="1" stop-color="#2a251f" stop-opacity="0.36"/>
+</radialGradient>
+<mask id="bla-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M668 342C674.6 365.4 674.6 365.4 698 372C674.6 378.6 674.6 378.6 668 402C661.4 378.6 661.4 378.6 638 372C661.4 365.4 661.4 365.4 668 342Z" fill="#000000"/>
+<path d="M681 520a9 9 0 1 0 18 0a9 9 0 1 0 -18 0Z" fill="#000000"/>
+</mask>
+<mask id="bla-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M458.9 671.8A230 230 0 1 0 458.9 224.2A236 236 0 0 1 458.9 671.8Z" fill="#000000" stroke="#000000" stroke-width="20" stroke-linejoin="round"/>
+</mask>
+<mask id="bla-k3" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M608 716L608 792A12 12 0 0 0 632 792L632 716A12 12 0 0 0 608 716Z" fill="#000000" stroke="#000000" stroke-width="28" stroke-linejoin="round"/>
+</mask>
+</defs>
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z" fill="url(#bla-tile)"/>
+<g clip-path="url(#bla-clip)">
+<g transform="translate(0 0)">
+<g mask="url(#bla-k2)">
+<path d="M282 448a230 230 0 1 0 460 0a230 230 0 1 0 -460 0Z" fill="url(#bla-accent)"/>
+</g>
+<g mask="url(#bla-h1)">
+<path d="M458.9 671.8A230 230 0 1 0 458.9 224.2A236 236 0 0 1 458.9 671.8Z" fill="url(#bla-ink)"/>
+</g>
+<g mask="url(#bla-k3)">
+<path d="M176 764L620 764A10 10 0 0 0 620 744L176 744A10 10 0 0 0 176 764Z" fill="#2a251f"/>
+<path d="M620 758.5L848 758.5A4.5 4.5 0 0 0 848 749.5L620 749.5A4.5 4.5 0 0 0 620 758.5Z" fill="#2a251f"/>
+</g>
+<path d="M608 716L608 792A12 12 0 0 0 632 792L632 716A12 12 0 0 0 608 716Z" fill="#ca552d"/>
+</g>
+</g>
 </svg>

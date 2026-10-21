@@ -48,7 +48,7 @@
 </defs>
 <path d="M0 0H1024V1024H0Z" fill="url(#blm-tile)"/>
 <g clip-path="url(#blm-clip)">
-<g transform="translate(512 512) scale(0.76) translate(-512 -512)">
+<g transform="translate(512 512) scale(0.78) translate(-512 -512)">
 <g mask="url(#blm-k2)">
 <path d="M282 448a230 230 0 1 0 460 0a230 230 0 1 0 -460 0Z" fill="url(#blm-accent)"/>
 </g>

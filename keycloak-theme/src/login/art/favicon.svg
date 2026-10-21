@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Baby Routine app icon, concept B "Day disc" (favicon, simplified for 16 px: larger disc, whole-pixel ruler, no gradients; dark tab strips get the dark palette via prefers-color-scheme). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Baby Routine</title>
+<style>
+.t{fill:#f5efe4}.d{fill:#b04c29}.n{fill:#2a251f}
+@media (prefers-color-scheme:dark){.t{fill:#24201b}.d{fill:#e58f68}.n{fill:#f2eadc}}
+</style>
+<defs>
+<mask id="fb-k" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+<rect width="32" height="32" fill="#fff"/>
+<path d="M13.74 22.14A9.8 9.8 0 1 0 13.74 3.06A12 12 0 0 1 13.74 22.14Z" fill="#000" stroke="#000" stroke-width="1.8" stroke-linejoin="round"/>
+</mask>
+<mask id="fb-s" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+<rect width="32" height="32" fill="#fff"/>
+<path d="M21.9 7.7C22.2 8.8 22.5 9.1 23.6 9.4C22.5 9.7 22.2 10 21.9 11.1C21.6 10 21.3 9.7 20.2 9.4C21.3 9.1 21.6 8.8 21.9 7.7Z" fill="#000"/>
+</mask>
+</defs>
+<path d="M7 0H25A7 7 0 0 1 32 7V25A7 7 0 0 1 25 32H7A7 7 0 0 1 0 25V7A7 7 0 0 1 7 0Z" class="t"/>
+<g mask="url(#fb-k)">
+<path d="M6.2 12.6a9.8 9.8 0 1 0 19.6 0a9.8 9.8 0 1 0 -19.6 0Z" class="d"/>
+</g>
+<g mask="url(#fb-s)">
+<path d="M13.74 22.14A9.8 9.8 0 1 0 13.74 3.06A12 12 0 0 1 13.74 22.14Z" class="n"/>
+</g>
+<path d="M5 26H19.4V28H5A1 1 0 0 1 5 26Z" class="n"/>
+<path d="M20 26.5H27A.5.5 0 0 1 27 27.5H20Z" class="n"/>
+<path d="M21 24.3H21A1.4 1.4 0 0 1 22.4 25.7V28.6A1.4 1.4 0 0 1 21 30H21A1.4 1.4 0 0 1 19.6 28.6V25.7A1.4 1.4 0 0 1 21 24.3Z" class="d"/>
+</svg>

@@ -19,7 +19,13 @@ export default defineConfig({
       // The user decides when to reload; see src/pwa/ReloadPrompt.tsx.
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.png',
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'icon.svg',
+      ],
       manifest: {
         name: 'Baby Routine',
         short_name: 'Baby Routine',
@@ -41,6 +47,12 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
+          },
+          {
+            src: '/icon-monochrome-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'monochrome',
           },
         ],
       },

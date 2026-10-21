@@ -1,46 +1,101 @@
-// Regenerates the PNG icons in web/public from web/public/icon.svg.
+// Regenerates the app icons in web/public from the concept B ("Day disc") art in
+// docs/design/icons (edit those SVGs; there is no other generator).
 //
-// Usage (from the repo root or web/):  node web/scripts/generate-icons.mjs
-// Requires the devDependency `sharp` (npm --prefix web install).
+// Usage (from web/):  node scripts/generate-icons.mjs
+// Requires the devDependency `sharp` (npm install in web/).
 //
-// Outputs:
-//   icon-192.png            192x192, any purpose
-//   icon-512.png            512x512, any purpose
-//   icon-maskable-512.png   512x512, full-bleed background, glyph inside the 80% safe zone
-//   apple-touch-icon.png    180x180 (iOS ignores transparency, background is solid)
-//   favicon.png             32x32
-import { readFile, writeFile } from 'node:fs/promises';
+// Copied as is:
+//   icon.svg                  <- icon-b.svg          (light tile, any purpose)
+//   favicon.svg               <- favicon-b.svg       (simplified, dark scheme via media query)
+// Rendered:
+//   icon-192.png, icon-512.png   any purpose, rounded tile, transparent corners
+//   icon-maskable-512.png        icon-b-maskable.svg: full bleed, glyph inside the 66% safe zone
+//   apple-touch-icon.png         180, opaque full bleed (iOS applies its own mask), larger glyph
+//   icon-monochrome-512.png      icon-b-mono.svg inside the 66% safe zone (only alpha is used)
+//   (also copies favicon.svg and favicon.png into keycloak-theme/src/login/art for its tab icon)
+//   favicon.png (32), favicon.ico (16, 32, 48 as PNG-in-ICO), both from favicon.svg (light)
+import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import sharp from 'sharp';
 
-const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
-const source = await readFile(join(publicDir, 'icon.svg'), 'utf8');
+const here = dirname(fileURLToPath(import.meta.url));
+const publicDir = join(here, '..', 'public');
+const artDir = join(here, '..', '..', 'docs', 'design', 'icons');
+const art = (name) => readFile(join(artDir, name), 'utf8');
 
-// Maskable icons are cropped by the OS into circles/squircles, so the glyph is
-// scaled to 80% around the centre (the W3C safe zone is the central 80%).
-const maskableSvg = source
-  .replace(
-    '<rect id="bg" width="512" height="512" rx="112"',
-    '<rect id="bg" width="512" height="512" rx="0"',
-  )
-  .replace(
-    '<g id="glyph">',
-    '<g id="glyph" transform="translate(256 256) scale(0.8) translate(-256 -256)">',
-  );
+const icon = await art('icon-b.svg');
+const maskable = await art('icon-b-maskable.svg');
+const mono = await art('icon-b-mono.svg');
+const favicon = await art('favicon-b.svg');
 
-const outputs = [
-  { name: 'icon-192.png', svg: source, size: 192 },
-  { name: 'icon-512.png', svg: source, size: 512 },
-  { name: 'icon-maskable-512.png', svg: maskableSvg, size: 512 },
-  { name: 'apple-touch-icon.png', svg: source, size: 180 },
-  { name: 'favicon.png', svg: source, size: 32 },
-];
+// iOS rounds the corners itself and turns transparency black: use the full-bleed art with the
+// glyph larger than the maskable safe zone allows.
+const MASKABLE_SCALE = 'scale(0.78)';
+if (!maskable.includes(MASKABLE_SCALE))
+  throw new Error(`icon-b-maskable.svg lost ${MASKABLE_SCALE}`);
+const appleSvg = maskable.replace(MASKABLE_SCALE, 'scale(0.92)');
 
-for (const { name, svg, size } of outputs) {
-  await sharp(Buffer.from(svg), { density: 384 })
+// Oversample the vector (density is relative to the SVG's own width/height, 96 dpi = 1x).
+const svgWidth = (svg) => Number(/<svg[^>]* width="(\d+)"/.exec(svg)[1]);
+const render = (svg, size) =>
+  sharp(Buffer.from(svg), { density: Math.max(72, (size / svgWidth(svg)) * 96 * 4) })
     .resize(size, size)
-    .png()
-    .toFile(join(publicDir, name));
+    .png();
+
+async function write(name, pipeline, size) {
+  await pipeline.toFile(join(publicDir, name));
   console.log(`wrote public/${name} (${size}x${size})`);
 }
+
+await copyFile(join(artDir, 'icon-b.svg'), join(publicDir, 'icon.svg'));
+await copyFile(join(artDir, 'favicon-b.svg'), join(publicDir, 'favicon.svg'));
+console.log('wrote public/icon.svg, public/favicon.svg');
+
+await write('icon-192.png', render(icon, 192), 192);
+await write('icon-512.png', render(icon, 512), 512);
+await write('icon-maskable-512.png', render(maskable, 512), 512);
+await write('apple-touch-icon.png', render(appleSvg, 180).flatten({ background: '#f5efe4' }), 180);
+await write('favicon.png', render(favicon, 32), 32);
+
+// The Keycloak login theme bundles the same tab icon.
+const kcArt = join(here, '..', '..', 'keycloak-theme', 'src', 'login', 'art');
+await copyFile(join(artDir, 'favicon-b.svg'), join(kcArt, 'favicon.svg'));
+await copyFile(join(publicDir, 'favicon.png'), join(kcArt, 'favicon.png'));
+console.log('copied favicon.svg, favicon.png to keycloak-theme/src/login/art');
+
+// Monochrome: 66% safe zone for the launcher's themed-icon mask, so the silhouette is scaled to 0.6.
+const monoSize = Math.round(512 * 0.6);
+const monoInner = await render(mono, monoSize).toBuffer();
+const pad = (512 - monoSize) / 2;
+await write(
+  'icon-monochrome-512.png',
+  sharp(monoInner).extend({
+    top: Math.floor(pad),
+    bottom: Math.ceil(pad),
+    left: Math.floor(pad),
+    right: Math.ceil(pad),
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  }),
+  512,
+);
+
+// favicon.ico: PNG-in-ICO (supported since Vista); sharp cannot write ICO itself.
+const icoSizes = [16, 32, 48];
+const icoPngs = await Promise.all(icoSizes.map((s) => render(favicon, s).toBuffer()));
+const header = Buffer.alloc(6 + 16 * icoSizes.length);
+header.writeUInt16LE(1, 2); // type: icon
+header.writeUInt16LE(icoSizes.length, 4);
+let offset = header.length;
+icoSizes.forEach((s, i) => {
+  const e = 6 + 16 * i;
+  header.writeUInt8(s, e); // width
+  header.writeUInt8(s, e + 1); // height
+  header.writeUInt16LE(1, e + 4); // colour planes
+  header.writeUInt16LE(32, e + 6); // bits per pixel
+  header.writeUInt32LE(icoPngs[i].length, e + 8);
+  header.writeUInt32LE(offset, e + 12);
+  offset += icoPngs[i].length;
+});
+await writeFile(join(publicDir, 'favicon.ico'), Buffer.concat([header, ...icoPngs]));
+console.log(`wrote public/favicon.ico (${icoSizes.join(', ')})`);
