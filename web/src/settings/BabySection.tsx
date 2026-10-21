@@ -1,14 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { Alert, Chip, Stack, Typography } from '@mui/material';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
 import { BabyForm } from '../baby/BabyForm';
 import { isOwner } from '../baby/permissions';
 import { useBabyActions } from '../baby/useBabyActions';
 import type { Baby } from '../db/models';
+import { formatDate } from '../i18n/format';
 import { ErrorNotice } from './ErrorNotice';
 import { useServerAction } from './useServerAction';
 
 /** Baby details (editable by the Owner) and the current user's role. */
 export function BabySection({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const { update } = useBabyActions();
   const { run, pending, error, online } = useServerAction();
   const owner = isOwner(baby);
@@ -16,19 +18,21 @@ export function BabySection({ baby }: { baby: Baby }) {
   return (
     <Stack spacing={2}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-        <Typography>Your role</Typography>
-        <Chip label={baby.role} size="small" color={owner ? 'primary' : 'default'} />
+        <Typography>{t('settings.baby.role')}</Typography>
+        <Chip
+          label={t(`baby.roles.${baby.role}`)}
+          size="small"
+          color={owner ? 'primary' : 'default'}
+        />
       </Stack>
-      {!owner && (
-        <Typography color="text.secondary">Only the owner can change these details.</Typography>
-      )}
-      {owner && !online && <Alert severity="warning">{OFFLINE_MESSAGE}</Alert>}
+      {!owner && <Typography color="text.secondary">{t('settings.baby.ownerOnly')}</Typography>}
+      {owner && !online && <Alert severity="warning">{t('errors.offline')}</Alert>}
       <ErrorNotice message={error} />
       {owner ? (
         <BabyForm
           key={`${baby.name}|${baby.birthDate}`}
           initial={{ name: baby.name, birthDate: baby.birthDate }}
-          submitLabel="Save details"
+          submitLabel={t('settings.baby.save')}
           disabled={!online}
           pending={pending}
           onSubmit={(request) => void run(() => update(baby.id, request))}
@@ -36,7 +40,9 @@ export function BabySection({ baby }: { baby: Baby }) {
       ) : (
         <Stack>
           <Typography variant="subtitle1">{baby.name}</Typography>
-          <Typography color="text.secondary">Born {baby.birthDate}</Typography>
+          <Typography color="text.secondary">
+            {t('settings.baby.born', { date: formatDate(baby.birthDate) })}
+          </Typography>
         </Stack>
       )}
     </Stack>

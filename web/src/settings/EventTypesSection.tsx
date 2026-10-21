@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -15,7 +16,6 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
 import { deleteEventType } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
 import { canWrite } from '../baby/permissions';
@@ -24,6 +24,7 @@ import { useEventTypes } from '../db/hooks';
 import type { Baby, EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
+import { useEventTypeText } from '../i18n/eventTypeText';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { useServerAction } from './useServerAction';
@@ -45,6 +46,9 @@ function TypeRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
+  const names = useEventTypeText();
+  const name = names.typeName(type);
   const custom = type.babyId !== null;
   return (
     <ListItem
@@ -53,10 +57,13 @@ function TypeRow({
         custom &&
         writable && (
           <Stack direction="row">
-            <IconButton aria-label={`Edit ${type.name}`} onClick={onEdit}>
+            <IconButton aria-label={t('settings.eventTypes.editNamed', { name })} onClick={onEdit}>
               <EditIcon />
             </IconButton>
-            <IconButton aria-label={`Delete ${type.name}`} onClick={onDelete}>
+            <IconButton
+              aria-label={t('settings.eventTypes.deleteNamed', { name })}
+              onClick={onDelete}
+            >
               <DeleteIcon />
             </IconButton>
           </Stack>
@@ -69,11 +76,18 @@ function TypeRow({
       <ListItemText
         primary={
           <>
-            {type.name}
-            {!custom && <Chip size="small" label="Built-in" sx={{ ml: 1 }} />}
+            {name}
+            {!custom && (
+              <Chip size="small" label={t('settings.eventTypes.builtIn')} sx={{ ml: 1 }} />
+            )}
           </>
         }
-        secondary={`${type.hasDuration ? 'Has duration' : 'Instant'} · ${type.fields.length} fields`}
+        secondary={t('settings.eventTypes.details', {
+          kind: type.hasDuration
+            ? t('settings.eventTypes.hasDuration')
+            : t('settings.eventTypes.instant'),
+          fields: t('settings.eventTypes.fieldCount', { count: type.fields.length }),
+        })}
       />
     </ListItem>
   );
@@ -81,6 +95,7 @@ function TypeRow({
 
 /** Built-in (read-only) and custom event types; custom ones are managed online. */
 export function EventTypesSection({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const types = useEventTypes(baby.id);
   const api = useApiClient();
   const db = useDatabase();
@@ -110,19 +125,17 @@ export function EventTypesSection({ baby }: { baby: Baby }) {
 
   return (
     <Stack spacing={2}>
-      {writable && !online && <Alert severity="warning">{OFFLINE_MESSAGE}</Alert>}
+      {writable && !online && <Alert severity="warning">{t('errors.offline')}</Alert>}
       {!writable && (
-        <Typography color="text.secondary">
-          You can view event types but not change them.
-        </Typography>
+        <Typography color="text.secondary">{t('settings.eventTypes.viewOnly')}</Typography>
       )}
       <Typography variant="subtitle1" component="h3">
-        Custom
+        {t('settings.eventTypes.custom')}
       </Typography>
       {custom.length === 0 && (
-        <Typography color="text.secondary">No custom event types.</Typography>
+        <Typography color="text.secondary">{t('settings.eventTypes.noCustom')}</Typography>
       )}
-      <List aria-label="Custom event types" disablePadding>
+      <List aria-label={t('settings.eventTypes.customList')} disablePadding>
         {custom.map((t) => (
           <TypeRow
             key={t.id}
@@ -141,19 +154,21 @@ export function EventTypesSection({ baby }: { baby: Baby }) {
           onClick={() => setEditing('new')}
           sx={{ minHeight: 48, alignSelf: 'flex-start' }}
         >
-          Add event type
+          {t('settings.eventTypes.add')}
         </Button>
       )}
       <Typography variant="subtitle1" component="h3">
-        Built-in
+        {t('settings.eventTypes.builtIn')}
       </Typography>
-      <List aria-label="Built-in event types" disablePadding>
+      <List aria-label={t('settings.eventTypes.builtInList')} disablePadding>
         {builtIn.map((t) => (
           <TypeRow key={t.id} type={t} writable={false} onEdit={() => {}} onDelete={() => {}} />
         ))}
       </List>
       {editing && (
-        <Suspense fallback={<CircularProgress aria-label="Loading editor" />}>
+        <Suspense
+          fallback={<CircularProgress aria-label={t('settings.eventTypes.loadingEditor')} />}
+        >
           <EventTypeEditorDialog
             babyId={baby.id}
             type={editing === 'new' ? undefined : editing.type}
@@ -163,9 +178,9 @@ export function EventTypesSection({ baby }: { baby: Baby }) {
       )}
       {deleting && (
         <ConfirmDialog
-          title={`Delete ${deleting.name}?`}
-          body="The event type is removed for everyone who follows this baby."
-          confirmLabel="Delete event type"
+          title={t('settings.eventTypes.deleteTitle', { name: deleting.name })}
+          body={t('settings.eventTypes.deleteBody')}
+          confirmLabel={t('settings.eventTypes.deleteConfirm')}
           pending={pending}
           error={error}
           onCancel={closeDeleting}

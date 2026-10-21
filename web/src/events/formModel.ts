@@ -6,7 +6,10 @@ import type {
   EventType,
   MedicationEventPayload,
 } from '../db/models';
+import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
+import { t } from '../i18n/i18n';
 import { getOwn, setOwn } from '../util/ownProperty';
+import { formatNumber } from '../i18n/format';
 import { fromLocalInput, toLocalInput } from './time';
 
 export interface MedicationSelection {
@@ -94,15 +97,22 @@ function parseNumber(raw: string | boolean | undefined): number | null {
   return Number.isFinite(n) ? n : Number.NaN;
 }
 
-function fieldError(field: EventFieldDefinition, raw: string | boolean | undefined) {
+function fieldError(label: string, field: EventFieldDefinition, raw: string | boolean | undefined) {
   const empty = raw === undefined || raw === '';
-  if (empty)
-    return field.isRequired && field.kind !== 'bool' ? `${field.label} is required.` : null;
+  if (empty) {
+    return field.isRequired && field.kind !== 'bool'
+      ? t('events.validation.fieldRequired', { label })
+      : null;
+  }
   if (field.kind !== 'number') return null;
   const n = parseNumber(raw);
-  if (n === null || Number.isNaN(n)) return `${field.label} must be a number.`;
-  if (field.min !== null && n < field.min) return `${field.label} must be at least ${field.min}.`;
-  if (field.max !== null && n > field.max) return `${field.label} must be at most ${field.max}.`;
+  if (n === null || Number.isNaN(n)) return t('events.validation.fieldNumber', { label });
+  if (field.min !== null && n < field.min) {
+    return t('events.validation.fieldMin', { label, min: formatNumber(field.min) });
+  }
+  if (field.max !== null && n > field.max) {
+    return t('events.validation.fieldMax', { label, max: formatNumber(field.max) });
+  }
   return null;
 }
 
@@ -110,27 +120,31 @@ function doseError(name: string, m: MedicationSelection) {
   if (!m.amount.trim()) return null;
   const amount = parseNumber(m.amount);
   if (amount === null || Number.isNaN(amount) || amount <= 0) {
-    return `Dose for ${name} must be a positive number.`;
+    return t('events.validation.doseInvalid', { name });
   }
-  return m.unit.trim() ? null : `Dose for ${name} needs a unit.`;
+  return m.unit.trim() ? null : t('events.validation.doseUnit', { name });
 }
 
-export function validateForm(form: EventFormState, type: EventType | undefined): string[] {
+export function validateForm(
+  form: EventFormState,
+  type: EventType | undefined,
+  names: EventTypeText = eventTypeText,
+): string[] {
   const errors: string[] = [];
-  if (!type) return ['Choose an event type.'];
+  if (!type) return [t('events.validation.chooseType')];
   const start = fromLocalInput(form.startedAt);
-  if (!start) errors.push('Start time is required.');
+  if (!start) errors.push(t('events.validation.startRequired'));
   const end = fromLocalInput(form.endedAt);
   if (type.hasDuration && start && end && end < start) {
-    errors.push('End time must not be before the start time.');
+    errors.push(t('events.validation.endBeforeStart'));
   }
   for (const field of type.fields) {
-    const error = fieldError(field, getOwn(form.values, field.key));
+    const error = fieldError(names.fieldLabel(type, field), field, getOwn(form.values, field.key));
     if (error) errors.push(error);
   }
   if (isMedicationType(type)) {
     const selected = Object.values(form.medications);
-    if (selected.length === 0) errors.push('Select at least one medication.');
+    if (selected.length === 0) errors.push(t('events.validation.selectMedication'));
     for (const m of selected) {
       const error = doseError(m.name, m);
       if (error) errors.push(error);

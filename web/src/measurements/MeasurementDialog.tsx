@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -9,7 +10,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
+import { formatNumber } from '../i18n/format';
 import { useServerAction } from '../settings/useServerAction';
 import type { MeasurementDto } from '../sync/contract';
 import {
@@ -17,6 +18,7 @@ import {
   formFromDto,
   MEASUREMENT_ERROR_MESSAGES,
   METRICS,
+  metricLabel,
   todayLocal,
   MIN_DATE,
   validateForm,
@@ -34,6 +36,7 @@ interface Props {
 
 /** Add / edit dialog. The GUID is fixed when it opens, so a retried save never duplicates. */
 export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
+  const { t } = useTranslation();
   const actions = useMeasurementActions(babyId);
   const { run, pending, error, online } = useServerAction(MEASUREMENT_ERROR_MESSAGES);
   const [id] = useState(() => measurement?.id ?? crypto.randomUUID());
@@ -55,15 +58,15 @@ export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{measurement ? 'Edit measurement' : 'Add measurement'}</DialogTitle>
+      <DialogTitle>{measurement ? t('growth.edit') : t('growth.add')}</DialogTitle>
       <form onSubmit={(e) => void submit(e)} noValidate>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {!online && <Alert severity="warning">{OFFLINE_MESSAGE}</Alert>}
+            {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
             {error && <Alert severity="error">{error}</Alert>}
             {errors.values && <Alert severity="error">{errors.values}</Alert>}
             <TextField
-              label="Date"
+              label={t('growth.date')}
               type="date"
               value={form.date}
               onChange={(e) => set('date')(e.target.value)}
@@ -78,17 +81,24 @@ export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
             {METRICS.map((m) => (
               <TextField
                 key={m.key}
-                label={`${m.label} (${m.unit})`}
+                label={t('growth.metricLabel', { label: metricLabel(m), unit: m.unit })}
                 value={form[m.key]}
                 onChange={(e) => set(m.key)(e.target.value)}
                 error={!!errors[m.key]}
-                helperText={errors[m.key] ?? `${m.min} to ${m.max} ${m.unit}`}
+                helperText={
+                  errors[m.key] ??
+                  t('growth.range', {
+                    min: formatNumber(m.min),
+                    max: formatNumber(m.max),
+                    unit: m.unit,
+                  })
+                }
                 slotProps={{ htmlInput: { inputMode: 'decimal' } }}
                 autoComplete="off"
               />
             ))}
             <TextField
-              label="Notes"
+              label={t('common.notes')}
               value={form.notes}
               onChange={(e) => set('notes')(e.target.value)}
               error={!!errors.notes}
@@ -99,9 +109,9 @@ export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" variant="contained" disabled={pending || !online}>
-            Save
+            {t('common.save')}
           </Button>
         </DialogActions>
       </form>

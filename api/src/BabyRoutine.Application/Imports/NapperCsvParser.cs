@@ -51,6 +51,8 @@ internal static class NapperCsvParser
             BottleFeedingType = cells.Text("bottleFeedingType"),
             BreastLeftSeconds = cells.Integer("breastLeftSeconds"),
             BreastRightSeconds = cells.Integer("breastRightSeconds"),
+            AmountPumpedLeft = cells.Number("amountPumpedLeft"),
+            AmountPumpedRight = cells.Number("amountPumpedRight"),
             NumberOfPauses = cells.Integer("numberOfPauses"),
             PausedMinutes = cells.Number("pausedMinutes"),
             BabyMoodOnWakeUp = cells.Text("babyMoodOnWakeUp"),

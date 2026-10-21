@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Drawer, Stack, Typography } from '@mui/material';
 import type { Baby } from '../db/models';
 
@@ -13,8 +14,9 @@ export interface TrackSheetProps {
  * the preset tile grid; the props are the contract the app shell relies on.
  */
 export function TrackSheet({ open, onClose }: TrackSheetProps) {
+  const { t } = useTranslation();
   return (
-    <Drawer anchor="bottom" open={open} onClose={onClose} aria-label="Track">
+    <Drawer anchor="bottom" open={open} onClose={onClose} aria-label={t('track.title')}>
       <Stack sx={{ width: '100%', maxWidth: 480, mx: 'auto', px: 2, pb: 3, pt: 1.5 }} spacing={2}>
         <Box
           aria-hidden
@@ -27,9 +29,9 @@ export function TrackSheet({ open, onClose }: TrackSheetProps) {
           }}
         />
         <Typography variant="h5" component="h2">
-          Track
+          {t('track.title')}
         </Typography>
-        <Typography color="text.secondary">Quick actions will appear here.</Typography>
+        <Typography color="text.secondary">{t('track.placeholder')}</Typography>
       </Stack>
     </Drawer>
   );

@@ -14,10 +14,13 @@ internal interface INapperCategoryMapper
     NapperRowOutcome Map(NapperLogRow row);
 }
 
-/// <summary><c>BOTTLE</c> -> feeding, method <c>bottle</c>, <c>amount_ml</c> from <c>feedingAmount</c>, <c>bottle_feeding_type</c>.</summary>
+/// <summary>
+/// <c>BOTTLE</c> -> feeding, method <c>bottle</c>, <c>amount_ml</c> from <c>feedingAmount</c>, <c>bottle_feeding_type</c>
+/// from Napper's <c>FORMULA</c>|<c>BREAST_MILK</c> as the option values <c>formula</c>|<c>breast_milk</c> (case-insensitive).
+/// </summary>
 internal sealed class BottleMapper : INapperCategoryMapper
 {
-    private static readonly FrozenSet<string> BottleContents = new[] { "FORMULA", "BREAST_MILK" }.ToFrozenSet(StringComparer.Ordinal);
+    private static readonly FrozenSet<string> BottleContents = new[] { "formula", "breast_milk" }.ToFrozenSet(StringComparer.Ordinal);
 
     public EventType Type => BuiltInEventTypes.Feeding;
 
@@ -26,7 +29,7 @@ internal sealed class BottleMapper : INapperCategoryMapper
     /// <remarks>An unknown bottle content is kept in the notes instead of the select field.</remarks>
     public NapperRowOutcome Map(NapperLogRow row)
     {
-        var content = row.BottleFeedingType?.Trim().ToUpperInvariant();
+        var content = row.BottleFeedingType?.Trim().ToLowerInvariant();
         var knownContent = content is not null && BottleContents.Contains(content) ? content : null;
         var payload = new PayloadBuilder()
             .With("method", "bottle")
@@ -73,6 +76,28 @@ internal sealed class NursingMapper : INapperCategoryMapper
         var nursedSeconds = Math.Max(row.BreastLeftSeconds ?? 0, 0) + Math.Max(row.BreastRightSeconds ?? 0, 0);
         var storedAsInstant = row.End is null || row.End == row.Start;
         return storedAsInstant ? row.Start.AddSeconds(nursedSeconds) : row.End!.Value;
+    }
+}
+
+/// <summary>
+/// <c>PUMPING</c> and <c>BREAST_PUMP</c> -> breast_pump with <c>amount_left_ml</c>/<c>amount_right_ml</c> from
+/// <c>amountPumpedLeft</c>/<c>amountPumpedRight</c>; an empty end becomes the start.
+/// </summary>
+internal sealed class BreastPumpMapper : INapperCategoryMapper
+{
+    private static readonly FrozenSet<string> Categories = new[] { "PUMPING", "BREAST_PUMP" }.ToFrozenSet(StringComparer.Ordinal);
+
+    public EventType Type => BuiltInEventTypes.BreastPump;
+
+    public bool CanHandle(string category) => Categories.Contains(category);
+
+    public NapperRowOutcome Map(NapperLogRow row)
+    {
+        var payload = new PayloadBuilder()
+            .With("amount_left_ml", row.AmountPumpedLeft)
+            .With("amount_right_ml", row.AmountPumpedRight)
+            .Build();
+        return NapperRowOutcome.Mapped(new NapperEventDraft(row, Type, row.Start, row.End ?? row.Start, payload, NapperNotes.Compose(row.Comment), []));
     }
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Chip,
@@ -15,6 +16,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import { canWrite } from '../baby/permissions';
 import { useMedicationCommands, useMedications } from '../db/hooks';
 import type { Baby, Medication } from '../db/models';
+import { t } from '../i18n/i18n';
+import { formatNumber } from '../i18n/format';
 import { ConfirmDialog } from './ConfirmDialog';
 import { MedicationDialog } from './MedicationDialog';
 
@@ -22,7 +25,9 @@ type Editing = { medication: Medication } | 'new' | null;
 
 function dosageText(medication: Medication): string | null {
   const dose = medication.defaultDosage;
-  return dose ? `${dose.amount} ${dose.unit}` : null;
+  return dose
+    ? t('settings.medications.dose', { amount: formatNumber(dose.amount), unit: dose.unit })
+    : null;
 }
 
 function MedicationRow({
@@ -36,16 +41,23 @@ function MedicationRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <ListItem
       divider
       secondaryAction={
         writable && (
           <Stack direction="row">
-            <IconButton aria-label={`Edit ${medication.name}`} onClick={onEdit}>
+            <IconButton
+              aria-label={t('settings.medications.editNamed', { name: medication.name })}
+              onClick={onEdit}
+            >
               <EditIcon />
             </IconButton>
-            <IconButton aria-label={`Delete ${medication.name}`} onClick={onDelete}>
+            <IconButton
+              aria-label={t('settings.medications.deleteNamed', { name: medication.name })}
+              onClick={onDelete}
+            >
               <DeleteIcon />
             </IconButton>
           </Stack>
@@ -56,7 +68,7 @@ function MedicationRow({
         primary={
           <>
             {medication.name}
-            {medication.isUsual && <Chip size="small" label="Usual" sx={{ ml: 1 }} />}
+            {medication.isUsual && <Chip size="small" label={t('events.usual')} sx={{ ml: 1 }} />}
           </>
         }
         secondary={[dosageText(medication), medication.notes].filter(Boolean).join(' · ')}
@@ -67,6 +79,7 @@ function MedicationRow({
 
 /** Medication catalog. Works offline: edits go through the local store and the outbox. */
 export function MedicationsSection({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const medications = useMedications(baby.id);
   const commands = useMedicationCommands();
   const writable = canWrite(baby);
@@ -78,9 +91,9 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
   return (
     <Stack spacing={1}>
       {medications.length === 0 && (
-        <Typography color="text.secondary">No medications yet.</Typography>
+        <Typography color="text.secondary">{t('settings.medications.none')}</Typography>
       )}
-      <List aria-label="Medications" disablePadding>
+      <List aria-label={t('settings.medications.list')} disablePadding>
         {medications.map((m) => (
           <MedicationRow
             key={m.id}
@@ -98,12 +111,10 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
           onClick={() => setEditing('new')}
           sx={{ minHeight: 48, alignSelf: 'flex-start' }}
         >
-          Add medication
+          {t('settings.medications.add')}
         </Button>
       ) : (
-        <Typography color="text.secondary">
-          You can view medications but not change them.
-        </Typography>
+        <Typography color="text.secondary">{t('settings.medications.viewOnly')}</Typography>
       )}
       {editing && (
         <MedicationDialog
@@ -114,9 +125,9 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
       )}
       {deleting && (
         <ConfirmDialog
-          title={`Delete ${deleting.name}?`}
-          body="Past events keep their own copy of the medication."
-          confirmLabel="Delete medication"
+          title={t('settings.medications.deleteTitle', { name: deleting.name })}
+          body={t('settings.medications.deleteBody')}
+          confirmLabel={t('settings.medications.deleteConfirm')}
           onCancel={() => setDeleting(null)}
           onConfirm={() => {
             void commands.remove(deleting.id);

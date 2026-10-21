@@ -1,4 +1,5 @@
 import { useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { BottomNavigationAction, Box, Fab, Paper } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -14,17 +15,18 @@ import { TrackSheet } from '../track/TrackSheet';
 
 interface NavItem {
   to: string;
-  label: string;
+  /** Catalog key under `nav`. */
+  label: 'home' | 'timeline' | 'growth' | 'settings';
   icon: ReactElement;
 }
 
 const START: NavItem[] = [
-  { to: '/', label: 'Home', icon: <HomeRoundedIcon /> },
-  { to: '/timeline', label: 'Timeline', icon: <TimelineRoundedIcon /> },
+  { to: '/', label: 'home', icon: <HomeRoundedIcon /> },
+  { to: '/timeline', label: 'timeline', icon: <TimelineRoundedIcon /> },
 ];
 const END: NavItem[] = [
-  { to: '/growth', label: 'Growth', icon: <BarChartRoundedIcon /> },
-  { to: '/settings', label: 'Settings', icon: <SettingsRoundedIcon /> },
+  { to: '/growth', label: 'growth', icon: <BarChartRoundedIcon /> },
+  { to: '/settings', label: 'settings', icon: <SettingsRoundedIcon /> },
 ];
 
 function isActive(item: NavItem, pathname: string) {
@@ -32,6 +34,7 @@ function isActive(item: NavItem, pathname: string) {
 }
 
 function NavLinks({ items, pathname }: { items: NavItem[]; pathname: string }) {
+  const { t } = useTranslation();
   return items.map((item) => {
     const active = isActive(item, pathname);
     return (
@@ -42,7 +45,7 @@ function NavLinks({ items, pathname }: { items: NavItem[]; pathname: string }) {
         showLabel
         selected={active}
         aria-current={active ? 'page' : undefined}
-        label={item.label}
+        label={t(`nav.${item.label}`)}
         icon={item.icon}
       />
     );
@@ -51,6 +54,7 @@ function NavLinks({ items, pathname }: { items: NavItem[]; pathname: string }) {
 
 /** Home, Timeline, a raised "Add event" action in the middle, Growth, Settings. */
 export function BottomNav() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { baby } = useSelectedBaby();
   const [trackOpen, setTrackOpen] = useState(false);
@@ -60,7 +64,7 @@ export function BottomNav() {
     <>
       <Paper
         component="nav"
-        aria-label="Main"
+        aria-label={t('nav.main')}
         elevation={0}
         square
         sx={(theme) => ({
@@ -89,7 +93,7 @@ export function BottomNav() {
             {canTrack && (
               <Fab
                 color="primary"
-                aria-label="Add event"
+                aria-label={t('nav.addEvent')}
                 aria-haspopup="dialog"
                 aria-expanded={trackOpen}
                 onClick={() => setTrackOpen((open) => !open)}

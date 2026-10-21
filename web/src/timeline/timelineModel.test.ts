@@ -58,10 +58,10 @@ describe('timelineModel', () => {
   it('describes duration, instant and running times', () => {
     const feeding = type(FEEDING);
     expect(describeTimes(event({ endedAt: local(20, 8, 45) }), feeding)).toBe(
-      '08:00 – 08:45 · 45 min',
+      '08:00 – 08:45 · 45m',
     );
     expect(describeTimes(event({ endedAt: local(20, 9, 30) }), feeding)).toBe(
-      '08:00 – 09:30 · 1 h 30 min',
+      '08:00 – 09:30 · 1h 30m',
     );
     expect(describeTimes(event({ typeId: DIAPER, endedAt: local(20, 8) }), type(DIAPER))).toBe(
       '08:00',
@@ -105,7 +105,7 @@ describe('payloadSummary', () => {
 
   it('summarizes type fields with units', () => {
     expect(payloadSummary({ method: 'bottle', amount_ml: 120 }, bottleType)).toBe(
-      'bottle · 120 ml',
+      'Bottle · 120 ml',
     );
   });
 
@@ -128,10 +128,10 @@ describe('payloadSummary', () => {
     };
     expect(
       payloadSummary({ method: 'bottle', amount_ml: 90, breast_left_seconds: 300 }, breast),
-    ).toBe('bottle · 90 ml · 300 s');
+    ).toBe('Bottle · 90 ml · 300 s');
     // An event stored before the key rename still shows its amount as an unknown value.
     expect(payloadSummary({ method: 'bottle', amount: 120 }, bottleType)).toBe(
-      'bottle · Amount 120',
+      'Bottle · Amount 120',
     );
   });
 
@@ -140,7 +140,7 @@ describe('payloadSummary', () => {
   });
 
   it('shows diaper content and values the type does not describe', () => {
-    expect(payloadSummary({ content: 'DIRTY' }, type(DIAPER))).toBe('DIRTY');
+    expect(payloadSummary({ content: 'DIRTY' }, type(DIAPER))).toBe('Dirty');
     expect(payloadSummary({ content: 'WET', pauses: 2 }, { ...type(DIAPER)!, fields: [] })).toBe(
       'WET · Pauses 2',
     );

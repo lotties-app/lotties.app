@@ -1,5 +1,5 @@
+import { useTranslation } from 'react-i18next';
 import { Alert, Step, StepContent, StepLabel, Stepper, Typography } from '@mui/material';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
 import { canWrite } from '../baby/permissions';
 import type { Baby } from '../db/models';
 import { ErrorNotice } from '../settings/ErrorNotice';
@@ -8,7 +8,7 @@ import { FilesStep } from './FilesStep';
 import { MedicationsStep } from './MedicationsStep';
 import { PreviewStep } from './PreviewStep';
 import { ResultStep } from './ResultStep';
-import { STEP, STEP_LABELS, useNapperImport, type NapperImport } from './useNapperImport';
+import { STEP, STEP_KEYS, useNapperImport, type NapperImport } from './useNapperImport';
 
 function StepBody({ baby, flow }: { baby: Baby; flow: NapperImport }) {
   const { preview } = flow;
@@ -69,28 +69,25 @@ function StepBody({ baby, flow }: { baby: Baby; flow: NapperImport }) {
 
 /** Napper CSV importer (Settings > Import). Parents and owners only; needs a connection. */
 export function ImportSection({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const flow = useNapperImport(baby);
 
   if (!canWrite(baby)) {
-    return (
-      <Typography color="text.secondary">
-        Only parents and owners can import data into this baby.
-      </Typography>
-    );
+    return <Typography color="text.secondary">{t('import.viewerBlocked')}</Typography>;
   }
 
   return (
     <>
       {!flow.online && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          {OFFLINE_MESSAGE}
+          {t('errors.offline')}
         </Alert>
       )}
       <ErrorNotice message={flow.error} />
-      <Stepper activeStep={flow.step} orientation="vertical" aria-label="Napper import steps">
-        {STEP_LABELS.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
+      <Stepper activeStep={flow.step} orientation="vertical" aria-label={t('import.stepsLabel')}>
+        {STEP_KEYS.map((key) => (
+          <Step key={key}>
+            <StepLabel>{t(`import.steps.${key}`)}</StepLabel>
             <StepContent>
               <StepBody baby={baby} flow={flow} />
             </StepContent>

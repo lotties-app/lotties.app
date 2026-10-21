@@ -6,7 +6,8 @@ namespace BabyRoutine.Domain.EventTypes;
 /// <summary>
 /// Definition of one field in an event's payload. <see cref="Options"/> apply only to
 /// <see cref="EventFieldKind.Select"/>; <see cref="Min"/>, <see cref="Max"/> and <see cref="Unit"/> only to
-/// <see cref="EventFieldKind.Number"/>.
+/// <see cref="EventFieldKind.Number"/>. <see cref="VisibleWhen"/> (any kind) shows the field only for some values of
+/// another select field; a hidden field is never required and must not hold a value.
 /// </summary>
 public sealed class EventFieldDefinition
 {
@@ -22,7 +23,8 @@ public sealed class EventFieldDefinition
         IReadOnlyList<string> options,
         decimal? min,
         decimal? max,
-        string? unit)
+        string? unit,
+        FieldVisibilityCondition? visibleWhen)
     {
         Key = key;
         Label = label;
@@ -32,6 +34,7 @@ public sealed class EventFieldDefinition
         Min = min;
         Max = max;
         Unit = unit;
+        VisibleWhen = visibleWhen;
     }
 
     /// <summary>Lower snake_case property name inside the event payload.</summary>
@@ -51,6 +54,9 @@ public sealed class EventFieldDefinition
 
     public string? Unit { get; }
 
+    /// <summary>When set, the field applies only while the referenced select field holds one of the listed values.</summary>
+    public FieldVisibilityCondition? VisibleWhen { get; }
+
     public static EventFieldDefinition Create(
         string key,
         string label,
@@ -59,18 +65,21 @@ public sealed class EventFieldDefinition
         IEnumerable<string>? options = null,
         decimal? min = null,
         decimal? max = null,
-        string? unit = null)
+        string? unit = null,
+        FieldVisibilityCondition? visibleWhen = null)
     {
         var validatedKind = EnsureDefined(kind);
+        var validatedKey = EnsureKey(key);
         return new EventFieldDefinition(
-            EnsureKey(key),
+            validatedKey,
             Text.Required(label, nameof(Label), LabelMaxLength),
             validatedKind,
             isRequired,
             ValidateOptions(validatedKind, options),
             ValidateNumberOnly(validatedKind, min, nameof(Min)),
             ValidateMax(validatedKind, min, max),
-            ValidateUnit(validatedKind, unit));
+            ValidateUnit(validatedKind, unit),
+            EnsureNotSelfReferencing(validatedKey, visibleWhen));
     }
 
     private static string EnsureKey(string? key)
@@ -82,6 +91,11 @@ public sealed class EventFieldDefinition
 
         return key!;
     }
+
+    private static FieldVisibilityCondition? EnsureNotSelfReferencing(string key, FieldVisibilityCondition? visibleWhen) =>
+        visibleWhen is null || !string.Equals(visibleWhen.Field, key, StringComparison.Ordinal)
+            ? visibleWhen
+            : throw new DomainValidationException(nameof(VisibleWhen), $"Field '{key}' cannot depend on itself.");
 
     private static EventFieldKind EnsureDefined(EventFieldKind kind)
     {

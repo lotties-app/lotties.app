@@ -9,11 +9,16 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import type { EventFieldDefinition } from '../db/models';
+import type { EventFieldDefinition, EventType } from '../db/models';
+import { useEventTypeText } from '../i18n/eventTypeText';
 
 type Value = string | boolean | undefined;
 
+/** A type with no translations: labels fall back to what the field carries. */
+const NO_TYPE = { key: '', babyId: '' } as const;
+
 interface FieldProps {
+  type: Pick<EventType, 'key' | 'babyId'> | undefined;
   field: EventFieldDefinition;
   value: Value;
   onChange: (value: string | boolean) => void;
@@ -33,10 +38,18 @@ function choicesFor(field: EventFieldDefinition): string[] | null {
   return null;
 }
 
-function ChoiceField({ field, value, onChange, choices }: FieldProps & { choices: string[] }) {
+function ChoiceField({
+  type,
+  field,
+  value,
+  onChange,
+  choices,
+}: FieldProps & { choices: string[] }) {
+  const text = useEventTypeText();
+  const label = text.fieldLabel(type ?? NO_TYPE, field);
   return (
     <FormControl required={field.isRequired}>
-      <FormLabel id={`field-${field.key}`}>{field.label}</FormLabel>
+      <FormLabel id={`field-${field.key}`}>{label}</FormLabel>
       <ToggleButtonGroup
         exclusive
         fullWidth
@@ -46,7 +59,7 @@ function ChoiceField({ field, value, onChange, choices }: FieldProps & { choices
       >
         {choices.map((choice) => (
           <ToggleButton key={choice} value={choice} sx={{ minHeight: 48 }}>
-            {choice}
+            {field.kind === 'select' ? text.optionLabel(type ?? NO_TYPE, field, choice) : choice}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
@@ -54,21 +67,23 @@ function ChoiceField({ field, value, onChange, choices }: FieldProps & { choices
   );
 }
 
-function BoolField({ field, value, onChange }: FieldProps) {
+function BoolField({ type, field, value, onChange }: FieldProps) {
+  const text = useEventTypeText();
   return (
     <FormControlLabel
-      label={field.label}
+      label={text.fieldLabel(type ?? NO_TYPE, field)}
       control={<Switch checked={value === true} onChange={(_, on) => onChange(on)} />}
     />
   );
 }
 
-function InputField({ field, value, onChange }: FieldProps) {
+function InputField({ type, field, value, onChange }: FieldProps) {
+  const text = useEventTypeText();
   const isNumber = field.kind === 'number';
   const isSelect = field.kind === 'select';
   return (
     <TextField
-      label={field.label}
+      label={text.fieldLabel(type ?? NO_TYPE, field)}
       required={field.isRequired}
       select={isSelect}
       type={isNumber ? 'number' : 'text'}
@@ -84,7 +99,7 @@ function InputField({ field, value, onChange }: FieldProps) {
       {isSelect &&
         field.options.map((option) => (
           <MenuItem key={option} value={option}>
-            {option}
+            {text.optionLabel(type ?? NO_TYPE, field, option)}
           </MenuItem>
         ))}
     </TextField>

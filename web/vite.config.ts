@@ -6,6 +6,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 const vendor = (...packages: string[]) =>
   new RegExp(`node_modules[\\/](${packages.join('|')})[\\/]`);
 
+/** MUI's per-language strings (`@mui/material/locale`). */
+const MUI_LOCALES = /@mui[\\/]material[\\/](esm[\\/])?locale[\\/]/;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -67,7 +70,12 @@ export default defineConfig({
               test: vendor('dexie', 'dexie-react-hooks', '@tanstack'),
               priority: 30,
             },
-            { name: 'vendor-mui', test: vendor('@mui', '@emotion'), priority: 20 },
+            {
+              name: 'vendor-mui',
+              // MUI's per-language strings stay out: pt-BR loads them with its own lazy chunk.
+              test: (id: string) => vendor('@mui', '@emotion').test(id) && !MUI_LOCALES.test(id),
+              priority: 20,
+            },
           ],
         },
       },

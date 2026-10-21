@@ -24,21 +24,6 @@ export function formatElapsed(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-/** `hh:mm` (24 h) in the local zone. */
-export function formatClock(iso: string): string {
-  const d = new Date(iso);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-/** Rounded to whole minutes: `45 min`, `1 h`, `2 h 05 min`. Never negative. */
-export function formatDuration(ms: number): string {
-  const minutes = Math.max(0, Math.round(ms / 60_000));
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  return m === 0 ? `${h} h` : `${h} h ${pad(m)} min`;
-}
-
 /**
  * Current time in ms, re-rendering every `intervalMs` (default 1 s). Elapsed values derive from
  * `startedAt`, so no drift.

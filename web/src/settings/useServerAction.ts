@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { describeApiError, OFFLINE_MESSAGE } from '../api/errorMessages';
+import { describeApiError, offlineMessage, type ErrorOverrides } from '../api/errorMessages';
 import { useOnline } from '../sync/useOnline';
 
 export interface ServerAction {
@@ -12,14 +12,14 @@ export interface ServerAction {
 }
 
 /** Wraps an online-only server call with pending/error state and an offline guard. */
-export function useServerAction(messages?: Record<string, string>): ServerAction {
+export function useServerAction(messages?: ErrorOverrides): ServerAction {
   const online = useOnline();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const run = async (action: () => Promise<unknown>) => {
     if (!online) {
-      setError(OFFLINE_MESSAGE);
+      setError(offlineMessage());
       return false;
     }
     setPending(true);

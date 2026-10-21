@@ -1,4 +1,5 @@
 import type { EventFieldKind, EventType } from '../db/models';
+import { t } from '../i18n/i18n';
 import type { CreateEventTypeRequest, EventFieldRequest, EventTypeRequest } from '../sync/contract';
 
 export const COLOR_PALETTE: readonly string[] = [
@@ -14,12 +15,8 @@ export const COLOR_PALETTE: readonly string[] = [
   '#6d4c41',
 ];
 
-export const FIELD_KINDS: readonly { kind: EventFieldKind; label: string }[] = [
-  { kind: 'text', label: 'Text' },
-  { kind: 'number', label: 'Number' },
-  { kind: 'select', label: 'Choice' },
-  { kind: 'bool', label: 'Yes / no' },
-];
+/** Field kinds a custom type can use; labels are `settings.eventTypes.kinds.<kind>`. */
+export const FIELD_KINDS: readonly EventFieldKind[] = ['text', 'number', 'select', 'bool'];
 
 const MAX_KEY_LENGTH = 40;
 
@@ -134,19 +131,19 @@ function resolveKeys(fields: FieldDraft[]): string[] {
 }
 
 function fieldErrors(field: FieldDraft, position: number): string[] {
-  const name = field.label.trim() || `Field ${position}`;
-  if (!field.label.trim()) return [`${name} needs a label.`];
+  const name = field.label.trim() || t('settings.eventTypes.fieldN', { position });
+  if (!field.label.trim()) return [t('settings.eventTypes.validation.needsLabel', { field: name })];
   const errors: string[] = [];
   if (field.kind === 'select' && parseOptions(field.options).length < 2) {
-    errors.push(`${name} needs at least two options.`);
+    errors.push(t('settings.eventTypes.validation.needsOptions', { field: name }));
   }
   if (field.kind === 'number') {
     const min = parseBound(field.min);
     const max = parseBound(field.max);
     if (Number.isNaN(min) || Number.isNaN(max))
-      errors.push(`${name}: min and max must be numbers.`);
+      errors.push(t('settings.eventTypes.validation.boundsNumbers', { field: name }));
     else if (min !== null && max !== null && min > max) {
-      errors.push(`${name}: min must not be above max.`);
+      errors.push(t('settings.eventTypes.validation.boundsOrder', { field: name }));
     }
   }
   return errors;
@@ -154,9 +151,9 @@ function fieldErrors(field: FieldDraft, position: number): string[] {
 
 export function validateDraft(draft: EventTypeDraft, creating: boolean): string[] {
   const errors: string[] = [];
-  if (!draft.name.trim()) errors.push('Name is required.');
+  if (!draft.name.trim()) errors.push(t('settings.eventTypes.validation.nameRequired'));
   else if (creating && !slugify(draft.name)) {
-    errors.push('Name must contain at least one letter or digit.');
+    errors.push(t('settings.eventTypes.validation.nameInvalid'));
   }
   draft.fields.forEach((field, i) => errors.push(...fieldErrors(field, i + 1)));
   return errors;

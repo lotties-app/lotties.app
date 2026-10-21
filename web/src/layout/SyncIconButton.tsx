@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import CloudDoneRoundedIcon from '@mui/icons-material/CloudDoneRounded';
@@ -35,6 +36,7 @@ function SyncIcon({ status }: { status: SyncStatus }) {
 
 /** Header icon button: sync state at a glance, opens Settings > Sync. */
 export function SyncIconButton() {
+  const { t } = useTranslation();
   const status = useSyncStatus();
   const label = syncLabel(status);
   return (
@@ -43,7 +45,7 @@ export function SyncIconButton() {
         component={Link}
         to="/settings#sync"
         color="inherit"
-        aria-label={`Sync: ${label}. Open sync settings`}
+        aria-label={t('sync.iconLabel', { label })}
       >
         <SyncIcon status={status} />
       </IconButton>

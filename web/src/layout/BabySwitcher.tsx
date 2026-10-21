@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ButtonBase, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import { BabyAvatar } from '../baby/BabyAvatar';
-import { formatAge } from '../baby/formatAge';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
+import { formatAge } from '../i18n/format';
 
 const grow = { flexGrow: 1, minWidth: 0 };
 
@@ -29,13 +30,14 @@ function BabyHeading({ baby, switchable }: { baby: Baby; switchable: boolean }) 
 
 /** Avatar, name and age line; a menu to switch babies when there is more than one. */
 export function BabySwitcher() {
+  const { t } = useTranslation();
   const { babies, baby, select } = useSelectedBaby();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
   if (!baby) {
     return (
       <Typography variant="h5" component="p" sx={grow}>
-        Baby Routine
+        {t('app.name')}
       </Typography>
     );
   }
@@ -52,7 +54,7 @@ export function BabySwitcher() {
       <ButtonBase
         onClick={(e) => setAnchor(e.currentTarget)}
         aria-haspopup="menu"
-        aria-label={`${baby.name}, switch baby`}
+        aria-label={t('layout.switchBaby', { name: baby.name })}
         sx={{ ...grow, justifyContent: 'flex-start', minHeight: 44, borderRadius: 2, py: 0.5 }}
       >
         <BabyHeading baby={baby} switchable />

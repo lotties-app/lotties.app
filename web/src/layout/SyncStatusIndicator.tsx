@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Chip, CircularProgress, Tooltip } from '@mui/material';
 import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
@@ -41,6 +42,7 @@ function presentSyncStatus(status: SyncStatus): Presentation {
 
 /** Compact sync state chip; the last error is available as a tooltip. */
 export function SyncStatusIndicator() {
+  const { t } = useTranslation();
   const status = useSyncStatus();
   const { label, tone, icon } = presentSyncStatus(status);
   return (
@@ -52,7 +54,7 @@ export function SyncStatusIndicator() {
         icon={icon}
         label={label}
         role="status"
-        aria-label={`Sync status: ${label}`}
+        aria-label={t('sync.statusLabel', { label })}
       />
     </Tooltip>
   );

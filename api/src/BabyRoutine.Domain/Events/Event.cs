@@ -141,6 +141,16 @@ public sealed class Event
         };
     }
 
+    /// <summary>
+    /// Whether an edit to these details must have its payload checked against the type's fields: when the type or the
+    /// payload (compared as JSON values) changes, or a running event is being completed. A payload stored before the
+    /// field rules existed stays editable (times, notes) as long as it is sent back unchanged.
+    /// </summary>
+    public bool NeedsPayloadCheck(Guid typeId, EventPayload payload, DateTimeOffset? endedAt) =>
+        TypeId != typeId
+        || !Payload.IsEquivalentTo(payload)
+        || (EndedAt is null && endedAt is not null);
+
     /// <summary>Ends a running event; a server-side change, so <see cref="ClientUpdatedAt"/> becomes <paramref name="now"/> too.</summary>
     public void Stop(DateTimeOffset endedAt, DateTimeOffset now)
     {

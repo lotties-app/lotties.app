@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -11,8 +12,10 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
+import { describeApiError } from '../api/errorMessages';
 import { useMedicationCommands } from '../db/hooks';
 import type { Dosage, Medication } from '../db/models';
+import { t } from '../i18n/i18n';
 
 interface Props {
   babyId: string;
@@ -25,12 +28,13 @@ interface Props {
 function parseDosage(amount: string, unit: string): Dosage | null | string {
   if (!amount.trim() && !unit.trim()) return null;
   const n = Number(amount);
-  if (!amount.trim() || !Number.isFinite(n) || n <= 0) return 'Dose must be a positive number.';
-  if (!unit.trim()) return 'A dose needs a unit.';
+  if (!amount.trim() || !Number.isFinite(n) || n <= 0) return t('settings.medications.doseInvalid');
+  if (!unit.trim()) return t('settings.medications.doseNeedsUnit');
   return { amount: n, unit: unit.trim() };
 }
 
 export function MedicationDialog({ babyId, medication, onClose }: Props) {
+  const { t } = useTranslation();
   const commands = useMedicationCommands();
   const [name, setName] = useState(medication?.name ?? '');
   const [amount, setAmount] = useState(
@@ -44,7 +48,7 @@ export function MedicationDialog({ babyId, medication, onClose }: Props) {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const dosage = parseDosage(amount, unit);
-    if (!name.trim()) return setError('Name is required.');
+    if (!name.trim()) return setError(t('settings.medications.nameRequired'));
     if (typeof dosage === 'string') return setError(dosage);
     const changes = {
       name,
@@ -57,19 +61,21 @@ export function MedicationDialog({ babyId, medication, onClose }: Props) {
       else await commands.create({ babyId, ...changes });
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save the medication.');
+      setError(e instanceof Error ? describeApiError(e) : t('settings.medications.saveFailed'));
     }
   };
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{medication ? 'Edit medication' : 'Add medication'}</DialogTitle>
+      <DialogTitle>
+        {medication ? t('settings.medications.edit') : t('settings.medications.add')}
+      </DialogTitle>
       <form onSubmit={(e) => void submit(e)} noValidate>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <Alert severity="error">{error}</Alert>}
             <TextField
-              label="Name"
+              label={t('common.name')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -77,36 +83,36 @@ export function MedicationDialog({ babyId, medication, onClose }: Props) {
             />
             <Stack direction="row" spacing={1}>
               <TextField
-                label="Default dose"
+                label={t('settings.medications.defaultDose')}
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 sx={{ flex: 2 }}
               />
               <TextField
-                label="Unit"
+                label={t('common.unit')}
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 sx={{ flex: 1 }}
               />
             </Stack>
             <TextField
-              label="Notes"
+              label={t('common.notes')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               multiline
               minRows={2}
             />
             <FormControlLabel
-              label="Usual medication"
+              label={t('settings.medications.usualSwitch')}
               control={<Switch checked={isUsual} onChange={(_, on) => setIsUsual(on)} />}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" variant="contained">
-            Save
+            {t('common.save')}
           </Button>
         </DialogActions>
       </form>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -32,6 +33,7 @@ export function UnsyncedChangesDialog({
   onProceed,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Dialog open onClose={onCancel}>
       <DialogTitle>{title}</DialogTitle>
@@ -44,7 +46,7 @@ export function UnsyncedChangesDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onCancel}>{t('common.cancel')}</Button>
         <Button onClick={onPush} disabled={pending}>
           {pushLabel}
         </Button>

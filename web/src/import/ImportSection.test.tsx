@@ -300,7 +300,7 @@ describe('Napper import', () => {
     [
       'preview too many rows',
       new ApiError(400, { code: 'import_too_many_rows', maxRows: 20000 }),
-      /too many rows \(limit 20000\)/,
+      /too many rows \(limit 20,000\)/,
     ],
     [
       'preview invalid file',

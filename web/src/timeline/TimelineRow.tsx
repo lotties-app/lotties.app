@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Chip, ListItemButton, ListItemIcon, ListItemText, Stack, Tooltip } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
@@ -5,6 +6,7 @@ import type { BabyEvent, EventType, Medication } from '../db/models';
 import type { EntitySyncState } from '../db/queries';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
+import { useEventTypeText } from '../i18n/eventTypeText';
 import { payloadSummary } from './payloadSummary';
 import { describeTimes } from './timelineModel';
 
@@ -19,9 +21,10 @@ interface Props {
 }
 
 function SyncBadge({ state }: { state: EntitySyncState | undefined }) {
+  const { t } = useTranslation();
   if (!state) return null;
   const dead = state === 'dead';
-  const label = dead ? 'Sync failed' : 'Not synced yet';
+  const label = dead ? t('timeline.syncFailed') : t('timeline.notSynced');
   return (
     <Tooltip title={label}>
       {dead ? (
@@ -41,14 +44,16 @@ export function TimelineRow({
   onEdit,
   readOnly = false,
 }: Props) {
-  const name = type?.name ?? 'Event';
-  const summary = payloadSummary(event.payload, type, medications);
+  const { t } = useTranslation();
+  const names = useEventTypeText();
+  const name = type ? names.typeName(type) : t('common.event');
+  const summary = payloadSummary(event.payload, type, medications, names);
   const running = event.endedAt === null;
   return (
     <ListItemButton
       onClick={() => onEdit(event)}
       disabled={readOnly}
-      aria-label={readOnly ? name : `Edit ${name}`}
+      aria-label={readOnly ? name : t('home.editNamed', { name })}
       sx={{ gap: 1, '&.Mui-disabled': { opacity: 1 } }}
     >
       <ListItemIcon sx={{ minWidth: 40 }}>
@@ -57,12 +62,14 @@ export function TimelineRow({
       <ListItemText
         primary={name}
         secondary={
-          summary ? `${describeTimes(event, type)} · ${summary}` : describeTimes(event, type)
+          summary
+            ? t('timeline.rowSummary', { times: describeTimes(event, type), summary })
+            : describeTimes(event, type)
         }
         slotProps={{ secondary: { noWrap: true } }}
       />
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
-        {running && <Chip size="small" color="success" label="Running" />}
+        {running && <Chip size="small" color="success" label={t('common.running')} />}
         <SyncBadge state={syncState} />
       </Stack>
     </ListItemButton>

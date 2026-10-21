@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogTitle, Drawer, useMediaQuery, useTheme } from '@mui/material';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { EventForm, type EventFormProps } from './EventForm';
@@ -7,9 +8,10 @@ import { EventForm, type EventFormProps } from './EventForm';
  * Mount it only while open so the form always starts from fresh props (and from "now").
  */
 export function EventSheet(props: EventFormProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const title = props.event ? 'Edit event' : 'Add event';
+  const title = props.event ? t('events.editTitle') : t('events.addTitle');
   const form = (
     <ErrorBoundary>
       <EventForm {...props} />

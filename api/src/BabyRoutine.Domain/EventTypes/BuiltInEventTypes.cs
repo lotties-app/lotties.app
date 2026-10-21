@@ -8,7 +8,9 @@ namespace BabyRoutine.Domain.EventTypes;
 /// The medication type has no field definitions: its payload is
 /// <c>{"medications":[{"medicationId":"&lt;guid&gt;","name":"&lt;copy of the name&gt;","dose":{"amount":..,"unit":".."}}]}</c>
 /// (dose optional), referencing the baby's medication catalog. Sleep <c>kind</c> also has the instant markers
-/// <c>bed_time</c> and <c>woke_up</c> (Napper import).
+/// <c>bed_time</c> and <c>woke_up</c> (Napper import). Feeding details depend on <c>method</c> (<see cref="FieldVisibilityCondition"/>):
+/// <c>side</c> and the breast seconds for <c>breast</c>, <c>amount_ml</c> and <c>bottle_feeding_type</c> for <c>bottle</c>,
+/// <c>food</c> for <c>solid</c>.
 /// </remarks>
 public static class BuiltInEventTypes
 {
@@ -19,6 +21,7 @@ public static class BuiltInEventTypes
     public static readonly Guid TummyTimeId = new("543cbd04-e226-435c-9639-810ecd066056");
     public static readonly Guid MedicationId = new("bd43d7fb-e12c-438a-852e-c710b41a7c76");
     public static readonly Guid BellyPainId = new("07a1ea45-7ba6-4fe3-9e38-a335da9ea12c");
+    public static readonly Guid BreastPumpId = new("ddfdaa52-57ee-4d34-8129-a78262c2172c");
 
     public static EventType Feeding { get; } = EventType.CreateBuiltIn(
         FeedingId,
@@ -29,11 +32,12 @@ public static class BuiltInEventTypes
         hasDuration: true,
         [
             EventFieldDefinition.Create("method", "Method", EventFieldKind.Select, isRequired: true, options: ["breast", "bottle", "solid"]),
-            EventFieldDefinition.Create("side", "Side", EventFieldKind.Select, options: ["left", "right", "both"]),
-            EventFieldDefinition.Create("amount_ml", "Amount", EventFieldKind.Number, min: 0, unit: "ml"),
-            EventFieldDefinition.Create("bottle_feeding_type", "Bottle content", EventFieldKind.Select, options: ["FORMULA", "BREAST_MILK"]),
-            EventFieldDefinition.Create("breast_left_seconds", "Left breast", EventFieldKind.Number, min: 0, unit: "s"),
-            EventFieldDefinition.Create("breast_right_seconds", "Right breast", EventFieldKind.Number, min: 0, unit: "s"),
+            EventFieldDefinition.Create("side", "Side", EventFieldKind.Select, options: ["left", "right", "both"], visibleWhen: WhenMethodIs("breast")),
+            EventFieldDefinition.Create("amount_ml", "Amount", EventFieldKind.Number, min: 0, unit: "ml", visibleWhen: WhenMethodIs("bottle")),
+            EventFieldDefinition.Create("bottle_feeding_type", "Bottle content", EventFieldKind.Select, options: ["formula", "breast_milk"], visibleWhen: WhenMethodIs("bottle")),
+            EventFieldDefinition.Create("breast_left_seconds", "Left breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
+            EventFieldDefinition.Create("breast_right_seconds", "Right breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
+            EventFieldDefinition.Create("food", "Food", EventFieldKind.Text, visibleWhen: WhenMethodIs("solid")),
         ]);
 
     public static EventType Sleep { get; } = EventType.CreateBuiltIn(
@@ -101,6 +105,20 @@ public static class BuiltInEventTypes
             EventFieldDefinition.Create("intensity", "Intensity", EventFieldKind.Number, isRequired: true, min: 1, max: 5),
         ]);
 
+    public static EventType BreastPump { get; } = EventType.CreateBuiltIn(
+        BreastPumpId,
+        EventTypeKey.From("breast_pump"),
+        "Breast pump",
+        "opacity",
+        HexColor.From("#26c6da"),
+        hasDuration: true,
+        [
+            EventFieldDefinition.Create("amount_left_ml", "Left amount", EventFieldKind.Number, min: 0, unit: "ml"),
+            EventFieldDefinition.Create("amount_right_ml", "Right amount", EventFieldKind.Number, min: 0, unit: "ml"),
+        ]);
+
     public static IReadOnlyList<EventType> All { get; } = Array.AsReadOnly(
-        new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain });
+        new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump });
+
+    private static FieldVisibilityCondition WhenMethodIs(string method) => FieldVisibilityCondition.Create("method", [method]);
 }

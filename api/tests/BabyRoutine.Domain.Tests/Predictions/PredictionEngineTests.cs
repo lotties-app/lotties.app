@@ -73,6 +73,20 @@ public sealed class PredictionEngineTests
         Assert.Equal(AgeBand.UnderThreeMonths, prediction.Reason.AgeBand);
     }
 
+    [Fact]
+    public void Predict_BreastPumpEveryFourHours_IsPredictedLikeAnyOtherDurationType()
+    {
+        var breastPump = Domain.EventTypes.BuiltInEventTypes.BreastPump.Key;
+        var events = Every(breastPump, TimeSpan.FromHours(4), Now.AddDays(-14), Now.AddHours(-1), TimeSpan.FromMinutes(15));
+
+        var prediction = Assert.Single(Predict(events).Predictions);
+
+        Assert.Equal(breastPump, prediction.TypeKey);
+        Assert.Equal(PredictionBasis.StartInterval, prediction.Reason.Basis);
+        Assert.Equal(TimeSpan.FromMinutes(15), prediction.ExpectedDuration!.Median);
+        Assert.Null(prediction.Reason.Phase);
+    }
+
     [Theory]
     [InlineData(21, 23, DayPhase.Night)]
     [InlineData(11, 13, DayPhase.Day)]

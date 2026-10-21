@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Alert, Box, Button, Container, Typography } from '@mui/material';
 import { useAuth } from './useAuth';
 import type { LoginRedirectState } from './loginRedirect';
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, error, login } = useAuth();
   const from = (useLocation().state as LoginRedirectState | null)?.from ?? '/';
 
@@ -13,7 +15,7 @@ export function LoginPage() {
     <Container maxWidth="xs" sx={{ minHeight: '100dvh', display: 'grid', alignContent: 'center' }}>
       <Box sx={{ textAlign: 'center' }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Baby Routine
+          {t('app.name')}
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -28,7 +30,7 @@ export function LoginPage() {
           onClick={() => void login(from)}
           sx={{ minHeight: 56 }}
         >
-          Sign in
+          {t('auth.signIn')}
         </Button>
       </Box>
     </Container>

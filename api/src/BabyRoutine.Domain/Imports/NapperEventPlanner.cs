@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using BabyRoutine.Domain.Events;
+using BabyRoutine.Domain.EventTypes;
 using BabyRoutine.Domain.Exceptions;
 
 namespace BabyRoutine.Domain.Imports;
@@ -23,8 +24,9 @@ public sealed record NapperEventCandidate(
 public sealed record NapperEventPlan(int TotalRows, IReadOnlyList<NapperEventCandidate> Candidates, IReadOnlyList<ImportSkippedRow> Skipped);
 
 /// <summary>
-/// Turns parsed Napper rows into validated <see cref="Event"/>s (built with <see cref="Event.Create"/>, so the usual
-/// event rules apply) with deterministic ids. Rows that would create exactly the same event as an earlier row are
+/// Turns parsed Napper rows into validated <see cref="Event"/>s (built with <see cref="Event.Create"/> after the payload
+/// passed <see cref="EventType.EnsureValidPayload"/>, so the same event and field rules as the API apply) with
+/// deterministic ids. Rows that would create exactly the same event as an earlier row are
 /// skipped as duplicates; rows that share category, start and end but differ get distinct ids by ordinal. Nothing is
 /// saved: the same plan backs the preview and the import. Medicine rows may name at most
 /// <see cref="MedicationNameLimits.MaxDistinctNamesPerFile"/> distinct medications (else
@@ -95,6 +97,7 @@ public static class NapperEventPlanner
         try
         {
             var payload = draft.MedicationTokens.Count > 0 ? MedicationPayload(resolution.Medications) : draft.Payload;
+            draft.Type.EnsureValidPayload(payload, draft.EndedAt);
             var created = Event.Create(identified.Id, context.BabyId, draft.Type.Id, context.CreatedBy, draft.StartedAt, draft.EndedAt, payload, draft.Notes, context.Now);
             return BuildResult.Built(new NapperEventCandidate(draft.Source.RowNumber, draft.Source.Category, created, draft.MedicationTokens, resolution.Unmapped, resolution.Medications));
         }

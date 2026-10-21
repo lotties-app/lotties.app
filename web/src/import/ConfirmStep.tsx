@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, LinearProgress, Stack, Typography } from '@mui/material';
 import type { NapperPreviewDto } from '../sync/contract';
 import type { Choices } from './importModel';
@@ -11,8 +12,15 @@ interface Props {
   onImport: () => void;
 }
 
+function summaryKey(created: number, ignored: number) {
+  if (created > 0 && ignored > 0) return 'import.confirm.summaryBoth';
+  if (created > 0) return 'import.confirm.summaryCreated';
+  return ignored > 0 ? 'import.confirm.summaryIgnored' : 'import.confirm.summary';
+}
+
 /** Step 4: last look, then the one irreversible-ish action (disabled while it runs). */
 export function ConfirmStep({ preview, choices, pending, online, onBack, onImport }: Props) {
+  const { t } = useTranslation();
   const events = preview.logs?.toCreate ?? 0;
   const measurements = preview.measurements?.toCreate ?? 0;
   const created = Object.values(choices).filter((c) => c.action === 'create').length;
@@ -21,19 +29,20 @@ export function ConfirmStep({ preview, choices, pending, online, onBack, onImpor
   return (
     <Stack spacing={2}>
       <Typography>
-        Ready to import {events} event{events === 1 ? '' : 's'} and {measurements} measurement
-        {measurements === 1 ? '' : 's'}
-        {created > 0 && `, creating ${created} new medication${created === 1 ? '' : 's'}`}
-        {ignored > 0 && ` (${ignored} medication name${ignored === 1 ? '' : 's'} ignored)`}.
+        {t(summaryKey(created, ignored), {
+          events: t('import.confirm.events', { count: events }),
+          measurements: t('import.confirm.measurements', { count: measurements }),
+          created: t('import.confirm.newMedications', { count: created }),
+          ignored: t('import.confirm.ignoredNames', { count: ignored }),
+        })}
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Everything is saved together or not at all. Importing the same file again later is safe:
-        nothing is duplicated, and events you deleted are not brought back.
+        {t('import.confirm.note')}
       </Typography>
-      {pending && <LinearProgress aria-label="Importing" />}
+      {pending && <LinearProgress aria-label={t('import.confirm.importing')} />}
       <Stack direction="row" spacing={1}>
         <Button onClick={onBack} disabled={pending} sx={{ minHeight: 48 }}>
-          Back
+          {t('common.back')}
         </Button>
         <Button
           variant="contained"
@@ -41,7 +50,7 @@ export function ConfirmStep({ preview, choices, pending, online, onBack, onImpor
           disabled={pending || !online}
           sx={{ minHeight: 48 }}
         >
-          {pending ? 'Importing…' : 'Import'}
+          {pending ? t('import.confirm.importingEllipsis') : t('import.confirm.import')}
         </Button>
       </Stack>
     </Stack>

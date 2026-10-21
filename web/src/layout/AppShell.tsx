@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
@@ -10,6 +11,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 /** Full-bleed page background with a centred content column (max 480px). */
 export function AppShell() {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
   return (
     <SelectedBabyProvider>
       <Box
@@ -32,7 +34,7 @@ export function AppShell() {
           <TopBar />
           <Box component="main" sx={{ flexGrow: 1, px: 2, py: 1, pb: 12, minWidth: 0 }}>
             <ErrorBoundary resetKey={pathname}>
-              <Suspense fallback={<CircularProgress aria-label="Loading page" />}>
+              <Suspense fallback={<CircularProgress aria-label={t('app.loadingPage')} />}>
                 <Outlet />
               </Suspense>
             </ErrorBoundary>

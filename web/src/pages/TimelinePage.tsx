@@ -1,15 +1,17 @@
+import { useTranslation } from 'react-i18next';
 import { CircularProgress, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { BabyTimeline } from '../timeline/BabyTimeline';
 
 export function TimelinePage() {
+  const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
 
-  if (!babies) return <CircularProgress aria-label="Loading" />;
+  if (!babies) return <CircularProgress aria-label={t('common.loading')} />;
   if (!baby) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-        No baby yet. Events appear here once a baby syncs from the server.
+        {t('timeline.noBaby')}
       </Typography>
     );
   }

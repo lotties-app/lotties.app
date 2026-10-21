@@ -217,7 +217,7 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("e6428ccb-7061-4cf4-a5d0-67c89a396a5f"),
                             Color = "#4f8ef7",
-                            Fields = "[{\"key\":\"method\",\"label\":\"Method\",\"kind\":\"select\",\"isRequired\":true,\"options\":[\"breast\",\"bottle\",\"solid\"]},{\"key\":\"side\",\"label\":\"Side\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"left\",\"right\",\"both\"]},{\"key\":\"amount_ml\",\"label\":\"Amount\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"ml\"},{\"key\":\"bottle_feeding_type\",\"label\":\"Bottle content\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"FORMULA\",\"BREAST_MILK\"]},{\"key\":\"breast_left_seconds\",\"label\":\"Left breast\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"s\"},{\"key\":\"breast_right_seconds\",\"label\":\"Right breast\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"s\"}]",
+                            Fields = "[{\"key\":\"method\",\"label\":\"Method\",\"kind\":\"select\",\"isRequired\":true,\"options\":[\"breast\",\"bottle\",\"solid\"]},{\"key\":\"side\",\"label\":\"Side\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"left\",\"right\",\"both\"],\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"breast\"]}},{\"key\":\"amount_ml\",\"label\":\"Amount\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"ml\",\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"bottle\"]}},{\"key\":\"bottle_feeding_type\",\"label\":\"Bottle content\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"formula\",\"breast_milk\"],\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"bottle\"]}},{\"key\":\"breast_left_seconds\",\"label\":\"Left breast\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"s\",\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"breast\"]}},{\"key\":\"breast_right_seconds\",\"label\":\"Right breast\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"s\",\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"breast\"]}},{\"key\":\"food\",\"label\":\"Food\",\"kind\":\"text\",\"isRequired\":false,\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"solid\"]}}]",
                             HasDuration = true,
                             Icon = "local_drink",
                             Key = "feeding",
@@ -282,6 +282,16 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                             Icon = "sick",
                             Key = "belly_pain",
                             Name = "Belly pain"
+                        },
+                        new
+                        {
+                            Id = new Guid("ddfdaa52-57ee-4d34-8129-a78262c2172c"),
+                            Color = "#26c6da",
+                            Fields = "[{\"key\":\"amount_left_ml\",\"label\":\"Left amount\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"ml\"},{\"key\":\"amount_right_ml\",\"label\":\"Right amount\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"ml\"}]",
+                            HasDuration = true,
+                            Icon = "opacity",
+                            Key = "breast_pump",
+                            Name = "Breast pump"
                         });
                 });
 

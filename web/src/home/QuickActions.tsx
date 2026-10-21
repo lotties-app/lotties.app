@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
+import { useEventTypeText } from '../i18n/eventTypeText';
 
 interface Props {
   types: EventType[];
@@ -23,12 +25,15 @@ function QuickAction({
   readOnly: boolean;
   onSelect: (type: EventType) => void;
 }) {
+  const { t } = useTranslation();
+  const names = useEventTypeText();
+  const name = names.typeName(type);
   const color = safeColor(type.color);
   return (
     <ButtonBase
       onClick={() => onSelect(type)}
       disabled={running || readOnly}
-      aria-label={type.hasDuration ? `Start ${type.name}` : `Log ${type.name}`}
+      aria-label={type.hasDuration ? t('home.start', { name }) : t('home.log', { name })}
       sx={{
         minHeight: 96,
         borderRadius: 2,
@@ -42,11 +47,11 @@ function QuickAction({
     >
       <EventTypeIcon name={type.icon} color={color} fontSize={36} />
       <Typography variant="subtitle1" component="span">
-        {type.name}
+        {name}
       </Typography>
       {running && (
         <Typography variant="caption" component="span">
-          Running
+          {t('common.running')}
         </Typography>
       )}
     </ButtonBase>

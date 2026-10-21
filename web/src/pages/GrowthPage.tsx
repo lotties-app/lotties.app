@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
 import { canWrite } from '../baby/permissions';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
@@ -18,6 +18,7 @@ import type { MeasurementDto } from '../sync/contract';
 type Editing = MeasurementDto | 'new' | null;
 
 function Growth({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const { query, online } = useMeasurements(baby.id);
   const actions = useMeasurementActions(baby.id);
   const { run, pending, error, clearError } = useServerAction();
@@ -38,7 +39,7 @@ function Growth({ baby }: { baby: Baby }) {
     <Stack spacing={2}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h5" component="h1">
-          Growth
+          {t('nav.growth')}
         </Typography>
         {writable && (
           <Button
@@ -48,22 +49,22 @@ function Growth({ baby }: { baby: Baby }) {
             onClick={() => setEditing('new')}
             sx={{ minHeight: 48 }}
           >
-            Add measurement
+            {t('growth.add')}
           </Button>
         )}
       </Stack>
-      {!online && <Alert severity="warning">{OFFLINE_MESSAGE}</Alert>}
-      {!writable && <Alert severity="info">You have view-only access to {baby.name}.</Alert>}
-      {query.isError && <ErrorNotice message="Could not load measurements. Try again later." />}
+      {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
+      {!writable && <Alert severity="info">{t('baby.viewOnlyNamed', { name: baby.name })}</Alert>}
+      {query.isError && <ErrorNotice message={t('growth.loadFailed')} />}
       {!deleting && <ErrorNotice message={error} />}
-      {query.isPending && online && <CircularProgress aria-label="Loading" />}
+      {query.isPending && online && <CircularProgress aria-label={t('common.loading')} />}
       {measurements && (
         <>
           {METRICS.map((metric) => (
             <GrowthChart key={metric.key} metric={metric} measurements={measurements} />
           ))}
           {measurements.length === 0 ? (
-            <Typography color="text.secondary">No measurements yet.</Typography>
+            <Typography color="text.secondary">{t('growth.none')}</Typography>
           ) : (
             <MeasurementList
               measurements={measurements}
@@ -83,9 +84,9 @@ function Growth({ baby }: { baby: Baby }) {
       )}
       {deleting && (
         <ConfirmDialog
-          title="Delete this measurement?"
-          body="This removes it from the list and the charts."
-          confirmLabel="Delete measurement"
+          title={t('growth.deleteTitle')}
+          body={t('growth.deleteBody')}
+          confirmLabel={t('growth.deleteConfirm')}
           pending={pending}
           error={error}
           onCancel={cancelDelete}
@@ -97,10 +98,11 @@ function Growth({ baby }: { baby: Baby }) {
 }
 
 export function GrowthPage() {
+  const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
-  if (!babies) return <CircularProgress aria-label="Loading" />;
+  if (!babies) return <CircularProgress aria-label={t('common.loading')} />;
   if (!baby) {
-    return <Alert severity="info">Create a baby on the Home screen to track growth.</Alert>;
+    return <Alert severity="info">{t('growth.createBabyFirst')}</Alert>;
   }
   return <Growth key={baby.id} baby={baby} />;
 }

@@ -77,7 +77,7 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
         var bottle = logs.Categories.Single(category => category.Category == "BOTTLE");
         Assert.Equal(("feeding", 3, 2, 1), (bottle.EventTypeKey, bottle.Total, bottle.ToCreate, bottle.Skipped));
         Assert.Equal(4, logs.Categories.Single(category => category.Category == "MEDICINE").ToCreate);
-        Assert.Null(logs.Categories.Single(category => category.Category == "PUMPING").EventTypeKey);
+        Assert.Null(logs.Categories.Single(category => category.Category == "UNKNOWN_ACTIVITY").EventTypeKey);
         var measurements = preview.Measurements!;
         Assert.Equal((6, 3, 0, 3), (measurements.TotalRows, measurements.ToCreate, measurements.AlreadyImported, measurements.Skipped));
         Assert.Equal((new DateOnly(2025, 8, 31), new DateOnly(2025, 10, 5)), (measurements.From!.Value, measurements.To!.Value));
@@ -256,6 +256,27 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
         var imported = await response.ReadAsync<NapperImportResponse>();
         Assert.Equal((0, 3), (imported.EventsCreated, imported.MeasurementsCreated));
         Assert.Null(imported.Logs);
+    }
+
+    [Fact]
+    public async Task Import_PumpingAndBottleRows_StoreBreastPumpAmountsAndLowerCaseBottleContent()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(ImportPath(baby.BabyId), Body(logsCsv: Fixture("napper-pumping.csv"), measurementsCsv: string.Empty));
+
+        var imported = await response.ReadAsync<NapperImportResponse>();
+        Assert.Equal(3, imported.EventsCreated);
+        Assert.Equal([(3, "invalid_record"), (5, "unknown_category")], imported.Logs!.SkippedRows.Select(skipped => (skipped.Row, skipped.Code)));
+        Assert.Contains("amount_left_ml", imported.Logs.SkippedRows[0].Reason, StringComparison.Ordinal);
+        Assert.Equal("breast_pump", imported.Logs.Categories.Single(category => category.Category == "BREAST_PUMP").EventTypeKey);
+        var events = await factory.QueryAsync(context => context.Events.Where(stored => stored.BabyId == baby.BabyId).OrderBy(stored => stored.StartedAt).ToListAsync());
+        Assert.Equal([BuiltInEventTypes.BreastPumpId, BuiltInEventTypes.BreastPumpId, BuiltInEventTypes.FeedingId], events.Select(stored => stored.TypeId));
+        Assert.True(Domain.Events.EventPayload.From("""{"amount_left_ml":40,"amount_right_ml":35.5}""").IsEquivalentTo(events[0].Payload));
+        Assert.Equal((TimeSpan.FromMinutes(15), "Morning session"), (events[0].Duration!.Value, events[0].Notes));
+        Assert.True(Domain.Events.EventPayload.From("""{"amount_left_ml":20}""").IsEquivalentTo(events[1].Payload));
+        Assert.Equal(events[1].StartedAt, events[1].EndedAt);
+        Assert.True(Domain.Events.EventPayload.From("""{"method":"bottle","amount_ml":90,"bottle_feeding_type":"formula"}""").IsEquivalentTo(events[2].Payload));
     }
 
     [Fact]

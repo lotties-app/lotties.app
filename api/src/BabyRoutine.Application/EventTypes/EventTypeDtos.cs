@@ -5,8 +5,34 @@ using BabyRoutine.Domain.EventTypes;
 namespace BabyRoutine.Application.EventTypes;
 
 /// <summary>
+/// Shows a field only while the select field <see cref="Field"/> of the same type holds one of <see cref="EqualsValues"/>:
+/// <c>{"field":"method","equals":["bottle"]}</c>.
+/// </summary>
+public sealed record FieldVisibilityConditionDto
+{
+    public string? Field { get; init; }
+
+    [JsonPropertyName("equals")]
+    public IReadOnlyList<string>? EqualsValues { get; init; }
+
+    public static implicit operator FieldVisibilityConditionDto(FieldVisibilityCondition condition)
+    {
+        ArgumentNullException.ThrowIfNull(condition);
+        return new FieldVisibilityConditionDto { Field = condition.Field, EqualsValues = condition.Values };
+    }
+
+    /// <summary>Validates the condition's own shape; throws <see cref="Domain.Exceptions.DomainValidationException"/> when invalid.</summary>
+    public static explicit operator FieldVisibilityCondition(FieldVisibilityConditionDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        return FieldVisibilityCondition.Create(dto.Field, dto.EqualsValues);
+    }
+}
+
+/// <summary>
 /// One field of an event type. <see cref="Kind"/> is written as <c>text</c>, <c>number</c>, <c>select</c> or <c>bool</c>.
 /// <see cref="Options"/> apply to select fields, <see cref="Min"/>, <see cref="Max"/> and <see cref="Unit"/> to number fields.
+/// <see cref="VisibleWhen"/> (any kind, <c>null</c> when the field is always shown) makes the field depend on a select field.
 /// </summary>
 public sealed record EventFieldDefinitionDto
 {
@@ -27,6 +53,8 @@ public sealed record EventFieldDefinitionDto
 
     public string? Unit { get; init; }
 
+    public FieldVisibilityConditionDto? VisibleWhen { get; init; }
+
     public static implicit operator EventFieldDefinitionDto(EventFieldDefinition field)
     {
         ArgumentNullException.ThrowIfNull(field);
@@ -40,6 +68,7 @@ public sealed record EventFieldDefinitionDto
             Min = field.Min,
             Max = field.Max,
             Unit = field.Unit,
+            VisibleWhen = field.VisibleWhen is null ? null : (FieldVisibilityConditionDto)field.VisibleWhen,
         };
     }
 
@@ -47,7 +76,8 @@ public sealed record EventFieldDefinitionDto
     public static explicit operator EventFieldDefinition(EventFieldDefinitionDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
-        return EventFieldDefinition.Create(dto.Key, dto.Label, dto.Kind, dto.IsRequired, dto.Options, dto.Min, dto.Max, dto.Unit);
+        var visibleWhen = dto.VisibleWhen is null ? null : (FieldVisibilityCondition)dto.VisibleWhen;
+        return EventFieldDefinition.Create(dto.Key, dto.Label, dto.Kind, dto.IsRequired, dto.Options, dto.Min, dto.Max, dto.Unit, visibleWhen);
     }
 }
 

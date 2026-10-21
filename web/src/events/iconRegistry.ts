@@ -12,6 +12,7 @@ import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import StarIcon from '@mui/icons-material/Star';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
+import OpacityIcon from '@mui/icons-material/Opacity';
 import ToysIcon from '@mui/icons-material/Toys';
 import VaccinesIcon from '@mui/icons-material/Vaccines';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
@@ -33,6 +34,7 @@ export const ICONS: ReadonlyMap<string, ElementType> = new Map<string, ElementTy
     favorite: FavoriteIcon,
     star: StarIcon,
     water_drop: WaterDropIcon,
+    opacity: OpacityIcon,
     toys: ToysIcon,
     directions_walk: DirectionsWalkIcon,
     thermostat: ThermostatIcon,

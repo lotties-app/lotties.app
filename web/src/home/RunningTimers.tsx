@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Card, CardActionArea, Stack, Typography } from '@mui/material';
 import StopIcon from '@mui/icons-material/Stop';
 import type { BabyEvent, EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
+import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatElapsed, useNow } from '../events/time';
 
 interface Props {
@@ -24,13 +26,15 @@ interface TimerProps {
 }
 
 function Timer({ event, type, now, onStop, onEdit, readOnly }: TimerProps) {
-  const name = type?.name ?? 'Event';
+  const { t } = useTranslation();
+  const names = useEventTypeText();
+  const name = type ? names.typeName(type) : t('common.event');
   return (
     <Card variant="outlined" sx={{ display: 'flex', alignItems: 'stretch' }}>
       <CardActionArea
         onClick={() => onEdit(event)}
         disabled={readOnly}
-        aria-label={readOnly ? name : `Edit ${name}`}
+        aria-label={readOnly ? name : t('home.editNamed', { name })}
         sx={{ display: 'flex', flexGrow: 1, justifyContent: 'flex-start', gap: 2, p: 2 }}
       >
         <EventTypeIcon name={type?.icon ?? ''} color={safeColor(type?.color ?? '')} fontSize={32} />
@@ -51,25 +55,26 @@ function Timer({ event, type, now, onStop, onEdit, readOnly }: TimerProps) {
         startIcon={<StopIcon />}
         onClick={() => onStop(event)}
         disabled={readOnly}
-        aria-label={`Stop ${name}`}
+        aria-label={t('home.stopNamed', { name })}
         sx={{ minWidth: 96, borderRadius: 0 }}
       >
-        Stop
+        {t('home.stop')}
       </Button>
     </Card>
   );
 }
 
 export function RunningTimers({ events, types, onStop, onEdit, readOnly = false }: Props) {
+  const { t } = useTranslation();
   const now = useNow();
   if (events.length === 0) return null;
   return (
-    <Stack spacing={1} component="section" aria-label="Running timers">
+    <Stack spacing={1} component="section" aria-label={t('home.runningTimers')}>
       {events.map((event) => (
         <Timer
           key={event.id}
           event={event}
-          type={types.find((t) => t.id === event.typeId)}
+          type={types.find((candidate) => candidate.id === event.typeId)}
           now={now}
           onStop={onStop}
           onEdit={onEdit}

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Stack, TextField } from '@mui/material';
 import type { BabyRequest } from '../sync/contract';
 
@@ -25,16 +26,17 @@ export function BabyForm({
   pending = false,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState(initial?.name ?? '');
   const [birthDate, setBirthDate] = useState(initial?.birthDate ?? '');
   const [touched, setTouched] = useState(false);
   const today = todayIso();
 
-  const nameError = !name.trim() ? 'Name is required.' : null;
+  const nameError = !name.trim() ? t('baby.nameRequired') : null;
   const dateError = !birthDate
-    ? 'Birth date is required.'
+    ? t('baby.birthRequired')
     : birthDate > today
-      ? 'Birth date cannot be in the future.'
+      ? t('baby.birthFuture')
       : null;
 
   const submit = (event: FormEvent) => {
@@ -47,7 +49,7 @@ export function BabyForm({
   return (
     <Stack component="form" spacing={2} onSubmit={submit} noValidate>
       <TextField
-        label="Name"
+        label={t('baby.nameLabel')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={disabled}
@@ -57,7 +59,7 @@ export function BabyForm({
         autoComplete="off"
       />
       <TextField
-        label="Birth date"
+        label={t('baby.birthDate')}
         type="date"
         value={birthDate}
         onChange={(e) => setBirthDate(e.target.value)}

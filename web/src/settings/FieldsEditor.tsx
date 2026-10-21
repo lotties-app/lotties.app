@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Card,
@@ -23,8 +24,9 @@ interface FieldCardProps {
 }
 
 function FieldCard({ field, position, onChange, onRemove }: FieldCardProps) {
+  const { t } = useTranslation();
   const set = (changes: Partial<FieldDraft>) => onChange({ ...field, ...changes });
-  const prefix = `Field ${position}`;
+  const prefix = t('settings.eventTypes.fieldN', { position });
   return (
     <Card variant="outlined" component="li" sx={{ listStyle: 'none' }}>
       <CardContent>
@@ -33,32 +35,35 @@ function FieldCard({ field, position, onChange, onRemove }: FieldCardProps) {
             <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
               {prefix}
             </Typography>
-            <IconButton aria-label={`Remove ${prefix}`} onClick={onRemove}>
+            <IconButton
+              aria-label={t('settings.eventTypes.removeField', { field: prefix })}
+              onClick={onRemove}
+            >
               <DeleteIcon />
             </IconButton>
           </Stack>
           <TextField
-            label={`${prefix} label`}
+            label={t('settings.eventTypes.fieldLabel', { field: prefix })}
             value={field.label}
             onChange={(e) => set({ label: e.target.value })}
             autoComplete="off"
           />
           <TextField
             select
-            label={`${prefix} type`}
+            label={t('settings.eventTypes.fieldType', { field: prefix })}
             value={field.kind}
             onChange={(e) => set({ kind: e.target.value as EventFieldKind })}
           >
-            {FIELD_KINDS.map((k) => (
-              <MenuItem key={k.kind} value={k.kind}>
-                {k.label}
+            {FIELD_KINDS.map((kind) => (
+              <MenuItem key={kind} value={kind}>
+                {t(`settings.eventTypes.kinds.${kind}`)}
               </MenuItem>
             ))}
           </TextField>
           {field.kind === 'select' && (
             <TextField
-              label={`${prefix} options`}
-              helperText="One option per line."
+              label={t('settings.eventTypes.fieldOptions', { field: prefix })}
+              helperText={t('settings.eventTypes.optionsHelp')}
               value={field.options}
               onChange={(e) => set({ options: e.target.value })}
               multiline
@@ -68,19 +73,19 @@ function FieldCard({ field, position, onChange, onRemove }: FieldCardProps) {
           {field.kind === 'number' && (
             <Stack direction="row" spacing={1}>
               <TextField
-                label={`${prefix} min`}
+                label={t('settings.eventTypes.fieldMin', { field: prefix })}
                 type="number"
                 value={field.min}
                 onChange={(e) => set({ min: e.target.value })}
               />
               <TextField
-                label={`${prefix} max`}
+                label={t('settings.eventTypes.fieldMax', { field: prefix })}
                 type="number"
                 value={field.max}
                 onChange={(e) => set({ max: e.target.value })}
               />
               <TextField
-                label={`${prefix} unit`}
+                label={t('settings.eventTypes.fieldUnit', { field: prefix })}
                 value={field.unit}
                 onChange={(e) => set({ unit: e.target.value })}
               />
@@ -88,12 +93,16 @@ function FieldCard({ field, position, onChange, onRemove }: FieldCardProps) {
           )}
           {field.kind !== 'bool' && (
             <FormControlLabel
-              label="Required"
+              label={t('common.required')}
               control={
                 <Switch
                   checked={field.isRequired}
                   onChange={(_, on) => set({ isRequired: on })}
-                  slotProps={{ input: { 'aria-label': `${prefix} required` } }}
+                  slotProps={{
+                    input: {
+                      'aria-label': t('settings.eventTypes.fieldRequired', { field: prefix }),
+                    },
+                  }}
                 />
               }
             />
@@ -111,17 +120,21 @@ interface Props {
 
 /** Ordered list of field definitions (text / number / choice / yes-no). */
 export function FieldsEditor({ fields, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <Stack spacing={1}>
       <Typography variant="subtitle1" component="h3">
-        Fields
+        {t('settings.eventTypes.fields')}
       </Typography>
       {fields.length === 0 && (
-        <Typography color="text.secondary">
-          No extra fields. Events only record time and notes.
-        </Typography>
+        <Typography color="text.secondary">{t('settings.eventTypes.noFields')}</Typography>
       )}
-      <Stack component="ul" spacing={1} sx={{ p: 0, m: 0 }} aria-label="Field definitions">
+      <Stack
+        component="ul"
+        spacing={1}
+        sx={{ p: 0, m: 0 }}
+        aria-label={t('settings.eventTypes.fieldDefinitions')}
+      >
         {fields.map((field, i) => (
           <FieldCard
             key={field.uid}
@@ -137,7 +150,7 @@ export function FieldsEditor({ fields, onChange }: Props) {
         onClick={() => onChange([...fields, newFieldDraft()])}
         sx={{ minHeight: 48, alignSelf: 'flex-start' }}
       >
-        Add field
+        {t('settings.eventTypes.addField')}
       </Button>
     </Stack>
   );

@@ -1,5 +1,6 @@
 import type { BabyEvent } from '../db/models';
-import { formatClock } from '../events/time';
+import { formatTime } from '../i18n/format';
+import { t } from '../i18n/i18n';
 import type { Preset } from './types';
 
 export type PresetStatus = 'running' | { lastAt: string } | 'untracked-today';
@@ -57,27 +58,32 @@ export function presetStatus(
   return sameLocalDay(last, now) || recent ? { lastAt } : 'untracked-today';
 }
 
-/** `h:mm` of elapsed time (`0:42`, `1:05`). */
+/** `h:mm` of elapsed time (`0:42`, `1:05`): digits only, the same in every language. */
 function formatHoursMinutes(ms: number) {
   const minutes = Math.max(0, Math.floor(ms / MINUTE_MS));
   return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
 /**
- * Tile status line: "Running 0:42", "Last 12 min ago", "Last 2h ago", "Last 07:05" (12 h or more
- * ago) or "Not tracked today". `startedAt` is the running timer's start.
+ * Tile status line, localized: "Running 0:42", "Last 12 min ago", "Last 2h ago", "Last 07:05"
+ * (12 h or more ago) or "Not tracked today". `startedAt` is the running timer's start. The
+ * structured `PresetStatus` stays language-free, so `presetStatus` remains a pure function.
  */
 export function formatPresetStatus(status: PresetStatus, now: Date, startedAt?: string): string {
   if (status === 'running') {
-    return `Running ${formatHoursMinutes(startedAt ? now.getTime() - Date.parse(startedAt) : 0)}`;
+    const time = formatHoursMinutes(startedAt ? now.getTime() - Date.parse(startedAt) : 0);
+    return t('presets.status.running', { time });
   }
-  if (status === 'untracked-today') return 'Not tracked today';
+  if (status === 'untracked-today') return t('presets.status.untrackedToday');
 
   const ago = Math.max(0, now.getTime() - Date.parse(status.lastAt));
-  if (ago >= 12 * HOUR_MS) return `Last ${formatClock(status.lastAt)}`;
-  if (ago < MINUTE_MS) return 'Last just now';
-  if (ago < HOUR_MS) return `Last ${Math.floor(ago / MINUTE_MS)} min ago`;
-  return `Last ${Math.floor(ago / HOUR_MS)}h ago`;
+  if (ago >= 12 * HOUR_MS)
+    return t('presets.status.lastClock', { time: formatTime(status.lastAt) });
+  if (ago < MINUTE_MS) return t('presets.status.lastJustNow');
+  if (ago < HOUR_MS) {
+    return t('presets.status.lastMinutes', { count: Math.floor(ago / MINUTE_MS) });
+  }
+  return t('presets.status.lastHours', { count: Math.floor(ago / HOUR_MS) });
 }
 
 /** Start of the preset's running timer, if one runs (feeds the "Running 0:42" line). */

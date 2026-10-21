@@ -1,17 +1,20 @@
+import { useTranslation } from 'react-i18next';
 import { Button, IconButton, Stack, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { formatNumber } from '../i18n/format';
 import { MAX_IMPORT_LABEL, type FileKind, type PickedFiles } from './importModel';
 
-const KINDS: { kind: FileKind; label: string; hint: string }[] = [
-  { kind: 'logs', label: 'logs CSV', hint: 'Events: feedings, sleep, diapers, medicine' },
-  { kind: 'measurements', label: 'measurements CSV', hint: 'Weight, height, head circumference' },
-];
+const KINDS: FileKind[] = ['logs', 'measurements'];
 
+/** Binary units keep the conventional `KB`/`MB` labels; only the number is localized. */
 function formatSize(bytes: number) {
-  return bytes < 1024 * 1024
-    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
-    : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024) return `${formatNumber(Math.max(1, Math.round(bytes / 1024)))} KB`;
+  const megabytes = formatNumber(bytes / 1024 / 1024, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${megabytes} MB`;
 }
 
 interface Props {
@@ -24,13 +27,13 @@ interface Props {
 
 /** Step 1: pick the logs and/or measurements export. */
 export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props) {
+  const { t } = useTranslation();
   return (
     <Stack spacing={2}>
       <Typography variant="body2" color="text.secondary">
-        Choose one or both Napper export files (up to {MAX_IMPORT_LABEL} each). Importing the same
-        file again is safe: records that already exist are skipped, nothing is duplicated.
+        {t('import.files.intro', { limit: MAX_IMPORT_LABEL })}
       </Typography>
-      {KINDS.map(({ kind, label, hint }) => {
+      {KINDS.map((kind) => {
         const file = files[kind];
         return (
           <Stack key={kind} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -40,7 +43,9 @@ export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props
               startIcon={<UploadFileIcon />}
               sx={{ minHeight: 48, flexShrink: 0 }}
             >
-              Choose {label}
+              {kind === 'logs'
+                ? t('import.files.chooseLogs')
+                : t('import.files.chooseMeasurements')}
               <input
                 hidden
                 type="file"
@@ -53,10 +58,17 @@ export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props
               />
             </Button>
             <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 0 }} noWrap>
-              {file ? `${file.name} (${formatSize(file.size)})` : hint}
+              {file
+                ? t('import.files.fileLabel', { name: file.name, size: formatSize(file.size) })
+                : kind === 'logs'
+                  ? t('import.files.logsHint')
+                  : t('import.files.measurementsHint')}
             </Typography>
             {file && (
-              <IconButton aria-label={`Remove ${file.name}`} onClick={() => onRemove(kind)}>
+              <IconButton
+                aria-label={t('import.files.remove', { name: file.name })}
+                onClick={() => onRemove(kind)}
+              >
                 <CloseIcon />
               </IconButton>
             )}
@@ -69,7 +81,7 @@ export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props
         disabled={pending || (!files.logs && !files.measurements)}
         sx={{ minHeight: 48, alignSelf: 'flex-start' }}
       >
-        Preview import
+        {t('import.files.preview')}
       </Button>
     </Stack>
   );

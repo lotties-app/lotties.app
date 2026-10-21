@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Avatar, IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -29,10 +30,11 @@ function useLogoutFlow() {
 }
 
 export function UserMenu() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const logout = useLogoutFlow();
-  const label = user?.name ?? user?.email ?? 'Account';
+  const label = user?.name ?? user?.email ?? t('common.account');
 
   const startLogout = () => {
     setAnchor(null);
@@ -42,7 +44,7 @@ export function UserMenu() {
   return (
     <>
       <IconButton
-        aria-label="User menu"
+        aria-label={t('layout.userMenu')}
         onClick={(e) => setAnchor(e.currentTarget)}
         color="inherit"
       >
@@ -58,15 +60,15 @@ export function UserMenu() {
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
-          Log out
+          {t('layout.logout')}
         </MenuItem>
       </Menu>
       {logout.confirming && (
         <UnsyncedChangesDialog
-          title="Log out?"
-          message={`You have ${unsyncedChangesLabel(logout.unsynced)} that will be lost.`}
-          pushLabel="Push now"
-          proceedLabel="Logout anyway"
+          title={t('layout.logoutTitle')}
+          message={t('layout.logoutMessage', { changes: unsyncedChangesLabel(logout.unsynced) })}
+          pushLabel={t('layout.pushNow')}
+          proceedLabel={t('layout.logoutAnyway')}
           pending={logout.push.pushing}
           error={logout.push.error}
           onPush={() => void logout.push.pushThenProceed()}

@@ -14,7 +14,7 @@ public sealed class EventTypeSafetyRuleTests
     [InlineData("constructor")]
     [InlineData("__proto__")]
     [InlineData("toString")]
-    [InlineData("opacity")]
+    [InlineData("rocket_launch")]
     [InlineData("")]
     [InlineData("WATER_DROP")]
     public void CreateCustom_IconNotAllowed_ThrowsValidationOnIcon(string icon)

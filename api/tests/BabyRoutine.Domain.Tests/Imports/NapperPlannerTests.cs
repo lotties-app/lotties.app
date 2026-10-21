@@ -1,4 +1,5 @@
 using BabyRoutine.Domain.Events;
+using BabyRoutine.Domain.EventTypes;
 using BabyRoutine.Domain.Exceptions;
 using BabyRoutine.Domain.Imports;
 using static BabyRoutine.Domain.Tests.Imports.ImportTestData;
@@ -102,6 +103,42 @@ public sealed class NapperPlannerTests
     }
 
     [Fact]
+    public void Plan_RowBreakingFieldRules_IsSkippedAsInvalidRecordNamingTheField()
+    {
+        var plan = Plan(
+            Row("BOTTLE") with { FeedingAmount = -5m },
+            Row("PUMPING", Offset, Offset.AddMinutes(10), rowNumber: 2) with { AmountPumpedRight = -1m });
+
+        Assert.Empty(plan.Candidates);
+        Assert.Equal([ImportSkipCodes.InvalidRecord, ImportSkipCodes.InvalidRecord], plan.Skipped.Select(skipped => skipped.Code));
+        Assert.Contains("amount_ml", plan.Skipped[0].Reason, StringComparison.Ordinal);
+        Assert.Contains("amount_right_ml", plan.Skipped[1].Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Plan_EveryMappedCategory_ProducesPayloadsThatPassTheFieldRules()
+    {
+        var rows = new[]
+        {
+            Row("BOTTLE", rowNumber: 1) with { FeedingAmount = 120m, BottleFeedingType = "BREAST_MILK" },
+            Row("NURSING", Offset, Offset.AddMinutes(20), rowNumber: 2) with { BreastLeftSeconds = 600, BreastRightSeconds = 540 },
+            Row("CHANGED_DIAPER", rowNumber: 3) with { DiaperContent = "MIXED" },
+            Row("NAP", Offset, Offset.AddHours(1), rowNumber: 4) with { BabyMoodOnWakeUp = "HAPPY" },
+            Row("NIGHT_WAKING", Offset.AddHours(2), Offset.AddHours(3), rowNumber: 5),
+            Row("BED_TIME", Offset.AddHours(4), rowNumber: 6),
+            Row("WOKE_UP", Offset.AddHours(5), rowNumber: 7),
+            Row("PUMPING", Offset.AddHours(6), Offset.AddHours(6).AddMinutes(10), rowNumber: 8) with { AmountPumpedLeft = 40m, AmountPumpedRight = 35m },
+            Row("BREAST_PUMP", Offset.AddHours(7), rowNumber: 9) with { AmountPumpedLeft = 20m },
+        };
+
+        var plan = Plan(rows);
+
+        Assert.Empty(plan.Skipped);
+        Assert.All(plan.Candidates, candidate =>
+            BuiltInEventTypes.All.Single(type => type.Id == candidate.Event.TypeId).EnsureValidPayload(candidate.Event.Payload, candidate.Event.EndedAt));
+    }
+
+    [Fact]
     public void Plan_CategoryFilter_SkipsOtherCategoriesAsExcluded()
     {
         var context = Context(categories: new HashSet<string> { "NAP" });
@@ -117,7 +154,7 @@ public sealed class NapperPlannerTests
     {
         var unreadable = new ImportSkippedRow(1, null, ImportSkipCodes.InvalidValue, "start is not a timestamp");
 
-        var plan = NapperEventPlanner.Plan(Context(), [Row("PUMPING", rowNumber: 2)], [unreadable]);
+        var plan = NapperEventPlanner.Plan(Context(), [Row("UNKNOWN_ACTIVITY", rowNumber: 2)], [unreadable]);
 
         Assert.Equal(2, plan.TotalRows);
         Assert.Equal([1, 2], plan.Skipped.Select(skipped => skipped.Row));

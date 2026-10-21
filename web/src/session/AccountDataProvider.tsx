@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { flushSync } from 'react-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../auth/useAuth';
@@ -34,6 +35,7 @@ export function AccountDataProvider({ syncOptions, children }: Props) {
 }
 
 function AccountData({ accountId, syncOptions, children }: Props & { accountId: string }) {
+  const { t } = useTranslation();
   const { logout } = useAuth();
   const [ending, setEnding] = useState(false);
   // Claimed before the first render of the children, so they never read the previous account's
@@ -61,7 +63,7 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
   if (ending) {
     return (
       <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '100dvh' }}>
-        <CircularProgress aria-label="Signing out" />
+        <CircularProgress aria-label={t('auth.signingOut')} />
       </Box>
     );
   }

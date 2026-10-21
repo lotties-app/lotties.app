@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Stack, TextField, Typography } from '@mui/material';
 import type { MedicationSuggestion } from '../sync/contract';
 import type { MappingChoice } from './importModel';
@@ -19,6 +20,7 @@ const SELECT = { select: { native: true } } as const;
 
 /** One medication name found in the file and the decision for it. */
 export function MappingRow({ suggestion, choice, catalog, problem, onChange }: Props) {
+  const { t } = useTranslation();
   const { token } = suggestion;
   const changeAction = (action: string) => {
     if (action === 'ignore') return onChange({ action: 'ignore' });
@@ -31,34 +33,39 @@ export function MappingRow({ suggestion, choice, catalog, problem, onChange }: P
   const canUseExisting = catalog.length > 0;
 
   return (
-    <Stack spacing={1.5} role="group" aria-label={`Medication ${token}`}>
+    <Stack spacing={1.5} role="group" aria-label={t('import.medications.group', { token })}>
       <div>
         <Typography variant="subtitle2">{token}</Typography>
         <Typography variant="body2" color="text.secondary">
-          Appears {suggestion.occurrences} time{suggestion.occurrences === 1 ? '' : 's'}
-          {suggestion.similarTokens.length > 0 &&
-            `. Similar names: ${suggestion.similarTokens.join(', ')}`}
+          {suggestion.similarTokens.length > 0
+            ? t('import.medications.appearsWithSimilar', {
+                appears: t('import.medications.appears', { count: suggestion.occurrences }),
+                similar: t('import.medications.similar', {
+                  names: suggestion.similarTokens.join(', '),
+                }),
+              })
+            : t('import.medications.appears', { count: suggestion.occurrences })}
         </Typography>
       </div>
       <TextField
         select
         size="small"
-        label={`Action for ${token}`}
+        label={t('import.medications.actionFor', { token })}
         value={choice.action}
         onChange={(e) => changeAction(e.target.value)}
         slotProps={SELECT}
       >
         <option value="existing" disabled={!canUseExisting}>
-          Use an existing medication
+          {t('import.medications.useExisting')}
         </option>
-        <option value="create">Create a new medication</option>
-        <option value="ignore">Ignore this name</option>
+        <option value="create">{t('import.medications.createNew')}</option>
+        <option value="ignore">{t('import.medications.ignore')}</option>
       </TextField>
       {choice.action === 'existing' && (
         <TextField
           select
           size="small"
-          label={`Medication for ${token}`}
+          label={t('import.medications.medicationFor', { token })}
           value={choice.medicationId}
           onChange={(e) => onChange({ action: 'existing', medicationId: e.target.value })}
           error={!!problem}
@@ -75,7 +82,7 @@ export function MappingRow({ suggestion, choice, catalog, problem, onChange }: P
       {choice.action === 'create' && (
         <TextField
           size="small"
-          label={`New medication name for ${token}`}
+          label={t('import.medications.newNameFor', { token })}
           value={choice.name}
           onChange={(e) => onChange({ action: 'create', name: e.target.value })}
           error={!!problem}

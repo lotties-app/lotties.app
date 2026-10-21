@@ -34,12 +34,12 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningThenSleepKindFellAsleep()
+    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningFellAsleepThenConditionalFields()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
@@ -78,6 +78,33 @@ public sealed class MigrationTests
 
         Assert.Contains("\"bed_time\",\"woke_up\",\"fell_asleep\"", script, StringComparison.Ordinal);
         Assert.Contains("SleepKindFellAsleep", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_SeedsFeedingVisibilityAndBreastPumpType()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+
+        Assert.Contains("\"options\":[\"formula\",\"breast_milk\"],\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"bottle\"]}", script, StringComparison.Ordinal);
+        Assert.Contains("'ddfdaa52-57ee-4d34-8129-a78262c2172c', NULL, '#26c6da'", script, StringComparison.Ordinal);
+        Assert.Contains("'opacity', 'breast_pump', 'Breast pump'", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_RewritesStoredBottleContentsToLowerCaseOnlyWhereStillUpperCase()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var seeded = script.IndexOf("\"options\":[\"formula\",\"breast_milk\"]", StringComparison.Ordinal);
+        var rewritten = script.IndexOf("to_jsonb(lower(payload ->> 'bottle_feeding_type'))", StringComparison.Ordinal);
+
+        Assert.True(seeded >= 0 && seeded < rewritten, $"seed {seeded}, rewrite {rewritten}");
+        Assert.Contains("WHERE type_id = 'e6428ccb-7061-4cf4-a5d0-67c89a396a5f'", script, StringComparison.Ordinal);
+        Assert.Contains("AND payload ->> 'bottle_feeding_type' IN ('FORMULA', 'BREAST_MILK');", script, StringComparison.Ordinal);
+        Assert.Contains("updated_at = now()", script, StringComparison.Ordinal);
     }
 
     [Fact]

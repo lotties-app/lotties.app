@@ -8,6 +8,7 @@ import { AuthContext, type AuthApi } from '../auth/AuthContext';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
 import type { BabyRoutineDb } from '../db/database';
 import { DatabaseProvider } from '../db/DatabaseProvider';
+import { I18nProvider } from '../i18n/I18nProvider';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { SyncEngine } from '../sync/SyncEngine';
 import { SyncEngineContext } from '../sync/SyncEngineContext';
@@ -41,20 +42,22 @@ export function renderWithDb(db: BabyRoutineDb, ui: ReactNode, options: RenderOp
   const engine = options.engine ?? new SyncEngine({ db, api, locks: null, eventTarget: null });
   lastEngine = engine;
   return render(
-    <AppThemeProvider>
-      <AuthContext value={options.auth ?? fakeAuth()}>
-        <ApiClientContext value={api}>
-          <QueryClientProvider client={testQueryClient()}>
-            <DatabaseProvider db={db}>
-              <SyncEngineContext value={engine}>
-                <MemoryRouter initialEntries={[options.route ?? '/']}>
-                  <SelectedBabyProvider>{ui}</SelectedBabyProvider>
-                </MemoryRouter>
-              </SyncEngineContext>
-            </DatabaseProvider>
-          </QueryClientProvider>
-        </ApiClientContext>
-      </AuthContext>
-    </AppThemeProvider>,
+    <I18nProvider>
+      <AppThemeProvider>
+        <AuthContext value={options.auth ?? fakeAuth()}>
+          <ApiClientContext value={api}>
+            <QueryClientProvider client={testQueryClient()}>
+              <DatabaseProvider db={db}>
+                <SyncEngineContext value={engine}>
+                  <MemoryRouter initialEntries={[options.route ?? '/']}>
+                    <SelectedBabyProvider>{ui}</SelectedBabyProvider>
+                  </MemoryRouter>
+                </SyncEngineContext>
+              </DatabaseProvider>
+            </QueryClientProvider>
+          </ApiClientContext>
+        </AuthContext>
+      </AppThemeProvider>
+    </I18nProvider>,
   );
 }

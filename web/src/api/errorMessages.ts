@@ -1,47 +1,52 @@
+import { EventCommandError } from '../db/errors';
+import { InvalidMedicationError } from '../db/medicationCommands';
+import { renderCatalogText } from '../i18n/catalog';
+import { t } from '../i18n/i18n';
 import { ApiError } from './ApiError';
 import { getOwn } from '../util/ownProperty';
 
-const MESSAGES: Record<string, string> = {
-  event_type_in_use:
-    'This event type is used by logged events, so it cannot be deleted. You can rename it instead.',
-  event_type_key_taken: 'An event type with this name already exists. Choose another name.',
-  event_type_built_in_read_only: 'Built-in event types cannot be changed.',
-  event_type_not_found: 'This event type no longer exists.',
-  last_owner_required: 'A baby needs at least one owner. Make someone else an owner first.',
-  member_not_found: 'This member is no longer part of the baby.',
-  invite_not_found: 'This invite link is not valid. It may have been revoked or mistyped.',
-  invite_expired: 'This invite has expired. Ask for a new invite link.',
-  invite_already_accepted: 'This invite was already used. Ask for a new invite link.',
-  member_already_exists: 'You are already a member of this baby.',
-  measurement_without_values: 'Enter at least one of weight, height or head circumference.',
-  measurement_baby_mismatch: 'This measurement belongs to another baby.',
-  concurrent_modification: 'Something changed at the same time, please try again.',
-  rate_limited: 'Too many requests, please wait a moment.',
-  request_body_too_large: 'The data is too large to send. Try a smaller change.',
-};
+/** Per-screen wording for a problem `code`, evaluated when the message is built. */
+export type ErrorOverrides = Record<string, () => string>;
 
-export const OFFLINE_MESSAGE = 'You are offline. Connect to the internet to do this.';
+export const offlineMessage = () => t('errors.offline');
 
-/** A user-facing sentence for a failed online operation (known codes, then status, then network). */
-export function describeApiError(error: unknown, overrides: Record<string, string> = {}): string {
+const LOCAL_ERRORS = {
+  EventNotFoundError: () => t('errors.local.eventNotFound'),
+  EventDeletedError: () => t('errors.local.eventDeleted'),
+  EventAlreadyStoppedError: () => t('errors.local.eventNotRunning'),
+  InvalidEventTimeRangeError: () => t('errors.local.invalidTimeRange'),
+} satisfies Record<string, () => string>;
+
+/** Wording for failures raised by local (Dexie) commands; `null` when the error is not one. */
+function describeLocalError(error: unknown): string | null {
+  if (error instanceof EventCommandError) {
+    return getOwn(LOCAL_ERRORS, error.name)?.() ?? t('errors.generic');
+  }
+  if (error instanceof InvalidMedicationError) {
+    return error.code === 'gone'
+      ? t('errors.local.medicationGone')
+      : t('errors.local.medicationNameRequired');
+  }
+  return null;
+}
+
+/**
+ * A user-facing sentence for a failed operation: the API problem `code` (catalog `errors.<code>`),
+ * then the HTTP status, then network and local failures. Server `detail` text is never shown.
+ */
+export function describeApiError(error: unknown, overrides: ErrorOverrides = {}): string {
   if (error instanceof ApiError) {
+    const override = error.code ? getOwn(overrides, error.code) : undefined;
+    if (override) return override();
     const known = error.code
-      ? (getOwn(overrides, error.code) ?? getOwn(MESSAGES, error.code))
+      ? renderCatalogText(['errors', error.code], { ...error.problem })
       : undefined;
     if (known) return known;
-    if (
-      error.code === 'import_too_many_medication_names' &&
-      error.problem?.maxNames !== undefined
-    ) {
-      return `This import has more than ${error.problem.maxNames} different medication names. Fix or split the file and try again.`;
-    }
-    if (error.status === 429) return 'Too many requests, please wait a moment.';
-    if (error.status === 413) return 'The data is too large to send. Try a smaller change.';
-    if (error.status === 403) return 'You do not have permission to do this.';
-    const detail = error.problem?.detail ?? error.problem?.title;
-    if (error.status >= 400 && error.status < 500 && detail) return detail;
-    return 'The server could not complete the request. Try again later.';
+    if (error.status === 429) return t('errors.tooManyRequests');
+    if (error.status === 413) return t('errors.tooLarge');
+    if (error.status === 403) return t('errors.forbidden');
+    return t('errors.serverUnavailable');
   }
-  if (error instanceof TypeError) return OFFLINE_MESSAGE;
-  return error instanceof Error ? error.message : 'Something went wrong.';
+  if (error instanceof TypeError) return offlineMessage();
+  return describeLocalError(error) ?? t('errors.generic');
 }

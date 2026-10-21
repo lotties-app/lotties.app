@@ -132,7 +132,7 @@ describe('HomePage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Log Diaper' }));
     expect(await screen.findByRole('heading', { name: 'Add event' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'DIRTY' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dirty' }));
     fireEvent.change(screen.getByLabelText('Notes'), { target: { value: ' leaked ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 

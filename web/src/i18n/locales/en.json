@@ -1,0 +1,728 @@
+{
+  "app": {
+    "name": "Baby Routine",
+    "loadingPage": "Loading page"
+  },
+  "common": {
+    "add": "Add",
+    "back": "Back",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "discard": "Discard",
+    "done": "Done",
+    "edit": "Edit",
+    "loading": "Loading",
+    "name": "Name",
+    "next": "Next",
+    "notes": "Notes",
+    "reload": "Reload",
+    "retry": "Retry",
+    "save": "Save",
+    "type": "Type",
+    "unit": "Unit",
+    "required": "Required",
+    "running": "Running",
+    "event": "Event",
+    "account": "Account"
+  },
+  "nav": {
+    "main": "Main",
+    "home": "Home",
+    "timeline": "Timeline",
+    "growth": "Growth",
+    "settings": "Settings",
+    "addEvent": "Add event"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in",
+    "backToSignIn": "Back to sign in",
+    "signingOut": "Signing out",
+    "setupTitle": "Setup required",
+    "setupBody": "Baby Routine is not configured. Set the following environment variables (see web/.env.example) and restart:"
+  },
+  "layout": {
+    "switchBaby": "{{name}}, switch baby",
+    "userMenu": "User menu",
+    "logout": "Log out",
+    "logoutTitle": "Log out?",
+    "logoutMessage": "You have {{changes}} that will be lost.",
+    "pushNow": "Push now",
+    "logoutAnyway": "Logout anyway",
+    "somethingWentWrong": "Something went wrong."
+  },
+  "sync": {
+    "signInToSync": "Sign in to sync",
+    "syncing": "Syncing…",
+    "offline": "Offline",
+    "error": "Sync error",
+    "synced": "Synced",
+    "failedSuffix": "{{count}} failed",
+    "labelWithFailed": "{{label}} · {{failed}}",
+    "iconLabel": "Sync: {{label}}. Open sync settings",
+    "statusLabel": "Sync status: {{label}}",
+    "unauthorized": "Unauthorized: sign in again to resume sync.",
+    "pending_one": "{{count}} pending",
+    "pending_other": "{{count}} pending"
+  },
+  "session": {
+    "unsyncedChanges_one": "{{count}} unsynced change",
+    "unsyncedChanges_other": "{{count}} unsynced changes",
+    "uploadFailed": "{{changes}} could not be uploaded. Check your connection, or review failed changes in Settings > Sync."
+  },
+  "baby": {
+    "viewerNotice": "You have view-only access to this baby, so logging is turned off.",
+    "viewOnlyNamed": "You have view-only access to {{name}}.",
+    "nameLabel": "Name",
+    "birthDate": "Birth date",
+    "nameRequired": "Name is required.",
+    "birthRequired": "Birth date is required.",
+    "birthFuture": "Birth date cannot be in the future.",
+    "noBabyYet": "No baby yet",
+    "createPrompt": "Create a baby to start logging, or open an invite link someone shared with you.",
+    "create": "Create baby",
+    "roles": {
+      "Owner": "Owner",
+      "Parent": "Parent",
+      "Viewer": "Viewer"
+    }
+  },
+  "age": {
+    "day_one": "{{count}} day",
+    "day_other": "{{count}} days",
+    "week_one": "{{count}} week",
+    "week_other": "{{count}} weeks",
+    "month_one": "{{count}} month",
+    "month_other": "{{count}} months",
+    "year_one": "{{count}} year",
+    "year_other": "{{count}} years",
+    "join": "{{first}}, {{second}}"
+  },
+  "format": {
+    "durationH": "{{h}}h",
+    "durationM": "{{m}}m",
+    "durationHM": "{{h}}h {{m}}m"
+  },
+  "home": {
+    "noTypes": "No event types yet. They appear here after the first sync.",
+    "start": "Start {{name}}",
+    "log": "Log {{name}}",
+    "runningTimers": "Running timers",
+    "stop": "Stop",
+    "stopNamed": "Stop {{name}}",
+    "editNamed": "Edit {{name}}"
+  },
+  "track": {
+    "title": "Track",
+    "placeholder": "Quick actions will appear here."
+  },
+  "presets": {
+    "wake_up": "Wake-up",
+    "nap": "Nap",
+    "bedtime": "Bedtime",
+    "fell_asleep": "Fell asleep",
+    "night_waking": "Night waking",
+    "bottle": "Bottle",
+    "nursing": "Nursing",
+    "diaper": "Diaper",
+    "medication": "Medication",
+    "belly_pain": "Belly pain",
+    "bath": "Bath",
+    "tummy_time": "Tummy time",
+    "pumping": "Pumping",
+    "custom": "Custom",
+    "status": {
+      "running": "Running {{time}}",
+      "lastClock": "Last {{time}}",
+      "lastJustNow": "Last just now",
+      "lastMinutes": "Last {{count}} min ago",
+      "lastHours": "Last {{count}}h ago",
+      "untrackedToday": "Not tracked today"
+    }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "noBaby": "No baby yet. Events appear here once a baby syncs from the server.",
+    "empty_one": "No events in the last {{count}} day.",
+    "empty_other": "No events in the last {{count}} days.",
+    "loadOlder": "Load older",
+    "filterByType": "Filter by type",
+    "all": "All",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "since": "Since {{time}}",
+    "range": "{{start}} – {{end}} · {{duration}}",
+    "syncFailed": "Sync failed",
+    "notSynced": "Not synced yet",
+    "unknownMedication": "Unknown medication",
+    "rowSummary": "{{times}} · {{summary}}",
+    "intensity": "{{label}} {{value}}/{{max}}",
+    "labelValue": "{{label}} {{value}}"
+  },
+  "events": {
+    "addTitle": "Add event",
+    "editTitle": "Edit event",
+    "time": "Time",
+    "start": "Start",
+    "end": "End",
+    "endHelp": "Leave empty while it is still running.",
+    "deleteTitle": "Delete this event?",
+    "deleteBody": "It will be removed from the timeline on all devices.",
+    "keep": "Keep",
+    "deleteConfirm": "Delete event",
+    "saveFailed": "Could not save the event.",
+    "medications": "Medications",
+    "newMedication": "New medication",
+    "addMedication": "Add medication",
+    "usual": "Usual",
+    "doseLabel": "{{name}} dose",
+    "unitLabel": "{{name}} unit",
+    "validation": {
+      "chooseType": "Choose an event type.",
+      "startRequired": "Start time is required.",
+      "endBeforeStart": "End time must not be before the start time.",
+      "fieldRequired": "{{label}} is required.",
+      "fieldNumber": "{{label}} must be a number.",
+      "fieldMin": "{{label}} must be at least {{min}}.",
+      "fieldMax": "{{label}} must be at most {{max}}.",
+      "selectMedication": "Select at least one medication.",
+      "doseInvalid": "Dose for {{name}} must be a positive number.",
+      "doseUnit": "Dose for {{name}} needs a unit."
+    }
+  },
+  "eventTypes": {
+    "feeding": {
+      "name": "Feeding",
+      "fields": {
+        "method": {
+          "label": "Method"
+        },
+        "side": {
+          "label": "Side"
+        },
+        "amount_ml": {
+          "label": "Amount"
+        },
+        "bottle_feeding_type": {
+          "label": "Bottle content"
+        },
+        "breast_left_seconds": {
+          "label": "Left breast"
+        },
+        "breast_right_seconds": {
+          "label": "Right breast"
+        },
+        "food": {
+          "label": "Food"
+        }
+      },
+      "options": {
+        "method": {
+          "breast": "Breast",
+          "bottle": "Bottle",
+          "solid": "Solid food"
+        },
+        "side": {
+          "left": "Left",
+          "right": "Right",
+          "both": "Both"
+        },
+        "bottle_feeding_type": {
+          "formula": "Formula",
+          "breast_milk": "Breast milk"
+        }
+      }
+    },
+    "sleep": {
+      "name": "Sleep",
+      "fields": {
+        "kind": {
+          "label": "Kind"
+        },
+        "mood": {
+          "label": "Mood"
+        }
+      },
+      "options": {
+        "kind": {
+          "nap": "Nap",
+          "night": "Night sleep",
+          "night_waking": "Night waking",
+          "bed_time": "Bedtime",
+          "woke_up": "Woke up",
+          "fell_asleep": "Fell asleep"
+        }
+      }
+    },
+    "diaper": {
+      "name": "Diaper",
+      "fields": {
+        "content": {
+          "label": "Content"
+        }
+      },
+      "options": {
+        "content": {
+          "wet": "Wet",
+          "dirty": "Dirty",
+          "mixed": "Mixed"
+        }
+      }
+    },
+    "bath": {
+      "name": "Bath",
+      "fields": {
+        "temperature_c": {
+          "label": "Water temperature"
+        }
+      }
+    },
+    "tummy_time": {
+      "name": "Tummy time",
+      "fields": {
+        "mood": {
+          "label": "Mood"
+        }
+      }
+    },
+    "medication": {
+      "name": "Medication"
+    },
+    "belly_pain": {
+      "name": "Belly pain",
+      "fields": {
+        "intensity": {
+          "label": "Intensity"
+        }
+      }
+    },
+    "breast_pump": {
+      "name": "Breast pump",
+      "fields": {
+        "amount_left_ml": {
+          "label": "Left amount"
+        },
+        "amount_right_ml": {
+          "label": "Right amount"
+        }
+      }
+    }
+  },
+  "predictions": {
+    "title": "Next predicted",
+    "region": "Predictions",
+    "next": "Next {{name}}",
+    "overdue": "Overdue",
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "why": "Why?",
+    "window": "around {{expected}}, between {{earliest}} and {{latest}}",
+    "duration": "usually lasts {{duration}}",
+    "windowWithDuration": "{{window}}; {{duration}}",
+    "needMore": "Need more data for: {{names}}",
+    "empty": "Predictions appear after a few days of logging.",
+    "offline": "Predictions load when you are back online.",
+    "unavailable": "Predictions are unavailable right now.",
+    "loading": "Loading predictions…",
+    "lastUpdated": "Last updated {{when}}",
+    "lastUpdatedOffline": "Offline · Last updated {{when}}",
+    "disclaimer": "Estimates from your logged history, not medical advice.",
+    "tomorrow": "tomorrow {{time}}",
+    "yesterday": "yesterday {{time}}",
+    "basis": {
+      "startInterval_one": "Usually every {{gap}}, based on the last {{count}} day.",
+      "startInterval_other": "Usually every {{gap}}, based on the last {{count}} days.",
+      "awakeWindow_one": "Usually {{gap}} awake after waking up, based on the last {{count}} day.",
+      "awakeWindow_other": "Usually {{gap}} awake after waking up, based on the last {{count}} days.",
+      "samples_one": "{{count}} sample used.",
+      "samples_other": "{{count}} samples used.",
+      "phaseDay": "Only daytime events were used.",
+      "phaseNight": "Only night events were used.",
+      "ageBand": "Only events from the age range {{band}} were used.",
+      "ageBands": {
+        "0-3m": "0-3 months",
+        "3-6m": "3-6 months",
+        "6-12m": "6-12 months",
+        "12m+": "12 months and older"
+      },
+      "typicalDuration_one": "Typical duration {{duration}} (from {{count}} sample).",
+      "typicalDuration_other": "Typical duration {{duration}} (from {{count}} samples).",
+      "inProgress": "Measured from the expected end of the one in progress."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "createBabyFirst": "Create a baby on the Home screen to unlock these settings.",
+    "sections": {
+      "baby": "Baby",
+      "eventTypes": "Event types",
+      "medications": "Medications",
+      "import": "Import",
+      "members": "Members & invites",
+      "appearance": "Appearance",
+      "language": "Language",
+      "sync": "Sync"
+    },
+    "appearance": {
+      "theme": "Theme",
+      "system": "System",
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "language": {
+      "label": "Language",
+      "system": "System default"
+    },
+    "baby": {
+      "role": "Your role",
+      "ownerOnly": "Only the owner can change these details.",
+      "born": "Born {{date}}",
+      "save": "Save details"
+    },
+    "eventTypes": {
+      "custom": "Custom",
+      "builtIn": "Built-in",
+      "noCustom": "No custom event types.",
+      "customList": "Custom event types",
+      "builtInList": "Built-in event types",
+      "add": "Add event type",
+      "viewOnly": "You can view event types but not change them.",
+      "hasDuration": "Has duration",
+      "instant": "Instant",
+      "details": "{{kind}} · {{fields}}",
+      "fieldCount_one": "{{count}} field",
+      "fieldCount_other": "{{count}} fields",
+      "editNamed": "Edit {{name}}",
+      "deleteNamed": "Delete {{name}}",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteBody": "The event type is removed for everyone who follows this baby.",
+      "deleteConfirm": "Delete event type",
+      "loadingEditor": "Loading editor",
+      "offlineSave": "You are offline. Saving needs a connection.",
+      "nameHelp": "The internal key is made from the name and cannot change.",
+      "durationSwitch": "Has duration (start and stop timer)",
+      "icon": "Icon",
+      "colour": "Colour",
+      "colourOption": "Colour {{color}}",
+      "fields": "Fields",
+      "noFields": "No extra fields. Events only record time and notes.",
+      "fieldDefinitions": "Field definitions",
+      "addField": "Add field",
+      "fieldN": "Field {{position}}",
+      "removeField": "Remove {{field}}",
+      "fieldLabel": "{{field}} label",
+      "fieldType": "{{field}} type",
+      "fieldOptions": "{{field}} options",
+      "optionsHelp": "One option per line.",
+      "fieldMin": "{{field}} min",
+      "fieldMax": "{{field}} max",
+      "fieldUnit": "{{field}} unit",
+      "fieldRequired": "{{field}} required",
+      "kinds": {
+        "text": "Text",
+        "number": "Number",
+        "select": "Choice",
+        "bool": "Yes / no"
+      },
+      "validation": {
+        "nameRequired": "Name is required.",
+        "nameInvalid": "Name must contain at least one letter or digit.",
+        "needsLabel": "{{field}} needs a label.",
+        "needsOptions": "{{field}} needs at least two options.",
+        "boundsNumbers": "{{field}}: min and max must be numbers.",
+        "boundsOrder": "{{field}}: min must not be above max."
+      }
+    },
+    "icons": {
+      "local_drink": "Drink",
+      "bedtime": "Moon",
+      "baby_changing_station": "Changing station",
+      "bathtub": "Bathtub",
+      "child_care": "Child",
+      "medication": "Medication",
+      "sick": "Sick",
+      "restaurant": "Restaurant",
+      "favorite": "Heart",
+      "star": "Star",
+      "water_drop": "Water drop",
+      "toys": "Toys",
+      "directions_walk": "Walking",
+      "thermostat": "Thermometer",
+      "vaccines": "Vaccine",
+      "cake": "Cake"
+    },
+    "medications": {
+      "none": "No medications yet.",
+      "add": "Add medication",
+      "edit": "Edit medication",
+      "viewOnly": "You can view medications but not change them.",
+      "editNamed": "Edit {{name}}",
+      "deleteNamed": "Delete {{name}}",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteBody": "Past events keep their own copy of the medication.",
+      "deleteConfirm": "Delete medication",
+      "list": "Medications",
+      "defaultDose": "Default dose",
+      "usualSwitch": "Usual medication",
+      "doseInvalid": "Dose must be a positive number.",
+      "doseNeedsUnit": "A dose needs a unit.",
+      "nameRequired": "Name is required.",
+      "saveFailed": "Could not save the medication.",
+      "dose": "{{amount}} {{unit}}"
+    },
+    "members": {
+      "unnamed": "Unnamed member",
+      "joined": "Joined {{date}}",
+      "roleFor": "Role for {{name}}",
+      "removeNamed": "Remove {{name}}",
+      "list": "Members",
+      "loadFailed": "Could not load members. Check your connection.",
+      "ownerOnly": "Only the owner can manage members and invites.",
+      "leave": "Leave this baby",
+      "removeTitle": "Remove {{name}}?",
+      "removeBody": "They lose access to this baby immediately.",
+      "removeConfirm": "Remove member",
+      "leaveTitle": "Leave {{name}}?",
+      "leaveUnsynced": "You have {{changes}} for {{name}} that will be lost.",
+      "pushFirst": "Push first",
+      "leaveAnyway": "Leave anyway",
+      "leaveBody": "You will need a new invite to follow this baby again.",
+      "leaveConfirm": "Leave baby"
+    },
+    "invites": {
+      "inviteSomeone": "Invite someone",
+      "role": "Invite role",
+      "expiresIn": "Expires in (days)",
+      "daysRange": "1 to 30 days.",
+      "create": "Create invite link",
+      "pending": "Pending invites",
+      "none": "No pending invites.",
+      "revoke": "Revoke {{role}} invite",
+      "expires": "Expires {{date}}",
+      "linkTitle": "Invite link",
+      "linkWarning": "Copy this link now: it is shown only once. Anyone who opens it while signed in can join.",
+      "linkCopied": "Link copied.",
+      "copyFailed": "Could not copy automatically. Select the link and copy it.",
+      "share": "Share",
+      "copy": "Copy link",
+      "shareTitle": "Baby Routine invite"
+    },
+    "sync": {
+      "status": "Status: {{state}}",
+      "waiting": "Waiting to upload: {{count}}",
+      "lastSynced": "Last synced {{when}}",
+      "syncNow": "Sync now",
+      "failedChanges": "Failed changes ({{count}})",
+      "failedList": "Failed changes",
+      "nothingFailed": "Nothing failed.",
+      "rejected": "Rejected by the server",
+      "retryNamed": "Retry {{label}}",
+      "discardNamed": "Discard {{label}}",
+      "states": {
+        "idle": "Up to date",
+        "syncing": "Syncing",
+        "offline": "Offline",
+        "error": "Error"
+      },
+      "mutation": {
+        "save": "Save {{entity}}",
+        "delete": "Delete {{entity}}"
+      },
+      "entities": {
+        "event": "event",
+        "medication": "medication"
+      }
+    }
+  },
+  "growth": {
+    "title": "Growth",
+    "add": "Add measurement",
+    "edit": "Edit measurement",
+    "none": "No measurements yet.",
+    "loadFailed": "Could not load measurements. Try again later.",
+    "createBabyFirst": "Create a baby on the Home screen to track growth.",
+    "deleteTitle": "Delete this measurement?",
+    "deleteBody": "This removes it from the list and the charts.",
+    "deleteConfirm": "Delete measurement",
+    "list": "Measurements",
+    "editOn": "Edit measurement of {{date}}",
+    "deleteOn": "Delete measurement of {{date}}",
+    "date": "Date",
+    "range": "{{min}} to {{max}} {{unit}}",
+    "metricLabel": "{{label}} ({{unit}})",
+    "chart": "{{label}} chart",
+    "latest": "Latest {{value}} {{unit}}",
+    "noneForMetric": "No {{label}} measurements yet.",
+    "valueWithUnit": "{{label}} {{value}} {{unit}}",
+    "pointTitle": "{{date}}: {{value}} {{unit}}",
+    "chartDescription": "{{label}} from {{from}} to {{to}}: {{points}}.",
+    "chartPoint": "{{value}} {{unit}} on {{date}}",
+    "metrics": {
+      "weightKg": "Weight",
+      "heightCm": "Height",
+      "headCircumferenceCm": "Head circumference"
+    },
+    "validation": {
+      "pickDate": "Pick a date.",
+      "dateFuture": "The date cannot be in the future.",
+      "dateTooOld": "The date is too far in the past.",
+      "outOfRange": "{{label}} must be between {{min}} and {{max}} {{unit}}.",
+      "needValue": "Enter at least one of weight, height or head circumference.",
+      "notesTooLong": "Notes can have up to {{max}} characters."
+    }
+  },
+  "invite": {
+    "title": "Invite",
+    "joining": "Joining…",
+    "goHome": "Go to Home"
+  },
+  "import": {
+    "stepsLabel": "Napper import steps",
+    "steps": {
+      "files": "Choose files",
+      "review": "Review",
+      "medications": "Medications",
+      "import": "Import",
+      "done": "Done"
+    },
+    "viewerBlocked": "Only parents and owners can import data into this baby.",
+    "files": {
+      "intro": "Choose one or both Napper export files (up to {{limit}} each). Importing the same file again is safe: records that already exist are skipped, nothing is duplicated.",
+      "chooseLogs": "Choose logs CSV",
+      "chooseMeasurements": "Choose measurements CSV",
+      "logsHint": "Events: feedings, sleep, diapers, medicine",
+      "measurementsHint": "Weight, height, head circumference",
+      "remove": "Remove {{name}}",
+      "preview": "Preview import",
+      "fileLabel": "{{name}} ({{size}})",
+      "tooBigLocal": "{{name}} is larger than {{limit}}. Export a smaller range and try again.",
+      "readFailed": "Could not read {{name}}."
+    },
+    "preview": {
+      "notice": "This is a preview: nothing has been saved yet.",
+      "logs": "Logs",
+      "measurements": "Measurements",
+      "totals": "{{total}} rows: {{create}} to create, {{existing}} already imported, {{skipped}} skipped.",
+      "dates": "Dates: {{range}}.",
+      "dateRange": "{{from}} to {{to}}",
+      "perCategory": "Logs per category",
+      "category": "Category",
+      "toCreate": "To create",
+      "alreadyImported": "Already imported",
+      "skipped": "Skipped",
+      "showSkipped_one": "Show {{count}} skipped {{label}} row",
+      "showSkipped_other": "Show {{count}} skipped {{label}} rows",
+      "hideSkipped_one": "Hide {{count}} skipped {{label}} row",
+      "hideSkipped_other": "Hide {{count}} skipped {{label}} rows",
+      "labelLog": "log",
+      "labelMeasurement": "measurement",
+      "skippedList": "Skipped {{label}} rows",
+      "row": "Row {{row}}",
+      "rowWithCategory": "Row {{row}} ({{category}})",
+      "more": "And {{count}} more."
+    },
+    "medications": {
+      "none": "No new medication names need a decision.",
+      "intro": "Napper stores medicines as free text. Choose what each name becomes, then press Re-check so the server confirms every name is covered.",
+      "unmapped_one": "{{count}} name still needs to be checked: {{names}}. Press Re-check after your choices.",
+      "unmapped_other": "{{count}} names still need to be checked: {{names}}. Press Re-check after your choices.",
+      "covered": "All medication names are covered.",
+      "recheck": "Re-check",
+      "group": "Medication {{token}}",
+      "appears_one": "Appears {{count}} time",
+      "appears_other": "Appears {{count}} times",
+      "similar": "Similar names: {{names}}",
+      "appearsWithSimilar": "{{appears}}. {{similar}}",
+      "actionFor": "Action for {{token}}",
+      "useExisting": "Use an existing medication",
+      "createNew": "Create a new medication",
+      "ignore": "Ignore this name",
+      "medicationFor": "Medication for {{token}}",
+      "newNameFor": "New medication name for {{token}}",
+      "enterName": "Enter a name.",
+      "tooLong": "Use at most 100 characters.",
+      "pickOne": "Pick a medication."
+    },
+    "confirm": {
+      "summary": "Ready to import {{events}} and {{measurements}}.",
+      "summaryCreated": "Ready to import {{events}} and {{measurements}}, creating {{created}}.",
+      "summaryIgnored": "Ready to import {{events}} and {{measurements}} ({{ignored}} ignored).",
+      "summaryBoth": "Ready to import {{events}} and {{measurements}}, creating {{created}} ({{ignored}} ignored).",
+      "events_one": "{{count}} event",
+      "events_other": "{{count}} events",
+      "measurements_one": "{{count}} measurement",
+      "measurements_other": "{{count}} measurements",
+      "newMedications_one": "{{count}} new medication",
+      "newMedications_other": "{{count}} new medications",
+      "ignoredNames_one": "{{count}} medication name",
+      "ignoredNames_other": "{{count}} medication names",
+      "note": "Everything is saved together or not at all. Importing the same file again later is safe: nothing is duplicated, and events you deleted are not brought back.",
+      "importing": "Importing",
+      "importingEllipsis": "Importing…",
+      "import": "Import"
+    },
+    "result": {
+      "imported": "Imported {{events}} and {{measurements}}.",
+      "newMedications": "New medications: {{names}}.",
+      "existing_one": "{{count}} record was already imported.",
+      "existing_other": "{{count}} records were already imported.",
+      "skippedRows_one": "{{count}} row was skipped.",
+      "skippedRows_other": "{{count}} rows were skipped.",
+      "refreshing": "Your timeline is refreshing now.",
+      "another": "Import another file"
+    },
+    "errors": {
+      "tooLargeServer": "A file is too large for the server (limit {{limit}}). Export a smaller range.",
+      "tooManyRows": "A file has too many rows (limit {{max}}). Split it and import the parts one by one.",
+      "invalidFile": "The {{field}} file is not a valid Napper export (empty, damaged or missing columns).",
+      "invalidFileDefault": "selected",
+      "unmapped": "Some medication names still need a decision: {{names}}.",
+      "unmappedDefault": "see the list",
+      "invalidMapping": "The medication choice for \"{{token}}\" is not valid. Pick an existing medication or enter a name.",
+      "invalidMappingDefault": "a name",
+      "conflict": "Another import or sync wrote the same records at the same time. Nothing was saved; try again.",
+      "validationFailed": "The server rejected the request. Check the files and the medication names (up to 100 characters)."
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "offline": "You are offline. Connect to the internet to do this.",
+    "serverUnavailable": "The server could not complete the request. Try again later.",
+    "forbidden": "You do not have permission to do this.",
+    "tooManyRequests": "Too many requests, please wait a moment.",
+    "tooLarge": "The data is too large to send. Try a smaller change.",
+    "event_type_in_use": "This event type is used by logged events, so it cannot be deleted. You can rename it instead.",
+    "event_type_key_taken": "An event type with this name already exists. Choose another name.",
+    "event_type_built_in_read_only": "Built-in event types cannot be changed.",
+    "event_type_not_found": "This event type no longer exists.",
+    "last_owner_required": "A baby needs at least one owner. Make someone else an owner first.",
+    "member_not_found": "This member is no longer part of the baby.",
+    "invite_not_found": "This invite link is not valid. It may have been revoked or mistyped.",
+    "invite_expired": "This invite has expired. Ask for a new invite link.",
+    "invite_already_accepted": "This invite was already used. Ask for a new invite link.",
+    "member_already_exists": "You are already a member of this baby.",
+    "measurement_without_values": "Enter at least one of weight, height or head circumference.",
+    "measurement_baby_mismatch": "This measurement belongs to another baby.",
+    "concurrent_modification": "Something changed at the same time, please try again.",
+    "rate_limited": "Too many requests, please wait a moment.",
+    "request_body_too_large": "The data is too large to send. Try a smaller change.",
+    "import_too_many_medication_names": "This import has more than {{maxNames}} different medication names. Fix or split the file and try again.",
+    "measurementValidation": "The server rejected some values. Check the date and that weight, height and head circumference are within range.",
+    "local": {
+      "eventNotFound": "This event no longer exists.",
+      "eventDeleted": "This event was deleted.",
+      "eventNotRunning": "This event is not running.",
+      "invalidTimeRange": "The end time must not be before the start time.",
+      "medicationNameRequired": "A medication needs a name.",
+      "medicationGone": "This medication no longer exists."
+    }
+  },
+  "pwa": {
+    "install": "Install app",
+    "iosHint": "To install, tap Share, then Add to Home Screen.",
+    "newVersion": "New version available"
+  }
+}

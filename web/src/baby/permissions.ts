@@ -9,5 +9,3 @@ export function canWrite(baby: Pick<Baby, 'role'>): boolean {
 export function isOwner(baby: Pick<Baby, 'role'>): boolean {
   return baby.role === 'Owner';
 }
-
-export const VIEWER_NOTICE = 'You have view-only access to this baby, so logging is turned off.';

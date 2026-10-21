@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Checkbox,
@@ -39,19 +40,20 @@ function DoseFields({
   value: MedicationSelection;
   onChange: (value: MedicationSelection) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Stack direction="row" spacing={1} sx={{ pl: 4, pb: 1 }}>
       <TextField
         size="small"
         type="number"
-        label={`${name} dose`}
+        label={t('events.doseLabel', { name })}
         value={value.amount}
         onChange={(e) => onChange({ ...value, amount: e.target.value })}
         sx={{ flex: 2 }}
       />
       <TextField
         size="small"
-        label={`${name} unit`}
+        label={t('events.unitLabel', { name })}
         value={value.unit}
         onChange={(e) => onChange({ ...value, unit: e.target.value })}
         sx={{ flex: 1 }}
@@ -61,6 +63,7 @@ function DoseFields({
 }
 
 function AddMedication({ babyId, onAdded }: { babyId: string; onAdded: (m: Medication) => void }) {
+  const { t } = useTranslation();
   const { create } = useMedicationCommands();
   const [name, setName] = useState('');
 
@@ -74,19 +77,20 @@ function AddMedication({ babyId, onAdded }: { babyId: string; onAdded: (m: Medic
     <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
       <TextField
         size="small"
-        label="New medication"
+        label={t('events.newMedication')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         sx={{ flexGrow: 1 }}
       />
       <Button variant="outlined" onClick={add} disabled={!name.trim()} sx={{ minHeight: 40 }}>
-        Add medication
+        {t('events.addMedication')}
       </Button>
     </Stack>
   );
 }
 
 export function MedicationChecklist({ babyId, selected, onChange }: Props) {
+  const { t } = useTranslation();
   const medications = useMedications(babyId) ?? [];
 
   const toggle = (medication: Medication) => {
@@ -100,7 +104,7 @@ export function MedicationChecklist({ babyId, selected, onChange }: Props) {
 
   return (
     <FormGroup>
-      <FormLabel>Medications</FormLabel>
+      <FormLabel>{t('events.medications')}</FormLabel>
       {medications.map((medication) => {
         const selection = getOwn(selected, medication.id);
         return (
@@ -110,7 +114,9 @@ export function MedicationChecklist({ babyId, selected, onChange }: Props) {
               label={
                 <>
                   {medication.name}
-                  {medication.isUsual && <Chip size="small" label="Usual" sx={{ ml: 1 }} />}
+                  {medication.isUsual && (
+                    <Chip size="small" label={t('events.usual')} sx={{ ml: 1 }} />
+                  )}
                 </>
               }
               control={

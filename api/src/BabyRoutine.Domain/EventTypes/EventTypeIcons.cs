@@ -19,6 +19,7 @@ public static class EventTypeIcons
         "child_care",
         "medication",
         "sick",
+        "opacity",
         "restaurant",
         "favorite",
         "star",

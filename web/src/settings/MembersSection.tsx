@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -15,13 +16,14 @@ import {
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
 import { purgeBabyData } from '../db/purge';
 import { changeMemberRole, leaveBaby, listMembers, removeMember } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
 import { isOwner } from '../baby/permissions';
 import { useDatabase } from '../db/DatabaseContext';
 import type { Baby, BabyRole } from '../db/models';
+import { formatDate } from '../i18n/format';
+import { t as translate } from '../i18n/i18n';
 import { countUnsyncedMutations } from '../db/outbox';
 import { UnsyncedChangesDialog } from '../session/UnsyncedChangesDialog';
 import { unsyncedChangesLabel, usePushThenProceed } from '../session/usePushThenProceed';
@@ -34,7 +36,7 @@ import { useServerAction } from './useServerAction';
 
 const ROLES: BabyRole[] = ['Owner', 'Parent', 'Viewer'];
 
-const memberName = (m: MemberDto) => m.displayName?.trim() || 'Unnamed member';
+const memberName = (m: MemberDto) => m.displayName?.trim() || translate('settings.members.unnamed');
 
 function MemberRow({
   member,
@@ -49,20 +51,21 @@ function MemberRow({
   onRole: (role: BabyRole) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const name = memberName(member);
   const role = parseRole(member.role);
   return (
     <ListItem divider sx={{ gap: 1, flexWrap: 'wrap' }}>
       <ListItemText
         primary={name}
-        secondary={`Joined ${new Date(member.joinedAt).toLocaleDateString()}`}
+        secondary={t('settings.members.joined', { date: formatDate(member.joinedAt) })}
       />
       {manage ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <TextField
             select
             size="small"
-            label={`Role for ${name}`}
+            label={t('settings.members.roleFor', { name })}
             value={role}
             disabled={disabled}
             onChange={(e) => onRole(e.target.value as BabyRole)}
@@ -70,16 +73,20 @@ function MemberRow({
           >
             {ROLES.map((r) => (
               <MenuItem key={r} value={r}>
-                {r}
+                {t(`baby.roles.${r}`)}
               </MenuItem>
             ))}
           </TextField>
-          <IconButton aria-label={`Remove ${name}`} disabled={disabled} onClick={onRemove}>
+          <IconButton
+            aria-label={t('settings.members.removeNamed', { name })}
+            disabled={disabled}
+            onClick={onRemove}
+          >
             <PersonRemoveIcon />
           </IconButton>
         </Stack>
       ) : (
-        <Chip size="small" label={role} />
+        <Chip size="small" label={t(`baby.roles.${role}`)} />
       )}
     </ListItem>
   );
@@ -87,6 +94,7 @@ function MemberRow({
 
 /** Members of the baby, plus invites for the owner and a "leave" action for everyone. */
 export function MembersSection({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const api = useApiClient();
   const db = useDatabase();
   const engine = useSyncEngine();
@@ -143,10 +151,10 @@ export function MembersSection({ baby }: { baby: Baby }) {
 
   return (
     <Stack spacing={2}>
-      {!online && <Alert severity="warning">{OFFLINE_MESSAGE}</Alert>}
+      {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
       {!dialogOpen && <ErrorNotice message={error} />}
-      {members.isError && <ErrorNotice message="Could not load members. Check your connection." />}
-      <List aria-label="Members" disablePadding>
+      {members.isError && <ErrorNotice message={t('settings.members.loadFailed')} />}
+      <List aria-label={t('settings.members.list')} disablePadding>
         {members.data?.map((m) => (
           <MemberRow
             key={m.userId}
@@ -159,11 +167,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
         ))}
       </List>
       {manage && <InvitesPanel baby={baby} />}
-      {!manage && (
-        <Typography color="text.secondary">
-          Only the owner can manage members and invites.
-        </Typography>
-      )}
+      {!manage && <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>}
       <Button
         color="error"
         variant="outlined"
@@ -171,13 +175,13 @@ export function MembersSection({ baby }: { baby: Baby }) {
         onClick={() => void startLeave()}
         sx={{ minHeight: 48, alignSelf: 'flex-start' }}
       >
-        Leave this baby
+        {t('settings.members.leave')}
       </Button>
       {removing && (
         <ConfirmDialog
-          title={`Remove ${memberName(removing)}?`}
-          body="They lose access to this baby immediately."
-          confirmLabel="Remove member"
+          title={t('settings.members.removeTitle', { name: memberName(removing) })}
+          body={t('settings.members.removeBody')}
+          confirmLabel={t('settings.members.removeConfirm')}
           pending={pending}
           error={error}
           onCancel={closeDialogs}
@@ -186,10 +190,13 @@ export function MembersSection({ baby }: { baby: Baby }) {
       )}
       {leaving === 'unsynced' && (
         <UnsyncedChangesDialog
-          title={`Leave ${baby.name}?`}
-          message={`You have ${unsyncedChangesLabel(unsynced)} for ${baby.name} that will be lost.`}
-          pushLabel="Push first"
-          proceedLabel="Leave anyway"
+          title={t('settings.members.leaveTitle', { name: baby.name })}
+          message={t('settings.members.leaveUnsynced', {
+            changes: unsyncedChangesLabel(unsynced),
+            name: baby.name,
+          })}
+          pushLabel={t('settings.members.pushFirst')}
+          proceedLabel={t('settings.members.leaveAnyway')}
           pending={pending || pushFirst.pushing}
           error={pushFirst.error ?? error}
           onPush={() => void pushFirst.pushThenProceed()}
@@ -199,9 +206,9 @@ export function MembersSection({ baby }: { baby: Baby }) {
       )}
       {leaving === 'confirm' && (
         <ConfirmDialog
-          title={`Leave ${baby.name}?`}
-          body="You will need a new invite to follow this baby again."
-          confirmLabel="Leave baby"
+          title={t('settings.members.leaveTitle', { name: baby.name })}
+          body={t('settings.members.leaveBody')}
+          confirmLabel={t('settings.members.leaveConfirm')}
           pending={pending}
           error={error}
           onCancel={closeDialogs}

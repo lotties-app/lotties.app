@@ -1,4 +1,5 @@
 import { Button, Snackbar } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 /**
@@ -6,6 +7,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
  * presses "Reload", so unsaved input is never lost. Mounted once, inside App.
  */
 export function ReloadPrompt() {
+  const { t } = useTranslation();
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -19,10 +21,10 @@ export function ReloadPrompt() {
   return (
     <Snackbar
       open={needRefresh}
-      message="New version available"
+      message={t('pwa.newVersion')}
       action={
         <Button color="primary" size="small" onClick={() => void updateServiceWorker(true)}>
-          Reload
+          {t('common.reload')}
         </Button>
       }
       onClose={() => setNeedRefresh(false)}

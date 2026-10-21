@@ -73,7 +73,7 @@ describe('PredictionsSection', () => {
       within(card).getByText(
         `around ${clockWithDay(expected.expected, new Date())}, between ` +
           `${clockWithDay(expected.earliest, new Date())} and ${clockWithDay(expected.latest, new Date())}` +
-          '; usually lasts 25 min',
+          '; usually lasts 25m',
       ),
     ).toBeTruthy();
     expect(within(card).getByText('High confidence')).toBeTruthy();

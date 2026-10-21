@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Alert, Button, Divider, Stack, Typography } from '@mui/material';
 import { useMedications } from '../db/hooks';
 import type { Baby } from '../db/models';
@@ -48,18 +49,18 @@ export function MedicationsStep({
   onBack,
   onNext,
 }: Props) {
+  const { t } = useTranslation();
   const catalog = catalogOptions(useMedications(baby.id) ?? [], suggestions);
   const hasProblems = Object.keys(problems).length > 0;
 
   return (
     <Stack spacing={2}>
       {suggestions.length === 0 ? (
-        <Typography color="text.secondary">No new medication names need a decision.</Typography>
+        <Typography color="text.secondary">{t('import.medications.none')}</Typography>
       ) : (
         <>
           <Typography variant="body2" color="text.secondary">
-            Napper stores medicines as free text. Choose what each name becomes, then press Re-check
-            so the server confirms every name is covered.
+            {t('import.medications.intro')}
           </Typography>
           <Stack spacing={2} divider={<Divider flexItem />}>
             {suggestions.map((s) => (
@@ -75,11 +76,13 @@ export function MedicationsStep({
           </Stack>
           {unmapped.length > 0 ? (
             <Alert severity="warning">
-              {unmapped.length} name{unmapped.length === 1 ? ' still needs' : 's still need'} to be
-              checked: {unmapped.join(', ')}. Press Re-check after your choices.
+              {t('import.medications.unmapped', {
+                count: unmapped.length,
+                names: unmapped.join(', '),
+              })}
             </Alert>
           ) : (
-            <Alert severity="success">All medication names are covered.</Alert>
+            <Alert severity="success">{t('import.medications.covered')}</Alert>
           )}
           <Button
             variant="outlined"
@@ -87,16 +90,16 @@ export function MedicationsStep({
             disabled={pending || hasProblems}
             sx={{ minHeight: 48, alignSelf: 'flex-start' }}
           >
-            Re-check
+            {t('import.medications.recheck')}
           </Button>
         </>
       )}
       <Stack direction="row" spacing={1}>
         <Button onClick={onBack} sx={{ minHeight: 48 }}>
-          Back
+          {t('common.back')}
         </Button>
         <Button variant="contained" onClick={onNext} disabled={!canContinue} sx={{ minHeight: 48 }}>
-          Next
+          {t('common.next')}
         </Button>
       </Stack>
     </Stack>

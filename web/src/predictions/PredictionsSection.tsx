@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Stack, Typography } from '@mui/material';
 import type { Baby, EventType } from '../db/models';
 import { useNow } from '../events/time';
+import { formatList } from '../i18n/format';
+import { t } from '../i18n/i18n';
 import type { PredictionsDto } from '../sync/contract';
 import { PredictionCard } from './PredictionCard';
 import { clockWithDay, typeForKey, typeNameForKey } from './predictionModel';
@@ -23,20 +26,23 @@ function StatusLine({ children }: { children: string }) {
 }
 
 function placeholderMessage(online: boolean, isError: boolean): string {
-  if (!online) return 'Predictions load when you are back online.';
-  return isError ? 'Predictions are unavailable right now.' : 'Loading predictions…';
+  if (!online) return t('predictions.offline');
+  return isError ? t('predictions.unavailable') : t('predictions.loading');
 }
 
 function updatedAtMessage(online: boolean, updatedAt: number): string {
   const when = clockWithDay(new Date(updatedAt).toISOString(), new Date());
-  return `${online ? '' : 'Offline · '}Last updated ${when}`;
+  return online
+    ? t('predictions.lastUpdated', { when })
+    : t('predictions.lastUpdatedOffline', { when });
 }
 
 function PredictionList({ data, baby, types }: Props & { data: PredictionsDto }) {
+  useTranslation();
   const now = new Date(useNow(CLOCK_TICK_MS));
   const nameOf = (key: string) => typeNameForKey(types, key, baby.id);
   if (data.predictions.length === 0 && data.insufficientData.length === 0) {
-    return <StatusLine>Predictions appear after a few days of logging.</StatusLine>;
+    return <StatusLine>{t('predictions.empty')}</StatusLine>;
   }
   return (
     <>
@@ -51,7 +57,9 @@ function PredictionList({ data, baby, types }: Props & { data: PredictionsDto })
       ))}
       {data.insufficientData.length > 0 && (
         <StatusLine>
-          {`Need more data for: ${data.insufficientData.map((m) => nameOf(m.typeKey)).join(', ')}`}
+          {t('predictions.needMore', {
+            names: formatList(data.insufficientData.map((m) => nameOf(m.typeKey))),
+          })}
         </StatusLine>
       )}
     </>
@@ -60,14 +68,15 @@ function PredictionList({ data, baby, types }: Props & { data: PredictionsDto })
 
 /** "Next predicted" cards. Estimates only: never presented as medical advice. */
 export function PredictionsSection({ baby, types }: Props) {
+  useTranslation();
   const { query, online } = usePredictions(baby.id);
   const { data, isError, dataUpdatedAt } = query;
   const showUpdatedAt = !!data && (!online || isError) && dataUpdatedAt > 0;
 
   return (
-    <Stack spacing={1} component="section" aria-label="Predictions">
+    <Stack spacing={1} component="section" aria-label={t('predictions.region')}>
       <Typography variant="h6" component="h2">
-        Next predicted
+        {t('predictions.title')}
       </Typography>
       {data ? (
         <PredictionList data={data} baby={baby} types={types} />
@@ -76,7 +85,7 @@ export function PredictionsSection({ baby, types }: Props) {
       )}
       {showUpdatedAt && <StatusLine>{updatedAtMessage(online, dataUpdatedAt)}</StatusLine>}
       <Typography variant="caption" color="text.secondary">
-        Estimates from your logged history, not medical advice.
+        {t('predictions.disclaimer')}
       </Typography>
     </Stack>
   );

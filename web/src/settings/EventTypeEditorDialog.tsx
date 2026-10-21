@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -25,6 +26,8 @@ import { useDatabase } from '../db/DatabaseContext';
 import type { EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { EVENT_ICON_NAMES } from '../events/iconRegistry';
+import { useEventTypeText } from '../i18n/eventTypeText';
+import { catalogText } from '../i18n/catalog';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 import { FieldsEditor } from './FieldsEditor';
 import {
@@ -39,6 +42,9 @@ import {
 import { ErrorNotice } from './ErrorNotice';
 import { useServerAction } from './useServerAction';
 
+/** Localized icon name; icons without a catalog entry keep their identifier. */
+const iconLabel = (name: string) => catalogText('settings', 'icons', name) ?? name;
+
 interface Props {
   babyId: string;
   /** Omit to create a custom type. */
@@ -47,9 +53,10 @@ interface Props {
 }
 
 function IconPicker({ value, onChange }: { value: string; onChange: (icon: string) => void }) {
+  const { t } = useTranslation();
   return (
     <Box>
-      <FormLabel id="icon-picker-label">Icon</FormLabel>
+      <FormLabel id="icon-picker-label">{t('settings.eventTypes.icon')}</FormLabel>
       <ToggleButtonGroup
         exclusive
         value={value}
@@ -58,7 +65,12 @@ function IconPicker({ value, onChange }: { value: string; onChange: (icon: strin
         sx={{ flexWrap: 'wrap', gap: 0.5, display: 'flex' }}
       >
         {EVENT_ICON_NAMES.map((name) => (
-          <ToggleButton key={name} value={name} aria-label={name} sx={{ width: 48, height: 48 }}>
+          <ToggleButton
+            key={name}
+            value={name}
+            aria-label={iconLabel(name)}
+            sx={{ width: 48, height: 48 }}
+          >
             <EventTypeIcon name={name} fontSize={24} />
           </ToggleButton>
         ))}
@@ -68,16 +80,17 @@ function IconPicker({ value, onChange }: { value: string; onChange: (icon: strin
 }
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  const { t } = useTranslation();
   return (
-    <Box role="radiogroup" aria-label="Colour">
-      <FormLabel>Colour</FormLabel>
+    <Box role="radiogroup" aria-label={t('settings.eventTypes.colour')}>
+      <FormLabel>{t('settings.eventTypes.colour')}</FormLabel>
       <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, pt: 0.5 }}>
         {COLOR_PALETTE.map((color) => (
           <IconButton
             key={color}
             role="radio"
             aria-checked={color === value}
-            aria-label={`Colour ${color}`}
+            aria-label={t('settings.eventTypes.colourOption', { color })}
             onClick={() => onChange(color)}
             sx={{
               bgcolor: color,
@@ -97,6 +110,8 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (color: str
 
 /** Create/edit form for a custom event type: identity, look, duration and field definitions. */
 export function EventTypeEditorDialog({ babyId, type, onClose }: Props) {
+  const { t } = useTranslation();
+  const names = useEventTypeText();
   const api = useApiClient();
   const db = useDatabase();
   const engine = useSyncEngine();
@@ -127,13 +142,15 @@ export function EventTypeEditorDialog({ babyId, type, onClose }: Props) {
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
-      <DialogTitle>{type ? `Edit ${type.name}` : 'Add event type'}</DialogTitle>
+      <DialogTitle>
+        {type
+          ? t('settings.eventTypes.editNamed', { name: names.typeName(type) })
+          : t('settings.eventTypes.add')}
+      </DialogTitle>
       <form onSubmit={(e) => void submit(e)} noValidate>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {!online && (
-              <Alert severity="warning">You are offline. Saving needs a connection.</Alert>
-            )}
+            {!online && <Alert severity="warning">{t('settings.eventTypes.offlineSave')}</Alert>}
             <ErrorNotice message={error} />
             {problems.length > 0 && (
               <Alert severity="error">
@@ -145,19 +162,17 @@ export function EventTypeEditorDialog({ babyId, type, onClose }: Props) {
               </Alert>
             )}
             <TextField
-              label="Name"
+              label={t('common.name')}
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
               required
               autoComplete="off"
-              helperText={
-                creating ? 'The internal key is made from the name and cannot change.' : null
-              }
+              helperText={creating ? t('settings.eventTypes.nameHelp') : null}
             />
             <IconPicker value={draft.icon} onChange={(icon) => patch({ icon })} />
             <ColorPicker value={draft.color} onChange={(color) => patch({ color })} />
             <FormControlLabel
-              label="Has duration (start and stop timer)"
+              label={t('settings.eventTypes.durationSwitch')}
               control={
                 <Switch
                   checked={draft.hasDuration}
@@ -169,9 +184,9 @@ export function EventTypeEditorDialog({ babyId, type, onClose }: Props) {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" variant="contained" disabled={pending || !online}>
-            Save
+            {t('common.save')}
           </Button>
         </DialogActions>
       </form>

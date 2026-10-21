@@ -1,5 +1,6 @@
 import type { BabyEvent, EventType } from '../db/models';
-import { formatClock, formatDuration } from '../events/time';
+import { formatDate, formatDuration, formatTime } from '../i18n/format';
+import { t } from '../i18n/i18n';
 
 /** Days loaded per page ("load older" adds another page). */
 export const DAYS_PER_PAGE = 14;
@@ -28,20 +29,14 @@ export function windowStart(days: number, now: Date): string {
   return start.toISOString();
 }
 
-const dayFormat = new Intl.DateTimeFormat(undefined, {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-});
-
 /** `Today`, `Yesterday`, or a short weekday + date. */
 export function dayLabel(key: string, now: Date): string {
   const [y, m, d] = key.split('-').map(Number);
   const day = new Date(y, m - 1, d);
-  if (key === dayKeyOf(now)) return 'Today';
+  if (key === dayKeyOf(now)) return t('timeline.today');
   const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  if (key === dayKeyOf(yesterday)) return 'Yesterday';
-  return dayFormat.format(day);
+  if (key === dayKeyOf(yesterday)) return t('timeline.yesterday');
+  return formatDate(day, 'weekdayDayMonth');
 }
 
 /** Groups events (already newest first) by local start day, keeping order. */
@@ -63,11 +58,11 @@ function isInstant(event: BabyEvent, type: EventType | undefined): boolean {
 
 /** `08:00`, `08:00 – 08:45 · 45 min`, or `Since 08:00` for running events. */
 export function describeTimes(event: BabyEvent, type: EventType | undefined): string {
-  const start = formatClock(event.startedAt);
-  if (event.endedAt === null) return `Since ${start}`;
+  const start = formatTime(event.startedAt);
+  if (event.endedAt === null) return t('timeline.since', { time: start });
   if (isInstant(event, type)) return start;
   const duration = formatDuration(Date.parse(event.endedAt) - Date.parse(event.startedAt));
-  return `${start} – ${formatClock(event.endedAt)} · ${duration}`;
+  return t('timeline.range', { start, end: formatTime(event.endedAt), duration });
 }
 
 /** Events whose type is in `typeIds`; an empty selection means all types. */

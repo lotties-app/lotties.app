@@ -1,10 +1,12 @@
+import type { ErrorOverrides } from '../api/errorMessages';
+import { formatNumber } from '../i18n/format';
+import { t } from '../i18n/i18n';
 import type { MeasurementDto, MeasurementRequest } from '../sync/contract';
 
 export type MetricKey = 'weightKg' | 'heightCm' | 'headCircumferenceCm';
 
 export interface MetricInfo {
   key: MetricKey;
-  label: string;
   unit: string;
   min: number;
   max: number;
@@ -12,10 +14,15 @@ export interface MetricInfo {
 
 /** Ranges mirror the API rules (docs/SPEC.md "Measurements"). */
 export const METRICS: readonly MetricInfo[] = [
-  { key: 'weightKg', label: 'Weight', unit: 'kg', min: 0.3, max: 40 },
-  { key: 'heightCm', label: 'Height', unit: 'cm', min: 20, max: 130 },
-  { key: 'headCircumferenceCm', label: 'Head circumference', unit: 'cm', min: 20, max: 60 },
+  { key: 'weightKg', unit: 'kg', min: 0.3, max: 40 },
+  { key: 'heightCm', unit: 'cm', min: 20, max: 130 },
+  { key: 'headCircumferenceCm', unit: 'cm', min: 20, max: 60 },
 ];
+
+/** Localized metric name (`Weight`, `Peso`). */
+export function metricLabel(metric: Pick<MetricInfo, 'key'>): string {
+  return t(`growth.metrics.${metric.key}`);
+}
 
 export const MIN_DATE = '2000-01-01';
 export const MAX_NOTES = 1000;
@@ -67,25 +74,30 @@ export function validateForm(form: MeasurementForm, now: Date = new Date()): Val
     headCircumferenceCm: null,
   };
 
-  if (!form.date) errors.date = 'Pick a date.';
-  else if (form.date > todayLocal(now)) errors.date = 'The date cannot be in the future.';
-  else if (form.date < MIN_DATE) errors.date = 'The date is too far in the past.';
+  if (!form.date) errors.date = t('growth.validation.pickDate');
+  else if (form.date > todayLocal(now)) errors.date = t('growth.validation.dateFuture');
+  else if (form.date < MIN_DATE) errors.date = t('growth.validation.dateTooOld');
 
   for (const metric of METRICS) {
     const raw = form[metric.key].trim();
     if (!raw) continue;
     const n = parseNumber(raw);
     if (!Number.isFinite(n) || n < metric.min || n > metric.max) {
-      errors[metric.key] =
-        `${metric.label} must be between ${metric.min} and ${metric.max} ${metric.unit}.`;
+      errors[metric.key] = t('growth.validation.outOfRange', {
+        label: metricLabel(metric),
+        min: formatNumber(metric.min),
+        max: formatNumber(metric.max),
+        unit: metric.unit,
+      });
     } else {
       values[metric.key] = Math.round(n * 100) / 100;
     }
   }
   if (!METRICS.some((m) => form[m.key].trim())) {
-    errors.values = 'Enter at least one of weight, height or head circumference.';
+    errors.values = t('growth.validation.needValue');
   }
-  if (form.notes.length > MAX_NOTES) errors.notes = `Notes can have up to ${MAX_NOTES} characters.`;
+  if (form.notes.length > MAX_NOTES)
+    errors.notes = t('growth.validation.notesTooLong', { max: MAX_NOTES });
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return { ok: true, request: { date: form.date, ...values, notes: form.notes.trim() || null } };
@@ -112,9 +124,8 @@ export function sortNewestFirst(measurements: MeasurementDto[]): MeasurementDto[
   );
 }
 
-export const MEASUREMENT_ERROR_MESSAGES: Record<string, string> = {
-  validation_failed:
-    'The server rejected some values. Check the date and that weight, height and head circumference are within range.',
+export const MEASUREMENT_ERROR_MESSAGES: ErrorOverrides = {
+  validation_failed: () => t('errors.measurementValidation'),
 };
 
 const TICKS = 4;

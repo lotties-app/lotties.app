@@ -13,9 +13,13 @@ export interface CreateMedicationInput {
 }
 
 export class InvalidMedicationError extends Error {
-  constructor(message: string) {
+  /** `gone`: the medication no longer exists; `name`: a name is required. */
+  readonly code: 'name' | 'gone';
+
+  constructor(message: string, code: 'name' | 'gone' = 'name') {
     super(message);
     this.name = 'InvalidMedicationError';
+    this.code = code;
   }
 }
 
@@ -70,7 +74,7 @@ export async function updateMedication(
   const now = (options.now?.() ?? new Date()).toISOString();
   return db.transaction('rw', db.medications, db.outbox, async () => {
     const current = await db.medications.get(id);
-    if (!current) throw new InvalidMedicationError('This medication no longer exists.');
+    if (!current) throw new InvalidMedicationError('This medication no longer exists.', 'gone');
     const updated: Medication = { ...current, ...changes, name };
     await db.medications.put(updated);
     await enqueueMutation(db, {

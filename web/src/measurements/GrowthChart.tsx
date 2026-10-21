@@ -1,20 +1,25 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Paper, Typography, useTheme } from '@mui/material';
+import { formatDate, formatNumber } from '../i18n/format';
 import type { MeasurementDto } from '../sync/contract';
-import { seriesFor, valueAxis, type MetricInfo, type SeriesPoint } from './measurementModel';
+import {
+  metricLabel,
+  seriesFor,
+  valueAxis,
+  type MetricInfo,
+  type SeriesPoint,
+} from './measurementModel';
 
 const W = 480;
 const H = 220;
 const PAD = { top: 16, right: 16, bottom: 28, left: 44 };
 
 const dayMs = (date: string) => Date.parse(`${date}T00:00:00Z`);
-const shortDate = (date: string) =>
-  new Date(dayMs(date)).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  });
+const shortDate = (date: string) => formatDate(date, 'dayMonth');
+const valueText = (value: number) => formatNumber(value);
 
 function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const axis = valueAxis(points);
   const first = points[0];
@@ -26,9 +31,20 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
   const x = (date: string) =>
     PAD.left + (t1 === t0 ? innerW / 2 : ((dayMs(date) - t0) / (t1 - t0)) * innerW);
   const y = (v: number) => PAD.top + innerH - ((v - axis.min) / (axis.max - axis.min)) * innerH;
-  const label = `${metric.label} from ${shortDate(first.date)} to ${shortDate(last.date)}: ${points
-    .map((p) => `${p.value} ${metric.unit} on ${shortDate(p.date)}`)
-    .join(', ')}.`;
+  const label = t('growth.chartDescription', {
+    label: metricLabel(metric),
+    from: shortDate(first.date),
+    to: shortDate(last.date),
+    points: points
+      .map((p) =>
+        t('growth.chartPoint', {
+          value: valueText(p.value),
+          unit: metric.unit,
+          date: shortDate(p.date),
+        }),
+      )
+      .join(', '),
+  });
   const muted = theme.palette.text.secondary;
   const color = theme.palette.primary.main;
 
@@ -56,7 +72,7 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
             fontSize="11"
             fill={muted}
           >
-            {Math.round(tick * 10) / 10}
+            {valueText(Math.round(tick * 10) / 10)}
           </text>
         </g>
       ))}
@@ -89,7 +105,13 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
           strokeWidth="2"
           data-testid="chart-point"
         >
-          <title>{`${shortDate(p.date)}: ${p.value} ${metric.unit}`}</title>
+          <title>
+            {t('growth.pointTitle', {
+              date: shortDate(p.date),
+              value: valueText(p.value),
+              unit: metric.unit,
+            })}
+          </title>
         </circle>
       ))}
     </svg>
@@ -104,28 +126,30 @@ export function GrowthChart({
   metric: MetricInfo;
   measurements: MeasurementDto[];
 }) {
+  const { t } = useTranslation();
   const points = seriesFor(measurements, metric.key);
+  const label = metricLabel(metric);
   const latest = points[points.length - 1];
   return (
     <Paper
       variant="outlined"
       sx={{ p: 2 }}
       component="section"
-      aria-label={`${metric.label} chart`}
+      aria-label={t('growth.chart', { label })}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
         <Typography variant="subtitle1" component="h3">
-          {metric.label} ({metric.unit})
+          {t('growth.metricLabel', { label, unit: metric.unit })}
         </Typography>
         {latest && (
           <Typography variant="body2" color="text.secondary">
-            Latest {latest.value} {metric.unit}
+            {t('growth.latest', { value: valueText(latest.value), unit: metric.unit })}
           </Typography>
         )}
       </Box>
       {points.length === 0 ? (
         <Typography color="text.secondary">
-          No {metric.label.toLowerCase()} measurements yet.
+          {t('growth.noneForMetric', { label: label.toLocaleLowerCase() })}
         </Typography>
       ) : (
         <Plot metric={metric} points={points} />

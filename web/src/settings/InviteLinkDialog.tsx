@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -24,6 +25,7 @@ interface Props {
  * the link cannot be shown again (the server keeps only its hash).
  */
 export function InviteLinkDialog({ token, onClose }: Props) {
+  const { t } = useTranslation();
   const link = inviteLink(token);
   const [copied, setCopied] = useState<'yes' | 'failed' | null>(null);
   const canShare = typeof navigator.share === 'function';
@@ -39,7 +41,7 @@ export function InviteLinkDialog({ token, onClose }: Props) {
 
   const share = async () => {
     try {
-      await navigator.share({ title: 'Baby Routine invite', url: link });
+      await navigator.share({ title: t('settings.invites.shareTitle'), url: link });
     } catch {
       // The user dismissed the share sheet.
     }
@@ -47,37 +49,33 @@ export function InviteLinkDialog({ token, onClose }: Props) {
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Invite link</DialogTitle>
+      <DialogTitle>{t('settings.invites.linkTitle')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
-          <DialogContentText>
-            Copy this link now: it is shown only once. Anyone who opens it while signed in can join.
-          </DialogContentText>
+          <DialogContentText>{t('settings.invites.linkWarning')}</DialogContentText>
           <TextField
-            label="Invite link"
+            label={t('settings.invites.linkTitle')}
             value={link}
             slotProps={{ input: { readOnly: true } }}
             onFocus={(e) => e.target.select()}
           />
-          {copied === 'yes' && <Alert severity="success">Link copied.</Alert>}
+          {copied === 'yes' && <Alert severity="success">{t('settings.invites.linkCopied')}</Alert>}
           {copied === 'failed' && (
-            <Alert severity="warning">
-              Could not copy automatically. Select the link and copy it.
-            </Alert>
+            <Alert severity="warning">{t('settings.invites.copyFailed')}</Alert>
           )}
         </Stack>
       </DialogContent>
       <DialogActions>
         {canShare && (
           <Button startIcon={<ShareIcon />} onClick={() => void share()}>
-            Share
+            {t('settings.invites.share')}
           </Button>
         )}
         <Button startIcon={<ContentCopyIcon />} onClick={() => void copy()}>
-          Copy link
+          {t('settings.invites.copy')}
         </Button>
         <Button variant="contained" onClick={onClose}>
-          Done
+          {t('common.done')}
         </Button>
       </DialogActions>
     </Dialog>

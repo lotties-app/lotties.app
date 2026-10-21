@@ -39,6 +39,8 @@
 - web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
 - api/src/BabyRoutine.Domain/Events/ — Event (upsert decision on ClientUpdatedAt, soft delete), ClientEditTime (client clock bound), EventPayload (+ JSON equivalence, StorableJson jsonb checks), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
 - api/src/BabyRoutine.Domain/EventTypes/EventTypeIcons.cs — allowed event type icon names (mirror of web/src/events/iconRegistry.ts)
+- api/src/BabyRoutine.Domain/EventTypes/FieldVisibilityCondition.cs, FieldVisibilityRules.cs — field `visibleWhen` (`{field, equals}`) and its type-level rules (select reference, known options, no cycles)
+- api/src/BabyRoutine.Domain/EventTypes/EventPayloadFieldRules.cs — event payload checks against field definitions (kinds, options, ranges, required, hidden fields), via EventType.EnsureValidPayload
 - api/src/BabyRoutine.Infrastructure/Persistence/Errors/ — IUniqueViolationDetector (Npgsql detector) + UniqueViolations: repositories tell lost insert races from other DB errors; ConcurrencyConflicts: lost xmin races -> invite_already_accepted / invite_not_found / concurrent_modification
 - api/src/BabyRoutine.Infrastructure/Persistence/Configurations/RowVersions.cs — shadow `xmin` row version (optimistic concurrency) used by invites and babies
 - api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_EventClientUpdatedAt.cs — adds events.client_updated_at, backfilled from updated_at
@@ -65,6 +67,9 @@
 - api/src/BabyRoutine.Api/Endpoints/ImportEndpoints.cs — `/babies/{babyId}/import/napper[/preview]` (contract in docs/SPEC.md "Napper import API")
 - api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_SleepKindBedWake.cs — adds bed_time/woke_up to the built-in sleep kind options
 - api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_SleepKindFellAsleep.cs — adds fell_asleep to the built-in sleep kind options
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_ConditionalFieldsAndBreastPump.cs — feeding visibleWhen + food field, lower-case bottle content options (rewrites stored payloads), seeds breast_pump
+- api/tests/BabyRoutine.Api.Tests/Endpoints/EventFieldRulesEndpointTests.cs — visibleWhen on event types and payload field rules on event upserts
+- api/tests/BabyRoutine.Domain.Tests/EventTypes/{FieldVisibility,EventPayloadValidation}Tests.cs, Events/EventPayloadCheckTests.cs — visibleWhen rules, payload field rules, when an edit is checked
 - api/tests/BabyRoutine.Api.Tests/Imports/ — CSV/parser unit tests, import endpoint and repository tests; Fixtures/ — small synthetic Napper CSVs (never real exports)
 - api/tests/BabyRoutine.Domain.Tests/Imports/ — mapping, medication matching/resolution, planner and id tests
 - web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
@@ -79,3 +84,4 @@
 - web/src/session/ — per-account database naming, logout/leave cleanup, unsynced-changes dialog; web/src/util/ownProperty.ts — safe own-key lookups for server-provided keys
 - web/src/invite/ — invite link hand-off (token in URL fragment, parked in sessionStorage across login)
 - web/src/theme/ (tokens.ts palette/category tokens, theme.ts CSS-variables theme + overrides, mode system|dark|light), web/src/presets/ (Track presets: catalogue, resolve, status, pinnedStorage, actions with undo; pure logic, no UI), web/src/track/TrackSheet.tsx (Track sheet stub, part B), web/src/baby/formatAge.ts + babyColor.ts + BabyAvatar.tsx, web/src/layout/ (header TopBar/BabySwitcher/SyncIconButton, BottomNav with centre Add event button)
+- web/src/i18n/ (i18next setup, I18nProvider/useLocale language setting, locales/{en,pt-BR}.json catalogs, format.ts Intl helpers, eventTypeText.ts/catalog.ts server-key lookups, README.md how to add keys/languages), web/src/settings/LanguageSection.tsx, web/src/presets/presetLabel.ts, web/src/test/locale.ts (pt-BR test helper)

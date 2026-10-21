@@ -461,3 +461,42 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021045736_ConditionalFieldsAndBreastPump') THEN
+    UPDATE event_types SET fields = '[{"key":"method","label":"Method","kind":"select","isRequired":true,"options":["breast","bottle","solid"]},{"key":"side","label":"Side","kind":"select","isRequired":false,"options":["left","right","both"],"visibleWhen":{"field":"method","equals":["breast"]}},{"key":"amount_ml","label":"Amount","kind":"number","isRequired":false,"min":0,"unit":"ml","visibleWhen":{"field":"method","equals":["bottle"]}},{"key":"bottle_feeding_type","label":"Bottle content","kind":"select","isRequired":false,"options":["formula","breast_milk"],"visibleWhen":{"field":"method","equals":["bottle"]}},{"key":"breast_left_seconds","label":"Left breast","kind":"number","isRequired":false,"min":0,"unit":"s","visibleWhen":{"field":"method","equals":["breast"]}},{"key":"breast_right_seconds","label":"Right breast","kind":"number","isRequired":false,"min":0,"unit":"s","visibleWhen":{"field":"method","equals":["breast"]}},{"key":"food","label":"Food","kind":"text","isRequired":false,"visibleWhen":{"field":"method","equals":["solid"]}}]'
+    WHERE id = 'e6428ccb-7061-4cf4-a5d0-67c89a396a5f';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021045736_ConditionalFieldsAndBreastPump') THEN
+    INSERT INTO event_types (id, baby_id, color, fields, has_duration, icon, key, name)
+    VALUES ('ddfdaa52-57ee-4d34-8129-a78262c2172c', NULL, '#26c6da', '[{"key":"amount_left_ml","label":"Left amount","kind":"number","isRequired":false,"min":0,"unit":"ml"},{"key":"amount_right_ml","label":"Right amount","kind":"number","isRequired":false,"min":0,"unit":"ml"}]', TRUE, 'opacity', 'breast_pump', 'Breast pump');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021045736_ConditionalFieldsAndBreastPump') THEN
+    UPDATE events
+    SET payload = jsonb_set(payload, '{bottle_feeding_type}', to_jsonb(lower(payload ->> 'bottle_feeding_type'))),
+        updated_at = now()
+    WHERE type_id = 'e6428ccb-7061-4cf4-a5d0-67c89a396a5f'
+      AND payload ->> 'bottle_feeding_type' IN ('FORMULA', 'BREAST_MILK');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021045736_ConditionalFieldsAndBreastPump') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021045736_ConditionalFieldsAndBreastPump', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

@@ -48,7 +48,7 @@ describe('predictionModel', () => {
   });
 
   it('describes the typical duration when known', () => {
-    expect(describeDuration(prediction())).toBe('usually lasts 25 min');
+    expect(describeDuration(prediction())).toBe('usually lasts 25m');
     expect(describeDuration(prediction({ expectedDuration: null }))).toBeNull();
   });
 

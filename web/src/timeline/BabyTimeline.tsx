@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, List, ListSubheader, Stack, Typography } from '@mui/material';
 import {
   useEntitySyncStates,
@@ -18,6 +19,7 @@ import { DAYS_PER_PAGE, filterByTypes, groupByDay, windowStart } from './timelin
 
 /** Day-grouped events of one baby, newest first, loaded `DAYS_PER_PAGE` days at a time. */
 export function BabyTimeline({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const [days, setDays] = useState(DAYS_PER_PAGE);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [editing, setEditing] = useState<BabyEvent | null>(null);
@@ -35,19 +37,19 @@ export function BabyTimeline({ baby }: { baby: Baby }) {
 
   const grouped = groupByDay(filterByTypes(events, selected), new Date());
   const hasOlder = !!oldest && oldest < from;
-  const typeOf = (event: BabyEvent) => types.find((t) => t.id === event.typeId);
+  const typeOf = (event: BabyEvent) => types.find((candidate) => candidate.id === event.typeId);
 
   return (
     <Stack spacing={2}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h6" component="h1">
-          Timeline
+          {t('nav.timeline')}
         </Typography>
         <SyncStatusIndicator />
       </Stack>
       <TimelineFilters types={types} selected={selected} onChange={setSelected} />
       {grouped.length === 0 && (
-        <Typography color="text.secondary">No events in the last {days} days.</Typography>
+        <Typography color="text.secondary">{t('timeline.empty', { count: days })}</Typography>
       )}
       {grouped.map((day) => (
         <ErrorBoundary key={day.key}>
@@ -71,7 +73,7 @@ export function BabyTimeline({ baby }: { baby: Baby }) {
       ))}
       {hasOlder && (
         <Button onClick={() => setDays((d) => d + DAYS_PER_PAGE)} sx={{ minHeight: 48 }}>
-          Load older
+          {t('timeline.loadOlder')}
         </Button>
       )}
       {editing && (

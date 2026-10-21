@@ -25,6 +25,10 @@ public sealed record NapperLogRow
 
     public int? BreastRightSeconds { get; init; }
 
+    public decimal? AmountPumpedLeft { get; init; }
+
+    public decimal? AmountPumpedRight { get; init; }
+
     public int? NumberOfPauses { get; init; }
 
     public decimal? PausedMinutes { get; init; }

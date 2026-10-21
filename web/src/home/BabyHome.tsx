@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Stack, Typography } from '@mui/material';
-import { canWrite, VIEWER_NOTICE } from '../baby/permissions';
+import { describeApiError } from '../api/errorMessages';
+import { canWrite } from '../baby/permissions';
 import { useEventCommands, useEventTypes, useRunningEvents } from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
 import { EventSheet } from '../events/EventSheet';
@@ -12,6 +14,7 @@ type SheetTarget = { event: BabyEvent } | { typeId: string };
 
 /** Home content for one baby: running timers on top, the quick-action grid, then predictions. */
 export function BabyHome({ baby }: { baby: Baby }) {
+  const { t } = useTranslation();
   const types = useEventTypes(baby.id);
   const running = useRunningEvents(baby.id);
   const commands = useEventCommands();
@@ -26,7 +29,7 @@ export function BabyHome({ baby }: { baby: Baby }) {
       setError(null);
       await action();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(describeApiError(e));
     }
   };
 
@@ -37,7 +40,7 @@ export function BabyHome({ baby }: { baby: Baby }) {
 
   return (
     <Stack spacing={2}>
-      {!writable && <Alert severity="info">{VIEWER_NOTICE}</Alert>}
+      {!writable && <Alert severity="info">{t('baby.viewerNotice')}</Alert>}
       {error && <Alert severity="error">{error}</Alert>}
       <RunningTimers
         events={running}
@@ -47,9 +50,7 @@ export function BabyHome({ baby }: { baby: Baby }) {
         readOnly={!writable}
       />
       {types.length === 0 ? (
-        <Typography color="text.secondary">
-          No event types yet. They appear here after the first sync.
-        </Typography>
+        <Typography color="text.secondary">{t('home.noTypes')}</Typography>
       ) : (
         <QuickActions
           types={types}

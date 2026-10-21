@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Chip, Stack } from '@mui/material';
 import type { EventType } from '../db/models';
 import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
+import { useEventTypeText } from '../i18n/eventTypeText';
 
 interface Props {
   types: EventType[];
@@ -18,16 +20,18 @@ function toggled(selected: ReadonlySet<string>, id: string): ReadonlySet<string>
 
 /** "All" plus one toggle chip per event type; several types can be combined. */
 export function TimelineFilters({ types, selected, onChange }: Props) {
+  const { t } = useTranslation();
+  const names = useEventTypeText();
   return (
     <Stack
       direction="row"
       spacing={1}
       role="group"
-      aria-label="Filter by type"
+      aria-label={t('timeline.filterByType')}
       sx={{ overflowX: 'auto', pb: 0.5 }}
     >
       <Chip
-        label="All"
+        label={t('timeline.all')}
         color={selected.size === 0 ? 'primary' : 'default'}
         variant={selected.size === 0 ? 'filled' : 'outlined'}
         aria-pressed={selected.size === 0}
@@ -38,7 +42,7 @@ export function TimelineFilters({ types, selected, onChange }: Props) {
         return (
           <Chip
             key={type.id}
-            label={type.name}
+            label={names.typeName(type)}
             icon={<EventTypeIcon name={type.icon} color={safeColor(type.color)} fontSize={18} />}
             color={active ? 'primary' : 'default'}
             variant={active ? 'filled' : 'outlined'}

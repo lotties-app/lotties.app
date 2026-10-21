@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { NapperImportResultDto } from '../sync/contract';
 
@@ -9,26 +10,31 @@ export function ResultStep({
   result: NapperImportResultDto;
   onReset: () => void;
 }) {
+  const { t } = useTranslation();
   const skipped = (result.logs?.skipped ?? 0) + (result.measurements?.skipped ?? 0);
   const existing =
     (result.logs?.alreadyImported ?? 0) + (result.measurements?.alreadyImported ?? 0);
   return (
     <Stack spacing={2}>
       <Alert severity="success">
-        Imported {result.eventsCreated} event{result.eventsCreated === 1 ? '' : 's'} and{' '}
-        {result.measurementsCreated} measurement{result.measurementsCreated === 1 ? '' : 's'}.
+        {t('import.result.imported', {
+          events: t('import.confirm.events', { count: result.eventsCreated }),
+          measurements: t('import.confirm.measurements', { count: result.measurementsCreated }),
+        })}
       </Alert>
       {result.createdMedications.length > 0 && (
         <Typography>
-          New medications: {result.createdMedications.map((m) => m.name).join(', ')}.
+          {t('import.result.newMedications', {
+            names: result.createdMedications.map((m) => m.name).join(', '),
+          })}
         </Typography>
       )}
       <Typography variant="body2" color="text.secondary">
-        {existing} record{existing === 1 ? ' was' : 's were'} already imported and {skipped} row
-        {skipped === 1 ? ' was' : 's were'} skipped. Your timeline is refreshing now.
+        {t('import.result.existing', { count: existing })}{' '}
+        {t('import.result.skippedRows', { count: skipped })} {t('import.result.refreshing')}
       </Typography>
       <Button onClick={onReset} sx={{ minHeight: 48, alignSelf: 'flex-start' }}>
-        Import another file
+        {t('import.result.another')}
       </Button>
     </Stack>
   );

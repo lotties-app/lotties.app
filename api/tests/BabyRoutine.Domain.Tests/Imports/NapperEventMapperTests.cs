@@ -16,9 +16,42 @@ public sealed class NapperEventMapperTests
         var draft = Mapped(Row("BOTTLE", Offset, Offset.AddMinutes(15)) with { FeedingAmount = 120m, BottleFeedingType = "formula", Comment = "Took it slowly, then burped" });
 
         Assert.Equal(BuiltInEventTypes.FeedingId, draft.Type.Id);
-        Assert.Equal(("bottle", "120", "FORMULA"), (Text(draft.Payload, "method"), Text(draft.Payload, "amount_ml"), Text(draft.Payload, "bottle_feeding_type")));
+        Assert.Equal(("bottle", "120", "formula"), (Text(draft.Payload, "method"), Text(draft.Payload, "amount_ml"), Text(draft.Payload, "bottle_feeding_type")));
         Assert.Equal((Offset, Offset.AddMinutes(15)), (draft.StartedAt, draft.EndedAt));
         Assert.Equal("Took it slowly, then burped", draft.Notes);
+    }
+
+    [Theory]
+    [InlineData("FORMULA", "formula")]
+    [InlineData("BREAST_MILK", "breast_milk")]
+    [InlineData(" breast_milk ", "breast_milk")]
+    public void Map_BottleContent_IsTheLowerCaseOptionValue(string napperContent, string option)
+    {
+        var draft = Mapped(Row("BOTTLE") with { BottleFeedingType = napperContent });
+
+        Assert.Equal(option, Text(draft.Payload, "bottle_feeding_type"));
+        Assert.Contains(option, BuiltInEventTypes.Feeding.Fields.Single(field => field.Key == "bottle_feeding_type").Options);
+    }
+
+    [Theory]
+    [InlineData("PUMPING")]
+    [InlineData("BREAST_PUMP")]
+    public void Map_Pumping_IsBreastPumpWithLeftAndRightAmounts(string category)
+    {
+        var draft = Mapped(Row(category, Offset, Offset.AddMinutes(10)) with { AmountPumpedLeft = 40m, AmountPumpedRight = 35.5m, Comment = "Morning" });
+
+        Assert.Equal(BuiltInEventTypes.BreastPumpId, draft.Type.Id);
+        Assert.Equal(("40", "35.5"), (Text(draft.Payload, "amount_left_ml"), Text(draft.Payload, "amount_right_ml")));
+        Assert.Equal((Offset, Offset.AddMinutes(10), "Morning"), (draft.StartedAt, draft.EndedAt, draft.Notes));
+    }
+
+    [Fact]
+    public void Map_PumpingWithOneSideAndNoEnd_LeavesTheOtherSideOutAndEndsAtStart()
+    {
+        var draft = Mapped(Row("PUMPING") with { End = null, AmountPumpedLeft = 20m });
+
+        Assert.Equal(("20", null), (Text(draft.Payload, "amount_left_ml"), Text(draft.Payload, "amount_right_ml")));
+        Assert.Equal(draft.StartedAt, draft.EndedAt);
     }
 
     [Fact]
@@ -183,10 +216,10 @@ public sealed class NapperEventMapperTests
     [Fact]
     public void Map_UnknownCategory_IsSkippedWithReason()
     {
-        var skipped = Skipped(Row("PUMPING", rowNumber: 3));
+        var skipped = Skipped(Row("UNKNOWN_ACTIVITY", rowNumber: 3));
 
         Assert.Equal((3, ImportSkipCodes.UnknownCategory), (skipped.Row, skipped.Code));
-        Assert.Contains("PUMPING", skipped.Reason, StringComparison.Ordinal);
+        Assert.Contains("UNKNOWN_ACTIVITY", skipped.Reason, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -198,6 +231,8 @@ public sealed class NapperEventMapperTests
     [InlineData("BED_TIME", "sleep")]
     [InlineData("WOKE_UP", "sleep")]
     [InlineData("MEDICINE", "medication")]
+    [InlineData("PUMPING", "breast_pump")]
+    [InlineData("BREAST_PUMP", "breast_pump")]
     public void TypeFor_KnownCategory_ReturnsBuiltInType(string category, string key)
     {
         Assert.Equal(key, NapperEventMapper.TypeFor(category)?.Key.Value);
@@ -206,6 +241,6 @@ public sealed class NapperEventMapperTests
     [Fact]
     public void TypeFor_UnknownCategory_ReturnsNull()
     {
-        Assert.Null(NapperEventMapper.TypeFor("PUMPING"));
+        Assert.Null(NapperEventMapper.TypeFor("UNKNOWN_ACTIVITY"));
     }
 }

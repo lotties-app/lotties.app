@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api/ApiClientContext';
-import { OFFLINE_MESSAGE } from '../api/errorMessages';
+import { offlineMessage } from '../api/errorMessages';
+import { t } from '../i18n/i18n';
 import { previewNapperImport, runNapperImport } from '../api/measurementsApi';
 import type { Baby } from '../db/models';
 import { measurementsKey } from '../measurements/useMeasurements';
@@ -21,7 +22,8 @@ import {
   type PickedFiles,
 } from './importModel';
 
-export const STEP_LABELS = ['Choose files', 'Review', 'Medications', 'Import', 'Done'] as const;
+/** Catalog keys under `import.steps`, in wizard order. */
+export const STEP_KEYS = ['files', 'review', 'medications', 'import', 'done'] as const;
 export const STEP = { files: 0, review: 1, medications: 2, confirm: 3, done: 4 } as const;
 
 interface Wizard {
@@ -62,7 +64,7 @@ export function useNapperImport(baby: Baby) {
   const call = async <T>(action: () => Promise<T>): Promise<Outcome<T> | null> => {
     if (busy.current) return null;
     if (!online) {
-      setError(OFFLINE_MESSAGE);
+      setError(offlineMessage());
       return null;
     }
     busy.current = true;
@@ -91,7 +93,7 @@ export function useNapperImport(baby: Baby) {
         files: { ...w.files, [kind]: { name: file.name, size: file.size, text } },
       }));
     } catch {
-      setError(`Could not read ${file.name}.`);
+      setError(t('import.files.readFailed', { name: file.name }));
     }
   };
 

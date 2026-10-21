@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { AppearanceSection } from '../settings/AppearanceSection';
+import { LanguageSection } from '../settings/LanguageSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
@@ -17,47 +19,55 @@ const ImportSection = lazy(() =>
 );
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
   // The header's sync icon links to /settings#sync.
   const { hash } = useLocation();
 
-  if (!babies) return <CircularProgress aria-label="Loading" />;
+  if (!babies) return <CircularProgress aria-label={t('common.loading')} />;
 
   return (
     <Stack spacing={1}>
       <Typography variant="h5" component="h1" gutterBottom>
-        Settings
+        {t('settings.title')}
       </Typography>
       {baby ? (
         <>
           {!canWrite(baby) && (
-            <Alert severity="info">You have view-only access to {baby.name}.</Alert>
+            <Alert severity="info">{t('baby.viewOnlyNamed', { name: baby.name })}</Alert>
           )}
-          <SettingsSection id="baby" title="Baby" defaultExpanded>
+          <SettingsSection id="baby" title={t('settings.sections.baby')} defaultExpanded>
             <BabySection baby={baby} />
           </SettingsSection>
-          <SettingsSection id="event-types" title="Event types">
+          <SettingsSection id="event-types" title={t('settings.sections.eventTypes')}>
             <EventTypesSection baby={baby} />
           </SettingsSection>
-          <SettingsSection id="medications" title="Medications">
+          <SettingsSection id="medications" title={t('settings.sections.medications')}>
             <MedicationsSection baby={baby} />
           </SettingsSection>
-          <SettingsSection id="import" title="Import">
-            <Suspense fallback={<CircularProgress aria-label="Loading" />}>
+          <SettingsSection id="import" title={t('settings.sections.import')}>
+            <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
               <ImportSection baby={baby} />
             </Suspense>
           </SettingsSection>
-          <SettingsSection id="members" title="Members & invites">
+          <SettingsSection id="members" title={t('settings.sections.members')}>
             <MembersSection baby={baby} />
           </SettingsSection>
         </>
       ) : (
-        <Alert severity="info">Create a baby on the Home screen to unlock these settings.</Alert>
+        <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
       )}
-      <SettingsSection id="appearance" title="Appearance">
+      <SettingsSection id="appearance" title={t('settings.sections.appearance')}>
         <AppearanceSection />
       </SettingsSection>
-      <SettingsSection id="sync" title="Sync" defaultExpanded={hash === '#sync'}>
+      <SettingsSection id="language" title={t('settings.sections.language')}>
+        <LanguageSection />
+      </SettingsSection>
+      <SettingsSection
+        id="sync"
+        title={t('settings.sections.sync')}
+        defaultExpanded={hash === '#sync'}
+      >
         <SyncSection />
       </SettingsSection>
     </Stack>

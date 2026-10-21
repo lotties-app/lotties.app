@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using BabyRoutine.Domain.Common;
+using BabyRoutine.Domain.Events;
 using BabyRoutine.Domain.Exceptions;
 
 namespace BabyRoutine.Domain.EventTypes;
@@ -118,6 +119,17 @@ public sealed class EventType
         HasDuration = hasDuration;
     }
 
+    /// <summary>
+    /// Checks <paramref name="payload"/> against the field definitions (see <see cref="EventPayloadFieldRules"/>):
+    /// values match their field kind, select values are options, numbers are within range, hidden fields
+    /// (<see cref="EventFieldDefinition.VisibleWhen"/> not met) hold no value and, once the event is complete (an
+    /// instant type, or <paramref name="endedAt"/> set: a running timer may still be filled in), visible required fields
+    /// are present. Members no field declares are left alone. Throws <see cref="DomainValidationException"/> with the
+    /// field key.
+    /// </summary>
+    public void EnsureValidPayload(EventPayload payload, DateTimeOffset? endedAt) =>
+        EventPayloadFieldRules.Ensure(Fields, payload, isComplete: !HasDuration || endedAt is not null);
+
     /// <summary>Throws <see cref="BuiltInEventTypeReadOnlyException"/> for built-in templates, which can never be deleted.</summary>
     public void EnsureDeletable() => EnsureCustom();
 
@@ -130,8 +142,8 @@ public sealed class EventType
     }
 
     /// <remarks>
-    /// The count, option and reserved-key rules apply when a type is created or updated, not when stored definitions are
-    /// read back, so rows saved before these rules existed stay readable.
+    /// The count, option, reserved-key and visibility rules apply when a type is created or updated, not when stored
+    /// definitions are read back, so rows saved before these rules existed stay readable.
     /// </remarks>
     private static IReadOnlyList<EventFieldDefinition> ValidateFields(IEnumerable<EventFieldDefinition> fields)
     {
@@ -139,10 +151,18 @@ public sealed class EventType
         var definitions = fields.ToArray();
         EnsureFieldCount(definitions);
         Array.ForEach(definitions, EnsureAllowedField);
+        EnsureUniqueKeys(definitions);
+        FieldVisibilityRules.EnsureValid(definitions);
+        return Array.AsReadOnly(definitions);
+    }
+
+    private static void EnsureUniqueKeys(EventFieldDefinition[] definitions)
+    {
         var distinctKeys = definitions.Select(field => field.Key).Distinct(StringComparer.Ordinal).Count();
-        return distinctKeys == definitions.Length
-            ? Array.AsReadOnly(definitions)
-            : throw new DomainValidationException(nameof(Fields), "Field keys must be unique within an event type.");
+        if (distinctKeys != definitions.Length)
+        {
+            throw new DomainValidationException(nameof(Fields), "Field keys must be unique within an event type.");
+        }
     }
 
     private static void EnsureFieldCount(EventFieldDefinition[] definitions)

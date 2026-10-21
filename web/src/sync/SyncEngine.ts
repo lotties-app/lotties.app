@@ -2,6 +2,7 @@ import { liveQuery, type Subscription } from 'dexie';
 import type { ApiClient } from '../api/apiClient';
 import type { BabyRoutineDb } from '../db/database';
 import { countDeadLetters, countPendingMutations } from '../db/outbox';
+import { t } from '../i18n/i18n';
 import { DEFAULT_BACKOFF, type BackoffOptions } from './backoff';
 import { discardDeadLetter } from './deadLetters';
 import { classifyFailure, describeFailure } from './failures';
@@ -233,7 +234,7 @@ export class SyncEngine {
     this.status.update({
       state: 'error',
       authRequired: true,
-      lastError: 'Unauthorized: sign in again to resume sync.',
+      lastError: t('sync.unauthorized'),
       pendingCount: counts.pending,
       deadLetterCount: counts.dead,
     });

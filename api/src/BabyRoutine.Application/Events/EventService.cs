@@ -11,7 +11,9 @@ namespace BabyRoutine.Application.Events;
 /// bump <c>UpdatedAt</c>, so the same request returns the same representation. Last write wins compares the request's
 /// client <c>updatedAt</c> with the stored <c>ClientUpdatedAt</c>; the server <c>UpdatedAt</c> stays the sync cursor.
 /// Concurrent creates of one client id resolve to a single row: the loser reloads the winner and applies its request as
-/// an edit.
+/// an edit. Payloads are checked against the type's field definitions (<see cref="EventType.EnsureValidPayload"/>) on
+/// create and on every edit that changes the type or payload or completes a running event, so an unchanged legacy
+/// payload never blocks an edit of times or notes.
 /// </remarks>
 internal sealed class EventService : IEventService
 {
@@ -72,7 +74,8 @@ internal sealed class EventService : IEventService
 
     private async Task<UpsertEventResult> CreateAsync(Guid babyId, Guid eventId, UpsertEventRequest request, CancellationToken cancellationToken)
     {
-        await EnsureTypeAvailableAsync(babyId, request.TypeId, cancellationToken);
+        var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
+        eventType.EnsureValidPayload(request.Payload, request.EndedAt);
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var created = Event.Create(
             eventId,
@@ -100,7 +103,8 @@ internal sealed class EventService : IEventService
             return new UpsertEventResult(existing, Created: false);
         }
 
-        await EnsureTypeAvailableAsync(babyId, request.TypeId, cancellationToken);
+        var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
+        EnsureValidEditPayload(existing, eventType, request);
         existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
         return new UpsertEventResult(existing, Created: false);
@@ -119,12 +123,17 @@ internal sealed class EventService : IEventService
             ?? throw new InvalidOperationException($"Event {eventId} was reported as existing but could not be loaded.");
     }
 
-    private async Task EnsureTypeAvailableAsync(Guid babyId, Guid eventTypeId, CancellationToken cancellationToken)
+    private async Task<EventType> LoadAvailableTypeAsync(Guid babyId, Guid eventTypeId, CancellationToken cancellationToken)
     {
         var eventType = await _eventTypes.FindAsync(eventTypeId, cancellationToken);
-        if (eventType?.IsAvailableTo(babyId) != true)
+        return eventType?.IsAvailableTo(babyId) == true ? eventType : throw new EventTypeNotAvailableException(eventTypeId, babyId);
+    }
+
+    private static void EnsureValidEditPayload(Event existing, EventType eventType, UpsertEventRequest request)
+    {
+        if (existing.NeedsPayloadCheck(request.TypeId, request.Payload, request.EndedAt))
         {
-            throw new EventTypeNotAvailableException(eventTypeId, babyId);
+            eventType.EnsureValidPayload(request.Payload, request.EndedAt);
         }
     }
 

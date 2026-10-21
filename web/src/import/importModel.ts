@@ -1,5 +1,7 @@
 import { ApiError } from '../api/ApiError';
 import { describeApiError } from '../api/errorMessages';
+import { formatDate, formatNumber } from '../i18n/format';
+import { t } from '../i18n/i18n';
 import type {
   MedicationMapping,
   MedicationSuggestion,
@@ -33,7 +35,7 @@ export type Choices = Record<string, MappingChoice>;
 /** A message when the file cannot be accepted, else `null`. */
 export function checkFileSize(file: { name: string; size: number }): string | null {
   return file.size > MAX_IMPORT_BYTES
-    ? `${file.name} is larger than ${MAX_IMPORT_LABEL}. Export a smaller range and try again.`
+    ? t('import.files.tooBigLocal', { name: file.name, limit: MAX_IMPORT_LABEL })
     : null;
 }
 
@@ -75,11 +77,12 @@ export function mappingsKey(choices: Choices): string {
 export function choiceProblems(choices: Choices): Record<string, string> {
   const problems: Record<string, string> = {};
   for (const [token, choice] of Object.entries(choices)) {
-    if (choice.action === 'create' && !choice.name.trim()) setOwn(problems, token, 'Enter a name.');
+    if (choice.action === 'create' && !choice.name.trim())
+      setOwn(problems, token, t('import.medications.enterName'));
     else if (choice.action === 'create' && choice.name.trim().length > 100) {
-      setOwn(problems, token, 'Use at most 100 characters.');
+      setOwn(problems, token, t('import.medications.tooLong'));
     } else if (choice.action === 'existing' && !choice.medicationId) {
-      setOwn(problems, token, 'Pick a medication.');
+      setOwn(problems, token, t('import.medications.pickOne'));
     }
   }
   return problems;
@@ -96,19 +99,12 @@ export function buildRequest(files: PickedFiles, choices: Choices): NapperImport
 
 export function summaryRange(summary: NapperSummaryBase): string | null {
   if (!summary.from || !summary.to) return null;
-  const fmt = (iso: string) =>
-    new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso).toLocaleDateString(undefined, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      timeZone: iso.length === 10 ? 'UTC' : undefined,
-    });
-  const from = fmt(summary.from);
-  const to = fmt(summary.to);
-  return from === to ? from : `${from} to ${to}`;
+  const from = formatDate(summary.from);
+  const to = formatDate(summary.to);
+  return from === to ? from : t('import.preview.dateRange', { from, to });
 }
 
-const mb = (bytes: number) => `${Math.round((bytes / (1024 * 1024)) * 10) / 10} MB`;
+const mb = (bytes: number) => `${formatNumber(Math.round((bytes / (1024 * 1024)) * 10) / 10)} MB`;
 
 /** Friendly sentence for a failed preview or import call (specific codes first). */
 export function describeImportError(error: unknown): string {
@@ -116,21 +112,27 @@ export function describeImportError(error: unknown): string {
     const p = error.problem;
     if (error.status === 413 || error.code === 'import_file_too_large') {
       const limit = p?.maxBytes ? mb(p.maxBytes) : MAX_IMPORT_LABEL;
-      return `A file is too large for the server (limit ${limit}). Export a smaller range.`;
+      return t('import.errors.tooLargeServer', { limit });
     }
     switch (error.code) {
       case 'import_too_many_rows':
-        return `A file has too many rows (limit ${p?.maxRows ?? 20000}). Split it and import the parts one by one.`;
+        return t('import.errors.tooManyRows', { max: formatNumber(p?.maxRows ?? 20000) });
       case 'import_invalid_file':
-        return `The ${p?.field ?? 'selected'} file is not a valid Napper export (empty, damaged or missing columns).`;
+        return t('import.errors.invalidFile', {
+          field: p?.field ?? t('import.errors.invalidFileDefault'),
+        });
       case 'import_unmapped_medications':
-        return `Some medication names still need a decision: ${(p?.tokens ?? []).join(', ') || 'see the list'}.`;
+        return t('import.errors.unmapped', {
+          names: (p?.tokens ?? []).join(', ') || t('import.errors.unmappedDefault'),
+        });
       case 'import_invalid_medication_mapping':
-        return `The medication choice for "${p?.token ?? 'a name'}" is not valid. Pick an existing medication or enter a name.`;
+        return t('import.errors.invalidMapping', {
+          token: p?.token ?? t('import.errors.invalidMappingDefault'),
+        });
       case 'import_conflict':
-        return 'Another import or sync wrote the same records at the same time. Nothing was saved; try again.';
+        return t('import.errors.conflict');
       case 'validation_failed':
-        return 'The server rejected the request. Check the files and the medication names (up to 100 characters).';
+        return t('import.errors.validationFailed');
     }
   }
   return describeApiError(error);

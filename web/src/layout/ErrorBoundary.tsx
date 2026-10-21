@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { Alert, Button } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   children: ReactNode;
@@ -16,6 +17,22 @@ interface State {
 
 function reloadPage() {
   window.location.reload();
+}
+
+function FailureNotice({ onReload }: { onReload: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Alert
+      severity="error"
+      action={
+        <Button color="inherit" size="small" onClick={onReload}>
+          {t('common.reload')}
+        </Button>
+      }
+    >
+      {t('layout.somethingWentWrong')}
+    </Alert>
+  );
 }
 
 /**
@@ -35,17 +52,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.failed) return this.props.children;
-    return (
-      <Alert
-        severity="error"
-        action={
-          <Button color="inherit" size="small" onClick={this.props.onReload ?? reloadPage}>
-            Reload
-          </Button>
-        }
-      >
-        Something went wrong.
-      </Alert>
-    );
+    return <FailureNotice onReload={this.props.onReload ?? reloadPage} />;
   }
 }

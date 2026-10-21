@@ -8,7 +8,8 @@ namespace BabyRoutine.Infrastructure.Persistence.Converters;
 
 /// <summary>
 /// Stores an event type's field definitions as a JSON array, e.g.
-/// <c>[{"key":"side","label":"Side","kind":"select","isRequired":false,"options":["left","right"]}]</c>.
+/// <c>[{"key":"side","label":"Side","kind":"select","isRequired":false,"options":["left","right"],"visibleWhen":{"field":"method","equals":["breast"]}}]</c>.
+/// Absent optional members (options, min, max, unit, visibleWhen) are left out.
 /// </summary>
 internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyList<EventFieldDefinition>, string>
 {
@@ -46,7 +47,8 @@ internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyL
         field.Options.Count == 0 ? null : field.Options,
         field.Min,
         field.Max,
-        field.Unit);
+        field.Unit,
+        field.VisibleWhen is null ? null : new VisibilityDocument(field.VisibleWhen.Field, field.VisibleWhen.Values));
 
     private static EventFieldDefinition ToDefinition(FieldDocument document) => EventFieldDefinition.Create(
         document.Key,
@@ -56,7 +58,8 @@ internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyL
         document.Options,
         document.Min,
         document.Max,
-        document.Unit);
+        document.Unit,
+        document.VisibleWhen is null ? null : FieldVisibilityCondition.Create(document.VisibleWhen.Field, document.VisibleWhen.EqualsValues));
 
     private sealed record FieldDocument(
         string Key,
@@ -66,5 +69,10 @@ internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyL
         IReadOnlyList<string>? Options,
         decimal? Min,
         decimal? Max,
-        string? Unit);
+        string? Unit,
+        VisibilityDocument? VisibleWhen = null);
+
+    private sealed record VisibilityDocument(
+        string Field,
+        [property: JsonPropertyName("equals")] IReadOnlyList<string> EqualsValues);
 }

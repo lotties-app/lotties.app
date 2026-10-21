@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Dialog,
@@ -14,16 +15,17 @@ interface Props {
 }
 
 export function ConfirmDeleteDialog({ open, onCancel, onConfirm }: Props) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onClose={onCancel}>
-      <DialogTitle>Delete this event?</DialogTitle>
+      <DialogTitle>{t('events.deleteTitle')}</DialogTitle>
       <DialogContent>
-        <DialogContentText>It will be removed from the timeline on all devices.</DialogContentText>
+        <DialogContentText>{t('events.deleteBody')}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Keep</Button>
+        <Button onClick={onCancel}>{t('events.keep')}</Button>
         <Button color="error" onClick={onConfirm}>
-          Delete event
+          {t('events.deleteConfirm')}
         </Button>
       </DialogActions>
     </Dialog>

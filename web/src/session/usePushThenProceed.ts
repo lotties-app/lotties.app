@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { t } from '../i18n/i18n';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 
 export function unsyncedChangesLabel(count: number): string {
-  return count === 1 ? '1 unsynced change' : `${count} unsynced changes`;
+  return t('session.unsyncedChanges', { count });
 }
 
 /**
@@ -24,10 +25,7 @@ export function usePushThenProceed(
       await engine.syncNow();
       const left = await countUnsynced();
       if (left === 0) return await proceed();
-      setError(
-        `${unsyncedChangesLabel(left)} could not be uploaded. Check your connection, or review ` +
-          'failed changes in Settings > Sync.',
-      );
+      setError(t('session.uploadFailed', { changes: unsyncedChangesLabel(left) }));
     } finally {
       setPushing(false);
     }

@@ -83,10 +83,10 @@ describe('TimelinePage', () => {
     const yesterday = screen.getByRole('list', { name: 'Yesterday' });
     expect(rowNames(today)).toEqual(['Edit Feeding', 'Edit Belly pain']);
     expect(rowNames(yesterday)).toEqual(['Edit Diaper']);
-    expect(within(today).getByText('08:00 – 08:45 · 45 min')).toBeTruthy();
+    expect(within(today).getByText('08:00 – 08:45 · 45m')).toBeTruthy();
     expect(within(today).getByText('07:00 · Intensity 3/5')).toBeTruthy();
-    expect(within(yesterday).getByText('20:00 · DIRTY')).toBeTruthy();
-    expect(screen.queryByText(/WET/)).toBeNull();
+    expect(within(yesterday).getByText('20:00 · Dirty')).toBeTruthy();
+    expect(screen.queryByText(/Wet/)).toBeNull();
   });
 
   it('loads 14 more days on "Load older"', async () => {
@@ -95,7 +95,7 @@ describe('TimelinePage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Load older' }));
 
-    expect(await screen.findByText('09:00 · WET')).toBeTruthy();
+    expect(await screen.findByText('09:00 · Wet')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Load older' })).toBeNull();
   });
 

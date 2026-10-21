@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -24,12 +25,13 @@ export function ConfirmDialog({
   title,
   body,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   pending = false,
   error = null,
   onCancel,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Dialog open onClose={onCancel}>
       <DialogTitle>{title}</DialogTitle>
@@ -42,7 +44,7 @@ export function ConfirmDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>{cancelLabel}</Button>
+        <Button onClick={onCancel}>{cancelLabel ?? t('common.cancel')}</Button>
         <Button color="error" onClick={onConfirm} disabled={pending}>
           {confirmLabel}
         </Button>

@@ -139,7 +139,7 @@ describe('SettingsPage event types', () => {
     const within_ = within(dialog);
 
     fireEvent.change(within_.getByLabelText(/^Name/), { target: { value: 'Pacifier' } });
-    fireEvent.click(within_.getByRole('button', { name: 'star' }));
+    fireEvent.click(within_.getByRole('button', { name: 'Star' }));
     fireEvent.click(within_.getByRole('radio', { name: 'Colour #e53935' }));
 
     const addField = () => fireEvent.click(within_.getByRole('button', { name: 'Add field' }));

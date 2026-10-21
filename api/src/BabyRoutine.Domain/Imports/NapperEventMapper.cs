@@ -18,6 +18,7 @@ public static class NapperEventMapper
         new DiaperMapper(),
         new SleepMapper(),
         new MedicineMapper(),
+        new BreastPumpMapper(),
     ];
 
     public static NapperRowOutcome Map(NapperLogRow row)
