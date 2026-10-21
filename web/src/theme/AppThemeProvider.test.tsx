@@ -222,3 +222,23 @@ describe('night feed', () => {
     expect(meta()?.getAttribute('content')).toBe('#f5efe4');
   });
 });
+
+describe('manifest and apple-touch-icon links', () => {
+  const href = (rel: string) => document.querySelector(`link[rel="${rel}"]`)?.getAttribute('href');
+
+  it('follow the shown scheme when the user switches the theme', () => {
+    const links = document.createElement('div');
+    links.innerHTML =
+      '<link rel="manifest" href="/manifest.webmanifest" />' +
+      '<link rel="apple-touch-icon" href="/apple-touch-icon.png" />';
+    const added = [...links.children];
+    document.head.append(...added);
+    renderProbe();
+    expect(href('manifest')).toBe('/manifest-dark.webmanifest');
+    expect(href('apple-touch-icon')).toBe('/apple-touch-icon-dark.png');
+    fireEvent.click(screen.getByRole('button', { name: 'choose light' }));
+    expect(href('manifest')).toBe('/manifest.webmanifest');
+    expect(href('apple-touch-icon')).toBe('/apple-touch-icon.png');
+    added.forEach((el) => el.remove());
+  });
+});

@@ -14,6 +14,7 @@ import {
   storeNightFeedState,
 } from './nightFeedStorage';
 import { useSystemColorScheme } from './useSystemColorScheme';
+import { applySchemeLinks } from '../pwa/schemeLinks';
 import { THEME_COLOR, type ResolvedMode, type SchemeName } from './tokens';
 
 /** How often the night window is re-evaluated (also on focus), so the scheme follows the clock. */
@@ -40,6 +41,11 @@ function useThemeColorMeta(scheme: SchemeName) {
       meta.setAttribute('content', THEME_COLOR[scheme]);
     });
   }, [scheme]);
+}
+
+/** Keeps the manifest and apple-touch-icon links on the icon set of the shown scheme. */
+function useSchemeLinks(scheme: SchemeName) {
+  useEffect(() => applySchemeLinks(scheme), [scheme]);
 }
 
 /** The wall clock, refreshed periodically and when the app comes back to the foreground. */
@@ -104,6 +110,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   const nightFeed = useNightFeedState(now);
   const scheme: SchemeName = nightFeed.active ? 'night' : resolved;
   useThemeColorMeta(scheme);
+  useSchemeLinks(scheme);
 
   const api = useMemo(
     () => ({

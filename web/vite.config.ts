@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { darkManifestPlugin, LIGHT_MANIFEST } from './pwa-manifest';
 
 /** Matches modules of the given top-level packages (bundler module ids use forward slashes). */
 const vendor = (...packages: string[]) =>
@@ -23,39 +24,14 @@ export default defineConfig({
         'favicon.svg',
         'favicon.png',
         'favicon.ico',
+        'favicon-dark.png',
+        'favicon-dark.ico',
         'apple-touch-icon.png',
+        'apple-touch-icon-dark.png',
         'icon.svg',
       ],
-      manifest: {
-        name: 'Baby Routine',
-        short_name: 'Baby Routine',
-        description:
-          'Track baby events offline, share with a co-parent, and see routine predictions.',
-        start_url: '/',
-        scope: '/',
-        display: 'standalone',
-        orientation: 'portrait',
-        // The dark scheme's background (docs/design/TOKENS.md); the app keeps the theme-color meta
-        // in sync with the shown scheme.
-        theme_color: '#1b1814',
-        background_color: '#1b1814',
-        icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          {
-            src: '/icon-maskable-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-          {
-            src: '/icon-monochrome-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'monochrome',
-          },
-        ],
-      },
+      // Light variant; the dark one is emitted by darkManifestPlugin (pwa-manifest.ts).
+      manifest: LIGHT_MANIFEST,
       workbox: {
         // Only built, hashed assets are precached. API calls and the OIDC callback are never
         // cached: no runtimeCaching rules exist, and navigations under these paths skip the fallback.
@@ -64,6 +40,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/auth\/callback/],
       },
     }),
+    // After VitePWA: it also removes the duplicate manifest link VitePWA injects.
+    darkManifestPlugin(),
   ],
   build: {
     rolldownOptions: {

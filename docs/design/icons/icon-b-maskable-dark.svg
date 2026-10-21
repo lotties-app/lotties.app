@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Baby Routine app icon, concept B "Day disc" (maskable, dark, full bleed, glyph in the 66% safe zone). Original work by the Baby Routine contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Baby Routine</title>
+<defs>
+<linearGradient id="bdm-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#332e27"/>
+<stop offset="0.55" stop-color="#24201b"/>
+<stop offset="1" stop-color="#1b1814"/>
+</linearGradient>
+<clipPath id="bdm-clip">
+<path d="M0 0H1024V1024H0Z"/>
+</clipPath>
+<linearGradient id="bdm-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#f3cdbb"/>
+<stop offset="0.5" stop-color="#e58f68"/>
+<stop offset="1" stop-color="#c76c49"/>
+</linearGradient>
+<radialGradient id="bdm-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#c76c49" stop-opacity="0"/>
+<stop offset="1" stop-color="#c76c49" stop-opacity="0.5"/>
+</radialGradient>
+<linearGradient id="bdm-ink" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#faf7f1"/>
+<stop offset="0.5" stop-color="#f2eadc"/>
+<stop offset="1" stop-color="#cac0b0"/>
+</linearGradient>
+<radialGradient id="bdm-ink-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#cac0b0" stop-opacity="0"/>
+<stop offset="1" stop-color="#cac0b0" stop-opacity="0.5"/>
+</radialGradient>
+<mask id="bdm-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M668 342C674.6 365.4 674.6 365.4 698 372C674.6 378.6 674.6 378.6 668 402C661.4 378.6 661.4 378.6 638 372C661.4 365.4 661.4 365.4 668 342Z" fill="#000000"/>
+<path d="M681 520a9 9 0 1 0 18 0a9 9 0 1 0 -18 0Z" fill="#000000"/>
+</mask>
+<mask id="bdm-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M458.9 671.8A230 230 0 1 0 458.9 224.2A236 236 0 0 1 458.9 671.8Z" fill="#000000" stroke="#000000" stroke-width="20" stroke-linejoin="round"/>
+</mask>
+<mask id="bdm-k3" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M608 716L608 792A12 12 0 0 0 632 792L632 716A12 12 0 0 0 608 716Z" fill="#000000" stroke="#000000" stroke-width="28" stroke-linejoin="round"/>
+</mask>
+</defs>
+<path d="M0 0H1024V1024H0Z" fill="url(#bdm-tile)"/>
+<g clip-path="url(#bdm-clip)">
+<g transform="translate(512 512) scale(0.78) translate(-512 -512)">
+<g mask="url(#bdm-k2)">
+<path d="M282 448a230 230 0 1 0 460 0a230 230 0 1 0 -460 0Z" fill="url(#bdm-accent)"/>
+</g>
+<g mask="url(#bdm-h1)">
+<path d="M458.9 671.8A230 230 0 1 0 458.9 224.2A236 236 0 0 1 458.9 671.8Z" fill="url(#bdm-ink)"/>
+</g>
+<g mask="url(#bdm-k3)">
+<path d="M176 764L620 764A10 10 0 0 0 620 744L176 744A10 10 0 0 0 176 764Z" fill="#cac0b0"/>
+<path d="M620 758.5L848 758.5A4.5 4.5 0 0 0 848 749.5L620 749.5A4.5 4.5 0 0 0 620 758.5Z" fill="#cac0b0"/>
+</g>
+<path d="M608 716L608 792A12 12 0 0 0 632 792L632 716A12 12 0 0 0 608 716Z" fill="#e58f68"/>
+</g>
+</g>
+</svg>

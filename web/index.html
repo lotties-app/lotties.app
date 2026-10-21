@@ -11,8 +11,23 @@
     <meta name="apple-mobile-web-app-title" content="Baby Routine" />
     <!-- Fallbacks first, the SVG last: browsers that read SVG icons (it follows the OS dark scheme) prefer it. -->
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicon.png"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicon-dark.png"
+      media="(prefers-color-scheme: dark)"
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- theme-init.js (and the theme provider) switch the manifest and apple-touch-icon to the dark set. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <script src="/theme-init.js"></script>
     <style>
@@ -36,7 +51,26 @@
         background: #0d0906;
       }
     </style>
-    <title>Baby Routine</title>
+    <title>Baby Routine: track your baby's day, together</title>
+    <meta
+      name="description"
+      content="Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent. Free and open source."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Baby Routine" />
+    <meta property="og:title" content="Baby Routine: track your baby's day, together" />
+    <meta
+      property="og:description"
+      content="Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent."
+    />
+    <meta property="og:image" content="/social-preview.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Baby Routine: track your baby's day, together" />
+    <meta
+      name="twitter:description"
+      content="Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent."
+    />
+    <meta name="twitter:image" content="/social-preview.png" />
   </head>
   <body>
     <div id="root"></div>

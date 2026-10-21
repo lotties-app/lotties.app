@@ -2,7 +2,9 @@
  * Pre-paint theme: runs synchronously from <head> (an external file, because the CSP allows no
  * inline scripts) so the first frame already has the right colours. It mirrors the rules in
  * src/theme/nightFeed.ts and src/theme/themeStorage.ts; keep them in sync (storage keys, the
- * 22:00-05:00 window, the period key). Failures are ignored: the app sets the scheme itself.
+ * 22:00-05:00 window, the period key). It also points the manifest and apple-touch-icon links at
+ * the light or dark icon set (night counts as dark), mirroring src/pwa/schemeLinks.ts; keep the
+ * hrefs in sync. Failures are ignored: the app sets the scheme itself.
  */
 (function () {
   try {
@@ -41,6 +43,16 @@
     for (var i = 0; i < metas.length; i++) {
       metas[i].removeAttribute('media');
       metas[i].setAttribute('content', colors[scheme]);
+    }
+
+    var dark = scheme !== 'light';
+    var links = {
+      manifest: dark ? '/manifest-dark.webmanifest' : '/manifest.webmanifest',
+      'apple-touch-icon': dark ? '/apple-touch-icon-dark.png' : '/apple-touch-icon.png',
+    };
+    for (var rel in links) {
+      var el = document.querySelector('link[rel="' + rel + '"]');
+      if (el) el.setAttribute('href', links[rel]);
     }
   } catch (e) {
     /* storage or matchMedia unavailable */

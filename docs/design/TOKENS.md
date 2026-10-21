@@ -10,7 +10,7 @@ Single source of truth: `web/src/theme/tokens.ts` (plain data, contrast-tested i
 | `dark`  | Ink                    | `data-dark`              | default when the OS gives no preference                                                                                               |
 | `night` | Lamplight (night feed) | `data-night`             | dark palette mode; near-black, one warm tone, blue channel <= 0x78, text about 45% of dark, one category pair, no shadow/grain/motion |
 
-Mode (Settings > Appearance): System / Light / Dark (`baby-routine.theme`). Night feed: Off / Ask / Auto (`baby-routine.nightFeed`, default Ask) decided by `nightFeed.ts` (local 22:00-05:00); the explicit choice and "Not now" live in `baby-routine.nightFeed.state` and expire at the next window boundary. `public/theme-init.js` mirrors these rules before first paint (keep both in sync).
+Mode (Settings > Appearance): System / Light / Dark (`baby-routine.theme`). Night feed: Off / Ask / Auto (`baby-routine.nightFeed`, default Ask) decided by `nightFeed.ts` (local 22:00-05:00); the explicit choice and "Not now" live in `baby-routine.nightFeed.state` and expire at the next window boundary. `public/theme-init.js` mirrors these rules before first paint (keep both in sync); it also points the manifest and apple-touch-icon links at the light or dark icon set (night counts as dark, `src/pwa/schemeLinks.ts`).
 
 ## Roles (MUI path in brackets)
 

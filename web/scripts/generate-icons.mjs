@@ -14,6 +14,12 @@
 //   icon-monochrome-512.png      icon-b-mono.svg inside the 66% safe zone (only alpha is used)
 //   (also copies favicon.svg and favicon.png into keycloak-theme/src/login/art for its tab icon)
 //   favicon.png (32), favicon.ico (16, 32, 48 as PNG-in-ICO), both from favicon.svg (light)
+// Dark set (concept B dark tile; shown when the app scheme is dark or night, see manifest-dark):
+//   icon-dark-192.png, icon-dark-512.png   icon-b-dark.svg
+//   icon-maskable-dark-512.png             icon-b-maskable-dark.svg (glyph at 0.78)
+//   apple-touch-icon-dark.png              180, opaque, glyph at 0.92
+//   favicon-dark.png (32), favicon-dark.ico  favicon-b.svg with the dark palette forced
+//   (icon-monochrome-512.png is shared: only its alpha is used)
 import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -28,6 +34,14 @@ const icon = await art('icon-b.svg');
 const maskable = await art('icon-b-maskable.svg');
 const mono = await art('icon-b-mono.svg');
 const favicon = await art('favicon-b.svg');
+const iconDark = await art('icon-b-dark.svg');
+const maskableDark = await art('icon-b-maskable-dark.svg');
+
+// favicon-b.svg switches palette with a media query that renderers do not evaluate: force it.
+const LIGHT_FAVICON_STYLE = '.t{fill:#f5efe4}.d{fill:#b04c29}.n{fill:#2a251f}';
+const DARK_FAVICON_STYLE = '.t{fill:#24201b}.d{fill:#e58f68}.n{fill:#f2eadc}';
+if (!favicon.includes(LIGHT_FAVICON_STYLE)) throw new Error('favicon-b.svg lost its palette');
+const faviconDark = favicon.replace(LIGHT_FAVICON_STYLE, DARK_FAVICON_STYLE);
 
 // iOS rounds the corners itself and turns transparency black: use the full-bleed art with the
 // glyph larger than the maskable safe zone allows.
@@ -35,6 +49,9 @@ const MASKABLE_SCALE = 'scale(0.78)';
 if (!maskable.includes(MASKABLE_SCALE))
   throw new Error(`icon-b-maskable.svg lost ${MASKABLE_SCALE}`);
 const appleSvg = maskable.replace(MASKABLE_SCALE, 'scale(0.92)');
+if (!maskableDark.includes(MASKABLE_SCALE))
+  throw new Error(`icon-b-maskable-dark.svg lost ${MASKABLE_SCALE}`);
+const appleSvgDark = maskableDark.replace(MASKABLE_SCALE, 'scale(0.92)');
 
 // Oversample the vector (density is relative to the SVG's own width/height, 96 dpi = 1x).
 const svgWidth = (svg) => Number(/<svg[^>]* width="(\d+)"/.exec(svg)[1]);
@@ -57,6 +74,16 @@ await write('icon-512.png', render(icon, 512), 512);
 await write('icon-maskable-512.png', render(maskable, 512), 512);
 await write('apple-touch-icon.png', render(appleSvg, 180).flatten({ background: '#f5efe4' }), 180);
 await write('favicon.png', render(favicon, 32), 32);
+
+await write('icon-dark-192.png', render(iconDark, 192), 192);
+await write('icon-dark-512.png', render(iconDark, 512), 512);
+await write('icon-maskable-dark-512.png', render(maskableDark, 512), 512);
+await write(
+  'apple-touch-icon-dark.png',
+  render(appleSvgDark, 180).flatten({ background: '#1b1814' }),
+  180,
+);
+await write('favicon-dark.png', render(faviconDark, 32), 32);
 
 // The Keycloak login theme bundles the same tab icon.
 const kcArt = join(here, '..', '..', 'keycloak-theme', 'src', 'login', 'art');
@@ -82,20 +109,24 @@ await write(
 
 // favicon.ico: PNG-in-ICO (supported since Vista); sharp cannot write ICO itself.
 const icoSizes = [16, 32, 48];
-const icoPngs = await Promise.all(icoSizes.map((s) => render(favicon, s).toBuffer()));
-const header = Buffer.alloc(6 + 16 * icoSizes.length);
-header.writeUInt16LE(1, 2); // type: icon
-header.writeUInt16LE(icoSizes.length, 4);
-let offset = header.length;
-icoSizes.forEach((s, i) => {
-  const e = 6 + 16 * i;
-  header.writeUInt8(s, e); // width
-  header.writeUInt8(s, e + 1); // height
-  header.writeUInt16LE(1, e + 4); // colour planes
-  header.writeUInt16LE(32, e + 6); // bits per pixel
-  header.writeUInt32LE(icoPngs[i].length, e + 8);
-  header.writeUInt32LE(offset, e + 12);
-  offset += icoPngs[i].length;
-});
-await writeFile(join(publicDir, 'favicon.ico'), Buffer.concat([header, ...icoPngs]));
-console.log(`wrote public/favicon.ico (${icoSizes.join(', ')})`);
+async function writeIco(name, svg) {
+  const icoPngs = await Promise.all(icoSizes.map((s) => render(svg, s).toBuffer()));
+  const header = Buffer.alloc(6 + 16 * icoSizes.length);
+  header.writeUInt16LE(1, 2); // type: icon
+  header.writeUInt16LE(icoSizes.length, 4);
+  let offset = header.length;
+  icoSizes.forEach((s, i) => {
+    const e = 6 + 16 * i;
+    header.writeUInt8(s, e); // width
+    header.writeUInt8(s, e + 1); // height
+    header.writeUInt16LE(1, e + 4); // colour planes
+    header.writeUInt16LE(32, e + 6); // bits per pixel
+    header.writeUInt32LE(icoPngs[i].length, e + 8);
+    header.writeUInt32LE(offset, e + 12);
+    offset += icoPngs[i].length;
+  });
+  await writeFile(join(publicDir, name), Buffer.concat([header, ...icoPngs]));
+  console.log(`wrote public/${name} (${icoSizes.join(', ')})`);
+}
+await writeIco('favicon.ico', favicon);
+await writeIco('favicon-dark.ico', faviconDark);
