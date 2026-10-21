@@ -1,0 +1,7 @@
+/* Example "skin" for a second app on the same Keycloak: only CSS variables of the baby-routine theme change.
+   `html:root` (specificity 0,1,1) beats the theme's own `:root`, even though the theme stylesheet is injected later.
+   The theme defines dark in :root and light inside @media (prefers-color-scheme: light): override both. */
+html:root { --br-accent: #5b8def; --br-on-accent: #0b1020; }
+@media (prefers-color-scheme: light) {
+  html:root { --br-accent: #2a55b8; --br-on-accent: #ffffff; }
+}

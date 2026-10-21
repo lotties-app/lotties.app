@@ -1,0 +1,66 @@
+# Bitnami keycloak chart 24.0.5: install the baby-routine login theme from an OCI image (routes A and B).
+# Use as an extra values file AFTER your own one:
+#   helm upgrade keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 \
+#     -n keycloak --reuse-values -f values-theme-oci.yaml
+# NOTE: Helm replaces lists instead of merging them. If your own values.yaml already sets `initContainers`,
+# `extraVolumes` or `extraVolumeMounts` (it does not today: all three are empty), merge the entries by hand.
+#
+# How it works
+#   1. Pod volume `br-theme` (emptyDir) is shared between an init container and Keycloak.
+#   2. Init container `br-theme-init` runs the theme image, which copies /theme (the `baby-routine` theme
+#      directory: login/theme.properties, login/*.ftl, login/resources/...) into the volume.
+#   3. Keycloak mounts the volume at /opt/bitnami/keycloak/themes/baby-routine. The themes/ directory of the image
+#      is read-only (readOnlyRootFilesystem: true), but a volume mounted on a sub-path is fine: the container
+#      runtime creates the mount point before it makes the root filesystem read-only.
+#   4. Keycloak scans themes/ at start, no `kc.sh build` needed (directory themes are not build-time providers).
+#
+# Permissions: the chart sets runAsUser/fsGroup 1001 for the main container only; init containers get nothing
+# automatically, so the securityContext below repeats it. An emptyDir is writable for group 1001 through fsGroup.
+# Files copied by the init container are owned by 1001 and readable by Keycloak.
+
+initContainers:
+  - name: br-theme-init
+    # CHANGE: ghcr.io/<owner>/baby-routine-keycloak-theme:<version> (route A) or your own registry (route B).
+    image: ghcr.io/dev-vinicius-andrade/baby-routine-keycloak-theme:0.1.0
+    # A fixed version tag never changes, so IfNotPresent is right. Use Always only with a floating tag.
+    imagePullPolicy: IfNotPresent
+    command: ["sh", "-c", "cp -R /theme/. /target/ && echo baby-routine theme copied"]
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+    volumeMounts:
+      - name: br-theme
+        mountPath: /target
+
+extraVolumes:
+  - name: br-theme
+    emptyDir:
+      sizeLimit: 32Mi
+
+extraVolumeMounts:
+  - name: br-theme
+    mountPath: /opt/bitnami/keycloak/themes/baby-routine
+    # Keycloak only reads the theme: mount it read-only.
+    readOnly: true
+
+# Private ghcr.io package (the default for a new package is private until you make it public)? Create a pull
+# secret in the namespace and reference it here:
+#   kubectl -n keycloak create secret docker-registry br-ghcr --docker-server=ghcr.io \
+#     --docker-username=<user> --docker-password=<token with read:packages>
+# global:
+#   imagePullSecrets: [br-ghcr]
+# NB: setting global.imagePullSecrets replaces what the chart uses today; keep any existing entries.

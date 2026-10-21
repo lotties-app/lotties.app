@@ -101,6 +101,117 @@ The login pages of Keycloak (sign in, register, reset password, verify email, on
 
 Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action.
 
+## Installing the Keycloak theme on Kubernetes (Bitnami chart)
+
+Target: Helm release `keycloak` (chart `bitnami/keycloak` 24.0.5, app 26.0.5, image `docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0`), production mode, `readOnlyRootFilesystem: true`, `runAsUser`/`fsGroup` 1001. `/opt/bitnami/keycloak/themes` is not writable, so the theme is installed in **directory mode**: an init container fills an `emptyDir`, Keycloak mounts it under `themes/`. No jar, no `kc.sh build`, no image rebuild. Everything below lives in `keycloak-theme/deploy/` and was verified against the real 26.0.5 Bitnami image (see "What was verified").
+
+### 1. Package the theme
+
+```bash
+bash keycloak-theme/deploy/package-theme.sh        # builds the jar in podman (build-in-podman.sh), unpacks theme/ from it
+# SKIP_BUILD=1 reuses keycloak-theme/dist_keycloak/*.jar
+```
+
+Keycloakify emits only the jar; the script takes the `theme/baby-routine/` folder out of it, checks the structure Keycloak 26 expects (`login/theme.properties` with `parent=keycloak`, `login/*.ftl`, `login/resources/`, `login/messages/`) and writes `deploy/out/theme/baby-routine/` (plain directory), `deploy/out/baby-routine-theme.tar.gz` (top folder `baby-routine/`) and a `.sha256` file (all git-ignored).
+
+### 2. Choose a delivery route
+
+| Route | What | Values file |
+| --- | --- | --- |
+| **A** OCI image on ghcr.io | Workflow `.github/workflows/keycloak-theme-image.yml` (manual dispatch, or push a tag `keycloak-theme-v0.1.0`) publishes `ghcr.io/<owner>/baby-routine-keycloak-theme:<version>` and attaches the tarball and checksum to the release | `values-theme-oci.yaml` |
+| **B** your own registry | `bash deploy/build-image.sh`, then push (below) | `values-theme-oci.yaml` with your image |
+| **C** no registry | init container (`curlimages/curl`) downloads the tarball from a URL (release asset), verifies its sha256, unpacks it | `values-theme-url.yaml` |
+| **Multi-theme (recommended for a shared IdP)** | one volume over the whole `themes/` dir, image with N theme folders | `values-theme-multi-oci.yaml` |
+
+Route B:
+
+```bash
+IMAGE_REPO=registry.example.com/apps/baby-routine-keycloak-theme bash keycloak-theme/deploy/build-image.sh
+podman login registry.example.com
+podman push registry.example.com/apps/baby-routine-keycloak-theme:0.1.0   # or PUSH=1 on the build command
+```
+
+Then set that image in the values file (`initContainers[0].image`). A private registry or a private ghcr package needs a pull secret (`global.imagePullSecrets`, see the comments in the values file). Route C: copy the first column of `deploy/out/baby-routine-theme.tar.gz.sha256` into `THEME_SHA256` and the release-asset URL into `THEME_URL`; a wrong checksum fails the init container on purpose (during a rolling update the old pod keeps running).
+
+### 3. Review, upgrade, check
+
+Each values file is a second `-f` after yours. Helm replaces lists instead of merging them: the owner's `values.yaml` has `initContainers`, `extraVolumes` and `extraVolumeMounts` empty, so nothing is lost; merge by hand if that changes. **Check the image first:** `values.yaml` has no `image:` block, yet the cluster runs `bitnamilegacy/keycloak`. Run `helm get values keycloak -n keycloak` and make sure whatever sets `image.repository` (and `global.security.allowInsecureImages` if used) is part of the upgrade command, otherwise the upgrade would also change the Keycloak image.
+
+```bash
+# render only, no cluster contact
+helm template keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 -n keycloak \
+  -f values.yaml --set image.repository=bitnamilegacy/keycloak --set global.security.allowInsecureImages=true -f keycloak-theme/deploy/values-theme-oci.yaml | grep -n -B2 -A8 br-theme
+
+# the change itself (the owner runs it). IMPORTANT: use --reuse-values. The running release carries user values
+# that are NOT in helms/home-lab/main/keycloak/values.yaml: image.repository=bitnamilegacy/keycloak and
+# global.security.allowInsecureImages=true. A plain `-f values.yaml` upgrade would drop them and switch Keycloak
+# back to the default Bitnami image. Check first: `helm get values keycloak -n keycloak` (it contains secrets: never paste it anywhere).
+helm upgrade keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 -n keycloak \
+  --reuse-values -f keycloak-theme/deploy/values-theme-oci.yaml
+
+kubectl -n keycloak rollout status statefulset/keycloak
+kubectl -n keycloak logs keycloak-0 -c br-theme-init          # "baby-routine theme copied"
+kubectl -n keycloak exec keycloak-0 -c keycloak -- ls /opt/bitnami/keycloak/themes/baby-routine/login
+```
+
+The StatefulSet restarts (single replica: a short outage of the IdP, plan it). Rendered with `helm template` against the owner's `values.yaml` plus each values file, the only differences from the current manifest are one initContainer, one volume and one volumeMount at exactly `/opt/bitnami/keycloak/themes/baby-routine` (multi variant: `/opt/bitnami/keycloak/themes`).
+
+**Rollback:** `helm history keycloak -n keycloak`, then `helm rollback keycloak <previous-revision> -n keycloak`, or use `helm rollback` for a clean revert (re-running the upgrade without the theme file keeps the theme pieces, because `--reuse-values` keeps the previous user values). A realm that still names `baby-routine` while the theme is absent falls back to Keycloak's default look.
+
+### 4. Configure the realm
+
+Admin console: Realm settings > Themes > Login theme = `baby-routine`; Localization > Internationalization on, English + Portuguese (Brazil). Or scripted and idempotent (curl + jq; credentials only from the environment, never printed):
+
+```bash
+export KC_URL=https://auth.homel4b.dev KC_REALM=baby-routine KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
+bash keycloak-theme/deploy/configure-realm.sh --dry-run    # prints the intended changes, writes nothing
+bash keycloak-theme/deploy/configure-realm.sh              # applies; a second run says "Nothing to do"
+```
+
+Outside `--dry-run` it refuses to run when `/admin/serverinfo` does not list the theme yet. Existing supported locales and the default locale are kept; `en` and `pt-BR` are added.
+
+### Multi-theme layout for a shared IdP (recommended)
+
+The Keycloak is used by many apps, so mount **one** volume over the whole `themes/` directory instead of one mount per theme (`values-theme-multi-oci.yaml`): the init container copies `/themes/*` from an image into the `emptyDir`; the image can hold N folders. This hides nothing Keycloak needs: the built-in themes (`base`, `keycloak`, `keycloak.v2`) are inside the server jar, and the image's `themes/` directory only holds a `README.md` (checked on 26.0.5-debian-12-r0).
+
+```bash
+bash keycloak-theme/deploy/package-multi.sh                      # out/themes/{baby-routine,example-other-app}
+MULTI=1 IMAGE_REPO=registry.example.com/apps/baby-routine-keycloak-themes bash keycloak-theme/deploy/build-image.sh
+```
+
+Each client (or realm) picks its theme: client attribute `login_theme` (admin console: client > Settings > Login settings > Login theme) or the realm's Login theme; the client's choice wins.
+
+**Adding another theme:** (1) put a ready theme folder in `deploy/themes-extra/<name>/login/...`, or for a pure re-colouring a `deploy/themes-extra/<name>/skin.css`; (2) run `package-multi.sh` and build the image with a **new tag**; (3) set the tag in the values file and `helm upgrade`; (4) set the theme on the app's client. Every theme change restarts the shared IdP pod, so batch changes.
+
+*Skin without rebuild:* `make-child-theme.sh <name> <skin.css>` creates a child theme (`theme.properties` with `parent=baby-routine`, the parent's `.ftl` pages each with one extra `<link>` to `resources/css/skin.css`; JS, fonts, images and messages come from the parent through Keycloak's parent chain). The CSS overrides the theme's CSS variables (`--br-accent`, ...): use `html:root { ... }` for specificity (the theme stylesheet is injected after the skin link) and repeat the values inside `@media (prefers-color-scheme: light)` for the light scheme. The placeholder `example-other-app` (blue accent) is built this way. The extra `<link>` is needed because Keycloakify pages ignore the `styles=` theme property.
+
+*Hot reload alternative (development only):* a git-sync sidecar writing into the shared volume plus `--spi-theme--cache-themes=false --spi-theme--cache-templates=false` (`KC_SPI_THEME_CACHE_THEMES=false`, `KC_SPI_THEME_CACHE_TEMPLATES=false`) so Keycloak re-reads files. Do not run a production IdP like that: caches off slow every page, and a bad push breaks every app's login page without a rollout and without `helm rollback`. In production every theme change goes through an image tag and a pod restart.
+
+### Security of login-page themes
+
+A login theme runs on the page where users type passwords, on the IdP origin. Treat it like auth code: no third-party scripts, fonts or analytics (the theme loads only its own files), review every theme change, pin image tags (never `latest`) and verify what you deploy. Route C has a mandatory sha256; for images use immutable digests (`image: repo@sha256:...`) and sign them (for example `cosign sign` with the GitHub OIDC identity and `cosign verify` in an admission policy), or at least publish only from the workflow above.
+
+### The jar-in-providers alternative (not recommended here)
+
+The chart's `/opt/bitnami/keycloak/providers` is on the writable `empty-dir`, so an init container could copy the Keycloakify jar there (next to the metrics SPI jar). Keycloak then re-augments at start when the provider set changed, which lengthens startup (the liveness probe starts after 300 s today) and needs CPU and memory for the build (it writes to `lib/quarkus`, also writable). Risks: slower, riskier restarts, a broken jar blocks the whole IdP, and the pre-built optimized state of the image is not used. Directory mode avoids all of that; use the jar where you control the image build (`kc.sh build` is needed in jar mode only).
+
+### Troubleshooting
+
+- **Theme not listed in the realm's Login theme dropdown:** check the init container log; `ls /opt/bitnami/keycloak/themes/baby-routine/login/theme.properties` in the pod (single layout: the volume is the theme folder itself, `login/` directly inside; multi layout: `themes/baby-routine/login/`); restart the pod after changes. Tarball extraction needs `--strip-components=1`.
+- **Blank page:** the page is a React SPA; open the browser console. 404s on `/resources/<hash>/login/baby-routine/dist/assets/...` mean the `resources/` tree is missing from the volume, or the ingress rewrites `/resources/`: forward `/resources/*` unchanged.
+- **Fonts missing:** Fraunces ships in `resources/dist/assets` (woff2); check they are served with 200 and not blocked by a `font-src` CSP set at the ingress.
+- **Edited files do not show:** Keycloak caches themes and templates; restart the pod, or (development only) start with `--spi-theme--cache-themes=false --spi-theme--cache-templates=false`.
+- **Init container in `CrashLoopBackOff`:** image pull (secret), `sha256sum: FAILED` (route C), or a missing scratch `emptyDir` (`br-theme-dl` mounted at `/dl` in route C; the root filesystem is read-only).
+- **Permission denied copying:** run the init container as 1001 (as in the files); `fsGroup: 1001` makes the `emptyDir` writable.
+
+### Bitnami legacy images are frozen
+
+`bitnamilegacy/keycloak` receives no updates (Bitnami moved its older images there and stopped maintaining them), so 26.0.5 gets no security fixes. A later migration to the official `quay.io/keycloak/keycloak` image is advisable and out of scope here; the directory-mode packages and carrier images work unchanged there, only the mount path changes (`/opt/keycloak/themes`).
+
+### What was verified (local, throwaway, no cluster contact)
+
+`deploy/verify-bitnami-local.sh` runs the real `docker.io/bitnamilegacy/keycloak:26.0.5-debian-12-r0` in podman as `br-kc-bn`: production mode (`KEYCLOAK_PRODUCTION=true`, proxy headers), `--read-only`, uid 1001, capabilities dropped, the chart's writable mounts as volumes, the theme mounted `:ro`. `verify-init-routes.sh A|C` fills the theme volume with the same commands and security context as the values files; `verify-multi.sh` checks the multi layout with two clients; `verify-bitnami-shots.mjs` (Playwright from `e2e/node_modules`) writes `docs/design/screenshots/keycloak-bn-*.png`.
+
 ## Reverse proxy and TLS
 
 Terminate TLS in front of the `web` container (Caddy, Traefik, nginx, a cloud load balancer) and forward to port 80 of the container. The inner nginx already forwards `Host` and `X-Forwarded-*` to the API. Requirements:

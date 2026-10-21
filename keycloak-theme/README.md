@@ -43,6 +43,10 @@ Keycloakify builds a jar per range of Keycloak versions because the theme resour
 
 `vite.config.ts` builds only `all-other-versions` by default (tested on Keycloak **26.8.1**). `KC_TARGETS=all npm run build-keycloak-theme` leaves the option out so Keycloakify builds every range it supports. Docs: <https://docs.keycloakify.dev/targeting-specific-keycloak-versions>. Only 26.8.1 was verified against a real server for this theme.
 
+## Kubernetes / Helm (directory mode, no jar, no Keycloak rebuild)
+
+For a Keycloak you cannot rebuild (for example the Bitnami chart with a read-only root filesystem) install the theme as a plain directory through an init container. Scripts, Helm values and the tested procedure are in [`deploy/`](deploy/) and `docs/DEPLOY.md` ("Installing the Keycloak theme on Kubernetes (Bitnami chart)"): `deploy/package-theme.sh`, `deploy/build-image.sh`, `deploy/values-theme-oci.yaml`, `deploy/values-theme-url.yaml`, `deploy/values-theme-multi-oci.yaml`, `deploy/configure-realm.sh`.
+
 ## Build the jar
 
 The jar is a Maven artifact, so building needs a JDK and Maven (`npm run build-keycloak-theme` calls `mvn`). Without them on your machine:

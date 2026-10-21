@@ -1,0 +1,11 @@
+# Carrier image with N theme folders under /themes/<name>/login/... (build: bash build-image.sh with MULTI=1).
+FROM docker.io/library/busybox:1.37.0
+ARG VERSION=dev
+LABEL org.opencontainers.image.title="baby-routine-keycloak-themes" \
+      org.opencontainers.image.source="https://github.com/dev-vinicius-andrade/baby-routine" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later" \
+      org.opencontainers.image.version="${VERSION}"
+COPY out/themes/ /themes/
+RUN chmod -R u=rwX,go=rX /themes
+USER 1001:1001
+CMD ["sh", "-c", "cp -R /themes/. /target/ && echo themes copied"]
