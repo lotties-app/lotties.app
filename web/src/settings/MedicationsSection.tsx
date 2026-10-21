@@ -18,6 +18,7 @@ import { termsOf } from '../db/prescriptionCommands';
 import { GuardrailNote } from '../medications/GuardrailNote';
 import { LinkedProduct } from '../medications/LinkedProduct';
 import { PrescriptionSheet } from '../medications/PrescriptionSheet';
+import { ReminderPromptCard } from '../notifications/ui/ReminderPromptCard';
 import { amountWithUnit, summaryText } from '../medications/prescriptionForm';
 import { stateLine } from '../medications/statusText';
 import { useMedicationStatuses } from '../medications/useMedicationStatus';
@@ -186,6 +187,7 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
   const writable = canWrite(baby);
   const [editing, setEditing] = useState<Editing>(null);
   const [editingRx, setEditingRx] = useState<EditingPrescription>(null);
+  const [offeringReminders, setOfferingReminders] = useState(false);
 
   if (!medications || !meds) return null;
   const nameOf = (p: Prescription) =>
@@ -279,6 +281,9 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
           writable={writable}
           onEdit={(prescription) => setEditingRx({ prescription })}
         />
+        {offeringReminders && writable && (
+          <ReminderPromptCard baby={baby} onClose={() => setOfferingReminders(false)} />
+        )}
         {stopped.length > 0 && (
           <>
             <Typography variant="subtitle2" component="h4" color="text.secondary">
@@ -318,6 +323,7 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
         <PrescriptionSheet
           babyId={baby.id}
           {...(editingRx === 'new' ? {} : { prescription: editingRx.prescription })}
+          onSaved={(terms) => setOfferingReminders(terms.kind === 'scheduled')}
           onDone={() => setEditingRx(null)}
         />
       )}

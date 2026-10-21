@@ -1562,6 +1562,22 @@
       "added": "Adicionado em {{date}}",
       "remove": "Remover",
       "removeNamed": "Remover {{label}}"
-    }
+    },
+    "prompt": {
+      "title": "Receber um lembrete nos horários agendados?",
+      "body": "O Lotties pode avisar neste aparelho quando uma dose agendada ainda não foi registrada.",
+      "turnOn": "Ativar",
+      "notNow": "Agora não",
+      "done": "Lembretes de remédio ativados para {{name}}."
+    },
+    "reminderLine": {
+      "at": "Lembrete para {{time}}",
+      "snooze": "Adiar 30 min",
+      "snoozed": "Adiado por 30 min.",
+      "stop": "Parar lembretes desta dose",
+      "stopped": "Sem mais lembretes para esta dose.",
+      "offline": "Conecte-se à internet para adiar."
+    },
+    "whyLink": "Me lembrar quando a janela abrir"
   }
 }

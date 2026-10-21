@@ -124,3 +124,22 @@ export const sendTestPush = (api: ApiClient, endpoint?: string) =>
     method: 'POST',
     body: endpoint ? { endpoint } : {},
   });
+
+export type DeliveryAction = 'snooze' | 'dismiss';
+
+/**
+ * Snooze (30 minutes, at most 3 times: the fourth is 409 `snooze_limit_reached`) or dismiss ("Stop
+ * reminders for this dose") one reminder with its per-delivery token. 404
+ * `notification_action_not_found` for an unknown, expired (12 h) or wrong-token delivery.
+ */
+export async function postDeliveryAction(
+  api: ApiClient,
+  deliveryId: string,
+  action: DeliveryAction,
+  token: string,
+): Promise<void> {
+  await api.request<unknown>(apiPaths.pushDeliveryAction(deliveryId), {
+    method: 'POST',
+    body: { action, token },
+  });
+}

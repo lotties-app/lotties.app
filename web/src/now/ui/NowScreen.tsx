@@ -7,6 +7,9 @@ import { useOldestEventStart } from '../../db/hooks';
 import type { Baby } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
 import { PrescriptionSheet } from '../../medications/PrescriptionSheet';
+import { useNotificationLink } from '../../notifications/notificationLinkContext';
+import type { NotificationLink } from '../../pwa/sw/deepLink';
+import { ReminderPromptCard } from '../../notifications/ui/ReminderPromptCard';
 import { tileStateLine } from '../../medications/statusText';
 import { eventTypeText } from '../../i18n/eventTypeText';
 import type { SheetPrefill } from '../../presets/actions';
@@ -27,7 +30,7 @@ import { DiaperTraySheet } from './DiaperTraySheet';
 import { FeedTraySheet } from './FeedTraySheet';
 import { FirstRun } from './FirstRun';
 import { LogTiles } from './LogTiles';
-import { MedsTraySheet } from './MedsTraySheet';
+import { MedsTraySheet, type TrayReminder } from './MedsTraySheet';
 import { MoreSheet } from './MoreSheet';
 import { NightNow } from './NightNow';
 import { NightStars } from './NightStars';
@@ -61,6 +64,34 @@ function useSnooze(now: Date) {
   };
 }
 
+/**
+ * A dose reminder tapped for this baby opens the Meds tray with its reminder line; a nap reminder
+ * just shows Now. Opening never logs or confirms anything.
+ */
+function useReminderLink(babyId: string, canOpenMeds: boolean, openMeds: () => void) {
+  const links = useNotificationLink();
+  const [reminder, setReminder] = useState<TrayReminder | null>(null);
+  const link = links?.link ?? null;
+  const [handled, setHandled] = useState<NotificationLink | null>(null);
+  const mine = link && link.babyId === babyId ? link : null;
+  // Adjusted while rendering (not in an effect): the tray opens in the same render pass.
+  if (mine && mine !== handled) {
+    setHandled(mine);
+    if (mine.kind === 'dose' && canOpenMeds) {
+      setReminder({
+        rxId: mine.rxId,
+        deliveryId: mine.deliveryId,
+        ...(mine.token !== undefined ? { token: mine.token } : {}),
+      });
+      openMeds();
+    }
+  }
+  useEffect(() => {
+    if (mine) links?.consume();
+  }, [mine, links]);
+  return { reminder, clear: () => setReminder(null) };
+}
+
 /** Predictions go stale when the state flips: ask again after a sleep starts or ends. */
 function useRefreshPredictions(babyId: string, model: NowScreenModel) {
   const queryClient = useQueryClient();
@@ -92,6 +123,8 @@ function NowContent({
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
   const [addingPrescription, setAddingPrescription] = useState(false);
+  const [offeringReminders, setOfferingReminders] = useState(false);
+  const reminderLink = useReminderLink(baby.id, !!model.trays.meds, () => setTray('meds'));
   useRefreshPredictions(baby.id, model);
   // The "+" of the bottom navigation opens the More sheet here (viewers have no "+").
   useAddRequests(() => {
@@ -108,7 +141,10 @@ function NowContent({
   const disabled = model.readOnly;
   const sleepType = typeForKey(model.types, 'sleep');
 
-  const close = () => setTray(null);
+  const close = () => {
+    setTray(null);
+    reminderLink.clear();
+  };
   const choose = (choice: TrayChoice) => {
     close();
     void action.run(() => model.commands.tray(choice));
@@ -161,6 +197,9 @@ function NowContent({
         <Alert severity="error" onClose={action.clearError}>
           {action.error}
         </Alert>
+      )}
+      {offeringReminders && !model.readOnly && (
+        <ReminderPromptCard baby={baby} onClose={() => setOfferingReminders(false)} />
       )}
 
       {night ? (
@@ -273,6 +312,7 @@ function NowContent({
           now={model.now}
           disabled={disabled}
           onChoose={medsChosen}
+          {...(reminderLink.reminder ? { reminder: reminderLink.reminder } : {})}
           onAddPrescription={() => {
             close();
             setAddingPrescription(true);
@@ -309,7 +349,11 @@ function NowContent({
         />
       )}
       {addingPrescription && !model.readOnly && (
-        <PrescriptionSheet babyId={baby.id} onDone={() => setAddingPrescription(false)} />
+        <PrescriptionSheet
+          babyId={baby.id}
+          onSaved={(terms) => setOfferingReminders(terms.kind === 'scheduled')}
+          onDone={() => setAddingPrescription(false)}
+        />
       )}
       {!model.readOnly && actions.elements}
     </Stack>

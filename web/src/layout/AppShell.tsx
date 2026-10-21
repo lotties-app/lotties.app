@@ -4,6 +4,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { canWrite } from '../baby/permissions';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
+import { NotificationLinkProvider } from '../notifications/NotificationLinkProvider';
+import { useCloseResolvedNotifications } from '../notifications/useCloseResolvedNotifications';
 import { usePushReconcile } from '../notifications/usePushReconcile';
 import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { UndoSnackbar } from '../ui/UndoSnackbar';
@@ -28,6 +30,7 @@ function ShellBody() {
   const { baby } = useSelectedBaby();
   const writable = !!baby && canWrite(baby);
   usePushReconcile();
+  useCloseResolvedNotifications();
   return (
     <AddSheetProvider enabled={writable}>
       <Box
@@ -75,7 +78,9 @@ function ShellBody() {
 export function AppShell() {
   return (
     <SelectedBabyProvider>
-      <ShellBody />
+      <NotificationLinkProvider>
+        <ShellBody />
+      </NotificationLinkProvider>
     </SelectedBabyProvider>
   );
 }

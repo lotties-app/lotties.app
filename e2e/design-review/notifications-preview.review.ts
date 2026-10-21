@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 
 /*
  * Captures Settings > Notifications in every device state (off, explainer, on, granted-off,
- * denied, unsupported, iOS install guidance, iOS too old, offline). Light, dark and night, English
+ * denied, unsupported, iOS install guidance, iOS too old, offline), plus the reminder offer card
+ * after a scheduled prescription, the dose reminder line in the Meds tray and the nap Why sheet
+ * link (task N9). Light, dark and night, English
  * and Portuguese, 390x844 and 1280x800. Credential-free (see notifications-preview.config.ts).
  *
  * Narrow it with NOTIFICATIONS_VIEWPORTS=mobile NOTIFICATIONS_SCHEMES=dark
@@ -31,7 +33,12 @@ const STATES = [
   "ios-needs-install",
   "ios-too-old",
   "offline",
+  "prompt",
+  "reminder",
+  "why",
 ] as const;
+/** Modal sheets: capture the viewport they cover. */
+const SHEETS: readonly string[] = ["explainer", "reminder", "why"];
 
 const pick = <T extends string>(
   env: string | undefined,
@@ -81,8 +88,7 @@ test("notifications settings in every state, scheme, language and viewport", asy
               SHOTS,
               `notifications-${state}-${viewport}-${scheme}-${locale}.png`,
             ),
-            // The explainer is a modal sheet: capture the viewport it covers.
-            fullPage: state !== "explainer",
+            fullPage: !SHEETS.includes(state),
             animations: "disabled",
             caret: "hide",
           });

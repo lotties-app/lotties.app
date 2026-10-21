@@ -24,8 +24,11 @@ export function usePushReconcile(): void {
     try {
       const config = await queryClient.fetchQuery(pushConfigQuery(api));
       if (!config.enabled || !config.publicKey) return;
-      await reconcilePush(context, config.publicKey);
-      await queryClient.invalidateQueries({ queryKey: pushKeys.thisDevice });
+      const outcome = await reconcilePush(context, config.publicKey);
+      if (outcome !== 'not-opted-in') {
+        await queryClient.invalidateQueries({ queryKey: pushKeys.thisDevice });
+        await queryClient.invalidateQueries({ queryKey: pushKeys.devices });
+      }
     } catch {
       // Retried on the next start; Settings shows the real state.
     }

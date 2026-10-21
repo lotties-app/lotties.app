@@ -99,6 +99,9 @@ export const apiPaths = {
   pushSettings: () => `${API_PREFIX}/push/settings`,
   pushPreferences: () => `${API_PREFIX}/push/preferences`,
   pushTest: () => `${API_PREFIX}/push/test`,
+  /** Anonymous: body `{ action, token }`, the per-delivery token is the credential. */
+  pushDeliveryAction: (deliveryId: string) =>
+    `${API_PREFIX}/push/deliveries/${enc(deliveryId)}/actions`,
   notificationPreferences: (babyId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/notification-preferences`,
 };

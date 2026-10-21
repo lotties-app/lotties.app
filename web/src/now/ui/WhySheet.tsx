@@ -1,5 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { Typography } from '@mui/material';
+import { Button, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { usePushDevice } from '../../notifications/PushDeviceContext';
+import { usePushConfig } from '../../notifications/usePush';
+import { Icon } from '../../ui/Icon';
 import { describeReason } from '../../predictions/predictionModel';
 import type { PredictionDto } from '../../sync/contract';
 import type { NapWindow } from '../nowState';
@@ -28,6 +32,25 @@ function predictionOf(window: NapWindow, full: PredictionDto | undefined): Predi
   );
 }
 
+/** "Remind me when the window opens": only where push can work and the server has it on. */
+function NapReminderLink({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const device = usePushDevice();
+  const config = usePushConfig();
+  if (device.support() !== 'supported' || !config.data?.enabled) return null;
+  return (
+    <Button
+      component={RouterLink}
+      to="/settings#notifications"
+      onClick={onClose}
+      startIcon={<Icon name="bell" size={20} />}
+      sx={{ minHeight: 48, alignSelf: 'flex-start' }}
+    >
+      {t('notifications.whyLink')}
+    </Button>
+  );
+}
+
 /** "Why?" of the nap window: the sentence built from the server's `basis`, and the disclaimer. */
 export function WhySheet({ open, onClose, window, prediction }: Props) {
   const { t } = useTranslation();
@@ -39,6 +62,7 @@ export function WhySheet({ open, onClose, window, prediction }: Props) {
       <Typography variant="body2" color="text.secondary">
         {t('predictions.disclaimer')}
       </Typography>
+      <NapReminderLink onClose={onClose} />
     </SheetFrame>
   );
 }

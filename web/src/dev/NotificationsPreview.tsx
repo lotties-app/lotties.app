@@ -10,6 +10,11 @@ import { PushDeviceContext } from '../notifications/PushDeviceContext';
 import { pushKeys } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 import { PushExplainerSheet } from '../notifications/ui/PushExplainerSheet';
+import { calculateMedicationStatus } from '../medications/statusCalculator';
+import { ReminderPromptCard } from '../notifications/ui/ReminderPromptCard';
+import { MedsTraySheet } from '../now/ui/MedsTraySheet';
+import { WhySheet } from '../now/ui/WhySheet';
+import { atTimes } from '../medications/prescriptionFixtures';
 import { SettingsSection } from '../settings/SettingsSection';
 import { PreviewToolbar } from './PreviewToolbar';
 
@@ -29,6 +34,9 @@ const SCENARIOS = [
   'ios-needs-install',
   'ios-too-old',
   'offline',
+  'prompt',
+  'reminder',
+  'why',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 
@@ -47,6 +55,9 @@ const DEVICE: Record<Scenario, FakeDeviceOptions> = {
   'ios-needs-install': { support: 'ios-needs-install' },
   'ios-too-old': { support: 'ios-too-old' },
   offline: { permission: 'granted', subscribed: true },
+  prompt: {},
+  reminder: { permission: 'granted', subscribed: true },
+  why: {},
 };
 
 const DAY = 24 * 60 * 60_000;
@@ -113,6 +124,82 @@ function setup(scenario: Scenario) {
   return { device, server, queryClient };
 }
 
+const MINUTE = 60_000;
+
+/** The Meds tray as a dose reminder opens it: one scheduled dose whose slot passed 10 min ago. */
+function ReminderTray() {
+  const [now] = useState(() => new Date());
+  const slot = new Date(Math.floor((now.getTime() - 10 * MINUTE) / MINUTE) * MINUTE);
+  const hhmm = `${String(slot.getHours()).padStart(2, '0')}:${String(slot.getMinutes()).padStart(2, '0')}`;
+  const [prescription] = useState(() => ({
+    ...atTimes('dev-push-med', [hhmm]),
+    babyId: 'dev-push-lia',
+  }));
+  const [status] = calculateMedicationStatus({
+    prescriptions: [prescription],
+    doses: [],
+    now,
+    utcOffsetMinutes: -now.getTimezoneOffset(),
+    weight: null,
+  });
+  const medication = {
+    id: 'dev-push-med',
+    babyId: 'dev-push-lia',
+    name: 'Simeticona',
+    defaultDosage: null,
+    notes: null,
+    isUsual: true,
+    createdAt: now.toISOString(),
+  };
+  return (
+    <MedsTraySheet
+      open
+      onClose={() => undefined}
+      tray={{
+        typeId: 'dev-med',
+        prescriptions: status ? [{ status, medication }] : [],
+        usual: [],
+        others: [],
+        lastUsedIds: [],
+        same: null,
+      }}
+      now={now}
+      disabled={false}
+      onChoose={() => undefined}
+      reminder={{
+        rxId: prescription.id,
+        deliveryId: '0f8fad5b-d9cb-469f-a165-70867728950e',
+        token: 'dGVzdC10b2tlbi10aGF0LWlzLWxvbmctZW5vdWdoLTEyMzQ',
+      }}
+    />
+  );
+}
+
+function WhyWithLink() {
+  const [now] = useState(() => Date.now());
+  const at = (minutes: number) => new Date(now + minutes * MINUTE).toISOString();
+  return (
+    <WhySheet
+      open
+      onClose={() => undefined}
+      window={{
+        earliest: at(20),
+        expected: at(35),
+        latest: at(50),
+        confidence: 'Medium',
+        sampleCount: 14,
+        basis: {},
+      }}
+    />
+  );
+}
+
+function N9Scenario({ scenario }: { scenario: 'prompt' | 'reminder' | 'why' }) {
+  if (scenario === 'reminder') return <ReminderTray />;
+  if (scenario === 'why') return <WhyWithLink />;
+  return <ReminderPromptCard baby={BABIES[0]!} onClose={() => undefined} />;
+}
+
 function Body({ scenario }: { scenario: Scenario }) {
   const { t } = useTranslation();
   const [{ device, server, queryClient }] = useState(() => setup(scenario));
@@ -121,17 +208,21 @@ function Body({ scenario }: { scenario: Scenario }) {
     <QueryClientProvider client={queryClient}>
       <ApiClientContext value={server.api}>
         <PushDeviceContext value={device}>
-          <SettingsSection
-            id="notifications"
-            title={t('settings.sections.notifications')}
-            defaultExpanded
-          >
-            <NotificationsSection
-              babies={BABIES}
-              publicKey="BFakeKey"
-              {...(scenario === 'offline' ? { online: false } : {})}
-            />
-          </SettingsSection>
+          {scenario === 'prompt' || scenario === 'reminder' || scenario === 'why' ? (
+            <N9Scenario scenario={scenario} />
+          ) : (
+            <SettingsSection
+              id="notifications"
+              title={t('settings.sections.notifications')}
+              defaultExpanded
+            >
+              <NotificationsSection
+                babies={BABIES}
+                publicKey="BFakeKey"
+                {...(scenario === 'offline' ? { online: false } : {})}
+              />
+            </SettingsSection>
+          )}
           <PushExplainerSheet
             open={explainer}
             onClose={() => setExplainer(false)}

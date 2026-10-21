@@ -1562,6 +1562,22 @@
       "added": "Added {{date}}",
       "remove": "Remove",
       "removeNamed": "Remove {{label}}"
-    }
+    },
+    "prompt": {
+      "title": "Get a reminder at the scheduled times?",
+      "body": "Lotties can notify this device when a scheduled dose is not logged yet.",
+      "turnOn": "Turn on",
+      "notNow": "Not now",
+      "done": "Medicine reminders are on for {{name}}."
+    },
+    "reminderLine": {
+      "at": "Reminder for {{time}}",
+      "snooze": "Snooze 30 min",
+      "snoozed": "Snoozed for 30 min.",
+      "stop": "Stop reminders for this dose",
+      "stopped": "No more reminders for this dose.",
+      "offline": "Connect to the internet to snooze."
+    },
+    "whyLink": "Remind me when the window opens"
   }
 }

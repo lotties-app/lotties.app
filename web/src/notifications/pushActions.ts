@@ -1,11 +1,11 @@
 import type { ApiClient } from '../api/apiClient';
 import {
   getNotificationSettings,
+  listPushDevices,
   putNotificationSettings,
   revokePushByEndpoint,
   subscribePush,
   type NotificationSettingsDto,
-  type PushDeviceDto,
 } from './pushApi';
 import {
   browserPushDevice,
@@ -13,6 +13,7 @@ import {
   type DeviceSubscription,
   type PushDevice,
 } from './pushDevice';
+import { localPushDeviceRecord, type PushDeviceRecordStore } from './pushDeviceRecord';
 
 /*
  * Subscribe, unsubscribe and reconcile this browser with the server
@@ -26,24 +27,29 @@ export interface PushContext {
   locale: string;
   /** "Chrome on Android"; left out when unknown. */
   deviceLabel?: string;
+  /** This device's own opt-in record (default: localStorage). */
+  record?: PushDeviceRecordStore;
 }
 
 /** Sign-out gives the server this long to revoke the device before it goes on locally. */
 const SIGN_OUT_REVOKE_TIMEOUT_MS = 3_000;
 
-/** The server id of this browser's subscription, learnt from the last subscribe call. */
-let thisDevice: { endpoint: string; id: string } | null = null;
-
-export function thisDeviceId(endpoint: string | null | undefined): string | null {
-  return endpoint && thisDevice?.endpoint === endpoint ? thisDevice.id : null;
+/** The server id of this browser's subscription, from this device's opt-in record. */
+export function thisDeviceId(
+  endpoint: string | null | undefined,
+  record: PushDeviceRecordStore = localPushDeviceRecord,
+): string | null {
+  const stored = record.read();
+  return endpoint && stored?.endpoint === endpoint ? stored.id : null;
 }
 
-function rememberDevice(endpoint: string, device: PushDeviceDto): string {
-  thisDevice = { endpoint, id: device.id };
-  return device.id;
-}
+const recordOf = (context: Pick<PushContext, 'record'>) => context.record ?? localPushDeviceRecord;
 
+/** POSTs the subscription (upsert by endpoint) and records the server id as this device's. */
 async function register(context: PushContext, subscription: DeviceSubscription): Promise<string> {
+  const record = recordOf(context);
+  // Opted in from here on, even when the POST fails: the next start retries the registration.
+  record.write({ endpoint: subscription.endpoint, id: null });
   const json = subscription.toJSON();
   const stored = await subscribePush(context.api, {
     endpoint: subscription.endpoint,
@@ -52,7 +58,8 @@ async function register(context: PushContext, subscription: DeviceSubscription):
     locale: context.locale,
     ...(context.deviceLabel ? { deviceLabel: context.deviceLabel } : {}),
   });
-  return rememberDevice(subscription.endpoint, stored);
+  record.write({ endpoint: subscription.endpoint, id: stored.id });
+  return stored.id;
 }
 
 /** A subscription made with `publicKey`: the current one, or a new one after a key change. */
@@ -93,31 +100,68 @@ export async function enablePush(context: PushContext, publicKey: string): Promi
 }
 
 /** Turns notifications off: revokes the server row, then unsubscribes the browser. */
-export async function disablePush(context: Pick<PushContext, 'api' | 'device'>): Promise<void> {
+export async function disablePush(
+  context: Pick<PushContext, 'api' | 'device' | 'record'>,
+): Promise<void> {
   const subscription = await context.device.getSubscription();
-  if (!subscription) return;
+  if (!subscription) {
+    recordOf(context).clear();
+    return;
+  }
   await revokePushByEndpoint(context.api, subscription.endpoint);
   await subscription.unsubscribe();
-  thisDevice = null;
+  recordOf(context).clear();
 }
 
+export type ReconcileOutcome =
+  /** The user never turned notifications on here (or turned them off): nothing is sent. */
+  | 'not-opted-in'
+  /** The browser lost its subscription: the opt-in is cleared and the device shows as off. */
+  | 'lost'
+  /** Registered for the first time, or again after the subscription or VAPID key changed. */
+  | 'registered'
+  /** Still listed by the server: last seen, locale and label refreshed. */
+  | 'refreshed'
+  /** Removed from another device: the browser is unsubscribed and the opt-in cleared. */
+  | 'removed-elsewhere';
+
 /**
- * On app start (signed in, permission granted) and on a language change: no subscription leaves
- * the device off; a key change re-subscribes; otherwise the POST refreshes last seen, locale and
- * label. Returns the device's server id, or `null` when it has no subscription.
+ * On app start (signed in, permission granted) and on a language change. Only a device the user
+ * opted in on HERE is ever (re)registered, and only when it was never registered or its browser
+ * subscription changed; a registered device is refreshed only while the server still lists it.
+ * When the server no longer lists it (removed from another device), the browser is unsubscribed
+ * and the local opt-in turned off, so the removal sticks.
  */
 export async function reconcilePush(
   context: PushContext,
   publicKey: string,
-): Promise<string | null> {
+): Promise<ReconcileOutcome> {
+  const record = recordOf(context);
+  const stored = record.read();
+  if (!stored) return 'not-opted-in';
   const existing = await context.device.getSubscription();
-  if (!existing) return null;
-  const subscription = keyMatches(existing, publicKey)
-    ? existing
-    : await currentSubscription(context.device, publicKey);
-  const id = await register(context, subscription);
+  if (!existing) {
+    record.clear();
+    // Best effort: the server would otherwise revoke it after the next failed send.
+    await revokePushByEndpoint(context.api, stored.endpoint).catch(() => undefined);
+    return 'lost';
+  }
+  const changed = !keyMatches(existing, publicKey) || existing.endpoint !== stored.endpoint;
+  if (changed || stored.id === null) {
+    const subscription = changed ? await currentSubscription(context.device, publicKey) : existing;
+    await register(context, subscription);
+    await syncTimeZone(context.api, context.device);
+    return 'registered';
+  }
+  const listed = (await listPushDevices(context.api)).some((device) => device.id === stored.id);
+  if (!listed) {
+    await existing.unsubscribe();
+    record.clear();
+    return 'removed-elsewhere';
+  }
+  await register(context, existing);
   await syncTimeZone(context.api, context.device);
-  return id;
+  return 'refreshed';
 }
 
 /**
@@ -129,8 +173,9 @@ export async function signOutPushDevice(
   api: ApiClient,
   device: PushDevice,
   online: boolean,
+  record: PushDeviceRecordStore = localPushDeviceRecord,
 ): Promise<void> {
-  thisDevice = null;
+  record.clear();
   let subscription: DeviceSubscription | null;
   try {
     if (device.support() !== 'supported') return;

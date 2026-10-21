@@ -17,6 +17,14 @@ export interface DeviceSubscription {
   unsubscribe: () => Promise<boolean>;
 }
 
+/** A notification the service worker is showing (`registration.getNotifications()`). */
+export interface ShownNotification {
+  tag: string;
+  /** The validated wire payload the worker stored; re-validate before use. */
+  data: unknown;
+  close: () => void;
+}
+
 export interface PushDevice {
   support: () => PushSupport;
   permission: () => BrowserPermission;
@@ -25,6 +33,8 @@ export interface PushDevice {
   getSubscription: () => Promise<DeviceSubscription | null>;
   /** Subscribes with the server's VAPID key (base64url); needs an active service worker. */
   subscribe: (publicKey: string) => Promise<DeviceSubscription>;
+  /** Notifications this browser shows for the app (empty without a service worker). */
+  shownNotifications: () => Promise<ShownNotification[]>;
   /** The device's IANA time zone. */
   timeZone: () => string;
   parts: () => DeviceParts | null;
@@ -104,6 +114,16 @@ export const browserPushDevice: PushDevice = {
       applicationServerKey: base64UrlToBytes(publicKey),
     });
     return wrap(subscription);
+  },
+  shownNotifications: async () => {
+    if (!hasServiceWorker()) return [];
+    const registration = await navigator.serviceWorker.getRegistration();
+    const shown = (await registration?.getNotifications?.()) ?? [];
+    return shown.map((notification) => ({
+      tag: notification.tag,
+      data: notification.data as unknown,
+      close: () => notification.close(),
+    }));
   },
   timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone,
   parts: () =>

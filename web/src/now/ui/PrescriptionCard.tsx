@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { formatDate, formatNumber, formatUnit } from '../../i18n/format';
@@ -15,6 +15,8 @@ interface Props {
   now: Date;
   disabled: boolean;
   onLog: (entry: MedicationEntry) => void;
+  /** Shown under the state line (the reminder line of a notification). */
+  children?: ReactNode;
 }
 
 const TONE_ICON = { ok: 'check', wait: 'clock', due: 'warning', ended: 'info' } as const;
@@ -156,7 +158,7 @@ function Confirm({
  * a confirm step first (the inputs of the suggestion; "Too early: next allowed at 18:00. Log
  * anyway?"). Logging early is never blocked and is recorded as `override`.
  */
-export function PrescriptionCard({ item, now, disabled, onLog }: Props) {
+export function PrescriptionCard({ item, now, disabled, onLog, children }: Props) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
   const { status, medication } = item;
@@ -217,6 +219,7 @@ export function PrescriptionCard({ item, now, disabled, onLog }: Props) {
         )}
       </Box>
       <StateText text={line.text} tone={line.tone} />
+      {children}
       {confirming && (
         <Confirm
           item={item}

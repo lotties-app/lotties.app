@@ -1,3 +1,4 @@
+import { ApiError } from '../api/ApiError';
 import type { ApiClient, RequestOptions } from '../api/apiClient';
 import type { BrowserPermission } from './permissionState';
 import type {
@@ -26,7 +27,12 @@ export interface FakeDeviceOptions {
 }
 
 export interface FakePushDevice extends PushDevice {
-  state: { permission: BrowserPermission; subscription: DeviceSubscription | null };
+  state: {
+    permission: BrowserPermission;
+    subscription: DeviceSubscription | null;
+    /** Notifications currently shown by the worker (`data` is the wire payload). */
+    shown: { tag: string; data: unknown }[];
+  };
   prompts: number;
 }
 
@@ -48,6 +54,7 @@ export function fakePushDevice(options: FakeDeviceOptions = {}): FakePushDevice 
     state: {
       permission: options.permission ?? 'default',
       subscription: null,
+      shown: [],
     },
     prompts: 0,
     support: () => options.support ?? 'supported',
@@ -62,6 +69,13 @@ export function fakePushDevice(options: FakeDeviceOptions = {}): FakePushDevice 
       device.state.subscription = makeSubscription();
       return device.state.subscription;
     },
+    shownNotifications: async () =>
+      device.state.shown.map((shown) => ({
+        ...shown,
+        close: () => {
+          device.state.shown = device.state.shown.filter((other) => other !== shown);
+        },
+      })),
     timeZone: () => options.timeZone ?? 'America/Sao_Paulo',
     parts: () => ({ browser: 'Chrome', os: 'Android' }),
   };
@@ -73,6 +87,9 @@ export interface FakePushServerState {
   settings: NotificationSettingsDto;
   preferences: BabyPreferencesDto[];
   devices: PushDeviceDto[];
+  /** Snoozes per delivery id, and the dismissed delivery ids. */
+  snoozes: Record<string, number>;
+  dismissed: string[];
 }
 
 export const DEFAULT_PUSH_SETTINGS: NotificationSettingsDto = {
@@ -94,11 +111,25 @@ export function fakePushServer(initial: Partial<FakePushServerState> = {}) {
     settings: initial.settings ?? DEFAULT_PUSH_SETTINGS,
     preferences: initial.preferences ?? [],
     devices: initial.devices ?? [],
+    snoozes: initial.snoozes ?? {},
+    dismissed: initial.dismissed ?? [],
   };
   const calls: FakePushCall[] = [];
 
   function handle(method: string, path: string, body: unknown): unknown {
     if (path.endsWith('/push/config')) return { enabled: true, publicKey: 'BFakeKey' };
+    const action = /push\/deliveries\/([^/]+)\/actions$/.exec(path);
+    if (action) {
+      const id = decodeURIComponent(action[1]);
+      if ((body as { action: string }).action === 'dismiss') {
+        state.dismissed = [...state.dismissed, id];
+        return undefined;
+      }
+      const count = (state.snoozes[id] ?? 0) + 1;
+      if (count > 3) throw new ApiError(409, { code: 'snooze_limit_reached' });
+      state.snoozes = { ...state.snoozes, [id]: count };
+      return undefined;
+    }
     if (path.endsWith('/push/settings')) {
       if (method === 'PUT') state.settings = body as NotificationSettingsDto;
       return state.settings;

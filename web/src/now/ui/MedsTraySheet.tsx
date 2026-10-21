@@ -6,6 +6,8 @@ import { formatList } from '../../i18n/format';
 import { Illustration } from '../../ui/illustrations';
 import { ChipGroup } from '../../ui/form';
 import { GuardrailNote } from '../../medications/GuardrailNote';
+import { reminderSlotAt } from '../../notifications/doseReminder';
+import { DoseReminderLine } from '../../notifications/ui/DoseReminderLine';
 import { Icon } from '../../ui/Icon';
 import { medicationPayloadEntries, type MedicationEntry, type MedsTray } from '../quickLog';
 import { PrescriptionCard } from './PrescriptionCard';
@@ -21,6 +23,15 @@ interface Props {
   onChoose: (medications: MedicationEntry[]) => void;
   /** Opens the prescription editor (hidden when omitted). */
   onAddPrescription?: () => void;
+  /** Opened from a dose reminder: the line goes on that prescription's card. */
+  reminder?: TrayReminder;
+}
+
+/** The validated ids of the notification that opened the tray. */
+export interface TrayReminder {
+  rxId: string;
+  deliveryId: string;
+  token?: string;
 }
 
 /**
@@ -36,6 +47,7 @@ export function MedsTraySheet({
   disabled,
   onChoose,
   onAddPrescription,
+  reminder,
 }: Props) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<string[]>([]);
@@ -59,15 +71,29 @@ export function MedsTraySheet({
             aria-label={t('medications.tray.prescriptions')}
             sx={{ display: 'grid', gap: 1 }}
           >
-            {tray.prescriptions.map((item) => (
-              <PrescriptionCard
-                key={item.status.prescription.id}
-                item={item}
-                now={now}
-                disabled={disabled}
-                onLog={(entry) => onChoose([entry])}
-              />
-            ))}
+            {tray.prescriptions.map((item) => {
+              const slotAt =
+                reminder?.rxId === item.status.prescription.id
+                  ? reminderSlotAt(item.status, now)
+                  : null;
+              return (
+                <PrescriptionCard
+                  key={item.status.prescription.id}
+                  item={item}
+                  now={now}
+                  disabled={disabled}
+                  onLog={(entry) => onChoose([entry])}
+                >
+                  {reminder && slotAt && (
+                    <DoseReminderLine
+                      slotAt={slotAt}
+                      deliveryId={reminder.deliveryId}
+                      {...(reminder.token !== undefined ? { token: reminder.token } : {})}
+                    />
+                  )}
+                </PrescriptionCard>
+              );
+            })}
           </Box>
         </>
       )}

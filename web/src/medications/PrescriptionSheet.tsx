@@ -19,7 +19,7 @@ import {
   usePrescriptions,
 } from '../db/hooks';
 import type { Medication, Prescription } from '../db/models';
-import { termsOf } from '../db/prescriptionCommands';
+import { termsOf, type PrescriptionTerms } from '../db/prescriptionCommands';
 import { Icon } from '../ui/Icon';
 import { Field } from '../ui/form';
 import { palette } from '../ui/form/styles';
@@ -47,6 +47,8 @@ export interface PrescriptionSheetProps {
   /** Start a new prescription for this medication. */
   medicationId?: string;
   onDone: () => void;
+  /** After a successful save (create or edit), before `onDone`. */
+  onSaved?: (terms: PrescriptionTerms) => void;
 }
 
 function Frame({
@@ -152,6 +154,7 @@ function PrescriptionEditor({
   medicationId,
   medications,
   onDone,
+  onSaved,
 }: PrescriptionSheetProps & { medications: Medication[] }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -223,6 +226,7 @@ function PrescriptionEditor({
       const terms = toTerms(form, prescription?.status ?? 'active');
       if (prescription) await commands.update(prescription.id, terms);
       else await commands.create(babyId, terms);
+      onSaved?.(terms);
       onDone();
     } catch (error) {
       setFailure(
