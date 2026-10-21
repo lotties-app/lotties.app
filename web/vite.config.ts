@@ -17,7 +17,8 @@ export default defineConfig({
       manifest: {
         name: 'Baby Routine',
         short_name: 'Baby Routine',
-        description: 'Track baby events offline, share with a co-parent, and see routine predictions.',
+        description:
+          'Track baby events offline, share with a co-parent, and see routine predictions.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
