@@ -7,7 +7,7 @@ import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatTime } from '../i18n/format';
 import { presentEvent } from '../timeline/eventPresentation';
 import { RADIUS } from '../theme/tokens';
-import { CategoryIcon } from '../ui/CategoryIcon';
+import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
 
@@ -118,6 +118,7 @@ function DurationPill({ text }: { text: string }) {
         fontSize: '0.8125rem',
         fontWeight: 600,
         whiteSpace: 'nowrap',
+        backgroundColor: palette(theme).background.paper,
         boxShadow: `inset 0 0 0 1px ${palette(theme).hairline}`,
       })}
     >
@@ -126,9 +127,85 @@ function DurationPill({ text }: { text: string }) {
   );
 }
 
+function ConnectingLine() {
+  return (
+    <Box
+      aria-hidden
+      sx={(theme) => ({
+        position: 'absolute',
+        top: 44,
+        bottom: -4,
+        width: '1px',
+        backgroundColor: palette(theme).hairline,
+      })}
+    />
+  );
+}
+
 /**
- * One event of the day: the time in a column, a tinted category dot on a connecting line, and a
- * card with the title derived from the event, a detail line, the duration pill (or the live
+ * A quiet line between rows when a nap or a night ended ("Sleep session ended, 1h 12m"): the end
+ * time in the time column, the connecting line through the dot column, the text in muted type.
+ */
+export function SessionSeparatorRow({
+  endedAt,
+  durationMs,
+}: {
+  endedAt: string;
+  durationMs: number;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Box
+      component="li"
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '44px 40px minmax(0, 1fr)',
+        columnGap: 1,
+        listStyle: 'none',
+        m: 0,
+        p: 0,
+        minHeight: 32,
+        alignItems: 'center',
+      }}
+    >
+      <Typography
+        component="time"
+        dateTime={endedAt}
+        variant="caption"
+        color="text.secondary"
+        sx={{ fontVariantNumeric: 'lining-nums tabular-nums' }}
+      >
+        {formatTime(endedAt)}
+      </Typography>
+      <Box
+        sx={{
+          position: 'relative',
+          alignSelf: 'stretch',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          aria-hidden
+          sx={(theme) => ({
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            width: '1px',
+            backgroundColor: palette(theme).hairline,
+          })}
+        />
+      </Box>
+      <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+        {t('day.sessionEnded', { duration: formatDuration(durationMs) })}
+      </Typography>
+    </Box>
+  );
+}
+
+/**
+ * One event of the day: the time in a column, the event's illustration on a connecting line, and a
+ * card tinted in the category colour with a coloured left edge, the title derived from the event, a detail line, the duration pill (or the live
  * "Running" timer with a Stop action) and a sync mark only for unsynced rows. Tap = edit.
  */
 export function DayRow({
@@ -161,7 +238,7 @@ export function DayRow({
       component="li"
       sx={{
         display: 'grid',
-        gridTemplateColumns: '48px 36px minmax(0, 1fr)',
+        gridTemplateColumns: '44px 40px minmax(0, 1fr)',
         columnGap: 1,
         listStyle: 'none',
         m: 0,
@@ -172,28 +249,17 @@ export function DayRow({
         component="time"
         dateTime={event.startedAt}
         sx={{
-          pt: 1.5,
+          pt: 1.75,
           fontFamily: (theme) => theme.typography.h5.fontFamily,
-          fontSize: '1.0625rem',
+          fontSize: '1rem',
           fontVariantNumeric: 'lining-nums tabular-nums',
         }}
       >
         {time}
       </Typography>
       <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', pt: 0.75 }}>
-        {hasNext && (
-          <Box
-            aria-hidden
-            sx={(theme) => ({
-              position: 'absolute',
-              top: 44,
-              bottom: -4,
-              width: '1px',
-              backgroundColor: palette(theme).hairline,
-            })}
-          />
-        )}
-        <CategoryIcon name={view.icon} category={view.category} size={16} />
+        {hasNext && <ConnectingLine />}
+        <EventIllustration type={type} payload={event.payload} size={32} />
       </Box>
       <Box
         sx={(theme) => ({
@@ -203,7 +269,9 @@ export function DayRow({
           gap: 1,
           minWidth: 0,
           borderRadius: `${RADIUS.tile}px`,
-          backgroundColor: palette(theme).surfaceRaised,
+          backgroundColor: palette(theme).category[view.category].bg,
+          // The coloured left edge follows the card's corners.
+          boxShadow: `inset 4px 0 0 ${palette(theme).category[view.category].fg}`,
         })}
       >
         <ButtonBase
@@ -218,7 +286,8 @@ export function DayRow({
             minHeight: 56,
             display: 'block',
             textAlign: 'start',
-            px: 1.5,
+            pl: 2,
+            pr: 1.5,
             py: 1,
             borderRadius: `${RADIUS.tile}px`,
             '&.Mui-disabled': { opacity: 1 },

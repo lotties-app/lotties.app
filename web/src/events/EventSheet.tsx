@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -11,16 +12,18 @@ import {
   useTheme,
 } from '@mui/material';
 import { useEventTypeText } from '../i18n/eventTypeText';
-import { formatTime } from '../i18n/format';
+import { formatDate, formatTime } from '../i18n/format';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Field, MedicationPicker, NotesRow } from '../ui/form';
+import { daysBeforeToday } from '../ui/form/timeMath';
 import { ConditionalFields } from './ConditionalFields';
 import { announceEventDeleted } from './deletedEvents';
 import type { EventSheetProps } from './eventSheetTypes';
 import { isMedicationType } from './formModel';
 import { readLastUsed } from './lastUsedValues';
+import { fromLocalInput } from './time';
 import { SheetHeader } from './SheetHeader';
 import { useEventSheetForm } from './useEventSheetForm';
 import { WhenFields } from './WhenFields';
@@ -35,7 +38,11 @@ function focusField(root: HTMLElement | null, key: string | undefined) {
   const holder = Array.from(root.querySelectorAll<HTMLElement>('[data-field-key]')).find(
     (el) => el.dataset.fieldKey === key,
   );
-  holder?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+  // A text field wins over the buttons before it (the quick time chips come before the time).
+  (
+    holder?.querySelector<HTMLElement>('input, textarea') ??
+    holder?.querySelector<HTMLElement>(FOCUSABLE)
+  )?.focus();
 }
 
 function SwitchBanner({
@@ -100,13 +107,11 @@ function DiscardBar({ onKeep, onDiscard }: { onKeep: () => void; onDiscard: () =
 /** The surface shared by the drawer (phones) and the dialog (md and up). */
 function Frame({
   desktop,
-  compact,
   titleId,
   onClose,
   children,
 }: {
   desktop: boolean;
-  compact: boolean;
   titleId: string;
   onClose: () => void;
   children: ReactNode;
@@ -144,7 +149,8 @@ function Frame({
           sx: {
             display: 'flex',
             flexDirection: 'column',
-            height: compact ? 'auto' : 'calc(100dvh - 16px)',
+            // Short for a quick log; long forms scroll inside, the Save footer stays in view.
+            height: 'auto',
             maxHeight: 'calc(100dvh - 16px)',
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
@@ -158,6 +164,14 @@ function Frame({
 }
 
 const minuteOf = (d: Date) => Math.floor(d.getTime() / 60_000);
+
+/** "Today", "Yesterday" or the date, for the large time of the header. */
+function heroDayLabel(date: Date, now: Date, t: TFunction): string {
+  const days = daysBeforeToday(date, now);
+  if (days === 0) return t('ui.time.today');
+  if (days === 1) return t('ui.time.yesterday');
+  return formatDate(date, 'weekdayDayMonth');
+}
 
 /**
  * The add/edit event sheet (docs/design/SYNTHESIS.md wave 4): a full-height bottom sheet on phones,
@@ -214,6 +228,16 @@ export function EventSheet(props: EventSheetProps) {
       : t('events.sheet.startingAt', { time: formatTime(start) });
   })();
 
+  const editTime = () => focusField(bodyRef.current, 'start');
+  const startDate = fromLocalInput(form.startedAt);
+  const startedAt = startDate ? new Date(startDate) : null;
+  const heroTime =
+    !finishing && startedAt
+      ? {
+          clock: formatTime(startedAt),
+          day: heroDayLabel(startedAt, state.openedAt, t),
+        }
+      : undefined;
   const remembered = type ? readLastUsed(babyId, type.id) : {};
   const saveLabel =
     finishing && event?.endedAt === null ? t('events.saveAndStop') : t('common.save');
@@ -223,12 +247,14 @@ export function EventSheet(props: EventSheetProps) {
       : state.saveError;
 
   return (
-    <Frame desktop={desktop} compact={finishing} titleId={titleId} onClose={requestClose}>
+    <Frame desktop={desktop} titleId={titleId} onClose={requestClose}>
       <SheetHeader
         titleId={titleId}
         type={type}
+        payload={form.values}
         title={title}
         subtitle={subtitle}
+        {...(heroTime ? { time: heroTime, onEditTime: editTime } : {})}
         {...(finishing ? {} : { types, onChangeType: state.changeType })}
         onClose={requestClose}
         {...(event && !finishing ? { onDelete: () => void remove() } : {})}
@@ -242,7 +268,7 @@ export function EventSheet(props: EventSheetProps) {
           pb: 2,
           display: 'flex',
           flexDirection: 'column',
-          gap: 2.5,
+          gap: 3,
           // Collapsing fields (overflow hidden) must not be squeezed to nothing by the sheet height.
           '& > *': { flexShrink: 0 },
         }}
@@ -262,6 +288,7 @@ export function EventSheet(props: EventSheetProps) {
               now={state.openedAt}
               errors={state.errors}
               onChange={state.edit}
+              instant={state.instant}
             />
           )}
           {type && isMedicationType(type) && (

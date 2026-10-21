@@ -76,7 +76,7 @@ describe('night view quick toggle', () => {
 describe('bottom navigation', () => {
   const tabs = ['Now', 'Day', 'Insights'];
 
-  it('has exactly Now, Day and Insights, and no centre add button', async () => {
+  it('has Now, Day and Insights links and the round Add event button', async () => {
     await seedBaby(db);
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
@@ -90,7 +90,34 @@ describe('bottom navigation', () => {
     expect(within(nav).getByRole('link', { name: 'Insights' }).getAttribute('href')).toBe(
       '/insights',
     );
-    expect(screen.queryByRole('button', { name: 'Add event' })).toBeNull();
+    // The round "+" sits in the pill between Day and Insights, not among the links.
+    const add = await within(nav).findByRole('button', { name: 'Add event' });
+    expect(add.compareDocumentPosition(within(nav).getByRole('link', { name: 'Day' }))).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING,
+    );
+    expect(add.compareDocumentPosition(within(nav).getByRole('link', { name: 'Insights' }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it.each([
+    ['/', 'Now'],
+    ['/day', 'Day'],
+    ['/insights', 'Insights'],
+  ])('opens the More sheet from the Add event button on %s (%s)', async (route, tab) => {
+    await seedBaby(db);
+    renderShell(route);
+    // The screen listens once it has loaded.
+    await screen.findByRole('heading', { name: tab, level: 1 });
+    const nav = await screen.findByRole('navigation', { name: 'Main' });
+    fireEvent.click(await within(nav).findByRole('button', { name: 'Add event' }));
+    const sheet = await screen.findByRole('dialog', { name: 'More' });
+    expect(within(sheet).getByTestId('more-grid')).toBeTruthy();
+    fireEvent.keyDown(sheet, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'More' })).toBeNull());
+    // And again: a second press opens it a second time.
+    fireEvent.click(within(nav).getByRole('button', { name: 'Add event' }));
+    expect(await screen.findByRole('dialog', { name: 'More' })).toBeTruthy();
   });
 
   it.each([
@@ -144,6 +171,8 @@ describe('bottom navigation', () => {
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
     expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    // Viewers cannot log, so there is no "+".
+    expect(within(nav).queryByRole('button', { name: 'Add event' })).toBeNull();
     expect(await screen.findByText(/view-only access/)).toBeTruthy();
   });
 
@@ -151,10 +180,11 @@ describe('bottom navigation', () => {
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
     expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav).queryByRole('button', { name: 'Add event' })).toBeNull();
     const styles = Array.from(document.querySelectorAll('style'), (node) => node.textContent).join(
       '',
     );
-    expect(styles).toContain('padding-bottom:env(safe-area-inset-bottom)');
+    expect(styles).toContain('padding-bottom:calc(12px + env(safe-area-inset-bottom))');
   });
 });
 

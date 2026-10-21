@@ -91,11 +91,12 @@ describe('DayPage', () => {
   it('goes to the previous day and back with the Today shortcut', async () => {
     await seedEvents();
     renderWithDb(db, <DayPage />);
-    await screen.findByRole('list', { name: /^Today, / });
-    expect((screen.getByRole('button', { name: 'Next day' }) as HTMLButtonElement).disabled).toBe(
+    const today = await screen.findByRole('list', { name: /^Today, / });
+    expect((screen.getByRole('button', { name: 'Next week' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Previous day' }));
+    fireEvent.touchStart(today.parentElement!, { touches: [{ clientX: 40, clientY: 100 }] });
+    fireEvent.touchEnd(today.parentElement!, { changedTouches: [{ clientX: 200, clientY: 100 }] });
     const yesterday = await screen.findByRole('list', { name: /^Yesterday, / });
     expect(rowNames(yesterday)).toEqual(['Edit Dirty, 20:00']);
     expect(within(yesterday).getByText('Dirty')).toBeTruthy();
@@ -195,7 +196,7 @@ describe('DayPage', () => {
   it('shows an empty day with an Add event action that opens the More sheet', async () => {
     await seedBaby(db);
     renderWithDb(db, <DayPage />);
-    expect(await screen.findByText('Nothing logged this day')).toBeTruthy();
+    expect(await screen.findByText('A quiet day. Nothing logged yet.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add event' }));
     expect(await screen.findByRole('dialog', { name: 'More' })).toBeTruthy();
   });

@@ -34,6 +34,7 @@ declare module '@mui/material/styles' {
     chart: ChartColors;
     cardShadow: string;
     fabShadow: string;
+    navShadow: string;
     scrim: string;
     grainOpacity: number;
   }
@@ -50,6 +51,7 @@ declare module '@mui/material/styles' {
     chart?: ChartColors;
     cardShadow?: string;
     fabShadow?: string;
+    navShadow?: string;
     scrim?: string;
     grainOpacity?: number;
   }
@@ -112,6 +114,7 @@ function paletteFor(mode: 'light' | 'dark', t: SchemeTokens) {
     chart: t.chart,
     cardShadow: t.cardShadow,
     fabShadow: t.fabShadow,
+    navShadow: t.navShadow,
     scrim: t.scrim,
     grainOpacity: t.grainOpacity,
   };
@@ -136,10 +139,10 @@ const isStatus = (value: unknown): value is Status =>
   typeof value === 'string' && value in STATUS_CATEGORY;
 
 /**
- * Space the fixed bottom navigation (64 px plus the raised "+" button) covers: focused or
+ * Space the floating navigation pill (64 px, 12 px above the edge) covers, plus a gap: focused or
  * scrolled-to elements stop above it (WCAG 2.4.11 Focus not obscured, review 05 M11).
  */
-export const BOTTOM_NAV_SCROLL_PADDING = 'calc(88px + env(safe-area-inset-bottom))';
+export const BOTTOM_NAV_SCROLL_PADDING = 'calc(104px + env(safe-area-inset-bottom))';
 
 /** Inputs: filled, 48px, 14px radius. Labels are always shrunk, with room above the value. */
 const FILLED_FIELD_PADDING = { paddingTop: 21, paddingBottom: 6 };

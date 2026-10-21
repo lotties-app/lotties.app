@@ -4,8 +4,18 @@ import { SCHEMES, SCHEME_NAMES, type SchemeName } from '../theme/tokens';
 import { SegmentedControl } from '../ui/form';
 import { ILLUSTRATIONS, ILLUSTRATION_NAMES, type IllustrationName } from '../ui/illustrations';
 
-/** Sizes the illustrations must hold: rows and tiles (24, 32), cards (48), hero (64, 96). */
-const SIZES = [24, 32, 48, 64, 96] as const;
+/** Sizes the illustrations must hold: see `SIZE_GRID` for where each one is used. */
+const SIZES = [24, 32, 40, 48, 64, 96] as const;
+
+/** The size grid of the app: the size in px and the places that use it. */
+const SIZE_GRID: readonly { size: number; where: string }[] = [
+  { size: 24, where: 'Day ribbon legend, small chips' },
+  { size: 32, where: 'Day rows, toast, forgotten notice, type menu' },
+  { size: 40, where: 'Tiles (compact)' },
+  { size: 48, where: 'Log tiles, More sheet, tray headers, nursing and timer cards' },
+  { size: 64, where: 'Event sheet header, first-run choices' },
+  { size: 96, where: 'Hero: Now state card, empty states, estimated nap sheet' },
+];
 
 type Background = 'surface' | 'tint';
 
@@ -58,11 +68,21 @@ export default function IllustrationGallery() {
           ]}
         />
       </Box>
+      <Box component="section" aria-label="Size grid" sx={{ mb: 2, display: 'grid', gap: 0.5 }}>
+        <Typography variant="h5" component="h2">
+          Size grid
+        </Typography>
+        {SIZE_GRID.map(({ size, where }) => (
+          <Typography key={size} variant="body2" data-size-grid={size}>
+            {`${size} px: ${where}`}
+          </Typography>
+        ))}
+      </Box>
       <Box
         sx={{
           display: 'grid',
           gap: 2,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(540px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(620px, 1fr))',
         }}
       >
         {SCHEME_NAMES.map((scheme) => (

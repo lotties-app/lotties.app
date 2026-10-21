@@ -290,7 +290,7 @@ describe('nursing, left and right', () => {
     await waitFor(async () => expect((await db.events.get(nursing.id))?.endedAt).not.toBeNull());
     const done = await db.events.get(nursing.id);
     expect(done?.payload).toMatchObject({ method: 'breast', side: 'both', last_side: 'right' });
-    expect(await screen.findByText(/^Nursing · left 3m · right/)).toBeTruthy();
+    expect(await screen.findByText(/^Nursing done, left 3m, right/)).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Nursing' })).toBeNull());
   });
 });

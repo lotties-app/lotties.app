@@ -96,7 +96,7 @@ describe('useQuickLogToast', () => {
         entry({ receipt: { kind: 'tray', choice: { kind: 'bottle', amountMl: 90 } } }),
       ),
     );
-    expect(result.current.current).toMatchObject({ message: 'Bottle · 90 ml' });
+    expect(result.current.current).toMatchObject({ message: 'Bottle logged, 90 ml' });
     expect(result.current.current!.id).not.toBe(first);
     act(() => result.current.dismiss());
     expect(result.current.current).toBeNull();

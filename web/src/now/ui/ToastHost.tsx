@@ -4,15 +4,40 @@ import { Box, ButtonBase, Typography } from '@mui/material';
 import { describeApiError } from '../../api/errorMessages';
 import { CONTENT_MAX_WIDTH, RADIUS } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
+import { ILLUSTRATIONS, Illustration, illustrationName } from '../../ui/illustrations';
 import { useQuickLogToastContext } from '../QuickLogToastContext';
+import { NAV_TOAST_BOTTOM } from '../../layout/navMetrics';
 import { shiftChipLabel } from '../nowText';
+import { receiptArt } from '../receiptArt';
 
-/** Space the bottom navigation takes (64 px) plus a gap. */
-export const TOAST_BOTTOM = 'calc(64px + env(safe-area-inset-bottom) + 12px)';
+/** Just above the floating navigation pill. */
+export const TOAST_BOTTOM = NAV_TOAST_BOTTOM;
 
 function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
+/** The illustration of the receipt on a small tinted disc (the toast itself is dark or light ink). */
+function ToastStamp({ art }: { art: string }) {
+  const name = illustrationName(art);
+  const category = name ? ILLUSTRATIONS[name].category : 'custom';
+  return (
+    <Box
+      aria-hidden
+      sx={(theme) => ({
+        flexShrink: 0,
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        display: 'grid',
+        placeItems: 'center',
+        backgroundColor: palette(theme).category[category].bg,
+      })}
+    >
+      <Illustration name={art} size={28} />
+    </Box>
+  );
 }
 
 /**
@@ -87,9 +112,10 @@ export function ToastHost() {
               boxShadow: palette(theme).cardShadow,
             })}
           >
+            <ToastStamp art={receiptArt(current.receipt)} />
             <Typography
               variant="body2"
-              sx={{ flex: '1 1 140px', fontWeight: 600, color: 'inherit' }}
+              sx={{ flex: '1 1 120px', fontWeight: 600, color: 'inherit' }}
             >
               {current.message}
             </Typography>

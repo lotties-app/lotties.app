@@ -42,7 +42,9 @@ describe('illustration gallery', () => {
       }
       const rows = document.querySelectorAll('[data-illustration-row]');
       expect(rows.length).toBe(ILLUSTRATION_NAMES.length * 3);
-      expect(document.querySelectorAll('svg[data-illustration]').length).toBe(rows.length * 5);
+      expect(document.querySelectorAll('svg[data-illustration]').length).toBe(rows.length * 6);
+      // The size grid lists where each size is used.
+      expect(document.querySelectorAll('[data-size-grid]')).toHaveLength(6);
       // One titled hero per row; the smaller copies are decorative.
       expect(screen.getAllByRole('img').length).toBe(rows.length);
     },

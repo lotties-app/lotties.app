@@ -4,6 +4,7 @@ import { formatDuration, formatTime } from '../../i18n/format';
 import { RADIUS, type CategoryName } from '../../theme/tokens';
 import { CategoryIcon } from '../../ui/CategoryIcon';
 import { palette } from '../../ui/form/styles';
+import { Illustration } from '../../ui/illustrations';
 import type { IconName } from '../../ui/icons';
 import type { NowState } from '../nowState';
 import { formatTileStatus, sleepActionLabel } from '../nowText';
@@ -34,6 +35,7 @@ interface Props {
 
 function GiantButton({
   icon,
+  art,
   category,
   title,
   subtitle,
@@ -42,6 +44,8 @@ function GiantButton({
   onClick,
 }: {
   icon: IconName;
+  /** Illustration key of the secondary buttons (flat in the night scheme). */
+  art?: string;
   category: CategoryName;
   title: string;
   subtitle?: string;
@@ -84,6 +88,20 @@ function GiantButton({
             size={40}
             sx={{ backgroundColor: 'transparent', color: 'inherit', width: 'auto', height: 'auto' }}
           />
+        </Box>
+      ) : art ? (
+        <Box
+          sx={(theme) => ({
+            width: 64,
+            height: 64,
+            flexShrink: 0,
+            borderRadius: '50%',
+            display: 'grid',
+            placeItems: 'center',
+            backgroundColor: palette(theme).category[category].bg,
+          })}
+        >
+          <Illustration name={art} size={48} />
         </Box>
       ) : (
         <CategoryIcon name={icon} category={category} size={40} />
@@ -183,6 +201,7 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
       ) : (
         <GiantButton
           icon="bottle"
+          art="bottle"
           category="feeding"
           title={t('now.tiles.feed')}
           subtitle={feed ? formatTileStatus(feed, now) : undefined}
@@ -193,6 +212,7 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
       {model.trays.diaper && (
         <GiantButton
           icon="diaper"
+          art="diaper"
           category="diaper"
           title={t('now.tiles.diaper')}
           subtitle={diaper ? formatTileStatus(diaper, now) : undefined}

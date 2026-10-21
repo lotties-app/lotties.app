@@ -112,12 +112,12 @@ test('Day sheets: filter, date, add', async ({ browser }) => {
       await shoot(page, `day-filtered-${tag}`);
 
       await open(page, `/dev/day?state=full&offset=1&scheme=${scheme}`);
-      await page.getByRole('button', { name: /^(Choose a date|Escolher a data)/ }).click();
+      await page.getByRole('button', { name: /(Choose a date|Escolher uma data)/ }).click();
       await page.waitForTimeout(500);
       await shoot(page, `day-date-${tag}`, false);
 
       await open(page, `/dev/day?state=empty&offset=0&scheme=${scheme}`);
-      await page.getByRole('button', { name: /^(Add event|Adicionar evento)$/ }).click();
+      await page.getByRole('button', { name: /^(Add event|Adicionar evento)$/ }).first().click();
       await page.waitForTimeout(500);
       await shoot(page, `day-add-${tag}`, false);
 

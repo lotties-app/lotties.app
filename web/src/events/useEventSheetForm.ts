@@ -10,6 +10,7 @@ import {
   buildPayload,
   buildTimes,
   formProblems,
+  defaultRunning,
   initialForm,
   pruneHiddenValues,
   switchFormType,
@@ -75,6 +76,11 @@ export function useEventSheetForm(props: EventSheetProps) {
 
   const type = types.find((candidate) => candidate.id === form.typeId);
   const dirty = JSON.stringify(form) !== initial;
+  // A bottle or a bedtime marker is a moment, not a timer; a finished event keeps its own length.
+  const instant =
+    !!type?.hasDuration &&
+    !defaultRunning(type, form.values) &&
+    (!event || event.endedAt === null || event.endedAt === event.startedAt);
 
   const edit = (changes: Partial<EventFormState>) => {
     setSwitched(null);
@@ -104,7 +110,7 @@ export function useEventSheetForm(props: EventSheetProps) {
       await commands.finish(event.id, payload);
       return payload;
     }
-    const times = buildTimes(form, selected);
+    const times = buildTimes(form, selected, instant);
     const payload = buildPayload(form, selected);
     const data = { typeId: selected.id, ...times, payload, notes: form.notes.trim() || null };
     await (event ? commands.edit(event.id, data) : commands.create({ babyId, ...data }));
@@ -112,7 +118,7 @@ export function useEventSheetForm(props: EventSheetProps) {
   };
 
   const submit = async () => {
-    const found = formProblems(form, type, names);
+    const found = formProblems(form, type, names, { instant });
     setProblems(found);
     setSaveError(null);
     if (found.length > 0 || !type) {
@@ -144,6 +150,7 @@ export function useEventSheetForm(props: EventSheetProps) {
     form,
     type,
     dirty,
+    instant,
     openedAt,
     problems,
     errors,

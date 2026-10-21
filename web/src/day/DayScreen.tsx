@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type TouchEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Skeleton, Typography } from '@mui/material';
 import { canWrite } from '../baby/permissions';
@@ -8,16 +8,15 @@ import { EventSheet } from '../events/EventSheet';
 import type { FormPrefill } from '../events/formModel';
 import { useNow } from '../events/time';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
-import { typeForKey } from '../now/eventFacts';
-import { MoreSheet } from '../now/ui/MoreSheet';
-import type { TrayName } from '../now/ui/trays';
+import { AddEventFlow } from '../layout/AddEventFlow';
+import { useAddRequests } from '../layout/addSheetContext';
 import { usePresetActions } from '../presets/usePresetActions';
 import { RADIUS, type CategoryName } from '../theme/tokens';
-import { CategoryIcon } from '../ui/CategoryIcon';
 import { Icon } from '../ui/Icon';
+import { Illustration } from '../ui/illustrations';
 import { DateBar } from './DateBar';
 import { DayFilterSheet } from './DayFilterSheet';
-import { DayRow } from './DayRow';
+import { DayRow, SessionSeparatorRow } from './DayRow';
 import { DaySummary } from './DaySummary';
 import {
   addDays,
@@ -29,21 +28,10 @@ import {
   queryRange,
   startOfDay,
   summarizeDay,
+  withSessionSeparators,
 } from './dayModel';
 import { useDayLabel } from './useDayLabel';
-
-/** Horizontal travel (px) that counts as a swipe, and how much more horizontal than vertical. */
-const SWIPE_DISTANCE = 64;
-const SWIPE_RATIO = 1.5;
-
-/** The built-in type each Now tray stands for; the Day screen opens the full sheet instead. */
-const TRAY_TYPE_KEY: Readonly<Record<TrayName, string>> = {
-  feed: 'feeding',
-  diaper: 'diaper',
-  meds: 'medication',
-  bellyPain: 'belly_pain',
-  more: '',
-};
+import { useSwipe } from './useSwipe';
 
 function DaySkeleton() {
   const { t } = useTranslation();
@@ -73,9 +61,9 @@ function EmptyDay({ readOnly, onAdd }: { readOnly: boolean; onAdd: () => void })
   return (
     <Box sx={{ display: 'grid', justifyItems: 'center', gap: 1.5, py: 5, textAlign: 'center' }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }} aria-hidden>
-        <CategoryIcon name="bottle" category="feeding" size={20} />
-        <CategoryIcon name="moon" category="sleep" size={32} />
-        <CategoryIcon name="diaper" category="diaper" size={20} />
+        <Illustration name="bottle" size={48} />
+        <Illustration name="nap" size={96} glow />
+        <Illustration name="diaper" size={48} />
       </Box>
       <Typography variant="h6" component="h2">
         {t('day.empty.title')}
@@ -135,7 +123,6 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<BabyEvent | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
-  const swipe = useRef<{ x: number; y: number } | null>(null);
 
   const types = useEventTypes(baby.id);
   const medications = useMedications(baby.id);
@@ -146,48 +133,35 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const writable = canWrite(baby);
 
   const go = (next: Date) => setPicked(isSameDay(next, today) ? null : next);
-  const onTouchStart = (event: TouchEvent) => {
-    const touch = event.touches[0];
-    swipe.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
-  };
-  const onTouchEnd = (event: TouchEvent) => {
-    const start = swipe.current;
-    const touch = event.changedTouches[0];
-    swipe.current = null;
-    if (!start || !touch) return;
-    const dx = touch.clientX - start.x;
-    const dy = touch.clientY - start.y;
-    if (Math.abs(dx) < SWIPE_DISTANCE || Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
-    // Swiping left reveals the next (later) day, right the previous one.
-    if (dx < 0) {
+  // Swiping left reveals the next (later) day, right the previous one.
+  const swipe = useSwipe(
+    () => {
       if (!isSameDay(day, today)) go(addDays(day, 1));
-    } else go(addDays(day, -1));
+    },
+    () => go(addDays(day, -1)),
+  );
+  const addEvent = () => {
+    if (!types) return;
+    if (isSameDay(day, today)) setAdding(true);
+    else if (types[0]) setCreating(types[0].id);
   };
+  useAddRequests(addEvent);
 
   if (!types || !medications || !events) return <DaySkeleton />;
 
   const summary = summarizeDay(events, types, bounds, new Date(clock));
   const dayEvents = eventsOfDay(events, bounds);
   const rows = filterByCategory(dayEvents, types, selected);
+  const items = withSessionSeparators(rows, types);
   const typeOf = (event: BabyEvent): EventType | undefined =>
     types.find((candidate) => candidate.id === event.typeId);
 
-  const openTray = (tray: TrayName) => {
-    const key = TRAY_TYPE_KEY[tray];
-    const type = key ? typeForKey(types, key) : undefined;
-    if (type) setCreating(type.id);
-  };
-  const addEvent = () => {
-    if (isSameDay(day, today)) setAdding(true);
-    else if (types[0]) setCreating(types[0].id);
-  };
   const creatingPrefill =
     creating && !isSameDay(day, today) ? prefillFor(creating, day) : undefined;
 
   return (
     <Box
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
+      {...swipe}
       sx={{
         display: 'grid',
         gap: 2,
@@ -213,25 +187,33 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
       )}
       {rows.length > 0 && (
         <Box component="ul" aria-label={label} sx={{ m: 0, p: 0 }}>
-          {rows.map((event, index) => (
-            <ErrorBoundary key={event.id}>
-              <DayRow
-                event={event}
-                type={typeOf(event)}
-                medications={medications}
-                syncState={syncStates?.get(event.id)}
-                hasNext={index < rows.length - 1}
-                onEdit={setEditing}
-                {...(writable
-                  ? {
-                      onStop: (running: BabyEvent) =>
-                        void actions.stop(running, { name: typeOf(running)?.name }),
-                    }
-                  : {})}
-                readOnly={!writable}
+          {items.map((item, index) =>
+            item.kind === 'separator' ? (
+              <SessionSeparatorRow
+                key={`sep-${item.id}`}
+                endedAt={item.endedAt}
+                durationMs={item.durationMs}
               />
-            </ErrorBoundary>
-          ))}
+            ) : (
+              <ErrorBoundary key={item.event.id}>
+                <DayRow
+                  event={item.event}
+                  type={typeOf(item.event)}
+                  medications={medications}
+                  syncState={syncStates?.get(item.event.id)}
+                  hasNext={index < items.length - 1}
+                  onEdit={setEditing}
+                  {...(writable
+                    ? {
+                        onStop: (running: BabyEvent) =>
+                          void actions.stop(running, { name: typeOf(running)?.name }),
+                      }
+                    : {})}
+                  readOnly={!writable}
+                />
+              </ErrorBoundary>
+            ),
+          )}
         </Box>
       )}
       <DayFilterSheet
@@ -241,18 +223,13 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         selected={selected}
         onChange={setSelected}
       />
-      {adding && (
-        <MoreSheet
-          open
-          onClose={() => setAdding(false)}
-          types={types}
-          events={dayEvents}
-          actions={actions}
-          readOnly={!writable}
-          onOpenTray={openTray}
-          onStartNursing={() => openTray('feed')}
-        />
-      )}
+      <AddEventFlow
+        baby={baby}
+        types={types}
+        events={dayEvents}
+        open={adding}
+        onClose={() => setAdding(false)}
+      />
       {editing && (
         <EventSheet
           babyId={baby.id}

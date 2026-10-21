@@ -110,10 +110,14 @@ describe('pt-BR screens', () => {
     expect(within(today).getByText('45 min')).toBeTruthy();
     expect(within(today).getByText('Intensidade 3/5')).toBeTruthy();
     expect(within(today).getByText('Dor de barriga')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Dia anterior' }));
+    // Swiping right shows the previous day.
+    fireEvent.touchStart(today.parentElement!, { touches: [{ clientX: 40, clientY: 100 }] });
+    fireEvent.touchEnd(today.parentElement!, { changedTouches: [{ clientX: 200, clientY: 100 }] });
     const yesterday = await screen.findByRole('list', { name: /^Ontem, / });
     expect(within(yesterday).getByText('Cocô')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Filtrar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Semana anterior' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Semana' })).toBeTruthy();
   });
 
   it('translates the settings and switches language instantly', async () => {

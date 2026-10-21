@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { Box, Button, Card, Stack, Typography } from '@mui/material';
 import { RADIUS, type CategoryName } from '../../theme/tokens';
 import { CategoryIcon } from '../../ui/CategoryIcon';
+import { Illustration } from '../../ui/illustrations';
 import { palette } from '../../ui/form/styles';
-import { Icon } from '../../ui/Icon';
 import type { IconName } from '../../ui/icons';
 
 interface Props {
@@ -64,11 +64,11 @@ export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, 
     {
       key: 'sleep',
       category: 'sleep',
-      icon: 'moon',
+      art: 'fell_asleep',
       label: t('now.sleepActions.fellAsleep'),
       run: onFellAsleep,
     },
-    { key: 'feed', category: 'feeding', icon: 'bottle', label: t('now.tiles.feed'), run: onFeed },
+    { key: 'feed', category: 'feeding', art: 'bottle', label: t('now.tiles.feed'), run: onFeed },
   ] as const;
   return (
     <>
@@ -77,12 +77,19 @@ export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, 
         aria-label={t('now.firstRun.title', { name: babyName })}
         sx={{ p: 2.5 }}
       >
-        <Typography variant="h4" component="h2">
-          {t('now.firstRun.title', { name: babyName })}
-        </Typography>
-        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-          {readOnly ? t('now.firstRun.viewer') : t('now.firstRun.body')}
-        </Typography>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="h4" component="h2">
+              {t('now.firstRun.title', { name: babyName })}
+            </Typography>
+            <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+              {readOnly ? t('now.firstRun.viewer') : t('now.firstRun.body')}
+            </Typography>
+          </Box>
+          <Illustration name="woke_up" size={96} glow />
+        </Box>
         {!readOnly && (
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mt: 2 }}>
             {options.map((option) => (
@@ -114,7 +121,7 @@ export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, 
                   '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
                 })}
               >
-                <Icon name={option.icon} size={32} />
+                <Illustration name={option.art} size={64} />
                 {option.label}
               </Box>
             ))}

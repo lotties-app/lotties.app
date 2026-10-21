@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ButtonBase, Box, Typography } from '@mui/material';
 import { RADIUS } from '../theme/tokens';
-import { CategoryIcon } from '../ui/CategoryIcon';
+import { Illustration } from '../ui/illustrations';
 import { palette } from '../ui/form/styles';
 import { presetIcon } from './presetIcons';
 import { presetLabel } from './presetLabel';
@@ -40,7 +40,7 @@ export function PresetTile({ preset, status, running, disabled = false, onClick 
       disabled={disabled}
       aria-label={status ? t('presets.tileLabel', { action, status }) : action}
       sx={(theme) => ({
-        minHeight: 80,
+        minHeight: 88,
         p: 1.5,
         gap: 1.5,
         justifyContent: 'flex-start',
@@ -51,10 +51,11 @@ export function PresetTile({ preset, status, running, disabled = false, onClick 
         '&.Mui-disabled': { opacity: 0.5 },
       })}
     >
-      <CategoryIcon
-        name={presetIcon(preset)}
-        category={preset.category}
-        sx={preset.customColor ? { color: preset.customColor } : undefined}
+      <Illustration
+        name={preset.builtIn ? preset.id : ''}
+        size={48}
+        fallbackIcon={presetIcon(preset)}
+        fallbackCategory={preset.category}
       />
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="subtitle1" component="span" sx={{ display: 'block' }}>

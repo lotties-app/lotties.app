@@ -4,7 +4,7 @@ import { Box, Button, Typography } from '@mui/material';
 import type { EventType } from '../../db/models';
 import { eventTypeText } from '../../i18n/eventTypeText';
 import { formatNumber } from '../../i18n/format';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { Illustration } from '../../ui/illustrations';
 import { ChipGroup, NumberStepper, SegmentedControl } from '../../ui/form';
 import { Icon } from '../../ui/Icon';
 import { otherSide, type BreastSide } from '../nursing';
@@ -180,7 +180,7 @@ export function FeedTraySheet(props: Props) {
       onClose={onClose}
       title={t('now.feedTray.title')}
       subtitle={subtitle || undefined}
-      leading={<CategoryIcon name="bottle" category="feeding" />}
+      leading={<Illustration name="bottle" size={48} />}
     >
       <SegmentedControl
         aria-label={t('now.feedTray.method')}

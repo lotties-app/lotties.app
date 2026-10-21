@@ -126,12 +126,12 @@ test('Now trays, Why sheet and toast', async ({ browser }) => {
       await page.keyboard.press('Escape');
 
       await open(page, 'awake', scheme);
-      await page.getByRole('button', { name: /^(Asleep|Dormiu)$/ }).click();
+      await page.getByRole('button', { name: /^(Fell asleep|Adormeceu)$/ }).click();
       await page.waitForTimeout(500);
       await shoot(page, `toast-asleep-${tag}`, false);
 
       await open(page, 'nursing', scheme);
-      await page.getByRole('button', { name: /^(Switch side|Trocar de lado)$/ }).click();
+      await page.getByRole('button', { name: /^(Switch side|Trocar lado)$/ }).click();
       await page.waitForTimeout(500);
       await shoot(page, `toast-nursing-${tag}`, false);
     }

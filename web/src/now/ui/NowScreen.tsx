@@ -8,6 +8,7 @@ import type { Baby } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
 import { eventTypeText } from '../../i18n/eventTypeText';
 import type { SheetPrefill } from '../../presets/actions';
+import { useAddRequests } from '../../layout/addSheetContext';
 import { usePresetActions } from '../../presets/usePresetActions';
 import { usePredictions } from '../../predictions/usePredictions';
 import { useNightFeed } from '../../theme/NightFeedContext';
@@ -27,6 +28,7 @@ import { LogTiles } from './LogTiles';
 import { MedsTraySheet } from './MedsTraySheet';
 import { MoreSheet } from './MoreSheet';
 import { NightNow } from './NightNow';
+import { NightStars } from './NightStars';
 import { NowSkeleton } from './NowSkeleton';
 import { NursingCard } from './NursingCard';
 import { StateCard } from './StateCard';
@@ -88,6 +90,10 @@ function NowContent({
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
   useRefreshPredictions(baby.id, model);
+  // The "+" of the bottom navigation opens the More sheet here (viewers have no "+").
+  useAddRequests(() => {
+    if (!model.readOnly) setTray('more');
+  });
 
   const feedTile = model.tiles.find((tile) => tile.id === 'feed');
   const nursing = feedTile?.running ?? null;
@@ -182,6 +188,7 @@ function NowContent({
           )}
           <StateCard
             model={model}
+            babyId={baby.id}
             babyName={baby.name}
             action={action}
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
@@ -303,7 +310,11 @@ function NowScreenBody({ baby }: { baby: Baby }) {
 export function NowScreen({ baby }: { baby: Baby }) {
   return (
     <QuickLogToastProvider>
-      <NowScreenBody baby={baby} />
+      {/* A stacking context of its own, so the night stars can sit behind the content. */}
+      <Box sx={{ position: 'relative', zIndex: 0, isolation: 'isolate' }}>
+        <NightStars />
+        <NowScreenBody baby={baby} />
+      </Box>
       <ToastHost />
     </QuickLogToastProvider>
   );

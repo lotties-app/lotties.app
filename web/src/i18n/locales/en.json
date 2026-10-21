@@ -31,7 +31,8 @@
     "growth": "Growth",
     "now": "Now",
     "day": "Day",
-    "insights": "Insights"
+    "insights": "Insights",
+    "add": "Add event"
   },
   "auth": {
     "signIn": "Sign in",
@@ -207,16 +208,22 @@
     "ribbon": {
       "label": "The day at a glance: {{sleep}}, {{feeds}}, {{diapers}}",
       "sleep": "{{duration}} of sleep",
-      "noSleep": "no sleep logged"
+      "noSleep": "no sleep logged",
+      "legend": "What the colours mean"
     },
     "empty": {
-      "title": "Nothing logged this day"
+      "title": "A quiet day. Nothing logged yet."
     },
     "addEvent": "Add event",
     "noMatches": "No events match this filter.",
     "editRow": "Edit {{title}}, {{time}}",
     "stopNamed": "Stop {{title}}",
-    "needsAttention": "Needs attention"
+    "needsAttention": "Needs attention",
+    "week": "Week",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "chooseMonth": "{{month}}. Choose a date. Showing {{date}}",
+    "sessionEnded": "Sleep session ended, {{duration}}"
   },
   "events": {
     "addTitle": "Add event",
@@ -255,7 +262,8 @@
       "discard": "Discard",
       "problems_one": "{{count}} thing to fix: {{first}}",
       "problems_other": "{{count}} things to fix. First: {{first}}",
-      "duration": "Duration {{duration}}"
+      "duration": "Duration {{duration}}",
+      "editTime": "Change the time, {{time}} {{day}}"
     },
     "deleted": "{{name}} deleted"
   },
@@ -840,7 +848,8 @@
       "invalid": "Enter a time like 14:30.",
       "future": "The time cannot be in the future.",
       "beforeMin": "The time cannot be before {{time}}.",
-      "stillRunning": "Still running"
+      "stillRunning": "Still running",
+      "morePrecise": "More precise"
     },
     "date": {
       "choose": "Choose date",
@@ -902,13 +911,13 @@
       "wokeUp": "Woke up at {{time}}",
       "nightWaking": "Night waking from {{time}}",
       "backAsleep": "Back asleep at {{time}}",
-      "bottle": "Bottle · {{amount}} ml",
-      "diaper": "Diaper · {{content}}",
-      "medication": "Medication · {{names}}",
-      "bellyPain": "Belly pain · {{intensity}} of 5",
+      "bottle": "Bottle logged, {{amount}} ml",
+      "diaper": "Diaper logged, {{content}}",
+      "medication": "Medication logged, {{names}}",
+      "bellyPain": "Belly pain logged, {{intensity}} of 5",
       "nursingStarted": "Nursing on the {{side}}",
       "nursingSwitched": "Switched to the {{side}}",
-      "nursingStopped": "Nursing · left {{left}} · right {{right}}",
+      "nursingStopped": "Nursing done, left {{left}}, right {{right}}",
       "shiftGroup": "When it happened"
     },
     "catchUp": {
@@ -968,7 +977,8 @@
       "range": "{{from}} – {{to}}",
       "opensIn": "opens in {{duration}}",
       "open": "open now",
-      "past": "past the usual window"
+      "past": "past the usual window",
+      "openDetails": "Estimated nap {{from}} to {{to}}, open details"
     },
     "ruler": {
       "withWindow": "Awake since {{since}}, now {{now}}. Nap window {{from}} to {{to}}.",
@@ -1062,6 +1072,31 @@
     "night": {
       "region": "Night view",
       "screenOn": "The screen stays on while this view is open."
+    },
+    "napSheet": {
+      "title": "Estimated nap",
+      "about": "about {{duration}}",
+      "windDown": "A good moment to start winding down around {{time}}",
+      "soon": "The window opens soon.",
+      "open": "The window is open now.",
+      "past": "The usual window has passed.",
+      "skip": "Skip",
+      "log": "Log nap now",
+      "skipped": "Estimated nap skipped",
+      "show": "Show again"
+    },
+    "ring": {
+      "title": "Day rhythm",
+      "view": "Day view",
+      "ruler": "Ruler",
+      "ring": "Ring",
+      "show": "Show the day ring",
+      "slept": "Slept {{duration}} so far today.",
+      "noSleep": "No sleep logged today.",
+      "wokeAt": "Woke up at {{time}}.",
+      "bedAt": "Bedtime at {{time}}.",
+      "nowAt": "Now {{time}}.",
+      "windowAt": "Nap window {{from}} to {{to}}."
     }
   },
   "insights": {

@@ -73,6 +73,8 @@ export interface SchemeTokens {
   cardShadow: string;
   /** Complete `box-shadow` of the raised action button. */
   fabShadow: string;
+  /** Complete `box-shadow` of the floating navigation pill (soft lift in light, hairline only otherwise). */
+  navShadow: string;
   /** Modal backdrop. */
   scrim: string;
   /** Paper grain opacity (0 = off). */
@@ -125,6 +127,8 @@ export const LIGHT: SchemeTokens = {
   cardShadow:
     'inset 0 0 0 1px #e2d8c5, 0 1px 0 rgba(42, 37, 31, 0.04), 0 6px 18px rgba(90, 60, 30, 0.06)',
   fabShadow: '0 0 0 5px #f5efe4, 0 6px 16px rgba(90, 40, 20, 0.22)',
+  navShadow:
+    'inset 0 0 0 1px #e2d8c5, 0 2px 4px rgba(42, 37, 31, 0.05), 0 12px 28px rgba(90, 60, 30, 0.16)',
   scrim: 'rgba(42, 37, 31, 0.34)',
   grainOpacity: 0.07,
   themeColor: '#f5efe4',
@@ -170,6 +174,7 @@ export const DARK: SchemeTokens = {
   },
   cardShadow: 'none',
   fabShadow: '0 0 0 5px #1b1814, 0 6px 16px rgba(0, 0, 0, 0.35)',
+  navShadow: 'inset 0 0 0 1px #3b362d',
   scrim: 'rgba(8, 6, 4, 0.62)',
   grainOpacity: 0.05,
   themeColor: '#1b1814',
@@ -220,6 +225,7 @@ export const NIGHT: SchemeTokens = {
   },
   cardShadow: 'none',
   fabShadow: 'none',
+  navShadow: 'inset 0 0 0 1px #2a1f13',
   scrim: 'rgba(0, 0, 0, 0.6)',
   grainOpacity: 0,
   themeColor: '#0d0906',

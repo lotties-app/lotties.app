@@ -4,7 +4,7 @@ import type { BabyEvent } from '../../db/models';
 import { formatElapsed, useNow } from '../../events/time';
 import { formatTime } from '../../i18n/format';
 import { RADIUS } from '../../theme/tokens';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { Illustration } from '../../ui/illustrations';
 import { palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
 import { nursingElapsed, type BreastSide } from '../nursing';
@@ -104,7 +104,7 @@ export function NursingCard({ event, commands, action, readOnly, large = false }
   return (
     <Card component="section" aria-label={t('now.nursing.region')} sx={{ p: 2.5 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 2 }}>
-        <CategoryIcon name="heart" category="feeding" />
+        <Illustration name="nursing" size={48} glow />
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="h5" component="h2">
             {t('now.nursing.title')}

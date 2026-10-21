@@ -37,6 +37,42 @@ export interface EventFormState {
 
 export const MEDICATION_TYPE_KEY = 'medication';
 
+/**
+ * Options of the built-in types that happen at a moment even though the type has a duration: a
+ * bottle or solid food is given and done (no timer), and bedtime, waking up and falling asleep are
+ * markers. Keyed by `type.field`.
+ */
+const INSTANT_OPTIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['feeding.method', new Set(['bottle', 'solid'])],
+  ['sleep.kind', new Set(['bed_time', 'woke_up', 'fell_asleep'])],
+]);
+
+/** Whether the event ends when it starts by its nature (a bottle, a bedtime marker): no timer. */
+export function isInstantByNature(
+  type: Pick<EventType, 'key' | 'babyId' | 'hasDuration'> | undefined,
+  values: EventFormState['values'],
+): boolean {
+  if (!type || !type.hasDuration || type.babyId !== null) return false;
+  for (const [path, options] of INSTANT_OPTIONS) {
+    const [typeKey, field] = path.split('.');
+    if (typeKey !== type.key) continue;
+    const value = getOwn(values, field);
+    if (typeof value === 'string' && options.has(value)) return true;
+  }
+  return false;
+}
+
+/**
+ * Whether a new event of this type and choices starts as a running timer ("Still running" on):
+ * a type with a duration whose chosen method is not instant (nursing, a nap, tummy time).
+ */
+export function defaultRunning(
+  type: Pick<EventType, 'key' | 'babyId' | 'hasDuration'> | undefined,
+  values: EventFormState['values'],
+): boolean {
+  return !!type?.hasDuration && !isInstantByNature(type, values);
+}
+
 export function isMedicationType(type: EventType | undefined): boolean {
   return type?.key === MEDICATION_TYPE_KEY;
 }
@@ -175,13 +211,14 @@ export function formProblems(
   form: EventFormState,
   type: EventType | undefined,
   names: EventTypeText = eventTypeText,
+  options: { instant?: boolean } = {},
 ): FormProblem[] {
   const problems: FormProblem[] = [];
   if (!type) return [{ field: 'type', message: t('events.validation.chooseType') }];
   const start = fromLocalInput(form.startedAt);
   if (!start) problems.push({ field: 'start', message: t('events.validation.startRequired') });
   const end = fromLocalInput(form.endedAt);
-  if (type.hasDuration && start && end && end < start) {
+  if (type.hasDuration && !options.instant && start && end && end < start) {
     problems.push({ field: 'end', message: t('events.validation.endBeforeStart') });
   }
   for (const field of shownFields(form, type)) {
@@ -248,10 +285,13 @@ export function buildPayload(
   return payload;
 }
 
-/** Start/end ISO strings to send: instant types end when they start; blank end = running. */
-export function buildTimes(form: EventFormState, type: EventType) {
+/**
+ * Start/end ISO strings to send: instant types (and instant choices, see `isInstantByNature`) end
+ * when they start; a blank end = running.
+ */
+export function buildTimes(form: EventFormState, type: EventType, instant = false) {
   const startedAt = fromLocalInput(form.startedAt)!;
-  const endedAt = type.hasDuration ? fromLocalInput(form.endedAt) : startedAt;
+  const endedAt = type.hasDuration && !instant ? fromLocalInput(form.endedAt) : startedAt;
   return { startedAt, endedAt };
 }
 

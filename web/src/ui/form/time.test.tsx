@@ -140,6 +140,7 @@ describe('TimePanel', () => {
     min?: Date | null;
     allowRunning?: boolean;
     now?: Date;
+    compact?: boolean;
   }) {
     const [value, setValue] = useState<Date | null>(
       props.initial === undefined ? NOW : props.initial,
@@ -152,6 +153,7 @@ describe('TimePanel', () => {
           now={props.now ?? NOW}
           min={props.min}
           allowRunning={props.allowRunning}
+          compact={props.compact}
         />
         <span data-testid="iso">{value ? value.toISOString() : 'running'}</span>
       </Field>
@@ -321,5 +323,50 @@ describe('TimePanel', () => {
       </Field>,
     );
     expect(pill().value.replace(/\s/g, ' ')).toMatch(/^2:05 PM$/);
+  });
+
+  describe('compact', () => {
+    it('puts short chips and the time in one row, named in full for assistive technology', () => {
+      renderUi(<Panel compact initial={at(14, 5)} />);
+      expect(pill().value).toBe('14:05');
+      const quick = screen.getByRole('group', { name: 'Quick times' });
+      expect(Array.from(quick.querySelectorAll('button'), (b) => b.textContent)).toEqual([
+        'Now',
+        '−5',
+        '−15',
+        '−30',
+      ]);
+      fireEvent.click(screen.getByRole('button', { name: '15 min ago' }));
+      expect(chosen()).toBe(addMinutes(NOW, -15).toISOString());
+    });
+
+    it('folds the day and the ruler away until asked', () => {
+      renderUi(<Panel compact />);
+      expect(screen.queryByRole('group', { name: 'Day' })).toBeNull();
+      expect(screen.queryByRole('slider')).toBeNull();
+
+      const more = screen.getByRole('button', { name: /More precise/ });
+      expect(more.getAttribute('aria-expanded')).toBe('false');
+      fireEvent.click(more);
+      expect(more.getAttribute('aria-expanded')).toBe('true');
+      expect(screen.getByRole('slider', { name: 'Adjust time' })).toBeTruthy();
+      fireEvent.click(more);
+      expect(screen.queryByRole('slider')).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: /^Today/ }));
+      expect(screen.getByRole('group', { name: 'Day' })).toBeTruthy();
+    });
+
+    it('names the date of an older day on the folded day button', () => {
+      renderUi(<Panel compact initial={at(14, 5, 18)} />);
+      expect(screen.queryByRole('button', { name: /^Today/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /^Sun, Oct 18/ })).toBeTruthy();
+    });
+
+    it('keeps the "Still running" switch and hides the row while it is on', () => {
+      renderUi(<Panel compact allowRunning initial={null} />);
+      expect(screen.getByRole('switch', { name: 'Still running' })).toBeTruthy();
+      expect(screen.queryByRole('group', { name: 'Quick times' })).toBeNull();
+    });
   });
 });

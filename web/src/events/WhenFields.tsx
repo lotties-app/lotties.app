@@ -14,6 +14,8 @@ interface Props {
   now: Date;
   errors: Readonly<Record<string, string>>;
   onChange: (changes: Partial<Pick<EventFormState, 'startedAt' | 'endedAt'>>) => void;
+  /** A bottle or a bedtime marker: one time, no End and no timer. */
+  instant?: boolean;
 }
 
 const toDate = (local: string) => {
@@ -26,17 +28,18 @@ const toLocal = (date: Date | null) => (date ? toLocalInput(date.toISOString()) 
  * The "When" part of the sheet: the inline time panel for the time of an instant event, or Start
  * and End panels (with the live duration between them and a "Still running" switch) for a timer.
  */
-export function WhenFields({ type, form, now, errors, onChange }: Props) {
+export function WhenFields({ type, form, now, errors, onChange, instant = false }: Props) {
   const { t } = useTranslation();
   const start = toDate(form.startedAt);
   const end = toDate(form.endedAt);
-  const hasDuration = type?.hasDuration === true;
+  const hasDuration = type?.hasDuration === true && !instant;
 
   if (!hasDuration) {
     return (
       <Box data-field-key="start">
         <Field label={t('events.time')} error={errors.start}>
           <TimePanel
+            compact
             value={start ?? now}
             now={now}
             onChange={(d) => onChange({ startedAt: toLocal(d) })}
@@ -46,10 +49,11 @@ export function WhenFields({ type, form, now, errors, onChange }: Props) {
     );
   }
   return (
-    <Box sx={{ display: 'grid', gap: 2.5 }}>
+    <Box sx={{ display: 'grid', gap: 3 }}>
       <Box data-field-key="start">
         <Field label={t('events.start')} error={errors.start}>
           <TimePanel
+            compact
             value={start ?? now}
             now={now}
             onChange={(d) => onChange({ startedAt: toLocal(d) })}
@@ -59,6 +63,7 @@ export function WhenFields({ type, form, now, errors, onChange }: Props) {
       <Box data-field-key="end">
         <Field label={t('events.end')} error={errors.end}>
           <TimePanel
+            compact
             value={end}
             now={now}
             min={start}

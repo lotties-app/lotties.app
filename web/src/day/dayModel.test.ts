@@ -12,6 +12,7 @@ import {
   parseDayValue,
   queryRange,
   summarizeDay,
+  withSessionSeparators,
 } from './dayModel';
 
 const types = [FEEDING_TYPE, SLEEP_TYPE, DIAPER_TYPE];
@@ -151,5 +152,54 @@ describe('category filter', () => {
     ];
     expect(filterByCategory(events, types, new Set())).toHaveLength(3);
     expect(filterByCategory(events, types, new Set(['diaper', 'sleep'] as const))).toHaveLength(2);
+  });
+});
+
+describe('withSessionSeparators', () => {
+  const feed = (h: number, m = 0) =>
+    event({ startedAt: local(20, h, m), endedAt: local(20, h, m) });
+  const label = (item: ReturnType<typeof withSessionSeparators>[number]) =>
+    item.kind === 'event' ? item.event.id : `sep:${item.id}`;
+
+  it('puts a separator above the events that started before the session ended', () => {
+    const nap = sleep(local(20, 9), local(20, 10, 12));
+    const rows = [feed(11), nap, feed(8)].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+    const items = withSessionSeparators(rows, types);
+    expect(items.map(label)).toEqual([rows[0].id, `sep:${nap.id}`, nap.id, rows[2].id]);
+    const separator = items[1];
+    expect(separator.kind === 'separator' && separator.durationMs).toBe(72 * 60_000);
+  });
+
+  it('puts the separator after later events of a night that ended in the morning', () => {
+    const night = sleep(local(19, 20), local(20, 6, 30), 'night');
+    const duringNight = event({ startedAt: local(20, 3), endedAt: local(20, 3) });
+    const rows = [feed(7), duringNight, night].sort((a, b) =>
+      b.startedAt.localeCompare(a.startedAt),
+    );
+    expect(withSessionSeparators(rows, types).map((item) => item.kind)).toEqual([
+      'event',
+      'separator',
+      'event',
+      'event',
+    ]);
+  });
+
+  it('adds none for running sessions, markers and hidden sleep', () => {
+    const running = sleep(local(20, 9), null);
+    const marker = sleep(local(20, 7), local(20, 7), 'woke_up');
+    const items = withSessionSeparators([running, marker], types);
+    expect(items.every((item) => item.kind === 'event')).toBe(true);
+    expect(withSessionSeparators([feed(12)], types)).toHaveLength(1);
+  });
+
+  it('orders several separators by when the sessions ended', () => {
+    const a = sleep(local(20, 9), local(20, 10));
+    const b = sleep(local(20, 13), local(20, 14));
+    expect(withSessionSeparators([b, a], types).map((item) => item.kind)).toEqual([
+      'separator',
+      'event',
+      'separator',
+      'event',
+    ]);
   });
 });

@@ -6,7 +6,7 @@ import { RADIUS } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
 import type { IconName } from '../../ui/icons';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { Illustration } from '../../ui/illustrations';
 import { typeForKey } from '../eventFacts';
 import type { DiaperTray } from '../quickLog';
 import { SheetFrame } from './SheetFrame';
@@ -38,7 +38,7 @@ export function DiaperTraySheet({ open, onClose, tray, types, onChoose, disabled
       open={open}
       onClose={onClose}
       title={t('now.diaperTray.title')}
-      leading={<CategoryIcon name="diaper" category="diaper" />}
+      leading={<Illustration name="diaper" size={48} />}
     >
       <Typography variant="body2" color="text.secondary">
         {t('now.diaperTray.hint')}

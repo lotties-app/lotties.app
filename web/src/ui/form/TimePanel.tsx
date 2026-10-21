@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, type Theme } from '@mui/material';
 import { currentLocale } from '../../i18n/i18n';
 import { formatDate, formatRelative, formatTime } from '../../i18n/format';
+import { Icon } from '../Icon';
 import { useControlAttributes } from './fieldContext';
 import { SwitchRow } from './SwitchRow';
 import { filledSurface, focusRing, optionBase, palette, selectedOption } from './styles';
@@ -45,6 +46,11 @@ export interface TimePanelProps {
   hourCycle?: HourCycle;
   'aria-label'?: string;
   disabled?: boolean;
+  /**
+   * One row for quick logs: the quick chips beside the time, with the day (Today, Yesterday) and
+   * the ruler folded behind two small buttons.
+   */
+  compact?: boolean;
 }
 
 /** Digits typed into the pill: a 24 h clock or `h12` text such as "2:30 pm". */
@@ -86,6 +92,7 @@ export function TimePanel({
   hourCycle = 'h23',
   disabled: disabledProp = false,
   'aria-label': ariaLabel,
+  compact = false,
 }: TimePanelProps) {
   const { t } = useTranslation();
   const { disabled: fieldDisabled, ...control } = useControlAttributes();
@@ -95,6 +102,8 @@ export function TimePanel({
   const max = maxProp ?? now;
   const [draft, setDraft] = useState<string | null>(null);
   const [problem, setProblem] = useState<TimeProblem | null>(null);
+  const [showDay, setShowDay] = useState(false);
+  const [showRuler, setShowRuler] = useState(false);
 
   const running = allowRunning && value === null;
   const shown = value ?? max;
@@ -138,151 +147,257 @@ export function TimePanel({
         ? t('ui.time.future')
         : t('ui.time.beforeMin', { time: min ? clockText(min, hourCycle) : '' });
 
+  const chips = (
+    <Box
+      role="group"
+      aria-label={t('ui.time.quick')}
+      sx={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 0.75 : 1 }}
+    >
+      {quick.map(({ key, label, target }) => {
+        const selected = value !== null && value.getTime() === target.getTime();
+        const unavailable = (min && target < min) || target > max;
+        const minutes = key === 'now' ? 0 : Number(key.slice(4));
+        const short = compact && minutes > 0;
+        return (
+          <Box
+            key={key}
+            component="button"
+            type="button"
+            aria-pressed={selected}
+            aria-label={short ? label : undefined}
+            disabled={disabled || !!unavailable}
+            onClick={() => pick(target)}
+            sx={[chipSx(selected), compact && { px: 1.25, minWidth: 44, justifyContent: 'center' }]}
+          >
+            {short ? `−${minutes}` : label}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+
+  const pill = (
+    <Box
+      sx={(theme) => ({
+        ...filledSurface(theme, invalid),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: compact ? 48 : 72,
+        ...(compact && { flex: '0 0 112px', width: 112 }),
+        '&:focus-within': { outline: focusRing(theme), outlineOffset: 0 },
+      })}
+    >
+      <Box
+        component="input"
+        type="text"
+        inputMode={hourCycle === 'h23' ? 'numeric' : 'text'}
+        autoComplete="off"
+        spellCheck={false}
+        dir="ltr"
+        id={control.id}
+        aria-label={control.id ? undefined : ariaLabel}
+        aria-describedby={describedBy}
+        aria-invalid={invalid ? true : undefined}
+        aria-required={control['aria-required']}
+        disabled={disabled}
+        value={draft ?? clockText(shown, hourCycle)}
+        onFocus={(e: { target: HTMLInputElement }) => e.target.select()}
+        onChange={(e: { target: { value: string } }) => {
+          setDraft(e.target.value);
+          setProblem(null);
+        }}
+        onBlur={commitDraft}
+        onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitDraft();
+          } else if (e.key === 'Escape') {
+            setDraft(null);
+            setProblem(null);
+          }
+        }}
+        sx={(theme) => ({
+          width: '100%',
+          maxWidth: compact ? 112 : 220,
+          textAlign: 'center',
+          border: 0,
+          outline: 0,
+          background: 'none',
+          color: palette(theme).text.primary,
+          fontFamily: theme.typography.fontFamilyDisplay,
+          fontSize: compact ? '1.5rem' : '2.5rem',
+          fontVariantNumeric: 'tabular-nums lining-nums',
+          letterSpacing: '0.02em',
+        })}
+      />
+    </Box>
+  );
+
+  const problemNote = problem && (
+    <Box
+      id={messageId}
+      role="status"
+      sx={(theme) => ({ fontSize: '0.8125rem', color: palette(theme).error.main })}
+    >
+      {problemText(problem)}
+    </Box>
+  );
+
+  const dayChips = (
+    <Box
+      role="group"
+      aria-label={t('ui.time.day')}
+      sx={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 0.75 : 1 }}
+    >
+      <Box
+        component="button"
+        type="button"
+        aria-pressed={days === 0}
+        disabled={disabled}
+        onClick={() => pick(shiftLocalDays(shown, days))}
+        sx={chipSx(days === 0)}
+      >
+        {t('ui.time.today')}
+      </Box>
+      <Box
+        component="button"
+        type="button"
+        aria-pressed={days === 1}
+        disabled={disabled}
+        onClick={() => pick(shiftLocalDays(shown, days - 1))}
+        sx={chipSx(days === 1)}
+      >
+        {t('ui.time.yesterday')}
+      </Box>
+      {days > 1 && (
+        <Box component="span" sx={chipSx(true)}>
+          {dateLabel}
+        </Box>
+      )}
+    </Box>
+  );
+
+  const ruler = (
+    <TimeRuler
+      value={shown}
+      now={max}
+      min={min}
+      hourCycle={hourCycle}
+      disabled={disabled}
+      onPick={pick}
+    />
+  );
+
+  const runningSwitch = allowRunning && (
+    <SwitchRow
+      checked={running}
+      onChange={(on) => {
+        setProblem(null);
+        onChange(on ? null : clampDate(now, min, max));
+      }}
+      label={t('ui.time.stillRunning')}
+      disabled={disabled}
+    />
+  );
+
+  if (compact) {
+    const dayText =
+      days === 0 ? t('ui.time.today') : days === 1 ? t('ui.time.yesterday') : dateLabel;
+    const dayId = `${control.id ?? 'time'}-day`;
+    const rulerId = `${control.id ?? 'time'}-ruler`;
+    return (
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        {runningSwitch}
+        {!running && (
+          <>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+              {chips}
+              {pill}
+            </Box>
+            {problemNote}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              <DisclosureButton
+                expanded={showDay}
+                onToggle={() => setShowDay((open) => !open)}
+                controls={dayId}
+                disabled={disabled}
+              >
+                {dayText}
+              </DisclosureButton>
+              <DisclosureButton
+                expanded={showRuler}
+                onToggle={() => setShowRuler((open) => !open)}
+                controls={rulerId}
+                disabled={disabled}
+              >
+                {t('ui.time.morePrecise')}
+              </DisclosureButton>
+            </Box>
+            {showDay && <Box id={dayId}>{dayChips}</Box>}
+            {showRuler && <Box id={rulerId}>{ruler}</Box>}
+          </>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ display: 'grid', gap: 1.5 }}>
-      {allowRunning && (
-        <SwitchRow
-          checked={running}
-          onChange={(on) => {
-            setProblem(null);
-            onChange(on ? null : clampDate(now, min, max));
-          }}
-          label={t('ui.time.stillRunning')}
-          disabled={disabled}
-        />
-      )}
+      {runningSwitch}
       {!running && (
         <>
-          <Box
-            role="group"
-            aria-label={t('ui.time.quick')}
-            sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}
-          >
-            {quick.map(({ key, label, target }) => {
-              const selected = value !== null && value.getTime() === target.getTime();
-              const unavailable = (min && target < min) || target > max;
-              return (
-                <Box
-                  key={key}
-                  component="button"
-                  type="button"
-                  aria-pressed={selected}
-                  disabled={disabled || !!unavailable}
-                  onClick={() => pick(target)}
-                  sx={chipSx(selected)}
-                >
-                  {label}
-                </Box>
-              );
-            })}
-          </Box>
-
-          <Box
-            sx={(theme) => ({
-              ...filledSurface(theme, invalid),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: 72,
-              '&:focus-within': { outline: focusRing(theme), outlineOffset: 0 },
-            })}
-          >
-            <Box
-              component="input"
-              type="text"
-              inputMode={hourCycle === 'h23' ? 'numeric' : 'text'}
-              autoComplete="off"
-              spellCheck={false}
-              dir="ltr"
-              id={control.id}
-              aria-label={control.id ? undefined : ariaLabel}
-              aria-describedby={describedBy}
-              aria-invalid={invalid ? true : undefined}
-              aria-required={control['aria-required']}
-              disabled={disabled}
-              value={draft ?? clockText(shown, hourCycle)}
-              onFocus={(e: { target: HTMLInputElement }) => e.target.select()}
-              onChange={(e: { target: { value: string } }) => {
-                setDraft(e.target.value);
-                setProblem(null);
-              }}
-              onBlur={commitDraft}
-              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  commitDraft();
-                } else if (e.key === 'Escape') {
-                  setDraft(null);
-                  setProblem(null);
-                }
-              }}
-              sx={(theme) => ({
-                width: '100%',
-                maxWidth: 220,
-                textAlign: 'center',
-                border: 0,
-                outline: 0,
-                background: 'none',
-                color: palette(theme).text.primary,
-                fontFamily: theme.typography.fontFamilyDisplay,
-                fontSize: '2.5rem',
-                fontVariantNumeric: 'tabular-nums lining-nums',
-                letterSpacing: '0.02em',
-              })}
-            />
-          </Box>
-          {problem && (
-            <Box
-              id={messageId}
-              role="status"
-              sx={(theme) => ({ fontSize: '0.8125rem', color: palette(theme).error.main })}
-            >
-              {problemText(problem)}
-            </Box>
-          )}
-
-          <Box
-            role="group"
-            aria-label={t('ui.time.day')}
-            sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}
-          >
-            <Box
-              component="button"
-              type="button"
-              aria-pressed={days === 0}
-              disabled={disabled}
-              onClick={() => pick(shiftLocalDays(shown, days))}
-              sx={chipSx(days === 0)}
-            >
-              {t('ui.time.today')}
-            </Box>
-            <Box
-              component="button"
-              type="button"
-              aria-pressed={days === 1}
-              disabled={disabled}
-              onClick={() => pick(shiftLocalDays(shown, days - 1))}
-              sx={chipSx(days === 1)}
-            >
-              {t('ui.time.yesterday')}
-            </Box>
-            {days > 1 && (
-              <Box component="span" sx={chipSx(true)}>
-                {dateLabel}
-              </Box>
-            )}
-          </Box>
-
-          <TimeRuler
-            value={shown}
-            now={max}
-            min={min}
-            hourCycle={hourCycle}
-            disabled={disabled}
-            onPick={pick}
-          />
+          {chips}
+          {pill}
+          {problemNote}
+          {dayChips}
+          {ruler}
         </>
       )}
+    </Box>
+  );
+}
+
+/** A small text button that folds a part of the panel in and out (44 px high). */
+function DisclosureButton({
+  expanded,
+  onToggle,
+  controls,
+  disabled,
+  children,
+}: {
+  expanded: boolean;
+  onToggle: () => void;
+  controls: string;
+  disabled: boolean;
+  children: string;
+}) {
+  return (
+    <Box
+      component="button"
+      type="button"
+      aria-expanded={expanded}
+      aria-controls={expanded ? controls : undefined}
+      disabled={disabled}
+      onClick={onToggle}
+      sx={(theme) => ({
+        ...optionBase(theme),
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        minHeight: 44,
+        px: 1.25,
+        borderRadius: '999px',
+        backgroundColor: 'transparent',
+        fontSize: '0.875rem',
+        color: palette(theme).text.primary,
+        textDecoration: 'underline',
+        textDecorationColor: palette(theme).hairline,
+        textUnderlineOffset: 4,
+      })}
+    >
+      {children}
+      <Icon name={expanded ? 'collapse' : 'expand'} size={16} />
     </Box>
   );
 }

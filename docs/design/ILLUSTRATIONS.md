@@ -2,6 +2,18 @@
 
 Wave 4c, SYNTHESIS.md section 5 item 1. Code: `web/src/ui/illustrations/`. Gallery: `/dev/illustrations` (development only). Screenshots: `cd e2e && npx playwright test -c design-review/illustrations.config.ts` (port 5175) writes `docs/design/screenshots/illustrations-*.png` (gitignored).
 
+## Where they are used (wave 4c-2) and the size grid
+
+| Size  | Where                                                                                         |
+| ----- | --------------------------------------------------------------------------------------------- |
+| 24    | Day ribbon legend                                                                             |
+| 32    | Day rows (on the connecting line), toast stamp, forgotten-timer notice, type menu of the sheet |
+| 40-48 | Log tiles and More sheet tiles (48), tray headers, nursing and timer cards (48)               |
+| 64    | Event sheet header (soft glow in light and dark), first-run and "what is she doing" choices   |
+| 96    | Now state card hero, first-run card, empty Day, estimated nap sheet                           |
+
+`illustrationKeyFor(type, payload)` picks the drawing of an event (sleep kind, feeding method, type key); a custom type falls back to its outline icon in the category tile. The night scheme draws every one of them flat, without halo or glow. Tabler icons stay for chrome (navigation, buttons, chevrons, filters).
+
 ## Licence
 
 These illustrations are **original works by the Baby Routine project contributors**, drawn by hand as SVG paths and gradients in code, and are licensed under the project licence (**AGPL-3.0-or-later**, see `LICENSE`). No external artwork, icon set, font glyph, traced image or generated raster was used. Competitor apps were only a source of general principles (soft depth, glow, illustrated categories); no shape, composition or colour scheme of theirs was copied, traced or imitated. Every source file carries the same statement in a header comment.
@@ -91,7 +103,7 @@ Props: `size` (default 48), `scheme` (default: the scheme the app shows; `dark` 
 
 `illustrationFor(key)` / `illustrationName(key)` accept built-in preset ids, built-in event type keys, sleep kinds (`nap`, `night`, `woke_up`, `bed_time`, `fell_asleep`, `night_waking`), feeding methods (`breast`, `bottle`, `solid`) and canonical names, through a `Map` (a stored key like `constructor` never resolves). Anything else gets `FallbackIllustration`: the Tabler icon in its category circle at the same size (`Illustration` takes `fallbackIcon` and `fallbackCategory`).
 
-Bundle: all 17 drawings, the registry, palette and geometry are about 22.6 kB minified / 7.1 kB gzip (measured 2026-10-21, shared app modules external), under the 25 kB gzip budget, so they are not split into a lazy chunk. Until screens use them, production builds do not contain them.
+Bundle: all 17 drawings, the registry, palette and geometry are about 22.6 kB minified / 7.1 kB gzip (measured 2026-10-21, shared app modules external), under the 25 kB gzip budget, so they are not split into a lazy chunk. Since wave 4c-2 the Now, Day and sheet screens use them, so they ship in the main bundle (measured before that wave).
 
 ## Do and don't
 

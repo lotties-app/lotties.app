@@ -79,7 +79,7 @@ describe('Diaper tray', () => {
     const tray = await screen.findByRole('dialog', { name: 'Diaper' });
     fireEvent.click(within(tray).getByRole('button', { name: label }));
 
-    expect(await screen.findByText(`Diaper · ${label}`)).toBeTruthy();
+    expect(await screen.findByText(`Diaper logged, ${label}`)).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Diaper' })).toBeNull());
     const diapers = (await logged()).filter((e) => e.payload.content === content);
     expect(diapers).toHaveLength(1);
@@ -137,7 +137,7 @@ describe('Diaper tray', () => {
     fireEvent.click(await tile(/^Diaper/));
     fireEvent.click(await screen.findByRole('button', { name: 'Mixed' }));
     await holdToast();
-    await screen.findByText('Diaper · Mixed');
+    await screen.findByText('Diaper logged, Mixed');
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
     await waitFor(async () =>
       expect((await live()).some((e) => e.payload.content === 'MIXED')).toBe(false),
@@ -164,7 +164,7 @@ describe('Feed tray', () => {
     );
 
     fireEvent.click(within(tray).getByRole('button', { name: 'Log 120 ml formula' }));
-    expect(await screen.findByText('Bottle · 120 ml')).toBeTruthy();
+    expect(await screen.findByText('Bottle logged, 120 ml')).toBeTruthy();
     const bottles = (await logged()).filter((e) => e.payload.method === 'bottle');
     expect(bottles).toHaveLength(1);
     expect(bottles[0].payload).toEqual({
@@ -186,7 +186,7 @@ describe('Feed tray', () => {
     fireEvent.click(within(tray).getByRole('radio', { name: 'Breast milk' }));
     fireEvent.click(within(tray).getByRole('button', { name: 'Log 90 ml breast milk' }));
 
-    await screen.findByText('Bottle · 90 ml');
+    await screen.findByText('Bottle logged, 90 ml');
     expect(
       (await live()).filter(
         (e) => e.payload.amount_ml === 90 && e.payload.bottle_feeding_type === 'breast_milk',
@@ -205,7 +205,7 @@ describe('Feed tray', () => {
     fireEvent.click(within(tray).getByRole('button', { name: 'Increase' }));
     fireEvent.click(within(tray).getByRole('button', { name: /^Log 130 ml/ }));
 
-    await screen.findByText('Bottle · 130 ml');
+    await screen.findByText('Bottle logged, 130 ml');
     expect((await live()).filter((e) => e.payload.amount_ml === 130)).toHaveLength(1);
   });
 
@@ -273,7 +273,7 @@ describe('Meds tray', () => {
     fireEvent.click(within(tray).getByRole('button', { name: 'Paracetamol' }));
     fireEvent.click(within(tray).getByRole('button', { name: 'Log 2 medications' }));
 
-    expect(await screen.findByText('Medication · Colidis and Paracetamol')).toBeTruthy();
+    expect(await screen.findByText('Medication logged, Colidis and Paracetamol')).toBeTruthy();
     const [logged] = (await live()).filter((e) => Array.isArray(e.payload.medications));
     expect(logged.payload.medications).toEqual([
       { medicationId: 'm-colidis', name: 'Colidis', dose: { amount: 5, unit: 'drops' } },
@@ -293,7 +293,7 @@ describe('Meds tray', () => {
 
     fireEvent.click(await tile(/^Meds/));
     fireEvent.click(await screen.findByRole('button', { name: 'Same as last time: Colidis' }));
-    await screen.findByText('Medication · Colidis');
+    await screen.findByText('Medication logged, Colidis');
     expect((await live()).filter((e) => Array.isArray(e.payload.medications))).toHaveLength(2);
   });
 
@@ -353,7 +353,7 @@ describe('More sheet', () => {
     expect(within(tray).getAllByRole('button', { name: /^[1-5]$/ })).toHaveLength(5);
     fireEvent.click(within(tray).getByRole('button', { name: '4' }));
 
-    expect(await screen.findByText('Belly pain · 4 of 5')).toBeTruthy();
+    expect(await screen.findByText('Belly pain logged, 4 of 5')).toBeTruthy();
     const [saved] = (await live()).filter((e) => e.typeId === BELLY_TYPE.id);
     expect(saved.payload).toEqual({ intensity: 4 });
   });

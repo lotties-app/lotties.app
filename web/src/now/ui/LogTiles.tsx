@@ -1,19 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { EventType } from '../../db/models';
-import { RADIUS, type CategoryName } from '../../theme/tokens';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { RADIUS } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
-import type { IconName } from '../../ui/icons';
+import { Illustration } from '../../ui/illustrations';
 import { formatTileStatus, tileLabel } from '../nowText';
 import type { QuickTile, TileId } from '../quickLog';
 import { tileDetailText } from '../tileText';
 
-const LOOK: Record<TileId, { icon: IconName; category: CategoryName }> = {
-  feed: { icon: 'bottle', category: 'feeding' },
-  diaper: { icon: 'diaper', category: 'diaper' },
-  meds: { icon: 'pill', category: 'health' },
-  more: { icon: 'add', category: 'custom' },
+/** The illustration of each tile (`illustrationFor` keys). */
+const ART: Record<TileId, string> = {
+  feed: 'bottle',
+  diaper: 'diaper',
+  meds: 'medication',
+  more: 'custom',
 };
 
 interface Props {
@@ -40,7 +40,6 @@ export function LogTiles({ tiles, types, now, readOnly, onOpen }: Props) {
       </Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
         {tiles.map((tile) => {
-          const look = LOOK[tile.id];
           const status = formatTileStatus(tile, now);
           const detail = tile.id === 'more' ? t('now.tiles.moreHint') : tileDetailText(tile, types);
           return (
@@ -49,9 +48,10 @@ export function LogTiles({ tiles, types, now, readOnly, onOpen }: Props) {
               disabled={readOnly}
               onClick={() => onOpen(tile.id)}
               sx={(theme) => ({
-                minHeight: 96,
+                minHeight: 120,
                 p: 1.5,
-                gap: 1.5,
+                gap: 1,
+                flexDirection: 'column',
                 alignItems: 'flex-start',
                 justifyContent: 'flex-start',
                 textAlign: 'left',
@@ -61,8 +61,8 @@ export function LogTiles({ tiles, types, now, readOnly, onOpen }: Props) {
                 '&.Mui-disabled': { opacity: 0.6 },
               })}
             >
-              <CategoryIcon name={look.icon} category={look.category} />
-              <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+              <Illustration name={ART[tile.id]} size={48} />
+              <Box sx={{ minWidth: 0, width: '100%' }}>
                 <Typography variant="subtitle1" component="span" sx={{ display: 'block' }}>
                   {tileLabel(tile.id)}
                 </Typography>

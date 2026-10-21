@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { formatList } from '../../i18n/format';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { Illustration } from '../../ui/illustrations';
 import { ChipGroup } from '../../ui/form';
 import { medicationPayloadEntries, type MedicationEntry, type MedsTray } from '../quickLog';
 import { SheetFrame } from './SheetFrame';
@@ -30,7 +30,7 @@ export function MedsTraySheet({ open, onClose, tray, disabled, onChoose }: Props
       open={open}
       onClose={onClose}
       title={t('now.medsTray.title')}
-      leading={<CategoryIcon name="pill" category="health" />}
+      leading={<Illustration name="medication" size={48} />}
     >
       {tray.same && (
         <Button

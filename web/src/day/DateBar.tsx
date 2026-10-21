@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Box, Button, ButtonBase, IconButton } from '@mui/material';
+import { formatDate } from '../i18n/format';
 import { SheetFrame } from '../now/ui/SheetFrame';
 import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { DateField, Field } from '../ui/form';
 import { palette } from '../ui/form/styles';
-import { dayValue, isSameDay, parseDayValue, addDays } from './dayModel';
+import { dayValue, isSameDay, parseDayValue } from './dayModel';
 import { useDayLabel } from './useDayLabel';
+import { WeekStrip } from './WeekStrip';
+import { jumpWeek } from './weekModel';
 
 interface Props {
   day: Date;
@@ -27,29 +30,32 @@ const roundButton = (theme: Parameters<typeof palette>[0]) => ({
 });
 
 /**
- * Day navigation: previous and next day buttons around the date (tap it to pick any day), a
- * "Today" shortcut when another day is shown, and the filter button with the number of active
- * categories as a badge. Swiping the list changes the day too (see `DayScreen`).
+ * Day navigation: the month (tap it to pick any day) between the week-jump chevrons, the filter
+ * button with the number of active categories as a badge, a "Today" shortcut when another day is
+ * shown, and the week strip. Swiping the list changes the day, swiping the strip the week (see
+ * `DayScreen` and `WeekStrip`).
  */
 export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Props) {
   const { t } = useTranslation();
   const [picking, setPicking] = useState(false);
   const label = useDayLabel(day, today);
   const isToday = isSameDay(day, today);
+  const month = formatDate(day, 'monthYear');
+  const atLatestWeek = isSameDay(jumpWeek(day, 1, today), day);
 
   return (
-    <Box sx={{ display: 'grid', gap: 0.5 }}>
+    <Box sx={{ display: 'grid', gap: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <IconButton
-          aria-label={t('day.previous')}
-          onClick={() => onChange(addDays(day, -1))}
+          aria-label={t('day.previousWeek')}
+          onClick={() => onChange(jumpWeek(day, -1, today))}
           sx={(theme) => roundButton(theme)}
         >
           <Icon name="chevron-left" size={20} />
         </IconButton>
         <ButtonBase
           onClick={() => setPicking(true)}
-          aria-label={t('day.chooseDate', { date: label })}
+          aria-label={t('day.chooseMonth', { month, date: label })}
           aria-haspopup="dialog"
           sx={{
             flex: '1 1 auto',
@@ -66,13 +72,13 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
             textAlign: 'center',
           }}
         >
-          <span>{label}</span>
+          <span>{month}</span>
           <Icon name="expand" size={16} />
         </ButtonBase>
         <IconButton
-          aria-label={t('day.next')}
-          disabled={isToday}
-          onClick={() => onChange(addDays(day, 1))}
+          aria-label={t('day.nextWeek')}
+          disabled={atLatestWeek}
+          onClick={() => onChange(jumpWeek(day, 1, today))}
           sx={(theme) => roundButton(theme)}
         >
           <Icon name="chevron-right" size={20} />
@@ -95,6 +101,7 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
           </IconButton>
         </Badge>
       </Box>
+      <WeekStrip day={day} today={today} onChange={onChange} />
       {!isToday && (
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Button

@@ -35,12 +35,23 @@ export function formatTime(value: Date | string | number, locale: Locale = curre
   return format.format(toDate(value));
 }
 
-export type DateStyle = 'dayMonth' | 'weekdayDayMonth' | 'dayMonthYear';
+export type DateStyle =
+  | 'dayMonth'
+  | 'weekdayDayMonth'
+  | 'dayMonthYear'
+  | 'weekdayNarrow'
+  | 'dayNumber'
+  | 'monthYear'
+  | 'weekdayLong';
 
 const DATE_OPTIONS: Record<DateStyle, Intl.DateTimeFormatOptions> = {
   dayMonth: { day: 'numeric', month: 'short' },
   weekdayDayMonth: { weekday: 'short', day: 'numeric', month: 'short' },
   dayMonthYear: { day: 'numeric', month: 'short', year: 'numeric' },
+  weekdayNarrow: { weekday: 'narrow' },
+  dayNumber: { day: 'numeric' },
+  monthYear: { month: 'long', year: 'numeric' },
+  weekdayLong: { weekday: 'long', day: 'numeric', month: 'long' },
 };
 
 /** `yyyy-mm-dd` strings are calendar dates (no zone): they are formatted as UTC midnight. */

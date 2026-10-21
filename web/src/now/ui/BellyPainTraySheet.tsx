@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import { formatNumber } from '../../i18n/format';
 import { RADIUS } from '../../theme/tokens';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { Illustration } from '../../ui/illustrations';
 import { palette } from '../../ui/form/styles';
 import type { BellyPainTray } from '../quickLog';
 import { SheetFrame } from './SheetFrame';
@@ -25,7 +25,7 @@ export function BellyPainTraySheet({ open, onClose, tray, onChoose, disabled }: 
       open={open}
       onClose={onClose}
       title={t('now.bellyTray.title')}
-      leading={<CategoryIcon name="mood-sad" category="health" />}
+      leading={<Illustration name="belly_pain" size={48} />}
     >
       <Typography variant="body2" color="text.secondary">
         {t('now.bellyTray.hint')}

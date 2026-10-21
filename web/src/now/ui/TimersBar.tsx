@@ -6,9 +6,9 @@ import { useEventTypeText } from '../../i18n/eventTypeText';
 import { formatDuration, formatTime } from '../../i18n/format';
 import type { PresetActions } from '../../presets/usePresetActions';
 import { Icon } from '../../ui/Icon';
-import { CategoryIcon } from '../../ui/CategoryIcon';
+import { illustrationKeyFor } from '../../ui/illustrations/eventKey';
+import { EventIllustration } from '../../ui/illustrations/EventIllustration';
 import { otherTimers, type ForgottenTimer } from '../timers';
-import { typeCategory, typeIcon } from '../typeVisual';
 import { ForgottenNotice } from './ForgottenNotice';
 
 interface Props {
@@ -52,7 +52,7 @@ function TimerRow({
   return (
     <Card component="article" aria-label={name} sx={{ p: 1.5 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-        <CategoryIcon name={typeIcon(type)} category={typeCategory(type)} />
+        <EventIllustration type={type} payload={event.payload} size={48} />
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="subtitle1" noWrap>
             {name}
@@ -81,6 +81,7 @@ function TimerRow({
       {forgotten && !snoozed && (
         <Box sx={{ mt: 1.5 }}>
           <ForgottenNotice
+            art={illustrationKeyFor(type, event.payload)}
             title={t('now.forgotten.running', {
               name,
               duration: formatDuration(elapsed),

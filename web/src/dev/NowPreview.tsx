@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
+import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
 import { createDatabase, type BabyRoutineDb } from '../db/database';
 import { DatabaseProvider } from '../db/DatabaseProvider';
@@ -382,19 +383,21 @@ export default function NowPreview() {
 
   return (
     <DatabaseProvider db={db}>
-      <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-        <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: 12 }}>
-          <Typography variant="h5" component="p" sx={{ py: 1 }}>
-            Lia
-          </Typography>
-          {ready?.scenario === scenario && <NowScreen key={scenario} baby={ready.baby} />}
-          <Toolbar
-            scenario={scenario}
-            onScenario={(next) => setParams({ state: next }, { replace: true })}
-          />
+      <AddSheetProvider enabled={scenario !== 'viewer'}>
+        <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
+          <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: 12 }}>
+            <Typography variant="h5" component="p" sx={{ py: 1 }}>
+              Lia
+            </Typography>
+            {ready?.scenario === scenario && <NowScreen key={scenario} baby={ready.baby} />}
+            <Toolbar
+              scenario={scenario}
+              onScenario={(next) => setParams({ state: next }, { replace: true })}
+            />
+          </Box>
+          <BottomNav />
         </Box>
-        <BottomNav />
-      </Box>
+      </AddSheetProvider>
     </DatabaseProvider>
   );
 }

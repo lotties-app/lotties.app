@@ -16,6 +16,8 @@ export {
   type IllustrationName,
 } from './registry';
 export { Illustration, type IllustrationByNameProps } from './Illustration';
+export { EventIllustration } from './EventIllustration';
+export { illustrationKeyFor } from './eventKey';
 export { FallbackIllustration, type FallbackIllustrationProps } from './FallbackIllustration';
 export type { IllustrationProps } from './IllustrationFrame';
 export {

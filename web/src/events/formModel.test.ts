@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
-import { formProblems, initialForm, switchFormType } from './formModel';
+import {
+  buildTimes,
+  defaultRunning,
+  formProblems,
+  initialForm,
+  isInstantByNature,
+  switchFormType,
+} from './formModel';
 
 const NOW = new Date(2026, 9, 21, 7, 0);
 
@@ -49,5 +56,49 @@ describe('switchFormType', () => {
   it('ends an instant type at its start', () => {
     const form = { ...feeding({}), endedAt: '2026-10-21T08:00' };
     expect(switchFormType(form, FEEDING_TYPE, DIAPER_TYPE).form.endedAt).toBe('');
+  });
+});
+
+describe('isInstantByNature and defaultRunning', () => {
+  it('treats a bottle and solid food as moments and nursing as a timer', () => {
+    expect(isInstantByNature(FEEDING_TYPE, { method: 'bottle' })).toBe(true);
+    expect(isInstantByNature(FEEDING_TYPE, { method: 'solid' })).toBe(true);
+    expect(isInstantByNature(FEEDING_TYPE, { method: 'breast' })).toBe(false);
+    expect(defaultRunning(FEEDING_TYPE, { method: 'bottle' })).toBe(false);
+    expect(defaultRunning(FEEDING_TYPE, { method: 'breast' })).toBe(true);
+    expect(defaultRunning(FEEDING_TYPE, {})).toBe(true);
+  });
+
+  it('treats sleep markers as moments and naps and nights as timers', () => {
+    for (const kind of ['bed_time', 'woke_up', 'fell_asleep']) {
+      expect(defaultRunning(SLEEP_TYPE, { kind })).toBe(false);
+    }
+    for (const kind of ['nap', 'night', 'night_waking']) {
+      expect(defaultRunning(SLEEP_TYPE, { kind })).toBe(true);
+    }
+  });
+
+  it('is never running for a type without a duration, and ignores custom types', () => {
+    expect(defaultRunning(DIAPER_TYPE, {})).toBe(false);
+    const custom = { ...FEEDING_TYPE, babyId: 'baby-1' };
+    expect(isInstantByNature(custom, { method: 'bottle' })).toBe(false);
+  });
+});
+
+describe('buildTimes', () => {
+  it('ends an instant choice at its start even when an end was left in the form', () => {
+    const form = {
+      ...feeding({ method: 'bottle' }),
+      startedAt: '2026-10-21T10:00',
+      endedAt: '2026-10-21T09:00',
+    };
+    const times = buildTimes(form, FEEDING_TYPE, true);
+    expect(times.endedAt).toBe(times.startedAt);
+    expect(formProblems(form, FEEDING_TYPE, undefined, { instant: true })).toEqual([]);
+  });
+
+  it('leaves a blank end running for a timer', () => {
+    const form = { ...feeding({ method: 'breast' }), startedAt: '2026-10-21T10:00' };
+    expect(buildTimes(form, FEEDING_TYPE).endedAt).toBeNull();
   });
 });

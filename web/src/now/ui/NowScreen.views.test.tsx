@@ -299,7 +299,7 @@ describe('night layout', () => {
     const night = await screen.findByRole('region', { name: 'Night view' });
     fireEvent.click(within(night).getByRole('button', { name: /^Diaper/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Wet' }));
-    expect(await screen.findByText('Diaper · Wet')).toBeTruthy();
+    expect(await screen.findByText('Diaper logged, Wet')).toBeTruthy();
 
     fireEvent.click(within(night).getByRole('button', { name: 'Fell asleep' }));
     expect(await screen.findByText(/^(Nap|Night sleep) from/)).toBeTruthy();
@@ -345,7 +345,7 @@ describe('Portuguese (pt-BR)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Fralda/ }));
     const tray = await screen.findByRole('dialog', { name: 'Fralda' });
     fireEvent.click(within(tray).getByRole('button', { name: 'Xixi' }));
-    expect(await screen.findByText('Fralda · Xixi')).toBeTruthy();
+    expect(await screen.findByText('Fralda registrada, Xixi')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Desfazer' })).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Quando aconteceu' })).toBeTruthy();
 

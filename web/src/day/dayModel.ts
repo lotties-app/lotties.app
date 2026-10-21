@@ -174,3 +174,57 @@ export function summarizeDay(
   }
   return summary;
 }
+
+/** A quiet line between rows: a nap or a night ended here. */
+export interface SessionSeparator {
+  kind: 'separator';
+  /** The sleep event whose end it marks. */
+  id: string;
+  endedAt: string;
+  durationMs: number;
+}
+
+export interface EventItem {
+  kind: 'event';
+  event: BabyEvent;
+}
+
+export type DayItem = EventItem | SessionSeparator;
+
+/**
+ * The rows of a day (newest first) with a separator where a nap or a night ended: placed between
+ * the events that came after the end and the ones that started before it. Only sessions among
+ * `rows` count, so a filter that hides sleep hides the separators too; running sessions and
+ * markers (bedtime, woke up) have none.
+ */
+export function withSessionSeparators(
+  rows: readonly BabyEvent[],
+  types: readonly EventType[],
+): DayItem[] {
+  const sleepIds = typeIdsForKey(types, 'sleep');
+  const separators: SessionSeparator[] = rows
+    .filter(
+      (event) =>
+        sleepIds.has(event.typeId) && event.endedAt !== null && sleepSessionKind(event) !== null,
+    )
+    .map((event) => ({
+      kind: 'separator' as const,
+      id: event.id,
+      endedAt: event.endedAt as string,
+      durationMs: Date.parse(event.endedAt as string) - Date.parse(event.startedAt),
+    }))
+    .filter((separator) => separator.durationMs > 0)
+    .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
+
+  const items: DayItem[] = [];
+  let next = 0;
+  for (const event of rows) {
+    // Every separator that ended after this event started goes above it.
+    while (next < separators.length && separators[next].endedAt > event.startedAt) {
+      items.push(separators[next]);
+      next += 1;
+    }
+    items.push({ kind: 'event', event });
+  }
+  return items;
+}

@@ -31,7 +31,8 @@
     "growth": "Crescimento",
     "now": "Agora",
     "day": "Dia",
-    "insights": "Insights"
+    "insights": "Insights",
+    "add": "Adicionar evento"
   },
   "auth": {
     "signIn": "Entrar",
@@ -207,16 +208,22 @@
     "ribbon": {
       "label": "O dia em resumo: {{sleep}}, {{feeds}}, {{diapers}}",
       "sleep": "{{duration}} de sono",
-      "noSleep": "nenhum sono registrado"
+      "noSleep": "nenhum sono registrado",
+      "legend": "O que as cores significam"
     },
     "empty": {
-      "title": "Nada registrado neste dia"
+      "title": "Um dia tranquilo. Nada registrado ainda."
     },
     "addEvent": "Adicionar evento",
     "noMatches": "Nenhum evento corresponde a este filtro.",
     "editRow": "Editar {{title}}, {{time}}",
     "stopNamed": "Parar {{title}}",
-    "needsAttention": "Precisa de atenção"
+    "needsAttention": "Precisa de atenção",
+    "week": "Semana",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Próxima semana",
+    "chooseMonth": "{{month}}. Escolher uma data. Mostrando {{date}}",
+    "sessionEnded": "Sessão de sono encerrada, {{duration}}"
   },
   "events": {
     "addTitle": "Adicionar evento",
@@ -255,7 +262,8 @@
       "discard": "Descartar",
       "problems_one": "{{count}} item para corrigir: {{first}}",
       "problems_other": "{{count}} itens para corrigir. Primeiro: {{first}}",
-      "duration": "Duração: {{duration}}"
+      "duration": "Duração: {{duration}}",
+      "editTime": "Alterar o horário, {{time}} {{day}}"
     },
     "deleted": "{{name}} excluído"
   },
@@ -840,7 +848,8 @@
       "invalid": "Digite um horário como 14:30.",
       "future": "O horário não pode estar no futuro.",
       "beforeMin": "O horário não pode ser antes de {{time}}.",
-      "stillRunning": "Ainda em andamento"
+      "stillRunning": "Ainda em andamento",
+      "morePrecise": "Mais preciso"
     },
     "date": {
       "choose": "Escolher data",
@@ -902,13 +911,13 @@
       "wokeUp": "Acordou às {{time}}",
       "nightWaking": "Despertar noturno desde {{time}}",
       "backAsleep": "Voltou a dormir às {{time}}",
-      "bottle": "Mamadeira · {{amount}} ml",
-      "diaper": "Fralda · {{content}}",
-      "medication": "Remédio · {{names}}",
-      "bellyPain": "Dor de barriga · {{intensity}} de 5",
+      "bottle": "Mamadeira registrada, {{amount}} ml",
+      "diaper": "Fralda registrada, {{content}}",
+      "medication": "Remédio registrado, {{names}}",
+      "bellyPain": "Dor de barriga registrada, {{intensity}} de 5",
       "nursingStarted": "Amamentação no lado {{side}}",
       "nursingSwitched": "Trocou para o lado {{side}}",
-      "nursingStopped": "Amamentação · esquerdo {{left}} · direito {{right}}",
+      "nursingStopped": "Amamentação concluída, esquerdo {{left}}, direito {{right}}",
       "shiftGroup": "Quando aconteceu"
     },
     "catchUp": {
@@ -968,7 +977,8 @@
       "range": "{{from}} – {{to}}",
       "opensIn": "abre em {{duration}}",
       "open": "aberta agora",
-      "past": "passou da janela usual"
+      "past": "passou da janela usual",
+      "openDetails": "Soneca estimada de {{from}} a {{to}}, abrir detalhes"
     },
     "ruler": {
       "withWindow": "Acordado desde {{since}}, agora {{now}}. Janela da soneca das {{from}} às {{to}}.",
@@ -1062,6 +1072,31 @@
     "night": {
       "region": "Visual noturno",
       "screenOn": "A tela fica ligada enquanto esta tela está aberta."
+    },
+    "napSheet": {
+      "title": "Soneca estimada",
+      "about": "cerca de {{duration}}",
+      "windDown": "Um bom momento para começar a desacelerar é por volta das {{time}}",
+      "soon": "A janela abre em breve.",
+      "open": "A janela está aberta agora.",
+      "past": "A janela de costume já passou.",
+      "skip": "Pular",
+      "log": "Registrar soneca agora",
+      "skipped": "Soneca estimada ignorada",
+      "show": "Mostrar de novo"
+    },
+    "ring": {
+      "title": "Ritmo do dia",
+      "view": "Visualização do dia",
+      "ruler": "Régua",
+      "ring": "Anel",
+      "show": "Ver o anel do dia",
+      "slept": "Dormiu {{duration}} até agora hoje.",
+      "noSleep": "Nenhum sono registrado hoje.",
+      "wokeAt": "Acordou às {{time}}.",
+      "bedAt": "Hora de dormir às {{time}}.",
+      "nowAt": "Agora são {{time}}.",
+      "windowAt": "Janela da soneca de {{from}} a {{to}}."
     }
   },
   "insights": {

@@ -100,7 +100,7 @@ describe('useNowScreen', () => {
     await waitFor(() =>
       expect(result.current.model!.tiles[1]).toMatchObject({ detail: { content: 'WET' } }),
     );
-    expect(result.current.toast?.current?.message).toBe('Diaper · Wet');
+    expect(result.current.toast?.current?.message).toBe('Diaper logged, Wet');
   });
 
   it('lists what another caregiver logged since the last open, with the member name', async () => {

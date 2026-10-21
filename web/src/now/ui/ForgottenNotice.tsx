@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { RADIUS } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
+import { Illustration } from '../../ui/illustrations';
 
 interface Props {
   /** "Still running? Tummy time has run for 3h 40m". */
@@ -12,13 +13,15 @@ interface Props {
   /** "Still going": keeps the timer and hides the notice for a while. */
   onKeep: () => void;
   disabled?: boolean;
+  /** Illustration key of the timer (`nap`, `tummy_time`...), drawn small beside the text. */
+  art?: string;
 }
 
 /**
  * A running timer that probably was not stopped (docs/design/03-interaction.md section 3): a calm
  * amber note with the suggested end and the way to keep it running. No modal, no red.
  */
-export function ForgottenNotice({ title, endLabel, onEnd, onKeep, disabled = false }: Props) {
+export function ForgottenNotice({ title, endLabel, onEnd, onKeep, disabled = false, art }: Props) {
   const { t } = useTranslation();
   return (
     <Box
@@ -31,9 +34,12 @@ export function ForgottenNotice({ title, endLabel, onEnd, onKeep, disabled = fal
         color: palette(theme).category.diaper.fg,
       })}
     >
-      <Typography variant="body2" sx={{ fontWeight: 600, color: 'inherit' }}>
-        {title}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+        {art && <Illustration name={art} size={32} />}
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'inherit' }}>
+          {title}
+        </Typography>
+      </Box>
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
         <Button
           size="small"

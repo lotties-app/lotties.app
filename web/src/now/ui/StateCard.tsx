@@ -1,17 +1,24 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Card, Chip, LinearProgress, Typography } from '@mui/material';
+import { Box, Button, ButtonBase, Card, Chip, LinearProgress, Typography } from '@mui/material';
 import { formatDuration, formatTime } from '../../i18n/format';
 import type { PredictionConfidence, PredictionDto } from '../../sync/contract';
 import { RADIUS, type CategoryName } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
 import type { IconName } from '../../ui/icons';
+import { Illustration } from '../../ui/illustrations';
 import type { AsleepState, AwakeState, LearningState, NapWindow, NightWaking } from '../nowState';
 import { sleepActionLabel } from '../nowText';
 import type { SleepAction, SleepActionKind } from '../sleepToggle';
 import type { NowScreenModel } from '../useNow';
+import { napWindowKey, readSkippedNap, writeSkippedNap } from '../napGuidance';
+import { readNowView, writeNowView, type NowView } from '../ringPrefs';
+import { DayRing } from './DayRing';
 import { DayRuler } from './DayRuler';
+import { NapSheet } from './NapSheet';
+import { RhythmToggle } from './RhythmToggle';
 import { ForgottenNotice } from './ForgottenNotice';
 import type { NowAction } from './useNowAction';
 import { WhySheet } from './WhySheet';
@@ -35,6 +42,8 @@ const CONFIDENCE_LABEL = {
 
 export interface StateCardProps {
   model: NowScreenModel;
+  /** Keys the skipped nap prediction. */
+  babyId: string;
   babyName: string;
   action: NowAction;
   /** The full sleep prediction (typical length), for the Why sheet. */
@@ -77,16 +86,61 @@ function StatePill({
   );
 }
 
+/**
+ * The top of the state card: the state pill, the live duration in the serif numerals and the
+ * "since" line on the left, the illustration of the state (96 px, soft glow in light and dark) on
+ * the right. The drawing is decoration: the pill and the numbers carry the meaning.
+ */
+function StateHero({
+  illustration,
+  pill,
+  duration,
+  since,
+}: {
+  illustration: string;
+  pill: ReactNode;
+  duration: string;
+  since: string;
+}) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+      <Box sx={{ minWidth: 0 }}>
+        {pill}
+        <Typography
+          variant="hero"
+          component="p"
+          data-testid="state-duration"
+          sx={{ mt: 1, fontSize: 'clamp(2.25rem, 11vw, 3rem)', overflowWrap: 'anywhere' }}
+        >
+          {duration}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" component="p">
+          {since}
+        </Typography>
+      </Box>
+      <Illustration name={illustration} size={96} glow />
+    </Box>
+  );
+}
+
 function NapWindowBlock({
   state,
   window,
   now,
+  view,
+  onView,
+  ring,
   onWhy,
+  onOpen,
 }: {
   state: AwakeState;
   window: NapWindow;
   now: Date;
+  view: NowView;
+  onView: (view: NowView) => void;
+  ring: ReactNode;
   onWhy: () => void;
+  onOpen: () => void;
 }) {
   const { t } = useTranslation();
   const nowMs = now.getTime();
@@ -115,17 +169,45 @@ function NapWindowBlock({
           {t('predictions.why')}
         </Button>
       </Box>
-      <Typography variant="body1" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-        {t('now.nap.range', { from: formatTime(window.earliest), to: formatTime(window.latest) })}
-        <Typography component="span" color="text.secondary" sx={{ fontWeight: 400 }}>
-          {` · ${status}`}
+      <ButtonBase
+        onClick={onOpen}
+        aria-label={t('now.nap.openDetails', {
+          from: formatTime(window.earliest),
+          to: formatTime(window.latest),
+        })}
+        aria-haspopup="dialog"
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 1,
+          width: '100%',
+          minHeight: 44,
+          textAlign: 'start',
+          borderRadius: `${RADIUS.input}px`,
+        }}
+      >
+        <Typography variant="body1" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {t('now.nap.range', {
+            from: formatTime(window.earliest),
+            to: formatTime(window.latest),
+          })}
+          <Typography component="span" color="text.secondary" sx={{ fontWeight: 400 }}>
+            {` · ${status}`}
+          </Typography>
         </Typography>
-      </Typography>
-      <DayRuler
-        since={state.since}
-        now={now}
-        window={{ earliest: window.earliest, latest: window.latest }}
-      />
+        <Icon name="chevron-right" size={20} />
+      </ButtonBase>
+      {view === 'ring' ? (
+        ring
+      ) : (
+        <DayRuler
+          since={state.since}
+          now={now}
+          window={{ earliest: window.earliest, latest: window.latest }}
+        />
+      )}
+      <RhythmToggle view={view} onChange={onView} />
     </Box>
   );
 }
@@ -223,8 +305,8 @@ function AskBlock({
 }) {
   const { t } = useTranslation();
   const options = [
-    { kind: 'fell_asleep', category: 'sleep', icon: 'moon', label: t('now.ask.sleeping') },
-    { kind: 'woke_up', category: 'care', icon: 'sun', label: t('now.ask.awake') },
+    { kind: 'fell_asleep', category: 'sleep', art: 'fell_asleep', label: t('now.ask.sleeping') },
+    { kind: 'woke_up', category: 'care', art: 'woke_up', label: t('now.ask.awake') },
   ] as const;
   return (
     <Box sx={{ textAlign: 'center' }}>
@@ -264,7 +346,7 @@ function AskBlock({
               '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
             })}
           >
-            <Icon name={option.icon} size={32} />
+            <Illustration name={option.art} size={64} />
             {option.label}
           </Box>
         ))}
@@ -283,10 +365,12 @@ function AsleepBlock({ state }: { state: AsleepState }) {
         sleepTime: formatTime(state.since),
       })
     : t('now.state.since', { time: formatTime(state.since) });
+  const illustration = waking ? 'night_waking' : state.sleepKind === 'night' ? 'night' : 'nap';
   return (
-    <>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-        {waking ? (
+    <StateHero
+      illustration={illustration}
+      pill={
+        waking ? (
           <StatePill category="nightWaking" icon="eye" label={t('now.state.nightWaking')} />
         ) : (
           <StatePill
@@ -296,15 +380,54 @@ function AsleepBlock({ state }: { state: AsleepState }) {
               state.sleepKind === 'night' ? t('now.state.asleepNight') : t('now.state.asleepNap')
             }
           />
-        )}
-        <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-          {sinceLine}
-        </Typography>
+        )
+      }
+      duration={formatDuration(minutes * MINUTE_MS)}
+      since={sinceLine}
+    />
+  );
+}
+
+/** "Asleep · Nap" / "Night waking" for the middle of the ring. */
+function asleepLabel(state: AsleepState, t: TFunction): string {
+  if (state.nightWaking) return t('now.state.nightWaking');
+  return state.sleepKind === 'night' ? t('now.state.asleepNight') : t('now.state.asleepNap');
+}
+
+const asleepMinutes = (state: AsleepState) => state.nightWaking?.minutes ?? state.minutes;
+
+/**
+ * Under the asleep hero: the day ring when that view is chosen, otherwise a quiet button that
+ * offers it (the ruler only exists while awake).
+ */
+function RhythmFooter({
+  view,
+  onView,
+  ring,
+}: {
+  view: NowView;
+  onView: (view: NowView) => void;
+  ring: ReactNode;
+}) {
+  const { t } = useTranslation();
+  if (view !== 'ring') {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+        <Button
+          color="inherit"
+          onClick={() => onView('ring')}
+          sx={{ minHeight: 44, color: 'text.secondary' }}
+        >
+          {t('now.ring.show')}
+        </Button>
       </Box>
-      <Typography variant="hero" component="p" data-testid="state-duration" sx={{ mt: 1 }}>
-        {formatDuration(minutes * MINUTE_MS)}
-      </Typography>
-    </>
+    );
+  }
+  return (
+    <Box sx={{ mt: 2 }}>
+      {ring}
+      <RhythmToggle view={view} onChange={onView} />
+    </Box>
   );
 }
 
@@ -315,6 +438,7 @@ function AsleepBlock({ state }: { state: AsleepState }) {
  */
 export function StateCard({
   model,
+  babyId,
   babyName,
   action,
   prediction,
@@ -324,12 +448,38 @@ export function StateCard({
 }: StateCardProps) {
   const { t } = useTranslation();
   const [whyOpen, setWhyOpen] = useState(false);
+  const [napOpen, setNapOpen] = useState(false);
+  const [view, setViewState] = useState<NowView>(readNowView);
+  const [skipped, setSkipped] = useState(() => readSkippedNap(babyId));
   const { state, now } = model;
+  const setView = (next: NowView) => {
+    setViewState(next);
+    writeNowView(next);
+  };
+  const skipNap = (key: string | null) => {
+    setSkipped(key);
+    writeSkippedNap(babyId, key);
+  };
   const disabled = model.readOnly;
   const run = (kind: SleepActionKind) =>
     void action.run(() =>
       model.commands.sleep(kind, state.kind === 'asleep' ? undefined : state.sleepKindHint),
     );
+
+  const ringFor = (
+    stateLabel: string,
+    duration: string,
+    window?: { earliest: string; latest: string },
+  ) => (
+    <DayRing
+      events={model.events}
+      types={model.types}
+      now={now}
+      {...(window ? { window } : {})}
+      stateLabel={stateLabel}
+      duration={duration}
+    />
+  );
 
   const forgotten =
     state.kind === 'asleep' ? (state.nightWaking?.forgotten ?? state.forgotten) : undefined;
@@ -342,28 +492,33 @@ export function StateCard({
         <AskBlock babyName={babyName} onRun={run} disabled={disabled} />
       ) : state.kind === 'awake' ? (
         <>
-          <Box
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
-          >
-            <StatePill category="care" icon="sun" label={t('now.state.awake')} />
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-              {state.after === 'nap'
+          <StateHero
+            illustration="woke_up"
+            pill={<StatePill category="care" icon="sun" label={t('now.state.awake')} />}
+            duration={formatDuration(state.awakeMinutes * MINUTE_MS)}
+            since={
+              state.after === 'nap'
                 ? t('now.state.sinceAfterNap', { time: formatTime(state.since) })
                 : state.after === 'night'
                   ? t('now.state.sinceAfterNight', { time: formatTime(state.since) })
-                  : t('now.state.since', { time: formatTime(state.since) })}
-            </Typography>
-          </Box>
-          <Typography variant="hero" component="p" data-testid="state-duration" sx={{ mt: 1 }}>
-            {formatDuration(state.awakeMinutes * MINUTE_MS)}
-          </Typography>
-          {state.window ? (
+                  : t('now.state.since', { time: formatTime(state.since) })
+            }
+          />
+          {state.window && napWindowKey(state.window) !== skipped ? (
             <>
               <NapWindowBlock
                 state={state}
                 window={state.window}
                 now={now}
+                view={view}
+                onView={setView}
+                ring={ringFor(
+                  t('now.state.awake'),
+                  formatDuration(state.awakeMinutes * MINUTE_MS),
+                  state.window,
+                )}
                 onWhy={() => setWhyOpen(true)}
+                onOpen={() => setNapOpen(true)}
               />
               <WhySheet
                 open={whyOpen}
@@ -371,18 +526,71 @@ export function StateCard({
                 window={state.window}
                 prediction={prediction}
               />
+              <NapSheet
+                open={napOpen}
+                onClose={() => setNapOpen(false)}
+                window={state.window}
+                {...(prediction?.expectedDuration
+                  ? { expectedMinutes: prediction.expectedDuration.minutes }
+                  : {})}
+                now={now}
+                readOnly={model.readOnly}
+                onSkip={() => {
+                  setNapOpen(false);
+                  skipNap(napWindowKey(state.window!));
+                }}
+                onLog={() => {
+                  setNapOpen(false);
+                  run('fell_asleep');
+                }}
+              />
             </>
-          ) : state.learning ? (
-            <LearningBlock learning={state.learning} babyName={babyName} />
+          ) : state.window ? (
+            <Box
+              sx={(theme) => ({
+                mt: 2,
+                p: 1.5,
+                borderRadius: `${RADIUS.input}px`,
+                backgroundColor: palette(theme).surfaceRaised,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+              })}
+            >
+              <Typography variant="body2" color="text.secondary">
+                {t('now.napSheet.skipped')}
+              </Typography>
+              <Button size="small" onClick={() => skipNap(null)} sx={{ minHeight: 44 }}>
+                {t('now.napSheet.show')}
+              </Button>
+            </Box>
           ) : null}
+          {state.window && napWindowKey(state.window) === skipped && null}
+          {state.learning && <LearningBlock learning={state.learning} babyName={babyName} />}
+          {(!state.window || napWindowKey(state.window) === skipped) && (
+            <RhythmFooter
+              view={view}
+              onView={setView}
+              ring={ringFor(t('now.state.awake'), formatDuration(state.awakeMinutes * MINUTE_MS))}
+            />
+          )}
         </>
       ) : (
-        <AsleepBlock state={state} />
+        <>
+          <AsleepBlock state={state} />
+          <RhythmFooter
+            view={view}
+            onView={setView}
+            ring={ringFor(asleepLabel(state, t), formatDuration(asleepMinutes(state) * MINUTE_MS))}
+          />
+        </>
       )}
 
       {forgotten && !isSnoozed(forgottenEventId) && state.kind === 'asleep' && (
         <Box sx={{ mt: 2 }}>
           <ForgottenNotice
+            art={state.nightWaking ? 'night_waking' : state.sleepKind === 'night' ? 'night' : 'nap'}
             title={
               state.nightWaking
                 ? t('now.forgotten.waking', {
