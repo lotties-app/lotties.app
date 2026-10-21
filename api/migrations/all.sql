@@ -441,3 +441,23 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021043358_SleepKindFellAsleep') THEN
+    UPDATE event_types SET fields = '[{"key":"kind","label":"Kind","kind":"select","isRequired":false,"options":["nap","night","night_waking","bed_time","woke_up","fell_asleep"]},{"key":"mood","label":"Mood","kind":"text","isRequired":false}]'
+    WHERE id = '5cbe3692-d4df-4d5f-85d6-2282d9733b35';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261021043358_SleepKindFellAsleep') THEN
+    INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
+    VALUES ('20261021043358_SleepKindFellAsleep', '8.0.11');
+    END IF;
+END $EF$;
+COMMIT;
+

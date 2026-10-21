@@ -44,7 +44,7 @@ public static class BuiltInEventTypes
         HexColor.From("#7e57c2"),
         hasDuration: true,
         [
-            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["nap", "night", "night_waking", "bed_time", "woke_up"]),
+            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["nap", "night", "night_waking", "bed_time", "woke_up", "fell_asleep"]),
             EventFieldDefinition.Create("mood", "Mood", EventFieldKind.Text),
         ]);
 

@@ -131,4 +131,54 @@ public sealed class SleepSessionTests
         Assert.Equal(4, prediction.SampleCount);
         Assert.Equal(TimeSpan.FromHours(23), prediction.Reason.MedianGap);
     }
+
+    private static IEnumerable<ObservedEvent> FellAsleepNight(int day) =>
+    [
+        Marker(SleepKinds.BedTime, At(day, 20)),
+        Marker(SleepKinds.FellAsleep, At(day, 20, 25)),
+        Logged(SleepKinds.Night, At(day, 20, 25), At(day + 1, 6, 30)),
+        Logged(SleepKinds.NightWaking, At(day + 1, 2), At(day + 1, 2, 20)),
+        Marker(SleepKinds.WokeUp, At(day + 1, 6, 30)),
+    ];
+
+    [Fact]
+    public void Predict_FellAsleepMarkerWithNightTimer_CountsTheNightOnce()
+    {
+        var now = At(0, 18);
+        var events = Enumerable.Range(1, 7).SelectMany(day => FellAsleepNight(-day));
+
+        var prediction = PredictSleep(events, now);
+
+        Assert.Equal(PredictionBasis.AwakeWindow, prediction.Reason.Basis);
+        Assert.Equal(TimeSpan.FromHours(10.5), prediction.ExpectedDuration!.Median);
+        Assert.Equal(TimeSpan.FromHours(13.5), prediction.Reason.MedianGap);
+        Assert.Equal(6, prediction.SampleCount);
+    }
+
+    [Fact]
+    public void Predict_FellAsleepMarkerAloneOrBeforeNapTimer_IsNotASession()
+    {
+        var events = Enumerable.Range(1, 5).SelectMany(day => new[]
+        {
+            Marker(SleepKinds.FellAsleep, At(-day, 13)),
+            Logged(SleepKinds.Nap, At(-day, 13, 2), At(-day, 14)),
+            Marker(SleepKinds.FellAsleep, At(-day, 17)),
+        });
+
+        var prediction = PredictSleep(events, At(0, 12));
+
+        Assert.Equal(4, prediction.SampleCount);
+        Assert.Equal(TimeSpan.FromMinutes(58), prediction.ExpectedDuration!.Median);
+    }
+
+    [Fact]
+    public void Predict_FellAsleepMarkerOnly_ReportsInsufficientDataWithoutSessions()
+    {
+        var events = Enumerable.Range(1, 5).Select(day => Marker(SleepKinds.FellAsleep, At(-day, 13)));
+
+        var result = Predict(events, Context(At(0, 12)));
+
+        Assert.Empty(result.Predictions);
+        Assert.Equal(0, Assert.Single(result.InsufficientData).SampleCount);
+    }
 }

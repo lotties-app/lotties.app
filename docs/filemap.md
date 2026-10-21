@@ -64,6 +64,7 @@
 - api/src/BabyRoutine.Infrastructure/Persistence/Repositories/EfImportRepository.cs — chunked id lookups, one-transaction chunked bulk insert
 - api/src/BabyRoutine.Api/Endpoints/ImportEndpoints.cs — `/babies/{babyId}/import/napper[/preview]` (contract in docs/SPEC.md "Napper import API")
 - api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_SleepKindBedWake.cs — adds bed_time/woke_up to the built-in sleep kind options
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_SleepKindFellAsleep.cs — adds fell_asleep to the built-in sleep kind options
 - api/tests/BabyRoutine.Api.Tests/Imports/ — CSV/parser unit tests, import endpoint and repository tests; Fixtures/ — small synthetic Napper CSVs (never real exports)
 - api/tests/BabyRoutine.Domain.Tests/Imports/ — mapping, medication matching/resolution, planner and id tests
 - web/src/timeline/ — day-grouped timeline, filters, row, payload summaries

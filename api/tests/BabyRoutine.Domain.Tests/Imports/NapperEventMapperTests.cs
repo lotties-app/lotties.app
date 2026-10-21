@@ -111,6 +111,15 @@ public sealed class NapperEventMapperTests
         Assert.Equal(Offset.AddMinutes(90), draft.EndedAt);
     }
 
+    [Fact]
+    public void Map_NapperSleepCategories_NeverProduceTheFellAsleepKind()
+    {
+        var kinds = new[] { "NAP", "NIGHT_WAKING", "BED_TIME", "WOKE_UP" }
+            .Select(category => Text(Mapped(Row(category, Offset, Offset.AddMinutes(90))).Payload, "kind"));
+
+        Assert.DoesNotContain("fell_asleep", kinds);
+    }
+
     [Theory]
     [InlineData("BED_TIME", "bed_time")]
     [InlineData("WOKE_UP", "woke_up")]

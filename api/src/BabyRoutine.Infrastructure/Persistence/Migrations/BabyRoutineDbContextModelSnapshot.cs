@@ -227,7 +227,7 @@ namespace BabyRoutine.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("5cbe3692-d4df-4d5f-85d6-2282d9733b35"),
                             Color = "#7e57c2",
-                            Fields = "[{\"key\":\"kind\",\"label\":\"Kind\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"nap\",\"night\",\"night_waking\",\"bed_time\",\"woke_up\"]},{\"key\":\"mood\",\"label\":\"Mood\",\"kind\":\"text\",\"isRequired\":false}]",
+                            Fields = "[{\"key\":\"kind\",\"label\":\"Kind\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"nap\",\"night\",\"night_waking\",\"bed_time\",\"woke_up\",\"fell_asleep\"]},{\"key\":\"mood\",\"label\":\"Mood\",\"kind\":\"text\",\"isRequired\":false}]",
                             HasDuration = true,
                             Icon = "bedtime",
                             Key = "sleep",

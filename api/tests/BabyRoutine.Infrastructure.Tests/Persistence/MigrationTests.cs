@@ -34,12 +34,12 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtThenWave2Hardening()
+    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningThenSleepKindFellAsleep()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
@@ -67,6 +67,17 @@ public sealed class MigrationTests
 
         Assert.Contains("\"night_waking\",\"bed_time\",\"woke_up\"", script, StringComparison.Ordinal);
         Assert.Contains("SleepKindBedWake", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_AddsFellAsleepSleepKind()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+
+        Assert.Contains("\"bed_time\",\"woke_up\",\"fell_asleep\"", script, StringComparison.Ordinal);
+        Assert.Contains("SleepKindFellAsleep", script, StringComparison.Ordinal);
     }
 
     [Fact]
