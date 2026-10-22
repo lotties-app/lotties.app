@@ -11,7 +11,14 @@ import type { IconName } from '../../ui/icons';
 import { Illustration } from '../../ui/illustrations';
 import type { AsleepState, AwakeState, LearningState, NapWindow, NightWaking } from '../nowState';
 import { sleepActionLabel } from '../nowText';
-import type { SleepAction, SleepActionKind } from '../sleepToggle';
+import { LockedNote } from '../../baby/LockedNote';
+import { typeForKey } from '../eventFacts';
+import {
+  changesRunningSleep,
+  runningSleepLock,
+  type SleepAction,
+  type SleepActionKind,
+} from '../sleepToggle';
 import type { NowScreenModel } from '../useNow';
 import { napWindowKey, readSkippedNap, writeSkippedNap } from '../napGuidance';
 import { readNowView, writeNowView, type NowView } from '../ringPrefs';
@@ -259,20 +266,26 @@ function SleepButtons({
   actions,
   onRun,
   disabled,
+  lockedBy = null,
 }: {
   actions: SleepAction[];
   onRun: (kind: SleepActionKind) => void;
   disabled: boolean;
+  /** Who started the running sleep the user may not change (see `runningSleepLock`). */
+  lockedBy?: string | null;
 }) {
   const [primary, ...others] = actions;
   if (!primary) return null;
+  const off = (kind: SleepActionKind) =>
+    disabled || (lockedBy !== null && changesRunningSleep(kind));
+  const locked = !disabled && lockedBy !== null && actions.some((a) => changesRunningSleep(a.kind));
   return (
     <>
       <Button
         variant="contained"
         size="large"
         fullWidth
-        disabled={disabled}
+        disabled={off(primary.kind)}
         startIcon={<Icon name={ACTION_ICON[primary.kind]} size={24} />}
         onClick={() => onRun(primary.kind)}
         sx={{ mt: 2, minHeight: 64, fontSize: '1.0625rem' }}
@@ -285,13 +298,18 @@ function SleepButtons({
             <Button
               key={other.kind}
               color="inherit"
-              disabled={disabled}
+              disabled={off(other.kind)}
               onClick={() => onRun(other.kind)}
               sx={{ minHeight: 44, color: 'text.secondary' }}
             >
               {sleepActionLabel(other.kind)}
             </Button>
           ))}
+        </Box>
+      )}
+      {locked && (
+        <Box sx={{ mt: 1 }}>
+          <LockedNote name={lockedBy} />
         </Box>
       )}
     </>
@@ -466,6 +484,11 @@ export function StateCard({
     writeSkippedNap(babyId, key);
   };
   const disabled = model.readOnly;
+  const sleepLock = runningSleepLock(
+    model.running,
+    typeForKey(model.types, 'sleep')?.id,
+    model.access.controlLockedBy,
+  );
   const run = (kind: SleepActionKind) =>
     void action.run(() =>
       model.commands.sleep(kind, state.kind === 'asleep' ? undefined : state.sleepKindHint),
@@ -593,6 +616,7 @@ export function StateCard({
             event={timerEvent}
             type={model.types.find((candidate) => candidate.id === timerEvent?.typeId)}
             readOnly={model.readOnly}
+            lockedBy={model.access.controlLockedBy(timerEvent)}
             action={action}
           />
           <RhythmFooter
@@ -623,13 +647,18 @@ export function StateCard({
             endLabel={t('now.forgotten.wokeAt', { time: formatTime(forgotten.suggestedEnd) })}
             onEnd={() => onEndAt(forgottenEventId, forgotten.suggestedEnd)}
             onKeep={() => onKeepRunning(forgottenEventId)}
-            disabled={model.readOnly}
+            disabled={model.readOnly || model.access.controlLockedBy(timerEvent) !== null}
           />
         </Box>
       )}
 
       {state.kind !== 'unknown' && (
-        <SleepButtons actions={model.sleepActions} onRun={run} disabled={disabled} />
+        <SleepButtons
+          actions={model.sleepActions}
+          onRun={run}
+          disabled={disabled}
+          lockedBy={sleepLock}
+        />
       )}
     </Card>
   );

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { canWrite } from '../baby/permissions';
+import { eventAccess, type EventAccess } from '../baby/useEventAccess';
 import {
   useEventTypes,
   useEventsStartedSince,
@@ -65,8 +65,13 @@ export interface NowScreenModel {
   meds: MedicationStatuses;
   /** The last 3 days plus running timers, newest first. */
   events: BabyEvent[];
-  /** Viewers read; the commands are for Parents and Owners. */
+  /** Viewers read; the commands are for Owners, Parents and Caregivers. */
   readOnly: boolean;
+  /**
+   * Per event: whether the user may change it, and who logged it (a Caregiver changes only their
+   * own entries: someone else's running timer shows "Started by" instead of its controls).
+   */
+  access: EventAccess;
   commands: NowCommands;
 }
 
@@ -112,6 +117,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
   const meds = useMedicationStatuses(baby.id);
   const commands = useNowCommands(baby, types ?? EMPTY_TYPES);
   const bottleHistory = useBottleHistory(baby.id);
+  const access = useMemo(() => eventAccess(baby, members), [baby, members]);
 
   const events = useMemo(
     () => (recent && runningTimers ? mergeRunning(recent, runningTimers) : undefined),
@@ -163,7 +169,8 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       medications,
       meds,
       events,
-      readOnly: !canWrite(baby),
+      readOnly: !access.canLog,
+      access,
       commands,
     };
   }, [
@@ -174,7 +181,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
     meds,
     runningTimers,
     handover.acknowledge,
-    baby,
+    access,
     commands,
   ]);
 }

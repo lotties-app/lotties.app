@@ -28,6 +28,7 @@ import { effectiveElapsedSeconds, isPaused, readPause } from './pauseMath';
 import { timerKindOf } from './runningTimers';
 import { PauseAnnouncer, PauseResumeButton, PausedClock } from './TimerParts';
 import { useTimerTitle } from './useTimerTitle';
+import { LockedNote } from '../baby/LockedNote';
 import { TimerTarget } from './TimerTarget';
 import type { TimerCommands } from './useTimerCommands';
 
@@ -37,6 +38,16 @@ interface Props {
   /** The running timer (live: the owner passes the stored copy). */
   event: BabyEvent;
   readOnly: boolean;
+  /**
+   * Who started the timer when the user may not change it (a Caregiver and someone else's timer,
+   * `EventAccess.lockedBy`): the menu, Discard and the details are off, and the sheet says why.
+   */
+  lockedBy?: string | null;
+  /**
+   * Who started it when the user may not even stop or pause it (`EventAccess.controlLockedBy`; a
+   * Caregiver may stop, pause and resume someone else's timer, except a nursing session).
+   */
+  controlLockedBy?: string | null;
   onClose: () => void;
   /** Stops the timer (asking for missing required fields first); the sheet closes. */
   onStop: (event: BabyEvent, name: string) => void;
@@ -87,13 +98,17 @@ export function TimerSheet({
   babyId,
   types,
   event,
-  readOnly,
+  readOnly: viewOnly,
+  lockedBy = null,
+  controlLockedBy = null,
   onClose,
   onStop,
   onEditAll,
   commands,
   run,
 }: Props) {
+  const readOnly = viewOnly || lockedBy !== null;
+  const controlOff = viewOnly || controlLockedBy !== null;
   const { t } = useTranslation();
   const names = useEventTypeText();
   const title = useTimerTitle();
@@ -160,15 +175,17 @@ export function TimerSheet({
           <IconButton onClick={onClose} aria-label={t('timers.sheet.close')} edge="start">
             <Icon name="close" />
           </IconButton>
-          <IconButton
-            onClick={(e) => setMenu(e.currentTarget)}
-            aria-label={t('timers.sheet.more')}
-            aria-haspopup="menu"
-            aria-controls={menu ? menuId : undefined}
-            edge="end"
-          >
-            <Icon name="more" />
-          </IconButton>
+          {!readOnly && (
+            <IconButton
+              onClick={(e) => setMenu(e.currentTarget)}
+              aria-label={t('timers.sheet.more')}
+              aria-haspopup="menu"
+              aria-controls={menu ? menuId : undefined}
+              edge="end"
+            >
+              <Icon name="more" />
+            </IconButton>
+          )}
           <Menu id={menuId} anchorEl={menu} open={menu !== null} onClose={closeMenu}>
             <MenuEntry
               icon="clock"
@@ -265,14 +282,14 @@ export function TimerSheet({
             paused={paused}
             name={name}
             large
-            disabled={readOnly}
+            disabled={controlOff}
             onPress={() =>
               run(() => (paused ? commands.resume(event.id) : commands.pause(event.id)))
             }
           />
           <Button
             variant="contained"
-            disabled={readOnly}
+            disabled={controlOff}
             startIcon={<Icon name="stop" size={20} />}
             aria-label={t('timers.stopNamed', { name })}
             onClick={() => onStop(event, name)}
@@ -298,6 +315,11 @@ export function TimerSheet({
             <Icon name="delete" />
           </IconButton>
         </Box>
+        {controlLockedBy !== null ? (
+          <LockedNote name={controlLockedBy} />
+        ) : (
+          lockedBy !== null && <LockedNote name={lockedBy} kind="control" />
+        )}
 
         <Collapse in={panel === 'start'} unmountOnExit>
           <Box

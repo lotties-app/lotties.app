@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { BabyEvent, EventType, Medication, Prescription } from '../db/models';
 import type { EntitySyncState } from '../db/queries';
+import { isMedicationType } from '../events/formModel';
 import { formatElapsed, useNow } from '../events/time';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatTime } from '../i18n/format';
@@ -32,6 +33,16 @@ interface Props {
   onStop?: (event: BabyEvent) => void;
   /** Viewers can look but not edit. */
   readOnly?: boolean;
+  /**
+   * Someone else's entry the user may not change (a Caregiver): tapping opens it read-only, and
+   * the row is named so.
+   */
+  viewOnly?: boolean;
+  /**
+   * Who logged it when that was someone else (`''`: name unknown); `null` for the user's own.
+   * A medication shows "Given by" with it.
+   */
+  author?: string | null;
   /** Briefly ringed after "Show in list" on the ribbon. */
   highlighted?: boolean;
 }
@@ -235,9 +246,14 @@ export function DayRow({
   onEdit,
   onStop,
   readOnly = false,
+  viewOnly = false,
+  author = null,
   highlighted = false,
 }: Props) {
   const { t } = useTranslation();
+  const authorName = author || t('access.someoneElse');
+  const givenBy =
+    author !== null && isMedicationType(type) ? t('access.givenBy', { name: authorName }) : '';
   const names = useEventTypeText();
   const view = presentEvent(event, type, medications, names, prescriptions);
   const running = event.endedAt === null;
@@ -306,7 +322,11 @@ export function DayRow({
           onClick={() => onEdit(event)}
           disabled={readOnly}
           aria-label={
-            readOnly ? `${view.title}, ${time}` : t('day.editRow', { title: view.title, time })
+            readOnly
+              ? `${view.title}, ${time}`
+              : viewOnly
+                ? t('day.viewRow', { title: view.title, time, name: authorName })
+                : t('day.editRow', { title: view.title, time })
           }
           sx={{
             flex: '1 1 auto',
@@ -328,6 +348,11 @@ export function DayRow({
           {detail && (
             <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
               {detail}
+            </Typography>
+          )}
+          {givenBy && (
+            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+              {givenBy}
             </Typography>
           )}
         </ButtonBase>

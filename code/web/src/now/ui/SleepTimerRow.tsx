@@ -15,6 +15,11 @@ interface Props {
   event: BabyEvent | undefined;
   type: EventType | undefined;
   readOnly: boolean;
+  /**
+   * Who started the timer when the user may not pause it (`EventAccess.controlLockedBy`); the state
+   * card's sleep buttons explain it.
+   */
+  lockedBy?: string | null;
   action: NowAction;
 }
 
@@ -23,7 +28,15 @@ interface Props {
  * waking), "Paused 02:10" live while paused, and Pause/Resume. Pausing means the baby stirred or
  * was briefly awake: it is not "woke up", the sleep toggle below is unchanged.
  */
-export function SleepTimerRow({ state, babyId, event, type, readOnly, action }: Props) {
+export function SleepTimerRow({
+  state,
+  babyId,
+  event,
+  type,
+  readOnly,
+  lockedBy = null,
+  action,
+}: Props) {
   const title = useTimerTitle();
   const nowMs = useNow(1000);
   const commands = useTimerCommands();
@@ -40,7 +53,7 @@ export function SleepTimerRow({ state, babyId, event, type, readOnly, action }: 
           variant="inline"
           paused={paused}
           name={name}
-          disabled={readOnly}
+          disabled={readOnly || lockedBy !== null}
           onPress={() =>
             void action.run(() => (paused ? commands.resume(event.id) : commands.pause(event.id)))
           }

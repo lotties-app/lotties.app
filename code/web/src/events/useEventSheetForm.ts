@@ -19,6 +19,7 @@ import {
   type FormProblem,
 } from './formModel';
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
+import { fillEmptyFields } from './stopPlan';
 
 /** Required choices that are never pre-selected: a wrong silent value costs more than one tap. */
 const NEVER_DEFAULT: ReadonlyMap<string, string> = new Map([['diaper', 'content']]);
@@ -124,7 +125,10 @@ export function useEventSheetForm(props: EventSheetProps) {
 
   const persist = async (selected: EventType) => {
     if (event && finish) {
-      const payload = buildPayload(form, selected, event.payload);
+      const built = buildPayload(form, selected, event.payload);
+      const payload = finish.restricted
+        ? fillEmptyFields(event.payload, built, finish.fields)
+        : built;
       await commands.finish(event.id, payload, finish.endedAt);
       return payload;
     }

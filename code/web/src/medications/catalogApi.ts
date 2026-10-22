@@ -1,5 +1,6 @@
 import { ApiError } from '../api/ApiError';
 import type { ApiClient } from '../api/apiClient';
+import { productKey } from '../db/catalogCache';
 import {
   apiPaths,
   type CreateProductRequest,
@@ -15,10 +16,30 @@ export const CATALOG_MIN_QUERY = 2;
 export const CATALOG_MAX_QUERY = 100;
 export const CATALOG_SEARCH_LIMIT = 10;
 
+/** How a search result matched: by its name (or a merged alias), or by one of its active ingredients. */
+export type CatalogMatchKind = ProductMatchDto['matchedBy'];
+
 /** A product with the other products that contain the same active ingredient (information only). */
 export interface CatalogMatch {
   product: ProductDto;
   siblings: SiblingProductDto[];
+  matchedBy: CatalogMatchKind;
+}
+
+/** Official products come from the official registry the importer read (ANVISA): labelled and attributed. */
+export function isOfficial(product: Pick<ProductDto, 'status'>): boolean {
+  return product.status === 'official';
+}
+
+/** Curated products come from the importer's small curated list (not reviewed by a pharmacist). */
+export function isCurated(product: Pick<ProductDto, 'status'>): boolean {
+  return product.status === 'curated';
+}
+
+/** Order of lists, like the API: official first, then curated, then the rest. */
+export function sourceRank(product: Pick<ProductDto, 'status'>): number {
+  if (isOfficial(product)) return 0;
+  return isCurated(product) ? 1 : 2;
 }
 
 export async function searchProducts(
@@ -33,6 +54,12 @@ export async function searchProducts(
   return (Array.isArray(list) ? list : []).map((match) => ({
     product: match.product,
     siblings: match.sameActiveIngredient ?? [],
+    matchedBy:
+      match.matchedBy === 'substance'
+        ? 'substance'
+        : match.matchedBy === 'alias'
+          ? 'alias'
+          : 'name',
   }));
 }
 
@@ -42,9 +69,14 @@ export interface CreatedProduct {
   existed: boolean;
 }
 
-function isProduct(value: unknown): value is ProductDto {
+export function isProduct(value: unknown): value is ProductDto {
   const product = value as Partial<ProductDto> | null;
-  return typeof product === 'object' && product !== null && typeof product.id === 'string';
+  return (
+    typeof product === 'object' &&
+    product !== null &&
+    typeof product.id === 'string' &&
+    Array.isArray(product.substances)
+  );
 }
 
 /**
@@ -75,7 +107,10 @@ export function substanceNames(product: ProductDto, language: 'en' | 'pt-BR'): s
   return product.substances.map((s) => (language === 'pt-BR' ? s.namePtBr : s.nameEn) || s.key);
 }
 
-/** Cached products that share exactly the same non-empty substance set (offline siblings). */
+/**
+ * Cached products that share exactly the same non-empty substance set (offline siblings), like the
+ * API: active ones only, not the same name in another form, official first.
+ */
 export function siblingsIn(
   product: ProductDto,
   others: readonly ProductDto[],
@@ -87,8 +122,17 @@ export function siblingsIn(
       .join('|');
   const mine = ids(product);
   if (mine === '') return [];
+  const name = productKey(product.name);
   return others
-    .filter((o) => o.id !== product.id && !o.mergedIntoId && ids(o) === mine)
+    .filter(
+      (o) =>
+        o.id !== product.id &&
+        !o.mergedIntoId &&
+        !o.inactive &&
+        productKey(o.name) !== name &&
+        ids(o) === mine,
+    )
+    .sort((a, b) => sourceRank(a) - sourceRank(b))
     .slice(0, 10)
     .map(({ id, name, form, country, status }) => ({ id, name, form, country, status }));
 }

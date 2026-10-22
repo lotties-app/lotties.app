@@ -55,6 +55,19 @@ export function isPayloadRejection(error: unknown): error is ApiError {
   return error instanceof ApiError && error.status === 400 && error.code === 'validation_failed';
 }
 
+/** The server refused a change to an event someone else logged (a Caregiver: 403 `event_not_owned`). */
+export function isNotOwnedRejection(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 403 && error.code === 'event_not_owned';
+}
+
+/**
+ * A 403 without that code: the user's role no longer allows the write (demoted to Viewer or
+ * Caregiver, or removed, e.g. while offline).
+ */
+export function isRoleRejection(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 403 && !isNotOwnedRejection(error);
+}
+
 /**
  * A localized, user-facing sentence for a sync failure (shown in Settings > Sync and the header
  * tooltip). Server `detail` text and raw HTTP statuses are never shown.

@@ -160,9 +160,11 @@ describe('the day rhythm view', () => {
     // A text equivalent for the picture: the state, the sleep so far and the predicted window.
     const image = within(ring).getByRole('img');
     expect(image.getAttribute('aria-label')).toMatch(/^Day rhythm\. Awake 1h 52m\./);
-    expect(image.getAttribute('aria-label')).toMatch(/Nap window \d\d:\d\d to \d\d:\d\d\./);
+    expect(image.getAttribute('aria-label')).toMatch(/Next nap window \d\d:\d\d to \d\d:\d\d\./);
     expect(within(ring).getByTestId('ring-now')).toBeTruthy();
     expect(within(ring).getAllByTestId('ring-window').length).toBeGreaterThan(0);
+    expect(within(ring).getByTestId('ring-window-line').textContent).toMatch(/^Next nap about /);
+    expect(within(ring).getByRole('list', { name: 'What the ring shows' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ruler' }));
     expect(await screen.findByTestId('ruler-now')).toBeTruthy();

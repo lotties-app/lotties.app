@@ -220,6 +220,84 @@ describe('the global mini timer bar', () => {
     ).toBe(true);
   });
 
+  it('lets a caregiver pause and stop someone else’s timer, and nothing else about it', async () => {
+    await db.babies.put({
+      id: BABY_ID,
+      name: 'Lia',
+      birthDate: '2026-08-01',
+      role: 'Caregiver',
+      userId: 'u-me',
+    });
+    await db.eventTypes.bulkPut([SLEEP_TYPE, FEEDING_TYPE, TUMMY_TIME_TYPE]);
+    const nap = await start(SLEEP_TYPE, { kind: 'nap' }, 9);
+    await db.events.update(nap.id, { createdBy: 'u-ana' });
+    const api = fakeApi((call) =>
+      call.path.endsWith('/members')
+        ? [{ userId: 'u-ana', displayName: 'Ana', role: 'Parent', joinedAt: '2026-10-01' }]
+        : undefined,
+    ).api;
+    renderShell('/day', api);
+    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    expect(
+      (within(bar).getByRole('button', { name: 'Pause Nap' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (within(bar).getByRole('button', { name: 'Stop Nap' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+
+    fireEvent.click(within(bar).getByRole('button', { name: 'Open the Nap timer' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Nap' });
+    expect(
+      await within(sheet).findByText(
+        'Started by Ana. You can pause or stop it; only they or a parent can change the rest.',
+      ),
+    ).toBeTruthy();
+    expect(
+      (within(sheet).getByRole('button', { name: 'Stop Nap' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (within(sheet).getByRole('button', { name: 'Discard' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(within(sheet).queryByRole('button', { name: 'More options' })).toBeNull();
+
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Pause Nap' }));
+    await waitFor(async () => expect((await stored(nap.id)).payload.paused_at).toBeDefined());
+  });
+
+  it('keeps someone else’s nursing session locked for a caregiver (its side clock would change)', async () => {
+    await db.babies.put({
+      id: BABY_ID,
+      name: 'Lia',
+      birthDate: '2026-08-01',
+      role: 'Caregiver',
+      userId: 'u-me',
+    });
+    await db.eventTypes.bulkPut([SLEEP_TYPE, FEEDING_TYPE, TUMMY_TIME_TYPE]);
+    const nursing = await start(
+      FEEDING_TYPE,
+      { method: 'breast', side: 'left', side_since: minutesAgo(6) },
+      6,
+    );
+    await db.events.update(nursing.id, { createdBy: 'u-ana' });
+    renderShell('/day');
+    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    expect(within(bar).queryByRole('button', { name: /^Pause / })).toBeNull();
+    expect(within(bar).queryByRole('button', { name: /^Stop / })).toBeNull();
+  });
+
+  it('lets a caregiver pause and stop the timers they started', async () => {
+    await seed('Caregiver');
+    await start(TUMMY_TIME_TYPE, {}, 5);
+    renderShell('/day');
+    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    expect(
+      (within(bar).getByRole('button', { name: /^Pause / }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      (within(bar).getByRole('button', { name: /^Stop / }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
   it('shows the quiet target of a running nap from the predictions, with its progress', async () => {
     await seed();
     const nap = await start(SLEEP_TYPE, { kind: 'nap' }, 10);

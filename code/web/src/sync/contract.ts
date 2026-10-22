@@ -47,7 +47,9 @@ import {
  *          /babies/{id}/prescriptions/{id}. A prescription must reach the server before the events
  *          that name it (`medications[i].prescriptionId`), and its medication before it.
  * - Shared catalog: GET /catalog/products?q=, POST /catalog/products (409 `product_exists` carries
- *          the existing `product`).
+ *          the existing `product`), GET /catalog/products/{id} (a product a medication links to; pulled
+ *          for the family's linked products only, the catalog itself is never synced: official ANVISA
+ *          products are searched online, see docs/design/13-anvisa-catalog.md).
  * - Medication event payload: { medications: [{ medicationId, name, dose?, prescriptionId?, kgUsed?,
  *          override? }] }.
  * - Enum values (field kind, role) are strings, compared case-insensitively.
@@ -84,6 +86,7 @@ export const apiPaths = {
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
     query({ q, limit: limit === undefined ? undefined : String(limit) }),
+  catalogProduct: (productId: string) => `${API_PREFIX}/catalog/products/${enc(productId)}`,
   measurements: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/measurements`,
   measurement: (babyId: string, measurementId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/measurements/${enc(measurementId)}`,
@@ -129,6 +132,8 @@ export interface BabyDto {
   name: string;
   birthDate: string;
   role?: string;
+  /** The caller's own user id (additive; absent from older servers). */
+  userId?: string;
 }
 
 export interface FieldVisibilityDto {
@@ -508,7 +513,7 @@ export function fromEventDto(dto: EventDto): BabyEvent {
   };
 }
 
-const ROLES: readonly BabyRole[] = ['Owner', 'Parent', 'Viewer'];
+const ROLES: readonly BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer'];
 const FIELD_KINDS: readonly EventFieldKind[] = ['text', 'number', 'select', 'bool'];
 
 function matchEnum<T extends string>(values: readonly T[], raw: string | undefined): T | undefined {
@@ -518,7 +523,13 @@ function matchEnum<T extends string>(values: readonly T[], raw: string | undefin
 export function fromBabyDto(dto: BabyDto): Baby {
   const role = matchEnum(ROLES, dto.role);
   // A missing role degrades to the least privilege; the server enforces roles regardless.
-  return { id: dto.id, name: dto.name, birthDate: dto.birthDate, role: role ?? 'Viewer' };
+  return {
+    id: dto.id,
+    name: dto.name,
+    birthDate: dto.birthDate,
+    role: role ?? 'Viewer',
+    ...(typeof dto.userId === 'string' && dto.userId !== '' ? { userId: dto.userId } : {}),
+  };
 }
 
 /** A well-formed condition, else `null` (an unreadable condition never hides a field). */
@@ -734,10 +745,25 @@ export interface ProductDto {
   name: string;
   form: ProductForm;
   country: string;
-  status: 'seed' | 'community' | 'verified';
+  /**
+   * `official`: imported from an official registry (`source` `anvisa`); `curated`: from the importer's
+   * curated list (`source` `curated`, not reviewed by a pharmacist).
+   */
+  status: 'seed' | 'community' | 'verified' | 'official' | 'curated';
   mergedIntoId: string | null;
   substances: ProductSubstanceDto[];
   createdAt: string;
+  /** Additive: the official registry of an `official` product, else `null`/absent. */
+  source?: string | null;
+  /** Additive: dosage text the official name carried (e.g. `0,9%`). */
+  presentation?: string | null;
+  /** Additive: the official product left its registry; search no longer offers it. */
+  inactive?: boolean;
+  /**
+   * Additive: the source name this product shares with products of other ingredients (e.g. `Sorine`);
+   * the app warns to check the box. `null`/absent when the name is unambiguous.
+   */
+  ambiguousName?: string | null;
 }
 
 export interface SiblingProductDto {

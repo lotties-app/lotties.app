@@ -19,7 +19,7 @@ export interface ReminderOfferFacts {
   subscribed: boolean;
   /** Medicine reminders are on for this baby (server preferences). */
   doseDueOn: boolean;
-  /** Owner or Parent (Viewers never get reminders). */
+  /** Owner, Parent or Caregiver (Viewers never get reminders). */
   canReceive: boolean;
   /** When "Not now" was chosen last, if ever. */
   dismissedAt: Date | null;

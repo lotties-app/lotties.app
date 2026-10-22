@@ -10,7 +10,7 @@ import {
   readLastUsed,
   recordLastUsed,
 } from './lastUsedValues';
-import { fixFields, planStop, rememberedFormValues } from './stopPlan';
+import { fillEmptyFields, fixFields, planStop, rememberedFormValues } from './stopPlan';
 
 const event = (overrides: Partial<BabyEvent>): BabyEvent => ({
   id: 'e1',
@@ -197,5 +197,25 @@ describe('quickStartPayload', () => {
   it('leaves fields without a remembered value empty (the stop asks)', () => {
     expect(quickStartPayload(custom, {}, {})).toEqual({});
     expect(planStop(custom, {})).toEqual({ kind: 'finish', fields: ['side'] });
+  });
+});
+
+describe('fillEmptyFields (a Caregiver finishing someone else’s timer)', () => {
+  it('fills only the asked fields that were empty and keeps every stored value', () => {
+    const stored = { method: 'bottle', bottle_feeding_type: 'formula', food: '', pause_count: 1 };
+    const built = {
+      method: 'breast',
+      bottle_feeding_type: 'breast_milk',
+      food: 'rice',
+      amount_ml: 90,
+      side: 'left',
+    };
+    expect(fillEmptyFields(stored, built, ['amount_ml', 'bottle_feeding_type', 'food'])).toEqual({
+      method: 'bottle',
+      bottle_feeding_type: 'formula',
+      food: 'rice',
+      pause_count: 1,
+      amount_ml: 90,
+    });
   });
 });

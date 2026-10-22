@@ -1,5 +1,5 @@
 import type { BabyEvent, EventPayload, EventType } from '../db/models';
-import { getOwn } from '../util/ownProperty';
+import { getOwn, setOwn } from '../util/ownProperty';
 import type { EventFormState } from './formModel';
 import { lastUsedFor } from './lastUsedValues';
 import {
@@ -51,6 +51,26 @@ export function planStop(type: EventType | undefined, payload: EventPayload): St
   if (asked.length > 0) return { kind: 'finish', fields: asked };
   if (problems.length === 0) return { kind: 'stop' };
   return { kind: 'strip', payload: withoutHiddenValues(type, payload) };
+}
+
+/**
+ * `stored` with only `fields` taken from `built`, and only where `stored` had no value (absent,
+ * `null` or `''`): what a Caregiver's "Finish this ..." on someone else's timer may save.
+ */
+export function fillEmptyFields(
+  stored: EventPayload,
+  built: EventPayload,
+  fields: readonly string[],
+): EventPayload {
+  const next: EventPayload = { ...stored };
+  for (const key of fields) {
+    const before = getOwn(stored, key);
+    const value = getOwn(built, key);
+    if ((before === undefined || before === null || before === '') && value !== undefined) {
+      setOwn<unknown>(next, key, value);
+    }
+  }
+  return next;
 }
 
 /**

@@ -16,9 +16,12 @@ import {
   classifyFailure,
   countsTowardGiveUp,
   describeFailure,
+  isNotOwnedRejection,
   isPayloadRejection,
+  isRoleRejection,
 } from './failures';
 import { deadLetter } from './deadLetters';
+import { deadLetterForRole, dropNotOwned } from './rejections';
 import { syncRequest, type SyncContext } from './syncContext';
 
 /**
@@ -41,7 +44,8 @@ export type PushOutcome =
  * same entity is coalesced into it first (only the latest full state is sent). Stops at the first
  * network error, 401 or transient failure (so later mutations never overtake earlier ones);
  * permanently rejected mutations, and ones that failed `MAX_SERVER_FAILURES` times in a row, are
- * dead-lettered and skipped.
+ * dead-lettered and skipped. A change to someone else's event that the user's role does not allow
+ * (403 `event_not_owned`) is dropped and the entry put back (`dropNotOwned`).
  */
 export async function pushOutbox(ctx: SyncContext): Promise<PushOutcome> {
   for (;;) {
@@ -199,6 +203,14 @@ async function recordFailure(
     case 'transient':
       return recordTransient(ctx, mutation, error, lastError);
     case 'permanent':
+      if (mutation.entityType === 'event' && isNotOwnedRejection(error)) {
+        await dropNotOwned(ctx, mutation, lastError);
+        return null;
+      }
+      if (isRoleRejection(error)) {
+        await deadLetterForRole(ctx, mutation, lastError);
+        return null;
+      }
       await deadLetter(ctx, mutation, {
         attempts: mutation.attempts + 1,
         failureCount: mutation.failureCount ?? 0,

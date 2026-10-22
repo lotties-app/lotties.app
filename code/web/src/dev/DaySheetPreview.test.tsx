@@ -3,7 +3,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ApiClientContext } from '../api/ApiClientContext';
+import { AuthContext } from '../auth/AuthContext';
 import { I18nProvider } from '../i18n/I18nProvider';
+import { fakeApi } from '../test/fakeApi';
+import { fakeAuth } from '../test/fakeAuth';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
 import DayPreview from './DayPreview';
 import SheetPreview from './SheetPreview';
@@ -18,9 +22,13 @@ function renderAt(route: string, ui: ReactElement) {
   return render(
     <I18nProvider>
       <AppThemeProvider>
-        <QueryClientProvider client={new QueryClient()}>
-          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-        </QueryClientProvider>
+        <AuthContext value={fakeAuth()}>
+          <ApiClientContext value={fakeApi().api}>
+            <QueryClientProvider client={new QueryClient()}>
+              <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+            </QueryClientProvider>
+          </ApiClientContext>
+        </AuthContext>
       </AppThemeProvider>
     </I18nProvider>,
   );

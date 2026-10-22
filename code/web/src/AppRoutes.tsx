@@ -26,6 +26,7 @@ const InvitePage = lazy(() =>
 const DevUiGallery = import.meta.env.DEV ? lazy(() => import('./dev/UiGallery')) : null;
 const DevNowPreview = import.meta.env.DEV ? lazy(() => import('./dev/NowPreview')) : null;
 const DevDayPreview = import.meta.env.DEV ? lazy(() => import('./dev/DayPreview')) : null;
+const DevRolesPreview = import.meta.env.DEV ? lazy(() => import('./dev/RolesPreview')) : null;
 const DevSheetPreview = import.meta.env.DEV ? lazy(() => import('./dev/SheetPreview')) : null;
 const DevMedsPreview = import.meta.env.DEV ? lazy(() => import('./dev/MedsPreview')) : null;
 const DevLandingPreview = import.meta.env.DEV ? lazy(() => import('./dev/LandingPreview')) : null;
@@ -36,6 +37,7 @@ const DevInsightsPreview = import.meta.env.DEV ? lazy(() => import('./dev/Insigh
 const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
+const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPreview')) : null;
 
 export function AppRoutes() {
   return (
@@ -120,12 +122,32 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevRolesPreview && (
+        <Route
+          path="/dev/roles"
+          element={
+            <Suspense fallback={null}>
+              <DevRolesPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevNotificationsPreview && (
         <Route
           path="/dev/notifications"
           element={
             <Suspense fallback={null}>
               <DevNotificationsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevRingPreview && (
+        <Route
+          path="/dev/ring"
+          element={
+            <Suspense fallback={null}>
+              <DevRingPreview />
             </Suspense>
           }
         />

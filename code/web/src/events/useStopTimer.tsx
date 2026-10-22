@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react';
+import { canChangeEvent } from '../baby/permissions';
+import { useDatabase } from '../db/DatabaseContext';
 import { useEventCommands } from '../db/hooks';
 import type { BabyEvent, EventType } from '../db/models';
 import type { FinishMode } from './eventSheetTypes';
@@ -29,19 +31,23 @@ function finishMode(
   type: EventType,
   fields: string[],
   endedAt?: string,
+  restricted = false,
 ): FinishMode {
   const remembered = readLastUsed(babyId, type.id);
-  const all = type.fields.map((f) => f.key);
+  // Someone else's timer: only the asked fields may be filled, so only they get remembered values.
+  const all = restricted ? fields : type.fields.map((f) => f.key);
   return {
     fields,
     initialValues: rememberedFormValues(type, all, remembered),
     ...(endedAt ? { endedAt } : {}),
+    ...(restricted ? { restricted } : {}),
   };
 }
 
 /** Stop and fix actions that never send a stop the server would reject (see `planStop`). */
 export function useStopTimer(babyId: string, types: EventType[]): StopTimer {
   const commands = useEventCommands();
+  const db = useDatabase();
   const [finishing, setFinishing] = useState<Finishing | null>(null);
   const typeOf = (event: BabyEvent) => types.find((candidate) => candidate.id === event.typeId);
 
@@ -50,7 +56,9 @@ export function useStopTimer(babyId: string, types: EventType[]): StopTimer {
     const plan = planStop(type, event.payload);
     if (plan.kind === 'stop') return commands.stop(event.id, endedAt);
     if (plan.kind === 'strip') return commands.finish(event.id, plan.payload, endedAt);
-    setFinishing({ event, finish: finishMode(babyId, type!, plan.fields, endedAt) });
+    const baby = await db.babies.get(babyId);
+    const restricted = !!baby && !canChangeEvent(baby, event);
+    setFinishing({ event, finish: finishMode(babyId, type!, plan.fields, endedAt, restricted) });
     return null;
   };
 

@@ -7,7 +7,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -20,10 +19,11 @@ import { formatDate } from '../i18n/format';
 import { parseRole, type InviteDto } from '../sync/contract';
 import { ErrorNotice } from './ErrorNotice';
 import { InviteLinkDialog } from './InviteLinkDialog';
+import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
 
-const ROLES: BabyRole[] = ['Parent', 'Viewer', 'Owner'];
+const ROLES: BabyRole[] = ['Parent', 'Caregiver', 'Viewer', 'Owner'];
 const DEFAULT_DAYS = 7;
 
 const invitesKey = (babyId: string) => ['invites', babyId] as const;
@@ -94,13 +94,11 @@ export function InvitesPanel({ baby }: { baby: Baby }) {
           label={t('settings.invites.role')}
           value={role}
           onChange={(e) => setRole(e.target.value as BabyRole)}
+          helperText={t(`baby.roleHints.${role}`)}
+          slotProps={{ select: selectRoleProps(t) }}
           sx={{ flex: 1 }}
         >
-          {ROLES.map((r) => (
-            <MenuItem key={r} value={r}>
-              {t(`baby.roles.${r}`)}
-            </MenuItem>
-          ))}
+          {roleOptions(ROLES, t)}
         </TextField>
         <TextField
           label={t('settings.invites.expiresIn')}

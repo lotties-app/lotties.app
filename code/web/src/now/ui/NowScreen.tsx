@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
-import { isOwner } from '../../baby/permissions';
+import { canWrite, isOwner } from '../../baby/permissions';
 import { useOldestEventStart } from '../../db/hooks';
 import type { Baby } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
@@ -220,6 +220,7 @@ function NowContent({
         <FirstRun
           babyName={baby.name}
           readOnly={model.readOnly}
+          canImport={canWrite(baby)}
           canInvite={isOwner(baby)}
           disabled={disabled}
           onFellAsleep={() =>
@@ -278,6 +279,7 @@ function NowContent({
               commands={model.commands}
               action={action}
               readOnly={model.readOnly}
+              lockedBy={model.access.controlLockedBy(nursing)}
             />
           )}
           <TimersBar
@@ -287,6 +289,7 @@ function NowContent({
             nursingId={nursing?.id ?? null}
             actions={actions}
             readOnly={model.readOnly}
+            lockedBy={model.access.controlLockedBy}
             isSnoozed={snooze.isSnoozed}
             onKeepRunning={snooze.keep}
             action={action}
@@ -338,10 +341,14 @@ function NowContent({
           disabled={disabled}
           onChoose={medsChosen}
           {...(reminderLink.reminder ? { reminder: reminderLink.reminder } : {})}
-          onAddPrescription={() => {
-            close();
-            setAddingPrescription(true);
-          }}
+          {...(canWrite(baby)
+            ? {
+                onAddPrescription: () => {
+                  close();
+                  setAddingPrescription(true);
+                },
+              }
+            : {})}
         />
       )}
       {tray === 'bellyPain' && model.trays.bellyPain && (
@@ -373,7 +380,7 @@ function NowContent({
           onDone={() => setSolid(null)}
         />
       )}
-      {addingPrescription && !model.readOnly && (
+      {addingPrescription && canWrite(baby) && (
         <PrescriptionSheet
           babyId={baby.id}
           onSaved={(terms) => setOfferingReminders(canRemind(terms))}

@@ -11,7 +11,7 @@ import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
-import { canWrite } from '../baby/permissions';
+import { canWrite, isCaregiver } from '../baby/permissions';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 
@@ -45,7 +45,11 @@ export function SettingsPage() {
       {baby ? (
         <>
           {!canWrite(baby) && (
-            <Alert severity="info">{t('baby.viewOnlyNamed', { name: baby.name })}</Alert>
+            <Alert severity="info">
+              {t(isCaregiver(baby) ? 'baby.caregiverNamed' : 'baby.viewOnlyNamed', {
+                name: baby.name,
+              })}
+            </Alert>
           )}
           <SettingsSection
             id="baby"

@@ -42,6 +42,12 @@ export async function cacheProducts(
   });
 }
 
+/** Whether a cached product matches the query only through its substances (not its name). */
+export function matchesOnlyBySubstance(product: ProductDto, query: string): boolean {
+  const needle = productKey(query);
+  return needle.length > 0 && !productKey(product.name).includes(needle);
+}
+
 /** Cached non-merged products whose name or substance names contain the query, best first. */
 export async function searchCachedProducts(
   db: BabyRoutineDb,

@@ -82,7 +82,9 @@
     "gaveUp": "O servidor continuou falhando depois de {{attempts}} tentativas ({{error}}). Tente de novo mais tarde ou descarte a alteração.",
     "attentionSuffix_one": "{{count}} precisa da sua atenção",
     "attentionSuffix_other": "{{count}} precisam da sua atenção",
-    "rejected": "O servidor recusou esta alteração."
+    "rejected": "O servidor recusou esta alteração.",
+    "rejectedNotOwned": "Uma alteração em um registro de outra pessoa não foi salva: você só pode alterar os seus próprios registros.",
+    "rejectedRole": "Seu acesso a este bebê mudou e uma alteração não foi salva. Ela ficou guardada em Ajustes > Sincronização."
   },
   "session": {
     "unsyncedChanges_one": "{{count}} alteração não sincronizada",
@@ -103,8 +105,16 @@
     "roles": {
       "Owner": "Titular",
       "Parent": "Responsável",
-      "Viewer": "Visualizador"
-    }
+      "Viewer": "Visualizador",
+      "Caregiver": "Cuidador(a)"
+    },
+    "roleHints": {
+      "Owner": "Controle total, incluindo membros e convites",
+      "Parent": "Pode registrar e editar tudo, e gerenciar remédios e ajustes",
+      "Caregiver": "Pode registrar eventos e editar os próprios registros",
+      "Viewer": "Só pode visualizar"
+    },
+    "caregiverNamed": "Você é cuidador(a) de {{name}}: pode registrar eventos e editar os seus próprios registros. Os responsáveis cuidam do resto."
   },
   "age": {
     "day_one": "{{count}} dia",
@@ -257,7 +267,8 @@
     "nextWeek": "Próxima semana",
     "chooseMonth": "{{month}}. Escolher uma data. Mostrando {{date}}",
     "sessionEnded": "Sessão de sono encerrada, {{duration}}",
-    "pausedFor": "pausa de {{duration}}"
+    "pausedFor": "pausa de {{duration}}",
+    "viewRow": "{{title}}, {{time}}, registrado por {{name}} (somente visualização)"
   },
   "events": {
     "addTitle": "Adicionar evento",
@@ -1064,7 +1075,8 @@
     "push_not_configured": "As notificações não estão configuradas neste servidor.",
     "push_endpoint_not_allowed": "O serviço de notificações deste navegador não é aceito pelo servidor.",
     "notification_action_not_found": "Este lembrete não está mais disponível.",
-    "snooze_limit_reached": "Este lembrete já foi adiado 3 vezes."
+    "snooze_limit_reached": "Este lembrete já foi adiado 3 vezes.",
+    "event_not_owned": "Você só pode alterar os registros que você adicionou."
   },
   "pwa": {
     "install": "Instalar o app",
@@ -1428,7 +1440,16 @@
       "wokeAt": "Acordou às {{time}}.",
       "bedAt": "Hora de dormir às {{time}}.",
       "nowAt": "Agora são {{time}}.",
-      "windowAt": "Janela da soneca de {{from}} a {{to}}."
+      "windowAt": "Janela da soneca de {{from}} a {{to}}.",
+      "nextWindowAt": "Próxima janela de soneca de {{from}} a {{to}}.",
+      "nextWindow": "Próxima soneca por volta de {{from}}–{{to}}",
+      "windowOpen": "Janela de soneca aberta até {{to}}",
+      "legendLabel": "O que o anel mostra",
+      "legendNight": "Sono da noite",
+      "legendNap": "Soneca",
+      "legendWaking": "Despertar noturno",
+      "legendWindow": "Janela de soneca",
+      "legendNow": "Agora"
     }
   },
   "insights": {
@@ -1654,7 +1675,14 @@
       "addNamed": "Adicionar {{name}} do catálogo",
       "useExisting": "Usar {{name}} da sua lista",
       "notListed": "Não está na lista? Adicione",
-      "notListedOffline": "Não está na lista? Conecte-se para adicionar"
+      "notListedOffline": "Não está na lista? Conecte-se para adicionar",
+      "byIngredient": "Produtos com este princípio ativo",
+      "byIngredientNote": "Apenas informativo. Pergunte ao médico ou ao farmacêutico antes de trocar.",
+      "official": "Lista oficial (Anvisa)",
+      "officialAttribution": "Fonte: dados abertos da Anvisa (medicamentos registrados e lista de preços da CMED). Não revisado por farmacêutico; não é orientação médica.",
+      "curated": "Lista curada (não revisada por farmacêutico)",
+      "ingredientNotListed": "Princípio ativo não informado nos dados oficiais",
+      "ambiguousName": "Produtos diferentes usam este nome com princípios ativos diferentes. Confira a embalagem."
     },
     "newProduct": {
       "title": "Adicionar ao catálogo compartilhado",
@@ -1929,5 +1957,12 @@
       "offline": "Conecte-se à internet para adiar."
     },
     "whyLink": "Me lembrar quando a janela abrir"
+  },
+  "access": {
+    "someoneElse": "outra pessoa",
+    "givenBy": "Dado por {{name}}",
+    "lockedTimer": "Iniciado por {{name}}. Só essa pessoa ou um responsável pode alterar.",
+    "lockedEntry": "Registrado por {{name}}. Só essa pessoa ou um responsável pode alterar.",
+    "controlOnly": "Iniciado por {{name}}. Você pode pausar ou parar; só essa pessoa ou um responsável pode alterar o resto."
   }
 }

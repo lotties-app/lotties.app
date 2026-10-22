@@ -8,6 +8,11 @@ export interface FinishMode {
   initialValues?: EventFormState['values'];
   /** End of a running timer stopped through this form (a forgotten timer); default now. */
   endedAt?: string;
+  /**
+   * Someone else's timer stopped by a Caregiver: the save keeps every stored value and only fills
+   * `fields` that were empty (the one change the role allows, see `isRunningControlChange`).
+   */
+  restricted?: boolean;
 }
 
 export interface EventSheetProps {

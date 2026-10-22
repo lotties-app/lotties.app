@@ -6,7 +6,8 @@
 
 import type { ProductDto } from '../sync/contract';
 
-export type BabyRole = 'Owner' | 'Parent' | 'Viewer';
+/** Owner > Parent > Caregiver > Viewer (docs/SPEC.md "Roles and permissions"). */
+export type BabyRole = 'Owner' | 'Parent' | 'Caregiver' | 'Viewer';
 
 export interface Baby {
   id: string;
@@ -15,6 +16,11 @@ export interface Baby {
   birthDate: string;
   /** The current user's role for this baby (from `GET /babies`). */
   role: BabyRole;
+  /**
+   * The current user's server id (from `GET /babies`; the `createdBy` of the events they log).
+   * `null`/absent until a babies refresh from a server that sends it.
+   */
+  userId?: string | null;
 }
 
 export type EventFieldKind = 'text' | 'number' | 'select' | 'bool';

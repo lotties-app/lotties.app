@@ -6,9 +6,10 @@ import { rulerGeometry, type RulerInput } from '../rulerGeometry';
 
 /**
  * The "day ruler" (docs/design/02-visual-identity.md, direction B): the awake window as an ink
- * line from waking up to now, the predicted nap window as a soft band, and "now" as a terracotta
- * mark. It replaces a progress ring. The bar is an image for assistive technology, described by
- * `now.ruler.*`; the times printed under it repeat what the description says.
+ * line from waking up to now, the predicted nap window as a soft band with a dashed edge (as on the
+ * ring), and "now" as a terracotta mark. The bar is an image for assistive technology, described by
+ * `now.ruler.*`; only its two ends are labelled under it (pinned to the edges, so they never meet),
+ * and the window times are in the line above it.
  */
 
 export function DayRuler(props: RulerInput) {
@@ -49,8 +50,10 @@ export function DayRuler(props: RulerInput) {
               left: `${geometry.band?.left}%`,
               width: `${(geometry.band?.right ?? 0) - (geometry.band?.left ?? 0)}%`,
               minWidth: 8,
-              backgroundColor: palette(theme).primary.main,
-              opacity: 0.32,
+              boxSizing: 'border-box',
+              // The same band as the nap window on the ring: a soft accent fill, a dashed edge.
+              backgroundColor: `color-mix(in srgb, ${palette(theme).primary.main} 18%, transparent)`,
+              border: `1.5px dashed ${palette(theme).primary.main}`,
             })}
           />
         )}

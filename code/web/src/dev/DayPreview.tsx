@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { DayScreen } from '../day/DayScreen';
@@ -17,10 +18,11 @@ import { PreviewToolbar } from './PreviewToolbar';
  * Developer-only (route `/dev/day`, never in production builds): the Day screen on a throw-away
  * local database, seeded per scenario, with no sign-in and no server. `?state=full` is a busy day
  * (yesterday, `offset=1`) with a night that crosses midnight; `?offset=0` is today with a running
- * timer; `busy` seeds about 1,200 events for a speed check.
+ * timer; `busy` seeds about 1,200 events for a speed check; `caregiver` is the full day seen by a
+ * Caregiver ("Lu") where most entries were logged by "Ana" (read-only rows, "Given by Ana").
  */
 
-const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers'] as const;
+const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers', 'caregiver'] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const MIN = 60_000;
 
@@ -107,6 +109,23 @@ function fullDay(day: Date): BabyEvent[] {
   ];
 }
 
+const CAREGIVER_ID = 'dev-me';
+const ANA_ID = 'dev-ana';
+const PREVIEW_MEMBERS = [
+  { userId: ANA_ID, displayName: 'Ana', role: 'Owner', joinedAt: '2026-08-01T10:00:00.000Z' },
+  {
+    userId: CAREGIVER_ID,
+    displayName: 'Lu',
+    role: 'Caregiver',
+    joinedAt: '2026-10-01T10:00:00.000Z',
+  },
+];
+
+/** The caregiver scenario: the diapers are the caregiver's own, everything else is Ana's. */
+function loggedByAnaOrMe(event: BabyEvent): BabyEvent {
+  return { ...event, createdBy: event.typeId === typeIdOf('diaper') ? CAREGIVER_ID : ANA_ID };
+}
+
 /** About 1,200 events over 60 days, for the speed check. */
 function busyHistory(today: Date): BabyEvent[] {
   const events: BabyEvent[] = [];
@@ -131,7 +150,8 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
     id: PREVIEW_BABY_ID,
     name: 'Lia',
     birthDate: '2026-08-01',
-    role: scenario === 'viewer' ? 'Viewer' : 'Owner',
+    role: scenario === 'viewer' ? 'Viewer' : scenario === 'caregiver' ? 'Caregiver' : 'Owner',
+    ...(scenario === 'caregiver' ? { userId: CAREGIVER_ID } : {}),
   };
   await Promise.all([
     db.babies.clear(),
@@ -148,7 +168,9 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
     await db.events.bulkPut(busyHistory(today));
     return baby;
   }
-  await db.events.bulkPut(fullDay(yesterday));
+  await db.events.bulkPut(
+    scenario === 'caregiver' ? fullDay(yesterday).map(loggedByAnaOrMe) : fullDay(yesterday),
+  );
 
   // Today: a few recent events, a running timer, one unsynced and one rejected row.
   const ago = (minutes: number) => new Date(now.getTime() - minutes * MIN).toISOString();
@@ -168,7 +190,8 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
   ]
     .filter((event) => Date.parse(event.startedAt) >= startOfToday)
     // Stable ids: seeding twice (StrictMode runs effects twice) must not duplicate the rows.
-    .map((event, index) => ({ ...event, id: `dev-day-recent-${index}` }));
+    .map((event, index) => ({ ...event, id: `dev-day-recent-${index}` }))
+    .map((event) => (scenario === 'caregiver' ? { ...event, createdBy: ANA_ID } : event));
   await db.events.bulkPut(recent);
   if (now.getTime() - startOfToday > 15 * MIN) {
     const pending = await createEvent(
@@ -210,17 +233,19 @@ export default function DayPreview() {
   const offset = Number(params.get('offset') ?? 0) || 0;
   const [db] = useState(() => createDatabase('dev-day-preview'));
   const [ready, setReady] = useState<{ scenario: Scenario; baby: Baby } | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let live = true;
     void (async () => {
       const baby = await seed(db, scenario);
+      queryClient.setQueryData(['members', PREVIEW_BABY_ID], PREVIEW_MEMBERS);
       if (live) setReady({ scenario, baby });
     })();
     return () => {
       live = false;
     };
-  }, [db, scenario]);
+  }, [db, scenario, queryClient]);
 
   const today = new Date();
   const initialDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset);

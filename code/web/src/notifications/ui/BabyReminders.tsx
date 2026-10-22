@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, Typography } from '@mui/material';
 import { useApiClient } from '../../api/ApiClientContext';
-import { canWrite } from '../../baby/permissions';
+import { canLog } from '../../baby/permissions';
 import type { Baby } from '../../db/models';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useServerAction } from '../../settings/useServerAction';
@@ -22,7 +22,7 @@ import { pushKeys } from '../usePush';
 function defaultsFor(baby: Baby): BabyPreferencesDto {
   return {
     babyId: baby.id,
-    canReceive: canWrite(baby),
+    canReceive: canLog(baby),
     doseDue: false,
     doseLeadMinutes: 0,
     napWindow: false,

@@ -4,7 +4,7 @@ import { EventSheet } from '../events/EventSheet';
 import { typeForKey } from '../now/eventFacts';
 import { MoreSheet } from '../now/ui/MoreSheet';
 import type { TrayName } from '../now/ui/trays';
-import { canWrite } from '../baby/permissions';
+import { canLog } from '../baby/permissions';
 import { usePresetActions } from '../presets/usePresetActions';
 
 /** The built-in type each Now tray stands for; outside Now the full event sheet opens instead. */
@@ -34,7 +34,7 @@ interface Props {
 export function AddEventFlow({ baby, types, events, open, onClose }: Props) {
   const actions = usePresetActions(baby.id, [...types]);
   const [creating, setCreating] = useState<string | null>(null);
-  const writable = canWrite(baby);
+  const writable = canLog(baby);
 
   const openTray = (tray: TrayName) => {
     const key = TRAY_TYPE_KEY[tray];

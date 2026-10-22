@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Skeleton, Typography, useMediaQuery } from '@mui/material';
-import { canWrite } from '../baby/permissions';
+import { useEventAccess } from '../baby/useEventAccess';
 import {
   useAllPrescriptions,
   useEntitySyncStates,
@@ -10,6 +10,7 @@ import {
   useMedications,
 } from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
+import { EventReadOnlySheet } from '../events/EventReadOnlySheet';
 import { EventSheet } from '../events/EventSheet';
 import type { FormPrefill } from '../events/formModel';
 import { useNow } from '../events/time';
@@ -157,6 +158,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const [filtering, setFiltering] = useState(false);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<BabyEvent | null>(null);
+  const [viewing, setViewing] = useState<BabyEvent | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const rowHighlight = useRowHighlight(listRef);
@@ -168,7 +170,10 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const syncStates = useEntitySyncStates(baby.id);
   const actions = usePresetActions(baby.id, types ?? []);
   const label = useDayLabel(day, today);
-  const writable = canWrite(baby);
+  const access = useEventAccess(baby);
+  const writable = access.canLog;
+  /** Opens the edit sheet, or the read-only one for an entry the user may not change. */
+  const open = (event: BabyEvent) => (access.canChange(event) ? setEditing : setViewing)(event);
 
   const go = (next: Date) => setPicked(isSameDay(next, today) ? null : next);
   // Swiping left reveals the next (later) day, right the previous one.
@@ -239,7 +244,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
           isToday={isToday}
           nowAt={nowAt}
           listedIds={listedIds}
-          {...(writable ? { onOpen: setEditing } : {})}
+          {...(writable ? { onOpen: open } : {})}
           onShowInList={(event) => rowHighlight.show(event.id)}
         />
       </DaySummary>
@@ -266,14 +271,16 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
                   syncState={syncStates?.get(item.event.id)}
                   hasNext={index < items.length - 1}
                   highlighted={rowHighlight.highlighted === item.event.id}
-                  onEdit={setEditing}
-                  {...(writable
+                  onEdit={open}
+                  {...(writable && access.controlLockedBy(item.event) === null
                     ? {
                         onStop: (running: BabyEvent) =>
                           void actions.stop(running, { name: typeOf(running)?.name }),
                       }
                     : {})}
                   readOnly={!writable}
+                  author={access.authorOf(item.event)}
+                  viewOnly={writable && !access.canChange(item.event)}
                 />
               </ErrorBoundary>
             ),
@@ -294,6 +301,16 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         open={adding}
         onClose={() => setAdding(false)}
       />
+      {viewing && (
+        <EventReadOnlySheet
+          event={viewing}
+          type={typeOf(viewing)}
+          medications={medications}
+          {...(prescriptions ? { prescriptions } : {})}
+          author={access.authorOf(viewing) ?? ''}
+          onClose={() => setViewing(null)}
+        />
+      )}
       {editing && (
         <EventSheet
           babyId={baby.id}

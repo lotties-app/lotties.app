@@ -11,6 +11,8 @@ interface Props {
   babyName: string;
   /** Viewers cannot log or import. */
   readOnly: boolean;
+  /** Owners and Parents can import (not Caregivers); absent = `!readOnly`. */
+  canImport?: boolean;
   /** Owners can invite. */
   canInvite: boolean;
   onFellAsleep: () => void;
@@ -58,7 +60,15 @@ function OfferCard({
  * predictions will come from, and the two things that decide whether a family sticks with the app,
  * importing the history and inviting the other parent (docs/design/01-ux-strategy.md section 5).
  */
-export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, disabled }: Props) {
+export function FirstRun({
+  babyName,
+  readOnly,
+  canImport = !readOnly,
+  canInvite,
+  onFellAsleep,
+  onFeed,
+  disabled,
+}: Props) {
   const { t } = useTranslation();
   const options = [
     {
@@ -145,7 +155,7 @@ export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, 
           </Box>
         </Stack>
       </Card>
-      {!readOnly && (
+      {canImport && (
         <OfferCard
           icon="upload-file"
           category="feeding"

@@ -8,7 +8,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -31,10 +30,11 @@ import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorNotice } from './ErrorNotice';
 import { InvitesPanel } from './InvitesPanel';
+import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
 
-const ROLES: BabyRole[] = ['Owner', 'Parent', 'Viewer'];
+const ROLES: BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer'];
 
 const memberName = (m: MemberDto) => m.displayName?.trim() || translate('settings.members.unnamed');
 
@@ -69,13 +69,10 @@ function MemberRow({
             value={role}
             disabled={disabled}
             onChange={(e) => onRole(e.target.value as BabyRole)}
+            slotProps={{ select: selectRoleProps(t) }}
             sx={{ minWidth: 120 }}
           >
-            {ROLES.map((r) => (
-              <MenuItem key={r} value={r}>
-                {t(`baby.roles.${r}`)}
-              </MenuItem>
-            ))}
+            {roleOptions(ROLES, t)}
           </TextField>
           <IconButton
             aria-label={t('settings.members.removeNamed', { name })}

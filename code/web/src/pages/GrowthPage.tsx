@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import { canWrite } from '../baby/permissions';
+import { canWrite, isCaregiver } from '../baby/permissions';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { GrowthChart } from '../measurements/GrowthChart';
@@ -56,7 +56,11 @@ function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
         )}
       </Stack>
       {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
-      {!writable && <Alert severity="info">{t('baby.viewOnlyNamed', { name: baby.name })}</Alert>}
+      {!writable && (
+        <Alert severity="info">
+          {t(isCaregiver(baby) ? 'baby.caregiverNamed' : 'baby.viewOnlyNamed', { name: baby.name })}
+        </Alert>
+      )}
       {query.isError && <ErrorNotice message={t('growth.loadFailed')} />}
       {!deleting && <ErrorNotice message={error} />}
       {query.isPending && online && <CircularProgress aria-label={t('common.loading')} />}

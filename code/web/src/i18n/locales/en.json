@@ -82,7 +82,9 @@
     "gaveUp": "The server kept failing after {{attempts}} attempts ({{error}}). Retry later or discard the change.",
     "attentionSuffix_one": "{{count}} needs your attention",
     "attentionSuffix_other": "{{count}} need your attention",
-    "rejected": "The server rejected this change."
+    "rejected": "The server rejected this change.",
+    "rejectedNotOwned": "A change to an entry someone else added was not saved: you can change only your own entries.",
+    "rejectedRole": "Your access to this baby changed, so a change was not saved. It is kept in Settings > Sync."
   },
   "session": {
     "unsyncedChanges_one": "{{count}} unsynced change",
@@ -103,8 +105,16 @@
     "roles": {
       "Owner": "Owner",
       "Parent": "Parent",
-      "Viewer": "Viewer"
-    }
+      "Viewer": "Viewer",
+      "Caregiver": "Caregiver"
+    },
+    "roleHints": {
+      "Owner": "Full control, including members and invites",
+      "Parent": "Can log and edit everything, and manage medications and settings",
+      "Caregiver": "Can log events and edit their own entries",
+      "Viewer": "Can only view"
+    },
+    "caregiverNamed": "You are a caregiver for {{name}}: you can log events and edit your own entries. The parents manage everything else."
   },
   "age": {
     "day_one": "{{count}} day",
@@ -257,7 +267,8 @@
     "nextWeek": "Next week",
     "chooseMonth": "{{month}}. Choose a date. Showing {{date}}",
     "sessionEnded": "Sleep session ended, {{duration}}",
-    "pausedFor": "paused {{duration}}"
+    "pausedFor": "paused {{duration}}",
+    "viewRow": "{{title}}, {{time}}, added by {{name}} (view only)"
   },
   "events": {
     "addTitle": "Add event",
@@ -1064,7 +1075,8 @@
     "push_not_configured": "Notifications are not set up on this server.",
     "push_endpoint_not_allowed": "This browser's notification service is not accepted by the server.",
     "notification_action_not_found": "This reminder is no longer available.",
-    "snooze_limit_reached": "This reminder was already snoozed 3 times."
+    "snooze_limit_reached": "This reminder was already snoozed 3 times.",
+    "event_not_owned": "You can change only the entries you added."
   },
   "pwa": {
     "install": "Install app",
@@ -1428,7 +1440,16 @@
       "wokeAt": "Woke up at {{time}}.",
       "bedAt": "Bedtime at {{time}}.",
       "nowAt": "Now {{time}}.",
-      "windowAt": "Nap window {{from}} to {{to}}."
+      "windowAt": "Nap window {{from}} to {{to}}.",
+      "nextWindowAt": "Next nap window {{from}} to {{to}}.",
+      "nextWindow": "Next nap about {{from}}–{{to}}",
+      "windowOpen": "Nap window open until {{to}}",
+      "legendLabel": "What the ring shows",
+      "legendNight": "Night sleep",
+      "legendNap": "Nap",
+      "legendWaking": "Night waking",
+      "legendWindow": "Nap window",
+      "legendNow": "Now"
     }
   },
   "insights": {
@@ -1654,7 +1675,14 @@
       "addNamed": "Add {{name}} from the catalog",
       "useExisting": "Use {{name}} from your list",
       "notListed": "Not listed? Add it",
-      "notListedOffline": "Not listed? Go online to add it"
+      "notListedOffline": "Not listed? Go online to add it",
+      "byIngredient": "Products with this ingredient",
+      "byIngredientNote": "Information only. Ask your doctor or pharmacist before substituting.",
+      "official": "Official list (ANVISA)",
+      "officialAttribution": "Source: Anvisa open data (registered medicines and the CMED price list). Not reviewed by a pharmacist; not medical advice.",
+      "curated": "Curated list (not reviewed by a pharmacist)",
+      "ingredientNotListed": "Ingredient not listed in the official data",
+      "ambiguousName": "Different products share this name with different ingredients. Check the box."
     },
     "newProduct": {
       "title": "Add to the shared catalog",
@@ -1929,5 +1957,12 @@
       "offline": "Connect to the internet to snooze."
     },
     "whyLink": "Remind me when the window opens"
+  },
+  "access": {
+    "someoneElse": "someone else",
+    "givenBy": "Given by {{name}}",
+    "lockedTimer": "Started by {{name}}. Only they or a parent can change it.",
+    "lockedEntry": "Added by {{name}}. Only they or a parent can change it.",
+    "controlOnly": "Started by {{name}}. You can pause or stop it; only they or a parent can change the rest."
   }
 }

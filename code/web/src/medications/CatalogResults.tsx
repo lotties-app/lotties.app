@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box } from '@mui/material';
 import type { Medication } from '../db/models';
@@ -7,7 +7,14 @@ import type { ProductDto } from '../sync/contract';
 import { Icon } from '../ui/Icon';
 import { filledSurface, optionBase, palette } from '../ui/form/styles';
 import { NewProductForm } from './NewProductForm';
-import { ProductMeta, SameIngredientNote } from './ProductInfo';
+import { isOfficial, type CatalogMatch } from './catalogApi';
+import {
+  AmbiguousNameWarning,
+  OfficialAttribution,
+  OfficialSourceLabel,
+  ProductMeta,
+  SameIngredientNote,
+} from './ProductInfo';
 import { useCatalogSearch } from './useCatalogSearch';
 
 interface Props {
@@ -23,9 +30,11 @@ interface Props {
 }
 
 /**
- * Matches of the shared catalog for what is typed: product, form, strength and substances, the
- * "same active ingredient" note (information only) and "Not listed? Add it". Offline it searches
- * only the products cached on this device.
+ * Matches of the shared catalog for what is typed: products matched by name first, then a
+ * "Products with this ingredient" section (information only; tapping one selects it like any
+ * result), each with form, strength and substances, the "same active ingredient" note, the
+ * "Official list (ANVISA)" label and, when any official product is shown, the source attribution.
+ * "Not listed? Add it" follows. Offline it searches only the products cached on this device.
  */
 export function CatalogResults({
   query,
@@ -46,85 +55,59 @@ export function CatalogResults({
     if (existing) onChooseMedication(existing);
     else onChooseProduct(product);
   };
+  const byName = search.matches.filter((m) => m.matchedBy !== 'substance');
+  const byIngredient = search.matches.filter((m) => m.matchedBy === 'substance');
+  const anyOfficial = search.matches.some((m) => isOfficial(m.product));
+  const renderCards = (matches: CatalogMatch[]) =>
+    matches.map((match) => (
+      <CatalogResultCard
+        key={match.product.id}
+        match={match}
+        linked={medications.find((m) => m.productId === match.product.id)}
+        onChoose={choose}
+      />
+    ));
 
   return (
     <Box sx={{ display: 'grid', gap: 1 }} aria-busy={search.loading || undefined}>
-      <Box
-        component="p"
-        id="catalog-results-title"
-        sx={(theme) => ({
-          m: 0,
-          fontSize: '0.75rem',
-          fontWeight: 500,
-          color: palette(theme).text.secondary,
-        })}
-      >
+      <SectionTitle id="catalog-results-title">
         {search.fromCache ? t('medications.catalog.titleOffline') : t('medications.catalog.title')}
-      </Box>
+      </SectionTitle>
       {search.matches.length === 0 && !search.loading && (
         <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
           {t('medications.catalog.noMatch', { query: query.trim() })}
         </Box>
       )}
-      <Box role="list" aria-labelledby="catalog-results-title" sx={{ display: 'grid', gap: 1 }}>
-        {search.matches.map(({ product, siblings }) => {
-          const linked = medications.find((m) => m.productId === product.id);
-          return (
-            <Box
-              role="listitem"
-              key={product.id}
-              sx={(theme) => ({
-                ...filledSurface(theme),
-                borderRadius: '18px',
-                display: 'grid',
-                gap: 0.75,
-                p: 1.25,
-              })}
-            >
-              <Box
-                component="button"
-                type="button"
-                onClick={() => choose(product)}
-                aria-label={
-                  linked
-                    ? t('medications.catalog.useExisting', { name: linked.name })
-                    : t('medications.catalog.addNamed', { name: product.name })
-                }
-                sx={(theme) => ({
-                  ...optionBase(theme),
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.25,
-                  width: '100%',
-                  minHeight: 48,
-                  background: 'none',
-                  textAlign: 'start',
-                  color: palette(theme).text.primary,
-                  p: 0,
-                  borderRadius: '12px',
-                })}
-              >
-                <Icon name="pill" size={20} sx={{ color: 'text.secondary', flex: 'none' }} />
-                <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
-                  <Box component="span" sx={{ display: 'block', fontWeight: 600 }}>
-                    {product.name}
-                  </Box>
-                  <Box
-                    component="span"
-                    sx={{ display: 'block', fontSize: '0.8125rem', color: 'text.secondary' }}
-                  >
-                    <ProductMeta product={product} />
-                  </Box>
-                </Box>
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, flex: 'none' }}>
-                  {linked ? t('medications.catalog.inYourList') : t('medications.catalog.add')}
-                </Box>
-              </Box>
-              <SameIngredientNote product={product} siblings={siblings} />
-            </Box>
-          );
-        })}
-      </Box>
+      {byName.length > 0 && (
+        <Box role="list" aria-labelledby="catalog-results-title" sx={{ display: 'grid', gap: 1 }}>
+          {renderCards(byName)}
+        </Box>
+      )}
+      {byIngredient.length > 0 && (
+        <Box
+          component="section"
+          aria-labelledby="catalog-ingredient-title"
+          sx={{ display: 'grid', gap: 1 }}
+        >
+          <SectionTitle id="catalog-ingredient-title">
+            {t('medications.catalog.byIngredient')}
+          </SectionTitle>
+          <Box
+            component="p"
+            sx={(theme) => ({ m: 0, fontSize: '0.8125rem', color: palette(theme).text.secondary })}
+          >
+            {t('medications.catalog.byIngredientNote')}
+          </Box>
+          <Box
+            role="list"
+            aria-labelledby="catalog-ingredient-title"
+            sx={{ display: 'grid', gap: 1 }}
+          >
+            {renderCards(byIngredient)}
+          </Box>
+        </Box>
+      )}
+      {anyOfficial && <OfficialAttribution />}
       {notice && (
         <Box role="status" sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
           {notice}
@@ -161,6 +144,91 @@ export function CatalogResults({
           }}
         />
       )}
+    </Box>
+  );
+}
+
+function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <Box
+      component="p"
+      id={id}
+      sx={(theme) => ({
+        m: 0,
+        fontSize: '0.75rem',
+        fontWeight: 500,
+        color: palette(theme).text.secondary,
+      })}
+    >
+      {children}
+    </Box>
+  );
+}
+
+/** One catalog product: the choose button (name, official label, details) and the same-ingredient note. */
+function CatalogResultCard({
+  match: { product, siblings },
+  linked,
+  onChoose,
+}: {
+  match: CatalogMatch;
+  linked: Medication | undefined;
+  onChoose: (product: ProductDto) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Box
+      role="listitem"
+      sx={(theme) => ({
+        ...filledSurface(theme),
+        borderRadius: '18px',
+        display: 'grid',
+        gap: 0.75,
+        p: 1.25,
+      })}
+    >
+      <Box
+        component="button"
+        type="button"
+        onClick={() => onChoose(product)}
+        aria-label={
+          linked
+            ? t('medications.catalog.useExisting', { name: linked.name })
+            : t('medications.catalog.addNamed', { name: product.name })
+        }
+        sx={(theme) => ({
+          ...optionBase(theme),
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.25,
+          width: '100%',
+          minHeight: 48,
+          background: 'none',
+          textAlign: 'start',
+          color: palette(theme).text.primary,
+          p: 0,
+          borderRadius: '12px',
+        })}
+      >
+        <Icon name="pill" size={20} sx={{ color: 'text.secondary', flex: 'none' }} />
+        <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
+          <Box component="span" sx={{ display: 'block', fontWeight: 600 }}>
+            {product.name}
+          </Box>
+          <Box
+            component="span"
+            sx={{ display: 'block', fontSize: '0.8125rem', color: 'text.secondary' }}
+          >
+            <ProductMeta product={product} />
+          </Box>
+          <OfficialSourceLabel product={product} />
+        </Box>
+        <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, flex: 'none' }}>
+          {linked ? t('medications.catalog.inYourList') : t('medications.catalog.add')}
+        </Box>
+      </Box>
+      <AmbiguousNameWarning product={product} />
+      <SameIngredientNote product={product} siblings={siblings} />
     </Box>
   );
 }

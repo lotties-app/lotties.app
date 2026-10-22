@@ -1,8 +1,14 @@
 import { useState } from 'react';
+import axe from 'axe-core';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api/ApiError';
-import { cacheProducts, productKey, searchCachedProducts } from '../db/catalogCache';
+import {
+  cacheProducts,
+  matchesOnlyBySubstance,
+  productKey,
+  searchCachedProducts,
+} from '../db/catalogCache';
 import type { BabyRoutineDb } from '../db/database';
 import type { ProductDto, ProductMatchDto } from '../sync/contract';
 import { BABY_ID, fakeApi, testDatabase, type ApiCall } from '../test/fakeApi';
@@ -37,9 +43,13 @@ function product(over: Partial<ProductDto> = {}): ProductDto {
 const FLYGAS = product();
 const LUFTAL = product({ id: 'p-luftal', name: 'Luftal' });
 
-const match = (p: ProductDto, siblings: ProductDto[] = []): ProductMatchDto => ({
+const match = (
+  p: ProductDto,
+  siblings: ProductDto[] = [],
+  matchedBy: ProductMatchDto['matchedBy'] = 'name',
+): ProductMatchDto => ({
   product: p,
-  matchedBy: 'name',
+  matchedBy,
   distance: 0,
   sameActiveIngredient: siblings.map(({ id, name, form, country, status }) => ({
     id,
@@ -220,6 +230,232 @@ describe('shared catalog search', () => {
   });
 });
 
+const OFFICIAL_LUFTAL = product({
+  id: 'p-off-luftal',
+  name: 'Luftal',
+  status: 'official',
+  source: 'anvisa',
+  substances: [{ ...SIMETHICONE, strength: null }],
+});
+const OFFICIAL_GENERIC = product({
+  id: 'p-off-generic',
+  name: 'Simeticona',
+  status: 'official',
+  source: 'anvisa',
+  presentation: '75 MG/ML',
+  substances: [{ ...SIMETHICONE, strength: null }],
+});
+
+/** The API reply for "simeticona": the generic by name, Luftal and Flygas by their ingredient. */
+const ingredientSearch = (call: ApiCall) =>
+  call.path.startsWith('/api/v1/catalog/products?q=simeticona')
+    ? [
+        match(OFFICIAL_GENERIC, [OFFICIAL_LUFTAL, FLYGAS]),
+        match(OFFICIAL_LUFTAL, [OFFICIAL_GENERIC, FLYGAS], 'substance'),
+        match(FLYGAS, [OFFICIAL_GENERIC, OFFICIAL_LUFTAL], 'substance'),
+      ]
+    : undefined;
+
+describe('search by active ingredient and the official list', () => {
+  it('lists the products with the typed ingredient in their own section, information only', async () => {
+    renderChooser(ingredientSearch);
+    type('simeticona');
+
+    const section = await screen.findByRole('region', { name: 'Products with this ingredient' });
+    expect(
+      within(section).getByText(
+        'Information only. Ask your doctor or pharmacist before substituting.',
+      ),
+    ).toBeTruthy();
+    expect(within(section).getAllByRole('listitem')).toHaveLength(2);
+    expect(
+      within(section).getByRole('button', { name: 'Add Luftal from the catalog' }),
+    ).toBeTruthy();
+    // The product matched by name stays in the main list, outside the ingredient section.
+    const main = screen.getByRole('list', { name: 'From the shared catalog' });
+    expect(
+      within(main).getByRole('button', { name: 'Add Simeticona from the catalog' }),
+    ).toBeTruthy();
+    expect(main.textContent).toMatch(/Drops · 75 MG\/ML · Simethicone/);
+  });
+
+  it('choosing a product of the ingredient section selects it like any result', async () => {
+    const { onPick } = renderChooser(ingredientSearch);
+    type('simeticona');
+    const section = await screen.findByRole('region', { name: 'Products with this ingredient' });
+    fireEvent.click(within(section).getByRole('button', { name: 'Add Luftal from the catalog' }));
+
+    await waitFor(() => expect(onPick).toHaveBeenCalledTimes(1));
+    const created = (await db.medications.toArray()).find((m) => m.name === 'Luftal')!;
+    expect(created.productId).toBe('p-off-luftal');
+    // Only the picked official product is kept on the device; the other official results are not.
+    expect((await db.catalogProducts.toArray()).map((row) => row.id).sort()).toEqual([
+      'p-flygas',
+      'p-off-luftal',
+    ]);
+  });
+
+  it('labels official products and shows the source attribution once', async () => {
+    renderChooser(ingredientSearch);
+    type('simeticona');
+    await screen.findByRole('region', { name: 'Products with this ingredient' });
+
+    expect(screen.getAllByText('Official list (ANVISA)')).toHaveLength(2);
+    expect(
+      screen.getAllByText(
+        'Source: Anvisa open data (registered medicines and the CMED price list). Not reviewed by a pharmacist; not medical advice.',
+      ),
+    ).toHaveLength(1);
+    expect(screen.getAllByRole('note')[0].textContent).toBe(
+      'Contains the same active ingredient as Luftal and Flygas: Simethicone. Ask your doctor or pharmacist before substituting.',
+    );
+  });
+
+  it('has no axe violation in the results with the ingredient section', async () => {
+    renderChooser(ingredientSearch);
+    type('simeticona');
+    const section = await screen.findByRole('region', { name: 'Products with this ingredient' });
+
+    const results = await axe.run(section.parentElement!);
+    expect(results.violations).toEqual([]);
+  });
+
+  it('shows no attribution when no official product is listed', async () => {
+    renderChooser((call) =>
+      call.path.includes('/catalog/products') ? [match(FLYGAS)] : undefined,
+    );
+    type('flygas');
+    await screen.findByRole('button', { name: 'Add Flygas from the catalog' });
+
+    expect(screen.queryByText(/^Source: Anvisa/)).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Products with this ingredient' })).toBeNull();
+  });
+
+  it('reads in pt-BR', async () => {
+    await useTestLocale('pt-BR');
+    renderChooser(ingredientSearch);
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'simeticona' } });
+
+    const section = await screen.findByRole('region', {
+      name: 'Produtos com este princípio ativo',
+    });
+    expect(
+      within(section).getByText(
+        'Apenas informativo. Pergunte ao médico ou ao farmacêutico antes de trocar.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByText('Lista oficial (Anvisa)')).toHaveLength(2);
+    expect(screen.getByText(/^Fonte: dados abertos da Anvisa/)).toBeTruthy();
+  });
+});
+
+const SORINE_DECONGESTANT = product({
+  id: 'p-sorine-naf',
+  name: 'Sorine (cloridrato de nafazolina)',
+  status: 'official',
+  source: 'anvisa',
+  ambiguousName: 'Sorine',
+  substances: [
+    {
+      substanceId: 's-naf',
+      key: 'naphazoline',
+      nameEn: 'Naphazoline',
+      namePtBr: 'Nafazolina',
+      strength: null,
+    },
+  ],
+});
+const SORINE_UNKNOWN = product({
+  id: 'p-sorine-none',
+  name: 'Sorine (princípio ativo não informado)',
+  form: 'other',
+  status: 'official',
+  source: 'anvisa',
+  ambiguousName: 'Sorine',
+  substances: [],
+});
+const SORINE_SALINE = product({
+  id: 'p-sorine-saline',
+  name: 'Sorine Solução Nasal Salina',
+  form: 'spray',
+  status: 'curated',
+  source: 'curated',
+  substances: [
+    {
+      substanceId: 's-nacl',
+      key: 'sodium_chloride',
+      nameEn: 'Sodium chloride',
+      namePtBr: 'Cloreto de sódio',
+      strength: null,
+    },
+  ],
+});
+
+const sorineSearch = (call: ApiCall) =>
+  call.path.startsWith('/api/v1/catalog/products?q=sorine')
+    ? [match(SORINE_DECONGESTANT), match(SORINE_UNKNOWN), match(SORINE_SALINE)]
+    : undefined;
+
+describe('ambiguous names, curated products and missing ingredients', () => {
+  it('lists every variant of an ambiguous name with its ingredients and a warning to check the box', async () => {
+    renderChooser(sorineSearch);
+    type('sorine');
+
+    const decongestant = await screen.findByRole('button', {
+      name: 'Add Sorine (cloridrato de nafazolina) from the catalog',
+    });
+    expect(decongestant.textContent).toMatch(/Drops · Naphazoline/);
+    const unknown = screen.getByRole('button', {
+      name: 'Add Sorine (princípio ativo não informado) from the catalog',
+    });
+    expect(unknown.textContent).toMatch(/Other · Ingredient not listed in the official data/);
+    expect(
+      screen.getAllByText(
+        'Different products share this name with different ingredients. Check the box.',
+      ),
+    ).toHaveLength(2);
+  });
+
+  it('labels curated products apart from the official list and shows their ingredients', async () => {
+    renderChooser(sorineSearch);
+    type('sorine');
+
+    const saline = await screen.findByRole('button', {
+      name: 'Add Sorine Solução Nasal Salina from the catalog',
+    });
+    expect(saline.textContent).toMatch(/Spray · Sodium chloride/);
+    expect(saline.textContent).toMatch(/Curated list \(not reviewed by a pharmacist\)/);
+    expect(screen.getAllByText('Official list (ANVISA)')).toHaveLength(2);
+    expect(screen.getAllByText('Curated list (not reviewed by a pharmacist)')).toHaveLength(1);
+  });
+
+  it('has no axe violation with ambiguous and curated results', async () => {
+    renderChooser(sorineSearch);
+    type('sorine');
+    const list = await screen.findByRole('list', { name: 'From the shared catalog' });
+
+    const results = await axe.run(list.parentElement!);
+    expect(results.violations).toEqual([]);
+  });
+
+  it('reads in pt-BR', async () => {
+    await useTestLocale('pt-BR');
+    renderChooser(sorineSearch);
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'sorine' } });
+
+    const unknown = await screen.findByRole('button', {
+      name: 'Adicionar Sorine (princípio ativo não informado) do catálogo',
+    });
+    expect(unknown.textContent).toMatch(/Princípio ativo não informado nos dados oficiais/);
+    expect(
+      screen.getAllByText(
+        'Produtos diferentes usam este nome com princípios ativos diferentes. Confira a embalagem.',
+      ),
+    ).toHaveLength(2);
+    expect(screen.getByText('Lista curada (não revisada por farmacêutico)')).toBeTruthy();
+  });
+});
+
 describe('shared catalog search offline', () => {
   it('searches only the products cached on this device and cannot add new ones', async () => {
     await cacheProducts(db, [FLYGAS, LUFTAL]);
@@ -274,6 +510,19 @@ describe('catalog cache', () => {
       substances: [{ ...SIMETHICONE, substanceId: 's-other' }],
     });
     expect(siblingsIn(FLYGAS, [FLYGAS, LUFTAL, other]).map((s) => s.name)).toEqual(['Luftal']);
+  });
+
+  it('lists offline siblings like the API: official first, not the same name, not retired', () => {
+    const flygasTablet = product({ id: 'p-fly-tab', name: 'Flygas', form: 'tablet' });
+    const retired = product({ id: 'p-old', name: 'Old', status: 'official', inactive: true });
+    expect(
+      siblingsIn(FLYGAS, [LUFTAL, flygasTablet, retired, OFFICIAL_GENERIC]).map((s) => s.name),
+    ).toEqual(['Simeticona', 'Luftal']);
+  });
+
+  it('marks offline matches found only through a substance', () => {
+    expect(matchesOnlyBySubstance(FLYGAS, 'simeticona')).toBe(true);
+    expect(matchesOnlyBySubstance(FLYGAS, 'fly')).toBe(false);
   });
 
   it('keeps only the most recently used products', async () => {

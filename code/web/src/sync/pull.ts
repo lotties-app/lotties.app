@@ -1,5 +1,7 @@
 import type { BabyRoutineDb } from '../db/database';
 import { saveLatestWeight } from '../db/bodyWeight';
+import { cacheProducts } from '../db/catalogCache';
+import { isProduct } from '../medications/catalogApi';
 import {
   BABIES_LISTED_KEY,
   editTimeOf,
@@ -225,6 +227,35 @@ export async function refreshLatestWeight(ctx: SyncContext, babyId: string): Pro
   }
 }
 
+/** Most catalog products fetched per baby and pull (the rest follow on later pulls). */
+export const LINKED_PRODUCTS_PER_PULL = 20;
+
+/**
+ * Keeps the shared-catalog products the family's medications link to on this device, so the
+ * product details and the offline search work on every device of the family. Only linked products
+ * missing from the device cache are fetched (`GET /catalog/products/{id}`): the shared catalog
+ * itself (thousands of official ANVISA products) is never pulled. Best effort: a failure leaves the
+ * cache as it was.
+ */
+export async function refreshLinkedProducts(ctx: SyncContext, babyId: string): Promise<void> {
+  const { db } = ctx;
+  const linked = new Set(
+    (await db.medications.where('babyId').equals(babyId).toArray())
+      .map((m) => m.productId)
+      .filter((id): id is string => !!id),
+  );
+  const cached = new Set((await db.catalogProducts.bulkGet([...linked])).map((row) => row?.id));
+  const missing = [...linked].filter((id) => !cached.has(id)).slice(0, LINKED_PRODUCTS_PER_PULL);
+  for (const productId of missing) {
+    try {
+      const product = await get<unknown>(ctx, apiPaths.catalogProduct(productId));
+      if (isProduct(product)) await cacheProducts(db, [product]);
+    } catch {
+      // Offline or unknown product: keep what is cached.
+    }
+  }
+}
+
 /**
  * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure or a paging
  * loop for one baby is collected and the others continue; network/401/transient failures are
@@ -235,6 +266,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
   for (const babyId of await refreshBabies(ctx)) {
     try {
       await refreshCatalogs(ctx, babyId);
+      await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
       await pullEvents(ctx, babyId);
       await refreshLatestWeight(ctx, babyId);

@@ -13,6 +13,7 @@ import { illustrationKeyFor } from '../../ui/illustrations/eventKey';
 import { EventIllustration } from '../../ui/illustrations/EventIllustration';
 import { otherTimers, type ForgottenTimer } from '../timers';
 import { ForgottenNotice } from './ForgottenNotice';
+import { LockedNote } from '../../baby/LockedNote';
 import type { NowAction } from './useNowAction';
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
   nursingId: string | null;
   actions: PresetActions;
   readOnly: boolean;
+  /** Who started a timer the user may not stop or pause (`EventAccess.controlLockedBy`). */
+  lockedBy: (event: BabyEvent) => string | null;
   isSnoozed: (eventId: string) => boolean;
   onKeepRunning: (eventId: string) => void;
   action: NowAction;
@@ -36,6 +39,7 @@ interface RowProps {
   forgotten: ForgottenTimer | undefined;
   actions: PresetActions;
   readOnly: boolean;
+  lockedBy: string | null;
   snoozed: boolean;
   onKeepRunning: (eventId: string) => void;
   action: NowAction;
@@ -48,6 +52,7 @@ function TimerRow({
   forgotten,
   actions,
   readOnly,
+  lockedBy,
   snoozed,
   onKeepRunning,
   action,
@@ -59,6 +64,7 @@ function TimerRow({
   const commands = useTimerCommands();
   const paused = isPaused(event);
   const elapsed = effectiveElapsedSeconds(event, nowMs) * 1000;
+  const off = readOnly || lockedBy !== null;
   return (
     <Card component="article" aria-label={name} sx={{ p: 1.5 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
@@ -85,7 +91,7 @@ function TimerRow({
           variant="icon"
           paused={paused}
           name={name}
-          disabled={readOnly}
+          disabled={off}
           onPress={() =>
             void action.run(() => (paused ? commands.resume(event.id) : commands.pause(event.id)))
           }
@@ -93,7 +99,7 @@ function TimerRow({
         <Button
           variant="outlined"
           color="inherit"
-          disabled={readOnly}
+          disabled={off}
           startIcon={<Icon name="stop" size={20} />}
           aria-label={t('home.stopNamed', { name })}
           onClick={() => void actions.stop(event, { name })}
@@ -102,6 +108,11 @@ function TimerRow({
           {t('home.stop')}
         </Button>
       </Stack>
+      {lockedBy !== null && (
+        <Box sx={{ mt: 1 }}>
+          <LockedNote name={lockedBy} />
+        </Box>
+      )}
       {forgotten && !snoozed && (
         <Box sx={{ mt: 1.5 }}>
           <ForgottenNotice
@@ -113,7 +124,7 @@ function TimerRow({
             endLabel={t('now.forgotten.stopAt', { time: formatTime(forgotten.suggestedEnd) })}
             onEnd={() => void actions.stop(event, { name, endedAt: forgotten.suggestedEnd })}
             onKeep={() => onKeepRunning(event.id)}
-            disabled={readOnly}
+            disabled={off}
           />
         </Box>
       )}
@@ -134,6 +145,7 @@ export function TimersBar({
   nursingId,
   actions,
   readOnly,
+  lockedBy,
   isSnoozed,
   onKeepRunning,
   action,
@@ -153,6 +165,7 @@ export function TimersBar({
           forgotten={forgotten.get(event.id)}
           actions={actions}
           readOnly={readOnly}
+          lockedBy={lockedBy(event)}
           snoozed={isSnoozed(event.id)}
           onKeepRunning={onKeepRunning}
           action={action}

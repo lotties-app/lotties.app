@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, IconButton, Snackbar, Typography } from '@mui/material';
 import { describeApiError } from '../api/errorMessages';
-import { canWrite } from '../baby/permissions';
+import { canLog } from '../baby/permissions';
+import { useEventAccess } from '../baby/useEventAccess';
 import { useEventTypes, useRunningEvents } from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
 import { EventSheet } from '../events/EventSheet';
@@ -64,13 +65,15 @@ interface RowProps {
   timer: RunningTimer;
   nowMs: number;
   readOnly: boolean;
+  /** A timer the user may not stop or pause (someone else's nursing): none here (the sheet says why). */
+  locked: boolean;
   onOpen: () => void;
   onTogglePause: () => void;
   onStop: () => void;
 }
 
 /** One timer of the expanded list: illustration, name, live time, pause and stop. */
-function ListRow({ timer, nowMs, readOnly, onOpen, onTogglePause, onStop }: RowProps) {
+function ListRow({ timer, nowMs, readOnly, locked, onOpen, onTogglePause, onStop }: RowProps) {
   const { t } = useTranslation();
   const title = useTimerTitle();
   const name = title(timer);
@@ -109,14 +112,18 @@ function ListRow({ timer, nowMs, readOnly, onOpen, onTogglePause, onStop }: RowP
           </Typography>
         </Box>
       </ButtonBase>
-      <PauseResumeButton
-        variant="icon"
-        paused={paused}
-        name={name}
-        disabled={readOnly}
-        onPress={onTogglePause}
-      />
-      <StopIconButton name={name} disabled={readOnly} onPress={onStop} />
+      {!locked && (
+        <>
+          <PauseResumeButton
+            variant="icon"
+            paused={paused}
+            name={name}
+            disabled={readOnly}
+            onPress={onTogglePause}
+          />
+          <StopIconButton name={name} disabled={readOnly} onPress={onStop} />
+        </>
+      )}
     </Box>
   );
 }
@@ -155,12 +162,13 @@ interface BarProps {
   baby: Baby;
   timers: RunningTimer[];
   readOnly: boolean;
+  isLocked: (timer: RunningTimer) => boolean;
   onOpen: (id: string) => void;
   onToggle: (timer: RunningTimer) => void;
   onStop: (timer: RunningTimer) => void;
 }
 
-function Bar({ baby, timers, readOnly, onOpen, onToggle, onStop }: BarProps) {
+function Bar({ baby, timers, readOnly, isLocked, onOpen, onToggle, onStop }: BarProps) {
   const { t } = useTranslation();
   const title = useTimerTitle();
   const nowMs = useNow(1000);
@@ -212,6 +220,7 @@ function Bar({ baby, timers, readOnly, onOpen, onToggle, onStop }: BarProps) {
               timer={timer}
               nowMs={nowMs}
               readOnly={readOnly}
+              locked={isLocked(timer)}
               onOpen={() => {
                 setExpanded(false);
                 onOpen(timer.event.id);
@@ -327,14 +336,18 @@ function Bar({ baby, timers, readOnly, onOpen, onToggle, onStop }: BarProps) {
               <Icon name={expanded ? 'expand' : 'collapse'} size={16} />
             </ButtonBase>
           )}
-          <PauseResumeButton
-            variant="icon"
-            paused={paused}
-            name={name}
-            disabled={readOnly}
-            onPress={() => onToggle(main)}
-          />
-          <StopIconButton name={name} disabled={readOnly} onPress={() => onStop(main)} />
+          {!isLocked(main) && (
+            <>
+              <PauseResumeButton
+                variant="icon"
+                paused={paused}
+                name={name}
+                disabled={readOnly}
+                onPress={() => onToggle(main)}
+              />
+              <StopIconButton name={name} disabled={readOnly} onPress={() => onStop(main)} />
+            </>
+          )}
         </Box>
         {main.kind === 'sleep' && (
           <Box sx={{ px: 1.5, pb: 1.25, mt: -0.25 }}>
@@ -366,7 +379,8 @@ export function MiniTimerBar({ baby }: { baby: Baby }) {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [editing, setEditing] = useState<BabyEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const readOnly = !canWrite(baby);
+  const readOnly = !canLog(baby);
+  const access = useEventAccess(baby);
   const title = useTimerTitle();
 
   const timers = types && running && !night ? runningTimers(running, types) : [];
@@ -390,6 +404,7 @@ export function MiniTimerBar({ baby }: { baby: Baby }) {
           baby={baby}
           timers={timers}
           readOnly={readOnly}
+          isLocked={(timer) => access.controlLockedBy(timer.event) !== null}
           onOpen={setSheetId}
           onToggle={toggle}
           onStop={stop}
@@ -401,6 +416,8 @@ export function MiniTimerBar({ baby }: { baby: Baby }) {
           types={types}
           event={sheetTimer.event}
           readOnly={readOnly}
+          lockedBy={access.lockedBy(sheetTimer.event)}
+          controlLockedBy={access.controlLockedBy(sheetTimer.event)}
           commands={commands}
           run={run}
           onClose={() => setSheetId(null)}

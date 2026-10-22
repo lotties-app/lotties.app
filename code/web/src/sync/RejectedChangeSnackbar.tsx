@@ -1,0 +1,27 @@
+import { useTranslation } from 'react-i18next';
+import { Snackbar } from '@mui/material';
+import { TOAST_BOTTOM } from '../now/ui/ToastHost';
+import { dismissRejectionNotice, useRejectionNotice } from './rejectionNotice';
+
+const NOTICE_MS = 8_000;
+
+/**
+ * Says once, without blocking, that the server refused a change because of the user's role (see
+ * `rejectionNotice.ts`). Mount once in the shell.
+ */
+export function RejectedChangeSnackbar() {
+  const { t } = useTranslation();
+  const notice = useRejectionNotice();
+  return (
+    <Snackbar
+      key={notice?.id ?? 'none'}
+      open={notice !== null}
+      autoHideDuration={NOTICE_MS}
+      onClose={(_, reason) => reason !== 'clickaway' && dismissRejectionNotice(notice?.id)}
+      message={
+        notice?.kind === 'role' ? t('sync.rejectedRole') : notice ? t('sync.rejectedNotOwned') : ''
+      }
+      sx={{ bottom: TOAST_BOTTOM }}
+    />
+  );
+}

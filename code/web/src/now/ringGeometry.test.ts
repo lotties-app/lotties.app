@@ -2,11 +2,17 @@ import { describe, expect, it } from 'vitest';
 import type { BabyEvent, EventType } from '../db/models';
 import { SLEEP_TYPE } from '../test/builtInTypes';
 import {
+  angleDistance,
   angleOf,
   arcPath,
   buildRing,
   dayFrame,
+  placeRingLabels,
   polar,
+  RING_LABEL_CLEARANCE,
+  ringHourLabels,
+  ringLegendKeys,
+  sectorPath,
   spanAngles,
   wrappedSpanAngles,
 } from './ringGeometry';
@@ -157,5 +163,118 @@ describe('buildRing', () => {
       now,
     });
     expect(ring.spans).toEqual([]);
+  });
+
+  it('draws a running sleep up to now and counts it', () => {
+    const ring = buildRing({ events: [sleep('run', at(13, 0), null, 'nap')], types, now });
+    expect(ring.spans).toEqual([{ id: 'run', kind: 'nap', from: 195, to: 210 }]);
+    expect(ring.sleptMinutes).toBe(60);
+  });
+
+  it('has nothing but now on an empty day', () => {
+    const ring = buildRing({ events: [], types, now });
+    expect(ring.spans).toEqual([]);
+    expect(ring.windows).toEqual([]);
+    expect(ring.sleptMinutes).toBe(0);
+    expect(ringLegendKeys(ring)).toEqual(['now']);
+  });
+
+  it('cuts a window that crosses midnight at the end of the face, not at the top', () => {
+    const late = at(23, 30);
+    const ring = buildRing({
+      events: [],
+      types,
+      now: late,
+      windows: [{ earliest: at(23, 45).toISOString(), latest: at(0, 40, 1).toISOString() }],
+    });
+    expect(ring.windows).toHaveLength(1);
+    expect(ring.windows[0].from).toBeCloseTo(356.25);
+    expect(ring.windows[0].to).toBe(360);
+  });
+});
+
+describe('sectorPath', () => {
+  it('closes a band between two radii and is empty without sweep', () => {
+    const path = sectorPath(50, 50, 30, 40, 0, 90);
+    expect(path.startsWith('M 50 10 A 40 40 0 0 1 90 50 L 80 50 A 30 30 0 0 0 50 20')).toBe(true);
+    expect(path.endsWith('Z')).toBe(true);
+    expect(sectorPath(50, 50, 30, 40, 10, 10)).toBe('');
+    expect(sectorPath(50, 50, 30, 40, 0, 270)).toContain('A 40 40 0 1 1');
+  });
+});
+
+describe('label collision avoidance', () => {
+  it('measures distance around the face both ways', () => {
+    expect(angleDistance(350, 10)).toBe(20);
+    expect(angleDistance(0, 360)).toBe(0);
+    expect(angleDistance(90, 270)).toBe(180);
+  });
+
+  it('keeps two labels apart by dropping the less important one', () => {
+    const kept = placeRingLabels(
+      [
+        { key: 'a', angle: 100, priority: 1 },
+        { key: 'b', angle: 105, priority: 2 },
+        { key: 'c', angle: 200, priority: 1 },
+      ],
+      { minDegrees: 12 },
+    );
+    expect(kept.map((label) => label.key)).toEqual(['b', 'c']);
+  });
+
+  it('keeps labels apart across midnight', () => {
+    const kept = placeRingLabels(
+      [
+        { key: 'late', angle: 355, priority: 1 },
+        { key: 'midnight', angle: 0, priority: 2 },
+      ],
+      { minDegrees: 12 },
+    );
+    expect(kept.map((label) => label.key)).toEqual(['midnight']);
+  });
+
+  it('keeps every kept label at least the minimum apart', () => {
+    const candidates = Array.from({ length: 40 }, (_, i) => ({
+      key: `l${i}`,
+      angle: (i * 37) % 360,
+      priority: i % 3,
+    }));
+    const kept = placeRingLabels(candidates, { minDegrees: 20 });
+    for (const a of kept) {
+      for (const b of kept) {
+        if (a !== b) expect(angleDistance(a.angle, b.angle)).toBeGreaterThanOrEqual(20);
+      }
+    }
+  });
+
+  it('drops an hour label the now marker sits on, and only that one', () => {
+    expect(ringHourLabels(null).map((l) => l.hour)).toEqual([0, 6, 12, 18]);
+    expect(ringHourLabels(angleOf(at(11, 30).getTime(), frame)).map((l) => l.hour)).toEqual([
+      0, 6, 18,
+    ]);
+    expect(ringHourLabels(angleOf(at(23, 50).getTime(), frame)).map((l) => l.hour)).toEqual([
+      6, 12, 18,
+    ]);
+    // Far enough from every hour: all four stay.
+    expect(ringHourLabels(angleOf(at(9).getTime(), frame)).map((l) => l.hour)).toEqual([
+      0, 6, 12, 18,
+    ]);
+    // Exactly at the clearance the label stays.
+    expect(ringHourLabels(180 - RING_LABEL_CLEARANCE).map((l) => l.hour)).toEqual([0, 6, 12, 18]);
+  });
+});
+
+describe('ringLegendKeys', () => {
+  it('names only what the ring draws, in a fixed order', () => {
+    expect(
+      ringLegendKeys({
+        spans: [
+          { id: 'n', kind: 'nap', from: 1, to: 2 },
+          { id: 'w', kind: 'waking', from: 3, to: 4 },
+          { id: 'g', kind: 'night', from: 0, to: 1 },
+        ],
+        windows: [{ id: 'window-0', from: 5, to: 6, earliest: '', latest: '' }],
+      }),
+    ).toEqual(['night', 'nap', 'waking', 'window', 'now']);
   });
 });
