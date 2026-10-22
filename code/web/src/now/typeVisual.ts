@@ -21,6 +21,14 @@ const CATEGORY_OF_KEY: ReadonlyMap<string, CategoryName> = new Map<string, Categ
   // Soothing a crying baby is care, not a symptom or a medicine (docs/design/11-patterns.md).
   ['fussy', 'care'],
   ['tummy_time', 'activity'],
+  ['nail_trim', 'care'],
+  ['temperature', 'health'],
+  ['spit_up', 'health'],
+  ['teething', 'health'],
+  ['milestone', 'care'],
+  ['symptom', 'health'],
+  ['outdoor', 'care'],
+  ['skin_care', 'care'],
 ]);
 
 export function typeCategory(type: Pick<EventType, 'key' | 'babyId'> | undefined): CategoryName {

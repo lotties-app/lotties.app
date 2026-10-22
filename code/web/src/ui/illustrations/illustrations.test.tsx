@@ -162,7 +162,18 @@ describe('registry', () => {
   const sleepKinds = SLEEP_DTO.fields!.find((f) => f.key === 'kind')!.options!;
   const feedingMethods = FEEDING_DTO.fields!.find((f) => f.key === 'method')!.options!;
   /** Built-in types and presets with no drawing yet: their type icon in the category tile. */
-  const withoutDrawing: readonly string[] = ['nasal_suction', 'belly_massage', 'fussy'];
+  const withoutDrawing: readonly string[] = [
+    'nasal_suction',
+    'belly_massage',
+    'fussy',
+    'nail_trim',
+    'spit_up',
+    'teething',
+    'milestone',
+    'symptom',
+    'outdoor',
+    'skin_care',
+  ];
   const drawn = (keys: readonly string[]) => keys.filter((key) => !withoutDrawing.includes(key));
 
   it.each([
@@ -187,7 +198,7 @@ describe('registry', () => {
     }
   });
 
-  it('knows the eleven built-in types of the API', () => {
+  it('knows the nineteen built-in types of the API', () => {
     expect([...builtInTypeKeys].sort()).toEqual(
       [
         'bath',
@@ -201,6 +212,14 @@ describe('registry', () => {
         'nasal_suction',
         'sleep',
         'tummy_time',
+        'nail_trim',
+        'temperature',
+        'spit_up',
+        'teething',
+        'milestone',
+        'symptom',
+        'outdoor',
+        'skin_care',
       ].sort(),
     );
   });

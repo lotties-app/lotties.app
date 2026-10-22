@@ -211,6 +211,153 @@ export const FUSSY_DTO: EventTypeDto = {
   ],
 };
 
+export const NAIL_TRIM_DTO: EventTypeDto = {
+  id: 'bd1fde97-19c8-49a9-9ffd-537449183686',
+  babyId: null,
+  key: 'nail_trim',
+  name: 'Nail trim',
+  icon: 'content_cut',
+  color: '#5c6bc0',
+  hasDuration: false,
+  fields: [field('where', 'Where', 'select', { options: ['hands', 'feet', 'both'] })],
+};
+
+export const TEMPERATURE_DTO: EventTypeDto = {
+  id: 'c3691235-0279-429c-be1c-db6692ad5455',
+  babyId: null,
+  key: 'temperature',
+  name: 'Temperature',
+  icon: 'thermostat',
+  color: '#ffca28',
+  hasDuration: false,
+  fields: [
+    field('value_c', 'Temperature', 'number', {
+      isRequired: true,
+      min: 30,
+      max: 45,
+      unit: '°C',
+      decimals: 1,
+    }),
+    field('method', 'Method', 'select', {
+      options: ['armpit', 'ear', 'forehead', 'rectal', 'mouth'],
+    }),
+  ],
+};
+
+export const SPIT_UP_DTO: EventTypeDto = {
+  id: '1a08d284-a71f-44f5-ae83-49446a6f0e3f',
+  babyId: null,
+  key: 'spit_up',
+  name: 'Spit-up / vomit',
+  icon: 'sentiment_sick',
+  color: '#c0ca33',
+  hasDuration: false,
+  fields: [
+    field('kind', 'Kind', 'select', { options: ['spit_up', 'vomit'] }),
+    field('amount', 'Amount', 'select', { options: ['little', 'some', 'a_lot'] }),
+  ],
+};
+
+export const TEETHING_DTO: EventTypeDto = {
+  id: '0a3e94b0-55c5-4d85-b530-317f161ef0cc',
+  babyId: null,
+  key: 'teething',
+  name: 'Teething',
+  icon: 'dentistry',
+  color: '#29b6f6',
+  hasDuration: false,
+  fields: [
+    field('stage', 'Stage', 'select', { options: ['gums_sore', 'tooth_came_through'] }),
+    field('tooth', 'Tooth', 'select', {
+      options: [
+        'lower_central_incisor',
+        'upper_central_incisor',
+        'lower_lateral_incisor',
+        'upper_lateral_incisor',
+        'first_molar',
+        'canine',
+        'second_molar',
+        'other',
+      ],
+      visibleWhen: { field: 'stage', equals: ['tooth_came_through'] },
+    }),
+  ],
+};
+
+export const MILESTONE_DTO: EventTypeDto = {
+  id: '3491e7b4-895b-406f-885a-238da041dd7c',
+  babyId: null,
+  key: 'milestone',
+  name: 'Milestone',
+  icon: 'emoji_events',
+  color: '#ab47bc',
+  hasDuration: false,
+  fields: [
+    field('milestone', 'Milestone', 'select', {
+      options: [
+        'first_smile',
+        'laughs',
+        'holds_head',
+        'rolls_over',
+        'sits',
+        'crawls',
+        'stands',
+        'first_steps',
+        'first_word',
+        'other',
+      ],
+    }),
+    field('custom', 'Which milestone?', 'text', {
+      visibleWhen: { field: 'milestone', equals: ['other'] },
+    }),
+  ],
+};
+
+export const SYMPTOM_DTO: EventTypeDto = {
+  id: 'fb45be64-6741-4762-ab9a-abf5c9e6a875',
+  babyId: null,
+  key: 'symptom',
+  name: 'Symptom',
+  icon: 'coronavirus',
+  color: '#e57373',
+  hasDuration: false,
+  fields: [
+    field('symptom', 'Symptom', 'select', {
+      options: ['cough', 'runny_nose', 'congestion', 'rash', 'diarrhea', 'constipation', 'other'],
+    }),
+    field('severity', 'Severity', 'select', { options: ['mild', 'moderate', 'severe'] }),
+  ],
+};
+
+export const OUTDOOR_DTO: EventTypeDto = {
+  id: 'b22205ae-bae1-432f-802a-06e0c173efe1',
+  babyId: null,
+  key: 'outdoor',
+  name: 'Outdoor time',
+  icon: 'park',
+  color: '#66bb6a',
+  hasDuration: true,
+  fields: [
+    field('kind', 'Kind', 'select', { options: ['sun', 'stroller_walk', 'park', 'other'] }),
+    ...PAUSE_FIELD_DTOS,
+  ],
+};
+
+export const SKIN_CARE_DTO: EventTypeDto = {
+  id: '9ad3dce5-dd4e-43d8-a022-5561ee7256ee',
+  babyId: null,
+  key: 'skin_care',
+  name: 'Skin care',
+  icon: 'sanitizer',
+  color: '#f48fb1',
+  hasDuration: false,
+  fields: [
+    field('product', 'Product', 'select', {
+      options: ['moisturizer', 'diaper_cream', 'sunscreen', 'other'],
+    }),
+  ],
+};
+
 export const TUMMY_TIME_DTO: EventTypeDto = {
   id: 'a2b6f1c4-5a0e-4a62-9e0d-0b8c3d1c7e11',
   babyId: null,
@@ -231,3 +378,24 @@ export const BELLY_MASSAGE_TYPE: EventType = fromEventTypeDto(BELLY_MASSAGE_DTO)
 export const FUSSY_TYPE: EventType = fromEventTypeDto(FUSSY_DTO);
 
 export const TUMMY_TIME_TYPE: EventType = fromEventTypeDto(TUMMY_TIME_DTO);
+
+export const NAIL_TRIM_TYPE: EventType = fromEventTypeDto(NAIL_TRIM_DTO);
+export const TEMPERATURE_TYPE: EventType = fromEventTypeDto(TEMPERATURE_DTO);
+export const SPIT_UP_TYPE: EventType = fromEventTypeDto(SPIT_UP_DTO);
+export const TEETHING_TYPE: EventType = fromEventTypeDto(TEETHING_DTO);
+export const MILESTONE_TYPE: EventType = fromEventTypeDto(MILESTONE_DTO);
+export const SYMPTOM_TYPE: EventType = fromEventTypeDto(SYMPTOM_DTO);
+export const OUTDOOR_TYPE: EventType = fromEventTypeDto(OUTDOOR_DTO);
+export const SKIN_CARE_TYPE: EventType = fromEventTypeDto(SKIN_CARE_DTO);
+
+/** The eight built-in types added with the `MoreEventTypes` migration. */
+export const MORE_BUILT_IN_TYPES: readonly EventType[] = [
+  NAIL_TRIM_TYPE,
+  TEMPERATURE_TYPE,
+  SPIT_UP_TYPE,
+  TEETHING_TYPE,
+  MILESTONE_TYPE,
+  SYMPTOM_TYPE,
+  OUTDOOR_TYPE,
+  SKIN_CARE_TYPE,
+];

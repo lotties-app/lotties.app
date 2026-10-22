@@ -21,6 +21,12 @@ const InvitePage = lazy(() =>
 const AppointmentsPage = lazy(() =>
   import('./pages/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })),
 );
+const VaccinesPage = lazy(() =>
+  import('./pages/VaccinesPage').then((m) => ({ default: m.VaccinesPage })),
+);
+const VaccinationCardPage = lazy(() =>
+  import('./pages/VaccinationCardPage').then((m) => ({ default: m.VaccinationCardPage })),
+);
 const NotesPage = lazy(() => import('./pages/NotesPage').then((m) => ({ default: m.NotesPage })));
 const PatientsPage = lazy(() =>
   import('./pages/PatientsPage').then((m) => ({ default: m.PatientsPage })),
@@ -51,6 +57,7 @@ const DevFormulasPreview = import.meta.env.DEV ? lazy(() => import('./dev/Formul
 const DevAppointmentsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/AppointmentsPreview'))
   : null;
+const DevVaccinesPreview = import.meta.env.DEV ? lazy(() => import('./dev/VaccinesPreview')) : null;
 const DevDoctorPreview = import.meta.env.DEV ? lazy(() => import('./dev/DoctorPreview')) : null;
 const DevProposalsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/ProposalsPreview'))
@@ -129,6 +136,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevAppointmentsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevVaccinesPreview && (
+        <Route
+          path="/dev/vaccines"
+          element={
+            <Suspense fallback={null}>
+              <DevVaccinesPreview />
             </Suspense>
           }
         />
@@ -236,6 +253,8 @@ export function AppRoutes() {
             <Route path="growth" element={<Navigate to="/insights" replace />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
+            <Route path="vaccines" element={<VaccinesPage />} />
+            <Route path="vaccines/card" element={<VaccinationCardPage />} />
             <Route path="notes" element={<NotesPage />} />
             <Route path="patients" element={<PatientsPage />} />
             <Route path="proposals" element={<ProposalsPage />} />

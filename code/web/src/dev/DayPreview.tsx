@@ -11,6 +11,7 @@ import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
 import { MiniTimerBar } from '../timers/MiniTimerBar';
+import { MORE_BUILT_IN_TYPES } from '../test/builtInTypes';
 import { PREVIEW_BABY_ID, PREVIEW_MEDICATIONS, PREVIEW_TYPES, typeIdOf } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
 
@@ -22,7 +23,7 @@ import { PreviewToolbar } from './PreviewToolbar';
  * Caregiver ("Lu") where most entries were logged by "Ana" (read-only rows, "Given by Ana").
  */
 
-const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers', 'caregiver'] as const;
+const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers', 'caregiver', 'moretypes'] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const MIN = 60_000;
 
@@ -109,6 +110,35 @@ function fullDay(day: Date): BabyEvent[] {
   ];
 }
 
+/**
+ * The `moretypes` scenario: one day with the built-in types of the `MoreEventTypes` migration, to
+ * review their Day rows (a temperature reads as the number only, never judged).
+ */
+function moreTypesDay(day: Date): BabyEvent[] {
+  const of = (key: string) => MORE_BUILT_IN_TYPES.find((type) => type.key === key)!.id;
+  const instant = (key: string, hour: number, minute: number, payload: EventPayload) =>
+    make(key, at(day, hour, minute), at(day, hour, minute), payload, { typeId: of(key) });
+  return [
+    instant('temperature', 8, 10, { value_c: 37.8, method: 'armpit' }),
+    instant('nail_trim', 9, 0, { where: 'both' }),
+    instant('spit_up', 10, 15, { kind: 'spit_up', amount: 'little' }),
+    instant('teething', 11, 0, { stage: 'tooth_came_through', tooth: 'lower_central_incisor' }),
+    make(
+      'outdoor',
+      at(day, 15, 0),
+      at(day, 15, 40),
+      { kind: 'stroller_walk' },
+      {
+        typeId: of('outdoor'),
+      },
+    ),
+    instant('milestone', 16, 20, { milestone: 'rolls_over' }),
+    instant('symptom', 17, 30, { symptom: 'runny_nose', severity: 'mild' }),
+    instant('skin_care', 19, 0, { product: 'diaper_cream' }),
+    instant('temperature', 20, 30, { value_c: 38.4 }),
+  ];
+}
+
 const CAREGIVER_ID = 'dev-me';
 const ANA_ID = 'dev-ana';
 const PREVIEW_MEMBERS = [
@@ -161,9 +191,15 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
     db.outbox.clear(),
   ]);
   await db.babies.put(baby);
-  await db.eventTypes.bulkPut(PREVIEW_TYPES);
+  await db.eventTypes.bulkPut(
+    scenario === 'moretypes' ? [...PREVIEW_TYPES, ...MORE_BUILT_IN_TYPES] : PREVIEW_TYPES,
+  );
   await db.medications.bulkPut(PREVIEW_MEDICATIONS);
   if (scenario === 'empty') return baby;
+  if (scenario === 'moretypes') {
+    await db.events.bulkPut(moreTypesDay(yesterday));
+    return baby;
+  }
   if (scenario === 'busy') {
     await db.events.bulkPut(busyHistory(today));
     return baby;

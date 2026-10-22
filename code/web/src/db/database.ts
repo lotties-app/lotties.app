@@ -15,6 +15,8 @@ import type {
   Proposal,
   SyncCursor,
   SyncEntity,
+  Vaccination,
+  VaccineScheduleCache,
 } from './models';
 
 interface SchemaVersion {
@@ -92,6 +94,15 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       noteReads: 'noteId, babyId',
     },
   },
+  {
+    // Vaccines: the baby's vaccination records (synced like prescriptions, soft deleted) and the
+    // schedule served by the API, cached for offline use (one row per profile, not per baby).
+    version: 8,
+    stores: {
+      vaccinations: 'id, babyId, [babyId+givenOn], [babyId+updatedAt]',
+      vaccineSchedules: 'profile',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -107,6 +118,8 @@ export class BabyRoutineDb extends Dexie {
   declare notes: EntityTable<Note, 'id'>;
   declare proposals: EntityTable<Proposal, 'id'>;
   declare noteReads: EntityTable<NoteRead, 'noteId'>;
+  declare vaccinations: EntityTable<Vaccination, 'id'>;
+  declare vaccineSchedules: EntityTable<VaccineScheduleCache, 'profile'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

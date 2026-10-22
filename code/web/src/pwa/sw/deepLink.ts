@@ -4,7 +4,8 @@
  * `/#notify=nap&baby=..&d=..`, `/#notify=belly&..`, `/#notify=overtired&..`, `/#notify=fussy&..`,
  * `/#notify=wet&..` or `/#notify=dirty&..` (each opens Now, where the matching card shows when it
  * applies), and `/appointments#notify=appt&baby=..&appt=..&d=..` (opens the appointment's detail
- * in the calendar), and `/from-doctor#notify=doctor&baby=..&d=..` (the doctor's suggestions page).
+ * in the calendar), `/from-doctor#notify=doctor&baby=..&d=..` (the doctor's suggestions page) and
+ * `/vaccines#notify=vaccine&baby=..&d=..` (the vaccine schedule of the baby).
  * Ids are validated GUIDs and the
  * token a validated base64url string on both sides; nothing else from a URL or a message is ever
  * used. The fragment keeps ids and the token out of server logs; the app strips it after reading
@@ -20,7 +21,8 @@ export type NotificationLink =
   | { kind: 'dose'; babyId: string; rxId: string; deliveryId: string; token?: string }
   | { kind: NowLinkKind; babyId: string; deliveryId: string }
   | { kind: 'appt'; babyId: string; appointmentId: string; deliveryId: string }
-  | { kind: 'doctor'; babyId: string; deliveryId: string };
+  | { kind: 'doctor'; babyId: string; deliveryId: string }
+  | { kind: 'vaccine'; babyId: string; deliveryId: string };
 
 /** The payload kind of each Now link, and back. */
 const PAYLOAD_KIND_OF_LINK: Readonly<Record<NowLinkKind, PushPayload['kind']>> = {
@@ -44,9 +46,16 @@ export const APPOINTMENTS_PATH = '/appointments';
 /** The route a doctor suggestion opens ("From your doctor"). */
 export const FROM_DOCTOR_PATH = '/from-doctor';
 
-/** The route of a link: the calendar for an appointment reminder, "From your doctor" for a suggestion, Now for the rest. */
+/** The route a vaccine reminder opens (the baby's vaccine schedule). */
+export const VACCINES_PATH = '/vaccines';
+
+/**
+ * The route of a link: the calendar for an appointment reminder, "From your doctor" for a
+ * suggestion, the vaccine schedule for a vaccine reminder, Now for the rest.
+ */
 export function linkPath(link: Pick<NotificationLink, 'kind'>): string {
   if (link.kind === 'appt') return APPOINTMENTS_PATH;
+  if (link.kind === 'vaccine') return VACCINES_PATH;
   return link.kind === 'doctor' ? FROM_DOCTOR_PATH : DEEP_LINK_PATH;
 }
 
@@ -87,6 +96,8 @@ export function linkOfPayload(payload: PushPayload): NotificationLink | null {
       };
     case 'doctor_suggestion':
       return { kind: 'doctor', babyId: payload.babyId, deliveryId: payload.id };
+    case 'vaccine_due':
+      return { kind: 'vaccine', babyId: payload.babyId, deliveryId: payload.id };
     case 'test':
       return null;
   }
@@ -132,6 +143,7 @@ function validLink(fields: Record<string, unknown>): NotificationLink | null {
     return appointmentId ? { kind: 'appt', babyId, appointmentId, deliveryId } : null;
   }
   if (fields.kind === 'doctor') return { kind: 'doctor', babyId, deliveryId };
+  if (fields.kind === 'vaccine') return { kind: 'vaccine', babyId, deliveryId };
   if (fields.kind !== 'dose') return null;
   const rxId = guid(fields.rxId);
   if (!rxId) return null;
@@ -157,6 +169,14 @@ export interface NotificationOpenMessage {
 }
 
 export function openMessageOf(link: NotificationLink): NotificationOpenMessage {
+  if (link.kind === 'vaccine') {
+    return {
+      type: 'notification-open',
+      kind: 'vaccine_due',
+      babyId: link.babyId,
+      deliveryId: link.deliveryId,
+    };
+  }
   if (link.kind === 'doctor') {
     return {
       type: 'notification-open',
@@ -201,6 +221,7 @@ const LINK_KIND_OF_MESSAGE: Readonly<Record<string, NotificationLink['kind']>> =
   diaper_dirty_headsup: 'dirty',
   appointment_reminder: 'appt',
   doctor_suggestion: 'doctor',
+  vaccine_due: 'vaccine',
 };
 
 /** Reads a link from a worker message (re-validated: messages are untrusted input). */

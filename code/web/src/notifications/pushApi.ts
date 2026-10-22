@@ -71,6 +71,8 @@ export interface ReminderPreferences {
   appointmentReminders: boolean;
   /** The doctor's suggestions and recommendations (`doctor_suggestion`); off by default. */
   doctorSuggestions: boolean;
+  /** The vaccine reminders (`vaccine_due`, Owners and Parents only); off by default. */
+  vaccineReminders: boolean;
 }
 
 /**
@@ -84,7 +86,8 @@ type AdditiveKinds =
   | 'diaperWetHeadsUp'
   | 'diaperDirtyHeadsUp'
   | 'appointmentReminders'
-  | 'doctorSuggestions';
+  | 'doctorSuggestions'
+  | 'vaccineReminders';
 
 export interface BabyPreferencesDto
   extends

@@ -96,6 +96,7 @@ describe('ReminderPromptCard', () => {
       diaperDirtyHeadsUp: false,
       appointmentReminders: true,
       doctorSuggestions: false,
+      vaccineReminders: false,
     });
   });
 

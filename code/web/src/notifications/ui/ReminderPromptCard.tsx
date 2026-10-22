@@ -61,6 +61,7 @@ function useDoseReminderOffer(baby: Baby) {
       diaperDirtyHeadsUp: prefs?.diaperDirtyHeadsUp ?? false,
       appointmentReminders: prefs?.appointmentReminders ?? true,
       doctorSuggestions: prefs?.doctorSuggestions ?? false,
+      vaccineReminders: prefs?.vaccineReminders ?? false,
     },
   } as const;
 }

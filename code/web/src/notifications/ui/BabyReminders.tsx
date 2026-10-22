@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, Typography } from '@mui/material';
 import { useApiClient } from '../../api/ApiClientContext';
-import { canDecideProposals, canLog } from '../../baby/permissions';
+import { canDecideProposals, canLog, canWrite } from '../../baby/permissions';
 import type { Baby } from '../../db/models';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useServerAction } from '../../settings/useServerAction';
@@ -35,6 +35,7 @@ function defaultsFor(baby: Baby): BabyPreferencesDto {
     diaperDirtyHeadsUp: false,
     appointmentReminders: canReceive,
     doctorSuggestions: false,
+    vaccineReminders: false,
   };
 }
 
@@ -66,6 +67,7 @@ function BabyRow({
       diaperDirtyHeadsUp: prefs.diaperDirtyHeadsUp ?? false,
       appointmentReminders: prefs.appointmentReminders ?? prefs.canReceive,
       doctorSuggestions: prefs.doctorSuggestions ?? false,
+      vaccineReminders: prefs.vaccineReminders ?? false,
       ...change,
     };
     const replace = (stored: BabyPreferencesDto) =>
@@ -184,6 +186,16 @@ function BabyRow({
         label={t('notifications.reminders.appointments')}
         description={t('notifications.reminders.appointmentsHelp')}
       />
+      {canWrite(baby) && (
+        <SwitchRow
+          icon="vaccine"
+          checked={prefs.vaccineReminders ?? false}
+          disabled={off}
+          onChange={(vaccineReminders) => update({ vaccineReminders })}
+          label={t('notifications.reminders.vaccines')}
+          description={t('notifications.reminders.vaccinesHelp')}
+        />
+      )}
       {canDecideProposals(baby) && (
         <SwitchRow
           icon="stethoscope"

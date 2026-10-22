@@ -1,3 +1,4 @@
+import { ApiError } from '../api/ApiError';
 import type { BabyRoutineDb } from '../db/database';
 import { saveLatestWeight } from '../db/bodyWeight';
 import { cacheProducts } from '../db/catalogCache';
@@ -10,6 +11,7 @@ import {
   type BabyEvent,
   type Formula,
   type Prescription,
+  type Vaccination,
 } from '../db/models';
 import { pendingEntityIds, rejectedStopIds } from '../db/outbox';
 import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
@@ -22,6 +24,7 @@ import {
   fromFormulaDto,
   fromMedicationDto,
   fromPrescriptionDto,
+  fromVaccinationDto,
   type AppointmentDto,
   type BabyDto,
   type EventDto,
@@ -31,6 +34,7 @@ import {
   type MedicationDto,
   type MeasurementDto,
   type PrescriptionDto,
+  type VaccinationDto,
   NEXT_CURSOR_HEADER,
 } from './contract';
 import { pullNotes } from '../notes/noteSync';
@@ -300,6 +304,52 @@ export async function pullAppointments(ctx: SyncContext, babyId: string): Promis
 }
 
 /**
+ * Merges pulled vaccinations like prescriptions: a copy with a queued local change is skipped until
+ * it is pushed, a server soft delete is final, otherwise the newer client edit time wins. The cursor
+ * moves in the same transaction.
+ */
+export async function mergeVaccinationDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: VaccinationDto[],
+): Promise<void> {
+  await db.transaction('rw', db.vaccinations, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromVaccinationDto);
+    const locals = await db.vaccinations.bulkGet(incoming.map((v) => v.id));
+    const editTime = (v: Vaccination) => Date.parse(v.clientUpdatedAt ?? v.updatedAt);
+    const wins = (remote: Vaccination, local: Vaccination | undefined) =>
+      !local || remote.deletedAt !== null || editTime(remote) >= editTime(local);
+    await db.vaccinations.bulkPut(incoming.filter((v, i) => wins(v, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'vaccinations']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'vaccinations', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the vaccinations changed since the stored cursor (minus the overlap), deleted included. */
+export async function pullVaccinations(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'vaccinations']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  let items: VaccinationDto[] | undefined;
+  try {
+    items = await get<VaccinationDto[]>(ctx, apiPaths.vaccinations(babyId, since));
+  } catch (error) {
+    // A server that does not have vaccinations yet (the web app updated first): nothing to pull,
+    // and the events that follow in this run must not be held back.
+    if (error instanceof ApiError && error.status === 404) return;
+    throw error;
+  }
+  await mergeVaccinationDelta(ctx.db, babyId, Array.isArray(items) ? items : []);
+}
+
+/**
  * Keeps the latest weight on the device (growth is online-only) for per-kg suggestions. Best
  * effort: a failure leaves the stored weight as it was.
  */
@@ -367,6 +417,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await pullPrescriptions(ctx, babyId);
       await pullFormulas(ctx, babyId);
       await pullAppointments(ctx, babyId);
+      await pullVaccinations(ctx, babyId);
       await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);
       await refreshLatestWeight(ctx, babyId);

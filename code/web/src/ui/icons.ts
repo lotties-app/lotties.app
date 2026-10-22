@@ -99,6 +99,13 @@ import IconCalendarCheck from '@tabler/icons-react/dist/esm/icons/IconCalendarCh
 import IconCalendarX from '@tabler/icons-react/dist/esm/icons/IconCalendarX.mjs';
 import IconRuler2 from '@tabler/icons-react/dist/esm/icons/IconRuler2.mjs';
 import IconLock from '@tabler/icons-react/dist/esm/icons/IconLock.mjs';
+import IconScissors from '@tabler/icons-react/dist/esm/icons/IconScissors.mjs';
+import IconMoodSick from '@tabler/icons-react/dist/esm/icons/IconMoodSick.mjs';
+import IconDental from '@tabler/icons-react/dist/esm/icons/IconDental.mjs';
+import IconTrophy from '@tabler/icons-react/dist/esm/icons/IconTrophy.mjs';
+import IconVirus from '@tabler/icons-react/dist/esm/icons/IconVirus.mjs';
+import IconTrees from '@tabler/icons-react/dist/esm/icons/IconTrees.mjs';
+import IconHandSanitizer from '@tabler/icons-react/dist/esm/icons/IconHandSanitizer.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -212,6 +219,13 @@ export const ICON_COMPONENTS = {
   'calendar-x': IconCalendarX,
   ruler: IconRuler2,
   lock: IconLock,
+  scissors: IconScissors,
+  'mood-sick': IconMoodSick,
+  tooth: IconDental,
+  trophy: IconTrophy,
+  virus: IconVirus,
+  trees: IconTrees,
+  lotion: IconHandSanitizer,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

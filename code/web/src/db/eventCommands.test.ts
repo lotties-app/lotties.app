@@ -48,6 +48,8 @@ describe('schema', () => {
         'prescriptions',
         'proposals',
         'syncState',
+        'vaccinations',
+        'vaccineSchedules',
       ].sort(),
     );
     const eventIndexes = db.events.schema.indexes.map((i) => i.name);

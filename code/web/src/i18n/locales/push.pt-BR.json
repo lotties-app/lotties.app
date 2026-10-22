@@ -65,5 +65,11 @@
     "title": "Seu médico enviou uma sugestão",
     "body": "Abra o Lotties para ver.",
     "bodyNamed": "{{baby}}: abra o Lotties para ver."
+  },
+  "vaccine_due": {
+    "title": "Pode haver uma vacina a tomar",
+    "body": "Abra o Lotties para ver o calendário de vacinas.",
+    "bodyNamed": "{{baby}}: {{vaccine}} pode estar na época, segundo o calendário.",
+    "bodyBaby": "{{baby}}: pode haver uma vacina a tomar, segundo o calendário."
   }
 }

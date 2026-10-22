@@ -92,6 +92,7 @@ export function SettingsPage() {
             <FormulasSection baby={baby} />
           </SettingsSection>
           <SettingsLinkRow to="/appointments" title={t('settings.sections.appointments')} />
+          <SettingsLinkRow to="/vaccines" title={t('settings.sections.vaccines')} />
           <DoctorSettingsEntries baby={baby} />
           <SettingsSection
             id="import"

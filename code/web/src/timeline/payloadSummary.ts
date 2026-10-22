@@ -144,7 +144,25 @@ export function payloadParts(
       .filter(([key]) => !known.has(key) && !INTERNAL_KEYS.has(key))
       .map(([key, raw]) => ({ key, text: extraPart(key, raw) })),
   ];
-  return parts.filter((p): p is PayloadPart => !!p.text);
+  return parts
+    .filter((p): p is PayloadPart => !!p.text)
+    .filter((p) => !isOtherMilestoneWithWords(type, payload, p));
+}
+
+/**
+ * A milestone of the "other" option described in the parents' own words reads as those words
+ * alone (`Waved bye-bye`, not `Other · Waved bye-bye`).
+ */
+function isOtherMilestoneWithWords(
+  type: EventType | undefined,
+  payload: EventPayload,
+  part: PayloadPart,
+): boolean {
+  if (type?.babyId !== null || type.key !== 'milestone' || part.key !== 'milestone') return false;
+  const custom = getOwn(payload, 'custom');
+  return (
+    getOwn(payload, 'milestone') === 'other' && typeof custom === 'string' && custom.trim() !== ''
+  );
 }
 
 /** Names of the logged medications, falling back to the catalog. */

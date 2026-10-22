@@ -37,7 +37,12 @@ import {
   type PrescriptionDose,
   type PrescriptionKind,
   type PrescriptionStatus,
+  type RsvMaternalAnswer,
+  type Vaccination,
+  type VaccineProfileSetting,
 } from '../db/models';
+import { isVaccineNetwork } from '../vaccines/vaccinationModel';
+import type { VaccineNetwork } from '../vaccines/vaccineSchedule';
 
 /*
  * API wire contract (`/api/v1`) used by the sync engine. This is the ONLY place the client
@@ -89,6 +94,12 @@ import {
  * - Appointments (docs/SPEC.md "Appointments"): GET /babies/{id}/appointments?since= (cancelled and
  *          done included, no delete), PUT /babies/{id}/appointments/{id} (Owner/Parent). `done` is
  *          refused (422 `appointment_not_started`) while the start is in the future.
+ * - Vaccinations (docs/design/18-vaccines.md): GET /babies/{id}/vaccinations?since= (deleted
+ *          included), PUT/DELETE /babies/{id}/vaccinations/{id} (Owner/Parent; a PUT to a deleted id
+ *          returns the stored deleted copy, 409 `vaccination_baby_mismatch`). GET /vaccine-schedule
+ *          (any signed-in user; `ETag` + `If-None-Match`, 304 without a body) serves the schedule
+ *          the device caches. PUT /babies/{id}/vaccine-profile (Owner/Parent, online) replaces the
+ *          baby's vaccine profile (`vaccineProfile`, `gestationalAgeWeeks`, `rsvMaternalVaccination`).
  * - Shared catalog: GET /catalog/products?q=, POST /catalog/products (409 `product_exists` carries
  *          the existing `product`), GET /catalog/products/{id} (a product a medication links to; pulled
  *          for the family's linked products only, the catalog itself is never synced: official ANVISA
@@ -134,6 +145,12 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/appointments` + query({ since }),
   appointment: (babyId: string, appointmentId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/appointments/${enc(appointmentId)}`,
+  vaccinations: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/vaccinations` + query({ since }),
+  vaccination: (babyId: string, vaccinationId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/vaccinations/${enc(vaccinationId)}`,
+  vaccineProfile: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/vaccine-profile`,
+  vaccineSchedule: () => `${API_PREFIX}/vaccine-schedule`,
   notes: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
   note: (babyId: string, noteId: string) =>
@@ -203,6 +220,12 @@ export interface BabyDto {
   role?: string;
   /** The caller's own user id (additive; absent from older servers). */
   userId?: string;
+  /** Vaccine profile (additive): `public` or `public+private`. */
+  vaccineProfile?: string;
+  /** Weeks at birth, 20-44 (additive); `null` = not told. */
+  gestationalAgeWeeks?: number | null;
+  /** `unknown`, `yes` or `no` (additive); `null` = not answered. */
+  rsvMaternalVaccination?: string | null;
 }
 
 export interface FieldVisibilityDto {
@@ -225,6 +248,8 @@ export interface EventFieldDefinitionDto {
   hidden?: boolean;
   /** Number fields: whole numbers only (additive; absent = false). */
   integer?: boolean;
+  /** Number fields: at most this many decimal places, 1 to 3 (additive; absent or `null` = any). */
+  decimals?: number | null;
 }
 
 export interface EventTypeDto {
@@ -591,6 +616,25 @@ function matchEnum<T extends string>(values: readonly T[], raw: string | undefin
   return values.find((v) => v.toLowerCase() === raw?.toLowerCase());
 }
 
+const VACCINE_PROFILES: readonly VaccineProfileSetting[] = ['public', 'public+private'];
+const RSV_ANSWERS: readonly RsvMaternalAnswer[] = ['unknown', 'yes', 'no'];
+
+/** The vaccine profile fields of a baby wire object; only the ones the server sent (older servers send none). */
+export function vaccineProfileFromDto(
+  dto: Pick<BabyDto, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'>,
+): Pick<Baby, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'> {
+  const profile = matchEnum(VACCINE_PROFILES, dto.vaccineProfile);
+  const rsv = matchEnum(RSV_ANSWERS, dto.rsvMaternalVaccination ?? undefined);
+  const weeks = dto.gestationalAgeWeeks;
+  return {
+    ...(profile ? { vaccineProfile: profile } : {}),
+    ...(typeof weeks === 'number' && Number.isFinite(weeks) ? { gestationalAgeWeeks: weeks } : {}),
+    ...(weeks === null ? { gestationalAgeWeeks: null } : {}),
+    ...(rsv ? { rsvMaternalVaccination: rsv } : {}),
+    ...(dto.rsvMaternalVaccination === null ? { rsvMaternalVaccination: null } : {}),
+  };
+}
+
 export function fromBabyDto(dto: BabyDto): Baby {
   const role = matchEnum(ROLES, dto.role);
   // A missing role degrades to the least privilege; the server enforces roles regardless.
@@ -600,6 +644,7 @@ export function fromBabyDto(dto: BabyDto): Baby {
     birthDate: dto.birthDate,
     role: role ?? 'Viewer',
     ...(typeof dto.userId === 'string' && dto.userId !== '' ? { userId: dto.userId } : {}),
+    ...vaccineProfileFromDto(dto),
   };
 }
 
@@ -624,7 +669,13 @@ function fromFieldDto(dto: EventFieldDefinitionDto): EventFieldDefinition {
     visibleWhen: fromVisibilityDto(dto.visibleWhen),
     ...(dto.hidden === true ? { hidden: true } : {}),
     ...(dto.integer === true ? { integer: true } : {}),
+    ...(isDecimalPlaces(dto.decimals) ? { decimals: dto.decimals } : {}),
   };
+}
+
+/** A decimal-places limit the client understands (1 to 3); anything else is ignored. */
+function isDecimalPlaces(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 3;
 }
 
 export function fromEventTypeDto(dto: EventTypeDto): EventType {
@@ -1124,6 +1175,100 @@ export function fromAppointmentDto(dto: AppointmentDto): Appointment {
     updatedAt: toUtcIso(dto.updatedAt),
     clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
   };
+}
+
+/* Vaccinations (docs/design/18-vaccines.md) */
+
+export interface VaccinationDto {
+  id: string;
+  babyId: string;
+  vaccineKey?: string | null;
+  doseId?: string | null;
+  customName?: string | null;
+  doseLabel?: string | null;
+  givenOn: string;
+  network?: string;
+  clinic?: string | null;
+  lot?: string | null;
+  administeredBy?: string | null;
+  notes?: string | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+  deletedAt?: string | null;
+}
+
+/** The full editable state of a vaccination plus the client edit time (`PUT` replaces it). */
+export interface VaccinationUpsertRequest {
+  vaccineKey: string | null;
+  doseId: string | null;
+  customName: string | null;
+  doseLabel: string | null;
+  givenOn: string;
+  network: VaccineNetwork;
+  clinic: string | null;
+  lot: string | null;
+  administeredBy: string | null;
+  notes: string | null;
+  updatedAt?: string;
+}
+
+export function toVaccinationUpsertRequest(v: Vaccination): VaccinationUpsertRequest {
+  return {
+    vaccineKey: v.vaccineKey,
+    doseId: v.doseId,
+    customName: v.customName,
+    doseLabel: v.doseLabel,
+    givenOn: v.givenOn,
+    network: v.network,
+    clinic: v.clinic,
+    lot: v.lot,
+    administeredBy: v.administeredBy,
+    notes: v.notes,
+    updatedAt: v.clientUpdatedAt ?? v.updatedAt,
+  };
+}
+
+export function isVaccinationDtoFor(value: unknown, id: string): value is VaccinationDto {
+  const dto = value as Partial<VaccinationDto> | undefined;
+  return (
+    typeof dto === 'object' &&
+    dto !== null &&
+    dto.id === id &&
+    !!dto.updatedAt &&
+    typeof dto.givenOn === 'string'
+  );
+}
+
+/** An unknown network from a newer server reads as `public`. */
+export function fromVaccinationDto(dto: VaccinationDto): Vaccination {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    vaccineKey: dto.vaccineKey ?? null,
+    doseId: dto.doseId ?? null,
+    customName: dto.customName ?? null,
+    doseLabel: dto.doseLabel ?? null,
+    givenOn: dto.givenOn,
+    network: isVaccineNetwork(dto.network) ? dto.network : 'public',
+    clinic: dto.clinic ?? null,
+    lot: dto.lot ?? null,
+    administeredBy: dto.administeredBy ?? null,
+    notes: dto.notes ?? null,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+    deletedAt: toUtcIsoOrNull(dto.deletedAt),
+  };
+}
+
+/** Body of `PUT /babies/{id}/vaccine-profile` (full state; `null` clears). */
+export interface VaccineProfileRequest {
+  vaccineProfile: VaccineProfileSetting;
+  gestationalAgeWeeks: number | null;
+  rsvMaternalVaccination: RsvMaternalAnswer | null;
 }
 
 /* Shared medication catalog (instance-wide). */

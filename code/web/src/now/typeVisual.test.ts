@@ -15,6 +15,12 @@ describe('typeVisual', () => {
     expect(category('fussy')).toBe('care');
     expect(category('bath')).toBe('care');
     expect(category('tummy_time')).toBe('activity');
+    for (const key of ['temperature', 'spit_up', 'teething', 'symptom']) {
+      expect(category(key), key).toBe('health');
+    }
+    for (const key of ['nail_trim', 'milestone', 'outdoor', 'skin_care']) {
+      expect(category(key), key).toBe('care');
+    }
     expect(category('something_new')).toBe('custom');
   });
 
@@ -28,6 +34,14 @@ describe('typeVisual', () => {
     expect(typeIcon({ icon: 'air' })).toBe('wind');
     expect(typeIcon({ icon: 'massage' })).toBe('massage');
     expect(typeIcon({ icon: 'sentiment_very_dissatisfied' })).toBe('mood-cry');
+    expect(typeIcon({ icon: 'content_cut' })).toBe('scissors');
+    expect(typeIcon({ icon: 'thermostat' })).toBe('thermometer');
+    expect(typeIcon({ icon: 'sentiment_sick' })).toBe('mood-sick');
+    expect(typeIcon({ icon: 'dentistry' })).toBe('tooth');
+    expect(typeIcon({ icon: 'emoji_events' })).toBe('trophy');
+    expect(typeIcon({ icon: 'coronavirus' })).toBe('virus');
+    expect(typeIcon({ icon: 'park' })).toBe('trees');
+    expect(typeIcon({ icon: 'sanitizer' })).toBe('lotion');
     expect(typeIcon({ icon: 'constructor' })).toBe('event');
     expect(typeIcon(undefined)).toBe('event');
   });

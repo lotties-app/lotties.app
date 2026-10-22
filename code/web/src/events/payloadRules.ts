@@ -16,6 +16,8 @@ export type PayloadProblemCode =
   | 'number'
   /** A whole number was required (`integer` fields). */
   | 'integer'
+  /** Too many decimal places (`decimals` fields). */
+  | 'decimals'
   | 'option'
   | 'bool'
   | 'min'
@@ -91,10 +93,19 @@ function kindProblem(field: EventFieldDefinition, value: unknown): PayloadProble
     case 'number':
       if (typeof value !== 'number' || Number.isNaN(value)) return 'number';
       if (field.integer === true && !Number.isInteger(value)) return 'integer';
+      if (!withinDecimals(field, value)) return 'decimals';
       if (field.min !== null && value < field.min) return 'min';
       if (field.max !== null && value > field.max) return 'max';
       return null;
   }
+}
+
+/** Whether `value` has no more decimal places than the field's `decimals` allows (any when unset). */
+export function withinDecimals(
+  field: Pick<EventFieldDefinition, 'decimals'>,
+  value: number,
+): boolean {
+  return field.decimals === undefined || Number(value.toFixed(field.decimals)) === value;
 }
 
 const payloadValue = (payload: EventPayload) => (key: string) => getOwn(payload, key);

@@ -34,6 +34,19 @@ export const SEGMENTED_MAX_OPTIONS = 4;
 const SCALE_MAX_CHOICES = 5;
 const DEGREES_C = '°C';
 const ML_QUICK_VALUES = [60, 90, 120, 150] as const;
+/**
+ * First value of an empty stepper (+ or -) of the built-in temperature reading, so it does not
+ * start at the 30 °C minimum. Only a starting point: the range, the decimals and the way the
+ * reading is shown are unchanged, and nothing judges the value.
+ */
+const TEMPERATURE_STEPPER_START = 36.5;
+
+/** The first stepper value of a field when it has its own (`undefined`: the generic rules). */
+function ownStepperStart(type: EventType, field: EventFieldDefinition): number | undefined {
+  const isTemperatureReading =
+    type.babyId === null && type.key === 'temperature' && field.key === 'value_c';
+  return isTemperatureReading ? TEMPERATURE_STEPPER_START : undefined;
+}
 
 const isSeconds = (field: EventFieldDefinition) =>
   field.kind === 'number' && (field.unit === 's' || field.key.endsWith('_seconds'));
@@ -56,6 +69,8 @@ const unitLabel = (unit: string): string => (unit === 'C' ? DEGREES_C : unit);
 
 function stepFor(field: EventFieldDefinition): number {
   if (field.integer === true) return 1;
+  // One step of the last allowed decimal place (a temperature with one decimal steps by 0.1).
+  if (field.decimals !== undefined) return 10 ** -field.decimals;
   if (field.unit === 'ml') return 10;
   if (field.unit === 'C' || field.unit === '°C') return 0.5;
   return 1;
@@ -89,7 +104,7 @@ function SelectControl({ type, field, value, onChange }: FieldControlProps) {
   );
 }
 
-function NumberControl({ field, value, remembered, bottle, onChange }: FieldControlProps) {
+function NumberControl({ type, field, value, remembered, bottle, onChange }: FieldControlProps) {
   const choices = scaleChoices(field);
   if (choices) {
     return (
@@ -118,6 +133,7 @@ function NumberControl({ field, value, remembered, bottle, onChange }: FieldCont
     : field.unit === 'ml'
       ? ML_QUICK_VALUES.filter(inRange)
       : undefined;
+  const ownStart = ownStepperStart(type, field);
   const start = bottle ? bottle.preferred : 90;
   return (
     <>
@@ -126,12 +142,17 @@ function NumberControl({ field, value, remembered, bottle, onChange }: FieldCont
         onChange={(next) => onChange(next === null ? '' : String(next))}
         step={bottle ? bottle.step : stepFor(field)}
         {...(field.integer === true ? { decimals: 0 } : {})}
+        {...(field.decimals !== undefined ? { decimals: field.decimals } : {})}
         {...(field.min !== null ? { min: field.min } : {})}
         {...(field.max !== null ? { max: field.max } : {})}
         {...(field.unit ? { unit: unitLabel(field.unit) } : {})}
         {...(quick ? { quickValues: quick } : {})}
         lastValue={last}
-        {...(last === null && (bottle || field.unit === 'ml') ? { start } : {})}
+        {...(ownStart !== undefined
+          ? { start: ownStart }
+          : last === null && (bottle || field.unit === 'ml')
+            ? { start }
+            : {})}
       />
       {bottle && <BottleSuggestionCaption suggestions={bottle} />}
     </>

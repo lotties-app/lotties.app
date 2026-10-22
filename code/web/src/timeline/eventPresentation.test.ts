@@ -5,8 +5,16 @@ import {
   FUSSY_TYPE,
   DIAPER_TYPE,
   FEEDING_TYPE,
+  MILESTONE_TYPE,
+  NAIL_TRIM_TYPE,
   NASAL_SUCTION_TYPE,
+  OUTDOOR_TYPE,
+  SKIN_CARE_TYPE,
   SLEEP_TYPE,
+  SPIT_UP_TYPE,
+  SYMPTOM_TYPE,
+  TEETHING_TYPE,
+  TEMPERATURE_TYPE,
 } from '../test/builtInTypes';
 import { EVENT_TYPES, MEDICATION } from '../test/seed';
 import { optionIcon } from '../events/optionIcons';
@@ -129,6 +137,84 @@ describe('presentEvent', () => {
     // A future option the catalog does not know yet is humanized, never shown raw.
     expect(view({ helped: 'much_better' }).detail).toBe('Much better');
   });
+
+  it('shows a temperature as the number with its unit and where it was measured, nothing more', () => {
+    const view = (payload: BabyEvent['payload']) =>
+      presentEvent(event(TEMPERATURE_TYPE, payload), TEMPERATURE_TYPE);
+    expect(view({ value_c: 37.8, method: 'armpit' })).toMatchObject({
+      title: 'Temperature',
+      icon: 'thermometer',
+      category: 'health',
+      detail: '37.8 °C · Armpit',
+    });
+    // The app never interprets the reading: a high value reads exactly like a normal one.
+    expect(view({ value_c: 39.5 }).detail).toBe('39.5 °C');
+    expect(view({ value_c: 36, method: 'ear' }).detail).toBe('36 °C · Ear');
+  });
+
+  it('shows the tooth once a tooth came through and the milestone in the parents words', () => {
+    const teething = (payload: BabyEvent['payload']) =>
+      presentEvent(event(TEETHING_TYPE, payload), TEETHING_TYPE);
+    expect(teething({ stage: 'gums_sore' })).toMatchObject({
+      title: 'Teething',
+      icon: 'tooth',
+      category: 'health',
+      detail: 'Sore gums',
+    });
+    expect(teething({ stage: 'tooth_came_through', tooth: 'lower_central_incisor' }).detail).toBe(
+      'Tooth came through · Lower central incisor',
+    );
+    const milestone = (payload: BabyEvent['payload']) =>
+      presentEvent(event(MILESTONE_TYPE, payload), MILESTONE_TYPE);
+    expect(milestone({ milestone: 'first_steps' })).toMatchObject({
+      title: 'Milestone',
+      icon: 'trophy',
+      category: 'care',
+      detail: 'First steps',
+    });
+    expect(milestone({ milestone: 'other', custom: 'Waved bye-bye' }).detail).toBe('Waved bye-bye');
+    expect(milestone({ milestone: 'other' }).detail).toBe('Other');
+  });
+
+  it.each([
+    [NAIL_TRIM_TYPE, { where: 'both' }, 'Nail trim', 'scissors', 'care', 'Both'],
+    [
+      SPIT_UP_TYPE,
+      { kind: 'vomit', amount: 'a_lot' },
+      'Spit-up / vomit',
+      'mood-sick',
+      'health',
+      'Vomit · A lot',
+    ],
+    [
+      SYMPTOM_TYPE,
+      { symptom: 'congestion', severity: 'mild' },
+      'Symptom',
+      'virus',
+      'health',
+      'Stuffy nose · Mild',
+    ],
+    [
+      OUTDOOR_TYPE,
+      { kind: 'stroller_walk', pause_count: 1, paused_seconds: 60 },
+      'Outdoor time',
+      'trees',
+      'care',
+      'Stroller walk',
+    ],
+    [SKIN_CARE_TYPE, { product: 'diaper_cream' }, 'Skin care', 'lotion', 'care', 'Diaper cream'],
+  ] as const)(
+    'titles %#: the %s row with its icon, category and option labels',
+    (type, payload, title, icon, category, detail) => {
+      expect(presentEvent(event(type, { ...payload }), type)).toMatchObject({
+        title,
+        icon,
+        category,
+        detail,
+      });
+      expect(presentEvent(event(type, {}), type).detail).toBe('');
+    },
+  );
 
   it('titles a fussy spell by its type name and says the intensity and what helped', () => {
     const view = (payload: BabyEvent['payload']) =>

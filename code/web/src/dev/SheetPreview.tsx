@@ -7,6 +7,8 @@ import type { Baby, BabyEvent, EventPayload } from '../db/models';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { EventSheet, type FinishMode } from '../events/EventSheet';
 import { clearAllLastUsed, recordLastUsed } from '../events/lastUsedValues';
+import type { EventType } from '../db/models';
+import { MORE_BUILT_IN_TYPES } from '../test/builtInTypes';
 import { PREVIEW_BABY_ID, PREVIEW_MEDICATIONS, PREVIEW_TYPES, typeIdOf } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
 
@@ -28,8 +30,20 @@ const SCENARIOS = [
   'finish',
   'bottlestop',
   'sleepdetails',
+  'temperature',
+  'teething',
+  'milestone',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
+
+/** Scenarios of the built-in types of the `MoreEventTypes` migration (they add those types). */
+const MORE_TYPE_SCENARIOS: readonly Scenario[] = ['temperature', 'teething', 'milestone'];
+const typesOf = (scenario: Scenario): EventType[] =>
+  MORE_TYPE_SCENARIOS.includes(scenario)
+    ? [...PREVIEW_TYPES, ...MORE_BUILT_IN_TYPES]
+    : PREVIEW_TYPES;
+const moreTypeId = (key: string): string =>
+  MORE_BUILT_IN_TYPES.find((type) => type.key === key)?.id ?? key;
 const MIN = 60_000;
 
 const baby: Baby = { id: PREVIEW_BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' };
@@ -45,7 +59,7 @@ function stored(
   return {
     id,
     babyId: PREVIEW_BABY_ID,
-    typeId: typeIdOf(key),
+    typeId: typeIdOf(key) === key ? moreTypeId(key) : typeIdOf(key),
     startedAt,
     endedAt: endAgo === null ? null : new Date(Date.now() - endAgo * MIN).toISOString(),
     payload,
@@ -98,6 +112,27 @@ function opened(scenario: Scenario): Opened {
           paused_seconds: 240,
         }),
       };
+    case 'temperature':
+      return {
+        event: stored('dev-sheet-temperature', 'temperature', 20, 20, {
+          value_c: 37.8,
+          method: 'armpit',
+        }),
+      };
+    case 'teething':
+      return {
+        event: stored('dev-sheet-teething', 'teething', 40, 40, {
+          stage: 'tooth_came_through',
+          tooth: 'lower_central_incisor',
+        }),
+      };
+    case 'milestone':
+      return {
+        event: stored('dev-sheet-milestone', 'milestone', 60, 60, {
+          milestone: 'other',
+          custom: 'Waved bye-bye',
+        }),
+      };
     case 'finish':
       return {
         event: stored('dev-sheet-finish', 'feeding', 14, null, {}),
@@ -122,7 +157,7 @@ async function seed(db: BabyRoutineDb, scenario: Scenario) {
   ]);
   clearAllLastUsed();
   await db.babies.put(baby);
-  await db.eventTypes.bulkPut(PREVIEW_TYPES);
+  await db.eventTypes.bulkPut(typesOf(scenario));
   await db.medications.bulkPut(PREVIEW_MEDICATIONS);
   const feeding = PREVIEW_TYPES.find((type) => type.key === 'feeding')!;
   recordLastUsed(PREVIEW_BABY_ID, feeding, {
@@ -175,7 +210,7 @@ export default function SheetPreview() {
           <EventSheet
             key={scenario}
             babyId={PREVIEW_BABY_ID}
-            types={PREVIEW_TYPES}
+            types={typesOf(scenario)}
             {...opened(scenario)}
             onDone={() => setOpen(false)}
           />

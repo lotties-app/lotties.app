@@ -27,6 +27,7 @@ const KINDS = {
   diaper_dirty_headsup: true,
   appointment_reminder: true,
   doctor_suggestion: true,
+  vaccine_due: true,
   test: true,
 } as const;
 export type PushKind = keyof typeof KINDS;
@@ -34,6 +35,8 @@ export type PushKind = keyof typeof KINDS;
 export interface PushNames {
   baby: string;
   medication?: string;
+  /** The vaccine's name in the payload's language (a vaccine reminder only). */
+  vaccine?: string;
 }
 
 interface PayloadBase {
@@ -119,6 +122,22 @@ export type DoctorSuggestionPayload = PayloadBase & {
   babyId: string;
 } & ({ proposalId: string; noteId?: never } | { noteId: string; proposalId?: never });
 
+/** The slug of a schedule dose (`penta-1`), as the API's vaccine schedule ids. */
+const DOSE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_DOSE_ID_LENGTH = 60;
+
+/**
+ * A vaccine may be due on this day (docs/design/18-vaccines.md): the schedule dose id and the
+ * instant of the reminder (`at`, 09:00 local). Generic lock-screen text; the vaccine's name only
+ * travels in `names.vaccine` when the recipient turned on "Show names". No actions: nothing to snooze.
+ */
+export interface VaccinePayload extends PayloadBase {
+  kind: 'vaccine_due';
+  babyId: string;
+  doseId: string;
+  token?: string;
+}
+
 export interface TestPayload extends PayloadBase {
   kind: 'test';
 }
@@ -132,6 +151,7 @@ export type PushPayload =
   | DiaperPayload
   | AppointmentPayload
   | DoctorSuggestionPayload
+  | VaccinePayload
   | TestPayload;
 
 /** The kinds about a baby that open Now and carry nothing but codes (not a dose). */
@@ -197,7 +217,18 @@ function names(value: unknown): PushNames | undefined {
   const baby = name(field(value, 'baby'));
   if (!baby) return undefined;
   const medication = name(field(value, 'medication'));
-  return medication ? { baby, medication } : { baby };
+  const vaccine = name(field(value, 'vaccine'));
+  return {
+    baby,
+    ...(medication ? { medication } : {}),
+    ...(vaccine ? { vaccine } : {}),
+  };
+}
+
+function doseId(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length <= MAX_DOSE_ID_LENGTH && DOSE_ID.test(value)
+    ? value
+    : undefined;
 }
 
 function snooze(value: unknown): number | undefined {
@@ -262,6 +293,12 @@ export function validatePayload(raw: unknown): ParsedPayload {
         ? { ...base, kind, babyId, proposalId }
         : { ...base, kind, babyId, noteId: noteId as string },
     };
+  }
+
+  if (kind === 'vaccine_due') {
+    const dose = doseId(field(raw, 'doseId'));
+    if (!dose) return fail;
+    return { ok: true, payload: { ...base, ...withToken, kind, babyId, doseId: dose } };
   }
 
   const rxId = guid(field(raw, 'rxId'));

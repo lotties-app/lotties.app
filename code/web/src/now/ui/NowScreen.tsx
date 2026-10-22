@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
 import { canPropose, canWrite, isOwner } from '../../baby/permissions';
 import { NextAppointment } from '../../appointments/NextAppointmentCard';
+import { VaccinesDue } from '../../vaccines/VaccinesDueCard';
 import { useOldestEventStart } from '../../db/hooks';
 import type { Baby, Prescription } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
@@ -80,10 +81,16 @@ function useReminderLink(babyId: string, canOpenMeds: boolean, openMeds: () => v
   const [reminder, setReminder] = useState<TrayReminder | null>(null);
   const link = links?.link ?? null;
   const [handled, setHandled] = useState<NotificationLink | null>(null);
-  // An appointment reminder belongs to the calendar page and a doctor suggestion to "From your
-  // doctor"; each consumes its own link there.
+  // An appointment reminder belongs to the calendar page, a doctor suggestion to "From your
+  // doctor" and a vaccine reminder to the vaccines page; each consumes its own link there.
   const mine =
-    link && link.babyId === babyId && link.kind !== 'appt' && link.kind !== 'doctor' ? link : null;
+    link &&
+    link.babyId === babyId &&
+    link.kind !== 'appt' &&
+    link.kind !== 'doctor' &&
+    link.kind !== 'vaccine'
+      ? link
+      : null;
   // Adjusted while rendering (not in an effect): the tray opens in the same render pass.
   if (mine && mine !== handled) {
     setHandled(mine);
@@ -285,6 +292,7 @@ function NowContent({
             {...(model.trays.diaper ? { onLogDiaper: openDiaperTray } : {})}
           />
           <NextAppointment babyId={baby.id} now={model.now.getTime()} />
+          <VaccinesDue baby={baby} now={model.now.getTime()} />
           {nursing && (
             <NursingCard
               event={nursing}

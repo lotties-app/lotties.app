@@ -6,8 +6,10 @@ import {
   DIAPER_TYPE,
   FEEDING_TYPE,
   FUSSY_TYPE,
+  MORE_BUILT_IN_TYPES,
   NASAL_SUCTION_TYPE,
   SLEEP_TYPE,
+  TEMPERATURE_TYPE,
 } from '../../test/builtInTypes';
 import { EventIllustration } from './EventIllustration';
 import { illustrationKeyFor } from './eventKey';
@@ -95,6 +97,29 @@ describe('EventIllustration', () => {
     const { container } = renderUi(<EventIllustration type={FUSSY_TYPE} size={64} />);
     expect(container.querySelector('svg[data-illustration]')).toBeNull();
     expect(container.querySelector('svg[data-icon="mood-cry"]')).toBeTruthy();
+  });
+
+  it('renders the thermometer drawing for a temperature reading', () => {
+    expect(illustrationKeyFor(TEMPERATURE_TYPE, { value_c: 37.8 })).toBe('temperature');
+    const { container } = renderUi(<EventIllustration type={TEMPERATURE_TYPE} size={64} />);
+    expect(container.querySelector('svg[data-illustration="temperature"]')).toBeTruthy();
+  });
+
+  it.each([
+    ['nail_trim', 'scissors'],
+    ['spit_up', 'mood-sick'],
+    ['teething', 'tooth'],
+    ['milestone', 'trophy'],
+    ['symptom', 'virus'],
+    ['outdoor', 'trees'],
+    ['skin_care', 'lotion'],
+  ])('renders the %s type icon tile (%s), which has no drawing of its own', (key, icon) => {
+    const type = MORE_BUILT_IN_TYPES.find((t) => t.key === key)!;
+    expect(illustrationKeyFor(type)).toBe(key);
+    expect(illustrationName(key)).toBeUndefined();
+    const { container } = renderUi(<EventIllustration type={type} size={64} />);
+    expect(container.querySelector('svg[data-illustration]')).toBeNull();
+    expect(container.querySelector(`svg[data-icon="${icon}"]`)).toBeTruthy();
   });
 
   it('renders the icon tile of a custom type instead of a drawing', () => {

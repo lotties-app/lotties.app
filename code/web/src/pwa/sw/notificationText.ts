@@ -11,6 +11,7 @@ import type {
   DoctorSuggestionPayload,
   ParsedPayload,
   PushLang,
+  VaccinePayload,
 } from './payload';
 
 export type PushCatalog = typeof en;
@@ -125,6 +126,21 @@ function doctorSuggestionText(
   return { title: strings.title, body: body ?? strings.body };
 }
 
+/**
+ * "A vaccine may be due": generic by default; with show-names on, the baby, and the vaccine when the
+ * payload names it. Always "according to the schedule" and never an instruction to give a vaccine.
+ */
+function vaccineText(payload: VaccinePayload, catalog: PushCatalog): NotificationText {
+  const strings = catalog.vaccine_due;
+  const names = payload.names;
+  const body = !names
+    ? strings.body
+    : names.vaccine !== undefined
+      ? interpolate(strings.bodyNamed, { baby: names.baby, vaccine: names.vaccine })
+      : interpolate(strings.bodyBaby, { baby: names.baby });
+  return { title: strings.title, body: body ?? strings.body };
+}
+
 function appointmentText(
   payload: AppointmentPayload,
   catalog: PushCatalog,
@@ -161,6 +177,7 @@ export function renderText(
       return appointmentText(payload, catalog, now, timeZone) ?? genericText(payload.lang);
     }
     if (payload.kind === 'doctor_suggestion') return doctorSuggestionText(payload, catalog);
+    if (payload.kind === 'vaccine_due') return vaccineText(payload, catalog);
 
     const time = formatTime(payload.at, payload.lang, timeZone);
     const strings = catalog[payload.kind];

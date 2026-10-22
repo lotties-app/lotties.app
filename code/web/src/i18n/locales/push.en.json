@@ -65,5 +65,11 @@
     "title": "Your doctor sent a suggestion",
     "body": "Open Lotties to review it.",
     "bodyNamed": "{{baby}}: open Lotties to review it."
+  },
+  "vaccine_due": {
+    "title": "A vaccine may be due",
+    "body": "Open Lotties to see the vaccine schedule.",
+    "bodyNamed": "{{baby}}: {{vaccine}} may be due according to the schedule.",
+    "bodyBaby": "{{baby}}: a vaccine may be due according to the schedule."
   }
 }

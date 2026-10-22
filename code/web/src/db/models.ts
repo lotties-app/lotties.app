@@ -5,6 +5,7 @@
  */
 
 import type { ProductDto } from '../sync/contract';
+import type { VaccineNetwork, VaccineSchedule } from '../vaccines/vaccineSchedule';
 
 /**
  * Owner > Parent > Caregiver > Viewer (docs/SPEC.md "Roles and permissions"); `Doctor` is outside that
@@ -13,6 +14,12 @@ import type { ProductDto } from '../sync/contract';
  */
 export type BabyRole = 'Owner' | 'Parent' | 'Caregiver' | 'Viewer' | 'Doctor';
 
+/** Which vaccine recommendations the baby's schedule shows: the public network only, or also private clinics. */
+export type VaccineProfileSetting = 'public' | 'public+private';
+
+/** The answer to "did the mother get the RSV vaccine in pregnancy?". */
+export type RsvMaternalAnswer = 'unknown' | 'yes' | 'no';
+
 export interface Baby {
   id: string;
   name: string;
@@ -20,6 +27,12 @@ export interface Baby {
   birthDate: string;
   /** The current user's role for this baby (from `GET /babies`). */
   role: BabyRole;
+  /** Vaccine schedule profile (from `GET /babies`); absent on rows stored before it existed (= `public`). */
+  vaccineProfile?: VaccineProfileSetting;
+  /** Weeks of pregnancy at birth (20-44); `null` or absent = not told. */
+  gestationalAgeWeeks?: number | null;
+  /** Maternal RSV vaccination answer; `null` or absent = not answered. */
+  rsvMaternalVaccination?: RsvMaternalAnswer | null;
   /**
    * The current user's server id (from `GET /babies`; the `createdBy` of the events they log).
    * `null`/absent until a babies refresh from a server that sends it.
@@ -53,6 +66,8 @@ export interface EventFieldDefinition {
   hidden?: boolean;
   /** Number fields only: whole numbers only. */
   integer?: boolean;
+  /** Number fields only: at most this many decimal places (absent = any). */
+  decimals?: number;
 }
 
 export interface EventType {
@@ -247,6 +262,51 @@ export interface Appointment {
   clientUpdatedAt?: string;
 }
 
+/**
+ * A vaccine given to the baby (per-baby record, synced like prescriptions; docs/design/18-vaccines.md).
+ * `vaccineKey`/`doseId` name the schedule entry it satisfies; a custom vaccine has a `customName`
+ * instead. `doseLabel` is the dose's name as it read when recorded, so the history survives schedule
+ * updates.
+ */
+export interface Vaccination {
+  id: string;
+  babyId: string;
+  vaccineKey: string | null;
+  doseId: string | null;
+  /** 1-80 characters; only without a `vaccineKey`. */
+  customName: string | null;
+  /** Up to 80 characters. */
+  doseLabel: string | null;
+  /** Calendar date `yyyy-mm-dd` it was given. */
+  givenOn: string;
+  /** Where it was given. */
+  network: VaccineNetwork;
+  clinic: string | null;
+  lot: string | null;
+  administeredBy: string | null;
+  notes: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+  /** Soft delete marker. */
+  deletedAt: string | null;
+}
+
+/** The vaccine schedule served by the API, kept on the device for offline use (one row per profile). */
+export interface VaccineScheduleCache {
+  /** Schedule profile, `BR`. */
+  profile: string;
+  /** The `ETag` the server sent with it (sent back as `If-None-Match`); `null` when it sent none. */
+  etag: string | null;
+  schedule: VaccineSchedule;
+  /** UTC ISO instant the content last changed on this device. */
+  fetchedAt: string;
+  /** UTC ISO instant the server was last asked (and agreed it is current). */
+  checkedAt: string;
+}
+
 /** What a note is; `recommendation` gets the parents' inbox in step 2 (docs/design/16-doctor-access.md). */
 export type NoteKind = 'note' | 'recommendation';
 
@@ -430,6 +490,7 @@ export type MutationEntityType =
   | 'prescription'
   | 'formula'
   | 'appointment'
+  | 'vaccination'
   | 'note'
   | 'proposal'
   | 'proposalDecision'
@@ -479,6 +540,7 @@ export type SyncEntity =
   | 'prescriptions'
   | 'formulas'
   | 'appointments'
+  | 'vaccinations'
   | 'notes'
   | 'proposals'
   | 'noteReads';

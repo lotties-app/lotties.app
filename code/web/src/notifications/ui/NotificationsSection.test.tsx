@@ -194,6 +194,7 @@ describe('NotificationsSection reminders and settings', () => {
           diaperDirtyHeadsUp: false,
           appointmentReminders: true,
           doctorSuggestions: false,
+          vaccineReminders: false,
         },
       }),
     );
@@ -211,6 +212,7 @@ describe('NotificationsSection reminders and settings', () => {
         diaperDirtyHeadsUp: false,
         appointmentReminders: true,
         doctorSuggestions: false,
+        vaccineReminders: false,
       }),
     );
   });
@@ -244,6 +246,7 @@ describe('NotificationsSection reminders and settings', () => {
           diaperDirtyHeadsUp: false,
           appointmentReminders: true,
           doctorSuggestions: false,
+          vaccineReminders: false,
         },
       }),
     );
@@ -293,6 +296,7 @@ describe('NotificationsSection reminders and settings', () => {
           diaperDirtyHeadsUp: false,
           appointmentReminders: true,
           doctorSuggestions: false,
+          vaccineReminders: false,
           ...kinds,
         },
       }),
@@ -534,5 +538,85 @@ describe('NotificationsSection doctor suggestions', () => {
     const lia = await screen.findByRole('region', { name: 'Lia' });
     expect(within(lia).queryByRole('switch', { name: /Doctor suggestions/ })).toBeNull();
     expect(within(lia).getByRole('switch', { name: /Medicine reminders/ })).toBeTruthy();
+  });
+});
+
+describe('NotificationsSection vaccine reminders', () => {
+  it('offers the switch to the parents only, off by default, and saves it per baby', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Vaccine reminders/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      within(lia).getByText('A note on the day a dose may be due, according to the schedule.'),
+    ).toBeTruthy();
+    // A Viewer never receives it, so there is no switch to leave off.
+    const theo = screen.getByRole('region', { name: 'Theo' });
+    expect(within(theo).queryByRole('switch', { name: /Vaccine reminders/ })).toBeNull();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: expect.objectContaining({ vaccineReminders: true, doseDue: false }),
+      }),
+    );
+  });
+
+  it('keeps the setting when another switch is saved', async () => {
+    const { server } = setup(
+      {},
+      { preferences: [{ ...PREFS[0]!, vaccineReminders: true }, PREFS[1]!] },
+    );
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    await waitFor(() =>
+      expect(
+        within(lia)
+          .getByRole('switch', { name: /Vaccine reminders/ })
+          .getAttribute('aria-checked'),
+      ).toBe('true'),
+    );
+
+    fireEvent.click(within(lia).getByRole('switch', { name: /Belly pain heads-up/ }));
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toEqual(
+        expect.objectContaining({ bellyPainPattern: true, vaccineReminders: true }),
+      ),
+    );
+  });
+
+  it.each(['Caregiver', 'Doctor'] as const)(
+    'is not offered for a %s, who never receives it',
+    async (role) => {
+      const device = fakePushDevice({});
+      const server = fakePushServer({ preferences: PREFS });
+      render(
+        <I18nProvider>
+          <AppThemeProvider>
+            <QueryClientProvider client={testQueryClient()}>
+              <ApiClientContext value={server.api}>
+                <PushDeviceContext value={device}>
+                  <NotificationsSection babies={[{ ...LIA, role }]} publicKey="BFakeKey" />
+                </PushDeviceContext>
+              </ApiClientContext>
+            </QueryClientProvider>
+          </AppThemeProvider>
+        </I18nProvider>,
+      );
+
+      const lia = await screen.findByRole('region', { name: 'Lia' });
+      expect(within(lia).queryByRole('switch', { name: /Vaccine reminders/ })).toBeNull();
+    },
+  );
+
+  it('is in Portuguese for a Portuguese user', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Lembretes de vacinas/ })).toBeTruthy();
   });
 });

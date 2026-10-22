@@ -11,7 +11,7 @@ import { t } from '../i18n/i18n';
 import { getOwn, setOwn } from '../util/ownProperty';
 import { formatNumber } from '../i18n/format';
 import { declaresFormula, FORMULA_KEYS } from '../formulas/formulaModel';
-import { visibleFields } from './payloadRules';
+import { visibleFields, withinDecimals } from './payloadRules';
 import { fromLocalInput, toLocalInput } from './time';
 
 export interface MedicationSelection {
@@ -174,6 +174,9 @@ function fieldError(label: string, field: EventFieldDefinition, raw: string | bo
   if (n === null || Number.isNaN(n)) return t('events.validation.fieldNumber', { label });
   if (field.integer === true && !Number.isInteger(n)) {
     return t('events.validation.fieldInteger', { label });
+  }
+  if (!withinDecimals(field, n)) {
+    return t('events.validation.fieldDecimals', { label, count: field.decimals });
   }
   if (field.min !== null && n < field.min) {
     return t('events.validation.fieldMin', { label, min: formatNumber(field.min) });
@@ -342,6 +345,7 @@ function acceptedBy(
     const n = parseNumber(value);
     if (n === null || Number.isNaN(n)) return false;
     if (field.integer === true && !Number.isInteger(n)) return false;
+    if (!withinDecimals(field, n)) return false;
     return (field.min === null || n >= field.min) && (field.max === null || n <= field.max);
   }
   return typeof value === 'string';

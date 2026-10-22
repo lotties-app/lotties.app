@@ -8,7 +8,7 @@ import { BUILT_IN_TYPES, DIAPER_T, SLEEP, event, eventType, presetById } from '.
 import { CATEGORY_NAMES } from '../theme/tokens';
 
 describe('catalogue', () => {
-  it('lists the seventeen built-in presets in Track sheet order', () => {
+  it('lists the twenty-five built-in presets in Track sheet order', () => {
     expect(BUILT_IN_PRESETS.map((p) => p.id)).toEqual([
       'wake_up',
       'nap',
@@ -23,8 +23,16 @@ describe('catalogue', () => {
       'belly_pain',
       'nasal_suction',
       'belly_massage',
+      'temperature',
+      'symptom',
+      'spit_up',
+      'teething',
       'bath',
       'fussy',
+      'nail_trim',
+      'skin_care',
+      'milestone',
+      'outdoor',
       'tummy_time',
       'custom',
     ]);
@@ -52,6 +60,11 @@ describe('catalogue', () => {
     expect(shape('bath')).toEqual(['bath', 'sheet', {}]);
     expect(shape('fussy')).toEqual(['fussy', 'timer', {}]);
     expect(shape('tummy_time')).toEqual(['tummy_time', 'timer', {}]);
+    for (const id of ['nail_trim', 'temperature', 'spit_up', 'teething', 'milestone', 'symptom']) {
+      expect(shape(id)).toEqual([id, 'sheet', {}]);
+    }
+    expect(shape('skin_care')).toEqual(['skin_care', 'sheet', {}]);
+    expect(shape('outdoor')).toEqual(['outdoor', 'timer', {}]);
     expect(shape('custom')).toEqual(['', 'link', {}]);
   });
 
@@ -98,6 +111,33 @@ describe('catalogue', () => {
     const withoutType = presetsForBaby(BUILT_IN_TYPES.filter((t) => t.key !== 'belly_massage'));
     expect(withoutType.map((p) => p.id)).not.toContain('belly_massage');
   });
+
+  it.each([
+    ['nail_trim', 'care', 'sheet', 'scissors', 'type-nail'],
+    ['temperature', 'health', 'sheet', 'thermometer', 'type-temperature'],
+    ['spit_up', 'health', 'sheet', 'mood-sick', 'type-spit'],
+    ['teething', 'health', 'sheet', 'tooth', 'type-teething'],
+    ['milestone', 'care', 'sheet', 'trophy', 'type-milestone'],
+    ['symptom', 'health', 'sheet', 'virus', 'type-symptom'],
+    ['outdoor', 'care', 'timer', 'trees', 'type-outdoor'],
+    ['skin_care', 'care', 'sheet', 'lotion', 'type-skin'],
+  ] as const)(
+    'offers %s as an unpinned %s %s preset with the %s icon, hidden without its type',
+    (id, category, mode, icon, typeId) => {
+      const preset = presetById(id);
+      expect(preset).toMatchObject({ category, typeId, builtIn: true, mode });
+      expect(presetIcon(preset)).toBe(icon);
+      expect(DEFAULT_PINNED).not.toContain(id);
+      expect(pinnedPresets(presetsForBaby(BUILT_IN_TYPES), [id]).map((p) => p.id)).toEqual([
+        id,
+        'wake_up',
+        'bottle',
+        'diaper',
+      ]);
+      const withoutType = presetsForBaby(BUILT_IN_TYPES.filter((t) => t.key !== id));
+      expect(withoutType.map((p) => p.id)).not.toContain(id);
+    },
+  );
 
   it('offers Fussy as an unpinned care timer preset with the crying-face icon', () => {
     const preset = presetById('fussy');

@@ -31,6 +31,8 @@ interface Props {
   appointment?: Appointment;
   /** The day a new appointment starts on (the chosen calendar day, else today). */
   initialDay?: DayKey;
+  /** The title and type a new appointment starts with (e.g. from a vaccine that is due). */
+  prefill?: { title: string; type: AppointmentType };
   /** The clock (tests and previews); defaults to now. */
   now?: number;
   onClose: () => void;
@@ -62,11 +64,16 @@ function defaultTime(day: DayKey, now: number): string {
   return `${String(hour).padStart(2, '0')}:00`;
 }
 
-function initialState(appointment: Appointment | undefined, day: DayKey, now: number): FormState {
+function initialState(
+  appointment: Appointment | undefined,
+  day: DayKey,
+  now: number,
+  prefill?: Props['prefill'],
+): FormState {
   if (!appointment) {
     return {
-      title: '',
-      type: 'consultation',
+      title: prefill?.title ?? '',
+      type: prefill?.type ?? 'consultation',
       day,
       time: defaultTime(day, now),
       duration: null,
@@ -101,6 +108,7 @@ export function AppointmentSheet({
   babyId,
   appointment,
   initialDay,
+  prefill,
   now,
   onClose,
   onSaved,
@@ -109,7 +117,7 @@ export function AppointmentSheet({
   const commands = useAppointmentCommands();
   const [clock] = useState(() => now ?? Date.now());
   const [form, setForm] = useState<FormState>(() =>
-    initialState(appointment, initialDay ?? dayKeyOf(clock), clock),
+    initialState(appointment, initialDay ?? dayKeyOf(clock), clock, prefill),
   );
   const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
