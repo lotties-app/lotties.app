@@ -1,6 +1,6 @@
 import type { EventType } from '../db/models';
 import { eventTypeText } from '../i18n/eventTypeText';
-import { formatList, formatTime, formatUnit } from '../i18n/format';
+import { formatDuration, formatList, formatTime, formatUnit } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import { typeForKey } from './eventFacts';
 import type { QuickTile } from './quickLog';
@@ -10,7 +10,7 @@ import type { QuickTile } from './quickLog';
  * "Colidis"). Language-aware wrapper over `QuickTile.detail`; the timing line is `formatTileStatus`.
  */
 
-/** "Bottle · 120 ml", "Nursing · left"; empty when nothing was logged yet. */
+/** "Bottle · 120 ml · 18 min", "Nursing · left"; empty when nothing was logged yet. */
 export function tileDetailText(tile: QuickTile, types: readonly EventType[]): string {
   const detail = tile.detail;
   if (!detail) return '';
@@ -22,8 +22,13 @@ export function tileDetailText(tile: QuickTile, types: readonly EventType[]): st
         ? eventTypeText.optionLabel(type, { key: 'method' }, detail.method)
         : detail.method;
       const extra =
-        detail.method === 'bottle' && detail.amountMl !== null
-          ? formatUnit(detail.amountMl, 'milliliter')
+        detail.method === 'bottle'
+          ? [
+              detail.amountMl !== null ? formatUnit(detail.amountMl, 'milliliter') : '',
+              detail.bottleMs !== null ? formatDuration(detail.bottleMs) : '',
+            ]
+              .filter(Boolean)
+              .join(' · ')
           : detail.method === 'breast' && detail.side
             ? eventTypeText.optionLabel(
                 type ?? { key: 'feeding', babyId: null },

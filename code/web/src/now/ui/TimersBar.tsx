@@ -5,7 +5,7 @@ import { formatElapsed, useNow } from '../../events/time';
 import { effectiveElapsedSeconds, isPaused } from '../../timers/pauseMath';
 import { PausedClock, PauseResumeButton } from '../../timers/TimerParts';
 import { useTimerCommands } from '../../timers/useTimerCommands';
-import { useEventTypeText } from '../../i18n/eventTypeText';
+import { useTimerTitle } from '../../timers/useTimerTitle';
 import { formatDuration, formatTime } from '../../i18n/format';
 import type { PresetActions } from '../../presets/usePresetActions';
 import { Icon } from '../../ui/Icon';
@@ -53,8 +53,9 @@ function TimerRow({
   action,
 }: RowProps) {
   const { t } = useTranslation();
-  const names = useEventTypeText();
-  const name = type ? names.typeName(type) : t('common.event');
+  const title = useTimerTitle();
+  // A running bottle reads "Bottle", like the mini bar (sleep and nursing have their own cards).
+  const name = title({ event, type, kind: 'other' });
   const commands = useTimerCommands();
   const paused = isPaused(event);
   const elapsed = effectiveElapsedSeconds(event, nowMs) * 1000;

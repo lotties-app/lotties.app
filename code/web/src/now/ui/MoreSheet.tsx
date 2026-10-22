@@ -17,14 +17,14 @@ interface Props {
   events: readonly BabyEvent[];
   actions: PresetActions;
   readOnly: boolean;
-  /** Presets with their own tray open it instead of running (Bottle, Diaper, Belly pain...). */
+  /** Presets with their own tray open it instead of running (Diaper, Meds, Belly pain). */
   onOpenTray: (tray: TrayName) => void;
   /** Nursing starts the live timer through the Now commands. */
   onStartNursing: () => void;
 }
 
+/** The Bottle preset is a timer (start, then stop with the amount), so it runs like the others. */
 const TRAY_OF_PRESET: Readonly<Record<string, TrayName>> = {
-  bottle: 'feed',
   diaper: 'diaper',
   medication: 'meds',
   belly_pain: 'bellyPain',

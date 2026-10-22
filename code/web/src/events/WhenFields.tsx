@@ -14,7 +14,7 @@ interface Props {
   now: Date;
   errors: Readonly<Record<string, string>>;
   onChange: (changes: Partial<Pick<EventFormState, 'startedAt' | 'endedAt'>>) => void;
-  /** A bottle or a bedtime marker: one time, no End and no timer. */
+  /** Solid food or a bedtime marker: one time, no End and no timer. */
   instant?: boolean;
 }
 
@@ -71,7 +71,8 @@ export function WhenFields({ type, form, now, errors, onChange, instant = false 
             onChange={(d) => onChange({ endedAt: toLocal(d) })}
           />
         </Field>
-        {start && end && end >= start && (
+        {/* No "0 min" for an event that ends when it starts (an older instant bottle). */}
+        {start && end && end > start && (
           <Box
             role="status"
             sx={{

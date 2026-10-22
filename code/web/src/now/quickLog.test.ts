@@ -16,6 +16,7 @@ import {
   medsTray,
   runTrayChoice,
 } from './quickLog';
+import { tileDetailText } from './tileText';
 
 const MED_TYPE = eventType({ id: 'type-med', key: 'medication', name: 'Medication' });
 const BELLY_TYPE = eventType({
@@ -100,8 +101,11 @@ describe('lastAndLogTiles', () => {
         amountMl: 120,
         bottleContent: 'formula',
         side: null,
+        // An older bottle that ends when it starts has no duration.
+        bottleMs: null,
       },
     });
+    expect(tileDetailText(tiles[0], TYPES)).toBe('Bottle · 120 mL');
     expect(tiles[1]).toMatchObject({
       status: { lastAt: iso(13, 32) },
       detail: { kind: 'diaper', content: 'WET' },
@@ -115,6 +119,31 @@ describe('lastAndLogTiles', () => {
       status: null,
       moreTypeIds: [BELLY_TYPE.id, BATH_TYPE.id, CUSTOM_TYPE.id],
     });
+  });
+
+  it('says how long the last bottle took, pauses left out', () => {
+    const bottle = logged(
+      FEEDING_TYPE.id,
+      iso(12),
+      { method: 'bottle', amount_ml: 120, paused_seconds: 120 },
+      iso(12, 20),
+    );
+    const [feed] = lastAndLogTiles(TYPES, [bottle], at(14));
+    expect(feed.detail).toMatchObject({ kind: 'feed', bottleMs: 18 * 60_000 });
+    expect(tileDetailText(feed, TYPES)).toBe('Bottle · 120 mL · 18m');
+  });
+
+  it('a bottle without an amount still shows its duration; nursing shows none', () => {
+    const bottle = logged(FEEDING_TYPE.id, iso(12), { method: 'bottle' }, iso(12, 9));
+    expect(tileDetailText(lastAndLogTiles(TYPES, [bottle], at(14))[0], TYPES)).toBe('Bottle · 9m');
+    const nursing = logged(
+      FEEDING_TYPE.id,
+      iso(12),
+      { method: 'breast', side: 'left' },
+      iso(12, 9),
+    );
+    const [feed] = lastAndLogTiles(TYPES, [nursing], at(14));
+    expect(feed.detail).toMatchObject({ bottleMs: null });
   });
 
   it('shows a running nursing session on the Feed tile', () => {

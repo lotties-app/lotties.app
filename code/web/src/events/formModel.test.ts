@@ -61,13 +61,28 @@ describe('switchFormType', () => {
 });
 
 describe('isInstantByNature and defaultRunning', () => {
-  it('treats a bottle and solid food as moments and nursing as a timer', () => {
-    expect(isInstantByNature(FEEDING_TYPE, { method: 'bottle' })).toBe(true);
+  it('treats solid food as a moment and nursing and a bottle as timers', () => {
     expect(isInstantByNature(FEEDING_TYPE, { method: 'solid' })).toBe(true);
     expect(isInstantByNature(FEEDING_TYPE, { method: 'breast' })).toBe(false);
-    expect(defaultRunning(FEEDING_TYPE, { method: 'bottle' })).toBe(false);
+    expect(isInstantByNature(FEEDING_TYPE, { method: 'bottle' })).toBe(false);
+    expect(defaultRunning(FEEDING_TYPE, { method: 'solid' })).toBe(false);
     expect(defaultRunning(FEEDING_TYPE, { method: 'breast' })).toBe(true);
     expect(defaultRunning(FEEDING_TYPE, {})).toBe(true);
+  });
+
+  it('starts a new bottle as a running timer (how long the baby took to drink it)', () => {
+    expect(defaultRunning(FEEDING_TYPE, { method: 'bottle', amount_ml: '120' })).toBe(true);
+  });
+
+  it('sends a bottle with its own end, so it has a duration', () => {
+    const form = {
+      ...feeding({ method: 'bottle', amount_ml: '120' }),
+      startedAt: '2026-10-21T10:00',
+      endedAt: '2026-10-21T10:18',
+    };
+    const instant = isInstantByNature(FEEDING_TYPE, form.values);
+    const times = buildTimes(form, FEEDING_TYPE, instant);
+    expect(Date.parse(times.endedAt!) - Date.parse(times.startedAt)).toBe(18 * 60_000);
   });
 
   it('treats sleep markers as moments and naps and nights as timers', () => {
@@ -82,14 +97,14 @@ describe('isInstantByNature and defaultRunning', () => {
   it('is never running for a type without a duration, and ignores custom types', () => {
     expect(defaultRunning(DIAPER_TYPE, {})).toBe(false);
     const custom = { ...FEEDING_TYPE, babyId: 'baby-1' };
-    expect(isInstantByNature(custom, { method: 'bottle' })).toBe(false);
+    expect(isInstantByNature(custom, { method: 'solid' })).toBe(false);
   });
 });
 
 describe('buildTimes', () => {
   it('ends an instant choice at its start even when an end was left in the form', () => {
     const form = {
-      ...feeding({ method: 'bottle' }),
+      ...feeding({ method: 'solid' }),
       startedAt: '2026-10-21T10:00',
       endedAt: '2026-10-21T09:00',
     };

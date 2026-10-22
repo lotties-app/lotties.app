@@ -29,6 +29,7 @@ const SHEET_STATES = [
   'edit',
   'running',
   'finish',
+  'bottlestop',
 ];
 
 const pick = <T extends string>(env: string | undefined, all: readonly T[]): T[] =>

@@ -38,3 +38,4 @@ code/api/out.sql
 
 # Home lab deploy settings (secrets); see deploy/homelab/.env.example
 deploy/homelab/.env
+

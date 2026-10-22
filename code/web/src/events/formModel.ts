@@ -42,16 +42,17 @@ export interface EventFormState {
 export const MEDICATION_TYPE_KEY = 'medication';
 
 /**
- * Options of the built-in types that happen at a moment even though the type has a duration: a
- * bottle or solid food is given and done (no timer), and bedtime, waking up and falling asleep are
- * markers. Keyed by `type.field`.
+ * Options of the built-in types that happen at a moment even though the type has a duration: solid
+ * food is given and done (no timer), and bedtime, waking up and falling asleep are markers. Keyed
+ * by `type.field`. A bottle is not one: it has a duration like nursing (how long the baby took to
+ * drink it), so a new bottle starts as a running timer.
  */
 const INSTANT_OPTIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ['feeding.method', new Set(['bottle', 'solid'])],
+  ['feeding.method', new Set(['solid'])],
   ['sleep.kind', new Set(['bed_time', 'woke_up', 'fell_asleep'])],
 ]);
 
-/** Whether the event ends when it starts by its nature (a bottle, a bedtime marker): no timer. */
+/** Whether the event ends when it starts by its nature (solid food, a bedtime marker): no timer. */
 export function isInstantByNature(
   type: Pick<EventType, 'key' | 'babyId' | 'hasDuration'> | undefined,
   values: EventFormState['values'],
@@ -68,7 +69,7 @@ export function isInstantByNature(
 
 /**
  * Whether a new event of this type and choices starts as a running timer ("Still running" on):
- * a type with a duration whose chosen method is not instant (nursing, a nap, tummy time).
+ * a type with a duration whose chosen method is not instant (nursing, a bottle, a nap, tummy time).
  */
 export function defaultRunning(
   type: Pick<EventType, 'key' | 'babyId' | 'hasDuration'> | undefined,

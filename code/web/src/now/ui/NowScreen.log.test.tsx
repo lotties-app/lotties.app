@@ -328,7 +328,7 @@ describe('More sheet', () => {
       'Log Bedtime',
       'Log Fell asleep',
       'Start Night waking',
-      'Log Bottle',
+      'Start Bottle',
       'Start Nursing',
       'Log Diaper',
       'Log Medication',

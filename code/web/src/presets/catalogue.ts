@@ -58,9 +58,9 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
     category: 'feeding',
     icon: 'bottle',
     typeKey: 'feeding',
-    mode: 'sheet',
+    // A timer like nursing: how long the baby took to drink it. Stopping asks for the amount.
+    mode: 'timer',
     payloadDefaults: { method: 'bottle' },
-    endsImmediately: true,
   },
   {
     id: 'nursing',

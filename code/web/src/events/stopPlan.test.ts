@@ -46,10 +46,34 @@ describe('planStop', () => {
   });
 
   it('strips values of hidden fields without asking', () => {
-    expect(planStop(FEEDING_TYPE, { method: 'bottle', side: 'left' })).toEqual({
+    expect(planStop(FEEDING_TYPE, { method: 'breast', amount_ml: 90 })).toEqual({
       kind: 'strip',
-      payload: { method: 'bottle' },
+      payload: { method: 'breast' },
     });
+  });
+
+  it('asks for the amount (optional) when a bottle timer without one stops', () => {
+    expect(planStop(FEEDING_TYPE, { method: 'bottle' })).toEqual({
+      kind: 'finish',
+      fields: ['amount_ml', 'bottle_feeding_type'],
+    });
+    // Hidden values go with the finish sheet, which drops them on save.
+    expect(planStop(FEEDING_TYPE, { method: 'bottle', side: 'left' })).toEqual({
+      kind: 'finish',
+      fields: ['amount_ml', 'bottle_feeding_type'],
+    });
+  });
+
+  it('stops a bottle with its amount at once, with or without the content', () => {
+    expect(planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120 })).toEqual({ kind: 'stop' });
+    expect(
+      planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120, bottle_feeding_type: 'formula' }),
+    ).toEqual({ kind: 'stop' });
+  });
+
+  it('never asks a custom type for a bottle amount', () => {
+    const custom = { ...FEEDING_TYPE, id: 'custom-feed', babyId: BABY_ID };
+    expect(planStop(custom, { method: 'bottle' })).toEqual({ kind: 'stop' });
   });
 });
 
@@ -151,9 +175,15 @@ describe('quickStartPayload', () => {
   });
 
   it('fills the feeding method of a generic timer, so its stop needs no sheet', () => {
-    const payload = quickStartPayload(FEEDING_TYPE, {}, { method: 'bottle', amount_ml: 90 });
-    expect(payload).toEqual({ method: 'bottle' });
+    const payload = quickStartPayload(FEEDING_TYPE, {}, { method: 'breast', side: 'left' });
+    expect(payload).toEqual({ method: 'breast' });
     expect(planStop(FEEDING_TYPE, payload)).toEqual({ kind: 'stop' });
+  });
+
+  it('a one-tap bottle timer gets no remembered amount: its stop asks for it', () => {
+    const payload = quickStartPayload(FEEDING_TYPE, { method: 'bottle' }, { amount_ml: 90 });
+    expect(payload).toEqual({ method: 'bottle' });
+    expect(planStop(FEEDING_TYPE, payload).kind).toBe('finish');
   });
 
   it('leaves fields without a remembered value empty (the stop asks)', () => {

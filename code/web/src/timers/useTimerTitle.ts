@@ -3,7 +3,10 @@ import { useEventTypeText } from '../i18n/eventTypeText';
 import { getOwn } from '../util/ownProperty';
 import type { RunningTimer } from './runningTimers';
 
-/** The title of a running timer: "Nap", "Night sleep", "Nursing", "Tummy time", a custom name. */
+/**
+ * The title of a running timer: "Nap", "Night sleep", "Nursing", "Bottle", "Tummy time", a custom
+ * name.
+ */
 export function useTimerTitle(): (timer: Pick<RunningTimer, 'event' | 'type' | 'kind'>) => string {
   const names = useEventTypeText();
   const { t } = useTranslation();
@@ -14,6 +17,13 @@ export function useTimerTitle(): (timer: Pick<RunningTimer, 'event' | 'type' | '
       const raw = getOwn(event.payload, 'kind');
       const option = typeof raw === 'string' ? raw : 'nap';
       return names.optionLabel(type, { key: 'kind' }, option);
+    }
+    if (
+      type.key === 'feeding' &&
+      type.babyId === null &&
+      getOwn(event.payload, 'method') === 'bottle'
+    ) {
+      return names.optionLabel(type, { key: 'method' }, 'bottle');
     }
     return names.typeName(type);
   };

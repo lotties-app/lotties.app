@@ -24,10 +24,19 @@ export interface StopTimer {
   sheet: ReactNode;
 }
 
-function finishMode(babyId: string, type: EventType, fields: string[]): FinishMode {
+function finishMode(
+  babyId: string,
+  type: EventType,
+  fields: string[],
+  endedAt?: string,
+): FinishMode {
   const remembered = readLastUsed(babyId, type.id);
   const all = type.fields.map((f) => f.key);
-  return { fields, initialValues: rememberedFormValues(type, all, remembered) };
+  return {
+    fields,
+    initialValues: rememberedFormValues(type, all, remembered),
+    ...(endedAt ? { endedAt } : {}),
+  };
 }
 
 /** Stop and fix actions that never send a stop the server would reject (see `planStop`). */
@@ -41,7 +50,7 @@ export function useStopTimer(babyId: string, types: EventType[]): StopTimer {
     const plan = planStop(type, event.payload);
     if (plan.kind === 'stop') return commands.stop(event.id, endedAt);
     if (plan.kind === 'strip') return commands.finish(event.id, plan.payload, endedAt);
-    setFinishing({ event, finish: finishMode(babyId, type!, plan.fields) });
+    setFinishing({ event, finish: finishMode(babyId, type!, plan.fields, endedAt) });
     return null;
   };
 

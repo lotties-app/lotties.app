@@ -37,7 +37,8 @@ describe('catalogue', () => {
     expect(shape('bedtime')).toEqual(['sleep', 'instant', { kind: 'bed_time' }]);
     expect(shape('fell_asleep')).toEqual(['sleep', 'instant', { kind: 'fell_asleep' }]);
     expect(shape('night_waking')).toEqual(['sleep', 'timer', { kind: 'night_waking' }]);
-    expect(shape('bottle')).toEqual(['feeding', 'sheet', { method: 'bottle' }]);
+    // A bottle is timed like nursing (how long the baby took); the stop asks for the amount.
+    expect(shape('bottle')).toEqual(['feeding', 'timer', { method: 'bottle' }]);
     expect(shape('nursing')).toEqual(['feeding', 'timer', { method: 'breast' }]);
     expect(shape('pumping')).toEqual(['breast_pump', 'timer', {}]);
     expect(shape('diaper')).toEqual(['diaper', 'sheet', {}]);

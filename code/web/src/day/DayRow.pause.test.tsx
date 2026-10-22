@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BabyEvent } from '../db/models';
 import { presentEvent } from '../timeline/eventPresentation';
 import { BUILT_IN_TYPES, SLEEP, event } from '../presets/presetFixtures';
-import { SLEEP_TYPE } from '../test/builtInTypes';
+import { FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { useTestLocale } from '../test/locale';
 import { renderUi } from '../test/renderUi';
 import { DayRow } from './DayRow';
@@ -63,6 +63,44 @@ describe('DayRow durations', () => {
     renderRow(nap({ payload: { kind: 'nap', pause_count: 1, paused_seconds: 240 } }));
     expect(screen.getByText('1 h 11 min')).toBeTruthy();
     expect(screen.getByText('pausa de 4 min')).toBeTruthy();
+  });
+});
+
+describe('DayRow of a bottle', () => {
+  const bottle = (endedAt: string): BabyEvent =>
+    event({
+      id: 'b',
+      typeId: FEEDING_TYPE.id,
+      startedAt: '2026-10-20T13:00:00.000Z',
+      endedAt,
+      payload: { method: 'bottle', amount_ml: 120 },
+    });
+  const renderBottle = (e: BabyEvent) =>
+    renderUi(
+      <ul>
+        <DayRow
+          event={e}
+          type={FEEDING_TYPE}
+          medications={[]}
+          syncState={undefined}
+          hasNext={false}
+          onEdit={() => undefined}
+        />
+      </ul>,
+    );
+
+  it('shows how long the bottle took', () => {
+    renderBottle(bottle('2026-10-20T13:18:00.000Z'));
+    expect(screen.getByText('Bottle')).toBeTruthy();
+    expect(screen.getByText('120 ml')).toBeTruthy();
+    expect(screen.getByText('18m')).toBeTruthy();
+  });
+
+  it('shows no duration (never "0m") for an older bottle that ends when it starts', () => {
+    renderBottle(bottle('2026-10-20T13:00:00.000Z'));
+    expect(screen.getByText('120 ml')).toBeTruthy();
+    expect(screen.queryByText('0m')).toBeNull();
+    expect(screen.queryByText(/\d+m$/)).toBeNull();
   });
 });
 

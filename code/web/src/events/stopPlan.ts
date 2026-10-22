@@ -15,7 +15,9 @@ import {
  * server rejects would dead-letter and leave the timer running there):
  * - `stop`: the payload is complete, stop now;
  * - `strip`: only values of hidden fields are wrong, stop with them removed;
- * - `finish`: required fields are missing (or values invalid): ask for `fields` first.
+ * - `finish`: required fields are missing (or values invalid): ask for `fields` first; also for
+ *   optional details that are only known at the end (a bottle's amount, see `askedAtStop`), which
+ *   the sheet lets the parent leave empty.
  */
 export type StopPlan =
   | { kind: 'stop' }
@@ -25,13 +27,30 @@ export type StopPlan =
 const askable = (problems: PayloadProblem[]) =>
   problems.filter((p) => p.code !== 'hidden').map((p) => p.field);
 
+/**
+ * Optional fields of a built-in type worth asking when its timer stops, because they are only known
+ * then: how much of the bottle was drunk (and what was in it). Asked only while the amount is
+ * missing; none of them is required, so the stop never depends on them.
+ */
+function askedAtStop(type: EventType, payload: EventPayload): string[] {
+  if (type.babyId !== null || type.key !== 'feeding') return [];
+  if (getOwn(payload, 'method') !== 'bottle' || getOwn(payload, 'amount_ml') !== undefined) {
+    return [];
+  }
+  const declared = new Set(type.fields.map((f) => f.key));
+  return ['amount_ml', 'bottle_feeding_type'].filter((key) => declared.has(key));
+}
+
 export function planStop(type: EventType | undefined, payload: EventPayload): StopPlan {
   if (!type) return { kind: 'stop' };
   const problems = validatePayload(type, payload, true);
-  if (problems.length === 0) return { kind: 'stop' };
   const fields = askable(problems);
-  if (fields.length === 0) return { kind: 'strip', payload: withoutHiddenValues(type, payload) };
-  return { kind: 'finish', fields };
+  if (fields.length > 0) return { kind: 'finish', fields };
+  const asked: string[] = askedAtStop(type, payload);
+  // The finish sheet drops the values of hidden fields itself (as `strip` does).
+  if (asked.length > 0) return { kind: 'finish', fields: asked };
+  if (problems.length === 0) return { kind: 'stop' };
+  return { kind: 'strip', payload: withoutHiddenValues(type, payload) };
 }
 
 /**

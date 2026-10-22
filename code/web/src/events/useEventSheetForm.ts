@@ -94,7 +94,7 @@ export function useEventSheetForm(props: EventSheetProps) {
 
   const type = types.find((candidate) => candidate.id === form.typeId);
   const dirty = JSON.stringify(form) !== initial;
-  // A bottle or a bedtime marker is a moment, not a timer; a finished event keeps its own length.
+  // Solid food or a bedtime marker is a moment, not a timer; a finished event keeps its own length.
   const instant =
     !!type?.hasDuration &&
     !defaultRunning(type, form.values) &&
@@ -125,7 +125,7 @@ export function useEventSheetForm(props: EventSheetProps) {
   const persist = async (selected: EventType) => {
     if (event && finish) {
       const payload = buildPayload(form, selected, event.payload);
-      await commands.finish(event.id, payload);
+      await commands.finish(event.id, payload, finish.endedAt);
       return payload;
     }
     const times = buildTimes(form, selected, instant);

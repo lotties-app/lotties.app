@@ -9,7 +9,7 @@ import {
   sheetPrefill,
   undoPreset,
 } from './actions';
-import { DIAPER_T, SLEEP, presetById } from './presetFixtures';
+import { DIAPER_T, FEEDING_T, SLEEP, presetById } from './presetFixtures';
 
 let db: BabyRoutineDb;
 
@@ -53,6 +53,21 @@ describe('runPreset: timer', () => {
     const [event] = await live();
     expect(event.payload).toEqual({ method: 'breast' });
     expect(event.payload).not.toBe(nursing.payloadDefaults);
+  });
+
+  it('starts a bottle as a running feeding timer, separate from nursing', async () => {
+    await runPreset(db, presetById('bottle'), ctx(NOON));
+    const [bottle] = await live();
+    expect(bottle).toMatchObject({
+      typeId: FEEDING_T,
+      startedAt: NOON.toISOString(),
+      endedAt: null,
+      payload: { method: 'bottle' },
+    });
+    const again = await runPreset(db, presetById('bottle'), ctx(NOON)).catch((e: unknown) => e);
+    expect(again).toBeInstanceOf(PresetAlreadyRunningError);
+    await runPreset(db, presetById('nursing'), ctx(NOON));
+    expect(await live()).toHaveLength(2);
   });
 
   it('refuses a second timer of the same preset, but allows a different kind', async () => {
@@ -219,7 +234,7 @@ describe('runPreset: offline queueing and errors', () => {
   });
 
   it('rejects sheet and link presets', async () => {
-    for (const id of ['diaper', 'bottle', 'custom']) {
+    for (const id of ['diaper', 'bath', 'custom']) {
       await expect(runPreset(db, presetById(id), ctx(NOON))).rejects.toBeInstanceOf(
         PresetNotRunnableError,
       );
@@ -321,16 +336,13 @@ describe('sheetPrefill', () => {
     });
   });
 
-  it('makes a bottle zero-length with method bottle', () => {
-    const prefill = sheetPrefill(presetById('bottle'), NOW);
-    expect(prefill).toMatchObject({
-      endedAt: NOW.toISOString(),
-      payload: { method: 'bottle' },
-    });
+  it('makes a bath zero-length (endsImmediately)', () => {
+    const prefill = sheetPrefill(presetById('bath'), NOW);
+    expect(prefill).toMatchObject({ endedAt: NOW.toISOString(), payload: {} });
   });
 
-  it('refuses timer, instant and link presets', () => {
-    for (const id of ['nap', 'wake_up', 'custom']) {
+  it('refuses timer, instant and link presets (the bottle is a timer)', () => {
+    for (const id of ['nap', 'wake_up', 'custom', 'bottle']) {
       expect(() => sheetPrefill(presetById(id), NOW)).toThrow(PresetNotRunnableError);
     }
   });

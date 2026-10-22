@@ -26,6 +26,7 @@ const SCENARIOS = [
   'edit',
   'running',
   'finish',
+  'bottlestop',
   'sleepdetails',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
@@ -101,6 +102,12 @@ function opened(scenario: Scenario): Opened {
       return {
         event: stored('dev-sheet-finish', 'feeding', 14, null, {}),
         finish: { fields: ['method'], initialValues: {} },
+      };
+    case 'bottlestop':
+      // Stopping a bottle timer: the optional amount and content (see events/stopPlan.ts).
+      return {
+        event: stored('dev-sheet-bottle', 'feeding', 18, null, { method: 'bottle' }),
+        finish: { fields: ['amount_ml', 'bottle_feeding_type'], initialValues: {} },
       };
   }
 }

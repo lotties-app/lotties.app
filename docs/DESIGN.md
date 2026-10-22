@@ -24,7 +24,7 @@ Built-ins (typeKey, mode, payload):
 3. Bedtime: sleep, `instant`, kind `bed_time`.
 4. Fell asleep: sleep, `instant` marker, kind `fell_asleep`, AND starts a sleep timer in the same tap with kind inferred: `night` if a bedtime marker was logged in the last 3 hours or local time is 19:00-05:00, else `nap`. The inferred kind is shown on the running-timer card and editable.
 5. Night waking: sleep, `timer`, kind `night_waking`.
-6. Bottle: feeding, `sheet` (amount_ml, bottle_feeding_type), method `bottle`, instant end=start.
+6. Bottle: feeding, `timer`, method `bottle`: tap starts a bottle timer, stop finishes it and asks for the optional amount_ml and bottle_feeding_type (only while the amount is missing); pause/resume as for nursing. The duration is how long the baby took to drink it. (History: until 2026-10 this was a `sheet` preset logging an instant end=start; such bottles show no duration.)
 7. Nursing: feeding, `timer`, method `breast`, with left/right seconds fields in the stop sheet.
 8. Diaper: diaper, `sheet` (content required).
 9. Medication: medication, `sheet` (catalog checklist).

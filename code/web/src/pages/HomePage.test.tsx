@@ -226,6 +226,67 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
     expect((await db.events.get(running.id))?.endedAt).toBeNull();
   });
 
+  it('a bottle timer asks for the amount on stop, and stops without one too', async () => {
+    window.localStorage.clear();
+    await seedBuiltIns();
+    const running = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      payload: { method: 'bottle' },
+    });
+    renderWithDb(db, <HomePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop Bottle' }));
+    expect(await screen.findByRole('heading', { name: 'Finish this feeding' })).toBeTruthy();
+    expect(screen.getByText('Amount')).toBeTruthy();
+    expect((await db.events.get(running.id))?.endedAt).toBeNull();
+    // The amount is optional: Save and stop works with it left empty.
+    fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
+
+    await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
+    expect((await db.events.get(running.id))?.payload).toEqual({ method: 'bottle' });
+  });
+
+  it('a bottle timer stopped with an amount keeps it and its duration', async () => {
+    window.localStorage.clear();
+    await seedBuiltIns();
+    const startedAt = new Date(Date.now() - 18 * 60_000).toISOString();
+    const running = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      startedAt,
+      payload: { method: 'bottle' },
+    });
+    renderWithDb(db, <HomePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop Bottle' }));
+    await screen.findByRole('heading', { name: 'Finish this feeding' });
+    fireEvent.click(screen.getByRole('button', { name: /^120/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
+
+    await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
+    const stopped = await db.events.get(running.id);
+    expect(stopped?.payload).toEqual({ method: 'bottle', amount_ml: 120 });
+    expect(Date.parse(stopped!.endedAt!) - Date.parse(startedAt)).toBeGreaterThanOrEqual(
+      18 * 60_000,
+    );
+  });
+
+  it('a bottle timer that already has its amount stops at once', async () => {
+    window.localStorage.clear();
+    await seedBuiltIns();
+    const running = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      payload: { method: 'bottle', amount_ml: 90 },
+    });
+    renderWithDb(db, <HomePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop Bottle' }));
+    await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
+    expect(screen.queryByRole('heading', { name: 'Finish this feeding' })).toBeNull();
+  });
+
   it('stops at once when the payload is complete (a nursing session has its method)', async () => {
     await seedBuiltIns();
     const running = await createEvent(db, {

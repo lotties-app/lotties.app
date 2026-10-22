@@ -64,7 +64,8 @@ function fullDay(day: Date): BabyEvent[] {
     }),
     make('diaper', at(day, 7, 5), at(day, 7, 5), { content: 'WET' }),
     make('sleep', at(day, 8, 45), at(day, 9, 40), { kind: 'nap' }),
-    make('feeding', at(day, 9, 50), at(day, 9, 50), {
+    // A timed bottle (18 min); the 13:40 one is an older instant bottle without a duration.
+    make('feeding', at(day, 9, 50), at(day, 10, 8), {
       method: 'bottle',
       amount_ml: 120,
       bottle_feeding_type: 'formula',

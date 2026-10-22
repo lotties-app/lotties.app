@@ -57,45 +57,67 @@ function chooseScheme(mode: string) {
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 const choose = (name: string) => fireEvent.click(screen.getByRole('radio', { name }));
 
-describe('a bottle is a moment, not a timer', () => {
-  it('has no "Still running" and no End once the method is a bottle', () => {
-    renderSheet({ initialTypeId: FEEDING_TYPE.id });
-    // Nothing chosen yet: it could still be nursing, so the timer is on.
-    expect(screen.getByRole('switch', { name: 'Still running' })).toBeTruthy();
-    choose('Bottle');
-    expect(screen.queryByRole('switch', { name: 'Still running' })).toBeNull();
-    expect(screen.queryByText('End')).toBeNull();
-    expect(screen.getByText('Time')).toBeTruthy();
-  });
-
-  it('saves a bottle finished at the moment it started, never running', async () => {
+describe('a bottle has a duration like nursing; solid food is a moment', () => {
+  it('a new bottle starts as a running timer with Start, End and "Still running"', async () => {
     const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
     choose('Bottle');
+    const running = screen.getByRole('switch', { name: 'Still running' });
+    expect(running.getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByText('Start')).toBeTruthy();
+    expect(screen.getByText('End')).toBeTruthy();
     save();
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     const [saved] = await db.events.toArray();
     expect(saved.payload).toMatchObject({ method: 'bottle' });
+    expect(saved.endedAt).toBeNull();
+  });
+
+  it('a bottle logged afterwards: "Still running" off sets an end and shows the duration', async () => {
+    const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
+    choose('Bottle');
+    fireEvent.click(screen.getByRole('switch', { name: 'Still running' }));
+    expect(screen.getByRole('switch', { name: 'Still running' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
+    save();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [saved] = await db.events.toArray();
     expect(saved.endedAt).not.toBeNull();
+  });
+
+  it('solid food is a moment: no "Still running" and no End', async () => {
+    const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
+    choose('Solid food');
+    expect(screen.queryByRole('switch', { name: 'Still running' })).toBeNull();
+    expect(screen.queryByText('End')).toBeNull();
+    expect(screen.getByText('Time')).toBeTruthy();
+    save();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [saved] = await db.events.toArray();
     expect(saved.endedAt).toBe(saved.startedAt);
   });
 
-  it('solid food is a moment too', () => {
+  it('the switch comes back when the method changes from solid food to nursing', () => {
     renderSheet({ initialTypeId: FEEDING_TYPE.id });
     choose('Solid food');
-    expect(screen.queryByRole('switch', { name: 'Still running' })).toBeNull();
-  });
-
-  it('nursing starts a running timer and the switch comes back when the method changes', async () => {
-    const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
-    choose('Bottle');
     expect(screen.queryByRole('switch', { name: 'Still running' })).toBeNull();
     choose('Breast');
     const running = screen.getByRole('switch', { name: 'Still running' });
     expect(running.getAttribute('aria-checked')).toBe('true');
-    save();
-    await waitFor(() => expect(onDone).toHaveBeenCalled());
-    const [saved] = await db.events.toArray();
-    expect(saved.endedAt).toBeNull();
+  });
+
+  it('an older bottle that ends when it starts shows both ends but no duration', async () => {
+    const at = new Date(2026, 9, 20, 6, 0).toISOString();
+    const event = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      startedAt: at,
+      endedAt: at,
+      payload: { method: 'bottle', amount_ml: 120 },
+    });
+    renderSheet({ event });
+    expect(screen.getByText('End')).toBeTruthy();
+    expect(screen.queryByText(/^Duration/)).toBeNull();
   });
 
   it('keeps the length of a finished bottle that was edited', async () => {
@@ -109,8 +131,9 @@ describe('a bottle is a moment, not a timer', () => {
       payload: { method: 'bottle' },
     });
     const onDone = renderSheet({ event });
-    // A finished event with its own length shows both ends.
+    // A finished event with its own length shows both ends and how long it took.
     expect(screen.getByText('End')).toBeTruthy();
+    expect(screen.getByText('Duration 20m')).toBeTruthy();
     save();
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     const saved = await db.events.get(event.id);

@@ -16,6 +16,7 @@ import {
 import { validatePayload } from '../events/payloadRules';
 import { PresetNotRunnableError, type SheetPrefill, type UndoToken } from '../presets/actions';
 import { presetStatus, type PresetStatus } from '../presets/status';
+import { effectiveDurationMs } from '../timers/pauseMath';
 import type { MedicationStatus } from '../medications/statusCalculator';
 import { getOwn } from '../util/ownProperty';
 import {
@@ -44,6 +45,11 @@ export type TileDetail =
       amountMl: number | null;
       bottleContent: string | null;
       side: string | null;
+      /**
+       * How long a finished bottle took (effective ms, pauses left out); `null` for other methods,
+       * a running bottle and a bottle that ends when it starts (older bottles, imports).
+       */
+      bottleMs: number | null;
     }
   | { kind: 'diaper'; content: string | null }
   | {
@@ -94,6 +100,14 @@ function medicationNames(event: BabyEvent | null): string[] {
     .filter((name): name is string => typeof name === 'string');
 }
 
+/** A finished bottle's effective length, when it has one (see `TileDetail` `bottleMs`). */
+function bottleLength(event: BabyEvent): number | null {
+  if (payloadString(event, 'method') !== 'bottle' || event.endedAt === null) return null;
+  if (event.endedAt === event.startedAt) return null;
+  const ms = effectiveDurationMs(event);
+  return ms > 0 ? ms : null;
+}
+
 function detailOf(id: TileId, last: BabyEvent | null): TileDetail | null {
   if (id === 'feed') {
     return {
@@ -102,6 +116,7 @@ function detailOf(id: TileId, last: BabyEvent | null): TileDetail | null {
       amountMl: last ? (payloadNumber(last, 'amount_ml') ?? null) : null,
       bottleContent: last ? (payloadString(last, 'bottle_feeding_type') ?? null) : null,
       side: last ? (payloadString(last, 'side') ?? null) : null,
+      bottleMs: last ? bottleLength(last) : null,
     };
   }
   if (id === 'diaper') {
@@ -423,7 +438,8 @@ function payloadOf(choice: Exclude<TrayChoice, { kind: 'breast' }>): EventPayloa
 }
 
 /**
- * Logs a tray choice as one instant event (a bottle is a zero-length feed) at the tap moment minus
+ * Logs a tray choice as one instant event (the tray's bottle is a quick after-the-fact log with
+ * no duration; a timed bottle starts from the Bottle preset or the event sheet) at the tap moment minus
  * `minutesAgo`, checked with the server's payload rules first, and remembers the values. Breast
  * starts a nursing session instead. Returns the token `undoPreset` reverts; its `at` is the tap
  * moment and `shiftMinutes` the "When" chip, so the toast's chips continue from it.

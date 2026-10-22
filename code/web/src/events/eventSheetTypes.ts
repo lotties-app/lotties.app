@@ -6,6 +6,8 @@ export interface FinishMode {
   fields: readonly string[];
   /** Values to pre-select (remembered last-used values), by field key. */
   initialValues?: EventFormState['values'];
+  /** End of a running timer stopped through this form (a forgotten timer); default now. */
+  endedAt?: string;
 }
 
 export interface EventSheetProps {

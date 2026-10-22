@@ -68,7 +68,7 @@ Three depths:
 Drop the MUI X picker from logging. Duration types show **Start · duration chip · End**:
 - Editing the duration moves the end.
 - A **Still running** switch replaces "leave empty".
-- A zero-length Feeding (bottle) shows one pill plus "Add an end time". This also solves backlog #18 (bath with an optional duration).
+- A zero-length Feeding (bottle) shows one pill plus "Add an end time". (2026-10: a new bottle in the sheet is a running timer with Start/End like nursing; older zero-length bottles show no duration.) This also solves backlog #18 (bath with an optional duration).
 
 **Twins and caregivers**: trays offer *For: Alice | Bia | Both*, and the toast offers "Also Bia". "Both" writes two events in one transaction. Nobody is asked who they are; initials appear when someone else logged ("by Rafa", from `createdBy`).
 
