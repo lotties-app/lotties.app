@@ -7,7 +7,7 @@ Status: design only, nothing implemented. Owner decisions: Web Push sent by our 
 ## 0. Summary of decisions
 | Choice | Decision |
 |---|---|
-| v1 kinds | Scheduled medicine dose due (from `MedicationStatusCalculator`), nap window opening (from predictions), test. Belly pain pattern heads-up (2026-10-22, section 2.5); overtired and fussy pattern heads-ups (2026-10-22, sections 2.6 and 2.7); wet and dirty diaper heads-ups (2026-10-22, section 2.8). Co-parent activity in v1.1. |
+| v1 kinds | Scheduled medicine dose due (from `MedicationStatusCalculator`), nap window opening (from predictions), test. Belly pain pattern heads-up (2026-10-22, section 2.5); overtired and fussy pattern heads-ups (2026-10-22, sections 2.6 and 2.7); wet and dirty diaper heads-ups (2026-10-22, section 2.8); appointment reminders, on by default (2026-10-22, section 2.9). Co-parent activity in v1.1. |
 | Opt-in | Per device (browser permission + subscription) and per user and baby (kinds); everything off by default. |
 | Lock screen | Generic text by default: no baby name, no medicine name, never a dose amount. Names only when the user turns on "Show names". |
 | Text | Rendered by the service worker from a bundled catalog (`push` namespace, en + pt-BR); the server sends codes, ids and instants only. |
@@ -99,13 +99,21 @@ When the baby will probably pee or poop, from the baby's own diaper and feed log
 - Payload codes only: `{v, id, kind: "diaper_wet_headsup" | "diaper_dirty_headsup", babyId, at (the expected time), lang, token, names?: {baby}}`; never the content, a symptom or advice. A retry rebuilds `at` as due time + 10 min (wet) or + 5 min (dirty; after a feed this approximates the expected time).
 - Lock-screen text, generic unless show-names: wet "A diaper check may be due / A wet diaper is often due around 15:40." (pt-BR "Pode ser hora de olhar a fralda / Uma fralda molhada costuma vir por volta de 15:40."); dirty "A diaper may be coming / A dirty diaper often comes around 16:05." ("Uma fralda suja pode estar a caminho / Uma fralda suja costuma vir por volta de 16:05."). Tapping opens Now (`/#notify=wet&..` or `/#notify=dirty&..`), where the card shows when it still applies. Device tags `wet:{baby}` and `dirty:{baby}`; the app closes a shown one once a wet (or mixed) diaper is logged from 10 minutes before `at`, or a dirty (or mixed) one from 60 minutes before `at`.
 
+### 2.9 `appointment_reminder` (2026-10-22; docs/design/15-appointments.md)
+Reminders before the baby's appointments (`Appointment`, synced per baby), at the offsets chosen on each appointment: 1 week, 1 day, 2 hours, 30 minutes (default 1 day and 2 hours).
+- On by default per user and baby (column `baby_notification_preferences.appointment_reminders`, NOT NULL DEFAULT TRUE, migration `Appointments`): the family created the appointment on purpose. The device opt-in is still needed. A member who never stored preferences is a scheduler candidate with the defaults while the baby has an upcoming appointment within a week (`ListCandidatesAsync` adds them; a stored row with only this kind on is a candidate under the same condition). Owners, Parents and Caregivers; Viewers never.
+- For every upcoming appointment that has not started and each offset: send at `start - offset`. Inside the recipient's quiet hours (read in their zone at that instant, daylight saving applied) the send time moves to the end of the quiet period when that is still before the start; otherwise that reminder is skipped (an appointment reminder is delayed, not dropped). An offset whose send time was already past when the appointment was last changed (created, moved, restored; its server `updatedAt`) is skipped. Of the offsets due in one tick only the latest goes; an earlier one that was never sent is superseded (never two at once). Done and cancelled appointments never remind.
+- Dedupe base key `appt:{appointmentId:N}:{start utc yyyyMMddHHmm}:{offset}`: moving the start is a new key (the reminders of the new time are planned again). Stale cutoff 30 minutes (`AppointmentStaleCutoff`); TTL until the start; `Urgency: normal`; snooze and dismiss as for naps (no buttons).
+- Payload codes only: `{v, id, kind: "appointment_reminder", babyId, apptId, offset, at (the start), lang, token, names?: {baby}}`; never the title, the doctor or the notes. A retry rebuilds `apptId`, `at` and `offset` from the key.
+- Lock-screen text, worded by the worker in the device zone from `at`, `offset` and the time of display: "Appointment reminder / Appointment tomorrow at 15:30." ("Lembrete de consulta / Consulta amanhã às 15:30."), "Appointment in 2 hours, at 15:30.", "Appointment in 30 minutes, at 15:30.", "Appointment in a week, on Thursday, October 22 at 15:30."; when the offset's phrase is no longer true (delayed by quiet hours) "today at", "tomorrow at" or "on {date} at" ("hoje às", "amanhã às", "marcada para {date}, às"). With show-names: "{{baby}}: appointment tomorrow at 15:30." Device tag `appt:{appointment}`. Tapping opens `/appointments#notify=appt&baby=..&appt=..&d=..`, where the appointment's detail opens.
+
 ## 3. Privacy and sharing semantics
 - Opt-in per device: nothing is subscribed until the user turns on "Notifications on this device" and grants the browser permission. Turning it off unsubscribes the browser and revokes the server row.
 - Opt-in per user and baby: `dose_due` and `nap_window` are off for every baby until the user turns them on. Defaults are never inherited from a co-parent.
 - Who receives: current members with role Owner or Parent who opted in, on every active subscription of theirs. Viewers cannot opt in (they cannot log a dose). Membership is re-checked on every tick (join on `baby_members`); preference rows cascade-delete when the member leaves or is removed.
 - Payload minimisation: the encrypted payload carries only `{v, id, kind, babyId, rxId?, at, lang, token?, names?}`. `names` (`{baby, medication}`, each trimmed to 40 characters) is included only when the recipient turned on "Show names on notifications" (user setting, default off). A dose amount is never sent or shown. The baby's birth date, notes, payload details, prescriptions' indication or instructions are never sent.
 - Lock-screen text by default: "Medicine reminder / A scheduled dose for 18:00 is not logged yet." and "Nap window / The estimated nap window opens around 14:20." No baby name, no medicine name.
-- Quiet hours (per user, in the user's time zone, `start`-`end` may cross midnight, default on 22:00-07:00): `nap_window`, `belly_pain_pattern`, `overtired_warning`, `fussy_pattern`, `diaper_wet_headsup`, `diaper_dirty_headsup` and later activity kinds are dropped. `dose_due` is still delivered (the parent scheduled that time on purpose) unless "Also silence medicine reminders in quiet hours" is on.
+- Quiet hours (per user, in the user's time zone, `start`-`end` may cross midnight, default on 22:00-07:00): `nap_window`, `belly_pain_pattern`, `overtired_warning`, `fussy_pattern`, `diaper_wet_headsup`, `diaper_dirty_headsup` and later activity kinds are dropped; `appointment_reminder` is delayed to the end of quiet hours when that is still before the start (else skipped). `dose_due` is still delivered (the parent scheduled that time on purpose) unless "Also silence medicine reminders in quiet hours" is on.
 - Snooze and dismiss are per user: snoozing my reminder never silences my co-parent's. Snooze = 30 minutes, at most 3 times per reminder; the re-send has key `{base}:s{n}` and is sent only if the item is still open. Each slot or awake window is notified once (no automatic repeats), so dismiss only matters after a snooze: "Stop reminders for this dose" on the in-app reminder line cancels pending snoozes for that base key for this user. Logging the dose (by anyone) is the implicit acknowledgement for everyone.
 - Dedupe: one delivery per `(subscription, key)` (unique index). On the device the notification `tag` is the base key, so a snoozed re-send replaces the earlier notification instead of stacking.
 - Shared device / account switch: a browser has one endpoint per origin. Subscribing with an endpoint that belongs to another user transfers it to the caller (latest sign-in owns the device) and the old user's pending deliveries for it are cancelled. Logout revokes the device (section 12).
@@ -166,9 +174,10 @@ Indexes: unique `endpoint_hash`; `(user_id)` filtered `revoked_at IS NULL`. Valu
 | fussy_pattern | bool | default false (migration `FussyAndOvertiredPrefs`, 2026-10-22) |
 | diaper_wet_headsup | bool | default false (migration `DiaperHeadsUpPrefs`, 2026-10-22) |
 | diaper_dirty_headsup | bool | default false (migration `DiaperHeadsUpPrefs`, 2026-10-22) |
+| appointment_reminders | bool | default TRUE (migration `Appointments`, 2026-10-22; on unless the member turns it off) |
 | updated_at | timestamptz | |
 
-Index `(baby_id)` filtered `dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup` (candidate babies; widened by migrations `BellyPainPattern`, `FussyAndOvertiredPrefs` and `DiaperHeadsUpPrefs`).
+Index `(baby_id)` filtered `dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders` (candidate babies; widened by migrations `BellyPainPattern`, `FussyAndOvertiredPrefs`, `DiaperHeadsUpPrefs` and `Appointments`).
 
 `notification_deliveries` (delivery log and idempotency)
 | Column | Type | Notes |
@@ -177,7 +186,7 @@ Index `(baby_id)` filtered `dose_due OR nap_window OR belly_pain_pattern OR over
 | subscription_id | uuid FK push_subscriptions, cascade | |
 | user_id | uuid | denormalised for snooze lookups |
 | baby_id | uuid null | null for `test` |
-| kind | varchar(24) | `dose_due`, `nap_window`, `belly_pain_pattern`, `overtired_warning`, `fussy_pattern`, `diaper_wet_headsup`, `diaper_dirty_headsup`, `test` |
+| kind | varchar(24) | `dose_due`, `nap_window`, `belly_pain_pattern`, `overtired_warning`, `fussy_pattern`, `diaper_wet_headsup`, `diaper_dirty_headsup`, `appointment_reminder`, `test` |
 | base_key | varchar(120) | e.g. `dose:{rx}:{slot}` |
 | dedupe_key | varchar(124) | base key, or `{base}:s{n}` for snooze re-sends |
 | due_at, expires_at | timestamptz | `expires_at = due_at + TTL` |
@@ -221,8 +230,8 @@ Base `/api/v1`, JSON camelCase, problem+json with `code` (status per code in `Do
 | `GET /push/subscriptions` | any user | the caller's active devices `[{id, deviceLabel, locale, createdAt, lastSeenAt, lastSuccessAt}]`. |
 | `DELETE /push/subscriptions/{id}` | any user, `push-write` | revokes one of the caller's devices; 204 idempotent. |
 | `GET /push/settings` / `PUT /push/settings` | any user, `push-write` on PUT | `{timeZone, quietHours:{enabled, start:"HH:mm", end:"HH:mm"}, quietIncludesMedicine, showNames}`; GET returns defaults with `timeZone: null` before the first PUT. |
-| `GET /push/preferences` | any user | `[{babyId, canReceive, doseDue, doseLeadMinutes, napWindow, napLeadMinutes, bellyPainPattern, overtiredWarning, fussyPattern, diaperWetHeadsUp, diaperDirtyHeadsUp}]` for every baby the caller belongs to (`canReceive = role != Viewer`). |
-| `PUT /babies/{babyId}/notification-preferences` | Parent/Owner, `push-write` | `{doseDue?, doseLeadMinutes?, napWindow?, napLeadMinutes?, bellyPainPattern?, overtiredWarning?, fussyPattern?, diaperWetHeadsUp?, diaperDirtyHeadsUp?}` merged into the stored state (a field absent or `null` keeps its value, defaults before the first PUT; since 2026-10-22, so a stale client never turns off a kind it does not know) -> 200 stored; Viewer 403; merged leads outside the allowed sets 400 `validation_failed`. |
+| `GET /push/preferences` | any user | `[{babyId, canReceive, doseDue, doseLeadMinutes, napWindow, napLeadMinutes, bellyPainPattern, overtiredWarning, fussyPattern, diaperWetHeadsUp, diaperDirtyHeadsUp, appointmentReminders}]` for every baby the caller belongs to (`canReceive = role != Viewer`). |
+| `PUT /babies/{babyId}/notification-preferences` | Parent/Owner, `push-write` | `{doseDue?, doseLeadMinutes?, napWindow?, napLeadMinutes?, bellyPainPattern?, overtiredWarning?, fussyPattern?, diaperWetHeadsUp?, diaperDirtyHeadsUp?, appointmentReminders?}` merged into the stored state (a field absent or `null` keeps its value, defaults before the first PUT; since 2026-10-22, so a stale client never turns off a kind it does not know) -> 200 stored; Viewer 403; merged leads outside the allowed sets 400 `validation_failed`. |
 | `POST /push/test` | any user, `push-test` | `{endpoint?}` (this device; all the caller's devices without it) -> 200 `{results:[{subscriptionId, status: "sent"|"gone"|"failed"}]}`; sends synchronously with the 10 s send timeout. |
 | `POST /push/deliveries/{deliveryId}/actions` | anonymous, `push-action` | `{action: "snooze"|"dismiss", token}` -> 204. Unknown id, wrong token or more than 12 h after `due_at` -> 404 `notification_action_not_found` (one code, nothing revealed); fourth snooze 409 `snooze_limit_reached`. |
 
@@ -334,6 +343,11 @@ Worker catalog `code/web/src/i18n/locales/push.{en,pt-BR}.json` (bundled into th
 | `diaper_dirty_headsup.title` | A diaper may be coming | Uma fralda suja pode estar a caminho |
 | `diaper_dirty_headsup.body` | A dirty diaper often comes around {{time}}. | Uma fralda suja costuma vir por volta de {{time}}. |
 | `diaper_dirty_headsup.bodyNamed` | {{baby}}: a dirty diaper often comes around {{time}}. | {{baby}}: uma fralda suja costuma vir por volta de {{time}}. |
+| `appointment_reminder.title` | Appointment reminder | Lembrete de consulta |
+| `appointment_reminder.tomorrow` / `today` | Appointment tomorrow at {{time}}. / Appointment today at {{time}}. | Consulta amanhã às {{time}}. / Consulta hoje às {{time}}. |
+| `appointment_reminder.hours` / `minutes` | Appointment in 2 hours, at {{time}}. / Appointment in 30 minutes, at {{time}}. | Consulta daqui a 2 horas, às {{time}}. / Consulta daqui a 30 minutos, às {{time}}. |
+| `appointment_reminder.week` / `on` | Appointment in a week, on {{date}} at {{time}}. / Appointment on {{date}} at {{time}}. | Consulta daqui a uma semana, {{date}}, às {{time}}. / Consulta marcada para {{date}}, às {{time}}. |
+| `appointment_reminder.*Named` | {{baby}}: appointment ... (each phrase above) | {{baby}}: consulta ... |
 | `test.title` / `test.body` | Notifications are on / This is a test from Lotties. | Notificações ativadas / Este é um teste do Lotties. |
 | `generic.title` / `generic.body` | Lotties / Open the app for details. | Lotties / Abra o app para ver os detalhes. |
 | `action.snooze` / `action.open` | Snooze 30 min / Open | Adiar 30 min / Abrir |
