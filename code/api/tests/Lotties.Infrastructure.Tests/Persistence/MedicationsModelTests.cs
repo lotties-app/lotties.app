@@ -60,6 +60,37 @@ public sealed class MedicationsModelTests
     }
 
     [Fact]
+    public void IdempotentScript_AddsNullableDayPartColumnsSoStoredPrescriptionsStayValid()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var section = script[script.IndexOf("_PrescriptionDayParts'", StringComparison.Ordinal)..];
+
+        Assert.Contains("ALTER TABLE prescriptions ADD day_parts character varying(40);", section, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE prescriptions ADD day_part_reminders character varying(64);", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE prescriptions", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Converters_RoundTripDayPartsAndReminders()
+    {
+        using var context = ModelTestContext.Create();
+        var schedule = context.DesignTimeModel().FindEntityType(typeof(PrescriptionSchedule))!;
+        var parts = schedule.FindProperty(nameof(PrescriptionSchedule.DayParts))!.GetTypeMapping().Converter!;
+        var reminders = schedule.FindProperty(nameof(PrescriptionSchedule.DayPartReminders))!.GetTypeMapping().Converter!;
+        var reminderValue = DayPartReminders.Create([DayPartReminder.Parse("night", "22:30"), DayPartReminder.Parse("morning", "08:00")]);
+
+        var storedParts = (string)parts.ConvertToProvider(DayPartSet.Parse(["night", "morning"]))!;
+        var storedReminders = (string)reminders.ConvertToProvider(reminderValue)!;
+
+        Assert.Equal("morning,night", storedParts);
+        Assert.Equal(DayPartSet.Parse(["morning", "night"]), parts.ConvertFromProvider(storedParts));
+        Assert.Equal("morning=08:00,night=22:30", storedReminders);
+        Assert.Equal(reminderValue, reminders.ConvertFromProvider(storedReminders));
+    }
+
+    [Fact]
     public void IdempotentScript_SeedsSubstancesWithoutDosingAndLinksMedicationsWithSetNull()
     {
         using var context = ModelTestContext.Create();

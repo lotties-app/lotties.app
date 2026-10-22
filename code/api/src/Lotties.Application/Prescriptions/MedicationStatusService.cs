@@ -92,6 +92,8 @@ internal static class MedicationStatusMapper
             Dose = prescription.Dose,
             TimesOfDay = prescription.Schedule.TimesOfDay?.ToStrings(),
             EveryMinutes = prescription.Schedule.EveryMinutes,
+            DayParts = prescription.Schedule.DayParts?.ToCodes(),
+            DayPartReminders = DayPartReminderDto.FromReminders(prescription.Schedule.DayPartReminders),
             MinIntervalMinutes = prescription.Schedule.MinIntervalMinutes,
             MaxDosesPer24h = prescription.Schedule.MaxDosesPer24h,
             Indication = prescription.Schedule.Indication,
@@ -109,6 +111,7 @@ internal static class MedicationStatusMapper
             DosesLast24h = status.DosesLast24h,
             LimitReached = status.LimitReached,
             SuggestedDose = status.SuggestedDose is null ? null : (SuggestedDoseDto)status.SuggestedDose,
+            DayPartsStatus = status.DayParts is null ? null : (DayPartsStatusDto)status.DayParts,
         };
     }
 

@@ -42,7 +42,8 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
         from preferences in context.BabyNotificationPreferences.AsNoTracking()
         join member in context.BabyMembers.AsNoTracking()
             on new { preferences.BabyId, preferences.UserId } equals new { member.BabyId, member.UserId }
-        where (preferences.DoseDue || preferences.NapWindow)
+        where (preferences.DoseDue || preferences.NapWindow || preferences.BellyPainPattern || preferences.OvertiredWarning || preferences.FussyPattern
+                || preferences.DiaperWetHeadsUp || preferences.DiaperDirtyHeadsUp)
             && context.PushSubscriptions.Any(subscription =>
                 subscription.UserId == preferences.UserId
                 && subscription.RevokedAt == null

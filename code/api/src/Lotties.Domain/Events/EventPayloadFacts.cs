@@ -4,13 +4,15 @@ using Lotties.Domain.Common;
 namespace Lotties.Domain.Events;
 
 /// <summary>
-/// The payload members the domain interprets beyond the type's field rules: the sleep <c>kind</c> and the pause keys
-/// (<see cref="PauseFields"/>). Read leniently, because stored payloads may predate the rules: a member that is absent,
-/// <c>null</c>, of the wrong JSON kind or out of range reads as no value (<c>null</c> / 0).
+/// The payload members the domain interprets beyond the type's field rules: the sleep <c>kind</c>, the pause keys
+/// (<see cref="PauseFields"/>) and the diaper <c>content</c> (<c>WET</c>, <c>DIRTY</c>, <c>MIXED</c>). Read leniently,
+/// because stored payloads may predate the rules: a member that is absent, <c>null</c>, of the wrong JSON kind or out
+/// of range reads as no value (<c>null</c> / 0).
 /// </summary>
-public sealed record EventPayloadFacts(string? Kind, int PauseCount, int PausedSeconds, DateTimeOffset? PausedAt)
+public sealed record EventPayloadFacts(string? Kind, int PauseCount, int PausedSeconds, DateTimeOffset? PausedAt, string? Content = null)
 {
     private const string KindMember = "kind";
+    private const string ContentMember = "content";
 
     public static EventPayloadFacts None { get; } = new(null, 0, 0, null);
 
@@ -27,7 +29,8 @@ public sealed record EventPayloadFacts(string? Kind, int PauseCount, int PausedS
                 Text(root, KindMember),
                 WholeNumber(root, PauseFields.PauseCount, PauseFields.MaxPauseCount),
                 WholeNumber(root, PauseFields.PausedSeconds, PauseFields.MaxPausedSeconds),
-                Instant(root, PauseFields.PausedAt));
+                Instant(root, PauseFields.PausedAt),
+                Text(root, ContentMember));
     }
 
     private static string? Text(JsonElement root, string key) =>

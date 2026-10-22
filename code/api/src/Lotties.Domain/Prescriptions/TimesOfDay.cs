@@ -50,9 +50,17 @@ public sealed partial record TimesOfDay
 
     public override int GetHashCode() => Values.Aggregate(Values.Count, (hash, time) => HashCode.Combine(hash, time));
 
+    /// <summary>Parses one <c>HH:mm</c> local clock time (two-digit hour 00-23 and minute); <c>false</c> for anything else.</summary>
+    internal static bool TryParseClockTime(string? text, out TimeOnly time)
+    {
+        var valid = text is not null && Pattern().IsMatch(text);
+        time = valid ? TimeOnly.ParseExact(text!, Format, CultureInfo.InvariantCulture) : default;
+        return valid;
+    }
+
     private static TimeOnly ParseOne(string text) =>
-        text is not null && Pattern().IsMatch(text)
-            ? TimeOnly.ParseExact(text, Format, CultureInfo.InvariantCulture)
+        TryParseClockTime(text, out var time)
+            ? time
             : throw new DomainValidationException(Field, $"timesOfDay entries must be HH:mm (00:00-23:59), got '{text}'.");
 
     [GeneratedRegex(@"^([01][0-9]|2[0-3]):[0-5][0-9]\z", RegexOptions.CultureInvariant)]

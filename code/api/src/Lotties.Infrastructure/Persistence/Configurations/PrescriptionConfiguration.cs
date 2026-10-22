@@ -18,6 +18,8 @@ internal sealed class PrescriptionConfiguration : IEntityTypeConfiguration<Presc
 {
     public const int EnumMaxLength = 16;
     public const int TimesOfDayMaxLength = TimesOfDay.MaxCount * 6;
+    public const int DayPartsMaxLength = 40;
+    public const int DayPartRemindersMaxLength = 64;
 
     public void Configure(EntityTypeBuilder<Prescription> builder)
     {
@@ -63,6 +65,14 @@ internal sealed class PrescriptionConfiguration : IEntityTypeConfiguration<Presc
             .HasMaxLength(TimesOfDayMaxLength)
             .HasColumnName("times_of_day");
         schedule.Property(value => value.EveryMinutes).HasColumnName("every_minutes");
+        schedule.Property(value => value.DayParts)
+            .HasConversion(ValueObjectConverters.DayParts)
+            .HasMaxLength(DayPartsMaxLength)
+            .HasColumnName("day_parts");
+        schedule.Property(value => value.DayPartReminders)
+            .HasConversion(ValueObjectConverters.DayPartReminders)
+            .HasMaxLength(DayPartRemindersMaxLength)
+            .HasColumnName("day_part_reminders");
         schedule.Property(value => value.MinIntervalMinutes).HasColumnName("min_interval_minutes");
         schedule.Property(value => value.MaxDosesPer24h).HasColumnName("max_doses_per_24h");
         schedule.Property(value => value.Indication).HasMaxLength(PrescriptionSchedule.IndicationMaxLength).HasColumnName("indication");

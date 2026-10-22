@@ -29,6 +29,9 @@ public static class EventTypeIcons
         "thermostat",
         "vaccines",
         "cake",
+        "air",
+        "massage",
+        "sentiment_very_dissatisfied",
     ];
 
     private static readonly FrozenSet<string> Allowed = Names.ToFrozenSet(StringComparer.Ordinal);

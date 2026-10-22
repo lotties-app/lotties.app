@@ -126,6 +126,71 @@ public sealed class EventPayloadValidationTests
         Assert.Equal("amount_left_ml", Rejected(BuiltInEventTypes.BreastPump, """{"amount_left_ml":-0.5}""").Field);
     }
 
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"tool":"bulb","saline":true}""")]
+    [InlineData("""{"tool":"electric"}""")]
+    [InlineData("""{"tool":"mouth","saline":false}""")]
+    [InlineData("""{"saline":true}""")]
+    public void NasalSuction_OptionalToolAndSaline_AreAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.NasalSuction, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{"tool":"syringe"}""", "tool")]
+    [InlineData("""{"tool":"BULB"}""", "tool")]
+    [InlineData("""{"saline":"yes"}""", "saline")]
+    [InlineData("""{"saline":1}""", "saline")]
+    public void NasalSuction_UnknownToolOrNonBooleanSaline_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.NasalSuction, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"reason":"gas","helped":"yes"}""")]
+    [InlineData("""{"reason":"constipation"}""")]
+    [InlineData("""{"reason":"colic","helped":"a_little"}""")]
+    [InlineData("""{"reason":"other","helped":"no","pause_count":1,"paused_seconds":30}""")]
+    public void BellyMassage_OptionalReasonAndHelped_AreAcceptedRunningOrEnded(string json)
+    {
+        Ensure(BuiltInEventTypes.BellyMassage, json, Ended);
+        Ensure(BuiltInEventTypes.BellyMassage, json, null);
+    }
+
+    [Theory]
+    [InlineData("""{"reason":"pain"}""", "reason")]
+    [InlineData("""{"reason":"GAS"}""", "reason")]
+    [InlineData("""{"helped":"maybe"}""", "helped")]
+    [InlineData("""{"helped":true}""", "helped")]
+    public void BellyMassage_UnknownReasonOrHelped_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.BellyMassage, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"intensity":"mild"}""")]
+    [InlineData("""{"intensity":"moderate","what_helped":"rocking"}""")]
+    [InlineData("""{"intensity":"intense","what_helped":"nothing"}""")]
+    [InlineData("""{"what_helped":"pacifier","pause_count":1,"paused_seconds":30}""")]
+    public void Fussy_OptionalIntensityAndWhatHelped_AreAcceptedRunningOrEnded(string json)
+    {
+        Ensure(BuiltInEventTypes.Fussy, json, Ended);
+        Ensure(BuiltInEventTypes.Fussy, json, null);
+    }
+
+    [Theory]
+    [InlineData("""{"intensity":3}""", "intensity")]
+    [InlineData("""{"intensity":"MILD"}""", "intensity")]
+    [InlineData("""{"what_helped":"singing"}""", "what_helped")]
+    [InlineData("""{"what_helped":true}""", "what_helped")]
+    public void Fussy_UnknownIntensityOrWhatHelped_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Fussy, json).Field);
+    }
+
     [Fact]
     public void Medication_HasNoFields_SoAnyPayloadIsAccepted()
     {

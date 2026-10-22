@@ -31,9 +31,20 @@ public sealed class BabyNotificationPreferences
 
     public short NapLeadMinutes { get; private set; }
 
+    public bool BellyPainPattern { get; private set; }
+
+    public bool OvertiredWarning { get; private set; }
+
+    public bool FussyPattern { get; private set; }
+
+    public bool DiaperWetHeadsUp { get; private set; }
+
+    public bool DiaperDirtyHeadsUp { get; private set; }
+
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public ReminderPreferences Preferences => ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes);
+    public ReminderPreferences Preferences =>
+        ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes, BellyPainPattern, OvertiredWarning, FussyPattern, DiaperWetHeadsUp, DiaperDirtyHeadsUp);
 
     public static BabyNotificationPreferences Create(Guid babyId, Guid userId, ReminderPreferences preferences, DateTimeOffset now)
     {
@@ -59,6 +70,11 @@ public sealed class BabyNotificationPreferences
         DoseLeadMinutes = (short)preferences.DoseLeadMinutes;
         NapWindow = preferences.NapWindow;
         NapLeadMinutes = (short)preferences.NapLeadMinutes;
+        BellyPainPattern = preferences.BellyPainPattern;
+        OvertiredWarning = preferences.OvertiredWarning;
+        FussyPattern = preferences.FussyPattern;
+        DiaperWetHeadsUp = preferences.DiaperWetHeadsUp;
+        DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp;
         UpdatedAt = UtcTime.Normalize(now);
     }
 }

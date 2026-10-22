@@ -16,7 +16,8 @@ public sealed record MedicationStatusInput(
 /// <summary>
 /// The computed state of one active prescription (see <see cref="MedicationStatusCalculator"/> for the rules).
 /// <see cref="OverdueBy"/>, <see cref="NextScheduledAt"/> and <see cref="OverdueSlotAt"/> are <c>null</c> for as-needed
-/// prescriptions. <see cref="OverdueSlotAt"/> is the open slot <see cref="OverdueBy"/> counts from (<c>now - OverdueBy</c>).
+/// and part-of-the-day prescriptions. <see cref="OverdueSlotAt"/> is the open slot <see cref="OverdueBy"/> counts from
+/// (<c>now - OverdueBy</c>). <see cref="DayParts"/> is set only for part-of-the-day prescriptions.
 /// </summary>
 public sealed record MedicationStatus(
     Prescription Prescription,
@@ -31,7 +32,8 @@ public sealed record MedicationStatus(
     bool LimitReached,
     SuggestedDose? SuggestedDose,
     IReadOnlyList<Guid> GroupMemberIds,
-    DateTimeOffset? OverdueSlotAt = null);
+    DateTimeOffset? OverdueSlotAt = null,
+    DayPartsStatus? DayParts = null);
 
 /// <summary>
 /// Pure status of a baby's active prescriptions, mirrored by the web client offline. It never blocks anything: it
@@ -52,6 +54,11 @@ public sealed record MedicationStatus(
 /// earliest open slot after now; <c>overdueBy</c> = now minus the latest open slot at or before now that is today's or
 /// at most 90 minutes old (slots before the prescription was created are never overdue).</item>
 /// <item>Every N minutes: <c>nextScheduledAt</c> = last dose + N (none before the first dose), overdue when past.</item>
+/// <item>Part of the day (<see cref="DayPartWindows"/>): per chosen part of the current routine day, <c>given</c> when an
+/// own dose lies inside the window, else <c>due</c> while the window is open, <c>upcoming</c> before it and <c>missed</c>
+/// after it (informative only). The course dates are compared with the routine day (it starts at 05:00, so the last
+/// night of a course runs until 05:00 the next date). The guard asks before a dose in a part that already has one or
+/// outside every chosen part.</item>
 /// <item><c>suggestedDose</c>: <see cref="DoseRule.SuggestFor"/> with the latest weight (stale after 30 days).</item>
 /// </list>
 /// </summary>
@@ -83,12 +90,14 @@ public static class MedicationStatusCalculator
         var recent = DosesInDailyWindow(medicationDoses, clock.Now);
         var limitUntil = LimitUntil(prescription.Schedule.MaxDosesPer24h, recent);
         var availableAt = Later(Latest(clockDoses) + EffectiveInterval(prescription, members), limitUntil);
-        var inCourse = prescription.CoversDay(clock.Today);
-        var schedule = ScheduleOf(prescription, OwnDosesOf(prescription, input.Doses), lastDoseAt, clock, inCourse);
+        var courseDay = clock.CourseDayOf(prescription);
+        var inCourse = prescription.CoversDay(courseDay);
+        var ownDoses = OwnDosesOf(prescription, input.Doses);
+        var schedule = ScheduleOf(prescription, ownDoses, lastDoseAt, clock, inCourse);
         return new MedicationStatus(
             prescription,
-            prescription.HasStartedOn(clock.Today),
-            prescription.HasEndedBefore(clock.Today),
+            prescription.HasStartedOn(courseDay),
+            prescription.HasEndedBefore(courseDay),
             inCourse && (availableAt is null || availableAt <= clock.Now),
             availableAt,
             schedule.NextAt,
@@ -98,7 +107,8 @@ public static class MedicationStatusCalculator
             limitUntil is not null,
             prescription.Dose.SuggestFor(input.LatestWeight, clock.Today),
             members.Select(member => member.Id).ToArray(),
-            schedule.OverdueSlotAt);
+            schedule.OverdueSlotAt,
+            prescription.Schedule.DayParts is { } parts ? DayPartSlots.Evaluate(prescription, parts, ownDoses, clock) : null);
     }
 
     private static IReadOnlyList<MedicationDose> MedicationDosesOf(Prescription prescription, IReadOnlyList<MedicationDose> doses) =>
@@ -146,6 +156,10 @@ internal sealed record ScheduleState(DateTimeOffset? NextAt, DateTimeOffset? Ove
 internal sealed record LocalClock(DateTimeOffset Now, TimeSpan Offset)
 {
     public DateOnly Today => DateOnly.FromDateTime(Now.ToOffset(Offset).DateTime);
+
+    /// <summary>The day the course dates are compared with: the routine day for part-of-the-day prescriptions, else local today.</summary>
+    public DateOnly CourseDayOf(Prescription prescription) =>
+        prescription.Schedule.DayParts is null ? Today : DayPartWindows.Of(Now, Offset).Day;
 
     public DateTimeOffset ToInstant(DateOnly day, TimeOnly time) => new DateTimeOffset(day.ToDateTime(time), Offset).ToUniversalTime();
 }

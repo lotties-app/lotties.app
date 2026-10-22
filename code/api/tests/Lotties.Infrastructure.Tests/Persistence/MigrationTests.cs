@@ -34,12 +34,12 @@ public sealed class MigrationTests
     }
 
     [Fact]
-    public void Migrations_AreOrderedInitialCreateFixupsMeasurementsSleepKindsClientUpdatedAtWave2HardeningFellAsleepConditionalFieldsMedicationsThenPauses()
+    public void Migrations_AreOrderedInTheOrderTheyWereAdded()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields", "_PushNotifications", "_NasalSuction", "_PrescriptionDayParts", "_BellyMassage", "_BellyPainPattern", "_FussyEvent", "_FussyAndOvertiredPrefs", "_DiaperHeadsUpPrefs" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
@@ -93,6 +93,70 @@ public sealed class MigrationTests
     }
 
     [Fact]
+    public void IdempotentScript_SeedsNasalSuctionTypeWithoutTouchingEvents()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var section = script[script.IndexOf("_NasalSuction'", StringComparison.Ordinal)..];
+
+        Assert.Contains("'4124b99c-e000-4ee0-b74a-a6579553a450', NULL, '#78909c'", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"tool\",\"label\":\"Tool\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"bulb\",\"electric\",\"mouth\"]}", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"saline\",\"label\":\"Saline used\",\"kind\":\"bool\",\"isRequired\":false}", section, StringComparison.Ordinal);
+        Assert.Contains("FALSE, 'air', 'nasal_suction', 'Nasal suction'", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE events", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_SeedsBellyMassageTypeOnceWithoutTouchingEvents()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var start = script.IndexOf("_BellyMassage'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_BellyPainPattern'", start, StringComparison.Ordinal)];
+
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(section, "INSERT INTO event_types"));
+        Assert.Contains("'44540b60-eb87-470f-8a3e-08170a525538', NULL, '#ff7043'", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"reason\",\"label\":\"Reason\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"gas\",\"constipation\",\"colic\",\"other\"]}", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"helped\",\"label\":\"Did it help?\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"yes\",\"a_little\",\"no\"]}", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"pause_count\"", section, StringComparison.Ordinal);
+        Assert.Contains("TRUE, 'massage', 'belly_massage', 'Belly massage'", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE events", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_SeedsFussyTypeOnceWithoutTouchingEvents()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var start = script.IndexOf("_FussyEvent'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_FussyAndOvertiredPrefs'", start, StringComparison.Ordinal)];
+
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(section, "INSERT INTO event_types"));
+        Assert.Contains("'6191006e-8767-4cd8-882f-81898fad58d3', NULL, '#81c784'", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"intensity\",\"label\":\"Intensity\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"mild\",\"moderate\",\"intense\"]}", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"what_helped\",\"label\":\"What helped\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"feeding\",\"rocking\",\"pacifier\",\"massage\",\"sleep\",\"other\",\"nothing\"]}", section, StringComparison.Ordinal);
+        Assert.Contains("{\"key\":\"pause_count\"", section, StringComparison.Ordinal);
+        Assert.Contains("TRUE, 'sentiment_very_dissatisfied', 'fussy', 'Fussy / crying'", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE events", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Migrations_FussyEventAndThePreferencesComeRightAfterBellyPainPattern()
+    {
+        using var context = ModelTestContext.Create();
+
+        var migrations = context.Database.GetMigrations().ToArray();
+        var belly = Array.FindIndex(migrations, migration => migration.EndsWith("_BellyPainPattern", StringComparison.Ordinal));
+        var fussy = Array.FindIndex(migrations, migration => migration.EndsWith("_FussyEvent", StringComparison.Ordinal));
+        var preferences = Array.FindIndex(migrations, migration => migration.EndsWith("_FussyAndOvertiredPrefs", StringComparison.Ordinal));
+
+        Assert.True(belly >= 0 && fussy == belly + 1 && preferences == fussy + 1, $"belly pain pattern {belly}, fussy {fussy}, preferences {preferences}");
+    }
+
+    [Fact]
     public void IdempotentScript_RewritesStoredBottleContentsToLowerCaseOnlyWhereStillUpperCase()
     {
         using var context = ModelTestContext.Create();
@@ -142,7 +206,9 @@ public sealed class MigrationTests
 
         Assert.Contains("CREATE TABLE events", script, StringComparison.Ordinal);
         Assert.Contains("payload jsonb NOT NULL", script, StringComparison.Ordinal);
-        Assert.Equal(["DROP INDEX ix_users_subject;"], DropStatements(script));
+        // Every index is recreated right after (issuer + subject; the wider belly pain, then overtired and fussy, then
+        // diaper candidate filter): no data is dropped.
+        Assert.Equal(["DROP INDEX ix_users_subject;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;"], DropStatements(script));
         Assert.DoesNotContain("TRUNCATE", script, StringComparison.OrdinalIgnoreCase);
     }
 

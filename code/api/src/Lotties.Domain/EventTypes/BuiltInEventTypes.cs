@@ -27,6 +27,9 @@ public static class BuiltInEventTypes
     public static readonly Guid MedicationId = new("bd43d7fb-e12c-438a-852e-c710b41a7c76");
     public static readonly Guid BellyPainId = new("07a1ea45-7ba6-4fe3-9e38-a335da9ea12c");
     public static readonly Guid BreastPumpId = new("ddfdaa52-57ee-4d34-8129-a78262c2172c");
+    public static readonly Guid NasalSuctionId = new("4124b99c-e000-4ee0-b74a-a6579553a450");
+    public static readonly Guid BellyMassageId = new("44540b60-eb87-470f-8a3e-08170a525538");
+    public static readonly Guid FussyId = new("6191006e-8767-4cd8-882f-81898fad58d3");
 
     public static EventType Feeding { get; } = EventType.CreateBuiltIn(
         FeedingId,
@@ -132,8 +135,55 @@ public static class BuiltInEventTypes
             .. PauseFieldDefinitions(),
         ]);
 
+    /// <summary>Clearing the baby's nose: an instant marker with the tool used and whether saline was used, both optional.</summary>
+    public static EventType NasalSuction { get; } = EventType.CreateBuiltIn(
+        NasalSuctionId,
+        EventTypeKey.From("nasal_suction"),
+        "Nasal suction",
+        "air",
+        HexColor.From("#78909c"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("tool", "Tool", EventFieldKind.Select, options: ["bulb", "electric", "mouth"]),
+            EventFieldDefinition.Create("saline", "Saline used", EventFieldKind.Bool),
+        ]);
+
+    /// <summary>
+    /// A massage of the baby's belly (for gas, constipation or colic): timed like tummy time, with the
+    /// optional reason and whether it helped.
+    /// </summary>
+    public static EventType BellyMassage { get; } = EventType.CreateBuiltIn(
+        BellyMassageId,
+        EventTypeKey.From("belly_massage"),
+        "Belly massage",
+        "massage",
+        HexColor.From("#ff7043"),
+        hasDuration: true,
+        [
+            EventFieldDefinition.Create("reason", "Reason", EventFieldKind.Select, options: ["gas", "constipation", "colic", "other"]),
+            EventFieldDefinition.Create("helped", "Did it help?", EventFieldKind.Select, options: ["yes", "a_little", "no"]),
+            .. PauseFieldDefinitions(),
+        ]);
+
+    /// <summary>
+    /// A fussy or crying spell (the evening "witching hour"): an optional timer like tummy time, with the optional
+    /// intensity and what helped. A log of what happened, never a diagnosis.
+    /// </summary>
+    public static EventType Fussy { get; } = EventType.CreateBuiltIn(
+        FussyId,
+        EventTypeKey.From("fussy"),
+        "Fussy / crying",
+        "sentiment_very_dissatisfied",
+        HexColor.From("#81c784"),
+        hasDuration: true,
+        [
+            EventFieldDefinition.Create("intensity", "Intensity", EventFieldKind.Select, options: ["mild", "moderate", "intense"]),
+            EventFieldDefinition.Create("what_helped", "What helped", EventFieldKind.Select, options: ["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing"]),
+            .. PauseFieldDefinitions(),
+        ]);
+
     public static IReadOnlyList<EventType> All { get; } = Array.AsReadOnly(
-        new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump });
+        new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump, NasalSuction, BellyMassage, Fussy });
 
     private static FieldVisibilityCondition WhenMethodIs(string method) => FieldVisibilityCondition.Create("method", [method]);
 

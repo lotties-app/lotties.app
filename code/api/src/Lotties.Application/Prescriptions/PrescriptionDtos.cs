@@ -30,10 +30,38 @@ public sealed record DoseRuleDto
     }
 }
 
+/// <summary>The reminder time of one part of the day: <c>{"part":"morning","time":"08:00"}</c>.</summary>
+public sealed record DayPartReminderDto
+{
+    public string? Part { get; init; }
+
+    public string? Time { get; init; }
+
+    public static implicit operator DayPartReminderDto(DayPartReminder reminder)
+    {
+        ArgumentNullException.ThrowIfNull(reminder);
+        return new DayPartReminderDto { Part = DayPartWindows.CodeOf(reminder.Part), Time = reminder.TimeText };
+    }
+
+    /// <summary>Validates with the domain rules; throws <see cref="DomainValidationException"/> (field <c>dayPartReminders</c>).</summary>
+    public static explicit operator DayPartReminder(DayPartReminderDto dto) =>
+        dto is null
+            ? throw new DomainValidationException(Domain.Prescriptions.DayPartReminders.Field, "dayPartReminders entries must not be null.")
+            : DayPartReminder.Parse(dto.Part, dto.Time);
+
+    /// <summary>The reminders of a request; <c>null</c> or an empty list means reminders are off.</summary>
+    public static DayPartReminders? ToReminders(IReadOnlyList<DayPartReminderDto>? reminders) =>
+        reminders is { Count: > 0 } list ? Domain.Prescriptions.DayPartReminders.Create(list.Select(reminder => (DayPartReminder)reminder).ToArray()) : null;
+
+    public static IReadOnlyList<DayPartReminderDto>? FromReminders(DayPartReminders? reminders) =>
+        reminders?.Values.Select(reminder => (DayPartReminderDto)reminder).ToArray();
+}
+
 /// <summary>
 /// Body of <c>PUT /api/v1/babies/{babyId}/prescriptions/{prescriptionId}</c>: the full editable state. <c>status</c>
 /// defaults to <c>active</c>; <c>kind</c>, <c>dose</c> and <c>startDate</c> are required. Scheduled: exactly one of
-/// <c>timesOfDay</c> (<c>["08:00","20:00"]</c>) or <c>everyMinutes</c>. As needed: <c>minIntervalMinutes</c>, optional
+/// <c>timesOfDay</c> (<c>["08:00","20:00"]</c>), <c>everyMinutes</c> or <c>dayParts</c> (<c>["morning","night"]</c>,
+/// with optional <c>dayPartReminders</c> for chosen parts). As needed: <c>minIntervalMinutes</c>, optional
 /// <c>maxDosesPer24h</c>. <c>updatedAt</c> is the client edit time (last write wins, as for events).
 /// </summary>
 public sealed record UpsertPrescriptionRequest
@@ -51,6 +79,10 @@ public sealed record UpsertPrescriptionRequest
     public IReadOnlyList<string>? TimesOfDay { get; init; }
 
     public int? EveryMinutes { get; init; }
+
+    public IReadOnlyList<string>? DayParts { get; init; }
+
+    public IReadOnlyList<DayPartReminderDto>? DayPartReminders { get; init; }
 
     public int? MinIntervalMinutes { get; init; }
 
@@ -81,7 +113,9 @@ public sealed record UpsertPrescriptionRequest
             request.EveryMinutes,
             request.MinIntervalMinutes,
             request.MaxDosesPer24h,
-            request.Indication);
+            request.Indication,
+            request.DayParts is null ? null : DayPartSet.Parse(request.DayParts),
+            DayPartReminderDto.ToReminders(request.DayPartReminders));
         return PrescriptionTerms.Create(
             request.MedicationId,
             request.Status ?? PrescriptionStatus.Active,
@@ -115,6 +149,10 @@ public sealed record PrescriptionResponse
     public IReadOnlyList<string>? TimesOfDay { get; init; }
 
     public int? EveryMinutes { get; init; }
+
+    public IReadOnlyList<string>? DayParts { get; init; }
+
+    public IReadOnlyList<DayPartReminderDto>? DayPartReminders { get; init; }
 
     public int? MinIntervalMinutes { get; init; }
 
@@ -157,6 +195,8 @@ public sealed record PrescriptionResponse
             Dose = prescription.Dose,
             TimesOfDay = prescription.Schedule.TimesOfDay?.ToStrings(),
             EveryMinutes = prescription.Schedule.EveryMinutes,
+            DayParts = prescription.Schedule.DayParts?.ToCodes(),
+            DayPartReminders = DayPartReminderDto.FromReminders(prescription.Schedule.DayPartReminders),
             MinIntervalMinutes = prescription.Schedule.MinIntervalMinutes,
             MaxDosesPer24h = prescription.Schedule.MaxDosesPer24h,
             Indication = prescription.Schedule.Indication,

@@ -6,7 +6,10 @@ namespace Lotties.Domain.Notifications;
 
 /// <summary>
 /// The idempotency key of a reminder. A base key names the item once: <c>dose:{prescriptionId:N}:{slot utc yyyyMMddHHmm}</c>,
-/// <c>nap:{babyId:N}:{anchor utc yyyyMMddHHmm}</c> or <c>test:{deliveryId:N}</c>. A snooze re-send uses the dedupe key
+/// <c>nap:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>belly:{babyId:N}:{local date yyyyMMdd}</c>,
+/// <c>overtired:{babyId:N}:{awake since utc yyyyMMddHHmm}</c>, <c>fussy:{babyId:N}:{local date yyyyMMdd}</c>,
+/// <c>wet:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}</c> or <c>test:{deliveryId:N}</c>.
+/// A snooze re-send uses the dedupe key
 /// <c>{base}:s{n}</c> (<see cref="Snoozed"/>). The device notification tag is always the base key.
 /// </summary>
 public readonly partial record struct NotificationKey
@@ -62,6 +65,26 @@ public readonly partial record struct NotificationKey
 
     public static NotificationKey ForTest(Guid deliveryId) => new($"test:{deliveryId:N}");
 
+    /// <summary>The belly pain pattern reminder of <paramref name="babyId"/> for the window starting on the local date <paramref name="windowDate"/> (one per day).</summary>
+    public static NotificationKey ForBellyPain(Guid babyId, DateOnly windowDate) =>
+        new(string.Create(CultureInfo.InvariantCulture, $"belly:{babyId:N}:{windowDate:yyyyMMdd}"));
+
+    /// <summary>The overtired heads-up of <paramref name="babyId"/> for the awake stretch that started at <paramref name="awakeSince"/> (one per stretch).</summary>
+    public static NotificationKey ForOvertired(Guid babyId, DateTimeOffset awakeSince) => new($"overtired:{babyId:N}:{Instant(awakeSince)}");
+
+    /// <summary>The fussy pattern reminder of <paramref name="babyId"/> for the window starting on the local date <paramref name="windowDate"/> (one per day).</summary>
+    public static NotificationKey ForFussy(Guid babyId, DateOnly windowDate) =>
+        new(string.Create(CultureInfo.InvariantCulture, $"fussy:{babyId:N}:{windowDate:yyyyMMdd}"));
+
+    /// <summary>The wet diaper heads-up of <paramref name="babyId"/> for the expectation anchored at the latest wet diaper <paramref name="anchor"/> (one per anchor).</summary>
+    public static NotificationKey ForDiaperWet(Guid babyId, DateTimeOffset anchor) => new($"wet:{babyId:N}:{Instant(anchor)}");
+
+    /// <summary>
+    /// The dirty diaper heads-up of <paramref name="babyId"/> for the expectation anchored at <paramref name="anchor"/>:
+    /// the end of the feed (after-feed signal) or the latest dirty diaper (gap signal). One per anchor.
+    /// </summary>
+    public static NotificationKey ForDiaperDirty(Guid babyId, DateTimeOffset anchor) => new($"dirty:{babyId:N}:{Instant(anchor)}");
+
     /// <summary>The dedupe key of the <paramref name="snoozeNumber"/>-th snooze re-send of this base key (1 to <see cref="NotificationRules.MaxSnoozes"/>).</summary>
     public NotificationKey Snoozed(int snoozeNumber)
     {
@@ -84,6 +107,6 @@ public readonly partial record struct NotificationKey
 
     private static string Instant(DateTimeOffset value) => value.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture);
 
-    [GeneratedRegex(@"^(?:(?:dose|nap):[0-9a-f]{32}:[0-9]{12}|test:[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|test:[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }

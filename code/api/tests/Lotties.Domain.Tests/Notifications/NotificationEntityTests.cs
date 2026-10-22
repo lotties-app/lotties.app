@@ -317,6 +317,30 @@ public sealed class NotificationEntityTests
     }
 
     [Fact]
+    public void BabyNotificationPreferences_StoresTheBellyPainPatternChoice()
+    {
+        var stored = BabyNotificationPreferences.Create(Guid.NewGuid(), MomId, ReminderPreferences.Default, Now);
+
+        stored.Change(ReminderPreferences.Create(false, 0, false, 10, bellyPainPattern: true), Now.AddHours(1));
+
+        Assert.True(stored.BellyPainPattern);
+        Assert.True(stored.Preferences.BellyPainPattern);
+        Assert.Equal(Now.AddHours(1), stored.UpdatedAt);
+    }
+
+    [Fact]
+    public void BabyNotificationPreferences_StoresTheOvertiredAndFussyChoices()
+    {
+        var stored = BabyNotificationPreferences.Create(Guid.NewGuid(), MomId, ReminderPreferences.Default, Now);
+
+        stored.Change(ReminderPreferences.Create(false, 0, false, 10, overtiredWarning: true, fussyPattern: true), Now.AddHours(1));
+
+        Assert.Equal((true, true), (stored.OvertiredWarning, stored.FussyPattern));
+        Assert.Equal((true, true, false), (stored.Preferences.OvertiredWarning, stored.Preferences.FussyPattern, stored.Preferences.BellyPainPattern));
+        Assert.Equal(Now.AddHours(1), stored.UpdatedAt);
+    }
+
+    [Fact]
     public void NotificationRecipient_WithoutSettings_HasNoTimeZoneAndIsNotPlanned()
     {
         var recipient = NotificationRecipient.From(MomId, BabyRole.Parent, ReminderPreferences.Create(true, 0, true, 10), null, Now);

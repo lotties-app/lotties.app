@@ -311,6 +311,103 @@ public sealed class PushEndpointTests(PushApiHost host) : IClassFixture<PushApiH
     }
 
     [Fact]
+    public async Task PutPreferences_BellyPainPattern_IsStoredListedAndTurnedOffOnlyWhenSentFalse()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+
+        var on = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { doseDue = false, doseLeadMinutes = 0, napWindow = false, napLeadMinutes = 10, bellyPainPattern = true }))
+            .ReadAsync<BabyNotificationPreferencesResponse>();
+        var listed = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+        var kept = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), PreferencesBody(doseDue: false))).ReadAsync<BabyNotificationPreferencesResponse>();
+        var off = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { bellyPainPattern = false })).ReadAsync<BabyNotificationPreferencesResponse>();
+
+        Assert.True(on.BellyPainPattern);
+        Assert.True(listed.BellyPainPattern);
+        Assert.True(kept.BellyPainPattern);
+        Assert.False(off.BellyPainPattern);
+        Assert.False(await Factory.QueryAsync(context => context.BabyNotificationPreferences.AnyAsync(row => row.BabyId == baby.BabyId && row.BellyPainPattern)));
+    }
+
+    [Fact]
+    public async Task PutPreferences_OvertiredAndFussy_AreStoredListedAndOffByDefault()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+        var before = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        var on = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { overtiredWarning = true, fussyPattern = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var listed = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        Assert.Equal((false, false), (before.OvertiredWarning, before.FussyPattern));
+        Assert.Equal((true, true, false, 0, false, 10, false), (on.OvertiredWarning, on.FussyPattern, on.DoseDue, on.DoseLeadMinutes, on.NapWindow, on.NapLeadMinutes, on.BellyPainPattern));
+        Assert.Equal((true, true), (listed.OvertiredWarning, listed.FussyPattern));
+        Assert.True(await Factory.QueryAsync(context => context.BabyNotificationPreferences.AnyAsync(row => row.BabyId == baby.BabyId && row.OvertiredWarning && row.FussyPattern)));
+    }
+
+    [Fact]
+    public async Task PutPreferences_DiaperHeadsUps_AreStoredListedOffByDefaultAndKeptByOlderClients()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+        var before = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        var on = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { diaperWetHeadsUp = true, diaperDirtyHeadsUp = true, fussyPattern = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var olderClient = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { doseDue = true, doseLeadMinutes = 5, napWindow = false, napLeadMinutes = 10, bellyPainPattern = false, overtiredWarning = false, fussyPattern = false })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var dirtyOff = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { diaperDirtyHeadsUp = false })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var listed = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        Assert.Equal((false, false), (before.DiaperWetHeadsUp, before.DiaperDirtyHeadsUp));
+        Assert.Equal((true, true, true, false), (on.DiaperWetHeadsUp, on.DiaperDirtyHeadsUp, on.FussyPattern, on.DoseDue));
+        Assert.Equal((true, true, true, false), (olderClient.DiaperWetHeadsUp, olderClient.DiaperDirtyHeadsUp, olderClient.DoseDue, olderClient.FussyPattern));
+        Assert.Equal((true, false), (dirtyOff.DiaperWetHeadsUp, dirtyOff.DiaperDirtyHeadsUp));
+        Assert.Equal((true, false), (listed.DiaperWetHeadsUp, listed.DiaperDirtyHeadsUp));
+        Assert.True(await Factory.QueryAsync(context => context.BabyNotificationPreferences.AnyAsync(row => row.BabyId == baby.BabyId && row.DiaperWetHeadsUp && !row.DiaperDirtyHeadsUp)));
+    }
+
+    [Fact]
+    public async Task PutPreferences_OmittedFields_KeepEveryStoredKind()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+        var all = new { doseDue = true, doseLeadMinutes = 15, napWindow = true, napLeadMinutes = 20, bellyPainPattern = true, overtiredWarning = true, fussyPattern = true };
+        await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), all);
+
+        var empty = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var olderClient = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), PreferencesBody(doseDue: true, doseLead: 15, napWindow: true, napLead: 20))).ReadAsync<BabyNotificationPreferencesResponse>();
+        var oneOff = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { napWindow = false, fussyPattern = (bool?)null })).ReadAsync<BabyNotificationPreferencesResponse>();
+
+        Assert.Equal((true, 15, true, 20, true, true, true), Flags(empty));
+        Assert.Equal((true, 15, true, 20, true, true, true), Flags(olderClient));
+        Assert.Equal((true, 15, false, 20, true, true, true), Flags(oneOff));
+    }
+
+    [Fact]
+    public async Task PutPreferences_FirstPutWithSomeFields_MergesIntoTheDefaults()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+
+        var stored = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { napWindow = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+
+        Assert.Equal((false, 0, true, 10, false, false, false), Flags(stored));
+    }
+
+    [Fact]
+    public async Task PutPreferences_MergedLeadOutsideTheAllowedSet_Returns400()
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var response = await host.ClientFor(baby.OwnerSubject).PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { napLeadMinutes = 15 });
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal("napLeadMinutes", problem.GetProperty("field").GetString());
+    }
+
+    private static (bool, int, bool, int, bool, bool, bool) Flags(BabyNotificationPreferencesResponse preferences) =>
+        (preferences.DoseDue, preferences.DoseLeadMinutes, preferences.NapWindow, preferences.NapLeadMinutes, preferences.BellyPainPattern, preferences.OvertiredWarning, preferences.FussyPattern);
+
+    [Fact]
     public async Task PutPreferences_Viewer_Returns403()
     {
         var baby = await Factory.SeedBabyAsync(BabyRole.Viewer);

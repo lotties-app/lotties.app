@@ -24,4 +24,9 @@
     <ProjectReference Include="..\..\src\Lotties.Domain\Lotties.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Part-of-the-day vectors shared with the web port (code/web/src/medications/dayParts.test.ts). -->
+    <None Include="..\..\..\web\src\medications\dayPartVectors.json" Link="Prescriptions\dayPartVectors.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

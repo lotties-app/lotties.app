@@ -9,7 +9,7 @@ public sealed class BuiltInEventTypesTests
     {
         var keys = BuiltInEventTypes.All.Select(type => type.Key.Value).ToArray();
 
-        Assert.Equal(["feeding", "sleep", "diaper", "bath", "tummy_time", "medication", "belly_pain", "breast_pump"], keys);
+        Assert.Equal(["feeding", "sleep", "diaper", "bath", "tummy_time", "medication", "belly_pain", "breast_pump", "nasal_suction", "belly_massage", "fussy"], keys);
     }
 
     [Fact]
@@ -19,6 +19,9 @@ public sealed class BuiltInEventTypesTests
         Assert.Equal(BuiltInEventTypes.All.Count, BuiltInEventTypes.All.Select(type => type.Id).Distinct().Count());
         Assert.Equal(new Guid("e6428ccb-7061-4cf4-a5d0-67c89a396a5f"), BuiltInEventTypes.Feeding.Id);
         Assert.Equal(new Guid("ddfdaa52-57ee-4d34-8129-a78262c2172c"), BuiltInEventTypes.BreastPump.Id);
+        Assert.Equal(new Guid("4124b99c-e000-4ee0-b74a-a6579553a450"), BuiltInEventTypes.NasalSuction.Id);
+        Assert.Equal(new Guid("44540b60-eb87-470f-8a3e-08170a525538"), BuiltInEventTypes.BellyMassage.Id);
+        Assert.Equal(new Guid("6191006e-8767-4cd8-882f-81898fad58d3"), BuiltInEventTypes.Fussy.Id);
     }
 
     [Theory]
@@ -30,6 +33,9 @@ public sealed class BuiltInEventTypesTests
     [InlineData("medication", false)]
     [InlineData("belly_pain", false)]
     [InlineData("breast_pump", true)]
+    [InlineData("nasal_suction", false)]
+    [InlineData("belly_massage", true)]
+    [InlineData("fussy", true)]
     public void All_HasDurationPerType(string key, bool hasDuration)
     {
         Assert.Equal(hasDuration, BuiltInEventTypes.All.Single(type => type.Key.Value == key).HasDuration);
@@ -73,6 +79,65 @@ public sealed class BuiltInEventTypesTests
         Assert.Equal(["amount_left_ml", "amount_right_ml"], fields.Select(field => field.Key));
         Assert.All(fields, field => Assert.Equal((EventFieldKind.Number, false, 0m, (decimal?)null, "ml", (FieldVisibilityCondition?)null), (field.Kind, field.IsRequired, field.Min, field.Max, field.Unit, field.VisibleWhen)));
         Assert.Equal(("Breast pump", "opacity"), (BuiltInEventTypes.BreastPump.Name, BuiltInEventTypes.BreastPump.Icon));
+    }
+
+    [Fact]
+    public void NasalSuction_HasOptionalToolSelectAndSalineBool()
+    {
+        var type = BuiltInEventTypes.NasalSuction;
+
+        Assert.Equal(("nasal_suction", "Nasal suction", "air", "#78909c"), (type.Key.Value, type.Name, type.Icon, type.Color.Value));
+        Assert.Equal(
+            [("tool", "Tool", EventFieldKind.Select), ("saline", "Saline used", EventFieldKind.Bool)],
+            type.Fields.Select(field => (field.Key, field.Label, field.Kind)));
+        Assert.Equal(["bulb", "electric", "mouth"], type.Fields[0].Options);
+        Assert.All(type.Fields, field => Assert.Equal((false, false, (FieldVisibilityCondition?)null), (field.IsRequired, field.IsHidden, field.VisibleWhen)));
+    }
+
+    [Fact]
+    public void BellyMassage_HasOptionalReasonAndHelpedSelectsThenPauses()
+    {
+        var type = BuiltInEventTypes.BellyMassage;
+        var visible = type.Fields.Where(field => !field.IsHidden).ToArray();
+
+        Assert.Equal(("belly_massage", "Belly massage", "massage", "#ff7043", true), (type.Key.Value, type.Name, type.Icon, type.Color.Value, type.HasDuration));
+        Assert.Equal(
+            [("reason", "Reason", EventFieldKind.Select), ("helped", "Did it help?", EventFieldKind.Select)],
+            visible.Select(field => (field.Key, field.Label, field.Kind)));
+        Assert.Equal(["gas", "constipation", "colic", "other"], visible[0].Options);
+        Assert.Equal(["yes", "a_little", "no"], visible[1].Options);
+        Assert.All(visible, field => Assert.Equal((false, (FieldVisibilityCondition?)null), (field.IsRequired, field.VisibleWhen)));
+    }
+
+    [Fact]
+    public void BellyMassage_IsAHealthTypeDistinctFromBellyPain()
+    {
+        Assert.NotEqual(BuiltInEventTypes.BellyPain.Color.Value, BuiltInEventTypes.BellyMassage.Color.Value);
+        Assert.NotEqual(BuiltInEventTypes.BellyPain.Icon, BuiltInEventTypes.BellyMassage.Icon);
+        Assert.True(EventTypeIcons.IsAllowed(BuiltInEventTypes.BellyMassage.Icon));
+    }
+
+    [Fact]
+    public void Fussy_HasOptionalIntensityAndWhatHelpedSelectsThenPauses()
+    {
+        var type = BuiltInEventTypes.Fussy;
+        var visible = type.Fields.Where(field => !field.IsHidden).ToArray();
+
+        Assert.Equal(("fussy", "Fussy / crying", "sentiment_very_dissatisfied", "#81c784", true), (type.Key.Value, type.Name, type.Icon, type.Color.Value, type.HasDuration));
+        Assert.Equal(
+            [("intensity", "Intensity", EventFieldKind.Select), ("what_helped", "What helped", EventFieldKind.Select)],
+            visible.Select(field => (field.Key, field.Label, field.Kind)));
+        Assert.Equal(["mild", "moderate", "intense"], visible[0].Options);
+        Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing"], visible[1].Options);
+        Assert.All(visible, field => Assert.Equal((false, (FieldVisibilityCondition?)null), (field.IsRequired, field.VisibleWhen)));
+    }
+
+    [Fact]
+    public void Fussy_HasAnAllowedIconAndAColourOfItsOwn()
+    {
+        Assert.True(EventTypeIcons.IsAllowed(BuiltInEventTypes.Fussy.Icon));
+        Assert.Single(BuiltInEventTypes.All, type => type.Color.Value == BuiltInEventTypes.Fussy.Color.Value);
+        Assert.Single(BuiltInEventTypes.All, type => type.Icon == BuiltInEventTypes.Fussy.Icon);
     }
 
     [Fact]
@@ -127,6 +192,8 @@ public sealed class BuiltInEventTypesTests
     [InlineData("tummy_time")]
     [InlineData("bath")]
     [InlineData("breast_pump")]
+    [InlineData("belly_massage")]
+    [InlineData("fussy")]
     public void TimedTypes_DeclareHiddenPauseFieldsLast(string key)
     {
         var fields = BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields.TakeLast(3).ToArray();
@@ -141,6 +208,7 @@ public sealed class BuiltInEventTypesTests
     [InlineData("diaper")]
     [InlineData("medication")]
     [InlineData("belly_pain")]
+    [InlineData("nasal_suction")]
     public void InstantTypes_DeclareNoPauseFields(string key)
     {
         Assert.DoesNotContain(BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields, field => field.Key.StartsWith("pause", StringComparison.Ordinal));

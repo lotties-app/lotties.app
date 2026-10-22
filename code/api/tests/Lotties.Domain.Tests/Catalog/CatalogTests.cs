@@ -114,6 +114,20 @@ public sealed class ProductTests
             Product.CreateCommunity("X drops", (ProductForm)42, CatalogData.Brazil, [], CatalogData.KnownIds, Guid.NewGuid(), TestClock.Now));
 
         Assert.Equal("form", exception.Field);
+        Assert.Contains("spray, ointment, suppository, inhaler", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ProductForm.Spray)]
+    [InlineData(ProductForm.Ointment)]
+    [InlineData(ProductForm.Suppository)]
+    [InlineData(ProductForm.Inhaler)]
+    public void CreateCommunity_CountedUnitForms_AreValidAndDistinctFromDrops(ProductForm form)
+    {
+        var product = Product.CreateCommunity("Sorine", form, CatalogData.Brazil, [], CatalogData.KnownIds, Guid.NewGuid(), TestClock.Now);
+
+        Assert.Equal(form, product.Form);
+        Assert.False(product.Duplicates("sorine", ProductForm.Drops, CatalogData.Brazil));
     }
 
     [Theory]

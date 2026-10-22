@@ -12,7 +12,7 @@ namespace Lotties.Infrastructure.Persistence.Configurations;
 /// </remarks>
 internal sealed class BabyNotificationPreferencesConfiguration : IEntityTypeConfiguration<BabyNotificationPreferences>
 {
-    public const string WantsAnyFilter = "dose_due OR nap_window";
+    public const string WantsAnyFilter = "dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup";
 
     public void Configure(EntityTypeBuilder<BabyNotificationPreferences> builder)
     {
@@ -22,6 +22,11 @@ internal sealed class BabyNotificationPreferencesConfiguration : IEntityTypeConf
         builder.Property(preferences => preferences.DoseLeadMinutes).IsRequired();
         builder.Property(preferences => preferences.NapWindow).IsRequired();
         builder.Property(preferences => preferences.NapLeadMinutes).IsRequired();
+        builder.Property(preferences => preferences.BellyPainPattern).IsRequired();
+        builder.Property(preferences => preferences.OvertiredWarning).IsRequired();
+        builder.Property(preferences => preferences.FussyPattern).IsRequired();
+        builder.Property(preferences => preferences.DiaperWetHeadsUp).HasColumnName("diaper_wet_headsup").IsRequired();
+        builder.Property(preferences => preferences.DiaperDirtyHeadsUp).HasColumnName("diaper_dirty_headsup").IsRequired();
         builder.Property(preferences => preferences.UpdatedAt).IsRequired();
         builder.Ignore(preferences => preferences.Preferences);
         builder.HasIndex(preferences => preferences.BabyId).HasFilter(WantsAnyFilter);

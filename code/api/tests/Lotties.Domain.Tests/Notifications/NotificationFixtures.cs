@@ -1,6 +1,7 @@
 using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
+using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
 
@@ -11,6 +12,7 @@ internal static class NotificationFixtures
 {
     public const int SaoPauloMinutes = -180;
     public static readonly TimeSpan SaoPaulo = TimeSpan.FromMinutes(SaoPauloMinutes);
+    public static readonly NotificationTimeZone SaoPauloZone = NotificationTimeZone.From("America/Sao_Paulo");
     public static readonly Guid MomId = Guid.NewGuid();
     public static readonly Guid DadId = Guid.NewGuid();
     public static readonly EventTypeKey SleepKey = BuiltInEventTypes.Sleep.Key;
@@ -29,15 +31,21 @@ internal static class NotificationFixtures
         bool quietIncludesMedicine = false,
         bool showNames = false,
         TimeSpan? offset = null,
-        bool withoutZone = false) =>
+        bool withoutZone = false,
+        bool bellyPainPattern = false,
+        bool overtiredWarning = false,
+        bool fussyPattern = false,
+        bool diaperWet = false,
+        bool diaperDirty = false) =>
         new(
             userId ?? MomId,
             role,
-            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead),
+            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty),
             quietHours ?? QuietHours.Default,
             quietIncludesMedicine,
             showNames,
-            withoutZone ? null : offset ?? SaoPaulo);
+            withoutZone ? null : offset ?? SaoPaulo,
+            withoutZone ? null : SaoPauloZone);
 
     public static NotificationBabyState State(IReadOnlyList<MedicationStatus> medications, PredictionSet? predictions = null, TimeSpan? offset = null) =>
         new(offset ?? SaoPaulo, medications, predictions);
@@ -52,8 +60,41 @@ internal static class NotificationFixtures
         IReadOnlyList<NotificationBabyState> states,
         IReadOnlyList<NotificationAction>? actions = null,
         IReadOnlyCollection<DeliveredNotification>? delivered = null,
-        NotificationNameSource? names = null) =>
-        NotificationPlanner.Plan(new NotificationPlanInput(now, Prescriptions.PrescriptionFixtures.BabyId, recipients, states, actions ?? [], delivered ?? [], names));
+        NotificationNameSource? names = null,
+        IReadOnlyList<TimeOfDayPatternState>? bellyPain = null,
+        IReadOnlyList<TimeOfDayPatternState>? fussy = null,
+        IReadOnlyList<WakeWindowState>? wakeWindows = null,
+        DiaperPrediction? diapers = null,
+        IReadOnlyCollection<SentHeadsUp>? sentHeadsUps = null) =>
+        NotificationPlanner.Plan(new NotificationPlanInput(
+            now,
+            Prescriptions.PrescriptionFixtures.BabyId,
+            recipients,
+            states,
+            actions ?? [],
+            delivered ?? [],
+            names,
+            BellyPainPatterns: bellyPain,
+            FussyPatterns: fussy,
+            WakeWindows: wakeWindows,
+            Diapers: diapers,
+            SentHeadsUps: sentHeadsUps));
+
+    /// <summary>A belly pain pattern whose usual window runs from <paramref name="start"/> for <paramref name="widthMinutes"/> (São Paulo local times).</summary>
+    public static TimeOfDayPattern BellyPattern(TimeOnly start, int widthMinutes = 60) =>
+        new(start.AddMinutes(widthMinutes / 2), start, start.AddMinutes(widthMinutes), TimeSpan.FromMinutes(10), PatternConfidence.Medium, [], 6, 5);
+
+    /// <summary>The belly pain state in São Paulo: the pattern (or none) and the latest belly pain or massage logged.</summary>
+    public static TimeOfDayPatternState BellyState(TimeOfDayPattern? pattern, DateTimeOffset? lastLoggedAt = null) =>
+        new(SaoPauloZone, pattern, lastLoggedAt);
+
+    /// <summary>The fussy pattern state in São Paulo: the pattern (or none) and the latest fussy spell logged.</summary>
+    public static TimeOfDayPatternState FussyState(TimeOfDayPattern? pattern, DateTimeOffset? lastLoggedAt = null) =>
+        new(SaoPauloZone, pattern, lastLoggedAt);
+
+    /// <summary>The wake window state in São Paulo: a usual limit of <paramref name="limitMinutes"/>, awake since <paramref name="awakeSince"/> (or not awake).</summary>
+    public static WakeWindowState WakeState(DateTimeOffset? awakeSince, int limitMinutes = 150) =>
+        new(SaoPauloZone, new WakeWindow(TimeSpan.FromMinutes(limitMinutes), [], awakeSince));
 
     /// <summary>An awake-window sleep prediction (baby awake, day, medium confidence unless stated).</summary>
     public static PredictionSet NapWindow(

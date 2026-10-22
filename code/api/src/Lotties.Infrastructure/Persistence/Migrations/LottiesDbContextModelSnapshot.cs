@@ -481,6 +481,36 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                             Icon = "opacity",
                             Key = "breast_pump",
                             Name = "Breast pump"
+                        },
+                        new
+                        {
+                            Id = new Guid("4124b99c-e000-4ee0-b74a-a6579553a450"),
+                            Color = "#78909c",
+                            Fields = "[{\"key\":\"tool\",\"label\":\"Tool\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"bulb\",\"electric\",\"mouth\"]},{\"key\":\"saline\",\"label\":\"Saline used\",\"kind\":\"bool\",\"isRequired\":false}]",
+                            HasDuration = false,
+                            Icon = "air",
+                            Key = "nasal_suction",
+                            Name = "Nasal suction"
+                        },
+                        new
+                        {
+                            Id = new Guid("44540b60-eb87-470f-8a3e-08170a525538"),
+                            Color = "#ff7043",
+                            Fields = "[{\"key\":\"reason\",\"label\":\"Reason\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"gas\",\"constipation\",\"colic\",\"other\"]},{\"key\":\"helped\",\"label\":\"Did it help?\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"yes\",\"a_little\",\"no\"]},{\"key\":\"pause_count\",\"label\":\"Pauses\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"max\":100,\"hidden\":true,\"integer\":true},{\"key\":\"paused_seconds\",\"label\":\"Paused time\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"max\":86400,\"unit\":\"s\",\"hidden\":true,\"integer\":true},{\"key\":\"paused_at\",\"label\":\"Paused at\",\"kind\":\"text\",\"isRequired\":false,\"hidden\":true}]",
+                            HasDuration = true,
+                            Icon = "massage",
+                            Key = "belly_massage",
+                            Name = "Belly massage"
+                        },
+                        new
+                        {
+                            Id = new Guid("6191006e-8767-4cd8-882f-81898fad58d3"),
+                            Color = "#81c784",
+                            Fields = "[{\"key\":\"intensity\",\"label\":\"Intensity\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"mild\",\"moderate\",\"intense\"]},{\"key\":\"what_helped\",\"label\":\"What helped\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"feeding\",\"rocking\",\"pacifier\",\"massage\",\"sleep\",\"other\",\"nothing\"]},{\"key\":\"pause_count\",\"label\":\"Pauses\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"max\":100,\"hidden\":true,\"integer\":true},{\"key\":\"paused_seconds\",\"label\":\"Paused time\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"max\":86400,\"unit\":\"s\",\"hidden\":true,\"integer\":true},{\"key\":\"paused_at\",\"label\":\"Paused at\",\"kind\":\"text\",\"isRequired\":false,\"hidden\":true}]",
+                            HasDuration = true,
+                            Icon = "sentiment_very_dissatisfied",
+                            Key = "fussy",
+                            Name = "Fussy / crying"
                         });
                 });
 
@@ -667,6 +697,18 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<bool>("BellyPainPattern")
+                        .HasColumnType("boolean")
+                        .HasColumnName("belly_pain_pattern");
+
+                    b.Property<bool>("DiaperDirtyHeadsUp")
+                        .HasColumnType("boolean")
+                        .HasColumnName("diaper_dirty_headsup");
+
+                    b.Property<bool>("DiaperWetHeadsUp")
+                        .HasColumnType("boolean")
+                        .HasColumnName("diaper_wet_headsup");
+
                     b.Property<bool>("DoseDue")
                         .HasColumnType("boolean")
                         .HasColumnName("dose_due");
@@ -675,6 +717,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("smallint")
                         .HasColumnName("dose_lead_minutes");
 
+                    b.Property<bool>("FussyPattern")
+                        .HasColumnType("boolean")
+                        .HasColumnName("fussy_pattern");
+
                     b.Property<short>("NapLeadMinutes")
                         .HasColumnType("smallint")
                         .HasColumnName("nap_lead_minutes");
@@ -682,6 +728,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.Property<bool>("NapWindow")
                         .HasColumnType("boolean")
                         .HasColumnName("nap_window");
+
+                    b.Property<bool>("OvertiredWarning")
+                        .HasColumnType("boolean")
+                        .HasColumnName("overtired_warning");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -692,7 +742,7 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BabyId")
                         .HasDatabaseName("ix_baby_notification_preferences_baby_id")
-                        .HasFilter("dose_due OR nap_window");
+                        .HasFilter("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup");
 
                     b.ToTable("baby_notification_preferences", (string)null);
                 });
@@ -1415,6 +1465,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                             b1.Property<Guid>("PrescriptionId")
                                 .HasColumnType("uuid")
                                 .HasColumnName("id");
+
+                            b1.Property<string>("DayPartReminders")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)")
+                                .HasColumnName("day_part_reminders");
+
+                            b1.Property<string>("DayParts")
+                                .HasMaxLength(40)
+                                .HasColumnType("character varying(40)")
+                                .HasColumnName("day_parts");
 
                             b1.Property<int?>("EveryMinutes")
                                 .HasColumnType("integer")

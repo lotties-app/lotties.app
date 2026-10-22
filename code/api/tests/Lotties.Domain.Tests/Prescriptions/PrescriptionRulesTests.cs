@@ -29,6 +29,65 @@ public sealed class DoseRuleTests
         Assert.Equal(field, exception.Field);
     }
 
+    [Theory]
+    [InlineData("sprays")]
+    [InlineData("Jatos")]
+    [InlineData("puff")]
+    [InlineData("supositório")]
+    [InlineData("applications")]
+    [InlineData(" Aplicações ")]
+    public void Create_PerKgInACountedUnit_ThrowsForPerKg(string unit)
+    {
+        var exception = Assert.Throws<DomainValidationException>(() => DoseRule.Create(1, unit, perKg: true, roundingStep: 1));
+
+        Assert.Equal("dose.perKg", exception.Field);
+    }
+
+    [Theory]
+    [InlineData(1.5, "sprays")]
+    [InlineData(1.5, "puffs")]
+    [InlineData(0.5, "jatos")]
+    [InlineData(0.25, "suppository")]
+    [InlineData(1.75, "supositórios")]
+    public void Create_AmountOffTheCountedUnitStep_ThrowsForAmount(double amount, string unit)
+    {
+        var exception = Assert.Throws<DomainValidationException>(() => DoseRule.Create((decimal)amount, unit, perKg: false, roundingStep: null));
+
+        Assert.Equal("dose.amount", exception.Field);
+    }
+
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(1)]
+    [InlineData(1.5)]
+    public void Create_HalfSuppositories_AreAllowed(double amount)
+    {
+        var dose = DoseRule.Create((decimal)amount, "supositório", perKg: false, roundingStep: null);
+
+        Assert.Equal((decimal)amount, dose.Amount);
+    }
+
+    [Theory]
+    [InlineData(2, "sprays")]
+    [InlineData(1, "supositório")]
+    [InlineData(2, "puffs")]
+    [InlineData(0.5, "application")]
+    [InlineData(1.5, "tablet")]
+    public void Create_CountedUnitsAndOtherFreeText_AreKept(double amount, string unit)
+    {
+        var dose = DoseRule.Create((decimal)amount, unit, perKg: false, roundingStep: null);
+
+        Assert.Equal(((decimal)amount, unit), (dose.Amount, dose.Unit));
+    }
+
+    [Fact]
+    public void Create_PerKgInAMeasuredUnit_StillAllowed()
+    {
+        var dose = DoseRule.Create(0.5m, "gotas", perKg: true, roundingStep: 1);
+
+        Assert.True(dose.PerKg);
+    }
+
     [Fact]
     public void Create_UnitWithNul_Throws()
     {

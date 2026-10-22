@@ -81,7 +81,107 @@ public sealed class NotificationsModelTests
         Assert.False(membership.PrincipalKey.IsPrimaryKey());
         Assert.Equal(DeleteBehavior.Cascade, membership.DeleteBehavior);
         Assert.Equal("baby_id", Columns(candidates.Properties));
-        Assert.Equal("dose_due OR nap_window", candidates.GetFilter());
+        Assert.Equal("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup", candidates.GetFilter());
+    }
+
+    [Theory]
+    [InlineData(nameof(BabyNotificationPreferences.OvertiredWarning), "overtired_warning")]
+    [InlineData(nameof(BabyNotificationPreferences.FussyPattern), "fussy_pattern")]
+    [InlineData(nameof(BabyNotificationPreferences.DiaperWetHeadsUp), "diaper_wet_headsup")]
+    [InlineData(nameof(BabyNotificationPreferences.DiaperDirtyHeadsUp), "diaper_dirty_headsup")]
+    public void Preferences_StoreTheHeadsUpChoicesAsRequiredBooleans(string property, string columnName)
+    {
+        using var context = ModelTestContext.Create();
+
+        var column = context.Entity<BabyNotificationPreferences>().FindProperty(property)!;
+
+        Assert.Equal((columnName, false, typeof(bool)), (column.GetColumnName(), column.IsNullable, column.ClrType));
+    }
+
+    [Fact]
+    public void IdempotentScript_FussyAndOvertiredPrefsAddsFalseDefaultedColumnsAndWidensTheCandidateIndex()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var start = script.IndexOf("_FussyAndOvertiredPrefs'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_DiaperHeadsUpPrefs'", start, StringComparison.Ordinal)];
+
+        Assert.Contains("ALTER TABLE baby_notification_preferences ADD fussy_pattern boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE baby_notification_preferences ADD overtired_warning boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
+        Assert.True(
+            section.IndexOf("DROP INDEX ix_baby_notification_preferences_baby_id;", StringComparison.Ordinal) < section.IndexOf("CREATE INDEX ix_baby_notification_preferences_baby_id", StringComparison.Ordinal),
+            "the candidate index is dropped before it is created again");
+        Assert.Contains("CREATE INDEX ix_baby_notification_preferences_baby_id ON baby_notification_preferences (baby_id) WHERE dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern;", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE ", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_DiaperHeadsUpPrefsAddsFalseDefaultedColumnsAndWidensTheCandidateIndex()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var section = script[script.IndexOf("_DiaperHeadsUpPrefs'", StringComparison.Ordinal)..];
+
+        Assert.Contains("ALTER TABLE baby_notification_preferences ADD diaper_wet_headsup boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE baby_notification_preferences ADD diaper_dirty_headsup boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
+        Assert.True(
+            section.IndexOf("DROP INDEX ix_baby_notification_preferences_baby_id;", StringComparison.Ordinal) < section.IndexOf("CREATE INDEX ix_baby_notification_preferences_baby_id", StringComparison.Ordinal),
+            "the candidate index is dropped before it is created again");
+        Assert.Contains("CREATE INDEX ix_baby_notification_preferences_baby_id ON baby_notification_preferences (baby_id) WHERE dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup;", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE ", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Migrations_DiaperHeadsUpPrefsComesRightAfterFussyAndOvertiredPrefs()
+    {
+        using var context = ModelTestContext.Create();
+
+        var migrations = context.Database.GetMigrations().ToArray();
+        var previous = Array.FindIndex(migrations, migration => migration.EndsWith("_FussyAndOvertiredPrefs", StringComparison.Ordinal));
+        var diapers = Array.FindIndex(migrations, migration => migration.EndsWith("_DiaperHeadsUpPrefs", StringComparison.Ordinal));
+
+        Assert.True(previous >= 0 && diapers == previous + 1, $"previous {previous}, diaper heads-ups {diapers}");
+    }
+
+    [Fact]
+    public void Preferences_StoreTheBellyPainPatternChoiceAsARequiredBoolean()
+    {
+        using var context = ModelTestContext.Create();
+
+        var column = context.Entity<BabyNotificationPreferences>().FindProperty(nameof(BabyNotificationPreferences.BellyPainPattern))!;
+
+        Assert.Equal("belly_pain_pattern", column.GetColumnName());
+        Assert.False(column.IsNullable);
+    }
+
+    [Fact]
+    public void IdempotentScript_BellyPainPatternAddsAFalseDefaultedColumnAndWidensTheCandidateIndex()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var section = script[script.IndexOf("_BellyPainPattern'", StringComparison.Ordinal)..];
+
+        Assert.Contains("ALTER TABLE baby_notification_preferences ADD belly_pain_pattern boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
+        Assert.True(
+            section.IndexOf("DROP INDEX ix_baby_notification_preferences_baby_id;", StringComparison.Ordinal) < section.IndexOf("CREATE INDEX ix_baby_notification_preferences_baby_id", StringComparison.Ordinal),
+            "the candidate index is dropped before it is created again");
+        Assert.Contains("CREATE INDEX ix_baby_notification_preferences_baby_id ON baby_notification_preferences (baby_id) WHERE dose_due OR nap_window OR belly_pain_pattern;", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE ", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Migrations_BellyPainPatternComesAfterBellyMassage()
+    {
+        using var context = ModelTestContext.Create();
+
+        var migrations = context.Database.GetMigrations().ToArray();
+        var previous = Array.FindIndex(migrations, migration => migration.EndsWith("_BellyMassage", StringComparison.Ordinal));
+        var belly = Array.FindIndex(migrations, migration => migration.EndsWith("_BellyPainPattern", StringComparison.Ordinal));
+
+        Assert.True(previous >= 0 && belly == previous + 1, $"previous {previous}, belly pain pattern {belly}");
     }
 
     [Fact]
@@ -124,7 +224,8 @@ public sealed class NotificationsModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("PushNotifications", StringComparison.Ordinal)..];
+        var start = script.IndexOf("PushNotifications", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_NasalSuction'", start, StringComparison.Ordinal)];
 
         Assert.Contains("ALTER TABLE baby_members ADD CONSTRAINT ak_baby_members_baby_id_user_id UNIQUE (baby_id, user_id);", section, StringComparison.Ordinal);
         Assert.Contains("endpoint_hash character(43) NOT NULL", section, StringComparison.Ordinal);

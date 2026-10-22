@@ -1,4 +1,5 @@
 using Lotties.Domain.Babies;
+using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
 
 namespace Lotties.Domain.Notifications;
@@ -21,6 +22,51 @@ public static class NotificationRules
     public static readonly TimeSpan NapMaxTimeToLive = TimeSpan.FromMinutes(60);
 
     public static readonly TimeSpan TestTimeToLive = TimeSpan.FromMinutes(5);
+
+    /// <summary>The belly pain pattern heads-up is sent this long before the usual window starts.</summary>
+    public static readonly TimeSpan BellyPainLead = TimeSpan.FromMinutes(30);
+
+    /// <summary>A belly pain heads-up whose send time is older than this is not sent (it would arrive after the window opened).</summary>
+    public static readonly TimeSpan BellyPainStaleCutoff = TimeSpan.FromMinutes(30);
+
+    /// <summary>A belly pain heads-up expires this long after the usual window ends.</summary>
+    public static readonly TimeSpan BellyPainExpiryAfterWindow = TimeSpan.FromMinutes(15);
+
+    /// <summary>The fussy pattern heads-up is sent this long before the usual window starts (as belly pain).</summary>
+    public static readonly TimeSpan FussyPatternLead = BellyPainLead;
+
+    /// <summary>A fussy pattern heads-up whose send time is older than this is not sent.</summary>
+    public static readonly TimeSpan FussyPatternStaleCutoff = BellyPainStaleCutoff;
+
+    /// <summary>A fussy pattern heads-up expires this long after the usual window ends.</summary>
+    public static readonly TimeSpan FussyPatternExpiryAfterWindow = BellyPainExpiryAfterWindow;
+
+    /// <summary>The overtired heads-up is sent this long before the usual longest awake stretch ends.</summary>
+    public static readonly TimeSpan OvertiredLead = WakeWindowOptions.Default.Lead;
+
+    /// <summary>An overtired heads-up whose send time is older than this is not sent (it would arrive after the limit).</summary>
+    public static readonly TimeSpan OvertiredStaleCutoff = WakeWindowOptions.Default.Lead;
+
+    /// <summary>An overtired heads-up expires this long after the limit.</summary>
+    public static readonly TimeSpan OvertiredExpiryAfterLimit = WakeWindowOptions.Default.Grace;
+
+    /// <summary>The wet diaper heads-up is sent this long before the expected wet diaper.</summary>
+    public static readonly TimeSpan DiaperWetLead = TimeSpan.FromMinutes(10);
+
+    /// <summary>The dirty diaper heads-up from the gaps is sent this long before the expected dirty diaper (after a feed: at the lower lag).</summary>
+    public static readonly TimeSpan DiaperDirtyGapLead = TimeSpan.FromMinutes(5);
+
+    /// <summary>A diaper heads-up whose send time is older than this is not sent.</summary>
+    public static readonly TimeSpan DiaperStaleCutoff = TimeSpan.FromMinutes(15);
+
+    /// <summary>A diaper heads-up expires this long after the expected time (it is not planned from then on).</summary>
+    public static readonly TimeSpan DiaperExpiryAfterExpected = TimeSpan.FromMinutes(30);
+
+    /// <summary>At most this many diaper heads-ups of one kind per recipient, baby and local day (counting the delivered ones).</summary>
+    public const int DiaperDailyCap = 3;
+
+    /// <summary>Two diaper heads-ups (either kind) for one recipient and baby are never this close.</summary>
+    public static readonly TimeSpan DiaperSpacing = TimeSpan.FromMinutes(60);
 
     public static readonly TimeSpan SnoozeLength = TimeSpan.FromMinutes(30);
 

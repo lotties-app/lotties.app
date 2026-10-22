@@ -115,7 +115,7 @@ public sealed class Product
     {
         if (!Enum.IsDefined(form))
         {
-            throw new DomainValidationException("form", "form must be drops, syrup, tablet, powder or other.");
+            throw new DomainValidationException("form", "form must be drops, syrup, tablet, powder, spray, ointment, suppository, inhaler or other.");
         }
     }
 

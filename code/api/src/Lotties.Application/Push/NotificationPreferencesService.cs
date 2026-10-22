@@ -20,7 +20,8 @@ public interface INotificationPreferencesService
     Task<IReadOnlyList<BabyNotificationPreferencesResponse>> ListPreferencesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Stores the caller's full reminder preferences for the baby. The caller must already be authorized as Parent or
+    /// Merges the request into the caller's reminder preferences for the baby (omitted fields keep the stored value, or
+    /// the default before the first PUT) and stores the result. The caller must already be authorized as Parent or
     /// Owner of the baby (Viewers never receive baby reminders).
     /// </summary>
     Task<BabyNotificationPreferencesResponse> PutPreferencesAsync(Guid babyId, PutBabyNotificationPreferencesRequest request, CancellationToken cancellationToken = default);
@@ -88,12 +89,12 @@ internal sealed class NotificationPreferencesService : INotificationPreferencesS
     {
         ArgumentNullException.ThrowIfNull(request);
         _configuration.EnsureEnabled();
-        var preferences = (ReminderPreferences)request;
+        var change = (ReminderPreferencesChange)request;
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var stored = await _preferences.FindAsync(babyId, user.Id, cancellationToken);
         var saved = stored is null
-            ? await CreatePreferencesAsync(babyId, user.Id, preferences, cancellationToken)
-            : await ChangePreferencesAsync(stored, preferences, cancellationToken);
+            ? await CreatePreferencesAsync(babyId, user.Id, change, cancellationToken)
+            : await ChangePreferencesAsync(stored, change, cancellationToken);
         return BabyNotificationPreferencesResponse.For(babyId, canReceive: true, saved.Preferences);
     }
 
@@ -118,9 +119,10 @@ internal sealed class NotificationPreferencesService : INotificationPreferencesS
         return stored;
     }
 
-    private async Task<BabyNotificationPreferences> CreatePreferencesAsync(Guid babyId, Guid userId, ReminderPreferences preferences, CancellationToken cancellationToken)
+    /// <summary>The first PUT merges into the defaults; when another request stored a row first, the change merges into that row.</summary>
+    private async Task<BabyNotificationPreferences> CreatePreferencesAsync(Guid babyId, Guid userId, ReminderPreferencesChange change, CancellationToken cancellationToken)
     {
-        var created = BabyNotificationPreferences.Create(babyId, userId, preferences, _timeProvider.GetUtcNow());
+        var created = BabyNotificationPreferences.Create(babyId, userId, ReminderPreferences.Default.With(change), _timeProvider.GetUtcNow());
         if (await _preferences.TryAddAsync(created, cancellationToken))
         {
             _logger.LogInformation("User {UserId} saved reminder preferences for baby {BabyId}", userId, babyId);
@@ -129,12 +131,12 @@ internal sealed class NotificationPreferencesService : INotificationPreferencesS
 
         var winner = await _preferences.FindAsync(babyId, userId, cancellationToken)
             ?? throw new InvalidOperationException($"Reminder preferences of user {userId} for baby {babyId} were reported as existing but could not be loaded.");
-        return await ChangePreferencesAsync(winner, preferences, cancellationToken);
+        return await ChangePreferencesAsync(winner, change, cancellationToken);
     }
 
-    private async Task<BabyNotificationPreferences> ChangePreferencesAsync(BabyNotificationPreferences stored, ReminderPreferences preferences, CancellationToken cancellationToken)
+    private async Task<BabyNotificationPreferences> ChangePreferencesAsync(BabyNotificationPreferences stored, ReminderPreferencesChange change, CancellationToken cancellationToken)
     {
-        stored.Change(preferences, _timeProvider.GetUtcNow());
+        stored.Change(stored.Preferences.With(change), _timeProvider.GetUtcNow());
         await _preferences.SaveChangesAsync(cancellationToken);
         return stored;
     }

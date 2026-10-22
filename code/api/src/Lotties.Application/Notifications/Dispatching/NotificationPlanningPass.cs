@@ -23,6 +23,9 @@ internal sealed class NotificationPlanningPass(
     /// </summary>
     public static readonly TimeSpan ClaimedKeysLookBack = TimeSpan.FromDays(1);
 
+    /// <summary>The kinds whose sent heads-ups count toward a daily cap and the spacing (docs/design/09-push-notifications.md section 2.8).</summary>
+    private static readonly IReadOnlyCollection<NotificationKind> CappedKinds = [NotificationKind.DiaperWetHeadsUp, NotificationKind.DiaperDirtyHeadsUp];
+
     public async Task<IReadOnlyList<PlannedNotification>> PlanAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
     {
         var candidates = await preferences.ListCandidatesAsync(now, cancellationToken);
@@ -34,20 +37,27 @@ internal sealed class NotificationPlanningPass(
         var userIds = candidates.Select(candidate => candidate.UserId).Distinct().ToArray();
         var settingsByUser = (await settings.ListForUsersAsync(userIds, cancellationToken)).ToDictionary(stored => stored.UserId);
         var delivered = await deliveries.ListClaimedKeysAsync(userIds, now - ClaimedKeysLookBack, cancellationToken);
+        var sentHeadsUps = await SentHeadsUpsAsync(candidates, userIds, now, cancellationToken);
         var planned = new List<PlannedNotification>();
         foreach (var baby in candidates.GroupBy(candidate => candidate.BabyId))
         {
-            planned.AddRange(await PlanBabyAsync(baby.Key, baby.ToArray(), settingsByUser, delivered, now, cancellationToken));
+            planned.AddRange(await PlanBabyAsync(baby.Key, baby.ToArray(), settingsByUser, new ClaimHistory(delivered, sentHeadsUps), now, cancellationToken));
         }
 
         return planned;
     }
 
+    /// <summary>The capped heads-ups of the last day (a local day is never longer), loaded only when someone wants a diaper heads-up.</summary>
+    private Task<IReadOnlyList<SentHeadsUp>> SentHeadsUpsAsync(IReadOnlyList<NotificationCandidate> candidates, IReadOnlyCollection<Guid> userIds, DateTimeOffset now, CancellationToken cancellationToken) =>
+        candidates.Any(candidate => candidate.Preferences.WantsDiapers)
+            ? deliveries.ListSentHeadsUpsAsync(userIds, CappedKinds, now - ClaimedKeysLookBack, cancellationToken)
+            : Task.FromResult<IReadOnlyList<SentHeadsUp>>([]);
+
     private async Task<IReadOnlyList<PlannedNotification>> PlanBabyAsync(
         Guid babyId,
         IReadOnlyList<NotificationCandidate> candidates,
         IReadOnlyDictionary<Guid, UserNotificationSettings> settingsByUser,
-        IReadOnlyCollection<DeliveredNotification> delivered,
+        ClaimHistory claims,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -56,7 +66,7 @@ internal sealed class NotificationPlanningPass(
             var recipients = candidates
                 .Select(candidate => NotificationRecipient.From(candidate.UserId, candidate.Role, candidate.Preferences, settingsByUser.GetValueOrDefault(candidate.UserId), now))
                 .ToArray();
-            var plan = NotificationPlanner.Plan(await loader.LoadAsync(babyId, recipients, delivered, now, cancellationToken));
+            var plan = NotificationPlanner.Plan(await loader.LoadAsync(babyId, recipients, claims, now, cancellationToken));
             RecordMetrics(plan);
             return plan.Notifications;
         }

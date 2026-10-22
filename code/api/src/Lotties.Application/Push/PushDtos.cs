@@ -178,6 +178,21 @@ public sealed record BabyNotificationPreferencesResponse
 
     public int NapLeadMinutes { get; init; }
 
+    /// <summary>The belly pain pattern heads-up (<c>belly_pain_pattern</c>) is on.</summary>
+    public bool BellyPainPattern { get; init; }
+
+    /// <summary>The overtired heads-up (<c>overtired_warning</c>) is on.</summary>
+    public bool OvertiredWarning { get; init; }
+
+    /// <summary>The fussy pattern heads-up (<c>fussy_pattern</c>) is on.</summary>
+    public bool FussyPattern { get; init; }
+
+    /// <summary>The wet diaper heads-up (<c>diaper_wet_headsup</c>) is on.</summary>
+    public bool DiaperWetHeadsUp { get; init; }
+
+    /// <summary>The dirty diaper heads-up (<c>diaper_dirty_headsup</c>) is on.</summary>
+    public bool DiaperDirtyHeadsUp { get; init; }
+
     public static BabyNotificationPreferencesResponse For(Guid babyId, bool canReceive, ReminderPreferences preferences) => new()
     {
         BabyId = babyId,
@@ -186,24 +201,52 @@ public sealed record BabyNotificationPreferencesResponse
         DoseLeadMinutes = preferences.DoseLeadMinutes,
         NapWindow = preferences.NapWindow,
         NapLeadMinutes = preferences.NapLeadMinutes,
+        BellyPainPattern = preferences.BellyPainPattern,
+        OvertiredWarning = preferences.OvertiredWarning,
+        FussyPattern = preferences.FussyPattern,
+        DiaperWetHeadsUp = preferences.DiaperWetHeadsUp,
+        DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp,
     };
 }
 
-/// <summary>Body of <c>PUT /babies/{babyId}/notification-preferences</c>: the full state.</summary>
+/// <summary>
+/// Body of <c>PUT /babies/{babyId}/notification-preferences</c>: a merge. Every field is optional; a field that is
+/// absent (or <c>null</c>) keeps the stored value (the default before the first PUT), so a client that does not know a
+/// newer kind never turns it off.
+/// </summary>
 public sealed record PutBabyNotificationPreferencesRequest
 {
-    public required bool DoseDue { get; init; }
+    public bool? DoseDue { get; init; }
 
-    public required int DoseLeadMinutes { get; init; }
+    public int? DoseLeadMinutes { get; init; }
 
-    public required bool NapWindow { get; init; }
+    public bool? NapWindow { get; init; }
 
-    public required int NapLeadMinutes { get; init; }
+    public int? NapLeadMinutes { get; init; }
 
-    public static explicit operator ReminderPreferences(PutBabyNotificationPreferencesRequest request)
+    public bool? BellyPainPattern { get; init; }
+
+    public bool? OvertiredWarning { get; init; }
+
+    public bool? FussyPattern { get; init; }
+
+    public bool? DiaperWetHeadsUp { get; init; }
+
+    public bool? DiaperDirtyHeadsUp { get; init; }
+
+    public static explicit operator ReminderPreferencesChange(PutBabyNotificationPreferencesRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ReminderPreferences.Create(request.DoseDue, request.DoseLeadMinutes, request.NapWindow, request.NapLeadMinutes);
+        return new ReminderPreferencesChange(
+            request.DoseDue,
+            request.DoseLeadMinutes,
+            request.NapWindow,
+            request.NapLeadMinutes,
+            request.BellyPainPattern,
+            request.OvertiredWarning,
+            request.FussyPattern,
+            request.DiaperWetHeadsUp,
+            request.DiaperDirtyHeadsUp);
     }
 }
 
