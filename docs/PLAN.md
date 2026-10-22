@@ -22,6 +22,7 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 
 | 16 | Measurements: `Measurement` entity + migration + endpoints; web list/chart | Medium (done) | 2, 8 | tests |
 | 17 | Napper CSV importer (API service + web upload + medication mapping step), synthetic fixtures | Careful (done) | 5, 6, 16 | tests on fixtures incl. idempotent re-import |
+| 23 | Diaper predictions (wet gap, dirty gap, lag after feeds; heuristics, see docs/ml/BENCHMARK.md) in `GET /predictions` and on Now (cards + Why sheets), opt-in heads-ups `diaper_wet_headsup` / `diaper_dirty_headsup` (3 a day per kind, 60 min apart, quiet hours), migration `DiaperHeadsUpPrefs` (not applied) | Careful (done 2026-10-22) | 7, 21 | Domain/API/web tests; docs/design/11-patterns.md section 8 |
 
 Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8; 10-14 after their deps.
 
@@ -33,6 +34,7 @@ Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8;
 | 19 | Upgrade to .NET 10 LTS (net8.0 EOL 2026-11-10) | Medium | REVIEW #20 |
 | 20 | Issuer backfill clean-up for legacy user rows; Postgres-specific tests (xmin concurrency, jsonb) via a real database or Testcontainers on Podman | Careful | REVIEW wave-2 doubts |
 | 21 | Push notifications (self-hosted Web Push, VAPID): v1 = scheduled dose due, nap window, test; co-parent activity in v1.1 | Careful/Medium per task | Spec docs/design/09-push-notifications.md: tasks N1-N12 (section 19; web N6 runs parallel to API N1-N5), owner open questions (section 20) |
+| 22 | Bottle suggestions phase 2: opt-in anonymous aggregate of per-feed amounts by age-in-months bucket (server-side medians/percentiles only, k >= 20 distinct babies, consent per account, GDPR/LGPD deletion) | Careful | Owner request; phase 1 (own history + static age table) done 2026-10-21, see docs/design/10-bottle-suggestions.md |
 
 ## UI redesign track (2026-10-21)
 Order: [done] theme+shell+presets (A) -> [running] API conditional fields + breast pump -> i18n foundation (en, pt-BR) -> form rework (conditional fields, MUI X date-time picker, label clipping audit, theme toggle in account menu) -> Home + Track sheet (B) -> fix e2e selectors (6 specs currently fail on the new header) + add pt-BR smoke spec -> Insights/Timeline/Growth polish (pass 2).

@@ -7,7 +7,7 @@ Status: design only, nothing implemented. Owner decisions: Web Push sent by our 
 ## 0. Summary of decisions
 | Choice | Decision |
 |---|---|
-| v1 kinds | Scheduled medicine dose due (from `MedicationStatusCalculator`), nap window opening (from predictions), test. Co-parent activity in v1.1. |
+| v1 kinds | Scheduled medicine dose due (from `MedicationStatusCalculator`), nap window opening (from predictions), test. Belly pain pattern heads-up (2026-10-22, section 2.5); overtired and fussy pattern heads-ups (2026-10-22, sections 2.6 and 2.7); wet and dirty diaper heads-ups (2026-10-22, section 2.8). Co-parent activity in v1.1. |
 | Opt-in | Per device (browser permission + subscription) and per user and baby (kinds); everything off by default. |
 | Lock screen | Generic text by default: no baby name, no medicine name, never a dose amount. Names only when the user turns on "Show names". |
 | Text | Rendered by the service worker from a bundled catalog (`push` namespace, en + pt-BR); the server sends codes, ids and instants only. |
@@ -45,6 +45,7 @@ Trigger, evaluated per baby by the planner from `MedicationStatus` (one per acti
 - Due time `T = max(S, AvailableAt ?? S)` (an interval group can push availability past the slot). If `T > S + 90 min` (`SlotMatchWindow`), the slot cannot be met within the rule: no reminder (counter `skipped{reason=unavailable}`).
 - Send time `T - lead`, lead per user and baby: 0 (default), 5 or 15 minutes. Send when `sendAt <= now`, `now - sendAt <= 30 min` (stale cutoff: after downtime the API does not fire old reminders) and the slot is still open.
 - Dedupe base key `dose:{prescriptionId:N}:{S utc yyyyMMddHHmm}`. Once any member's dose for that slot is synced, the slot is closed and nothing more is sent for it (also cancels pending snoozes).
+- Part-of-the-day prescriptions (docs/design/06-medications.md 2.1, 2026-10-22) have no slots; they remind only when the prescription has `dayPartReminders` (off by default). Candidate: each chosen part of the routine day that is `due` (window open, no dose yet) with a reminder time `R` (inside the window). `T = max(R, availableAt)`; `T` at or after the window's end, or the 24 h limit reached, holds it back (`unavailable` / `limit`). Sent from `T - lead`, never before the window opens; same stale cutoff, time to live, urgency, quiet-hours rule (delivered unless medicine is silenced) and snooze as slots. Key `dose:{rx}:{R utc}`: one per prescription, part and local date (changing the reminder time is a new reminder); the payload `at` is `R`, so the generic lock-screen text is unchanged ("A scheduled dose for 08:00 is not logged yet"). A dose logged inside the window closes it; a part that ends without a dose is never reminded again.
 - TTL 90 min (a later delivery would point at a slot that no longer matches), `Urgency: high`.
 
 ### 2.2 `nap_window` (v1)
@@ -63,13 +64,48 @@ Sent on demand from Settings to the caller's devices. Key `test:{deliveryId}`, T
 - `bed_time_window`: from `bedTime` of the predictions response. Open question 2.
 - As-needed "available again": open question 1; if ever added, neutral wording ("can be logged again from 18:00 if needed"), opt-in per prescription.
 
+### 2.5 `belly_pain_pattern` (2026-10-22; docs/design/11-patterns.md)
+Trigger from the baby's belly pain pattern (`BellyPainPatterns.Detect`, read in the recipient's IANA time zone so daylight saving changes inside the look-back are applied):
+- Opt-in per user and baby ("Belly pain heads-up"), off by default; only Owners and Parents with a time zone, like the other kinds.
+- One reminder per baby and local day: the window starting on that date (windows starting yesterday, today and tomorrow are candidates, so a window around midnight works). Sent at `window start - 30 min` (`NotificationRules.BellyPainLead`), only while now is before the window's end and within 30 minutes of the send time (stale cutoff), and only when no belly pain or belly massage was logged from `window start - 45 min` on (the same lead the Now card uses; a logged event closes the day, like a dose closes a slot).
+- Not a medicine: dropped inside quiet hours whatever "Also silence medicine reminders" says. Snooze and dismiss as for naps (the server accepts them; the notification has no action buttons).
+- Dedupe base key `belly:{babyId:N}:{local date yyyyMMdd}` (the date the window starts on, in the recipient's zone). TTL until 15 minutes after the window ends; `Urgency: normal`.
+- Payload codes only: `{v, id, kind: "belly_pain_pattern", babyId, at (window start), lang, token, names?: {baby}}`; never an intensity, a symptom or advice. A retry rebuilds `at` as due time + 30 min (snooze re-sends show their due time, as naps).
+- Lock-screen text "A good moment for a belly massage / Belly pain often shows up from around 17:30." (generic: no baby name unless show-names is on). Tapping opens Now for that baby (`/#notify=belly&baby=..&d=..`), where the card shows when it still applies.
+
+### 2.6 `overtired_warning` (2026-10-22; docs/design/11-patterns.md section 6)
+The "hora da bruxa" heads-up: the baby has been awake nearly as long as her usual longest comfortable stretch. Trigger from the baby's wake window (`WakeWindows.Measure`, read in the recipient's IANA time zone, which decides the daytime stretches):
+- Opt-in per device (push on) and per user and baby ("Overtired heads-up", off by default; column `baby_notification_preferences.overtired_warning`, migration `FussyAndOvertiredPrefs`).
+- Only while the baby is awake: no sleep running, no lone `fell_asleep` since the last wake, no night waking that ended at or after it (the wake window's `AwakeSince` is then `null`). With fewer than 5 daytime stretches there is no wake window and nothing is sent.
+- One reminder per awake stretch: sent at `awake since + limit - 15 min` (`NotificationRules.OvertiredLead`), only within 15 minutes of that time (stale cutoff, so never after the limit) and while now is before `limit + 30 min`. A sleep that starts ends the stretch (no current stretch, nothing more is planned); the next stretch has its own key.
+- Quiet hours always apply (not a medicine). Dedupe base key `overtired:{babyId:N}:{awake since utc yyyyMMddHHmm}`. TTL until 30 minutes after the limit; `Urgency: normal`.
+- Payload codes only: `{v, id, kind: "overtired_warning", babyId, at (the limit), lang, token, names?: {baby}}`; never a symptom or advice. A retry rebuilds `at` as due time + 15 min (snooze re-sends show their due time).
+- Lock-screen text "Awake time is near the usual limit / The usual limit is around 15:30. A nap soon may help." (generic; no alarm). Tapping opens Now (`/#notify=overtired&baby=..&d=..`), where the card shows when it still applies. Device tag `overtired:{baby}` (the next stretch's replaces it); the app closes it once a sleep starts from 30 min before the limit.
+
+### 2.7 `fussy_pattern` (2026-10-22; docs/design/11-patterns.md section 7)
+The evening fussiness pattern: the rules of section 2.5 over the baby's `fussy` pattern (`FussyPatterns.Detect`).
+- Opt-in per device and per user and baby ("Fussy time heads-up", off by default; column `baby_notification_preferences.fussy_pattern`, migration `FussyAndOvertiredPrefs`).
+- One per baby and local day at `window start - 30 min`, 30 min stale cutoff, while before the window's end, unless a fussy spell was logged from `window start - 45 min` on. Quiet hours always apply. Key `fussy:{babyId:N}:{local date yyyyMMdd}`; TTL until 15 minutes after the window ends; `Urgency: normal`.
+- Payload codes only (`kind: "fussy_pattern"`, `at` = window start). Text "Fussy time is coming up / Fussiness often starts from around 17:30. A calm routine may help." Tapping opens Now (`/#notify=fussy&..`); device tag `fussy:{baby}`; closed once a fussy spell is logged from 45 min before the window.
+
+### 2.8 `diaper_wet_headsup` and `diaper_dirty_headsup` (2026-10-22; docs/design/11-patterns.md section 8)
+When the baby will probably pee or poop, from the baby's own diaper and feed log (`DiaperPredictions.Predict`, elapsed time, so no time zone is needed for the estimate itself).
+- Two kinds, each opt-in per device (push on) and per user and baby ("Wet diaper heads-up", "Dirty diaper heads-up", both off by default; columns `baby_notification_preferences.diaper_wet_headsup` and `diaper_dirty_headsup`, migration `DiaperHeadsUpPrefs`).
+- Wet: anchored at the latest wet (or mixed) diaper; one heads-up at `expected - 10 min` (`NotificationRules.DiaperWetLead`). A wet diaper logged since is a new anchor (new key, later time), so the old heads-up is never sent.
+- Dirty: when the lag after feeds passed its gate, the latest feed ended at most 3 hours ago and no dirty diaper came since it ended, one heads-up at `feed end + lower lag`, keyed by the feed end; otherwise, when the gaps between dirty diapers passed their gate, one at `expected - 5 min` (`DiaperDirtyGapLead`), keyed by the latest dirty diaper. Neither gate: nothing.
+- Stale cutoff 15 minutes after the send time (`DiaperStaleCutoff`); not a candidate from 30 minutes after the expected time on; time to live until then (`DiaperExpiryAfterExpected`); `Urgency: normal`. Quiet hours always apply (dropped, not deferred).
+- Caps per recipient and baby: at most 3 heads-ups of a kind per local day of the recipient (`DiaperDailyCap`, skip reason `daily_cap`), counting the deliveries that were sent or are still pending on any of the recipient's devices (one per dedupe key; failed, expired, gone and cancelled ones do not count); never two of either kind within 60 minutes (`DiaperSpacing`, skip reason `spacing`, measured from the time the push service accepted the earlier one, else its due time). Within one tick at most one diaper heads-up per recipient: the earlier due one wins, wet first on a tie. The scheduler loads these heads-ups once per tick for the last day (`INotificationDeliveryRepository.ListSentHeadsUpsAsync`), only when someone wants a diaper kind.
+- Dedupe base keys `wet:{babyId:N}:{anchor utc yyyyMMddHHmm}` and `dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}`.
+- Payload codes only: `{v, id, kind: "diaper_wet_headsup" | "diaper_dirty_headsup", babyId, at (the expected time), lang, token, names?: {baby}}`; never the content, a symptom or advice. A retry rebuilds `at` as due time + 10 min (wet) or + 5 min (dirty; after a feed this approximates the expected time).
+- Lock-screen text, generic unless show-names: wet "A diaper check may be due / A wet diaper is often due around 15:40." (pt-BR "Pode ser hora de olhar a fralda / Uma fralda molhada costuma vir por volta de 15:40."); dirty "A diaper may be coming / A dirty diaper often comes around 16:05." ("Uma fralda suja pode estar a caminho / Uma fralda suja costuma vir por volta de 16:05."). Tapping opens Now (`/#notify=wet&..` or `/#notify=dirty&..`), where the card shows when it still applies. Device tags `wet:{baby}` and `dirty:{baby}`; the app closes a shown one once a wet (or mixed) diaper is logged from 10 minutes before `at`, or a dirty (or mixed) one from 60 minutes before `at`.
+
 ## 3. Privacy and sharing semantics
 - Opt-in per device: nothing is subscribed until the user turns on "Notifications on this device" and grants the browser permission. Turning it off unsubscribes the browser and revokes the server row.
 - Opt-in per user and baby: `dose_due` and `nap_window` are off for every baby until the user turns them on. Defaults are never inherited from a co-parent.
 - Who receives: current members with role Owner or Parent who opted in, on every active subscription of theirs. Viewers cannot opt in (they cannot log a dose). Membership is re-checked on every tick (join on `baby_members`); preference rows cascade-delete when the member leaves or is removed.
 - Payload minimisation: the encrypted payload carries only `{v, id, kind, babyId, rxId?, at, lang, token?, names?}`. `names` (`{baby, medication}`, each trimmed to 40 characters) is included only when the recipient turned on "Show names on notifications" (user setting, default off). A dose amount is never sent or shown. The baby's birth date, notes, payload details, prescriptions' indication or instructions are never sent.
 - Lock-screen text by default: "Medicine reminder / A scheduled dose for 18:00 is not logged yet." and "Nap window / The estimated nap window opens around 14:20." No baby name, no medicine name.
-- Quiet hours (per user, in the user's time zone, `start`-`end` may cross midnight, default on 22:00-07:00): `nap_window` and later activity kinds are dropped. `dose_due` is still delivered (the parent scheduled that time on purpose) unless "Also silence medicine reminders in quiet hours" is on.
+- Quiet hours (per user, in the user's time zone, `start`-`end` may cross midnight, default on 22:00-07:00): `nap_window`, `belly_pain_pattern`, `overtired_warning`, `fussy_pattern`, `diaper_wet_headsup`, `diaper_dirty_headsup` and later activity kinds are dropped. `dose_due` is still delivered (the parent scheduled that time on purpose) unless "Also silence medicine reminders in quiet hours" is on.
 - Snooze and dismiss are per user: snoozing my reminder never silences my co-parent's. Snooze = 30 minutes, at most 3 times per reminder; the re-send has key `{base}:s{n}` and is sent only if the item is still open. Each slot or awake window is notified once (no automatic repeats), so dismiss only matters after a snooze: "Stop reminders for this dose" on the in-app reminder line cancels pending snoozes for that base key for this user. Logging the dose (by anyone) is the implicit acknowledgement for everyone.
 - Dedupe: one delivery per `(subscription, key)` (unique index). On the device the notification `tag` is the base key, so a snoozed re-send replaces the earlier notification instead of stacking.
 - Shared device / account switch: a browser has one endpoint per origin. Subscribing with an endpoint that belongs to another user transfers it to the caller (latest sign-in owns the device) and the old user's pending deliveries for it are cancelled. Logout revokes the device (section 12).
@@ -125,9 +161,14 @@ Indexes: unique `endpoint_hash`; `(user_id)` filtered `revoked_at IS NULL`. Valu
 | dose_lead_minutes | smallint | 0, 5, 15 |
 | nap_window | bool | default false |
 | nap_lead_minutes | smallint | 0, 10, 20 |
+| belly_pain_pattern | bool | default false (migration `BellyPainPattern`, 2026-10-22) |
+| overtired_warning | bool | default false (migration `FussyAndOvertiredPrefs`, 2026-10-22) |
+| fussy_pattern | bool | default false (migration `FussyAndOvertiredPrefs`, 2026-10-22) |
+| diaper_wet_headsup | bool | default false (migration `DiaperHeadsUpPrefs`, 2026-10-22) |
+| diaper_dirty_headsup | bool | default false (migration `DiaperHeadsUpPrefs`, 2026-10-22) |
 | updated_at | timestamptz | |
 
-Index `(baby_id)` filtered `dose_due OR nap_window` (candidate babies).
+Index `(baby_id)` filtered `dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup` (candidate babies; widened by migrations `BellyPainPattern`, `FussyAndOvertiredPrefs` and `DiaperHeadsUpPrefs`).
 
 `notification_deliveries` (delivery log and idempotency)
 | Column | Type | Notes |
@@ -136,7 +177,7 @@ Index `(baby_id)` filtered `dose_due OR nap_window` (candidate babies).
 | subscription_id | uuid FK push_subscriptions, cascade | |
 | user_id | uuid | denormalised for snooze lookups |
 | baby_id | uuid null | null for `test` |
-| kind | varchar(24) | `dose_due`, `nap_window`, `test` |
+| kind | varchar(24) | `dose_due`, `nap_window`, `belly_pain_pattern`, `overtired_warning`, `fussy_pattern`, `diaper_wet_headsup`, `diaper_dirty_headsup`, `test` |
 | base_key | varchar(120) | e.g. `dose:{rx}:{slot}` |
 | dedupe_key | varchar(124) | base key, or `{base}:s{n}` for snooze re-sends |
 | due_at, expires_at | timestamptz | `expires_at = due_at + TTL` |
@@ -180,8 +221,8 @@ Base `/api/v1`, JSON camelCase, problem+json with `code` (status per code in `Do
 | `GET /push/subscriptions` | any user | the caller's active devices `[{id, deviceLabel, locale, createdAt, lastSeenAt, lastSuccessAt}]`. |
 | `DELETE /push/subscriptions/{id}` | any user, `push-write` | revokes one of the caller's devices; 204 idempotent. |
 | `GET /push/settings` / `PUT /push/settings` | any user, `push-write` on PUT | `{timeZone, quietHours:{enabled, start:"HH:mm", end:"HH:mm"}, quietIncludesMedicine, showNames}`; GET returns defaults with `timeZone: null` before the first PUT. |
-| `GET /push/preferences` | any user | `[{babyId, canReceive, doseDue, doseLeadMinutes, napWindow, napLeadMinutes}]` for every baby the caller belongs to (`canReceive = role != Viewer`). |
-| `PUT /babies/{babyId}/notification-preferences` | Parent/Owner, `push-write` | `{doseDue, doseLeadMinutes, napWindow, napLeadMinutes}` full state -> 200 stored; Viewer 403; leads outside the allowed sets 400 `validation_failed`. |
+| `GET /push/preferences` | any user | `[{babyId, canReceive, doseDue, doseLeadMinutes, napWindow, napLeadMinutes, bellyPainPattern, overtiredWarning, fussyPattern, diaperWetHeadsUp, diaperDirtyHeadsUp}]` for every baby the caller belongs to (`canReceive = role != Viewer`). |
+| `PUT /babies/{babyId}/notification-preferences` | Parent/Owner, `push-write` | `{doseDue?, doseLeadMinutes?, napWindow?, napLeadMinutes?, bellyPainPattern?, overtiredWarning?, fussyPattern?, diaperWetHeadsUp?, diaperDirtyHeadsUp?}` merged into the stored state (a field absent or `null` keeps its value, defaults before the first PUT; since 2026-10-22, so a stale client never turns off a kind it does not know) -> 200 stored; Viewer 403; merged leads outside the allowed sets 400 `validation_failed`. |
 | `POST /push/test` | any user, `push-test` | `{endpoint?}` (this device; all the caller's devices without it) -> 200 `{results:[{subscriptionId, status: "sent"|"gone"|"failed"}]}`; sends synchronously with the 10 s send timeout. |
 | `POST /push/deliveries/{deliveryId}/actions` | anonymous, `push-action` | `{action: "snooze"|"dismiss", token}` -> 204. Unknown id, wrong token or more than 12 h after `due_at` -> 404 `notification_action_not_found` (one code, nothing revealed); fourth snooze 409 `snooze_limit_reached`. |
 
@@ -254,7 +295,7 @@ Licence compatibility: MIT and MPL-2.0 libraries may be used by an AGPL-3.0 appl
   - `granted` + subscribed: device switch on; `granted` without subscription: Turn on re-subscribes without a prompt.
 - Settings section (online-only server state, like measurements; offline shows the last loaded values read-only with "Connect to the internet to change notification settings"):
   1. "Notifications on this device" switch, device label, "Send a test notification".
-  2. Per baby (Viewer rows disabled with "Only parents get reminders for this baby"): "Medicine reminders" switch + "Remind me" (At the scheduled time / 5 min before / 15 min before); "Nap window" switch + (When it opens / 10 min before / 20 min before).
+  2. Per baby (Viewer rows disabled with "Only parents get reminders for this baby"): "Medicine reminders" switch + "Remind me" (At the scheduled time / 5 min before / 15 min before); "Nap window" switch + (When it opens / 10 min before / 20 min before); "Belly pain heads-up" switch ("When belly pain often shows up around the same time, a note 30 min before.", no lead choice); "Overtired heads-up" ("When the baby has been awake nearly as long as usual, a note 15 min before.") and "Fussy time heads-up" ("When fussiness often starts around the same time, a note 30 min before."), both off by default, no lead choice; "Wet diaper heads-up" ("When a wet diaper is usually due, a note 10 min before.") and "Dirty diaper heads-up" ("When a dirty diaper usually comes, after a feed or from the usual gaps, a note shortly before."), both off by default, no lead choice.
   3. Quiet hours switch + start/end time fields; "Also silence medicine reminders in quiet hours".
   4. "Show baby and medicine names on notifications" (explains lock-screen visibility).
   5. "Times use {{zone}}" line; other devices list with Remove.
@@ -278,6 +319,21 @@ Worker catalog `code/web/src/i18n/locales/push.{en,pt-BR}.json` (bundled into th
 | `nap_window.title` | Nap window | Janela de soneca |
 | `nap_window.body` | The estimated nap window opens around {{time}}. | A janela estimada de soneca abre por volta de {{time}}. |
 | `nap_window.bodyNamed` | {{baby}}: the estimated nap window opens around {{time}}. | {{baby}}: a janela estimada de soneca abre por volta de {{time}}. |
+| `belly_pain_pattern.title` | A good moment for a belly massage | Hora de uma massagem na barriguinha |
+| `belly_pain_pattern.body` | Belly pain often shows up from around {{time}}. | A dor de barriga costuma aparecer a partir de {{time}}. |
+| `belly_pain_pattern.bodyNamed` | {{baby}}: belly pain often shows up from around {{time}}. | {{baby}}: a dor de barriga costuma aparecer a partir de {{time}}. |
+| `overtired_warning.title` | Awake time is near the usual limit | Tempo acordado perto do limite de costume |
+| `overtired_warning.body` | The usual limit is around {{time}}. A nap soon may help. | O limite de costume é por volta de {{time}}. Uma soneca em breve pode ajudar. |
+| `overtired_warning.bodyNamed` | {{baby}}: the usual limit is around {{time}}. A nap soon may help. | {{baby}}: o limite de costume é por volta de {{time}}. Uma soneca em breve pode ajudar. |
+| `fussy_pattern.title` | Fussy time is coming up | A hora do choro está chegando |
+| `fussy_pattern.body` | Fussiness often starts from around {{time}}. A calm routine may help. | A irritação costuma começar a partir de {{time}}. Uma rotina calma pode ajudar. |
+| `fussy_pattern.bodyNamed` | {{baby}}: fussiness often starts from around {{time}}. | {{baby}}: a irritação costuma começar a partir de {{time}}. |
+| `diaper_wet_headsup.title` | A diaper check may be due | Pode ser hora de olhar a fralda |
+| `diaper_wet_headsup.body` | A wet diaper is often due around {{time}}. | Uma fralda molhada costuma vir por volta de {{time}}. |
+| `diaper_wet_headsup.bodyNamed` | {{baby}}: a wet diaper is often due around {{time}}. | {{baby}}: uma fralda molhada costuma vir por volta de {{time}}. |
+| `diaper_dirty_headsup.title` | A diaper may be coming | Uma fralda suja pode estar a caminho |
+| `diaper_dirty_headsup.body` | A dirty diaper often comes around {{time}}. | Uma fralda suja costuma vir por volta de {{time}}. |
+| `diaper_dirty_headsup.bodyNamed` | {{baby}}: a dirty diaper often comes around {{time}}. | {{baby}}: uma fralda suja costuma vir por volta de {{time}}. |
 | `test.title` / `test.body` | Notifications are on / This is a test from Lotties. | Notificações ativadas / Este é um teste do Lotties. |
 | `generic.title` / `generic.body` | Lotties / Open the app for details. | Lotties / Abra o app para ver os detalhes. |
 | `action.snooze` / `action.open` | Snooze 30 min / Open | Adiar 30 min / Abrir |
@@ -310,7 +366,7 @@ SSRF allowlist on subscribe and send; endpoints and keys never logged, never ret
 - Manual device checklist (task N11, HTTPS staging): Android Chrome (tab and installed), desktop Chrome, Edge, Firefox, macOS Safari, iPhone 16.4+ Home Screen app and Safari tab guidance; enable, test, dose reminder at slot and with lead, snooze action and in-app snooze, dose logged by the co-parent stops theirs, quiet hours, show names off/on on the lock screen, airplane mode then reconnect within TTL, permission denied recovery, logout unsubscribes, account switch transfers the endpoint, VAPID rotation re-subscribes.
 
 ## 18. Observability
-- `Meter` `Lotties.Push` (no exporter dependency; readable with `dotnet-counters`): counters `push.planned{kind}`, `push.sent{kind}`, `push.failed{kind,status}`, `push.gone`, `push.skipped{reason}` (stale, quiet_hours, unavailable, limit, snoozed, dismissed), `push.actions{action}`; histograms `push.tick.duration`, `push.send.duration`; observable gauge `push.subscriptions.active`.
+- `Meter` `Lotties.Push` (no exporter dependency; readable with `dotnet-counters`): counters `push.planned{kind}`, `push.sent{kind}`, `push.failed{kind,status}`, `push.gone`, `push.skipped{reason}` (stale, quiet_hours, unavailable, limit, snoozed, dismissed, spacing, daily_cap), `push.actions{action}`; histograms `push.tick.duration`, `push.send.duration`; observable gauge `push.subscriptions.active`.
 - Logs: Information per tick only when something was sent (counts), Warning for ticks over 10 s, lease lost repeatedly, 413, 10-failure revocations; Debug per delivery (delivery id, subscription id, kind, push service host, status). Never endpoints, keys, tokens, payloads or names.
 - Delivery rows answer support questions ("was it sent?") for 14 days.
 

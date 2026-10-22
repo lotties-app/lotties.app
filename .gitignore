@@ -7,6 +7,8 @@ dist/
 .env
 .env.*
 !.env.example
+# Public build values of the native app (no secrets; its .env.native.local stays ignored)
+!code/web/.env.native
 coverage/
 *.log
 .idea/
@@ -38,4 +40,5 @@ code/api/out.sql
 
 # Home lab deploy settings (secrets); see deploy/homelab/.env.example
 deploy/homelab/.env
+
 

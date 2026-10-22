@@ -222,4 +222,11 @@ run "trusted networks" FORWARDED_HEADERS_TRUSTED_NETWORKS=10.42.0.0/16,10.43.0.0
   check "trusted networks: passed with the comma escaped" log_has 'env\.FORWARDED_HEADERS_TRUSTED_NETWORKS=10\.42\.0\.0/16\\,10\.43\.0\.0/16'
 }
 
+run "native app origins" CORS_ALLOWED_ORIGINS=https://lotties.app,https://localhost,capacitor://localhost SKIP_BUILD=1 && {
+  check "native app: CORS lists the WebView origins, commas escaped" log_has 'env\.CORS_ALLOWED_ORIGINS=https://lotties\.app\\,https://localhost\\,capacitor://localhost'
+}
+
+EXPECT_FAIL=1 run "bad CORS origin" CORS_ALLOWED_ORIGINS='https://lotties.app/app, https://localhost' SKIP_BUILD=1
+check "CORS: a path or a space is refused" out_has 'CORS_ALLOWED_ORIGINS must be comma-separated origins'
+
 exit "$FAILED"
