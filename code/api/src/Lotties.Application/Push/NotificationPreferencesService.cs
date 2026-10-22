@@ -145,7 +145,9 @@ internal sealed class NotificationPreferencesService : INotificationPreferencesS
     {
         var member = baby.FindMember(userId) ?? throw new MemberNotFoundException(baby.Id, userId);
         var canReceive = NotificationRules.CanReceive(member.Role);
-        var preferences = canReceive && stored.TryGetValue(baby.Id, out var row) ? row.Preferences : ReminderPreferences.Default;
+        var preferences = !canReceive ? ReminderPreferences.None
+            : stored.TryGetValue(baby.Id, out var row) ? row.Preferences
+            : ReminderPreferences.Default;
         return BabyNotificationPreferencesResponse.For(baby.Id, canReceive, preferences);
     }
 }

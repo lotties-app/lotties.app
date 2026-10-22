@@ -17,4 +17,11 @@ public enum BabyRole
 
     /// <summary>Read-only access.</summary>
     Viewer,
+
+    /// <summary>
+    /// A healthcare professional (self-declared in her <see cref="Professionals.ProfessionalProfile"/>) invited to this baby:
+    /// reads everything a Viewer reads and in addition writes her own notes and consultation measurements. Outside the
+    /// Owner &gt; Parent &gt; Caregiver &gt; Viewer order: never logs events, manages nothing and receives no baby reminders.
+    /// </summary>
+    Doctor,
 }

@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using Lotties.Application.Professionals;
 using Lotties.Application.Serialization;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Professionals;
 using Lotties.Domain.Users;
 
 namespace Lotties.Application.Babies;
@@ -61,7 +63,10 @@ public sealed record MemberResponse
 
     public DateTimeOffset JoinedAt { get; init; }
 
-    public static MemberResponse For(BabyMember member, User? user)
+    /// <summary>A Doctor member's professional details (additive; <c>null</c> for every other role).</summary>
+    public ProfessionalSummary? Professional { get; init; }
+
+    public static MemberResponse For(BabyMember member, User? user, ProfessionalProfile? doctorProfile = null)
     {
         ArgumentNullException.ThrowIfNull(member);
         return new MemberResponse
@@ -70,6 +75,7 @@ public sealed record MemberResponse
             DisplayName = user?.DisplayName ?? ExternalIdentity.FallbackDisplayName,
             Role = member.Role,
             JoinedAt = member.JoinedAt,
+            Professional = member.Role.IsDoctor() && doctorProfile is not null ? (ProfessionalSummary)doctorProfile : null,
         };
     }
 }

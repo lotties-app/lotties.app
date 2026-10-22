@@ -41,10 +41,13 @@ public sealed class BabyNotificationPreferences
 
     public bool DiaperDirtyHeadsUp { get; private set; }
 
+    /// <summary>On unless the member turned it off (rows stored before the column existed are on: database default true).</summary>
+    public bool AppointmentReminders { get; private set; } = true;
+
     public DateTimeOffset UpdatedAt { get; private set; }
 
     public ReminderPreferences Preferences =>
-        ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes, BellyPainPattern, OvertiredWarning, FussyPattern, DiaperWetHeadsUp, DiaperDirtyHeadsUp);
+        ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes, BellyPainPattern, OvertiredWarning, FussyPattern, DiaperWetHeadsUp, DiaperDirtyHeadsUp, AppointmentReminders);
 
     public static BabyNotificationPreferences Create(Guid babyId, Guid userId, ReminderPreferences preferences, DateTimeOffset now)
     {
@@ -75,6 +78,7 @@ public sealed class BabyNotificationPreferences
         FussyPattern = preferences.FussyPattern;
         DiaperWetHeadsUp = preferences.DiaperWetHeadsUp;
         DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp;
+        AppointmentReminders = preferences.AppointmentReminders;
         UpdatedAt = UtcTime.Normalize(now);
     }
 }

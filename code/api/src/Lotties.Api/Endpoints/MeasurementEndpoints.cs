@@ -6,7 +6,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// Growth measurements of one baby. Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes
-/// <see cref="BabyPolicies.Write"/>. Deletion is a hard delete.
+/// <see cref="BabyPolicies.Measure"/> (Owner, Parent, and a Doctor for her consultation measurements, who changes only
+/// her own). Deletion is a hard delete.
 /// </summary>
 internal static class MeasurementEndpoints
 {
@@ -22,14 +23,16 @@ internal static class MeasurementEndpoints
         ArgumentNullException.ThrowIfNull(baby);
         baby.MapGet(MeasurementsPath, ListAsync).WithName("ListMeasurements");
         baby.MapPut(MeasurementPath, UpsertAsync)
-            .RequireAuthorization(BabyPolicies.Write)
+            .RequireAuthorization(BabyPolicies.Measure)
             .WithName("UpsertMeasurement")
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
         baby.MapDelete(MeasurementPath, DeleteAsync)
-            .RequireAuthorization(BabyPolicies.Write)
-            .WithName("DeleteMeasurement");
+            .RequireAuthorization(BabyPolicies.Measure)
+            .WithName("DeleteMeasurement")
+            .ProducesProblem(StatusCodes.Status403Forbidden);
         return baby;
     }
 

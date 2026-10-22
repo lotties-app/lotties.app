@@ -1,3 +1,4 @@
+using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
@@ -36,16 +37,18 @@ internal static class NotificationFixtures
         bool overtiredWarning = false,
         bool fussyPattern = false,
         bool diaperWet = false,
-        bool diaperDirty = false) =>
+        bool diaperDirty = false,
+        bool appointmentReminders = true,
+        NotificationTimeZone? zone = null) =>
         new(
             userId ?? MomId,
             role,
-            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty),
+            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty, appointmentReminders),
             quietHours ?? QuietHours.Default,
             quietIncludesMedicine,
             showNames,
             withoutZone ? null : offset ?? SaoPaulo,
-            withoutZone ? null : SaoPauloZone);
+            withoutZone ? null : zone ?? SaoPauloZone);
 
     public static NotificationBabyState State(IReadOnlyList<MedicationStatus> medications, PredictionSet? predictions = null, TimeSpan? offset = null) =>
         new(offset ?? SaoPaulo, medications, predictions);
@@ -65,7 +68,8 @@ internal static class NotificationFixtures
         IReadOnlyList<TimeOfDayPatternState>? fussy = null,
         IReadOnlyList<WakeWindowState>? wakeWindows = null,
         DiaperPrediction? diapers = null,
-        IReadOnlyCollection<SentHeadsUp>? sentHeadsUps = null) =>
+        IReadOnlyCollection<SentHeadsUp>? sentHeadsUps = null,
+        IReadOnlyList<Appointment>? appointments = null) =>
         NotificationPlanner.Plan(new NotificationPlanInput(
             now,
             Prescriptions.PrescriptionFixtures.BabyId,
@@ -78,7 +82,8 @@ internal static class NotificationFixtures
             FussyPatterns: fussy,
             WakeWindows: wakeWindows,
             Diapers: diapers,
-            SentHeadsUps: sentHeadsUps));
+            SentHeadsUps: sentHeadsUps,
+            Appointments: appointments));
 
     /// <summary>A belly pain pattern whose usual window runs from <paramref name="start"/> for <paramref name="widthMinutes"/> (São Paulo local times).</summary>
     public static TimeOfDayPattern BellyPattern(TimeOnly start, int widthMinutes = 60) =>

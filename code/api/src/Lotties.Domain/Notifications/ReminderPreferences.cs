@@ -4,10 +4,11 @@ namespace Lotties.Domain.Notifications;
 
 /// <summary>
 /// One member's reminder choices for one baby: which kinds are on and how early each is sent. Everything is off by
-/// default; dose lead 0, 5 or 15 minutes (default 0); nap lead 0, 10 or 20 minutes (default 10); the belly pain and
+/// default except the appointment reminders (on: the family created the appointment on purpose; the device opt-in is
+/// still needed); dose lead 0, 5 or 15 minutes (default 0); nap lead 0, 10 or 20 minutes (default 10); the belly pain and
 /// fussy pattern heads-ups have no lead choice (30 minutes before the usual window), nor has the overtired heads-up
 /// (15 minutes before the usual longest awake stretch ends) or the diaper heads-ups (10 minutes before a wet diaper,
-/// 5 minutes before a dirty one or at the usual lag after a feed).
+/// 5 minutes before a dirty one or at the usual lag after a feed); appointment reminders use each appointment's own offsets.
 /// </summary>
 public readonly record struct ReminderPreferences
 {
@@ -23,7 +24,8 @@ public readonly record struct ReminderPreferences
         bool overtiredWarning,
         bool fussyPattern,
         bool diaperWetHeadsUp,
-        bool diaperDirtyHeadsUp)
+        bool diaperDirtyHeadsUp,
+        bool appointmentReminders)
     {
         DoseDue = doseDue;
         DoseLeadMinutes = doseLeadMinutes;
@@ -34,9 +36,14 @@ public readonly record struct ReminderPreferences
         FussyPattern = fussyPattern;
         DiaperWetHeadsUp = diaperWetHeadsUp;
         DiaperDirtyHeadsUp = diaperDirtyHeadsUp;
+        AppointmentReminders = appointmentReminders;
     }
 
-    public static ReminderPreferences Default { get; } = new(false, 0, false, 10, false, false, false, false, false);
+    /// <summary>What a member who never changed anything has: everything off except the appointment reminders.</summary>
+    public static ReminderPreferences Default { get; } = new(false, 0, false, 10, false, false, false, false, false, true);
+
+    /// <summary>Everything off (what a member who cannot receive baby reminders, a Viewer, is shown).</summary>
+    public static ReminderPreferences None { get; } = new(false, 0, false, 10, false, false, false, false, false, false);
 
     public bool DoseDue { get; }
 
@@ -61,12 +68,15 @@ public readonly record struct ReminderPreferences
     /// <summary>The dirty diaper heads-up (<c>diaper_dirty_headsup</c>) is on.</summary>
     public bool DiaperDirtyHeadsUp { get; }
 
+    /// <summary>The appointment reminders (<c>appointment_reminder</c>) are on; on by default.</summary>
+    public bool AppointmentReminders { get; }
+
     public TimeSpan DoseLead => TimeSpan.FromMinutes(DoseLeadMinutes);
 
     public TimeSpan NapLead => TimeSpan.FromMinutes(NapLeadMinutes);
 
     /// <summary>Whether any reminder kind is on (the baby is a scheduler candidate for this member).</summary>
-    public bool WantsAny => DoseDue || WantsEventHistory;
+    public bool WantsAny => DoseDue || WantsEventHistory || AppointmentReminders;
 
     /// <summary>Whether a kind read from the baby's events (nap window, a pattern or a diaper heads-up) is on: the scheduler loads the event history.</summary>
     public bool WantsEventHistory => NapWindow || BellyPainPattern || OvertiredWarning || FussyPattern || WantsDiapers;
@@ -83,7 +93,8 @@ public readonly record struct ReminderPreferences
         bool overtiredWarning = false,
         bool fussyPattern = false,
         bool diaperWetHeadsUp = false,
-        bool diaperDirtyHeadsUp = false) =>
+        bool diaperDirtyHeadsUp = false,
+        bool appointmentReminders = true) =>
         new(
             doseDue,
             Allowed(doseLeadMinutes, DoseLeadOptions, "doseLeadMinutes"),
@@ -93,7 +104,8 @@ public readonly record struct ReminderPreferences
             overtiredWarning,
             fussyPattern,
             diaperWetHeadsUp,
-            diaperDirtyHeadsUp);
+            diaperDirtyHeadsUp,
+            appointmentReminders);
 
     /// <summary>
     /// These preferences with the values <paramref name="change"/> names; the ones it leaves out stay as they are, so a
@@ -111,7 +123,8 @@ public readonly record struct ReminderPreferences
             change.OvertiredWarning ?? OvertiredWarning,
             change.FussyPattern ?? FussyPattern,
             change.DiaperWetHeadsUp ?? DiaperWetHeadsUp,
-            change.DiaperDirtyHeadsUp ?? DiaperDirtyHeadsUp);
+            change.DiaperDirtyHeadsUp ?? DiaperDirtyHeadsUp,
+            change.AppointmentReminders ?? AppointmentReminders);
     }
 
     private static int Allowed(int minutes, IReadOnlyList<int> options, string field) =>
@@ -130,4 +143,5 @@ public sealed record ReminderPreferencesChange(
     bool? OvertiredWarning = null,
     bool? FussyPattern = null,
     bool? DiaperWetHeadsUp = null,
-    bool? DiaperDirtyHeadsUp = null);
+    bool? DiaperDirtyHeadsUp = null,
+    bool? AppointmentReminders = null);

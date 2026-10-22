@@ -105,9 +105,11 @@ public sealed class NotificationValueObjectTests
     }
 
     [Fact]
-    public void ReminderPreferences_DefaultIsAllOffWithTenMinuteNapLead()
+    public void ReminderPreferences_DefaultIsAllOffButAppointmentsWithTenMinuteNapLead()
     {
-        Assert.Equal((false, 0, false, 10, false), (ReminderPreferences.Default.DoseDue, ReminderPreferences.Default.DoseLeadMinutes, ReminderPreferences.Default.NapWindow, ReminderPreferences.Default.NapLeadMinutes, ReminderPreferences.Default.WantsAny));
+        Assert.Equal((false, 0, false, 10, true), (ReminderPreferences.Default.DoseDue, ReminderPreferences.Default.DoseLeadMinutes, ReminderPreferences.Default.NapWindow, ReminderPreferences.Default.NapLeadMinutes, ReminderPreferences.Default.WantsAny));
+        Assert.True(ReminderPreferences.Default.AppointmentReminders);
+        Assert.Equal((false, false), (ReminderPreferences.None.AppointmentReminders, ReminderPreferences.None.WantsAny));
         Assert.False(ReminderPreferences.Default.BellyPainPattern);
         Assert.Equal((false, false, false), (ReminderPreferences.Default.OvertiredWarning, ReminderPreferences.Default.FussyPattern, ReminderPreferences.Default.WantsEventHistory));
     }
@@ -350,7 +352,7 @@ public sealed class NotificationValueObjectTests
     [Fact]
     public void NotificationCodes_RoundTripEveryValue()
     {
-        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup"]);
+        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder"]);
         AssertRoundTrip<NotificationUrgency>(["normal", "high"]);
         AssertRoundTrip<NotificationSkipReason>(["stale", "quiet_hours", "unavailable", "limit", "snoozed", "dismissed", "spacing", "daily_cap"]);
         AssertRoundTrip<DeliveryStatus>(["pending", "sent", "failed", "expired", "gone", "cancelled"]);

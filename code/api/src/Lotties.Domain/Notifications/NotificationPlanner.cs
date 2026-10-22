@@ -1,3 +1,4 @@
+using Lotties.Domain.Appointments;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
@@ -46,6 +47,13 @@ namespace Lotties.Domain.Notifications;
 /// feed end or the latest dirty diaper).</item>
 /// <item>Diaper caps per recipient and baby: at most 3 heads-ups of a kind per local day (counting the ones sent or
 /// being sent) and never two of either kind within 60 minutes (also within one tick: the earlier one wins, wet first).</item>
+/// <item><c>appointment_reminder</c> (on by default): for every upcoming appointment that has not started and each of its
+/// offsets (1 week, 1 day, 2 hours, 30 minutes), sent at <c>start - offset</c>; inside the recipient's quiet hours it is
+/// delayed to their end (read in the recipient's zone) when that is still before the start, else skipped; an offset whose
+/// send time was already past when the appointment was last changed is skipped. Of the offsets due at a tick only the
+/// latest goes (the earlier unsent ones are superseded). Key <c>appt:{appointment}:{start utc yyyyMMddHHmm}:{offset}</c>
+/// (moving the start plans new reminders), stale cutoff 30 minutes, time to live until the start, urgency normal. Done
+/// and cancelled appointments never remind.</item>
 /// <item>Each key is planned once per user. A snooze re-sends the still open item at the snooze end with key
 /// <c>{base}:s{n}</c> (same stale cutoff and quiet hours); a dismissal stops it for that user only.</item>
 /// </list>
@@ -82,7 +90,8 @@ public static class NotificationPlanner
             .Concat(PatternReminders(recipient, PatternKind.BellyPain, context))
             .Concat(PatternReminders(recipient, PatternKind.Fussy, context))
             .Concat(OvertiredReminders(recipient, context))
-            .Concat(DiaperReminders(recipient, context));
+            .Concat(DiaperReminders(recipient, context))
+            .Concat(AppointmentRemindersFor(recipient, context));
 
     private static IEnumerable<Reminder> StateReminders(NotificationRecipient recipient, PlanContext context) =>
         context.StateAt(recipient.UtcOffset!.Value) is { } state
@@ -256,6 +265,50 @@ public static class NotificationPlanner
 
     private static bool IsDiaperKind(NotificationKind kind) => kind is NotificationKind.DiaperWetHeadsUp or NotificationKind.DiaperDirtyHeadsUp;
 
+    private static IEnumerable<Reminder> AppointmentRemindersFor(NotificationRecipient recipient, PlanContext context) =>
+        recipient.Preferences.AppointmentReminders
+            ? context.Appointments.Where(appointment => appointment.IsRemindableAt(context.Now)).Select(appointment => LatestDueAppointmentReminder(recipient, appointment, context)).OfType<Reminder>()
+            : [];
+
+    /// <summary>
+    /// The reminder of <paramref name="appointment"/> to consider now: of its offsets that are due (send time reached),
+    /// the latest one; an earlier offset that is still unsent is superseded by it (one notification per appointment, the
+    /// nearest wording). <c>null</c> while none is due.
+    /// </summary>
+    private static Reminder? LatestDueAppointmentReminder(NotificationRecipient recipient, Appointment appointment, PlanContext context) =>
+        AppointmentSendTimes(recipient, appointment)
+            .Where(planned => planned.SendAt <= context.Now)
+            .OrderByDescending(planned => planned.SendAt)
+            .ThenBy(planned => planned.OffsetMinutes)
+            .Select(planned => AppointmentReminder(recipient, appointment, planned, context))
+            .FirstOrDefault();
+
+    /// <summary>
+    /// Each offset's send time: <c>start - offset</c>, moved to the end of the recipient's quiet hours when it falls inside
+    /// them. Dropped when that is not before the start (a reminder never arrives at or after the visit) or when it was
+    /// already past when the appointment was last changed (created, moved, restored): no late reminder for a time that is gone.
+    /// </summary>
+    private static IEnumerable<AppointmentSendTime> AppointmentSendTimes(NotificationRecipient recipient, Appointment appointment)
+    {
+        var clock = recipient.Clock();
+        return appointment.Reminders.Minutes
+            .Select(offset => new AppointmentSendTime(offset, recipient.QuietHours.EndOfQuietPeriod(appointment.StartsAt.AddMinutes(-offset), clock)))
+            .Where(planned => planned.SendAt < appointment.StartsAt && planned.SendAt >= appointment.UpdatedAt);
+    }
+
+    private static Reminder AppointmentReminder(NotificationRecipient recipient, Appointment appointment, AppointmentSendTime planned, PlanContext context) =>
+        new(
+            recipient,
+            NotificationKind.AppointmentReminder,
+            NotificationKey.ForAppointment(appointment.Id, appointment.StartsAt, planned.OffsetMinutes),
+            planned.SendAt,
+            new NotificationContent(context.BabyId, null, appointment.StartsAt, context.NamesFor(recipient, medicationId: null), appointment.Id, planned.OffsetMinutes),
+            appointment.StartsAt - context.Now,
+            NotificationUrgency.Normal,
+            NotificationRules.AppointmentStaleCutoff,
+            DeliveredInQuietHours: true,
+            HeldBy: null);
+
     /// <summary>
     /// At most one diaper heads-up per recipient in a tick (the spacing rule also holds within a tick): the earliest due
     /// wins, wet before dirty on a tie; the other is skipped as <see cref="NotificationSkipReason.Spacing"/>.
@@ -317,6 +370,9 @@ public static class NotificationPlanner
         NotificationSkipReason? HeldBy);
 
     private sealed record Attempt(NotificationKey Key, DateTimeOffset SendAt, bool IsSnooze, bool Dismissed);
+
+    /// <summary>When the reminder <see cref="OffsetMinutes"/> before an appointment goes (quiet hours applied).</summary>
+    private sealed record AppointmentSendTime(int OffsetMinutes, DateTimeOffset SendAt);
 
     /// <summary>One occurrence of a usual pattern window, placed with the recipient's offset at the tick.</summary>
     private sealed record PatternWindowAt(DateOnly Date, DateTimeOffset Start, DateTimeOffset End)
@@ -409,6 +465,7 @@ public static class NotificationPlanner
             _fussy = ByZone(input.FussyPatterns, state => state.TimeZone);
             _wakeWindows = ByZone(input.WakeWindows, state => state.TimeZone);
             Diapers = input.Diapers;
+            Appointments = (input.Appointments ?? []).Where(appointment => appointment.BabyId == input.BabyId).ToArray();
             _sentHeadsUps = (input.SentHeadsUps ?? [])
                 .Where(sent => sent.BabyId == input.BabyId)
                 .DistinctBy(sent => (sent.UserId, sent.DedupeKey.Value))
@@ -420,6 +477,9 @@ public static class NotificationPlanner
         public Guid BabyId { get; }
 
         public DiaperPrediction? Diapers { get; }
+
+        /// <summary>The baby's appointments as loaded (upcoming within the reminder horizon).</summary>
+        public IReadOnlyList<Appointment> Appointments { get; }
 
         public NotificationBabyState? StateAt(TimeSpan utcOffset) => _states.GetValueOrDefault(utcOffset);
 

@@ -7,4 +7,7 @@ public interface IBabyAccessService
 {
     /// <summary>Decides whether the current user's membership on <paramref name="babyId"/> satisfies <paramref name="requiredRole"/>.</summary>
     Task<BabyAccessDecision> CheckAsync(Guid babyId, BabyRole requiredRole, CancellationToken cancellationToken = default);
+
+    /// <summary>The current user's role on <paramref name="babyId"/>, or <c>null</c> when she is not a member.</summary>
+    Task<BabyRole?> FindRoleAsync(Guid babyId, CancellationToken cancellationToken = default);
 }

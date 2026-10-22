@@ -165,11 +165,12 @@ internal sealed class SchedulerTestHost : IDisposable
         bool overtiredWarning = false,
         bool fussyPattern = false,
         bool diaperWet = false,
-        bool diaperDirty = false) =>
+        bool diaperDirty = false,
+        bool appointmentReminders = true) =>
         SeedAsync(BabyNotificationPreferences.Create(
             babyId,
             userId,
-            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty),
+            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty, appointmentReminders),
             TestUsers.Now));
 
     /// <summary>An instant event of a built-in type (e.g. belly pain with intensity 3, or a finished belly massage).</summary>

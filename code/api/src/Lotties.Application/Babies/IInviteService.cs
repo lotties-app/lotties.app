@@ -22,7 +22,8 @@ public interface IInviteService
     /// Adds the current user to the invite's baby with the invite's role and returns that baby. Throws
     /// <see cref="Domain.Exceptions.InviteNotFoundException"/> (unknown or malformed token),
     /// <see cref="Domain.Exceptions.InviteExpiredException"/>, <see cref="Domain.Exceptions.InviteAlreadyAcceptedException"/>
-    /// (also for the loser of two concurrent accepts), <see cref="Domain.Exceptions.MemberAlreadyExistsException"/> or,
+    /// (also for the loser of two concurrent accepts), <see cref="Domain.Exceptions.MemberAlreadyExistsException"/>,
+    /// <see cref="Domain.Exceptions.ProfessionalProfileRequiredException"/> (a Doctor invite and no professional profile) or,
     /// when the baby's members changed concurrently, <see cref="Domain.Exceptions.ConcurrentModificationException"/>.
     /// </summary>
     Task<BabyResponse> AcceptAsync(string? token, CancellationToken cancellationToken = default);

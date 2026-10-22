@@ -1,3 +1,4 @@
+using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
@@ -31,6 +32,10 @@ public sealed record NotificationRecipient(
         settings is null
             ? new NotificationRecipient(userId, role, preferences, QuietHours.Default, false, false, null)
             : new NotificationRecipient(userId, role, preferences, settings.QuietHours, settings.QuietIncludesMedicine, settings.ShowNames, settings.TimeZone.OffsetAt(now), settings.TimeZone);
+
+    /// <summary>The recipient's wall clock: the time zone when known (daylight saving per instant), else the offset at the tick.</summary>
+    public Patterns.LocalClock Clock() =>
+        TimeZone is { Value: not null } zone ? zone.Clock() : Patterns.LocalClock.WithOffset(UtcOffset ?? TimeSpan.Zero);
 }
 
 /// <summary>
@@ -71,6 +76,7 @@ public sealed record SentHeadsUp(Guid UserId, Guid BabyId, NotificationKind Kind
 /// <param name="WakeWindows">The wake window per time zone of the recipients who want the overtired heads-up (loaded only for them).</param>
 /// <param name="Diapers">The baby's diaper predictions (loaded only when a recipient wants a diaper heads-up; elapsed time, no zone).</param>
 /// <param name="SentHeadsUps">The diaper heads-ups of the last day that count toward the daily cap and the spacing (any baby; filtered here).</param>
+/// <param name="Appointments">The baby's upcoming appointments within the reminder horizon (loaded only when a recipient wants appointment reminders).</param>
 public sealed record NotificationPlanInput(
     DateTimeOffset Now,
     Guid BabyId,
@@ -84,7 +90,8 @@ public sealed record NotificationPlanInput(
     IReadOnlyList<TimeOfDayPatternState>? FussyPatterns = null,
     IReadOnlyList<WakeWindowState>? WakeWindows = null,
     DiaperPrediction? Diapers = null,
-    IReadOnlyCollection<SentHeadsUp>? SentHeadsUps = null);
+    IReadOnlyCollection<SentHeadsUp>? SentHeadsUps = null,
+    IReadOnlyList<Appointment>? Appointments = null);
 
 /// <summary>Names shown on the lock screen (only with show-names on), each trimmed to <see cref="MaxLength"/> characters. Never a dose amount.</summary>
 public sealed record NotificationNames
@@ -110,12 +117,23 @@ public sealed record NotificationNames
     }
 }
 
-/// <summary>What the payload carries besides kind and ids of the delivery: the baby, the prescription (doses), the time shown and optional names.</summary>
+/// <summary>
+/// What the payload carries besides kind and ids of the delivery: the baby, the prescription (doses), the time shown,
+/// optional names and, for appointment reminders, the appointment and the reminder offset (never its title, doctor or notes).
+/// </summary>
 /// <param name="At">
 /// The time the text shows: the dose slot, the nap window's earliest start, the start of the usual belly pain or fussy
-/// window, the instant the current awake stretch reaches the usual limit, or when the wet or dirty diaper is expected.
+/// window, the instant the current awake stretch reaches the usual limit, when the wet or dirty diaper is expected, or
+/// when the appointment starts.
 /// </param>
-public sealed record NotificationContent(Guid? BabyId, Guid? PrescriptionId, DateTimeOffset At, NotificationNames? Names);
+/// <param name="ReminderOffsetMinutes">How long before the start the appointment reminder was meant to go (10080, 1440, 120 or 30).</param>
+public sealed record NotificationContent(
+    Guid? BabyId,
+    Guid? PrescriptionId,
+    DateTimeOffset At,
+    NotificationNames? Names,
+    Guid? AppointmentId = null,
+    int? ReminderOffsetMinutes = null);
 
 /// <summary>
 /// One notification to claim for every active subscription of <see cref="UserId"/>. <see cref="DueAt"/> is when it

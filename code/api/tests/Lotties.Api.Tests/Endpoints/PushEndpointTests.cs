@@ -346,6 +346,25 @@ public sealed class PushEndpointTests(PushApiHost host) : IClassFixture<PushApiH
     }
 
     [Fact]
+    public async Task PutPreferences_AppointmentReminders_AreOnByDefaultTurnOffAndStayAcrossOlderClients()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Viewer);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+        var before = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+        var viewer = Assert.Single(await (await host.ClientFor(baby.SubjectOf(BabyRole.Viewer)).GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        var firstPut = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { doseDue = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var off = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { appointmentReminders = false })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var olderClient = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { napWindow = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+
+        Assert.Equal((true, false), (before.AppointmentReminders, viewer.AppointmentReminders));
+        Assert.Equal((true, true), (firstPut.AppointmentReminders, firstPut.DoseDue));
+        Assert.False(off.AppointmentReminders);
+        Assert.Equal((false, true), (olderClient.AppointmentReminders, olderClient.NapWindow));
+        Assert.True(await Factory.QueryAsync(context => context.BabyNotificationPreferences.AnyAsync(row => row.BabyId == baby.BabyId && !row.AppointmentReminders && row.NapWindow)));
+    }
+
+    [Fact]
     public async Task PutPreferences_DiaperHeadsUps_AreStoredListedOffByDefaultAndKeptByOlderClients()
     {
         var baby = await Factory.SeedBabyAsync(BabyRole.Parent);

@@ -193,6 +193,9 @@ public sealed record BabyNotificationPreferencesResponse
     /// <summary>The dirty diaper heads-up (<c>diaper_dirty_headsup</c>) is on.</summary>
     public bool DiaperDirtyHeadsUp { get; init; }
 
+    /// <summary>The appointment reminders (<c>appointment_reminder</c>) are on (the default for members who can receive).</summary>
+    public bool AppointmentReminders { get; init; }
+
     public static BabyNotificationPreferencesResponse For(Guid babyId, bool canReceive, ReminderPreferences preferences) => new()
     {
         BabyId = babyId,
@@ -206,6 +209,7 @@ public sealed record BabyNotificationPreferencesResponse
         FussyPattern = preferences.FussyPattern,
         DiaperWetHeadsUp = preferences.DiaperWetHeadsUp,
         DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp,
+        AppointmentReminders = preferences.AppointmentReminders,
     };
 }
 
@@ -234,6 +238,8 @@ public sealed record PutBabyNotificationPreferencesRequest
 
     public bool? DiaperDirtyHeadsUp { get; init; }
 
+    public bool? AppointmentReminders { get; init; }
+
     public static explicit operator ReminderPreferencesChange(PutBabyNotificationPreferencesRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -246,7 +252,8 @@ public sealed record PutBabyNotificationPreferencesRequest
             request.OvertiredWarning,
             request.FussyPattern,
             request.DiaperWetHeadsUp,
-            request.DiaperDirtyHeadsUp);
+            request.DiaperDirtyHeadsUp,
+            request.AppointmentReminders);
     }
 }
 

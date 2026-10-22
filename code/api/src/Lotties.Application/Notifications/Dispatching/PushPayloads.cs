@@ -7,8 +7,9 @@ namespace Lotties.Application.Notifications.Dispatching;
 
 /// <summary>
 /// The encrypted push payload the service worker parses (code/web/src/pwa/sw/payload.ts, design section 8):
-/// <c>{v, id, kind, babyId?, rxId?, at, lang, token?, names?{baby, medication?}, snooze?}</c>. Codes, ids and instants
-/// only; <c>names</c> only with show-names on; never a dose amount. Never logged.
+/// <c>{v, id, kind, babyId?, rxId?, apptId?, offset?, at, lang, token?, names?{baby, medication?}, snooze?}</c>. Codes,
+/// ids, instants and the appointment reminder offset (minutes) only; <c>names</c> only with show-names on; never a dose
+/// amount, an appointment title, doctor or notes. Never logged.
 /// </summary>
 public static class PushPayloads
 {
@@ -36,6 +37,8 @@ public static class PushPayloads
             writer.WriteString("kind", NotificationCodes.Of(kind));
             WriteOptionalId(writer, "babyId", content.BabyId);
             WriteOptionalId(writer, "rxId", content.PrescriptionId);
+            WriteOptionalId(writer, "apptId", content.AppointmentId);
+            WriteOptionalNumber(writer, "offset", content.ReminderOffsetMinutes);
             writer.WriteString("at", content.At.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture));
             writer.WriteString("lang", locale.Value ?? NotificationLocale.English.Value);
             WriteOptionalString(writer, "token", token?.Value);
@@ -52,6 +55,14 @@ public static class PushPayloads
         if (id is { } value)
         {
             writer.WriteString(name, value.ToString("D"));
+        }
+    }
+
+    private static void WriteOptionalNumber(Utf8JsonWriter writer, string name, int? value)
+    {
+        if (value is { } number)
+        {
+            writer.WriteNumber(name, number);
         }
     }
 

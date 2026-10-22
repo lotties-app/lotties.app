@@ -39,7 +39,7 @@ public sealed class MigrationTests
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields", "_PushNotifications", "_NasalSuction", "_PrescriptionDayParts", "_BellyMassage", "_BellyPainPattern", "_FussyEvent", "_FussyAndOvertiredPrefs", "_DiaperHeadsUpPrefs", "_ProductExternalRef", "_Formulas" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields", "_PushNotifications", "_NasalSuction", "_PrescriptionDayParts", "_BellyMassage", "_BellyPainPattern", "_FussyEvent", "_FussyAndOvertiredPrefs", "_DiaperHeadsUpPrefs", "_ProductExternalRef", "_Formulas", "_Appointments", "_DoctorAccess" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
@@ -207,8 +207,8 @@ public sealed class MigrationTests
         Assert.Contains("CREATE TABLE events", script, StringComparison.Ordinal);
         Assert.Contains("payload jsonb NOT NULL", script, StringComparison.Ordinal);
         // Every index is recreated right after (issuer + subject; the wider belly pain, then overtired and fussy, then
-        // diaper candidate filter): no data is dropped.
-        Assert.Equal(["DROP INDEX ix_users_subject;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;"], DropStatements(script));
+        // diaper, then appointment candidate filter): no data is dropped.
+        Assert.Equal(["DROP INDEX ix_users_subject;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;"], DropStatements(script));
         Assert.DoesNotContain("TRUNCATE", script, StringComparison.OrdinalIgnoreCase);
     }
 

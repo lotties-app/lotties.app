@@ -23,6 +23,148 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Lotties.Domain.AccessLogs.AccessLogEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("role");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_access_log");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_access_log_user_id");
+
+                    b.HasIndex("BabyId", "At")
+                        .HasDatabaseName("ix_access_log_baby_id_at");
+
+                    b.HasIndex("BabyId", "UserId", "At")
+                        .HasDatabaseName("ix_access_log_baby_id_user_id_at");
+
+                    b.ToTable("access_log", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Appointments.Appointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<DateTimeOffset>("ClientUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("client_updated_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DoctorName")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("doctor_name");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("location");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Reminders")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("reminder_offsets_minutes");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_appointments");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_appointments_created_by");
+
+                    b.HasIndex("BabyId", "StartsAt")
+                        .HasDatabaseName("ix_appointments_baby_id_starts_at");
+
+                    b.HasIndex("BabyId", "UpdatedAt")
+                        .HasDatabaseName("ix_appointments_baby_id_updated_at");
+
+                    b.HasIndex(new[] { "BabyId", "StartsAt" }, "ix_appointments_upcoming")
+                        .HasDatabaseName("ix_appointments_upcoming")
+                        .HasFilter("status = 'upcoming'");
+
+                    b.ToTable("appointments", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Babies.Baby", b =>
                 {
                     b.Property<Guid>("Id")
@@ -726,6 +868,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("notes");
 
+                    b.Property<bool>("RecordedByDoctor")
+                        .HasColumnType("boolean")
+                        .HasColumnName("recorded_by_doctor");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -792,6 +938,66 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("medications", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Notes.BabyNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("ClientUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("client_updated_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_baby_notes");
+
+                    b.HasIndex("AuthorUserId")
+                        .HasDatabaseName("ix_baby_notes_author_user_id");
+
+                    b.HasIndex("BabyId", "UpdatedAt")
+                        .HasDatabaseName("ix_baby_notes_baby_id_updated_at");
+
+                    b.ToTable("baby_notes", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Notifications.BabyNotificationPreferences", b =>
                 {
                     b.Property<Guid>("BabyId")
@@ -801,6 +1007,12 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
+
+                    b.Property<bool>("AppointmentReminders")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("appointment_reminders");
 
                     b.Property<bool>("BellyPainPattern")
                         .HasColumnType("boolean")
@@ -847,7 +1059,7 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BabyId")
                         .HasDatabaseName("ix_baby_notification_preferences_baby_id")
-                        .HasFilter("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup");
+                        .HasFilter("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders");
 
                     b.ToTable("baby_notification_preferences", (string)null);
                 });
@@ -1227,6 +1439,52 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("prescriptions", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Professionals.ProfessionalProfile", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("registration_number");
+
+                    b.Property<string>("Specialty")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("specialty");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<bool>("Verified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("verified");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_professional_profiles");
+
+                    b.ToTable("professional_profiles", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1263,6 +1521,40 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_users_issuer_subject");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.AccessLogs.AccessLogEntry", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_access_log_babies_baby_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_access_log_users_user_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Appointments.Appointment", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointments_babies_baby_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointments_users_created_by");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Babies.BabyMember", b =>
@@ -1490,6 +1782,23 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.Navigation("DefaultDosage");
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Notes.BabyNote", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_baby_notes_users_author_user_id");
+
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_baby_notes_babies_baby_id");
+                });
+
             modelBuilder.Entity("Lotties.Domain.Notifications.BabyNotificationPreferences", b =>
                 {
                     b.HasOne("Lotties.Domain.Babies.BabyMember", null)
@@ -1640,6 +1949,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Schedule")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Professionals.ProfessionalProfile", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.Professionals.ProfessionalProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_professional_profiles_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Babies.Baby", b =>

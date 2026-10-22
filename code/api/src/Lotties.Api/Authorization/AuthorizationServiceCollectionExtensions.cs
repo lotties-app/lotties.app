@@ -18,10 +18,12 @@ internal static class AuthorizationServiceCollectionExtensions
             .AddPolicy(BabyPolicies.Read, policy => RequireBabyRole(policy, BabyRole.Viewer))
             .AddPolicy(BabyPolicies.Log, policy => RequireBabyRole(policy, BabyRole.Caregiver))
             .AddPolicy(BabyPolicies.Write, policy => RequireBabyRole(policy, BabyRole.Parent))
-            .AddPolicy(BabyPolicies.ManageMembers, policy => RequireBabyRole(policy, BabyRole.Owner));
+            .AddPolicy(BabyPolicies.ManageMembers, policy => RequireBabyRole(policy, BabyRole.Owner))
+            .AddPolicy(BabyPolicies.Note, policy => RequireBabyRole(policy, BabyRole.Doctor))
+            .AddPolicy(BabyPolicies.Measure, policy => RequireBabyRole(policy, BabyRole.Parent, BabyRole.Doctor));
         return services;
     }
 
-    private static void RequireBabyRole(AuthorizationPolicyBuilder policy, BabyRole requiredRole) =>
-        policy.RequireAuthenticatedUser().AddRequirements(new BabyAccessRequirement(requiredRole));
+    private static void RequireBabyRole(AuthorizationPolicyBuilder policy, BabyRole requiredRole, params BabyRole[] alternativeRoles) =>
+        policy.RequireAuthenticatedUser().AddRequirements(new BabyAccessRequirement(requiredRole, alternativeRoles));
 }

@@ -1,3 +1,4 @@
+using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Catalog;
 using Lotties.Domain.Events;
@@ -40,6 +41,18 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
 
     /// <summary>The babies' formulas, archived ones included (formulas are never deleted).</summary>
     public DbSet<Formula> Formulas => Set<Formula>();
+
+    /// <summary>The babies' appointments, cancelled ones included (appointments are never deleted).</summary>
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+
+    /// <summary>Users' self-declared healthcare professional profiles (one per user).</summary>
+    public DbSet<Lotties.Domain.Professionals.ProfessionalProfile> ProfessionalProfiles => Set<Lotties.Domain.Professionals.ProfessionalProfile>();
+
+    /// <summary>The babies' notes including soft-deleted ones; readers filter by visibility (private notes: author only).</summary>
+    public DbSet<Lotties.Domain.Notes.BabyNote> BabyNotes => Set<Lotties.Domain.Notes.BabyNote>();
+
+    /// <summary>Recorded accesses of Doctors to the babies' data (append only).</summary>
+    public DbSet<Lotties.Domain.AccessLogs.AccessLogEntry> AccessLog => Set<Lotties.Domain.AccessLogs.AccessLogEntry>();
 
     public DbSet<Substance> Substances => Set<Substance>();
 

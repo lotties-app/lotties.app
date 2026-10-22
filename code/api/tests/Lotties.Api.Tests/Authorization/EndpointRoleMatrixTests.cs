@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lotties.Api.Tests.Authorization;
 
 /// <summary>
-/// Every mapped endpoint x every caller (Owner, Parent, Caregiver, Viewer, non-member, anonymous). <see cref="Matrix"/>
+/// Every mapped endpoint x every caller (Owner, Parent, Caregiver, Viewer, Doctor, non-member, anonymous). <see cref="Matrix"/>
 /// holds the role decision of each route; <see cref="Matrix_CoversEveryMappedEndpoint"/> fails when a route is mapped
 /// without a decision (or a decision is left for a route that no longer exists), so a new endpoint cannot ship
 /// without one. A denied call must be exactly 401 (anonymous) or 403; an allowed call must get past authorization
@@ -38,6 +38,12 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
 
         /// <summary>Owner only (<c>BabyManageMembers</c>).</summary>
         Owner,
+
+        /// <summary>Owner, Parent, Doctor (<c>BabyMeasure</c>): growth measurements; a Doctor changes only her own.</summary>
+        Measure,
+
+        /// <summary>The Doctor only (<c>BabyNote</c>): notes; only the author changes a note.</summary>
+        Note,
     }
 
     /// <summary>The callers every route is tried with.</summary>
@@ -47,6 +53,7 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         Parent,
         Caregiver,
         Viewer,
+        Doctor,
         NonMember,
         Anonymous,
     }
@@ -56,6 +63,9 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
     {
         ["GET /health"] = Access.Anonymous,
         ["GET /api/v1/me"] = Access.SignedIn,
+        // The caller's own professional profile: any signed-in user may declare one (needed to accept a Doctor invite).
+        ["GET /api/v1/me/professional-profile"] = Access.SignedIn,
+        ["PUT /api/v1/me/professional-profile"] = Access.SignedIn,
 
         ["GET /api/v1/babies"] = Access.SignedIn,
         ["POST /api/v1/babies"] = Access.SignedIn,
@@ -90,8 +100,9 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["DELETE /api/v1/babies/{babyId:guid}/medications/{medicationId:guid}"] = Access.Write,
 
         ["GET /api/v1/babies/{babyId:guid}/measurements"] = Access.Read,
-        ["PUT /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Write,
-        ["DELETE /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Write,
+        // A Doctor adds consultation measurements and edits or deletes only her own (403 measurement_not_owned).
+        ["PUT /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Measure,
+        ["DELETE /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Measure,
 
         ["GET /api/v1/babies/{babyId:guid}/prescriptions"] = Access.Read,
         ["PUT /api/v1/babies/{babyId:guid}/prescriptions/{prescriptionId:guid}"] = Access.Write,
@@ -103,6 +114,12 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/babies/{babyId:guid}/formulas"] = Access.Read,
         ["PUT /api/v1/babies/{babyId:guid}/formulas/{formulaId:guid}"] = Access.Write,
 
+        // Appointments: every member reads them (the list with its delta and range, one by id); only Owners and Parents
+        // create, edit, mark done or cancel (there is no delete). Caregivers, Viewers and the Doctor read only.
+        ["GET /api/v1/babies/{babyId:guid}/appointments"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Write,
+
         ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
         ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,
         // A Caregiver passes the policy; the use case then allows only their own events, plus stopping, pausing or
@@ -111,6 +128,14 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["DELETE /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
 
         ["GET /api/v1/babies/{babyId:guid}/predictions"] = Access.Read,
+
+        // Notes (docs/design/16-doctor-access.md): every member reads the shared ones (a private note only its author,
+        // filtered by the use case); only the Doctor writes, and only her own (403 note_not_owned).
+        ["GET /api/v1/babies/{babyId:guid}/notes"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Note,
+        ["DELETE /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Note,
+        ["GET /api/v1/babies/{babyId:guid}/access-log"] = Access.Owner,
 
         ["POST /api/v1/babies/{babyId:guid}/import/napper/preview"] = Access.Write,
         ["POST /api/v1/babies/{babyId:guid}/import/napper"] = Access.Write,
@@ -155,7 +180,7 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
     [MemberData(nameof(Cases))]
     public async Task Route_ByCaller_FollowsTheMatrix(string route, Caller caller)
     {
-        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer);
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer, BabyRole.Doctor);
 
         var response = await SendAsync(ClientFor(baby, caller), route, baby.BabyId);
 
@@ -187,6 +212,8 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         (Access.Log, Caller.Owner or Caller.Parent or Caller.Caregiver) => null,
         (Access.Write, Caller.Owner or Caller.Parent) => null,
         (Access.Owner, Caller.Owner) => null,
+        (Access.Measure, Caller.Owner or Caller.Parent or Caller.Doctor) => null,
+        (Access.Note, Caller.Doctor) => null,
         _ => HttpStatusCode.Forbidden,
     };
 

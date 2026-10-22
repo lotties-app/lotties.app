@@ -26,6 +26,9 @@ public enum NotificationKind
 
     /// <summary>A dirty diaper may be coming, after a feed or from the gaps between dirty diapers (<c>diaper_dirty_headsup</c>).</summary>
     DiaperDirtyHeadsUp,
+
+    /// <summary>An upcoming appointment of the baby starts in a week, a day, 2 hours or 30 minutes (<c>appointment_reminder</c>).</summary>
+    AppointmentReminder,
 }
 
 /// <summary>Web Push <c>Urgency</c> header value.</summary>
@@ -76,6 +79,7 @@ public static class NotificationCodes
         NotificationKind.FussyPattern => "fussy_pattern",
         NotificationKind.DiaperWetHeadsUp => "diaper_wet_headsup",
         NotificationKind.DiaperDirtyHeadsUp => "diaper_dirty_headsup",
+        NotificationKind.AppointmentReminder => "appointment_reminder",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown notification kind."),
     };
 

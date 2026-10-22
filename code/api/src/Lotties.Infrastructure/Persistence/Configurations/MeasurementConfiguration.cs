@@ -20,6 +20,7 @@ internal sealed class MeasurementConfiguration : IEntityTypeConfiguration<Measur
         builder.Property(measurement => measurement.Notes).HasMaxLength(Measurement.NotesMaxLength);
         builder.Property(measurement => measurement.CreatedAt).IsRequired();
         builder.Property(measurement => measurement.UpdatedAt).IsRequired();
+        builder.Property(measurement => measurement.RecordedByDoctor).IsRequired();
         builder.HasIndex(measurement => new { measurement.BabyId, measurement.Date });
         builder.HasOne<Baby>().WithMany().HasForeignKey(measurement => measurement.BabyId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(measurement => measurement.CreatedBy).OnDelete(DeleteBehavior.Restrict);

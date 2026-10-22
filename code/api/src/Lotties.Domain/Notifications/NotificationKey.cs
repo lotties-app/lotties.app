@@ -8,7 +8,8 @@ namespace Lotties.Domain.Notifications;
 /// The idempotency key of a reminder. A base key names the item once: <c>dose:{prescriptionId:N}:{slot utc yyyyMMddHHmm}</c>,
 /// <c>nap:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>belly:{babyId:N}:{local date yyyyMMdd}</c>,
 /// <c>overtired:{babyId:N}:{awake since utc yyyyMMddHHmm}</c>, <c>fussy:{babyId:N}:{local date yyyyMMdd}</c>,
-/// <c>wet:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}</c> or <c>test:{deliveryId:N}</c>.
+/// <c>wet:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>,
+/// <c>appt:{appointmentId:N}:{start utc yyyyMMddHHmm}:{offset minutes}</c> or <c>test:{deliveryId:N}</c>.
 /// A snooze re-send uses the dedupe key
 /// <c>{base}:s{n}</c> (<see cref="Snoozed"/>). The device notification tag is always the base key.
 /// </summary>
@@ -18,6 +19,7 @@ public readonly partial record struct NotificationKey
     public const int MaxLength = 124;
     private const string InstantFormat = "yyyyMMddHHmm";
     private const string SnoozeMarker = ":s";
+    private const string AppointmentPrefix = "appt";
 
     private NotificationKey(string value)
     {
@@ -59,7 +61,37 @@ public readonly partial record struct NotificationKey
         return found;
     }
 
+    /// <summary>
+    /// The appointment and its reminder an appointment key (<c>appt:{appointmentId:N}:{start}:{offset}</c>, snoozed or
+    /// not) names; <c>false</c> for other kinds. Lets a retry rebuild the payload from the stored key.
+    /// </summary>
+    public bool TryGetAppointment(out Guid appointmentId, out DateTimeOffset startsAt, out int offsetMinutes)
+    {
+        var parts = (Value ?? string.Empty).Split(':');
+        var isAppointment = parts.Length >= 4 && parts[0] == AppointmentPrefix;
+        var hasId = Guid.TryParseExact(isAppointment ? parts[1] : string.Empty, "N", out var id);
+        var hasStart = DateTime.TryParseExact(
+            isAppointment ? parts[2] : string.Empty,
+            InstantFormat,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+            out var utc);
+        var hasOffset = int.TryParse(isAppointment ? parts[3] : string.Empty, NumberStyles.None, CultureInfo.InvariantCulture, out var offset);
+        var found = isAppointment && hasId && hasStart && hasOffset;
+        appointmentId = found ? id : Guid.Empty;
+        startsAt = found ? new DateTimeOffset(utc, TimeSpan.Zero) : default;
+        offsetMinutes = found ? offset : 0;
+        return found;
+    }
+
     public static NotificationKey ForDose(Guid prescriptionId, DateTimeOffset slot) => new($"dose:{prescriptionId:N}:{Instant(slot)}");
+
+    /// <summary>
+    /// The reminder <paramref name="offsetMinutes"/> before the appointment <paramref name="appointmentId"/> that starts at
+    /// <paramref name="startsAt"/>: moving the start is a new key, so the reminders of the new time are planned again.
+    /// </summary>
+    public static NotificationKey ForAppointment(Guid appointmentId, DateTimeOffset startsAt, int offsetMinutes) =>
+        new(string.Create(CultureInfo.InvariantCulture, $"{AppointmentPrefix}:{appointmentId:N}:{Instant(startsAt)}:{offsetMinutes}"));
 
     public static NotificationKey ForNap(Guid babyId, DateTimeOffset anchor) => new($"nap:{babyId:N}:{Instant(anchor)}");
 
@@ -107,6 +139,6 @@ public readonly partial record struct NotificationKey
 
     private static string Instant(DateTimeOffset value) => value.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture);
 
-    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|test:[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|test:[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }

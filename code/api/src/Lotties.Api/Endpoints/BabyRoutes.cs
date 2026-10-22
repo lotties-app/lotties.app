@@ -12,11 +12,15 @@ public static class BabyRoutes
     /// <summary>
     /// Maps the baby-scoped group under <paramref name="api"/>. The group requires <see cref="BabyPolicies.Read"/>;
     /// endpoints that change data add <see cref="BabyPolicies.Log"/> (events, own reminder preferences),
-    /// <see cref="BabyPolicies.Write"/> or <see cref="BabyPolicies.ManageMembers"/>.
+    /// <see cref="BabyPolicies.Write"/>, <see cref="BabyPolicies.Measure"/>, <see cref="BabyPolicies.Note"/> or
+    /// <see cref="BabyPolicies.ManageMembers"/>. Every authorized <c>GET</c> of a Doctor is recorded in the baby's access
+    /// log (<see cref="AccessLogEndpoints.RecordDoctorAccess"/>, at most hourly).
     /// </summary>
     public static RouteGroupBuilder MapBabyScopedGroup(this IEndpointRouteBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
-        return api.MapGroup(Prefix).RequireAuthorization(BabyPolicies.Read);
+        var group = api.MapGroup(Prefix).RequireAuthorization(BabyPolicies.Read);
+        group.AddEndpointFilter(AccessLogEndpoints.RecordDoctorAccess);
+        return group;
     }
 }

@@ -68,6 +68,12 @@ public static class NotificationRules
     /// <summary>Two diaper heads-ups (either kind) for one recipient and baby are never this close.</summary>
     public static readonly TimeSpan DiaperSpacing = TimeSpan.FromMinutes(60);
 
+    /// <summary>An appointment reminder whose send time is older than this is not sent (after downtime).</summary>
+    public static readonly TimeSpan AppointmentStaleCutoff = TimeSpan.FromMinutes(30);
+
+    /// <summary>The longest reminder offset (1 week): appointments starting later than this from now have nothing due.</summary>
+    public static readonly TimeSpan AppointmentReminderHorizon = TimeSpan.FromMinutes(Appointments.AppointmentReminders.AllowedMinutes.Max());
+
     public static readonly TimeSpan SnoozeLength = TimeSpan.FromMinutes(30);
 
     public const int MaxSnoozes = 3;

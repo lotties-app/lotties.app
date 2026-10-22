@@ -10,7 +10,7 @@ namespace Lotties.Api.Authorization;
 /// </remarks>
 public static class BabyPolicies
 {
-    /// <summary>Any member (Viewer, Caregiver, Parent, Owner).</summary>
+    /// <summary>Any member (Viewer, Caregiver, Parent, Owner, Doctor).</summary>
     public const string Read = "BabyRead";
 
     /// <summary>
@@ -24,4 +24,16 @@ public static class BabyPolicies
 
     /// <summary>Members who can manage members and invites (Owner).</summary>
     public const string ManageMembers = "BabyManageMembers";
+
+    /// <summary>
+    /// Members who write notes (the Doctor only in v1). Only the author changes a note, checked by the use case (403
+    /// <c>note_not_owned</c>).
+    /// </summary>
+    public const string Note = "BabyNote";
+
+    /// <summary>
+    /// Members who add growth measurements (Owner, Parent, Doctor). A Doctor changes only her own, checked by the use case
+    /// (403 <c>measurement_not_owned</c>).
+    /// </summary>
+    public const string Measure = "BabyMeasure";
 }

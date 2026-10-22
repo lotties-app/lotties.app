@@ -13,8 +13,8 @@ internal sealed record RetryBatch(IReadOnlyList<OutgoingPush> Outgoing, int Expi
 /// is rebuilt from the stored row (doses: prescription and slot from the key; naps: due time plus the user's nap lead;
 /// belly pain and fussy heads-ups: due time plus the fixed 30-minute lead, i.e. the window start; overtired heads-ups:
 /// due time plus the fixed 15-minute lead, i.e. the limit; diaper heads-ups: due time plus 10 minutes for wet and
-/// 5 minutes for dirty, the expected time from the gaps, an approximation after a feed) without names, so a retry always
-/// shows the generic lock-screen text.
+/// 5 minutes for dirty, the expected time from the gaps, an approximation after a feed; appointment reminders:
+/// appointment, start and offset from the key) without names, so a retry always shows the generic lock-screen text.
 /// </summary>
 internal sealed class NotificationRetryPass(
     INotificationDeliveryRepository deliveries,
@@ -64,6 +64,11 @@ internal sealed class NotificationRetryPass(
         if (delivery.DedupeKey.TryGetDose(out var prescriptionId, out var slot))
         {
             return new NotificationContent(delivery.BabyId, prescriptionId, slot, null);
+        }
+
+        if (delivery.DedupeKey.TryGetAppointment(out var appointmentId, out var startsAt, out var offsetMinutes))
+        {
+            return new NotificationContent(delivery.BabyId, null, startsAt, null, appointmentId, offsetMinutes);
         }
 
         return delivery.Kind switch

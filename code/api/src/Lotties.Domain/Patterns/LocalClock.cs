@@ -44,6 +44,21 @@ public sealed class LocalClock
     /// <summary>The local date of <paramref name="instant"/>.</summary>
     public DateOnly DateOf(DateTimeOffset instant) => DateOnly.FromDateTime(ToLocal(instant));
 
+    /// <summary>
+    /// The instant of the local wall-clock time <paramref name="local"/>: a time skipped by a daylight saving change is
+    /// read with the offset before the change (so it lands just after the gap), a repeated time is its first occurrence.
+    /// </summary>
+    public DateTimeOffset ToInstant(DateTime local)
+    {
+        var unspecified = DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
+        return _zone is null ? new DateTimeOffset(unspecified, _offset) : new DateTimeOffset(unspecified, OffsetOf(_zone, unspecified));
+    }
+
+    private static TimeSpan OffsetOf(TimeZoneInfo zone, DateTime local) =>
+        zone.IsAmbiguousTime(local) ? zone.GetAmbiguousTimeOffsets(local).Max()
+        : zone.IsInvalidTime(local) ? zone.GetUtcOffset(local.AddHours(-3))
+        : zone.GetUtcOffset(local);
+
     private static TimeZoneInfo? FindIanaZone(string? timeZoneId)
     {
         var trimmed = timeZoneId?.Trim();

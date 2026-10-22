@@ -1,3 +1,4 @@
+using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Measurements;
 using Lotties.Domain.Medications;
@@ -15,9 +16,11 @@ namespace Lotties.Application.Notifications.Dispatching;
 /// only when a recipient wants dose reminders; the prediction history (as the predictions endpoint) only when one wants
 /// nap reminders or a heads-up read from the events (belly pain, fussy, overtired: each is read once per time zone of
 /// the recipients who want it, daylight saving applied per event; the diaper predictions once, elapsed time needs no
-/// zone); names only when one has show-names on.
+/// zone); the upcoming appointments within a week only when one wants appointment reminders; names only when one has
+/// show-names on.
 /// </summary>
 internal sealed class NotificationPlanInputLoader(
+    IAppointmentRepository appointments,
     IPrescriptionRepository prescriptions,
     IMedicationDoseHistoryRepository doses,
     IMeasurementRepository measurements,
@@ -47,6 +50,9 @@ internal sealed class NotificationPlanInputLoader(
         var states = plannable.Select(recipient => recipient.UtcOffset!.Value).Distinct().Select(offset => StateAt(offset, medication, wantsNap ? history : null, now)).ToArray();
         var userActions = await actions.ListForBabyAsync(babyId, recipients.Select(recipient => recipient.UserId).ToArray(), cancellationToken);
         var names = plannable.Any(recipient => recipient.ShowNames) ? await LoadNamesAsync(babyId, cancellationToken) : null;
+        var upcoming = plannable.Any(recipient => recipient.Preferences.AppointmentReminders)
+            ? await appointments.ListUpcomingAsync(babyId, now, now + NotificationRules.AppointmentReminderHorizon, cancellationToken)
+            : [];
         return new NotificationPlanInput(
             now,
             babyId,
@@ -60,7 +66,8 @@ internal sealed class NotificationPlanInputLoader(
             history is null ? [] : FussyStates(plannable, history, now),
             history is null ? [] : WakeWindowStates(plannable, history, now),
             DiapersOf(plannable, history, now),
-            claims.SentHeadsUps);
+            claims.SentHeadsUps,
+            upcoming);
     }
 
     /// <summary>The diaper predictions when a recipient wants a diaper heads-up.</summary>
