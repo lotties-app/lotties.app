@@ -46,11 +46,12 @@ public sealed class BuiltInEventTypesTests
     {
         var fields = BuiltInEventTypes.Feeding.Fields;
 
-        Assert.Equal(["method", "side", "amount_ml", "bottle_feeding_type", "breast_left_seconds", "breast_right_seconds", "food", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
+        Assert.Equal(["method", "side", "amount_ml", "bottle_feeding_type", "formula_id", "formula_name", "breast_left_seconds", "breast_right_seconds", "food", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
         Assert.Equal(["breast", "bottle", "solid"], fields[0].Options);
         Assert.Equal(["formula", "breast_milk"], fields[3].Options);
-        Assert.Equal([true, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
-        Assert.Equal((EventFieldKind.Number, EventFieldKind.Text), (fields[2].Kind, fields[6].Kind));
+        Assert.Equal([true, false, false, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
+        Assert.Equal((EventFieldKind.Number, EventFieldKind.Text), (fields[2].Kind, fields[8].Kind));
+        Assert.Equal((EventFieldKind.Text, true, "bottle_feeding_type"), (fields[4].Kind, fields[4].IsHidden, fields[4].VisibleWhen!.Field));
     }
 
     [Theory]

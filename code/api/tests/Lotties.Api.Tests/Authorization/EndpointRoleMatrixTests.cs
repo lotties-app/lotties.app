@@ -98,6 +98,11 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["DELETE /api/v1/babies/{babyId:guid}/prescriptions/{prescriptionId:guid}"] = Access.Write,
         ["GET /api/v1/babies/{babyId:guid}/medications/status"] = Access.Read,
 
+        // Formulas: everyone reads them (a Caregiver picks one when logging a bottle, which the events PUT allows her);
+        // only Owners and Parents create, edit, set the current one or archive (there is no delete).
+        ["GET /api/v1/babies/{babyId:guid}/formulas"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/formulas/{formulaId:guid}"] = Access.Write,
+
         ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
         ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,
         // A Caregiver passes the policy; the use case then allows only their own events, plus stopping, pausing or

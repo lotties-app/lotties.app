@@ -51,6 +51,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(PrescriptionBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(PrescriptionDeletedException)] = StatusCodes.Status409Conflict,
         [typeof(PrescriptionMedicationNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(FormulaBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(PushNotConfiguredException)] = StatusCodes.Status409Conflict,
         [typeof(PushEndpointNotAllowedException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(NotificationActionNotFoundException)] = StatusCodes.Status404NotFound,

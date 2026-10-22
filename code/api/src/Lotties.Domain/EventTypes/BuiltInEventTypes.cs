@@ -1,4 +1,5 @@
 using Lotties.Domain.Events;
+using Lotties.Domain.Formulas;
 
 namespace Lotties.Domain.EventTypes;
 
@@ -12,7 +13,8 @@ namespace Lotties.Domain.EventTypes;
 /// (dose optional), referencing the baby's medication catalog. Sleep <c>kind</c> also has the instant markers
 /// <c>bed_time</c> and <c>woke_up</c> (Napper import). Feeding details depend on <c>method</c> (<see cref="FieldVisibilityCondition"/>):
 /// <c>side</c> and the breast seconds for <c>breast</c>, <c>amount_ml</c> and <c>bottle_feeding_type</c> for <c>bottle</c>,
-/// <c>food</c> for <c>solid</c>. Every type with a duration (and bath, which clients may time) declares the hidden pause
+/// <c>food</c> for <c>solid</c>; a bottle of formula may name the baby's formula with the hidden <c>formula_id</c> and
+/// <c>formula_name</c> (<see cref="FormulaPayload"/>). Every type with a duration (and bath, which clients may time) declares the hidden pause
 /// keys of <see cref="PauseFields"/>. Sleep has optional detail fields (<see cref="SleepDetailFields"/>) for the
 /// <c>nap</c> and <c>night</c> kinds; its free-text <c>mood</c> is deprecated (replaced by <c>mood_on_wake</c>), hidden
 /// from forms and kept only so older events stay valid and readable.
@@ -43,6 +45,8 @@ public static class BuiltInEventTypes
             EventFieldDefinition.Create("side", "Side", EventFieldKind.Select, options: ["left", "right", "both"], visibleWhen: WhenMethodIs("breast")),
             EventFieldDefinition.Create("amount_ml", "Amount", EventFieldKind.Number, min: 0, unit: "ml", visibleWhen: WhenMethodIs("bottle")),
             EventFieldDefinition.Create("bottle_feeding_type", "Bottle content", EventFieldKind.Select, options: ["formula", "breast_milk"], visibleWhen: WhenMethodIs("bottle")),
+            EventFieldDefinition.Create(FormulaPayload.FormulaIdMember, "Formula", EventFieldKind.Text, visibleWhen: WhenBottleOfFormula(), isHidden: true),
+            EventFieldDefinition.Create(FormulaPayload.FormulaNameMember, "Formula name", EventFieldKind.Text, visibleWhen: WhenBottleOfFormula(), isHidden: true),
             EventFieldDefinition.Create("breast_left_seconds", "Left breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
             EventFieldDefinition.Create("breast_right_seconds", "Right breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
             EventFieldDefinition.Create("food", "Food", EventFieldKind.Text, visibleWhen: WhenMethodIs("solid")),
@@ -186,6 +190,9 @@ public static class BuiltInEventTypes
         new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump, NasalSuction, BellyMassage, Fussy });
 
     private static FieldVisibilityCondition WhenMethodIs(string method) => FieldVisibilityCondition.Create("method", [method]);
+
+    /// <summary>The bottle's content is formula (and, through <c>bottle_feeding_type</c>, the method is bottle).</summary>
+    private static FieldVisibilityCondition WhenBottleOfFormula() => FieldVisibilityCondition.Create("bottle_feeding_type", ["formula"]);
 
     private static FieldVisibilityCondition WhenSleepDetailsApply() => FieldVisibilityCondition.Create("kind", SleepDetailFields.Kinds);
 

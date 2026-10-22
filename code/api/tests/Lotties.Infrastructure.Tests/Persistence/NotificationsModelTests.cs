@@ -122,7 +122,7 @@ public sealed class NotificationsModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_DiaperHeadsUpPrefs'", StringComparison.Ordinal)..];
+        var section = script[script.IndexOf("_DiaperHeadsUpPrefs'", StringComparison.Ordinal)..script.LastIndexOf("_DiaperHeadsUpPrefs'", StringComparison.Ordinal)];
 
         Assert.Contains("ALTER TABLE baby_notification_preferences ADD diaper_wet_headsup boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
         Assert.Contains("ALTER TABLE baby_notification_preferences ADD diaper_dirty_headsup boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
@@ -162,7 +162,7 @@ public sealed class NotificationsModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_BellyPainPattern'", StringComparison.Ordinal)..];
+        var section = script[script.IndexOf("_BellyPainPattern'", StringComparison.Ordinal)..script.LastIndexOf("_BellyPainPattern'", StringComparison.Ordinal)];
 
         Assert.Contains("ALTER TABLE baby_notification_preferences ADD belly_pain_pattern boolean NOT NULL DEFAULT FALSE;", section, StringComparison.Ordinal);
         Assert.True(

@@ -30,6 +30,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddScoped<Catalog.ICatalogService, Catalog.CatalogService>();
         services.AddScoped<Prescriptions.IPrescriptionService, Prescriptions.PrescriptionService>();
+        services.AddScoped<Formulas.IFormulaService, Formulas.FormulaService>();
         services.AddScoped<Prescriptions.IMedicationStatusService, Prescriptions.MedicationStatusService>();
         services.AddScoped<Imports.INapperImportService, Imports.NapperImportService>();
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);

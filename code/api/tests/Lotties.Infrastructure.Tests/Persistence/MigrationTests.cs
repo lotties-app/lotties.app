@@ -39,7 +39,7 @@ public sealed class MigrationTests
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields", "_PushNotifications", "_NasalSuction", "_PrescriptionDayParts", "_BellyMassage", "_BellyPainPattern", "_FussyEvent", "_FussyAndOvertiredPrefs", "_DiaperHeadsUpPrefs", "_ProductExternalRef" };
+        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields", "_PushNotifications", "_NasalSuction", "_PrescriptionDayParts", "_BellyMassage", "_BellyPainPattern", "_FussyEvent", "_FussyAndOvertiredPrefs", "_DiaperHeadsUpPrefs", "_ProductExternalRef", "_Formulas" };
 
         Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
         Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));

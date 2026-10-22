@@ -2,6 +2,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Catalog;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
+using Lotties.Domain.Formulas;
 using Lotties.Domain.Measurements;
 using Lotties.Domain.Medications;
 using Lotties.Domain.Notifications;
@@ -36,6 +37,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
 
     /// <summary>Prescriptions including soft-deleted ones (no query filter: delta sync must see deletions).</summary>
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
+
+    /// <summary>The babies' formulas, archived ones included (formulas are never deleted).</summary>
+    public DbSet<Formula> Formulas => Set<Formula>();
 
     public DbSet<Substance> Substances => Set<Substance>();
 
