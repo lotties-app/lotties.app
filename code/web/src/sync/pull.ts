@@ -1,4 +1,5 @@
 import { ApiError } from '../api/ApiError';
+import { canSeeAppointments } from '../baby/permissions';
 import type { BabyRoutineDb } from '../db/database';
 import { saveLatestWeight } from '../db/bodyWeight';
 import { cacheProducts } from '../db/catalogCache';
@@ -304,6 +305,29 @@ export async function pullAppointments(ctx: SyncContext, babyId: string): Promis
 }
 
 /**
+ * Removes a baby's appointments and their cursor from this device. Run for a Doctor on every pull:
+ * she never holds the family's appointments (docs/design/16-doctor-access.md, "Doctor read
+ * audit"), so copies stored while the user had a family role are purged as soon as the role is
+ * Doctor, and a later change back to a family role pulls them all again from scratch.
+ */
+export async function dropAppointments(db: BabyRoutineDb, babyId: string): Promise<void> {
+  await db.transaction('rw', db.appointments, db.syncState, async () => {
+    await db.appointments.where('babyId').equals(babyId).delete();
+    await db.syncState.delete([babyId, 'appointments']);
+  });
+}
+
+/** Pulls the appointments for the family roles; for a Doctor, never asks and drops local copies. */
+export async function syncAppointments(ctx: SyncContext, babyId: string): Promise<void> {
+  const baby = await ctx.db.babies.get(babyId);
+  if (baby && !canSeeAppointments(baby)) {
+    await dropAppointments(ctx.db, babyId);
+    return;
+  }
+  await pullAppointments(ctx, babyId);
+}
+
+/**
  * Merges pulled vaccinations like prescriptions: a copy with a queued local change is skipped until
  * it is pushed, a server soft delete is final, otherwise the newer client edit time wins. The cursor
  * moves in the same transaction.
@@ -416,7 +440,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
       await pullFormulas(ctx, babyId);
-      await pullAppointments(ctx, babyId);
+      await syncAppointments(ctx, babyId);
       await pullVaccinations(ctx, babyId);
       await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);

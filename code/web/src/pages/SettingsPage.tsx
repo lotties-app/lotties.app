@@ -14,7 +14,7 @@ import { SettingsLinkRow } from '../settings/SettingsLinkRow';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
-import { canWrite, isCaregiver, isDoctor } from '../baby/permissions';
+import { canSeeAppointments, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { patientBabies } from '../patients/patientsModel';
 import { DoctorSettingsEntries } from '../proposals/SettingsEntries';
 import { usePushConfig } from '../notifications/usePush';
@@ -91,7 +91,9 @@ export function SettingsPage() {
           >
             <FormulasSection baby={baby} />
           </SettingsSection>
-          <SettingsLinkRow to="/appointments" title={t('settings.sections.appointments')} />
+          {canSeeAppointments(baby) && (
+            <SettingsLinkRow to="/appointments" title={t('settings.sections.appointments')} />
+          )}
           <SettingsLinkRow to="/vaccines" title={t('settings.sections.vaccines')} />
           <DoctorSettingsEntries baby={baby} />
           <SettingsSection

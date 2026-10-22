@@ -13,7 +13,8 @@ Owner request: a pediatrician follows her patients in the app. She registers an 
 
 | Action | Owner | Parent | Caregiver | Viewer | Doctor |
 |---|---|---|---|---|---|
-| Read baby, members, events (Day, Now), event types, medications, prescriptions and status, formulas, measurements, appointments, predictions (Insights), notes, catalog | yes | yes | yes | yes | yes |
+| Read baby, events (Day, Now), event types, medications, prescriptions and status, formulas, vaccinations, measurements, predictions (Insights), notes, catalog | yes | yes | yes | yes | yes |
+| Read the members list and the appointments (every appointment route; section 11) | yes | yes | yes | yes | no (403) |
 | Log, edit or delete events | yes | yes | own | no | no |
 | Event types, medications, prescriptions, formulas, appointments (writes) | yes | yes | no | no | no |
 | Measurements: add | yes | yes | no | no | yes (consultation measurements) |
@@ -29,10 +30,10 @@ Owner request: a pediatrician follows her patients in the app. She registers an 
 | Step 2: mark a note read, list own reads | yes | yes | yes | yes | yes |
 | Step 2: `doctor_suggestion` push | opt-in | opt-in | no | no | no |
 
-- Policies (`Api/Authorization`): `BabyNote` (Doctor) for note writes; `BabyMeasure` (Owner, Parent or Doctor; a requirement may name alternative roles) for measurement writes; reads stay `BabyRead`. The decision of every route is in `EndpointRoleMatrixTests` (a Doctor column for every route, appointment routes included: read yes, writes no).
+- Policies (`Api/Authorization`): `BabyNote` (Doctor) for note writes; `BabyMeasure` (Owner, Parent or Doctor; a requirement may name alternative roles) for measurement writes; reads stay `BabyRead`, except the family's non-clinical records (appointments, members list), which need `BabyReadFamily` (any member but the Doctor, section 11). The decision of every route is in `EndpointRoleMatrixTests` (a Doctor column for every route; appointment routes and `GET /members`: refused, 403).
 - **Reminders:** `NotificationRules.CanReceive` is `CanLogEvents`, so a Doctor is excluded everywhere the planner and the recipient loaders look (dose, nap, belly pain, fussy, overtired, diapers, appointments); `PUT /notification-preferences` is 403 for her and `GET /push/preferences` says `canReceive: false`.
 - **Invites:** the Owner invites with role `Doctor` (any other role can be invited as before). Accepting a Doctor invite needs the accepting user's professional profile: 422 `professional_profile_required` otherwise, and the invite stays usable. The web accept screen shows the profile form inline ("Join as the baby's doctor"), saves it, accepts the same invite again and lands on Patients. Changing a member's role to Doctor needs her profile too (same 422); the web offers no role picker for a doctor row: doctor access starts with an invite and ends with a removal. A Doctor cannot invite (Owner only).
-- **Removal:** the Owner removes a doctor at any time (Members). Her notes stay; they read "Dr. Ana Souza (no longer has access)" (the web compares the author with the members list; offline the suffix is left out). Her consultation measurements stay, still "Recorded by Dr. ...".
+- **Removal:** the Owner removes a doctor at any time (Members). Her notes stay; they read "Dr. Ana Souza (no longer has access)" (the web compares the author with the members list; offline, and for a Doctor reader, who never gets the members list, the suffix is left out). Her consultation measurements stay, still "Recorded by Dr. ...".
 - Strictly per baby: every read is the baby-scoped `BabyRead` policy of that one baby's membership. A doctor following Lia sees nothing of her siblings unless the family invites her there too.
 
 ## 3. Notes (`baby_notes`)
@@ -50,7 +51,7 @@ Owner request: a pediatrician follows her patients in the app. She registers an 
 - Web (Insights > Growth and its list): the doctor gets "Add measurement" and edit/delete on her own rows; every measurement a doctor recorded reads "Recorded by Dr. Ana Souza (self-declared doctor)".
 
 ## 5. Patients (the doctor's home)
-- Route `/patients`: the babies where the user's role is Doctor, by name, each with age, the latest entry ("Last entry 2 hours ago"), and the number of shared notes she wrote, plus a Notes button. Tapping a card selects the baby into the usual views (Now, Day, Insights, Growth, Medications, Appointments), which are read-only for her: the bottom bar keeps its tabs, the "+" is hidden (the Viewer mechanism: `canLog` is false), Now shows the view-only notice.
+- Route `/patients`: the babies where the user's role is Doctor, by name, each with age, the latest entry ("Last entry 2 hours ago"), and the number of shared notes she wrote, plus a Notes button. Tapping a card selects the baby into the usual views (Now, Day, Insights, Growth, Medications, Vaccines; never Appointments, section 11), which are read-only for her: the bottom bar keeps its tabs, the "+" is hidden (the Viewer mechanism: `canLog` is false), Now shows the view-only notice.
 - Landing: a user whose babies are all Doctor memberships lands on `/patients` until she opens a patient in this browser session (a `sessionStorage` flag); everyone else with a Doctor membership finds "Patients" in Settings. Patients' data syncs like any baby's.
 
 ## 6. Access log (`access_log`)
@@ -125,3 +126,44 @@ Step 1 checked the latest entry and derived the id from the UTC hour: two parall
 
 ### 10.11 Not built
 Admin verification tooling (CRM lookup), chat between family and doctor, doctor-created appointments, a push to the doctor when a proposal is decided, editing a decided proposal, a local prescription before an offline accept reaches the server (the proposal reads "Waiting to sync"; the prescription arrives with the accept response or the next pull).
+
+## 11. Doctor read audit (2026-10-22)
+Owner finding after trying doctor access: a Doctor could read the baby's **appointments**, which may name other doctors, clinics and private reasons. Fixed, together with the one other unambiguous leak found (the members list); everything else a Doctor reads is listed below for the owner to decide.
+
+### 11.1 What changed
+- **Server.** New policy `BabyReadFamily` (`BabyFamilyRequirement` + `BabyFamilyHandler`, rule `BabyRoleRules.CanReadFamilyRecords`: Owner, Parent, Caregiver, Viewer; never the Doctor). Every appointment route sits in a route group that requires it (`AppointmentEndpoints`: list with its `since` delta and `from`/`to` range, by id, the `PUT`; a route added to the group later inherits it), and `GET /members` requires it. A Doctor gets **403** (the policy's answer, like every other role refusal; a 404 would only hide existence, and the routes are not per-item secrets), a refused read writes no access log entry, and she can still leave (`DELETE /members/me` stays `BabyRead`). No aggregate endpoint carries appointments (predictions, babies, push preferences, vaccinations checked), and the planner never sends her an `appointment_reminder` (`NotificationRules.CanReceive`; test added).
+- **Web.** `canSeeAppointments` / `canSeeFamilyRecords` (`baby/permissions.ts`): for a Doctor there is no "Next appointment" card on Now, no appointments strip and no calendar button on Day, no Settings > Appointments entry, and `/appointments` redirects to `/patients` before the calendar renders. The sync never pulls appointments for a Doctor membership and drops the local copies and their cursor on every pull (`syncAppointments`/`dropAppointments` in `sync/pull.ts`), so copies kept from an earlier family role are purged as soon as the role is Doctor; a change back to a family role pulls them all again. `useMembers` and Settings > Members never ask for the members list for a Doctor (she keeps "Leave this baby"); without the list, Day shows no "logged by" names and Notes no "(no longer has access)" suffix for her, as offline.
+- The Doctor invite's consent line ("will see everything logged for Lia") is unchanged: appointments are planned visits, not logged data.
+
+### 11.2 What a Doctor reads (routes and screens)
+"Clinician?" = relevant to a pediatrician following the baby. "Keep" unless marked otherwise; "owner decision" items are recommendations, not changed.
+
+| Route / screen | Data | Clinician? | Reasoning | Recommendation |
+|---|---|---|---|---|
+| `GET /appointments`, `GET /appointments/{id}` (delta, range); Now card, Day strip and calendar button, Settings entry, `/appointments` | Visits with title, type, time, location, other doctor's name, notes, outcome | no | Other providers, clinics and private reasons; not data the family logged for her | **Removed** (403; hidden; purged) |
+| `GET /members`; Settings > Members | Names, roles and join dates of the family, other doctors with their profile | no | Identities of the household are not clinical; the doctor needs none of them | **Removed** (403; she only sees "Leave") |
+| `GET /invites`, `POST`/`DELETE /invites` | Pending invites, roles | no | Owner only already (403) | Keep refused |
+| `GET /access-log` | Who loaded the data and when | no | Owner only already (403) | Keep refused |
+| `PUT /notification-preferences`; `GET /push/preferences` | Her own switches per baby (`canReceive: false`) | n/a | Already 403 for the write; the read is her own rows, no family data | Keep |
+| `/push/subscriptions`, `/push/settings`, `/push/config`, `/push/test` | Her own devices and settings (user level) | n/a | Never another user's rows | Keep |
+| Other babies of the same parents | (nothing) | no | `GET /babies` lists only her memberships; every baby route checks her membership of that baby (non-member 403, the matrix's NonMember column) | Impossible, keep |
+| `GET /babies`, `GET /babies/{id}`; Patients, Settings > Baby | Name, birth date, gestational age, maternal RSV vaccination, vaccine network (public or public+private) | yes | Age, prematurity and RSV status drive the schedule and dosing; the network choice is mildly personal but decides which vaccines show | Keep (network: questionable, owner decision) |
+| `GET /events` (delta, by id); Day, Now | Every event of every type: feeds, sleep, diapers, medication doses, temperature, symptom, spit-up, teething, skin care, belly pain, milestone, outdoor, bath; free-text event notes; `createdBy` ids (no names now) | yes / questionable | The core of what she follows; the consent names "everything logged". Lifestyle types (outdoor, bath) and the parents' free-text notes are questionable | Keep; owner decision: a per-type or per-note "share with the doctor" switch |
+| `GET /event-types` | The family's types, custom names included | yes | Needed to render the events; custom names can be personal | Keep |
+| `GET /medications`, `GET /prescriptions`, `GET /medications/status`; Meds tray | Medicines, doses, schedules, adherence, provenance (another doctor's name, `prescriber` free text) | yes / questionable | Central for her proposals; the names of other prescribers are the same kind of data as an appointment's doctor | Keep; owner decision: hide `prescriber` and another doctor's provenance from a Doctor reader |
+| `GET /prescription-proposals` | Her own proposals only | yes | Filtered in SQL | Keep |
+| `GET /formulas` | Formulas with brand and preparation | yes | Nutrition | Keep |
+| `GET /vaccinations`; Vaccines, printable card | Records with date, network, clinic, lot, administered by, notes | yes / questionable | The vaccination history is clinical; clinic, administering professional and notes identify other providers | Keep; owner decision: hide `clinic`, `administeredBy`, `notes` from a Doctor reader |
+| `GET /measurements`; Insights > Growth | Weight, length, head; `recordedBy` of doctors | yes | Growth; another doctor's name on her consultation rows is questionable | Keep |
+| `GET /predictions`; Insights | Derived sleep and feeding predictions | questionable | Derived from events she already reads; useful context, not clinical | Keep |
+| `GET /notes` (delta, by id); Notes | Shared notes of every author (other doctors included, with their professional profile) and her own private ones | yes / questionable | Her own notes: yes. Another doctor's shared notes reveal that doctor, her advice and her registration number | **Recommend removing** (owner decision): a Doctor reads only her own notes |
+| `PUT /notes/{id}/read`, `GET /note-reads` | Her own reads | n/a | Own data | Keep |
+| Professional profiles of other doctors | Display name, specialty, registration number, verified, via note authors, prescription provenance and measurement `recordedBy` (no longer via members) | questionable | Peer identities are not about the baby | Owner decision: drop `registrationNumber` (or the whole `professional`) for a Doctor reader |
+| `/catalog/*`, `GET /vaccine-schedule` | Instance-wide product catalog and the public schedule (user level) | yes | No family data | Keep |
+| Napper import (`POST /import/napper*`); Settings > Import | (writes) | n/a | `BabyWrite`: 403; the web shows the read-only notice | Keep refused; there is no export |
+| `/me`, `/me/professional-profile`; Settings > professional | Her own account and profile | n/a | Own data | Keep |
+| `/proposals`, `/patients` | Her proposals; her patients with age, last entry and her notes count | yes | Built for her | Keep |
+| `/from-doctor` | (redirects to `/proposals`) | n/a | Parents' inbox | Keep |
+
+### 11.3 Tests
+API: `EndpointRoleMatrixTests` (`ReadFamily` access: the Doctor column of the appointment routes and `GET /members` is 403, the four family roles pass), `AppointmentEndpointTests` (every appointment route x Doctor, list, delta, range, by id known and unknown, `PUT` known and new: 403 without the appointment in the body; a refused `PUT` changes nothing; Owner, Parent, Caregiver and Viewer still read list, delta, range and by id with a Doctor on the baby), `DoctorAccessEndpointTests` (members, invites, access log 403 for a Doctor, no access log entry, she can leave, family roles list members), Domain `DoctorRoleTests` (`CanReadFamilyRecords`) and `NotificationPlannerAppointmentTests` (a Doctor with the switch on gets no reminder). Web: `appointments/AppointmentsDoctor.test.tsx` (Now card, Day strip and calendar button, Settings entry and members list hidden for a Doctor and kept for the family; `/appointments` redirects her to `/patients` without showing the calendar; no members request), `sync/appointmentSync.test.ts` (a Doctor never pulls appointments and copies kept from a family role are purged with their cursor; back to a family role pulls them again). No i18n key added or changed.

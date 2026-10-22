@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
-import { canPropose, canWrite, isOwner } from '../../baby/permissions';
+import { canPropose, canSeeAppointments, canWrite, isOwner } from '../../baby/permissions';
 import { NextAppointment } from '../../appointments/NextAppointmentCard';
 import { VaccinesDue } from '../../vaccines/VaccinesDueCard';
 import { useOldestEventStart } from '../../db/hooks';
@@ -291,7 +291,9 @@ function NowContent({
             predictions={predictions}
             {...(model.trays.diaper ? { onLogDiaper: openDiaperTray } : {})}
           />
-          <NextAppointment babyId={baby.id} now={model.now.getTime()} />
+          {canSeeAppointments(baby) && (
+            <NextAppointment babyId={baby.id} now={model.now.getTime()} />
+          )}
           <VaccinesDue baby={baby} now={model.now.getTime()} />
           {nursing && (
             <NursingCard

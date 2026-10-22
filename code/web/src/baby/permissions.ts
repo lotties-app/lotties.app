@@ -39,6 +39,20 @@ export function isDoctor(baby: Pick<Baby, 'role'>): boolean {
   return baby.role === 'Doctor';
 }
 
+/**
+ * The family's own records that are not clinical data (docs/design/16-doctor-access.md, "Doctor
+ * read audit"): the appointments (they name other doctors, clinics and private reasons) and the
+ * members list. Every family role; never the Doctor (the server refuses her with 403).
+ */
+export function canSeeFamilyRecords(baby: Pick<Baby, 'role'>): boolean {
+  return !isDoctor(baby);
+}
+
+/** Whether the appointments (Now card, Day strip and calendar button, Settings, `/appointments`) are shown. */
+export function canSeeAppointments(baby: Pick<Baby, 'role'>): boolean {
+  return canSeeFamilyRecords(baby);
+}
+
 /** Only the Doctor writes notes in v1 (and changes only her own). */
 export function canWriteNotes(baby: Pick<Baby, 'role'>): boolean {
   return isDoctor(baby);

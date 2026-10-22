@@ -112,7 +112,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
   const recent = useEventsStartedSince(baby.id, since);
   const runningTimers = useRunningEvents(baby.id);
   const predictions = usePredictions(baby.id).query.data;
-  const members = useMembers(baby.id);
+  const members = useMembers(baby);
   const handover = useHandover(baby.id);
   const meds = useMedicationStatuses(baby.id);
   const commands = useNowCommands(baby, types ?? EMPTY_TYPES);

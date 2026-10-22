@@ -53,6 +53,6 @@ export function eventAccess(
 
 /** `eventAccess` for the selected baby, with the members list shared with Settings and Now. */
 export function useEventAccess(baby: Baby): EventAccess {
-  const members = useMembers(baby.id);
+  const members = useMembers(baby);
   return useMemo(() => eventAccess(baby, members), [baby, members]);
 }
