@@ -45,6 +45,37 @@ public sealed class EventFieldDefinitionTests
         Assert.Equal(nameof(EventFieldDefinition.IsInteger), exception.Field);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    public void Create_NumberWithDecimals_KeepsThem(int decimals)
+    {
+        var field = EventFieldDefinition.Create("value_c", "Temperature", EventFieldKind.Number, decimals: decimals);
+
+        Assert.Equal((decimals, false), (field.Decimals, field.IsInteger));
+    }
+
+    [Fact]
+    public void Create_WithoutDecimals_HasNoLimit()
+    {
+        Assert.Null(EventFieldDefinition.Create("amount", "Amount", EventFieldKind.Number).Decimals);
+    }
+
+    [Theory]
+    [InlineData(EventFieldKind.Text, 1, false)]
+    [InlineData(EventFieldKind.Select, 1, false)]
+    [InlineData(EventFieldKind.Number, 0, false)]
+    [InlineData(EventFieldKind.Number, 4, false)]
+    [InlineData(EventFieldKind.Number, 1, true)]
+    public void Create_InvalidDecimals_ThrowsValidationNamingDecimals(EventFieldKind kind, int decimals, bool isInteger)
+    {
+        var options = kind == EventFieldKind.Select ? new[] { "a" } : null;
+
+        var exception = Assert.Throws<DomainValidationException>(() => EventFieldDefinition.Create("value", "Value", kind, options: options, isInteger: isInteger, decimals: decimals));
+
+        Assert.Equal(nameof(EventFieldDefinition.Decimals), exception.Field);
+    }
+
     [Fact]
     public void Create_SelectWithoutOptions_ThrowsValidation()
     {

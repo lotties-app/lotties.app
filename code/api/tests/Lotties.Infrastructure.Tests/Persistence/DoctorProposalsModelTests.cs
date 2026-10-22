@@ -85,7 +85,7 @@ public sealed class DoctorProposalsModelTests
 
         var candidates = preferences.GetIndexes().Single(index => index.GetFilter() is not null);
 
-        Assert.EndsWith("OR doctor_suggestions", candidates.GetFilter(), StringComparison.Ordinal);
+        Assert.Contains("OR doctor_suggestions", candidates.GetFilter(), StringComparison.Ordinal);
         Assert.Equal(false, preferences.FindProperty("DoctorSuggestions")!.GetDefaultValue());
     }
 }

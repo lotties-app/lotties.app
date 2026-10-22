@@ -10,7 +10,8 @@ namespace Lotties.Domain.Notifications;
 /// <c>overtired:{babyId:N}:{awake since utc yyyyMMddHHmm}</c>, <c>fussy:{babyId:N}:{local date yyyyMMdd}</c>,
 /// <c>wet:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>,
 /// <c>appt:{appointmentId:N}:{start utc yyyyMMddHHmm}:{offset minutes}</c>, <c>proposal:{proposalId:N}</c>,
-/// <c>recommendation:{noteId:N}</c> (the doctor suggestions) or <c>test:{deliveryId:N}</c>.
+/// <c>recommendation:{noteId:N}</c> (the doctor suggestions), <c>vaccine:{babyId:N}:{doseId}:{n}</c> (the n-th reminder of a
+/// scheduled dose; a yearly dose adds its due date: <c>vaccine:{babyId:N}:{doseId}@{yyyyMMdd}:{n}</c>) or <c>test:{deliveryId:N}</c>.
 /// A snooze re-send uses the dedupe key
 /// <c>{base}:s{n}</c> (<see cref="Snoozed"/>). The device notification tag is always the base key.
 /// </summary>
@@ -23,6 +24,8 @@ public readonly partial record struct NotificationKey
     private const string AppointmentPrefix = "appt";
     private const string ProposalPrefix = "proposal";
     private const string RecommendationPrefix = "recommendation";
+    private const string VaccinePrefix = "vaccine";
+    private const string DateFormat = "yyyyMMdd";
 
     private NotificationKey(string value)
     {
@@ -32,7 +35,7 @@ public readonly partial record struct NotificationKey
     public string Value { get; }
 
     /// <summary>Whether this is a snooze re-send key (<c>{base}:s{n}</c>).</summary>
-    public bool IsSnoozeResend => Value.Contains(SnoozeMarker, StringComparison.Ordinal);
+    public bool IsSnoozeResend => Value is not null && SnoozeSuffix().IsMatch(Value);
 
     /// <summary>The base key: this key without its snooze suffix.</summary>
     public NotificationKey Base => IsSnoozeResend ? new NotificationKey(Value[..Value.LastIndexOf(SnoozeMarker, StringComparison.Ordinal)]) : this;
@@ -103,6 +106,31 @@ public readonly partial record struct NotificationKey
         return found;
     }
 
+    /// <summary>
+    /// The <paramref name="number"/>-th reminder (1 or 2) of the scheduled dose <paramref name="doseId"/> of
+    /// <paramref name="babyId"/>; a yearly dose names the day this occurrence became due (<paramref name="occurrence"/>).
+    /// </summary>
+    public static NotificationKey ForVaccine(Guid babyId, string doseId, DateOnly? occurrence, int number)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(doseId);
+        ArgumentOutOfRangeException.ThrowIfLessThan(number, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(number, NotificationRules.VaccineMaxReminders);
+        var dated = occurrence is { } day ? $"{doseId}@{day.ToString(DateFormat, CultureInfo.InvariantCulture)}" : doseId;
+        return From(string.Create(CultureInfo.InvariantCulture, $"{VaccinePrefix}:{babyId:N}:{dated}:{number}"));
+    }
+
+    /// <summary>
+    /// The dose a vaccine key (<c>vaccine:{babyId:N}:{doseId}[@{yyyyMMdd}]:{n}</c>) names; <c>false</c> for other kinds.
+    /// Lets a retry rebuild the payload from the stored key.
+    /// </summary>
+    public bool TryGetVaccine(out string doseId)
+    {
+        var parts = (Value ?? string.Empty).Split(':');
+        var found = parts.Length >= 4 && parts[0] == VaccinePrefix && parts[2].Length > 0;
+        doseId = found ? parts[2].Split('@')[0] : string.Empty;
+        return found;
+    }
+
     /// <summary>The doctor suggestion <paramref name="id"/> (a proposal or a recommendation note): one notification per suggestion and member.</summary>
     public static NotificationKey ForDoctorSuggestion(DoctorSuggestionSource source, Guid id) =>
         new(string.Create(CultureInfo.InvariantCulture, $"{(source == DoctorSuggestionSource.Recommendation ? RecommendationPrefix : ProposalPrefix)}:{id:N}"));
@@ -162,6 +190,9 @@ public readonly partial record struct NotificationKey
 
     private static string Instant(DateTimeOffset value) => value.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture);
 
-    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|(?:proposal|recommendation|test):[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|(?:proposal|recommendation|test):[0-9a-f]{32}|vaccine:[0-9a-f]{32}:[a-z0-9]+(?:-[a-z0-9]+)*(?:@[0-9]{8})?:[12])(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
+
+    [GeneratedRegex(@":s[1-9]\z", RegexOptions.CultureInvariant)]
+    private static partial Regex SnoozeSuffix();
 }

@@ -10,13 +10,15 @@ namespace Lotties.Domain.EventTypes;
 /// another select field; a field hidden that way is never required and must not hold a value. <see cref="IsHidden"/> is
 /// unrelated: such a field is validated like any other but clients do not render it in their forms (it is filled by
 /// dedicated UI, e.g. timer pauses, or kept only so older events stay valid). <see cref="IsInteger"/> (number fields
-/// only) accepts whole numbers only.
+/// only) accepts whole numbers only; <see cref="Decimals"/> (number fields only, not with <see cref="IsInteger"/>)
+/// accepts at most that many decimal places.
 /// </summary>
 public sealed class EventFieldDefinition
 {
     public const int LabelMaxLength = 100;
     public const int OptionMaxLength = 50;
     public const int UnitMaxLength = 20;
+    public const int MaxDecimals = 3;
 
     private EventFieldDefinition(
         string key,
@@ -29,7 +31,8 @@ public sealed class EventFieldDefinition
         string? unit,
         FieldVisibilityCondition? visibleWhen,
         bool isHidden,
-        bool isInteger)
+        bool isInteger,
+        int? decimals)
     {
         Key = key;
         Label = label;
@@ -42,6 +45,7 @@ public sealed class EventFieldDefinition
         VisibleWhen = visibleWhen;
         IsHidden = isHidden;
         IsInteger = isInteger;
+        Decimals = decimals;
     }
 
     /// <summary>Lower snake_case property name inside the event payload.</summary>
@@ -70,6 +74,9 @@ public sealed class EventFieldDefinition
     /// <summary>Number fields only: the value must be a whole number.</summary>
     public bool IsInteger { get; }
 
+    /// <summary>Number fields only: the most decimal places a value may have (1 to <see cref="MaxDecimals"/>), or <c>null</c> for any.</summary>
+    public int? Decimals { get; }
+
     public static EventFieldDefinition Create(
         string key,
         string label,
@@ -81,7 +88,8 @@ public sealed class EventFieldDefinition
         string? unit = null,
         FieldVisibilityCondition? visibleWhen = null,
         bool isHidden = false,
-        bool isInteger = false)
+        bool isInteger = false,
+        int? decimals = null)
     {
         var validatedKind = EnsureDefined(kind);
         var validatedKey = EnsureKey(key);
@@ -96,7 +104,8 @@ public sealed class EventFieldDefinition
             ValidateUnit(validatedKind, unit),
             EnsureNotSelfReferencing(validatedKey, visibleWhen),
             isHidden,
-            ValidateIntegerFlag(validatedKind, isInteger));
+            ValidateIntegerFlag(validatedKind, isInteger),
+            ValidateDecimals(validatedKind, isInteger, decimals));
     }
 
     private static string EnsureKey(string? key)
@@ -156,6 +165,15 @@ public sealed class EventFieldDefinition
         !isInteger || kind == EventFieldKind.Number
             ? isInteger
             : throw new DomainValidationException(nameof(IsInteger), "Only number fields can be integer.");
+
+    private static int? ValidateDecimals(EventFieldKind kind, bool isInteger, int? decimals) => decimals switch
+    {
+        null => null,
+        _ when kind != EventFieldKind.Number => throw new DomainValidationException(nameof(Decimals), "Only number fields can limit decimal places."),
+        _ when isInteger => throw new DomainValidationException(nameof(Decimals), "An integer field cannot also limit decimal places."),
+        < 1 or > MaxDecimals => throw new DomainValidationException(nameof(Decimals), $"Decimal places must be between 1 and {MaxDecimals}."),
+        _ => decimals,
+    };
 
     private static string? ValidateUnit(EventFieldKind kind, string? unit)
     {

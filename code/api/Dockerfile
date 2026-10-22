@@ -9,6 +9,8 @@ COPY src/Lotties.Infrastructure/Lotties.Infrastructure.csproj src/Lotties.Infras
 COPY src/Lotties.Api/Lotties.Api.csproj src/Lotties.Api/
 RUN dotnet restore src/Lotties.Api/Lotties.Api.csproj
 COPY src ./src
+# The vaccine schedule (data/vaccine-schedule.br.json) is embedded into Lotties.Application at build time.
+COPY data ./data
 RUN dotnet publish src/Lotties.Api/Lotties.Api.csproj -c Release -o /out --no-restore --no-self-contained
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

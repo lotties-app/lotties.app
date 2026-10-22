@@ -2,6 +2,7 @@ using Lotties.Domain.Appointments;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Domain.Notifications;
 
@@ -59,6 +60,14 @@ namespace Lotties.Domain.Notifications;
 /// than 24 hours ago and not yet opened by the recipient (a recommendation). Sent from its creation; inside quiet hours it
 /// waits for their end (quiet hours always apply; stale cutoff 24 hours). Key <c>proposal:{id}</c> or
 /// <c>recommendation:{id}</c>, time to live until 24 hours after the creation, urgency normal.</item>
+/// <item><c>vaccine_due</c> (off by default; Owners and Parents only): the baby's dose statuses on the recipient's local date
+/// (<see cref="VaccineStatusCalculator"/>, the baby's profile applied). Per slot (an alternative group counts once) with a
+/// dose that is due or overdue (not given, not covered by a combined product, not expired): the first reminder at 09:00
+/// local on the day the slot became due, a follow-up 14 days later at 09:00 if still not given (at most 2 per dose).
+/// Inside quiet hours it moves to their end when that is still the same local day, else that reminder is skipped; only
+/// reminders of today or yesterday are considered (turning the switch on never sends old ones). Key
+/// <c>vaccine:{baby}:{doseId}:{n}</c> (a yearly dose adds its due date), stale cutoff 12 hours, time to live 48 hours,
+/// urgency normal.</item>
 /// <item>Each key is planned once per user. A snooze re-sends the still open item at the snooze end with key
 /// <c>{base}:s{n}</c> (same stale cutoff and quiet hours); a dismissal stops it for that user only.</item>
 /// </list>
@@ -97,7 +106,8 @@ public static class NotificationPlanner
             .Concat(OvertiredReminders(recipient, context))
             .Concat(DiaperReminders(recipient, context))
             .Concat(AppointmentRemindersFor(recipient, context))
-            .Concat(DoctorSuggestionReminders(recipient, context));
+            .Concat(DoctorSuggestionReminders(recipient, context))
+            .Concat(VaccineReminders(recipient, context));
 
     private static IEnumerable<Reminder> StateReminders(NotificationRecipient recipient, PlanContext context) =>
         context.StateAt(recipient.UtcOffset!.Value) is { } state
@@ -337,6 +347,59 @@ public static class NotificationPlanner
             DeliveredInQuietHours: false,
             HeldBy: null);
 
+    private static IEnumerable<Reminder> VaccineReminders(NotificationRecipient recipient, PlanContext context)
+    {
+        if (!recipient.Preferences.VaccineReminders || !NotificationRules.CanReceiveVaccineReminders(recipient.Role) || context.Vaccines is not { } vaccines)
+        {
+            return [];
+        }
+
+        var clock = recipient.Clock();
+        var today = clock.DateOf(context.Now);
+        var statuses = VaccineStatusCalculator.Calculate(new VaccineStatusInput(vaccines.Schedule, vaccines.Profile, vaccines.BirthDate, vaccines.Records, today));
+        return PendingSlots(statuses)
+            .SelectMany(dose => VaccineSendTimes(recipient, dose, clock, today).Select(planned => VaccineReminder(recipient, vaccines, dose, planned, context)));
+    }
+
+    /// <summary>
+    /// One dose per slot that is due or overdue: the one that became due first (schedule order on a tie), so an
+    /// alternative group or a dose shown twice by two sources reminds once.
+    /// </summary>
+    private static IEnumerable<DoseStatus> PendingSlots(VaccineStatusResult statuses) =>
+        statuses.Doses
+            .Select((dose, order) => (Dose: dose, Order: order))
+            .Where(item => item.Dose.State is DoseState.Due or DoseState.Overdue && item.Dose.DueOn is not null)
+            .GroupBy(item => item.Dose.Slot, StringComparer.Ordinal)
+            .Select(slot => slot.OrderBy(item => item.Dose.DueOn).ThenBy(item => item.Order).First().Dose);
+
+    /// <summary>
+    /// The first reminder (day the dose became due) and the follow-up (14 days later), each at 09:00 local, moved to the
+    /// end of the quiet hours when that is still the same day (else dropped); only today's and yesterday's.
+    /// </summary>
+    private static IEnumerable<VaccineSendTime> VaccineSendTimes(NotificationRecipient recipient, DoseStatus dose, Patterns.LocalClock clock, DateOnly today) =>
+        Enumerable.Range(1, NotificationRules.VaccineMaxReminders)
+            .Select(number => (Number: number, Day: dose.DueOn!.Value.AddDays((number - 1) * NotificationRules.VaccineFollowUpDays)))
+            .Where(planned => planned.Day <= today && planned.Day >= today.AddDays(-1))
+            .Select(planned => new VaccineSendTime(planned.Number, planned.Day, recipient.QuietHours.EndOfQuietPeriod(clock.ToInstant(planned.Day.ToDateTime(NotificationRules.VaccineReminderTime)), clock)))
+            .Where(planned => clock.DateOf(planned.SendAt) == planned.Day);
+
+    private static Reminder VaccineReminder(NotificationRecipient recipient, VaccinePlanState vaccines, DoseStatus dose, VaccineSendTime planned, PlanContext context)
+    {
+        var scheduled = vaccines.Schedule.FindDose(dose.DoseId)!;
+        var occurrence = scheduled.Recurrence is null ? (DateOnly?)null : dose.DueOn;
+        return new Reminder(
+            recipient,
+            NotificationKind.VaccineDue,
+            NotificationKey.ForVaccine(context.BabyId, dose.DoseId, occurrence, planned.Number),
+            planned.SendAt,
+            new NotificationContent(context.BabyId, null, planned.SendAt, context.VaccineNamesFor(recipient, vaccines.Schedule.FindVaccine(scheduled.VaccineKey)), VaccineDoseId: dose.DoseId),
+            NotificationRules.VaccineTimeToLive,
+            NotificationUrgency.Normal,
+            NotificationRules.VaccineStaleCutoff,
+            DeliveredInQuietHours: false,
+            HeldBy: null);
+    }
+
     /// <summary>
     /// At most one diaper heads-up per recipient in a tick (the spacing rule also holds within a tick): the earliest due
     /// wins, wet before dirty on a tie; the other is skipped as <see cref="NotificationSkipReason.Spacing"/>.
@@ -398,6 +461,9 @@ public static class NotificationPlanner
         NotificationSkipReason? HeldBy);
 
     private sealed record Attempt(NotificationKey Key, DateTimeOffset SendAt, bool IsSnooze, bool Dismissed);
+
+    /// <summary>When the <see cref="Number"/>-th reminder of a vaccine dose goes on the local <see cref="Day"/> (quiet hours applied).</summary>
+    private sealed record VaccineSendTime(int Number, DateOnly Day, DateTimeOffset SendAt);
 
     /// <summary>When the reminder <see cref="OffsetMinutes"/> before an appointment goes (quiet hours applied).</summary>
     private sealed record AppointmentSendTime(int OffsetMinutes, DateTimeOffset SendAt);
@@ -495,6 +561,7 @@ public static class NotificationPlanner
             Diapers = input.Diapers;
             Appointments = (input.Appointments ?? []).Where(appointment => appointment.BabyId == input.BabyId).ToArray();
             DoctorSuggestions = input.DoctorSuggestions ?? [];
+            Vaccines = input.Vaccines;
             _sentHeadsUps = (input.SentHeadsUps ?? [])
                 .Where(sent => sent.BabyId == input.BabyId)
                 .DistinctBy(sent => (sent.UserId, sent.DedupeKey.Value))
@@ -512,6 +579,9 @@ public static class NotificationPlanner
 
         /// <summary>The baby's doctor suggestions as loaded (the last 24 hours).</summary>
         public IReadOnlyList<DoctorSuggestion> DoctorSuggestions { get; }
+
+        /// <summary>The baby's vaccine schedule, profile and records as loaded (only when a recipient wants vaccine reminders).</summary>
+        public VaccinePlanState? Vaccines { get; }
 
         public NotificationBabyState? StateAt(TimeSpan utcOffset) => _states.GetValueOrDefault(utcOffset);
 
@@ -547,6 +617,10 @@ public static class NotificationPlanner
             recipient.ShowNames && _names is { } names
                 ? NotificationNames.Create(names.BabyName, medicationId is { } id ? names.MedicationNamesById.GetValueOrDefault(id) : null)
                 : null;
+
+        /// <summary>The baby's name and the vaccine's names for a recipient with show-names on; else <c>null</c>.</summary>
+        public NotificationNames? VaccineNamesFor(NotificationRecipient recipient, VaccineDefinition? vaccine) =>
+            recipient.ShowNames && _names is { } names ? NotificationNames.Create(names.BabyName, null, vaccine?.Names) : null;
 
         private static IReadOnlyDictionary<string, TState> ByZone<TState>(IReadOnlyList<TState>? states, Func<TState, NotificationTimeZone> zoneOf) =>
             (states ?? [])

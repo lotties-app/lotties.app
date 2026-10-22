@@ -376,6 +376,53 @@ public sealed class NapperEventMapperTests
         Assert.Equal(ImportSkipCodes.MissingValue, Skipped(Row("MEDICINE")).Code);
     }
 
+    [Theory]
+    [InlineData("37.8", null, "37.8")]
+    [InlineData("37.85", "CELSIUS", "37.9")]
+    [InlineData("36", "c", "36")]
+    [InlineData("100.4", "FAHRENHEIT", "38")]
+    [InlineData("99.5", "°F", "37.5")]
+    [InlineData("98.6", " f ", "37")]
+    public void Map_Temperature_IsAnInstantTemperatureInCelsiusWithOneDecimal(string reading, string? units, string celsius)
+    {
+        var draft = Mapped(Row("TEMPERATURE", Offset, Offset.AddMinutes(5)) with { Temperature = decimal.Parse(reading, System.Globalization.CultureInfo.InvariantCulture), Units = units, Comment = "After the bath" });
+
+        Assert.Equal(BuiltInEventTypes.TemperatureId, draft.Type.Id);
+        Assert.Equal(decimal.Parse(celsius, System.Globalization.CultureInfo.InvariantCulture), Json(draft.Payload).GetProperty("value_c").GetDecimal());
+        Assert.Single(Json(draft.Payload).EnumerateObject());
+        Assert.Equal((Offset, Offset, "After the bath"), (draft.StartedAt, draft.EndedAt, draft.Notes));
+        BuiltInEventTypes.Temperature.EnsureValidPayload(draft.Payload, draft.StartedAt, draft.EndedAt);
+    }
+
+    [Fact]
+    public void Map_TemperatureWithoutAValue_IsSkippedAsMissingValue()
+    {
+        var empty = Skipped(Row("TEMPERATURE"));
+        var unreadable = Skipped(Row("TEMPERATURE") with { InvalidCells = new Dictionary<string, string> { ["temperature"] = "warm" } });
+
+        Assert.Equal((ImportSkipCodes.MissingValue, ImportSkipCodes.MissingValue), (empty.Code, unreadable.Code));
+        Assert.Contains("warm", unreadable.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Plan_TemperatureOutOfRange_IsAnInvalidRecord()
+    {
+        var plan = NapperEventPlanner.Plan(Context(), [Row("TEMPERATURE") with { Temperature = 98.6m }], []);
+
+        Assert.Equal(ImportSkipCodes.InvalidRecord, Assert.Single(plan.Skipped).Code);
+    }
+
+    [Theory]
+    [InlineData("NAIL_TRIM")]
+    [InlineData("TEETHING")]
+    [InlineData("MILESTONE")]
+    [InlineData("SYMPTOM")]
+    [InlineData("OUTDOOR")]
+    public void Map_CategoriesWithoutAKnownNapperName_StayUnknown(string category)
+    {
+        Assert.Equal(ImportSkipCodes.UnknownCategory, Skipped(Row(category)).Code);
+    }
+
     [Fact]
     public void Map_UnknownCategory_IsSkippedWithReason()
     {
@@ -396,6 +443,7 @@ public sealed class NapperEventMapperTests
     [InlineData("MEDICINE", "medication")]
     [InlineData("PUMPING", "breast_pump")]
     [InlineData("BREAST_PUMP", "breast_pump")]
+    [InlineData("TEMPERATURE", "temperature")]
     public void TypeFor_KnownCategory_ReturnsBuiltInType(string category, string key)
     {
         Assert.Equal(key, NapperEventMapper.TypeFor(category)?.Key.Value);

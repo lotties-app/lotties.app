@@ -13,4 +13,7 @@ public interface IBabyService
 
     /// <summary>Renames the baby and/or changes its birth date.</summary>
     Task<BabyResponse> UpdateAsync(Guid babyId, SaveBabyRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Replaces the baby's vaccine profile (coverage, gestational age, the mother's RSV vaccination).</summary>
+    Task<BabyResponse> UpdateVaccineProfileAsync(Guid babyId, UpdateVaccineProfileRequest request, CancellationToken cancellationToken = default);
 }

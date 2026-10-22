@@ -13,7 +13,7 @@ internal sealed record ParsedRows<TRow>(IReadOnlyList<TRow> Rows, IReadOnlyList<
 /// Reads Napper CSV exports into typed rows (column names as in docs/SPEC.md "Napper import"). A row whose cells
 /// cannot be read is reported, never aborting the file; a file without the required columns is rejected. The optional
 /// pause cells (<c>numberOfPauses</c>, <c>pausedMinutes</c>) are read leniently: an unreadable one never skips the row
-/// (it is reported as a skipped field where the mapping uses it).
+/// (it is reported as a skipped field where the mapping uses it); so is <c>temperature</c>, which only temperature rows use.
 /// </summary>
 internal static class NapperCsvParser
 {
@@ -57,6 +57,8 @@ internal static class NapperCsvParser
             AmountPumpedRight = cells.Number("amountPumpedRight"),
             NumberOfPauses = cells.LenientInteger("numberOfPauses"),
             PausedMinutes = cells.LenientNumber("pausedMinutes"),
+            Temperature = cells.LenientNumber("temperature"),
+            Units = cells.Text("units"),
             BabyMoodOnWakeUp = cells.Text("babyMoodOnWakeUp"),
             BabyMoodOnSleep = cells.Text("babyMoodOnSleep"),
             HowBabySlept = cells.Text("howBabySlept"),

@@ -13,7 +13,7 @@ namespace Lotties.Infrastructure.Persistence.Configurations;
 /// </remarks>
 internal sealed class BabyNotificationPreferencesConfiguration : IEntityTypeConfiguration<BabyNotificationPreferences>
 {
-    public const string WantsAnyFilter = "dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders OR doctor_suggestions";
+    public const string WantsAnyFilter = "dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders OR doctor_suggestions OR vaccine_reminders";
 
     public void Configure(EntityTypeBuilder<BabyNotificationPreferences> builder)
     {
@@ -33,6 +33,7 @@ internal sealed class BabyNotificationPreferencesConfiguration : IEntityTypeConf
         // to the database default and always write a `false`, so the default never overrides a member's choice.
         builder.Property(preferences => preferences.AppointmentReminders).HasDefaultValue(true).HasSentinel(true).IsRequired();
         builder.Property(preferences => preferences.DoctorSuggestions).HasDefaultValue(false).IsRequired();
+        builder.Property(preferences => preferences.VaccineReminders).HasDefaultValue(false).IsRequired();
         builder.Property(preferences => preferences.UpdatedAt).IsRequired();
         builder.Ignore(preferences => preferences.Preferences);
         builder.HasIndex(preferences => preferences.BabyId).HasFilter(WantsAnyFilter);

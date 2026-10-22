@@ -1,5 +1,6 @@
 using Lotties.Domain.Common;
 using Lotties.Domain.Exceptions;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Domain.Babies;
 
@@ -32,6 +33,18 @@ public sealed class Baby
 
     public IReadOnlyCollection<BabyMember> Members => _members.AsReadOnly();
 
+    /// <summary>Which recommendations the vaccine schedule shows (public by default).</summary>
+    public VaccineCoverage VaccineCoverage { get; private set; }
+
+    /// <summary>Weeks of gestation at birth; <c>null</c> = not told (term assumed).</summary>
+    public short? GestationalAgeWeeks { get; private set; }
+
+    /// <summary>Whether the mother got the RSV vaccine in pregnancy; <c>null</c> = not answered.</summary>
+    public RsvMaternalVaccination? RsvMaternalVaccination { get; private set; }
+
+    /// <summary>What the vaccine schedule needs to know about the baby besides the birth date.</summary>
+    public VaccineProfile VaccineProfile => VaccineProfile.Create(VaccineCoverage, GestationalAgeWeeks, RsvMaternalVaccination);
+
     public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
     {
         Ids.Required(ownerUserId, nameof(ownerUserId));
@@ -50,6 +63,15 @@ public sealed class Baby
         var validatedName = Text.Required(name, nameof(Name), NameMaxLength);
         BirthDate = EnsureBirthDateNotInFuture(birthDate, UtcTime.Normalize(now));
         Name = validatedName;
+    }
+
+    /// <summary>Replaces the vaccine profile (Owners and Parents, from the Vaccines page).</summary>
+    public void UpdateVaccineProfile(VaccineProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        VaccineCoverage = profile.Coverage;
+        GestationalAgeWeeks = (short?)profile.GestationalAgeWeeks;
+        RsvMaternalVaccination = profile.RsvMaternalVaccination;
     }
 
     public BabyMember? FindMember(Guid userId) => _members.Find(member => member.UserId == userId);

@@ -74,6 +74,8 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["POST /api/v1/babies"] = Access.SignedIn,
         ["GET /api/v1/babies/{babyId:guid}"] = Access.Read,
         ["PUT /api/v1/babies/{babyId:guid}"] = Access.Owner,
+        // The vaccine profile (coverage, gestational age, the mother's RSV vaccination): Owners and Parents.
+        ["PUT /api/v1/babies/{babyId:guid}/vaccine-profile"] = Access.Write,
 
         ["GET /api/v1/babies/{babyId:guid}/members"] = Access.Read,
         ["PATCH /api/v1/babies/{babyId:guid}/members/{userId:guid}"] = Access.Owner,
@@ -122,6 +124,13 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/babies/{babyId:guid}/appointments"] = Access.Read,
         ["GET /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Read,
         ["PUT /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Write,
+
+        // Vaccines: the schedule is the same for everyone (any signed-in user); every member reads a baby's records,
+        // a Doctor included; only Owners and Parents record, edit or delete. Caregivers, Viewers and the Doctor read only.
+        ["GET /api/v1/vaccine-schedule"] = Access.SignedIn,
+        ["GET /api/v1/babies/{babyId:guid}/vaccinations"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
 
         ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
         ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,

@@ -196,3 +196,37 @@ internal sealed class MedicineMapper : INapperCategoryMapper
         };
     }
 }
+
+/// <summary>
+/// <c>TEMPERATURE</c> -> temperature (an instant) with the required <c>value_c</c> from the <c>temperature</c> column,
+/// rounded to one decimal place (midpoint away from zero). A value whose <c>units</c> cell names Fahrenheit (<c>F</c>,
+/// <c>°F</c> or <c>FAHRENHEIT</c>, case-insensitive) is converted to Celsius first; any other unit is read as Celsius.
+/// Napper exports no measuring method, so <c>method</c> is left out. An empty or unreadable value skips the row as
+/// <c>missing_value</c>; a value outside the field range fails the payload rules (<c>invalid_record</c>).
+/// </summary>
+internal sealed class TemperatureMapper : INapperCategoryMapper
+{
+    private static readonly FrozenSet<string> FahrenheitUnits = new[] { "F", "°F", "FAHRENHEIT" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+
+    public EventType Type => BuiltInEventTypes.Temperature;
+
+    public bool CanHandle(string category) => category == "TEMPERATURE";
+
+    public NapperRowOutcome Map(NapperLogRow row)
+    {
+        if (row.Temperature is not { } reading)
+        {
+            var raw = row.InvalidCells.GetValueOrDefault("temperature");
+            return NapperRowOutcome.Skipped(row, ImportSkipCodes.MissingValue, raw is null ? "temperature is empty." : $"temperature '{raw}' is not a number.");
+        }
+
+        var payload = new PayloadBuilder().With("value_c", Celsius(reading, row.Units)).Build();
+        return NapperRowOutcome.Mapped(new NapperEventDraft(row, Type, row.Start, row.Start, payload, NapperNotes.Compose(row.Comment), []));
+    }
+
+    private static decimal Celsius(decimal reading, string? units)
+    {
+        var celsius = units is not null && FahrenheitUnits.Contains(units.Trim()) ? (reading - 32m) * 5m / 9m : reading;
+        return Math.Round(celsius, 1, MidpointRounding.AwayFromZero);
+    }
+}

@@ -4,6 +4,7 @@ using Lotties.Application.Serialization;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Professionals;
 using Lotties.Domain.Users;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Application.Babies;
 
@@ -27,6 +28,16 @@ public sealed record BabyResponse
     /// </summary>
     public Guid UserId { get; init; }
 
+    /// <summary>Which recommendations the vaccine schedule shows: <c>public</c> or <c>public+private</c> (additive).</summary>
+    public string VaccineProfile { get; init; } = Domain.Vaccinations.VaccineProfile.PublicCode;
+
+    /// <summary>Weeks of gestation at birth, or <c>null</c> (additive).</summary>
+    public int? GestationalAgeWeeks { get; init; }
+
+    /// <summary>Whether the mother got the RSV vaccine in pregnancy: <c>unknown</c>, <c>yes</c>, <c>no</c> or <c>null</c> (additive).</summary>
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public RsvMaternalVaccination? RsvMaternalVaccination { get; init; }
+
     public static BabyResponse For(Baby baby, BabyMember member)
     {
         ArgumentNullException.ThrowIfNull(baby);
@@ -39,7 +50,35 @@ public sealed record BabyResponse
             Role = member.Role,
             CreatedAt = baby.CreatedAt,
             UserId = member.UserId,
+            VaccineProfile = Domain.Vaccinations.VaccineProfile.CodeOf(baby.VaccineCoverage),
+            GestationalAgeWeeks = baby.GestationalAgeWeeks,
+            RsvMaternalVaccination = baby.RsvMaternalVaccination,
         };
+    }
+}
+
+/// <summary>
+/// Body of <c>PUT /api/v1/babies/{babyId}/vaccine-profile</c> (Owners and Parents): the full vaccine profile.
+/// <c>vaccineProfile</c> is <c>public</c> or <c>public+private</c> (required); <c>gestationalAgeWeeks</c> 20-44 or
+/// <c>null</c>; <c>rsvMaternalVaccination</c> <c>unknown</c>, <c>yes</c>, <c>no</c> or <c>null</c>.
+/// </summary>
+public sealed record UpdateVaccineProfileRequest
+{
+    public string? VaccineProfile { get; init; }
+
+    public int? GestationalAgeWeeks { get; init; }
+
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public RsvMaternalVaccination? RsvMaternalVaccination { get; init; }
+
+    /// <summary>Validates; throws <see cref="Domain.Exceptions.DomainValidationException"/> naming the field.</summary>
+    public static explicit operator Domain.Vaccinations.VaccineProfile(UpdateVaccineProfileRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return Domain.Vaccinations.VaccineProfile.Create(
+            Domain.Vaccinations.VaccineProfile.CoverageOf(request.VaccineProfile),
+            request.GestationalAgeWeeks,
+            request.RsvMaternalVaccination);
     }
 }
 

@@ -356,7 +356,7 @@ public sealed class NotificationValueObjectTests
     [Fact]
     public void NotificationCodes_RoundTripEveryValue()
     {
-        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder", "doctor_suggestion"]);
+        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder", "doctor_suggestion", "vaccine_due"]);
         AssertRoundTrip<NotificationUrgency>(["normal", "high"]);
         AssertRoundTrip<NotificationSkipReason>(["stale", "quiet_hours", "unavailable", "limit", "snoozed", "dismissed", "spacing", "daily_cap"]);
         AssertRoundTrip<DeliveryStatus>(["pending", "sent", "failed", "expired", "gone", "cancelled"]);

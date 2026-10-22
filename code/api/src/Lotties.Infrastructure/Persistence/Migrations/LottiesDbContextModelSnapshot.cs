@@ -179,11 +179,28 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<short?>("GestationalAgeWeeks")
+                        .HasColumnType("smallint")
+                        .HasColumnName("gestational_age_weeks");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
+
+                    b.Property<string>("RsvMaternalVaccination")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("rsv_maternal_vaccination");
+
+                    b.Property<string>("VaccineCoverage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("public")
+                        .HasColumnName("vaccine_profile");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -682,6 +699,86 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                             Icon = "sentiment_very_dissatisfied",
                             Key = "fussy",
                             Name = "Fussy / crying"
+                        },
+                        new
+                        {
+                            Id = new Guid("bd1fde97-19c8-49a9-9ffd-537449183686"),
+                            Color = "#5c6bc0",
+                            Fields = "[{\"key\":\"where\",\"label\":\"Where\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"hands\",\"feet\",\"both\"]}]",
+                            HasDuration = false,
+                            Icon = "content_cut",
+                            Key = "nail_trim",
+                            Name = "Nail trim"
+                        },
+                        new
+                        {
+                            Id = new Guid("c3691235-0279-429c-be1c-db6692ad5455"),
+                            Color = "#ffca28",
+                            Fields = "[{\"key\":\"value_c\",\"label\":\"Temperature\",\"kind\":\"number\",\"isRequired\":true,\"min\":30,\"max\":45,\"unit\":\"\\u00B0C\",\"decimals\":1},{\"key\":\"method\",\"label\":\"Method\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"armpit\",\"ear\",\"forehead\",\"rectal\",\"mouth\"]}]",
+                            HasDuration = false,
+                            Icon = "thermostat",
+                            Key = "temperature",
+                            Name = "Temperature"
+                        },
+                        new
+                        {
+                            Id = new Guid("1a08d284-a71f-44f5-ae83-49446a6f0e3f"),
+                            Color = "#c0ca33",
+                            Fields = "[{\"key\":\"kind\",\"label\":\"Kind\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"spit_up\",\"vomit\"]},{\"key\":\"amount\",\"label\":\"Amount\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"little\",\"some\",\"a_lot\"]}]",
+                            HasDuration = false,
+                            Icon = "sentiment_sick",
+                            Key = "spit_up",
+                            Name = "Spit-up / vomit"
+                        },
+                        new
+                        {
+                            Id = new Guid("0a3e94b0-55c5-4d85-b530-317f161ef0cc"),
+                            Color = "#29b6f6",
+                            Fields = "[{\"key\":\"stage\",\"label\":\"Stage\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"gums_sore\",\"tooth_came_through\"]},{\"key\":\"tooth\",\"label\":\"Tooth\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"lower_central_incisor\",\"upper_central_incisor\",\"lower_lateral_incisor\",\"upper_lateral_incisor\",\"first_molar\",\"canine\",\"second_molar\",\"other\"],\"visibleWhen\":{\"field\":\"stage\",\"equals\":[\"tooth_came_through\"]}}]",
+                            HasDuration = false,
+                            Icon = "dentistry",
+                            Key = "teething",
+                            Name = "Teething"
+                        },
+                        new
+                        {
+                            Id = new Guid("3491e7b4-895b-406f-885a-238da041dd7c"),
+                            Color = "#ab47bc",
+                            Fields = "[{\"key\":\"milestone\",\"label\":\"Milestone\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"first_smile\",\"laughs\",\"holds_head\",\"rolls_over\",\"sits\",\"crawls\",\"stands\",\"first_steps\",\"first_word\",\"other\"]},{\"key\":\"custom\",\"label\":\"Which milestone?\",\"kind\":\"text\",\"isRequired\":false,\"visibleWhen\":{\"field\":\"milestone\",\"equals\":[\"other\"]}}]",
+                            HasDuration = false,
+                            Icon = "emoji_events",
+                            Key = "milestone",
+                            Name = "Milestone"
+                        },
+                        new
+                        {
+                            Id = new Guid("fb45be64-6741-4762-ab9a-abf5c9e6a875"),
+                            Color = "#e57373",
+                            Fields = "[{\"key\":\"symptom\",\"label\":\"Symptom\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"cough\",\"runny_nose\",\"congestion\",\"rash\",\"diarrhea\",\"constipation\",\"other\"]},{\"key\":\"severity\",\"label\":\"Severity\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"mild\",\"moderate\",\"severe\"]}]",
+                            HasDuration = false,
+                            Icon = "coronavirus",
+                            Key = "symptom",
+                            Name = "Symptom"
+                        },
+                        new
+                        {
+                            Id = new Guid("b22205ae-bae1-432f-802a-06e0c173efe1"),
+                            Color = "#66bb6a",
+                            Fields = "[{\"key\":\"kind\",\"label\":\"Kind\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"sun\",\"stroller_walk\",\"park\",\"other\"]},{\"key\":\"pause_count\",\"label\":\"Pauses\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"max\":100,\"hidden\":true,\"integer\":true},{\"key\":\"paused_seconds\",\"label\":\"Paused time\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"max\":86400,\"unit\":\"s\",\"hidden\":true,\"integer\":true},{\"key\":\"paused_at\",\"label\":\"Paused at\",\"kind\":\"text\",\"isRequired\":false,\"hidden\":true}]",
+                            HasDuration = true,
+                            Icon = "park",
+                            Key = "outdoor",
+                            Name = "Outdoor time"
+                        },
+                        new
+                        {
+                            Id = new Guid("9ad3dce5-dd4e-43d8-a022-5561ee7256ee"),
+                            Color = "#f48fb1",
+                            Fields = "[{\"key\":\"product\",\"label\":\"Product\",\"kind\":\"select\",\"isRequired\":false,\"options\":[\"moisturizer\",\"diaper_cream\",\"sunscreen\",\"other\"]}]",
+                            HasDuration = false,
+                            Icon = "sanitizer",
+                            Key = "skin_care",
+                            Name = "Skin care"
                         });
                 });
 
@@ -1090,12 +1187,18 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<bool>("VaccineReminders")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("vaccine_reminders");
+
                     b.HasKey("BabyId", "UserId")
                         .HasName("pk_baby_notification_preferences");
 
                     b.HasIndex("BabyId")
                         .HasDatabaseName("ix_baby_notification_preferences_baby_id")
-                        .HasFilter("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders OR doctor_suggestions");
+                        .HasFilter("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders OR doctor_suggestions OR vaccine_reminders");
 
                     b.ToTable("baby_notification_preferences", (string)null);
                 });
@@ -1699,6 +1802,101 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Vaccinations.Vaccination", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AdministeredBy")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("administered_by");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<DateTimeOffset>("ClientUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("client_updated_at");
+
+                    b.Property<string>("Clinic")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("clinic");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CustomName")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("custom_name");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("DoseId")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("dose_id");
+
+                    b.Property<string>("DoseLabel")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("dose_label");
+
+                    b.Property<DateOnly>("GivenOn")
+                        .HasColumnType("date")
+                        .HasColumnName("given_on");
+
+                    b.Property<string>("Lot")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("lot");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("network");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VaccineKey")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("vaccine_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_vaccinations");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_vaccinations_created_by");
+
+                    b.HasIndex("BabyId", "GivenOn")
+                        .HasDatabaseName("ix_vaccinations_baby_id_given_on");
+
+                    b.HasIndex("BabyId", "UpdatedAt")
+                        .HasDatabaseName("ix_vaccinations_baby_id_updated_at");
+
+                    b.ToTable("vaccinations", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.AccessLogs.AccessLogEntry", b =>
                 {
                     b.HasOne("Lotties.Domain.Babies.Baby", null)
@@ -2276,6 +2474,23 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Schedule")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Vaccinations.Vaccination", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_vaccinations_babies_baby_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_vaccinations_users_created_by");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Babies.Baby", b =>

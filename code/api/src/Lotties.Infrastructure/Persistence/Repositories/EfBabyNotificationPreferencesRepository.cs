@@ -57,7 +57,7 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
             join member in context.BabyMembers.AsNoTracking()
                 on new { preferences.BabyId, preferences.UserId } equals new { member.BabyId, member.UserId }
             where (preferences.DoseDue || preferences.NapWindow || preferences.BellyPainPattern || preferences.OvertiredWarning || preferences.FussyPattern
-                    || preferences.DiaperWetHeadsUp || preferences.DiaperDirtyHeadsUp
+                    || preferences.DiaperWetHeadsUp || preferences.DiaperDirtyHeadsUp || preferences.VaccineReminders
                     || (preferences.AppointmentReminders && context.Appointments.Any(appointment =>
                         appointment.BabyId == preferences.BabyId
                         && appointment.Status == AppointmentStatus.Upcoming

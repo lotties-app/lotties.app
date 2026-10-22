@@ -191,6 +191,118 @@ public sealed class EventPayloadValidationTests
         Assert.Equal(field, Rejected(BuiltInEventTypes.Fussy, json).Field);
     }
 
+    [Theory]
+    [InlineData("""{"value_c":37.8,"method":"armpit"}""")]
+    [InlineData("""{"value_c":37}""")]
+    [InlineData("""{"value_c":30}""")]
+    [InlineData("""{"value_c":45.0,"method":"rectal"}""")]
+    [InlineData("""{"value_c":36.50}""")]
+    public void Temperature_ValueInRangeWithOneDecimal_IsAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.Temperature, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{}""", "value_c")]
+    [InlineData("""{"method":"ear"}""", "value_c")]
+    [InlineData("""{"value_c":29.9}""", "value_c")]
+    [InlineData("""{"value_c":45.1}""", "value_c")]
+    [InlineData("""{"value_c":37.85}""", "value_c")]
+    [InlineData("""{"value_c":"37.8"}""", "value_c")]
+    [InlineData("""{"value_c":37.8,"method":"toe"}""", "method")]
+    public void Temperature_MissingOutOfRangeOrTooPreciseValue_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Temperature, json).Field);
+    }
+
+    [Fact]
+    public void Temperature_TooManyDecimals_MessageNamesTheLimit()
+    {
+        Assert.Equal("'value_c' must have at most 1 decimal place(s).", Rejected(BuiltInEventTypes.Temperature, """{"value_c":37.85}""").Message);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"stage":"gums_sore"}""")]
+    [InlineData("""{"stage":"tooth_came_through"}""")]
+    [InlineData("""{"stage":"tooth_came_through","tooth":"lower_central_incisor"}""")]
+    [InlineData("""{"stage":"tooth_came_through","tooth":"other"}""")]
+    public void Teething_ToothWithAToothThatCameThrough_IsAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.Teething, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{"tooth":"canine"}""", "tooth")]
+    [InlineData("""{"stage":"gums_sore","tooth":"canine"}""", "tooth")]
+    [InlineData("""{"stage":"tooth_came_through","tooth":"wisdom"}""", "tooth")]
+    [InlineData("""{"stage":"erupted"}""", "stage")]
+    public void Teething_ToothWithoutAToothThatCameThroughOrUnknownOption_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Teething, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"milestone":"first_steps"}""")]
+    [InlineData("""{"milestone":"other","custom":"Waved bye-bye"}""")]
+    [InlineData("""{"milestone":"other"}""")]
+    public void Milestone_CustomTextForOther_IsAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.Milestone, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{"custom":"Waved"}""", "custom")]
+    [InlineData("""{"milestone":"sits","custom":"Waved"}""", "custom")]
+    [InlineData("""{"milestone":"other","custom":3}""", "custom")]
+    [InlineData("""{"milestone":"jumps"}""", "milestone")]
+    public void Milestone_CustomTextWithoutOtherOrUnknownOption_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Milestone, json).Field);
+    }
+
+    [Theory]
+    [InlineData("nail_trim", """{"where":"both"}""")]
+    [InlineData("spit_up", """{"kind":"vomit","amount":"a_lot"}""")]
+    [InlineData("symptom", """{"symptom":"runny_nose","severity":"mild"}""")]
+    [InlineData("outdoor", """{"kind":"stroller_walk","pause_count":1,"paused_seconds":60}""")]
+    [InlineData("skin_care", """{"product":"diaper_cream"}""")]
+    [InlineData("nail_trim", """{}""")]
+    [InlineData("spit_up", """{}""")]
+    [InlineData("symptom", """{}""")]
+    [InlineData("outdoor", """{}""")]
+    [InlineData("skin_care", """{}""")]
+    public void SelectOnlyTypes_KnownOptionsOrNothing_AreAccepted(string key, string json)
+    {
+        Ensure(BuiltInEventTypes.All.Single(type => type.Key.Value == key), json, Ended);
+    }
+
+    [Theory]
+    [InlineData("nail_trim", """{"where":"toes"}""", "where")]
+    [InlineData("spit_up", """{"kind":"burp"}""", "kind")]
+    [InlineData("spit_up", """{"amount":"huge"}""", "amount")]
+    [InlineData("symptom", """{"symptom":"fever"}""", "symptom")]
+    [InlineData("symptom", """{"severity":"intense"}""", "severity")]
+    [InlineData("outdoor", """{"kind":"beach"}""", "kind")]
+    [InlineData("skin_care", """{"product":"SUNSCREEN"}""", "product")]
+    public void SelectOnlyTypes_UnknownOption_IsRejected(string key, string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.All.Single(type => type.Key.Value == key), json).Field);
+    }
+
+    [Fact]
+    public void Custom_NumberWithDecimals_AcceptsUpToThatManyPlaces()
+    {
+        var eventType = Custom(false, EventFieldDefinition.Create("weight", "Weight", EventFieldKind.Number, decimals: 2));
+
+        Ensure(eventType, """{"weight":3.25}""", Ended);
+        Ensure(eventType, """{"weight":3}""", Ended);
+        Ensure(eventType, """{"weight":3.2500}""", Ended);
+        Assert.Equal("weight", Rejected(eventType, """{"weight":3.251}""").Field);
+        Assert.Equal("weight", Rejected(eventType, """{"weight":1e400}""").Field);
+    }
+
     [Fact]
     public void Medication_HasNoFields_SoAnyPayloadIsAccepted()
     {

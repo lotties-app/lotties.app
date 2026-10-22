@@ -3,6 +3,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Domain.Notifications;
 
@@ -102,6 +103,7 @@ public sealed record DoctorSuggestion(Guid Id, DoctorSuggestionSource Source, Gu
 /// <param name="SentHeadsUps">The diaper heads-ups of the last day that count toward the daily cap and the spacing (any baby; filtered here).</param>
 /// <param name="Appointments">The baby's upcoming appointments within the reminder horizon (loaded only when a recipient wants appointment reminders).</param>
 /// <param name="DoctorSuggestions">The baby's doctor suggestions of the last 24 hours (loaded only when a recipient wants them).</param>
+/// <param name="Vaccines">The baby's schedule, profile and records (loaded only when an Owner or Parent wants vaccine reminders).</param>
 public sealed record NotificationPlanInput(
     DateTimeOffset Now,
     Guid BabyId,
@@ -117,24 +119,46 @@ public sealed record NotificationPlanInput(
     DiaperPrediction? Diapers = null,
     IReadOnlyCollection<SentHeadsUp>? SentHeadsUps = null,
     IReadOnlyList<Appointment>? Appointments = null,
-    IReadOnlyList<DoctorSuggestion>? DoctorSuggestions = null);
+    IReadOnlyList<DoctorSuggestion>? DoctorSuggestions = null,
+    VaccinePlanState? Vaccines = null);
 
-/// <summary>Names shown on the lock screen (only with show-names on), each trimmed to <see cref="MaxLength"/> characters. Never a dose amount.</summary>
+/// <summary>
+/// What the vaccine reminders need about one baby: the schedule, the baby's vaccine profile and birth date, and the
+/// records that are not deleted. The statuses are computed per recipient, on the recipient's local date.
+/// </summary>
+public sealed record VaccinePlanState(VaccineSchedule Schedule, VaccineProfile Profile, DateOnly BirthDate, IReadOnlyList<VaccinationRecord> Records);
+
+/// <summary>
+/// Names shown on the lock screen (only with show-names on), each trimmed to <see cref="MaxLength"/> characters. Never a
+/// dose amount. A vaccine name is kept per language (the payload picks the device's) without its parenthetical detail.
+/// </summary>
 public sealed record NotificationNames
 {
     public const int MaxLength = 40;
 
-    private NotificationNames(string baby, string? medication)
+    private NotificationNames(string baby, string? medication, LocalizedText? vaccine)
     {
         Baby = baby;
         Medication = medication;
+        Vaccine = vaccine;
     }
 
     public string Baby { get; }
 
     public string? Medication { get; }
 
-    public static NotificationNames Create(string baby, string? medication) => new(Shorten(baby) ?? string.Empty, Shorten(medication));
+    /// <summary>The vaccine's short name per language (<c>Pentavalente</c>, not <c>Pentavalente (DTP + Hib ...)</c>).</summary>
+    public LocalizedText? Vaccine { get; }
+
+    public static NotificationNames Create(string baby, string? medication, LocalizedText? vaccine = null) =>
+        new(Shorten(baby) ?? string.Empty, Shorten(medication), vaccine is null ? null : new LocalizedText(vaccine.Values.ToDictionary(pair => pair.Key, pair => Shorten(ShortVaccineName(pair.Value)) ?? string.Empty, StringComparer.Ordinal)));
+
+    /// <summary>The name before a parenthetical detail: <c>Pentavalente (DTP + Hib ...)</c> is <c>Pentavalente</c>.</summary>
+    private static string ShortVaccineName(string name)
+    {
+        var detail = name.IndexOf(" (", StringComparison.Ordinal);
+        return detail > 0 ? name[..detail] : name;
+    }
 
     private static string? Shorten(string? value)
     {
@@ -156,6 +180,7 @@ public sealed record NotificationNames
 /// <param name="ReminderOffsetMinutes">How long before the start the appointment reminder was meant to go (10080, 1440, 120 or 30).</param>
 /// <param name="ProposalId">The prescription proposal a doctor suggestion announces.</param>
 /// <param name="NoteId">The recommendation note a doctor suggestion announces.</param>
+/// <param name="VaccineDoseId">The scheduled dose a vaccine reminder is about (a schedule dose id, never a record).</param>
 public sealed record NotificationContent(
     Guid? BabyId,
     Guid? PrescriptionId,
@@ -164,7 +189,8 @@ public sealed record NotificationContent(
     Guid? AppointmentId = null,
     int? ReminderOffsetMinutes = null,
     Guid? ProposalId = null,
-    Guid? NoteId = null)
+    Guid? NoteId = null,
+    string? VaccineDoseId = null)
 {
     /// <summary>The content of a doctor suggestion: the baby, when it was sent, the proposal or the note.</summary>
     public static NotificationContent ForDoctorSuggestion(Guid? babyId, DoctorSuggestionSource source, Guid id, DateTimeOffset at, NotificationNames? names) =>

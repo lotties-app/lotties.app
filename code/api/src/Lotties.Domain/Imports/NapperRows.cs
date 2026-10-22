@@ -33,6 +33,12 @@ public sealed record NapperLogRow
 
     public decimal? PausedMinutes { get; init; }
 
+    /// <summary>The <c>temperature</c> cell (read leniently: unreadable text is in <see cref="InvalidCells"/>).</summary>
+    public decimal? Temperature { get; init; }
+
+    /// <summary>The <c>units</c> cell, e.g. the unit of <see cref="Temperature"/>.</summary>
+    public string? Units { get; init; }
+
     public string? BabyMoodOnWakeUp { get; init; }
 
     public string? BabyMoodOnSleep { get; init; }

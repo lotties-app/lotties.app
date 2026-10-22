@@ -15,7 +15,7 @@ internal sealed record RetryBatch(IReadOnlyList<OutgoingPush> Outgoing, int Expi
 /// due time plus the fixed 15-minute lead, i.e. the limit; diaper heads-ups: due time plus 10 minutes for wet and
 /// 5 minutes for dirty, the expected time from the gaps, an approximation after a feed; appointment reminders:
 /// appointment, start and offset from the key; doctor suggestions: the proposal or note from the key, shown at the due
-/// time, i.e. when it was sent) without names, so a retry always shows the generic lock-screen text.
+/// time, i.e. when it was sent; vaccine reminders: the dose id from the key, shown at the due time) without names, so a retry always shows the generic lock-screen text.
 /// </summary>
 internal sealed class NotificationRetryPass(
     INotificationDeliveryRepository deliveries,
@@ -70,6 +70,11 @@ internal sealed class NotificationRetryPass(
         if (delivery.DedupeKey.TryGetAppointment(out var appointmentId, out var startsAt, out var offsetMinutes))
         {
             return new NotificationContent(delivery.BabyId, null, startsAt, null, appointmentId, offsetMinutes);
+        }
+
+        if (delivery.DedupeKey.TryGetVaccine(out var doseId))
+        {
+            return new NotificationContent(delivery.BabyId, null, delivery.DueAt, null, VaccineDoseId: doseId);
         }
 
         if (delivery.DedupeKey.TryGetDoctorSuggestion(out var source, out var suggestionId))

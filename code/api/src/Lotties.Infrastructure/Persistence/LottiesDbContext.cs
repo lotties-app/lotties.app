@@ -45,6 +45,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>The babies' appointments, cancelled ones included (appointments are never deleted).</summary>
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
+    /// <summary>The babies' recorded vaccines, soft-deleted ones included (readers of the schedule filter them).</summary>
+    public DbSet<Lotties.Domain.Vaccinations.Vaccination> Vaccinations => Set<Lotties.Domain.Vaccinations.Vaccination>();
+
     /// <summary>Users' self-declared healthcare professional profiles (one per user).</summary>
     public DbSet<Lotties.Domain.Professionals.ProfessionalProfile> ProfessionalProfiles => Set<Lotties.Domain.Professionals.ProfessionalProfile>();
 

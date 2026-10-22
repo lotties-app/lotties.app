@@ -32,6 +32,14 @@ public static class BuiltInEventTypes
     public static readonly Guid NasalSuctionId = new("4124b99c-e000-4ee0-b74a-a6579553a450");
     public static readonly Guid BellyMassageId = new("44540b60-eb87-470f-8a3e-08170a525538");
     public static readonly Guid FussyId = new("6191006e-8767-4cd8-882f-81898fad58d3");
+    public static readonly Guid NailTrimId = new("bd1fde97-19c8-49a9-9ffd-537449183686");
+    public static readonly Guid TemperatureId = new("c3691235-0279-429c-be1c-db6692ad5455");
+    public static readonly Guid SpitUpId = new("1a08d284-a71f-44f5-ae83-49446a6f0e3f");
+    public static readonly Guid TeethingId = new("0a3e94b0-55c5-4d85-b530-317f161ef0cc");
+    public static readonly Guid MilestoneId = new("3491e7b4-895b-406f-885a-238da041dd7c");
+    public static readonly Guid SymptomId = new("fb45be64-6741-4762-ab9a-abf5c9e6a875");
+    public static readonly Guid OutdoorId = new("b22205ae-bae1-432f-802a-06e0c173efe1");
+    public static readonly Guid SkinCareId = new("9ad3dce5-dd4e-43d8-a022-5561ee7256ee");
 
     public static EventType Feeding { get; } = EventType.CreateBuiltIn(
         FeedingId,
@@ -186,8 +194,126 @@ public static class BuiltInEventTypes
             .. PauseFieldDefinitions(),
         ]);
 
+    /// <summary>Trimming the baby's nails: an instant marker with where (hands, feet or both), optional.</summary>
+    public static EventType NailTrim { get; } = EventType.CreateBuiltIn(
+        NailTrimId,
+        EventTypeKey.From("nail_trim"),
+        "Nail trim",
+        "content_cut",
+        HexColor.From("#5c6bc0"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("where", "Where", EventFieldKind.Select, options: ["hands", "feet", "both"]),
+        ]);
+
+    /// <summary>
+    /// A temperature reading: the required value in degrees Celsius (30 to 45, one decimal place) and the optional
+    /// measuring method. Only the number is recorded; the app never interprets it (no fever thresholds).
+    /// </summary>
+    public static EventType Temperature { get; } = EventType.CreateBuiltIn(
+        TemperatureId,
+        EventTypeKey.From("temperature"),
+        "Temperature",
+        "thermostat",
+        HexColor.From("#ffca28"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("value_c", "Temperature", EventFieldKind.Number, isRequired: true, min: 30, max: 45, unit: "°C", decimals: 1),
+            EventFieldDefinition.Create("method", "Method", EventFieldKind.Select, options: ["armpit", "ear", "forehead", "rectal", "mouth"]),
+        ]);
+
+    /// <summary>Spitting up or vomiting: an instant marker with the optional kind and amount.</summary>
+    public static EventType SpitUp { get; } = EventType.CreateBuiltIn(
+        SpitUpId,
+        EventTypeKey.From("spit_up"),
+        "Spit-up / vomit",
+        "sentiment_sick",
+        HexColor.From("#c0ca33"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["spit_up", "vomit"]),
+            EventFieldDefinition.Create("amount", "Amount", EventFieldKind.Select, options: ["little", "some", "a_lot"]),
+        ]);
+
+    /// <summary>Teething: an instant marker with the optional stage and, once a tooth came through, which tooth.</summary>
+    public static EventType Teething { get; } = EventType.CreateBuiltIn(
+        TeethingId,
+        EventTypeKey.From("teething"),
+        "Teething",
+        "dentistry",
+        HexColor.From("#29b6f6"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("stage", "Stage", EventFieldKind.Select, options: ["gums_sore", "tooth_came_through"]),
+            EventFieldDefinition.Create(
+                "tooth",
+                "Tooth",
+                EventFieldKind.Select,
+                options: ["lower_central_incisor", "upper_central_incisor", "lower_lateral_incisor", "upper_lateral_incisor", "first_molar", "canine", "second_molar", "other"],
+                visibleWhen: FieldVisibilityCondition.Create("stage", ["tooth_came_through"])),
+        ]);
+
+    /// <summary>A development milestone: an instant marker with the optional milestone and, for "other", its own words.</summary>
+    public static EventType Milestone { get; } = EventType.CreateBuiltIn(
+        MilestoneId,
+        EventTypeKey.From("milestone"),
+        "Milestone",
+        "emoji_events",
+        HexColor.From("#ab47bc"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create(
+                "milestone",
+                "Milestone",
+                EventFieldKind.Select,
+                options: ["first_smile", "laughs", "holds_head", "rolls_over", "sits", "crawls", "stands", "first_steps", "first_word", "other"]),
+            EventFieldDefinition.Create("custom", "Which milestone?", EventFieldKind.Text, visibleWhen: FieldVisibilityCondition.Create("milestone", ["other"])),
+        ]);
+
+    /// <summary>A symptom the parents noticed: an instant marker with the optional symptom and severity. A log, never a diagnosis.</summary>
+    public static EventType Symptom { get; } = EventType.CreateBuiltIn(
+        SymptomId,
+        EventTypeKey.From("symptom"),
+        "Symptom",
+        "coronavirus",
+        HexColor.From("#e57373"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("symptom", "Symptom", EventFieldKind.Select, options: ["cough", "runny_nose", "congestion", "rash", "diarrhea", "constipation", "other"]),
+            EventFieldDefinition.Create("severity", "Severity", EventFieldKind.Select, options: ["mild", "moderate", "severe"]),
+        ]);
+
+    /// <summary>Time outdoors (sun, a stroller walk, the park): timed like tummy time, with the optional kind.</summary>
+    public static EventType Outdoor { get; } = EventType.CreateBuiltIn(
+        OutdoorId,
+        EventTypeKey.From("outdoor"),
+        "Outdoor time",
+        "park",
+        HexColor.From("#66bb6a"),
+        hasDuration: true,
+        [
+            EventFieldDefinition.Create("kind", "Kind", EventFieldKind.Select, options: ["sun", "stroller_walk", "park", "other"]),
+            .. PauseFieldDefinitions(),
+        ]);
+
+    /// <summary>Skin care: an instant marker with the optional product applied.</summary>
+    public static EventType SkinCare { get; } = EventType.CreateBuiltIn(
+        SkinCareId,
+        EventTypeKey.From("skin_care"),
+        "Skin care",
+        "sanitizer",
+        HexColor.From("#f48fb1"),
+        hasDuration: false,
+        [
+            EventFieldDefinition.Create("product", "Product", EventFieldKind.Select, options: ["moisturizer", "diaper_cream", "sunscreen", "other"]),
+        ]);
+
     public static IReadOnlyList<EventType> All { get; } = Array.AsReadOnly(
-        new[] { Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump, NasalSuction, BellyMassage, Fussy });
+        new[]
+        {
+            Feeding, Sleep, Diaper, Bath, TummyTime, Medication, BellyPain, BreastPump, NasalSuction, BellyMassage, Fussy,
+            NailTrim, Temperature, SpitUp, Teething, Milestone, Symptom, Outdoor, SkinCare,
+        });
 
     private static FieldVisibilityCondition WhenMethodIs(string method) => FieldVisibilityCondition.Create("method", [method]);
 

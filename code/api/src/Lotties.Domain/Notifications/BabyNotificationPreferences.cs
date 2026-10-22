@@ -47,10 +47,13 @@ public sealed class BabyNotificationPreferences
     /// <summary>The doctor suggestions are on (off by default; rows stored before the column existed are off).</summary>
     public bool DoctorSuggestions { get; private set; }
 
+    /// <summary>The vaccine reminders are on (off by default; rows stored before the column existed are off).</summary>
+    public bool VaccineReminders { get; private set; }
+
     public DateTimeOffset UpdatedAt { get; private set; }
 
     public ReminderPreferences Preferences =>
-        ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes, BellyPainPattern, OvertiredWarning, FussyPattern, DiaperWetHeadsUp, DiaperDirtyHeadsUp, AppointmentReminders, DoctorSuggestions);
+        ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes, BellyPainPattern, OvertiredWarning, FussyPattern, DiaperWetHeadsUp, DiaperDirtyHeadsUp, AppointmentReminders, DoctorSuggestions, VaccineReminders);
 
     public static BabyNotificationPreferences Create(Guid babyId, Guid userId, ReminderPreferences preferences, DateTimeOffset now)
     {
@@ -83,6 +86,7 @@ public sealed class BabyNotificationPreferences
         DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp;
         AppointmentReminders = preferences.AppointmentReminders;
         DoctorSuggestions = preferences.DoctorSuggestions;
+        VaccineReminders = preferences.VaccineReminders;
         UpdatedAt = UtcTime.Normalize(now);
     }
 }

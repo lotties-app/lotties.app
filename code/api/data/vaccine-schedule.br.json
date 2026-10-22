@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "profile": "BR",
   "generatedOn": "2026-10-22",
   "sources": [
@@ -423,6 +423,52 @@
       "network": "private"
     },
     {
+      "key": "penta-acelular",
+      "names": {
+        "pt-BR": "Pentavalente acelular (DTPa + VIP + Hib)",
+        "en": "Pentavalent, acellular (DTaP + IPV + Hib)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche",
+          "poliomielite",
+          "infecções por Haemophilus influenzae tipo b"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)",
+          "polio",
+          "Haemophilus influenzae type b infections"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "dtpa-vip",
+      "names": {
+        "pt-BR": "DTPa-VIP ou dTpa-VIP (tríplice bacteriana acelular + VIP)",
+        "en": "DTaP-IPV or Tdap-IPV (acellular DTP + IPV)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche",
+          "poliomielite"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)",
+          "polio"
+        ]
+      },
+      "network": "private"
+    },
+    {
       "key": "dt-adulto",
       "names": {
         "pt-BR": "Dupla adulto (dT)",
@@ -517,7 +563,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hepatite-b",
@@ -542,7 +593,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hepatite-b",
@@ -566,7 +622,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Satisfied by combined vaccines (penta, hexavalente), which schema v1 cannot express; SBIm says 1 month, SBP says 1 or 2 months (2 months in its private 0-2-6 scheme)."
+      "needsReviewReason": "Satisfied by combined vaccines (penta, hexavalente), which schema v1 cannot express; SBIm says 1 month, SBP says 1 or 2 months (2 months in its private 0-2-6 scheme).",
+      "previousDoseIds": [
+        "hepatite-b-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hepatite-b",
@@ -590,7 +653,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Satisfied by combined vaccines, which schema v1 cannot express; the sources give no minimum interval for the infant 2nd-to-3rd dose (the PNI adolescent table gives 2 months between doses 2 and 3 and 4 months between doses 1 and 3)."
+      "needsReviewReason": "Satisfied by combined vaccines, which schema v1 cannot express; the sources give no minimum interval for the infant 2nd-to-3rd dose (the PNI adolescent table gives 2 months between doses 2 and 3 and 4 months between doses 1 and 3).",
+      "previousDoseIds": [
+        "hepatite-b-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "vsr-nirsevimabe",
@@ -614,7 +684,12 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Depends on the mother's RSV vaccination in pregnancy, prematurity and comorbidities, which schema v1 cannot express; SBP and SBIm do not recommend both the maternal vaccine and the antibody for healthy term babies. Clesrovimab is an alternative product (SBP)."
+      "needsReviewReason": "Depends on the mother's RSV vaccination in pregnancy, prematurity and comorbidities, which schema v1 cannot express; SBP and SBIm do not recommend both the maternal vaccine and the antibody for healthy term babies. Clesrovimab is an alternative product (SBP).",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": "rsv-maternal-vaccination-unknown-or-no",
+      "recordOnly": false
     },
     {
       "vaccineKey": "penta",
@@ -637,7 +712,14 @@
       },
       "alternativeGroup": "dtp-primaria-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "hepatite-b-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "penta",
@@ -660,7 +742,15 @@
       },
       "alternativeGroup": "dtp-primaria-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "penta-1",
+        "hexavalente-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "penta",
@@ -683,7 +773,17 @@
       },
       "alternativeGroup": "dtp-primaria-3",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "penta-2",
+        "hexavalente-2"
+      ],
+      "covers": [
+        "hepatite-b-3"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hexavalente",
@@ -707,7 +807,15 @@
       },
       "alternativeGroup": "dtp-primaria-1",
       "needsReview": true,
-      "needsReviewReason": "SBP and SBIm recommend the antigens (DTP/DTPa, Hib, VIP, hepatitis B) at 2, 4 and 6 months, not a product; hexavalente is the acellular combination they list for private clinics (SBIm availability column, SBP note 05). Coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; the sources state no minimum age or age limit."
+      "needsReviewReason": "SBP and SBIm recommend the antigens (DTP/DTPa, Hib, VIP, hepatitis B) at 2, 4 and 6 months, not a product; hexavalente is the acellular combination they list for private clinics (SBIm availability column, SBP note 05). Coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; the sources state no minimum age or age limit.",
+      "previousDoseIds": [],
+      "covers": [
+        "vip-1",
+        "hepatite-b-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hexavalente",
@@ -731,7 +839,17 @@
       },
       "alternativeGroup": "dtp-primaria-2",
       "needsReview": true,
-      "needsReviewReason": "Product chosen from the societies' antigen recommendation (see hexavalente-1); coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; no minimum interval stated in the sources."
+      "needsReviewReason": "Product chosen from the societies' antigen recommendation (see hexavalente-1); coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; no minimum interval stated in the sources.",
+      "previousDoseIds": [
+        "hexavalente-1",
+        "penta-1"
+      ],
+      "covers": [
+        "vip-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hexavalente",
@@ -755,7 +873,18 @@
       },
       "alternativeGroup": "dtp-primaria-3",
       "needsReview": true,
-      "needsReviewReason": "Product chosen from the societies' antigen recommendation (see hexavalente-1); coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; no minimum interval stated in the sources."
+      "needsReviewReason": "Product chosen from the societies' antigen recommendation (see hexavalente-1); coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; no minimum interval stated in the sources.",
+      "previousDoseIds": [
+        "hexavalente-2",
+        "penta-2"
+      ],
+      "covers": [
+        "vip-3",
+        "hepatite-b-3"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "vip",
@@ -780,7 +909,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "vip",
@@ -805,7 +939,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "vip-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "vip",
@@ -830,7 +971,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "vip-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "vip",
@@ -855,7 +1003,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "vip-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "vip",
@@ -880,7 +1035,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Recent PNI change: the technical child calendar on gov.br (2026-01-30) and the SBIm calendar (2026-06-17) still describe a single booster; the 4-to-under-5-years SUS window comes from NT 64/2026 table 1. The societies accept up to 6 years (SBP: catch-up at any age in private clinics)."
+      "needsReviewReason": "Recent PNI change: the technical child calendar on gov.br (2026-01-30) and the SBIm calendar (2026-06-17) still describe a single booster; the 4-to-under-5-years SUS window comes from NT 64/2026 table 1. The societies accept up to 6 years (SBP: catch-up at any age in private clinics).",
+      "previousDoseIds": [
+        "vip-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "rotavirus",
@@ -905,7 +1067,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "rotavirus",
@@ -930,7 +1097,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "rotavirus-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "rotavirus",
@@ -954,7 +1128,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Exists only with the RV5 product, which schema v1 cannot express; the sources state no minimum age for this dose (earliest set to the recommended age); SBP minimum interval is 4 weeks, SBIm 30 days."
+      "needsReviewReason": "Exists only with the RV5 product, which schema v1 cannot express; the sources state no minimum age for this dose (earliest set to the recommended age); SBP minimum interval is 4 weeks, SBIm 30 days.",
+      "previousDoseIds": [
+        "rotavirus-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "pneumo-conjugada",
@@ -979,7 +1160,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "pneumo-conjugada",
@@ -1004,7 +1190,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "PNI transition: the product at this dose (PCV10 or PCV20) depends on local stock and on the 1st dose, and the public calendar of 2026-10-13 still lists PCV10 here; the 30-day minimum applies only to series started at 6 months or later (60 days otherwise)."
+      "needsReviewReason": "PNI transition: the product at this dose (PCV10 or PCV20) depends on local stock and on the 1st dose, and the public calendar of 2026-10-13 still lists PCV10 here; the 30-day minimum applies only to series started at 6 months or later (60 days otherwise).",
+      "previousDoseIds": [
+        "pneumo-conjugada-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "pneumo-conjugada",
@@ -1028,7 +1221,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "The number of doses depends on the product and on the age at the first dose (SBP note 07 and SBIm comment 7 defer to the product labels); no minimum age or interval stated."
+      "needsReviewReason": "The number of doses depends on the product and on the age at the first dose (SBP note 07 and SBIm comment 7 defer to the product labels); no minimum age or interval stated.",
+      "previousDoseIds": [
+        "pneumo-conjugada-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "pneumo-conjugada",
@@ -1053,7 +1253,15 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "pneumo-conjugada-2",
+        "pneumo-conjugada-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-c",
@@ -1076,7 +1284,12 @@
       },
       "alternativeGroup": "meningo-primaria-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-c",
@@ -1099,7 +1312,15 @@
       },
       "alternativeGroup": "meningo-primaria-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "meningo-c-1",
+        "meningo-acwy-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-acwy",
@@ -1123,7 +1344,12 @@
       },
       "alternativeGroup": "meningo-primaria-1",
       "needsReview": true,
-      "needsReviewReason": "The number of infant doses and their ages depend on the ACWY product (SBP note 08, SBIm comment 8); 3 and 5 months come from the society tables."
+      "needsReviewReason": "The number of infant doses and their ages depend on the ACWY product (SBP note 08, SBIm comment 8); 3 and 5 months come from the society tables.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-acwy",
@@ -1147,7 +1373,15 @@
       },
       "alternativeGroup": "meningo-primaria-2",
       "needsReview": true,
-      "needsReviewReason": "The number of infant doses and their ages depend on the ACWY product (SBP note 08, SBIm comment 8); no minimum interval stated."
+      "needsReviewReason": "The number of infant doses and their ages depend on the ACWY product (SBP note 08, SBIm comment 8); no minimum interval stated.",
+      "previousDoseIds": [
+        "meningo-acwy-1",
+        "meningo-c-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-acwy",
@@ -1172,7 +1406,15 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "meningo-c-2",
+        "meningo-acwy-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-acwy",
@@ -1196,7 +1438,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "SBP's table marks the 4-6 years column while its note says between 5 and 6 years; the window end (6 years, 11 months, 29 days) is our reading of '5-6 anos'."
+      "needsReviewReason": "SBP's table marks the 4-6 years column while its note says between 5 and 6 years; the window end (6 years, 11 months, 29 days) is our reading of '5-6 anos'.",
+      "previousDoseIds": [
+        "meningo-acwy-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-acwy",
@@ -1220,7 +1469,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-acwy",
@@ -1243,7 +1497,12 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Marked with a hollow circle in the SBP table, whose legend is not printed; note 08 ties it to adolescents who never had MenACWY, so it may not apply to a child who followed the SBP infant schedule."
+      "needsReviewReason": "Marked with a hollow circle in the SBP table, whose legend is not printed; note 08 ties it to adolescents who never had MenACWY, so it may not apply to a child who followed the SBP infant schedule.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-b",
@@ -1267,7 +1526,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-b",
@@ -1291,7 +1555,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "meningo-b-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "meningo-b",
@@ -1315,7 +1586,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "influenza",
@@ -1340,7 +1616,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "influenza",
@@ -1365,7 +1646,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "influenza-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "influenza",
@@ -1388,7 +1676,18 @@
       },
       "alternativeGroup": "influenza-anual",
       "needsReview": true,
-      "needsReviewReason": "Recurring yearly dose: schema v1 has no recurrence field; 365 days is a placeholder meaning 'from the second year of life, once per season'. The real date follows the yearly campaign (SBIm: earlier in the North region)."
+      "needsReviewReason": "Recurring yearly dose: schema v1 has no recurrence field; 365 days is a placeholder meaning 'from the second year of life, once per season'. The real date follows the yearly campaign (SBIm: earlier in the North region).",
+      "previousDoseIds": [
+        "influenza-1",
+        "influenza-2"
+      ],
+      "covers": [],
+      "recurrence": {
+        "everyDays": 365,
+        "startAgeDays": 365
+      },
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "influenza",
@@ -1412,7 +1711,18 @@
       },
       "alternativeGroup": "influenza-anual",
       "needsReview": true,
-      "needsReviewReason": "Recurring yearly dose: schema v1 has no recurrence field; 365 days is a placeholder meaning 'from the second year of life, once per season'."
+      "needsReviewReason": "Recurring yearly dose: schema v1 has no recurrence field; 365 days is a placeholder meaning 'from the second year of life, once per season'.",
+      "previousDoseIds": [
+        "influenza-1",
+        "influenza-2"
+      ],
+      "covers": [],
+      "recurrence": {
+        "everyDays": 365,
+        "startAgeDays": 365
+      },
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "covid-19",
@@ -1437,7 +1747,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "covid-19",
@@ -1462,7 +1777,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "covid-19-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "covid-19",
@@ -1485,7 +1807,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Exists only with the Comirnaty product (3-dose scheme), which schema v1 cannot express. SBP and SBIm do not list doses; they defer to the PNI scheme."
+      "needsReviewReason": "Exists only with the Comirnaty product (3-dose scheme), which schema v1 cannot express. SBP and SBIm do not list doses; they defer to the PNI scheme.",
+      "previousDoseIds": [
+        "covid-19-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "febre-amarela",
@@ -1510,7 +1839,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "febre-amarela",
@@ -1535,7 +1869,14 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Conditional on the age at the first dose (before 5 years), which schema v1 cannot express; SBP and SBIm prefer a second dose for everyone."
+      "needsReviewReason": "Conditional on the age at the first dose (before 5 years), which schema v1 cannot express; SBP and SBIm prefer a second dose for everyone.",
+      "previousDoseIds": [
+        "febre-amarela-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "triplice-viral",
@@ -1560,7 +1901,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "triplice-viral",
@@ -1585,7 +1931,109 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "minIntervalDaysFromPrevious holds the PNI minimum (15 days, travel or outbreak only; 30 days recommended); SBP and SBIm require 3 months when this dose is given as MMRV."
+      "needsReviewReason": "minIntervalDaysFromPrevious holds the PNI minimum (15 days, travel or outbreak only; 30 days recommended); SBP and SBIm require 3 months when this dose is given as MMRV.",
+      "previousDoseIds": [
+        "triplice-viral-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "tetraviral",
+      "doseId": "tetraviral-1-sociedades",
+      "label": {
+        "pt-BR": "Dose dos 12 meses (1ª tríplice viral + 1ª varicela)",
+        "en": "12-month dose (1st MMR + 1st varicella)"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada: a tetraviral aos 12 meses vale pela 1ª dose da tríplice viral e pela 1ª da varicela.",
+        "en": "Private clinics: MMRV at 12 months counts as the 1st MMR dose and the 1st varicella dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "triplice-viral-1",
+        "varicela-1-sociedades"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "tetraviral",
+      "doseId": "tetraviral-15m",
+      "label": {
+        "pt-BR": "Dose dos 15 meses no SUS (2ª tríplice viral + 1ª varicela)",
+        "en": "15-month dose in the SUS (2nd MMR + 1st varicella)"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: quando falta a varicela isolada, a tetraviral aos 15 meses vale pela 2ª dose da tríplice viral e pela 1ª da varicela.",
+        "en": "SUS: when stand-alone varicella is missing, MMRV at 15 months counts as the 2nd MMR dose and the 1st varicella dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "triplice-viral-2",
+        "varicela-1"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "tetraviral",
+      "doseId": "tetraviral-2-sociedades",
+      "label": {
+        "pt-BR": "Dose dos 15 meses (2ª tríplice viral + 2ª varicela)",
+        "en": "15-month dose (2nd MMR + 2nd varicella)"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm preferem a tetraviral na 2ª dose: vale pela 2ª da tríplice viral e pela 2ª da varicela.",
+        "en": "SBP and SBIm prefer MMRV for the 2nd dose: it counts as the 2nd MMR dose and the 2nd varicella dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "triplice-viral-2",
+        "varicela-2-sociedades"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
     },
     {
       "vaccineKey": "varicela",
@@ -1609,7 +2057,12 @@
       },
       "alternativeGroup": "varicela-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "varicela",
@@ -1632,7 +2085,12 @@
       },
       "alternativeGroup": "varicela-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "varicela",
@@ -1656,7 +2114,15 @@
       },
       "alternativeGroup": "varicela-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "varicela-1-sociedades",
+        "varicela-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "varicela",
@@ -1679,7 +2145,15 @@
       },
       "alternativeGroup": "varicela-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "varicela-1",
+        "varicela-1-sociedades"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hepatite-a",
@@ -1703,7 +2177,12 @@
       },
       "alternativeGroup": "hepatite-a-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hepatite-a",
@@ -1726,7 +2205,12 @@
       },
       "alternativeGroup": "hepatite-a-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hepatite-a",
@@ -1750,7 +2234,15 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "hepatite-a-1-sociedades",
+        "hepatite-a-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dtp",
@@ -1773,7 +2265,15 @@
       },
       "alternativeGroup": "dtp-reforco-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "penta-3",
+        "hexavalente-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dtp",
@@ -1796,7 +2296,15 @@
       },
       "alternativeGroup": "dtp-reforco-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dtp-reforco-1",
+        "dtpa-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dtpa",
@@ -1820,7 +2328,15 @@
       },
       "alternativeGroup": "dtp-reforco-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "hexavalente-3",
+        "penta-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dtpa",
@@ -1844,7 +2360,15 @@
       },
       "alternativeGroup": "dtp-reforco-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dtpa-reforco-1",
+        "dtp-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hib",
@@ -1868,7 +2392,76 @@
       },
       "alternativeGroup": null,
       "needsReview": true,
-      "needsReviewReason": "Conditional dose (SBP: only after acellular combinations; SBIm: recommended, mainly then) that schema v1 cannot express; usually given inside a combined vaccine, whose coverage schema v1 cannot express either."
+      "needsReviewReason": "Conditional dose (SBP: only after acellular combinations; SBIm: recommended, mainly then) that schema v1 cannot express; usually given inside a combined vaccine, whose coverage schema v1 cannot express either.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "penta-acelular",
+      "doseId": "penta-acelular-reforco",
+      "label": {
+        "pt-BR": "Reforço dos 15 meses (DTPa + VIP + Hib)",
+        "en": "15-month booster (DTaP + IPV + Hib)"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada: vale pelo 1º reforço da tríplice bacteriana, pelo reforço da Hib e pelo 1º reforço da pólio.",
+        "en": "Private clinics: counts as the 1st DTP booster, the Hib booster and the 1st polio booster."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "dtpa-reforco-1",
+        "hib-reforco",
+        "vip-reforco-1"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "dtpa-vip",
+      "doseId": "dtpa-vip-reforco",
+      "label": {
+        "pt-BR": "Reforço dos 4 a 6 anos (DTPa + VIP)",
+        "en": "4-to-6-year booster (DTaP + IPV)"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 1461,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBIm: vale pelo 2º reforço da tríplice bacteriana e pelo 2º reforço da pólio.",
+        "en": "SBIm: counts as the 2nd DTP booster and the 2nd polio booster."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "dtpa-reforco-2",
+        "vip-reforco-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
     },
     {
       "vaccineKey": "dt-adulto",
@@ -1891,7 +2484,15 @@
       },
       "alternativeGroup": "dt-reforco-adolescente",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dtp-reforco-2",
+        "dtpa-reforco-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dtpa-adulto",
@@ -1914,7 +2515,12 @@
       },
       "alternativeGroup": "dt-reforco-adolescente",
       "needsReview": true,
-      "needsReviewReason": "Only the SBIm child calendar (0 to under 10 years) was used; the SBIm adolescent calendar was not consulted, so later SBIm boosters and the relation to the SBP and PNI booster at 14 years are not covered."
+      "needsReviewReason": "Only the SBIm child calendar (0 to under 10 years) was used; the SBIm adolescent calendar was not consulted, so later SBIm boosters and the relation to the SBP and PNI booster at 14 years are not covered.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dtpa-adulto",
@@ -1937,7 +2543,12 @@
       },
       "alternativeGroup": "dt-reforco-adolescente",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hpv",
@@ -1962,7 +2573,12 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "hpv",
@@ -1986,7 +2602,14 @@
       },
       "alternativeGroup": null,
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "hpv-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dengue",
@@ -2010,7 +2633,12 @@
       },
       "alternativeGroup": "dengue-1",
       "needsReview": true,
-      "needsReviewReason": "The societies give a starting age ('from 4 years'), not a recommended age; 4 years is used as both."
+      "needsReviewReason": "The societies give a starting age ('from 4 years'), not a recommended age; 4 years is used as both.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dengue",
@@ -2034,7 +2662,15 @@
       },
       "alternativeGroup": "dengue-2",
       "needsReview": true,
-      "needsReviewReason": "Follows dengue-1-sociedades, whose recommended age is the societies' starting age (4 years)."
+      "needsReviewReason": "Follows dengue-1-sociedades, whose recommended age is the societies' starting age (4 years).",
+      "previousDoseIds": [
+        "dengue-1-sociedades",
+        "dengue-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dengue",
@@ -2057,7 +2693,12 @@
       },
       "alternativeGroup": "dengue-1",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     },
     {
       "vaccineKey": "dengue",
@@ -2080,7 +2721,15 @@
       },
       "alternativeGroup": "dengue-2",
       "needsReview": false,
-      "needsReviewReason": null
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dengue-1",
+        "dengue-1-sociedades"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
     }
   ]
 }

@@ -19,6 +19,7 @@ public static class NapperEventMapper
         new SleepMapper(),
         new MedicineMapper(),
         new BreastPumpMapper(),
+        new TemperatureMapper(),
     ];
 
     public static NapperRowOutcome Map(NapperLogRow row)

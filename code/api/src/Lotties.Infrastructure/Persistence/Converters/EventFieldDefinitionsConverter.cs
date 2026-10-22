@@ -9,8 +9,8 @@ namespace Lotties.Infrastructure.Persistence.Converters;
 /// <summary>
 /// Stores an event type's field definitions as a JSON array, e.g.
 /// <c>[{"key":"side","label":"Side","kind":"select","isRequired":false,"options":["left","right"],"visibleWhen":{"field":"method","equals":["breast"]}}]</c>.
-/// Absent optional members (options, min, max, unit, visibleWhen) are left out, as are the flags <c>hidden</c> and
-/// <c>integer</c> while false, so definitions stored before those flags existed read back unchanged.
+/// Absent optional members (options, min, max, unit, visibleWhen, decimals) are left out, as are the flags <c>hidden</c>
+/// and <c>integer</c> while false, so definitions stored before those members existed read back unchanged.
 /// </summary>
 internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyList<EventFieldDefinition>, string>
 {
@@ -51,7 +51,8 @@ internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyL
         field.Unit,
         field.VisibleWhen is null ? null : new VisibilityDocument(field.VisibleWhen.Field, field.VisibleWhen.Values),
         field.IsHidden ? true : null,
-        field.IsInteger ? true : null);
+        field.IsInteger ? true : null,
+        field.Decimals);
 
     private static EventFieldDefinition ToDefinition(FieldDocument document) => EventFieldDefinition.Create(
         document.Key,
@@ -64,7 +65,8 @@ internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyL
         document.Unit,
         document.VisibleWhen is null ? null : FieldVisibilityCondition.Create(document.VisibleWhen.Field, document.VisibleWhen.EqualsValues),
         document.Hidden == true,
-        document.Integer == true);
+        document.Integer == true,
+        document.Decimals);
 
     private sealed record FieldDocument(
         string Key,
@@ -77,7 +79,8 @@ internal sealed class EventFieldDefinitionsConverter : ValueConverter<IReadOnlyL
         string? Unit,
         VisibilityDocument? VisibleWhen = null,
         bool? Hidden = null,
-        bool? Integer = null);
+        bool? Integer = null,
+        int? Decimals = null);
 
     private sealed record VisibilityDocument(
         string Field,

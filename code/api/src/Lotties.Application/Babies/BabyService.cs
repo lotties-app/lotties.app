@@ -2,6 +2,7 @@ using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Users;
+using Lotties.Domain.Vaccinations;
 using Microsoft.Extensions.Logging;
 
 namespace Lotties.Application.Babies;
@@ -52,6 +53,18 @@ internal sealed class BabyService : IBabyService
         baby.UpdateDetails(request.Name, request.BirthDate, _timeProvider.GetUtcNow());
         await _babies.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("User {UserId} updated baby {BabyId}", user.Id, baby.Id);
+        return ToResponse(baby, user);
+    }
+
+    public async Task<BabyResponse> UpdateVaccineProfileAsync(Guid babyId, UpdateVaccineProfileRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var profile = (VaccineProfile)request;
+        var user = await _currentUser.GetUserAsync(cancellationToken);
+        var baby = await LoadAsync(babyId, cancellationToken);
+        baby.UpdateVaccineProfile(profile);
+        await _babies.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("User {UserId} updated the vaccine profile of baby {BabyId}", user.Id, baby.Id);
         return ToResponse(baby, user);
     }
 

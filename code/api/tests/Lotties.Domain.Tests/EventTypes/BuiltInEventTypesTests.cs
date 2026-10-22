@@ -9,7 +9,7 @@ public sealed class BuiltInEventTypesTests
     {
         var keys = BuiltInEventTypes.All.Select(type => type.Key.Value).ToArray();
 
-        Assert.Equal(["feeding", "sleep", "diaper", "bath", "tummy_time", "medication", "belly_pain", "breast_pump", "nasal_suction", "belly_massage", "fussy"], keys);
+        Assert.Equal(["feeding", "sleep", "diaper", "bath", "tummy_time", "medication", "belly_pain", "breast_pump", "nasal_suction", "belly_massage", "fussy", "nail_trim", "temperature", "spit_up", "teething", "milestone", "symptom", "outdoor", "skin_care"], keys);
     }
 
     [Fact]
@@ -22,6 +22,18 @@ public sealed class BuiltInEventTypesTests
         Assert.Equal(new Guid("4124b99c-e000-4ee0-b74a-a6579553a450"), BuiltInEventTypes.NasalSuction.Id);
         Assert.Equal(new Guid("44540b60-eb87-470f-8a3e-08170a525538"), BuiltInEventTypes.BellyMassage.Id);
         Assert.Equal(new Guid("6191006e-8767-4cd8-882f-81898fad58d3"), BuiltInEventTypes.Fussy.Id);
+        Assert.Equal(
+            [
+                new Guid("bd1fde97-19c8-49a9-9ffd-537449183686"), new Guid("c3691235-0279-429c-be1c-db6692ad5455"),
+                new Guid("1a08d284-a71f-44f5-ae83-49446a6f0e3f"), new Guid("0a3e94b0-55c5-4d85-b530-317f161ef0cc"),
+                new Guid("3491e7b4-895b-406f-885a-238da041dd7c"), new Guid("fb45be64-6741-4762-ab9a-abf5c9e6a875"),
+                new Guid("b22205ae-bae1-432f-802a-06e0c173efe1"), new Guid("9ad3dce5-dd4e-43d8-a022-5561ee7256ee"),
+            ],
+            new[]
+            {
+                BuiltInEventTypes.NailTrim, BuiltInEventTypes.Temperature, BuiltInEventTypes.SpitUp, BuiltInEventTypes.Teething,
+                BuiltInEventTypes.Milestone, BuiltInEventTypes.Symptom, BuiltInEventTypes.Outdoor, BuiltInEventTypes.SkinCare,
+            }.Select(type => type.Id));
     }
 
     [Theory]
@@ -36,6 +48,14 @@ public sealed class BuiltInEventTypesTests
     [InlineData("nasal_suction", false)]
     [InlineData("belly_massage", true)]
     [InlineData("fussy", true)]
+    [InlineData("nail_trim", false)]
+    [InlineData("temperature", false)]
+    [InlineData("spit_up", false)]
+    [InlineData("teething", false)]
+    [InlineData("milestone", false)]
+    [InlineData("symptom", false)]
+    [InlineData("outdoor", true)]
+    [InlineData("skin_care", false)]
     public void All_HasDurationPerType(string key, bool hasDuration)
     {
         Assert.Equal(hasDuration, BuiltInEventTypes.All.Single(type => type.Key.Value == key).HasDuration);
@@ -195,6 +215,7 @@ public sealed class BuiltInEventTypesTests
     [InlineData("breast_pump")]
     [InlineData("belly_massage")]
     [InlineData("fussy")]
+    [InlineData("outdoor")]
     public void TimedTypes_DeclareHiddenPauseFieldsLast(string key)
     {
         var fields = BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields.TakeLast(3).ToArray();
@@ -210,6 +231,13 @@ public sealed class BuiltInEventTypesTests
     [InlineData("medication")]
     [InlineData("belly_pain")]
     [InlineData("nasal_suction")]
+    [InlineData("nail_trim")]
+    [InlineData("temperature")]
+    [InlineData("spit_up")]
+    [InlineData("teething")]
+    [InlineData("milestone")]
+    [InlineData("symptom")]
+    [InlineData("skin_care")]
     public void InstantTypes_DeclareNoPauseFields(string key)
     {
         Assert.DoesNotContain(BuiltInEventTypes.All.Single(type => type.Key.Value == key).Fields, field => field.Key.StartsWith("pause", StringComparison.Ordinal));
@@ -231,5 +259,77 @@ public sealed class BuiltInEventTypesTests
         var intensity = Assert.Single(BuiltInEventTypes.BellyPain.Fields);
 
         Assert.Equal(("intensity", EventFieldKind.Number, true, 1m, 5m), (intensity.Key, intensity.Kind, intensity.IsRequired, intensity.Min, intensity.Max));
+    }
+
+    [Theory]
+    [InlineData("nail_trim", "Nail trim", "content_cut", "#5c6bc0", "where:hands,feet,both")]
+    [InlineData("spit_up", "Spit-up / vomit", "sentiment_sick", "#c0ca33", "kind:spit_up,vomit|amount:little,some,a_lot")]
+    [InlineData("symptom", "Symptom", "coronavirus", "#e57373", "symptom:cough,runny_nose,congestion,rash,diarrhea,constipation,other|severity:mild,moderate,severe")]
+    [InlineData("outdoor", "Outdoor time", "park", "#66bb6a", "kind:sun,stroller_walk,park,other")]
+    [InlineData("skin_care", "Skin care", "sanitizer", "#f48fb1", "product:moisturizer,diaper_cream,sunscreen,other")]
+    public void SelectOnlyTypes_HaveTheirOptionalAlwaysVisibleSelects(string key, string name, string icon, string color, string selects)
+    {
+        var type = BuiltInEventTypes.All.Single(type => type.Key.Value == key);
+        var visible = type.Fields.Where(field => !field.IsHidden).ToArray();
+
+        Assert.Equal((name, icon, color), (type.Name, type.Icon, type.Color.Value));
+        Assert.Equal(selects.Split('|'), visible.Select(field => $"{field.Key}:{string.Join(',', field.Options)}"));
+        Assert.All(visible, field => Assert.Equal((EventFieldKind.Select, false, (FieldVisibilityCondition?)null), (field.Kind, field.IsRequired, field.VisibleWhen)));
+    }
+
+    [Fact]
+    public void Temperature_HasARequiredCelsiusValueWithOneDecimalAndAnOptionalMethod()
+    {
+        var type = BuiltInEventTypes.Temperature;
+        var value = type.Fields[0];
+
+        Assert.Equal(("temperature", "Temperature", "thermostat", "#ffca28", false), (type.Key.Value, type.Name, type.Icon, type.Color.Value, type.HasDuration));
+        Assert.Equal(("value_c", EventFieldKind.Number, true, 30m, 45m, "°C", 1, false), (value.Key, value.Kind, value.IsRequired, value.Min!.Value, value.Max!.Value, value.Unit, value.Decimals, value.IsInteger));
+        Assert.Equal(("method", EventFieldKind.Select, false), (type.Fields[1].Key, type.Fields[1].Kind, type.Fields[1].IsRequired));
+        Assert.Equal(["armpit", "ear", "forehead", "rectal", "mouth"], type.Fields[1].Options);
+        Assert.Equal(2, type.Fields.Count);
+    }
+
+    [Fact]
+    public void Teething_ToothShowsOnlyOnceAToothCameThrough()
+    {
+        var type = BuiltInEventTypes.Teething;
+
+        Assert.Equal(("teething", "Teething", "dentistry", "#29b6f6"), (type.Key.Value, type.Name, type.Icon, type.Color.Value));
+        Assert.Equal(["stage", "tooth"], type.Fields.Select(field => field.Key));
+        Assert.Equal(["gums_sore", "tooth_came_through"], type.Fields[0].Options);
+        Assert.Equal(
+            ["lower_central_incisor", "upper_central_incisor", "lower_lateral_incisor", "upper_lateral_incisor", "first_molar", "canine", "second_molar", "other"],
+            type.Fields[1].Options);
+        Assert.Equal(("stage", "tooth_came_through"), (type.Fields[1].VisibleWhen!.Field, Assert.Single(type.Fields[1].VisibleWhen!.Values)));
+        Assert.All(type.Fields, field => Assert.False(field.IsRequired));
+    }
+
+    [Fact]
+    public void Milestone_CustomTextShowsOnlyForOther()
+    {
+        var type = BuiltInEventTypes.Milestone;
+
+        Assert.Equal(("milestone", "Milestone", "emoji_events", "#ab47bc"), (type.Key.Value, type.Name, type.Icon, type.Color.Value));
+        Assert.Equal([("milestone", EventFieldKind.Select), ("custom", EventFieldKind.Text)], type.Fields.Select(field => (field.Key, field.Kind)));
+        Assert.Equal(
+            ["first_smile", "laughs", "holds_head", "rolls_over", "sits", "crawls", "stands", "first_steps", "first_word", "other"],
+            type.Fields[0].Options);
+        Assert.Equal(("milestone", "other"), (type.Fields[1].VisibleWhen!.Field, Assert.Single(type.Fields[1].VisibleWhen!.Values)));
+        Assert.All(type.Fields, field => Assert.False(field.IsRequired));
+    }
+
+    [Fact]
+    public void NewTypes_HaveAllowedIconsAndColoursOfTheirOwn()
+    {
+        var added = new[]
+        {
+            BuiltInEventTypes.NailTrim, BuiltInEventTypes.Temperature, BuiltInEventTypes.SpitUp, BuiltInEventTypes.Teething,
+            BuiltInEventTypes.Milestone, BuiltInEventTypes.Symptom, BuiltInEventTypes.Outdoor, BuiltInEventTypes.SkinCare,
+        };
+
+        Assert.All(added, type => Assert.True(EventTypeIcons.IsAllowed(type.Icon), type.Icon));
+        Assert.All(added, type => Assert.Single(BuiltInEventTypes.All, other => other.Color.Value == type.Color.Value));
+        Assert.All(added, type => Assert.Single(BuiltInEventTypes.All, other => other.Icon == type.Icon));
     }
 }

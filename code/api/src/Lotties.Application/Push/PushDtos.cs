@@ -199,6 +199,9 @@ public sealed record BabyNotificationPreferencesResponse
     /// <summary>The doctor suggestions (<c>doctor_suggestion</c>) are on (off by default; only Owners and Parents receive them).</summary>
     public bool DoctorSuggestions { get; init; }
 
+    /// <summary>The vaccine reminders (<c>vaccine_due</c>) are on (off by default; only Owners and Parents receive them).</summary>
+    public bool VaccineReminders { get; init; }
+
     public static BabyNotificationPreferencesResponse For(Guid babyId, bool canReceive, ReminderPreferences preferences) => new()
     {
         BabyId = babyId,
@@ -214,6 +217,7 @@ public sealed record BabyNotificationPreferencesResponse
         DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp,
         AppointmentReminders = preferences.AppointmentReminders,
         DoctorSuggestions = preferences.DoctorSuggestions,
+        VaccineReminders = preferences.VaccineReminders,
     };
 }
 
@@ -246,6 +250,8 @@ public sealed record PutBabyNotificationPreferencesRequest
 
     public bool? DoctorSuggestions { get; init; }
 
+    public bool? VaccineReminders { get; init; }
+
     public static explicit operator ReminderPreferencesChange(PutBabyNotificationPreferencesRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -260,7 +266,8 @@ public sealed record PutBabyNotificationPreferencesRequest
             request.DiaperWetHeadsUp,
             request.DiaperDirtyHeadsUp,
             request.AppointmentReminders,
-            request.DoctorSuggestions);
+            request.DoctorSuggestions,
+            request.VaccineReminders);
     }
 }
 

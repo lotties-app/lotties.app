@@ -1,3 +1,4 @@
+using Lotties.Application.Vaccinations;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Measurements;
@@ -6,6 +7,7 @@ using Lotties.Domain.Notifications;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Application.Notifications.Dispatching;
 
@@ -17,7 +19,8 @@ namespace Lotties.Application.Notifications.Dispatching;
 /// nap reminders or a heads-up read from the events (belly pain, fussy, overtired: each is read once per time zone of
 /// the recipients who want it, daylight saving applied per event; the diaper predictions once, elapsed time needs no
 /// zone); the upcoming appointments within a week only when one wants appointment reminders; the doctor suggestions of
-/// the last 24 hours only when an Owner or Parent wants them; names only when one has show-names on.
+/// the last 24 hours only when an Owner or Parent wants them; the vaccine schedule, the baby's vaccine profile and its
+/// records that are not deleted only when an Owner or Parent wants vaccine reminders; names only when one has show-names on.
 /// </summary>
 internal sealed class NotificationPlanInputLoader(
     IAppointmentRepository appointments,
@@ -29,6 +32,8 @@ internal sealed class NotificationPlanInputLoader(
     IBabyRepository babies,
     IMedicationRepository medications,
     INotificationActionRepository actions,
+    IVaccinationRepository vaccinations,
+    IVaccineScheduleProvider vaccineSchedule,
     PredictionOptions predictionOptions)
 {
     public async Task<NotificationPlanInput> LoadAsync(
@@ -57,6 +62,7 @@ internal sealed class NotificationPlanInputLoader(
         var suggestions = plannable.Any(WantsDoctorSuggestions)
             ? await doctorSuggestions.ListSinceAsync(babyId, now - NotificationRules.DoctorSuggestionLifetime, cancellationToken)
             : [];
+        var vaccines = plannable.Any(WantsVaccineReminders) ? await LoadVaccinesAsync(babyId, cancellationToken) : null;
         return new NotificationPlanInput(
             now,
             babyId,
@@ -72,7 +78,24 @@ internal sealed class NotificationPlanInputLoader(
             DiapersOf(plannable, history, now),
             claims.SentHeadsUps,
             upcoming,
-            suggestions);
+            suggestions,
+            vaccines);
+    }
+
+    private static bool WantsVaccineReminders(NotificationRecipient recipient) =>
+        recipient.Preferences.VaccineReminders && NotificationRules.CanReceiveVaccineReminders(recipient.Role);
+
+    /// <summary>The schedule, the baby's vaccine profile and birth date, and its records that are not deleted; <c>null</c> without the baby.</summary>
+    private async Task<VaccinePlanState?> LoadVaccinesAsync(Guid babyId, CancellationToken cancellationToken)
+    {
+        var baby = await babies.FindAsync(babyId, cancellationToken);
+        if (baby is null)
+        {
+            return null;
+        }
+
+        var records = await vaccinations.ListActiveAsync(babyId, cancellationToken);
+        return new VaccinePlanState(vaccineSchedule.Schedule, baby.VaccineProfile, baby.BirthDate, records.Select(record => record.ToRecord()).ToArray());
     }
 
     private static bool WantsDoctorSuggestions(NotificationRecipient recipient) =>

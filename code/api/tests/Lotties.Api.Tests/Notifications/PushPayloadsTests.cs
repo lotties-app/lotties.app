@@ -77,6 +77,26 @@ public sealed class PushPayloadsTests
     }
 
     [Fact]
+    public void Build_VaccineDue_CarriesTheDoseIdAndTheVaccineNameInTheDeviceLanguage()
+    {
+        var vaccine = new Lotties.Domain.Vaccinations.LocalizedText(new Dictionary<string, string> { ["en"] = "Pentavalent (whole-cell DTP + Hib + hepatitis B)", ["pt-BR"] = "Pentavalente (DTP + Hib + hepatite B, células inteiras)" });
+        var named = new NotificationContent(BabyId, null, Slot, NotificationNames.Create("Lia", null, vaccine), VaccineDoseId: "penta-1");
+        var key = NotificationKey.ForVaccine(BabyId, "penta-1", null, 1);
+
+        var portuguese = PushPayloads.Build(DeliveryId, NotificationKind.VaccineDue, named, key, NotificationLocale.FromOrDefault("pt-BR"), null);
+        var english = PushPayloads.Build(DeliveryId, NotificationKind.VaccineDue, named with { Names = null }, key, NotificationLocale.English, null);
+
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"vaccine_due\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"doseId\":\"penta-1\",\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"pt-BR\",\"names\":{\"baby\":\"Lia\",\"vaccine\":\"Pentavalente\"}}",
+            portuguese);
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"vaccine_due\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"doseId\":\"penta-1\",\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"en\"}",
+            english);
+    }
+
+    [Fact]
     public void Build_Test_HasNoBabyNoTokenNoNames()
     {
         var planned = NotificationPlanner.PlanTest(Guid.NewGuid(), DeliveryId, Slot);

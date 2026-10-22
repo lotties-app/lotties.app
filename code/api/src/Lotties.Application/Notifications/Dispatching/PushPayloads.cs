@@ -7,9 +7,10 @@ namespace Lotties.Application.Notifications.Dispatching;
 
 /// <summary>
 /// The encrypted push payload the service worker parses (code/web/src/pwa/sw/payload.ts, design section 8):
-/// <c>{v, id, kind, babyId?, rxId?, apptId?, offset?, proposalId?, noteId?, at, lang, token?, names?{baby, medication?}, snooze?}</c>.
-/// Codes, ids, instants and the appointment reminder offset (minutes) only; <c>names</c> only with show-names on; never a
-/// dose amount, an appointment title, doctor or notes, a medicine a doctor suggested or a note's text. Never logged.
+/// <c>{v, id, kind, babyId?, rxId?, apptId?, offset?, proposalId?, noteId?, doseId?, at, lang, token?, names?{baby, medication?, vaccine?}, snooze?}</c>.
+/// Codes, ids, instants, the appointment reminder offset (minutes) and a schedule dose id only; <c>names</c> only with
+/// show-names on (the vaccine name in the payload's language); never a dose amount, an appointment title, doctor or notes,
+/// a medicine a doctor suggested, a note's text or anything recorded about a vaccine. Never logged.
 /// </summary>
 public static class PushPayloads
 {
@@ -41,10 +42,11 @@ public static class PushPayloads
             WriteOptionalNumber(writer, "offset", content.ReminderOffsetMinutes);
             WriteOptionalId(writer, "proposalId", content.ProposalId);
             WriteOptionalId(writer, "noteId", content.NoteId);
+            WriteOptionalString(writer, "doseId", content.VaccineDoseId);
             writer.WriteString("at", content.At.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture));
             writer.WriteString("lang", locale.Value ?? NotificationLocale.English.Value);
             WriteOptionalString(writer, "token", token?.Value);
-            WriteNames(writer, content.Names);
+            WriteNames(writer, content.Names, locale.Value ?? NotificationLocale.English.Value);
             WriteSnooze(writer, dedupeKey.SnoozeNumber);
             writer.WriteEndObject();
         }
@@ -76,7 +78,7 @@ public static class PushPayloads
         }
     }
 
-    private static void WriteNames(Utf8JsonWriter writer, NotificationNames? names)
+    private static void WriteNames(Utf8JsonWriter writer, NotificationNames? names, string language)
     {
         if (names is null || string.IsNullOrEmpty(names.Baby))
         {
@@ -86,6 +88,8 @@ public static class PushPayloads
         writer.WriteStartObject("names");
         writer.WriteString("baby", names.Baby);
         WriteOptionalString(writer, "medication", string.IsNullOrEmpty(names.Medication) ? null : names.Medication);
+        var vaccine = names.Vaccine?.In(language);
+        WriteOptionalString(writer, "vaccine", string.IsNullOrEmpty(vaccine) ? null : vaccine);
         writer.WriteEndObject();
     }
 

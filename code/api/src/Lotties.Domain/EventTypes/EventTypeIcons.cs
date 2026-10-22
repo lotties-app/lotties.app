@@ -32,6 +32,13 @@ public static class EventTypeIcons
         "air",
         "massage",
         "sentiment_very_dissatisfied",
+        "content_cut",
+        "sentiment_sick",
+        "dentistry",
+        "emoji_events",
+        "coronavirus",
+        "park",
+        "sanitizer",
     ];
 
     private static readonly FrozenSet<string> Allowed = Names.ToFrozenSet(StringComparer.Ordinal);

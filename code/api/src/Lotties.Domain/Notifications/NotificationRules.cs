@@ -77,6 +77,20 @@ public static class NotificationRules
     /// <summary>A doctor suggestion is planned while it is newer than this; its notification expires this long after it was sent by the doctor.</summary>
     public static readonly TimeSpan DoctorSuggestionLifetime = TimeSpan.FromHours(24);
 
+    /// <summary>The local time of day a vaccine reminder is sent (on the day the dose becomes due, and 14 days later).</summary>
+    public static readonly TimeOnly VaccineReminderTime = new(9, 0);
+
+    /// <summary>The follow-up vaccine reminder goes this long after the first one when the dose is still not recorded.</summary>
+    public const int VaccineFollowUpDays = 14;
+
+    /// <summary>At most this many reminders per scheduled dose (the first one and the follow-up).</summary>
+    public const int VaccineMaxReminders = 2;
+
+    /// <summary>A vaccine reminder whose send time is older than this is not sent (after downtime).</summary>
+    public static readonly TimeSpan VaccineStaleCutoff = TimeSpan.FromHours(12);
+
+    public static readonly TimeSpan VaccineTimeToLive = TimeSpan.FromHours(48);
+
     public static readonly TimeSpan SnoozeLength = TimeSpan.FromMinutes(30);
 
     public const int MaxSnoozes = 3;
@@ -107,6 +121,9 @@ public static class NotificationRules
 
     /// <summary>Only the members who decide on them (Owners and Parents) receive doctor suggestions; never a Doctor, Caregiver or Viewer.</summary>
     public static bool CanReceiveDoctorSuggestions(BabyRole role) => role.CanWrite();
+
+    /// <summary>Only Owners and Parents receive vaccine reminders; never a Caregiver, a Viewer or a Doctor.</summary>
+    public static bool CanReceiveVaccineReminders(BabyRole role) => role.CanWrite();
 
     /// <summary>Wait before re-sending after a retryable failure (no <c>Retry-After</c>): 1 minute, then 4 minutes.</summary>
     public static TimeSpan RetryDelayAfter(int attempts) => attempts <= 1 ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(4);

@@ -53,6 +53,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(PrescriptionMedicationNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(FormulaBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(AppointmentBabyMismatchException)] = StatusCodes.Status409Conflict,
+        [typeof(VaccinationBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(AppointmentNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(AppointmentNotStartedException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(ProfessionalProfileRequiredException)] = StatusCodes.Status422UnprocessableEntity,
