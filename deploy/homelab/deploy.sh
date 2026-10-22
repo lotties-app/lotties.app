@@ -43,7 +43,7 @@ PULL_SECRET_SOURCE_NS=keycloak
 
 # Files each image is built from (repository-relative pathspecs). The API image uses only these from its context
 # (code/api/.dockerignore leaves the tests out); the web image takes its whole context.
-API_SOURCES=(code/api/Dockerfile code/api/.dockerignore code/api/Directory.Build.props code/api/src)
+API_SOURCES=(code/api/Dockerfile code/api/.dockerignore code/api/Directory.Build.props code/api/src code/api/data)
 WEB_SOURCES=(code/web ':(exclude)code/web/dist' ':(exclude)code/web/node_modules' ':(exclude)code/web/coverage')
 
 # ── Pure helpers (deploy.test.sh checks them) ─────────────────────────────────

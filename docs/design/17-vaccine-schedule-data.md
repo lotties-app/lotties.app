@@ -1,6 +1,6 @@
 # Vaccine schedule data, Brazil (data and sources, 2026-10-22)
 
-This note documents `code/api/data/vaccine-schedule.br.json`: the Brazilian vaccine schedule for children and adolescents (birth to 19 years, the first 6 years done most carefully), extracted from the official Calendário Nacional de Vacinação (PNI, Ministério da Saúde) and from the two scientific societies that publish private-network recommendations (SBP and SBIm). It is data only: no app code, migration or test was written. A later worker builds the feature on top of this file; section 5 lists what that worker needs and section 10 what schema v1 cannot express.
+This note documents `code/api/data/vaccine-schedule.br.json`: the Brazilian vaccine schedule for children and adolescents (birth to 19 years, the first 6 years done most carefully), extracted from the official Calendário Nacional de Vacinação (PNI, Ministério da Saúde) and from the two scientific societies that publish private-network recommendations (SBP and SBIm). It is data only: no app code, migration or test was written. A later worker builds the feature on top of this file; section 5 lists what that worker needs and section 10 what schema v1 cannot express. The feature (docs/design/18-vaccines.md) moved the file to schema v2 (section 11); sections 3 to 9 describe the v1 research and stay true for every v1 field.
 
 ## 0. Guardrails
 
@@ -310,3 +310,16 @@ Done by hand on the table in section 4, then repeated with a throwaway script in
 4. **Product**: doses tied to a product (RV5 3rd dose, Comirnaty 3rd dose, PCV10 or PCV20 at 4 months) need a product field.
 5. **Per-source windows**: one dose shared by several sources can have different windows (VIP 2nd booster: SUS 4 to under 5 years, societies 4-6 years); schema v1 holds one window per entry.
 6. **More product keys**: pentavalente acelular (DTPa-VIP-Hib), DTPa-VIP, dTpa-VIP and hepatitis A+B are common private products and have no key yet.
+
+## 11. Schema v2 (2026-10-22, with the vaccinations feature)
+
+What changed in `code/api/data/vaccine-schedule.br.json` (scripted, canonical format kept; every v1 field, value, `needsReview` flag and reason is unchanged, and the 66 v1 doses keep their order):
+- `schemaVersion` is 2. Every dose has five new fields, always present: `previousDoseIds`, `covers`, `recurrence`, `condition`, `recordOnly`.
+- **`previousDoseIds`** (new; v1 kept it only in the "After" column of section 4): the doses `minIntervalDaysFromPrevious` counts from; when the previous slot has alternatives both are listed (`penta-2` after `penta-1` or `hexavalente-1`; `dtp-reforco-1` after `penta-3` or `hexavalente-3`; `pneumo-conjugada-reforco` after dose 2 or the private dose 3; `meningo-acwy-reforco-1` after `meningo-c-2` or `meningo-acwy-2`; `hepatite-a-2` after either first hepatitis A dose). The engine counts from the latest given one.
+- **`covers`** (gap 1 of section 10): `penta-1` covers `hepatite-b-2`, `penta-3` covers `hepatite-b-3`; `hexavalente-1` covers `vip-1` and `hepatite-b-2`, `hexavalente-2` covers `vip-2`, `hexavalente-3` covers `vip-3` and `hepatite-b-3` (section 5.4). One recorded combined dose marks the covered doses given and they are never reminded.
+- **`recordOnly`** combined products (gap 6, from section 5.4), doses the family can record that are never a slot of their own: `tetraviral-1-sociedades` (12 months, covers `triplice-viral-1` + `varicela-1-sociedades`), `tetraviral-15m` (SUS at 15 months, covers `triplice-viral-2` + `varicela-1`), `tetraviral-2-sociedades` (covers `triplice-viral-2` + `varicela-2-sociedades`), and two new vaccines with one dose each: `penta-acelular` / `penta-acelular-reforco` (DTPa-VIP-Hib at 15 months, covers `dtpa-reforco-1`, `hib-reforco`, `vip-reforco-1`) and `dtpa-vip` / `dtpa-vip-reforco` (SBIm, 4-6 years, covers `dtpa-reforco-2`, `vip-reforco-2`). Hepatitis A+B (catch-up only) is still not modelled.
+- **`recurrence`** (gap 2): `influenza-anual` and `influenza-anual-sociedades` have `{"everyDays": 365, "startAgeDays": 365}` with `previousDoseIds` = the two first-season doses: due from 1 year, then a year after the latest influenza dose; the 365-day age is no longer a placeholder (their review reasons still describe the campaign timing).
+- **`condition`** (gap 3, RSV only): `vsr-nirsevimabe-1` has `rsv-maternal-vaccination-unknown-or-no`: it applies unless the family answered that the mother got the RSV vaccine in pregnancy. The other conditional doses keep `condition: null` and their review flag.
+- Counts: 28 vaccines (2 new), 71 doses (66 scheduled as before + 5 record-only), 23 with `needsReview` (unchanged).
+- Gaps still open: product fields (gap 4), per-source windows (gap 5), conditions other than RSV, hepatitis A+B.
+- Validation (`VaccineScheduleValidator`, at API startup and in `VaccineScheduleDataTests`) and the yearly update procedure are in docs/design/18-vaccines.md sections 1 and 8.
