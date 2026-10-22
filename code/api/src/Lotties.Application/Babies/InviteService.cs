@@ -65,7 +65,7 @@ internal sealed class InviteService : IInviteService
         var member = baby.AdmitWith(invite, user.Id, _timeProvider.GetUtcNow());
         await _babies.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("User {UserId} joined baby {BabyId} as {Role} with invite {InviteId}", user.Id, baby.Id, member.Role, invite.Id);
-        return BabyResponse.For(baby, member.Role);
+        return BabyResponse.For(baby, member);
     }
 
     private async Task<Invite> FindInviteAsync(string? token, CancellationToken cancellationToken)

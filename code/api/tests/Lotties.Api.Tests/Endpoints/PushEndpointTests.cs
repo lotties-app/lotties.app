@@ -408,6 +408,22 @@ public sealed class PushEndpointTests(PushApiHost host) : IClassFixture<PushApiH
         (preferences.DoseDue, preferences.DoseLeadMinutes, preferences.NapWindow, preferences.NapLeadMinutes, preferences.BellyPainPattern, preferences.OvertiredWarning, preferences.FussyPattern);
 
     [Fact]
+    public async Task PutPreferences_Caregiver_StoresOnlyTheirOwnRowAndCanReceive()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Caregiver);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Caregiver));
+
+        var stored = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), PreferencesBody())).ReadAsync<BabyNotificationPreferencesResponse>();
+        var listed = await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>();
+
+        var caregiverId = await Factory.UserIdAsync(baby.SubjectOf(BabyRole.Caregiver));
+        Assert.Equal((true, true), (stored.CanReceive, stored.DoseDue));
+        Assert.True(Assert.Single(listed).CanReceive);
+        var owners = await Factory.QueryAsync(context => context.BabyNotificationPreferences.Where(row => row.BabyId == baby.BabyId).Select(row => row.UserId).ToListAsync());
+        Assert.Equal([caregiverId], owners);
+    }
+
+    [Fact]
     public async Task PutPreferences_Viewer_Returns403()
     {
         var baby = await Factory.SeedBabyAsync(BabyRole.Viewer);

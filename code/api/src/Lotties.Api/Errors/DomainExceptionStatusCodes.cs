@@ -5,7 +5,7 @@ namespace Lotties.Api.Errors;
 
 /// <summary>
 /// The single place that maps <see cref="DomainException"/> types to HTTP status codes. Invalid input is 400, a
-/// missing resource 404, a state conflict 409, a well-formed request the rules reject 422 (also the fallback for
+/// write the caller's role does not cover for this resource 403, a missing resource 404, a state conflict 409, a well-formed request the rules reject 422 (also the fallback for
 /// domain exceptions not listed here). Add a new exception type here when it needs a different status.
 /// </summary>
 internal static class DomainExceptionStatusCodes
@@ -18,6 +18,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(InvalidEventTimeRangeException)] = StatusCodes.Status400BadRequest,
         [typeof(EventNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(EventBabyMismatchException)] = StatusCodes.Status409Conflict,
+        [typeof(EventNotOwnedException)] = StatusCodes.Status403Forbidden,
         [typeof(EventDeletedException)] = StatusCodes.Status409Conflict,
         [typeof(EventAlreadyStoppedException)] = StatusCodes.Status409Conflict,
         [typeof(BuiltInEventTypeReadOnlyException)] = StatusCodes.Status409Conflict,
@@ -46,6 +47,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(ProductNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(InvalidProductLinkException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(SubstanceNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(CatalogSubstanceNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(PrescriptionBabyMismatchException)] = StatusCodes.Status409Conflict,
         [typeof(PrescriptionDeletedException)] = StatusCodes.Status409Conflict,
         [typeof(PrescriptionMedicationNotFoundException)] = StatusCodes.Status422UnprocessableEntity,

@@ -22,6 +22,9 @@ public sealed class ProductSubstance
 
     internal static ProductSubstance Create(Guid productId, Guid substanceId, SubstanceStrength? strength) => new(productId, substanceId, strength);
 
+    /// <summary>Official records carry composition names only: a strength entered earlier by a user is dropped.</summary>
+    internal void ClearStrength() => Strength = null;
+
     /// <summary>A product-substance link for seed data (no strength: seeds carry composition names only).</summary>
     public static ProductSubstance Seed(Guid productId, Guid substanceId) => new(productId, substanceId, null);
 }

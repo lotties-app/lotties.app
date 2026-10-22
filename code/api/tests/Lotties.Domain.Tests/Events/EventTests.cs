@@ -1,3 +1,4 @@
+using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Exceptions;
@@ -249,6 +250,52 @@ public sealed class EventTests
         running.SoftDelete(TestClock.Now);
 
         Assert.Throws<EventBabyMismatchException>(() => running.DecideUpsert(Guid.NewGuid(), null, TestClock.Now));
+    }
+
+    [Theory]
+    [InlineData(BabyRole.Owner)]
+    [InlineData(BabyRole.Parent)]
+    [InlineData(BabyRole.Caregiver)]
+    public void EnsureChangeableBy_Creator_WhoLogs_DoesNotThrow(BabyRole role)
+    {
+        var running = CreateRunning();
+
+        var thrown = Record.Exception(() => running.EnsureChangeableBy(UserId, role));
+
+        Assert.Null(thrown);
+    }
+
+    [Theory]
+    [InlineData(BabyRole.Owner)]
+    [InlineData(BabyRole.Parent)]
+    public void EnsureChangeableBy_OwnerOrParent_OthersEvent_DoesNotThrow(BabyRole role)
+    {
+        var running = CreateRunning();
+
+        var thrown = Record.Exception(() => running.EnsureChangeableBy(Guid.NewGuid(), role));
+
+        Assert.Null(thrown);
+    }
+
+    [Fact]
+    public void EnsureChangeableBy_CaregiverOnOthersEvent_ThrowsNotOwned()
+    {
+        var running = CreateRunning();
+        var grandmother = Guid.NewGuid();
+
+        var thrown = Assert.Throws<EventNotOwnedException>(() => running.EnsureChangeableBy(grandmother, BabyRole.Caregiver));
+
+        Assert.Equal(("event_not_owned", EventId, grandmother), (thrown.Code, thrown.EventId, thrown.UserId));
+    }
+
+    [Theory]
+    [InlineData(BabyRole.Viewer)]
+    [InlineData(null)]
+    public void EnsureChangeableBy_ViewerOrNoMembership_EvenOnOwnEvent_ThrowsNotOwned(BabyRole? role)
+    {
+        var running = CreateRunning();
+
+        Assert.Throws<EventNotOwnedException>(() => running.EnsureChangeableBy(UserId, role));
     }
 
     private static Event CreateRunning() =>

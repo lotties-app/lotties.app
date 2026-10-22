@@ -32,5 +32,7 @@ public sealed class BabyMember
 
     public bool CanWrite => Role.CanWrite();
 
+    public bool CanLogEvents => Role.CanLogEvents();
+
     public bool CanManageMembers => Role.CanManageMembers();
 }

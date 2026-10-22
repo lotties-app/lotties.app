@@ -26,12 +26,36 @@ public sealed record ProductMatch(Product Product, CatalogMatchKind MatchedBy, i
 /// <summary>A substance matched by a search.</summary>
 public sealed record SubstanceMatch(Substance Substance, int Rank, int Distance);
 
+/// <summary>A page of a list: skip <see cref="Offset"/> rows, return at most <see cref="Limit"/>.</summary>
+public sealed record CatalogPage(int Offset, int Limit)
+{
+    public const int DefaultLimit = 20;
+    public const int MaxLimit = 50;
+    public const int MaxOffset = 100_000;
+
+    /// <summary>Defaults 0 and <see cref="DefaultLimit"/>; throws <see cref="DomainValidationException"/> (<c>offset</c>/<c>limit</c>) out of range.</summary>
+    public static CatalogPage From(int? offset, int? limit) => new(
+        offset switch
+        {
+            null => 0,
+            >= 0 and <= MaxOffset => offset.Value,
+            _ => throw new DomainValidationException("offset", $"offset must be between 0 and {MaxOffset}."),
+        },
+        limit switch
+        {
+            null => DefaultLimit,
+            >= 1 and <= MaxLimit => limit.Value,
+            _ => throw new DomainValidationException("limit", $"limit must be between 1 and {MaxLimit}."),
+        });
+}
+
 /// <summary>
 /// Pure ranking of the shared catalog search over a bounded candidate set loaded by the repository
 /// (<see cref="CatalogQuery.CandidateFilter"/>, products of the matched substances). Names are compared by
 /// <see cref="ProductNames.Key"/>: equal, prefix of the name, then typo distance with the importer's tolerance
 /// (<see cref="MedicationNameMatcher.Tolerance"/>: keys up to 3 characters exact, up to 7 one edit, longer two).
-/// Merged products resolve to their target. Order: rank, distance, name (case-insensitive), id.
+/// Merged products resolve to their target; retired official products (<see cref="Product.IsActive"/> false) are
+/// never offered. Order: rank, distance, name (case-insensitive), id.
 /// </summary>
 public static class ProductSearch
 {
@@ -51,6 +75,13 @@ public static class ProductSearch
         _ => throw new DomainValidationException("limit", $"limit must be between 1 and {MaxLimit}."),
     };
 
+    /// <summary>Order of lists of products: official first, then curated, then the rest (<see cref="Product.SourceRank"/>), by name (case-insensitive), then id.</summary>
+    public static IOrderedEnumerable<Product> OfficialFirst(IEnumerable<Product> products) =>
+        products
+            .OrderBy(product => product.SourceRank)
+            .ThenBy(product => product.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(product => product.Id);
+
     /// <summary>How <paramref name="queryKey"/> matches the name key <paramref name="nameKey"/>, or <c>null</c>.</summary>
     public static CatalogNameMatch? MatchName(string queryKey, string nameKey)
     {
@@ -64,14 +95,22 @@ public static class ProductSearch
         };
     }
 
-    /// <summary>The substances any of whose names (key, en, pt-BR, synonyms) match the query, best first.</summary>
+    /// <summary>
+    /// The substances any of whose names (key, en, pt-BR, synonyms) match the query, best first. Typo matches count only
+    /// when no name matched exactly or by prefix: "simeticona" must not also bring dimeticona (one letter apart) and its
+    /// products into "products with this ingredient".
+    /// </summary>
     public static IReadOnlyList<SubstanceMatch> MatchSubstances(CatalogQuery query, IReadOnlyList<Substance> substances)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(substances);
-        return substances
+        var matches = substances
             .Select(substance => BestSubstanceMatch(query, substance))
             .OfType<SubstanceMatch>()
+            .ToArray();
+        var hasCloseMatch = matches.Any(match => match.Rank < CatalogNameMatch.TypoRank);
+        return matches
+            .Where(match => !hasCloseMatch || match.Rank < CatalogNameMatch.TypoRank)
             .OrderBy(match => match.Rank)
             .ThenBy(match => match.Distance)
             .ThenBy(match => match.Substance.NameEn, StringComparer.OrdinalIgnoreCase)
@@ -98,6 +137,7 @@ public static class ProductSearch
         var byName = nameCandidates.Select(candidate => NameMatchOrNull(query, candidate, targets)).OfType<ProductMatch>();
         var bySubstance = substanceProducts.Where(product => !product.IsMerged).Select(product => new ProductMatch(product, CatalogMatchKind.Substance, CatalogNameMatch.SubstanceRank, 0));
         return byName.Concat(bySubstance)
+            .Where(match => match.Product.IsActive)
             .OrderBy(match => match.Rank)
             .ThenBy(match => match.Distance)
             .ThenBy(match => match.Product.Name, StringComparer.OrdinalIgnoreCase)
@@ -107,16 +147,58 @@ public static class ProductSearch
             .ToArray();
     }
 
-    /// <summary>Other non-merged products of <paramref name="pool"/> with exactly the same active ingredients, by name.</summary>
+    /// <summary>
+    /// Puts every variant of an ambiguous name next to its first result matched by name or alias: products sharing a
+    /// source name with different ingredients (<see cref="Product.AmbiguousName"/>) are shown together, so the parent
+    /// sees all of them and their ingredients. Substance matches are not expanded (the other variants do not contain the
+    /// searched ingredient). Variants already listed are not repeated; they may take the list past the search limit.
+    /// </summary>
+    public static IReadOnlyList<ProductMatch> WithAmbiguousVariants(IReadOnlyList<ProductMatch> matches, IReadOnlyList<Product> variants)
+    {
+        ArgumentNullException.ThrowIfNull(matches);
+        ArgumentNullException.ThrowIfNull(variants);
+        var byName = variants
+            .Where(variant => variant.AmbiguousName is not null && variant.IsActive && !variant.IsMerged)
+            .GroupBy(variant => variant.AmbiguousName!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => OfficialFirst(group).ToArray(), StringComparer.Ordinal);
+        return matches
+            .SelectMany(match => Expanded(match, byName))
+            .DistinctBy(match => match.Product.Id)
+            .ToArray();
+    }
+
+    /// <summary>The ambiguous names among the results matched by name or alias (whose variants should be loaded).</summary>
+    public static IReadOnlyList<string> AmbiguousNames(IReadOnlyList<ProductMatch> matches)
+    {
+        ArgumentNullException.ThrowIfNull(matches);
+        return matches
+            .Where(match => match.MatchedBy != CatalogMatchKind.Substance)
+            .Select(match => match.Product.AmbiguousName)
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static IEnumerable<ProductMatch> Expanded(ProductMatch match, IReadOnlyDictionary<string, Product[]> variants) =>
+        match.MatchedBy != CatalogMatchKind.Substance && match.Product.AmbiguousName is { } name && variants.TryGetValue(name, out var group)
+            ? [match, .. group.Select(variant => new ProductMatch(variant, match.MatchedBy, match.Rank, match.Distance))]
+            : [match];
+
+    /// <summary>
+    /// Other non-merged, active products of <paramref name="pool"/> with exactly the same active ingredients, official
+    /// first, then by name; one per name (the same brand in another form is listed once).
+    /// </summary>
     public static IReadOnlyList<Product> SameActiveIngredient(Product product, IReadOnlyList<Product> pool)
     {
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(pool);
-        return pool
-            .Where(candidate => candidate.Id != product.Id && !candidate.IsMerged && product.HasSameActiveIngredientsAs(candidate))
-            .DistinctBy(candidate => candidate.Id)
-            .OrderBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(candidate => candidate.Id)
+        var candidates = pool.Where(candidate => candidate.Id != product.Id
+            && candidate.NormalizedName != product.NormalizedName
+            && !candidate.IsMerged
+            && candidate.IsActive
+            && product.HasSameActiveIngredientsAs(candidate));
+        return OfficialFirst(candidates.DistinctBy(candidate => candidate.Id))
+            .DistinctBy(candidate => candidate.NormalizedName, StringComparer.Ordinal)
             .Take(MaxSiblings)
             .ToArray();
     }

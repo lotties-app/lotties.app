@@ -4,7 +4,7 @@ namespace Lotties.Domain.Notifications;
 
 /// <summary>
 /// One member's reminder preferences for one baby (stored only once the member changes anything; otherwise
-/// <see cref="ReminderPreferences.Default"/>). Only Owners and Parents may store them (<see cref="NotificationRules.CanReceive"/>,
+/// <see cref="ReminderPreferences.Default"/>). Only Owners, Parents and Caregivers may store them, each only their own (<see cref="NotificationRules.CanReceive"/>,
 /// enforced by the baby role policy); the row goes away with the membership.
 /// </summary>
 public sealed class BabyNotificationPreferences

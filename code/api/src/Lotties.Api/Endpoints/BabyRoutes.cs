@@ -11,7 +11,8 @@ public static class BabyRoutes
 
     /// <summary>
     /// Maps the baby-scoped group under <paramref name="api"/>. The group requires <see cref="BabyPolicies.Read"/>;
-    /// endpoints that change data add <see cref="BabyPolicies.Write"/> or <see cref="BabyPolicies.ManageMembers"/>.
+    /// endpoints that change data add <see cref="BabyPolicies.Log"/> (events, own reminder preferences),
+    /// <see cref="BabyPolicies.Write"/> or <see cref="BabyPolicies.ManageMembers"/>.
     /// </summary>
     public static RouteGroupBuilder MapBabyScopedGroup(this IEndpointRouteBuilder api)
     {

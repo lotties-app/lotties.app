@@ -15,6 +15,19 @@ internal static class CatalogMapper
         MergedIntoId = product.MergedIntoId,
         Substances = product.Substances.Select(link => ToResponse(link, substances)).OrderBy(link => link.NameEn, StringComparer.OrdinalIgnoreCase).ToArray(),
         CreatedAt = product.CreatedAt,
+        Source = product.Source,
+        Presentation = product.Presentation,
+        Inactive = !product.IsActive,
+        AmbiguousName = product.AmbiguousName,
+    };
+
+    public static SubstanceProductsResponse ToSubstanceProducts(Substance substance, ProductPage products, CatalogPage page, IReadOnlyDictionary<Guid, Substance> substances) => new()
+    {
+        Substance = substance,
+        Total = products.Total,
+        Offset = page.Offset,
+        Limit = page.Limit,
+        Items = products.Items.Select(product => ToResponse(product, substances)).ToArray(),
     };
 
     public static ProductSearchResult ToSearchResult(ProductMatch match, IReadOnlyList<Product> siblings, IReadOnlyDictionary<Guid, Substance> substances) => new()

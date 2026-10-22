@@ -1,0 +1,61 @@
+{
+  "about": "Curated products of the catalog importer (docs/design/13-anvisa-catalog.md section 7): common Brazilian baby products that are missing or ambiguous in ANVISA's registered-medicines file. Imported with status 'curated' and source 'curated', shown as 'Curated list (not reviewed by a pharmacist)'. NOT reviewed by a pharmacist or pediatrician: every entry keeps reviewed=false until such a review, and must not be trusted before it. Each entry: id (stable key, lower-case letters, digits, dashes; never reuse or change it), name (display name; a name that ANVISA uses for a product with other ingredients must be made distinct, e.g. with 'Solução Nasal Salina'), form (drops, syrup, tablet, powder, spray, ointment, suppository, inhaler, other), ingredients (active-ingredient spellings of the curated substance map, pt-BR), reviewed, basis (where the composition comes from: a primary source or the owner's statement). Never add a dose, strength or indication. Never guess an ingredient from a name.",
+  "products": [
+    {
+      "id": "flygas-drops",
+      "name": "Flygas",
+      "form": "drops",
+      "ingredients": ["simeticona"],
+      "reviewed": false,
+      "basis": "Owner statement (2026-10-21): Flygas is similar to simeticona, which is similar to Luftal. Not in ANVISA's registered-medicines file nor in the CMED price list (checked 2026-10-22)."
+    },
+    {
+      "id": "luftal-drops",
+      "name": "Luftal",
+      "form": "drops",
+      "ingredients": ["simeticona"],
+      "reviewed": false,
+      "basis": "CMED price list TA_PRECO_MEDICAMENTO.csv (2026-10-09): LUFTAL, presentation registration 1739000090031, substance SIMETICONA, emulsion with dropper. Its registration rows in DADOS_ABERTOS_MEDICAMENTOS.csv are all 'Inativo', so the official import leaves it out. Owner statement as for Flygas."
+    },
+    {
+      "id": "colidis-drops",
+      "name": "Colidis",
+      "form": "drops",
+      "ingredients": ["limosilactobacillus reuteri"],
+      "reviewed": false,
+      "basis": "Manufacturer page https://www.ache.com.br/produto/suplementos-alimentares/colidis/ (checked 2026-10-22): a food supplement (not a registered medicine), active ingredient Limosilactobacillus reuteri DSM 17938, drops. It is not simethicone."
+    },
+    {
+      "id": "sorine-saline-spray",
+      "name": "Sorine Solução Nasal Salina",
+      "form": "spray",
+      "ingredients": ["cloreto de sódio"],
+      "reviewed": false,
+      "basis": "The saline Sorine products (e.g. Sorine SSC nasal spray) are notified low-risk products without registration or ingredient in the ANVISA file, while the registered 'Sorine' (1.0573.0050) is naphazoline, a decongestant. The inactive registration 1.0573.0352 'SORINE H' lists cloreto de sódio. Composition from retail listings and the coordinator, not a primary source: check the box."
+    },
+    {
+      "id": "sorine-saline-drops",
+      "name": "Sorine Solução Nasal Salina",
+      "form": "drops",
+      "ingredients": ["cloreto de sódio"],
+      "reviewed": false,
+      "basis": "As for the Sorine saline spray (coordinator request: spray and drops)."
+    },
+    {
+      "id": "rinosoro-saline-spray",
+      "name": "Rinosoro Solução Nasal Salina",
+      "form": "spray",
+      "ingredients": ["cloreto de sódio"],
+      "reviewed": false,
+      "basis": "CMED price list (2026-10-09): RINOSORO SIC, presentation registration 1781700810141, nasal solution spray; its registration rows (cloreto de sódio) are 'Inativo' and the other Rinosoro products are notified without ingredient in the ANVISA file. Concentration varies by product: check the box."
+    },
+    {
+      "id": "rinosoro-saline-drops",
+      "name": "Rinosoro Solução Nasal Salina",
+      "form": "drops",
+      "ingredients": ["cloreto de sódio"],
+      "reviewed": false,
+      "basis": "Inactive ANVISA registrations of RINOSORO list cloreto de sódio; the active 'RINOSORO GOTAS' row is a notified product without ingredient. Coordinator request: spray and drops. Check the box."
+    }
+  ]
+}

@@ -68,12 +68,15 @@ internal static class PushEndpoints
         return api;
     }
 
-    /// <summary>Maps, under the baby-scoped group, <c>PUT /notification-preferences</c> (Parent/Owner; 200 with the stored state).</summary>
+    /// <summary>
+    /// Maps, under the baby-scoped group, <c>PUT /notification-preferences</c> (the caller's own preferences; Caregiver,
+    /// Parent or Owner; 200 with the stored state).
+    /// </summary>
     public static RouteGroupBuilder MapNotificationPreferenceEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
         baby.MapPut("/notification-preferences", PutPreferencesAsync)
-            .RequireAuthorization(BabyPolicies.Write)
+            .RequireAuthorization(BabyPolicies.Log)
             .RequireRateLimiting(RequestLimitPolicies.PushWrite)
             .WithName("PutBabyNotificationPreferences")
             .ProducesProblem(StatusCodes.Status400BadRequest)

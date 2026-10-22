@@ -1,0 +1,232 @@
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
+using Lotties.Api.Tests.Support;
+using Lotties.Domain.Babies;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Lotties.Api.Tests.Authorization;
+
+/// <summary>
+/// Every mapped endpoint x every caller (Owner, Parent, Caregiver, Viewer, non-member, anonymous). <see cref="Matrix"/>
+/// holds the role decision of each route; <see cref="Matrix_CoversEveryMappedEndpoint"/> fails when a route is mapped
+/// without a decision (or a decision is left for a route that no longer exists), so a new endpoint cannot ship
+/// without one. A denied call must be exactly 401 (anonymous) or 403; an allowed call must get past authorization
+/// (any status but 401/403/5xx: the requests carry an empty JSON body, so validation may answer 400).
+/// </summary>
+public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClassFixture<ApiFactory>
+{
+    /// <summary>Who may call a route.</summary>
+    public enum Access
+    {
+        /// <summary>No sign-in needed.</summary>
+        Anonymous,
+
+        /// <summary>Any signed-in user (no baby involved, or the route reads only the caller's own data).</summary>
+        SignedIn,
+
+        /// <summary>Any member of the baby (<c>BabyRead</c>).</summary>
+        Read,
+
+        /// <summary>Owner, Parent, Caregiver (<c>BabyLog</c>): events and the caller's own reminder preferences.</summary>
+        Log,
+
+        /// <summary>Owner, Parent (<c>BabyWrite</c>).</summary>
+        Write,
+
+        /// <summary>Owner only (<c>BabyManageMembers</c>).</summary>
+        Owner,
+    }
+
+    /// <summary>The callers every route is tried with.</summary>
+    public enum Caller
+    {
+        Owner,
+        Parent,
+        Caregiver,
+        Viewer,
+        NonMember,
+        Anonymous,
+    }
+
+    /// <summary>The role decision of every route, keyed by <c>"METHOD /route/pattern"</c> as the endpoint data source lists it.</summary>
+    public static readonly IReadOnlyDictionary<string, Access> Matrix = new Dictionary<string, Access>(StringComparer.Ordinal)
+    {
+        ["GET /health"] = Access.Anonymous,
+        ["GET /api/v1/me"] = Access.SignedIn,
+
+        ["GET /api/v1/babies"] = Access.SignedIn,
+        ["POST /api/v1/babies"] = Access.SignedIn,
+        ["GET /api/v1/babies/{babyId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}"] = Access.Owner,
+
+        ["GET /api/v1/babies/{babyId:guid}/members"] = Access.Read,
+        ["PATCH /api/v1/babies/{babyId:guid}/members/{userId:guid}"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/members/{userId:guid}"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/members/me"] = Access.Read,
+
+        ["POST /api/v1/babies/{babyId:guid}/invites"] = Access.Owner,
+        ["GET /api/v1/babies/{babyId:guid}/invites"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/invites/{inviteId:guid}"] = Access.Owner,
+        ["POST /api/v1/invites/accept"] = Access.SignedIn,
+        ["POST /api/v1/invites/{token}/accept"] = Access.SignedIn,
+
+        ["GET /api/v1/babies/{babyId:guid}/event-types"] = Access.Read,
+        ["POST /api/v1/babies/{babyId:guid}/event-types"] = Access.Write,
+        ["PUT /api/v1/babies/{babyId:guid}/event-types/{eventTypeId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/event-types/{eventTypeId:guid}"] = Access.Write,
+
+        // The shared catalog is instance-wide (no baby): any signed-in user, whatever their roles on babies.
+        ["GET /api/v1/catalog/products"] = Access.SignedIn,
+        ["GET /api/v1/catalog/products/{productId:guid}"] = Access.SignedIn,
+        ["POST /api/v1/catalog/products"] = Access.SignedIn,
+        ["GET /api/v1/catalog/substances"] = Access.SignedIn,
+        ["GET /api/v1/catalog/substances/{substanceId:guid}/products"] = Access.SignedIn,
+
+        ["GET /api/v1/babies/{babyId:guid}/medications"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/medications/{medicationId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/medications/{medicationId:guid}"] = Access.Write,
+
+        ["GET /api/v1/babies/{babyId:guid}/measurements"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Write,
+
+        ["GET /api/v1/babies/{babyId:guid}/prescriptions"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/prescriptions/{prescriptionId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/prescriptions/{prescriptionId:guid}"] = Access.Write,
+        ["GET /api/v1/babies/{babyId:guid}/medications/status"] = Access.Read,
+
+        ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,
+        // A Caregiver passes the policy; the use case then allows only their own events, plus stopping, pausing or
+        // resuming someone else's running one (PUT only), else 403 event_not_owned (CaregiverEndpointTests).
+        ["PUT /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
+        ["DELETE /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
+
+        ["GET /api/v1/babies/{babyId:guid}/predictions"] = Access.Read,
+
+        ["POST /api/v1/babies/{babyId:guid}/import/napper/preview"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/import/napper"] = Access.Write,
+
+        ["GET /api/v1/push/config"] = Access.SignedIn,
+        ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
+        ["POST /api/v1/push/subscriptions/revoke"] = Access.SignedIn,
+        ["GET /api/v1/push/subscriptions"] = Access.SignedIn,
+        ["DELETE /api/v1/push/subscriptions/{subscriptionId:guid}"] = Access.SignedIn,
+        ["GET /api/v1/push/settings"] = Access.SignedIn,
+        ["PUT /api/v1/push/settings"] = Access.SignedIn,
+        ["GET /api/v1/push/preferences"] = Access.SignedIn,
+        ["POST /api/v1/push/test"] = Access.SignedIn,
+        ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = Access.Anonymous,
+        ["PUT /api/v1/babies/{babyId:guid}/notification-preferences"] = Access.Log,
+    };
+
+    public static TheoryData<string, Caller> Cases()
+    {
+        var cases = new TheoryData<string, Caller>();
+        foreach (var route in Matrix.Keys)
+        {
+            Array.ForEach(Enum.GetValues<Caller>(), caller => cases.Add(route, caller));
+        }
+
+        return cases;
+    }
+
+    [Fact]
+    public void Matrix_CoversEveryMappedEndpoint()
+    {
+        var mapped = MappedRoutes();
+
+        var missing = mapped.Except(Matrix.Keys).Order().ToArray();
+        var stale = Matrix.Keys.Except(mapped).Order().ToArray();
+
+        Assert.True(missing.Length == 0, $"Routes without a role decision in {nameof(Matrix)}: {string.Join(", ", missing)}");
+        Assert.True(stale.Length == 0, $"Decisions for routes that are not mapped: {string.Join(", ", stale)}");
+    }
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public async Task Route_ByCaller_FollowsTheMatrix(string route, Caller caller)
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer);
+
+        var response = await SendAsync(ClientFor(baby, caller), route, baby.BabyId);
+
+        AssertOutcome(Expected(Matrix[route], caller), response, $"{route} as {caller}");
+    }
+
+    private static void AssertOutcome(HttpStatusCode? expectedDenial, HttpResponseMessage response, string what)
+    {
+        var status = response.StatusCode;
+        if (expectedDenial is { } denial)
+        {
+            Assert.True(status == denial, $"{what}: expected {(int)denial}, got {(int)status}");
+            return;
+        }
+
+        Assert.True(
+            status is not (HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) && (int)status < 500,
+            $"{what}: expected to pass authorization, got {(int)status}");
+    }
+
+    /// <summary>The denial status for <paramref name="caller"/>, or <c>null</c> when the call is allowed.</summary>
+    private static HttpStatusCode? Expected(Access access, Caller caller) => (access, caller) switch
+    {
+        (Access.Anonymous, _) => null,
+        (_, Caller.Anonymous) => HttpStatusCode.Unauthorized,
+        (Access.SignedIn, _) => null,
+        (_, Caller.NonMember) => HttpStatusCode.Forbidden,
+        (Access.Read, _) => null,
+        (Access.Log, Caller.Owner or Caller.Parent or Caller.Caregiver) => null,
+        (Access.Write, Caller.Owner or Caller.Parent) => null,
+        (Access.Owner, Caller.Owner) => null,
+        _ => HttpStatusCode.Forbidden,
+    };
+
+    private HttpClient ClientFor(SeededBaby baby, Caller caller) => caller switch
+    {
+        Caller.Anonymous => factory.CreateClient(),
+        Caller.NonMember => factory.CreateClientFor(TestUsers.NewSubject()),
+        Caller.Owner => factory.CreateClientFor(baby.OwnerSubject),
+        _ => factory.CreateClientFor(baby.SubjectOf(Enum.Parse<BabyRole>(caller.ToString()))),
+    };
+
+    private static Task<HttpResponseMessage> SendAsync(HttpClient client, string route, Guid babyId)
+    {
+        var separator = route.IndexOf(' ', StringComparison.Ordinal);
+        var method = new HttpMethod(route[..separator]);
+        var path = RouteParameter().Replace(route[(separator + 1)..], match => ParameterValue(match.Groups["name"].Value, babyId));
+        var request = new HttpRequestMessage(method, path);
+        if (method != HttpMethod.Get && method != HttpMethod.Delete)
+        {
+            request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
+        }
+
+        return client.SendAsync(request);
+    }
+
+    private static string ParameterValue(string name, Guid babyId) => name switch
+    {
+        "babyId" => babyId.ToString(),
+        "token" => "not-a-real-token",
+        _ => Guid.NewGuid().ToString(),
+    };
+
+    private HashSet<string> MappedRoutes()
+    {
+        var sources = factory.Services.GetRequiredService<IEnumerable<EndpointDataSource>>();
+        return sources
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText?.StartsWith(ProbeEndpointsStartupFilter.Prefix, StringComparison.Ordinal) == false)
+            .SelectMany(endpoint => (endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods ?? []).Select(method => $"{method} {Normalized(endpoint.RoutePattern.RawText!)}"))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private static string Normalized(string rawText) => "/" + rawText.TrimStart('/').TrimEnd('/');
+
+    [GeneratedRegex(@"\{(?<name>\w+)(:[^}]*)?\}")]
+    private static partial Regex RouteParameter();
+}

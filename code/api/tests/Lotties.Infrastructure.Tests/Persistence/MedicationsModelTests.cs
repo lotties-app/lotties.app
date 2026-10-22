@@ -15,10 +15,41 @@ public sealed class MedicationsModelTests
     {
         using var context = ModelTestContext.Create();
 
-        var index = context.Entity<Product>().GetIndexes().Single(candidate => candidate.IsUnique);
+        var index = context.Entity<Product>().GetIndexes().Single(candidate => candidate.IsUnique && candidate.Properties[0].Name == "NormalizedName");
 
         Assert.Equal(["NormalizedName", "Form", "Country"], index.Properties.Select(property => property.Name));
         Assert.Equal("merged_into_id IS NULL", index.GetFilter());
+    }
+
+    [Fact]
+    public void Products_OfficialRowsAreUniqueBySourceAndExternalRef()
+    {
+        using var context = ModelTestContext.Create();
+        var product = context.Entity<Product>();
+
+        var index = product.GetIndexes().Single(candidate => candidate.IsUnique && candidate.Properties[0].Name == "Source");
+
+        Assert.Equal(["Source", "ExternalRef"], index.Properties.Select(property => property.Name));
+        Assert.Equal("source IS NOT NULL AND external_ref IS NOT NULL", index.GetFilter());
+        Assert.All(new[] { "Source", "ExternalRef", "Presentation", "InactiveSince", "AmbiguousName" }, name => Assert.True(product.FindProperty(name)!.IsNullable));
+        Assert.Equal(100, product.FindProperty("AmbiguousName")!.GetMaxLength());
+        Assert.Equal((32, 128, 100), (product.FindProperty("Source")!.GetMaxLength(), product.FindProperty("ExternalRef")!.GetMaxLength(), product.FindProperty("Presentation")!.GetMaxLength()));
+    }
+
+    [Fact]
+    public void IdempotentScript_AddsNullableOfficialColumnsWithoutTouchingStoredProducts()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var section = script[script.IndexOf("_ProductExternalRef'", StringComparison.Ordinal)..];
+
+        Assert.Contains("ALTER TABLE products ADD external_ref character varying(128);", section, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE products ADD inactive_since timestamp with time zone;", section, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE products ADD ambiguous_name character varying(100);", section, StringComparison.Ordinal);
+        Assert.Contains("CREATE UNIQUE INDEX ix_products_source_external_ref ON products (source, external_ref) WHERE source IS NOT NULL AND external_ref IS NOT NULL;", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE products", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("DELETE FROM", section, StringComparison.Ordinal);
     }
 
     [Fact]

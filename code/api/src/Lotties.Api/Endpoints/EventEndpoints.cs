@@ -6,7 +6,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// Events of one baby, for offline sync: idempotent upsert by client GUID, soft delete and a paged delta pull.
-/// Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes <see cref="BabyPolicies.Write"/>.
+/// Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes <see cref="BabyPolicies.Log"/>; a Caregiver
+/// may only change the events they logged (403 <c>event_not_owned</c>, decided by the use case).
 /// </summary>
 internal static class EventEndpoints
 {
@@ -32,14 +33,16 @@ internal static class EventEndpoints
             .WithName("GetEvent")
             .ProducesProblem(StatusCodes.Status404NotFound);
         baby.MapPut(EventPath, UpsertAsync)
-            .RequireAuthorization(BabyPolicies.Write)
+            .RequireAuthorization(BabyPolicies.Log)
             .WithName("UpsertEvent")
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
         baby.MapDelete(EventPath, DeleteAsync)
-            .RequireAuthorization(BabyPolicies.Write)
-            .WithName("DeleteEvent");
+            .RequireAuthorization(BabyPolicies.Log)
+            .WithName("DeleteEvent")
+            .ProducesProblem(StatusCodes.Status403Forbidden);
         return baby;
     }
 

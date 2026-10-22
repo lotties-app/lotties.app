@@ -1,3 +1,4 @@
+using Lotties.Domain.Babies;
 using Lotties.Domain.Common;
 using Lotties.Domain.Exceptions;
 
@@ -120,6 +121,48 @@ public sealed class Event
 
         ApplyDetails(details);
         Touch(now, ClientEditTime.Bound(clientUpdatedAt, now));
+    }
+
+    /// <summary>
+    /// Ensures <paramref name="userId"/>, holding <paramref name="role"/> on the event's baby (<c>null</c> = not a member),
+    /// may edit or delete this event: Owners and Parents change any event, a Caregiver only the events they logged
+    /// (<see cref="BabyRoleRules.CanChangeEvent"/>); otherwise <see cref="EventNotOwnedException"/>. Checked for every
+    /// write to a stored event, including the ones that turn out to be no-ops (stale or already deleted).
+    /// </summary>
+    public void EnsureChangeableBy(Guid userId, BabyRole? role)
+    {
+        if (role?.CanChangeEvent(CreatedBy, userId) != true)
+        {
+            throw new EventNotOwnedException(Id, userId);
+        }
+    }
+
+    /// <summary>
+    /// Ensures <paramref name="userId"/>, holding <paramref name="role"/>, may apply <paramref name="edit"/> to this
+    /// event: anyone who may change it (<see cref="EnsureChangeableBy"/>); and a member who logs events (a Caregiver)
+    /// also when the edit only stops, pauses or resumes it while it runs (<see cref="RunningEventControl"/>), or
+    /// changes nothing (an idempotent replay). Otherwise <see cref="EventNotOwnedException"/>.
+    /// </summary>
+    public void EnsureEditableBy(Guid userId, BabyRole? role, EventEdit edit, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(edit);
+        var allowed = role?.CanChangeEvent(CreatedBy, userId) == true
+            || (role?.CanLogEvents() == true && (RunningEventControl.Allows(this, edit, now) || IsUnchangedBy(edit)));
+        if (!allowed)
+        {
+            throw new EventNotOwnedException(Id, userId);
+        }
+    }
+
+    /// <summary>Whether <paramref name="edit"/> holds exactly the stored details (normalized like a write would).</summary>
+    public bool IsUnchangedBy(EventEdit edit)
+    {
+        ArgumentNullException.ThrowIfNull(edit);
+        return TypeId == edit.TypeId
+            && StartedAt == UtcTime.Normalize(edit.StartedAt)
+            && EndedAt == UtcTime.Normalize(edit.EndedAt)
+            && string.Equals(Notes, RunningEventControl.NormalizedNotes(edit.Notes), StringComparison.Ordinal)
+            && Payload.IsEquivalentTo(edit.Payload);
     }
 
     /// <summary>

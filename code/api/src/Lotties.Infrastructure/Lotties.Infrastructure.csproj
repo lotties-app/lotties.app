@@ -22,6 +22,10 @@
     <InternalsVisibleTo Include="Lotties.Infrastructure.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Catalog\Official\curated-substances.json" LogicalName="Lotties.Infrastructure.Catalog.Official.curated-substances.json" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

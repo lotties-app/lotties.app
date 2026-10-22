@@ -16,6 +16,7 @@ internal static class AuthorizationServiceCollectionExtensions
         services.AddAuthorizationBuilder()
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
             .AddPolicy(BabyPolicies.Read, policy => RequireBabyRole(policy, BabyRole.Viewer))
+            .AddPolicy(BabyPolicies.Log, policy => RequireBabyRole(policy, BabyRole.Caregiver))
             .AddPolicy(BabyPolicies.Write, policy => RequireBabyRole(policy, BabyRole.Parent))
             .AddPolicy(BabyPolicies.ManageMembers, policy => RequireBabyRole(policy, BabyRole.Owner));
         return services;

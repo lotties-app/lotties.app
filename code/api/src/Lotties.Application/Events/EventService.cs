@@ -1,4 +1,5 @@
 using Lotties.Application.Users;
+using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Exceptions;
@@ -16,13 +17,17 @@ namespace Lotties.Application.Events;
 /// create and on every edit that changes the type or payload or completes a running event, so an unchanged legacy
 /// payload never blocks an edit of times or notes. Built-in medication events are checked at the same moments for the
 /// prescription members of their entries (<see cref="MedicationDosePayload"/>): a referenced prescription must be one of
-/// the baby's (soft-deleted included) for the entry's medication.
+/// the baby's (soft-deleted included) for the entry's medication. Every write to a stored event (edit or delete, no-ops
+/// included) checks that the caller may change it: a Caregiver changes only the events they logged, except that they may
+/// stop, pause or resume someone else's running event (<see cref="Event.EnsureEditableBy"/>, deletes
+/// <see cref="Event.EnsureChangeableBy"/>); creating needs only the role the endpoint policy already checked.
 /// </remarks>
 internal sealed class EventService : IEventService
 {
     private readonly IEventRepository _events;
     private readonly IEventTypeRepository _eventTypes;
     private readonly IPrescriptionRepository _prescriptions;
+    private readonly IBabyMembershipRepository _memberships;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<EventService> _logger;
@@ -31,6 +36,7 @@ internal sealed class EventService : IEventService
         IEventRepository events,
         IEventTypeRepository eventTypes,
         IPrescriptionRepository prescriptions,
+        IBabyMembershipRepository memberships,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
         ILogger<EventService> logger)
@@ -38,6 +44,7 @@ internal sealed class EventService : IEventService
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _eventTypes = eventTypes ?? throw new ArgumentNullException(nameof(eventTypes));
         _prescriptions = prescriptions ?? throw new ArgumentNullException(nameof(prescriptions));
+        _memberships = memberships ?? throw new ArgumentNullException(nameof(memberships));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -62,6 +69,7 @@ internal sealed class EventService : IEventService
             return;
         }
 
+        await EnsureCallerMayChangeAsync(existing, cancellationToken);
         existing.SoftDelete(_timeProvider.GetUtcNow());
         await _events.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Soft deleted event {EventId} of baby {BabyId}", eventId, babyId);
@@ -104,6 +112,7 @@ internal sealed class EventService : IEventService
     {
         var now = _timeProvider.GetUtcNow();
         var decision = existing.DecideUpsert(babyId, request.UpdatedAt, now);
+        await EnsureCallerMayEditAsync(existing, request, now, cancellationToken);
         if (decision != EventUpsertDecision.Apply)
         {
             _logger.LogInformation("Upsert of event {EventId} ignored: {Decision}", existing.Id, decision);
@@ -115,6 +124,25 @@ internal sealed class EventService : IEventService
         existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
         return new UpsertEventResult(existing, Created: false);
+    }
+
+    private async Task EnsureCallerMayChangeAsync(Event existing, CancellationToken cancellationToken)
+    {
+        var (userId, role) = await CallerRoleAsync(existing.BabyId, cancellationToken);
+        existing.EnsureChangeableBy(userId, role);
+    }
+
+    private async Task EnsureCallerMayEditAsync(Event existing, UpsertEventRequest request, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var (userId, role) = await CallerRoleAsync(existing.BabyId, cancellationToken);
+        existing.EnsureEditableBy(userId, role, new EventEdit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes), now);
+    }
+
+    private async Task<(Guid UserId, BabyRole? Role)> CallerRoleAsync(Guid babyId, CancellationToken cancellationToken)
+    {
+        var user = await _currentUser.GetUserAsync(cancellationToken);
+        var member = await _memberships.FindAsync(babyId, user.Id, cancellationToken);
+        return (user.Id, member?.Role);
     }
 
     private UpsertEventResult Created(Event created)

@@ -42,11 +42,59 @@ internal sealed class EfCatalogRepository(LottiesDbContext context, UniqueViolat
         return ids.Count == 0
             ? []
             : await ProductsWithSubstances()
-                .Where(product => product.MergedIntoId == null && product.Substances.Any(link => ids.Contains(link.SubstanceId)))
+                .Where(product => product.MergedIntoId == null && product.InactiveSince == null && product.Substances.Any(link => ids.Contains(link.SubstanceId)))
                 .OrderBy(product => product.Name)
                 .ThenBy(product => product.Id)
                 .Take(take)
                 .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Product>> FindWithSameSubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(substanceIds);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+        var ids = substanceIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        var first = ids[0];
+        var count = ids.Count;
+        return await OfficialFirst(ProductsWithSubstances()
+                .Where(product => product.MergedIntoId == null
+                    && product.InactiveSince == null
+                    && product.Substances.Any(link => link.SubstanceId == first)
+                    && product.Substances.Count == count
+                    && product.Substances.All(link => ids.Contains(link.SubstanceId))))
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Product>> FindAmbiguousVariantsAsync(IReadOnlyCollection<string> ambiguousNames, int take, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(ambiguousNames);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+        var names = ambiguousNames.Distinct(StringComparer.Ordinal).ToList();
+        return names.Count == 0
+            ? []
+            : await OfficialFirst(ProductsWithSubstances()
+                    .Where(product => product.MergedIntoId == null && product.InactiveSince == null && product.AmbiguousName != null && names.Contains(product.AmbiguousName)))
+                .Take(take)
+                .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ProductPage> ListContainingSubstanceAsync(Guid substanceId, CatalogPage page, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        var containing = context.Products.AsNoTracking()
+            .Where(product => product.MergedIntoId == null && product.InactiveSince == null && product.Substances.Any(link => link.SubstanceId == substanceId));
+        var total = await containing.CountAsync(cancellationToken);
+        var items = await OfficialFirst(containing.Include(product => product.Substances))
+            .Skip(page.Offset)
+            .Take(page.Limit)
+            .ToListAsync(cancellationToken);
+        return new ProductPage(items, total);
     }
 
     public Task<Product?> FindDuplicateAsync(string normalizedName, ProductForm form, CountryCode country, CancellationToken cancellationToken = default) =>
@@ -78,8 +126,15 @@ internal sealed class EfCatalogRepository(LottiesDbContext context, UniqueViolat
 
     private IQueryable<Product> ProductsWithSubstances() => context.Products.AsNoTracking().Include(product => product.Substances);
 
+    private static IOrderedQueryable<Product> OfficialFirst(IQueryable<Product> products) =>
+        products
+            .OrderBy(product => product.Status == ProductStatus.Official ? 0 : product.Status == ProductStatus.Curated ? 1 : 2)
+            .ThenBy(product => product.Name)
+            .ThenBy(product => product.Id);
+
     private IQueryable<Product> PrefixQuery(ProductCandidateFilter filter, int take) =>
         ProductsWithSubstances()
+            .Where(product => product.InactiveSince == null)
             .Where(product => product.NormalizedName.StartsWith(filter.Prefix))
             .OrderBy(product => product.NormalizedName)
             .ThenBy(product => product.Id)
@@ -87,6 +142,7 @@ internal sealed class EfCatalogRepository(LottiesDbContext context, UniqueViolat
 
     private IQueryable<Product> TypoBucketQuery(ProductCandidateFilter filter, int take) =>
         ProductsWithSubstances()
+            .Where(product => product.InactiveSince == null)
             .Where(product => product.NormalizedName.Length >= filter.MinLength
                 && product.NormalizedName.Length <= filter.MaxLength
                 && (product.NormalizedName.StartsWith(filter.FirstCharacter) || product.NormalizedName.EndsWith(filter.LastCharacter)))

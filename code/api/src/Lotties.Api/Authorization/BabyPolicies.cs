@@ -10,8 +10,14 @@ namespace Lotties.Api.Authorization;
 /// </remarks>
 public static class BabyPolicies
 {
-    /// <summary>Any member (Viewer, Parent, Owner).</summary>
+    /// <summary>Any member (Viewer, Caregiver, Parent, Owner).</summary>
     public const string Read = "BabyRead";
+
+    /// <summary>
+    /// Members who can log events (Caregiver, Parent, Owner): event writes and the member's own reminder preferences.
+    /// A Caregiver changes only the events they logged, checked by the event use case (403 <c>event_not_owned</c>).
+    /// </summary>
+    public const string Log = "BabyLog";
 
     /// <summary>Members who can write (Parent, Owner).</summary>
     public const string Write = "BabyWrite";

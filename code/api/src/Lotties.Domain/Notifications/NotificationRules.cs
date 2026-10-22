@@ -93,8 +93,8 @@ public static class NotificationRules
     /// <summary>An active subscription not seen for this long is revoked as inactive.</summary>
     public static readonly TimeSpan InactiveSubscriptionAge = TimeSpan.FromDays(90);
 
-    /// <summary>Only members who can log (Owner, Parent) receive or opt into baby reminders; Viewers never do.</summary>
-    public static bool CanReceive(BabyRole role) => role is BabyRole.Owner or BabyRole.Parent;
+    /// <summary>Only members who can log events (Owner, Parent, Caregiver) receive or opt into baby reminders; Viewers never do.</summary>
+    public static bool CanReceive(BabyRole role) => role.CanLogEvents();
 
     /// <summary>Wait before re-sending after a retryable failure (no <c>Retry-After</c>): 1 minute, then 4 minutes.</summary>
     public static TimeSpan RetryDelayAfter(int attempts) => attempts <= 1 ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(4);

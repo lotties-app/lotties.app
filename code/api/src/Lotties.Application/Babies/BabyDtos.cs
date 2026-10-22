@@ -5,7 +5,7 @@ using Lotties.Domain.Users;
 
 namespace Lotties.Application.Babies;
 
-/// <summary>A baby as seen by the current user, who holds <see cref="Role"/> on it.</summary>
+/// <summary>A baby as seen by the current user, who holds <see cref="Role"/> on it as <see cref="UserId"/>.</summary>
 public sealed record BabyResponse
 {
     public Guid Id { get; init; }
@@ -19,16 +19,24 @@ public sealed record BabyResponse
 
     public DateTimeOffset CreatedAt { get; init; }
 
-    public static BabyResponse For(Baby baby, BabyRole role)
+    /// <summary>
+    /// The caller's own user id (additive): the <c>createdBy</c> of the events they log, so a client can tell its own
+    /// entries apart (a Caregiver may change only those) while offline.
+    /// </summary>
+    public Guid UserId { get; init; }
+
+    public static BabyResponse For(Baby baby, BabyMember member)
     {
         ArgumentNullException.ThrowIfNull(baby);
+        ArgumentNullException.ThrowIfNull(member);
         return new BabyResponse
         {
             Id = baby.Id,
             Name = baby.Name,
             BirthDate = baby.BirthDate,
-            Role = role,
+            Role = member.Role,
             CreatedAt = baby.CreatedAt,
+            UserId = member.UserId,
         };
     }
 }

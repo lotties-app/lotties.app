@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The importer's curated product list, checked by Catalog/CuratedProductListTests.cs. -->
+    <None Include="..\..\tools\Lotties.CatalogImporter\Data\curated-products.json" Link="Catalog\curated-products.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Lotties.Infrastructure\Lotties.Infrastructure.csproj" />
   </ItemGroup>
 

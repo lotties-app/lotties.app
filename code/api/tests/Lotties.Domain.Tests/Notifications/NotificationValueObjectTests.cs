@@ -342,9 +342,9 @@ public sealed class NotificationValueObjectTests
     }
 
     [Fact]
-    public void NotificationRules_OnlyOwnersAndParentsReceive()
+    public void NotificationRules_OnlyMembersWhoLogReceive()
     {
-        Assert.Equal([true, true, false], new[] { BabyRole.Owner, BabyRole.Parent, BabyRole.Viewer }.Select(NotificationRules.CanReceive));
+        Assert.Equal([true, true, true, false], new[] { BabyRole.Owner, BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer }.Select(NotificationRules.CanReceive));
     }
 
     [Fact]

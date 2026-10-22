@@ -61,6 +61,6 @@ internal sealed class BabyService : IBabyService
     private static BabyResponse ToResponse(Baby baby, User user)
     {
         var member = baby.FindMember(user.Id) ?? throw new MemberNotFoundException(baby.Id, user.Id);
-        return BabyResponse.For(baby, member.Role);
+        return BabyResponse.For(baby, member);
     }
 }

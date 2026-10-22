@@ -168,6 +168,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AmbiguousName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ambiguous_name");
+
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(2)
@@ -183,11 +188,20 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
+                    b.Property<string>("ExternalRef")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("external_ref");
+
                     b.Property<string>("Form")
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
                         .HasColumnName("form");
+
+                    b.Property<DateTimeOffset?>("InactiveSince")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inactive_since");
 
                     b.Property<Guid?>("MergedIntoId")
                         .HasColumnType("uuid")
@@ -205,6 +219,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("normalized_name");
 
+                    b.Property<string>("Presentation")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("presentation");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -219,6 +243,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("MergedIntoId")
                         .HasDatabaseName("ix_products_merged_into_id");
+
+                    b.HasIndex("Source", "ExternalRef")
+                        .IsUnique()
+                        .HasDatabaseName("ix_products_source_external_ref")
+                        .HasFilter("source IS NOT NULL AND external_ref IS NOT NULL");
 
                     b.HasIndex("NormalizedName", "Form", "Country")
                         .IsUnique()
