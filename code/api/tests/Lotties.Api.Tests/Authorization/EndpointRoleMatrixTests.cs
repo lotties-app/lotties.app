@@ -44,6 +44,9 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
 
         /// <summary>The Doctor only (<c>BabyNote</c>): notes; only the author changes a note.</summary>
         Note,
+
+        /// <summary>The Doctor only (<c>BabyPropose</c>): prescription proposals; only the author changes or withdraws one.</summary>
+        Propose,
     }
 
     /// <summary>The callers every route is tried with.</summary>
@@ -137,6 +140,20 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["DELETE /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Note,
         ["GET /api/v1/babies/{babyId:guid}/access-log"] = Access.Owner,
 
+        // Doctor access step 2 (docs/design/16-doctor-access.md section 10). Note reads: any member who sees the note marks
+        // it read and lists her own reads. Proposals: every member passes the read policy and the use case filters (Owner
+        // and Parent all, the Doctor her own, Caregiver and Viewer an empty list and 404 by id); only the Doctor writes and
+        // withdraws (her own; another doctor's is 404); only Owners and Parents accept or decline. Prescriptions and
+        // medications stay Write: the Doctor never changes them directly.
+        ["PUT /api/v1/babies/{babyId:guid}/notes/{noteId:guid}/read"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/note-reads"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/prescription-proposals"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = Access.Propose,
+        ["DELETE /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = Access.Propose,
+        ["POST /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}/accept"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}/decline"] = Access.Write,
+
         ["POST /api/v1/babies/{babyId:guid}/import/napper/preview"] = Access.Write,
         ["POST /api/v1/babies/{babyId:guid}/import/napper"] = Access.Write,
 
@@ -214,6 +231,7 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         (Access.Owner, Caller.Owner) => null,
         (Access.Measure, Caller.Owner or Caller.Parent or Caller.Doctor) => null,
         (Access.Note, Caller.Doctor) => null,
+        (Access.Propose, Caller.Doctor) => null,
         _ => HttpStatusCode.Forbidden,
     };
 

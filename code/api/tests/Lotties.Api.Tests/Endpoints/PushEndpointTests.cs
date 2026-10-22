@@ -346,6 +346,22 @@ public sealed class PushEndpointTests(PushApiHost host) : IClassFixture<PushApiH
     }
 
     [Fact]
+    public async Task PutPreferences_DoctorSuggestions_AreOffByDefaultStoredAndKeptByOlderClients()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Parent);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Parent));
+        var before = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        var on = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { doctorSuggestions = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var olderClient = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { napWindow = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+
+        Assert.False(before.DoctorSuggestions);
+        Assert.Equal((true, false), (on.DoctorSuggestions, on.DoseDue));
+        Assert.Equal((true, true), (olderClient.DoctorSuggestions, olderClient.NapWindow));
+        Assert.True(await Factory.QueryAsync(context => context.BabyNotificationPreferences.AnyAsync(row => row.BabyId == baby.BabyId && row.DoctorSuggestions)));
+    }
+
+    [Fact]
     public async Task PutPreferences_AppointmentReminders_AreOnByDefaultTurnOffAndStayAcrossOlderClients()
     {
         var baby = await Factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Viewer);

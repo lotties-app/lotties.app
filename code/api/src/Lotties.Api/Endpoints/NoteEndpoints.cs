@@ -14,10 +14,13 @@ internal static class NoteEndpoints
 {
     private const string NotesPath = "/notes";
     private const string NotePath = NotesPath + "/{noteId:guid}";
+    private const string NoteReadsPath = "/note-reads";
 
     /// <summary>
     /// Maps, under the baby-scoped group: <c>GET /notes?since=</c> (deleted included), <c>GET /notes/{noteId}</c> (404 when
-    /// not visible), <c>PUT /notes/{noteId}</c> (201 created / 200 otherwise) and <c>DELETE /notes/{noteId}</c> (soft, 204).
+    /// not visible), <c>PUT /notes/{noteId}</c> (201 created / 200 otherwise), <c>DELETE /notes/{noteId}</c> (soft, 204), and
+    /// the caller's reads: <c>PUT /notes/{noteId}/read</c> (any member who sees the note; 200 <c>{noteId, readAt}</c>) and
+    /// <c>GET /note-reads?since=</c>.
     /// </summary>
     public static RouteGroupBuilder MapNoteEndpoints(this RouteGroupBuilder baby)
     {
@@ -36,8 +39,16 @@ internal static class NoteEndpoints
             .RequireAuthorization(BabyPolicies.Note)
             .WithName("DeleteNote")
             .ProducesProblem(StatusCodes.Status403Forbidden);
+        baby.MapPut(NotePath + "/read", MarkReadAsync).WithName("MarkNoteRead").ProducesProblem(StatusCodes.Status404NotFound);
+        baby.MapGet(NoteReadsPath, ListReadsAsync).WithName("ListNoteReads");
         return baby;
     }
+
+    private static async Task<Ok<NoteReadResponse>> MarkReadAsync(Guid babyId, Guid noteId, INoteService notes, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await notes.MarkReadAsync(babyId, noteId, cancellationToken));
+
+    private static async Task<Ok<IReadOnlyList<NoteReadResponse>>> ListReadsAsync(Guid babyId, DateTimeOffset? since, INoteService notes, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await notes.ListReadsAsync(babyId, since, cancellationToken));
 
     private static async Task<Ok<IReadOnlyList<NoteResponse>>> ListChangesAsync(Guid babyId, DateTimeOffset? since, INoteService notes, CancellationToken cancellationToken) =>
         TypedResults.Ok(await notes.ListChangesAsync(babyId, since, cancellationToken));

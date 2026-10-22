@@ -107,7 +107,7 @@ public sealed class MedicationsModelTests
     public void Converters_RoundTripDayPartsAndReminders()
     {
         using var context = ModelTestContext.Create();
-        var schedule = context.DesignTimeModel().FindEntityType(typeof(PrescriptionSchedule))!;
+        var schedule = context.Entity<Prescription>().FindNavigation(nameof(Prescription.Schedule))!.TargetEntityType;
         var parts = schedule.FindProperty(nameof(PrescriptionSchedule.DayParts))!.GetTypeMapping().Converter!;
         var reminders = schedule.FindProperty(nameof(PrescriptionSchedule.DayPartReminders))!.GetTypeMapping().Converter!;
         var reminderValue = DayPartReminders.Create([DayPartReminder.Parse("night", "22:30"), DayPartReminder.Parse("morning", "08:00")]);
@@ -140,7 +140,7 @@ public sealed class MedicationsModelTests
     public void Converters_RoundTripTimesOfDayAndSynonyms()
     {
         using var context = ModelTestContext.Create();
-        var times = context.DesignTimeModel().FindEntityType(typeof(PrescriptionSchedule))!.FindProperty(nameof(PrescriptionSchedule.TimesOfDay))!.GetTypeMapping().Converter!;
+        var times = context.Entity<Prescription>().FindNavigation(nameof(Prescription.Schedule))!.TargetEntityType.FindProperty(nameof(PrescriptionSchedule.TimesOfDay))!.GetTypeMapping().Converter!;
         var synonyms = context.Entity<Substance>().FindProperty(nameof(Substance.Synonyms))!.GetTypeMapping().Converter!;
 
         var storedTimes = (string)times.ConvertToProvider(TimesOfDay.Parse(["20:00", "08:00"]))!;

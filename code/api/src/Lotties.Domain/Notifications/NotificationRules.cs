@@ -74,6 +74,9 @@ public static class NotificationRules
     /// <summary>The longest reminder offset (1 week): appointments starting later than this from now have nothing due.</summary>
     public static readonly TimeSpan AppointmentReminderHorizon = TimeSpan.FromMinutes(Appointments.AppointmentReminders.AllowedMinutes.Max());
 
+    /// <summary>A doctor suggestion is planned while it is newer than this; its notification expires this long after it was sent by the doctor.</summary>
+    public static readonly TimeSpan DoctorSuggestionLifetime = TimeSpan.FromHours(24);
+
     public static readonly TimeSpan SnoozeLength = TimeSpan.FromMinutes(30);
 
     public const int MaxSnoozes = 3;
@@ -101,6 +104,9 @@ public static class NotificationRules
 
     /// <summary>Only members who can log events (Owner, Parent, Caregiver) receive or opt into baby reminders; Viewers never do.</summary>
     public static bool CanReceive(BabyRole role) => role.CanLogEvents();
+
+    /// <summary>Only the members who decide on them (Owners and Parents) receive doctor suggestions; never a Doctor, Caregiver or Viewer.</summary>
+    public static bool CanReceiveDoctorSuggestions(BabyRole role) => role.CanWrite();
 
     /// <summary>Wait before re-sending after a retryable failure (no <c>Retry-After</c>): 1 minute, then 4 minutes.</summary>
     public static TimeSpan RetryDelayAfter(int attempts) => attempts <= 1 ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(4);

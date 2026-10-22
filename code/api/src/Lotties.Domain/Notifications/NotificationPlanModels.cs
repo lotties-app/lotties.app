@@ -67,6 +67,30 @@ public sealed record DeliveredNotification(Guid UserId, NotificationKey DedupeKe
 /// </summary>
 public sealed record SentHeadsUp(Guid UserId, Guid BabyId, NotificationKind Kind, NotificationKey DedupeKey, DateTimeOffset At);
 
+/// <summary>Where a doctor suggestion comes from.</summary>
+public enum DoctorSuggestionSource
+{
+    /// <summary>A prescription proposal (pending).</summary>
+    Proposal,
+
+    /// <summary>A shared note of kind recommendation.</summary>
+    Recommendation,
+}
+
+/// <summary>
+/// Something the baby's doctor sent that may be announced (<c>doctor_suggestion</c>): a pending prescription proposal or a
+/// shared recommendation that is not deleted, created at <see cref="CreatedAt"/> by <see cref="AuthorUserId"/>;
+/// <see cref="ReadBy"/> = the members who already opened the recommendation.
+/// </summary>
+public sealed record DoctorSuggestion(Guid Id, DoctorSuggestionSource Source, Guid AuthorUserId, DateTimeOffset CreatedAt, IReadOnlyCollection<Guid>? ReadBy = null)
+{
+    /// <summary>Whether it is still worth announcing to <paramref name="userId"/> at <paramref name="now"/>: new, not hers, not read by her.</summary>
+    public bool IsOpenFor(Guid userId, DateTimeOffset now) =>
+        AuthorUserId != userId
+        && now < CreatedAt + NotificationRules.DoctorSuggestionLifetime
+        && !(ReadBy?.Contains(userId) ?? false);
+}
+
 /// <summary>Everything <see cref="NotificationPlanner.Plan"/> needs for one baby at one tick.</summary>
 /// <param name="Actions">The recipients' snoozes and dismissals for this baby.</param>
 /// <param name="Names">Loaded only when a recipient has show-names on.</param>
@@ -77,6 +101,7 @@ public sealed record SentHeadsUp(Guid UserId, Guid BabyId, NotificationKind Kind
 /// <param name="Diapers">The baby's diaper predictions (loaded only when a recipient wants a diaper heads-up; elapsed time, no zone).</param>
 /// <param name="SentHeadsUps">The diaper heads-ups of the last day that count toward the daily cap and the spacing (any baby; filtered here).</param>
 /// <param name="Appointments">The baby's upcoming appointments within the reminder horizon (loaded only when a recipient wants appointment reminders).</param>
+/// <param name="DoctorSuggestions">The baby's doctor suggestions of the last 24 hours (loaded only when a recipient wants them).</param>
 public sealed record NotificationPlanInput(
     DateTimeOffset Now,
     Guid BabyId,
@@ -91,7 +116,8 @@ public sealed record NotificationPlanInput(
     IReadOnlyList<WakeWindowState>? WakeWindows = null,
     DiaperPrediction? Diapers = null,
     IReadOnlyCollection<SentHeadsUp>? SentHeadsUps = null,
-    IReadOnlyList<Appointment>? Appointments = null);
+    IReadOnlyList<Appointment>? Appointments = null,
+    IReadOnlyList<DoctorSuggestion>? DoctorSuggestions = null);
 
 /// <summary>Names shown on the lock screen (only with show-names on), each trimmed to <see cref="MaxLength"/> characters. Never a dose amount.</summary>
 public sealed record NotificationNames
@@ -119,21 +145,37 @@ public sealed record NotificationNames
 
 /// <summary>
 /// What the payload carries besides kind and ids of the delivery: the baby, the prescription (doses), the time shown,
-/// optional names and, for appointment reminders, the appointment and the reminder offset (never its title, doctor or notes).
+/// optional names and, for appointment reminders, the appointment and the reminder offset (never its title, doctor or notes);
+/// for doctor suggestions the proposal or the note (never a medicine name, a dose or the note text).
 /// </summary>
 /// <param name="At">
 /// The time the text shows: the dose slot, the nap window's earliest start, the start of the usual belly pain or fussy
-/// window, the instant the current awake stretch reaches the usual limit, when the wet or dirty diaper is expected, or
-/// when the appointment starts.
+/// window, the instant the current awake stretch reaches the usual limit, when the wet or dirty diaper is expected,
+/// when the appointment starts, or when the doctor sent the suggestion.
 /// </param>
 /// <param name="ReminderOffsetMinutes">How long before the start the appointment reminder was meant to go (10080, 1440, 120 or 30).</param>
+/// <param name="ProposalId">The prescription proposal a doctor suggestion announces.</param>
+/// <param name="NoteId">The recommendation note a doctor suggestion announces.</param>
 public sealed record NotificationContent(
     Guid? BabyId,
     Guid? PrescriptionId,
     DateTimeOffset At,
     NotificationNames? Names,
     Guid? AppointmentId = null,
-    int? ReminderOffsetMinutes = null);
+    int? ReminderOffsetMinutes = null,
+    Guid? ProposalId = null,
+    Guid? NoteId = null)
+{
+    /// <summary>The content of a doctor suggestion: the baby, when it was sent, the proposal or the note.</summary>
+    public static NotificationContent ForDoctorSuggestion(Guid? babyId, DoctorSuggestionSource source, Guid id, DateTimeOffset at, NotificationNames? names) =>
+        new(
+            babyId,
+            null,
+            at,
+            names,
+            ProposalId: source == DoctorSuggestionSource.Proposal ? id : null,
+            NoteId: source == DoctorSuggestionSource.Recommendation ? id : null);
+}
 
 /// <summary>
 /// One notification to claim for every active subscription of <see cref="UserId"/>. <see cref="DueAt"/> is when it

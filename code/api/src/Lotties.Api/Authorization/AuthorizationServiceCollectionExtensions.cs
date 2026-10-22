@@ -20,6 +20,7 @@ internal static class AuthorizationServiceCollectionExtensions
             .AddPolicy(BabyPolicies.Write, policy => RequireBabyRole(policy, BabyRole.Parent))
             .AddPolicy(BabyPolicies.ManageMembers, policy => RequireBabyRole(policy, BabyRole.Owner))
             .AddPolicy(BabyPolicies.Note, policy => RequireBabyRole(policy, BabyRole.Doctor))
+            .AddPolicy(BabyPolicies.Propose, policy => RequireBabyRole(policy, BabyRole.Doctor))
             .AddPolicy(BabyPolicies.Measure, policy => RequireBabyRole(policy, BabyRole.Parent, BabyRole.Doctor));
         return services;
     }

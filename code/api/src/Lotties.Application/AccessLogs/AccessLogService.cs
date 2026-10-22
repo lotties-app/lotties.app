@@ -80,13 +80,13 @@ internal sealed class AccessLogService : IAccessLogService
 
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var now = _timeProvider.GetUtcNow();
-        var latestAt = await _entries.FindLatestAtAsync(babyId, user.Id, cancellationToken);
-        if (!AccessLogThrottle.IsDue(latestAt, now))
+        var latest = await _entries.FindLatestAsync(babyId, user.Id, cancellationToken);
+        if (!AccessLogThrottle.IsDue(latest?.At, now))
         {
             return;
         }
 
-        var added = await _entries.TryAddAsync(AccessLogEntry.View(babyId, user.Id, recorded, now), cancellationToken);
+        var added = await _entries.TryAddAsync(AccessLogEntry.View(babyId, user.Id, recorded, now, latest), cancellationToken);
         _logger.LogInformation("Access of user {UserId} ({Role}) to baby {BabyId} recorded: {Added}", user.Id, recorded, babyId, added);
     }
 

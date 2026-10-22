@@ -24,6 +24,15 @@ public interface INoteService
 
     /// <summary>Soft delete by the author (see <see cref="BabyNote.DecideDelete"/>); unknown ids are a no-op.</summary>
     Task DeleteAsync(Guid babyId, Guid noteId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records that the caller opened the note (idempotent: the first read is kept); <see cref="NoteNotFoundException"/>
+    /// when unknown, of another baby or private to someone else (docs/design/16-doctor-access.md section 10.3).
+    /// </summary>
+    Task<NoteReadResponse> MarkReadAsync(Guid babyId, Guid noteId, CancellationToken cancellationToken = default);
+
+    /// <summary>The caller's reads of the baby's notes at or after <paramref name="since"/> (all when <c>null</c>), by (readAt, noteId).</summary>
+    Task<IReadOnlyList<NoteReadResponse>> ListReadsAsync(Guid babyId, DateTimeOffset? since, CancellationToken cancellationToken = default);
 }
 
 /// <remarks>
@@ -34,14 +43,16 @@ public interface INoteService
 internal sealed class NoteService : INoteService
 {
     private readonly INoteRepository _notes;
+    private readonly INoteReadRepository _reads;
     private readonly IPersonDirectory _people;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<NoteService> _logger;
 
-    public NoteService(INoteRepository notes, IPersonDirectory people, ICurrentUser currentUser, TimeProvider timeProvider, ILogger<NoteService> logger)
+    public NoteService(INoteRepository notes, INoteReadRepository reads, IPersonDirectory people, ICurrentUser currentUser, TimeProvider timeProvider, ILogger<NoteService> logger)
     {
         _notes = notes ?? throw new ArgumentNullException(nameof(notes));
+        _reads = reads ?? throw new ArgumentNullException(nameof(reads));
         _people = people ?? throw new ArgumentNullException(nameof(people));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
@@ -58,13 +69,43 @@ internal sealed class NoteService : INoteService
     public async Task<NoteResponse> GetAsync(Guid babyId, Guid noteId, CancellationToken cancellationToken = default)
     {
         var user = await _currentUser.GetUserAsync(cancellationToken);
-        var note = await _notes.FindAsync(noteId, cancellationToken);
-        if (note is null || note.BabyId != babyId || !note.IsVisibleTo(user.Id))
+        var note = await FindVisibleAsync(babyId, noteId, user.Id, cancellationToken);
+        return await DescribeAsync(note, cancellationToken);
+    }
+
+    public async Task<NoteReadResponse> MarkReadAsync(Guid babyId, Guid noteId, CancellationToken cancellationToken = default)
+    {
+        var user = await _currentUser.GetUserAsync(cancellationToken);
+        var note = await FindVisibleAsync(babyId, noteId, user.Id, cancellationToken);
+        if (await _reads.FindAsync(noteId, user.Id, cancellationToken) is { } known)
         {
-            throw new NoteNotFoundException(babyId, noteId);
+            return known;
         }
 
-        return await DescribeAsync(note, cancellationToken);
+        var read = NoteRead.Of(note, user.Id, _timeProvider.GetUtcNow());
+        if (await _reads.TryAddAsync(read, cancellationToken))
+        {
+            _logger.LogInformation("User {UserId} read note {NoteId} of baby {BabyId}", user.Id, noteId, babyId);
+            return read;
+        }
+
+        return await _reads.FindAsync(noteId, user.Id, cancellationToken)
+            ?? throw new InvalidOperationException($"The read of note {noteId} was reported as existing but could not be loaded.");
+    }
+
+    public async Task<IReadOnlyList<NoteReadResponse>> ListReadsAsync(Guid babyId, DateTimeOffset? since, CancellationToken cancellationToken = default)
+    {
+        var user = await _currentUser.GetUserAsync(cancellationToken);
+        var reads = await _reads.ListChangesAsync(babyId, user.Id, since, cancellationToken);
+        return reads.Select(read => (NoteReadResponse)read).ToArray();
+    }
+
+    private async Task<BabyNote> FindVisibleAsync(Guid babyId, Guid noteId, Guid userId, CancellationToken cancellationToken)
+    {
+        var note = await _notes.FindAsync(noteId, cancellationToken);
+        return note is not null && note.BabyId == babyId && note.IsVisibleTo(userId)
+            ? note
+            : throw new NoteNotFoundException(babyId, noteId);
     }
 
     public async Task<UpsertNoteResult> UpsertAsync(Guid babyId, Guid noteId, UpsertNoteRequest request, CancellationToken cancellationToken = default)

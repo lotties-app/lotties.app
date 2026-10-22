@@ -54,6 +54,12 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>Recorded accesses of Doctors to the babies' data (append only).</summary>
     public DbSet<Lotties.Domain.AccessLogs.AccessLogEntry> AccessLog => Set<Lotties.Domain.AccessLogs.AccessLogEntry>();
 
+    /// <summary>Prescriptions doctors suggested, decided ones included (never deleted); readers filter by visibility.</summary>
+    public DbSet<Lotties.Domain.Proposals.PrescriptionProposal> PrescriptionProposals => Set<Lotties.Domain.Proposals.PrescriptionProposal>();
+
+    /// <summary>Which member opened which note (the recommendations inbox).</summary>
+    public DbSet<Lotties.Domain.Notes.NoteRead> NoteReads => Set<Lotties.Domain.Notes.NoteRead>();
+
     public DbSet<Substance> Substances => Set<Substance>();
 
     public DbSet<Product> Products => Set<Product>();

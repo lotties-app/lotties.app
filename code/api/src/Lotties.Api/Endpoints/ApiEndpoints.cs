@@ -23,6 +23,7 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapFormulaEndpoints();
         api.MapBabyScopedGroup().MapAppointmentEndpoints();
         api.MapBabyScopedGroup().MapNoteEndpoints().MapAccessLogEndpoints();
+        api.MapBabyScopedGroup().MapProposalEndpoints();
         api.MapBabyScopedGroup().MapEventEndpoints();
         api.MapBabyScopedGroup().MapPredictionEndpoints();
         api.MapBabyScopedGroup().MapImportEndpoints();

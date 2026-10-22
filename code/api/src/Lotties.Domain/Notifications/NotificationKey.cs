@@ -9,7 +9,8 @@ namespace Lotties.Domain.Notifications;
 /// <c>nap:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>belly:{babyId:N}:{local date yyyyMMdd}</c>,
 /// <c>overtired:{babyId:N}:{awake since utc yyyyMMddHHmm}</c>, <c>fussy:{babyId:N}:{local date yyyyMMdd}</c>,
 /// <c>wet:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>,
-/// <c>appt:{appointmentId:N}:{start utc yyyyMMddHHmm}:{offset minutes}</c> or <c>test:{deliveryId:N}</c>.
+/// <c>appt:{appointmentId:N}:{start utc yyyyMMddHHmm}:{offset minutes}</c>, <c>proposal:{proposalId:N}</c>,
+/// <c>recommendation:{noteId:N}</c> (the doctor suggestions) or <c>test:{deliveryId:N}</c>.
 /// A snooze re-send uses the dedupe key
 /// <c>{base}:s{n}</c> (<see cref="Snoozed"/>). The device notification tag is always the base key.
 /// </summary>
@@ -20,6 +21,8 @@ public readonly partial record struct NotificationKey
     private const string InstantFormat = "yyyyMMddHHmm";
     private const string SnoozeMarker = ":s";
     private const string AppointmentPrefix = "appt";
+    private const string ProposalPrefix = "proposal";
+    private const string RecommendationPrefix = "recommendation";
 
     private NotificationKey(string value)
     {
@@ -84,6 +87,26 @@ public readonly partial record struct NotificationKey
         return found;
     }
 
+    /// <summary>
+    /// The doctor suggestion a key (<c>proposal:{id:N}</c> or <c>recommendation:{id:N}</c>, snoozed or not) names;
+    /// <c>false</c> for other kinds. Lets a retry rebuild the payload from the stored key.
+    /// </summary>
+    public bool TryGetDoctorSuggestion(out DoctorSuggestionSource source, out Guid id)
+    {
+        var parts = (Value ?? string.Empty).Split(':');
+        var prefix = parts.Length >= 2 ? parts[0] : string.Empty;
+        var known = prefix is ProposalPrefix or RecommendationPrefix;
+        var hasId = Guid.TryParseExact(known ? parts[1] : string.Empty, "N", out var parsed);
+        var found = known && hasId;
+        source = prefix == RecommendationPrefix ? DoctorSuggestionSource.Recommendation : DoctorSuggestionSource.Proposal;
+        id = found ? parsed : Guid.Empty;
+        return found;
+    }
+
+    /// <summary>The doctor suggestion <paramref name="id"/> (a proposal or a recommendation note): one notification per suggestion and member.</summary>
+    public static NotificationKey ForDoctorSuggestion(DoctorSuggestionSource source, Guid id) =>
+        new(string.Create(CultureInfo.InvariantCulture, $"{(source == DoctorSuggestionSource.Recommendation ? RecommendationPrefix : ProposalPrefix)}:{id:N}"));
+
     public static NotificationKey ForDose(Guid prescriptionId, DateTimeOffset slot) => new($"dose:{prescriptionId:N}:{Instant(slot)}");
 
     /// <summary>
@@ -139,6 +162,6 @@ public readonly partial record struct NotificationKey
 
     private static string Instant(DateTimeOffset value) => value.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture);
 
-    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|test:[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|(?:proposal|recommendation|test):[0-9a-f]{32})(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }

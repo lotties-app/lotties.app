@@ -49,15 +49,18 @@ internal sealed class EfNoteRepository(LottiesDbContext context, UniqueViolation
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
 }
 
-/// <remarks>Two requests of one doctor that race in the same UTC hour write the same id: the second insert loses on the primary key.</remarks>
+/// <remarks>
+/// Requests of one doctor that race after reading the same latest entry write the same id (derived from it): every
+/// insert but the first loses on the primary key.
+/// </remarks>
 internal sealed class EfAccessLogRepository(LottiesDbContext context, UniqueViolations uniqueViolations) : IAccessLogRepository
 {
-    public async Task<DateTimeOffset?> FindLatestAtAsync(Guid babyId, Guid userId, CancellationToken cancellationToken = default) =>
-        await context.AccessLog
+    public Task<AccessLogEntry?> FindLatestAsync(Guid babyId, Guid userId, CancellationToken cancellationToken = default) =>
+        context.AccessLog
             .AsNoTracking()
             .Where(entry => entry.BabyId == babyId && entry.UserId == userId)
             .OrderByDescending(entry => entry.At)
-            .Select(entry => (DateTimeOffset?)entry.At)
+            .ThenBy(entry => entry.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<AccessLogEntry>> ListNewestAsync(Guid babyId, int limit, CancellationToken cancellationToken = default) =>

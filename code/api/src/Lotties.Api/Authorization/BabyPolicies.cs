@@ -36,4 +36,10 @@ public static class BabyPolicies
     /// (403 <c>measurement_not_owned</c>).
     /// </summary>
     public const string Measure = "BabyMeasure";
+
+    /// <summary>
+    /// Members who propose prescriptions to the parents (the Doctor only). Only the author edits or withdraws a pending
+    /// proposal, checked by the use case (another doctor's is 404 <c>proposal_not_found</c>).
+    /// </summary>
+    public const string Propose = "BabyPropose";
 }

@@ -35,6 +35,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Professionals.IPersonDirectory, Professionals.PersonDirectory>();
         services.AddScoped<Professionals.IProfessionalProfileService, Professionals.ProfessionalProfileService>();
         services.AddScoped<Notes.INoteService, Notes.NoteService>();
+        services.AddScoped<Proposals.IPrescriptionProposalService, Proposals.PrescriptionProposalService>();
         services.AddScoped<AccessLogs.IAccessLogService, AccessLogs.AccessLogService>();
         services.AddScoped<Prescriptions.IMedicationStatusService, Prescriptions.MedicationStatusService>();
         services.AddScoped<Imports.INapperImportService, Imports.NapperImportService>();

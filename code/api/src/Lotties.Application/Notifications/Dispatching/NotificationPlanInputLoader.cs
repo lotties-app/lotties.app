@@ -16,11 +16,12 @@ namespace Lotties.Application.Notifications.Dispatching;
 /// only when a recipient wants dose reminders; the prediction history (as the predictions endpoint) only when one wants
 /// nap reminders or a heads-up read from the events (belly pain, fussy, overtired: each is read once per time zone of
 /// the recipients who want it, daylight saving applied per event; the diaper predictions once, elapsed time needs no
-/// zone); the upcoming appointments within a week only when one wants appointment reminders; names only when one has
-/// show-names on.
+/// zone); the upcoming appointments within a week only when one wants appointment reminders; the doctor suggestions of
+/// the last 24 hours only when an Owner or Parent wants them; names only when one has show-names on.
 /// </summary>
 internal sealed class NotificationPlanInputLoader(
     IAppointmentRepository appointments,
+    IDoctorSuggestionRepository doctorSuggestions,
     IPrescriptionRepository prescriptions,
     IMedicationDoseHistoryRepository doses,
     IMeasurementRepository measurements,
@@ -53,6 +54,9 @@ internal sealed class NotificationPlanInputLoader(
         var upcoming = plannable.Any(recipient => recipient.Preferences.AppointmentReminders)
             ? await appointments.ListUpcomingAsync(babyId, now, now + NotificationRules.AppointmentReminderHorizon, cancellationToken)
             : [];
+        var suggestions = plannable.Any(WantsDoctorSuggestions)
+            ? await doctorSuggestions.ListSinceAsync(babyId, now - NotificationRules.DoctorSuggestionLifetime, cancellationToken)
+            : [];
         return new NotificationPlanInput(
             now,
             babyId,
@@ -67,8 +71,12 @@ internal sealed class NotificationPlanInputLoader(
             history is null ? [] : WakeWindowStates(plannable, history, now),
             DiapersOf(plannable, history, now),
             claims.SentHeadsUps,
-            upcoming);
+            upcoming,
+            suggestions);
     }
+
+    private static bool WantsDoctorSuggestions(NotificationRecipient recipient) =>
+        recipient.Preferences.DoctorSuggestions && NotificationRules.CanReceiveDoctorSuggestions(recipient.Role);
 
     /// <summary>The diaper predictions when a recipient wants a diaper heads-up.</summary>
     private static DiaperPrediction? DiapersOf(IEnumerable<NotificationRecipient> recipients, PredictionHistory? history, DateTimeOffset now) =>

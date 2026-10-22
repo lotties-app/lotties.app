@@ -1,3 +1,4 @@
+using Lotties.Application.Professionals;
 using Lotties.Application.Users;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Medications;
@@ -31,6 +32,7 @@ internal sealed class PrescriptionService : IPrescriptionService
 {
     private readonly IPrescriptionRepository _prescriptions;
     private readonly IMedicationRepository _medications;
+    private readonly IPersonDirectory _people;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<PrescriptionService> _logger;
@@ -38,12 +40,14 @@ internal sealed class PrescriptionService : IPrescriptionService
     public PrescriptionService(
         IPrescriptionRepository prescriptions,
         IMedicationRepository medications,
+        IPersonDirectory people,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
         ILogger<PrescriptionService> logger)
     {
         _prescriptions = prescriptions ?? throw new ArgumentNullException(nameof(prescriptions));
         _medications = medications ?? throw new ArgumentNullException(nameof(medications));
+        _people = people ?? throw new ArgumentNullException(nameof(people));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -52,7 +56,7 @@ internal sealed class PrescriptionService : IPrescriptionService
     public async Task<IReadOnlyList<PrescriptionResponse>> ListChangesAsync(Guid babyId, DateTimeOffset? since, CancellationToken cancellationToken = default)
     {
         var changed = await _prescriptions.ListChangesAsync(babyId, since, cancellationToken);
-        return changed.Select(prescription => (PrescriptionResponse)prescription).ToArray();
+        return await DescribeAsync(changed, cancellationToken);
     }
 
     public async Task<UpsertPrescriptionResult> UpsertAsync(Guid babyId, Guid prescriptionId, UpsertPrescriptionRequest request, CancellationToken cancellationToken = default)
@@ -91,7 +95,7 @@ internal sealed class PrescriptionService : IPrescriptionService
         }
 
         _logger.LogInformation("Created prescription {PrescriptionId} for baby {BabyId}", prescriptionId, babyId);
-        return new UpsertPrescriptionResult(created, Created: true);
+        return new UpsertPrescriptionResult(await DescribeAsync(created, cancellationToken), Created: true);
     }
 
     private async Task<UpsertPrescriptionResult> UpdateAsync(Guid babyId, Prescription existing, PrescriptionTerms terms, DateTimeOffset? clientUpdatedAt, CancellationToken cancellationToken)
@@ -101,13 +105,24 @@ internal sealed class PrescriptionService : IPrescriptionService
         if (decision != PrescriptionUpsertDecision.Apply)
         {
             _logger.LogInformation("Upsert of prescription {PrescriptionId} ignored: {Decision}", existing.Id, decision);
-            return new UpsertPrescriptionResult(existing, Created: false);
+            return new UpsertPrescriptionResult(await DescribeAsync(existing, cancellationToken), Created: false);
         }
 
         await EnsureMedicationChangeAllowedAsync(babyId, existing, terms, cancellationToken);
         existing.Edit(terms, now, clientUpdatedAt);
         await _prescriptions.SaveChangesAsync(cancellationToken);
-        return new UpsertPrescriptionResult(existing, Created: false);
+        return new UpsertPrescriptionResult(await DescribeAsync(existing, cancellationToken), Created: false);
+    }
+
+    private async Task<PrescriptionResponse> DescribeAsync(Prescription prescription, CancellationToken cancellationToken) =>
+        (await DescribeAsync([prescription], cancellationToken))[0];
+
+    /// <summary>The responses, with the prescribing doctor of the doctor-sourced ones as the family sees her now.</summary>
+    private async Task<IReadOnlyList<PrescriptionResponse>> DescribeAsync(IReadOnlyList<Prescription> prescriptions, CancellationToken cancellationToken)
+    {
+        var doctorIds = prescriptions.Select(prescription => prescription.PrescribedByUserId).OfType<Guid>().Distinct().ToArray();
+        var doctors = await _people.DescribeAsync(doctorIds, cancellationToken);
+        return prescriptions.Select(prescription => PrescriptionResponse.For(prescription, doctors)).ToArray();
     }
 
     private Task EnsureMedicationChangeAllowedAsync(Guid babyId, Prescription existing, PrescriptionTerms terms, CancellationToken cancellationToken) =>

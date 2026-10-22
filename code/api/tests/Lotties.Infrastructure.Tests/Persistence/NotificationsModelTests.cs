@@ -81,7 +81,7 @@ public sealed class NotificationsModelTests
         Assert.False(membership.PrincipalKey.IsPrimaryKey());
         Assert.Equal(DeleteBehavior.Cascade, membership.DeleteBehavior);
         Assert.Equal("baby_id", Columns(candidates.Properties));
-        Assert.Equal("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders", candidates.GetFilter());
+        Assert.Equal("dose_due OR nap_window OR belly_pain_pattern OR overtired_warning OR fussy_pattern OR diaper_wet_headsup OR diaper_dirty_headsup OR appointment_reminders OR doctor_suggestions", candidates.GetFilter());
     }
 
     [Theory]

@@ -12,8 +12,9 @@ public enum AccessKind
 /// <summary>
 /// One recorded access of a member to a baby's data (v1: a Doctor loading it, at most once per hour per doctor and
 /// baby: <see cref="AccessLogThrottle"/>). Written by the server, read by the baby's Owner, never changed or deleted by
-/// the API. The id is derived from the baby, the user and the UTC hour (<see cref="IdFor"/>), so two requests that race
-/// in the same hour write one row.
+/// the API. The id is derived from the baby, the user and the member's previous entry (<see cref="IdAfter"/>), so every
+/// request of a parallel burst that read the same latest entry writes the same row and only one insert wins, also on
+/// both sides of an hour boundary (step 1 derived it from the UTC hour, which let 10:59:59 and 11:00:00 both write).
 /// </summary>
 public sealed class AccessLogEntry
 {
@@ -46,19 +47,17 @@ public sealed class AccessLogEntry
 
     public DateTimeOffset At { get; private set; }
 
-    public static AccessLogEntry View(Guid babyId, Guid userId, BabyRole role, DateTimeOffset now)
-    {
-        var at = UtcTime.Normalize(now);
-        return new AccessLogEntry(
-            IdFor(Ids.Required(babyId, nameof(babyId)), Ids.Required(userId, nameof(userId)), at),
+    /// <summary>A view of <paramref name="babyId"/> by <paramref name="userId"/> at <paramref name="now"/>, following her latest entry <paramref name="previous"/> (none for her first).</summary>
+    public static AccessLogEntry View(Guid babyId, Guid userId, BabyRole role, DateTimeOffset now, AccessLogEntry? previous = null) =>
+        new(
+            IdAfter(Ids.Required(babyId, nameof(babyId)), Ids.Required(userId, nameof(userId)), previous?.Id),
             babyId,
             userId,
             BabyRoleRules.EnsureDefined(role),
             AccessKind.View,
-            at);
-    }
+            UtcTime.Normalize(now));
 
-    /// <summary>The id of the entry of <paramref name="userId"/> on <paramref name="babyId"/> in the UTC hour of <paramref name="at"/>.</summary>
-    public static Guid IdFor(Guid babyId, Guid userId, DateTimeOffset at) =>
-        DeterministicGuid.Create(IdNamespace, $"{babyId:N}|{userId:N}|{at.UtcDateTime:yyyyMMddHH}");
+    /// <summary>The id of the entry of <paramref name="userId"/> on <paramref name="babyId"/> that follows the entry <paramref name="previousEntryId"/> (<c>null</c>: her first).</summary>
+    public static Guid IdAfter(Guid babyId, Guid userId, Guid? previousEntryId) =>
+        DeterministicGuid.Create(IdNamespace, $"{babyId:N}|{userId:N}|after|{(previousEntryId is { } previous ? previous.ToString("N") : "first")}");
 }

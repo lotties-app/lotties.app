@@ -54,6 +54,11 @@ namespace Lotties.Domain.Notifications;
 /// latest goes (the earlier unsent ones are superseded). Key <c>appt:{appointment}:{start utc yyyyMMddHHmm}:{offset}</c>
 /// (moving the start plans new reminders), stale cutoff 30 minutes, time to live until the start, urgency normal. Done
 /// and cancelled appointments never remind.</item>
+/// <item><c>doctor_suggestion</c> (off by default; Owners and Parents only, never the Doctor, a Caregiver or a Viewer, never
+/// the author): for every pending prescription proposal and every shared recommendation that is not deleted, created less
+/// than 24 hours ago and not yet opened by the recipient (a recommendation). Sent from its creation; inside quiet hours it
+/// waits for their end (quiet hours always apply; stale cutoff 24 hours). Key <c>proposal:{id}</c> or
+/// <c>recommendation:{id}</c>, time to live until 24 hours after the creation, urgency normal.</item>
 /// <item>Each key is planned once per user. A snooze re-sends the still open item at the snooze end with key
 /// <c>{base}:s{n}</c> (same stale cutoff and quiet hours); a dismissal stops it for that user only.</item>
 /// </list>
@@ -91,7 +96,8 @@ public static class NotificationPlanner
             .Concat(PatternReminders(recipient, PatternKind.Fussy, context))
             .Concat(OvertiredReminders(recipient, context))
             .Concat(DiaperReminders(recipient, context))
-            .Concat(AppointmentRemindersFor(recipient, context));
+            .Concat(AppointmentRemindersFor(recipient, context))
+            .Concat(DoctorSuggestionReminders(recipient, context));
 
     private static IEnumerable<Reminder> StateReminders(NotificationRecipient recipient, PlanContext context) =>
         context.StateAt(recipient.UtcOffset!.Value) is { } state
@@ -309,6 +315,28 @@ public static class NotificationPlanner
             DeliveredInQuietHours: true,
             HeldBy: null);
 
+    private static IEnumerable<Reminder> DoctorSuggestionReminders(NotificationRecipient recipient, PlanContext context) =>
+        recipient.Preferences.DoctorSuggestions && NotificationRules.CanReceiveDoctorSuggestions(recipient.Role)
+            ? context.DoctorSuggestions.Where(suggestion => suggestion.IsOpenFor(recipient.UserId, context.Now)).Select(suggestion => DoctorSuggestionReminder(recipient, suggestion, context))
+            : [];
+
+    /// <summary>
+    /// Sent at the creation (a <see cref="NotificationDelivery"/> then expires exactly 24 hours after it); inside quiet
+    /// hours it is held and goes on the first tick after them while the suggestion is still new.
+    /// </summary>
+    private static Reminder DoctorSuggestionReminder(NotificationRecipient recipient, DoctorSuggestion suggestion, PlanContext context) =>
+        new(
+            recipient,
+            NotificationKind.DoctorSuggestion,
+            NotificationKey.ForDoctorSuggestion(suggestion.Source, suggestion.Id),
+            suggestion.CreatedAt,
+            NotificationContent.ForDoctorSuggestion(context.BabyId, suggestion.Source, suggestion.Id, suggestion.CreatedAt, context.NamesFor(recipient, medicationId: null)),
+            NotificationRules.DoctorSuggestionLifetime,
+            NotificationUrgency.Normal,
+            NotificationRules.DoctorSuggestionLifetime,
+            DeliveredInQuietHours: false,
+            HeldBy: null);
+
     /// <summary>
     /// At most one diaper heads-up per recipient in a tick (the spacing rule also holds within a tick): the earliest due
     /// wins, wet before dirty on a tie; the other is skipped as <see cref="NotificationSkipReason.Spacing"/>.
@@ -466,6 +494,7 @@ public static class NotificationPlanner
             _wakeWindows = ByZone(input.WakeWindows, state => state.TimeZone);
             Diapers = input.Diapers;
             Appointments = (input.Appointments ?? []).Where(appointment => appointment.BabyId == input.BabyId).ToArray();
+            DoctorSuggestions = input.DoctorSuggestions ?? [];
             _sentHeadsUps = (input.SentHeadsUps ?? [])
                 .Where(sent => sent.BabyId == input.BabyId)
                 .DistinctBy(sent => (sent.UserId, sent.DedupeKey.Value))
@@ -480,6 +509,9 @@ public static class NotificationPlanner
 
         /// <summary>The baby's appointments as loaded (upcoming within the reminder horizon).</summary>
         public IReadOnlyList<Appointment> Appointments { get; }
+
+        /// <summary>The baby's doctor suggestions as loaded (the last 24 hours).</summary>
+        public IReadOnlyList<DoctorSuggestion> DoctorSuggestions { get; }
 
         public NotificationBabyState? StateAt(TimeSpan utcOffset) => _states.GetValueOrDefault(utcOffset);
 

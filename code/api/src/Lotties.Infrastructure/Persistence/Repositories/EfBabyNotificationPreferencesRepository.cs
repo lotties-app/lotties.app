@@ -1,7 +1,9 @@
 using Lotties.Application.Notifications;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Notes;
 using Lotties.Domain.Notifications;
+using Lotties.Domain.Proposals;
 using Lotties.Infrastructure.Persistence.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +15,8 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// stored preferences is a candidate too, with <see cref="ReminderPreferences.Default"/>, while the baby has an
 /// upcoming appointment within the reminder horizon (a stored row with only appointment reminders on likewise). Who may
 /// receive is decided by the domain rule <see cref="NotificationRules.CanReceive"/> after loading, so a member demoted to
-/// Viewer is left out.
+/// Viewer is left out. Doctor suggestions (off by default) make a stored row a candidate while the baby has a pending
+/// proposal or a shared recommendation created in the last 24 hours.
 /// </remarks>
 internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext context, UniqueViolations uniqueViolations) : IBabyNotificationPreferencesRepository
 {
@@ -49,6 +52,7 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
     internal static IQueryable<CandidateRow> CandidatesQuery(LottiesDbContext context, DateTimeOffset now)
     {
         var horizon = now + NotificationRules.AppointmentReminderHorizon;
+        var suggestionsSince = now - NotificationRules.DoctorSuggestionLifetime;
         return from preferences in context.BabyNotificationPreferences.AsNoTracking()
             join member in context.BabyMembers.AsNoTracking()
                 on new { preferences.BabyId, preferences.UserId } equals new { member.BabyId, member.UserId }
@@ -58,7 +62,18 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
                         appointment.BabyId == preferences.BabyId
                         && appointment.Status == AppointmentStatus.Upcoming
                         && appointment.StartsAt > now
-                        && appointment.StartsAt <= horizon)))
+                        && appointment.StartsAt <= horizon))
+                    || (preferences.DoctorSuggestions
+                        && (context.PrescriptionProposals.Any(proposal =>
+                                proposal.BabyId == preferences.BabyId
+                                && proposal.Status == ProposalStatus.Pending
+                                && proposal.CreatedAt >= suggestionsSince)
+                            || context.BabyNotes.Any(note =>
+                                note.BabyId == preferences.BabyId
+                                && note.Kind == NoteKind.Recommendation
+                                && note.Visibility == NoteVisibility.Shared
+                                && note.DeletedAt == null
+                                && note.CreatedAt >= suggestionsSince))))
                 && context.PushSubscriptions.Any(subscription =>
                     subscription.UserId == preferences.UserId
                     && subscription.RevokedAt == null

@@ -82,3 +82,17 @@ public sealed record NoteResponse
 
 /// <summary>The outcome of an upsert: the note as stored, and whether this request created it.</summary>
 public sealed record UpsertNoteResult(NoteResponse Note, bool Created);
+
+/// <summary>That the caller opened a note: <c>{noteId, readAt}</c> (server time of the first read; the delta cursor of her reads).</summary>
+public sealed record NoteReadResponse
+{
+    public Guid NoteId { get; init; }
+
+    public DateTimeOffset ReadAt { get; init; }
+
+    public static implicit operator NoteReadResponse(NoteRead read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        return new NoteReadResponse { NoteId = read.NoteId, ReadAt = read.ReadAt };
+    }
+}

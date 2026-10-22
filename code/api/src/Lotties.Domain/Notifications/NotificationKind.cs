@@ -29,6 +29,9 @@ public enum NotificationKind
 
     /// <summary>An upcoming appointment of the baby starts in a week, a day, 2 hours or 30 minutes (<c>appointment_reminder</c>).</summary>
     AppointmentReminder,
+
+    /// <summary>The baby's doctor sent a prescription proposal or a recommendation (<c>doctor_suggestion</c>; Owners and Parents only).</summary>
+    DoctorSuggestion,
 }
 
 /// <summary>Web Push <c>Urgency</c> header value.</summary>
@@ -80,6 +83,7 @@ public static class NotificationCodes
         NotificationKind.DiaperWetHeadsUp => "diaper_wet_headsup",
         NotificationKind.DiaperDirtyHeadsUp => "diaper_dirty_headsup",
         NotificationKind.AppointmentReminder => "appointment_reminder",
+        NotificationKind.DoctorSuggestion => "doctor_suggestion",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown notification kind."),
     };
 

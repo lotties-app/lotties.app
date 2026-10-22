@@ -49,6 +49,10 @@ public sealed class NotificationValueObjectTests
     [InlineData("test:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
     [InlineData("dose:0F8FAD5BD9CB469FA16570867728950E:202610212100", false)]
     [InlineData("feed:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
+    [InlineData("proposal:0f8fad5bd9cb469fa16570867728950e", true)]
+    [InlineData("recommendation:0f8fad5bd9cb469fa16570867728950e:s1", true)]
+    [InlineData("proposal:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
+    [InlineData("recommendation:not-a-guid", false)]
     [InlineData("", false)]
     [InlineData(null, false)]
     public void NotificationKey_TryFrom_AcceptsOnlyKnownShapes(string? value, bool expected)
@@ -352,7 +356,7 @@ public sealed class NotificationValueObjectTests
     [Fact]
     public void NotificationCodes_RoundTripEveryValue()
     {
-        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder"]);
+        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder", "doctor_suggestion"]);
         AssertRoundTrip<NotificationUrgency>(["normal", "high"]);
         AssertRoundTrip<NotificationSkipReason>(["stale", "quiet_hours", "unavailable", "limit", "snoozed", "dismissed", "spacing", "daily_cap"]);
         AssertRoundTrip<DeliveryStatus>(["pending", "sent", "failed", "expired", "gone", "cancelled"]);
