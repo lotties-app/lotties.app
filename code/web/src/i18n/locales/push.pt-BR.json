@@ -60,5 +60,10 @@
   "action": {
     "snooze": "Adiar 30 min",
     "open": "Abrir"
+  },
+  "doctor_suggestion": {
+    "title": "Seu médico enviou uma sugestão",
+    "body": "Abra o Lotties para ver.",
+    "bodyNamed": "{{baby}}: abra o Lotties para ver."
   }
 }

@@ -104,6 +104,34 @@ export interface PrescriptionDose {
   roundingStep: number | null;
 }
 
+/**
+ * The content of a prescription without its identity: the dose rule, the schedule, the course and
+ * the doctor's instructions. Proposals and the "original" of a doctor-sourced prescription carry it
+ * with the same rules and validation as a prescription's (docs/design/16-doctor-access.md section 10).
+ */
+export interface PrescriptionContent {
+  kind: PrescriptionKind;
+  dose: PrescriptionDose;
+  timesOfDay: string[] | null;
+  everyMinutes: number | null;
+  dayParts: DayPart[] | null;
+  dayPartReminders: DayPartReminder[] | null;
+  minIntervalMinutes: number | null;
+  maxDosesPer24h: number | null;
+  indication: string | null;
+  intervalGroup: string | null;
+  /** Calendar dates `yyyy-mm-dd`. */
+  startDate: string;
+  endDate: string | null;
+  instructions: string | null;
+}
+
+/** What the doctor sent, as the doctor sent it (kept on an accepted prescription). */
+export interface PrescriptionOriginal extends PrescriptionContent {
+  medicationName: string;
+  productId: string | null;
+}
+
 /** What the doctor prescribed for one medication of a baby (synced like events). */
 export interface Prescription {
   id: string;
@@ -134,6 +162,20 @@ export interface Prescription {
   endDate: string | null;
   prescriber: string | null;
   instructions: string | null;
+  /**
+   * Provenance of a prescription a doctor suggested and the parents accepted (all absent on one the
+   * parents entered; docs/design/16-doctor-access.md section 10.2). The server fills them.
+   */
+  prescribedByUserId?: string | null;
+  /** The doctor's name without a title ("Ana Souza"): screens add "Dr.". */
+  prescribedByName?: string | null;
+  /** The doctor as the family sees her (the verified or self-declared badge). */
+  prescribedBy?: PersonSummary | null;
+  proposalId?: string | null;
+  /** A parent edited the content after accepting it (never reset). */
+  changedByParent?: boolean;
+  /** The proposal as the doctor sent it. */
+  original?: PrescriptionOriginal | null;
   createdBy: string | null;
   createdAt: string;
   /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
@@ -250,6 +292,56 @@ export interface Note {
   deletedAt: string | null;
 }
 
+/** The first read of a shared note by this user (the recommendations inbox; one row per note). */
+export interface NoteRead {
+  noteId: string;
+  babyId: string;
+  /** Device time until the server echoed its own; the earlier one is kept. */
+  readAt: string;
+}
+
+/** `pending` is the only open state; the others are final (docs/design/16-doctor-access.md 10.1). */
+export type ProposalStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'superseded';
+
+/** Why a proposal was cancelled: the doctor withdrew it, or her access to the baby ended. */
+export type ProposalCancelReason = 'withdrawn' | 'access_removed';
+
+/**
+ * A prescription the baby's Doctor suggests (synced; only the author and the Owners and Parents
+ * ever receive it). Nothing is active, reminded or calculated before a parent accepts it
+ * (docs/design/16-doctor-access.md section 10).
+ */
+export interface Proposal extends PrescriptionContent {
+  id: string;
+  babyId: string;
+  /** The doctor's server id; `null` while written on this device and not echoed yet. */
+  authorUserId: string | null;
+  /** The doctor as the server named her at the last pull (`null` until synced). */
+  author: PersonSummary | null;
+  /** A medication of the baby's list, when the doctor picked one. */
+  medicationId: string | null;
+  /** A shared catalog product, when the doctor picked one. */
+  productId: string | null;
+  /** What the family reads: 1-100 characters. */
+  medicationName: string;
+  /** The prescription this proposes to change. */
+  replacesPrescriptionId: string | null;
+  status: ProposalStatus;
+  /** The parent's words when declined. */
+  declineReason: string | null;
+  cancelReason: ProposalCancelReason | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  /** The prescription the accept created (the id the accepting device generated). */
+  acceptedPrescriptionId: string | null;
+  /** An accept or decline made on this device that has not reached the server yet ("Waiting to sync"). */
+  decisionPending?: boolean;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+}
+
 /** A shared catalog product kept on the device (recently used or found), for offline search. */
 export interface CachedProduct {
   id: string;
@@ -327,8 +419,21 @@ export function editTimeOf(event: Pick<BabyEvent, 'clientUpdatedAt' | 'updatedAt
 }
 
 export type MutationKind = 'upsert' | 'delete';
+/**
+ * `proposal`: the Doctor's suggestion (upsert = `PUT`, delete = withdraw); `proposalDecision`: a
+ * parent's accept or decline (`POST`, entity id = the proposal's); `noteRead`: a first read of a
+ * shared note (`PUT .../read`, entity id = `read:{noteId}` so a pull of the note is never held back).
+ */
 export type MutationEntityType =
-  'event' | 'medication' | 'prescription' | 'formula' | 'appointment' | 'note';
+  | 'event'
+  | 'medication'
+  | 'prescription'
+  | 'formula'
+  | 'appointment'
+  | 'note'
+  | 'proposal'
+  | 'proposalDecision'
+  | 'noteRead';
 /** `dead` = permanently rejected by the server; kept for inspection, never blocks the queue. */
 export type MutationStatus = 'pending' | 'dead';
 
@@ -369,7 +474,14 @@ export interface OutboxMutation {
  * fetch succeeded on this device (an empty local list then really means "no baby yet").
  */
 export type SyncEntity =
-  'events' | 'babies' | 'prescriptions' | 'formulas' | 'appointments' | 'notes';
+  | 'events'
+  | 'babies'
+  | 'prescriptions'
+  | 'formulas'
+  | 'appointments'
+  | 'notes'
+  | 'proposals'
+  | 'noteReads';
 
 /** `babyId` of the `babies` marker row (not a baby id). */
 export const BABIES_LISTED_KEY = '*';

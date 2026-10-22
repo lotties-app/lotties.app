@@ -1,7 +1,14 @@
-import type { DayPart, Medication, Prescription, PrescriptionKind } from '../db/models';
+import type {
+  DayPart,
+  Medication,
+  Prescription,
+  PrescriptionContent,
+  PrescriptionKind,
+} from '../db/models';
 import type { PrescriptionTerms } from '../db/prescriptionCommands';
 import { formatDate, formatList, formatNumber, formatTime } from '../i18n/format';
 import { t } from '../i18n/i18n';
+import { PROPOSAL_NAME_MAX, contentOf } from '../proposals/proposalModel';
 import { clockText, dayPartName, dayPartPhrase } from './dayPartText';
 import {
   DAY_PART_STARTS,
@@ -34,7 +41,7 @@ export const AMOUNT_MAX = 9_999_999.999;
 export const UNIT_MAX = 20;
 export const INDICATION_MAX = 200;
 export const PRESCRIBER_MAX = 100;
-export const INSTRUCTIONS_MAX = 1000;
+export const INSTRUCTIONS_MAX = 2000;
 export const EARLIEST_DATE = '2000-01-01';
 export const LATEST_DATE = '2100-12-31';
 
@@ -121,20 +128,27 @@ const roundingOf = (step: number | null): RoundingChoice =>
 
 const hoursOf = (minutes: number | null) => (minutes === null ? null : minutes / 60);
 
-function scheduleByOf(p: Prescription): ScheduleBy {
+function scheduleByOf(
+  p: Pick<PrescriptionContent, 'everyMinutes'> & { dayParts?: DayPart[] | null },
+): ScheduleBy {
   if (p.dayParts && p.dayParts.length > 0) return 'parts';
   return p.everyMinutes !== null ? 'every' : 'times';
 }
 
-function reminderTimesOf(p: Prescription): Record<DayPart, string> {
+function reminderTimesOf(p: {
+  dayPartReminders?: PrescriptionContent['dayPartReminders'];
+}): Record<DayPart, string> {
   const times = { ...DEFAULT_REMINDER_TIMES };
   for (const reminder of p.dayPartReminders ?? []) times[reminder.part] = reminder.time;
   return times;
 }
 
-export function formFromPrescription(p: Prescription): PrescriptionForm {
+/** The form for a prescription's content (a proposal's, or the one a change is proposed for). */
+export function formFromContent(
+  p: Omit<PrescriptionContent, 'dayParts' | 'dayPartReminders'> &
+    Partial<Pick<PrescriptionContent, 'dayParts' | 'dayPartReminders'>>,
+): Omit<PrescriptionForm, 'medicationId' | 'prescriber'> {
   return {
-    medicationId: p.medicationId,
     amount: p.dose.amount,
     unit: p.dose.unit,
     perKg: p.dose.perKg,
@@ -152,19 +166,34 @@ export function formFromPrescription(p: Prescription): PrescriptionForm {
     group: p.intervalGroup ?? '',
     startDate: p.startDate,
     endDate: p.endDate ?? '',
-    prescriber: p.prescriber ?? '',
     instructions: p.instructions ?? '',
   };
+}
+
+export function formFromPrescription(p: Prescription): PrescriptionForm {
+  return { ...formFromContent(p), medicationId: p.medicationId, prescriber: p.prescriber ?? '' };
 }
 
 const minutesOf = (hours: number | null) => (hours === null ? null : Math.round(hours * 60));
 const blankToNull = (text: string) => (text.trim() === '' ? null : text.trim());
 const hasNul = (text: string) => text.includes(String.fromCharCode(0));
 
-/** The problems of the form, by field (empty when it can be saved). */
-export function validateForm(form: PrescriptionForm): FormErrors {
+/**
+ * The problems of the form, by field (empty when it can be saved). A proposal has no medication of
+ * the baby's list necessarily: it passes the name it will carry instead (`medicationName`).
+ */
+export function validateForm(
+  form: PrescriptionForm,
+  proposal?: { medicationName: string },
+): FormErrors {
   const errors: FormErrors = {};
-  if (!form.medicationId) errors.medication = t('medications.editor.errors.medication');
+  if (proposal) {
+    const name = proposal.medicationName.trim();
+    if (name === '') errors.medication = t('medications.editor.errors.medication');
+    else if (name.length > PROPOSAL_NAME_MAX) {
+      errors.medication = t('medications.editor.errors.tooLong', { max: PROPOSAL_NAME_MAX });
+    }
+  } else if (!form.medicationId) errors.medication = t('medications.editor.errors.medication');
   if (form.amount === null || form.amount < 0.001 || form.amount > AMOUNT_MAX) {
     errors.amount = t('medications.editor.errors.amount');
   }
@@ -284,6 +313,11 @@ export function toTerms(
   };
 }
 
+/** The content of a valid form without a medication or a prescriber: what a proposal carries. */
+export function toContent(form: PrescriptionForm): PrescriptionContent {
+  return contentOf(toTerms(form));
+}
+
 /**
  * Whether saved terms can produce a medicine reminder (to offer turning reminders on): scheduled
  * clock times or periods, or parts of the day with reminders on.
@@ -299,6 +333,19 @@ export function intervalText(minutes: number): string {
   const hours = minutes / 60;
   return t('medications.interval.hours', { count: hours });
 }
+
+/** What the plain-language summary reads: the dose, the schedule, the indication and the end date. */
+export type SummaryTerms = Pick<
+  PrescriptionContent,
+  | 'dose'
+  | 'kind'
+  | 'timesOfDay'
+  | 'everyMinutes'
+  | 'minIntervalMinutes'
+  | 'maxDosesPer24h'
+  | 'indication'
+  | 'endDate'
+> & { dayParts?: DayPart[] | null };
 
 const DROPS_UNITS = new Set(['drop', 'drops', 'gota', 'gotas']);
 
@@ -333,7 +380,7 @@ export function dayText(day: string): string {
   return formatDate(day, 'dayMonthYear');
 }
 
-function whenParts(terms: PrescriptionTerms): string[] {
+function whenParts(terms: SummaryTerms): string[] {
   if (terms.kind === 'scheduled') {
     if (terms.dayParts && terms.dayParts.length > 0) {
       return [formatList(terms.dayParts.map(dayPartPhrase))];
@@ -360,7 +407,7 @@ function whenParts(terms: PrescriptionTerms): string[] {
  * "Give 1 drop per kg, no more often than every 8 hours, when belly pain": the rule as the parent
  * entered it, in plain words. `null` while the form cannot be summarized yet.
  */
-export function summaryText(terms: PrescriptionTerms | null): string | null {
+export function summaryText(terms: SummaryTerms | null): string | null {
   if (!terms || terms.dose.amount <= 0 || terms.dose.unit === '') return null;
   const hasWhen =
     terms.timesOfDay !== null ||

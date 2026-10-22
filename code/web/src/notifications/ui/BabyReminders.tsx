@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, Typography } from '@mui/material';
 import { useApiClient } from '../../api/ApiClientContext';
-import { canLog } from '../../baby/permissions';
+import { canDecideProposals, canLog } from '../../baby/permissions';
 import type { Baby } from '../../db/models';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useServerAction } from '../../settings/useServerAction';
@@ -34,6 +34,7 @@ function defaultsFor(baby: Baby): BabyPreferencesDto {
     diaperWetHeadsUp: false,
     diaperDirtyHeadsUp: false,
     appointmentReminders: canReceive,
+    doctorSuggestions: false,
   };
 }
 
@@ -64,6 +65,7 @@ function BabyRow({
       diaperWetHeadsUp: prefs.diaperWetHeadsUp ?? false,
       diaperDirtyHeadsUp: prefs.diaperDirtyHeadsUp ?? false,
       appointmentReminders: prefs.appointmentReminders ?? prefs.canReceive,
+      doctorSuggestions: prefs.doctorSuggestions ?? false,
       ...change,
     };
     const replace = (stored: BabyPreferencesDto) =>
@@ -182,6 +184,16 @@ function BabyRow({
         label={t('notifications.reminders.appointments')}
         description={t('notifications.reminders.appointmentsHelp')}
       />
+      {canDecideProposals(baby) && (
+        <SwitchRow
+          icon="stethoscope"
+          checked={prefs.doctorSuggestions ?? false}
+          disabled={off}
+          onChange={(doctorSuggestions) => update({ doctorSuggestions })}
+          label={t('notifications.reminders.doctor')}
+          description={t('notifications.reminders.doctorHelp')}
+        />
+      )}
       <ErrorNotice message={save.error} />
     </Stack>
   );

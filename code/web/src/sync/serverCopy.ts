@@ -7,12 +7,15 @@ import {
   fromMedicationDto,
   fromNoteDto,
   fromPrescriptionDto,
+  fromProposalDto,
   isEventDtoFor,
   isNoteDtoFor,
+  isProposalDtoFor,
   type EventDto,
   type MedicationDto,
   type NoteDto,
   type PrescriptionDto,
+  type ProposalDto,
 } from './contract';
 import { syncRequest, type TransportContext } from './syncContext';
 
@@ -21,7 +24,11 @@ export type ServerCopy =
   | { entityType: 'event'; dto: EventDto | null }
   | { entityType: 'medication'; dto: MedicationDto | null }
   | { entityType: 'prescription'; dto: PrescriptionDto | null }
-  | { entityType: 'note'; dto: NoteDto | null };
+  | { entityType: 'note'; dto: NoteDto | null }
+  /** A doctor's edit or withdraw, or a parent's accept or decline: the stored proposal. */
+  | { entityType: 'proposal'; dto: ProposalDto | null }
+  /** A first read has no server copy to put back. */
+  | { entityType: 'noteRead'; dto: null };
 
 async function fetchEvent(ctx: TransportContext, babyId: string, id: string) {
   let body: unknown;
@@ -46,6 +53,19 @@ async function fetchNote(ctx: TransportContext, babyId: string, id: string) {
     throw error;
   }
   if (!isNoteDtoFor(body, id)) throw new Error(`Unexpected response for note ${id}.`);
+  return body;
+}
+
+/** A proposal the server does not show this user (unknown, or not hers to see) is 404. */
+async function fetchProposal(ctx: TransportContext, babyId: string, id: string) {
+  let body: unknown;
+  try {
+    body = await syncRequest<unknown>(ctx, apiPaths.proposal(babyId, id));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+  if (!isProposalDtoFor(body, id)) throw new Error(`Unexpected response for proposal ${id}.`);
   return body;
 }
 
@@ -77,6 +97,11 @@ export async function fetchServerCopy(
       return { entityType: 'prescription', dto: await fetchPrescription(ctx, babyId, entityId) };
     case 'note':
       return { entityType: 'note', dto: await fetchNote(ctx, babyId, entityId) };
+    case 'proposal':
+    case 'proposalDecision':
+      return { entityType: 'proposal', dto: await fetchProposal(ctx, babyId, entityId) };
+    case 'noteRead':
+      return { entityType: 'noteRead', dto: null };
     default:
       return { entityType: 'medication', dto: await fetchMedication(ctx, babyId, entityId) };
   }
@@ -84,7 +109,7 @@ export async function fetchServerCopy(
 
 /** Tables a transaction must include to use `applyServerCopy`. */
 export function serverCopyTables(db: BabyRoutineDb) {
-  return [db.outbox, db.events, db.medications, db.prescriptions, db.notes];
+  return [db.outbox, db.events, db.medications, db.prescriptions, db.notes, db.proposals];
 }
 
 /**
@@ -118,6 +143,12 @@ export async function applyServerCopy(
     else await db.notes.delete(mutation.entityId);
     return;
   }
+  if (copy.entityType === 'proposal') {
+    if (copy.dto) await db.proposals.put(fromProposalDto(copy.dto));
+    else await db.proposals.delete(mutation.entityId);
+    return;
+  }
+  if (copy.entityType === 'noteRead') return;
   if (copy.entityType === 'medication') {
     if (copy.dto) await db.medications.put(fromMedicationDto(copy.dto));
     else await db.medications.delete(mutation.entityId);

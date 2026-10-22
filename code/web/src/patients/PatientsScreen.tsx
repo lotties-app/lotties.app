@@ -16,11 +16,13 @@ function PatientCard({
   now,
   onOpen,
   onNotes,
+  onProposals,
 }: {
   row: PatientRow;
   now: number;
   onOpen: () => void;
   onNotes: () => void;
+  onProposals: () => void;
 }) {
   const { t } = useTranslation();
   const { baby, lastEventAt, sharedNotes } = row;
@@ -61,7 +63,7 @@ function PatientCard({
         </Stack>
         <Icon name="chevron-right" />
       </ButtonBase>
-      <Box sx={{ px: 2, pb: 1.5 }}>
+      <Box sx={{ px: 2, pb: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         <Button
           size="small"
           startIcon={<Icon name="note" size={20} />}
@@ -70,6 +72,15 @@ function PatientCard({
           aria-label={t('doctor.patients.notesOf', { name: baby.name })}
         >
           {t('doctor.notes.title')}
+        </Button>
+        <Button
+          size="small"
+          startIcon={<Icon name="pill" size={20} />}
+          onClick={onProposals}
+          sx={{ minHeight: 44 }}
+          aria-label={t('doctor.patients.proposalsOf', { name: baby.name })}
+        >
+          {t('doctor.patients.proposals')}
         </Button>
       </Box>
     </Paper>
@@ -125,6 +136,7 @@ export function PatientsScreen({ initialNow }: { initialNow?: number }) {
               now={now}
               onOpen={() => open(row.baby.id, '/')}
               onNotes={() => open(row.baby.id, '/notes')}
+              onProposals={() => open(row.baby.id, '/proposals')}
             />
           ))}
         </Stack>

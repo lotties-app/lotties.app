@@ -60,5 +60,10 @@
   "action": {
     "snooze": "Snooze 30 min",
     "open": "Open"
+  },
+  "doctor_suggestion": {
+    "title": "Your doctor sent a suggestion",
+    "body": "Open Lotties to review it.",
+    "bodyNamed": "{{baby}}: open Lotties to review it."
   }
 }

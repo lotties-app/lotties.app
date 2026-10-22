@@ -60,6 +60,7 @@ function useDoseReminderOffer(baby: Baby) {
       diaperWetHeadsUp: prefs?.diaperWetHeadsUp ?? false,
       diaperDirtyHeadsUp: prefs?.diaperDirtyHeadsUp ?? false,
       appointmentReminders: prefs?.appointmentReminders ?? true,
+      doctorSuggestions: prefs?.doctorSuggestions ?? false,
     },
   } as const;
 }

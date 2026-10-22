@@ -10,12 +10,18 @@ import {
   fromFormulaDto,
   fromNoteDto,
   fromPrescriptionDto,
+  fromProposalDto,
   isAppointmentDtoFor,
   isEventDtoFor,
   isFormulaDtoFor,
   isNoteDtoFor,
   isPrescriptionDtoFor,
+  isProposalDecisionFor,
+  isProposalDtoFor,
+  toUtcIso,
   type EventUpsertRequest,
+  type NoteReadDto,
+  type ProposalDecisionPayload,
 } from './contract';
 import { t } from '../i18n/i18n';
 import {
@@ -24,10 +30,12 @@ import {
   describeFailure,
   isNotOwnedRejection,
   isPayloadRejection,
+  isProposalDecidedRejection,
   isRoleRejection,
 } from './failures';
 import { deadLetter } from './deadLetters';
 import { deadLetterForRole, dropNotOwned } from './rejections';
+import { announceRejection } from './rejectionNotice';
 import { syncRequest, type SyncContext } from './syncContext';
 
 /**
@@ -101,7 +109,33 @@ async function pushOne(ctx: SyncContext, mutation: OutboxMutation): Promise<Push
   return null;
 }
 
+/** A parent's accept or decline: `POST .../accept {prescriptionId, acceptedOn}` or `.../decline {reason}`. */
+function sendDecision(ctx: SyncContext, mutation: OutboxMutation): Promise<unknown> {
+  const decision = mutation.payload as ProposalDecisionPayload;
+  if (decision.action === 'accept') {
+    return syncRequest<unknown>(ctx, apiPaths.proposalAccept(mutation.babyId, mutation.entityId), {
+      method: 'POST',
+      body: {
+        prescriptionId: decision.prescriptionId,
+        ...(decision.acceptedOn ? { acceptedOn: decision.acceptedOn } : {}),
+      },
+    });
+  }
+  return syncRequest<unknown>(ctx, apiPaths.proposalDecline(mutation.babyId, mutation.entityId), {
+    method: 'POST',
+    body: { reason: decision.reason ?? null },
+  });
+}
+
+/** The first read of a shared note: `PUT .../notes/{id}/read`, no body. */
+function sendNoteRead(ctx: SyncContext, mutation: OutboxMutation): Promise<unknown> {
+  const { noteId } = mutation.payload as { noteId: string };
+  return syncRequest<unknown>(ctx, apiPaths.noteRead(mutation.babyId, noteId), { method: 'PUT' });
+}
+
 async function send(ctx: SyncContext, mutation: OutboxMutation): Promise<unknown> {
+  if (mutation.entityType === 'proposalDecision') return sendDecision(ctx, mutation);
+  if (mutation.entityType === 'noteRead') return sendNoteRead(ctx, mutation);
   const path = pathOf(mutation);
   if (mutation.kind === 'upsert') {
     return syncRequest<unknown>(ctx, path, { method: 'PUT', body: upsertBody(mutation) });
@@ -122,6 +156,8 @@ function pathOf(mutation: OutboxMutation): string {
       return apiPaths.appointment(mutation.babyId, mutation.entityId);
     case 'note':
       return apiPaths.note(mutation.babyId, mutation.entityId);
+    case 'proposal':
+      return apiPaths.proposal(mutation.babyId, mutation.entityId);
     default:
       return apiPaths.event(mutation.babyId, mutation.entityId);
   }
@@ -149,9 +185,20 @@ function isAlreadyDeleted(mutation: OutboxMutation, error: unknown) {
  * and the stored copy returned, or the event was already deleted on the server).
  */
 async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
-  const tables = [db.outbox, db.events, db.prescriptions, db.formulas, db.appointments, db.notes];
+  const tables = [
+    db.outbox,
+    db.events,
+    db.prescriptions,
+    db.formulas,
+    db.appointments,
+    db.notes,
+    db.proposals,
+    db.noteReads,
+  ];
   await db.transaction('rw', tables, async () => {
     await db.outbox.delete(mutation.id);
+    if (mutation.entityType === 'proposalDecision') return adoptDecision(db, mutation, response);
+    if (mutation.entityType === 'noteRead') return adoptNoteRead(db, mutation, response);
     const { entityType, entityId } = mutation;
     const eventCopy =
       entityType === 'event' && isEventDtoFor(response, entityId) ? response : undefined;
@@ -167,7 +214,18 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
         : undefined;
     const noteCopy =
       entityType === 'note' && isNoteDtoFor(response, entityId) ? response : undefined;
-    if (!eventCopy && !prescriptionCopy && !formulaCopy && !appointmentCopy && !noteCopy) return;
+    const proposalCopy =
+      entityType === 'proposal' && isProposalDtoFor(response, entityId) ? response : undefined;
+    if (
+      !eventCopy &&
+      !prescriptionCopy &&
+      !formulaCopy &&
+      !appointmentCopy &&
+      !noteCopy &&
+      !proposalCopy
+    ) {
+      return;
+    }
     const stillPending = await db.outbox
       .where('entityId')
       .equals(entityId)
@@ -179,7 +237,37 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
     if (formulaCopy) await db.formulas.put(fromFormulaDto(formulaCopy));
     if (appointmentCopy) await db.appointments.put(fromAppointmentDto(appointmentCopy));
     if (noteCopy) await db.notes.put(fromNoteDto(noteCopy));
+    if (proposalCopy) await db.proposals.put(fromProposalDto(proposalCopy));
   });
+}
+
+/**
+ * Adopts the outcome of an accepted or declined proposal: the proposal as the server stored it
+ * (the local "Waiting to sync" state is over) and, on accept, the prescription it created. The pull
+ * that follows in the same sync run brings the medication the accept may have added. An unexpected
+ * body only ends the waiting state; the pull then brings the real one.
+ */
+async function adoptDecision(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
+  const { entityId } = mutation;
+  if (!isProposalDecisionFor(response, entityId)) {
+    const local = await db.proposals.get(entityId);
+    if (local?.decisionPending) await db.proposals.put({ ...local, decisionPending: false });
+    return;
+  }
+  await db.proposals.put(fromProposalDto(response.proposal));
+  const created = response.prescription;
+  if (!created || !isPrescriptionDtoFor(created, created.id)) return;
+  const queued = await db.outbox.where('entityId').equals(created.id).count();
+  if (queued === 0) await db.prescriptions.put(fromPrescriptionDto(created));
+}
+
+/** Keeps the time of the first read the server stored (the device time stays on an unexpected body). */
+async function adoptNoteRead(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
+  const read = response as Partial<NoteReadDto> | undefined;
+  const { noteId } = mutation.payload as { noteId: string };
+  if (typeof read !== 'object' || read === null || typeof read.readAt !== 'string') return;
+  if (read.noteId !== noteId || Number.isNaN(Date.parse(read.readAt))) return;
+  await db.noteReads.put({ noteId, babyId: mutation.babyId, readAt: toUtcIso(read.readAt) });
 }
 
 function giveUpMessage(lastError: string) {
@@ -230,6 +318,22 @@ async function recordFailure(
     case 'transient':
       return recordTransient(ctx, mutation, error, lastError);
     case 'permanent':
+      if (mutation.entityType === 'noteRead') {
+        // A read is a convenience (the note may be gone or no longer visible): never a dead letter.
+        await ctx.db.outbox.delete(mutation.id);
+        return null;
+      }
+      if (isProposalDecidedRejection(error)) {
+        // Someone decided first, or the doctor withdrew it: keep the change for inspection, show
+        // the stored proposal and say so once.
+        await deadLetter(ctx, mutation, {
+          attempts: mutation.attempts + 1,
+          failureCount: mutation.failureCount ?? 0,
+          lastError,
+        });
+        announceRejection('proposalDecided');
+        return null;
+      }
       if (mutation.entityType === 'event' && isNotOwnedRejection(error)) {
         await dropNotOwned(ctx, mutation, lastError);
         return null;

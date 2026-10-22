@@ -91,7 +91,8 @@ describe('validateForm (mirrors the API rules)', () => {
     expect(validateForm(form({ endDate: '2026-03-02' })).endDate).toBeUndefined();
     expect(validateForm(form({ indication: 'x'.repeat(201) })).indication).toBeTruthy();
     expect(validateForm(form({ prescriber: 'x'.repeat(101) })).prescriber).toBeTruthy();
-    expect(validateForm(form({ instructions: 'x'.repeat(1001) })).instructions).toBeTruthy();
+    expect(validateForm(form({ instructions: 'x'.repeat(2000) })).instructions).toBeUndefined();
+    expect(validateForm(form({ instructions: 'x'.repeat(2001) })).instructions).toBeTruthy();
     expect(validateForm(form({ group: 'x'.repeat(51) })).group).toBeTruthy();
   });
 });

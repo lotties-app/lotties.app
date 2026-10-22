@@ -34,6 +34,7 @@ import {
   NEXT_CURSOR_HEADER,
 } from './contract';
 import { pullNotes } from '../notes/noteSync';
+import { pullNoteReads, pullProposals } from '../proposals/proposalSync';
 import { classifyFailure, describeFailure } from './failures';
 import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
 
@@ -341,6 +342,18 @@ export async function refreshLinkedProducts(ctx: SyncContext, babyId: string): P
 }
 
 /**
+ * The doctor suggestions of one baby (docs/design/16-doctor-access.md section 10): the proposals
+ * for the Doctor (her own) and the Owners and Parents (all of them), the user's own note reads for
+ * the Owners and Parents (the recommendations inbox). Caregivers and Viewers have neither.
+ */
+export async function pullSuggestions(ctx: SyncContext, babyId: string): Promise<void> {
+  const role = (await ctx.db.babies.get(babyId))?.role;
+  const decides = role === 'Owner' || role === 'Parent';
+  if (decides || role === 'Doctor') await pullProposals(ctx, babyId);
+  if (decides) await pullNoteReads(ctx, babyId);
+}
+
+/**
  * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure or a paging
  * loop for one baby is collected and the others continue; network/401/transient failures are
  * rethrown.
@@ -357,6 +370,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);
       await refreshLatestWeight(ctx, babyId);
+      await pullSuggestions(ctx, babyId);
     } catch (error) {
       const perBaby =
         error instanceof RepeatedCursorError || classifyFailure(error) === 'permanent';

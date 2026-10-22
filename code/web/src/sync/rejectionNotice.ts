@@ -5,10 +5,11 @@ import { useSyncExternalStore } from 'react';
  * change to someone else's entry (403 `event_not_owned`, the change was dropped and the entry put
  * back) or a write the role no longer allows (403 without a code, e.g. demoted to Viewer while
  * offline: the change is kept in Settings > Sync). The sync engine raises it; the shell draws it
- * once (`RejectedChangeSnackbar`); a later rejection replaces it.
+ * once (`RejectedChangeSnackbar`); a later rejection replaces it. A third kind: a change to a
+ * doctor's suggestion that was already decided (the stored proposal was put back).
  */
 
-export type RejectionKind = 'notOwned' | 'role';
+export type RejectionKind = 'notOwned' | 'role' | 'proposalDecided';
 
 export interface RejectionNotice {
   /** Changes with every notice (React key). */

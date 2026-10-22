@@ -44,6 +44,19 @@ export function canWriteNotes(baby: Pick<Baby, 'role'>): boolean {
   return isDoctor(baby);
 }
 
+/**
+ * Only the Doctor suggests prescriptions (docs/design/16-doctor-access.md section 10): she never
+ * writes the baby's prescriptions or medications, the parents decide.
+ */
+export function canPropose(baby: Pick<Baby, 'role'>): boolean {
+  return isDoctor(baby);
+}
+
+/** Owners and Parents accept or decline a doctor's suggestion and get her recommendations. */
+export function canDecideProposals(baby: Pick<Baby, 'role'>): boolean {
+  return canWrite(baby);
+}
+
 /** Owners and Parents add measurements, and the Doctor her consultation measurements. */
 export function canRecordMeasurements(baby: Pick<Baby, 'role'>): boolean {
   return canWrite(baby) || isDoctor(baby);

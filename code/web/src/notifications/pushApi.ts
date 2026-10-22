@@ -69,6 +69,8 @@ export interface ReminderPreferences {
   diaperDirtyHeadsUp: boolean;
   /** The appointment reminders (`appointment_reminder`); ON by default (the family created the appointment). */
   appointmentReminders: boolean;
+  /** The doctor's suggestions and recommendations (`doctor_suggestion`); off by default. */
+  doctorSuggestions: boolean;
 }
 
 /**
@@ -81,7 +83,8 @@ type AdditiveKinds =
   | 'fussyPattern'
   | 'diaperWetHeadsUp'
   | 'diaperDirtyHeadsUp'
-  | 'appointmentReminders';
+  | 'appointmentReminders'
+  | 'doctorSuggestions';
 
 export interface BabyPreferencesDto
   extends

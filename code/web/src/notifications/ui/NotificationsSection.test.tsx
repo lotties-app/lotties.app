@@ -193,6 +193,7 @@ describe('NotificationsSection reminders and settings', () => {
           diaperWetHeadsUp: false,
           diaperDirtyHeadsUp: false,
           appointmentReminders: true,
+          doctorSuggestions: false,
         },
       }),
     );
@@ -209,6 +210,7 @@ describe('NotificationsSection reminders and settings', () => {
         diaperWetHeadsUp: false,
         diaperDirtyHeadsUp: false,
         appointmentReminders: true,
+        doctorSuggestions: false,
       }),
     );
   });
@@ -241,6 +243,7 @@ describe('NotificationsSection reminders and settings', () => {
           diaperWetHeadsUp: false,
           diaperDirtyHeadsUp: false,
           appointmentReminders: true,
+          doctorSuggestions: false,
         },
       }),
     );
@@ -289,6 +292,7 @@ describe('NotificationsSection reminders and settings', () => {
           diaperWetHeadsUp: false,
           diaperDirtyHeadsUp: false,
           appointmentReminders: true,
+          doctorSuggestions: false,
           ...kinds,
         },
       }),
@@ -481,5 +485,54 @@ describe.each(['light', 'dark', 'night'] as const)('in the %s scheme', (scheme) 
       await screen.findByRole('dialog');
       expect(await violations()).toEqual([]);
     }, 60_000);
+  });
+});
+
+describe('NotificationsSection doctor suggestions', () => {
+  it('offers the switch to the parents only, off by default, and saves it per baby', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Doctor suggestions/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      within(lia).getByText('When the doctor sends a prescription suggestion or a recommendation.'),
+    ).toBeTruthy();
+    const theo = screen.getByRole('region', { name: 'Theo' });
+    expect(within(theo).queryByRole('switch', { name: /Doctor suggestions/ })).toBeNull();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: expect.objectContaining({ doctorSuggestions: true, doseDue: false }),
+      }),
+    );
+  });
+
+  it('is not offered for a Caregiver, who never receives it', async () => {
+    const device = fakePushDevice({});
+    const server = fakePushServer({ preferences: PREFS });
+    render(
+      <I18nProvider>
+        <AppThemeProvider>
+          <QueryClientProvider client={testQueryClient()}>
+            <ApiClientContext value={server.api}>
+              <PushDeviceContext value={device}>
+                <NotificationsSection
+                  babies={[{ ...LIA, role: 'Caregiver' }]}
+                  publicKey="BFakeKey"
+                />
+              </PushDeviceContext>
+            </ApiClientContext>
+          </QueryClientProvider>
+        </AppThemeProvider>
+      </I18nProvider>,
+    );
+
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).queryByRole('switch', { name: /Doctor suggestions/ })).toBeNull();
+    expect(within(lia).getByRole('switch', { name: /Medicine reminders/ })).toBeTruthy();
   });
 });

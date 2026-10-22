@@ -70,6 +70,18 @@ export function isNotOwnedRejection(error: unknown): error is ApiError {
 }
 
 /**
+ * The proposal was already decided when a queued edit, accept or decline reached the server (409
+ * `proposal_decided` for the doctor's edit, `proposal_not_pending` for a parent's decision).
+ */
+export function isProposalDecidedRejection(error: unknown): error is ApiError {
+  return (
+    error instanceof ApiError &&
+    error.status === 409 &&
+    (error.code === 'proposal_decided' || error.code === 'proposal_not_pending')
+  );
+}
+
+/**
  * A 403 without that code: the user's role no longer allows the write (demoted to Viewer or
  * Caregiver, or removed, e.g. while offline).
  */

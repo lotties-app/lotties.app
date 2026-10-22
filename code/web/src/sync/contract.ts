@@ -3,10 +3,16 @@ import {
   isAppointmentType,
   normalizeReminders,
 } from '../appointments/appointmentModel';
+import { isProposalStatus } from '../proposals/proposalModel';
 import {
   editTimeOf,
   type Appointment,
   type Note,
+  type NoteRead,
+  type PrescriptionContent,
+  type PrescriptionOriginal,
+  type Proposal,
+  type ProposalCancelReason,
   type NoteKind,
   type NoteVisibility,
   type PersonSummary,
@@ -69,6 +75,14 @@ import {
  *          the notes the caller may see: shared ones and her own private ones), GET/PUT/DELETE
  *          /babies/{id}/notes/{id} (writes: the Doctor, her own notes only). A shared note never
  *          becomes private (422 `note_already_shared`).
+ * - Prescription proposals (docs/design/16-doctor-access.md section 10): GET
+ *          /babies/{id}/prescription-proposals?since= (the Doctor's own, or every one for Owners and
+ *          Parents, none for others; all statuses), GET /prescription-proposals/{id}, PUT (the
+ *          Doctor, client GUID; 409 `proposal_decided` once decided), DELETE (withdraw, 204),
+ *          POST .../accept `{prescriptionId, acceptedOn}` and .../decline `{reason}` (Owner,
+ *          Parent; 200 `{proposal, prescription}`; 409 `proposal_not_pending`). PUT
+ *          /babies/{id}/notes/{id}/read marks a shared note read, GET /babies/{id}/note-reads?since=
+ *          lists the caller's own reads.
  * - Doctor access: GET/PUT /me/professional-profile (404 `professional_profile_not_found` before
  *          one is declared; a Doctor invite needs one: 422 `professional_profile_required`), GET
  *          /babies/{id}/access-log (Owner).
@@ -124,6 +138,18 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
   note: (babyId: string, noteId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/notes/${enc(noteId)}`,
+  proposals: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals` + query({ since }),
+  proposal: (babyId: string, proposalId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals/${enc(proposalId)}`,
+  proposalAccept: (babyId: string, proposalId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals/${enc(proposalId)}/accept`,
+  proposalDecline: (babyId: string, proposalId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals/${enc(proposalId)}/decline`,
+  noteRead: (babyId: string, noteId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notes/${enc(noteId)}/read`,
+  noteReads: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/note-reads` + query({ since }),
   accessLog: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/access-log`,
   professionalProfile: () => `${API_PREFIX}/me/professional-profile`,
   catalogProducts: (q?: string, limit?: number) =>
@@ -649,6 +675,14 @@ export interface PrescriptionDto {
   endDate?: string | null;
   prescriber?: string | null;
   instructions?: string | null;
+  /** Provenance (additive; absent on prescriptions the parents entered). */
+  prescribedByUserId?: string | null;
+  /** The doctor's name without a title. */
+  prescribedByName?: string | null;
+  prescribedBy?: PersonSummaryDto | null;
+  proposalId?: string | null;
+  changedByParent?: boolean;
+  original?: PrescriptionOriginalDto | null;
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -751,12 +785,199 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
     endDate: dto.endDate ?? null,
     prescriber: dto.prescriber ?? null,
     instructions: dto.instructions ?? null,
+    ...(dto.prescribedByUserId !== undefined || dto.proposalId !== undefined
+      ? {
+          prescribedByUserId: dto.prescribedByUserId ?? null,
+          prescribedByName: dto.prescribedByName ?? null,
+          prescribedBy: fromPersonDto(dto.prescribedBy),
+          proposalId: dto.proposalId ?? null,
+          changedByParent: dto.changedByParent === true,
+          original: dto.original ? fromOriginalDto(dto.original) : null,
+        }
+      : {}),
     createdBy: dto.createdBy ?? null,
     createdAt: toUtcIso(dto.createdAt),
     updatedAt: toUtcIso(dto.updatedAt),
     clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
     deletedAt: toUtcIsoOrNull(dto.deletedAt),
   };
+}
+
+/* Prescription proposals (docs/design/16-doctor-access.md section 10) */
+
+/** The prescription content as the wire carries it (a proposal's, and the `original` of a prescription). */
+export interface PrescriptionContentDto {
+  kind: string;
+  dose: { amount: number; unit: string; perKg?: boolean; roundingStep?: number | null };
+  timesOfDay?: string[] | null;
+  everyMinutes?: number | null;
+  dayParts?: string[] | null;
+  dayPartReminders?: { part: string; time: string }[] | null;
+  minIntervalMinutes?: number | null;
+  maxDosesPer24h?: number | null;
+  indication?: string | null;
+  intervalGroup?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  instructions?: string | null;
+}
+
+export interface PrescriptionOriginalDto extends PrescriptionContentDto {
+  medicationName: string;
+  productId?: string | null;
+}
+
+export interface ProposalDto extends PrescriptionContentDto {
+  id: string;
+  babyId: string;
+  authorUserId?: string | null;
+  author?: PersonSummaryDto | null;
+  medicationId?: string | null;
+  productId?: string | null;
+  medicationName: string;
+  replacesPrescriptionId?: string | null;
+  status: string;
+  declineReason?: string | null;
+  cancelReason?: string | null;
+  decidedBy?: string | null;
+  decidedAt?: string | null;
+  acceptedPrescriptionId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full state of a proposal plus the client edit time (`PUT` replaces it). */
+export interface ProposalUpsertRequest extends PrescriptionContent {
+  medicationId: string | null;
+  productId: string | null;
+  medicationName: string;
+  replacesPrescriptionId: string | null;
+  updatedAt?: string;
+}
+
+/** What a parent's accept or decline queues (the outbox payload of a `proposalDecision`). */
+export interface ProposalDecisionPayload {
+  action: 'accept' | 'decline';
+  /** Accept: the id of the prescription the server creates (a replay reuses it). */
+  prescriptionId?: string;
+  /** Accept: the parent's local calendar day, when a replaced prescription ends. */
+  acceptedOn?: string;
+  /** Decline: the parent's optional words (up to 500 characters). */
+  reason?: string | null;
+}
+
+/** The answer of accept and decline: the proposal and, on accept, the prescription it created. */
+export interface ProposalDecisionResponse {
+  proposal: ProposalDto;
+  prescription?: PrescriptionDto | null;
+}
+
+/** The answer of `PUT /notes/{id}/read` and the items of `GET /note-reads`. */
+export interface NoteReadDto {
+  noteId: string;
+  readAt: string;
+}
+
+export function toProposalUpsertRequest(p: Proposal): ProposalUpsertRequest {
+  return {
+    medicationId: p.medicationId,
+    productId: p.productId,
+    medicationName: p.medicationName,
+    kind: p.kind,
+    dose: p.dose,
+    timesOfDay: p.timesOfDay,
+    everyMinutes: p.everyMinutes,
+    dayParts: p.dayParts,
+    dayPartReminders: p.dayPartReminders,
+    minIntervalMinutes: p.minIntervalMinutes,
+    maxDosesPer24h: p.maxDosesPer24h,
+    indication: p.indication,
+    intervalGroup: p.intervalGroup,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    instructions: p.instructions,
+    replacesPrescriptionId: p.replacesPrescriptionId,
+    updatedAt: p.clientUpdatedAt ?? p.updatedAt,
+  };
+}
+
+export function isProposalDtoFor(value: unknown, id: string): value is ProposalDto {
+  const dto = value as Partial<ProposalDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function isProposalDecisionFor(
+  value: unknown,
+  id: string,
+): value is ProposalDecisionResponse {
+  const response = value as Partial<ProposalDecisionResponse> | undefined;
+  return (
+    typeof response === 'object' && response !== null && isProposalDtoFor(response.proposal, id)
+  );
+}
+
+/** The prescription content of a wire object; unknown codes degrade to the safest reading. */
+function fromContentDto(dto: PrescriptionContentDto): PrescriptionContent {
+  return {
+    kind: dto.kind?.toLowerCase() === 'scheduled' ? 'scheduled' : 'asNeeded',
+    dose: {
+      amount: dto.dose.amount,
+      unit: dto.dose.unit,
+      perKg: dto.dose.perKg === true,
+      roundingStep: dto.dose.roundingStep ?? null,
+    },
+    timesOfDay: dto.timesOfDay ? [...dto.timesOfDay].sort() : null,
+    everyMinutes: dto.everyMinutes ?? null,
+    dayParts: dayPartsFromDto(dto.dayParts),
+    dayPartReminders: dayPartRemindersFromDto(dto.dayPartReminders),
+    minIntervalMinutes: dto.minIntervalMinutes ?? null,
+    maxDosesPer24h: dto.maxDosesPer24h ?? null,
+    indication: dto.indication ?? null,
+    intervalGroup: dto.intervalGroup ?? null,
+    startDate: dto.startDate,
+    endDate: dto.endDate ?? null,
+    instructions: dto.instructions ?? null,
+  };
+}
+
+export function fromOriginalDto(dto: PrescriptionOriginalDto): PrescriptionOriginal {
+  return {
+    ...fromContentDto(dto),
+    medicationName: dto.medicationName,
+    productId: dto.productId ?? null,
+  };
+}
+
+const CANCEL_REASONS: readonly ProposalCancelReason[] = ['withdrawn', 'access_removed'];
+
+/** An unknown status from a newer server reads as cancelled: never offered for a decision. */
+export function fromProposalDto(dto: ProposalDto): Proposal {
+  const status = dto.status?.toLowerCase();
+  return {
+    ...fromContentDto(dto),
+    id: dto.id,
+    babyId: dto.babyId,
+    authorUserId: dto.authorUserId ?? null,
+    author: fromPersonDto(dto.author),
+    medicationId: dto.medicationId ?? null,
+    productId: dto.productId ?? null,
+    medicationName: dto.medicationName,
+    replacesPrescriptionId: dto.replacesPrescriptionId ?? null,
+    status: isProposalStatus(status) ? status : 'cancelled',
+    declineReason: dto.declineReason ?? null,
+    cancelReason: matchEnum(CANCEL_REASONS, dto.cancelReason ?? undefined) ?? null,
+    decidedBy: dto.decidedBy ?? null,
+    decidedAt: toUtcIsoOrNull(dto.decidedAt),
+    acceptedPrescriptionId: dto.acceptedPrescriptionId ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
+export function fromNoteReadDto(babyId: string, dto: NoteReadDto): NoteRead {
+  return { noteId: dto.noteId, babyId, readAt: toUtcIso(dto.readAt) };
 }
 
 /* Formulas */

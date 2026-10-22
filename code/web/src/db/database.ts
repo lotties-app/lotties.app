@@ -9,8 +9,10 @@ import type {
   CachedProduct,
   Medication,
   Note,
+  NoteRead,
   OutboxMutation,
   Prescription,
+  Proposal,
   SyncCursor,
   SyncEntity,
 } from './models';
@@ -81,6 +83,15 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       notes: 'id, babyId, [babyId+updatedAt]',
     },
   },
+  {
+    // Doctor access step 2: the Doctor's prescription proposals (synced; only the author's and,
+    // for parents, every one of the baby) and the user's first reads of shared notes (inbox).
+    version: 7,
+    stores: {
+      proposals: 'id, babyId, [babyId+updatedAt]',
+      noteReads: 'noteId, babyId',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -94,6 +105,8 @@ export class BabyRoutineDb extends Dexie {
   declare formulas: EntityTable<Formula, 'id'>;
   declare appointments: EntityTable<Appointment, 'id'>;
   declare notes: EntityTable<Note, 'id'>;
+  declare proposals: EntityTable<Proposal, 'id'>;
+  declare noteReads: EntityTable<NoteRead, 'noteId'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

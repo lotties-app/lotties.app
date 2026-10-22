@@ -84,7 +84,8 @@
     "attentionSuffix_other": "{{count}} precisam da sua atenção",
     "rejected": "O servidor recusou esta alteração.",
     "rejectedNotOwned": "Uma alteração em um registro de outra pessoa não foi salva: você só pode alterar os seus próprios registros.",
-    "rejectedRole": "Seu acesso a este bebê mudou e uma alteração não foi salva. Ela ficou guardada em Ajustes > Sincronização."
+    "rejectedRole": "Seu acesso a este bebê mudou e uma alteração não foi salva. Ela ficou guardada em Ajustes > Sincronização.",
+    "rejectedProposalDecided": "Esta sugestão já foi decidida, então sua alteração não foi aplicada."
   },
   "session": {
     "unsyncedChanges_one": "{{count}} alteração não sincronizada",
@@ -861,7 +862,10 @@
         "prescription": "receita",
         "formula": "fórmula",
         "appointment": "consulta",
-        "note": "nota"
+        "note": "nota",
+        "proposal": "proposta",
+        "proposalDecision": "decisão sobre uma sugestão",
+        "noteRead": "marca de leitura"
       },
       "fix": "Corrigir",
       "fixNamed": "Corrigir: {{label}}",
@@ -1724,7 +1728,9 @@
       "logNamed": "Registrar {{name}}",
       "suggested": "{{dose}} sugerido ({{rule}})",
       "perKgNoWeight": "{{rule}}, sem peso registrado",
-      "addPrescription": "Adicionar receita"
+      "addPrescription": "Adicionar receita",
+      "proposeChange": "Propor uma mudança",
+      "proposeChangeNamed": "Propor uma mudança em {{name}}"
     },
     "catalog": {
       "title": "Do catálogo compartilhado",
@@ -1742,7 +1748,9 @@
       "officialAttribution": "Fonte: dados abertos da Anvisa (medicamentos registrados e lista de preços da CMED). Não revisado por farmacêutico; não é orientação médica.",
       "curated": "Lista curada (não revisada por farmacêutico)",
       "ingredientNotListed": "Princípio ativo não informado nos dados oficiais",
-      "ambiguousName": "Produtos diferentes usam este nome com princípios ativos diferentes. Confira a embalagem."
+      "ambiguousName": "Produtos diferentes usam este nome com princípios ativos diferentes. Confira a embalagem.",
+      "choose": "Escolher",
+      "chooseNamed": "Escolher {{name}} do catálogo"
     },
     "newProduct": {
       "title": "Adicionar ao catálogo compartilhado",
@@ -2107,7 +2115,9 @@
         "0": "Quando abrir",
         "10": "10 min antes",
         "20": "20 min antes"
-      }
+      },
+      "doctor": "Sugestões do médico",
+      "doctorHelp": "Quando o médico envia uma sugestão de prescrição ou uma recomendação."
     },
     "quiet": {
       "switch": "Horário de silêncio",
@@ -2160,7 +2170,7 @@
     "name": "Dr(a). {{name}}",
     "nameNoAccess": "Dr(a). {{name}} (não tem mais acesso)",
     "selfDeclared": "Médico(a) autodeclarado(a)",
-    "verifiedDoctor": "Médico(a)",
+    "verifiedDoctor": "Profissional verificado",
     "settingsNotice": "Você é médico(a) de {{name}}: pode ver tudo o que é registrado, escrever notas e adicionar medidas da consulta. Os responsáveis cuidam do resto.",
     "profile": {
       "sectionTitle": "Sou profissional de saúde",
@@ -2237,7 +2247,9 @@
       "lastEntry": "Último registro {{when}}",
       "noEntries": "Nada registrado ainda",
       "sharedNotes_one": "{{count}} nota compartilhada sua",
-      "sharedNotes_other": "{{count}} notas compartilhadas suas"
+      "sharedNotes_other": "{{count}} notas compartilhadas suas",
+      "proposals": "Propostas",
+      "proposalsOf": "Propostas para {{name}}"
     },
     "growth": {
       "doctorNotice": "Como médico(a) de {{name}}, você pode adicionar medidas da consulta e alterar as suas.",
@@ -2250,6 +2262,116 @@
       "none": "Nenhum(a) médico(a) abriu os dados de {{name}} ainda.",
       "entry": "{{role}} · {{when}}",
       "loadFailed": "Não foi possível carregar o registro de acessos. Verifique sua conexão."
+    }
+  },
+  "proposals": {
+    "status": {
+      "pending": "Pendente",
+      "accepted": "Aceita",
+      "declined": "Recusada",
+      "cancelled": "Cancelada",
+      "superseded": "Substituída"
+    },
+    "waitingToSync": "Aguardando sincronizar",
+    "accessRemoved": "Acesso removido",
+    "unknownDoctor": "Seu médico",
+    "sent": "Enviada em {{date}}",
+    "reason": "Motivo: {{reason}}",
+    "badgeLabel_one": "{{count}} novo do seu médico",
+    "badgeLabel_other": "{{count}} novos do seu médico",
+    "sheet": {
+      "titleNew": "Prescrever",
+      "titleEdit": "Editar proposta",
+      "titleChange": "Propor uma mudança",
+      "instructions": "Instruções para os pais",
+      "send": "Enviar aos pais",
+      "withdraw": "Retirar",
+      "reviewNote": "Os pais revisam antes de qualquer mudança.",
+      "replaces": "Muda a prescrição atual: {{summary}}",
+      "saveFailed": "Não foi possível salvar a proposta. Tente de novo.",
+      "alreadyDecided": "Os pais já decidiram esta proposta, então ela não pode mais ser editada."
+    },
+    "chooser": {
+      "useName": "Usar \"{{name}}\"",
+      "noneYet": "A lista de remédios do bebê está vazia. Busque no catálogo ou digite um nome."
+    },
+    "facts": {
+      "course": "Tratamento",
+      "courseRange": "De {{start}} a {{end}}",
+      "courseOpen": "A partir de {{start}}, sem data final",
+      "instructions": "Instruções do médico"
+    },
+    "provenance": {
+      "prescribedBy": "Prescrito por {{doctor}}",
+      "changedByParent": "Alterado pelos pais",
+      "seeOriginal": "Ver o que {{doctor}} prescreveu",
+      "originalTitle": "O que {{doctor}} prescreveu",
+      "originalNote": "Do jeito que o médico enviou. É um registro: não pode ser editado."
+    },
+    "mine": {
+      "title": "Minhas propostas",
+      "subtitle": "Prescrições que você sugeriu para {{name}}. Nada muda até os pais aceitarem.",
+      "prescribe": "Prescrever",
+      "listLabel": "Propostas, da mais recente para a mais antiga",
+      "emptyTitle": "Nenhuma proposta ainda",
+      "emptyBody": "Prescreva um remédio para {{name}} e os pais recebem para aceitar ou recusar.",
+      "edit": "Editar",
+      "editNamed": "Editar proposta de {{name}}",
+      "withdraw": "Retirar",
+      "withdrawNamed": "Retirar proposta de {{name}}",
+      "proposeChange": "Propor uma mudança",
+      "proposeChangeNamed": "Propor uma mudança em {{name}}",
+      "withdrawTitle": "Retirar esta proposta?",
+      "withdrawBody": "Os pais não verão mais a proposta para aceitar.",
+      "withdrawConfirm": "Retirar proposta",
+      "onlyDoctor": "As propostas são enviadas pelo médico do bebê.",
+      "noBaby": "Escolha um paciente primeiro."
+    },
+    "inbox": {
+      "region": "Do seu médico",
+      "proposalTitle": "{{doctor}} sugeriu uma prescrição",
+      "recommendationTitle": "{{doctor}} enviou uma recomendação",
+      "review": "Revisar",
+      "reviewNamed": "Revisar a sugestão de {{name}}",
+      "read": "Ler",
+      "readNamed": "Ler a recomendação de {{doctor}}",
+      "seeAll": "Ver tudo do seu médico"
+    },
+    "details": {
+      "suggestedBy": "Sugerido por",
+      "replacesCurrent": "Muda a prescrição atual: {{summary}}",
+      "replacesEnds": "Ao aceitar, a atual termina hoje.",
+      "acceptAdds": "Ao aceitar, esta prescrição é adicionada para {{name}}. Você pode encerrá-la quando quiser.",
+      "accept": "Aceitar",
+      "decline": "Recusar",
+      "reasonLabel": "Motivo (opcional)",
+      "reasonHelp": "O médico vê o que você escrever.",
+      "addedTitle": "Adicionado aos remédios de {{name}}",
+      "addedPending": "Aparece nos remédios assim que sincronizar.",
+      "acceptedOn": "Aceita em {{date}}",
+      "declinedOn": "Recusada em {{date}}",
+      "cancelledWithdrawn": "O médico retirou esta sugestão.",
+      "cancelledAccess": "Cancelada porque o médico não tem mais acesso.",
+      "superseded": "Substituída quando outra sugestão para a mesma prescrição foi aceita.",
+      "missing": "Esta sugestão ainda não está neste aparelho.",
+      "alreadyDecided": "Esta sugestão já foi decidida.",
+      "decisionFailed": "Não foi possível salvar sua decisão. Tente de novo."
+    },
+    "fromDoctor": {
+      "title": "Do seu médico",
+      "subtitle": "Prescrições e recomendações do médico de {{name}}. Nada muda até você aceitar.",
+      "waiting": "Aguardando você",
+      "nothingWaiting": "Nada aguardando você.",
+      "recommendations": "Recomendações",
+      "decided": "Decididas",
+      "emptyTitle": "Nada do médico ainda",
+      "emptyBody": "Quando o médico de {{name}} sugerir uma prescrição ou enviar uma recomendação, aparece aqui.",
+      "unread": "Nova",
+      "recommendation": "Recomendação",
+      "openProposal": "Abrir a sugestão de {{name}}",
+      "openRecommendation": "Abrir a recomendação de {{date}}",
+      "parentsOnly": "Só os pais do bebê veem o que o médico envia.",
+      "noBaby": "Escolha um bebê primeiro."
     }
   }
 }

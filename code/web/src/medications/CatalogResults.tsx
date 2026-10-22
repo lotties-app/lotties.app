@@ -27,6 +27,11 @@ interface Props {
   onChooseMedication: (medication: Medication) => void;
   /** Hide "Not listed? Add it" (the parent shows it elsewhere). */
   canCreate?: boolean;
+  /**
+   * `pick`: choosing a product only names it (a doctor's proposal): the buttons say "Choose", never
+   * "Add", because nothing is added to the baby's list. Default `add`.
+   */
+  mode?: 'add' | 'pick';
 }
 
 /**
@@ -42,6 +47,7 @@ export function CatalogResults({
   onChooseProduct,
   onChooseMedication,
   canCreate = true,
+  mode = 'add',
 }: Props) {
   const { t } = useTranslation();
   const online = useOnline();
@@ -64,6 +70,7 @@ export function CatalogResults({
         key={match.product.id}
         match={match}
         linked={medications.find((m) => m.productId === match.product.id)}
+        mode={mode}
         onChoose={choose}
       />
     ));
@@ -169,10 +176,12 @@ function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
 function CatalogResultCard({
   match: { product, siblings },
   linked,
+  mode,
   onChoose,
 }: {
   match: CatalogMatch;
   linked: Medication | undefined;
+  mode: 'add' | 'pick';
   onChoose: (product: ProductDto) => void;
 }) {
   const { t } = useTranslation();
@@ -194,7 +203,12 @@ function CatalogResultCard({
         aria-label={
           linked
             ? t('medications.catalog.useExisting', { name: linked.name })
-            : t('medications.catalog.addNamed', { name: product.name })
+            : t(
+                mode === 'pick'
+                  ? 'medications.catalog.chooseNamed'
+                  : 'medications.catalog.addNamed',
+                { name: product.name },
+              )
         }
         sx={(theme) => ({
           ...optionBase(theme),
@@ -224,7 +238,9 @@ function CatalogResultCard({
           <OfficialSourceLabel product={product} />
         </Box>
         <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, flex: 'none' }}>
-          {linked ? t('medications.catalog.inYourList') : t('medications.catalog.add')}
+          {linked
+            ? t('medications.catalog.inYourList')
+            : t(mode === 'pick' ? 'medications.catalog.choose' : 'medications.catalog.add')}
         </Box>
       </Box>
       <AmbiguousNameWarning product={product} />

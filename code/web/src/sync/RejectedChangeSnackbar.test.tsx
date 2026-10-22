@@ -36,4 +36,25 @@ describe('RejectedChangeSnackbar', () => {
       ),
     ).toBeTruthy();
   });
+
+  it('says a suggestion was already decided, in English and in pt-BR', async () => {
+    const { unmount } = renderUi(<RejectedChangeSnackbar />);
+    act(() => announceRejection('proposalDecided'));
+    expect(
+      await screen.findByText(
+        'This suggestion was already decided, so your change was not applied.',
+      ),
+    ).toBeTruthy();
+    unmount();
+    dismissRejectionNotice();
+
+    await useTestLocale('pt-BR');
+    renderUi(<RejectedChangeSnackbar />);
+    act(() => announceRejection('proposalDecided'));
+    expect(
+      await screen.findByText(
+        'Esta sugestão já foi decidida, então sua alteração não foi aplicada.',
+      ),
+    ).toBeTruthy();
+  });
 });

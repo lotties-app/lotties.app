@@ -1,16 +1,6 @@
-import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  Drawer,
-  IconButton,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { describeApiError } from '../api/errorMessages';
 import {
   useBodyWeight,
@@ -18,17 +8,27 @@ import {
   usePrescriptionCommands,
   usePrescriptions,
 } from '../db/hooks';
-import type { Medication, Prescription } from '../db/models';
+import type { Medication, Prescription, Proposal } from '../db/models';
 import { termsOf, type PrescriptionTerms } from '../db/prescriptionCommands';
-import { Icon } from '../ui/Icon';
+import { Provenance } from '../proposals/Provenance';
 import { Field } from '../ui/form';
-import { palette } from '../ui/form/styles';
 import { announceUndo } from '../ui/undoNotice';
+import {
+  DiscardChoice,
+  EditorBody,
+  EditorFooter,
+  EditorFrame,
+  EditorHeader,
+  PlainSummary,
+  PrimaryAction,
+} from './EditorShell';
 import { DoseFields } from './DoseFields';
 import { GuardrailNote } from './GuardrailNote';
 import { ExtraFields } from './ExtraFields';
 import { MedicationChooser } from './MedicationChooser';
+import { ProposalSheet } from './ProposalSheet';
 import { ScheduleFields } from './ScheduleFields';
+import { useEditorForm } from './useEditorForm';
 import { useProductForm } from './useProductForm';
 import {
   emptyForm,
@@ -37,11 +37,12 @@ import {
   summaryText,
   toTerms,
   validateForm,
-  type FormErrors,
   type PrescriptionForm,
 } from './prescriptionForm';
 
 export interface PrescriptionSheetProps {
+  /** `proposal`: the Doctor's editor (see the component). Default `prescription`. */
+  mode?: 'prescription' | 'proposal';
   babyId: string;
   /** Edit this prescription; omit to add one. */
   prescription?: Prescription;
@@ -50,90 +51,16 @@ export interface PrescriptionSheetProps {
   onDone: () => void;
   /** After a successful save (create or edit), before `onDone`. */
   onSaved?: (terms: PrescriptionTerms) => void;
-}
-
-function Frame({
-  desktop,
-  titleId,
-  onClose,
-  children,
-}: {
-  desktop: boolean;
-  titleId: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  if (desktop) {
-    return (
-      <Dialog
-        open
-        onClose={onClose}
-        fullWidth
-        maxWidth="sm"
-        aria-labelledby={titleId}
-        slotProps={{
-          paper: {
-            sx: {
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: 'min(760px, calc(100dvh - 64px))',
-            },
-          },
-        }}
-      >
-        {children}
-      </Dialog>
-    );
-  }
-  return (
-    <Drawer
-      anchor="bottom"
-      open
-      onClose={onClose}
-      slotProps={{
-        paper: {
-          'aria-labelledby': titleId,
-          sx: {
-            display: 'flex',
-            flexDirection: 'column',
-            height: 'auto',
-            maxHeight: 'calc(100dvh - 16px)',
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-          },
-        },
-      }}
-    >
-      {children}
-    </Drawer>
-  );
-}
-
-/** The one-line plain-language rule at the top of the editor. */
-function Summary({ text }: { text: string | null }) {
-  const { t } = useTranslation();
-  return (
-    <Box
-      role="status"
-      aria-live="polite"
-      sx={(theme) => ({
-        borderRadius: '18px',
-        p: 1.75,
-        backgroundColor: palette(theme).surfaceRaised,
-        color: text ? palette(theme).text.primary : palette(theme).text.secondary,
-      })}
-    >
-      <Box
-        component="span"
-        sx={{ display: 'block', fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}
-      >
-        {t('medications.editor.summaryLabel')}
-      </Box>
-      <Typography sx={{ fontWeight: text ? 600 : 400 }}>
-        {text ?? t('medications.editor.summaryEmpty')}
-      </Typography>
-    </Box>
-  );
+  /** Proposal mode: the Doctor's server id, stored on a new proposal until the server echoes it. */
+  authorUserId?: string | null;
+  /** Proposal mode: edit this pending proposal. */
+  proposal?: Proposal;
+  /** Proposal mode: propose a change to this prescription (prefilled, replaces it on accept). */
+  replaces?: Prescription;
+  /** Proposal mode: propose a change to what an accepted proposal created, when it is not here. */
+  replacesProposal?: Proposal;
+  /** Proposal mode: after the proposal was written locally and queued. */
+  onProposed?: (proposal: Proposal) => void;
 }
 
 /**
@@ -142,8 +69,27 @@ function Summary({ text }: { text: string | null }) {
  * hours, or as needed with a minimum interval and a daily maximum), a shared wait with other
  * medications, the course dates and notes follow. The doctor's prescription is the source for every
  * dose and interval the app shows; the footer says so. Mount only while open.
+ *
+ * With `mode="proposal"` it is the Doctor's editor instead: the same fields and validation, a
+ * medicine picker that adds nothing to the baby's list, and "Send to parents" (`ProposalSheet`).
  */
 export function PrescriptionSheet(props: PrescriptionSheetProps) {
+  if (props.mode !== 'proposal') return <PrescriptionForSheet {...props} />;
+  const { babyId, authorUserId, proposal, replaces, replacesProposal, onDone, onProposed } = props;
+  return (
+    <ProposalSheet
+      babyId={babyId}
+      authorUserId={authorUserId ?? null}
+      onDone={onDone}
+      {...(proposal ? { proposal } : {})}
+      {...(replaces ? { replaces } : {})}
+      {...(replacesProposal ? { replacesProposal } : {})}
+      {...(onProposed ? { onSaved: onProposed } : {})}
+    />
+  );
+}
+
+function PrescriptionForSheet(props: PrescriptionSheetProps) {
   // The form starts from the medication's default dose, so it waits for the local catalog.
   const medications = useMedications(props.babyId);
   return medications ? <PrescriptionEditor {...props} medications={medications} /> : null;
@@ -158,10 +104,7 @@ function PrescriptionEditor({
   onSaved,
 }: PrescriptionSheetProps & { medications: Medication[] }) {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const desktop = useMediaQuery(theme.breakpoints.up('md'));
   const titleId = useId();
-  const bodyRef = useRef<HTMLDivElement>(null);
   const prescriptions = usePrescriptions(babyId);
   const weight = useBodyWeight(babyId);
   const commands = usePrescriptionCommands();
@@ -176,12 +119,9 @@ function PrescriptionEditor({
           ...(medicationId ? { medicationId } : {}),
         },
   );
-  const [form, setForm] = useState(initial);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [saving, setSaving] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
-  const [discarding, setDiscarding] = useState(false);
-  const dirty = JSON.stringify(form) !== JSON.stringify(initial);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const editor = useEditorForm(initial, bodyRef);
+  const { form, errors, saving, failure } = editor;
   const groups = useMemo(
     () =>
       [
@@ -196,36 +136,17 @@ function PrescriptionEditor({
     medications.find((m) => m.id === form.medicationId)?.productId,
   );
 
-  const edit = (patch: Partial<PrescriptionForm>) => {
-    setForm((current) => ({ ...current, ...patch }));
-    setErrors({});
-  };
   const chooseMedication = (medication: Medication) =>
-    edit({
+    editor.edit({
       medicationId: medication.id,
       ...(form.amount === null && form.unit === '' && medication.defaultDosage
         ? { amount: medication.defaultDosage.amount, unit: medication.defaultDosage.unit }
         : {}),
     });
 
-  const requestClose = () => {
-    if (saving) return;
-    if (dirty) setDiscarding(true);
-    else onDone();
-  };
-
   const submit = async () => {
-    const found = validateForm(form);
-    setErrors(found);
-    setFailure(null);
-    if (Object.keys(found).length > 0) {
-      setTimeout(
-        () => bodyRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
-        0,
-      );
-      return;
-    }
-    setSaving(true);
+    if (!editor.accept(validateForm(form))) return;
+    editor.setSaving(true);
     try {
       const terms = toTerms(form, prescription?.status ?? 'active');
       if (prescription) await commands.update(prescription.id, terms);
@@ -233,16 +154,16 @@ function PrescriptionEditor({
       onSaved?.(terms);
       onDone();
     } catch (error) {
-      setFailure(
+      editor.setFailure(
         error instanceof Error ? describeApiError(error) : t('medications.editor.saveFailed'),
       );
-      setSaving(false);
+      editor.setSaving(false);
     }
   };
 
   const toggleStatus = async () => {
     if (!prescription) return;
-    setSaving(true);
+    editor.setSaving(true);
     try {
       await commands.setStatus(
         prescription.id,
@@ -250,8 +171,8 @@ function PrescriptionEditor({
       );
       onDone();
     } catch (error) {
-      setFailure(describeApiError(error));
-      setSaving(false);
+      editor.setFailure(describeApiError(error));
+      editor.setSaving(false);
     }
   };
 
@@ -268,31 +189,18 @@ function PrescriptionEditor({
   const problems = Object.keys(errors).length;
   const note = problems > 0 ? t('medications.editor.problems', { count: problems }) : failure;
   const editing = prescription !== undefined;
+  const close = () => editor.requestClose(onDone);
 
   return (
-    <Frame desktop={desktop} titleId={titleId} onClose={requestClose}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2.5, pt: 2, pb: 1 }}>
-        <Typography id={titleId} variant="h5" component="h2" sx={{ flex: 1, minWidth: 0 }}>
-          {editing ? t('medications.editor.titleEdit') : t('medications.editor.titleNew')}
-        </Typography>
-        <IconButton onClick={requestClose} aria-label={t('now.sheet.close')} edge="end">
-          <Icon name="close" />
-        </IconButton>
-      </Box>
-      <Box
-        ref={bodyRef}
-        sx={{
-          flex: '1 1 auto',
-          overflowY: 'auto',
-          px: 2.5,
-          pb: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          '& > *': { flexShrink: 0 },
-        }}
-      >
-        <Summary text={summary} />
+    <EditorFrame titleId={titleId} onClose={close}>
+      <EditorHeader
+        titleId={titleId}
+        title={editing ? t('medications.editor.titleEdit') : t('medications.editor.titleNew')}
+        onClose={close}
+      />
+      <EditorBody ref={bodyRef}>
+        {prescription && <Provenance prescription={prescription} />}
+        <PlainSummary text={summary} />
         <Box data-field-key="medication">
           <Field
             label={t('medications.editor.medication')}
@@ -312,67 +220,21 @@ function PrescriptionEditor({
           errors={errors}
           weight={weight ?? null}
           productForm={productForm}
-          onChange={edit}
+          onChange={editor.edit}
         />
-        <ScheduleFields form={form} errors={errors} onChange={edit} />
-        <ExtraFields form={form} errors={errors} groups={groups} onChange={edit} />
-      </Box>
-      <Box
-        sx={{
-          flex: '0 0 auto',
-          borderTop: 1,
-          borderColor: 'divider',
-          px: 2.5,
-          pt: 1.5,
-          pb: 'calc(16px + env(safe-area-inset-bottom))',
-          display: 'grid',
-          gap: 1.25,
-        }}
-      >
+        <ScheduleFields form={form} errors={errors} onChange={editor.edit} />
+        <ExtraFields form={form} errors={errors} groups={groups} onChange={editor.edit} />
+      </EditorBody>
+      <EditorFooter>
         <GuardrailNote />
-        {discarding ? (
-          <Box
-            role="group"
-            aria-label={t('events.sheet.discardQuestion')}
-            sx={{ display: 'grid', gap: 1.5 }}
-          >
-            <Typography sx={{ fontWeight: 600 }}>{t('events.sheet.discardQuestion')}</Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                autoFocus
-                onClick={() => setDiscarding(false)}
-                sx={{ flex: '1 1 140px', minHeight: 48, borderRadius: '999px' }}
-              >
-                {t('events.sheet.keepEditing')}
-              </Button>
-              <Button
-                color="error"
-                variant="outlined"
-                onClick={onDone}
-                sx={{ flex: '1 1 140px', minHeight: 48, borderRadius: '999px' }}
-              >
-                {t('events.sheet.discard')}
-              </Button>
-            </Box>
-          </Box>
+        {editor.discarding ? (
+          <DiscardChoice onKeep={() => editor.setDiscarding(false)} onDiscard={onDone} />
         ) : (
           <>
             <Box role="status" sx={{ color: 'error.main', fontSize: '0.875rem' }}>
               {note}
             </Box>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={() => void submit()}
-              aria-busy={saving || undefined}
-              startIcon={
-                saving ? <CircularProgress size={20} color="inherit" aria-hidden /> : undefined
-              }
-              sx={{ minHeight: 56, borderRadius: '999px', fontSize: '1rem' }}
-            >
-              {t('common.save')}
-            </Button>
+            <PrimaryAction label={t('common.save')} saving={saving} onClick={() => void submit()} />
             {editing && (
               <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between' }}>
                 <Button
@@ -396,7 +258,7 @@ function PrescriptionEditor({
             )}
           </>
         )}
-      </Box>
-    </Frame>
+      </EditorFooter>
+    </EditorFrame>
   );
 }

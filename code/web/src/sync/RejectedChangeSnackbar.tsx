@@ -5,6 +5,12 @@ import { dismissRejectionNotice, useRejectionNotice } from './rejectionNotice';
 
 const NOTICE_MS = 8_000;
 
+const MESSAGES = {
+  notOwned: 'sync.rejectedNotOwned',
+  role: 'sync.rejectedRole',
+  proposalDecided: 'sync.rejectedProposalDecided',
+} as const;
+
 /**
  * Says once, without blocking, that the server refused a change because of the user's role (see
  * `rejectionNotice.ts`). Mount once in the shell.
@@ -18,9 +24,7 @@ export function RejectedChangeSnackbar() {
       open={notice !== null}
       autoHideDuration={NOTICE_MS}
       onClose={(_, reason) => reason !== 'clickaway' && dismissRejectionNotice(notice?.id)}
-      message={
-        notice?.kind === 'role' ? t('sync.rejectedRole') : notice ? t('sync.rejectedNotOwned') : ''
-      }
+      message={notice ? t(MESSAGES[notice.kind]) : ''}
       sx={{ bottom: TOAST_BOTTOM }}
     />
   );

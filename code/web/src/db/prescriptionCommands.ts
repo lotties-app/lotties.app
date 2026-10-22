@@ -3,6 +3,7 @@ import type { Prescription, PrescriptionStatus } from './models';
 import { enqueueMutation } from './outbox';
 import { toPrescriptionUpsertRequest } from '../sync/contract';
 import type { CommandOptions } from './eventCommands';
+import { isDoctorSourced } from '../proposals/proposalModel';
 
 /** The terms a parent edits; ids, authorship and times are set by the commands. */
 export type PrescriptionTerms = Pick<
@@ -56,6 +57,22 @@ export function termsOf(p: Prescription): PrescriptionTerms {
   };
 }
 
+/** Key order and `undefined` never matter when two sets of terms are compared; the status is left out. */
+function stableJson(terms: PrescriptionTerms): string {
+  const sorted = Object.entries({ ...terms, status: 'active' }).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  return JSON.stringify(sorted, (_key, value: unknown) => value ?? null);
+}
+
+/**
+ * Whether the edit changes the content of a prescription a doctor suggested (anything but stopping
+ * or resuming it): the server then flags it "changed by parent" for good; the device shows it at once.
+ */
+function changesDoctorContent(current: Prescription, terms: PrescriptionTerms): boolean {
+  return isDoctorSourced(current) && stableJson(termsOf(current)) !== stableJson(terms);
+}
+
 async function queueUpsert(db: BabyRoutineDb, p: Prescription, now: string) {
   await enqueueMutation(db, {
     babyId: p.babyId,
@@ -105,7 +122,13 @@ export async function updatePrescription(
     if (!current || current.deletedAt) {
       throw new InvalidPrescriptionError('This prescription no longer exists.');
     }
-    const updated: Prescription = { ...current, ...terms, updatedAt: now, clientUpdatedAt: now };
+    const updated: Prescription = {
+      ...current,
+      ...terms,
+      ...(changesDoctorContent(current, terms) ? { changedByParent: true } : {}),
+      updatedAt: now,
+      clientUpdatedAt: now,
+    };
     await db.prescriptions.put(updated);
     await queueUpsert(db, updated, now);
     return updated;

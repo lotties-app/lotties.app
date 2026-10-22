@@ -1,7 +1,8 @@
 /*
  * Push payload parsing (docs/design/09-push-notifications.md sections 3 and 8). The server sends
- * codes, ids and instants only: `{v, id, kind, babyId?, rxId?, apptId?, offset?, at, lang, token?,
- * names?, snooze?}` (never an appointment's title, doctor or notes).
+ * codes, ids and instants only: `{v, id, kind, babyId?, rxId?, apptId?, offset?, proposalId?,
+ * noteId?, at, lang, token?, names?, snooze?}` (never an appointment's title, doctor or notes, a
+ * medicine name or the text of a note).
  * Everything here is pure and never throws: anything unexpected becomes a generic notification
  * ("Open the app for details"), so a raw code or a broken string never reaches the lock screen.
  */
@@ -25,6 +26,7 @@ const KINDS = {
   diaper_wet_headsup: true,
   diaper_dirty_headsup: true,
   appointment_reminder: true,
+  doctor_suggestion: true,
   test: true,
 } as const;
 export type PushKind = keyof typeof KINDS;
@@ -107,6 +109,16 @@ export interface AppointmentPayload extends PayloadBase {
   token?: string;
 }
 
+/**
+ * The doctor sent a suggestion (docs/design/16-doctor-access.md section 10.4): exactly one of a
+ * proposal id and a note id (a recommendation); `at` is when it was created. Generic lock-screen
+ * text only: never the medicine name, the dose or the note text.
+ */
+export type DoctorSuggestionPayload = PayloadBase & {
+  kind: 'doctor_suggestion';
+  babyId: string;
+} & ({ proposalId: string; noteId?: never } | { noteId: string; proposalId?: never });
+
 export interface TestPayload extends PayloadBase {
   kind: 'test';
 }
@@ -119,6 +131,7 @@ export type PushPayload =
   | FussyPayload
   | DiaperPayload
   | AppointmentPayload
+  | DoctorSuggestionPayload
   | TestPayload;
 
 /** The kinds about a baby that open Now and carry nothing but codes (not a dose). */
@@ -236,6 +249,19 @@ export function validatePayload(raw: unknown): ParsedPayload {
     const minutes = offset(field(raw, 'offset'));
     if (!apptId || minutes === undefined) return fail;
     return { ok: true, payload: { ...base, ...withToken, kind, babyId, apptId, offset: minutes } };
+  }
+
+  if (kind === 'doctor_suggestion') {
+    // A suggestion names its proposal or its note, never both and never neither.
+    const proposalId = guid(field(raw, 'proposalId'));
+    const noteId = guid(field(raw, 'noteId'));
+    if (!proposalId === !noteId) return fail;
+    return {
+      ok: true,
+      payload: proposalId
+        ? { ...base, kind, babyId, proposalId }
+        : { ...base, kind, babyId, noteId: noteId as string },
+    };
   }
 
   const rxId = guid(field(raw, 'rxId'));

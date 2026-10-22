@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Chip, Typography } from '@mui/material';
 import type { PersonSummary } from '../db/models';
+import { Icon } from '../ui/Icon';
 import { doctorLabel } from './doctorLabel';
 
 /**
- * "Self-declared doctor": shown next to every doctor's name in v1 (nobody checked the registration;
- * docs/design/16-doctor-access.md). A verified profile (a later step) would read "Doctor".
+ * "Self-declared doctor" next to every doctor's name, unless the operator verified the profile
+ * (docs/design/16-doctor-access.md sections 1 and 10.6): then "Verified professional" with a check.
+ * The app itself never checks a registration.
  */
 export function SelfDeclaredBadge({ verified = false }: { verified?: boolean }) {
   const { t } = useTranslation();
@@ -13,6 +15,8 @@ export function SelfDeclaredBadge({ verified = false }: { verified?: boolean }) 
     <Chip
       size="small"
       variant="outlined"
+      color={verified ? 'success' : 'default'}
+      icon={verified ? <Icon name="success" size={16} /> : undefined}
       label={t(verified ? 'doctor.verifiedDoctor' : 'doctor.selfDeclared')}
       sx={{ height: 22, fontSize: '0.75rem' }}
     />

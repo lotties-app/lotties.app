@@ -10,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { NoteCard } from './NoteCard';
 import { NoteComposer } from './NoteComposer';
 import { isOwnNote, timelineOf } from './noteModel';
+import { useReadRecommendationsOnView } from '../proposals/useProposals';
 import { useNoteCommands, useNotes } from './useNotes';
 
 type Composing = Note | 'new' | null;
@@ -57,6 +58,7 @@ export function NotesScreen({ baby }: { baby: Baby }) {
   const notes = useNotes(baby.id);
   const members = useMembers(baby.id);
   const commands = useNoteCommands();
+  useReadRecommendationsOnView(baby);
   const [composing, setComposing] = useState<Composing>(null);
   const [deleting, setDeleting] = useState<Note | null>(null);
   const writable = canWriteNotes(baby);

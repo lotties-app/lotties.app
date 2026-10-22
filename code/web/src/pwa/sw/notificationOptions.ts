@@ -40,7 +40,8 @@ export function keyInstant(at: number): string {
  * replaces it); the overtired heads-up uses `overtired:{baby}` (one per awake stretch; the next
  * stretch's replaces it); the diaper heads-ups use `wet:{baby}` and `dirty:{baby}` (the next
  * expected diaper of the kind replaces the earlier one); an appointment reminder uses
- * `appt:{appointment}` (its next reminder, "in 2 hours" after "tomorrow", replaces the earlier one).
+ * `appt:{appointment}` (its next reminder, "in 2 hours" after "tomorrow", replaces the earlier one);
+ * a doctor suggestion uses `doctor:{proposal or note}` (one notification per suggestion, only Open).
  */
 export function notificationTag(payload: PushPayload): string {
   switch (payload.kind) {
@@ -60,6 +61,8 @@ export function notificationTag(payload: PushPayload): string {
       return `dirty:${compactGuid(payload.babyId)}`;
     case 'appointment_reminder':
       return `appt:${compactGuid(payload.apptId)}`;
+    case 'doctor_suggestion':
+      return `doctor:${compactGuid((payload.proposalId ?? payload.noteId) as string)}`;
     case 'test':
       return `test:${compactGuid(payload.id)}`;
   }

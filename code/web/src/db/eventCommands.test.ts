@@ -42,9 +42,11 @@ describe('schema', () => {
         'events',
         'formulas',
         'medications',
+        'noteReads',
         'notes',
         'outbox',
         'prescriptions',
+        'proposals',
         'syncState',
       ].sort(),
     );

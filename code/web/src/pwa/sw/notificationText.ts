@@ -6,7 +6,12 @@
 import en from '../../i18n/locales/push.en.json';
 import ptBR from '../../i18n/locales/push.pt-BR.json';
 import { getOwn } from '../../util/ownProperty';
-import type { AppointmentPayload, ParsedPayload, PushLang } from './payload';
+import type {
+  AppointmentPayload,
+  DoctorSuggestionPayload,
+  ParsedPayload,
+  PushLang,
+} from './payload';
 
 export type PushCatalog = typeof en;
 
@@ -108,6 +113,18 @@ function formatLongDate(at: number, lang: PushLang, timeZone?: string): string {
   }).format(new Date(at));
 }
 
+/** "Your doctor sent a suggestion": generic, whatever the suggestion is (the app shows the rest). */
+function doctorSuggestionText(
+  payload: DoctorSuggestionPayload,
+  catalog: PushCatalog,
+): NotificationText {
+  const strings = catalog.doctor_suggestion;
+  const body = payload.names
+    ? interpolate(strings.bodyNamed, { baby: payload.names.baby })
+    : strings.body;
+  return { title: strings.title, body: body ?? strings.body };
+}
+
 function appointmentText(
   payload: AppointmentPayload,
   catalog: PushCatalog,
@@ -143,6 +160,7 @@ export function renderText(
     if (payload.kind === 'appointment_reminder') {
       return appointmentText(payload, catalog, now, timeZone) ?? genericText(payload.lang);
     }
+    if (payload.kind === 'doctor_suggestion') return doctorSuggestionText(payload, catalog);
 
     const time = formatTime(payload.at, payload.lang, timeZone);
     const strings = catalog[payload.kind];

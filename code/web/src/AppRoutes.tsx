@@ -25,6 +25,12 @@ const NotesPage = lazy(() => import('./pages/NotesPage').then((m) => ({ default:
 const PatientsPage = lazy(() =>
   import('./pages/PatientsPage').then((m) => ({ default: m.PatientsPage })),
 );
+const ProposalsPage = lazy(() =>
+  import('./pages/ProposalsPage').then((m) => ({ default: m.ProposalsPage })),
+);
+const FromDoctorPage = lazy(() =>
+  import('./pages/FromDoctorPage').then((m) => ({ default: m.FromDoctorPage })),
+);
 
 /**
  * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
@@ -46,6 +52,9 @@ const DevAppointmentsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/AppointmentsPreview'))
   : null;
 const DevDoctorPreview = import.meta.env.DEV ? lazy(() => import('./dev/DoctorPreview')) : null;
+const DevProposalsPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/ProposalsPreview'))
+  : null;
 const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
@@ -130,6 +139,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevDoctorPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevProposalsPreview && (
+        <Route
+          path="/dev/proposals"
+          element={
+            <Suspense fallback={null}>
+              <DevProposalsPreview />
             </Suspense>
           }
         />
@@ -219,6 +238,8 @@ export function AppRoutes() {
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="notes" element={<NotesPage />} />
             <Route path="patients" element={<PatientsPage />} />
+            <Route path="proposals" element={<ProposalsPage />} />
+            <Route path="from-doctor" element={<FromDoctorPage />} />
           </Route>
         </Route>
       </Route>

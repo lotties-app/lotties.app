@@ -149,3 +149,55 @@ describe('NotificationLinkProvider', () => {
     expect(screen.getByTestId('path').textContent).toBe('/');
   });
 });
+
+describe('doctor suggestion links', () => {
+  const DOCTOR: NotificationLink = { kind: 'doctor', babyId: BABY_ID, deliveryId: DELIVERY_ID };
+
+  it('reads the link on the "From your doctor" route only', () => {
+    const url = new URL(deepLinkUrl(DOCTOR), 'https://app.example');
+    expect(url.pathname).toBe('/from-doctor');
+    expect(linkFromLocation(url)).toEqual(DOCTOR);
+    expect(linkFromLocation({ pathname: '/', hash: url.hash })).toBeNull();
+  });
+
+  it('selects the baby of a member, pulls first and hands the link on', async () => {
+    window.history.replaceState(null, '', deepLinkUrl(DOCTOR));
+    const { select, syncNow } = renderProvider([LIA], '/from-doctor');
+
+    await waitFor(() => expect(shownLink()).toEqual(DOCTOR));
+    expect(select).toHaveBeenCalledWith(BABY_ID);
+    expect(syncNow).toHaveBeenCalled();
+    expect(window.location.hash).toBe('');
+  });
+
+  it('ignores a link for a baby the user does not belong to', async () => {
+    window.history.replaceState(null, '', deepLinkUrl({ ...DOCTOR, babyId: RX_ID }));
+    const { select } = renderProvider([LIA], '/from-doctor');
+
+    await act(async () => {});
+    expect(select).not.toHaveBeenCalled();
+    expect(shownLink()).toBeNull();
+  });
+
+  it('takes a validated worker message in an open window and goes to "From your doctor"', async () => {
+    const worker = new EventTarget();
+    vi.stubGlobal('navigator', Object.assign(Object.create(navigator), { serviceWorker: worker }));
+    renderProvider([LIA], '/');
+
+    act(() => {
+      worker.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            type: 'notification-open',
+            kind: 'doctor_suggestion',
+            babyId: BABY_ID,
+            deliveryId: DELIVERY_ID,
+          },
+        }),
+      );
+    });
+
+    await waitFor(() => expect(shownLink()).toEqual(DOCTOR));
+    expect(screen.getByTestId('path').textContent).toBe('/from-doctor');
+  });
+});

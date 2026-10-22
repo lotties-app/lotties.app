@@ -25,11 +25,21 @@ interface Props {
   readOnly: boolean;
   /** Where the prescriptions stand ("Next allowed 18:00", "Due now"), shown on the Meds tile. */
   medsLine?: StateLine | null;
+  /** Tiles that still open for a reader who cannot log (the Doctor reads the Meds tray). */
+  viewable?: readonly TileId[];
   onOpen: (id: TileId) => void;
 }
 
 /** The "last and log" tiles: Feed, Diaper, Meds, More. A tap opens the matching tray. */
-export function LogTiles({ tiles, types, now, readOnly, medsLine = null, onOpen }: Props) {
+export function LogTiles({
+  tiles,
+  types,
+  now,
+  readOnly,
+  medsLine = null,
+  viewable = [],
+  onOpen,
+}: Props) {
   const { t } = useTranslation();
   return (
     <Box component="section" aria-label={t('now.tiles.region')}>
@@ -48,7 +58,7 @@ export function LogTiles({ tiles, types, now, readOnly, medsLine = null, onOpen 
           return (
             <ButtonBase
               key={tile.id}
-              disabled={readOnly}
+              disabled={readOnly && !viewable.includes(tile.id)}
               onClick={() => onOpen(tile.id)}
               sx={(theme) => ({
                 minHeight: 120,

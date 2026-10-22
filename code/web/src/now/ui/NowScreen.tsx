@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
-import { canWrite, isOwner } from '../../baby/permissions';
+import { canPropose, canWrite, isOwner } from '../../baby/permissions';
 import { NextAppointment } from '../../appointments/NextAppointmentCard';
 import { useOldestEventStart } from '../../db/hooks';
-import type { Baby } from '../../db/models';
+import type { Baby, Prescription } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
 import { PrescriptionSheet } from '../../medications/PrescriptionSheet';
 import { canRemind } from '../../medications/prescriptionForm';
+import { DoctorInbox } from '../../proposals/DoctorInbox';
 import { useNotificationLink } from '../../notifications/notificationLinkContext';
 import type { NotificationLink } from '../../pwa/sw/deepLink';
 import { ReminderPromptCard } from '../../notifications/ui/ReminderPromptCard';
@@ -79,8 +80,10 @@ function useReminderLink(babyId: string, canOpenMeds: boolean, openMeds: () => v
   const [reminder, setReminder] = useState<TrayReminder | null>(null);
   const link = links?.link ?? null;
   const [handled, setHandled] = useState<NotificationLink | null>(null);
-  // An appointment reminder belongs to the calendar page, which consumes it there.
-  const mine = link && link.babyId === babyId && link.kind !== 'appt' ? link : null;
+  // An appointment reminder belongs to the calendar page and a doctor suggestion to "From your
+  // doctor"; each consumes its own link there.
+  const mine =
+    link && link.babyId === babyId && link.kind !== 'appt' && link.kind !== 'doctor' ? link : null;
   // Adjusted while rendering (not in an effect): the tray opens in the same render pass.
   if (mine && mine !== handled) {
     setHandled(mine);
@@ -130,6 +133,8 @@ function NowContent({
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
   const [addingPrescription, setAddingPrescription] = useState(false);
+  const [proposingChange, setProposingChange] = useState<Prescription | null>(null);
+  const proposing = canPropose(baby);
   const [offeringReminders, setOfferingReminders] = useState(false);
   const reminderLink = useReminderLink(baby.id, !!model.trays.meds, () => setTray('meds'));
   useRefreshPredictions(baby.id, model);
@@ -219,22 +224,25 @@ function NowContent({
           onOpenDiaper={() => setTray('diaper')}
         />
       ) : !hasEvents ? (
-        <FirstRun
-          babyName={baby.name}
-          readOnly={model.readOnly}
-          canImport={canWrite(baby)}
-          canInvite={isOwner(baby)}
-          disabled={disabled}
-          onFellAsleep={() =>
-            void action.run(() =>
-              model.commands.sleep(
-                'fell_asleep',
-                model.state.kind === 'asleep' ? undefined : model.state.sleepKindHint,
-              ),
-            )
-          }
-          onFeed={() => setTray('feed')}
-        />
+        <>
+          <DoctorInbox baby={baby} />
+          <FirstRun
+            babyName={baby.name}
+            readOnly={model.readOnly}
+            canImport={canWrite(baby)}
+            canInvite={isOwner(baby)}
+            disabled={disabled}
+            onFellAsleep={() =>
+              void action.run(() =>
+                model.commands.sleep(
+                  'fell_asleep',
+                  model.state.kind === 'asleep' ? undefined : model.state.sleepKindHint,
+                ),
+              )
+            }
+            onFeed={() => setTray('feed')}
+          />
+        </>
       ) : (
         <>
           {model.catchUp && (
@@ -256,6 +264,7 @@ function NowContent({
             isSnoozed={snooze.isSnoozed}
             onKeepRunning={snooze.keep}
           />
+          <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
             model={model}
@@ -303,6 +312,7 @@ function NowContent({
             now={model.now}
             readOnly={model.readOnly}
             medsLine={medsLine}
+            viewable={proposing && model.trays.meds ? ['meds'] : []}
             onOpen={openTile}
           />
           <TodayStrip stats={stats} />
@@ -352,6 +362,14 @@ function NowContent({
                 },
               }
             : {})}
+          {...(proposing
+            ? {
+                onProposeChange: (prescription: Prescription) => {
+                  close();
+                  setProposingChange(prescription);
+                },
+              }
+            : {})}
         />
       )}
       {tray === 'bellyPain' && model.trays.bellyPain && (
@@ -381,6 +399,15 @@ function NowContent({
           types={model.types}
           prefill={solid}
           onDone={() => setSolid(null)}
+        />
+      )}
+      {proposingChange && proposing && (
+        <PrescriptionSheet
+          mode="proposal"
+          babyId={baby.id}
+          authorUserId={baby.userId ?? null}
+          replaces={proposingChange}
+          onDone={() => setProposingChange(null)}
         />
       )}
       {addingPrescription && canWrite(baby) && (

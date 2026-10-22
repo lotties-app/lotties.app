@@ -84,7 +84,8 @@
     "attentionSuffix_other": "{{count}} need your attention",
     "rejected": "The server rejected this change.",
     "rejectedNotOwned": "A change to an entry someone else added was not saved: you can change only your own entries.",
-    "rejectedRole": "Your access to this baby changed, so a change was not saved. It is kept in Settings > Sync."
+    "rejectedRole": "Your access to this baby changed, so a change was not saved. It is kept in Settings > Sync.",
+    "rejectedProposalDecided": "This suggestion was already decided, so your change was not applied."
   },
   "session": {
     "unsyncedChanges_one": "{{count}} unsynced change",
@@ -861,7 +862,10 @@
         "prescription": "prescription",
         "formula": "formula",
         "appointment": "appointment",
-        "note": "note"
+        "note": "note",
+        "proposal": "proposal",
+        "proposalDecision": "decision on a suggestion",
+        "noteRead": "read mark"
       },
       "fix": "Fix",
       "fixNamed": "Fix: {{label}}",
@@ -1724,7 +1728,9 @@
       "logNamed": "Log {{name}}",
       "suggested": "{{dose}} suggested ({{rule}})",
       "perKgNoWeight": "{{rule}}, no weight on record",
-      "addPrescription": "Add prescription"
+      "addPrescription": "Add prescription",
+      "proposeChange": "Propose a change",
+      "proposeChangeNamed": "Propose a change to {{name}}"
     },
     "catalog": {
       "title": "From the shared catalog",
@@ -1742,7 +1748,9 @@
       "officialAttribution": "Source: Anvisa open data (registered medicines and the CMED price list). Not reviewed by a pharmacist; not medical advice.",
       "curated": "Curated list (not reviewed by a pharmacist)",
       "ingredientNotListed": "Ingredient not listed in the official data",
-      "ambiguousName": "Different products share this name with different ingredients. Check the box."
+      "ambiguousName": "Different products share this name with different ingredients. Check the box.",
+      "choose": "Choose",
+      "chooseNamed": "Choose {{name}} from the catalog"
     },
     "newProduct": {
       "title": "Add to the shared catalog",
@@ -2107,7 +2115,9 @@
         "0": "When it opens",
         "10": "10 min before",
         "20": "20 min before"
-      }
+      },
+      "doctor": "Doctor suggestions",
+      "doctorHelp": "When the doctor sends a prescription suggestion or a recommendation."
     },
     "quiet": {
       "switch": "Quiet hours",
@@ -2160,7 +2170,7 @@
     "name": "Dr. {{name}}",
     "nameNoAccess": "Dr. {{name}} (no longer has access)",
     "selfDeclared": "Self-declared doctor",
-    "verifiedDoctor": "Doctor",
+    "verifiedDoctor": "Verified professional",
     "settingsNotice": "You are {{name}}'s doctor: you can read everything logged, write notes and add consultation measurements. The parents manage everything else.",
     "profile": {
       "sectionTitle": "I'm a healthcare professional",
@@ -2237,7 +2247,9 @@
       "lastEntry": "Last entry {{when}}",
       "noEntries": "Nothing logged yet",
       "sharedNotes_one": "{{count}} shared note by you",
-      "sharedNotes_other": "{{count}} shared notes by you"
+      "sharedNotes_other": "{{count}} shared notes by you",
+      "proposals": "Proposals",
+      "proposalsOf": "Proposals for {{name}}"
     },
     "growth": {
       "doctorNotice": "As {{name}}'s doctor you can add consultation measurements and change your own.",
@@ -2250,6 +2262,116 @@
       "none": "No doctor has opened {{name}}'s data yet.",
       "entry": "{{role}} · {{when}}",
       "loadFailed": "Could not load the access log. Check your connection."
+    }
+  },
+  "proposals": {
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "superseded": "Replaced"
+    },
+    "waitingToSync": "Waiting to sync",
+    "accessRemoved": "Access removed",
+    "unknownDoctor": "Your doctor",
+    "sent": "Sent {{date}}",
+    "reason": "Reason: {{reason}}",
+    "badgeLabel_one": "{{count}} new from your doctor",
+    "badgeLabel_other": "{{count}} new from your doctor",
+    "sheet": {
+      "titleNew": "Prescribe",
+      "titleEdit": "Edit proposal",
+      "titleChange": "Propose a change",
+      "instructions": "Instructions for the parents",
+      "send": "Send to parents",
+      "withdraw": "Withdraw",
+      "reviewNote": "The parents review it before anything changes.",
+      "replaces": "Changes the current prescription: {{summary}}",
+      "saveFailed": "Could not save the proposal. Try again.",
+      "alreadyDecided": "The parents already decided this proposal, so it can no longer be edited."
+    },
+    "chooser": {
+      "useName": "Use \"{{name}}\"",
+      "noneYet": "The baby's medication list is empty. Search the catalog or type a name."
+    },
+    "facts": {
+      "course": "Course",
+      "courseRange": "From {{start}} to {{end}}",
+      "courseOpen": "From {{start}}, no end date",
+      "instructions": "Instructions from the doctor"
+    },
+    "provenance": {
+      "prescribedBy": "Prescribed by {{doctor}}",
+      "changedByParent": "Changed by parent",
+      "seeOriginal": "See what {{doctor}} prescribed",
+      "originalTitle": "What {{doctor}} prescribed",
+      "originalNote": "As the doctor sent it. This is a record: it cannot be edited."
+    },
+    "mine": {
+      "title": "My proposals",
+      "subtitle": "Prescriptions you suggested for {{name}}. Nothing changes until the parents accept.",
+      "prescribe": "Prescribe",
+      "listLabel": "Proposals, newest first",
+      "emptyTitle": "No proposals yet",
+      "emptyBody": "Prescribe a medicine for {{name}} and the parents get it to accept or decline.",
+      "edit": "Edit",
+      "editNamed": "Edit proposal for {{name}}",
+      "withdraw": "Withdraw",
+      "withdrawNamed": "Withdraw proposal for {{name}}",
+      "proposeChange": "Propose a change",
+      "proposeChangeNamed": "Propose a change to {{name}}",
+      "withdrawTitle": "Withdraw this proposal?",
+      "withdrawBody": "The parents will no longer see it to accept.",
+      "withdrawConfirm": "Withdraw proposal",
+      "onlyDoctor": "Proposals are sent by the baby's doctor.",
+      "noBaby": "Choose a patient first."
+    },
+    "inbox": {
+      "region": "From your doctor",
+      "proposalTitle": "{{doctor}} suggested a prescription",
+      "recommendationTitle": "{{doctor}} sent a recommendation",
+      "review": "Review",
+      "reviewNamed": "Review the suggestion for {{name}}",
+      "read": "Read",
+      "readNamed": "Read the recommendation from {{doctor}}",
+      "seeAll": "See all from your doctor"
+    },
+    "details": {
+      "suggestedBy": "Suggested by",
+      "replacesCurrent": "Changes the current prescription: {{summary}}",
+      "replacesEnds": "Accepting ends the current one today.",
+      "acceptAdds": "Accepting adds this prescription to {{name}}. You can end it at any time.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "reasonLabel": "Reason (optional)",
+      "reasonHelp": "The doctor sees it.",
+      "addedTitle": "Added to {{name}}'s medicines",
+      "addedPending": "It shows in the medicines as soon as it syncs.",
+      "acceptedOn": "Accepted on {{date}}",
+      "declinedOn": "Declined on {{date}}",
+      "cancelledWithdrawn": "The doctor withdrew this suggestion.",
+      "cancelledAccess": "Cancelled because the doctor no longer has access.",
+      "superseded": "Replaced when another suggestion for the same prescription was accepted.",
+      "missing": "This suggestion is not on this device yet.",
+      "alreadyDecided": "This suggestion was already decided.",
+      "decisionFailed": "Could not save your decision. Try again."
+    },
+    "fromDoctor": {
+      "title": "From your doctor",
+      "subtitle": "Prescriptions and recommendations from {{name}}'s doctor. Nothing changes until you accept.",
+      "waiting": "Waiting for you",
+      "nothingWaiting": "Nothing is waiting for you.",
+      "recommendations": "Recommendations",
+      "decided": "Decided",
+      "emptyTitle": "Nothing from the doctor yet",
+      "emptyBody": "When {{name}}'s doctor suggests a prescription or sends a recommendation, it shows here.",
+      "unread": "New",
+      "recommendation": "Recommendation",
+      "openProposal": "Open the suggestion for {{name}}",
+      "openRecommendation": "Open the recommendation of {{date}}",
+      "parentsOnly": "Only the baby's parents see what the doctor sends.",
+      "noBaby": "Choose a baby first."
     }
   }
 }
