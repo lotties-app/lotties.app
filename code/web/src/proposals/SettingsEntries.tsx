@@ -9,7 +9,7 @@ import { useDoctorInbox } from './useProposals';
 function FromDoctorEntry({ baby }: { baby: Baby }) {
   const { t } = useTranslation();
   const inbox = useDoctorInbox(baby);
-  const members = useMembers(baby.id);
+  const members = useMembers(baby);
   if (!inbox) return null;
   const hasDoctor = members?.some((member) => member.role === 'Doctor') ?? false;
   const anything = inbox.proposals.length > 0 || inbox.recommendations.length > 0;

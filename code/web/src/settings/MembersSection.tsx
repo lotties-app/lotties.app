@@ -17,7 +17,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { purgeBabyData } from '../db/purge';
 import { changeMemberRole, leaveBaby, listMembers, removeMember } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
-import { isOwner } from '../baby/permissions';
+import { canSeeFamilyRecords, isOwner } from '../baby/permissions';
 import { useDatabase } from '../db/DatabaseContext';
 import type { Baby, BabyRole } from '../db/models';
 import { formatDate } from '../i18n/format';
@@ -134,9 +134,12 @@ export function MembersSection({ baby }: { baby: Baby }) {
   const [leaving, setLeaving] = useState<'confirm' | 'unsynced' | null>(null);
   const countUnsynced = () => countUnsyncedMutations(db, baby.id);
   const unsynced = useLiveQuery(countUnsynced, [db, baby.id]) ?? 0;
+  // A Doctor never lists the family (the server refuses her): she only gets "Leave".
+  const family = canSeeFamilyRecords(baby);
   const members = useQuery({
     queryKey: ['members', baby.id],
     queryFn: () => listMembers(api, baby.id),
+    enabled: family,
   });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['members', baby.id] });
 
@@ -182,22 +185,26 @@ export function MembersSection({ baby }: { baby: Baby }) {
     <Stack spacing={2}>
       {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
       {!dialogOpen && <ErrorNotice message={error} />}
-      {members.isError && <ErrorNotice message={t('settings.members.loadFailed')} />}
-      <List aria-label={t('settings.members.list')} disablePadding>
-        {members.data?.map((m) => (
-          <MemberRow
-            key={m.userId}
-            member={m}
-            manage={manage}
-            disabled={pending || !online}
-            onRole={(role) => void setRole(m, role)}
-            onRemove={() => setRemoving(m)}
-          />
-        ))}
-      </List>
+      {family && members.isError && <ErrorNotice message={t('settings.members.loadFailed')} />}
+      {family && (
+        <List aria-label={t('settings.members.list')} disablePadding>
+          {members.data?.map((m) => (
+            <MemberRow
+              key={m.userId}
+              member={m}
+              manage={manage}
+              disabled={pending || !online}
+              onRole={(role) => void setRole(m, role)}
+              onRemove={() => setRemoving(m)}
+            />
+          ))}
+        </List>
+      )}
       {manage && <InvitesPanel baby={baby} />}
       {manage && <AccessLogPanel baby={baby} />}
-      {!manage && <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>}
+      {family && !manage && (
+        <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>
+      )}
       <Button
         color="error"
         variant="outlined"

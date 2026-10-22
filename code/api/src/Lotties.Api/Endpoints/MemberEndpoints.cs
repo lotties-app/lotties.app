@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Lotties.Api.Endpoints;
 
 /// <summary>
-/// Members of one baby. Any member may list them and leave; changing roles and removing others needs
+/// Members of one baby. Any family member may list them (<see cref="BabyPolicies.ReadFamily"/>: a Doctor gets 403, the
+/// family's names and roles are not clinical data) and any member may leave; changing roles and removing others needs
 /// <see cref="BabyPolicies.ManageMembers"/>. The last owner can neither be demoted nor removed (409).
 /// </summary>
 internal static class MemberEndpoints
@@ -21,7 +22,9 @@ internal static class MemberEndpoints
     public static RouteGroupBuilder MapMemberEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(MembersPath, ListAsync).WithName("ListMembers");
+        baby.MapGet(MembersPath, ListAsync)
+            .RequireAuthorization(BabyPolicies.ReadFamily)
+            .WithName("ListMembers");
         baby.MapPatch(MemberPath, ChangeRoleAsync)
             .RequireAuthorization(BabyPolicies.ManageMembers)
             .WithName("ChangeMemberRole")

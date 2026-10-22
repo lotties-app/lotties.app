@@ -4,6 +4,7 @@ import { Box, Button, Skeleton, Typography, useMediaQuery } from '@mui/material'
 import { dayKeyOf } from '../appointments/calendarModel';
 import { DayAppointmentsStrip } from '../appointments/DayAppointmentsStrip';
 import { useAppointmentSheets } from '../appointments/useAppointmentSheets';
+import { canSeeAppointments } from '../baby/permissions';
 import { useEventAccess } from '../baby/useEventAccess';
 import {
   useAllPrescriptions,
@@ -214,9 +215,11 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
     types.find((candidate) => candidate.id === event.typeId);
 
   const dayKey = dayKeyOf(day.getTime());
-  const dayAppointments = (appointments ?? []).filter(
-    (appointment) => dayKeyOf(appointment.startsAt) === dayKey,
-  );
+  // A Doctor never sees the family's appointments (docs/design/16-doctor-access.md, "Doctor read audit").
+  const showsAppointments = canSeeAppointments(baby);
+  const dayAppointments = showsAppointments
+    ? (appointments ?? []).filter((appointment) => dayKeyOf(appointment.startsAt) === dayKey)
+    : [];
 
   const creatingPrefill =
     creating && !isSameDay(day, today) ? prefillFor(creating, day) : undefined;
@@ -241,12 +244,15 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         onChange={go}
         filterCount={selected.size}
         onOpenFilter={() => setFiltering(true)}
+        showAppointments={showsAppointments}
       />
-      <DayAppointmentsStrip
-        appointments={dayAppointments}
-        now={clock}
-        onOpen={(appointment) => appointmentSheets.openDetail(appointment.id)}
-      />
+      {showsAppointments && (
+        <DayAppointmentsStrip
+          appointments={dayAppointments}
+          now={clock}
+          onOpen={(appointment) => appointmentSheets.openDetail(appointment.id)}
+        />
+      )}
       <DaySummary summary={summary}>
         <DayRibbon
           model={ribbon}
@@ -346,7 +352,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         />
       )}
       {writable && actions.elements}
-      {appointmentSheets.elements}
+      {showsAppointments && appointmentSheets.elements}
     </Box>
   );
 }

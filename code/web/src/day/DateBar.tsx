@@ -21,6 +21,8 @@ interface Props {
   /** Categories selected in the filter. */
   filterCount: number;
   onOpenFilter: () => void;
+  /** Whether the appointments calendar button is shown (default true; never for a Doctor). */
+  showAppointments?: boolean;
 }
 
 const roundButton = (theme: Parameters<typeof palette>[0]) => ({
@@ -62,7 +64,14 @@ const MONTH_LABEL = {
  * badge, a "Today" shortcut when another day is shown, and the week strip. Swiping the list
  * changes the day, swiping the strip the week (see `DayScreen` and `WeekStrip`).
  */
-export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Props) {
+export function DateBar({
+  day,
+  today,
+  onChange,
+  filterCount,
+  onOpenFilter,
+  showAppointments = true,
+}: Props) {
   const { t } = useTranslation();
   const [picking, setPicking] = useState(false);
   const label = useDayLabel(day, today);
@@ -120,14 +129,16 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
         >
           <Icon name="chevron-right" size={20} />
         </IconButton>
-        <IconButton
-          component={RouterLink}
-          to="/appointments"
-          aria-label={t('appointments.open')}
-          sx={(theme) => ({ ...roundButton(theme), borderRadius: `${RADIUS.input}px` })}
-        >
-          <Icon name="calendar" size={20} />
-        </IconButton>
+        {showAppointments && (
+          <IconButton
+            component={RouterLink}
+            to="/appointments"
+            aria-label={t('appointments.open')}
+            sx={(theme) => ({ ...roundButton(theme), borderRadius: `${RADIUS.input}px` })}
+          >
+            <Icon name="calendar" size={20} />
+          </IconButton>
+        )}
         <Badge
           badgeContent={filterCount}
           color="primary"

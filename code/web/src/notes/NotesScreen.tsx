@@ -56,7 +56,7 @@ function EmptyNotes({
 export function NotesScreen({ baby }: { baby: Baby }) {
   const { t } = useTranslation();
   const notes = useNotes(baby.id);
-  const members = useMembers(baby.id);
+  const members = useMembers(baby);
   const commands = useNoteCommands();
   useReadRecommendationsOnView(baby);
   const [composing, setComposing] = useState<Composing>(null);

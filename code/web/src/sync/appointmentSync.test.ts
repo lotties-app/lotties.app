@@ -272,3 +272,57 @@ describe('pulling appointments', () => {
     expect(await db.appointments.count()).toBe(0);
   });
 });
+
+describe('a Doctor and the appointments', () => {
+  const babiesAs = (role: string) => [{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role }];
+  const remote: AppointmentDto = {
+    id: 'remote',
+    babyId: BABY_ID,
+    title: 'Second opinion',
+    type: 'consultation',
+    startsAt: '2026-11-01T12:00:00Z',
+    status: 'upcoming',
+    reminderOffsetsMinutes: [1440, 120],
+    createdAt: SERVER_TIME,
+    updatedAt: SERVER_TIME,
+    clientUpdatedAt: SERVER_TIME,
+  };
+
+  function server(role: { current: string }) {
+    return setup((call) => {
+      if (call.path === '/api/v1/babies') return babiesAs(role.current);
+      if (call.method === 'GET' && call.path.includes('/appointments')) return [remote];
+      return undefined;
+    });
+  }
+
+  it('never asks for them and purges the copies kept from a family role, cursor included', async () => {
+    const role = { current: 'Parent' };
+    const { engine, calls } = server(role);
+    await engine.syncNow();
+    expect(await db.appointments.get('remote')).toMatchObject({ title: 'Second opinion' });
+    expect(await db.syncState.get([BABY_ID, 'appointments'])).toBeTruthy();
+
+    role.current = 'Doctor';
+    calls.length = 0;
+    await engine.syncNow();
+
+    expect(calls.some((c) => c.path.includes('/appointments'))).toBe(false);
+    expect(await db.appointments.count()).toBe(0);
+    expect(await db.syncState.get([BABY_ID, 'appointments'])).toBeUndefined();
+    expect((await db.babies.get(BABY_ID))?.role).toBe('Doctor');
+  });
+
+  it('pulls them all again from scratch when the role goes back to a family role', async () => {
+    const role = { current: 'Doctor' };
+    const { engine, calls } = server(role);
+    await engine.syncNow();
+    expect(calls.some((c) => c.path.includes('/appointments'))).toBe(false);
+
+    role.current = 'Viewer';
+    await engine.syncNow();
+
+    expect(calls.some((c) => c.path === `/api/v1/babies/${BABY_ID}/appointments`)).toBe(true);
+    expect(await db.appointments.get('remote')).toMatchObject({ title: 'Second opinion' });
+  });
+});
