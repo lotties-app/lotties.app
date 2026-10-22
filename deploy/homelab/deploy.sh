@@ -75,6 +75,9 @@ source_tag() { # salt pathspecs...
   shift
   files=$(cd "$REPO" && git ls-files --cached --others --exclude-standard -- "$@" | sort -u \
     | while IFS= read -r file; do [ -f "$file" ] && printf '%s\n' "$file"; done)
+  # An empty list means git could not be read here (a git worktree made on Windows cannot be read from WSL, for example): every image would get the
+  # same tag and a stale image in the registry would be deployed. Stop instead.
+  [ -n "$files" ] || { echo "error: git listed no files under $* in $REPO: cannot compute the image tag. Run from a normal clone (not a git worktree), or set TAG." >&2; exit 1; }
   printf 'src-%s' "$( { (cd "$REPO" && paste <(printf '%s\n' "$files") <(printf '%s\n' "$files" | git hash-object --stdin-paths)); printf '%s\n' "$salt"; } \
     | sha256sum | cut -c1-12)"
 }
