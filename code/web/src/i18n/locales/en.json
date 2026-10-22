@@ -679,7 +679,8 @@
       "appearance": "Appearance",
       "language": "Language",
       "sync": "Sync",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "formulas": "Formulas"
     },
     "appearance": {
       "theme": "Theme",
@@ -854,7 +855,8 @@
       "entities": {
         "event": "event",
         "medication": "medication",
-        "prescription": "prescription"
+        "prescription": "prescription",
+        "formula": "formula"
       },
       "fix": "Fix",
       "fixNamed": "Fix: {{label}}",
@@ -1480,7 +1482,8 @@
       "sleep": "Sleep",
       "sleepRhythm": "Sleep rhythm",
       "feeding": "Feeding",
-      "diapers": "Diapers"
+      "diapers": "Diapers",
+      "formulas": "Formulas"
     },
     "start": {
       "sleep": "Start logging naps and nights to unlock",
@@ -1536,6 +1539,48 @@
       "headline_other": "{{count, number}} diapers / day",
       "chart": "Diapers per day",
       "mixedNote": "A mixed diaper counts as both wet and dirty."
+    },
+    "formulas": {
+      "rowTitle": "Formula: {{name}}",
+      "moreDays_one": "Shows after {{count}} more day with this formula",
+      "moreDays_other": "Shows after {{count}} more days with this formula",
+      "moreBottles_one": "Shows after {{count}} more bottle of this formula",
+      "moreBottles_other": "Shows after {{count}} more bottles of this formula",
+      "metrics": {
+        "bottlesPerDay": "Bottles per day",
+        "mlPerDay": "Bottle milk per day",
+        "mlPerKgPerDay": "Bottle milk per kg per day",
+        "bellyPainsPerDay": "Belly pains per day",
+        "bellyPainsAfterBottlePerDay": "Belly pains within 2 h after a bottle, per day",
+        "fussyPerDay": "Fussy spells per day",
+        "dirtyPerDay": "Dirty diapers per day"
+      },
+      "values": {
+        "bellyPains_one": "{{count, number}} belly pain/day",
+        "bellyPains_other": "{{count, number}} belly pains/day",
+        "fussy_one": "{{count, number}} fussy spell/day",
+        "fussy_other": "{{count, number}} fussy spells/day",
+        "ml": "{{value}}/day"
+      },
+      "statementOne": "While on {{name}}: {{value}}.",
+      "statementMany": "While on {{name}}: {{value}}, {{others}}.",
+      "onOther": "on {{name}}: {{value}}",
+      "range": "{{from}} to {{to}}",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "bottles_one": "{{count}} bottle",
+      "bottles_other": "{{count}} bottles",
+      "headlineBottles_one": "{{count, number}} bottle / day",
+      "headlineBottles_other": "{{count, number}} bottles / day",
+      "singleCaption_one": "While on {{name}}, average of {{count}} logged day",
+      "singleCaption_other": "While on {{name}}, average of {{count}} logged days",
+      "caption_one": "The days with a bottle of each formula, last {{count}} day",
+      "caption_other": "The days with a bottle of each formula, last {{count}} days",
+      "chartLabel": "Formulas: {{summary}}",
+      "tableMeasure": "Per day",
+      "note": "This compares what you logged. Many things change over time (age, growth, illness), so it does not show that a formula causes anything. Talk to your pediatrician before changing a formula or the amount.",
+      "weightNote": "Milk per kg uses the weight logged nearest before each day, within 14 days (else the nearest after it).",
+      "collecting": "Still collecting"
     }
   },
   "medications": {
@@ -1796,6 +1841,39 @@
       "early": "Logged early",
       "kgUsed": "for {{kg}}"
     }
+  },
+  "formulas": {
+    "field": "Formula",
+    "noneYet": "No formulas yet.",
+    "newFormula": "New formula",
+    "name": "Name",
+    "suggestions": "Suggestions",
+    "useSuggestion": "Use {{name}}",
+    "nameRequired": "Enter a name of up to 60 characters.",
+    "add": "Add formula",
+    "edit": "Edit formula",
+    "brand": "Brand",
+    "stage": "Stage",
+    "stageHelp": "e.g. 1, 2, 1+",
+    "startedOn": "Started on",
+    "notes": "Notes",
+    "current": "Current formula",
+    "currentHelp": "New bottles of formula start with it selected.",
+    "currentBadge": "Current",
+    "saveFailed": "Couldn't save the formula. Try again.",
+    "stageLine": "Stage {{stage}}",
+    "startedLine": "Since {{date}}",
+    "editNamed": "Edit {{name}}",
+    "setCurrentNamed": "Set {{name}} as the current formula",
+    "archiveNamed": "Archive {{name}}",
+    "restoreNamed": "Restore {{name}}",
+    "archivedNotice": "{{name}} archived",
+    "none": "No formulas yet. Add the formula the baby drinks: bottles of formula can then name it.",
+    "list": "Formulas",
+    "viewOnly": "You can see the formulas but not change them.",
+    "archivedTitle": "Archived",
+    "archivedList": "Archived formulas",
+    "archivedNote": "Archived formulas stay in the history of the bottles that named them."
   },
   "timers": {
     "paused": "Paused",

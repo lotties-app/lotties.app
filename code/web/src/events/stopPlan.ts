@@ -1,6 +1,7 @@
 import type { BabyEvent, EventPayload, EventType } from '../db/models';
 import { getOwn, setOwn } from '../util/ownProperty';
 import type { EventFormState } from './formModel';
+import { FORMULA_KEYS } from '../formulas/formulaModel';
 import { lastUsedFor } from './lastUsedValues';
 import {
   isComplete,
@@ -29,8 +30,9 @@ const askable = (problems: PayloadProblem[]) =>
 
 /**
  * Optional fields of a built-in type worth asking when its timer stops, because they are only known
- * then: how much of the bottle was drunk (and what was in it). Asked only while the amount is
- * missing; none of them is required, so the stop never depends on them.
+ * then: how much of the bottle was drunk (and what was in it: the content and, for formula, which
+ * one). Asked only while the amount is missing; none of them is required, so the stop never
+ * depends on them.
  */
 function askedAtStop(type: EventType, payload: EventPayload): string[] {
   if (type.babyId !== null || type.key !== 'feeding') return [];
@@ -38,7 +40,7 @@ function askedAtStop(type: EventType, payload: EventPayload): string[] {
     return [];
   }
   const declared = new Set(type.fields.map((f) => f.key));
-  return ['amount_ml', 'bottle_feeding_type'].filter((key) => declared.has(key));
+  return ['amount_ml', 'bottle_feeding_type', ...FORMULA_KEYS].filter((key) => declared.has(key));
 }
 
 export function planStop(type: EventType | undefined, payload: EventPayload): StopPlan {

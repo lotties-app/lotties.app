@@ -11,6 +11,7 @@ import { formatDuration, formatNumber } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import { getOwn } from '../util/ownProperty';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
+import { FORMULA_NAME_KEY } from '../formulas/formulaModel';
 
 const SEPARATOR = ' · ';
 
@@ -27,6 +28,10 @@ function fieldPart(
   text: EventTypeText,
 ): string | null {
   if (raw === undefined || raw === null || raw === '') return null;
+  // A bottle's formula, as named when it was logged (renames and archiving keep the history).
+  if (type.babyId === null && type.key === 'feeding' && field.key === FORMULA_NAME_KEY) {
+    return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
+  }
   // Forms never show hidden fields (pause keys, deprecated ones); neither does the detail line.
   if (field.hidden === true) return null;
   const label = text.fieldLabel(type, field);

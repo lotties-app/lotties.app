@@ -39,6 +39,7 @@ describe('schema', () => {
         'catalogProducts',
         'eventTypes',
         'events',
+        'formulas',
         'medications',
         'outbox',
         'prescriptions',

@@ -5,6 +5,7 @@ import IconCircleCheck from '@tabler/icons-react/dist/esm/icons/IconCircleCheck.
 import IconCheck from '@tabler/icons-react/dist/esm/icons/IconCheck.mjs';
 import IconPencil from '@tabler/icons-react/dist/esm/icons/IconPencil.mjs';
 import IconTrash from '@tabler/icons-react/dist/esm/icons/IconTrash.mjs';
+import IconArchive from '@tabler/icons-react/dist/esm/icons/IconArchive.mjs';
 import IconShare from '@tabler/icons-react/dist/esm/icons/IconShare.mjs';
 import IconCopy from '@tabler/icons-react/dist/esm/icons/IconCopy.mjs';
 import IconFileUpload from '@tabler/icons-react/dist/esm/icons/IconFileUpload.mjs';
@@ -109,6 +110,7 @@ export const ICON_COMPONENTS = {
   success: IconCircleCheck,
   edit: IconPencil,
   delete: IconTrash,
+  archive: IconArchive,
   share: IconShare,
   copy: IconCopy,
   'upload-file': IconFileUpload,

@@ -679,7 +679,8 @@
       "appearance": "Aparência",
       "language": "Idioma",
       "sync": "Sincronização",
-      "notifications": "Notificações"
+      "notifications": "Notificações",
+      "formulas": "Fórmulas"
     },
     "appearance": {
       "theme": "Tema",
@@ -854,7 +855,8 @@
       "entities": {
         "event": "evento",
         "medication": "remédio",
-        "prescription": "receita"
+        "prescription": "receita",
+        "formula": "fórmula"
       },
       "fix": "Corrigir",
       "fixNamed": "Corrigir: {{label}}",
@@ -1480,7 +1482,8 @@
       "sleep": "Sono",
       "sleepRhythm": "Ritmo do sono",
       "feeding": "Alimentação",
-      "diapers": "Fraldas"
+      "diapers": "Fraldas",
+      "formulas": "Fórmulas"
     },
     "start": {
       "sleep": "Comece a registrar sonecas e noites para desbloquear",
@@ -1536,6 +1539,48 @@
       "headline_other": "{{count, number}} fraldas / dia",
       "chart": "Fraldas por dia",
       "mixedNote": "Uma fralda mista conta como xixi e como cocô."
+    },
+    "formulas": {
+      "rowTitle": "Fórmula: {{name}}",
+      "moreDays_one": "Aparece depois de mais {{count}} dia com esta fórmula",
+      "moreDays_other": "Aparece depois de mais {{count}} dias com esta fórmula",
+      "moreBottles_one": "Aparece depois de mais {{count}} mamadeira desta fórmula",
+      "moreBottles_other": "Aparece depois de mais {{count}} mamadeiras desta fórmula",
+      "metrics": {
+        "bottlesPerDay": "Mamadeiras por dia",
+        "mlPerDay": "Leite na mamadeira por dia",
+        "mlPerKgPerDay": "Leite na mamadeira por kg por dia",
+        "bellyPainsPerDay": "Dores de barriga por dia",
+        "bellyPainsAfterBottlePerDay": "Dores de barriga até 2 h depois de uma mamadeira, por dia",
+        "fussyPerDay": "Episódios de choro por dia",
+        "dirtyPerDay": "Fraldas com cocô por dia"
+      },
+      "values": {
+        "bellyPains_one": "{{count, number}} dor de barriga/dia",
+        "bellyPains_other": "{{count, number}} dores de barriga/dia",
+        "fussy_one": "{{count, number}} episódio de choro/dia",
+        "fussy_other": "{{count, number}} episódios de choro/dia",
+        "ml": "{{value}}/dia"
+      },
+      "statementOne": "Com {{name}}: {{value}}.",
+      "statementMany": "Com {{name}}: {{value}}; {{others}}.",
+      "onOther": "com {{name}}: {{value}}",
+      "range": "{{from}} a {{to}}",
+      "days_one": "{{count}} dia",
+      "days_other": "{{count}} dias",
+      "bottles_one": "{{count}} mamadeira",
+      "bottles_other": "{{count}} mamadeiras",
+      "headlineBottles_one": "{{count, number}} mamadeira / dia",
+      "headlineBottles_other": "{{count, number}} mamadeiras / dia",
+      "singleCaption_one": "Com {{name}}, média de {{count}} dia registrado",
+      "singleCaption_other": "Com {{name}}, média de {{count}} dias registrados",
+      "caption_one": "Os dias com mamadeira de cada fórmula, último {{count}} dia",
+      "caption_other": "Os dias com mamadeira de cada fórmula, últimos {{count}} dias",
+      "chartLabel": "Fórmulas: {{summary}}",
+      "tableMeasure": "Por dia",
+      "note": "Isto compara o que você registrou. Muita coisa muda com o tempo (idade, crescimento, doenças), então isto não mostra que uma fórmula causa alguma coisa. Converse com o pediatra antes de trocar a fórmula ou a quantidade.",
+      "weightNote": "O leite por kg usa o peso registrado mais perto antes de cada dia, em até 14 dias (senão o mais perto depois).",
+      "collecting": "Ainda coletando"
     }
   },
   "medications": {
@@ -1796,6 +1841,39 @@
       "early": "Registrado antes da hora",
       "kgUsed": "para {{kg}}"
     }
+  },
+  "formulas": {
+    "field": "Fórmula",
+    "noneYet": "Nenhuma fórmula ainda.",
+    "newFormula": "Nova fórmula",
+    "name": "Nome",
+    "suggestions": "Sugestões",
+    "useSuggestion": "Usar {{name}}",
+    "nameRequired": "Informe um nome de até 60 caracteres.",
+    "add": "Adicionar fórmula",
+    "edit": "Editar fórmula",
+    "brand": "Marca",
+    "stage": "Estágio",
+    "stageHelp": "ex.: 1, 2, 1+",
+    "startedOn": "Começou em",
+    "notes": "Observações",
+    "current": "Fórmula atual",
+    "currentHelp": "Novas mamadeiras de fórmula já vêm com ela selecionada.",
+    "currentBadge": "Atual",
+    "saveFailed": "Não foi possível salvar a fórmula. Tente de novo.",
+    "stageLine": "Estágio {{stage}}",
+    "startedLine": "Desde {{date}}",
+    "editNamed": "Editar {{name}}",
+    "setCurrentNamed": "Definir {{name}} como a fórmula atual",
+    "archiveNamed": "Arquivar {{name}}",
+    "restoreNamed": "Restaurar {{name}}",
+    "archivedNotice": "{{name}} arquivada",
+    "none": "Nenhuma fórmula ainda. Adicione a fórmula que o bebê toma: as mamadeiras de fórmula poderão indicá-la.",
+    "list": "Fórmulas",
+    "viewOnly": "Você pode ver as fórmulas, mas não alterá-las.",
+    "archivedTitle": "Arquivadas",
+    "archivedList": "Fórmulas arquivadas",
+    "archivedNote": "As fórmulas arquivadas continuam no histórico das mamadeiras que as indicaram."
   },
   "timers": {
     "paused": "Pausado",

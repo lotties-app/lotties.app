@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatDate, formatTime } from '../i18n/format';
+import { FormulaField } from '../formulas/FormulaField';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
@@ -326,6 +327,7 @@ export function EventSheet(props: EventSheetProps) {
               onChange={state.setValue}
             />
           )}
+          <FormulaField babyId={babyId} choice={state.formula} />
           {type && !finishing && (
             <SleepDetails type={type} values={form.values} onChange={state.setValue} />
           )}

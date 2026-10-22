@@ -69,6 +69,22 @@ export const INSIGHTS: readonly InsightDefinition[] = [
   },
 ];
 
+/**
+ * The Formulas card is not in the readiness catalogue: it opens per formula (7 days and 20
+ * bottles, `formulaComparison.ts`), so it only shares the card's look.
+ */
+export interface FormulasInsight {
+  id: 'formulas';
+  icon: IconName;
+  category: CategoryName;
+}
+
+export const FORMULAS_INSIGHT: FormulasInsight = {
+  id: 'formulas',
+  icon: 'bottle',
+  category: 'feeding',
+};
+
 export function insightById(id: InsightId): InsightDefinition {
   const found = INSIGHTS.find((insight) => insight.id === id);
   if (!found) throw new Error(`Unknown insight ${id}`);

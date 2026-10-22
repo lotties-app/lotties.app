@@ -4,6 +4,7 @@ import type {
   BabyEvent,
   EventType,
   BodyWeightRow,
+  Formula,
   CachedProduct,
   Medication,
   OutboxMutation,
@@ -57,6 +58,13 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       bodyWeights: 'babyId',
     },
   },
+  {
+    // Formulas: the baby's formula list (synced like prescriptions, never deleted).
+    version: 4,
+    stores: {
+      formulas: 'id, babyId, [babyId+updatedAt]',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -67,6 +75,7 @@ export class BabyRoutineDb extends Dexie {
   declare prescriptions: EntityTable<Prescription, 'id'>;
   declare catalogProducts: EntityTable<CachedProduct, 'id'>;
   declare bodyWeights: EntityTable<BodyWeightRow, 'babyId'>;
+  declare formulas: EntityTable<Formula, 'id'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

@@ -7,6 +7,7 @@ import {
   editTimeOf,
   prescriptionEditTime,
   type BabyEvent,
+  type Formula,
   type Prescription,
 } from '../db/models';
 import { pendingEntityIds, rejectedStopIds } from '../db/outbox';
@@ -16,12 +17,14 @@ import {
   fromBabyDto,
   fromEventDto,
   fromEventTypeDto,
+  fromFormulaDto,
   fromMedicationDto,
   fromPrescriptionDto,
   type BabyDto,
   type EventDto,
   type EventsDeltaResponse,
   type EventTypeDto,
+  type FormulaDto,
   type MedicationDto,
   type MeasurementDto,
   type PrescriptionDto,
@@ -215,6 +218,45 @@ export async function pullPrescriptions(ctx: SyncContext, babyId: string): Promi
 }
 
 /**
+ * Merges pulled formulas like prescriptions: a copy with a queued local change is skipped until
+ * that is pushed, otherwise the newer client edit time wins (formulas are never deleted). The
+ * server's clearing of the previous current formula arrives here too. The cursor moves in the
+ * same transaction.
+ */
+export async function mergeFormulaDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: FormulaDto[],
+): Promise<void> {
+  await db.transaction('rw', db.formulas, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromFormulaDto);
+    const locals = await db.formulas.bulkGet(incoming.map((f) => f.id));
+    const editTime = (f: Formula) => Date.parse(f.clientUpdatedAt ?? f.updatedAt);
+    const wins = (remote: Formula, local: Formula | undefined) =>
+      !local || editTime(remote) >= editTime(local);
+    await db.formulas.bulkPut(incoming.filter((f, i) => wins(f, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'formulas']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'formulas', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the formulas changed since the stored cursor (minus the overlap), archived included. */
+export async function pullFormulas(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'formulas']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  const items = await get<FormulaDto[]>(ctx, apiPaths.formulas(babyId, since));
+  await mergeFormulaDelta(ctx.db, babyId, items ?? []);
+}
+
+/**
  * Keeps the latest weight on the device (growth is online-only) for per-kg suggestions. Best
  * effort: a failure leaves the stored weight as it was.
  */
@@ -268,6 +310,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await refreshCatalogs(ctx, babyId);
       await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
+      await pullFormulas(ctx, babyId);
       await pullEvents(ctx, babyId);
       await refreshLatestWeight(ctx, babyId);
     } catch (error) {

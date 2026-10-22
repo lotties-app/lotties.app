@@ -371,6 +371,38 @@ describe('runTrayChoice', () => {
     });
   });
 
+  it('names the current formula of a bottle of formula, silently', async () => {
+    const formula = (id: string, isCurrent: boolean) => ({
+      id,
+      babyId: BABY_ID,
+      name: id === 'f-cur' ? 'Nan 2' : 'Nan 1',
+      brand: null,
+      stage: null,
+      notes: null,
+      startedOn: null,
+      isCurrent,
+      archived: false,
+      createdBy: null,
+      createdAt: iso(8),
+      updatedAt: iso(8),
+    });
+    await db.formulas.bulkPut([formula('f-old', false), formula('f-cur', true)]);
+
+    await runTrayChoice(db, { kind: 'bottle', amountMl: 120, content: 'formula' }, ctx(at(14)));
+    await runTrayChoice(db, { kind: 'bottle', amountMl: 90, content: 'breast_milk' }, ctx(at(15)));
+
+    const [formulaBottle, milkBottle] = (await live()).sort((a, b) =>
+      a.startedAt.localeCompare(b.startedAt),
+    );
+    expect(formulaBottle.payload).toMatchObject({ formula_id: 'f-cur', formula_name: 'Nan 2' });
+    expect(milkBottle.payload).not.toHaveProperty('formula_id');
+  });
+
+  it('logs a bottle of formula without a formula when none is current', async () => {
+    await runTrayChoice(db, { kind: 'bottle', amountMl: 120, content: 'formula' }, ctx(at(14)));
+    expect((await live())[0].payload).not.toHaveProperty('formula_id');
+  });
+
   it('logs one medication event with the selected entries', async () => {
     const medications = medicationPayloadEntries(['m1'], MEDS);
     await runTrayChoice(db, { kind: 'medication', medications }, ctx(at(14)));

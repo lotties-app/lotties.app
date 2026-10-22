@@ -11,6 +11,7 @@ import {
   type FieldVisibility,
   type EventPayload,
   type EventType,
+  type Formula,
   type Medication,
   type Prescription,
   type PrescriptionDose,
@@ -46,6 +47,10 @@ import {
  *          /babies/{id}/prescriptions?since= (incl. soft-deleted), PUT/DELETE
  *          /babies/{id}/prescriptions/{id}. A prescription must reach the server before the events
  *          that name it (`medications[i].prescriptionId`), and its medication before it.
+ * - Formulas (docs/SPEC.md "Formulas"): GET /babies/{id}/formulas?since= (archived included, no
+ *          delete), PUT /babies/{id}/formulas/{id} (Owner/Parent). Making one current makes the
+ *          others not current on the server (they come back in the delta). A formula must reach the
+ *          server before the bottles that name it (feeding payload `formula_id`, `formula_name`).
  * - Shared catalog: GET /catalog/products?q=, POST /catalog/products (409 `product_exists` carries
  *          the existing `product`), GET /catalog/products/{id} (a product a medication links to; pulled
  *          for the family's linked products only, the catalog itself is never synced: official ANVISA
@@ -83,6 +88,10 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/prescriptions` + query({ since }),
   prescription: (babyId: string, prescriptionId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/prescriptions/${enc(prescriptionId)}`,
+  formulas: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/formulas` + query({ since }),
+  formula: (babyId: string, formulaId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/formulas/${enc(formulaId)}`,
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
     query({ q, limit: limit === undefined ? undefined : String(limit) }),
@@ -711,6 +720,73 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
     updatedAt: toUtcIso(dto.updatedAt),
     clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
     deletedAt: toUtcIsoOrNull(dto.deletedAt),
+  };
+}
+
+/* Formulas */
+
+export interface FormulaDto {
+  id: string;
+  babyId: string;
+  name: string;
+  brand?: string | null;
+  stage?: string | null;
+  notes?: string | null;
+  startedOn?: string | null;
+  isCurrent?: boolean;
+  archived?: boolean;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full editable state of a formula plus the client edit time (`PUT` replaces it). */
+export interface FormulaUpsertRequest {
+  name: string;
+  brand: string | null;
+  stage: string | null;
+  notes: string | null;
+  startedOn: string | null;
+  isCurrent: boolean;
+  archived: boolean;
+  updatedAt?: string;
+}
+
+export function toFormulaUpsertRequest(f: Formula): FormulaUpsertRequest {
+  return {
+    name: f.name,
+    brand: f.brand,
+    stage: f.stage,
+    notes: f.notes,
+    startedOn: f.startedOn,
+    isCurrent: f.isCurrent,
+    archived: f.archived,
+    updatedAt: f.clientUpdatedAt ?? f.updatedAt,
+  };
+}
+
+export function isFormulaDtoFor(value: unknown, id: string): value is FormulaDto {
+  const dto = value as Partial<FormulaDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromFormulaDto(dto: FormulaDto): Formula {
+  const archived = dto.archived === true;
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    name: dto.name,
+    brand: dto.brand ?? null,
+    stage: dto.stage ?? null,
+    notes: dto.notes ?? null,
+    startedOn: dto.startedOn ?? null,
+    isCurrent: dto.isCurrent === true && !archived,
+    archived,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
   };
 }
 

@@ -10,6 +10,7 @@ import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
 import { t } from '../i18n/i18n';
 import { getOwn, setOwn } from '../util/ownProperty';
 import { formatNumber } from '../i18n/format';
+import { declaresFormula, FORMULA_KEYS } from '../formulas/formulaModel';
 import { visibleFields } from './payloadRules';
 import { fromLocalInput, toLocalInput } from './time';
 
@@ -82,11 +83,20 @@ export function isMedicationType(type: EventType | undefined): boolean {
   return type?.key === MEDICATION_TYPE_KEY;
 }
 
+/**
+ * Whether the form edits the field's value: every field that is not hidden, plus the hidden
+ * formula members of the built-in feeding type, which the formula chips edit (not a generic
+ * control).
+ */
+export function isFormField(type: EventType | undefined, field: EventFieldDefinition): boolean {
+  return field.hidden !== true || (declaresFormula(type) && FORMULA_KEYS.includes(field.key));
+}
+
 function valuesFromPayload(type: EventType | undefined, payload: EventPayload) {
   const values: EventFormState['values'] = {};
   for (const field of type?.fields ?? []) {
     // Hidden fields (pause keys, deprecated ones) have no control; `buildPayload` keeps their values.
-    if (field.hidden === true) continue;
+    if (!isFormField(type, field)) continue;
     const raw = getOwn(payload, field.key);
     if (raw === undefined || raw === null) continue;
     setOwn(values, field.key, field.kind === 'bool' ? raw === true : String(raw));
@@ -296,11 +306,12 @@ export function buildPayload(
   }
   const payload: EventPayload = {};
   // Members no field declares (imports) and the values of hidden fields (pause keys) are kept.
-  const editable = new Set(type.fields.filter((f) => f.hidden !== true).map((f) => f.key));
+  const editable = new Set(type.fields.filter((f) => isFormField(type, f)).map((f) => f.key));
   for (const [key, value] of Object.entries(base)) {
     if (!editable.has(key)) setOwn(payload, key, value);
   }
-  for (const field of shownFields(form, type)) {
+  const visible = visibleFields(type.fields, formValue(form.values));
+  for (const field of visible.filter((f) => isFormField(type, f))) {
     const raw = getOwn(form.values, field.key);
     if (raw === undefined || raw === '') continue;
     setOwn<unknown>(payload, field.key, field.kind === 'number' ? parseNumber(raw) : raw);

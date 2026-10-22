@@ -5,7 +5,7 @@ import { RADIUS } from '../theme/tokens';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import { palette } from '../ui/form/styles';
 import { Icon } from '../ui/Icon';
-import type { InsightDefinition } from './catalogue';
+import type { FormulasInsight, InsightDefinition } from './catalogue';
 import { insightName } from './insightText';
 
 export interface Stat {
@@ -65,8 +65,10 @@ export function InsightCard({
   chart,
   table,
   note,
+  intro,
+  extra,
 }: {
-  insight: InsightDefinition;
+  insight: InsightDefinition | FormulasInsight;
   /** Averages of the range as headline numbers, with a caption saying what they average. */
   headline?: { values: readonly string[]; caption: string } | null;
   summary: string;
@@ -75,6 +77,10 @@ export function InsightCard({
   chart: ReactNode;
   table: ReactNode;
   note?: string;
+  /** Shown under the summary in both views (e.g. the period of each formula). */
+  intro?: ReactNode;
+  /** Shown under the chart or table in both views. */
+  extra?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [asTable, setAsTable] = useState(false);
@@ -90,7 +96,7 @@ export function InsightCard({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <CategoryIcon name={insight.icon} category={insight.category} size={20} />
         <Typography id={titleId} variant="h5" component="h2">
-          {insightName(t, insight.id)}
+          {insight.id === 'formulas' ? t('insights.names.formulas') : insightName(t, insight.id)}
         </Typography>
       </Box>
       {headline && headline.values.length > 0 && (
@@ -118,9 +124,11 @@ export function InsightCard({
       <Typography variant="body2" color="text.secondary">
         {summary}
       </Typography>
+      {intro}
       {stats && <StatTiles stats={stats} />}
       {!asTable && legend}
       <Box id={bodyId}>{asTable ? table : chart}</Box>
+      {extra}
       {note && (
         <Typography variant="caption" color="text.secondary">
           {note}

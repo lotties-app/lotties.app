@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { formatDate, formatTime } from '../i18n/format';
 import type { InsightId } from './catalogue';
+import type { FormulaReadiness } from './formulaComparison';
 import type { Readiness } from './readiness';
 
 /*
@@ -57,6 +58,12 @@ export function estimateLine(t: TFunction, readiness: Readiness): string {
     case 'events':
       return moreEventsLine(t, readiness.id, readiness.eventsLeft ?? 1);
   }
+}
+
+/** What a formula still needs before the Formulas card shows it: days of use, then bottles. */
+export function formulaEstimateLine(t: TFunction, readiness: FormulaReadiness): string {
+  if (readiness.daysLeft > 0) return t('insights.formulas.moreDays', { count: readiness.daysLeft });
+  return t('insights.formulas.moreBottles', { count: Math.max(1, readiness.bottlesLeft) });
 }
 
 /** "Day 3 of 7" (days with data, capped at the days needed). */

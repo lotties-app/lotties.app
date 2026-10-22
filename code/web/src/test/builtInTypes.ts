@@ -46,6 +46,8 @@ const whenKindIs = (...kinds: string[]) => ({ visibleWhen: { field: 'kind', equa
 
 const whenMethodIs = (method: string) => ({ visibleWhen: { field: 'method', equals: [method] } });
 
+const whenFormula = { visibleWhen: { field: 'bottle_feeding_type', equals: ['formula'] } };
+
 export const FEEDING_DTO: EventTypeDto = {
   id: 'e6428ccb-7061-4cf4-a5d0-67c89a396a5f',
   babyId: null,
@@ -68,6 +70,8 @@ export const FEEDING_DTO: EventTypeDto = {
       options: ['formula', 'breast_milk'],
       ...whenMethodIs('bottle'),
     }),
+    field('formula_id', 'Formula', 'text', { hidden: true, ...whenFormula }),
+    field('formula_name', 'Formula name', 'text', { hidden: true, ...whenFormula }),
     field('breast_left_seconds', 'Left breast', 'number', {
       min: 0,
       unit: 's',

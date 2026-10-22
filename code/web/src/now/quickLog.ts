@@ -1,5 +1,7 @@
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent, type CommandOptions } from '../db/eventCommands';
+import { formulasFor } from '../db/queries';
+import { currentFormula, declaresFormula, formulaMembers } from '../formulas/formulaModel';
 import type {
   BabyEvent,
   EventPayload,
@@ -457,6 +459,21 @@ function payloadOf(choice: Exclude<TrayChoice, { kind: 'breast' }>): EventPayloa
 }
 
 /**
+ * A bottle of formula from the tray names the baby's current formula, silently (none without a
+ * current formula); the event sheet is where another one is picked.
+ */
+async function trayFormulaMembers(
+  db: BabyRoutineDb,
+  babyId: string,
+  type: EventType,
+  choice: Exclude<TrayChoice, { kind: 'breast' }>,
+): Promise<EventPayload> {
+  if (choice.kind !== 'bottle' || choice.content !== 'formula' || !declaresFormula(type)) return {};
+  const current = currentFormula(await formulasFor(db, babyId));
+  return current ? formulaMembers(current) : {};
+}
+
+/**
  * Logs a tray choice as one instant event (the tray's bottle is a quick after-the-fact log with
  * no duration; a timed bottle starts from the Bottle preset or the event sheet) at the tap moment minus
  * `minutesAgo`, checked with the server's payload rules first, and remembers the values. Breast
@@ -483,7 +500,10 @@ export async function runTrayChoice(
 
   const type = typeForKey(ctx.types, TYPE_KEY[choice.kind]);
   if (!type) throw new PresetNotRunnableError(choice.kind);
-  const payload = payloadOf(choice);
+  const payload = {
+    ...payloadOf(choice),
+    ...(await trayFormulaMembers(db, ctx.babyId, type, choice)),
+  };
   const problems = validatePayload(type, payload, true).map((p) => p.field);
   if (problems.length > 0) throw new TrayChoiceInvalidError(problems);
   if (choice.kind === 'medication' && choice.medications.length === 0) {

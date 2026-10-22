@@ -20,6 +20,7 @@ import {
 } from './formModel';
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
 import { fillEmptyFields } from './stopPlan';
+import { useFormulaChoice } from '../formulas/useFormulaChoice';
 
 /** Required choices that are never pre-selected: a wrong silent value costs more than one tap. */
 const NEVER_DEFAULT: ReadonlyMap<string, string> = new Map([['diaper', 'content']]);
@@ -94,6 +95,7 @@ export function useEventSheetForm(props: EventSheetProps) {
   const [switched, setSwitched] = useState<TypeSwitch | null>(null);
 
   const type = types.find((candidate) => candidate.id === form.typeId);
+  const formula = useFormulaChoice({ babyId, type, event, finish, values: form.values, setForm });
   const dirty = JSON.stringify(form) !== initial;
   // Solid food or a bedtime marker is a moment, not a timer; a finished event keeps its own length.
   const instant =
@@ -124,21 +126,23 @@ export function useEventSheetForm(props: EventSheetProps) {
   };
 
   const persist = async (selected: EventType) => {
+    // A bottle of formula left on the preselected formula names it (see `useFormulaChoice`).
+    const toSave = { ...form, values: formula.valuesToSave(form.values) };
     if (event && finish) {
-      const built = buildPayload(form, selected, event.payload);
+      const built = buildPayload(toSave, selected, event.payload);
       const payload = finish.restricted
         ? fillEmptyFields(event.payload, built, finish.fields)
         : built;
       await commands.finish(event.id, payload, finish.endedAt);
       return payload;
     }
-    const times = buildTimes(form, selected, instant);
+    const times = buildTimes(toSave, selected, instant);
     const payload = buildPayload(
-      form,
+      toSave,
       selected,
       event ? editBase(event.payload, selected, event.typeId === selected.id) : {},
     );
-    const data = { typeId: selected.id, ...times, payload, notes: form.notes.trim() || null };
+    const data = { typeId: selected.id, ...times, payload, notes: toSave.notes.trim() || null };
     await (event ? commands.edit(event.id, data) : commands.create({ babyId, ...data }));
     return payload;
   };
@@ -185,6 +189,7 @@ export function useEventSheetForm(props: EventSheetProps) {
     saveError,
     saving,
     switched,
+    formula,
     edit,
     setValue,
     changeType,

@@ -93,6 +93,8 @@ export function DataTable({
           borderBottom: `1px solid ${palette(theme).hairline}`,
           fontSize: '0.875rem',
         },
+        // Values stay on one line, clear of a wrapping row label.
+        '& td': { whiteSpace: 'nowrap', pl: 1.5 },
         '& th:first-of-type, & td:first-of-type': { textAlign: 'left', pl: 0 },
         '& td:last-of-type, & th:last-of-type': { pr: 0 },
         '& thead th': {

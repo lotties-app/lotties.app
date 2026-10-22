@@ -61,14 +61,13 @@ describe('planStop', () => {
   });
 
   it('asks for the amount (optional) when a bottle timer without one stops', () => {
-    expect(planStop(FEEDING_TYPE, { method: 'bottle' })).toEqual({
-      kind: 'finish',
-      fields: ['amount_ml', 'bottle_feeding_type'],
-    });
+    // The content and, for formula, which one (the sheet's formula chips) are asked with it.
+    const asked = ['amount_ml', 'bottle_feeding_type', 'formula_id', 'formula_name'];
+    expect(planStop(FEEDING_TYPE, { method: 'bottle' })).toEqual({ kind: 'finish', fields: asked });
     // Hidden values go with the finish sheet, which drops them on save.
     expect(planStop(FEEDING_TYPE, { method: 'bottle', side: 'left' })).toEqual({
       kind: 'finish',
-      fields: ['amount_ml', 'bottle_feeding_type'],
+      fields: asked,
     });
   });
 

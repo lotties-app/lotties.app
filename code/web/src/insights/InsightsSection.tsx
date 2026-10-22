@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Card, Skeleton, Stack, Typography } from '@mui/material';
 import { addDays, dayValue, startOfDay } from '../day/dayModel';
-import { useEventsStartedSince, useEventTypes } from '../db/hooks';
+import { useBodyWeight, useEventsStartedSince, useEventTypes, useFormulas } from '../db/hooks';
 import type { Baby } from '../db/models';
 import { useNow } from '../events/time';
 import { RADIUS } from '../theme/tokens';
@@ -10,6 +10,14 @@ import { CategoryIcon } from '../ui/CategoryIcon';
 import { SegmentedControl } from '../ui/form';
 import { INSIGHTS, relevantEvents, type InsightId } from './catalogue';
 import { lastDays } from './days';
+import { FormulaCard } from './FormulaCard';
+import {
+  compareFormulas,
+  formulaReadiness,
+  type FormulaComparison,
+  type FormulaReadiness,
+  type WeightPoint,
+} from './formulaComparison';
 import { DiaperCard, FeedingCard, RhythmCard, SleepCard, type CardProps } from './InsightCards';
 import { LOOK_BACK_DAYS, readiness, type Readiness } from './readiness';
 import { ReadinessRows } from './ReadinessRows';
@@ -50,7 +58,13 @@ function InsightsSkeleton() {
  * The calm "more is coming" card. With readiness it lists every insight with its progress and
  * estimate; without a baby it only says what will appear.
  */
-export function InsightsComingCard({ items }: { items?: readonly Readiness[] }) {
+export function InsightsComingCard({
+  items,
+  formulas = [],
+}: {
+  items?: readonly Readiness[];
+  formulas?: readonly FormulaReadiness[];
+}) {
   const { t } = useTranslation();
   return (
     <Card component="section" aria-labelledby="insights-soon-title" sx={{ p: 2.5 }}>
@@ -67,14 +81,20 @@ export function InsightsComingCard({ items }: { items?: readonly Readiness[] }) 
       </Stack>
       {items && items.length > 0 && (
         <Box sx={{ mt: 1.5 }}>
-          <ReadinessRows items={items} />
+          <ReadinessRows items={items} formulas={formulas} />
         </Box>
       )}
     </Card>
   );
 }
 
-function OnTheWay({ items }: { items: readonly Readiness[] }) {
+function OnTheWay({
+  items,
+  formulas,
+}: {
+  items: readonly Readiness[];
+  formulas: readonly FormulaReadiness[];
+}) {
   const { t } = useTranslation();
   return (
     <Box component="section" aria-labelledby="insights-on-the-way">
@@ -88,14 +108,36 @@ function OnTheWay({ items }: { items: readonly Readiness[] }) {
         {t('insights.onTheWay')}
       </Typography>
       <Card sx={{ px: 2.5, py: 0.5 }}>
-        <ReadinessRows items={items} />
+        <ReadinessRows items={items} formulas={formulas} />
       </Card>
     </Box>
   );
 }
 
-/** Insights of `baby`: readiness, the open cards and the ones on their way. */
-export function InsightsSection({ baby }: { baby: Baby }) {
+/** The device's latest weight joins the measured ones (offline, the list may be empty). */
+function withLatestWeight(
+  weights: readonly WeightPoint[],
+  latest: { kg: number; date: string } | null | undefined,
+): WeightPoint[] {
+  return latest ? [...weights, { date: latest.date, kg: latest.kg }] : [...weights];
+}
+
+/** Formulas still collecting days, as readiness rows (none when the card shows them itself). */
+const formulaRowsOf = (comparison: FormulaComparison) =>
+  comparison.view === 'collecting' ? comparison.periods.map(formulaReadiness) : [];
+
+/**
+ * Insights of `baby`: readiness, the open cards and the ones on their way. `weights` (the growth
+ * measurements, online) give the Formulas card its ml per kg; the device's latest weight is used
+ * too.
+ */
+export function InsightsSection({
+  baby,
+  weights = [],
+}: {
+  baby: Baby;
+  weights?: readonly WeightPoint[];
+}) {
   const { t } = useTranslation();
   const clock = useNow(60_000);
   const todayKey = dayValue(new Date(clock));
@@ -108,9 +150,11 @@ export function InsightsSection({ baby }: { baby: Baby }) {
   );
   const types = useEventTypes(baby.id);
   const events = useEventsStartedSince(baby.id, from);
+  const formulas = useFormulas(baby.id);
+  const latestWeight = useBodyWeight(baby.id);
   const [range, setRange] = useState<RangeDays>(14);
 
-  if (!types || !events) return <InsightsSkeleton />;
+  if (!types || !events || !formulas) return <InsightsSkeleton />;
 
   const now = new Date(clock);
   const states = INSIGHTS.map((insight) =>
@@ -122,7 +166,18 @@ export function InsightsSection({ baby }: { baby: Baby }) {
   );
   const open = states.filter((state) => state.state === 'unlocked');
   const waiting = states.filter((state) => state.state !== 'unlocked');
-  if (open.length === 0) return <InsightsComingCard items={states} />;
+  const formulaComparison = compareFormulas({
+    events,
+    types,
+    formulas,
+    weights: withLatestWeight(weights, latestWeight),
+    now,
+  });
+  const formulaOpen = formulaComparison.qualified.length > 0;
+  const formulaRows = formulaRowsOf(formulaComparison);
+  if (open.length === 0 && !formulaOpen) {
+    return <InsightsComingCard items={states} formulas={formulaRows} />;
+  }
 
   const props: CardProps = { events, types, days: lastDays(now, range), now, todayKey };
   return (
@@ -140,7 +195,10 @@ export function InsightsSection({ baby }: { baby: Baby }) {
         const View = CARDS[state.id];
         return <View key={state.id} {...props} />;
       })}
-      {waiting.length > 0 && <OnTheWay items={waiting} />}
+      {formulaOpen && <FormulaCard comparison={formulaComparison} />}
+      {(waiting.length > 0 || formulaRows.length > 0) && (
+        <OnTheWay items={waiting} formulas={formulaRows} />
+      )}
       <Typography variant="caption" color="text.secondary" component="p">
         {t('insights.footnote')}
       </Typography>

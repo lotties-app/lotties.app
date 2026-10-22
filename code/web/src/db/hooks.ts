@@ -7,6 +7,7 @@ import {
   eventsInRange,
   eventsStartedSince,
   eventTypesFor,
+  formulasFor,
   liveEvent,
   medicationsFor,
   latestBodyWeight,
@@ -39,6 +40,13 @@ import {
   type PrescriptionTerms,
 } from './prescriptionCommands';
 import type { PrescriptionStatus } from './models';
+import {
+  createFormula,
+  setCurrentFormula,
+  setFormulaArchived,
+  updateFormula,
+  type FormulaTerms,
+} from './formulaCommands';
 
 /*
  * Reads come straight from Dexie through `useLiveQuery`, which re-runs on any local or synced
@@ -155,5 +163,21 @@ export function usePrescriptionCommands() {
     update: (id: string, terms: PrescriptionTerms) => updatePrescription(db, id, terms),
     setStatus: (id: string, status: PrescriptionStatus) => setPrescriptionStatus(db, id, status),
     remove: (id: string) => deletePrescription(db, id),
+  };
+}
+
+/** Every formula of the baby, archived ones included (`undefined` while loading). */
+export function useFormulas(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(() => formulasFor(db, babyId), [db, babyId]);
+}
+
+export function useFormulaCommands() {
+  const db = useDatabase();
+  return {
+    create: (babyId: string, terms: FormulaTerms) => createFormula(db, babyId, terms),
+    update: (id: string, terms: FormulaTerms) => updateFormula(db, id, terms),
+    setCurrent: (id: string) => setCurrentFormula(db, id),
+    setArchived: (id: string, archived: boolean) => setFormulaArchived(db, id, archived),
   };
 }

@@ -7,6 +7,7 @@ import { AppearanceSection } from '../settings/AppearanceSection';
 import { LanguageSection } from '../settings/LanguageSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
+import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
 import { SettingsSection } from '../settings/SettingsSection';
@@ -71,6 +72,13 @@ export function SettingsPage() {
             defaultExpanded={wants('medications')}
           >
             <MedicationsSection baby={baby} />
+          </SettingsSection>
+          <SettingsSection
+            id="formulas"
+            title={t('settings.sections.formulas')}
+            defaultExpanded={wants('formulas')}
+          >
+            <FormulasSection baby={baby} />
           </SettingsSection>
           <SettingsSection
             id="import"

@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import type { BabyRoutineDb } from './database';
-import type { Baby, BabyEvent, EventType, Medication, Prescription } from './models';
+import type { Baby, BabyEvent, EventType, Formula, Medication, Prescription } from './models';
 
 /** Live (not deleted) events of a baby with `from <= startedAt < to`, oldest first. */
 export function eventsInRange(
@@ -101,6 +101,11 @@ export async function prescriptionsFor(db: BabyRoutineDb, babyId: string): Promi
 /** Every prescription row of the baby, deleted ones included (they still name logged doses). */
 export function allPrescriptionsFor(db: BabyRoutineDb, babyId: string): Promise<Prescription[]> {
   return db.prescriptions.where('babyId').equals(babyId).toArray();
+}
+
+/** Every formula of the baby, archived ones included (bottles still name them). */
+export function formulasFor(db: BabyRoutineDb, babyId: string): Promise<Formula[]> {
+  return db.formulas.where('babyId').equals(babyId).toArray();
 }
 
 export function latestBodyWeight(db: BabyRoutineDb, babyId: string) {

@@ -138,6 +138,31 @@ export interface Prescription {
   deletedAt: string | null;
 }
 
+/**
+ * An infant formula of a baby (per-baby list, synced like prescriptions; docs/design/14-formulas.md).
+ * Never deleted: archived instead, because bottles name it. At most one is current per baby (the
+ * server enforces it; on the device `currentFormula` picks the newest edit if a pull lags).
+ */
+export interface Formula {
+  id: string;
+  babyId: string;
+  /** 1-60 characters. */
+  name: string;
+  brand: string | null;
+  /** Short text such as `2` or `1+`. */
+  stage: string | null;
+  notes: string | null;
+  /** Calendar date `yyyy-mm-dd` the baby started it. */
+  startedOn: string | null;
+  isCurrent: boolean;
+  archived: boolean;
+  createdBy: string | null;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+}
+
 /** A shared catalog product kept on the device (recently used or found), for offline search. */
 export interface CachedProduct {
   id: string;
@@ -215,7 +240,7 @@ export function editTimeOf(event: Pick<BabyEvent, 'clientUpdatedAt' | 'updatedAt
 }
 
 export type MutationKind = 'upsert' | 'delete';
-export type MutationEntityType = 'event' | 'medication' | 'prescription';
+export type MutationEntityType = 'event' | 'medication' | 'prescription' | 'formula';
 /** `dead` = permanently rejected by the server; kept for inspection, never blocks the queue. */
 export type MutationStatus = 'pending' | 'dead';
 
@@ -255,7 +280,7 @@ export interface OutboxMutation {
  * `events`: the per-baby delta cursor. `babies`: stored under `BABIES_LISTED_KEY` once a babies
  * fetch succeeded on this device (an empty local list then really means "no baby yet").
  */
-export type SyncEntity = 'events' | 'babies' | 'prescriptions';
+export type SyncEntity = 'events' | 'babies' | 'prescriptions' | 'formulas';
 
 /** `babyId` of the `babies` marker row (not a baby id). */
 export const BABIES_LISTED_KEY = '*';
