@@ -1,5 +1,19 @@
 import {
+  isAppointmentStatus,
+  isAppointmentType,
+  normalizeReminders,
+} from '../appointments/appointmentModel';
+import {
   editTimeOf,
+  type Appointment,
+  type Note,
+  type NoteKind,
+  type NoteVisibility,
+  type PersonSummary,
+  type ProfessionalSummary,
+  type AppointmentStatus,
+  type AppointmentType,
+  type ReminderOffset,
   type Baby,
   type BabyEvent,
   type BabyRole,
@@ -51,6 +65,16 @@ import {
  *          delete), PUT /babies/{id}/formulas/{id} (Owner/Parent). Making one current makes the
  *          others not current on the server (they come back in the delta). A formula must reach the
  *          server before the bottles that name it (feeding payload `formula_id`, `formula_name`).
+ * - Notes (docs/design/16-doctor-access.md): GET /babies/{id}/notes?since= (deleted included; only
+ *          the notes the caller may see: shared ones and her own private ones), GET/PUT/DELETE
+ *          /babies/{id}/notes/{id} (writes: the Doctor, her own notes only). A shared note never
+ *          becomes private (422 `note_already_shared`).
+ * - Doctor access: GET/PUT /me/professional-profile (404 `professional_profile_not_found` before
+ *          one is declared; a Doctor invite needs one: 422 `professional_profile_required`), GET
+ *          /babies/{id}/access-log (Owner).
+ * - Appointments (docs/SPEC.md "Appointments"): GET /babies/{id}/appointments?since= (cancelled and
+ *          done included, no delete), PUT /babies/{id}/appointments/{id} (Owner/Parent). `done` is
+ *          refused (422 `appointment_not_started`) while the start is in the future.
  * - Shared catalog: GET /catalog/products?q=, POST /catalog/products (409 `product_exists` carries
  *          the existing `product`), GET /catalog/products/{id} (a product a medication links to; pulled
  *          for the family's linked products only, the catalog itself is never synced: official ANVISA
@@ -92,6 +116,16 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/formulas` + query({ since }),
   formula: (babyId: string, formulaId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/formulas/${enc(formulaId)}`,
+  appointments: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/appointments` + query({ since }),
+  appointment: (babyId: string, appointmentId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/appointments/${enc(appointmentId)}`,
+  notes: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
+  note: (babyId: string, noteId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notes/${enc(noteId)}`,
+  accessLog: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/access-log`,
+  professionalProfile: () => `${API_PREFIX}/me/professional-profile`,
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
     query({ q, limit: limit === undefined ? undefined : String(limit) }),
@@ -250,6 +284,8 @@ export interface MemberDto {
   displayName: string | null;
   role: string;
   joinedAt: string;
+  /** A Doctor member's professional details (additive; absent or `null` for other roles). */
+  professional?: ProfessionalSummaryDto | null;
 }
 
 export interface InviteDto {
@@ -522,7 +558,7 @@ export function fromEventDto(dto: EventDto): BabyEvent {
   };
 }
 
-const ROLES: readonly BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer'];
+const ROLES: readonly BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer', 'Doctor'];
 const FIELD_KINDS: readonly EventFieldKind[] = ['text', 'number', 'select', 'bool'];
 
 function matchEnum<T extends string>(values: readonly T[], raw: string | undefined): T | undefined {
@@ -790,6 +826,85 @@ export function fromFormulaDto(dto: FormulaDto): Formula {
   };
 }
 
+/* Appointments */
+
+export interface AppointmentDto {
+  id: string;
+  babyId: string;
+  title: string;
+  type: string;
+  startsAt: string;
+  durationMinutes?: number | null;
+  location?: string | null;
+  doctorName?: string | null;
+  notes?: string | null;
+  outcome?: string | null;
+  status?: string;
+  reminderOffsetsMinutes?: number[] | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full editable state of an appointment plus the client edit time (`PUT` replaces it). */
+export interface AppointmentUpsertRequest {
+  title: string;
+  type: AppointmentType;
+  startsAt: string;
+  durationMinutes: number | null;
+  location: string | null;
+  doctorName: string | null;
+  notes: string | null;
+  outcome: string | null;
+  status: AppointmentStatus;
+  reminderOffsetsMinutes: ReminderOffset[];
+  updatedAt?: string;
+}
+
+export function toAppointmentUpsertRequest(a: Appointment): AppointmentUpsertRequest {
+  return {
+    title: a.title,
+    type: a.type,
+    startsAt: a.startsAt,
+    durationMinutes: a.durationMinutes,
+    location: a.location,
+    doctorName: a.doctorName,
+    notes: a.notes,
+    outcome: a.outcome,
+    status: a.status,
+    reminderOffsetsMinutes: a.reminderOffsetsMinutes,
+    updatedAt: a.clientUpdatedAt ?? a.updatedAt,
+  };
+}
+
+export function isAppointmentDtoFor(value: unknown, id: string): value is AppointmentDto {
+  const dto = value as Partial<AppointmentDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+/** Unknown codes from a newer server degrade to `other` / `upcoming`; unknown offsets are dropped. */
+export function fromAppointmentDto(dto: AppointmentDto): Appointment {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    title: dto.title,
+    type: isAppointmentType(dto.type) ? dto.type : 'other',
+    startsAt: toUtcIso(dto.startsAt),
+    durationMinutes: dto.durationMinutes ?? null,
+    location: dto.location ?? null,
+    doctorName: dto.doctorName ?? null,
+    notes: dto.notes ?? null,
+    outcome: dto.outcome ?? null,
+    status: isAppointmentStatus(dto.status) ? dto.status : 'upcoming',
+    reminderOffsetsMinutes: normalizeReminders(dto.reminderOffsetsMinutes ?? []),
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
 /* Shared medication catalog (instance-wide). */
 
 export type ProductForm =
@@ -883,6 +998,10 @@ export interface MeasurementDto {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Recorded by the baby's Doctor during a consultation (additive). */
+  recordedByDoctor?: boolean;
+  /** That Doctor, as the family sees her; only when `recordedByDoctor` (additive). */
+  recordedBy?: PersonSummaryDto | null;
 }
 
 /** Full state of a measurement (`PUT` replaces it). */
@@ -993,4 +1112,118 @@ export interface NapperImportResultDto {
   createdMedications: { id: string; name: string }[];
   logs: NapperLogsSummary | null;
   measurements: NapperMeasurementsSummary | null;
+}
+
+/* Notes and doctor access (docs/design/16-doctor-access.md) */
+
+export interface ProfessionalSummaryDto {
+  kind?: string;
+  displayName: string;
+  specialty?: string | null;
+  registrationNumber?: string | null;
+  verified?: boolean;
+}
+
+export interface PersonSummaryDto {
+  userId: string;
+  displayName: string;
+  professional?: ProfessionalSummaryDto | null;
+}
+
+/** The caller's own professional profile (`GET/PUT /me/professional-profile`). */
+export interface ProfessionalProfileDto extends ProfessionalSummaryDto {
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Body of `PUT /me/professional-profile` (v1 knows the `doctor` kind only; never `verified`). */
+export interface ProfessionalProfileRequest {
+  kind: 'doctor';
+  displayName: string;
+  specialty: string | null;
+  registrationNumber: string | null;
+}
+
+export interface AccessLogEntryDto {
+  userId: string;
+  person?: PersonSummaryDto | null;
+  role: string;
+  kind: string;
+  at: string;
+}
+
+export interface NoteDto {
+  id: string;
+  babyId: string;
+  authorUserId: string;
+  author?: PersonSummaryDto | null;
+  kind: string;
+  visibility: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+  deletedAt?: string | null;
+}
+
+/** The full editable state of a note plus the client edit time (`PUT` replaces it). */
+export interface NoteUpsertRequest {
+  kind: NoteKind;
+  visibility: NoteVisibility;
+  body: string;
+  updatedAt?: string;
+}
+
+export function fromProfessionalDto(
+  dto: ProfessionalSummaryDto | null | undefined,
+): ProfessionalSummary | null {
+  if (!dto || typeof dto.displayName !== 'string') return null;
+  return {
+    kind: 'doctor',
+    displayName: dto.displayName,
+    specialty: dto.specialty ?? null,
+    registrationNumber: dto.registrationNumber ?? null,
+    verified: dto.verified === true,
+  };
+}
+
+export function fromPersonDto(dto: PersonSummaryDto | null | undefined): PersonSummary | null {
+  if (!dto || typeof dto.userId !== 'string') return null;
+  return {
+    userId: dto.userId,
+    displayName: dto.displayName ?? '',
+    professional: fromProfessionalDto(dto.professional),
+  };
+}
+
+export function toNoteUpsertRequest(note: Note): NoteUpsertRequest {
+  return {
+    kind: note.kind,
+    visibility: note.visibility,
+    body: note.body,
+    updatedAt: note.clientUpdatedAt ?? note.updatedAt,
+  };
+}
+
+export function isNoteDtoFor(value: unknown, id: string): value is NoteDto {
+  const dto = value as Partial<NoteDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromNoteDto(dto: NoteDto): Note {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    authorUserId: dto.authorUserId ?? null,
+    author: fromPersonDto(dto.author),
+    kind: dto.kind === 'recommendation' ? 'recommendation' : 'note',
+    // Anything unreadable is treated as private: shown to nobody but the author's own device.
+    visibility: dto.visibility === 'shared' ? 'shared' : 'private',
+    body: dto.body,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+    deletedAt: toUtcIsoOrNull(dto.deletedAt ?? null),
+  };
 }

@@ -1,4 +1,4 @@
-import { DEEP_LINK_PATH, parseDeepLinkHash } from '../pwa/sw/deepLink';
+import { linkPath, parseDeepLinkHash } from '../pwa/sw/deepLink';
 import type { SyncEngine } from '../sync/SyncEngine';
 
 /* Helpers of the notification deep link in the app (NotificationLinkProvider.tsx). */
@@ -6,9 +6,13 @@ import type { SyncEngine } from '../sync/SyncEngine';
 /** The pull before opening a reminder waits at most this long, then local data is shown. */
 export const LINK_SYNC_WAIT_MS = 3_000;
 
-/** The link in the address bar (`/#notify=...` on the Now route), if any. */
+/**
+ * The link in the address bar, if any: `/#notify=...` on the Now route, or an appointment reminder's
+ * `/appointments#notify=appt&...` on the calendar route.
+ */
 export function linkFromLocation(location: Pick<Location, 'pathname' | 'hash'>) {
-  return location.pathname === DEEP_LINK_PATH ? parseDeepLinkHash(location.hash) : null;
+  const link = parseDeepLinkHash(location.hash);
+  return link && location.pathname === linkPath(link) ? link : null;
 }
 
 /** Removes `#notify=...` from the address bar (ids and token never stay in history). */

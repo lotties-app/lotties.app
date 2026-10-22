@@ -67,15 +67,21 @@ export interface ReminderPreferences {
   diaperWetHeadsUp: boolean;
   /** The dirty diaper heads-up (`diaper_dirty_headsup`); off by default. */
   diaperDirtyHeadsUp: boolean;
+  /** The appointment reminders (`appointment_reminder`); ON by default (the family created the appointment). */
+  appointmentReminders: boolean;
 }
 
-/** The kinds added after the first release: absent on older servers (= off). */
+/**
+ * The kinds added after the first release: absent on older servers (= off, except the appointment
+ * reminders, which such a server does not send at all).
+ */
 type AdditiveKinds =
   | 'bellyPainPattern'
   | 'overtiredWarning'
   | 'fussyPattern'
   | 'diaperWetHeadsUp'
-  | 'diaperDirtyHeadsUp';
+  | 'diaperDirtyHeadsUp'
+  | 'appointmentReminders';
 
 export interface BabyPreferencesDto
   extends

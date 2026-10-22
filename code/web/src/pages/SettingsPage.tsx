@@ -10,9 +10,12 @@ import { EventTypesSection } from '../settings/EventTypesSection';
 import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
+import { SettingsLinkRow } from '../settings/SettingsLinkRow';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
-import { canWrite, isCaregiver } from '../baby/permissions';
+import { ProfessionalSection } from '../settings/ProfessionalSection';
+import { canWrite, isCaregiver, isDoctor } from '../baby/permissions';
+import { patientBabies } from '../patients/patientsModel';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 
@@ -47,9 +50,16 @@ export function SettingsPage() {
         <>
           {!canWrite(baby) && (
             <Alert severity="info">
-              {t(isCaregiver(baby) ? 'baby.caregiverNamed' : 'baby.viewOnlyNamed', {
-                name: baby.name,
-              })}
+              {t(
+                isDoctor(baby)
+                  ? 'doctor.settingsNotice'
+                  : isCaregiver(baby)
+                    ? 'baby.caregiverNamed'
+                    : 'baby.viewOnlyNamed',
+                {
+                  name: baby.name,
+                },
+              )}
             </Alert>
           )}
           <SettingsSection
@@ -80,6 +90,8 @@ export function SettingsPage() {
           >
             <FormulasSection baby={baby} />
           </SettingsSection>
+          <SettingsLinkRow to="/appointments" title={t('settings.sections.appointments')} />
+          <SettingsLinkRow to="/notes" title={t('doctor.notes.title')} />
           <SettingsSection
             id="import"
             title={t('settings.sections.import')}
@@ -100,6 +112,16 @@ export function SettingsPage() {
       ) : (
         <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
       )}
+      {patientBabies(babies).length > 0 && (
+        <SettingsLinkRow to="/patients" title={t('doctor.patients.title')} />
+      )}
+      <SettingsSection
+        id="professional"
+        title={t('doctor.profile.sectionTitle')}
+        defaultExpanded={wants('professional')}
+      >
+        <ProfessionalSection />
+      </SettingsSection>
       {push?.enabled && push.publicKey && (
         <SettingsSection
           id="notifications"

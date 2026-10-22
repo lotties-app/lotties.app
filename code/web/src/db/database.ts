@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable, type Table, type Transaction } from 'dexie';
 import type {
+  Appointment,
   Baby,
   BabyEvent,
   EventType,
@@ -7,6 +8,7 @@ import type {
   Formula,
   CachedProduct,
   Medication,
+  Note,
   OutboxMutation,
   Prescription,
   SyncCursor,
@@ -65,6 +67,20 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       formulas: 'id, babyId, [babyId+updatedAt]',
     },
   },
+  {
+    // Appointments: the baby's calendar (synced like formulas, cancelled instead of deleted).
+    version: 5,
+    stores: {
+      appointments: 'id, babyId, [babyId+startsAt], [babyId+updatedAt]',
+    },
+  },
+  {
+    // Doctor access: the baby's notes (synced, soft deleted; private ones are only ever the user's own).
+    version: 6,
+    stores: {
+      notes: 'id, babyId, [babyId+updatedAt]',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -76,6 +92,8 @@ export class BabyRoutineDb extends Dexie {
   declare catalogProducts: EntityTable<CachedProduct, 'id'>;
   declare bodyWeights: EntityTable<BodyWeightRow, 'babyId'>;
   declare formulas: EntityTable<Formula, 'id'>;
+  declare appointments: EntityTable<Appointment, 'id'>;
+  declare notes: EntityTable<Note, 'id'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

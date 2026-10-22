@@ -106,13 +106,15 @@
       "Owner": "Titular",
       "Parent": "Responsável",
       "Viewer": "Visualizador",
-      "Caregiver": "Cuidador(a)"
+      "Caregiver": "Cuidador(a)",
+      "Doctor": "Médico(a)"
     },
     "roleHints": {
       "Owner": "Controle total, incluindo membros e convites",
       "Parent": "Pode registrar e editar tudo, e gerenciar remédios e ajustes",
       "Caregiver": "Pode registrar eventos e editar os próprios registros",
-      "Viewer": "Só pode visualizar"
+      "Viewer": "Só pode visualizar",
+      "Doctor": "Profissional de saúde: vê tudo, escreve notas e medidas"
     },
     "caregiverNamed": "Você é cuidador(a) de {{name}}: pode registrar eventos e editar os seus próprios registros. Os responsáveis cuidam do resto."
   },
@@ -680,7 +682,8 @@
       "language": "Idioma",
       "sync": "Sincronização",
       "notifications": "Notificações",
-      "formulas": "Fórmulas"
+      "formulas": "Fórmulas",
+      "appointments": "Consultas"
     },
     "appearance": {
       "theme": "Tema",
@@ -856,7 +859,9 @@
         "event": "evento",
         "medication": "remédio",
         "prescription": "receita",
-        "formula": "fórmula"
+        "formula": "fórmula",
+        "appointment": "consulta",
+        "note": "nota"
       },
       "fix": "Corrigir",
       "fixNamed": "Corrigir: {{label}}",
@@ -1078,7 +1083,17 @@
     "push_endpoint_not_allowed": "O serviço de notificações deste navegador não é aceito pelo servidor.",
     "notification_action_not_found": "Este lembrete não está mais disponível.",
     "snooze_limit_reached": "Este lembrete já foi adiado 3 vezes.",
-    "event_not_owned": "Você só pode alterar os registros que você adicionou."
+    "event_not_owned": "Você só pode alterar os registros que você adicionou.",
+    "appointment_not_started": "Só uma consulta que já começou pode ser marcada como realizada.",
+    "appointment_baby_mismatch": "Esta consulta pertence a outro bebê.",
+    "appointment_not_found": "Esta consulta não existe mais.",
+    "professional_profile_required": "Este convite é para um(a) médico(a). Preencha seu perfil profissional primeiro.",
+    "professional_profile_not_found": "Você ainda não preencheu um perfil profissional.",
+    "note_not_found": "Esta nota não existe mais.",
+    "note_not_owned": "Só o(a) médico(a) que escreveu a nota pode alterá-la.",
+    "note_baby_mismatch": "Esta nota pertence a outro bebê.",
+    "note_already_shared": "Esta nota já foi compartilhada com a família e não pode ficar privada. Exclua-a.",
+    "measurement_not_owned": "Você só pode alterar as medidas que registrou."
   },
   "pwa": {
     "install": "Instalar o app",
@@ -1875,6 +1890,102 @@
     "archivedList": "Fórmulas arquivadas",
     "archivedNote": "As fórmulas arquivadas continuam no histórico das mamadeiras que as indicaram."
   },
+  "appointments": {
+    "title": "Consultas",
+    "add": "Nova consulta",
+    "open": "Agenda de consultas",
+    "createBabyFirst": "Cadastre um bebê primeiro para guardar as consultas.",
+    "viewOnly": "Você pode ver as consultas, mas não alterá-las.",
+    "caregiverNotice": "Você pode ver as consultas. Só os pais adicionam ou alteram.",
+    "viewerNotice": "Você pode ver as consultas, mas não alterá-las.",
+    "types": {
+      "consultation": "Consulta",
+      "vaccine": "Vacina",
+      "exam": "Exame",
+      "other": "Outro"
+    },
+    "status": {
+      "done": "Realizada",
+      "cancelled": "Cancelada",
+      "ask": "Aconteceu?"
+    },
+    "reminders": {
+      "10080": "1 semana",
+      "1440": "1 dia",
+      "120": "2 horas",
+      "30": "30 min"
+    },
+    "calendar": {
+      "previousMonth": "Mês anterior",
+      "nextMonth": "Próximo mês",
+      "today": "Hoje",
+      "todayMark": "hoje",
+      "count_one": "{{count}} consulta",
+      "count_other": "{{count}} consultas"
+    },
+    "agenda": {
+      "upcoming": "Próximas",
+      "past": "Anteriores",
+      "showAll": "Mostrar todas as consultas",
+      "noneOnDay": "Nenhuma consulta em {{date}}.",
+      "noneUpcoming": "Nenhuma consulta marcada."
+    },
+    "empty": {
+      "title": "Nenhuma consulta ainda",
+      "body": "Guarde aqui consultas, vacinas e exames, com um lembrete antes de cada um."
+    },
+    "next": {
+      "label": "Próxima consulta"
+    },
+    "day": {
+      "label": "Consultas do dia"
+    },
+    "sheet": {
+      "newTitle": "Nova consulta",
+      "editTitle": "Editar consulta",
+      "title": "Título",
+      "titlePlaceholder": "ex.: Pediatra, vacinas de 2 meses",
+      "titleRequired": "Digite um título de até 80 caracteres.",
+      "type": "Tipo",
+      "date": "Data",
+      "time": "Horário",
+      "whenRequired": "Escolha a data e o horário.",
+      "duration": "Duração",
+      "minutesUnit": "min",
+      "durationChoices": "Durações comuns",
+      "durationChips": {
+        "15": "15 minutos",
+        "30": "30 minutos",
+        "60": "1 hora"
+      },
+      "location": "Local",
+      "doctor": "Médico(a)",
+      "notes": "Observações",
+      "outcome": "Como foi",
+      "reminders": "Me lembrar",
+      "remindersHelp": "Enviados antes do horário para os aparelhos com notificações ativadas.",
+      "notStarted": "Uma consulta realizada não pode começar no futuro.",
+      "saveFailed": "Não foi possível salvar a consulta. Tente de novo."
+    },
+    "detail": {
+      "when": "Quando",
+      "location": "Local",
+      "doctor": "Médico(a)",
+      "reminders": "Lembretes",
+      "remindersBefore": "{{list}} antes",
+      "noReminders": "Sem lembretes",
+      "notes": "Observações",
+      "outcome": "Como foi",
+      "addToCalendar": "Adicionar ao calendário",
+      "edit": "Editar",
+      "cancel": "Cancelar consulta",
+      "restore": "Restaurar consulta",
+      "markDone": "Marcar como realizada",
+      "ask": "A consulta aconteceu? Marque como realizada e anote como foi.",
+      "addMeasurements": "Adicionar medidas",
+      "cancelledNotice": "{{title}} cancelada"
+    }
+  },
   "timers": {
     "paused": "Pausado",
     "pausedFor": "pausa de {{duration}}",
@@ -1984,6 +2095,8 @@
       "diaperWetHelp": "Quando costuma ser hora de uma fralda molhada, um aviso 10 min antes.",
       "diaperDirty": "Aviso de fralda suja",
       "diaperDirtyHelp": "Quando uma fralda suja costuma vir, depois de uma mamada ou pelos intervalos de costume, um aviso pouco antes.",
+      "appointments": "Lembretes de consultas",
+      "appointmentsHelp": "Antes de cada consulta, nos horários escolhidos para ela.",
       "lead": "Lembrar",
       "doseLeads": {
         "0": "No horário agendado",
@@ -2042,5 +2155,101 @@
     "lockedTimer": "Iniciado por {{name}}. Só essa pessoa ou um responsável pode alterar.",
     "lockedEntry": "Registrado por {{name}}. Só essa pessoa ou um responsável pode alterar.",
     "controlOnly": "Iniciado por {{name}}. Você pode pausar ou parar; só essa pessoa ou um responsável pode alterar o resto."
+  },
+  "doctor": {
+    "name": "Dr(a). {{name}}",
+    "nameNoAccess": "Dr(a). {{name}} (não tem mais acesso)",
+    "selfDeclared": "Médico(a) autodeclarado(a)",
+    "verifiedDoctor": "Médico(a)",
+    "settingsNotice": "Você é médico(a) de {{name}}: pode ver tudo o que é registrado, escrever notas e adicionar medidas da consulta. Os responsáveis cuidam do resto.",
+    "profile": {
+      "sectionTitle": "Sou profissional de saúde",
+      "intro": "Pediatras e outros médicos se identificam aqui. Assim uma família pode convidar você para o bebê com o papel Médico(a).",
+      "declared": "Seu perfil profissional",
+      "selfDeclaredNotice": "Autodeclarado: o Lotties não verifica registros. As famílias veem “Médico(a) autodeclarado(a)” ao lado do seu nome.",
+      "displayName": "Nome que as famílias veem",
+      "displayNameHelp": "Sem o título: as famílias veem “Dr(a).” antes dele.",
+      "displayNameRequired": "Informe o nome que as famílias vão ver.",
+      "specialty": "Especialidade",
+      "specialtyPlaceholder": "ex.: Pediatria",
+      "registrationNumber": "Número de registro",
+      "registrationNumberHelp": "Por exemplo, seu CRM. As famílias podem vê-lo.",
+      "loadFailed": "Não foi possível carregar seu perfil profissional. Verifique sua conexão."
+    },
+    "invite": {
+      "consent": "O(a) médico(a) que aceitar vai ver tudo o que for registrado de {{name}} e poderá adicionar notas e medidas. Você pode remover o acesso a qualquer momento."
+    },
+    "inviteAccept": {
+      "title": "Entrar como médico(a) do bebê",
+      "body": "Este convite é para um(a) médico(a). Primeiro diga à família quem você é: seu perfil é autodeclarado e aparece ao lado das suas notas.",
+      "saveAndJoin": "Salvar e entrar"
+    },
+    "members": {
+      "removeBody": "Perde o acesso a {{baby}} na hora. As notas compartilhadas continuam visíveis para a família."
+    },
+    "notes": {
+      "title": "Notas",
+      "add": "Escrever nota",
+      "newTitle": "Nova nota",
+      "editTitle": "Editar nota",
+      "kind": "Tipo",
+      "kinds": {
+        "note": "Nota",
+        "recommendation": "Recomendação"
+      },
+      "visibility": "Quem vê",
+      "visibilities": {
+        "shared": "Compartilhada com a família",
+        "private": "Só eu"
+      },
+      "visibilityChip": {
+        "shared": "Compartilhada com a família",
+        "private": "Privada"
+      },
+      "visibilityHelp": "Notas compartilhadas são vistas por todos que acompanham o bebê. Notas privadas são só suas.",
+      "staysShared": "Esta nota já foi compartilhada com a família. Para retirá-la, exclua-a.",
+      "body": "Nota",
+      "bodyRequired": "Escreva a nota.",
+      "saveFailed": "Não foi possível salvar a nota. Tente de novo.",
+      "byYou": "Você",
+      "unknownAuthor": "Autor desconhecido",
+      "cardLabel": "Nota de {{date}}",
+      "edit": "Editar nota de {{date}}",
+      "delete": "Excluir nota de {{date}}",
+      "deleteTitle": "Excluir esta nota?",
+      "deleteBody": "Ela sai das suas notas.",
+      "deleteSharedBody": "A família não vai mais vê-la.",
+      "deleteConfirm": "Excluir nota",
+      "emptyTitle": "Nenhuma nota ainda",
+      "emptyDoctor": "Escreva o que a família deve lembrar depois de uma consulta de {{name}}. As notas compartilhadas aparecem para a família.",
+      "emptyFamily": "As notas do(a) médico(a) de {{name}} aparecem aqui.",
+      "familyNotice": "Notas do(a) médico(a) de {{name}}. Você pode lê-las; só quem escreveu uma nota pode alterá-la.",
+      "timeline": "Notas, das mais recentes",
+      "createBabyFirst": "Cadastre um bebê primeiro para ver as notas."
+    },
+    "patients": {
+      "title": "Pacientes",
+      "subtitle": "Bebês cujas famílias convidaram você como médico(a).",
+      "list": "Pacientes",
+      "none": "Nenhum paciente ainda. Uma família adiciona você com um link de convite para médico(a).",
+      "open": "Abrir {{name}}",
+      "notesOf": "Notas sobre {{name}}",
+      "lastEntry": "Último registro {{when}}",
+      "noEntries": "Nada registrado ainda",
+      "sharedNotes_one": "{{count}} nota compartilhada sua",
+      "sharedNotes_other": "{{count}} notas compartilhadas suas"
+    },
+    "growth": {
+      "doctorNotice": "Como médico(a) de {{name}}, você pode adicionar medidas da consulta e alterar as suas.",
+      "recordedBy": "Registrado por {{name}} (médico(a) autodeclarado(a))",
+      "recordedByDoctor": "Registrado pelo(a) médico(a)"
+    },
+    "accessLog": {
+      "title": "Registro de acessos",
+      "explainer": "Quando o app de um(a) médico(a) carrega os dados de {{name}}, isso fica registrado aqui, no máximo uma vez por hora. Os 50 mais recentes aparecem.",
+      "none": "Nenhum(a) médico(a) abriu os dados de {{name}} ainda.",
+      "entry": "{{role}} · {{when}}",
+      "loadFailed": "Não foi possível carregar o registro de acessos. Verifique sua conexão."
+    }
   }
 }

@@ -1,6 +1,7 @@
 /*
  * Push payload parsing (docs/design/09-push-notifications.md sections 3 and 8). The server sends
- * codes, ids and instants only: `{v, id, kind, babyId?, rxId?, at, lang, token?, names?, snooze?}`.
+ * codes, ids and instants only: `{v, id, kind, babyId?, rxId?, apptId?, offset?, at, lang, token?,
+ * names?, snooze?}` (never an appointment's title, doctor or notes).
  * Everything here is pure and never throws: anything unexpected becomes a generic notification
  * ("Open the app for details"), so a raw code or a broken string never reaches the lock screen.
  */
@@ -23,6 +24,7 @@ const KINDS = {
   fussy_pattern: true,
   diaper_wet_headsup: true,
   diaper_dirty_headsup: true,
+  appointment_reminder: true,
   test: true,
 } as const;
 export type PushKind = keyof typeof KINDS;
@@ -89,6 +91,22 @@ export interface DiaperPayload extends PayloadBase {
   token?: string;
 }
 
+/** The reminder offsets of an appointment, in minutes before its start (1 week, 1 day, 2 h, 30 min). */
+export const APPOINTMENT_OFFSETS = [10080, 1440, 120, 30] as const;
+export type AppointmentOffset = (typeof APPOINTMENT_OFFSETS)[number];
+
+/**
+ * An appointment reminder: the appointment id, its start (`at`) and the reminder offset; the text is
+ * worded from them in the recipient's zone. Never the title, the doctor or the notes.
+ */
+export interface AppointmentPayload extends PayloadBase {
+  kind: 'appointment_reminder';
+  babyId: string;
+  apptId: string;
+  offset: AppointmentOffset;
+  token?: string;
+}
+
 export interface TestPayload extends PayloadBase {
   kind: 'test';
 }
@@ -100,6 +118,7 @@ export type PushPayload =
   | OvertiredPayload
   | FussyPayload
   | DiaperPayload
+  | AppointmentPayload
   | TestPayload;
 
 /** The kinds about a baby that open Now and carry nothing but codes (not a dose). */
@@ -174,6 +193,10 @@ function snooze(value: unknown): number | undefined {
     : undefined;
 }
 
+function offset(value: unknown): AppointmentOffset | undefined {
+  return APPOINTMENT_OFFSETS.find((candidate) => candidate === value);
+}
+
 function token(value: unknown): string | undefined {
   return typeof value === 'string' && TOKEN.test(value) ? value : undefined;
 }
@@ -206,6 +229,13 @@ export function validatePayload(raw: unknown): ParsedPayload {
 
   if (isBabyOnlyKind(kind)) {
     return { ok: true, payload: { ...base, ...withToken, kind, babyId } };
+  }
+
+  if (kind === 'appointment_reminder') {
+    const apptId = guid(field(raw, 'apptId'));
+    const minutes = offset(field(raw, 'offset'));
+    if (!apptId || minutes === undefined) return fail;
+    return { ok: true, payload: { ...base, ...withToken, kind, babyId, apptId, offset: minutes } };
   }
 
   const rxId = guid(field(raw, 'rxId'));

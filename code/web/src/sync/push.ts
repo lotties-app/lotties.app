@@ -5,11 +5,15 @@ import { dependencyOf, dropIfSuperseded, peekPendingMutation } from '../db/outbo
 import { backoffDelay } from './backoff';
 import {
   apiPaths,
+  fromAppointmentDto,
   fromEventDto,
   fromFormulaDto,
+  fromNoteDto,
   fromPrescriptionDto,
+  isAppointmentDtoFor,
   isEventDtoFor,
   isFormulaDtoFor,
+  isNoteDtoFor,
   isPrescriptionDtoFor,
   type EventUpsertRequest,
 } from './contract';
@@ -114,6 +118,10 @@ function pathOf(mutation: OutboxMutation): string {
       return apiPaths.prescription(mutation.babyId, mutation.entityId);
     case 'formula':
       return apiPaths.formula(mutation.babyId, mutation.entityId);
+    case 'appointment':
+      return apiPaths.appointment(mutation.babyId, mutation.entityId);
+    case 'note':
+      return apiPaths.note(mutation.babyId, mutation.entityId);
     default:
       return apiPaths.event(mutation.babyId, mutation.entityId);
   }
@@ -141,7 +149,8 @@ function isAlreadyDeleted(mutation: OutboxMutation, error: unknown) {
  * and the stored copy returned, or the event was already deleted on the server).
  */
 async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response: unknown) {
-  await db.transaction('rw', [db.outbox, db.events, db.prescriptions, db.formulas], async () => {
+  const tables = [db.outbox, db.events, db.prescriptions, db.formulas, db.appointments, db.notes];
+  await db.transaction('rw', tables, async () => {
     await db.outbox.delete(mutation.id);
     const { entityType, entityId } = mutation;
     const eventCopy =
@@ -152,7 +161,13 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
         : undefined;
     const formulaCopy =
       entityType === 'formula' && isFormulaDtoFor(response, entityId) ? response : undefined;
-    if (!eventCopy && !prescriptionCopy && !formulaCopy) return;
+    const appointmentCopy =
+      entityType === 'appointment' && isAppointmentDtoFor(response, entityId)
+        ? response
+        : undefined;
+    const noteCopy =
+      entityType === 'note' && isNoteDtoFor(response, entityId) ? response : undefined;
+    if (!eventCopy && !prescriptionCopy && !formulaCopy && !appointmentCopy && !noteCopy) return;
     const stillPending = await db.outbox
       .where('entityId')
       .equals(entityId)
@@ -162,6 +177,8 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
     if (eventCopy) await db.events.put(fromEventDto(eventCopy));
     if (prescriptionCopy) await db.prescriptions.put(fromPrescriptionDto(prescriptionCopy));
     if (formulaCopy) await db.formulas.put(fromFormulaDto(formulaCopy));
+    if (appointmentCopy) await db.appointments.put(fromAppointmentDto(appointmentCopy));
+    if (noteCopy) await db.notes.put(fromNoteDto(noteCopy));
   });
 }
 

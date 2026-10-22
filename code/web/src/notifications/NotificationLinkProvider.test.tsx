@@ -66,6 +66,19 @@ describe('linkFromLocation', () => {
     expect(linkFromLocation({ pathname: '/settings', hash: url.hash })).toBeNull();
     expect(linkFromLocation({ pathname: '/', hash: '#notifications' })).toBeNull();
   });
+
+  it('reads an appointment reminder link on the appointments route only', () => {
+    const link = {
+      kind: 'appt',
+      babyId: DOSE.babyId,
+      appointmentId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+      deliveryId: DOSE.deliveryId,
+    } as const;
+    const url = new URL(deepLinkUrl(link), 'https://app.example');
+    expect(url.pathname).toBe('/appointments');
+    expect(linkFromLocation(url)).toEqual(link);
+    expect(linkFromLocation({ pathname: '/', hash: url.hash })).toBeNull();
+  });
 });
 
 describe('pullBriefly', () => {

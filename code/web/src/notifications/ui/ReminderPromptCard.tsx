@@ -59,6 +59,7 @@ function useDoseReminderOffer(baby: Baby) {
       fussyPattern: prefs?.fussyPattern ?? false,
       diaperWetHeadsUp: prefs?.diaperWetHeadsUp ?? false,
       diaperDirtyHeadsUp: prefs?.diaperDirtyHeadsUp ?? false,
+      appointmentReminders: prefs?.appointmentReminders ?? true,
     },
   } as const;
 }

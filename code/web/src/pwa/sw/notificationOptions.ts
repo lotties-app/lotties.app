@@ -39,7 +39,8 @@ export function keyInstant(at: number): string {
  * and fussy heads-ups use `belly:{baby}` and `fussy:{baby}` (at most one a day; the next day's
  * replaces it); the overtired heads-up uses `overtired:{baby}` (one per awake stretch; the next
  * stretch's replaces it); the diaper heads-ups use `wet:{baby}` and `dirty:{baby}` (the next
- * expected diaper of the kind replaces the earlier one).
+ * expected diaper of the kind replaces the earlier one); an appointment reminder uses
+ * `appt:{appointment}` (its next reminder, "in 2 hours" after "tomorrow", replaces the earlier one).
  */
 export function notificationTag(payload: PushPayload): string {
   switch (payload.kind) {
@@ -57,14 +58,20 @@ export function notificationTag(payload: PushPayload): string {
       return `wet:${compactGuid(payload.babyId)}`;
     case 'diaper_dirty_headsup':
       return `dirty:${compactGuid(payload.babyId)}`;
+    case 'appointment_reminder':
+      return `appt:${compactGuid(payload.apptId)}`;
     case 'test':
       return `test:${compactGuid(payload.id)}`;
   }
 }
 
 /** Builds the notification for a parsed payload; generic text without tag or actions when invalid. */
-export function buildNotification(parsed: ParsedPayload, timeZone?: string): ShownNotification {
-  const { title, body } = renderText(parsed, timeZone);
+export function buildNotification(
+  parsed: ParsedPayload,
+  timeZone?: string,
+  now: number = Date.now(),
+): ShownNotification {
+  const { title, body } = renderText(parsed, timeZone, now);
   const lang = parsed.ok ? parsed.payload.lang : parsed.lang;
   const options: ShownNotificationOptions = {
     body,

@@ -6,6 +6,7 @@ import {
   BABIES_LISTED_KEY,
   editTimeOf,
   prescriptionEditTime,
+  type Appointment,
   type BabyEvent,
   type Formula,
   type Prescription,
@@ -14,12 +15,14 @@ import { pendingEntityIds, rejectedStopIds } from '../db/outbox';
 import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
 import {
   apiPaths,
+  fromAppointmentDto,
   fromBabyDto,
   fromEventDto,
   fromEventTypeDto,
   fromFormulaDto,
   fromMedicationDto,
   fromPrescriptionDto,
+  type AppointmentDto,
   type BabyDto,
   type EventDto,
   type EventsDeltaResponse,
@@ -30,6 +33,7 @@ import {
   type PrescriptionDto,
   NEXT_CURSOR_HEADER,
 } from './contract';
+import { pullNotes } from '../notes/noteSync';
 import { classifyFailure, describeFailure } from './failures';
 import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
 
@@ -257,6 +261,44 @@ export async function pullFormulas(ctx: SyncContext, babyId: string): Promise<vo
 }
 
 /**
+ * Merges pulled appointments like formulas: a copy with a queued local change is skipped until it
+ * is pushed, otherwise the newer client edit time wins (appointments are never deleted: a
+ * cancelled one arrives like any edit). The cursor moves in the same transaction.
+ */
+export async function mergeAppointmentDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: AppointmentDto[],
+): Promise<void> {
+  await db.transaction('rw', db.appointments, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromAppointmentDto);
+    const locals = await db.appointments.bulkGet(incoming.map((a) => a.id));
+    const editTime = (a: Appointment) => Date.parse(a.clientUpdatedAt ?? a.updatedAt);
+    const wins = (remote: Appointment, local: Appointment | undefined) =>
+      !local || editTime(remote) >= editTime(local);
+    await db.appointments.bulkPut(incoming.filter((a, i) => wins(a, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'appointments']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'appointments', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the appointments changed since the stored cursor (minus the overlap), cancelled included. */
+export async function pullAppointments(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'appointments']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  const items = await get<AppointmentDto[]>(ctx, apiPaths.appointments(babyId, since));
+  await mergeAppointmentDelta(ctx.db, babyId, items ?? []);
+}
+
+/**
  * Keeps the latest weight on the device (growth is online-only) for per-kg suggestions. Best
  * effort: a failure leaves the stored weight as it was.
  */
@@ -311,6 +353,8 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
       await pullFormulas(ctx, babyId);
+      await pullAppointments(ctx, babyId);
+      await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);
       await refreshLatestWeight(ctx, babyId);
     } catch (error) {

@@ -94,6 +94,7 @@ describe('ReminderPromptCard', () => {
       fussyPattern: false,
       diaperWetHeadsUp: true,
       diaperDirtyHeadsUp: false,
+      appointmentReminders: true,
     });
   });
 

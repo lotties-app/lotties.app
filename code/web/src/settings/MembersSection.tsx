@@ -30,6 +30,9 @@ import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorNotice } from './ErrorNotice';
 import { InvitesPanel } from './InvitesPanel';
+import { AccessLogPanel } from './AccessLogPanel';
+import { DoctorName } from '../professional/DoctorName';
+import { fromProfessionalDto } from '../sync/contract';
 import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
@@ -54,13 +57,42 @@ function MemberRow({
   const { t } = useTranslation();
   const name = memberName(member);
   const role = parseRole(member.role);
+  const professional = role === 'Doctor' ? fromProfessionalDto(member.professional) : null;
   return (
     <ListItem divider sx={{ gap: 1, flexWrap: 'wrap' }}>
       <ListItemText
-        primary={name}
-        secondary={t('settings.members.joined', { date: formatDate(member.joinedAt) })}
+        disableTypography={!!professional}
+        primary={
+          professional ? (
+            <DoctorName person={{ displayName: name, professional }} variant="body2" />
+          ) : (
+            name
+          )
+        }
+        secondary={
+          professional ? (
+            <Typography variant="body2" color="text.secondary" component="p">
+              {t('settings.members.joined', { date: formatDate(member.joinedAt) })}
+            </Typography>
+          ) : (
+            t('settings.members.joined', { date: formatDate(member.joinedAt) })
+          )
+        }
       />
-      {manage ? (
+      {manage && role === 'Doctor' ? (
+        // Doctor access comes with an invite (it needs her professional profile) and ends by
+        // removing her: no role picker.
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Chip size="small" label={t('baby.roles.Doctor')} />
+          <IconButton
+            aria-label={t('settings.members.removeNamed', { name })}
+            disabled={disabled}
+            onClick={onRemove}
+          >
+            <Icon name="person-remove" />
+          </IconButton>
+        </Stack>
+      ) : manage ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <TextField
             select
@@ -164,6 +196,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
         ))}
       </List>
       {manage && <InvitesPanel baby={baby} />}
+      {manage && <AccessLogPanel baby={baby} />}
       {!manage && <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>}
       <Button
         color="error"
@@ -177,7 +210,12 @@ export function MembersSection({ baby }: { baby: Baby }) {
       {removing && (
         <ConfirmDialog
           title={t('settings.members.removeTitle', { name: memberName(removing) })}
-          body={t('settings.members.removeBody')}
+          body={t(
+            parseRole(removing.role) === 'Doctor'
+              ? 'doctor.members.removeBody'
+              : 'settings.members.removeBody',
+            { baby: baby.name },
+          )}
           confirmLabel={t('settings.members.removeConfirm')}
           pending={pending}
           error={error}

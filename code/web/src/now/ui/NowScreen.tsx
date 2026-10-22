@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
 import { canWrite, isOwner } from '../../baby/permissions';
+import { NextAppointment } from '../../appointments/NextAppointmentCard';
 import { useOldestEventStart } from '../../db/hooks';
 import type { Baby } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
@@ -78,7 +79,8 @@ function useReminderLink(babyId: string, canOpenMeds: boolean, openMeds: () => v
   const [reminder, setReminder] = useState<TrayReminder | null>(null);
   const link = links?.link ?? null;
   const [handled, setHandled] = useState<NotificationLink | null>(null);
-  const mine = link && link.babyId === babyId ? link : null;
+  // An appointment reminder belongs to the calendar page, which consumes it there.
+  const mine = link && link.babyId === babyId && link.kind !== 'appt' ? link : null;
   // Adjusted while rendering (not in an effect): the tray opens in the same render pass.
   if (mine && mine !== handled) {
     setHandled(mine);
@@ -273,6 +275,7 @@ function NowContent({
             predictions={predictions}
             {...(model.trays.diaper ? { onLogDiaper: openDiaperTray } : {})}
           />
+          <NextAppointment babyId={baby.id} now={model.now.getTime()} />
           {nursing && (
             <NursingCard
               event={nursing}

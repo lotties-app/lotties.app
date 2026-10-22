@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import { dayKeyOf } from '../appointments/calendarModel';
+import { DayAppointmentsStrip } from '../appointments/DayAppointmentsStrip';
+import { useAppointmentSheets } from '../appointments/useAppointmentSheets';
 import { useEventAccess } from '../baby/useEventAccess';
 import {
   useAllPrescriptions,
+  useAppointments,
   useEntitySyncStates,
   useEventsInRange,
   useEventTypes,
@@ -142,7 +146,8 @@ function prefillFor(typeId: string, day: Date): FormPrefill {
 
 /**
  * The Day tab (docs/DESIGN.md section 11): date bar with swipe, a summary strip and 24-hour ribbon,
- * a category filter, and the day's events as rows (newest first). Tap a row to edit it, Stop a
+ * a category filter, the day's appointments (a compact strip above the ribbon, tap for the detail),
+ * and the day's events as rows (newest first). Tap a row to edit it, Stop a
  * running one in place. The data is a live query for the local day (by the `[babyId+startedAt]`
  * index), so a busy history stays fast. `initialDay` opens another day (the dev preview).
  */
@@ -168,6 +173,8 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const prescriptions = useAllPrescriptions(baby.id);
   const events = useEventsInRange(baby.id, range.from, range.to);
   const syncStates = useEntitySyncStates(baby.id);
+  const appointments = useAppointments(baby.id);
+  const appointmentSheets = useAppointmentSheets(baby, appointments, clock);
   const actions = usePresetActions(baby.id, types ?? []);
   const label = useDayLabel(day, today);
   const access = useEventAccess(baby);
@@ -206,6 +213,11 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const typeOf = (event: BabyEvent): EventType | undefined =>
     types.find((candidate) => candidate.id === event.typeId);
 
+  const dayKey = dayKeyOf(day.getTime());
+  const dayAppointments = (appointments ?? []).filter(
+    (appointment) => dayKeyOf(appointment.startsAt) === dayKey,
+  );
+
   const creatingPrefill =
     creating && !isSameDay(day, today) ? prefillFor(creating, day) : undefined;
 
@@ -229,6 +241,11 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         onChange={go}
         filterCount={selected.size}
         onOpenFilter={() => setFiltering(true)}
+      />
+      <DayAppointmentsStrip
+        appointments={dayAppointments}
+        now={clock}
+        onOpen={(appointment) => appointmentSheets.openDetail(appointment.id)}
       />
       <DaySummary summary={summary}>
         <DayRibbon
@@ -329,6 +346,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         />
       )}
       {writable && actions.elements}
+      {appointmentSheets.elements}
     </Box>
   );
 }

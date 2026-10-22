@@ -483,6 +483,7 @@ describe('SettingsPage members and invites', () => {
       'CaregiverCan log events and edit their own entries',
       'ViewerCan only view',
       'OwnerFull control, including members and invites',
+      'DoctorA healthcare professional: sees everything, writes notes and measurements',
     ]);
     fireEvent.click(screen.getByRole('option', { name: /^Caregiver/ }));
     expect(await screen.findByText('Can log events and edit their own entries')).toBeTruthy();

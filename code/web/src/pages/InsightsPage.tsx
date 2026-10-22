@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Stack, Typography } from '@mui/material';
+import { useLocation } from 'react-router-dom';
+import { Box, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import type { WeightPoint } from '../insights/formulaComparison';
@@ -24,6 +26,11 @@ function BabyInsights({ baby }: { baby: Baby }) {
 export function InsightsPage() {
   const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
+  // "Add measurements" after a visit links here (`#growth`): bring Growth into view.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === '#growth') document.getElementById('growth')?.scrollIntoView?.({ block: 'start' });
+  }, [hash, baby]);
   return (
     <Stack spacing={3}>
       <Typography variant="h4" component="h1">
@@ -31,7 +38,9 @@ export function InsightsPage() {
       </Typography>
       {baby && <BabyInsights key={baby.id} baby={baby} />}
       {babies && !baby && <InsightsComingCard />}
-      <GrowthPage heading="h2" />
+      <Box id="growth" sx={{ scrollMarginTop: 72 }}>
+        <GrowthPage heading="h2" />
+      </Box>
     </Stack>
   );
 }

@@ -6,7 +6,7 @@
 import en from '../../i18n/locales/push.en.json';
 import ptBR from '../../i18n/locales/push.pt-BR.json';
 import { getOwn } from '../../util/ownProperty';
-import type { ParsedPayload, PushLang } from './payload';
+import type { AppointmentPayload, ParsedPayload, PushLang } from './payload';
 
 export type PushCatalog = typeof en;
 
@@ -53,13 +53,96 @@ export function genericText(lang: PushLang): NotificationText {
   return { title: catalog.generic.title, body: catalog.generic.body };
 }
 
-/** Title and body for a parsed payload; falls back to the generic text, never throws. */
-export function renderText(parsed: ParsedPayload, timeZone?: string): NotificationText {
+const MINUTE_MS = 60_000;
+const DAY_MS = 86_400_000;
+
+/** How an appointment reminder is worded (keys of the `appointment_reminder` catalog entry). */
+export type AppointmentPhrase = 'week' | 'tomorrow' | 'today' | 'hours' | 'minutes' | 'on';
+
+/** `yyyy-mm-dd` of an instant in the device zone, or in `timeZone`. */
+function localDateKey(at: number, timeZone?: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone,
+  }).format(new Date(at));
+}
+
+/** Calendar days from the local date of `from` to the local date of `to` (DST safe). */
+function calendarDaysBetween(from: number, to: number, timeZone?: string): number {
+  const utcMidnight = (key: string) => Date.parse(`${key}T00:00:00Z`);
+  return Math.round(
+    (utcMidnight(localDateKey(to, timeZone)) - utcMidnight(localDateKey(from, timeZone))) / DAY_MS,
+  );
+}
+
+/**
+ * The wording of an appointment reminder shown at `now`: the offset's own phrase ("in a week",
+ * "in 2 hours", "in 30 minutes") while it is still true, else the calendar relation in the
+ * recipient's zone ("today", "tomorrow", "on 29 October"), e.g. when quiet hours delayed it.
+ */
+export function appointmentPhrase(
+  at: number,
+  offsetMinutes: number,
+  now: number,
+  timeZone?: string,
+): AppointmentPhrase {
+  const remaining = at - now;
+  if (offsetMinutes === 10080 && remaining >= 6 * DAY_MS) return 'week';
+  if (offsetMinutes === 120 && remaining >= 105 * MINUTE_MS) return 'hours';
+  if (offsetMinutes === 30 && remaining >= 20 * MINUTE_MS) return 'minutes';
+  const days = calendarDaysBetween(now, at, timeZone);
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  return 'on';
+}
+
+/** "Tuesday, October 29" / "terça-feira, 29 de outubro" in the device zone (or `timeZone`). */
+function formatLongDate(at: number, lang: PushLang, timeZone?: string): string {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone,
+  }).format(new Date(at));
+}
+
+function appointmentText(
+  payload: AppointmentPayload,
+  catalog: PushCatalog,
+  now: number,
+  timeZone?: string,
+): NotificationText | undefined {
+  const strings = catalog.appointment_reminder;
+  const phrase = appointmentPhrase(payload.at, payload.offset, now, timeZone);
+  const values: Record<string, string> = {
+    time: formatTime(payload.at, payload.lang, timeZone),
+    date: formatLongDate(payload.at, payload.lang, timeZone),
+  };
+  if (payload.names) values.baby = payload.names.baby;
+  const template = payload.names ? strings[`${phrase}Named`] : strings[phrase];
+  const body = interpolate(template, values);
+  return body === undefined ? undefined : { title: strings.title, body };
+}
+
+/**
+ * Title and body for a parsed payload; falls back to the generic text, never throws. `now` words
+ * appointment reminders ("tomorrow", "in 2 hours").
+ */
+export function renderText(
+  parsed: ParsedPayload,
+  timeZone?: string,
+  now: number = Date.now(),
+): NotificationText {
   if (!parsed.ok) return genericText(parsed.lang);
   const { payload } = parsed;
   const catalog = catalogFor(payload.lang);
   try {
     if (payload.kind === 'test') return { title: catalog.test.title, body: catalog.test.body };
+    if (payload.kind === 'appointment_reminder') {
+      return appointmentText(payload, catalog, now, timeZone) ?? genericText(payload.lang);
+    }
 
     const time = formatTime(payload.at, payload.lang, timeZone);
     const strings = catalog[payload.kind];

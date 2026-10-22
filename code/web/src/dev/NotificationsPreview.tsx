@@ -86,6 +86,7 @@ function setup(scenario: Scenario) {
         fussyPattern: false,
         diaperWetHeadsUp: on,
         diaperDirtyHeadsUp: false,
+        appointmentReminders: true,
       },
       {
         babyId: 'dev-push-theo',
@@ -99,6 +100,7 @@ function setup(scenario: Scenario) {
         fussyPattern: false,
         diaperWetHeadsUp: false,
         diaperDirtyHeadsUp: false,
+        appointmentReminders: false,
       },
     ],
     devices: [

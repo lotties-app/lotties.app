@@ -6,8 +6,12 @@
 
 import type { ProductDto } from '../sync/contract';
 
-/** Owner > Parent > Caregiver > Viewer (docs/SPEC.md "Roles and permissions"). */
-export type BabyRole = 'Owner' | 'Parent' | 'Caregiver' | 'Viewer';
+/**
+ * Owner > Parent > Caregiver > Viewer (docs/SPEC.md "Roles and permissions"); `Doctor` is outside that
+ * order: reads like a Viewer and writes only her notes and consultation measurements
+ * (docs/design/16-doctor-access.md).
+ */
+export type BabyRole = 'Owner' | 'Parent' | 'Caregiver' | 'Viewer' | 'Doctor';
 
 export interface Baby {
   id: string;
@@ -163,6 +167,89 @@ export interface Formula {
   clientUpdatedAt?: string;
 }
 
+/** What an appointment is (docs/design/15-appointments.md). */
+export type AppointmentType = 'consultation' | 'vaccine' | 'exam' | 'other';
+
+/** `cancelled` is the soft delete (kept and synced, never reminded); `done` only once it started. */
+export type AppointmentStatus = 'upcoming' | 'done' | 'cancelled';
+
+/** Reminder offsets in minutes before the start: 1 week, 1 day, 2 hours, 30 minutes. */
+export type ReminderOffset = 10080 | 1440 | 120 | 30;
+
+/**
+ * A doctor appointment of a baby (per-baby calendar, synced like formulas; docs/design/15-appointments.md).
+ * Never deleted: cancelling is the soft delete. All instants are UTC; the device zone only shows them.
+ */
+export interface Appointment {
+  id: string;
+  babyId: string;
+  /** 1-80 characters. */
+  title: string;
+  type: AppointmentType;
+  /** UTC ISO instant; may be in the past (a visit logged after the fact). */
+  startsAt: string;
+  /** 5-480 minutes, or unknown. */
+  durationMinutes: number | null;
+  location: string | null;
+  doctorName: string | null;
+  notes: string | null;
+  /** What came out of the visit (filled after it). */
+  outcome: string | null;
+  status: AppointmentStatus;
+  /** Minutes before the start, largest first; `[]` = no reminders. */
+  reminderOffsetsMinutes: ReminderOffset[];
+  createdBy: string | null;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+}
+
+/** What a note is; `recommendation` gets the parents' inbox in step 2 (docs/design/16-doctor-access.md). */
+export type NoteKind = 'note' | 'recommendation';
+
+/** `shared`: every member of the baby reads it; `private`: only its author (the server never sends it to others). */
+export type NoteVisibility = 'shared' | 'private';
+
+/** A healthcare professional as the family sees her. v1 profiles are self-declared (`verified: false`). */
+export interface ProfessionalSummary {
+  kind: 'doctor';
+  displayName: string;
+  specialty: string | null;
+  registrationNumber: string | null;
+  verified: boolean;
+}
+
+/** A person named on the baby's data: the professional name when she declared one. */
+export interface PersonSummary {
+  userId: string;
+  displayName: string;
+  professional: ProfessionalSummary | null;
+}
+
+/**
+ * A note about a baby, written by its Doctor (synced like appointments, soft deleted;
+ * docs/design/16-doctor-access.md). Only the author edits or deletes it.
+ */
+export interface Note {
+  id: string;
+  babyId: string;
+  /** The author's server id; `null` while written on this device and not echoed yet. */
+  authorUserId: string | null;
+  /** The author as the server named her at the last pull (`null` for a note not synced yet). */
+  author: PersonSummary | null;
+  kind: NoteKind;
+  visibility: NoteVisibility;
+  /** 1-4000 characters, line breaks kept. */
+  body: string;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+  /** Soft delete marker. */
+  deletedAt: string | null;
+}
+
 /** A shared catalog product kept on the device (recently used or found), for offline search. */
 export interface CachedProduct {
   id: string;
@@ -240,7 +327,8 @@ export function editTimeOf(event: Pick<BabyEvent, 'clientUpdatedAt' | 'updatedAt
 }
 
 export type MutationKind = 'upsert' | 'delete';
-export type MutationEntityType = 'event' | 'medication' | 'prescription' | 'formula';
+export type MutationEntityType =
+  'event' | 'medication' | 'prescription' | 'formula' | 'appointment' | 'note';
 /** `dead` = permanently rejected by the server; kept for inspection, never blocks the queue. */
 export type MutationStatus = 'pending' | 'dead';
 
@@ -280,7 +368,8 @@ export interface OutboxMutation {
  * `events`: the per-baby delta cursor. `babies`: stored under `BABIES_LISTED_KEY` once a babies
  * fetch succeeded on this device (an empty local list then really means "no baby yet").
  */
-export type SyncEntity = 'events' | 'babies' | 'prescriptions' | 'formulas';
+export type SyncEntity =
+  'events' | 'babies' | 'prescriptions' | 'formulas' | 'appointments' | 'notes';
 
 /** `babyId` of the `babies` marker row (not a baby id). */
 export const BABIES_LISTED_KEY = '*';

@@ -34,6 +34,21 @@
     "body": "A dirty diaper often comes around {{time}}.",
     "bodyNamed": "{{baby}}: a dirty diaper often comes around {{time}}."
   },
+  "appointment_reminder": {
+    "title": "Appointment reminder",
+    "week": "Appointment in a week, on {{date}} at {{time}}.",
+    "weekNamed": "{{baby}}: appointment in a week, on {{date}} at {{time}}.",
+    "tomorrow": "Appointment tomorrow at {{time}}.",
+    "tomorrowNamed": "{{baby}}: appointment tomorrow at {{time}}.",
+    "today": "Appointment today at {{time}}.",
+    "todayNamed": "{{baby}}: appointment today at {{time}}.",
+    "hours": "Appointment in 2 hours, at {{time}}.",
+    "hoursNamed": "{{baby}}: appointment in 2 hours, at {{time}}.",
+    "minutes": "Appointment in 30 minutes, at {{time}}.",
+    "minutesNamed": "{{baby}}: appointment in 30 minutes, at {{time}}.",
+    "on": "Appointment on {{date}} at {{time}}.",
+    "onNamed": "{{baby}}: appointment on {{date}} at {{time}}."
+  },
   "test": {
     "title": "Notifications are on",
     "body": "This is a test from Lotties."

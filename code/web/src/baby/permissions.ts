@@ -32,6 +32,33 @@ export function isOwner(baby: Pick<Baby, 'role'>): boolean {
 }
 
 /**
+ * The baby's Doctor (docs/design/16-doctor-access.md): reads like a Viewer, writes her own notes and
+ * consultation measurements, logs nothing and gets no reminders.
+ */
+export function isDoctor(baby: Pick<Baby, 'role'>): boolean {
+  return baby.role === 'Doctor';
+}
+
+/** Only the Doctor writes notes in v1 (and changes only her own). */
+export function canWriteNotes(baby: Pick<Baby, 'role'>): boolean {
+  return isDoctor(baby);
+}
+
+/** Owners and Parents add measurements, and the Doctor her consultation measurements. */
+export function canRecordMeasurements(baby: Pick<Baby, 'role'>): boolean {
+  return canWrite(baby) || isDoctor(baby);
+}
+
+/** Whether the user may edit or delete the measurement: any for Owners and Parents, her own for the Doctor. */
+export function canChangeMeasurement(
+  baby: Pick<Baby, 'role' | 'userId'>,
+  measurement: { createdBy: string | null },
+): boolean {
+  if (canWrite(baby)) return true;
+  return isDoctor(baby) && !!baby.userId && measurement.createdBy === baby.userId;
+}
+
+/**
  * Whether the event was logged by the current user: not synced yet (`createdBy` null: only this
  * account's own changes live in this device's store) or created by `baby.userId`. Unknown when
  * the user's id is not known yet: then only unsynced events count as theirs.

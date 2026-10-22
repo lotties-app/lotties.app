@@ -34,6 +34,21 @@
     "body": "Uma fralda suja costuma vir por volta de {{time}}.",
     "bodyNamed": "{{baby}}: uma fralda suja costuma vir por volta de {{time}}."
   },
+  "appointment_reminder": {
+    "title": "Lembrete de consulta",
+    "week": "Consulta daqui a uma semana, {{date}}, às {{time}}.",
+    "weekNamed": "{{baby}}: consulta daqui a uma semana, {{date}}, às {{time}}.",
+    "tomorrow": "Consulta amanhã às {{time}}.",
+    "tomorrowNamed": "{{baby}}: consulta amanhã às {{time}}.",
+    "today": "Consulta hoje às {{time}}.",
+    "todayNamed": "{{baby}}: consulta hoje às {{time}}.",
+    "hours": "Consulta daqui a 2 horas, às {{time}}.",
+    "hoursNamed": "{{baby}}: consulta daqui a 2 horas, às {{time}}.",
+    "minutes": "Consulta daqui a 30 minutos, às {{time}}.",
+    "minutesNamed": "{{baby}}: consulta daqui a 30 minutos, às {{time}}.",
+    "on": "Consulta marcada para {{date}}, às {{time}}.",
+    "onNamed": "{{baby}}: consulta marcada para {{date}}, às {{time}}."
+  },
   "test": {
     "title": "Notificações ativadas",
     "body": "Este é um teste do Lotties."

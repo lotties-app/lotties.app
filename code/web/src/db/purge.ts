@@ -14,6 +14,8 @@ export function purgeTables(db: BabyRoutineDb) {
     db.medications,
     db.prescriptions,
     db.formulas,
+    db.appointments,
+    db.notes,
     db.bodyWeights,
     db.outbox,
     db.syncState,
@@ -31,6 +33,8 @@ export async function deleteBabyRows(db: BabyRoutineDb, babyIds: string[]): Prom
   await db.medications.where('babyId').anyOf(babyIds).delete();
   await db.prescriptions.where('babyId').anyOf(babyIds).delete();
   await db.formulas.where('babyId').anyOf(babyIds).delete();
+  await db.appointments.where('babyId').anyOf(babyIds).delete();
+  await db.notes.where('babyId').anyOf(babyIds).delete();
   await db.bodyWeights.where('babyId').anyOf(babyIds).delete();
   await db.outbox.where('babyId').anyOf(babyIds).delete();
   await db.syncState.where('babyId').anyOf(babyIds).delete();

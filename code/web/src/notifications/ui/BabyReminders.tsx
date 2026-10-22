@@ -18,11 +18,12 @@ import {
 } from '../pushApi';
 import { pushKeys } from '../usePush';
 
-/** What a member who never changed anything has (everything off). */
+/** What a member who never changed anything has (everything off but the appointment reminders). */
 function defaultsFor(baby: Baby): BabyPreferencesDto {
+  const canReceive = canLog(baby);
   return {
     babyId: baby.id,
-    canReceive: canLog(baby),
+    canReceive,
     doseDue: false,
     doseLeadMinutes: 0,
     napWindow: false,
@@ -32,6 +33,7 @@ function defaultsFor(baby: Baby): BabyPreferencesDto {
     fussyPattern: false,
     diaperWetHeadsUp: false,
     diaperDirtyHeadsUp: false,
+    appointmentReminders: canReceive,
   };
 }
 
@@ -61,6 +63,7 @@ function BabyRow({
       fussyPattern: prefs.fussyPattern ?? false,
       diaperWetHeadsUp: prefs.diaperWetHeadsUp ?? false,
       diaperDirtyHeadsUp: prefs.diaperDirtyHeadsUp ?? false,
+      appointmentReminders: prefs.appointmentReminders ?? prefs.canReceive,
       ...change,
     };
     const replace = (stored: BabyPreferencesDto) =>
@@ -170,6 +173,14 @@ function BabyRow({
         onChange={(diaperDirtyHeadsUp) => update({ diaperDirtyHeadsUp })}
         label={t('notifications.reminders.diaperDirty')}
         description={t('notifications.reminders.diaperDirtyHelp')}
+      />
+      <SwitchRow
+        icon="calendar"
+        checked={prefs.appointmentReminders ?? prefs.canReceive}
+        disabled={off}
+        onChange={(appointmentReminders) => update({ appointmentReminders })}
+        label={t('notifications.reminders.appointments')}
+        description={t('notifications.reminders.appointmentsHelp')}
       />
       <ErrorNotice message={save.error} />
     </Stack>

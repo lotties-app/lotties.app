@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Alert,
   Button,
   Chip,
   IconButton,
@@ -23,7 +24,7 @@ import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
 
-const ROLES: BabyRole[] = ['Parent', 'Caregiver', 'Viewer', 'Owner'];
+const ROLES: BabyRole[] = ['Parent', 'Caregiver', 'Viewer', 'Owner', 'Doctor'];
 const DEFAULT_DAYS = 7;
 
 const invitesKey = (babyId: string) => ['invites', babyId] as const;
@@ -111,6 +112,9 @@ export function InvitesPanel({ baby }: { baby: Baby }) {
           sx={{ flex: 1 }}
         />
       </Stack>
+      {role === 'Doctor' && (
+        <Alert severity="info">{t('doctor.invite.consent', { name: baby.name })}</Alert>
+      )}
       <Button
         variant="contained"
         disabled={!daysValid || pending || !online}

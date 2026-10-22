@@ -18,6 +18,13 @@ const SettingsPage = lazy(() =>
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
+const AppointmentsPage = lazy(() =>
+  import('./pages/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })),
+);
+const NotesPage = lazy(() => import('./pages/NotesPage').then((m) => ({ default: m.NotesPage })));
+const PatientsPage = lazy(() =>
+  import('./pages/PatientsPage').then((m) => ({ default: m.PatientsPage })),
+);
 
 /**
  * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
@@ -35,6 +42,10 @@ const DevNotificationsPreview = import.meta.env.DEV
   : null;
 const DevInsightsPreview = import.meta.env.DEV ? lazy(() => import('./dev/InsightsPreview')) : null;
 const DevFormulasPreview = import.meta.env.DEV ? lazy(() => import('./dev/FormulasPreview')) : null;
+const DevAppointmentsPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/AppointmentsPreview'))
+  : null;
+const DevDoctorPreview = import.meta.env.DEV ? lazy(() => import('./dev/DoctorPreview')) : null;
 const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
@@ -99,6 +110,26 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevFormulasPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevAppointmentsPreview && (
+        <Route
+          path="/dev/appointments"
+          element={
+            <Suspense fallback={null}>
+              <DevAppointmentsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevDoctorPreview && (
+        <Route
+          path="/dev/doctor"
+          element={
+            <Suspense fallback={null}>
+              <DevDoctorPreview />
             </Suspense>
           }
         />
@@ -185,6 +216,9 @@ export function AppRoutes() {
             <Route path="timeline" element={<Navigate to="/day" replace />} />
             <Route path="growth" element={<Navigate to="/insights" replace />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="appointments" element={<AppointmentsPage />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="patients" element={<PatientsPage />} />
           </Route>
         </Route>
       </Route>

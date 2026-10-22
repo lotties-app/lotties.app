@@ -115,6 +115,8 @@ export function isResolved(data: unknown, facts: ResolutionFacts): boolean {
         payload.babyId,
         payload.at - DIRTY_RESOLVE_LOOK_BACK_MS,
       );
+    // An appointment reminder stays until the person dismisses or opens it (its time is fixed).
+    case 'appointment_reminder':
     case 'test':
       return false;
   }

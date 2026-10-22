@@ -106,13 +106,15 @@
       "Owner": "Owner",
       "Parent": "Parent",
       "Viewer": "Viewer",
-      "Caregiver": "Caregiver"
+      "Caregiver": "Caregiver",
+      "Doctor": "Doctor"
     },
     "roleHints": {
       "Owner": "Full control, including members and invites",
       "Parent": "Can log and edit everything, and manage medications and settings",
       "Caregiver": "Can log events and edit their own entries",
-      "Viewer": "Can only view"
+      "Viewer": "Can only view",
+      "Doctor": "A healthcare professional: sees everything, writes notes and measurements"
     },
     "caregiverNamed": "You are a caregiver for {{name}}: you can log events and edit your own entries. The parents manage everything else."
   },
@@ -680,7 +682,8 @@
       "language": "Language",
       "sync": "Sync",
       "notifications": "Notifications",
-      "formulas": "Formulas"
+      "formulas": "Formulas",
+      "appointments": "Appointments"
     },
     "appearance": {
       "theme": "Theme",
@@ -856,7 +859,9 @@
         "event": "event",
         "medication": "medication",
         "prescription": "prescription",
-        "formula": "formula"
+        "formula": "formula",
+        "appointment": "appointment",
+        "note": "note"
       },
       "fix": "Fix",
       "fixNamed": "Fix: {{label}}",
@@ -1078,7 +1083,17 @@
     "push_endpoint_not_allowed": "This browser's notification service is not accepted by the server.",
     "notification_action_not_found": "This reminder is no longer available.",
     "snooze_limit_reached": "This reminder was already snoozed 3 times.",
-    "event_not_owned": "You can change only the entries you added."
+    "event_not_owned": "You can change only the entries you added.",
+    "appointment_not_started": "Only a visit that has started can be marked as done.",
+    "appointment_baby_mismatch": "This appointment belongs to another baby.",
+    "appointment_not_found": "This appointment no longer exists.",
+    "professional_profile_required": "This invite is for a doctor. Declare your professional profile first.",
+    "professional_profile_not_found": "You have not declared a professional profile yet.",
+    "note_not_found": "This note no longer exists.",
+    "note_not_owned": "Only the doctor who wrote a note can change it.",
+    "note_baby_mismatch": "This note belongs to another baby.",
+    "note_already_shared": "This note is already shared with the parents and cannot be made private. Delete it instead.",
+    "measurement_not_owned": "You can change only the measurements you recorded."
   },
   "pwa": {
     "install": "Install app",
@@ -1875,6 +1890,102 @@
     "archivedList": "Archived formulas",
     "archivedNote": "Archived formulas stay in the history of the bottles that named them."
   },
+  "appointments": {
+    "title": "Appointments",
+    "add": "New appointment",
+    "open": "Appointments calendar",
+    "createBabyFirst": "Add a baby first to keep their appointments.",
+    "viewOnly": "You can see the appointments but not change them.",
+    "caregiverNotice": "You can see the appointments. Only parents add or change them.",
+    "viewerNotice": "You can see the appointments but not change them.",
+    "types": {
+      "consultation": "Consultation",
+      "vaccine": "Vaccine",
+      "exam": "Exam",
+      "other": "Other"
+    },
+    "status": {
+      "done": "Done",
+      "cancelled": "Cancelled",
+      "ask": "Did it happen?"
+    },
+    "reminders": {
+      "10080": "1 week",
+      "1440": "1 day",
+      "120": "2 hours",
+      "30": "30 min"
+    },
+    "calendar": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "today": "Today",
+      "todayMark": "today",
+      "count_one": "{{count}} appointment",
+      "count_other": "{{count}} appointments"
+    },
+    "agenda": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "showAll": "Show all appointments",
+      "noneOnDay": "No appointments on {{date}}.",
+      "noneUpcoming": "Nothing coming up."
+    },
+    "empty": {
+      "title": "No appointments yet",
+      "body": "Keep doctor visits, vaccines and exams here, with a reminder before each one."
+    },
+    "next": {
+      "label": "Next appointment"
+    },
+    "day": {
+      "label": "Appointments of the day"
+    },
+    "sheet": {
+      "newTitle": "New appointment",
+      "editTitle": "Edit appointment",
+      "title": "Title",
+      "titlePlaceholder": "e.g. Pediatrician, 2-month vaccines",
+      "titleRequired": "Enter a title of up to 80 characters.",
+      "type": "Type",
+      "date": "Date",
+      "time": "Time",
+      "whenRequired": "Choose the date and the time.",
+      "duration": "Duration",
+      "minutesUnit": "min",
+      "durationChoices": "Usual lengths",
+      "durationChips": {
+        "15": "15 minutes",
+        "30": "30 minutes",
+        "60": "1 hour"
+      },
+      "location": "Place",
+      "doctor": "Doctor",
+      "notes": "Notes",
+      "outcome": "How it went",
+      "reminders": "Remind me",
+      "remindersHelp": "Sent before the start to the devices with notifications on.",
+      "notStarted": "A visit marked as done can't start in the future.",
+      "saveFailed": "Couldn't save the appointment. Try again."
+    },
+    "detail": {
+      "when": "When",
+      "location": "Place",
+      "doctor": "Doctor",
+      "reminders": "Reminders",
+      "remindersBefore": "{{list}} before",
+      "noReminders": "No reminders",
+      "notes": "Notes",
+      "outcome": "How it went",
+      "addToCalendar": "Add to calendar",
+      "edit": "Edit",
+      "cancel": "Cancel appointment",
+      "restore": "Restore appointment",
+      "markDone": "Mark as done",
+      "ask": "Did it happen? Mark it as done and note how it went.",
+      "addMeasurements": "Add measurements",
+      "cancelledNotice": "{{title}} cancelled"
+    }
+  },
   "timers": {
     "paused": "Paused",
     "pausedFor": "paused {{duration}}",
@@ -1984,6 +2095,8 @@
       "diaperWetHelp": "When a wet diaper is usually due, a note 10 min before.",
       "diaperDirty": "Dirty diaper heads-up",
       "diaperDirtyHelp": "When a dirty diaper usually comes, after a feed or from the usual gaps, a note shortly before.",
+      "appointments": "Appointment reminders",
+      "appointmentsHelp": "Before each appointment, at the times chosen for it.",
       "lead": "Remind me",
       "doseLeads": {
         "0": "At the scheduled time",
@@ -2042,5 +2155,101 @@
     "lockedTimer": "Started by {{name}}. Only they or a parent can change it.",
     "lockedEntry": "Added by {{name}}. Only they or a parent can change it.",
     "controlOnly": "Started by {{name}}. You can pause or stop it; only they or a parent can change the rest."
+  },
+  "doctor": {
+    "name": "Dr. {{name}}",
+    "nameNoAccess": "Dr. {{name}} (no longer has access)",
+    "selfDeclared": "Self-declared doctor",
+    "verifiedDoctor": "Doctor",
+    "settingsNotice": "You are {{name}}'s doctor: you can read everything logged, write notes and add consultation measurements. The parents manage everything else.",
+    "profile": {
+      "sectionTitle": "I'm a healthcare professional",
+      "intro": "Pediatricians and other doctors declare it here. A family can then invite you to their baby with the Doctor role.",
+      "declared": "Your professional profile",
+      "selfDeclaredNotice": "Self-declared: Lotties does not check registrations. Families see “Self-declared doctor” next to your name.",
+      "displayName": "Name shown to families",
+      "displayNameHelp": "Without a title: families see “Dr.” before it.",
+      "displayNameRequired": "Enter the name families will see.",
+      "specialty": "Specialty",
+      "specialtyPlaceholder": "e.g. Pediatrics",
+      "registrationNumber": "Registration number",
+      "registrationNumberHelp": "For example your CRM. Families can see it.",
+      "loadFailed": "Could not load your professional profile. Check your connection."
+    },
+    "invite": {
+      "consent": "The doctor who accepts will see everything logged for {{name}} and can add notes and measurements. You can remove access at any time."
+    },
+    "inviteAccept": {
+      "title": "Join as the baby's doctor",
+      "body": "This invite is for a doctor. First tell the family who you are: your profile is self-declared and they see it next to your notes.",
+      "saveAndJoin": "Save and join"
+    },
+    "members": {
+      "removeBody": "They lose access to {{baby}} immediately. The notes they shared stay visible to the family."
+    },
+    "notes": {
+      "title": "Notes",
+      "add": "Write a note",
+      "newTitle": "New note",
+      "editTitle": "Edit note",
+      "kind": "Kind",
+      "kinds": {
+        "note": "Note",
+        "recommendation": "Recommendation"
+      },
+      "visibility": "Who sees it",
+      "visibilities": {
+        "shared": "Shared with parents",
+        "private": "Only me"
+      },
+      "visibilityChip": {
+        "shared": "Shared with parents",
+        "private": "Private"
+      },
+      "visibilityHelp": "Shared notes are seen by everyone who follows the baby. Private notes are only for you.",
+      "staysShared": "This note is already shared with the parents. To take it back, delete it.",
+      "body": "Note",
+      "bodyRequired": "Write the note.",
+      "saveFailed": "Could not save the note. Try again.",
+      "byYou": "You",
+      "unknownAuthor": "Unknown author",
+      "cardLabel": "Note of {{date}}",
+      "edit": "Edit note of {{date}}",
+      "delete": "Delete note of {{date}}",
+      "deleteTitle": "Delete this note?",
+      "deleteBody": "It is removed from your notes.",
+      "deleteSharedBody": "The parents will no longer see it.",
+      "deleteConfirm": "Delete note",
+      "emptyTitle": "No notes yet",
+      "emptyDoctor": "Write what the family should remember after a visit for {{name}}. Shared notes appear for the parents.",
+      "emptyFamily": "Notes from {{name}}'s doctor will appear here.",
+      "familyNotice": "Notes from {{name}}'s doctor. You can read them; only the doctor who wrote a note can change it.",
+      "timeline": "Notes, newest first",
+      "createBabyFirst": "Create a baby first to see notes."
+    },
+    "patients": {
+      "title": "Patients",
+      "subtitle": "Babies whose families invited you as their doctor.",
+      "list": "Patients",
+      "none": "No patients yet. A family adds you with a doctor invite link.",
+      "open": "Open {{name}}",
+      "notesOf": "Notes about {{name}}",
+      "lastEntry": "Last entry {{when}}",
+      "noEntries": "Nothing logged yet",
+      "sharedNotes_one": "{{count}} shared note by you",
+      "sharedNotes_other": "{{count}} shared notes by you"
+    },
+    "growth": {
+      "doctorNotice": "As {{name}}'s doctor you can add consultation measurements and change your own.",
+      "recordedBy": "Recorded by {{name}} (self-declared doctor)",
+      "recordedByDoctor": "Recorded by the doctor"
+    },
+    "accessLog": {
+      "title": "Access log",
+      "explainer": "When a doctor's app loads {{name}}'s data it is recorded here, at most once an hour. The latest 50 are shown.",
+      "none": "No doctor has opened {{name}}'s data yet.",
+      "entry": "{{role}} · {{when}}",
+      "loadFailed": "Could not load the access log. Check your connection."
+    }
   }
 }

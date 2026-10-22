@@ -192,6 +192,7 @@ describe('NotificationsSection reminders and settings', () => {
           fussyPattern: false,
           diaperWetHeadsUp: false,
           diaperDirtyHeadsUp: false,
+          appointmentReminders: true,
         },
       }),
     );
@@ -207,6 +208,7 @@ describe('NotificationsSection reminders and settings', () => {
         fussyPattern: false,
         diaperWetHeadsUp: false,
         diaperDirtyHeadsUp: false,
+        appointmentReminders: true,
       }),
     );
   });
@@ -238,6 +240,7 @@ describe('NotificationsSection reminders and settings', () => {
           fussyPattern: false,
           diaperWetHeadsUp: false,
           diaperDirtyHeadsUp: false,
+          appointmentReminders: true,
         },
       }),
     );
@@ -285,10 +288,43 @@ describe('NotificationsSection reminders and settings', () => {
           bellyPainPattern: false,
           diaperWetHeadsUp: false,
           diaperDirtyHeadsUp: false,
+          appointmentReminders: true,
           ...kinds,
         },
       }),
     );
+  });
+
+  it('shows the appointment reminders on by default and turns them off per baby', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Appointment reminders/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    expect(
+      within(lia).getByText('Before each appointment, at the times chosen for it.'),
+    ).toBeTruthy();
+    const theo = await screen.findByRole('region', { name: 'Theo' });
+    expect(
+      within(theo)
+        .getByRole('switch', { name: /Appointment reminders/ })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toMatchObject({ appointmentReminders: false }),
+    );
+  });
+
+  it('shows the appointment reminders switch in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Lembretes de consultas/ })).toBeTruthy();
+    expect(
+      within(lia).getByText('Antes de cada consulta, nos horários escolhidos para ela.'),
+    ).toBeTruthy();
   });
 
   it('shows the diaper switches in Portuguese, off by default', async () => {

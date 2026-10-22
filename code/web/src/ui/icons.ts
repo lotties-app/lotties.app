@@ -91,6 +91,14 @@ import IconCapsule from '@tabler/icons-react/dist/esm/icons/IconCapsule.mjs';
 import IconLungs from '@tabler/icons-react/dist/esm/icons/IconLungs.mjs';
 import IconMedicalCross from '@tabler/icons-react/dist/esm/icons/IconMedicalCross.mjs';
 import IconMassage from '@tabler/icons-react/dist/esm/icons/IconMassage.mjs';
+import IconStethoscope from '@tabler/icons-react/dist/esm/icons/IconStethoscope.mjs';
+import IconMicroscope from '@tabler/icons-react/dist/esm/icons/IconMicroscope.mjs';
+import IconMapPin from '@tabler/icons-react/dist/esm/icons/IconMapPin.mjs';
+import IconCalendarPlus from '@tabler/icons-react/dist/esm/icons/IconCalendarPlus.mjs';
+import IconCalendarCheck from '@tabler/icons-react/dist/esm/icons/IconCalendarCheck.mjs';
+import IconCalendarX from '@tabler/icons-react/dist/esm/icons/IconCalendarX.mjs';
+import IconRuler2 from '@tabler/icons-react/dist/esm/icons/IconRuler2.mjs';
+import IconLock from '@tabler/icons-react/dist/esm/icons/IconLock.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -196,6 +204,14 @@ export const ICON_COMPONENTS = {
   lungs: IconLungs,
   'medical-cross': IconMedicalCross,
   massage: IconMassage,
+  stethoscope: IconStethoscope,
+  microscope: IconMicroscope,
+  'map-pin': IconMapPin,
+  'calendar-plus': IconCalendarPlus,
+  'calendar-check': IconCalendarCheck,
+  'calendar-x': IconCalendarX,
+  ruler: IconRuler2,
+  lock: IconLock,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

@@ -5,10 +5,13 @@ import {
   apiPaths,
   fromEventDto,
   fromMedicationDto,
+  fromNoteDto,
   fromPrescriptionDto,
   isEventDtoFor,
+  isNoteDtoFor,
   type EventDto,
   type MedicationDto,
+  type NoteDto,
   type PrescriptionDto,
 } from './contract';
 import { syncRequest, type TransportContext } from './syncContext';
@@ -17,7 +20,8 @@ import { syncRequest, type TransportContext } from './syncContext';
 export type ServerCopy =
   | { entityType: 'event'; dto: EventDto | null }
   | { entityType: 'medication'; dto: MedicationDto | null }
-  | { entityType: 'prescription'; dto: PrescriptionDto | null };
+  | { entityType: 'prescription'; dto: PrescriptionDto | null }
+  | { entityType: 'note'; dto: NoteDto | null };
 
 async function fetchEvent(ctx: TransportContext, babyId: string, id: string) {
   let body: unknown;
@@ -29,6 +33,19 @@ async function fetchEvent(ctx: TransportContext, babyId: string, id: string) {
   }
   // Never read an unexpected body as "the server has none": that would delete the local row.
   if (!isEventDtoFor(body, id)) throw new Error(`Unexpected response for event ${id}.`);
+  return body;
+}
+
+/** A note the server does not show this user (unknown, or private to someone else) is 404. */
+async function fetchNote(ctx: TransportContext, babyId: string, id: string) {
+  let body: unknown;
+  try {
+    body = await syncRequest<unknown>(ctx, apiPaths.note(babyId, id));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+  if (!isNoteDtoFor(body, id)) throw new Error(`Unexpected response for note ${id}.`);
   return body;
 }
 
@@ -58,6 +75,8 @@ export async function fetchServerCopy(
       return { entityType: 'event', dto: await fetchEvent(ctx, babyId, entityId) };
     case 'prescription':
       return { entityType: 'prescription', dto: await fetchPrescription(ctx, babyId, entityId) };
+    case 'note':
+      return { entityType: 'note', dto: await fetchNote(ctx, babyId, entityId) };
     default:
       return { entityType: 'medication', dto: await fetchMedication(ctx, babyId, entityId) };
   }
@@ -65,7 +84,7 @@ export async function fetchServerCopy(
 
 /** Tables a transaction must include to use `applyServerCopy`. */
 export function serverCopyTables(db: BabyRoutineDb) {
-  return [db.outbox, db.events, db.medications, db.prescriptions];
+  return [db.outbox, db.events, db.medications, db.prescriptions, db.notes];
 }
 
 /**
@@ -92,6 +111,11 @@ export async function applyServerCopy(
   if (copy.entityType === 'prescription') {
     if (copy.dto) await db.prescriptions.put(fromPrescriptionDto(copy.dto));
     else await db.prescriptions.delete(mutation.entityId);
+    return;
+  }
+  if (copy.entityType === 'note') {
+    if (copy.dto) await db.notes.put(fromNoteDto(copy.dto));
+    else await db.notes.delete(mutation.entityId);
     return;
   }
   if (copy.entityType === 'medication') {
