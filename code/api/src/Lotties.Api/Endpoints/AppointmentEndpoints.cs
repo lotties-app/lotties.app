@@ -6,15 +6,16 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Lotties.Api.Endpoints;
 
 /// <summary>
-/// The appointments of one baby (offline sync: idempotent upsert by client GUID, delta pull, calendar range). Reads need
-/// <see cref="BabyPolicies.Read"/> (from the baby group: every member, Caregivers and Viewers read only); writes,
-/// cancelling and marking done included, need <see cref="BabyPolicies.Write"/>. There is no delete: cancelling is the
-/// soft delete.
+/// The appointments of one baby (offline sync: idempotent upsert by client GUID, delta pull, calendar range). Every
+/// appointment route sits in a group that requires <see cref="BabyPolicies.ReadFamily"/> (family members only: a Doctor
+/// gets 403 on all of them, routes added later included, since appointments name other doctors, clinics and private
+/// reasons); Caregivers and Viewers read only; writes, cancelling and marking done included, need
+/// <see cref="BabyPolicies.Write"/>. There is no delete: cancelling is the soft delete.
 /// </summary>
 internal static class AppointmentEndpoints
 {
     private const string AppointmentsPath = "/appointments";
-    private const string AppointmentPath = AppointmentsPath + "/{appointmentId:guid}";
+    private const string AppointmentPath = "/{appointmentId:guid}";
 
     /// <summary>
     /// Maps, under the baby-scoped group: <c>GET /appointments?since=&amp;from=&amp;to=</c> (cancelled and done
@@ -24,13 +25,14 @@ internal static class AppointmentEndpoints
     public static RouteGroupBuilder MapAppointmentEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(AppointmentsPath, ListAsync)
+        var appointments = baby.MapGroup(AppointmentsPath).RequireAuthorization(BabyPolicies.ReadFamily);
+        appointments.MapGet(string.Empty, ListAsync)
             .WithName("ListAppointments")
             .ProducesProblem(StatusCodes.Status400BadRequest);
-        baby.MapGet(AppointmentPath, GetAsync)
+        appointments.MapGet(AppointmentPath, GetAsync)
             .WithName("GetAppointment")
             .ProducesProblem(StatusCodes.Status404NotFound);
-        baby.MapPut(AppointmentPath, UpsertAsync)
+        appointments.MapPut(AppointmentPath, UpsertAsync)
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("UpsertAppointment")
             .ProducesProblem(StatusCodes.Status400BadRequest)

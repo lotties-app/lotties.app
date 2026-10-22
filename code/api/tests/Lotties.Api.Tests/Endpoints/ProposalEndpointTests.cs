@@ -393,7 +393,7 @@ public sealed class ProposalEndpointTests(ApiFactory factory) : IClassFixture<Ap
             context.AccessLog.Add(AccessLogEntry.View(baby.BabyId, doctorId, BabyRole.Doctor, DateTimeOffset.UtcNow.AddHours(-2)));
             return Task.CompletedTask;
         });
-        var paths = new[] { "events", "prescriptions", "notes", "medications", "measurements", "formulas", "appointments", "prescription-proposals" };
+        var paths = new[] { "events", "prescriptions", "notes", "medications", "measurements", "formulas", "vaccinations", "prescription-proposals" };
 
         var responses = await Task.WhenAll(paths.Select(path => factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor)).GetAsync($"{BabyPath(baby.BabyId)}/{path}")));
         await As(baby, BabyRole.Doctor).GetAsync($"{BabyPath(baby.BabyId)}/events");

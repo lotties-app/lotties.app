@@ -40,6 +40,18 @@ public sealed class DoctorRoleTests
     }
 
     [Theory]
+    [InlineData(BabyRole.Owner, true)]
+    [InlineData(BabyRole.Parent, true)]
+    [InlineData(BabyRole.Caregiver, true)]
+    [InlineData(BabyRole.Viewer, true)]
+    [InlineData(BabyRole.Doctor, false)]
+    [InlineData((BabyRole)99, false)]
+    public void CanReadFamilyRecords_EveryFamilyRoleButNeverTheDoctor(BabyRole role, bool expected)
+    {
+        Assert.Equal(expected, role.CanReadFamilyRecords());
+    }
+
+    [Theory]
     [InlineData(BabyRole.Owner, true, true)]
     [InlineData(BabyRole.Parent, true, true)]
     [InlineData(BabyRole.Caregiver, false, false)]

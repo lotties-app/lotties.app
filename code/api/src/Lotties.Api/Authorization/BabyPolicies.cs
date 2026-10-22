@@ -14,6 +14,13 @@ public static class BabyPolicies
     public const string Read = "BabyRead";
 
     /// <summary>
+    /// Family members only (Owner, Parent, Caregiver, Viewer; never the Doctor): the family's non-clinical records, the
+    /// appointments (every route) and the members list. A Doctor gets 403 (docs/design/16-doctor-access.md, "Doctor read
+    /// audit").
+    /// </summary>
+    public const string ReadFamily = "BabyReadFamily";
+
+    /// <summary>
     /// Members who can log events (Caregiver, Parent, Owner): event writes and the member's own reminder preferences.
     /// A Caregiver changes only the events they logged, checked by the event use case (403 <c>event_not_owned</c>).
     /// </summary>

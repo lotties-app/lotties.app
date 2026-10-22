@@ -24,6 +24,13 @@ public static class BabyRoleRules
     /// <summary>Whether the role is the healthcare professional's (<see cref="BabyRole.Doctor"/>).</summary>
     public static bool IsDoctor(this BabyRole role) => role is BabyRole.Doctor;
 
+    /// <summary>
+    /// Whether the role may read the family's own records that are not clinical data: the appointments (they name other
+    /// doctors, clinics and private reasons) and the members list. Every family role (Owner, Parent, Caregiver, Viewer);
+    /// never the Doctor (docs/design/16-doctor-access.md, "Doctor read audit").
+    /// </summary>
+    public static bool CanReadFamilyRecords(this BabyRole role) => Enum.IsDefined(role) && !role.IsDoctor();
+
     /// <summary>Whether the role may write notes (only her own) on the baby: the Doctor only in v1.</summary>
     public static bool CanAuthorNotes(this BabyRole role) => role.IsDoctor();
 

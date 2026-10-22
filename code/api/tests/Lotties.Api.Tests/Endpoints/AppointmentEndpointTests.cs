@@ -268,4 +268,71 @@ public sealed class AppointmentEndpointTests(ApiFactory factory) : IClassFixture
         Assert.Equal(2, (await ListAsync(As(baby, BabyRole.Caregiver), baby.BabyId)).Length);
         Assert.Equal(HttpStatusCode.OK, (await As(baby, BabyRole.Viewer).GetAsync(AppointmentPath(baby.BabyId, id))).StatusCode);
     }
+
+    /// <summary>
+    /// A Doctor never reads the family's appointments (they name other doctors, clinics and private reasons): every
+    /// appointment route is 403 for her, the delta pull and the calendar range included, and the body carries nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("GET", "")]
+    [InlineData("GET", "?since=2020-01-01T00:00:00Z")]
+    [InlineData("GET", "?from=2026-01-01T00:00:00Z&to=2026-03-01T00:00:00Z")]
+    [InlineData("GET", "/{existing}")]
+    [InlineData("GET", "/{unknown}")]
+    [InlineData("PUT", "/{existing}")]
+    [InlineData("PUT", "/{unknown}")]
+    public async Task Doctor_EveryAppointmentRoute_Returns403WithoutTheAppointment(string method, string suffix)
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Doctor);
+        var existing = Guid.NewGuid();
+        await As(baby, BabyRole.Owner).PutAsJsonAsync(AppointmentPath(baby.BabyId, existing), Body(title: "Second opinion"));
+        var path = $"{BabyPath(baby.BabyId)}/appointments{suffix.Replace("{existing}", existing.ToString(), StringComparison.Ordinal).Replace("{unknown}", Guid.NewGuid().ToString(), StringComparison.Ordinal)}";
+        var request = new HttpRequestMessage(new HttpMethod(method), path);
+        if (method == "PUT")
+        {
+            request.Content = JsonContent.Create(Body(status: "cancelled"));
+        }
+
+        var response = await As(baby, BabyRole.Doctor).SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Second opinion", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(existing.ToString(), text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Doctor_RefusedPut_LeavesTheAppointmentUnchanged()
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Doctor);
+        var id = Guid.NewGuid();
+        await As(baby, BabyRole.Owner).PutAsJsonAsync(AppointmentPath(baby.BabyId, id), Body());
+
+        await As(baby, BabyRole.Doctor).PutAsJsonAsync(AppointmentPath(baby.BabyId, id), Body(status: "cancelled"));
+
+        var stored = await JsonAsync(await As(baby, BabyRole.Owner).GetAsync(AppointmentPath(baby.BabyId, id)));
+        Assert.Equal("upcoming", stored.GetProperty("status").GetString());
+    }
+
+    /// <summary>Every family role still reads the list, the delta, the range and one by id with a Doctor on the baby.</summary>
+    [Theory]
+    [InlineData(BabyRole.Owner)]
+    [InlineData(BabyRole.Parent)]
+    [InlineData(BabyRole.Caregiver)]
+    [InlineData(BabyRole.Viewer)]
+    public async Task FamilyRoles_WithADoctorOnTheBaby_StillReadEveryAppointmentRoute(BabyRole role)
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer, BabyRole.Doctor);
+        var id = Guid.NewGuid();
+        await As(baby, BabyRole.Owner).PutAsJsonAsync(AppointmentPath(baby.BabyId, id), Body());
+        var client = As(baby, role);
+
+        var all = await ListAsync(client, baby.BabyId);
+        var delta = await ListAsync(client, baby.BabyId, "?since=2020-01-01T00:00:00Z");
+        var range = await ListAsync(client, baby.BabyId, "?from=2026-01-01T00:00:00Z&to=2026-03-01T00:00:00Z");
+        var one = await client.GetAsync(AppointmentPath(baby.BabyId, id));
+
+        Assert.All(new[] { all, delta, range }, list => Assert.Equal([id], list.Select(item => item.GetProperty("id").GetGuid())));
+        Assert.Equal(HttpStatusCode.OK, one.StatusCode);
+    }
 }

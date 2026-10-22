@@ -13,9 +13,11 @@ internal static class AuthorizationServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddScoped<IAuthorizationHandler, BabyAccessHandler>();
+        services.AddScoped<IAuthorizationHandler, BabyFamilyHandler>();
         services.AddAuthorizationBuilder()
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
             .AddPolicy(BabyPolicies.Read, policy => RequireBabyRole(policy, BabyRole.Viewer))
+            .AddPolicy(BabyPolicies.ReadFamily, policy => policy.RequireAuthenticatedUser().AddRequirements(new BabyFamilyRequirement()))
             .AddPolicy(BabyPolicies.Log, policy => RequireBabyRole(policy, BabyRole.Caregiver))
             .AddPolicy(BabyPolicies.Write, policy => RequireBabyRole(policy, BabyRole.Parent))
             .AddPolicy(BabyPolicies.ManageMembers, policy => RequireBabyRole(policy, BabyRole.Owner))

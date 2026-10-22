@@ -199,6 +199,16 @@ public sealed class NotificationPlannerAppointmentTests
     }
 
     [Fact]
+    public void Plan_DoctorWithTheSwitchOn_NeverGetsAnAppointmentReminder()
+    {
+        var doctor = Recipient(role: BabyRole.Doctor, doseDue: false, appointmentReminders: true);
+
+        var plan = PlanAt(At(15, 30, day: 3), Visit(), doctor);
+
+        Assert.Empty(plan.Notifications);
+    }
+
+    [Fact]
     public void Plan_NamesOn_CarryTheBabyNameOnly()
     {
         var names = new NotificationNameSource("Lia", new Dictionary<Guid, string>());

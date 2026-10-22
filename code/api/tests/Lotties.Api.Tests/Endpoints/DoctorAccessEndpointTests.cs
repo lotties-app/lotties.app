@@ -313,4 +313,29 @@ public sealed class DoctorAccessEndpointTests(ApiFactory factory) : IClassFixtur
 
         Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden), (invite.StatusCode, edit.StatusCode, log.StatusCode));
     }
+
+    /// <summary>
+    /// The family's own records are not clinical data (docs/design/16-doctor-access.md, "Doctor read audit"): a Doctor gets
+    /// 403 on the members list, the invites and the access log, and a refused read writes no access log entry; she can
+    /// still leave. The family roles still list the members.
+    /// </summary>
+    [Fact]
+    public async Task Doctor_CannotReadMembersInvitesOrAccessLog_ButCanLeave()
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer, BabyRole.Doctor);
+        var doctor = As(baby, BabyRole.Doctor);
+
+        var members = await doctor.GetAsync($"{BabyPath(baby.BabyId)}/members");
+        var invites = await doctor.GetAsync($"{BabyPath(baby.BabyId)}/invites");
+        var accessLog = await doctor.GetAsync($"{BabyPath(baby.BabyId)}/access-log");
+        var entries = await AccessEntriesAsync(baby.BabyId);
+        var familyLists = await Task.WhenAll(new[] { BabyRole.Owner, BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer }
+            .Select(role => As(baby, role).GetAsync($"{BabyPath(baby.BabyId)}/members")));
+        var left = await doctor.DeleteAsync($"{BabyPath(baby.BabyId)}/members/me");
+
+        Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden), (members.StatusCode, invites.StatusCode, accessLog.StatusCode));
+        Assert.Equal(0, entries);
+        Assert.All(familyLists, response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+        Assert.Equal(HttpStatusCode.NoContent, left.StatusCode);
+    }
 }

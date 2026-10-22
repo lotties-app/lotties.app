@@ -55,6 +55,7 @@ internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, ILogger<B
         context.Fail(new AuthorizationFailureReason(this, $"Baby access denied: {decision}."));
     }
 
-    private static Guid? ReadBabyId(HttpContext httpContext) =>
+    /// <summary>The <c>{babyId}</c> route value, or <c>null</c> when the route has none (or it is not a GUID).</summary>
+    internal static Guid? ReadBabyId(HttpContext httpContext) =>
         Guid.TryParse(httpContext.GetRouteValue(BabyRoutes.BabyIdParameter)?.ToString(), out var babyId) ? babyId : null;
 }
