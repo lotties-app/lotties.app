@@ -1,5 +1,6 @@
-import type { BabyEvent, Prescription } from '../db/models';
+import type { BabyEvent, DayPart, Prescription } from '../db/models';
 import { getOwn } from '../util/ownProperty';
+import { dayPartOf, dayPartWindow, instantInPart, nextDay, type DayPartWindow } from './dayParts';
 
 /*
  * Offline mirror of the API's pure `MedicationStatusCalculator`
@@ -12,6 +13,10 @@ import { getOwn } from '../util/ownProperty';
  *   when the oldest counted dose leaves the window.
  * - Times of day: slots of local yesterday/today/tomorrow inside the course; each slot takes the
  *   nearest unused dose within 90 minutes.
+ * - Part of the day (dayParts.ts): per chosen part of the routine day, `given` when an own dose lies
+ *   inside the window, else `due` while it is open, `upcoming` before and `missed` after
+ *   (informative only); the course dates are compared with the routine day; the guard asks before
+ *   a second dose in a part or a dose outside every chosen part.
  * It never blocks anything: the parent decides (a dose logged early is recorded as `override`).
  * The UTC offset is fixed for the call (a DST change inside the window is not modelled).
  */
@@ -54,6 +59,38 @@ export interface SuggestedDose {
   roundingStep: number | null;
 }
 
+export type DayPartState = 'upcoming' | 'due' | 'given' | 'missed';
+export type DayPartGuard = 'none' | 'alreadyGiven' | 'outsideParts';
+
+/** One chosen part on one routine day. */
+export interface DayPartSlot {
+  part: DayPart;
+  /** The routine day `yyyy-mm-dd`. */
+  day: string;
+  start: Date;
+  end: Date;
+  state: DayPartState;
+  /** The first dose logged inside the window. */
+  givenAt: Date | null;
+  doseCount: number;
+  /** When the prescription has a reminder for this part. */
+  reminderAt: Date | null;
+}
+
+/** The part-of-the-day side of a status (API `dayPartsStatus`). */
+export interface DayPartsStatus {
+  /** The current routine day. */
+  day: string;
+  /** Today's chosen parts (empty outside the course; parts that ended before the prescription existed without a dose are left out). */
+  parts: DayPartSlot[];
+  /** The chosen part whose window contains now. */
+  current: DayPartSlot | null;
+  /** The earliest chosen part due now or starting later (today's or the next routine day's). */
+  next: DayPartSlot | null;
+  givenCount: number;
+  guard: DayPartGuard;
+}
+
 export interface MedicationStatus {
   prescription: Prescription;
   courseStarted: boolean;
@@ -69,6 +106,8 @@ export interface MedicationStatus {
   limitReached: boolean;
   suggestedDose: SuggestedDose | null;
   groupMemberIds: string[];
+  /** Only for part-of-the-day prescriptions. */
+  dayParts: DayPartsStatus | null;
 }
 
 export interface MedicationStatusInput {
@@ -296,6 +335,92 @@ function scheduleOf(
   return NO_SCHEDULE;
 }
 
+/* ---------- parts of the day ---------- */
+
+function slotOf(
+  window: DayPartWindow,
+  p: Prescription,
+  ownDoses: readonly MedicationDose[],
+  now: number,
+  offset: number,
+): DayPartSlot {
+  const inside = ownDoses
+    .map((d) => d.givenAt)
+    .filter((at) => at >= window.start && at < window.end)
+    .sort((a, b) => a - b);
+  const reminder = p.dayPartReminders?.find((r) => r.part === window.part);
+  const state: DayPartState =
+    inside.length > 0
+      ? 'given'
+      : window.end <= now
+        ? 'missed'
+        : window.start > now
+          ? 'upcoming'
+          : 'due';
+  return {
+    part: window.part,
+    day: window.day,
+    start: new Date(window.start),
+    end: new Date(window.end),
+    state,
+    givenAt: inside.length > 0 ? new Date(inside[0]) : null,
+    doseCount: inside.length,
+    reminderAt: reminder
+      ? new Date(instantInPart(window.day, window.part, reminder.time, offset))
+      : null,
+  };
+}
+
+function slotsOn(
+  day: string,
+  p: Prescription,
+  parts: readonly DayPart[],
+  ownDoses: readonly MedicationDose[],
+  now: number,
+  offset: number,
+): DayPartSlot[] {
+  if (!coversDay(p, day)) return [];
+  return parts.map((part) => slotOf(dayPartWindow(day, part, offset), p, ownDoses, now, offset));
+}
+
+/** The part-of-the-day status (see the API's `DayPartSlots`). */
+export function evaluateDayParts(
+  p: Prescription,
+  parts: readonly DayPart[],
+  ownDoses: readonly MedicationDose[],
+  now: number,
+  offset: number,
+): DayPartsStatus {
+  const day = dayPartOf(now, offset).day;
+  const today = slotsOn(day, p, parts, ownDoses, now, offset);
+  const current = today.find((slot) => slot.start.getTime() <= now && now < slot.end.getTime());
+  const createdAt = Date.parse(p.createdAt);
+  const shown = today.filter((slot) => slot.state !== 'missed' || slot.end.getTime() > createdAt);
+  const next = [...today, ...slotsOn(nextDay(day), p, parts, ownDoses, now, offset)].find(
+    (slot) => slot.state === 'due' || slot.state === 'upcoming',
+  );
+  const guard: DayPartGuard = !coversDay(p, day)
+    ? 'none'
+    : !current
+      ? 'outsideParts'
+      : current.state === 'given'
+        ? 'alreadyGiven'
+        : 'none';
+  return {
+    day,
+    parts: shown,
+    current: current ?? null,
+    next: next ?? null,
+    givenCount: shown.filter((slot) => slot.state === 'given').length,
+    guard,
+  };
+}
+
+/** The day the course dates are compared with: the routine day for part-of-the-day prescriptions. */
+function courseDayOf(p: Prescription, now: Date, offset: number, today: string): string {
+  return p.dayParts ? dayPartOf(now, offset).day : today;
+}
+
 function statusOf(
   p: Prescription,
   active: readonly Prescription[],
@@ -326,10 +451,12 @@ function statusOf(
     clock !== null && interval !== null ? clock + interval : null,
     limitUntil,
   );
-  const inCourse = coversDay(p, today);
+  const courseDay = courseDayOf(p, input.now, input.utcOffsetMinutes, today);
+  const inCourse = coversDay(p, courseDay);
+  const ownDoses = ownDosesOf(p, input.doses);
   const schedule = scheduleOf(
     p,
-    ownDosesOf(p, input.doses),
+    ownDoses,
     lastDoseAt,
     now,
     today,
@@ -339,8 +466,8 @@ function statusOf(
   const toDate = (ms: number | null) => (ms === null ? null : new Date(ms));
   return {
     prescription: p,
-    courseStarted: hasStartedOn(p, today),
-    courseEnded: hasEndedBefore(p, today),
+    courseStarted: hasStartedOn(p, courseDay),
+    courseEnded: hasEndedBefore(p, courseDay),
     availableNow: inCourse && (availableAt === null || availableAt <= now),
     availableAt: toDate(availableAt),
     nextScheduledAt: toDate(schedule.nextAt),
@@ -354,6 +481,9 @@ function statusOf(
     limitReached: limitUntil !== null,
     suggestedDose: suggestDose(p.dose, input.weight, today),
     groupMemberIds: members.map((m) => m.id),
+    dayParts: p.dayParts
+      ? evaluateDayParts(p, p.dayParts, ownDoses, now, input.utcOffsetMinutes)
+      : null,
   };
 }
 

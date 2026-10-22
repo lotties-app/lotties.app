@@ -142,6 +142,10 @@ describe('the estimated nap sheet', () => {
 });
 
 describe('the day rhythm view', () => {
+  // The ring draws today only: a morning seeded relative to now (and a nap window 40 minutes ahead)
+  // must stay inside the same calendar day, whatever hour the suite runs at.
+  beforeEach(() => pinClock(14));
+
   it('shows the ruler by default and the ring after choosing it, remembered', async () => {
     await seedNow(db);
     await seedMorning(db, 112);

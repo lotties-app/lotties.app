@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import type { EventType } from '../../db/models';
+import { BottleSuggestionCaption } from '../../events/BottleSuggestionCaption';
 import { eventTypeText } from '../../i18n/eventTypeText';
 import { formatNumber } from '../../i18n/format';
 import { Illustration } from '../../ui/illustrations';
@@ -78,12 +79,13 @@ function BottlePanel({
           { value: OTHER, label: t('now.feedTray.otherAmount') },
         ]}
       />
+      <BottleSuggestionCaption suggestions={bottle.suggestions} />
       {custom && (
         <NumberStepper
           aria-label={t('now.feedTray.amount')}
           value={amount}
           onChange={setAmount}
-          step={10}
+          step={bottle.suggestions.step}
           min={field?.min ?? 0}
           max={field?.max ?? 500}
           start={bottle.amountMl}

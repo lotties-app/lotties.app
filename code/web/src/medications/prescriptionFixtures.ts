@@ -1,4 +1,4 @@
-import type { Prescription, PrescriptionDose } from '../db/models';
+import type { DayPart, DayPartReminder, Prescription, PrescriptionDose } from '../db/models';
 import {
   calculateMedicationStatus,
   type BodyWeight,
@@ -74,6 +74,25 @@ export function atTimes(medicationId: string, times: string[], o: Options = {}) 
     kind: 'scheduled',
     timesOfDay: times,
     intervalGroup: normalizeGroup(o.group),
+    startDate: o.start ?? '2026-01-01',
+    endDate: o.end ?? null,
+    ...(o.createdAt ? { createdAt: o.createdAt.toISOString() } : {}),
+  });
+}
+
+/** A part-of-the-day prescription ("1 drop in the morning"), reminders off unless given. */
+export function byParts(
+  medicationId: string,
+  parts: DayPart[],
+  o: Options & { reminders?: DayPartReminder[] } = {},
+) {
+  return prescription({
+    medicationId,
+    kind: 'scheduled',
+    dayParts: parts,
+    dayPartReminders: o.reminders ?? null,
+    intervalGroup: normalizeGroup(o.group),
+    dose: o.dose ?? TWO_DROPS,
     startDate: o.start ?? '2026-01-01',
     endDate: o.end ?? null,
     ...(o.createdAt ? { createdAt: o.createdAt.toISOString() } : {}),

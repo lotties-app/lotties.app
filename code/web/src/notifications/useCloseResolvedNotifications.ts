@@ -5,8 +5,8 @@ import { usePushDevice } from './PushDeviceContext';
 import { closeResolvedNotifications, loadResolutionFacts } from './resolvedNotifications';
 
 /**
- * Closes this browser's notifications for doses logged and naps started (here or synced from
- * another device). The live query re-runs after every local write and every sync pull. Nothing
+ * Closes this browser's notifications for doses logged, naps started and belly pain heads-ups
+ * handled (here or synced from another device). The live query re-runs after every local write and every sync pull. Nothing
  * runs where notifications cannot be shown.
  */
 export function useCloseResolvedNotifications(): void {

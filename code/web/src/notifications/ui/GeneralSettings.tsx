@@ -5,46 +5,10 @@ import { Box, Stack, Typography } from '@mui/material';
 import { useApiClient } from '../../api/ApiClientContext';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useServerAction } from '../../settings/useServerAction';
-import { Field, SwitchRow } from '../../ui/form';
-import { useControlAttributes } from '../../ui/form/fieldContext';
-import { filledSurface, focusRing } from '../../ui/form/styles';
+import { ClockTimeField, Field, SwitchRow } from '../../ui/form';
 import { putNotificationSettings, type NotificationSettingsDto } from '../pushApi';
 import { usePushDevice } from '../PushDeviceContext';
 import { pushKeys } from '../usePush';
-
-/** A native `HH:mm` time input in the form library's filled style; labelled by its `Field`. */
-function TimeInput({
-  value,
-  onChange,
-  onCommit,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onCommit: () => void;
-}) {
-  const { disabled, ...control } = useControlAttributes();
-  return (
-    <Box
-      component="input"
-      type="time"
-      value={value}
-      disabled={disabled}
-      {...control}
-      onChange={(e: { target: { value: string } }) => onChange(e.target.value)}
-      onBlur={onCommit}
-      sx={(theme) => ({
-        ...filledSurface(theme, !!control['aria-invalid']),
-        width: '100%',
-        minWidth: 0,
-        px: 1.75,
-        border: 0,
-        font: 'inherit',
-        '&:focus-visible': { outline: focusRing(theme), outlineOffset: 0 },
-        '&:disabled': { opacity: 0.5 },
-      })}
-    />
-  );
-}
 
 /** Quiet hours, show names and the time zone line: the user's settings for every baby. */
 export function GeneralSettings({
@@ -112,17 +76,17 @@ export function GeneralSettings({
               disabled={off}
               error={sameTime ? t('notifications.quiet.sameTime') : undefined}
             >
-              <TimeInput
+              <ClockTimeField
                 value={draft.start}
                 onChange={(start) => setDraft((d) => ({ ...d, start }))}
-                onCommit={commitTimes}
+                onBlur={commitTimes}
               />
             </Field>
             <Field label={t('notifications.quiet.end')} disabled={off}>
-              <TimeInput
+              <ClockTimeField
                 value={draft.end}
                 onChange={(end) => setDraft((d) => ({ ...d, end }))}
-                onCommit={commitTimes}
+                onBlur={commitTimes}
               />
             </Field>
           </Box>

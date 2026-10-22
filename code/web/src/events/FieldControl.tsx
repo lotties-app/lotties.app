@@ -9,6 +9,8 @@ import {
   SwitchRow,
   TextInput,
 } from '../ui/form';
+import { BottleSuggestionCaption } from './BottleSuggestionCaption';
+import type { BottleSuggestions } from './bottleSuggestions';
 import { optionIcon } from './optionIcons';
 
 export type FieldValue = string | boolean | undefined;
@@ -21,6 +23,8 @@ export interface FieldControlProps {
   error?: string;
   /** The last used value of the field (per baby and type), if any. */
   remembered?: string | number | boolean;
+  /** Bottle amount chips that follow the baby (the feeding `amount_ml` field only). */
+  bottle?: BottleSuggestions;
   onChange: (value: string | boolean) => void;
 }
 
@@ -85,7 +89,7 @@ function SelectControl({ type, field, value, onChange }: FieldControlProps) {
   );
 }
 
-function NumberControl({ field, value, remembered, onChange }: FieldControlProps) {
+function NumberControl({ field, value, remembered, bottle, onChange }: FieldControlProps) {
   const choices = scaleChoices(field);
   if (choices) {
     return (
@@ -107,25 +111,30 @@ function NumberControl({ field, value, remembered, onChange }: FieldControlProps
     );
   }
   const last = typeof remembered === 'number' ? remembered : null;
-  const quick =
-    field.unit === 'ml'
-      ? ML_QUICK_VALUES.filter(
-          (n) => (field.max === null || n <= field.max) && (field.min === null || n >= field.min),
-        )
+  const inRange = (n: number) =>
+    (field.max === null || n <= field.max) && (field.min === null || n >= field.min);
+  const quick = bottle
+    ? bottle.amounts.filter(inRange)
+    : field.unit === 'ml'
+      ? ML_QUICK_VALUES.filter(inRange)
       : undefined;
+  const start = bottle ? bottle.preferred : 90;
   return (
-    <NumberStepper
-      value={toNumber(value)}
-      onChange={(next) => onChange(next === null ? '' : String(next))}
-      step={stepFor(field)}
-      {...(field.integer === true ? { decimals: 0 } : {})}
-      {...(field.min !== null ? { min: field.min } : {})}
-      {...(field.max !== null ? { max: field.max } : {})}
-      {...(field.unit ? { unit: unitLabel(field.unit) } : {})}
-      {...(quick ? { quickValues: quick } : {})}
-      lastValue={last}
-      {...(last === null && field.unit === 'ml' ? { start: 90 } : {})}
-    />
+    <>
+      <NumberStepper
+        value={toNumber(value)}
+        onChange={(next) => onChange(next === null ? '' : String(next))}
+        step={bottle ? bottle.step : stepFor(field)}
+        {...(field.integer === true ? { decimals: 0 } : {})}
+        {...(field.min !== null ? { min: field.min } : {})}
+        {...(field.max !== null ? { max: field.max } : {})}
+        {...(field.unit ? { unit: unitLabel(field.unit) } : {})}
+        {...(quick ? { quickValues: quick } : {})}
+        lastValue={last}
+        {...(last === null && (bottle || field.unit === 'ml') ? { start } : {})}
+      />
+      {bottle && <BottleSuggestionCaption suggestions={bottle} />}
+    </>
   );
 }
 

@@ -1,12 +1,22 @@
 import { Button, Snackbar } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { isNativeApp } from '../platform/nativeApp';
+
+/**
+ * Registers the service worker (the PWA's offline copy and updates). Mounted once, inside App.
+ * Not in the iOS/Android app: its bundled assets are the offline copy and a store release is the
+ * update, so no service worker is registered there.
+ */
+export function ReloadPrompt() {
+  return isNativeApp() ? null : <ServiceWorkerReloadPrompt />;
+}
 
 /**
  * Shows a snackbar when a new service worker is waiting. Nothing reloads until the user
- * presses "Reload", so unsaved input is never lost. Mounted once, inside App.
+ * presses "Reload", so unsaved input is never lost.
  */
-export function ReloadPrompt() {
+function ServiceWorkerReloadPrompt() {
   const { t } = useTranslation();
   const {
     needRefresh: [needRefresh, setNeedRefresh],

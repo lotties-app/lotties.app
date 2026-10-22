@@ -13,6 +13,8 @@ export type PrescriptionTerms = Pick<
   | 'dose'
   | 'timesOfDay'
   | 'everyMinutes'
+  | 'dayParts'
+  | 'dayPartReminders'
   | 'minIntervalMinutes'
   | 'maxDosesPer24h'
   | 'indication'
@@ -41,6 +43,8 @@ export function termsOf(p: Prescription): PrescriptionTerms {
     dose: p.dose,
     timesOfDay: p.timesOfDay,
     everyMinutes: p.everyMinutes,
+    dayParts: p.dayParts ?? null,
+    dayPartReminders: p.dayPartReminders ?? null,
     minIntervalMinutes: p.minIntervalMinutes,
     maxDosesPer24h: p.maxDosesPer24h,
     indication: p.indication,

@@ -95,6 +95,26 @@ export function filterByCategory(
   return events.filter((e) => selected.has(typeCategory(byId.get(e.typeId))));
 }
 
+/** Whether a filter category is shown: an empty selection shows every category. */
+export const isCategoryShown = (selected: ReadonlySet<CategoryName>, category: CategoryName) =>
+  selected.size === 0 || selected.has(category);
+
+/**
+ * The filter selection after showing or hiding one category from the ribbon legend (the same
+ * state as the filter sheet). Hiding from "everything" selects all the others; a selection that
+ * covers every category, or would hide all of them, goes back to "everything" (empty).
+ */
+export function toggleShown(
+  selected: ReadonlySet<CategoryName>,
+  category: CategoryName,
+  all: readonly CategoryName[],
+): ReadonlySet<CategoryName> {
+  const shown = new Set(selected.size === 0 ? all : selected);
+  if (!shown.delete(category)) shown.add(category);
+  if (shown.size === 0 || all.every((name) => shown.has(name))) return new Set();
+  return shown;
+}
+
 /** A coloured stretch of the ribbon, as fractions (0 to 1) of the day. */
 export interface RibbonSpan {
   id: string;
@@ -113,6 +133,8 @@ export interface RibbonTick {
 export interface DaySummary {
   /** Minutes of sleep (naps and night sleep) inside the day, running sleep counted until `now`. */
   sleepMinutes: number;
+  /** Naps that started on the day. */
+  naps: number;
   feeds: number;
   diapers: number;
   spans: RibbonSpan[];
@@ -141,7 +163,14 @@ export function summarizeDay(
   const feedIds = typeIdsForKey(types, 'feeding');
   const diaperIds = typeIdsForKey(types, 'diaper');
   const byId = new Map(types.map((type) => [type.id, type]));
-  const summary: DaySummary = { sleepMinutes: 0, feeds: 0, diapers: 0, spans: [], ticks: [] };
+  const summary: DaySummary = {
+    sleepMinutes: 0,
+    naps: 0,
+    feeds: 0,
+    diapers: 0,
+    spans: [],
+    ticks: [],
+  };
 
   for (const event of events) {
     if (event.deletedAt !== null) continue;
@@ -157,6 +186,7 @@ export function summarizeDay(
       const to = Math.min(finish, bounds.end.getTime());
       if (to <= from) continue;
       // Effective minutes: a paused stretch is not sleep.
+      if (kind === 'nap' && !waking && inDay) summary.naps += 1;
       if (kind !== null) {
         summary.sleepMinutes += Math.round(
           effectiveMsInWindow(event, startMs, bounds.end.getTime(), now) / MINUTE_MS,

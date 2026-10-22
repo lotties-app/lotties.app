@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box } from '@mui/material';
 import type { PrescriptionKind } from '../db/models';
 import { Field, NumberStepper, SegmentedControl, TextInput } from '../ui/form';
+import { DayPartsFields } from './DayPartsFields';
 import { TimesOfDayField } from './TimesOfDayField';
 import {
   INDICATION_MAX,
@@ -47,7 +48,10 @@ function HoursStepper({
   );
 }
 
-/** When it is given: scheduled (clock times or every N hours) or as needed (minimum interval, max). */
+/**
+ * When it is given: scheduled (clock times, every N hours or parts of the day) or as needed
+ * (minimum interval, max).
+ */
 export function ScheduleFields({ form, errors, onChange }: Props) {
   const { t } = useTranslation();
   const scheduled = form.kind === 'scheduled';
@@ -72,10 +76,13 @@ export function ScheduleFields({ form, errors, onChange }: Props) {
               options={[
                 { value: 'times', label: t('medications.editor.byTimes') },
                 { value: 'every', label: t('medications.editor.byEvery') },
+                { value: 'parts', label: t('medications.editor.byParts') },
               ]}
             />
           </Field>
-          {form.scheduleBy === 'times' ? (
+          {form.scheduleBy === 'parts' ? (
+            <DayPartsFields form={form} errors={errors} onChange={onChange} />
+          ) : form.scheduleBy === 'times' ? (
             <Field label={t('medications.editor.timesOfDay')} required group error={errors.times}>
               <TimesOfDayField value={form.times} onChange={(times) => onChange({ times })} />
             </Field>

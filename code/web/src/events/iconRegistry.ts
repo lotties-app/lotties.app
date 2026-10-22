@@ -24,6 +24,9 @@ export const ICONS: ReadonlyMap<string, IconName> = new Map<string, IconName>(
     thermostat: 'thermometer',
     vaccines: 'vaccine',
     cake: 'cake',
+    air: 'wind',
+    massage: 'massage',
+    sentiment_very_dissatisfied: 'mood-cry',
   } satisfies Record<string, IconName>),
 );
 

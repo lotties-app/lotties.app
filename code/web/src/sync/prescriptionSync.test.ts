@@ -330,3 +330,46 @@ describe('pulling prescriptions', () => {
     });
   });
 });
+
+describe('part-of-the-day prescriptions in the sync contract', () => {
+  it('stores server parts in day order, drops unknown codes and reads older rows as none', async () => {
+    await mergePrescriptionDelta(db, BABY_ID, [
+      serverPrescription({
+        id: 'rx-parts',
+        kind: 'scheduled',
+        minIntervalMinutes: null,
+        dayParts: ['night', 'dawn', 'morning'],
+        dayPartReminders: [
+          { part: 'night', time: '22:30' },
+          { part: 'dawn', time: '04:00' },
+        ],
+      }),
+      serverPrescription({ id: 'rx-old' }),
+    ]);
+
+    expect(await db.prescriptions.get('rx-parts')).toMatchObject({
+      dayParts: ['morning', 'night'],
+      dayPartReminders: [{ part: 'night', time: '22:30' }],
+    });
+    expect(await db.prescriptions.get('rx-old')).toMatchObject({
+      dayParts: null,
+      dayPartReminders: null,
+    });
+  });
+
+  it('sends the parts and reminders on upsert (null for the other schedules)', () => {
+    const request = toPrescriptionUpsertRequest({
+      ...asNeeded('med-1', 480),
+      kind: 'scheduled',
+      minIntervalMinutes: null,
+      dayParts: ['morning'],
+      dayPartReminders: [{ part: 'morning', time: '08:00' }],
+    });
+    expect(request).toMatchObject({
+      dayParts: ['morning'],
+      dayPartReminders: [{ part: 'morning', time: '08:00' }],
+    });
+    const legacy = toPrescriptionUpsertRequest(asNeeded('med-1', 480));
+    expect([legacy.dayParts, legacy.dayPartReminders]).toEqual([null, null]);
+  });
+});

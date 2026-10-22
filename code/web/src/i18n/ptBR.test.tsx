@@ -16,6 +16,9 @@ import { fakeAuth } from '../test/fakeAuth';
 import { useTestLocale } from '../test/locale';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { BELLY, DIAPER, FEEDING, seedBaby } from '../test/seed';
+import { BELLY_MASSAGE_TYPE, FUSSY_TYPE, NASAL_SUCTION_TYPE } from '../test/builtInTypes';
+import { payloadSummary } from '../timeline/payloadSummary';
+import { presetLabel } from '../presets/presetLabel';
 import { eventTypeText } from './eventTypeText';
 import { I18nProvider } from './I18nProvider';
 import { LOCALE_STORAGE_KEY } from './localeStorage';
@@ -85,7 +88,10 @@ describe('pt-BR screens', () => {
     expect(screen.getByRole('button', { name: 'Criar uma conta' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'Como funciona' })).toBeTruthy();
     expect(document.documentElement.lang).toBe('pt-BR');
-    expect(document.title).toBe('Lotties: acompanhe o dia do seu bebê, em conjunto');
+    // The title is set by an effect that can run just after the page is in the document.
+    await waitFor(() =>
+      expect(document.title).toBe('Lotties: acompanhe o dia do seu bebê, em conjunto'),
+    );
   });
 
   it('translates the Now screen: the question, the tiles and the navigation', async () => {
@@ -204,6 +210,65 @@ describe('pt-BR texts outside components', () => {
     expect(eventTypeText.fieldLabel(type, { key: 'amount_ml', label: 'Amount' })).toBe(
       'Quantidade',
     );
+  });
+
+  it('translates the nasal suction type, its options, the Day detail line and its preset', () => {
+    expect(eventTypeText.typeName(NASAL_SUCTION_TYPE)).toBe('Aspiração nasal');
+    expect(payloadSummary({ tool: 'bulb', saline: true }, NASAL_SUCTION_TYPE)).toBe(
+      'Pera · Com soro fisiológico',
+    );
+    expect(payloadSummary({ tool: 'electric' }, NASAL_SUCTION_TYPE)).toBe('Elétrico');
+    expect(payloadSummary({ tool: 'mouth', saline: false }, NASAL_SUCTION_TYPE)).toBe(
+      'Sucção pela boca',
+    );
+    expect(presetLabel({ id: 'nasal_suction', label: 'Nasal suction', builtIn: true })).toBe(
+      'Aspiração nasal',
+    );
+  });
+
+  it('translates the belly massage type, its fields and options, the Day detail and its preset', () => {
+    const type = BELLY_MASSAGE_TYPE;
+    const [reason, helped] = type.fields;
+    expect(eventTypeText.typeName(type)).toBe('Massagem na barriguinha');
+    expect(eventTypeText.fieldLabel(type, reason)).toBe('Motivo');
+    expect(eventTypeText.fieldLabel(type, helped)).toBe('Ajudou?');
+    expect(
+      ['gas', 'constipation', 'colic', 'other'].map((o) =>
+        eventTypeText.optionLabel(type, reason, o),
+      ),
+    ).toEqual(['Gases', 'Prisão de ventre', 'Cólica', 'Outro']);
+    expect(
+      ['yes', 'a_little', 'no'].map((o) => eventTypeText.optionLabel(type, helped, o)),
+    ).toEqual(['Sim', 'Um pouco', 'Não']);
+    expect(payloadSummary({ reason: 'gas', helped: 'yes' }, type)).toBe('Gases · ajudou');
+    expect(payloadSummary({ reason: 'colic', helped: 'a_little' }, type)).toBe(
+      'Cólica · ajudou um pouco',
+    );
+    expect(payloadSummary({ helped: 'no' }, type)).toBe('não ajudou');
+    expect(presetLabel({ id: 'belly_massage', label: 'Belly massage', builtIn: true })).toBe(
+      'Massagem na barriguinha',
+    );
+  });
+
+  it('translates the fussy type, its fields and options, the Day detail and its preset', () => {
+    const type = FUSSY_TYPE;
+    const [intensity, helped] = type.fields;
+    expect(eventTypeText.typeName(type)).toBe('Choro / irritação');
+    expect(eventTypeText.fieldLabel(type, intensity)).toBe('Intensidade');
+    expect(eventTypeText.fieldLabel(type, helped)).toBe('O que ajudou');
+    expect(
+      ['mild', 'moderate', 'intense'].map((o) => eventTypeText.optionLabel(type, intensity, o)),
+    ).toEqual(['Leve', 'Moderada', 'Intensa']);
+    expect(
+      ['feeding', 'rocking', 'pacifier', 'massage', 'sleep', 'other', 'nothing'].map((o) =>
+        eventTypeText.optionLabel(type, helped, o),
+      ),
+    ).toEqual(['Mamada', 'Balanço', 'Chupeta', 'Massagem', 'Sono', 'Outro', 'Nada']);
+    expect(payloadSummary({ intensity: 'mild', what_helped: 'pacifier' }, type)).toBe(
+      'Leve · a chupeta ajudou',
+    );
+    expect(payloadSummary({ what_helped: 'nothing' }, type)).toBe('nada ajudou');
+    expect(presetLabel({ id: 'fussy', label: 'Fussy', builtIn: true })).toBe('Choro');
   });
 });
 

@@ -1,11 +1,19 @@
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthProvider as OidcProvider, useAuth as useOidc } from 'react-oidc-context';
-import { UserManager, WebStorageStateStore, type User } from 'oidc-client-ts';
+import { UserManager, WebStorageStateStore, type INavigator, type User } from 'oidc-client-ts';
 import type { AppConfig } from '../config/appConfig';
+import { isNativeApp } from '../platform/nativeApp';
+import { capacitorShell } from '../platform/nativeShell';
 import { accountDatabaseName } from '../session/accountDatabase';
 import { AuthContext, accountIdOf, type AuthApi, type SessionState } from './AuthContext';
 import { forgetEndedSession, readEndedSession, rememberEndedSession } from './endedSession';
+import type { LoginRedirectState } from './loginRedirect';
+import {
+  NATIVE_POST_LOGOUT_REDIRECT_URI,
+  NATIVE_REDIRECT_URI,
+  NativeAuthRedirects,
+} from './nativeAuth';
 import { SessionRenewal, type RenewalStatus } from './sessionRenewal';
 import { registerRedirect, signinArgs, type LoginState } from './signinRequest';
 
@@ -13,6 +21,11 @@ interface Props {
   config: AppConfig['oidc'];
   /** Injected in tests; built from `config` otherwise. */
   userManager?: UserManager;
+  /**
+   * The system-browser sign-in of the iOS/Android app. Injected in tests; otherwise created when
+   * `isNativeApp()`, and `null` in a browser (the library's own redirect, unchanged).
+   */
+  nativeAuth?: NativeAuthRedirects | null;
   children: ReactNode;
 }
 
@@ -22,37 +35,87 @@ const userStore = () => new WebStorageStateStore({ store: window.localStorage })
  * Silent renew is driven by `SessionRenewal` (single-flight, offline-aware), not by the library:
  * its automatic renew ignores a token that already expired before the app opened and would race
  * our own refresh with the same (possibly rotating) refresh token.
+ * The native app returns through its URL scheme (auth/nativeAuth.ts) instead of the web origin;
+ * everything else (stores, scopes, renewal, per-account data) is the same.
  */
-function createUserManager(config: AppConfig['oidc']): UserManager {
-  return new UserManager({
-    authority: config.authority,
-    client_id: config.clientId,
-    redirect_uri: `${window.location.origin}/auth/callback`,
-    post_logout_redirect_uri: `${window.location.origin}/login`,
-    scope: 'openid profile email offline_access',
-    response_type: 'code',
-    automaticSilentRenew: false,
-    extraQueryParams: config.audience ? { audience: config.audience } : undefined,
-    userStore: userStore(),
-  });
+function createUserManager(
+  config: AppConfig['oidc'],
+  native: NativeAuthRedirects | null,
+): UserManager {
+  return new UserManager(
+    {
+      authority: config.authority,
+      client_id: config.clientId,
+      redirect_uri: native ? NATIVE_REDIRECT_URI : `${window.location.origin}/auth/callback`,
+      post_logout_redirect_uri: native
+        ? NATIVE_POST_LOGOUT_REDIRECT_URI
+        : `${window.location.origin}/login`,
+      scope: 'openid profile email offline_access',
+      response_type: 'code',
+      automaticSilentRenew: false,
+      extraQueryParams: config.audience ? { audience: config.audience } : undefined,
+      userStore: userStore(),
+    },
+    native?.navigator,
+  );
 }
 
-export function OidcAuthProvider({ config, userManager: injected, children }: Props) {
+export function OidcAuthProvider({ config, userManager: injected, nativeAuth, children }: Props) {
   const navigate = useNavigate();
-  const [userManager] = useState(() => injected ?? createUserManager(config));
+  const [native] = useState(() =>
+    nativeAuth !== undefined
+      ? nativeAuth
+      : isNativeApp()
+        ? new NativeAuthRedirects(capacitorShell)
+        : null,
+  );
+  const [userManager] = useState(() => injected ?? createUserManager(config, native));
 
   const handleSigninCallback = (user: User | void) => {
     const state = (user?.state ?? {}) as LoginState;
     navigate(state.returnTo || '/', { replace: true });
   };
+  useNativeRedirects(native, userManager, handleSigninCallback);
 
   return (
     <OidcProvider userManager={userManager} onSigninCallback={handleSigninCallback}>
-      <OidcBridge authority={config.authority} audience={config.audience} userManager={userManager}>
+      <OidcBridge
+        authority={config.authority}
+        audience={config.audience}
+        userManager={userManager}
+        redirectNavigator={native?.navigator}
+      >
         {children}
       </OidcBridge>
     </OidcProvider>
   );
+}
+
+/**
+ * The native app's redirects come back as app URLs, not page loads (react-oidc-context only reads
+ * the page URL): completed here, then the same navigation as the web callback.
+ */
+function useNativeRedirects(
+  native: NativeAuthRedirects | null,
+  userManager: UserManager,
+  onSignedIn: (user: User) => void,
+) {
+  const navigate = useNavigate();
+  const latest = useRef({ navigate, onSignedIn });
+  useEffect(() => {
+    latest.current = { navigate, onSignedIn };
+  });
+  useEffect(() => {
+    if (!native) return;
+    return native.attach(userManager, {
+      signedIn: (user) => latest.current.onSignedIn(user),
+      signInFailed: () => {
+        const state: LoginRedirectState = { failed: true };
+        latest.current.navigate('/', { replace: true, state });
+      },
+      signedOut: () => latest.current.navigate('/', { replace: true }),
+    });
+  }, [native, userManager]);
 }
 
 function sessionOf(status: RenewalStatus): SessionState {
@@ -92,11 +155,14 @@ function OidcBridge({
   authority,
   audience,
   userManager,
+  redirectNavigator,
   children,
 }: {
   authority: string;
   audience?: string;
   userManager: UserManager;
+  /** The navigator `userManager` was built with, when not the library's default. */
+  redirectNavigator?: INavigator;
   children: ReactNode;
 }) {
   const oidc = useOidc();
@@ -136,7 +202,7 @@ function OidcBridge({
     sessionEnded: !isAuthenticated && (status === 'ended' || endedEarlier),
     login: (returnTo, options) =>
       options?.register
-        ? registerRedirect(userManager, signinArgs(returnTo, audience))
+        ? registerRedirect(userManager, signinArgs(returnTo, audience), redirectNavigator)
         : oidc.signinRedirect(signinArgs(returnTo, audience)),
     logout: async () => {
       try {

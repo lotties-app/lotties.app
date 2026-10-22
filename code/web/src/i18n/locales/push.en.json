@@ -9,6 +9,31 @@
     "body": "The estimated nap window opens around {{time}}.",
     "bodyNamed": "{{baby}}: the estimated nap window opens around {{time}}."
   },
+  "belly_pain_pattern": {
+    "title": "A good moment for a belly massage",
+    "body": "Belly pain often shows up from around {{time}}.",
+    "bodyNamed": "{{baby}}: belly pain often shows up from around {{time}}."
+  },
+  "overtired_warning": {
+    "title": "Awake time is near the usual limit",
+    "body": "The usual limit is around {{time}}. A nap soon may help.",
+    "bodyNamed": "{{baby}}: the usual limit is around {{time}}. A nap soon may help."
+  },
+  "fussy_pattern": {
+    "title": "Fussy time is coming up",
+    "body": "Fussiness often starts from around {{time}}. A calm routine may help.",
+    "bodyNamed": "{{baby}}: fussiness often starts from around {{time}}."
+  },
+  "diaper_wet_headsup": {
+    "title": "A diaper check may be due",
+    "body": "A wet diaper is often due around {{time}}.",
+    "bodyNamed": "{{baby}}: a wet diaper is often due around {{time}}."
+  },
+  "diaper_dirty_headsup": {
+    "title": "A diaper may be coming",
+    "body": "A dirty diaper often comes around {{time}}.",
+    "bodyNamed": "{{baby}}: a dirty diaper often comes around {{time}}."
+  },
   "test": {
     "title": "Notifications are on",
     "body": "This is a test from Lotties."

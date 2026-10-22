@@ -7,6 +7,7 @@ import { useOldestEventStart } from '../../db/hooks';
 import type { Baby } from '../../db/models';
 import { EventSheet } from '../../events/EventSheet';
 import { PrescriptionSheet } from '../../medications/PrescriptionSheet';
+import { canRemind } from '../../medications/prescriptionForm';
 import { useNotificationLink } from '../../notifications/notificationLinkContext';
 import type { NotificationLink } from '../../pwa/sw/deepLink';
 import { ReminderPromptCard } from '../../notifications/ui/ReminderPromptCard';
@@ -24,11 +25,14 @@ import { QuickLogToastProvider } from '../QuickLogToastProvider';
 import { tileDetailText } from '../tileText';
 import { todayStats } from '../todayStats';
 import { useNowScreen, type NowScreenModel } from '../useNow';
+import { BellyPainSuggestion } from './BellyPainCard';
 import { BellyPainTraySheet } from './BellyPainTraySheet';
 import { CatchUpCard } from './CatchUpCard';
+import { DiaperSuggestions } from './DiaperCard';
 import { DiaperTraySheet } from './DiaperTraySheet';
 import { FeedTraySheet } from './FeedTraySheet';
 import { FirstRun } from './FirstRun';
+import { FussyPatternSuggestion } from './FussyPatternCard';
 import { LogTiles } from './LogTiles';
 import { MedsTraySheet, type TrayReminder } from './MedsTraySheet';
 import { MoreSheet } from './MoreSheet';
@@ -36,6 +40,7 @@ import { NightNow } from './NightNow';
 import { NightStars } from './NightStars';
 import { NowSkeleton } from './NowSkeleton';
 import { NursingCard } from './NursingCard';
+import { OvertiredSuggestionCard } from './OvertiredCard';
 import { StateCard } from './StateCard';
 import { TimersBar } from './TimersBar';
 import { ToastHost } from './ToastHost';
@@ -150,6 +155,7 @@ function NowContent({
     void action.run(() => model.commands.tray(choice));
   };
   const openTile = (id: TileId) => setTray(id);
+  const openDiaperTray = () => setTray('diaper');
   const endForgottenSleep = (eventId: string, endedAt: string) => {
     const event = model.events.find((candidate) => candidate.id === eventId);
     if (!event) return;
@@ -246,6 +252,25 @@ function NowContent({
             onEndAt={endForgottenSleep}
             isSnoozed={snooze.isSnoozed}
             onKeepRunning={snooze.keep}
+          />
+          <OvertiredSuggestionCard
+            babyId={baby.id}
+            model={model}
+            predictions={predictions}
+            actions={actions}
+          />
+          <BellyPainSuggestion
+            babyId={baby.id}
+            model={model}
+            predictions={predictions}
+            actions={actions}
+          />
+          <FussyPatternSuggestion babyId={baby.id} model={model} predictions={predictions} />
+          <DiaperSuggestions
+            babyId={baby.id}
+            model={model}
+            predictions={predictions}
+            {...(model.trays.diaper ? { onLogDiaper: openDiaperTray } : {})}
           />
           {nursing && (
             <NursingCard
@@ -351,7 +376,7 @@ function NowContent({
       {addingPrescription && !model.readOnly && (
         <PrescriptionSheet
           babyId={baby.id}
-          onSaved={(terms) => setOfferingReminders(terms.kind === 'scheduled')}
+          onSaved={(terms) => setOfferingReminders(canRemind(terms))}
           onDone={() => setAddingPrescription(false)}
         />
       )}

@@ -161,10 +161,13 @@ describe('registry', () => {
   ].map((m) => m[1]);
   const sleepKinds = SLEEP_DTO.fields!.find((f) => f.key === 'kind')!.options!;
   const feedingMethods = FEEDING_DTO.fields!.find((f) => f.key === 'method')!.options!;
+  /** Built-in types and presets with no drawing yet: their type icon in the category tile. */
+  const withoutDrawing: readonly string[] = ['nasal_suction', 'belly_massage', 'fussy'];
+  const drawn = (keys: readonly string[]) => keys.filter((key) => !withoutDrawing.includes(key));
 
   it.each([
-    ['built-in preset id', BUILT_IN_PRESETS.map((p) => p.id)],
-    ['built-in event type key', builtInTypeKeys],
+    ['built-in preset id', drawn(BUILT_IN_PRESETS.map((p) => p.id))],
+    ['built-in event type key', drawn(builtInTypeKeys)],
     ['sleep kind', sleepKinds],
     ['feeding method', feedingMethods],
   ])('resolves every %s to an illustration', (_label, keys) => {
@@ -176,15 +179,26 @@ describe('registry', () => {
     }
   });
 
-  it('knows the eight built-in types of the API', () => {
+  it('falls back to the icon tile for the built-ins without a drawing yet', () => {
+    for (const key of withoutDrawing) {
+      expect(builtInTypeKeys, key).toContain(key);
+      expect(illustrationName(key), key).toBeUndefined();
+      expect(illustrationFor(key), key).toBe(FallbackIllustration);
+    }
+  });
+
+  it('knows the eleven built-in types of the API', () => {
     expect([...builtInTypeKeys].sort()).toEqual(
       [
         'bath',
+        'belly_massage',
         'belly_pain',
         'breast_pump',
         'diaper',
         'feeding',
+        'fussy',
         'medication',
+        'nasal_suction',
         'sleep',
         'tummy_time',
       ].sort(),

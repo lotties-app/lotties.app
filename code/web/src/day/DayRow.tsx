@@ -16,6 +16,7 @@ import {
 import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
+import { isInstantEvent } from './ribbonText';
 
 interface Props {
   event: BabyEvent;
@@ -31,11 +32,9 @@ interface Props {
   onStop?: (event: BabyEvent) => void;
   /** Viewers can look but not edit. */
   readOnly?: boolean;
+  /** Briefly ringed after "Show in list" on the ribbon. */
+  highlighted?: boolean;
 }
-
-/** Instant events (no duration type, or ending when they start) have no length to show. */
-const isInstant = (event: BabyEvent, type: EventType | undefined) =>
-  type?.hasDuration === false || event.endedAt === event.startedAt;
 
 /** The live clock of a running event: effective time, so a paused timer stands still. */
 function LiveTimer({ event }: { event: BabyEvent }) {
@@ -236,13 +235,14 @@ export function DayRow({
   onEdit,
   onStop,
   readOnly = false,
+  highlighted = false,
 }: Props) {
   const { t } = useTranslation();
   const names = useEventTypeText();
   const view = presentEvent(event, type, medications, names, prescriptions);
   const running = event.endedAt === null;
   const time = formatTime(event.startedAt);
-  const instant = isInstant(event, type);
+  const instant = isInstantEvent(event, type);
   let range = '';
   if (running) range = t('timeline.since', { time });
   else if (!instant) range = `${time} – ${formatTime(event.endedAt!)}`;
@@ -257,6 +257,7 @@ export function DayRow({
   return (
     <Box
       component="li"
+      data-event-id={event.id}
       sx={{
         display: 'grid',
         gridTemplateColumns: '44px 40px minmax(0, 1fr)',
@@ -264,6 +265,8 @@ export function DayRow({
         listStyle: 'none',
         m: 0,
         p: 0,
+        scrollMarginTop: 16,
+        scrollMarginBottom: 96,
       }}
     >
       <Typography
@@ -291,8 +294,12 @@ export function DayRow({
           minWidth: 0,
           borderRadius: `${RADIUS.tile}px`,
           backgroundColor: palette(theme).category[view.category].bg,
-          // The coloured left edge follows the card's corners.
-          boxShadow: `inset 4px 0 0 ${palette(theme).category[view.category].fg}`,
+          // The coloured left edge follows the card's corners; a ring while highlighted.
+          boxShadow: `inset 4px 0 0 ${palette(theme).category[view.category].fg}${
+            highlighted ? `, 0 0 0 2px ${palette(theme).primary.main}` : ''
+          }`,
+          transition: 'box-shadow 240ms ease-out',
+          '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
         })}
       >
         <ButtonBase

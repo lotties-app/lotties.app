@@ -1,7 +1,16 @@
-import type { Medication, Prescription, PrescriptionKind } from '../db/models';
+import type { DayPart, Medication, Prescription, PrescriptionKind } from '../db/models';
 import type { PrescriptionTerms } from '../db/prescriptionCommands';
 import { formatDate, formatList, formatNumber, formatTime } from '../i18n/format';
 import { t } from '../i18n/i18n';
+import { clockText, dayPartName, dayPartPhrase } from './dayPartText';
+import {
+  DAY_PART_STARTS,
+  DEFAULT_REMINDER_TIMES,
+  dayPartEnd,
+  partAt,
+  sortDayParts,
+} from './dayParts';
+import { countedAmountText, countedUnitLabel, countedUnitOf, fitsAmountStep } from './doseUnits';
 import { INTERVAL_GROUP_MAX, normalizeGroupName } from './groupName';
 
 /*
@@ -12,7 +21,7 @@ import { INTERVAL_GROUP_MAX, normalizeGroupName } from './groupName';
  */
 
 export type RoundingChoice = 'none' | '0.1' | '0.5' | '1';
-export type ScheduleBy = 'times' | 'every';
+export type ScheduleBy = 'times' | 'every' | 'parts';
 
 export const ROUNDING_CHOICES: readonly RoundingChoice[] = ['none', '0.1', '0.5', '1'];
 /** Presets of the minimum interval stepper (hours). */
@@ -39,6 +48,12 @@ export interface PrescriptionForm {
   scheduleBy: ScheduleBy;
   times: string[];
   everyHours: number | null;
+  /** Part of the day: the chosen parts (one dose in each per day). */
+  parts: DayPart[];
+  /** Part of the day: reminders on (off by default). */
+  partReminders: boolean;
+  /** Part of the day: the reminder time of every part (`HH:mm`), used for the chosen ones. */
+  reminderTimes: Record<DayPart, string>;
   minIntervalHours: number | null;
   maxDoses: number | null;
   indication: string;
@@ -56,6 +71,8 @@ export type FormErrors = Partial<
     | 'unit'
     | 'times'
     | 'every'
+    | 'parts'
+    | 'reminders'
     | 'minInterval'
     | 'maxDoses'
     | 'indication'
@@ -85,6 +102,9 @@ export function emptyForm(now: Date, medication?: Medication): PrescriptionForm 
     scheduleBy: 'times',
     times: [],
     everyHours: null,
+    parts: [],
+    partReminders: false,
+    reminderTimes: { ...DEFAULT_REMINDER_TIMES },
     minIntervalHours: null,
     maxDoses: null,
     indication: '',
@@ -101,6 +121,17 @@ const roundingOf = (step: number | null): RoundingChoice =>
 
 const hoursOf = (minutes: number | null) => (minutes === null ? null : minutes / 60);
 
+function scheduleByOf(p: Prescription): ScheduleBy {
+  if (p.dayParts && p.dayParts.length > 0) return 'parts';
+  return p.everyMinutes !== null ? 'every' : 'times';
+}
+
+function reminderTimesOf(p: Prescription): Record<DayPart, string> {
+  const times = { ...DEFAULT_REMINDER_TIMES };
+  for (const reminder of p.dayPartReminders ?? []) times[reminder.part] = reminder.time;
+  return times;
+}
+
 export function formFromPrescription(p: Prescription): PrescriptionForm {
   return {
     medicationId: p.medicationId,
@@ -109,9 +140,12 @@ export function formFromPrescription(p: Prescription): PrescriptionForm {
     perKg: p.dose.perKg,
     rounding: roundingOf(p.dose.roundingStep),
     kind: p.kind,
-    scheduleBy: p.everyMinutes !== null ? 'every' : 'times',
+    scheduleBy: scheduleByOf(p),
     times: p.timesOfDay ? [...p.timesOfDay] : [],
     everyHours: hoursOf(p.everyMinutes),
+    parts: p.dayParts ? [...p.dayParts] : [],
+    partReminders: (p.dayPartReminders?.length ?? 0) > 0,
+    reminderTimes: reminderTimesOf(p),
     minIntervalHours: hoursOf(p.minIntervalMinutes),
     maxDoses: p.maxDosesPer24h,
     indication: p.indication ?? '',
@@ -137,6 +171,14 @@ export function validateForm(form: PrescriptionForm): FormErrors {
   if (form.unit.trim() === '' || form.unit.trim().length > UNIT_MAX) {
     errors.unit = t('medications.editor.errors.unit', { max: UNIT_MAX });
   }
+  const counted = countedUnitOf(form.unit);
+  if (counted && form.perKg) errors.unit = t('medications.editor.errors.perKgCounted');
+  if (counted && form.amount !== null && !fitsAmountStep(form.amount, counted) && !errors.amount) {
+    errors.amount =
+      counted === 'suppository'
+        ? t('medications.editor.errors.halfCount')
+        : t('medications.editor.errors.wholeCount');
+  }
   const interval = (minutes: number | null) =>
     minutes !== null && minutes >= MIN_INTERVAL_MINUTES && minutes <= MAX_INTERVAL_MINUTES;
   const intervalError = t('medications.editor.errors.interval');
@@ -148,6 +190,11 @@ export function validateForm(form: PrescriptionForm): FormErrors {
   }
   if (form.kind === 'scheduled' && form.scheduleBy === 'every') {
     if (!interval(minutesOf(form.everyHours))) errors.every = intervalError;
+  }
+  if (form.kind === 'scheduled' && form.scheduleBy === 'parts') {
+    if (form.parts.length === 0) errors.parts = t('medications.editor.errors.partsRequired');
+    const reminderError = form.partReminders ? partReminderError(form) : null;
+    if (reminderError) errors.reminders = reminderError;
   }
   if (form.kind === 'asNeeded') {
     if (!interval(minutesOf(form.minIntervalHours))) errors.minInterval = intervalError;
@@ -178,6 +225,28 @@ export function validateForm(form: PrescriptionForm): FormErrors {
   return errors;
 }
 
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** The first chosen part whose reminder time is missing or outside its window. */
+export function wrongReminderPart(form: PrescriptionForm): DayPart | null {
+  if (!form.partReminders) return null;
+  const wrong = sortDayParts(form.parts).find((part) => {
+    const time = form.reminderTimes[part];
+    return !CLOCK.test(time) || partAt(time) !== part;
+  });
+  return wrong ?? null;
+}
+
+function partReminderError(form: PrescriptionForm): string | null {
+  const wrong = wrongReminderPart(form);
+  if (!wrong) return null;
+  return t('medications.editor.errors.reminderWindow', {
+    part: dayPartName(wrong),
+    start: clockText(DAY_PART_STARTS[wrong]),
+    end: clockText(dayPartEnd(wrong)),
+  });
+}
+
 /** The terms to save for a valid form (call after `validateForm` found no problems). */
 export function toTerms(
   form: PrescriptionForm,
@@ -185,6 +254,8 @@ export function toTerms(
 ): PrescriptionTerms {
   const scheduled = form.kind === 'scheduled';
   const byTimes = scheduled && form.scheduleBy === 'times';
+  const byParts = scheduled && form.scheduleBy === 'parts';
+  const parts = byParts ? sortDayParts(form.parts) : [];
   return {
     medicationId: form.medicationId ?? '',
     status,
@@ -196,7 +267,12 @@ export function toTerms(
       roundingStep: form.perKg && form.rounding !== 'none' ? Number(form.rounding) : null,
     },
     timesOfDay: byTimes ? [...form.times].sort() : null,
-    everyMinutes: scheduled && !byTimes ? minutesOf(form.everyHours) : null,
+    everyMinutes: scheduled && form.scheduleBy === 'every' ? minutesOf(form.everyHours) : null,
+    dayParts: parts.length > 0 ? parts : null,
+    dayPartReminders:
+      parts.length > 0 && form.partReminders
+        ? parts.map((part) => ({ part, time: form.reminderTimes[part] }))
+        : null,
     minIntervalMinutes: scheduled ? null : minutesOf(form.minIntervalHours),
     maxDosesPer24h: scheduled ? null : form.maxDoses,
     indication: blankToNull(form.indication),
@@ -206,6 +282,15 @@ export function toTerms(
     prescriber: blankToNull(form.prescriber),
     instructions: blankToNull(form.instructions),
   };
+}
+
+/**
+ * Whether saved terms can produce a medicine reminder (to offer turning reminders on): scheduled
+ * clock times or periods, or parts of the day with reminders on.
+ */
+export function canRemind(terms: PrescriptionTerms): boolean {
+  if (terms.kind !== 'scheduled') return false;
+  return !terms.dayParts || (terms.dayPartReminders?.length ?? 0) > 0;
 }
 
 /** "8 hours", "1.5 hours", "45 minutes", "2 days"-free: hours up to a week, minutes below an hour. */
@@ -219,16 +304,21 @@ const DROPS_UNITS = new Set(['drop', 'drops', 'gota', 'gotas']);
 
 /**
  * "5 drops", but "1 drop": the drops unit follows the amount and the app language (a prescription
- * typed in English still reads "gotas" in Portuguese). Other units are shown as typed.
+ * typed in English still reads "gotas" in Portuguese); so do the counted units ("2 sprays",
+ * "2 jatos", "1 suppository"). Other units are shown as typed.
  */
 export function amountWithUnit(amount: number, unit: string): string {
+  const counted = countedUnitOf(unit);
+  if (counted) return countedAmountText(amount, counted);
   const drops = DROPS_UNITS.has(unit.trim().toLowerCase());
   const word = drops ? t(amount === 1 ? 'ui.units.drop' : 'ui.units.drops') : unit;
   return `${formatNumber(amount)} ${word}`;
 }
 
-/** The unit alone, in the app language for drops ("drops" / "gotas"), else as typed. */
+/** The unit alone, in the app language for drops and counted units ("gotas", "jatos"), else as typed. */
 export function unitText(unit: string): string {
+  const counted = countedUnitOf(unit);
+  if (counted) return countedUnitLabel(counted);
   return DROPS_UNITS.has(unit.trim().toLowerCase()) ? t('ui.units.drops') : unit;
 }
 
@@ -245,6 +335,9 @@ export function dayText(day: string): string {
 
 function whenParts(terms: PrescriptionTerms): string[] {
   if (terms.kind === 'scheduled') {
+    if (terms.dayParts && terms.dayParts.length > 0) {
+      return [formatList(terms.dayParts.map(dayPartPhrase))];
+    }
     if (terms.timesOfDay) {
       const times = terms.timesOfDay.map((time) => {
         const [h, m] = time.split(':').map(Number);
@@ -270,7 +363,9 @@ function whenParts(terms: PrescriptionTerms): string[] {
 export function summaryText(terms: PrescriptionTerms | null): string | null {
   if (!terms || terms.dose.amount <= 0 || terms.dose.unit === '') return null;
   const hasWhen =
-    terms.timesOfDay !== null || (terms.everyMinutes ?? terms.minIntervalMinutes ?? 0) > 0;
+    terms.timesOfDay !== null ||
+    (terms.dayParts?.length ?? 0) > 0 ||
+    (terms.everyMinutes ?? terms.minIntervalMinutes ?? 0) > 0;
   const parts = [
     t('medications.summary.give', { dose: doseText(terms.dose) }),
     ...(hasWhen ? whenParts(terms) : []),

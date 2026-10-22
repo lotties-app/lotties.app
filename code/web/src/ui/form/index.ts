@@ -9,7 +9,8 @@ export { OptionTiles, type TileOption, type OptionTilesProps } from './OptionTil
 export { ChipGroup, type ChipOption, type ChipGroupProps } from './ChipGroup';
 export { NumberStepper, type NumberStepperProps } from './NumberStepper';
 export { DurationField, type DurationFieldProps } from './DurationField';
-export { TimePanel, type TimePanelProps, type HourCycle } from './TimePanel';
+export { TimePanel, type TimePanelProps } from './TimePanel';
+export { ClockTimeField, type ClockTimeFieldProps } from './ClockTimeField';
 export { DateField, type DateFieldProps } from './DateField';
 export { NotesRow, type NotesRowProps } from './NotesRow';
 export {

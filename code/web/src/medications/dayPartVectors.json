@@ -1,0 +1,445 @@
+{
+  "description": "Shared vectors of the part-of-the-day rules: read by code/web/src/medications/dayParts.test.ts and by code/api/tests/Lotties.Domain.Tests/Prescriptions/DayPartVectorTests.cs (linked file). Instants are ISO-8601; offsets are minutes east of UTC.",
+  "dayPartOf": [
+    {
+      "name": "04:59 is still the previous day's night",
+      "at": "2026-03-02T04:59:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-01",
+      "part": "night"
+    },
+    {
+      "name": "05:00 starts the morning",
+      "at": "2026-03-02T05:00:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "morning"
+    },
+    {
+      "name": "11:59 is morning",
+      "at": "2026-03-02T11:59:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "morning"
+    },
+    {
+      "name": "12:00 starts the afternoon",
+      "at": "2026-03-02T12:00:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "afternoon"
+    },
+    {
+      "name": "18:00 starts the evening",
+      "at": "2026-03-02T18:00:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "evening"
+    },
+    {
+      "name": "21:59 is evening",
+      "at": "2026-03-02T21:59:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "evening"
+    },
+    {
+      "name": "22:00 starts the night",
+      "at": "2026-03-02T22:00:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "night"
+    },
+    {
+      "name": "00:30 after midnight belongs to the night that started the day before",
+      "at": "2026-03-03T00:30:00-03:00",
+      "offsetMinutes": -180,
+      "day": "2026-03-02",
+      "part": "night"
+    },
+    {
+      "name": "New Year's night belongs to 31 December",
+      "at": "2027-01-01T02:00:00+01:00",
+      "offsetMinutes": 60,
+      "day": "2026-12-31",
+      "part": "night"
+    },
+    {
+      "name": "DST: before spring forward (EST) 04:30 is night",
+      "at": "2026-03-08T09:30:00Z",
+      "offsetMinutes": -300,
+      "day": "2026-03-07",
+      "part": "night"
+    },
+    {
+      "name": "DST: the same instant after spring forward (EDT) is 05:30, morning",
+      "at": "2026-03-08T09:30:00Z",
+      "offsetMinutes": -240,
+      "day": "2026-03-08",
+      "part": "morning"
+    }
+  ],
+  "windows": [
+    {
+      "name": "morning in Sao Paulo",
+      "day": "2026-03-02",
+      "part": "morning",
+      "offsetMinutes": -180,
+      "start": "2026-03-02T08:00:00Z",
+      "end": "2026-03-02T15:00:00Z"
+    },
+    {
+      "name": "evening in Sao Paulo",
+      "day": "2026-03-02",
+      "part": "evening",
+      "offsetMinutes": -180,
+      "start": "2026-03-02T21:00:00Z",
+      "end": "2026-03-03T01:00:00Z"
+    },
+    {
+      "name": "night crosses midnight",
+      "day": "2026-03-02",
+      "part": "night",
+      "offsetMinutes": -180,
+      "start": "2026-03-03T01:00:00Z",
+      "end": "2026-03-03T08:00:00Z"
+    },
+    {
+      "name": "night at the end of a month",
+      "day": "2026-02-28",
+      "part": "night",
+      "offsetMinutes": 0,
+      "start": "2026-02-28T22:00:00Z",
+      "end": "2026-03-01T05:00:00Z"
+    }
+  ],
+  "status": [
+    {
+      "name": "morning given at 08:12, afternoon is outside the chosen parts",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T14:00:00-03:00",
+      "prescription": { "parts": ["morning", "night"], "startDate": "2026-01-01" },
+      "doses": [{ "at": "2026-03-02T08:12:00-03:00" }],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          {
+            "part": "morning",
+            "state": "given",
+            "givenAt": "2026-03-02T11:12:00Z",
+            "doseCount": 1
+          },
+          { "part": "night", "state": "upcoming" }
+        ],
+        "current": null,
+        "next": { "part": "night", "day": "2026-03-02" },
+        "givenCount": 1,
+        "guard": "outsideParts",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "morning open and not given is due",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T07:00:00-03:00",
+      "prescription": { "parts": ["morning", "night"], "startDate": "2026-01-01" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          { "part": "morning", "state": "due" },
+          { "part": "night", "state": "upcoming" }
+        ],
+        "current": "morning",
+        "next": { "part": "morning", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "a second dose in the same morning asks first (already given)",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T09:00:00-03:00",
+      "prescription": { "parts": ["morning", "night"], "startDate": "2026-01-01" },
+      "doses": [{ "at": "2026-03-02T08:12:00-03:00" }],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          {
+            "part": "morning",
+            "state": "given",
+            "givenAt": "2026-03-02T11:12:00Z",
+            "doseCount": 1
+          },
+          { "part": "night", "state": "upcoming" }
+        ],
+        "current": "morning",
+        "next": { "part": "night", "day": "2026-03-02" },
+        "givenCount": 1,
+        "guard": "alreadyGiven",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "night crosses midnight: a dose at 23:30 counts at 02:00, the next night is tomorrow's",
+      "offsetMinutes": -180,
+      "now": "2026-03-03T02:00:00-03:00",
+      "prescription": { "parts": ["night"], "startDate": "2026-01-01" },
+      "doses": [{ "at": "2026-03-02T23:30:00-03:00" }],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          { "part": "night", "state": "given", "givenAt": "2026-03-03T02:30:00Z", "doseCount": 1 }
+        ],
+        "current": "night",
+        "next": { "part": "night", "day": "2026-03-03" },
+        "givenCount": 1,
+        "guard": "alreadyGiven",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "night due until 05:00",
+      "offsetMinutes": -180,
+      "now": "2026-03-03T03:00:00-03:00",
+      "prescription": { "parts": ["night"], "startDate": "2026-01-01" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [{ "part": "night", "state": "due" }],
+        "current": "night",
+        "next": { "part": "night", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "a morning without a dose is missed (informative), the afternoon is due",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T13:00:00-03:00",
+      "prescription": { "parts": ["morning", "afternoon"], "startDate": "2026-01-01" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          { "part": "morning", "state": "missed" },
+          { "part": "afternoon", "state": "due" }
+        ],
+        "current": "afternoon",
+        "next": { "part": "afternoon", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "a dose just before the window (night) does not count for the morning",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T06:00:00-03:00",
+      "prescription": { "parts": ["morning"], "startDate": "2026-01-01" },
+      "doses": [{ "at": "2026-03-02T04:55:00-03:00" }],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [{ "part": "morning", "state": "due" }],
+        "current": "morning",
+        "next": { "part": "morning", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "a part that ended before the prescription was created is left out",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T16:00:00-03:00",
+      "prescription": {
+        "parts": ["morning", "night"],
+        "startDate": "2026-03-02",
+        "createdAt": "2026-03-02T15:00:00-03:00"
+      },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [{ "part": "night", "state": "upcoming" }],
+        "current": null,
+        "next": { "part": "night", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "outsideParts",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "a dose logged before the prescription was created still shows",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T16:00:00-03:00",
+      "prescription": {
+        "parts": ["morning", "night"],
+        "startDate": "2026-03-02",
+        "createdAt": "2026-03-02T15:00:00-03:00"
+      },
+      "doses": [{ "at": "2026-03-02T08:00:00-03:00" }],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          {
+            "part": "morning",
+            "state": "given",
+            "givenAt": "2026-03-02T11:00:00Z",
+            "doseCount": 1
+          },
+          { "part": "night", "state": "upcoming" }
+        ],
+        "current": null,
+        "next": { "part": "night", "day": "2026-03-02" },
+        "givenCount": 1,
+        "guard": "outsideParts",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "the last night of a course runs until 05:00 the next date",
+      "offsetMinutes": -180,
+      "now": "2026-03-03T02:00:00-03:00",
+      "prescription": { "parts": ["night"], "startDate": "2026-01-01", "endDate": "2026-03-02" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [{ "part": "night", "state": "due" }],
+        "current": "night",
+        "next": { "part": "night", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "after the last night the course has ended",
+      "offsetMinutes": -180,
+      "now": "2026-03-03T06:00:00-03:00",
+      "prescription": { "parts": ["night"], "startDate": "2026-01-01", "endDate": "2026-03-02" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-03",
+        "parts": [],
+        "current": null,
+        "next": null,
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": true
+      }
+    },
+    {
+      "name": "before the course starts the next part is the first one of the start date",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T20:00:00-03:00",
+      "prescription": { "parts": ["morning"], "startDate": "2026-03-03" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [],
+        "current": null,
+        "next": { "part": "morning", "day": "2026-03-03" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": false,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "reminder instants: a night reminder at 01:30 falls on the next date",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T10:00:00-03:00",
+      "prescription": {
+        "parts": ["morning", "night"],
+        "reminders": [
+          { "part": "morning", "time": "08:00" },
+          { "part": "night", "time": "01:30" }
+        ],
+        "startDate": "2026-01-01"
+      },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          { "part": "morning", "state": "due", "reminderAt": "2026-03-02T11:00:00Z" },
+          { "part": "night", "state": "upcoming", "reminderAt": "2026-03-03T04:30:00Z" }
+        ],
+        "current": "morning",
+        "next": { "part": "morning", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "a dose that names another prescription of the medication does not count",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T10:00:00-03:00",
+      "prescription": { "parts": ["morning"], "startDate": "2026-01-01" },
+      "doses": [{ "at": "2026-03-02T08:00:00-03:00", "otherPrescription": true }],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [{ "part": "morning", "state": "due" }],
+        "current": "morning",
+        "next": { "part": "morning", "day": "2026-03-02" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "two doses in one morning: the first time shows, both are counted",
+      "offsetMinutes": -180,
+      "now": "2026-03-02T11:00:00-03:00",
+      "prescription": { "parts": ["morning"], "startDate": "2026-01-01" },
+      "doses": [
+        { "at": "2026-03-02T10:30:00-03:00", "named": true },
+        { "at": "2026-03-02T08:00:00-03:00" }
+      ],
+      "expected": {
+        "day": "2026-03-02",
+        "parts": [
+          { "part": "morning", "state": "given", "givenAt": "2026-03-02T11:00:00Z", "doseCount": 2 }
+        ],
+        "current": "morning",
+        "next": { "part": "morning", "day": "2026-03-03" },
+        "givenCount": 1,
+        "guard": "alreadyGiven",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    },
+    {
+      "name": "DST: after spring forward the windows follow the new wall clock",
+      "offsetMinutes": -240,
+      "now": "2026-03-08T05:30:00-04:00",
+      "prescription": { "parts": ["morning"], "startDate": "2026-01-01" },
+      "doses": [],
+      "expected": {
+        "day": "2026-03-08",
+        "parts": [{ "part": "morning", "state": "due" }],
+        "current": "morning",
+        "next": { "part": "morning", "day": "2026-03-08" },
+        "givenCount": 0,
+        "guard": "none",
+        "courseStarted": true,
+        "courseEnded": false
+      }
+    }
+  ]
+}

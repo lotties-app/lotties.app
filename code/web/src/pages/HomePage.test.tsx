@@ -25,6 +25,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.useRealTimers();
   await settleSync();
   vi.restoreAllMocks();
   await db.delete();
@@ -248,6 +249,10 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
   });
 
   it('a bottle timer stopped with an amount keeps it and its duration', async () => {
+    // The amount chips follow Lia's age in months (docs/design/10-bottle-suggestions.md): pin the date
+    // so she stays 2 months old and the 120 ml chip exists.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 14, 0));
     window.localStorage.clear();
     await seedBuiltIns();
     const startedAt = new Date(Date.now() - 18 * 60_000).toISOString();

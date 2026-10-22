@@ -76,6 +76,14 @@ export interface Medication {
 
 export type PrescriptionKind = 'scheduled' | 'asNeeded';
 export type PrescriptionStatus = 'active' | 'stopped';
+/** A part of the baby's day (windows in medications/dayParts.ts, same as the API). */
+export type DayPart = 'morning' | 'afternoon' | 'evening' | 'night';
+
+/** The local reminder time (`HH:mm`, inside the part's window) of one part of the day. */
+export interface DayPartReminder {
+  part: DayPart;
+  time: string;
+}
 
 /** The doctor's dose rule; with `perKg` the amount is per kg of body weight. */
 export interface PrescriptionDose {
@@ -98,6 +106,13 @@ export interface Prescription {
   timesOfDay: string[] | null;
   /** Scheduled "every N minutes" alternative to `timesOfDay`. */
   everyMinutes: number | null;
+  /**
+   * Scheduled by part of the day ("1 drop in the morning"): one dose per chosen part per day, in
+   * day order. Absent on rows stored before this field existed (= `null`).
+   */
+  dayParts?: DayPart[] | null;
+  /** Optional reminder times of chosen parts; `null` or absent = reminders off (the default). */
+  dayPartReminders?: DayPartReminder[] | null;
   /** As needed: the shortest wait between doses. */
   minIntervalMinutes: number | null;
   maxDosesPer24h: number | null;

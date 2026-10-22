@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { useTestLocale } from '../test/locale';
 import {
+  canRemind,
   emptyForm,
   formFromPrescription,
   lenientTerms,
@@ -9,7 +10,7 @@ import {
   validateForm,
   type PrescriptionForm,
 } from './prescriptionForm';
-import { asNeeded } from './prescriptionFixtures';
+import { asNeeded, byParts } from './prescriptionFixtures';
 import { normalizeGroupName } from './groupName';
 
 const NOW = new Date(2026, 2, 2, 12, 0);
@@ -62,6 +63,25 @@ describe('validateForm (mirrors the API rules)', () => {
       validateForm(form({ ...scheduled, scheduleBy: 'every', everyHours: null })).every,
     ).toBeTruthy();
     expect(validateForm(form({ ...scheduled, scheduleBy: 'every', everyHours: 6 }))).toEqual({});
+  });
+
+  it('rejects per kg for counted units, fractions of sprays and puffs, and quarter suppositories', () => {
+    expect(validateForm(form({ unit: 'sprays' })).unit).toBe(
+      'A per-kg dose is only for measured units like drops, ml or mg, not for sprays, puffs, suppositories or applications.',
+    );
+    const fixed = { perKg: false, rounding: 'none' as const };
+    expect(validateForm(form({ ...fixed, unit: 'sprays', amount: 2 }))).toEqual({});
+    expect(validateForm(form({ ...fixed, unit: 'sprays', amount: 1.5 })).amount).toBe(
+      'Use a whole number of sprays or puffs.',
+    );
+    expect(validateForm(form({ ...fixed, unit: 'supositório', amount: 1.5 }))).toEqual({});
+    expect(validateForm(form({ ...fixed, unit: 'supositório', amount: 0.5 }))).toEqual({});
+    expect(validateForm(form({ ...fixed, unit: 'supositório', amount: 1.25 })).amount).toBe(
+      'Use whole or half suppositories (for example 0.5, 1 or 1.5).',
+    );
+    expect(validateForm(form({ ...fixed, unit: 'puffs', amount: 0.5 })).amount).toBeTruthy();
+    expect(validateForm(form({ ...fixed, unit: 'applications', amount: 0.5 }))).toEqual({});
+    expect(validateForm(form({ ...fixed, unit: 'ml', amount: 0.5 }))).toEqual({});
   });
 
   it('checks dates, text lengths and the interval group', () => {
@@ -167,6 +187,24 @@ describe('the plain-language summary', () => {
     );
   });
 
+  it('reads counted units with plurals', async () => {
+    const spray = form({
+      unit: 'sprays',
+      amount: 2,
+      perKg: false,
+      indication: '',
+      minIntervalHours: 4,
+    });
+    expect(summaryText(lenientTerms(spray))).toBe(
+      'Give 2 sprays, no more often than every 4 hours',
+    );
+    await useTestLocale('pt-BR');
+    expect(summaryText(lenientTerms({ ...spray, unit: 'jatos', amount: 1 }))).toBe(
+      'Dar 1 jato, com intervalo mínimo de 4 horas',
+    );
+    await useTestLocale('en');
+  });
+
   it('is empty until there is a dose and a unit', () => {
     expect(summaryText(lenientTerms(form({ amount: null })))).toBeNull();
     expect(summaryText(lenientTerms(form({ unit: '' })))).toBeNull();
@@ -187,6 +225,96 @@ describe('the plain-language summary', () => {
       ),
     ).toBe('Dar 2,5 ml, com intervalo mínimo de 1,5 hora');
     await useTestLocale('en');
+  });
+});
+
+describe('part of the day', () => {
+  const byPartsForm = (over: Partial<PrescriptionForm> = {}) =>
+    form({
+      kind: 'scheduled',
+      scheduleBy: 'parts',
+      perKg: false,
+      rounding: 'none',
+      indication: '',
+      ...over,
+    });
+
+  it('needs at least one part, and reminder times inside their windows when reminders are on', () => {
+    expect(validateForm(byPartsForm({ parts: [] })).parts).toBe(
+      'Choose at least one part of the day.',
+    );
+    expect(validateForm(byPartsForm({ parts: ['morning'] }))).toEqual({});
+    const night = { ...emptyForm(NOW).reminderTimes, night: '21:00' };
+    expect(
+      validateForm(byPartsForm({ parts: ['night'], partReminders: true, reminderTimes: night }))
+        .reminders,
+    ).toBe('Night: choose a time between 22:00 and 05:00.');
+    expect(
+      validateForm(byPartsForm({ parts: ['night'], partReminders: false, reminderTimes: night })),
+    ).toEqual({});
+    const late = { ...emptyForm(NOW).reminderTimes, night: '01:30' };
+    expect(
+      validateForm(byPartsForm({ parts: ['night'], partReminders: true, reminderTimes: late })),
+    ).toEqual({});
+  });
+
+  it('saves the parts in day order and reminders only when on (default times 08, 14, 19, 22)', () => {
+    expect(emptyForm(NOW).reminderTimes).toEqual({
+      morning: '08:00',
+      afternoon: '14:00',
+      evening: '19:00',
+      night: '22:00',
+    });
+    const off = toTerms(byPartsForm({ parts: ['night', 'morning'], times: ['08:00'] }));
+    expect(off).toMatchObject({
+      kind: 'scheduled',
+      dayParts: ['morning', 'night'],
+      dayPartReminders: null,
+      timesOfDay: null,
+      everyMinutes: null,
+    });
+    const on = toTerms(byPartsForm({ parts: ['night', 'morning'], partReminders: true }));
+    expect(on.dayPartReminders).toEqual([
+      { part: 'morning', time: '08:00' },
+      { part: 'night', time: '22:00' },
+    ]);
+    expect(toTerms(form({ kind: 'scheduled', times: ['08:00'] })).dayParts).toBeNull();
+  });
+
+  it('round trips an existing part-of-the-day prescription', () => {
+    const p = byParts('med-a', ['morning', 'evening'], {
+      reminders: [{ part: 'evening', time: '20:30' }],
+    });
+    const edited = formFromPrescription(p);
+    expect(edited).toMatchObject({ scheduleBy: 'parts', parts: ['morning', 'evening'] });
+    expect(edited.partReminders).toBe(true);
+    expect(edited.reminderTimes.evening).toBe('20:30');
+    expect(edited.reminderTimes.morning).toBe('08:00');
+    const back = toTerms(edited, p.status);
+    expect([back.dayParts, back.dayPartReminders]).toEqual([
+      ['morning', 'evening'],
+      [
+        { part: 'morning', time: '08:00' },
+        { part: 'evening', time: '20:30' },
+      ],
+    ]);
+  });
+
+  it('reads the parts in the summary, in English and Portuguese', async () => {
+    const terms = lenientTerms(byPartsForm({ parts: ['morning', 'night'] }));
+    expect(summaryText(terms)).toBe('Give 1 drop, in the morning and at night');
+    await useTestLocale('pt-BR');
+    expect(summaryText(lenientTerms(byPartsForm({ parts: ['morning', 'evening'] })))).toBe(
+      'Dar 1 gota, de manhã e à noite',
+    );
+    await useTestLocale('en');
+  });
+
+  it('offers medicine reminders only when the saved terms can remind', () => {
+    expect(canRemind(toTerms(byPartsForm({ parts: ['morning'] })))).toBe(false);
+    expect(canRemind(toTerms(byPartsForm({ parts: ['morning'], partReminders: true })))).toBe(true);
+    expect(canRemind(toTerms(form({ kind: 'scheduled', times: ['08:00'] })))).toBe(true);
+    expect(canRemind(toTerms(form()))).toBe(false);
   });
 });
 

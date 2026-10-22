@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BabyEvent, EventType } from '../db/models';
 import { BABY_ID } from '../test/fakeApi';
-import { FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import { BELLY_MASSAGE_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import {
   clearAllLastUsed,
   clearLastUsedForBaby,
@@ -32,6 +32,14 @@ describe('planStop', () => {
     expect(planStop(FEEDING_TYPE, { method: 'breast' })).toEqual({ kind: 'stop' });
     expect(planStop(SLEEP_TYPE, {})).toEqual({ kind: 'stop' });
     expect(planStop(undefined, {})).toEqual({ kind: 'stop' });
+  });
+
+  it('stops a belly massage at once, like tummy time: its details are all optional', () => {
+    expect(planStop(BELLY_MASSAGE_TYPE, {})).toEqual({ kind: 'stop' });
+    expect(planStop(BELLY_MASSAGE_TYPE, { reason: 'gas' })).toEqual({ kind: 'stop' });
+    expect(planStop(BELLY_MASSAGE_TYPE, { reason: 'gas', helped: 'yes' })).toEqual({
+      kind: 'stop',
+    });
   });
 
   it('asks for missing required fields first', () => {

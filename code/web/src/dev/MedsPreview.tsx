@@ -74,6 +74,7 @@ const PRODUCTS = [
   product('p-flygas', 'Flygas', 'drops'),
   product('p-luftal', 'Luftal', 'drops'),
   { ...product('p-colidis', 'Colidis', 'drops'), substances: [] },
+  { ...product('p-sorine', 'Sorine', 'spray'), substances: [] },
 ];
 
 function clockAgo(minAgo: number): string {
@@ -132,6 +133,13 @@ const PRESCRIPTIONS: Prescription[] = [
     timesOfDay: [clockAgo(30), '23:00'],
   }),
   prescription({
+    id: 'rx-sorine',
+    medicationId: 'm-sorine',
+    dose: { amount: 2, unit: 'sprays', perKg: false, roundingStep: null },
+    minIntervalMinutes: 240,
+    indication: 'blocked nose',
+  }),
+  prescription({
     id: 'rx-old',
     medicationId: 'm-flygas',
     status: 'stopped',
@@ -153,6 +161,7 @@ async function seed(db: BabyRoutineDb): Promise<void> {
     medication('m-colidis', 'Colidis', true, 'p-colidis', { amount: 5, unit: 'drops' }),
     medication('m-flygas', 'Flygas', true, 'p-flygas', { amount: 10, unit: 'drops' }),
     medication('m-vitd', 'Vitamin D', false, null),
+    medication('m-sorine', 'Sorine', false, 'p-sorine', { amount: 2, unit: 'sprays' }),
   ]);
   await db.prescriptions.bulkPut(PRESCRIPTIONS);
   await cacheProducts(db, PRODUCTS);

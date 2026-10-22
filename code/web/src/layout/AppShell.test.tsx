@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from '../AppRoutes';
 import type { BabyRoutineDb } from '../db/database';
 import { fakeApi, testDatabase } from '../test/fakeApi';
@@ -9,6 +9,7 @@ import { seedBaby } from '../test/seed';
 import { nightPeriodKey } from '../theme/nightFeed';
 import { NIGHT_FEED_STATE_STORAGE_KEY } from '../theme/nightFeedStorage';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
+import { useTestLocale } from '../test/locale';
 
 let db: BabyRoutineDb;
 
@@ -17,6 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.useRealTimers();
   await settleSync();
   await db.delete();
 });
@@ -26,6 +28,9 @@ const renderShell = (route = '/', api = fakeApi().api) =>
 
 describe('header', () => {
   it('shows the baby avatar initial, name and age line', async () => {
+    // Lia's age is a count of days, weeks or months only while she is under a year old: pin the date.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 14, 0));
     await seedBaby(db);
     renderShell();
     const header = await screen.findByRole('banner');
@@ -74,9 +79,9 @@ describe('night view quick toggle', () => {
 });
 
 describe('bottom navigation', () => {
-  const tabs = ['Now', 'Day', 'Insights'];
+  const tabs = ['Now', 'Day', 'Insights', 'Settings'];
 
-  it('has Now, Day and Insights links and the round Add event button', async () => {
+  it('has Now, Day, Insights and Settings links and the round Add event button', async () => {
     await seedBaby(db);
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
@@ -90,7 +95,10 @@ describe('bottom navigation', () => {
     expect(within(nav).getByRole('link', { name: 'Insights' }).getAttribute('href')).toBe(
       '/insights',
     );
-    // The round "+" sits in the pill between Day and Insights, not among the links.
+    expect(within(nav).getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe(
+      '/settings',
+    );
+    // The round "+" sits in the middle of the pill: two tabs on each side, not among the links.
     const add = await within(nav).findByRole('button', { name: 'Add event' });
     expect(add.compareDocumentPosition(within(nav).getByRole('link', { name: 'Day' }))).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
@@ -124,6 +132,8 @@ describe('bottom navigation', () => {
     ['/', 'Now'],
     ['/day', 'Day'],
     ['/insights', 'Insights'],
+    ['/settings', 'Settings'],
+    ['/settings#sync', 'Settings'],
   ])(
     'marks the current tab on %s (%s) and puts the pill behind its icon',
     async (route, current) => {
@@ -150,7 +160,7 @@ describe('bottom navigation', () => {
 
     renderShell('/growth');
     expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Growth', level: 2 })).toBeTruthy();
   });
 
@@ -162,15 +172,33 @@ describe('bottom navigation', () => {
     expect(await screen.findByRole('heading', { name: 'Day' })).toBeTruthy();
     fireEvent.click(within(nav).getByRole('link', { name: 'Insights' }));
     expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
+    fireEvent.click(within(nav).getByRole('link', { name: 'Settings' }));
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeTruthy();
+    expect(within(nav).getByRole('link', { name: 'Settings' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
     fireEvent.click(within(nav).getByRole('link', { name: 'Now' }));
     expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
+  });
+
+  it('labels the tabs in Portuguese (Settings is "Ajustes", as in the account menu)', async () => {
+    await useTestLocale('pt-BR');
+    await seedBaby(db);
+    renderShell('/');
+    const nav = await screen.findByRole('navigation', { name: 'Principal' });
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Agora', 'Dia', 'Insights', 'Ajustes']);
+    expect(await within(nav).findByRole('button', { name: 'Adicionar evento' })).toBeTruthy();
   });
 
   it('stays visible for viewers (write actions are disabled on the screens, not hidden here)', async () => {
     await seedBaby(db, { role: 'Viewer' });
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav).getAllByRole('link')).toHaveLength(4);
     // Viewers cannot log, so there is no "+".
     expect(within(nav).queryByRole('button', { name: 'Add event' })).toBeNull();
     expect(await screen.findByText(/view-only access/)).toBeTruthy();
@@ -179,8 +207,11 @@ describe('bottom navigation', () => {
   it('is visible with no baby too, and sits above the home indicator', async () => {
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav).getAllByRole('link')).toHaveLength(4);
     expect(within(nav).queryByRole('button', { name: 'Add event' })).toBeNull();
+    // Settings works before the first baby too, like the other tabs.
+    fireEvent.click(within(nav).getByRole('link', { name: 'Settings' }));
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeTruthy();
     const styles = Array.from(document.querySelectorAll('style'), (node) => node.textContent).join(
       '',
     );
@@ -275,6 +306,17 @@ describe('accessibility (axe)', () => {
       expect(await violations()).toEqual([]);
     },
   );
+
+  it('has no violations on the Settings tab', async () => {
+    await seedBaby(db);
+    renderShell('/settings');
+    await screen.findByRole('heading', { name: 'Settings', level: 1 });
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getByRole('link', { name: 'Settings' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(await violations()).toEqual([]);
+  });
 
   it('has no violations with the account menu open', async () => {
     await seedBaby(db);

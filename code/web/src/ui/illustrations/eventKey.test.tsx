@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { renderUi } from '../../test/renderUi';
-import { BREAST_PUMP_TYPE, DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../../test/builtInTypes';
+import {
+  BELLY_MASSAGE_TYPE,
+  BREAST_PUMP_TYPE,
+  DIAPER_TYPE,
+  FEEDING_TYPE,
+  FUSSY_TYPE,
+  NASAL_SUCTION_TYPE,
+  SLEEP_TYPE,
+} from '../../test/builtInTypes';
 import { EventIllustration } from './EventIllustration';
 import { illustrationKeyFor } from './eventKey';
 import { ILLUSTRATION_NAMES, illustrationName } from './registry';
@@ -63,6 +71,30 @@ describe('EventIllustration', () => {
       <EventIllustration type={FEEDING_TYPE} payload={{ method: 'breast' }} size={64} />,
     );
     expect(container.querySelector('svg[data-illustration="nursing"]')).toBeTruthy();
+  });
+
+  it('renders the wind icon tile for nasal suction, which has no drawing of its own', () => {
+    expect(illustrationKeyFor(NASAL_SUCTION_TYPE, { tool: 'bulb' })).toBe('nasal_suction');
+    expect(illustrationName('nasal_suction')).toBeUndefined();
+    const { container } = renderUi(<EventIllustration type={NASAL_SUCTION_TYPE} size={64} />);
+    expect(container.querySelector('svg[data-illustration]')).toBeNull();
+    expect(container.querySelector('svg[data-icon="wind"]')).toBeTruthy();
+  });
+
+  it('renders the massage icon tile for belly massage, which has no drawing of its own', () => {
+    expect(illustrationKeyFor(BELLY_MASSAGE_TYPE, { reason: 'gas' })).toBe('belly_massage');
+    expect(illustrationName('belly_massage')).toBeUndefined();
+    const { container } = renderUi(<EventIllustration type={BELLY_MASSAGE_TYPE} size={64} />);
+    expect(container.querySelector('svg[data-illustration]')).toBeNull();
+    expect(container.querySelector('svg[data-icon="massage"]')).toBeTruthy();
+  });
+
+  it('renders the crying-face icon tile for a fussy spell, which has no drawing of its own', () => {
+    expect(illustrationKeyFor(FUSSY_TYPE, { intensity: 'mild' })).toBe('fussy');
+    expect(illustrationName('fussy')).toBeUndefined();
+    const { container } = renderUi(<EventIllustration type={FUSSY_TYPE} size={64} />);
+    expect(container.querySelector('svg[data-illustration]')).toBeNull();
+    expect(container.querySelector('svg[data-icon="mood-cry"]')).toBeTruthy();
   });
 
   it('renders the icon tile of a custom type instead of a drawing', () => {

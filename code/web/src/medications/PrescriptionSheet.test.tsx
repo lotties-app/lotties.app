@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cacheProducts } from '../db/catalogCache';
 import type { BabyRoutineDb } from '../db/database';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import { useTestLocale } from '../test/locale';
@@ -131,6 +132,7 @@ describe('PrescriptionSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a time' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a time' }));
     const first = screen.getByLabelText('Time 1') as HTMLInputElement;
+    expect(first.type).toBe('time');
     expect([first.value, (screen.getByLabelText('Time 2') as HTMLInputElement).value]).toEqual([
       '08:00',
       '12:00',
@@ -206,6 +208,68 @@ describe('PrescriptionSheet', () => {
       expect(live[0].id).not.toBe(p.id);
       expect(live[0].minIntervalMinutes).toBe(480);
     });
+  });
+
+  it('offers only sprays for a spray product, refuses per kg and fractions, then saves', async () => {
+    await cacheProducts(db, [
+      {
+        id: 'p-sorine',
+        name: 'Sorine',
+        form: 'spray',
+        country: 'BR',
+        status: 'seed',
+        mergedIntoId: null,
+        substances: [],
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+    await db.medications.put({
+      id: 'm-sorine',
+      babyId: BABY_ID,
+      name: 'Sorine',
+      defaultDosage: null,
+      notes: null,
+      isUsual: false,
+      productId: 'p-sorine',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    renderSheet({ medicationId: 'm-sorine' });
+    await sheet();
+    const units = await screen.findByRole('radiogroup', { name: 'Common units' });
+    await waitFor(() =>
+      expect(
+        within(units)
+          .getAllByRole('radio')
+          .map((r) => r.textContent),
+      ).toEqual(['sprays']),
+    );
+    fireEvent.click(within(units).getByRole('radio', { name: 'sprays' }));
+    expect((text(/^Unit/) as HTMLInputElement).value).toBe('sprays');
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Dose/ }), {
+      target: { value: '1.5' },
+    });
+    fireEvent.click(screen.getByRole('switch', { name: /Dose depends on weight/ }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Quick values' })).getByRole('button', {
+        name: /^4/,
+      }),
+    );
+    await waitForDateFields();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText(/A per-kg dose is only for measured units/)).toBeTruthy();
+    expect(screen.getByText('Use a whole number of sprays or puffs.')).toBeTruthy();
+    expect(await db.prescriptions.count()).toBe(0);
+
+    fireEvent.click(screen.getByRole('switch', { name: /Dose depends on weight/ }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Dose/ }), {
+      target: { value: '2' },
+    });
+    expect(screen.getByText('Give 2 sprays, no more often than every 4 hours')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(async () => expect(await db.prescriptions.count()).toBe(1));
+    const [saved] = await db.prescriptions.toArray();
+    expect(saved.dose).toEqual({ amount: 2, unit: 'sprays', perKg: false, roundingStep: null });
   });
 
   it('asks before discarding unsaved changes', async () => {

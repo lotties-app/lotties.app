@@ -9,6 +9,31 @@
     "body": "A janela estimada de soneca abre por volta de {{time}}.",
     "bodyNamed": "{{baby}}: a janela estimada de soneca abre por volta de {{time}}."
   },
+  "belly_pain_pattern": {
+    "title": "Hora de uma massagem na barriguinha",
+    "body": "A dor de barriga costuma aparecer a partir de {{time}}.",
+    "bodyNamed": "{{baby}}: a dor de barriga costuma aparecer a partir de {{time}}."
+  },
+  "overtired_warning": {
+    "title": "Tempo acordado perto do limite de costume",
+    "body": "O limite de costume é por volta de {{time}}. Uma soneca em breve pode ajudar.",
+    "bodyNamed": "{{baby}}: o limite de costume é por volta de {{time}}. Uma soneca em breve pode ajudar."
+  },
+  "fussy_pattern": {
+    "title": "A hora do choro está chegando",
+    "body": "A irritação costuma começar a partir de {{time}}. Uma rotina calma pode ajudar.",
+    "bodyNamed": "{{baby}}: a irritação costuma começar a partir de {{time}}."
+  },
+  "diaper_wet_headsup": {
+    "title": "Pode ser hora de olhar a fralda",
+    "body": "Uma fralda molhada costuma vir por volta de {{time}}.",
+    "bodyNamed": "{{baby}}: uma fralda molhada costuma vir por volta de {{time}}."
+  },
+  "diaper_dirty_headsup": {
+    "title": "Uma fralda suja pode estar a caminho",
+    "body": "Uma fralda suja costuma vir por volta de {{time}}.",
+    "bodyNamed": "{{baby}}: uma fralda suja costuma vir por volta de {{time}}."
+  },
   "test": {
     "title": "Notificações ativadas",
     "body": "Este é um teste do Lotties."

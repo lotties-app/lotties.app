@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Skeleton, Typography } from '@mui/material';
+import { Box, Button, Skeleton, Typography, useMediaQuery } from '@mui/material';
 import { canWrite } from '../baby/permissions';
 import {
   useAllPrescriptions,
@@ -21,6 +21,7 @@ import { RADIUS, type CategoryName } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Illustration } from '../ui/illustrations';
 import { DateBar } from './DateBar';
+import { DayRibbon } from './DayRibbon';
 import { DayFilterSheet } from './DayFilterSheet';
 import { DayRow, SessionSeparatorRow } from './DayRow';
 import { DaySummary } from './DaySummary';
@@ -36,6 +37,8 @@ import {
   summarizeDay,
   withSessionSeparators,
 } from './dayModel';
+import { ribbonLabel } from './ribbonLabel';
+import { ribbonModel } from './ribbonModel';
 import { useDayLabel } from './useDayLabel';
 import { useSwipe } from './useSwipe';
 
@@ -100,6 +103,32 @@ function NoMatches({ onClear }: { onClear: () => void }) {
   );
 }
 
+/** How long a row stays highlighted after "Show in list" on the ribbon. */
+const HIGHLIGHT_MS = 2000;
+
+/**
+ * Scrolls the row of `id` into view, highlights it for a moment and moves the focus to it (after
+ * the ribbon's popover gave the focus back to its mark, so this effect runs last).
+ */
+function useRowHighlight(list: RefObject<HTMLUListElement | null>) {
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const [highlight, setHighlight] = useState<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    if (!highlight) return;
+    const row = Array.from(
+      list.current?.querySelectorAll<HTMLElement>('[data-event-id]') ?? [],
+    ).find((element) => element.dataset.eventId === highlight.id);
+    row?.scrollIntoView?.({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+    row?.querySelector<HTMLElement>('button:not(:disabled)')?.focus({ preventScroll: true });
+    const timer = window.setTimeout(() => setHighlight(null), HIGHLIGHT_MS);
+    return () => window.clearTimeout(timer);
+  }, [highlight, list, reducedMotion]);
+  return {
+    highlighted: highlight?.id ?? null,
+    show: (id: string) => setHighlight({ id, at: Date.now() }),
+  };
+}
+
 /** Noon of `day` as a new-event prefill (adding to a past day must not land on today). */
 function prefillFor(typeId: string, day: Date): FormPrefill {
   return {
@@ -129,6 +158,8 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<BabyEvent | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const rowHighlight = useRowHighlight(listRef);
 
   const types = useEventTypes(baby.id);
   const medications = useMedications(baby.id);
@@ -156,10 +187,17 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
 
   if (!types || !medications || !events) return <DaySkeleton />;
 
-  const summary = summarizeDay(events, types, bounds, new Date(clock));
+  const now = new Date(clock);
+  const summary = summarizeDay(events, types, bounds, now);
+  const ribbon = ribbonModel(events, types, bounds, now);
+  const isToday = isSameDay(day, today);
+  const dayLength = bounds.end.getTime() - bounds.start.getTime();
+  const nowAt = Math.min(1, Math.max(0, (clock - bounds.start.getTime()) / dayLength));
   const dayEvents = eventsOfDay(events, bounds);
   const rows = filterByCategory(dayEvents, types, selected);
   const items = withSessionSeparators(rows, types);
+  const listedIds = new Set(rows.map((row) => row.id));
+  const categories = categoriesOf(types);
   const typeOf = (event: BabyEvent): EventType | undefined =>
     types.find((candidate) => candidate.id === event.typeId);
 
@@ -187,13 +225,30 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         filterCount={selected.size}
         onOpenFilter={() => setFiltering(true)}
       />
-      <DaySummary summary={summary} />
+      <DaySummary summary={summary}>
+        <DayRibbon
+          model={ribbon}
+          label={ribbonLabel(summary, t)}
+          types={types}
+          medications={medications}
+          {...(prescriptions ? { prescriptions } : {})}
+          categories={categories}
+          selected={selected}
+          onSelectedChange={setSelected}
+          now={now}
+          isToday={isToday}
+          nowAt={nowAt}
+          listedIds={listedIds}
+          {...(writable ? { onOpen: setEditing } : {})}
+          onShowInList={(event) => rowHighlight.show(event.id)}
+        />
+      </DaySummary>
       {dayEvents.length === 0 && <EmptyDay readOnly={!writable} onAdd={addEvent} />}
       {dayEvents.length > 0 && rows.length === 0 && (
         <NoMatches onClear={() => setSelected(new Set())} />
       )}
       {rows.length > 0 && (
-        <Box component="ul" aria-label={label} sx={{ m: 0, p: 0 }}>
+        <Box component="ul" ref={listRef} aria-label={label} sx={{ m: 0, p: 0 }}>
           {items.map((item, index) =>
             item.kind === 'separator' ? (
               <SessionSeparatorRow
@@ -210,6 +265,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
                   {...(prescriptions ? { prescriptions } : {})}
                   syncState={syncStates?.get(item.event.id)}
                   hasNext={index < items.length - 1}
+                  highlighted={rowHighlight.highlighted === item.event.id}
                   onEdit={setEditing}
                   {...(writable
                     ? {
@@ -227,7 +283,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
       <DayFilterSheet
         open={filtering}
         onClose={() => setFiltering(false)}
-        categories={categoriesOf(types)}
+        categories={categories}
         selected={selected}
         onChange={setSelected}
       />

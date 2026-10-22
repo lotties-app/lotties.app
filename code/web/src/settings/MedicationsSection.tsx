@@ -19,7 +19,7 @@ import { GuardrailNote } from '../medications/GuardrailNote';
 import { LinkedProduct } from '../medications/LinkedProduct';
 import { PrescriptionSheet } from '../medications/PrescriptionSheet';
 import { ReminderPromptCard } from '../notifications/ui/ReminderPromptCard';
-import { amountWithUnit, summaryText } from '../medications/prescriptionForm';
+import { amountWithUnit, canRemind, summaryText } from '../medications/prescriptionForm';
 import { stateLine } from '../medications/statusText';
 import { useMedicationStatuses } from '../medications/useMedicationStatus';
 import { Icon } from '../ui/Icon';
@@ -323,7 +323,7 @@ export function MedicationsSection({ baby }: { baby: Baby }) {
         <PrescriptionSheet
           babyId={baby.id}
           {...(editingRx === 'new' ? {} : { prescription: editingRx.prescription })}
-          onSaved={(terms) => setOfferingReminders(terms.kind === 'scheduled')}
+          onSaved={(terms) => setOfferingReminders(canRemind(terms))}
           onDone={() => setEditingRx(null)}
         />
       )}

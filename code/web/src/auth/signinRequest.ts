@@ -1,4 +1,4 @@
-import { UserManager, type SigninRedirectArgs } from 'oidc-client-ts';
+import { UserManager, type INavigator, type SigninRedirectArgs } from 'oidc-client-ts';
 import { currentLocale } from '../i18n/i18n';
 
 /** What `login` accepts besides the path to return to. */
@@ -41,10 +41,13 @@ export function signinArgs(returnTo: string | undefined, audience?: string): Sig
  * `prompt=create`; its `/registrations` endpoint is used instead, through a manager that shares the
  * settings and state storage of `userManager` (so the callback is handled as usual). Other
  * providers get `prompt=create` on their normal endpoint (OIDC Initiated User Registration).
+ * `redirectNavigator` is the one `userManager` was built with when it is not the library's default
+ * (the system browser in the native app, auth/nativeAuth.ts).
  */
 export async function registerRedirect(
   userManager: UserManager,
   args: SigninRedirectArgs,
+  redirectNavigator?: INavigator,
 ): Promise<void> {
   const metadata = await userManager.metadataService.getMetadata();
   const endpoint = registrationEndpoint(metadata.authorization_endpoint);
@@ -52,9 +55,12 @@ export async function registerRedirect(
     await userManager.signinRedirect({ ...args, prompt: 'create' });
     return;
   }
-  const registrar = new UserManager({
-    ...userManager.settings,
-    metadata: { ...metadata, authorization_endpoint: endpoint },
-  });
+  const registrar = new UserManager(
+    {
+      ...userManager.settings,
+      metadata: { ...metadata, authorization_endpoint: endpoint },
+    },
+    redirectNavigator,
+  );
   await registrar.signinRedirect(args);
 }

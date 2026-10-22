@@ -13,6 +13,7 @@ import {
   recordLastUsed,
   recordLastUsedMedications,
 } from '../events/lastUsedValues';
+import { bottleSuggestions, type BottleSuggestions } from '../events/bottleSuggestions';
 import { validatePayload } from '../events/payloadRules';
 import { PresetNotRunnableError, type SheetPrefill, type UndoToken } from '../presets/actions';
 import { presetStatus, type PresetStatus } from '../presets/status';
@@ -170,10 +171,6 @@ export function lastAndLogTiles(
 
 /* ---------- trays ---------- */
 
-export const DEFAULT_BOTTLE_AMOUNTS: readonly number[] = [60, 90, 120, 150];
-const DEFAULT_BOTTLE_AMOUNT = 90;
-const CHIP_COUNT = 4;
-
 function fieldOf(type: EventType, key: string) {
   return type.fields.find((f) => f.key === key);
 }
@@ -185,9 +182,14 @@ function inFieldRange(type: EventType, key: string, value: number): boolean {
 }
 
 export interface BottleTray {
-  /** Amount chips (ml), ascending: recent amounts of this baby topped up with the defaults. */
+  /**
+   * Amount chips (ml), ascending, that follow the baby (events/bottleSuggestions.ts); the last
+   * (else the remembered) amount is always one of them.
+   */
   amounts: number[];
-  /** Pre-selected amount: the last bottle, else the remembered one, else 90 ml. */
+  /** Where the chips come from (the caption under them). */
+  suggestions: BottleSuggestions;
+  /** Pre-selected amount: the last bottle, else the remembered one, else the suggested one. */
   amountMl: number;
   /** Pre-selected content (`formula` / `breast_milk`), when known. */
   content: string | null;
@@ -213,7 +215,19 @@ export interface FeedTray {
   solid: SheetPrefill;
 }
 
-function bottleTray(babyId: string, type: EventType, feeds: BabyEvent[]): BottleTray {
+/** What the bottle chips read beyond the Now window: 30 days of events and the birth date. */
+export interface BottleHistoryInput {
+  events: readonly BabyEvent[];
+  birthDate: string | null;
+}
+
+function bottleTray(
+  babyId: string,
+  type: EventType,
+  feeds: BabyEvent[],
+  now: Date,
+  history: BottleHistoryInput | undefined,
+): BottleTray {
   const bottles = feeds
     .filter(
       (e) => payloadString(e, 'method') === 'bottle' && payloadNumber(e, 'amount_ml') !== undefined,
@@ -226,21 +240,24 @@ function bottleTray(babyId: string, type: EventType, feeds: BabyEvent[]): Bottle
   const lastAmount = last ? payloadNumber(last, 'amount_ml') : undefined;
   const lastContent = last ? (payloadString(last, 'bottle_feeding_type') ?? null) : null;
 
-  const recent = [
-    ...bottles.map((e) => payloadNumber(e, 'amount_ml') as number),
-    ...(typeof rememberedAmount === 'number' ? [rememberedAmount] : []),
-  ].filter((a) => inFieldRange(type, 'amount_ml', a));
-  const amounts: number[] = [];
-  for (const amount of [...recent, ...DEFAULT_BOTTLE_AMOUNTS]) {
-    if (amounts.length < CHIP_COUNT && !amounts.includes(amount)) amounts.push(amount);
-  }
+  const known = lastAmount ?? (typeof rememberedAmount === 'number' ? rememberedAmount : null);
+  const include = known !== null && inFieldRange(type, 'amount_ml', known) ? known : null;
+  const field = fieldOf(type, 'amount_ml');
+  const suggestions = bottleSuggestions({
+    events: history?.events ?? feeds,
+    feedingTypeId: type.id,
+    birthDate: history?.birthDate ?? null,
+    now,
+    min: field?.min ?? null,
+    max: field?.max ?? null,
+    include,
+  });
   const contents = fieldOf(type, 'bottle_feeding_type')?.options ?? [];
   const content = lastContent ?? (typeof rememberedContent === 'string' ? rememberedContent : null);
   return {
-    amounts: amounts.sort((a, b) => a - b),
-    amountMl:
-      lastAmount ??
-      (typeof rememberedAmount === 'number' ? rememberedAmount : DEFAULT_BOTTLE_AMOUNT),
+    amounts: suggestions.amounts,
+    suggestions,
+    amountMl: known ?? suggestions.preferred,
     content: content !== null && contents.includes(content) ? content : null,
     contents,
     same:
@@ -256,6 +273,8 @@ export function feedTrayOptions(
   types: readonly EventType[],
   events: readonly BabyEvent[],
   now: Date,
+  /** 30 days of events and the birth date for the amount chips; else `events` only, no age. */
+  history?: BottleHistoryInput,
 ): FeedTray | null {
   const type = typeForKey(types, 'feeding');
   if (!type) return null;
@@ -270,7 +289,7 @@ export function feedTrayOptions(
   return {
     typeId: type.id,
     lastMethod: newest ? (payloadString(newest, 'method') ?? null) : null,
-    bottle: bottleTray(babyId, type, feeds),
+    bottle: bottleTray(babyId, type, feeds, now, history),
     breast: { ...suggestion, runningId: running?.id ?? null },
     solid: { typeId: type.id, startedAt, endedAt: startedAt, payload: { method: 'solid' } },
   };

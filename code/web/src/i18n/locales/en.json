@@ -32,7 +32,8 @@
     "now": "Now",
     "day": "Day",
     "insights": "Insights",
-    "add": "Add event"
+    "add": "Add event",
+    "settings": "Settings"
   },
   "auth": {
     "signIn": "Sign in",
@@ -146,7 +147,10 @@
     "diaper": "Diaper",
     "medication": "Medication",
     "belly_pain": "Belly pain",
+    "nasal_suction": "Nasal suction",
+    "belly_massage": "Belly massage",
     "bath": "Bath",
+    "fussy": "Fussy",
     "tummy_time": "Tummy time",
     "pumping": "Pumping",
     "custom": "Custom",
@@ -177,6 +181,20 @@
     "labelValue": "{{label}} {{value}}",
     "moodOnWake": "Mood on waking: {{mood}}",
     "fellAsleepIn": "fell asleep in {{duration}}",
+    "massageHelped": {
+      "yes": "helped",
+      "aLittle": "helped a little",
+      "no": "didn't help"
+    },
+    "fussyHelped": {
+      "feeding": "feeding helped",
+      "rocking": "rocking helped",
+      "pacifier": "the pacifier helped",
+      "massage": "massage helped",
+      "sleep": "sleep helped",
+      "other": "something else helped",
+      "nothing": "nothing helped"
+    },
     "pauses_one": "{{count}} pause",
     "pauses_other": "{{count}} pauses"
   },
@@ -212,7 +230,19 @@
       "label": "The day at a glance: {{sleep}}, {{feeds}}, {{diapers}}",
       "sleep": "{{duration}} of sleep",
       "noSleep": "no sleep logged",
-      "legend": "What the colours mean"
+      "legend": "What the colours mean",
+      "range": "{{from}} – {{to}}",
+      "itemName": "{{name}} {{time}}, {{details}}",
+      "itemNameShort": "{{name}} {{time}}",
+      "cluster_one": "{{count}} event, {{from}} to {{to}}",
+      "cluster_other": "{{count}} events, {{from}} to {{to}}",
+      "clusterTitle_one": "{{count}} event",
+      "clusterTitle_other": "{{count}} events",
+      "naps_one": "{{count}} nap",
+      "naps_other": "{{count}} naps",
+      "open": "Open",
+      "showInList": "Show in list",
+      "legendHint": "Tap a colour to show or hide it"
     },
     "empty": {
       "title": "A quiet day. Nothing logged yet."
@@ -277,6 +307,12 @@
       "filled_one": "{{count}} detail added",
       "filled_other": "{{count}} details added",
       "moodAria": "Mood on waking"
+    },
+    "bottleSuggestions": {
+      "age_one": "Typical for {{count}} month. Based on common ranges, not advice.",
+      "age_other": "Typical for {{count}} months. Based on common ranges, not advice.",
+      "newborn": "Typical for newborns. Based on common ranges, not advice.",
+      "history": "From your recent feeds"
     }
   },
   "eventTypes": {
@@ -478,6 +514,93 @@
         },
         "paused_at": {
           "label": "Paused since"
+        }
+      }
+    },
+    "nasal_suction": {
+      "name": "Nasal suction",
+      "fields": {
+        "tool": {
+          "label": "Tool"
+        },
+        "saline": {
+          "label": "Saline used"
+        }
+      },
+      "options": {
+        "tool": {
+          "bulb": "Bulb",
+          "electric": "Electric",
+          "mouth": "Mouth suction"
+        }
+      }
+    },
+    "belly_massage": {
+      "name": "Belly massage",
+      "fields": {
+        "reason": {
+          "label": "Reason"
+        },
+        "helped": {
+          "label": "Did it help?"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "reason": {
+          "gas": "Gas",
+          "constipation": "Constipation",
+          "colic": "Colic",
+          "other": "Other"
+        },
+        "helped": {
+          "yes": "Yes",
+          "a_little": "A little",
+          "no": "No"
+        }
+      }
+    },
+    "fussy": {
+      "name": "Fussy / crying",
+      "fields": {
+        "intensity": {
+          "label": "Intensity"
+        },
+        "what_helped": {
+          "label": "What helped"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "intensity": {
+          "mild": "Mild",
+          "moderate": "Moderate",
+          "intense": "Intense"
+        },
+        "what_helped": {
+          "feeding": "Feeding",
+          "rocking": "Rocking",
+          "pacifier": "Pacifier",
+          "massage": "Massage",
+          "sleep": "Sleep",
+          "other": "Other",
+          "nothing": "Nothing"
         }
       }
     }
@@ -1009,7 +1132,11 @@
       "drops": "drops",
       "drop": "drop",
       "ml": "ml",
-      "mg": "mg"
+      "mg": "mg",
+      "sprays": "sprays",
+      "puffs": "puffs",
+      "suppositories": "suppositories",
+      "applications": "applications"
     }
   },
   "now": {
@@ -1128,6 +1255,77 @@
       "title": "Why this window?",
       "noBasis": "Based on your logged history."
     },
+    "bellyPattern": {
+      "label": "Belly pain pattern",
+      "text": "Belly pain often shows up around {{time}}. A belly massage may help.",
+      "start": "Start massage",
+      "notToday": "Not today",
+      "whyTitle": "Why this suggestion?",
+      "window": "Usual time: {{start}} to {{end}}.",
+      "count": "Belly pain was logged in this window on {{count}} of the last {{recent}} days.",
+      "rule": "The suggestion shows when that happens on at least {{minimum}} of the last {{recent}} days and on at least {{coverage}}% of the days with belly pain in the last {{lookBack}} days.",
+      "daysTitle": "Days and times used",
+      "day": "{{date}}: {{times}}",
+      "disclaimer": "This is a pattern from what you logged, not medical advice. If the pain keeps coming back, mention it to your pediatrician."
+    },
+    "overtired": {
+      "label": "Witching hour heads-up",
+      "text": "Witching hour soon: awake for {{awake}}, usually fussy after about {{limit}}. A nap soon may help.",
+      "start": "Start nap",
+      "notNow": "Not now",
+      "whyTitle": "Why this suggestion?",
+      "awake": "Awake since {{time}}: {{duration}}.",
+      "limit": "Usual longest comfortable awake time: about {{duration}}.",
+      "rule": "About {{percentile}}% of the {{count}} daytime awake stretches below lasted this long or less (from the end of one sleep to the start of the next, starting between {{dayStart}} and {{dayEnd}} in the last {{lookBack}} days; at least {{minimum}} are needed). The note shows from {{lead}} min before that time until {{grace}} min after it.",
+      "stretchesTitle": "Awake stretches used",
+      "stretch": "{{date}}, {{start}} to {{end}}: {{duration}}",
+      "disclaimer": "This is a pattern from what you logged, not medical advice. If the crying worries you, talk to your pediatrician."
+    },
+    "fussyPattern": {
+      "label": "Fussy time pattern",
+      "text": "Fussiness often starts around {{time}}. A calm routine may help.",
+      "notToday": "Not today",
+      "whyTitle": "Why this suggestion?",
+      "window": "Usual time: {{start}} to {{end}}.",
+      "count": "A fussy spell was logged in this window on {{count}} of the last {{recent}} days.",
+      "rule": "The suggestion shows when that happens on at least {{minimum}} of the last {{recent}} days and on at least {{coverage}}% of the days with a fussy spell in the last {{lookBack}} days.",
+      "daysTitle": "Days and times used",
+      "day": "{{date}}: {{times}}",
+      "disclaimer": "This is a pattern from what you logged, not medical advice. If the crying worries you, mention it to your pediatrician."
+    },
+    "diaper": {
+      "wetLabel": "Wet diaper heads-up",
+      "dirtyLabel": "Dirty diaper heads-up",
+      "wetText": "Diaper check likely around {{time}}.",
+      "dirtyText": "A dirty diaper may come around {{time}}.",
+      "afterFeedText_one": "A dirty diaper often follows feeds after about {{count}} minute.",
+      "afterFeedText_other": "A dirty diaper often follows feeds after about {{count}} minutes.",
+      "log": "Log diaper",
+      "notNow": "Not now",
+      "whyTitle": "Why this suggestion?",
+      "wetExpected": "Next wet diaper likely around {{time}}, usually between {{start}} and {{end}}.",
+      "wetLast": "Last wet diaper: {{when}}.",
+      "wetGap_one": "Typical time between wet diapers: about {{duration}}, from {{count}} wet diaper in the last {{days}} days.",
+      "wetGap_other": "Typical time between wet diapers: about {{duration}}, from {{count}} wet diapers in the last {{days}} days.",
+      "dirtyExpected": "Next dirty diaper likely around {{time}}, usually between {{start}} and {{end}}.",
+      "dirtyLast": "Last dirty diaper: {{when}}.",
+      "dirtyGap_one": "Typical time between dirty diapers: about {{duration}}, from {{count}} dirty diaper in the last {{days}} days.",
+      "dirtyGap_other": "Typical time between dirty diapers: about {{duration}}, from {{count}} dirty diapers in the last {{days}} days.",
+      "afterFeedExpected": "The last feed ended at {{time}}: a dirty diaper usually follows between {{start}} and {{end}}.",
+      "afterFeedLag_one": "After a feed, a dirty diaper came about {{median}} min after it ended (usually {{lower}} to {{upper}} min), from {{count}} dirty diaper with a feed in the {{hours}} hours before.",
+      "afterFeedLag_other": "After a feed, a dirty diaper came about {{median}} min after it ended (usually {{lower}} to {{upper}} min), from {{count}} dirty diapers with a feed in the {{hours}} hours before.",
+      "wetRule": "A wet diaper is one logged as wet or mixed. The estimate needs at least {{minimum}} wet diapers in the last {{days}} days; the window is the middle half of the gaps between them ({{lower}}th to {{upper}}th percentile), and recent days count more. The note shows from {{lead}} min before the expected time until {{grace}} min after it.",
+      "dirtyRule": "A dirty diaper is one logged as dirty or mixed. From the gaps: at least {{minimum}} dirty diapers in the last {{days}} days. After feeds: at least {{pairs}} dirty diapers with a feed in the {{hours}} hours before, and the middle half of those times at most {{spread}} min wide. The note shows from {{lead}} min before the expected time until {{grace}} min after it.",
+      "confidence": "Confidence: {{level}}.",
+      "confidenceLevel": {
+        "Low": "low",
+        "Medium": "medium",
+        "High": "high"
+      },
+      "dayTime": "{{date}}, {{time}}",
+      "wetDrop": "Wet diapers in the last 24 hours: {{recent}}, fewer than usual (about {{usual}} a day). If that continues, mention it to your pediatrician.",
+      "disclaimer": "This is a pattern from what you logged, not medical advice."
+    },
     "forgotten": {
       "keep": "Still going",
       "asleep": "Still asleep? The {{kind}} has run for {{duration}}",
@@ -1235,15 +1433,139 @@
   },
   "insights": {
     "soonTitle": "More insights are coming",
-    "soonBody": "Sleep rhythm, feeding and diaper trends will appear here as you keep logging."
+    "soonBody": "Sleep rhythm, feeding and diaper trends will appear here as you keep logging.",
+    "readyBody": "Each one opens after a few days of logging. Imported history counts too.",
+    "ready": "Ready",
+    "rangeLabel": "Period",
+    "range_one": "{{count}} day",
+    "range_other": "{{count}} days",
+    "onTheWay": "On the way",
+    "progress": "Day {{done}} of {{total}}",
+    "estimateDays_one": "About {{count}} more day of logging",
+    "estimateDays_other": "About {{count}} more days of logging",
+    "showTable": "View as table",
+    "showChart": "View as chart",
+    "tableDay": "Day",
+    "averageCaption_one": "Average of the logged days, last {{count}} day",
+    "averageCaption_other": "Average of the logged days, last {{count}} days",
+    "perDay": "{{value}} / day",
+    "average": "Average",
+    "noData": "Nothing logged in this period yet.",
+    "chartLabel": "{{title}}, {{from}} to {{to}}: {{summary}}",
+    "columnTitle": "{{day}}: {{values}}",
+    "seriesValue": "{{label}} {{value}}",
+    "footnote": "Worked out on this device from what you logged. An estimate, not medical advice.",
+    "names": {
+      "sleep": "Sleep",
+      "sleepRhythm": "Sleep rhythm",
+      "feeding": "Feeding",
+      "diapers": "Diapers"
+    },
+    "start": {
+      "sleep": "Start logging naps and nights to unlock",
+      "feeding": "Start logging feeds to unlock",
+      "diapers": "Start logging diapers to unlock"
+    },
+    "moreEvents": {
+      "sleep_one": "Log {{count}} more nap or night to unlock",
+      "sleep_other": "Log {{count}} more naps or nights to unlock",
+      "feeding_one": "Log {{count}} more feed to unlock",
+      "feeding_other": "Log {{count}} more feeds to unlock",
+      "diapers_one": "Log {{count}} more diaper to unlock",
+      "diapers_other": "Log {{count}} more diapers to unlock"
+    },
+    "sleep": {
+      "summary": "On average {{total}} of sleep a day: {{night}} at night and {{naps}} in naps.",
+      "night": "Night",
+      "naps": "Naps"
+    },
+    "rhythm": {
+      "bedtime": "Usual bedtime",
+      "wake": "Usual wake-up",
+      "tableBedtime": "Bedtime",
+      "tableWake": "Wake-up",
+      "summary": "Bedtime is usually around {{bedtime}} and wake-up around {{wake}}.",
+      "summaryBedtime": "Bedtime is usually around {{bedtime}}.",
+      "summaryWake": "Wake-up is usually around {{wake}}.",
+      "caption": "One row per day, from 06:00 to 06:00 the next morning. Gaps in the night are wakings."
+    },
+    "feeding": {
+      "summary_one": "About {{count}} feed a day.",
+      "summary_other": "About {{count}} feeds a day.",
+      "gapSummary": "Feeds are about {{gap}} apart on average.",
+      "feeds": "Feeds",
+      "gap": "Average gap",
+      "bottle": "Average bottle",
+      "bottleTime": "Average bottle time",
+      "headline_one": "{{count, number}} feed / day",
+      "headline_other": "{{count, number}} feeds / day",
+      "feedsChart": "Feeds per day",
+      "mlChart": "Bottle milk per day (ml)",
+      "mlSummary": "On the days with bottles, about {{ml}} a day from bottles.",
+      "tableMl": "Bottle ml"
+    },
+    "diapers": {
+      "summary_one": "About {{count}} diaper a day.",
+      "summary_other": "About {{count}} diapers a day.",
+      "wetDirty": "About {{wet}} wet and {{dirty}} dirty a day.",
+      "total": "Diapers",
+      "wet": "Wet",
+      "dirty": "Dirty",
+      "headline_one": "{{count, number}} diaper / day",
+      "headline_other": "{{count, number}} diapers / day",
+      "chart": "Diapers per day",
+      "mixedNote": "A mixed diaper counts as both wet and dirty."
+    }
   },
   "medications": {
+    "dayPart": {
+      "name": {
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "evening": "Evening",
+        "night": "Night"
+      },
+      "phrase": {
+        "morning": "in the morning",
+        "afternoon": "in the afternoon",
+        "evening": "in the evening",
+        "night": "at night"
+      },
+      "this": {
+        "morning": "this morning",
+        "afternoon": "this afternoon",
+        "evening": "this evening",
+        "night": "tonight"
+      },
+      "withWindow": "{{part}} {{start}}–{{end}}"
+    },
+    "parts": {
+      "listLabel": "Today's parts of the day",
+      "given": "Given at {{time}}",
+      "due": "Due until {{time}}",
+      "upcoming": "From {{time}}",
+      "missed": "Not logged"
+    },
     "forms": {
       "drops": "Drops",
       "syrup": "Syrup",
       "tablet": "Tablet",
       "powder": "Powder",
-      "other": "Other"
+      "other": "Other",
+      "spray": "Spray",
+      "ointment": "Ointment or cream",
+      "suppository": "Suppository",
+      "inhaler": "Inhaler"
+    },
+    "countedDose": {
+      "spray_one": "{{count, number}} spray",
+      "spray_other": "{{count, number}} sprays",
+      "puff_one": "{{count, number}} puff",
+      "puff_other": "{{count, number}} puffs",
+      "suppository_one": "{{count, number}} suppository",
+      "suppository_other": "{{count, number}} suppositories",
+      "application_one": "{{count, number}} application",
+      "application_other": "{{count, number}} applications"
     },
     "kind": {
       "scheduled": "At set times",
@@ -1273,6 +1595,9 @@
       "until": "until {{date}}"
     },
     "state": {
+      "partDue": "{{part}}: due until {{time}}",
+      "partNext": "Next: {{part}} from {{time}}",
+      "partsToday": "{{done}} of {{total}} today",
       "courseEnded": "Course ended",
       "startsOn": "Starts {{date}}",
       "availableAt": "Available at {{time}}",
@@ -1288,6 +1613,8 @@
       "readyCount_other": "{{count}} prescriptions ready"
     },
     "early": {
+      "partGiven": "Already given {{when}} at {{time}}. Log another dose anyway?",
+      "outsideParts": "Not one of the prescribed parts of the day ({{parts}}). Log anyway?",
       "wait": "Too early: next allowed at {{time}}. Log anyway?",
       "limit": "Daily limit reached: next allowed at {{time}}. Log anyway?",
       "ended": "This course ended on {{date}}. Log anyway?",
@@ -1308,6 +1635,8 @@
       "wait": "Wait"
     },
     "tray": {
+      "giveNow": "Give now",
+      "giveNowNamed": "Give {{name}} now",
       "prescriptions": "Prescriptions",
       "others": "Other medications",
       "logOne": "Log",
@@ -1341,6 +1670,12 @@
       "existed": "{{name}} was already in the catalog, so that one is used."
     },
     "editor": {
+      "byParts": "Part of the day",
+      "dayParts": "Parts of the day",
+      "dayPartsHelp": "One dose in each chosen part, at any time inside it: {{windows}}.",
+      "partReminders": "Remind me in each part",
+      "partRemindersHelp": "Off by default. A reminder is sent only while that part has no dose yet, and only with medicine reminders on in Settings.",
+      "reminderAt": "{{part}} reminder",
       "titleNew": "Add prescription",
       "titleEdit": "Edit prescription",
       "summaryLabel": "In plain words",
@@ -1389,6 +1724,9 @@
       "problems_one": "Fix {{count}} thing to save.",
       "problems_other": "Fix {{count}} things to save.",
       "errors": {
+        "partsRequired": "Choose at least one part of the day.",
+        "reminderWindow": "{{part}}: choose a time between {{start}} and {{end}}.",
+        "halfCount": "Use whole or half suppositories (for example 0.5, 1 or 1.5).",
         "medication": "Choose the medication.",
         "amount": "Enter a dose above zero.",
         "unit": "Enter a unit (up to {{max}} characters).",
@@ -1398,7 +1736,9 @@
         "maxDoses": "Use a number from 1 to {{max}}.",
         "tooLong": "Use at most {{max}} characters.",
         "date": "Choose a valid date.",
-        "endDate": "The end date cannot be before the start date."
+        "endDate": "The end date cannot be before the start date.",
+        "perKgCounted": "A per-kg dose is only for measured units like drops, ml or mg, not for sprays, puffs, suppositories or applications.",
+        "wholeCount": "Use a whole number of sprays or puffs."
       }
     },
     "settings": {
@@ -1528,6 +1868,16 @@
       "doseHelp": "Scheduled doses only, never as-needed medicines.",
       "nap": "Nap window",
       "napHelp": "When the estimated nap window opens during the day.",
+      "bellyPain": "Belly pain heads-up",
+      "bellyPainHelp": "When belly pain often shows up around the same time, a note 30 min before.",
+      "overtired": "Overtired heads-up",
+      "overtiredHelp": "When the baby has been awake nearly as long as usual, a note 15 min before.",
+      "fussy": "Fussy time heads-up",
+      "fussyHelp": "When fussiness often starts around the same time, a note 30 min before.",
+      "diaperWet": "Wet diaper heads-up",
+      "diaperWetHelp": "When a wet diaper is usually due, a note 10 min before.",
+      "diaperDirty": "Dirty diaper heads-up",
+      "diaperDirtyHelp": "When a dirty diaper usually comes, after a feed or from the usual gaps, a note shortly before.",
       "lead": "Remind me",
       "doseLeads": {
         "0": "At the scheduled time",
@@ -1542,7 +1892,7 @@
     },
     "quiet": {
       "switch": "Quiet hours",
-      "help": "No nap reminders between these times.",
+      "help": "No nap reminders or belly pain heads-ups between these times.",
       "start": "From",
       "end": "To",
       "sameTime": "Start and end must be different times.",

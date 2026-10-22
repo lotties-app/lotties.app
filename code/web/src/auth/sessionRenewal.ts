@@ -67,6 +67,8 @@ export class SessionRenewal {
   private retryAt = 0;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private started = false;
+  /** Set by `stop()`, cleared by `start()`: an attempt still in flight then arms no retry timer. */
+  private stopped = false;
 
   constructor(options: SessionRenewalOptions) {
     this.userManager = options.userManager;
@@ -93,11 +95,14 @@ export class SessionRenewal {
   start(): void {
     if (this.started) return;
     this.started = true;
+    this.stopped = false;
     this.eventTarget?.addEventListener('online', this.handleOnline);
   }
 
+  /** Stops listening and retrying; an attempt in flight settles without scheduling a retry. */
   stop(): void {
     this.started = false;
+    this.stopped = true;
     this.eventTarget?.removeEventListener('online', this.handleOnline);
     this.clearRetryTimer();
   }
@@ -181,10 +186,12 @@ export class SessionRenewal {
     const delay = backoffDelay(this.attempts, this.backoff);
     this.retryAt = this.now() + delay;
     this.clearRetryTimer();
-    this.retryTimer = setTimeout(() => {
-      this.retryTimer = null;
-      this.renew({ force: true }).catch(() => {});
-    }, delay);
+    if (!this.stopped) {
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        this.renew({ force: true }).catch(() => {});
+      }, delay);
+    }
     this.setStatus('waiting');
     throw new TokenRenewalPendingError();
   }

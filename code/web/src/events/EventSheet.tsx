@@ -18,6 +18,7 @@ import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Field, MedicationPicker, NotesRow } from '../ui/form';
 import { daysBeforeToday } from '../ui/form/timeMath';
+import { getOwn } from '../util/ownProperty';
 import { ConditionalFields } from './ConditionalFields';
 import { announceEventDeleted } from './deletedEvents';
 import type { EventSheetProps } from './eventSheetTypes';
@@ -27,6 +28,7 @@ import { fromLocalInput } from './time';
 import { SheetHeader } from './SheetHeader';
 import { SleepDetails } from './SleepDetails';
 import { SLEEP_DETAIL_SET } from './sleepDetailModel';
+import { useBottleSuggestions } from './useBottleHistory';
 import { useEventSheetForm } from './useEventSheetForm';
 import { WhenFields } from './WhenFields';
 
@@ -241,6 +243,12 @@ export function EventSheet(props: EventSheetProps) {
         }
       : undefined;
   const remembered = type ? readLastUsed(babyId, type.id) : {};
+  const rememberedMl = getOwn(remembered, 'amount_ml');
+  const bottle = useBottleSuggestions(
+    babyId,
+    type,
+    typeof rememberedMl === 'number' ? rememberedMl : null,
+  );
   const saveLabel =
     finishing && event?.endedAt === null ? t('events.saveAndStop') : t('common.save');
   const note =
@@ -314,6 +322,7 @@ export function EventSheet(props: EventSheetProps) {
                 : {})}
               errors={state.errors}
               remembered={remembered}
+              {...(bottle ? { bottle } : {})}
               onChange={state.setValue}
             />
           )}

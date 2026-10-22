@@ -109,6 +109,28 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
     payloadDefaults: {},
   },
   {
+    // Built-in `nasal_suction` type (added after DESIGN.md section 3 was written). Instant, with
+    // optional tool and saline fields, so the sheet opens; not pinned by default.
+    id: 'nasal_suction',
+    label: 'Nasal suction',
+    category: 'health',
+    icon: 'nasal_suction',
+    typeKey: 'nasal_suction',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    // Built-in `belly_massage` type (added after DESIGN.md section 3 was written). Timed like tummy
+    // time; the optional reason and "did it help" are filled in the sheet; not pinned by default.
+    id: 'belly_massage',
+    label: 'Belly massage',
+    category: 'health',
+    icon: 'belly_massage',
+    typeKey: 'belly_massage',
+    mode: 'timer',
+    payloadDefaults: {},
+  },
+  {
     id: 'bath',
     label: 'Bath',
     category: 'care',
@@ -117,6 +139,17 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
     mode: 'sheet',
     payloadDefaults: {},
     endsImmediately: true,
+  },
+  {
+    // Built-in `fussy` type ("Fussy / crying", added after DESIGN.md section 3 was written). Timed
+    // like tummy time; the optional intensity and what helped are filled in the sheet; not pinned.
+    id: 'fussy',
+    label: 'Fussy',
+    category: 'care',
+    icon: 'fussy',
+    typeKey: 'fussy',
+    mode: 'timer',
+    payloadDefaults: {},
   },
   {
     id: 'tummy_time',

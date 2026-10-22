@@ -27,6 +27,11 @@ function defaultsFor(baby: Baby): BabyPreferencesDto {
     doseLeadMinutes: 0,
     napWindow: false,
     napLeadMinutes: 10,
+    bellyPainPattern: false,
+    overtiredWarning: false,
+    fussyPattern: false,
+    diaperWetHeadsUp: false,
+    diaperDirtyHeadsUp: false,
   };
 }
 
@@ -51,6 +56,11 @@ function BabyRow({
       doseLeadMinutes: prefs.doseLeadMinutes,
       napWindow: prefs.napWindow,
       napLeadMinutes: prefs.napLeadMinutes,
+      bellyPainPattern: prefs.bellyPainPattern ?? false,
+      overtiredWarning: prefs.overtiredWarning ?? false,
+      fussyPattern: prefs.fussyPattern ?? false,
+      diaperWetHeadsUp: prefs.diaperWetHeadsUp ?? false,
+      diaperDirtyHeadsUp: prefs.diaperDirtyHeadsUp ?? false,
       ...change,
     };
     const replace = (stored: BabyPreferencesDto) =>
@@ -121,6 +131,46 @@ function BabyRow({
           />
         </Field>
       )}
+      <SwitchRow
+        icon="massage"
+        checked={prefs.bellyPainPattern ?? false}
+        disabled={off}
+        onChange={(bellyPainPattern) => update({ bellyPainPattern })}
+        label={t('notifications.reminders.bellyPain')}
+        description={t('notifications.reminders.bellyPainHelp')}
+      />
+      <SwitchRow
+        icon="zzz"
+        checked={prefs.overtiredWarning ?? false}
+        disabled={off}
+        onChange={(overtiredWarning) => update({ overtiredWarning })}
+        label={t('notifications.reminders.overtired')}
+        description={t('notifications.reminders.overtiredHelp')}
+      />
+      <SwitchRow
+        icon="mood-cry"
+        checked={prefs.fussyPattern ?? false}
+        disabled={off}
+        onChange={(fussyPattern) => update({ fussyPattern })}
+        label={t('notifications.reminders.fussy')}
+        description={t('notifications.reminders.fussyHelp')}
+      />
+      <SwitchRow
+        icon="diaper"
+        checked={prefs.diaperWetHeadsUp ?? false}
+        disabled={off}
+        onChange={(diaperWetHeadsUp) => update({ diaperWetHeadsUp })}
+        label={t('notifications.reminders.diaperWet')}
+        description={t('notifications.reminders.diaperWetHelp')}
+      />
+      <SwitchRow
+        icon="diaper"
+        checked={prefs.diaperDirtyHeadsUp ?? false}
+        disabled={off}
+        onChange={(diaperDirtyHeadsUp) => update({ diaperDirtyHeadsUp })}
+        label={t('notifications.reminders.diaperDirty')}
+        description={t('notifications.reminders.diaperDirtyHelp')}
+      />
       <ErrorNotice message={save.error} />
     </Stack>
   );

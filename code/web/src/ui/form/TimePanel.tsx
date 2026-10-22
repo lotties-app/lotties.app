@@ -6,29 +6,30 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, type Theme } from '@mui/material';
-import { currentLocale } from '../../i18n/i18n';
 import { formatDate, formatRelative, formatTime } from '../../i18n/format';
 import { Icon } from '../Icon';
+import { NativeTimeInput } from './NativeTimeInput';
 import { useControlAttributes } from './fieldContext';
 import { SwitchRow } from './SwitchRow';
-import { filledSurface, focusRing, optionBase, palette, selectedOption } from './styles';
+import { focusRing, optionBase, palette, selectedOption } from './styles';
 import {
   QUICK_MINUTES_AGO,
   MINUTE_MS,
   addMinutes,
   clampDate,
+  clockValue,
   dateAtRatio,
   daysBeforeToday,
   hourMarks,
+  parseClock,
   ratioOf,
   resolveTypedTime,
   rulerRange,
   shiftLocalDays,
   startOfMinute,
+  withClock,
   type TimeProblem,
 } from './timeMath';
-
-export type HourCycle = 'h23' | 'h12';
 
 export interface TimePanelProps {
   /** The chosen instant; `null` = still running (only with `allowRunning`). */
@@ -42,8 +43,6 @@ export interface TimePanelProps {
   max?: Date | null;
   /** Adds a "Still running" switch; while on, `value` is `null`. For the end of an event. */
   allowRunning?: boolean;
-  /** `h23` (default, like the rest of the app) or `h12` with am/pm. */
-  hourCycle?: HourCycle;
   'aria-label'?: string;
   disabled?: boolean;
   /**
@@ -51,16 +50,6 @@ export interface TimePanelProps {
    * the ruler folded behind two small buttons.
    */
   compact?: boolean;
-}
-
-/** Digits typed into the pill: a 24 h clock or `h12` text such as "2:30 pm". */
-function clockText(date: Date, hourCycle: HourCycle): string {
-  if (hourCycle === 'h23') return formatTime(date);
-  return new Intl.DateTimeFormat(currentLocale(), {
-    hour: 'numeric',
-    minute: '2-digit',
-    hourCycle: 'h12',
-  }).format(date);
 }
 
 const chipSx = (selected: boolean) => (theme: Theme) => ({
@@ -78,7 +67,7 @@ const chipSx = (selected: boolean) => (theme: Theme) => ({
 
 /**
  * Inline time entry for the start or end of an event: quick chips (Now, 5, 15, 30 min ago), a big
- * pill with the chosen local time you can also type into, Today/Yesterday (and the date when it
+ * pill with the chosen local time (the device's native time picker), Today/Yesterday (and the date when it
  * is older), and a ruler that snaps to 5 minutes across the 12 hours before now. Never in the
  * future, never before `min`. Pure maths lives in `timeMath.ts`.
  */
@@ -89,7 +78,6 @@ export function TimePanel({
   min = null,
   max: maxProp,
   allowRunning = false,
-  hourCycle = 'h23',
   disabled: disabledProp = false,
   'aria-label': ariaLabel,
   compact = false,
@@ -113,14 +101,25 @@ export function TimePanel({
     onChange(clampDate(startOfMinute(date), min, max));
   };
 
-  const commitDraft = () => {
+  // The native picker fires a change per wheel step on iOS: a time that fits on the chosen day is
+  // applied at once; anything else waits as a draft (never fought mid-scroll) until the field is
+  // left, where it is resolved like a typed time (later than now today = yesterday evening) or
+  // clamped into range with a message.
+  const changeTime = (text: string) => {
+    setProblem(null);
+    const clock = parseClock(text);
+    const onDay = clock && withClock(shown, clock.hours, clock.minutes);
+    if (onDay && onDay <= max && !(min && onDay < min)) pick(onDay);
+    else setDraft(text);
+  };
+
+  const leaveTime = () => {
     if (draft === null) return;
     const result = resolveTypedTime(draft, shown, { min, max });
-    if (result.ok) pick(result.value);
-    else {
-      setDraft(null);
-      setProblem(result.problem);
-    }
+    setDraft(null);
+    if (result.ok) return pick(result.value);
+    if (result.problem !== 'invalid') onChange(result.nearest);
+    setProblem(result.problem);
   };
 
   const messageId = `${control.id ?? 'time'}-problem`;
@@ -145,7 +144,7 @@ export function TimePanel({
       ? t('ui.time.invalid')
       : kind === 'future'
         ? t('ui.time.future')
-        : t('ui.time.beforeMin', { time: min ? clockText(min, hourCycle) : '' });
+        : t('ui.time.beforeMin', { time: min ? formatTime(min) : '' });
 
   const chips = (
     <Box
@@ -177,61 +176,18 @@ export function TimePanel({
   );
 
   const pill = (
-    <Box
-      sx={(theme) => ({
-        ...filledSurface(theme, invalid),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: compact ? 48 : 72,
-        ...(compact && { flex: '0 0 112px', width: 112 }),
-        '&:focus-within': { outline: focusRing(theme), outlineOffset: 0 },
-      })}
-    >
-      <Box
-        component="input"
-        type="text"
-        inputMode={hourCycle === 'h23' ? 'numeric' : 'text'}
-        autoComplete="off"
-        spellCheck={false}
-        dir="ltr"
-        id={control.id}
-        aria-label={control.id ? undefined : ariaLabel}
-        aria-describedby={describedBy}
-        aria-invalid={invalid ? true : undefined}
-        aria-required={control['aria-required']}
-        disabled={disabled}
-        value={draft ?? clockText(shown, hourCycle)}
-        onFocus={(e: { target: HTMLInputElement }) => e.target.select()}
-        onChange={(e: { target: { value: string } }) => {
-          setDraft(e.target.value);
-          setProblem(null);
-        }}
-        onBlur={commitDraft}
-        onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            commitDraft();
-          } else if (e.key === 'Escape') {
-            setDraft(null);
-            setProblem(null);
-          }
-        }}
-        sx={(theme) => ({
-          width: '100%',
-          maxWidth: compact ? 112 : 220,
-          textAlign: 'center',
-          border: 0,
-          outline: 0,
-          background: 'none',
-          color: palette(theme).text.primary,
-          fontFamily: theme.typography.fontFamilyDisplay,
-          fontSize: compact ? '1.5rem' : '2.5rem',
-          fontVariantNumeric: 'tabular-nums lining-nums',
-          letterSpacing: '0.02em',
-        })}
-      />
-    </Box>
+    <NativeTimeInput
+      value={draft ?? clockValue(shown)}
+      size={compact ? 'compact' : 'large'}
+      invalid={invalid}
+      id={control.id}
+      aria-label={control.id ? undefined : ariaLabel}
+      aria-describedby={describedBy}
+      aria-required={control['aria-required']}
+      disabled={disabled}
+      onChange={changeTime}
+      onBlur={leaveTime}
+    />
   );
 
   const problemNote = problem && (
@@ -278,16 +234,7 @@ export function TimePanel({
     </Box>
   );
 
-  const ruler = (
-    <TimeRuler
-      value={shown}
-      now={max}
-      min={min}
-      hourCycle={hourCycle}
-      disabled={disabled}
-      onPick={pick}
-    />
-  );
+  const ruler = <TimeRuler value={shown} now={max} min={min} disabled={disabled} onPick={pick} />;
 
   const runningSwitch = allowRunning && (
     <SwitchRow
@@ -407,13 +354,12 @@ interface RulerProps {
   /** The right end of the ruler. */
   now: Date;
   min: Date | null;
-  hourCycle: HourCycle;
   disabled: boolean;
   onPick: (date: Date) => void;
 }
 
 /** Horizontal slider over the 12 hours before now: drag or use the arrow keys. */
-function TimeRuler({ value, now, min, hourCycle, disabled, onPick }: RulerProps) {
+function TimeRuler({ value, now, min, disabled, onPick }: RulerProps) {
   const { t } = useTranslation();
   const track = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -468,7 +414,7 @@ function TimeRuler({ value, now, min, hourCycle, disabled, onPick }: RulerProps)
       aria-valuemax={0}
       aria-valuenow={offsetMinutes}
       aria-valuetext={t('ui.time.rulerValue', {
-        time: clockText(value, hourCycle),
+        time: formatTime(value),
         relative: formatRelative(value.getTime(), range.to.getTime()),
       })}
       onPointerDown={onPointerDown}
@@ -524,7 +470,7 @@ function TimeRuler({ value, now, min, hourCycle, disabled, onPick }: RulerProps)
                   whiteSpace: 'nowrap',
                 })}
               >
-                {clockText(mark, hourCycle)}
+                {formatTime(mark)}
               </Box>
             )}
           </Box>

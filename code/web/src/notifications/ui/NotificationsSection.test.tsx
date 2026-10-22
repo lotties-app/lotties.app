@@ -182,7 +182,17 @@ describe('NotificationsSection reminders and settings', () => {
       expect(writes(server).at(-1)).toEqual({
         method: 'PUT',
         path: `/api/v1/babies/${LIA.id}/notification-preferences`,
-        body: { doseDue: true, doseLeadMinutes: 0, napWindow: false, napLeadMinutes: 10 },
+        body: {
+          doseDue: true,
+          doseLeadMinutes: 0,
+          napWindow: false,
+          napLeadMinutes: 10,
+          bellyPainPattern: false,
+          overtiredWarning: false,
+          fussyPattern: false,
+          diaperWetHeadsUp: false,
+          diaperDirtyHeadsUp: false,
+        },
       }),
     );
     fireEvent.click(await within(lia).findByRole('radio', { name: '15 min before' }));
@@ -192,8 +202,123 @@ describe('NotificationsSection reminders and settings', () => {
         doseLeadMinutes: 15,
         napWindow: false,
         napLeadMinutes: 10,
+        bellyPainPattern: false,
+        overtiredWarning: false,
+        fussyPattern: false,
+        diaperWetHeadsUp: false,
+        diaperDirtyHeadsUp: false,
       }),
     );
+  });
+
+  it('turns the belly pain heads-up on per baby, off by default', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Belly pain heads-up/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      within(lia).getByText(
+        'When belly pain often shows up around the same time, a note 30 min before.',
+      ),
+    ).toBeTruthy();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: {
+          doseDue: false,
+          doseLeadMinutes: 0,
+          napWindow: false,
+          napLeadMinutes: 10,
+          bellyPainPattern: true,
+          overtiredWarning: false,
+          fussyPattern: false,
+          diaperWetHeadsUp: false,
+          diaperDirtyHeadsUp: false,
+        },
+      }),
+    );
+  });
+
+  it.each([
+    [
+      'Overtired heads-up',
+      'When the baby has been awake nearly as long as usual, a note 15 min before.',
+      { overtiredWarning: true, fussyPattern: false },
+    ],
+    [
+      'Fussy time heads-up',
+      'When fussiness often starts around the same time, a note 30 min before.',
+      { overtiredWarning: false, fussyPattern: true },
+    ],
+    [
+      'Wet diaper heads-up',
+      'When a wet diaper is usually due, a note 10 min before.',
+      { overtiredWarning: false, fussyPattern: false, diaperWetHeadsUp: true },
+    ],
+    [
+      'Dirty diaper heads-up',
+      'When a dirty diaper usually comes, after a feed or from the usual gaps, a note shortly before.',
+      { overtiredWarning: false, fussyPattern: false, diaperDirtyHeadsUp: true },
+    ],
+  ])('turns the %s on per baby, off by default', async (name, help, kinds) => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: new RegExp(name) });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(within(lia).getByText(help)).toBeTruthy();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: {
+          doseDue: false,
+          doseLeadMinutes: 0,
+          napWindow: false,
+          napLeadMinutes: 10,
+          bellyPainPattern: false,
+          diaperWetHeadsUp: false,
+          diaperDirtyHeadsUp: false,
+          ...kinds,
+        },
+      }),
+    );
+  });
+
+  it('shows the diaper switches in Portuguese, off by default', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const wet = within(lia).getByRole('switch', { name: /Aviso de fralda molhada/ });
+    const dirty = within(lia).getByRole('switch', { name: /Aviso de fralda suja/ });
+    expect([wet, dirty].map((toggle) => toggle.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'false',
+    ]);
+    expect(
+      within(lia).getByText(
+        'Quando costuma ser hora de uma fralda molhada, um aviso 10 min antes.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('shows the overtired and fussy switches in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Aviso de cansaço/ })).toBeTruthy();
+    expect(within(lia).getByRole('switch', { name: /Aviso da hora do choro/ })).toBeTruthy();
+    expect(
+      within(lia).getByText(
+        'Quando a irritação costuma começar no mesmo horário, um aviso 30 min antes.',
+      ),
+    ).toBeTruthy();
   });
 
   it('disables Viewer rows with the reason', async () => {
@@ -215,7 +340,8 @@ describe('NotificationsSection reminders and settings', () => {
         body: { timeZone: 'Europe/Lisbon', showNames: true },
       }),
     );
-    const start = screen.getByLabelText('From');
+    const start = screen.getByLabelText('From') as HTMLInputElement;
+    expect(start.type).toBe('time');
     fireEvent.change(start, { target: { value: '21:30' } });
     fireEvent.blur(start);
     await waitFor(() =>

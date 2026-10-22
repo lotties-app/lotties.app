@@ -35,7 +35,11 @@ export function keyInstant(at: number): string {
 /**
  * The device tag: the server's base key where the payload carries its parts (`dose:{rx}:{slot}`,
  * `test:{id}`). The nap key's anchor is not sent, so a nap notification uses `nap:{baby}`
- * (one awake window per baby at a time; a newer window replaces the older one).
+ * (one awake window per baby at a time; a newer window replaces the older one); the belly pain
+ * and fussy heads-ups use `belly:{baby}` and `fussy:{baby}` (at most one a day; the next day's
+ * replaces it); the overtired heads-up uses `overtired:{baby}` (one per awake stretch; the next
+ * stretch's replaces it); the diaper heads-ups use `wet:{baby}` and `dirty:{baby}` (the next
+ * expected diaper of the kind replaces the earlier one).
  */
 export function notificationTag(payload: PushPayload): string {
   switch (payload.kind) {
@@ -43,6 +47,16 @@ export function notificationTag(payload: PushPayload): string {
       return `dose:${compactGuid(payload.rxId)}:${keyInstant(payload.at)}`;
     case 'nap_window':
       return `nap:${compactGuid(payload.babyId)}`;
+    case 'belly_pain_pattern':
+      return `belly:${compactGuid(payload.babyId)}`;
+    case 'overtired_warning':
+      return `overtired:${compactGuid(payload.babyId)}`;
+    case 'fussy_pattern':
+      return `fussy:${compactGuid(payload.babyId)}`;
+    case 'diaper_wet_headsup':
+      return `wet:${compactGuid(payload.babyId)}`;
+    case 'diaper_dirty_headsup':
+      return `dirty:${compactGuid(payload.babyId)}`;
     case 'test':
       return `test:${compactGuid(payload.id)}`;
   }

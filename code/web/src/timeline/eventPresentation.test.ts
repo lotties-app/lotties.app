@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { BabyEvent, EventType } from '../db/models';
-import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import {
+  BELLY_MASSAGE_TYPE,
+  FUSSY_TYPE,
+  DIAPER_TYPE,
+  FEEDING_TYPE,
+  NASAL_SUCTION_TYPE,
+  SLEEP_TYPE,
+} from '../test/builtInTypes';
 import { EVENT_TYPES, MEDICATION } from '../test/seed';
 import { optionIcon } from '../events/optionIcons';
 import { asNeeded } from '../medications/prescriptionFixtures';
@@ -84,6 +91,60 @@ describe('presentEvent', () => {
       detail: '5 drops',
       category: 'health',
     });
+  });
+
+  it('titles nasal suction by its type name and puts the tool and saline in the detail', () => {
+    const full = presentEvent(
+      event(NASAL_SUCTION_TYPE, { tool: 'bulb', saline: true }),
+      NASAL_SUCTION_TYPE,
+    );
+    expect(full).toMatchObject({
+      title: 'Nasal suction',
+      icon: 'wind',
+      category: 'health',
+      detail: 'Bulb · Saline used',
+    });
+    expect(
+      presentEvent(event(NASAL_SUCTION_TYPE, { tool: 'mouth', saline: false }), NASAL_SUCTION_TYPE)
+        .detail,
+    ).toBe('Mouth suction');
+    expect(presentEvent(event(NASAL_SUCTION_TYPE, {}), NASAL_SUCTION_TYPE).detail).toBe('');
+  });
+
+  it('titles belly massage by its type name and says the reason and whether it helped', () => {
+    const view = (payload: BabyEvent['payload']) =>
+      presentEvent(event(BELLY_MASSAGE_TYPE, payload), BELLY_MASSAGE_TYPE);
+    expect(view({ reason: 'gas', helped: 'yes' })).toMatchObject({
+      title: 'Belly massage',
+      icon: 'massage',
+      category: 'health',
+      detail: 'Gas · helped',
+    });
+    expect(view({ reason: 'colic', helped: 'a_little' }).detail).toBe('Colic · helped a little');
+    expect(view({ helped: 'no' }).detail).toBe("didn't help");
+    expect(view({ reason: 'constipation', pause_count: 1, paused_seconds: 30 }).detail).toBe(
+      'Constipation',
+    );
+    expect(view({}).detail).toBe('');
+    // A future option the catalog does not know yet is humanized, never shown raw.
+    expect(view({ helped: 'much_better' }).detail).toBe('Much better');
+  });
+
+  it('titles a fussy spell by its type name and says the intensity and what helped', () => {
+    const view = (payload: BabyEvent['payload']) =>
+      presentEvent(event(FUSSY_TYPE, payload), FUSSY_TYPE);
+    expect(view({ intensity: 'moderate', what_helped: 'rocking' })).toMatchObject({
+      title: 'Fussy / crying',
+      icon: 'mood-cry',
+      category: 'care',
+      detail: 'Moderate · rocking helped',
+    });
+    expect(view({ what_helped: 'nothing' }).detail).toBe('nothing helped');
+    expect(view({ what_helped: 'other' }).detail).toBe('something else helped');
+    expect(view({ intensity: 'intense', pause_count: 1, paused_seconds: 30 }).detail).toBe(
+      'Intense',
+    );
+    expect(view({}).detail).toBe('');
   });
 
   it('falls back to the type name without a kind, and never shows a raw code', () => {

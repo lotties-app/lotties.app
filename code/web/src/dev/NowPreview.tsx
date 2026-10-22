@@ -45,6 +45,11 @@ const SCENARIOS = [
   'meds',
   'paused',
   'timers',
+  'belly',
+  'overtired',
+  'fussy',
+  'wet',
+  'dirty',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 type Scheme = 'light' | 'dark' | 'night';
@@ -91,6 +96,14 @@ const TYPES: EventType[] = [
   ]),
   extraType('bath', 'Bath', 'bathtub'),
   TUMMY_TIME_TYPE,
+  extraType('belly_massage', 'Belly massage', 'massage', true),
+  extraType('fussy', 'Fussy / crying', 'sentiment_very_dissatisfied', true, [
+    field('intensity', { kind: 'select', options: ['mild', 'moderate', 'intense'] }),
+    field('what_helped', {
+      kind: 'select',
+      options: ['feeding', 'rocking', 'pacifier', 'massage', 'sleep', 'other', 'nothing'],
+    }),
+  ]),
 ];
 const typeId = (key: string) => TYPES.find((t) => t.key === key)?.id ?? key;
 
@@ -209,6 +222,197 @@ function prediction(now: number): PredictionsDto {
 function clockAgo(now: number, minAgo: number): string {
   const d = new Date(now - minAgo * MIN);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+const DAY_MIN = 24 * 60;
+/** Minutes before `now` of the usual belly pain time in the `belly` scenario (window opened 10 min ago). */
+const BELLY_TYPICAL_AGO = -20;
+const BELLY_DAYS = [1, 2, 3, 5, 6, 8];
+
+/** `yyyy-mm-dd` of the local date `minAgo` minutes before `now`. */
+function dateAgo(now: number, minAgo: number): string {
+  const d = new Date(now - minAgo * MIN);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** The server's belly pain pattern for the `belly` scenario: usual window 10 min ago to 50 min from now. */
+function bellyPredictions(now: number): PredictionsDto {
+  const jitter = [5, -10, 0, 15, -5, 10];
+  return {
+    ...prediction(now),
+    patterns: [
+      {
+        typeKey: 'belly_pain',
+        typicalClock: clockAgo(now, BELLY_TYPICAL_AGO),
+        windowStart: clockAgo(now, BELLY_TYPICAL_AGO + 30),
+        windowEnd: clockAgo(now, BELLY_TYPICAL_AGO - 30),
+        windowMinutes: 60,
+        spreadMinutes: 9,
+        confidence: 'Medium',
+        eventDayCount: 6,
+        recentDayCount: 5,
+        timeZone: null,
+        days: BELLY_DAYS.map((day, index) => {
+          const ago = day * DAY_MIN + BELLY_TYPICAL_AGO - jitter[index];
+          return { date: dateAgo(now, ago), times: [clockAgo(now, ago)] };
+        }).reverse(),
+        rule: {
+          lookBackDays: 14,
+          recentDays: 7,
+          minimumRecentDays: 4,
+          maximumSpreadMinutes: 45,
+          minimumCoveragePercent: 60,
+          leadMinutes: 45,
+        },
+      },
+    ],
+  };
+}
+
+/** Minutes awake in the `overtired` scenario: 10 min before the usual limit of 2h 30m. */
+const OVERTIRED_AWAKE_MIN = 140;
+
+/** The server's wake window for the `overtired` scenario: nine daytime stretches, limit 2h 30m. */
+function overtiredPredictions(now: number): PredictionsDto {
+  const lengths = [95, 120, 150, 110, 150, 135, 160, 125, 150];
+  const stretches = lengths.map((minutes, index) => {
+    const startAgo = (lengths.length - index) * DAY_MIN - 9 * 60 + index * 17;
+    return {
+      start: new Date(now - startAgo * MIN).toISOString(),
+      end: new Date(now - (startAgo - minutes) * MIN).toISOString(),
+      minutes,
+    };
+  });
+  return {
+    ...prediction(now),
+    wakeWindow: {
+      limitMinutes: 150,
+      sampleCount: stretches.length,
+      awakeSince: new Date(now - OVERTIRED_AWAKE_MIN * MIN).toISOString(),
+      awakeMinutes: OVERTIRED_AWAKE_MIN,
+      timeZone: null,
+      stretches,
+      rule: {
+        lookBackDays: 14,
+        dayStartsAt: '05:00',
+        dayEndsAt: '18:00',
+        percentile: 75,
+        minimumStretches: 5,
+        leadMinutes: 15,
+        graceMinutes: 30,
+      },
+    },
+  };
+}
+
+/** Minutes before `now` of the usual fussy time in the `fussy` scenario (window opened 10 min ago). */
+const FUSSY_TYPICAL_AGO = -20;
+const FUSSY_DAYS = [1, 2, 3, 4, 6, 7, 9];
+
+/** The server's fussy pattern for the `fussy` scenario: usual window 10 min ago to 50 min from now. */
+function fussyPredictions(now: number): PredictionsDto {
+  const jitter = [10, -5, 0, 15, -10, 5, 0];
+  return {
+    ...prediction(now),
+    patterns: [
+      {
+        typeKey: 'fussy',
+        typicalClock: clockAgo(now, FUSSY_TYPICAL_AGO),
+        windowStart: clockAgo(now, FUSSY_TYPICAL_AGO + 30),
+        windowEnd: clockAgo(now, FUSSY_TYPICAL_AGO - 30),
+        windowMinutes: 60,
+        spreadMinutes: 8,
+        confidence: 'Medium',
+        eventDayCount: 7,
+        recentDayCount: 6,
+        timeZone: null,
+        days: FUSSY_DAYS.map((day, index) => {
+          const ago = day * DAY_MIN + FUSSY_TYPICAL_AGO - jitter[index];
+          return { date: dateAgo(now, ago), times: [clockAgo(now, ago)] };
+        }).reverse(),
+        rule: {
+          lookBackDays: 14,
+          recentDays: 7,
+          minimumRecentDays: 4,
+          maximumSpreadMinutes: 45,
+          minimumCoveragePercent: 60,
+          leadMinutes: 45,
+        },
+      },
+    ],
+  };
+}
+
+const DIAPER_RULE = {
+  wetLookBackDays: 7,
+  minimumWetEvents: 8,
+  dirtyLookBackDays: 14,
+  minimumDirtyEvents: 5,
+  lowerPercentile: 25,
+  upperPercentile: 75,
+  feedWindowMinutes: 180,
+  minimumFeedPairs: 5,
+  maximumLagSpreadMinutes: 40,
+  leadMinutes: 20,
+  graceMinutes: 40,
+};
+
+/** Minutes before `now` of the latest wet diaper of the `wet` scenario (the morning's). */
+const WET_AGO = 142;
+/** Minutes before `now` the feed of the `dirty` scenario ended. */
+const FEED_ENDED_AGO = 28;
+
+/**
+ * The server's diaper predictions: `wet` expects the next wet diaper 8 min from now (usual gap
+ * 2h30); `dirty` has the lag after feeds (25-40 min, median 30) and no wet estimate.
+ */
+function diaperPredictions(now: number, kind: 'wet' | 'dirty'): PredictionsDto {
+  const at = (minAgo: number) => new Date(now - minAgo * MIN).toISOString();
+  const wet = {
+    anchorAt: at(WET_AGO),
+    nextStart: {
+      earliest: at(WET_AGO - 130),
+      expected: at(WET_AGO - 150),
+      latest: at(WET_AGO - 170),
+    },
+    lowerGapMinutes: 130,
+    medianGapMinutes: 150,
+    upperGapMinutes: 170,
+    eventCount: 46,
+    gapCount: 45,
+    confidence: 'Medium' as const,
+    trend: { last24Hours: 8, usualPer24Hours: 7.4, droppedSharply: false },
+  };
+  const gap = {
+    ...wet,
+    anchorAt: at(312),
+    lowerGapMinutes: 360,
+    medianGapMinutes: 470,
+    upperGapMinutes: 610,
+    eventCount: 19,
+    gapCount: 18,
+    confidence: 'Low' as const,
+    trend: null,
+  };
+  return {
+    ...prediction(now),
+    diaper: {
+      wet: kind === 'wet' ? wet : null,
+      dirty: {
+        lastDirtyAt: at(312),
+        gap: { ...gap, nextStart: { earliest: at(-48), expected: at(-158), latest: at(-298) } },
+        afterFeed: {
+          lowerLagMinutes: 25,
+          medianLagMinutes: 30,
+          upperLagMinutes: 40,
+          pairCount: 11,
+          confidence: 'Medium',
+          latestFeedEndedAt: at(kind === 'dirty' ? FEED_ENDED_AGO : 242),
+        },
+      },
+      rule: DIAPER_RULE,
+    },
+  };
 }
 
 /** Prescriptions of the `meds` scenario: waiting, per kg, due now, and an ended course. */
@@ -409,6 +613,63 @@ function seedFor(scenario: Scenario, now: number): Seeded {
           eventAt(now, 'tummy_time', 5, null, {}),
         ],
         predictions: prediction(now),
+      };
+    case 'belly':
+      return {
+        baby,
+        events: [
+          ...morning(now, 112),
+          ...BELLY_DAYS.map((day) =>
+            eventAt(
+              now,
+              'belly_pain',
+              day * DAY_MIN + BELLY_TYPICAL_AGO,
+              day * DAY_MIN + BELLY_TYPICAL_AGO,
+              {
+                intensity: 3,
+              },
+            ),
+          ),
+        ],
+        predictions: bellyPredictions(now),
+      };
+    case 'overtired':
+      return {
+        baby,
+        events: morning(now, OVERTIRED_AWAKE_MIN),
+        predictions: overtiredPredictions(now),
+      };
+    case 'fussy':
+      return {
+        baby,
+        events: [
+          ...morning(now, 112),
+          ...FUSSY_DAYS.map((day) =>
+            eventAt(
+              now,
+              'fussy',
+              day * DAY_MIN + FUSSY_TYPICAL_AGO,
+              day * DAY_MIN + FUSSY_TYPICAL_AGO - 35,
+              { intensity: 'moderate', what_helped: 'rocking' },
+            ),
+          ),
+        ],
+        predictions: fussyPredictions(now),
+      };
+    case 'wet':
+      return { baby, events: morning(now, 112), predictions: diaperPredictions(now, 'wet') };
+    case 'dirty':
+      return {
+        baby,
+        events: [
+          ...morning(now, 112),
+          eventAt(now, 'feeding', FEED_ENDED_AGO + 15, FEED_ENDED_AGO, {
+            method: 'bottle',
+            amount_ml: 120,
+            bottle_feeding_type: 'formula',
+          }),
+        ],
+        predictions: diaperPredictions(now, 'dirty'),
       };
     case 'awake':
     case 'viewer':

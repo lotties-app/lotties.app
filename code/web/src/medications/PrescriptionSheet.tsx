@@ -29,6 +29,7 @@ import { GuardrailNote } from './GuardrailNote';
 import { ExtraFields } from './ExtraFields';
 import { MedicationChooser } from './MedicationChooser';
 import { ScheduleFields } from './ScheduleFields';
+import { useProductForm } from './useProductForm';
 import {
   emptyForm,
   formFromPrescription,
@@ -191,6 +192,9 @@ function PrescriptionEditor({
     [prescriptions],
   );
   const summary = summaryText(lenientTerms(form));
+  const productForm = useProductForm(
+    medications.find((m) => m.id === form.medicationId)?.productId,
+  );
 
   const edit = (patch: Partial<PrescriptionForm>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -303,7 +307,13 @@ function PrescriptionEditor({
             />
           </Field>
         </Box>
-        <DoseFields form={form} errors={errors} weight={weight ?? null} onChange={edit} />
+        <DoseFields
+          form={form}
+          errors={errors}
+          weight={weight ?? null}
+          productForm={productForm}
+          onChange={edit}
+        />
         <ScheduleFields form={form} errors={errors} onChange={edit} />
         <ExtraFields form={form} errors={errors} groups={groups} onChange={edit} />
       </Box>

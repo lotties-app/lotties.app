@@ -15,7 +15,16 @@ export const MAX_NAME_LENGTH = 40;
 /** Snooze re-sends are numbered 1 to 3 (`{base}:s{n}` on the server). */
 export const MAX_SNOOZES = 3;
 
-const KINDS = { dose_due: true, nap_window: true, test: true } as const;
+const KINDS = {
+  dose_due: true,
+  nap_window: true,
+  belly_pain_pattern: true,
+  overtired_warning: true,
+  fussy_pattern: true,
+  diaper_wet_headsup: true,
+  diaper_dirty_headsup: true,
+  test: true,
+} as const;
 export type PushKind = keyof typeof KINDS;
 
 export interface PushNames {
@@ -26,7 +35,11 @@ export interface PushNames {
 interface PayloadBase {
   /** Delivery id (lower-case GUID); also the id the snooze action posts to. */
   id: string;
-  /** Instant shown in the text: the dose slot or the nap window's earliest start (epoch ms). */
+  /**
+   * Instant shown in the text: the dose slot, the nap window's earliest start, the start of the
+   * usual belly pain or fussy window, when the awake stretch reaches the usual limit, or when the
+   * wet or dirty diaper is expected (epoch ms).
+   */
   at: number;
   lang: PushLang;
   names?: PushNames;
@@ -48,11 +61,62 @@ export interface NapPayload extends PayloadBase {
   token?: string;
 }
 
+/** The belly pain pattern heads-up: codes only, never a symptom detail or medical advice. */
+export interface BellyPainPayload extends PayloadBase {
+  kind: 'belly_pain_pattern';
+  babyId: string;
+  token?: string;
+}
+
+/** The overtired heads-up: codes only, never a symptom detail or medical advice. */
+export interface OvertiredPayload extends PayloadBase {
+  kind: 'overtired_warning';
+  babyId: string;
+  token?: string;
+}
+
+/** The fussy pattern heads-up: codes only, never a symptom detail or medical advice. */
+export interface FussyPayload extends PayloadBase {
+  kind: 'fussy_pattern';
+  babyId: string;
+  token?: string;
+}
+
+/** The diaper heads-ups (wet and dirty): codes only, never a symptom detail or medical advice. */
+export interface DiaperPayload extends PayloadBase {
+  kind: 'diaper_wet_headsup' | 'diaper_dirty_headsup';
+  babyId: string;
+  token?: string;
+}
+
 export interface TestPayload extends PayloadBase {
   kind: 'test';
 }
 
-export type PushPayload = DosePayload | NapPayload | TestPayload;
+export type PushPayload =
+  | DosePayload
+  | NapPayload
+  | BellyPainPayload
+  | OvertiredPayload
+  | FussyPayload
+  | DiaperPayload
+  | TestPayload;
+
+/** The kinds about a baby that open Now and carry nothing but codes (not a dose). */
+const BABY_ONLY_KINDS: ReadonlySet<string> = new Set([
+  'nap_window',
+  'belly_pain_pattern',
+  'overtired_warning',
+  'fussy_pattern',
+  'diaper_wet_headsup',
+  'diaper_dirty_headsup',
+]);
+
+type BabyOnlyKind = (
+  NapPayload | BellyPainPayload | OvertiredPayload | FussyPayload | DiaperPayload
+)['kind'];
+
+const isBabyOnlyKind = (kind: string): kind is BabyOnlyKind => BABY_ONLY_KINDS.has(kind);
 
 /** A valid payload, or the generic fallback (only the language survives). */
 export type ParsedPayload = { ok: true; payload: PushPayload } | { ok: false; lang: PushLang };
@@ -140,7 +204,9 @@ export function validatePayload(raw: unknown): ParsedPayload {
   const actionToken = token(field(raw, 'token'));
   const withToken = actionToken ? { token: actionToken } : {};
 
-  if (kind === 'nap_window') return { ok: true, payload: { ...base, ...withToken, kind, babyId } };
+  if (isBabyOnlyKind(kind)) {
+    return { ok: true, payload: { ...base, ...withToken, kind, babyId } };
+  }
 
   const rxId = guid(field(raw, 'rxId'));
   if (!rxId) return fail;

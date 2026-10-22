@@ -1,15 +1,35 @@
 /*
  * The notification deep link (docs/design/09-push-notifications.md sections 10 and 11), shared by
- * the service worker (builds it) and the app (reads it): `/#notify=dose&baby=..&rx=..&d=..&t=..`
- * or `/#notify=nap&baby=..&d=..`. Ids are validated GUIDs and the token a validated base64url
- * string on both sides; nothing else from a URL or a message is ever used. The fragment keeps ids
- * and the token out of server logs; the app strips it after reading it.
+ * the service worker (builds it) and the app (reads it): `/#notify=dose&baby=..&rx=..&d=..&t=..`,
+ * `/#notify=nap&baby=..&d=..`, `/#notify=belly&..`, `/#notify=overtired&..`, `/#notify=fussy&..`,
+ * `/#notify=wet&..` or `/#notify=dirty&..` (each opens Now, where the matching card shows when it
+ * applies). Ids are validated GUIDs and the
+ * token a validated base64url string on both sides; nothing else from a URL or a message is ever
+ * used. The fragment keeps ids and the token out of server logs; the app strips it after reading
+ * it.
  */
+import { getOwn } from '../../util/ownProperty';
 import { guid, type PushPayload } from './payload';
+
+/** Links that just open Now for a baby. */
+export type NowLinkKind = 'nap' | 'belly' | 'overtired' | 'fussy' | 'wet' | 'dirty';
 
 export type NotificationLink =
   | { kind: 'dose'; babyId: string; rxId: string; deliveryId: string; token?: string }
-  | { kind: 'nap'; babyId: string; deliveryId: string };
+  | { kind: NowLinkKind; babyId: string; deliveryId: string };
+
+/** The payload kind of each Now link, and back. */
+const PAYLOAD_KIND_OF_LINK: Readonly<Record<NowLinkKind, PushPayload['kind']>> = {
+  nap: 'nap_window',
+  belly: 'belly_pain_pattern',
+  overtired: 'overtired_warning',
+  fussy: 'fussy_pattern',
+  wet: 'diaper_wet_headsup',
+  dirty: 'diaper_dirty_headsup',
+};
+
+const isNowLinkKind = (kind: unknown): kind is NowLinkKind =>
+  typeof kind === 'string' && getOwn(PAYLOAD_KIND_OF_LINK, kind) !== undefined;
 
 /** The app route a notification opens (the Now screen). */
 export const DEEP_LINK_PATH = '/';
@@ -32,6 +52,16 @@ export function linkOfPayload(payload: PushPayload): NotificationLink | null {
       };
     case 'nap_window':
       return { kind: 'nap', babyId: payload.babyId, deliveryId: payload.id };
+    case 'belly_pain_pattern':
+      return { kind: 'belly', babyId: payload.babyId, deliveryId: payload.id };
+    case 'overtired_warning':
+      return { kind: 'overtired', babyId: payload.babyId, deliveryId: payload.id };
+    case 'fussy_pattern':
+      return { kind: 'fussy', babyId: payload.babyId, deliveryId: payload.id };
+    case 'diaper_wet_headsup':
+      return { kind: 'wet', babyId: payload.babyId, deliveryId: payload.id };
+    case 'diaper_dirty_headsup':
+      return { kind: 'dirty', babyId: payload.babyId, deliveryId: payload.id };
     case 'test':
       return null;
   }
@@ -67,7 +97,9 @@ function validLink(fields: Record<string, unknown>): NotificationLink | null {
   const babyId = guid(fields.babyId);
   const deliveryId = guid(fields.deliveryId);
   if (!babyId || !deliveryId) return null;
-  if (fields.kind === 'nap') return { kind: 'nap', babyId, deliveryId };
+  if (isNowLinkKind(fields.kind)) {
+    return { kind: fields.kind, babyId, deliveryId };
+  }
   if (fields.kind !== 'dose') return null;
   const rxId = guid(fields.rxId);
   if (!rxId) return null;
@@ -103,11 +135,21 @@ export function openMessageOf(link: NotificationLink): NotificationOpenMessage {
       }
     : {
         type: 'notification-open',
-        kind: 'nap_window',
+        kind: PAYLOAD_KIND_OF_LINK[link.kind],
         babyId: link.babyId,
         deliveryId: link.deliveryId,
       };
 }
+
+const LINK_KIND_OF_MESSAGE: Readonly<Record<string, NotificationLink['kind']>> = {
+  dose_due: 'dose',
+  nap_window: 'nap',
+  belly_pain_pattern: 'belly',
+  overtired_warning: 'overtired',
+  fussy_pattern: 'fussy',
+  diaper_wet_headsup: 'wet',
+  diaper_dirty_headsup: 'dirty',
+};
 
 /** Reads a link from a worker message (re-validated: messages are untrusted input). */
 export function linkOfMessage(data: unknown): NotificationLink | null {
@@ -115,6 +157,6 @@ export function linkOfMessage(data: unknown): NotificationLink | null {
   const message = data as Record<string, unknown>;
   if (message.type !== 'notification-open') return null;
   const kind =
-    message.kind === 'dose_due' ? 'dose' : message.kind === 'nap_window' ? 'nap' : undefined;
+    typeof message.kind === 'string' ? getOwn(LINK_KIND_OF_MESSAGE, message.kind) : undefined;
   return validLink({ ...message, kind });
 }

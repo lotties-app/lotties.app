@@ -8,6 +8,7 @@ import {
 } from '../db/hooks';
 import type { Baby, BabyEvent, EventType, Medication } from '../db/models';
 import { useNow } from '../events/time';
+import { useBottleHistory } from '../events/useBottleHistory';
 import { useMedicationStatuses, type MedicationStatuses } from '../medications/useMedicationStatus';
 import { usePredictions } from '../predictions/usePredictions';
 import { catchUp, type CatchUp } from './catchUp';
@@ -110,6 +111,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
   const handover = useHandover(baby.id);
   const meds = useMedicationStatuses(baby.id);
   const commands = useNowCommands(baby, types ?? EMPTY_TYPES);
+  const bottleHistory = useBottleHistory(baby.id);
 
   const events = useMemo(
     () => (recent && runningTimers ? mergeRunning(recent, runningTimers) : undefined),
@@ -126,7 +128,10 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       sleepActions: sleepToggleActions(state, now),
       tiles: lastAndLogTiles(types, events, now),
       trays: {
-        feed: feedTrayOptions(baby.id, types, events, now),
+        feed: feedTrayOptions(baby.id, types, events, now, {
+          events: bottleHistory?.events ?? events,
+          birthDate: baby.birthDate,
+        }),
         diaper: diaperTray(types),
         meds: medsTray(baby.id, types, medications, events, now, meds.statuses),
         bellyPain: bellyPainTray(types),
@@ -134,7 +139,19 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       forgotten: forgottenTimers(events, types, now),
       catchUp: catchUp(events, members, handover.since, now, { types }),
     };
-  }, [types, events, medications, meds, predictions, members, handover.since, tick, baby.id]);
+  }, [
+    types,
+    events,
+    medications,
+    meds,
+    predictions,
+    members,
+    handover.since,
+    tick,
+    baby.id,
+    baby.birthDate,
+    bottleHistory,
+  ]);
 
   return useMemo(() => {
     if (!derived || !types || !events || !medications || !meds || !runningTimers) return undefined;

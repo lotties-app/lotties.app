@@ -186,7 +186,7 @@ describe('lastAndLogTiles', () => {
 });
 
 describe('trays', () => {
-  it('feed tray: last bottle, amount chips topped up from the defaults, side to start', () => {
+  it('feed tray: last bottle, amount chips with the last one, side to start', () => {
     const events = [
       logged(FEEDING_TYPE.id, iso(12), {
         method: 'bottle',
@@ -205,7 +205,9 @@ describe('trays', () => {
       typeId: FEEDING_TYPE.id,
       lastMethod: 'bottle',
       bottle: {
-        amounts: [60, 90, 110, 120],
+        // Two bottles is a cold start; without a birth date the neutral set, plus the last 110.
+        amounts: [60, 90, 110, 120, 150],
+        suggestions: { source: 'neutral' },
         amountMl: 110,
         content: 'breast_milk',
         contents: ['formula', 'breast_milk'],
@@ -221,11 +223,12 @@ describe('trays', () => {
     });
   });
 
-  it('feed tray without history: defaults, then the remembered amount', () => {
+  it('feed tray without history: neutral set, then the remembered amount', () => {
     const tray = feedTrayOptions(BABY_ID, TYPES, [], at(14))!;
-    expect(tray.bottle).toEqual({
-      amounts: [60, 90, 120, 150],
-      amountMl: 90,
+    expect(tray.bottle).toMatchObject({
+      amounts: [60, 90, 120, 150, 180],
+      suggestions: { source: 'neutral', ageMonths: null },
+      amountMl: 120,
       content: null,
       contents: ['formula', 'breast_milk'],
       same: null,
@@ -238,9 +241,42 @@ describe('trays', () => {
       bottle_feeding_type: 'formula',
     });
     expect(feedTrayOptions(BABY_ID, TYPES, [], at(14))!.bottle).toMatchObject({
-      amounts: [60, 90, 120, 130],
+      amounts: [60, 90, 120, 130, 150],
       amountMl: 130,
       content: 'formula',
+    });
+  });
+
+  it('feed tray: age-based chips from the birth date, then the 30-day history', () => {
+    // Born 2026-07-10, on 2026-10-21: 3 whole months (typical 120-180 ml).
+    const young = feedTrayOptions(BABY_ID, TYPES, [], at(14), {
+      events: [],
+      birthDate: '2026-07-10',
+    })!;
+    expect(young.bottle).toMatchObject({
+      amounts: [120, 150, 180],
+      suggestions: { source: 'age', ageMonths: 3 },
+      amountMl: 150,
+    });
+
+    // Bottles older than the Now window still count (30 days), deleted ones never.
+    const history = [
+      logged(FEEDING_TYPE.id, iso(9, 0, 10), { method: 'bottle', amount_ml: 120 }),
+      logged(FEEDING_TYPE.id, iso(12, 0, 12), { method: 'bottle', amount_ml: 120 }),
+      logged(FEEDING_TYPE.id, iso(15, 0, 14), { method: 'bottle', amount_ml: 130 }),
+      {
+        ...logged(FEEDING_TYPE.id, iso(15, 0, 15), { method: 'bottle', amount_ml: 400 }),
+        deletedAt: iso(16, 0, 15),
+      },
+    ];
+    const grown = feedTrayOptions(BABY_ID, TYPES, [], at(14), {
+      events: history,
+      birthDate: '2026-07-10',
+    })!;
+    expect(grown.bottle).toMatchObject({
+      amounts: [120, 130, 150, 180],
+      suggestions: { source: 'history', preferred: 120 },
+      amountMl: 120,
     });
   });
 

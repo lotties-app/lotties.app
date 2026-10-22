@@ -85,7 +85,7 @@ describe('DayPage', () => {
     expect(within(today).getByText('Intensity 3/5')).toBeTruthy();
     const summary = screen.getByRole('region', { name: 'Summary of the day' });
     expect(within(summary).getByText('Feeds').nextSibling?.textContent).toBe('1');
-    expect(screen.getByRole('img', { name: /The day at a glance/ })).toBeTruthy();
+    expect(screen.getByRole('group', { name: /The day at a glance/ })).toBeTruthy();
   });
 
   it('goes to the previous day and back with the Today shortcut', async () => {

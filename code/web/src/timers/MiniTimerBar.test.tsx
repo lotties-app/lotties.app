@@ -83,7 +83,10 @@ describe('the global mini timer bar', () => {
     const timer = await start(SLEEP_TYPE, { kind: 'nap' }, 5);
     renderShell('/day');
     await screen.findByRole('region', { name: 'Running timers' });
-    expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toMatch(/px$/);
+    // The variable is set by a passive effect that can run just after the bar is in the document.
+    await waitFor(() =>
+      expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toMatch(/px$/),
+    );
     await db.events.update(timer.id, { endedAt: new Date().toISOString() });
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Running timers' })).toBeNull(),

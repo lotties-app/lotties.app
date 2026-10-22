@@ -161,6 +161,52 @@ export const BREAST_PUMP_DTO: EventTypeDto = {
   ],
 };
 
+export const NASAL_SUCTION_DTO: EventTypeDto = {
+  id: '4124b99c-e000-4ee0-b74a-a6579553a450',
+  babyId: null,
+  key: 'nasal_suction',
+  name: 'Nasal suction',
+  icon: 'air',
+  color: '#78909c',
+  hasDuration: false,
+  fields: [
+    field('tool', 'Tool', 'select', { options: ['bulb', 'electric', 'mouth'] }),
+    field('saline', 'Saline used', 'bool'),
+  ],
+};
+
+export const BELLY_MASSAGE_DTO: EventTypeDto = {
+  id: '44540b60-eb87-470f-8a3e-08170a525538',
+  babyId: null,
+  key: 'belly_massage',
+  name: 'Belly massage',
+  icon: 'massage',
+  color: '#ff7043',
+  hasDuration: true,
+  fields: [
+    field('reason', 'Reason', 'select', { options: ['gas', 'constipation', 'colic', 'other'] }),
+    field('helped', 'Did it help?', 'select', { options: ['yes', 'a_little', 'no'] }),
+    ...PAUSE_FIELD_DTOS,
+  ],
+};
+
+export const FUSSY_DTO: EventTypeDto = {
+  id: '6191006e-8767-4cd8-882f-81898fad58d3',
+  babyId: null,
+  key: 'fussy',
+  name: 'Fussy / crying',
+  icon: 'sentiment_very_dissatisfied',
+  color: '#81c784',
+  hasDuration: true,
+  fields: [
+    field('intensity', 'Intensity', 'select', { options: ['mild', 'moderate', 'intense'] }),
+    field('what_helped', 'What helped', 'select', {
+      options: ['feeding', 'rocking', 'pacifier', 'massage', 'sleep', 'other', 'nothing'],
+    }),
+    ...PAUSE_FIELD_DTOS,
+  ],
+};
+
 export const TUMMY_TIME_DTO: EventTypeDto = {
   id: 'a2b6f1c4-5a0e-4a62-9e0d-0b8c3d1c7e11',
   babyId: null,
@@ -176,5 +222,8 @@ export const FEEDING_TYPE: EventType = fromEventTypeDto(FEEDING_DTO);
 export const SLEEP_TYPE: EventType = fromEventTypeDto(SLEEP_DTO);
 export const DIAPER_TYPE: EventType = fromEventTypeDto(DIAPER_DTO);
 export const BREAST_PUMP_TYPE: EventType = fromEventTypeDto(BREAST_PUMP_DTO);
+export const NASAL_SUCTION_TYPE: EventType = fromEventTypeDto(NASAL_SUCTION_DTO);
+export const BELLY_MASSAGE_TYPE: EventType = fromEventTypeDto(BELLY_MASSAGE_DTO);
+export const FUSSY_TYPE: EventType = fromEventTypeDto(FUSSY_DTO);
 
 export const TUMMY_TIME_TYPE: EventType = fromEventTypeDto(TUMMY_TIME_DTO);

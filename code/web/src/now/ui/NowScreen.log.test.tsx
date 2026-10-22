@@ -178,10 +178,16 @@ describe('Feed tray', () => {
   it('a chip or another amount changes what is logged', async () => {
     await seedNow(db);
     await seedMorning(db, 112);
+    // Two older bottles: the chips come from the baby's own history (typical 90 ml).
+    for (const daysAgo of [1, 2]) {
+      const ago = daysAgo * 24 * 60;
+      await putEvent(db, 'feeding', ago, ago, { method: 'bottle', amount_ml: 90 });
+    }
     renderNow();
 
     fireEvent.click(await tile(/^Feed/));
     const tray = await screen.findByRole('dialog', { name: 'Feed' });
+    expect(within(tray).getByText('From your recent feeds')).toBeTruthy();
     fireEvent.click(within(tray).getByRole('radio', { name: '90 ml' }));
     fireEvent.click(within(tray).getByRole('radio', { name: 'Breast milk' }));
     fireEvent.click(within(tray).getByRole('button', { name: 'Log 90 ml breast milk' }));

@@ -62,11 +62,11 @@ export function renderText(parsed: ParsedPayload, timeZone?: string): Notificati
     if (payload.kind === 'test') return { title: catalog.test.title, body: catalog.test.body };
 
     const time = formatTime(payload.at, payload.lang, timeZone);
-    const strings = payload.kind === 'dose_due' ? catalog.dose_due : catalog.nap_window;
+    const strings = catalog[payload.kind];
     const values: Record<string, string> = { time };
     const names = payload.names;
     const named =
-      names !== undefined && (payload.kind === 'nap_window' || names.medication !== undefined);
+      names !== undefined && (payload.kind !== 'dose_due' || names.medication !== undefined);
     if (named) {
       values.baby = names.baby;
       if (names.medication !== undefined) values.medication = names.medication;

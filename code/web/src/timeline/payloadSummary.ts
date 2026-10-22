@@ -34,6 +34,14 @@ function fieldPart(
     const sleep = sleepDetailPart(field, raw, text, type);
     if (sleep !== undefined) return sleep;
   }
+  if (type.babyId === null && type.key === 'belly_massage') {
+    const massage = bellyMassagePart(field, raw);
+    if (massage !== undefined) return massage;
+  }
+  if (type.babyId === null && type.key === 'fussy') {
+    const fussy = fussyPart(field, raw);
+    if (fussy !== undefined) return fussy;
+  }
   if (field.kind === 'bool') return raw === true ? label : null;
   if (field.kind === 'number') {
     if (field.unit === 's' && typeof raw === 'number') return formatDuration(raw * 1000);
@@ -60,6 +68,36 @@ function sleepDetailPart(
     return t('timeline.moodOnWake', { mood: text.optionLabel(type, field, raw).toLowerCase() });
   }
   return undefined;
+}
+
+/** Whether a belly massage helped, as words that read alone (`helped`, not a bare `Yes`). */
+const MASSAGE_HELPED: ReadonlyMap<string, () => string> = new Map([
+  ['yes', () => t('timeline.massageHelped.yes')],
+  ['a_little', () => t('timeline.massageHelped.aLittle')],
+  ['no', () => t('timeline.massageHelped.no')],
+]);
+
+/** The detail line wording of the belly massage fields (`undefined`: use the generic one). */
+function bellyMassagePart(field: EventFieldDefinition, raw: unknown): string | undefined {
+  if (field.key !== 'helped' || typeof raw !== 'string') return undefined;
+  return MASSAGE_HELPED.get(raw)?.();
+}
+
+/** What soothed a fussy spell, as words that read alone (`rocking helped`, `nothing helped`). */
+const FUSSY_HELPED: ReadonlyMap<string, () => string> = new Map([
+  ['feeding', () => t('timeline.fussyHelped.feeding')],
+  ['rocking', () => t('timeline.fussyHelped.rocking')],
+  ['pacifier', () => t('timeline.fussyHelped.pacifier')],
+  ['massage', () => t('timeline.fussyHelped.massage')],
+  ['sleep', () => t('timeline.fussyHelped.sleep')],
+  ['other', () => t('timeline.fussyHelped.other')],
+  ['nothing', () => t('timeline.fussyHelped.nothing')],
+]);
+
+/** The detail line wording of the fussy fields (`undefined`: use the generic one). */
+function fussyPart(field: EventFieldDefinition, raw: unknown): string | undefined {
+  if (field.key !== 'what_helped' || typeof raw !== 'string') return undefined;
+  return FUSSY_HELPED.get(raw)?.();
 }
 
 /** Keys of the app itself (pause keys, the open nursing segment): never shown as details. */

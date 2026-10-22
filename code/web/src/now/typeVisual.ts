@@ -15,7 +15,11 @@ const CATEGORY_OF_KEY: ReadonlyMap<string, CategoryName> = new Map<string, Categ
   ['diaper', 'diaper'],
   ['medication', 'health'],
   ['belly_pain', 'health'],
+  ['nasal_suction', 'health'],
+  ['belly_massage', 'health'],
   ['bath', 'care'],
+  // Soothing a crying baby is care, not a symptom or a medicine (docs/design/11-patterns.md).
+  ['fussy', 'care'],
   ['tummy_time', 'activity'],
 ]);
 

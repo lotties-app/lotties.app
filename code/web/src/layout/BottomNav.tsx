@@ -11,7 +11,7 @@ import { NAV_HEIGHT, NAV_INSET } from './navMetrics';
 interface NavItem {
   to: string;
   /** Catalog key under `nav`. */
-  label: 'now' | 'day' | 'insights';
+  label: 'now' | 'day' | 'insights' | 'settings';
   icon: IconName;
   /** Route prefixes that mark the tab as current. */
   matches: readonly string[];
@@ -21,6 +21,7 @@ const ITEMS: readonly NavItem[] = [
   { to: '/', label: 'now', icon: 'clock', matches: [] },
   { to: '/day', label: 'day', icon: 'calendar', matches: ['/day'] },
   { to: '/insights', label: 'insights', icon: 'chart', matches: ['/insights'] },
+  { to: '/settings', label: 'settings', icon: 'settings', matches: ['/settings'] },
 ];
 
 /** Size of the round "Add event" button. */
@@ -109,16 +110,17 @@ function AddButton({ onPress }: { onPress: () => void }) {
 
 /**
  * The floating pill navigation: Now, Day, a round "+" that opens the More sheet from any tab
- * (hidden when the person cannot log) and Insights. The pill is inset from the edges and sits
- * above the home indicator; its elevation is a soft shadow in light, the raised surface in dark
- * and flat in the night scheme. Settings and the baby profile live in the header menu.
+ * (hidden when the person cannot log), Insights and Settings: two equal tabs on each side keep the
+ * "+" centred. The pill is inset from the edges and sits above the home indicator; its elevation
+ * is a soft shadow in light, the raised surface in dark and flat in the night scheme. Settings is
+ * also reachable from the header menu, next to the baby profile.
  */
 export function BottomNav() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const add = useAddSheet();
   const withAdd = add?.enabled === true;
-  const [now, day, insights] = ITEMS;
+  const [now, day, insights, settings] = ITEMS;
 
   return (
     <Box
@@ -146,7 +148,10 @@ export function BottomNav() {
           px: 1,
           display: 'grid',
           alignItems: 'center',
-          gridTemplateColumns: withAdd ? `1fr 1fr ${ADD_SIZE + 16}px 1fr` : 'repeat(3, 1fr)',
+          // Equal tab columns (minmax keeps a longer label from widening its column).
+          gridTemplateColumns: withAdd
+            ? `repeat(2, minmax(0, 1fr)) ${ADD_SIZE + 16}px repeat(2, minmax(0, 1fr))`
+            : 'repeat(4, minmax(0, 1fr))',
           borderRadius: `${RADIUS.pill}px`,
           // Light floats on a soft shadow; dark and night use the raised surface, night flat.
           backgroundColor: palette(theme).background.paper,
@@ -158,6 +163,7 @@ export function BottomNav() {
         <Tab item={day} active={isActive(day, pathname)} />
         {withAdd && <AddButton onPress={add.request} />}
         <Tab item={insights} active={isActive(insights, pathname)} />
+        <Tab item={settings} active={isActive(settings, pathname)} />
       </Box>
     </Box>
   );

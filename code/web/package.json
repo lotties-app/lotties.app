@@ -4,12 +4,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sw.json --noEmit && vite build",
+    "build:native": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sw.json --noEmit && vite build --mode native",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.3",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@fontsource-variable/fraunces": "^5.3.0",

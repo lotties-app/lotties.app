@@ -29,6 +29,9 @@ export const BUILT_IN_TYPES: EventType[] = [
   eventType({ id: 'type-med', key: 'medication', name: 'Medication' }),
   eventType({ id: 'type-belly', key: 'belly_pain', name: 'Belly pain' }),
   eventType({ id: 'type-pump', key: 'breast_pump', name: 'Breast pump', hasDuration: true }),
+  eventType({ id: 'type-nasal', key: 'nasal_suction', name: 'Nasal suction' }),
+  eventType({ id: 'type-massage', key: 'belly_massage', name: 'Belly massage', hasDuration: true }),
+  eventType({ id: 'type-fussy', key: 'fussy', name: 'Fussy / crying', hasDuration: true }),
 ];
 
 export function presetById(id: string, types: EventType[] = BUILT_IN_TYPES): Preset {

@@ -3,6 +3,8 @@ import {
   type Baby,
   type BabyEvent,
   type BabyRole,
+  type DayPart,
+  type DayPartReminder,
   type Dosage,
   type EventFieldDefinition,
   type EventFieldKind,
@@ -88,8 +90,10 @@ export const apiPaths = {
   importNapper: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/napper`,
   importNapperPreview: (babyId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/import/napper/preview`,
-  predictions: (babyId: string, utcOffsetMinutes: number) =>
-    `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}`,
+  /** `timeZone` (IANA) places the recurring patterns in local time, daylight saving included. */
+  predictions: (babyId: string, utcOffsetMinutes: number, timeZone?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}` +
+    (timeZone ? `&timeZone=${encodeURIComponent(timeZone)}` : ''),
   pushConfig: () => `${API_PREFIX}/push/config`,
   pushSubscriptions: () => `${API_PREFIX}/push/subscriptions`,
   /** Body `{ endpoint }`: the endpoint never travels in a URL. */
@@ -312,6 +316,138 @@ export interface BedTimeDto {
   basis: Record<string, unknown>;
 }
 
+/** One supporting day of a pattern: `yyyy-MM-dd` and its local `HH:mm` times inside the window. */
+export interface PatternDayDto {
+  date: string;
+  times: string[];
+}
+
+/**
+ * A time of day an event type keeps happening at (docs/design/11-patterns.md), in local `HH:mm`
+ * (the window crosses midnight when `windowEnd` is earlier than `windowStart`). Numbers only: the
+ * client writes the text.
+ */
+export interface TimeOfDayPatternDto {
+  /** `belly_pain` or `fussy`. */
+  typeKey: string;
+  typicalClock: string;
+  windowStart: string;
+  windowEnd: string;
+  windowMinutes: number;
+  spreadMinutes: number;
+  confidence: PredictionConfidence;
+  eventDayCount: number;
+  recentDayCount: number;
+  /** IANA zone of the local times; `null` when the fixed offset was used. */
+  timeZone: string | null;
+  /** Oldest first. */
+  days: PatternDayDto[];
+  rule: {
+    lookBackDays: number;
+    recentDays: number;
+    minimumRecentDays: number;
+    maximumSpreadMinutes: number;
+    minimumCoveragePercent: number;
+    /** The suggestion shows from this long before the window starts. */
+    leadMinutes: number;
+  };
+}
+
+/** One awake stretch the wake window used: UTC ISO start and end, whole minutes. */
+export interface AwakeStretchDto {
+  start: string;
+  end: string;
+  minutes: number;
+}
+
+/**
+ * The overtired heads-up numbers (docs/design/11-patterns.md section 6): the baby's usual longest
+ * comfortable awake stretch (`limitMinutes`, a percentile of the recent daytime stretches) and the
+ * current stretch at `generatedAt`. Numbers only: the client writes the text and measures the
+ * current stretch from local events.
+ */
+export interface WakeWindowDto {
+  limitMinutes: number;
+  sampleCount: number;
+  /** UTC ISO start of the current awake stretch; `null` while asleep or after a night waking. */
+  awakeSince: string | null;
+  awakeMinutes: number | null;
+  timeZone: string | null;
+  /** Oldest first. */
+  stretches: AwakeStretchDto[];
+  rule: {
+    lookBackDays: number;
+    /** Local `HH:mm` (inclusive) and before `dayEndsAt` (exclusive): daytime stretch starts. */
+    dayStartsAt: string;
+    dayEndsAt: string;
+    percentile: number;
+    minimumStretches: number;
+    /** The heads-up shows from this long before the limit... */
+    leadMinutes: number;
+    /** ...until this long after it. */
+    graceMinutes: number;
+  };
+}
+
+/**
+ * The next wet or dirty diaper from the gaps between them (docs/design/11-patterns.md section 8),
+ * anchored at the latest one on the server. Whole minutes; the client re-anchors at its latest
+ * local event.
+ */
+export interface DiaperGapDto {
+  /** UTC ISO of the latest diaper of the kind. */
+  anchorAt: string;
+  nextStart: { earliest: string; expected: string; latest: string };
+  lowerGapMinutes: number;
+  medianGapMinutes: number;
+  upperGapMinutes: number;
+  eventCount: number;
+  gapCount: number;
+  confidence: PredictionConfidence;
+  /** Wet only: the last 24 hours against the usual count; `null` with too little history. */
+  trend?: { last24Hours: number; usualPer24Hours: number; droppedSharply: boolean } | null;
+}
+
+/** How long after a feed ends the next dirty diaper usually comes (whole minutes). */
+export interface DiaperFeedLagDto {
+  lowerLagMinutes: number;
+  medianLagMinutes: number;
+  upperLagMinutes: number;
+  pairCount: number;
+  confidence: PredictionConfidence;
+  /** UTC ISO end of the latest finished feed on the server, or `null`. */
+  latestFeedEndedAt: string | null;
+}
+
+export interface DirtyDiaperDto {
+  lastDirtyAt: string | null;
+  gap: DiaperGapDto | null;
+  afterFeed: DiaperFeedLagDto | null;
+}
+
+export interface DiaperRuleDto {
+  wetLookBackDays: number;
+  minimumWetEvents: number;
+  dirtyLookBackDays: number;
+  minimumDirtyEvents: number;
+  lowerPercentile: number;
+  upperPercentile: number;
+  feedWindowMinutes: number;
+  minimumFeedPairs: number;
+  maximumLagSpreadMinutes: number;
+  /** The Now card shows from this long before the expected time... */
+  leadMinutes: number;
+  /** ...until this long after it. */
+  graceMinutes: number;
+}
+
+/** The diaper predictions: each part `null` when its gate did not pass (nothing is guessed). */
+export interface DiaperPredictionsDto {
+  wet: DiaperGapDto | null;
+  dirty: DirtyDiaperDto | null;
+  rule: DiaperRuleDto;
+}
+
 export interface PredictionsDto {
   babyId: string;
   generatedAt: string;
@@ -321,6 +457,12 @@ export interface PredictionsDto {
   insufficientData: InsufficientDataDto[];
   /** Absent or `null` when no bed time can be estimated. */
   bedTime?: BedTimeDto | null;
+  /** Recurring time-of-day patterns (additive; absent on older servers). */
+  patterns?: TimeOfDayPatternDto[];
+  /** The overtired heads-up numbers (additive); `null` or absent without enough data. */
+  wakeWindow?: WakeWindowDto | null;
+  /** The next wet and dirty diaper (additive; absent on older servers). */
+  diaper?: DiaperPredictionsDto | null;
 }
 
 /** Normalizes any ISO-8601 timestamp to UTC `Z` with millisecond precision. */
@@ -440,6 +582,9 @@ export interface PrescriptionDto {
   dose: { amount: number; unit: string; perKg?: boolean; roundingStep?: number | null };
   timesOfDay?: string[] | null;
   everyMinutes?: number | null;
+  /** Part-of-the-day codes (`morning`, `afternoon`, `evening`, `night`); absent on older servers. */
+  dayParts?: string[] | null;
+  dayPartReminders?: { part: string; time: string }[] | null;
   minIntervalMinutes?: number | null;
   maxDosesPer24h?: number | null;
   indication?: string | null;
@@ -463,6 +608,8 @@ export interface PrescriptionUpsertRequest {
   dose: PrescriptionDose;
   timesOfDay: string[] | null;
   everyMinutes: number | null;
+  dayParts: DayPart[] | null;
+  dayPartReminders: DayPartReminder[] | null;
   minIntervalMinutes: number | null;
   maxDosesPer24h: number | null;
   indication: string | null;
@@ -482,6 +629,8 @@ export function toPrescriptionUpsertRequest(p: Prescription): PrescriptionUpsert
     dose: p.dose,
     timesOfDay: p.timesOfDay,
     everyMinutes: p.everyMinutes,
+    dayParts: p.dayParts ?? null,
+    dayPartReminders: p.dayPartReminders ?? null,
     minIntervalMinutes: p.minIntervalMinutes,
     maxDosesPer24h: p.maxDosesPer24h,
     indication: p.indication,
@@ -499,6 +648,28 @@ export function isPrescriptionDtoFor(value: unknown, id: string): value is Presc
   return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
 }
 
+const DAY_PARTS: readonly DayPart[] = ['morning', 'afternoon', 'evening', 'night'];
+
+const isDayPart = (value: unknown): value is DayPart =>
+  typeof value === 'string' && (DAY_PARTS as readonly string[]).includes(value);
+
+/** Known part codes in day order (unknown ones are dropped); `null` when absent or empty. */
+function dayPartsFromDto(codes: PrescriptionDto['dayParts']): DayPart[] | null {
+  if (!Array.isArray(codes)) return null;
+  const parts = DAY_PARTS.filter((part) => codes.includes(part));
+  return parts.length > 0 ? parts : null;
+}
+
+function dayPartRemindersFromDto(
+  reminders: PrescriptionDto['dayPartReminders'],
+): DayPartReminder[] | null {
+  if (!Array.isArray(reminders)) return null;
+  const valid = reminders.filter(
+    (r): r is DayPartReminder => isDayPart(r?.part) && typeof r.time === 'string',
+  );
+  return valid.length > 0 ? valid.map((r) => ({ part: r.part, time: r.time })) : null;
+}
+
 export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
   return {
     id: dto.id,
@@ -514,6 +685,8 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
     },
     timesOfDay: dto.timesOfDay ? [...dto.timesOfDay].sort() : null,
     everyMinutes: dto.everyMinutes ?? null,
+    dayParts: dayPartsFromDto(dto.dayParts),
+    dayPartReminders: dayPartRemindersFromDto(dto.dayPartReminders),
     minIntervalMinutes: dto.minIntervalMinutes ?? null,
     maxDosesPer24h: dto.maxDosesPer24h ?? null,
     indication: dto.indication ?? null,
@@ -532,7 +705,16 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
 
 /* Shared medication catalog (instance-wide). */
 
-export type ProductForm = 'drops' | 'syrup' | 'tablet' | 'powder' | 'other';
+export type ProductForm =
+  | 'drops'
+  | 'syrup'
+  | 'tablet'
+  | 'powder'
+  | 'spray'
+  | 'ointment'
+  | 'suppository'
+  | 'inhaler'
+  | 'other';
 
 export interface ProductSubstanceDto {
   substanceId: string;

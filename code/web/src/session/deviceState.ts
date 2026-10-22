@@ -2,6 +2,13 @@ import { forgetSelectedBaby } from '../baby/selectedBabyStorage';
 import { clearAllLastUsed } from '../events/lastUsedValues';
 import { localPushDeviceRecord } from '../notifications/pushDeviceRecord';
 import { clearPromptDismissed } from '../notifications/reminderPrompt';
+import { clearAllBellyDismissals } from '../now/bellyPatternDismissal';
+import {
+  diaperDirtyDismissal,
+  diaperWetDismissal,
+  fussyDismissal,
+  overtiredDismissal,
+} from '../now/dismissalStore';
 import { clearAllLastSeen } from '../now/lastSeen';
 import { clearAllCachedPredictions } from '../predictions/predictionsCache';
 import { clearAllPinned } from '../presets/pinnedStorage';
@@ -11,9 +18,10 @@ const ACCOUNT_KEY = 'baby-routine.account';
 
 /**
  * Removes the account's localStorage entries: the selected baby, the cached predictions, the pinned
- * presets, the remembered field values, the Now "last seen" times (all keyed by baby), this
- * device's push opt-in and the reminder card's "Not now". Device preferences such as the theme
- * are kept.
+ * presets, the remembered field values, the Now "last seen" times, the belly pain and fussy
+ * pattern cards' "Not today" and the overtired and diaper cards' "Not now" (all keyed by baby), this device's
+ * push opt-in and the reminder card's "Not now".
+ * Device preferences such as the theme are kept.
  */
 export function clearAccountDeviceState(): void {
   forgetSelectedBaby();
@@ -21,6 +29,11 @@ export function clearAccountDeviceState(): void {
   clearAllPinned();
   clearAllLastUsed();
   clearAllLastSeen();
+  clearAllBellyDismissals();
+  fussyDismissal.clearAll();
+  overtiredDismissal.clearAll();
+  diaperWetDismissal.clearAll();
+  diaperDirtyDismissal.clearAll();
   localPushDeviceRecord.clear();
   clearPromptDismissed();
   try {

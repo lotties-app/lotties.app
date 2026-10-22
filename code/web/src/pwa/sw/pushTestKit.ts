@@ -26,6 +26,68 @@ export const napPayload = (overrides: Record<string, unknown> = {}): Record<stri
   ...overrides,
 });
 
+/** The belly pain heads-up for a window starting at 17:30 São Paulo (20:30 UTC). */
+export const bellyPayload = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  v: 1,
+  id: DELIVERY_ID,
+  kind: 'belly_pain_pattern',
+  babyId: BABY_ID,
+  at: '2026-10-21T20:30:00Z',
+  lang: 'en',
+  token: TOKEN,
+  ...overrides,
+});
+
+/** The overtired heads-up for an awake stretch reaching the usual limit at 15:30 São Paulo (18:30 UTC). */
+export const overtiredPayload = (
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> => ({
+  v: 1,
+  id: DELIVERY_ID,
+  kind: 'overtired_warning',
+  babyId: BABY_ID,
+  at: '2026-10-21T18:30:00Z',
+  lang: 'en',
+  token: TOKEN,
+  ...overrides,
+});
+
+/** The fussy pattern heads-up for a window starting at 17:30 São Paulo (20:30 UTC). */
+export const fussyPayload = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  v: 1,
+  id: DELIVERY_ID,
+  kind: 'fussy_pattern',
+  babyId: BABY_ID,
+  at: '2026-10-21T20:30:00Z',
+  lang: 'en',
+  token: TOKEN,
+  ...overrides,
+});
+
+/** The wet diaper heads-up for a wet diaper expected at 15:40 São Paulo (18:40 UTC). */
+export const wetPayload = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  v: 1,
+  id: DELIVERY_ID,
+  kind: 'diaper_wet_headsup',
+  babyId: BABY_ID,
+  at: '2026-10-21T18:40:00Z',
+  lang: 'en',
+  token: TOKEN,
+  ...overrides,
+});
+
+/** The dirty diaper heads-up for a dirty diaper expected at 16:05 São Paulo (19:05 UTC). */
+export const dirtyPayload = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  v: 1,
+  id: DELIVERY_ID,
+  kind: 'diaper_dirty_headsup',
+  babyId: BABY_ID,
+  at: '2026-10-21T19:05:00Z',
+  lang: 'en',
+  token: TOKEN,
+  ...overrides,
+});
+
 export const testPayload = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   v: 1,
   id: DELIVERY_ID,

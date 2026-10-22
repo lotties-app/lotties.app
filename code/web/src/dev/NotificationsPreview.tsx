@@ -81,6 +81,11 @@ function setup(scenario: Scenario) {
         doseLeadMinutes: 5,
         napWindow: on,
         napLeadMinutes: 10,
+        bellyPainPattern: on,
+        overtiredWarning: on,
+        fussyPattern: false,
+        diaperWetHeadsUp: on,
+        diaperDirtyHeadsUp: false,
       },
       {
         babyId: 'dev-push-theo',
@@ -89,6 +94,11 @@ function setup(scenario: Scenario) {
         doseLeadMinutes: 0,
         napWindow: false,
         napLeadMinutes: 10,
+        bellyPainPattern: false,
+        overtiredWarning: false,
+        fussyPattern: false,
+        diaperWetHeadsUp: false,
+        diaperDirtyHeadsUp: false,
       },
     ],
     devices: [

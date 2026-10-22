@@ -54,6 +54,11 @@ function useDoseReminderOffer(baby: Baby) {
       doseLeadMinutes: prefs?.doseLeadMinutes ?? 0,
       napWindow: prefs?.napWindow ?? false,
       napLeadMinutes: prefs?.napLeadMinutes ?? 10,
+      bellyPainPattern: prefs?.bellyPainPattern ?? false,
+      overtiredWarning: prefs?.overtiredWarning ?? false,
+      fussyPattern: prefs?.fussyPattern ?? false,
+      diaperWetHeadsUp: prefs?.diaperWetHeadsUp ?? false,
+      diaperDirtyHeadsUp: prefs?.diaperDirtyHeadsUp ?? false,
     },
   } as const;
 }

@@ -81,6 +81,15 @@ import IconBuildingCarousel from '@tabler/icons-react/dist/esm/icons/IconBuildin
 import IconSunrise from '@tabler/icons-react/dist/esm/icons/IconSunrise.mjs';
 import IconBellRinging from '@tabler/icons-react/dist/esm/icons/IconBellRinging.mjs';
 import IconArrowsExchange from '@tabler/icons-react/dist/esm/icons/IconArrowsExchange.mjs';
+import IconWind from '@tabler/icons-react/dist/esm/icons/IconWind.mjs';
+import IconMedicineSyrup from '@tabler/icons-react/dist/esm/icons/IconMedicineSyrup.mjs';
+import IconFlask from '@tabler/icons-react/dist/esm/icons/IconFlask.mjs';
+import IconSpray from '@tabler/icons-react/dist/esm/icons/IconSpray.mjs';
+import IconBandage from '@tabler/icons-react/dist/esm/icons/IconBandage.mjs';
+import IconCapsule from '@tabler/icons-react/dist/esm/icons/IconCapsule.mjs';
+import IconLungs from '@tabler/icons-react/dist/esm/icons/IconLungs.mjs';
+import IconMedicalCross from '@tabler/icons-react/dist/esm/icons/IconMedicalCross.mjs';
+import IconMassage from '@tabler/icons-react/dist/esm/icons/IconMassage.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -176,6 +185,15 @@ export const ICON_COMPONENTS = {
   sunrise: IconSunrise,
   bell: IconBellRinging,
   exchange: IconArrowsExchange,
+  wind: IconWind,
+  'medicine-syrup': IconMedicineSyrup,
+  flask: IconFlask,
+  spray: IconSpray,
+  bandage: IconBandage,
+  capsule: IconCapsule,
+  lungs: IconLungs,
+  'medical-cross': IconMedicalCross,
+  massage: IconMassage,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

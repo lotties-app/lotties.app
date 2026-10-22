@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { EventFieldDefinition, EventType } from '../db/models';
 import { fromEventTypeDto } from '../sync/contract';
-import { FEEDING_DTO, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import {
+  BELLY_MASSAGE_TYPE,
+  FEEDING_DTO,
+  FEEDING_TYPE,
+  NASAL_SUCTION_TYPE,
+  SLEEP_TYPE,
+} from '../test/builtInTypes';
 import {
   isComplete,
   isFieldVisible,
@@ -60,6 +66,64 @@ describe('the built-in feeding definition from the API', () => {
     expect(pause.map((f) => f.key)).toEqual(['pause_count', 'paused_seconds', 'paused_at']);
     expect(pause.every((f) => f.hidden === true)).toBe(true);
     expect(FEEDING_TYPE.fields.find((f) => f.key === 'pause_count')?.integer).toBe(true);
+  });
+});
+
+describe('the built-in nasal suction definition from the API', () => {
+  it('shows the optional tool and saline fields', () => {
+    const forms = visibleFields(NASAL_SUCTION_TYPE.fields, () => undefined);
+    expect(forms.map((f) => [f.key, f.kind, f.isRequired])).toEqual([
+      ['tool', 'select', false],
+      ['saline', 'bool', false],
+    ]);
+  });
+
+  it.each([{}, { tool: 'bulb', saline: true }, { tool: 'electric' }, { saline: false }])(
+    'accepts %j like the API',
+    (payload) => {
+      expect(validatePayload(NASAL_SUCTION_TYPE, payload, true)).toEqual([]);
+    },
+  );
+
+  it('rejects an unknown or differently cased tool and a non-boolean saline like the API', () => {
+    expect(validatePayload(NASAL_SUCTION_TYPE, { tool: 'syringe' }, true)).toEqual([
+      { field: 'tool', code: 'option' },
+    ]);
+    expect(validatePayload(NASAL_SUCTION_TYPE, { tool: 'BULB', saline: 'yes' }, true)).toEqual([
+      { field: 'tool', code: 'option' },
+      { field: 'saline', code: 'bool' },
+    ]);
+  });
+});
+
+describe('the built-in belly massage definition from the API', () => {
+  it('shows the optional reason and helped selects and hides the pause keys', () => {
+    const forms = visibleFields(BELLY_MASSAGE_TYPE.fields, () => undefined).filter(
+      (f) => f.hidden !== true,
+    );
+    expect(forms.map((f) => [f.key, f.kind, f.isRequired])).toEqual([
+      ['reason', 'select', false],
+      ['helped', 'select', false],
+    ]);
+    expect(BELLY_MASSAGE_TYPE.hasDuration).toBe(true);
+  });
+
+  it.each([{}, { reason: 'gas', helped: 'yes' }, { reason: 'constipation' }, { helped: 'no' }])(
+    'accepts %j like the API, running or ended',
+    (payload) => {
+      expect(validatePayload(BELLY_MASSAGE_TYPE, payload, true)).toEqual([]);
+      expect(validatePayload(BELLY_MASSAGE_TYPE, payload, false)).toEqual([]);
+    },
+  );
+
+  it('rejects an unknown or differently cased reason and helped like the API', () => {
+    expect(validatePayload(BELLY_MASSAGE_TYPE, { reason: 'pain' }, true)).toEqual([
+      { field: 'reason', code: 'option' },
+    ]);
+    expect(validatePayload(BELLY_MASSAGE_TYPE, { reason: 'GAS', helped: 'maybe' }, true)).toEqual([
+      { field: 'reason', code: 'option' },
+      { field: 'helped', code: 'option' },
+    ]);
   });
 });
 

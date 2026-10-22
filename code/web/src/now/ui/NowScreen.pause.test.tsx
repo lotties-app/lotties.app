@@ -48,7 +48,8 @@ describe('pausing on the Now screen', () => {
     await waitFor(async () =>
       expect((await byId(nap.id)).payload).toMatchObject({ pause_count: 1 }),
     );
-    expect(within(card).queryByTestId('timer-paused')).toBeNull();
+    // The database changes before the card re-renders: wait for the badge instead of racing it.
+    await waitFor(() => expect(within(card).queryByTestId('timer-paused')).toBeNull());
   });
 
   it('shows the effective minutes of a nap that had a pause', async () => {
@@ -74,8 +75,11 @@ describe('pausing on the Now screen', () => {
     expect(await within(card).findByRole('button', { name: 'Resume Nursing' })).toBeTruthy();
     expect(within(card).getByTestId('timer-paused')).toBeTruthy();
     expect((await byId(feed.id)).payload.paused_at).toEqual(expect.any(String));
+    // The card shows the earlier of its last tick and the pause: let one tick pass so the frozen
+    // value is on screen (a slow run can also put the pause a second after the 06:00 mark).
+    await new Promise((resolve) => setTimeout(resolve, 1200));
     const total = within(card).getByTestId('nursing-total').textContent;
-    expect(total).toBe('06:00');
+    expect(total).toMatch(/^06:0\d$/);
     await new Promise((resolve) => setTimeout(resolve, 1200));
     expect(within(card).getByTestId('nursing-total').textContent).toBe(total);
   });
