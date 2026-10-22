@@ -1,0 +1,32 @@
+{
+  "name": "lotties-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell that ships the Lotties web build (code/web/dist) as the iOS and Android apps.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check:versions": "node scripts/check-plugin-versions.mjs",
+    "build:web": "npm --prefix ../web run build:native",
+    "sync": "npm run check:versions && cap sync",
+    "android": "npm run build:web && npm run sync -- android && cap open android",
+    "ios": "npm run build:web && npm run sync -- ios && cap open ios",
+    "doctor": "cap doctor"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/keyboard": "8.0.6",
+    "@capacitor/splash-screen": "8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "typescript": "6.0.3"
+  }
+}

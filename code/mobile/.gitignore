@@ -1,0 +1,26 @@
+# code/mobile: the Capacitor shell. android/.gitignore and ios/.gitignore (generated) already keep the copied web
+# assets (public/), the generated capacitor.config.json, build outputs, Pods, DerivedData and local.properties out.
+node_modules/
+.DS_Store
+
+# Signing material and store credentials never enter the repository (CI reads them from GitHub secrets).
+*.jks
+*.keystore
+keystore.properties
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+fastlane/.env*
+# Firebase/Google service files are per environment (FCM, later): provided by CI, never committed.
+google-services.json
+GoogleService-Info.plist
+
+# Android Studio / Gradle leftovers outside android/.gitignore
+android/.idea/
+android/app/release/
+android/app/debug/
+# Xcode leftovers outside ios/.gitignore
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
