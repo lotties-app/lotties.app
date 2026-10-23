@@ -227,7 +227,7 @@ Nothing secret is in the repository (`code/mobile/.gitignore` refuses keystores,
 - APNs `.p8` key and the FCM service account (section 7) are API secrets: the Secret `lotties-secrets`, like the VAPID
   keys.
 
-## 13. CI plan
+## 13. CI plan (built as `.github/workflows/mobile-release.yml`, unrun; how to use it: docs/MOBILE-RELEASE.md)
 
 - Android (ubuntu-latest): Node 22, Temurin JDK 21, `npm ci` in code/web and code/mobile, `build:web` (client id from a
   repository variable), `npx cap sync android`, `./gradlew assembleDebug` on pull requests (artifact); on a `v*` tag
