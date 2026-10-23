@@ -1,5 +1,7 @@
 # Doctor access: professional profile, Doctor role, notes, consultation measurements, access log (step 1), suggestions the parents accept or decline (step 2) (design, 2026-10-22)
 
+> Since 2026-10-22 the Owner chooses which sections each doctor sees (daily log, growth, medications, vaccines, formulas, notes; all six by default) and a doctor works in her own dashboard (`/doctor`) with on-demand, section-filtered reads instead of syncing her patients like a parent: docs/design/19-doctor-dashboard.md. Where this document says the Doctor reads "everything" (sections 2, 5, 7), read "the sections the family shares"; members are never hers.
+
 Owner request: a pediatrician follows her patients in the app. She registers an account like anyone (Keycloak), declares herself a healthcare professional, and a baby's Owner invites her with the new role **Doctor**. One doctor account can follow many babies (her patients). Step 1 (sections 1-9) gives her read access, notes and consultation measurements, and gives the family an access log. Step 2 (section 10) lets her suggest prescriptions and recommendations that the parents accept or decline, with provenance on the accepted prescriptions, the parents' inbox and the `doctor_suggestion` push.
 
 ## 1. Professional profile (`professional_profiles`)
