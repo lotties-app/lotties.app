@@ -2,4 +2,6 @@
 // only dynamically (platform/nativeShell.ts): a static import would put @capacitor/* in the PWA.
 export { App } from '@capacitor/app';
 export { Browser } from '@capacitor/browser';
+export { Directory, Filesystem } from '@capacitor/filesystem';
+export { Share } from '@capacitor/share';
 export { SystemBars, SystemBarsStyle } from '@capacitor/core';

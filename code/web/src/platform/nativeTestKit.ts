@@ -1,7 +1,7 @@
 // Test helpers for the native shell (never imported by the app): a fake Capacitor bridge global and
 // an in-memory NativeShell whose events the test fires.
 import { vi } from 'vitest';
-import type { NativeShell, SystemBarsStyle } from './nativeShell';
+import type { NativeShell, SharedFile, SystemBarsStyle } from './nativeShell';
 
 /** Makes `isNativeApp()` true, like the bridge the Capacitor shell injects. Returns the undo. */
 export function pretendNativeApp(): () => void {
@@ -18,6 +18,8 @@ export interface FakeNativeShell extends NativeShell {
   /** URLs passed to `openBrowser`, in order. */
   opened: string[];
   styles: SystemBarsStyle[];
+  /** Files passed to `shareFile`, in order. */
+  shared: SharedFile[];
   /** The URL `launchUrl` returns. */
   launch: string | undefined;
   /** The OS opens the app with `url` (appUrlOpen). */
@@ -35,6 +37,7 @@ export function fakeNativeShell(): FakeNativeShell {
     opened: [],
     styles: [],
     launch: undefined,
+    shared: [],
     openBrowser: vi.fn(async (url: string) => {
       shell.opened.push(url);
     }),
@@ -48,6 +51,9 @@ export function fakeNativeShell(): FakeNativeShell {
       return () => urlListeners.delete(listener);
     },
     launchUrl: async () => shell.launch,
+    shareFile: vi.fn(async (file: SharedFile) => {
+      shell.shared.push(file);
+    }),
     setSystemBarsStyle: vi.fn(async (style: SystemBarsStyle) => {
       shell.styles.push(style);
     }),
