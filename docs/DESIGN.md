@@ -43,6 +43,7 @@ Tiles in the Track sheet: two columns, each tile = tinted icon circle, name (15/
 2. Running timers: pinned card(s) in surface-raised: category icon circle, "Nap running", "Started 13:02, 0:42" (live), Stop button (pill, high contrast). Several timers stack. Tap the card to edit.
 3. Other predictions: a horizontal row of compact chips ("Feeding around 15:10", "Diaper around 14:40"), hidden when stale; "Not medical advice" line only inside the Why? sheet and once as a quiet footer caption on Home (12px muted).
 4. "Today" strip: three metric cards (Sleep total "5h 10m" incl. running sleep, Feeds count, Diapers count) for the local day, from Dexie.
+   Layout (Now): tiles two by two, four in a row once the strip is 32rem wide (container query); value on one line in the compact duration form ("9h 36min"), scaled with the tile (`min(1.75rem, 19cqi)`); the sub-line slot is reserved in every tile so heights match.
 5. Track: section header "Track" + "Edit" (pin/reorder); four pinned preset tiles (compact vertical tiles, icon + label); a "See all" link opens the Track sheet.
 Empty state (no baby yet): friendly illustration-free card with the create-baby form. Skeletons while Dexie loads. Large screens: same single column, max 480px.
 

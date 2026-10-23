@@ -106,6 +106,19 @@ export function formatDuration(ms: number, locale: Locale = currentLocale()) {
   return t('format.durationHM', { h, m: pad(m), lng: locale });
 }
 
+/**
+ * Tight variant of `formatDuration` for small tiles: `9h 36min` (pt-BR) instead of `9 h 36 min`,
+ * so a value fits one line. Same rounding; the English form equals `formatDuration`.
+ */
+export function formatDurationCompact(ms: number, locale: Locale = currentLocale()) {
+  const minutes = Math.max(0, Math.round(ms / MS_PER_MINUTE));
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return t('format.durationCompactM', { m, lng: locale });
+  if (m === 0) return t('format.durationCompactH', { h, lng: locale });
+  return t('format.durationCompactHM', { h, m: pad(m), lng: locale });
+}
+
 /** `in 24 minutes` / `em 24 minutos`; hours from 60 minutes on, days from 24 hours. */
 export function formatRelative(
   targetMs: number,
