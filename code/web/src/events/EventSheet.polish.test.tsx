@@ -60,7 +60,7 @@ const choose = (name: string) => fireEvent.click(screen.getByRole('radio', { nam
 
 describe('a bottle has a duration like nursing; solid food is a moment', () => {
   it('with "Time bottle feedings" on, a new bottle starts as a running timer with Start, End and "Still running"', async () => {
-    storeTimeBottles(BABY_ID, true);
+    storeTimeBottles(true);
     const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
     choose('Bottle');
     const running = screen.getByRole('switch', { name: 'Still running' });
@@ -75,7 +75,7 @@ describe('a bottle has a duration like nursing; solid food is a moment', () => {
   });
 
   it('a timed bottle logged afterwards: "Still running" off sets an end and shows the duration', async () => {
-    storeTimeBottles(BABY_ID, true);
+    storeTimeBottles(true);
     const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
     choose('Bottle');
     fireEvent.click(screen.getByRole('switch', { name: 'Still running' }));

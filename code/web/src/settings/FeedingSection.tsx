@@ -3,14 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { FormControlLabel, FormHelperText, Stack, Switch } from '@mui/material';
 import { loadTimeBottles, storeTimeBottles } from '../presets/timeBottlesStorage';
 
-interface Props {
-  babyId: string;
-}
-
-/** Feeding preferences of this device: whether a bottle runs as a timer (off by default). */
-export function FeedingSection({ babyId }: Props) {
+/** Feeding preference of the signed-in account (all its babies): whether a bottle runs as a timer (off by default). */
+export function FeedingSection() {
   const { t } = useTranslation();
-  const [on, setOn] = useState(() => loadTimeBottles(babyId));
+  const [on, setOn] = useState(() => loadTimeBottles());
   return (
     <Stack spacing={0.5}>
       <FormControlLabel
@@ -20,7 +16,7 @@ export function FeedingSection({ babyId }: Props) {
             checked={on}
             onChange={(_, checked) => {
               setOn(checked);
-              storeTimeBottles(babyId, checked);
+              storeTimeBottles(checked);
             }}
             slotProps={{ input: { 'aria-describedby': 'time-bottles-hint' } }}
           />

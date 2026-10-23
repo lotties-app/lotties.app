@@ -78,7 +78,7 @@ describe('a new bottle with "Time bottle feedings" off (the default)', () => {
   });
 
   it('on, a new bottle is a timer again', async () => {
-    storeTimeBottles(BABY_ID, true);
+    storeTimeBottles(true);
     renderSheet();
     choose('Bottle');
     expect(screen.getByRole('switch', { name: 'Still running' }).getAttribute('aria-checked')).toBe(

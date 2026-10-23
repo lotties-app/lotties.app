@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../../db/database';
 import { storeTimeBottles } from '../../presets/timeBottlesStorage';
-import { BABY_ID, fakeApi, testDatabase } from '../../test/fakeApi';
+import { fakeApi, testDatabase } from '../../test/fakeApi';
 import { renderWithDb, settleSync } from '../../test/renderApp';
 import { BABY, nowApi, putEvent, seedMorning, seedNow } from './nowKit';
 import { NowScreen } from './NowScreen';
@@ -131,7 +131,7 @@ describe('the bottle quick action and "Time bottle feedings"', () => {
   });
 
   it('on: it starts a bottle timer, like before', async () => {
-    storeTimeBottles(BABY_ID, true);
+    storeTimeBottles(true);
     await seedNow(db);
     await seedMorning(db, 112);
     renderNow();

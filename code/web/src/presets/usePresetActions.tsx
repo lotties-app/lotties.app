@@ -95,7 +95,7 @@ export function usePresetActions(babyId: string, types: EventType[]): PresetActi
       }
       if (running) return stopTimer(running, presetLabel(preset));
       // Without "Time bottle feedings" the bottle is logged at once: the sheet asks the amounts.
-      if (preset.id === 'bottle' && preset.typeId && !loadTimeBottles(babyId)) {
+      if (preset.id === 'bottle' && preset.typeId && !loadTimeBottles()) {
         const startedAt = new Date().toISOString();
         setPrefill({
           typeId: preset.typeId,

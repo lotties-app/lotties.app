@@ -15,7 +15,7 @@
     "timeBottles": {
       "title": "Feeding",
       "label": "Time bottle feedings",
-      "hint": "Off: the bottle button logs the feeding right away, with the amount prepared and drunk. On: it starts a timer, like nursing."
+      "hint": "Applies to your account on all babies. Off: the bottle button logs the feeding right away, with the amount prepared and drunk. On: it starts a timer, like nursing."
     },
     "tray": {
       "drunk": "How much was drunk",

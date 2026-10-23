@@ -98,7 +98,7 @@ export function useEventSheetForm(props: EventSheetProps) {
   const [saving, setSaving] = useState(false);
   const [switched, setSwitched] = useState<TypeSwitch | null>(null);
   // A new bottle is timed only with the "Time bottle feedings" setting; stored events keep their times.
-  const [timeBottles] = useState(() => !!event || loadTimeBottles(babyId));
+  const [timeBottles] = useState(() => !!event || loadTimeBottles());
 
   const type = types.find((candidate) => candidate.id === form.typeId);
   const formula = useFormulaChoice({ babyId, type, event, finish, values: form.values, setForm });
