@@ -370,6 +370,9 @@
         "what_helped": {
           "label": "O que ajudou"
         },
+        "suggested_cause": {
+          "label": "Primeira sugestão"
+        },
         "pause_count": {
           "label": "Pausas"
         },
@@ -393,7 +396,17 @@
           "massage": "Massagem",
           "sleep": "Sono",
           "other": "Outro",
-          "nothing": "Nada"
+          "nothing": "Nada",
+          "diaper_change": "Troca de fralda",
+          "burping": "Arroto",
+          "holding": "Colo / pele a pele"
+        },
+        "suggested_cause": {
+          "hunger": "Fome",
+          "sleepy": "Sono",
+          "diaper": "Fralda",
+          "gas": "Gases",
+          "comfort": "Conforto"
         }
       }
     },

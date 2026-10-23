@@ -215,7 +215,22 @@ export const FUSSY_DTO: EventTypeDto = {
   fields: [
     field('intensity', 'Intensity', 'select', { options: ['mild', 'moderate', 'intense'] }),
     field('what_helped', 'What helped', 'select', {
-      options: ['feeding', 'rocking', 'pacifier', 'massage', 'sleep', 'other', 'nothing'],
+      options: [
+        'feeding',
+        'rocking',
+        'pacifier',
+        'massage',
+        'sleep',
+        'other',
+        'nothing',
+        'diaper_change',
+        'burping',
+        'holding',
+      ],
+    }),
+    field('suggested_cause', 'First suggestion', 'select', {
+      options: ['hunger', 'sleepy', 'diaper', 'gas', 'comfort'],
+      hidden: true,
     }),
     ...PAUSE_FIELD_DTOS,
   ],
