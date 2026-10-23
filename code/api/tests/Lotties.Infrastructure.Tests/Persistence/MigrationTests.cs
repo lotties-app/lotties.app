@@ -69,6 +69,7 @@ public sealed class MigrationTests
         "20261023023038_CareProviders",
         "20261023032350_DoctorScopes",
         "20261023071720_AccountDeletion",
+        "20261023162441_ProductStrength",
     ];
 
     [Fact]
