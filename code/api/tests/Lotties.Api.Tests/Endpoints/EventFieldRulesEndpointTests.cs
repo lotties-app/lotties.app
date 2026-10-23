@@ -473,6 +473,35 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task PutEvent_BottleDrunkAmount_MustNotExceedPrepared()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var partly = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, amount_drunk_ml = 80 }, Start));
+        var legacy = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120 }, Start));
+        var tooMuch = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, amount_drunk_ml = 130 }, Start));
+        var onBreast = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "breast", amount_drunk_ml = 30 }, Start));
+
+        Assert.Equal((HttpStatusCode.Created, HttpStatusCode.Created), (partly.StatusCode, legacy.StatusCode));
+        await AssertFieldProblemAsync(tooMuch, "amount_drunk_ml");
+        await AssertFieldProblemAsync(onBreast, "amount_drunk_ml");
+    }
+
+    [Fact]
+    public async Task PutEvent_FeedingEndedBySleep_IsStored()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var ended = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "breast", ended_by = "sleep" }, Start.AddMinutes(10)));
+        var unknown = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "breast", ended_by = "nap" }, Start.AddMinutes(10)));
+
+        Assert.Equal(HttpStatusCode.Created, ended.StatusCode);
+        await AssertFieldProblemAsync(unknown, "ended_by");
+    }
+
+    [Fact]
     public async Task PutEvent_CustomTypeRules_ApplyToItsFields()
     {
         var baby = await factory.SeedBabyAsync();
