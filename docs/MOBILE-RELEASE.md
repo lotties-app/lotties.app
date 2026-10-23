@@ -87,7 +87,10 @@ Google requires the **first** AAB of an app to be uploaded by hand in the consol
    the keystore from section 3 is only the upload key) > upload the AAB > save and roll out to internal testing.
 4. Fill the mandatory forms so the track is allowed to roll out: App content (privacy policy URL, ads: none, app access
    with the demo login, target audience adults, Data safety, health apps declaration, government/news/financial: no),
-   store listing (short and full description, icon 512, feature graphic 1024x500, at least two phone screenshots).
+   store listing (short and full description, icon 512, feature graphic 1024x500, at least two phone screenshots; put
+   the credits URL https://lotties.app/credits in the full description next to the privacy policy URL, and the same
+   in the App Store description or support text: it names the open-source software and data behind the app,
+   docs/design/25-credits.md).
    Answers and drafts: docs/design/20-store-readiness.md sections 3 to 8.
 5. Add testers (an e-mail list) and open the opt-in link on a device.
 6. Only then set `PLAY_SERVICE_ACCOUNT_JSON` and use the `upload_play` input or a tag. The service account needs the

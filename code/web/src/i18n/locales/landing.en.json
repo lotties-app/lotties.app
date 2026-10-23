@@ -76,7 +76,19 @@
     "themeDark": "Dark",
     "source": "Source code",
     "licence": "Free and open source software, licensed under the AGPL-3.0.",
-    "notMedical": "Not a medical device."
+    "notMedical": "Not a medical device.",
+    "credits": "Credits and licenses"
+  },
+  "openSource": {
+    "title": "Built on open source",
+    "body": "Lotties stands on the work of the open-source community and on public health data. Thank you to every author and maintainer.",
+    "count_one": "{{count}} open-source package",
+    "count_other": "{{count}} open-source packages",
+    "including": "Including {{names}} and more.",
+    "license": "Lotties itself is free software under the AGPL-3.0.",
+    "source": "Source code on GitHub",
+    "seeAll": "See all credits and licenses",
+    "notMedical": "Lotties is not a medical device."
   },
   "important": {
     "eyebrow": "Important",

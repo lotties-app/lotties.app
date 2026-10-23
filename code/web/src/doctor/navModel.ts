@@ -21,14 +21,20 @@ export function activeNavKey(pathname: string): NavKey | null {
   const parts = pathname.split('/').filter(Boolean);
   if (parts[0] !== 'doctor') return null;
   if (parts.length === 1) return 'patients';
-  if (parts[1] === 'settings') return null;
+  if (parts[1] === 'settings' || parts[1] === 'credits') return null;
   return sectionOfPath(pathname);
 }
 
 /** The patient id of a `/doctor/:babyId/...` path, or `null` (Patients, Settings). */
 export function patientIdOfPath(pathname: string): string | null {
   const parts = pathname.split('/').filter(Boolean);
-  if (parts[0] !== 'doctor' || parts.length < 2 || parts[1] === 'settings') return null;
+  if (
+    parts[0] !== 'doctor' ||
+    parts.length < 2 ||
+    parts[1] === 'settings' ||
+    parts[1] === 'credits'
+  )
+    return null;
   return decodeURIComponent(parts[1]);
 }
 

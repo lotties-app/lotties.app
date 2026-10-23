@@ -16,6 +16,7 @@ import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { RADIUS } from '../theme/tokens';
 import { formatDate } from '../i18n/format';
+import { CreditsContent } from '../credits/CreditsContent';
 import { usePatientBaby } from './DoctorDashboardContext';
 import { WhenShared } from './PatientRoute';
 
@@ -168,6 +169,21 @@ export function DoctorSettingsPage() {
         >
           <SyncSection />
         </SettingsSection>
+      </Stack>
+    </Box>
+  );
+}
+
+/** `/doctor/credits`: the credits and licenses, inside the doctor's shell (her account menu links here). */
+export function DoctorCreditsPage() {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ maxWidth: 720 }}>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h1">
+          {t('credits.title')}
+        </Typography>
+        <CreditsContent />
       </Stack>
     </Box>
   );

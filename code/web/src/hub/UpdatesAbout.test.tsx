@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../i18n/I18nProvider';
 import { useTestLocale } from '../test/locale';
 import { pretendNativeApp } from '../platform/nativeTestKit';
@@ -25,7 +26,12 @@ function registration(update: () => Promise<void>, parts: Partial<ServiceWorkerR
   } as unknown as ServiceWorkerRegistration;
 }
 
-const renderScreen = (ui: React.ReactNode) => render(<I18nProvider>{ui}</I18nProvider>);
+const renderScreen = (ui: React.ReactNode) =>
+  render(
+    <I18nProvider>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </I18nProvider>,
+  );
 
 let undoNative: (() => void) | undefined;
 

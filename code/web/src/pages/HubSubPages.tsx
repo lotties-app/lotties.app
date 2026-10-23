@@ -4,6 +4,7 @@ import { Link as RouterLink, Navigate, useLocation } from 'react-router-dom';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
+import { CreditsContent } from '../credits/CreditsContent';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
 import { canSeeFamilyRecords, canWrite } from '../baby/permissions';
@@ -163,6 +164,16 @@ export function HubAboutPage() {
   return (
     <HubSubPage title={t('hub.about.title')}>
       <AboutScreen />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Credits and licenses: the same content as the public /credits page, inside the shell. */
+export function HubCreditsPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('credits.title')}>
+      <CreditsContent />
     </HubSubPage>
   );
 }

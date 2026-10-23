@@ -57,6 +57,19 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 
 Never commit `.env`. See `.env.example` for placeholders.
 
+## Credits and open-source acknowledgements
+
+Lotties is free software and stands on the work of many people: the open-source libraries it ships, the public data it uses
+(Anvisa, the Ministry of Health vaccine calendar, OpenStreetMap) and the services it calls (BrasilAPI, ViaCEP, Nominatim),
+plus Keycloak and PostgreSQL. Thank you to every author and maintainer.
+
+- [CREDITS.md](CREDITS.md): the thanks page, with data sources, services and direct dependencies.
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): the license texts of every bundled package.
+- In the app: <https://lotties.app/credits> (no sign-in needed), and Hub > App > Credits and licenses.
+
+Both files are generated from the dependency files (`node code/web/scripts/generate-credits.mjs`, see
+[docs/design/25-credits.md](docs/design/25-credits.md)). Naming a project here credits it; it does not mean it endorses Lotties.
+
 ## License
 
 AGPL-3.0. See [LICENSE](LICENSE).

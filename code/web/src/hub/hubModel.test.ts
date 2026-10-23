@@ -24,8 +24,16 @@ describe('who sees which entry', () => {
   it('shows the baby entries only with a baby', () => {
     const ids = visibleEntries(ctx(null)).map((e) => e.id);
     // Without a baby, a person can still restore a backup into a new one.
-    expect(ids).toEqual(['settings', 'backupImport', 'updates', 'about']);
+    expect(ids).toEqual(['settings', 'backupImport', 'updates', 'about', 'credits']);
   });
+
+  it.each(['Owner', 'Parent', 'Caregiver', 'Viewer', 'Doctor', null] as const)(
+    'shows the credits entry to every role, also native and without a baby: %s',
+    (role) => {
+      expect(isEntryVisible('credits', ctx(role))).toBe(true);
+      expect(isEntryVisible('credits', ctx(role, { native: true }))).toBe(true);
+    },
+  );
 
   it.each([
     ['Owner', true],

@@ -1,0 +1,15 @@
+{
+  "generatedBy": "code/web/scripts/generate-credits.mjs: do not edit by hand",
+  "count": 155,
+  "directCount": 38,
+  "featured": [
+    "react",
+    "@mui/material",
+    "dexie",
+    "i18next",
+    "@capacitor/core",
+    "@tabler/icons-react",
+    "workbox-precaching",
+    "Microsoft.EntityFrameworkCore"
+  ]
+}

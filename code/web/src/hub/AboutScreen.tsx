@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Link as RouterLink } from 'react-router-dom';
 import { Link, Paper, Stack, Typography } from '@mui/material';
 import { readBuildInfo } from '../config/buildInfo';
 import { formatDateTime } from '../i18n/format';
@@ -36,6 +37,13 @@ export function AboutScreen() {
           {commit && <Fact label={t('hub.about.commit')} value={commit} />}
           <Fact label={t('hub.about.license')} value={t('hub.about.licenseValue')} />
         </Stack>
+        <Link
+          component={RouterLink}
+          to="/hub/credits"
+          sx={{ minHeight: 44, display: 'inline-flex', alignItems: 'center' }}
+        >
+          {t('hub.about.credits')}
+        </Link>
         {source && (
           <Link
             href={source}

@@ -11,6 +11,7 @@ import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import type { AuthApi } from '../auth/AuthContext';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
+import summary from '../credits/third-party-summary.generated.json';
 import LandingPage from './LandingPage';
 import { repoUrl } from './repoUrl';
 
@@ -49,6 +50,7 @@ describe('LandingPage', () => {
       'What it does',
       'Not a medical device',
       'How it works',
+      'Built on open source',
     ]);
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(9);
     expect(screen.getByText(/Estimates from your logged history, not medical advice/)).toBeTruthy();
@@ -57,6 +59,31 @@ describe('LandingPage', () => {
     expect(screen.getByText(/AGPL-3\.0/, { selector: 'footer p' })).toBeTruthy();
     // The title is set by an effect that can run just after the page is in the document.
     await waitFor(() => expect(document.title).toBe("Lotties: track your baby's day, together"));
+  });
+
+  it('credits open source in a visible section and in the footer, both linking to /credits', async () => {
+    renderLanding();
+    const section = (
+      await screen.findByRole('heading', { level: 2, name: 'Built on open source' })
+    ).closest('section')!;
+    expect(within(section).getByText(`${summary.count} open-source packages`)).toBeTruthy();
+    expect(within(section).getByText(/Including React, MUI, Dexie/)).toBeTruthy();
+    expect(within(section).getByText(/AGPL-3\.0/)).toBeTruthy();
+    expect(within(section).getByText(/not a medical device/)).toBeTruthy();
+    expect(
+      within(section)
+        .getByRole('link', { name: 'See all credits and licenses' })
+        .getAttribute('href'),
+    ).toBe('/credits');
+    expect(
+      within(section)
+        .getByRole('link', { name: /Source code on GitHub/ })
+        .getAttribute('href'),
+    ).toBe('https://github.com/dev-vinicius-andrade/lotties.app');
+    const footer = screen.getByRole('contentinfo');
+    expect(
+      within(footer).getByRole('link', { name: 'Credits and licenses' }).getAttribute('href'),
+    ).toBe('/credits');
   });
 
   it('starts sign-in from the header and the hero, and registration from the secondary button', async () => {
