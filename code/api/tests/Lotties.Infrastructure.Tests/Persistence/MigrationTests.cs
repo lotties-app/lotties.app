@@ -65,6 +65,7 @@ public sealed class MigrationTests
         "20261022203709_DoctorProposals",
         "20261022213633_MoreEventTypes",
         "20261022230039_Vaccines",
+        "20261023005632_FeedingAmounts",
     ];
 
     [Fact]
