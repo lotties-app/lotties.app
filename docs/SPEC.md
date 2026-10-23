@@ -178,7 +178,7 @@ Per baby + event type: take last 14 days, compute median interval between starts
 - Timeline: day-grouped list, filter by type, tap to edit.
 - Add/edit sheet (bottom sheet on mobile): type, start/end, type-specific fields; medication shows catalog checklist (usual meds first) + "add new".
 - Settings (preferences only): baby profile, event types (enable/disable/create custom), professional profile, notifications, theme (light/dark), language (en, pt-BR), sync.
-- Hub (fourth navigation tab, `/hub`, docs/design/20-hub.md): baby care (appointments, vaccines, growth, medicines, formulas, notes, the doctor's inbox, the Doctor's proposals and patients), family (members and roles, invites, doctor access) and app (settings, import, check for updates, about). Entries follow the role matrix below (a client convenience: the server enforces every rule); shortcuts and their order are a per-device preference.
+- Hub (fourth navigation tab, `/hub`, docs/design/21-hub.md): baby care (appointments, vaccines, growth, medicines, formulas, notes, the doctor's inbox, the Doctor's proposals and patients), family (members and roles, invites, doctor access) and app (settings, import, check for updates, about). Entries follow the role matrix below (a client convenience: the server enforces every rule); shortcuts and their order are a per-device preference.
 - Mobile-first, one-handed, large touch targets, MUI theme with light/dark.
 
 ## MVP definition of done

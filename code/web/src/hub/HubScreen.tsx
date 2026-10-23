@@ -20,7 +20,7 @@ import { entryMatches } from './searchEntries';
 import { useHubAttention } from './useHubAttention';
 
 /**
- * The Hub (docs/design/20-hub.md): the places that are not a daily tab, in three sections (baby
+ * The Hub (docs/design/21-hub.md): the places that are not a daily tab, in three sections (baby
  * care, family, app), with a search field, four shortcuts picked by use (or by hand) and a badge
  * on what waits for a look. Role-aware: an entry the person cannot use is not listed.
  */

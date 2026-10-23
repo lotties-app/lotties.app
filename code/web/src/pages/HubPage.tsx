@@ -3,7 +3,7 @@ import { CircularProgress } from '@mui/material';
 import { HubScreen } from '../hub/HubScreen';
 import { useHubContext } from '../hub/useHubContext';
 
-/** `/hub`: the places that are not a daily tab, grouped (docs/design/20-hub.md). */
+/** `/hub`: the places that are not a daily tab, grouped (docs/design/21-hub.md). */
 export function HubPage() {
   const { t } = useTranslation();
   const context = useHubContext();

@@ -27,7 +27,7 @@ import { PREVIEW_BABY_ID, PREVIEW_TYPES, typeIdOf } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
 
 /*
- * Developer-only (route `/dev/hub`, never in production builds): the Hub (docs/design/20-hub.md)
+ * Developer-only (route `/dev/hub`, never in production builds): the Hub (docs/design/21-hub.md)
  * with the floating dock and, in `timers`, the running-timer pill in the header, over a
  * throw-away local database. `?state=owner` (vaccines due, an appointment soon, a doctor
  * suggestion: every badge), `quiet` (nothing waits), `caregiver`, `viewer`, `doctor` (patients and
