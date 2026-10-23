@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Card, Skeleton, Stack, Typography } from '@mui/material';
+import { useAgeNorms } from '../ageNorms/useAgeNorms';
 import { addDays, dayValue, startOfDay } from '../day/dayModel';
 import { useBodyWeight, useEventsStartedSince, useEventTypes, useFormulas } from '../db/hooks';
 import type { Baby } from '../db/models';
@@ -152,6 +153,7 @@ export function InsightsSection({
   const events = useEventsStartedSince(baby.id, from);
   const formulas = useFormulas(baby.id);
   const latestWeight = useBodyWeight(baby.id);
+  const ageNorms = useAgeNorms();
   const [range, setRange] = useState<RangeDays>(14);
 
   if (!types || !events || !formulas) return <InsightsSkeleton />;
@@ -179,7 +181,15 @@ export function InsightsSection({
     return <InsightsComingCard items={states} formulas={formulaRows} />;
   }
 
-  const props: CardProps = { events, types, days: lastDays(now, range), now, todayKey };
+  const props: CardProps = {
+    events,
+    types,
+    days: lastDays(now, range),
+    now,
+    todayKey,
+    birthDate: baby.birthDate,
+    ageNorms: ageNorms ?? null,
+  };
   return (
     <Stack spacing={2}>
       <SegmentedControl<`${RangeDays}`>

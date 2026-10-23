@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Lotties.Domain.AgeNorms;
+using Lotties.Domain.Clinical;
 
 namespace Lotties.Domain.Tests.AgeNorms;
 
@@ -51,6 +52,21 @@ public sealed class AgeNormsVectorTests
         Assert.Equal((Number(expected, "low"), Number(expected, "typical"), Number(expected, "high")), (norm.Low, norm.Typical, norm.High));
         Assert.Equal(expected.GetProperty("confidence").GetString(), norm.Confidence);
         Assert.Equal(expected.GetProperty("needsReview").GetBoolean(), norm.NeedsReview);
+    }
+
+    public static TheoryData<string> FeedGapNames => NamesOf("feedGapLimits");
+
+    [Theory]
+    [MemberData(nameof(FeedGapNames))]
+    public void FeedGapLimit_SharedVector_GivesTheExpectedCutOff(string name)
+    {
+        var vector = VectorOf("feedGapLimits", name);
+        var norms = vector.GetProperty("withNorms").GetBoolean() ? ShippedAgeNorms.Set : null;
+        int? ageDays = vector.GetProperty("ageDays").ValueKind == JsonValueKind.Null ? null : vector.GetProperty("ageDays").GetInt32();
+
+        var limit = FeedGapLimit.For(norms, ageDays);
+
+        Assert.Equal(vector.GetProperty("expectedHours").GetDouble(), limit.TotalHours, 6);
     }
 
     internal static decimal? Number(JsonElement element, string property) =>

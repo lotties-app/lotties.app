@@ -468,5 +468,9 @@ Every default that now comes from a norm. Values that come from norms in the tab
 | Bottle cold-start chips, days 91-121 | same | 2 m row 120-150, then 3 m row 120-180 (120, 150, 180) | 180-200 ml (180, 200) | `feed_volume_ml_per_feed.formula.91-122`, medium (sbp-alimentacao-2024) |
 | Bottle cold-start chips, days 122-182 | same | 3 m row 120-180, 4 m row 160-200 (160, 190), 5 m row 180-240 (180, 210, 240) | 180-200 ml (180, 200) | `feed_volume_ml_per_feed.formula.122-183`, medium (sbp-alimentacao-2024) |
 | Bottle cold-start chips, days 183-364 | same | 5 m / 7 m rows 180-240 | 180-240 ml (same chips) | `feed_volume_ml_per_feed.formula.183-365`, high (sbp-alimentacao-2024, aap-formula-2022) |
+| Feed-gap cut-off of the feeding average, 12 to under 18 months (days 365-547) | web `code/web/src/insights/feedGapLimit.ts` (used by `feedingModel.ts` `feedGaps`/`feedingSummary`, Insights feeding card); API `Lotties.Domain/Clinical/FeedGapLimit.cs` (used by `FeedingSummaries.Summarize`, clinical summary feeding section) | 8 h | 13.6 h (the band's high end, 97.5th-98th percentile night) | `night_sleep_hours.all.365-548`, medium (pelotas-2017, iglowstein-2003) |
+| Feed-gap cut-off, 24 to under 36 months (days 731-1095) | same | 8 h | 13.4 h | `night_sleep_hours.all.731-1096`, medium (pelotas-2017, iglowstein-2003) |
+
+Feed-gap rule (both engines, shared vectors `feedGapLimits`): under 183 days always 8 h (identical results for babies under 6 months, by design); from 183 days the high end of `longest_sleep_hours` if usable, else of `night_sleep_hours`, clamped to 8-14 h (14 h: above every published night, 13.7 h, and below the 16 h night-session cap `MaxNightSessionLength`); 8 h when neither is usable. The age is the baby's on the local date the gap starts (API: the family's clock of the clinical window). The doctor's patient list (`DoctorPatientsService`) reports no gap and is untouched.
 
 ### 15.3 Deliberately not changed

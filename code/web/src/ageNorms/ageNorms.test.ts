@@ -8,6 +8,12 @@ import {
   type AgeNormPopulation,
   type AgeNormSet,
 } from './ageNorms';
+import {
+  DEFAULT_FEED_GAP_MS,
+  FEED_GAP_MAX_MS,
+  feedGapLimitAt,
+  maxFeedGapMs,
+} from '../insights/feedGapLimit';
 import vectors from './ageNormsVectors.json';
 
 /*
@@ -28,6 +34,39 @@ describe('the shared age norms vectors', () => {
       return;
     }
     expect(norm).toMatchObject(vector.expected);
+  });
+});
+
+describe('the shared feed-gap cut-off vectors', () => {
+  it.each(vectors.feedGapLimits.map((vector) => [vector.name, vector] as const))(
+    '%s',
+    (_, vector) => {
+      const norms = vector.withNorms ? SHIPPED_AGE_NORMS : null;
+      expect(maxFeedGapMs(norms, vector.ageDays) / 3_600_000).toBeCloseTo(vector.expectedHours, 6);
+    },
+  );
+
+  it('keeps the cut-off between 8 and 14 hours', () => {
+    const withHigh = (high: number) =>
+      ({
+        ...SHIPPED_AGE_NORMS,
+        norms: SHIPPED_AGE_NORMS.norms.map((norm) =>
+          norm.id === 'night_sleep_hours.all.365-548' ? { ...norm, high } : norm,
+        ),
+      }) as AgeNormSet;
+    expect(maxFeedGapMs(withHigh(20), 400)).toBe(FEED_GAP_MAX_MS);
+    expect(maxFeedGapMs(withHigh(6), 400)).toBe(DEFAULT_FEED_GAP_MS);
+    expect(maxFeedGapMs(withHigh(10.5), 400)).toBe(10.5 * 3_600_000);
+  });
+
+  it('reads the age on the local date each gap starts', () => {
+    const limit = feedGapLimitAt({ birthDate: '2025-01-09', ageNorms: SHIPPED_AGE_NORMS });
+    expect(limit(new Date(2026, 0, 9, 2).getTime())).toBeCloseTo(13.6 * 3_600_000, 0);
+    expect(limit(new Date(2026, 0, 8, 23).getTime())).toBe(DEFAULT_FEED_GAP_MS);
+    expect(feedGapLimitAt(undefined)(0)).toBe(DEFAULT_FEED_GAP_MS);
+    expect(feedGapLimitAt({ birthDate: null, ageNorms: SHIPPED_AGE_NORMS })(0)).toBe(
+      DEFAULT_FEED_GAP_MS,
+    );
   });
 });
 

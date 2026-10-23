@@ -1,5 +1,64 @@
 {
-  "description": "Shared vectors of the age norms lookup, run against the shipped file code/api/data/age-norms.json: read by code/web/src/ageNorms/ageNorms.test.ts and by code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsVectorTests.cs (linked file). A lookup finds the band of `metric` that holds `ageDays` (completed days since birth) for `population`, else for 'all'; `expected` is null when no band holds the age. `prior` says whether the norm may replace a default (not low confidence, not needsReview).",
+  "description": "Shared vectors of the age norms lookup, run against the shipped file code/api/data/age-norms.json: read by code/web/src/ageNorms/ageNorms.test.ts and by code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsVectorTests.cs (linked file). A lookup finds the band of `metric` that holds `ageDays` (completed days since birth) for `population`, else for 'all'; `expected` is null when no band holds the age. `prior` says whether the norm may replace a default (not low confidence, not needsReview). `feedGapLimits`: the longest feed gap (hours) that counts in the feeding averages at `ageDays` (null: no birth date), with the shipped norms or without any (`withNorms` false): web feedGapLimit.ts and API FeedGapLimit.",
+  "feedGapLimits": [
+    {
+      "name": "no norms on the device: 8 h at any age",
+      "withNorms": false,
+      "ageDays": 400,
+      "expectedHours": 8
+    },
+    { "name": "no birth date: 8 h", "withNorms": true, "ageDays": null, "expectedHours": 8 },
+    { "name": "birth day: 8 h", "withNorms": true, "ageDays": 0, "expectedHours": 8 },
+    {
+      "name": "100 days: under 6 months stays 8 h although a usable night norm exists",
+      "withNorms": true,
+      "ageDays": 100,
+      "expectedHours": 8
+    },
+    {
+      "name": "182 days: the last day under 6 months, 8 h",
+      "withNorms": true,
+      "ageDays": 182,
+      "expectedHours": 8
+    },
+    {
+      "name": "183 days: only norms that need review or are low confidence, 8 h",
+      "withNorms": true,
+      "ageDays": 183,
+      "expectedHours": 8
+    },
+    {
+      "name": "300 days: only norms that need review or are low confidence, 8 h",
+      "withNorms": true,
+      "ageDays": 300,
+      "expectedHours": 8
+    },
+    {
+      "name": "365 days: the Pelotas and Swiss night sleep high end, 13.6 h",
+      "withNorms": true,
+      "ageDays": 365,
+      "expectedHours": 13.6
+    },
+    {
+      "name": "547 days: still the 12-18 month night band, 13.6 h",
+      "withNorms": true,
+      "ageDays": 547,
+      "expectedHours": 13.6
+    },
+    {
+      "name": "548 days: the 18-24 month night band is low confidence, 8 h",
+      "withNorms": true,
+      "ageDays": 548,
+      "expectedHours": 8
+    },
+    {
+      "name": "731 days: the 24-36 month night band, 13.4 h",
+      "withNorms": true,
+      "ageDays": 731,
+      "expectedHours": 13.4
+    },
+    { "name": "1096 days: no band, 8 h", "withNorms": true, "ageDays": 1096, "expectedHours": 8 }
+  ],
   "lookups": [
     {
       "name": "total sleep at 100 days: the 3-month band, a usable prior",

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
+import type { AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent, EventType } from '../db/models';
 import { formatDate, formatDuration, formatList, formatNumber, formatUnit } from '../i18n/format';
 import { countAxis, hoursAxis } from './chartGeometry';
@@ -30,6 +31,9 @@ export interface CardProps {
   days: readonly LocalDay[];
   now: Date;
   todayKey: string;
+  /** The baby's birth date and the published age norms: the feeding gap cut-off follows age. */
+  birthDate?: string | null;
+  ageNorms?: AgeNormSet | null;
 }
 
 const NONE = '–';
@@ -196,12 +200,20 @@ export function RhythmCard({ events, types, days, now, todayKey }: CardProps) {
   );
 }
 
-export function FeedingCard({ events, types, days, now, todayKey }: CardProps) {
+export function FeedingCard({
+  events,
+  types,
+  days,
+  now,
+  todayKey,
+  birthDate,
+  ageNorms,
+}: CardProps) {
   const { t } = useTranslation();
   const text = useCardText(days);
   const insight = insightById('feeding');
   const data = feedsByDay(events, types, days, now);
-  const facts = feedingSummary(events, types, days, now, todayKey);
+  const facts = feedingSummary(events, types, days, now, todayKey, { birthDate, ageNorms });
   const hasBottleMl = data.some((d) => d.bottleMl > 0);
   const sentences: string[] = [];
   if (facts.perDay !== null) {

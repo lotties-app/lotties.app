@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { BabyEvent, EventPayload } from '../db/models';
 import { BUILT_IN_TYPES, DIAPER_T, FEEDING_T, SLEEP, event } from '../presets/presetFixtures';
+import { SHIPPED_AGE_NORMS } from '../test/ageNorms';
 import { completedDaysWithData, lastDays, localDay, median } from './days';
 import { diaperSummary, diapersByDay } from './diaperModel';
 import { feedGaps, feedingSummary, feedsByDay, MAX_FEED_GAP_MS } from './feedingModel';
@@ -189,6 +190,20 @@ describe('feeding', () => {
     expect(summary.avgBottleMs).toBe(15 * MIN);
     // Averaged over the days that have bottle amounts.
     expect(summary.mlPerDay).toBe(210);
+  });
+
+  it('keeps a real long night from the age the published norms allow it (docs/design/28 section 15.2)', () => {
+    const summary = (birthDate: string | null, ageNorms = SHIPPED_AGE_NORMS) =>
+      feedingSummary(feeds, BUILT_IN_TYPES, lastDays(NOW, 2), NOW, TODAY, { birthDate, ageNorms })
+        .avgGapMs;
+    // A year old: the 11 h night counts (cut-off 13.6 h), the 15 h gap still does not.
+    expect(summary('2025-10-01')).toBe(((3 + 3 + 11) / 3) * HOUR);
+    // Before: the same baby without norms on the device, 8 h.
+    expect(summary('2025-10-01', null as never)).toBe(3 * HOUR);
+    // Under 6 months the result is identical; 7 months has only norms that need review.
+    expect(summary('2026-06-01')).toBe(3 * HOUR);
+    expect(summary('2026-03-01')).toBe(3 * HOUR);
+    expect(summary(null)).toBe(3 * HOUR);
   });
 
   it('has no numbers without feeds', () => {
