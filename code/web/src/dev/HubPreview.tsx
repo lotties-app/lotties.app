@@ -16,6 +16,10 @@ import { BottomNav } from '../layout/BottomNav';
 import { NAV_CONTENT_PADDING } from '../layout/navMetrics';
 import { ANA, DOCTOR_ID, proposal, recommendation } from '../proposals/proposalKit';
 import { seedSchedule } from '../test/vaccineSchedule';
+import { ApiClientContext } from '../api/ApiClientContext';
+import { SyncEngine } from '../sync/SyncEngine';
+import { SyncEngineContext } from '../sync/SyncEngineContext';
+import { fakeApi } from '../test/fakeApi';
 import { SettingsPage } from '../pages/SettingsPage';
 import { RunningTimerPill } from '../timers/RunningTimerPill';
 import { addDays } from '../vaccines/vaccineStatus';
@@ -140,6 +144,9 @@ export default function HubPreview() {
   const requested = params.get('state');
   const scenario: Scenario = SCENARIOS.find((s) => s === requested) ?? 'owner';
   const [db] = useState(() => createDatabase('dev-hub-preview'));
+  // The Settings page reads the sync engine and the API: an idle engine over an in-memory API.
+  const [api] = useState(() => fakeApi().api);
+  const [engine] = useState(() => new SyncEngine({ db, api, locks: null, eventTarget: null }));
   const [ready, setReady] = useState<{ scenario: Scenario; baby: Baby } | null>(null);
 
   useEffect(() => {
@@ -169,40 +176,46 @@ export default function HubPreview() {
   };
   return (
     <DatabaseProvider db={db}>
-      <SelectedBabyContext value={selected}>
-        <AddSheetProvider enabled={!!baby && baby.role !== 'Viewer' && baby.role !== 'Doctor'}>
-          <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-            <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: NAV_CONTENT_PADDING }}>
+      <ApiClientContext value={api}>
+        <SyncEngineContext value={engine}>
+          <SelectedBabyContext value={selected}>
+            <AddSheetProvider enabled={!!baby && baby.role !== 'Viewer' && baby.role !== 'Doctor'}>
               <Box
-                component="header"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  py: 1,
-                }}
+                sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}
               >
-                <Box component="p" sx={{ m: 0, typography: 'h5' }}>
-                  Lia
+                <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: NAV_CONTENT_PADDING }}>
+                  <Box
+                    component="header"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      py: 1,
+                    }}
+                  >
+                    <Box component="p" sx={{ m: 0, typography: 'h5' }}>
+                      Lia
+                    </Box>
+                    {baby && <RunningTimerPill key={scenario} baby={baby} />}
+                  </Box>
+                  {context && scenario === 'updates' && <UpdatesScreen />}
+                  {context && scenario === 'about' && <AboutScreen />}
+                  {context && scenario === 'settings' && <SettingsPage />}
+                  {context && !['updates', 'about', 'settings'].includes(scenario) && (
+                    <HubScreen key={scenario} context={context} />
+                  )}
+                  <PreviewToolbar
+                    scenarios={SCENARIOS}
+                    scenario={scenario}
+                    onScenario={(next) => setParams({ state: next }, { replace: true })}
+                  />
                 </Box>
-                {baby && <RunningTimerPill key={scenario} baby={baby} />}
+                <BottomNav />
               </Box>
-              {context && scenario === 'updates' && <UpdatesScreen />}
-              {context && scenario === 'about' && <AboutScreen />}
-              {context && scenario === 'settings' && <SettingsPage />}
-              {context && !['updates', 'about', 'settings'].includes(scenario) && (
-                <HubScreen key={scenario} context={context} />
-              )}
-              <PreviewToolbar
-                scenarios={SCENARIOS}
-                scenario={scenario}
-                onScenario={(next) => setParams({ state: next }, { replace: true })}
-              />
-            </Box>
-            <BottomNav />
-          </Box>
-        </AddSheetProvider>
-      </SelectedBabyContext>
+            </AddSheetProvider>
+          </SelectedBabyContext>
+        </SyncEngineContext>
+      </ApiClientContext>
     </DatabaseProvider>
   );
 }
