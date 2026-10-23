@@ -446,6 +446,8 @@ function NowContent({
         <MoreSheet
           open
           onClose={close}
+          babyId={baby.id}
+          userId={baby.userId}
           types={model.types}
           events={model.events}
           actions={actions}

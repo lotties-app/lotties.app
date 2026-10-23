@@ -268,6 +268,8 @@ describe('illustrations on the Now screen', () => {
     renderNow(sleepPredictions(40));
     fireEvent.click(await screen.findByRole('button', { name: /^More/ }));
     const grid = await screen.findByTestId('more-grid');
+    // The tiles show once the sheet has worked out its order (one local read).
+    await within(grid).findAllByRole('button');
     const names = Array.from(grid.querySelectorAll('svg[data-illustration]'), (svg) =>
       svg.getAttribute('data-illustration'),
     );

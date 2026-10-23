@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useEventsStartedSince } from '../../db/hooks';
 import type { BabyEvent, EventType } from '../../db/models';
+import { currentLocale } from '../../i18n/i18n';
+import { MORE_USAGE_WINDOW_DAYS, orderMoreTypes } from '../moreOrder';
 import { PresetTile } from '../../presets/PresetTile';
 import { presetsForBaby } from '../../presets/resolve';
 import type { Preset } from '../../presets/types';
@@ -14,6 +18,9 @@ import type { TrayName } from './trays';
 interface Props {
   open: boolean;
   onClose: () => void;
+  babyId: string;
+  /** The signed-in person's server id (`Baby.userId`): her own events order the tiles. */
+  userId: string | null | undefined;
   types: readonly EventType[];
   events: readonly BabyEvent[];
   actions: PresetActions;
@@ -34,13 +41,45 @@ const TRAY_OF_PRESET: Readonly<Record<string, TrayName>> = {
 };
 
 /**
+ * The tiles in the More sheet order (`orderMoreTypes`), worked out once when the sheet opens from
+ * the person's events of the last 60 days, so nothing moves while it is open. `undefined` while
+ * those events load (a single local read). A preset that appears later goes last.
+ */
+function useMoreOrder(
+  babyId: string,
+  userId: string | null | undefined,
+  presets: Preset[],
+): Preset[] | undefined {
+  const [openedAt] = useState(() => new Date());
+  const since = new Date(openedAt.getTime() - MORE_USAGE_WINDOW_DAYS * DAY_MS).toISOString();
+  const usage = useEventsStartedSince(babyId, since);
+  const [rank, setRank] = useState<string[] | null>(null);
+  // Adjusted while rendering (not in an effect): the first render with the events has the order.
+  if (rank === null && usage !== undefined) {
+    setRank(ids(orderMoreTypes(presets, usage, userId, openedAt, currentLocale())));
+  }
+  if (rank === null) return undefined;
+  const position = (p: Preset) => {
+    const index = rank.indexOf(p.id);
+    return index === -1 ? rank.length : index;
+  };
+  return [...presets].sort((a, b) => position(a) - position(b));
+}
+
+const DAY_MS = 24 * 3_600_000;
+const ids = (presets: readonly Preset[]) => presets.map((p) => p.id);
+
+/**
  * The More sheet: every preset of the baby as a two-column grid with its status line, so nothing
- * the baby can track is more than two taps away. Sleep presets stay here as data kinds; the
+ * the baby can track is more than two taps away. The tiles the person logs most come first, the
+ * rest by name (docs/DESIGN.md "More sheet order"). Sleep presets stay here as data kinds; the
  * toggle on Now is the everyday way.
  */
 export function MoreSheet({
   open,
   onClose,
+  babyId,
+  userId,
   types,
   events,
   actions,
@@ -52,7 +91,7 @@ export function MoreSheet({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const stateOf = usePresetStates(events);
-  const presets = presetsForBaby([...types]);
+  const presets = useMoreOrder(babyId, userId, presetsForBaby([...types]));
 
   const select = (preset: Preset, running?: BabyEvent) => {
     onClose();
@@ -69,14 +108,14 @@ export function MoreSheet({
 
   return (
     <SheetFrame open={open} onClose={onClose} title={t('now.more.title')}>
-      {presets.length === 0 ? (
+      {presets?.length === 0 ? (
         <Typography color="text.secondary">{t('home.noTypes')}</Typography>
       ) : (
         <Box
           data-testid="more-grid"
           sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}
         >
-          {presets.map((preset) => {
+          {presets?.map((preset) => {
             const { status, running } = stateOf(preset);
             return (
               <PresetTile

@@ -32,6 +32,12 @@ const live = async () => (await db.events.toArray()).filter((e) => e.deletedAt =
 const logged = async () =>
   (await live()).filter((e) => Date.now() - Date.parse(e.createdAt) < 60_000);
 const tile = (name: RegExp) => screen.findByRole('button', { name });
+/** The More sheet's tile names in order, once its order is worked out. */
+async function moreNames(sheet: HTMLElement) {
+  const grid = within(sheet).getByTestId('more-grid');
+  const buttons = await within(grid).findAllByRole('button');
+  return buttons.map((b) => b.getAttribute('aria-label')?.split(',')[0]);
+}
 
 describe('the last-and-log tiles', () => {
   it('shows Feed, Diaper, Meds and More with the last event and its detail', async () => {
@@ -325,27 +331,53 @@ describe('More sheet', () => {
 
     fireEvent.click(await tile(/^More/));
     const sheet = await screen.findByRole('dialog', { name: 'More' });
-    const names = within(within(sheet).getByTestId('more-grid'))
-      .getAllByRole('button')
-      .map((b) => b.getAttribute('aria-label')?.split(',')[0]);
-    expect(names).toEqual([
-      'Log Wake-up',
-      'Start Nap',
-      'Log Bedtime',
-      'Log Fell asleep',
-      'Start Night waking',
-      'Start Bottle',
-      'Start Nursing',
-      'Log Diaper',
-      'Log Medication',
-      'Log Belly pain',
+    // Without two uses of anything yet, the tiles are in name order and Custom comes last.
+    expect(await moreNames(sheet)).toEqual([
       'Log Bath',
+      'Log Bedtime',
+      'Log Belly pain',
+      'Start Bottle',
+      'Log Diaper',
+      'Log Fell asleep',
+      'Log Medication',
+      'Start Nap',
+      'Start Night waking',
+      'Start Nursing',
       'Start Tummy time',
+      'Log Wake-up',
       'Custom',
     ]);
     expect(within(sheet).getAllByText('Not tracked today').length).toBeGreaterThan(4);
     const results = await axe.run(sheet, { runOnly: ['aria-dialog-name', 'button-name'] });
     expect(results.violations).toEqual([]);
+  });
+
+  it("moves the person's most logged tiles first, from her own events only", async () => {
+    await seedNow(db);
+    await seedMorning(db, 112);
+    // Two baths of this person (not synced yet: no author) and a tummy time two days ago...
+    await putEvent(db, 'bath', 60, 60);
+    await putEvent(db, 'bath', 3 * 24 * 60, 3 * 24 * 60);
+    await putEvent(db, 'tummy_time', 2 * 24 * 60, 2 * 24 * 60 - 10);
+    await putEvent(db, 'tummy_time', 2 * 24 * 60 + 60, 2 * 24 * 60 + 50);
+    await putEvent(db, 'tummy_time', 3 * 24 * 60, 3 * 24 * 60 - 10);
+    // ...while another member logs Belly pain all day, and deleted diapers do not count.
+    for (const ago of [30, 90, 150])
+      await putEvent(db, 'belly_pain', ago, ago, { intensity: 2 }, { createdBy: 'u-ana' });
+    for (const ago of [40, 80])
+      await putEvent(db, 'diaper', ago, ago, {}, { deletedAt: new Date().toISOString() });
+    renderNow();
+
+    fireEvent.click(await tile(/^More/));
+    const sheet = await screen.findByRole('dialog', { name: 'More' });
+    const names = await moreNames(sheet);
+    expect(names.slice(0, 4)).toEqual([
+      'Start Tummy time',
+      'Log Bath',
+      'Log Bedtime',
+      'Log Belly pain',
+    ]);
+    expect(names.at(-1)).toBe('Custom');
   });
 
   it('Belly pain opens its tray and one tap logs the intensity', async () => {
