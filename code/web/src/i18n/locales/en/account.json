@@ -5,7 +5,6 @@
     "exportHint": "Want to keep a copy first? Download what this device holds of your babies' records as a JSON file.",
     "export": "Download my data",
     "exportFailed": "This browser could not save the file.",
-    "exportOnWeb": "To keep a copy of your data first, open Lotties in a browser at lotties.app and download it from Settings > Account and data.",
     "delete": "Delete my account…",
     "confirmTitle": "Delete your account?",
     "previewFailed": "Could not check what the deletion affects. Try again.",

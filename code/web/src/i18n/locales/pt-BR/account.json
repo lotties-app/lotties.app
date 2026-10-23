@@ -5,7 +5,6 @@
     "exportHint": "Quer guardar uma cópia antes? Baixe em um arquivo JSON o que este aparelho tem dos registros dos seus bebês.",
     "export": "Baixar meus dados",
     "exportFailed": "Este navegador não conseguiu salvar o arquivo.",
-    "exportOnWeb": "Para guardar uma cópia dos seus dados antes, abra o Lotties no navegador, em lotties.app, e baixe em Configurações > Conta e dados.",
     "delete": "Excluir minha conta…",
     "confirmTitle": "Excluir sua conta?",
     "previewFailed": "Não foi possível verificar o que a exclusão afeta. Tente de novo.",

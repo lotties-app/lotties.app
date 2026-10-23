@@ -27,7 +27,6 @@ import { useApiClient } from '../api/ApiClientContext';
 import { useDatabase } from '../db/DatabaseContext';
 import { countUnsyncedMutations } from '../db/outbox';
 import { releaseThisDevice } from '../notifications/pushActions';
-import { isNativeApp } from '../platform/nativeApp';
 import { useSignOut } from '../session/useSignOut';
 import { unsyncedChangesLabel } from '../session/usePushThenProceed';
 import { useSyncEngine } from '../sync/SyncEngineContext';
@@ -101,17 +100,13 @@ export function DeleteAccountSection() {
   return (
     <Stack spacing={2}>
       <Typography color="text.secondary">{t('account.intro')}</Typography>
-      {isNativeApp() ? (
-        <Alert severity="info">{t('account.exportOnWeb')}</Alert>
-      ) : (
-        <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
-          <Typography variant="body2">{t('account.exportHint')}</Typography>
-          <Button variant="outlined" onClick={() => void download()}>
-            {t('account.export')}
-          </Button>
-          {exportFailed && <ErrorNotice message={t('account.exportFailed')} />}
-        </Stack>
-      )}
+      <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
+        <Typography variant="body2">{t('account.exportHint')}</Typography>
+        <Button variant="outlined" onClick={() => void download()}>
+          {t('account.export')}
+        </Button>
+        {exportFailed && <ErrorNotice message={t('account.exportFailed')} />}
+      </Stack>
       <Button
         color="error"
         variant="outlined"
