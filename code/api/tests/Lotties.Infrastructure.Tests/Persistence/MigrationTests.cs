@@ -68,6 +68,7 @@ public sealed class MigrationTests
         "20261023005632_FeedingAmounts",
         "20261023023038_CareProviders",
         "20261023032350_DoctorScopes",
+        "20261023071720_AccountDeletion",
     ];
 
     [Fact]
