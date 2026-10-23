@@ -121,7 +121,7 @@ export function MedsTraySheet({
       {all.length === 0 && !prescribed ? (
         <Typography color="text.secondary">
           {t('now.medsTray.none')}{' '}
-          <Link to="/settings#medications" onClick={onClose}>
+          <Link to="/hub/medicines" onClick={onClose}>
             {t('now.medsTray.open')}
           </Link>
         </Typography>

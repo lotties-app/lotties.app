@@ -7,7 +7,8 @@ import { nowApi, BABY as NOW_BABY, seedMorning, seedNow } from '../now/ui/nowKit
 import { NowScreen } from '../now/ui/NowScreen';
 import { AppointmentsPage } from '../pages/AppointmentsPage';
 import { DayPage } from '../pages/DayPage';
-import { SettingsPage } from '../pages/SettingsPage';
+import { HubPage } from '../pages/HubPage';
+import { HubFamilyPage } from '../pages/HubSubPages';
 import { BABY_ID, fakeApi, testDatabase, type ApiCall } from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { seedBaby } from '../test/seed';
@@ -114,14 +115,23 @@ describe('Day', () => {
   });
 });
 
-describe('Settings', () => {
+describe('the Hub', () => {
   it('has no Appointments entry and no members list for a Doctor, who can still leave', async () => {
     await seedBaby(db, { role: 'Doctor' });
     const fake = fakeApi();
-    renderWithDb(db, <SettingsPage />, { route: '/settings#members', api: fake.api });
+    renderWithDb(db, <HubPage />, { route: '/hub', api: fake.api });
+    await screen.findByRole('heading', { name: 'Hub', level: 1 });
+    expect(screen.queryByRole('link', { name: /^Appointments/ })).toBeNull();
+    await settleSync();
+    expect(askedForMembers(fake.calls)).toBe(false);
+  });
+
+  it('lets a Doctor leave from the family page, without a members list', async () => {
+    await seedBaby(db, { role: 'Doctor' });
+    const fake = fakeApi();
+    renderWithDb(db, <HubFamilyPage />, { route: '/hub/family', api: fake.api });
 
     expect(await screen.findByRole('button', { name: 'Leave this baby' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /^Appointments/ })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Members' })).toBeNull();
     expect(screen.queryByText('Only the owner can manage members and invites.')).toBeNull();
     await settleSync();
@@ -131,9 +141,14 @@ describe('Settings', () => {
   it('keeps the entry and the members list for a Viewer', async () => {
     await seedBaby(db, { role: 'Viewer' });
     const fake = fakeApi();
-    renderWithDb(db, <SettingsPage />, { route: '/settings#members', api: fake.api });
+    renderWithDb(db, <HubPage />, { route: '/hub', api: fake.api });
+    expect(await screen.findByTestId('hub-row-appointments')).toBeTruthy();
+  });
 
-    expect(await screen.findByRole('link', { name: /^Appointments/ })).toBeTruthy();
+  it('lists the members on the family page for a Viewer', async () => {
+    await seedBaby(db, { role: 'Viewer' });
+    const fake = fakeApi();
+    renderWithDb(db, <HubFamilyPage />, { route: '/hub/family', api: fake.api });
     expect(await screen.findByRole('list', { name: 'Members' })).toBeTruthy();
     await waitFor(() => expect(askedForMembers(fake.calls)).toBe(true));
   });

@@ -162,7 +162,7 @@ export function FirstRun({
           title={t('now.firstRun.importTitle')}
           body={t('now.firstRun.importBody')}
           action={t('now.firstRun.importAction')}
-          to="/settings#import"
+          to="/hub/import"
         />
       )}
       {canInvite && (
@@ -172,7 +172,7 @@ export function FirstRun({
           title={t('now.firstRun.inviteTitle', { name: babyName })}
           body={t('now.firstRun.inviteBody')}
           action={t('now.firstRun.inviteAction')}
-          to="/settings#members"
+          to="/hub/family#invite"
         />
       )}
     </>

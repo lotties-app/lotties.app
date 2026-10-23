@@ -77,11 +77,9 @@ describe('loading and empty states', () => {
     expect(await screen.findByRole('heading', { name: "Log Lia's first event" })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Fell asleep' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Feed' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Import' }).getAttribute('href')).toBe(
-      '/settings#import',
-    );
+    expect(screen.getByRole('link', { name: 'Import' }).getAttribute('href')).toBe('/hub/import');
     expect(screen.getByRole('link', { name: 'Invite' }).getAttribute('href')).toBe(
-      '/settings#members',
+      '/hub/family#invite',
     );
     expect(screen.getByText(/Log a few days and predictions appear here/)).toBeTruthy();
   });

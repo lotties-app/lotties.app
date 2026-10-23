@@ -5,7 +5,7 @@ import type { BabyRoutineDb } from '../db/database';
 import type { Appointment } from '../db/models';
 import { NotificationLinkContext } from '../notifications/notificationLinkContext';
 import { DayPage } from '../pages/DayPage';
-import { SettingsPage } from '../pages/SettingsPage';
+import { HubPage } from '../pages/HubPage';
 import type { NotificationLink } from '../pwa/sw/deepLink';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
@@ -15,7 +15,7 @@ import { NextAppointment } from './NextAppointmentCard';
 
 /*
  * The ways into the appointments: the "Next appointment" card on Now (14 days ahead), the Day
- * strip above the ribbon and the calendar button in the Day header, Settings > Appointments, and
+ * strip above the ribbon and the calendar button in the Day header, Hub > Appointments, and
  * an appointment reminder's deep link.
  */
 
@@ -119,11 +119,11 @@ describe('the Day screen', () => {
   });
 });
 
-describe('Settings', () => {
+describe('Hub', () => {
   it('has an Appointments entry that opens the page', async () => {
-    renderWithDb(db, <SettingsPage />, { route: '/settings' });
+    renderWithDb(db, <HubPage />, { route: '/hub' });
 
-    const entry = await screen.findByRole('link', { name: /Appointments/ });
+    const entry = await screen.findByTestId('hub-row-appointments');
     expect(entry.getAttribute('href')).toBe('/appointments');
   });
 });

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import type { Baby, Vaccination } from '../db/models';
 import { NotificationLinkContext } from '../notifications/notificationLinkContext';
-import { SettingsPage } from '../pages/SettingsPage';
+import { HubPage } from '../pages/HubPage';
 import type { NotificationLink } from '../pwa/sw/deepLink';
 import { NowScreen } from '../now/ui/NowScreen';
 import { BABY, nowApi, putEvent, seedNow } from '../now/ui/nowKit';
@@ -18,7 +18,7 @@ import { VaccinesScreen } from './VaccinesScreen';
 
 /*
  * The ways into the vaccines: the "Vaccines due" card on Now (only while a dose is due or overdue),
- * Settings > Vaccines and a vaccine reminder's deep link.
+ * Hub > Vaccines and a vaccine reminder's deep link.
  */
 
 let db: BabyRoutineDb;
@@ -148,11 +148,11 @@ describe('the Now card', () => {
   });
 });
 
-describe('Settings', () => {
+describe('Hub', () => {
   it('has a Vaccines entry that opens the page', async () => {
-    renderWithDb(db, <SettingsPage />, { route: '/settings' });
+    renderWithDb(db, <HubPage />, { route: '/hub' });
 
-    const entry = await screen.findByRole('link', { name: /Vaccines/ });
+    const entry = await screen.findByTestId('hub-row-vaccines');
     expect(entry.getAttribute('href')).toBe('/vaccines');
   });
 });

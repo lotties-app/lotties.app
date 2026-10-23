@@ -106,6 +106,10 @@ import IconTrophy from '@tabler/icons-react/dist/esm/icons/IconTrophy.mjs';
 import IconVirus from '@tabler/icons-react/dist/esm/icons/IconVirus.mjs';
 import IconTrees from '@tabler/icons-react/dist/esm/icons/IconTrees.mjs';
 import IconHandSanitizer from '@tabler/icons-react/dist/esm/icons/IconHandSanitizer.mjs';
+import IconLayoutGrid from '@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mjs';
+import IconRefresh from '@tabler/icons-react/dist/esm/icons/IconRefresh.mjs';
+import IconUserPlus from '@tabler/icons-react/dist/esm/icons/IconUserPlus.mjs';
+import IconPalette from '@tabler/icons-react/dist/esm/icons/IconPalette.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -226,6 +230,10 @@ export const ICON_COMPONENTS = {
   virus: IconVirus,
   trees: IconTrees,
   lotion: IconHandSanitizer,
+  hub: IconLayoutGrid,
+  refresh: IconRefresh,
+  'user-plus': IconUserPlus,
+  palette: IconPalette,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

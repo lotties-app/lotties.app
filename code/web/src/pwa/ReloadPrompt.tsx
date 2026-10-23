@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Button, Snackbar } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { isNativeApp } from '../platform/nativeApp';
+import { setRegistration, setReload, setWaiting } from './updateStore';
 
 /**
  * Registers the service worker (the PWA's offline copy and updates). Mounted once, inside App.
@@ -14,7 +16,8 @@ export function ReloadPrompt() {
 
 /**
  * Shows a snackbar when a new service worker is waiting. Nothing reloads until the user
- * presses "Reload", so unsaved input is never lost.
+ * presses "Reload", so unsaved input is never lost. The registration, the waiting flag and the
+ * reload function also feed the update store behind Hub > Check for updates.
  */
 function ServiceWorkerReloadPrompt() {
   const { t } = useTranslation();
@@ -22,11 +25,22 @@ function ServiceWorkerReloadPrompt() {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
+    onRegisteredSW(_url, registration) {
+      setRegistration(registration);
+    },
     onRegisterError(error) {
       // Registration failures only mean no offline support; the app keeps working online.
       console.warn('Service worker registration failed', error);
     },
   });
+
+  useEffect(() => {
+    setReload(updateServiceWorker);
+    return () => setReload(undefined);
+  }, [updateServiceWorker]);
+  useEffect(() => {
+    setWaiting(needRefresh);
+  }, [needRefresh]);
 
   return (
     <Snackbar

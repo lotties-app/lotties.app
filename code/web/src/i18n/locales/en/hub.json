@@ -1,0 +1,141 @@
+{
+  "hub": {
+    "title": "Hub",
+    "back": "Back to Hub",
+    "search": {
+      "label": "Search the Hub",
+      "placeholder": "Search the Hub",
+      "clear": "Clear search",
+      "none": "Nothing in the Hub matches “{{query}}”.",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results"
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "customize": "Customize",
+      "customizeTitle": "Choose your shortcuts",
+      "customizeHint": "Pick up to {{count}}. Until you do, the places you open most show here.",
+      "picked": "{{picked}} of {{count}} chosen",
+      "automatic": "Pick by use",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "sections": {
+      "care": "Baby care",
+      "family": "Family",
+      "app": "App"
+    },
+    "badge_one": "{{count}} needs attention",
+    "badge_other": "{{count}} need attention",
+    "tabBadge_one": "{{count}} thing needs attention in the Hub",
+    "tabBadge_other": "{{count}} things need attention in the Hub",
+    "entries": {
+      "appointments": {
+        "title": "Appointments",
+        "hint": "Visits and reminders",
+        "keywords": "visits doctor calendar pediatrician checkup"
+      },
+      "vaccines": {
+        "title": "Vaccines",
+        "hint": "Schedule and card",
+        "keywords": "shots immunization doses card"
+      },
+      "growth": {
+        "title": "Growth",
+        "hint": "Weight, length and head size",
+        "keywords": "weight height length head measurements chart"
+      },
+      "medicines": {
+        "title": "Medicines",
+        "hint": "Medications and prescriptions",
+        "keywords": "medications drugs doses prescriptions"
+      },
+      "formulas": {
+        "title": "Formulas",
+        "hint": "Brands and how you prepare them",
+        "keywords": "milk bottle powder"
+      },
+      "notes": {
+        "title": "Notes",
+        "hint": "Doctor's notes about visits",
+        "keywords": "doctor notes recommendations"
+      },
+      "fromDoctor": {
+        "title": "From your doctor",
+        "hint": "Suggestions waiting for you",
+        "keywords": "doctor proposals prescriptions recommendations inbox"
+      },
+      "myProposals": {
+        "title": "My proposals",
+        "hint": "Prescriptions you suggested",
+        "keywords": "doctor proposals prescriptions"
+      },
+      "patients": {
+        "title": "Patients",
+        "hint": "Babies shared with you",
+        "keywords": "doctor babies families"
+      },
+      "members": {
+        "title": "Members and roles",
+        "hint": "Who can see and log",
+        "keywords": "family people roles owner parent caregiver viewer leave"
+      },
+      "invite": {
+        "title": "Invite someone",
+        "hint": "Share a link with family or a caregiver",
+        "keywords": "link share add person family caregiver"
+      },
+      "doctorAccess": {
+        "title": "Doctor access",
+        "hint": "Invite a doctor and see who looked",
+        "keywords": "doctor invite access log audit"
+      },
+      "settings": {
+        "title": "Settings",
+        "hint": "Appearance, language, notifications, sync",
+        "keywords": "preferences theme dark language notifications sync profile event types"
+      },
+      "import": {
+        "title": "Import",
+        "hint": "Bring history from another app",
+        "keywords": "napper export file csv history"
+      },
+      "updates": {
+        "title": "Check for updates",
+        "hint": "Get the latest version",
+        "keywords": "update version reload refresh new"
+      },
+      "about": {
+        "title": "About",
+        "hint": "Version and licence",
+        "keywords": "version build licence license source"
+      }
+    },
+    "updates": {
+      "title": "Check for updates",
+      "current": "You have version {{version}}.",
+      "check": "Check for updates",
+      "checking": "Checking for updates…",
+      "upToDate": "You have the latest version.",
+      "checkedAt": "Checked at {{time}}.",
+      "ready": "A new version is ready.",
+      "readyHint": "Reloading switches to it. Changes not yet synced stay on this device.",
+      "reload": "Reload to update",
+      "error": "Could not check. Make sure you are online and try again.",
+      "retry": "Try again",
+      "unsupportedNative": "This app is updated through the app store.",
+      "unsupportedBrowser": "This browser does not keep an offline copy of the app, so it always opens the latest version."
+    },
+    "about": {
+      "title": "About",
+      "tagline": "A calm baby routine tracker that works offline.",
+      "version": "Version",
+      "builtAt": "Built",
+      "commit": "Build",
+      "license": "Licence",
+      "licenseValue": "Free software, AGPL-3.0",
+      "source": "Source code",
+      "unknown": "Unknown"
+    }
+  }
+}
