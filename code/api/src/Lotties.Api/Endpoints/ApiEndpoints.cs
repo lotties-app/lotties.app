@@ -1,4 +1,5 @@
 using Lotties.Api.Assistants.Alexa;
+using Lotties.Api.Assistants.Mcp;
 
 namespace Lotties.Api.Endpoints;
 
@@ -6,7 +7,7 @@ public static class ApiEndpoints
 {
     public const string V1Prefix = "/api/v1";
 
-    /// <summary>Maps the anonymous <c>/health</c> probe and the authenticated <c>/api/v1</c> routes.</summary>
+    /// <summary>Maps the anonymous <c>/health</c> probe, the authenticated <c>/api/v1</c> routes and the MCP server's routes (own OAuth scheme).</summary>
     public static WebApplication MapLottiesApi(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -41,6 +42,7 @@ public static class ApiEndpoints
         api.MapPushEndpoints();
         api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();
         api.MapAlexaEndpoints();
+        app.MapMcpEndpoints();
         return app;
     }
 }

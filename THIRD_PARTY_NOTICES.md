@@ -1493,7 +1493,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-### Microsoft.AspNetCore.Authentication.JwtBearer 8.0.11, Microsoft.EntityFrameworkCore 8.0.11, Microsoft.EntityFrameworkCore.Abstractions 8.0.11, Microsoft.EntityFrameworkCore.Analyzers 8.0.11, Microsoft.EntityFrameworkCore.Relational 8.0.11, Microsoft.IdentityModel.Abstractions 7.1.2, Microsoft.IdentityModel.JsonWebTokens 7.1.2, Microsoft.IdentityModel.Logging 7.1.2, Microsoft.IdentityModel.Protocols 7.1.2, Microsoft.IdentityModel.Protocols.OpenIdConnect 7.1.2, Microsoft.IdentityModel.Tokens 7.1.2, System.IdentityModel.Tokens.Jwt 7.1.2
+### Microsoft.AspNetCore.Authentication.JwtBearer 8.0.11, Microsoft.EntityFrameworkCore 8.0.11, Microsoft.EntityFrameworkCore.Abstractions 8.0.11, Microsoft.EntityFrameworkCore.Analyzers 8.0.11, Microsoft.EntityFrameworkCore.Relational 8.0.11, Microsoft.Extensions.AI.Abstractions 10.11.0, Microsoft.Extensions.Caching.Abstractions 10.0.13, Microsoft.Extensions.Configuration.Abstractions 10.0.13, Microsoft.Extensions.DependencyInjection.Abstractions 10.0.13, Microsoft.Extensions.Diagnostics.Abstractions 10.0.13, Microsoft.Extensions.FileProviders.Abstractions 10.0.13, Microsoft.Extensions.Hosting.Abstractions 10.0.13, Microsoft.Extensions.Logging.Abstractions 10.0.13, Microsoft.Extensions.Options 10.0.13, Microsoft.Extensions.Primitives 10.0.13, Microsoft.IdentityModel.Abstractions 7.1.2, Microsoft.IdentityModel.JsonWebTokens 7.1.2, Microsoft.IdentityModel.Logging 7.1.2, Microsoft.IdentityModel.Protocols 7.1.2, Microsoft.IdentityModel.Protocols.OpenIdConnect 7.1.2, Microsoft.IdentityModel.Tokens 7.1.2, System.Diagnostics.DiagnosticSource 10.0.13, System.IdentityModel.Tokens.Jwt 7.1.2, System.IO.Pipelines 10.0.13, System.Net.ServerSentEvents 10.0.13, System.Text.Encodings.Web 10.0.13, System.Text.Json 10.0.13
 
 License: MIT
 
@@ -1535,6 +1535,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+### ModelContextProtocol 2.3.0, ModelContextProtocol.AspNetCore 2.3.0, ModelContextProtocol.Core 2.3.0
+
+License: Apache-2.0
+
+```text
+© Model Context Protocol a Series of LF Projects, LLC.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this software except in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 ```
 
 ### ms 2.1.3
