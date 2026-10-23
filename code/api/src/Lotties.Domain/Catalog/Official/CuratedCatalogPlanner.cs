@@ -6,9 +6,30 @@ namespace Lotties.Domain.Catalog.Official;
 /// One entry of the curated product list (the importer's <c>Data/curated-products.json</c>): a common product that is
 /// missing or ambiguous in the official data, with its form and ingredients (spellings of the curated substance map),
 /// whether a pharmacist or pediatrician reviewed it, and the basis it rests on (owner statement, manufacturer page,
-/// price list...). <see cref="Id"/> is its stable key (lower-case letters, digits and dashes).
+/// price list...). <see cref="Id"/> is its stable key (lower-case letters, digits and dashes). The optional fields only
+/// steer the verifier: <see cref="OfficialName"/> (the exact official name to look up when it differs from the display
+/// name), <see cref="Registration"/> (nine-digit ANVISA registration to look up instead of the name), <see cref="Route"/>
+/// (<c>oral</c>, <c>nasal</c>, <c>topical</c>...) and the last recorded <see cref="AnvisaCheck"/>.
 /// </summary>
-public sealed record CuratedProductEntry(string Id, string Name, ProductForm Form, IReadOnlyList<string> Ingredients, bool Reviewed, string Basis);
+public sealed record CuratedProductEntry(
+    string Id,
+    string Name,
+    ProductForm Form,
+    IReadOnlyList<string> Ingredients,
+    bool Reviewed,
+    string Basis,
+    string? OfficialName = null,
+    string? Registration = null,
+    string? Route = null,
+    AnvisaCheck? AnvisaCheck = null);
+
+/// <summary>
+/// The recorded result of the machine cross-check of an entry against ANVISA's open data (<c>verify-curated</c>): the
+/// date, the status (<c>VERIFIED</c>, <c>MISMATCH</c>, <c>NOT_FOUND</c>, <c>AMBIGUOUS</c>, <c>CANCELLED</c>,
+/// <c>UNVERIFIABLE</c>) and the registration numbers or product names it rests on. It is not a pharmacist's review
+/// (<see cref="CuratedProductEntry.Reviewed"/>) and says nothing about age, dose or equivalence for treatment.
+/// </summary>
+public sealed record AnvisaCheck(string Date, string Status, IReadOnlyList<string> Evidence);
 
 /// <summary>The curated products to import and the substances they need.</summary>
 public sealed record CuratedCatalogPlan(IReadOnlyList<CatalogProductPlan> Products, IReadOnlyList<SubstanceDefinition> Substances);
