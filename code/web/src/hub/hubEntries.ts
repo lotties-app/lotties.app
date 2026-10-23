@@ -34,6 +34,8 @@ export const HUB_ENTRY_IDS = [
   'doctorAccess',
   'settings',
   'import',
+  'export',
+  'backupImport',
   'updates',
   'about',
 ] as const;
@@ -63,6 +65,8 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'doctorAccess', section: 'family', icon: 'stethoscope', to: '/hub/family#doctor-access' },
   { id: 'settings', section: 'app', icon: 'settings', to: '/settings' },
   { id: 'import', section: 'app', icon: 'upload-file', to: '/hub/import' },
+  { id: 'export', section: 'app', icon: 'archive', to: '/hub/export' },
+  { id: 'backupImport', section: 'app', icon: 'cloud-upload', to: '/hub/backup' },
   { id: 'updates', section: 'app', icon: 'refresh', to: '/hub/updates' },
   { id: 'about', section: 'app', icon: 'info', to: '/hub/about' },
 ];
@@ -102,7 +106,11 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
     case 'doctorAccess':
       return !!baby && isOwner(baby);
     case 'import':
+    case 'export':
       return !!baby && canWrite(baby);
+    case 'backupImport':
+      // A backup restores into a new baby of anyone's; into the selected one only for who may write to it.
+      return baby ? canWrite(baby) : !ctx.hasPatients;
     case 'vaccines':
     case 'growth':
     case 'medicines':

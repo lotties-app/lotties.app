@@ -7,6 +7,11 @@ export interface ApiCall {
   method: string;
   path: string;
   body?: unknown;
+  /** A file sent as it is (backup import) and its content type. */
+  rawBody?: Blob;
+  contentType?: string;
+  /** The caller asked for the answer as a file (backup export). */
+  responseType?: 'blob';
   /** Extra request headers the caller sent (e.g. `If-None-Match`). */
   headers?: Record<string, string>;
   /** Whether the caller opted out of the client's 401 login redirect. */
@@ -86,6 +91,8 @@ export function fakeApi(handler: ApiHandler = () => undefined) {
       method: options.method ?? 'GET',
       path,
       body: options.body,
+      ...(options.rawBody ? { rawBody: options.rawBody, contentType: options.contentType } : {}),
+      ...(options.responseType ? { responseType: options.responseType } : {}),
       ...(options.headers ? { headers: options.headers } : {}),
       skipUnauthorizedHandler: options.skipUnauthorizedHandler ?? false,
     };

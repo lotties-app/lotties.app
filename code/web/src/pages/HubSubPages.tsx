@@ -6,14 +6,20 @@ import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
-import { canSeeFamilyRecords } from '../baby/permissions';
+import { canSeeFamilyRecords, canWrite } from '../baby/permissions';
 import { ProvidersScreen } from '../providers/ProvidersScreen';
 import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
 import { Icon } from '../ui/Icon';
 
-// The importer is only needed when its page is opened, so it loads on demand.
+// The importers are only needed when their page is opened, so they load on demand.
+const ExportSection = lazy(() =>
+  import('../backup/ExportSection').then((m) => ({ default: m.ExportSection })),
+);
+const ImportBackupSection = lazy(() =>
+  import('../backup/ImportBackupSection').then((m) => ({ default: m.ImportBackupSection })),
+);
 const ImportSection = lazy(() =>
   import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
 );
@@ -107,6 +113,39 @@ export function HubImportPage() {
         </Suspense>
       )}
     </BabyPage>
+  );
+}
+
+/** "Export data": the baby's backup file. Owners and Parents only. */
+export function HubExportPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  if (babies && baby && !canWrite(baby)) return <Navigate to="/hub" replace />;
+  return (
+    <BabyPage title={t('hub.entries.export.title')}>
+      {(current) => (
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <ExportSection key={current.id} baby={current} />
+        </Suspense>
+      )}
+    </BabyPage>
+  );
+}
+
+/** "Import backup": a file this app exported, into a new baby or the selected one. */
+export function HubBackupImportPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  return (
+    <HubSubPage title={t('hub.entries.backupImport.title')}>
+      {babies ? (
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <ImportBackupSection key={baby?.id} baby={baby} />
+        </Suspense>
+      ) : (
+        <CircularProgress aria-label={t('common.loading')} />
+      )}
+    </HubSubPage>
   );
 }
 

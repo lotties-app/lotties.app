@@ -23,7 +23,8 @@ const ctx = (role: Baby['role'] | null, extra: Partial<HubContext> = {}): HubCon
 describe('who sees which entry', () => {
   it('shows the baby entries only with a baby', () => {
     const ids = visibleEntries(ctx(null)).map((e) => e.id);
-    expect(ids).toEqual(['settings', 'updates', 'about']);
+    // Without a baby, a person can still restore a backup into a new one.
+    expect(ids).toEqual(['settings', 'backupImport', 'updates', 'about']);
   });
 
   it.each([
@@ -45,6 +46,23 @@ describe('who sees which entry', () => {
     ['Doctor', false],
   ] as const)('import for %s: %s', (role, expected) => {
     expect(isEntryVisible('import', ctx(role))).toBe(expected);
+  });
+
+  it.each([
+    ['Owner', true],
+    ['Parent', true],
+    ['Caregiver', false],
+    ['Viewer', false],
+    ['Doctor', false],
+  ] as const)('export and import backup for %s: %s', (role, expected) => {
+    expect(isEntryVisible('export', ctx(role))).toBe(expected);
+    expect(isEntryVisible('backupImport', ctx(role))).toBe(expected);
+  });
+
+  it('offers a backup restore without a baby, except to a doctor who only has patients', () => {
+    expect(isEntryVisible('export', ctx(null))).toBe(false);
+    expect(isEntryVisible('backupImport', ctx(null))).toBe(true);
+    expect(isEntryVisible('backupImport', ctx(null, { hasPatients: true }))).toBe(false);
   });
 
   it('keeps the appointments from the Doctor and the proposals for her only', () => {

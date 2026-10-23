@@ -1,0 +1,81 @@
+{
+  "backup": {
+    "privacy": "O arquivo contém dados de saúde da criança: nome, data de nascimento, medidas, remédios, vacinas, anotações e todos os eventos registrados. Ele não é criptografado. Guarde em um lugar seguro, não envie por e-mail ou mensagem e apague as cópias que não precisar mais.",
+    "kinds": {
+      "baby": "Bebê",
+      "eventTypes": "Tipos de evento próprios",
+      "medications": "Remédios",
+      "prescriptions": "Receitas",
+      "formulas": "Fórmulas",
+      "careProviders": "Médicos e clínicas",
+      "appointments": "Consultas",
+      "vaccinations": "Vacinas aplicadas",
+      "measurements": "Medidas de crescimento",
+      "notes": "Anotações",
+      "events": "Eventos"
+    },
+    "export": {
+      "blocked": "Só titulares e responsáveis podem exportar os dados de um bebê.",
+      "intro": "Baixe tudo que o app guarda sobre {{name}} em um único arquivo: uma cópia de segurança para guardar ou para mudar de conta ou de servidor.",
+      "includes": "Incluído: o perfil, todos os eventos (os apagados também), tipos de evento próprios, remédios e receitas, fórmulas, consultas, médicos e clínicas, vacinas, medidas de crescimento e as anotações que você pode ver.",
+      "excludes": "Não incluído: outros membros, convites, o acesso de um médico, lembretes e configurações de notificação, anotações privadas de outras pessoas e qualquer dado que identifique um login.",
+      "compress": "Compactar o arquivo (.json.gz, bem menor)",
+      "button": "Exportar dados",
+      "sending": "Enviando antes as alterações feitas neste aparelho...",
+      "working": "Preparando o arquivo...",
+      "unsent": "Nem tudo neste aparelho pôde ser enviado antes ({{changes}}), então essas alterações não estão no arquivo.",
+      "exportAnyway": "Exportar mesmo assim",
+      "saved": "Arquivo {{name}} salvo ({{size}}). Veja seus downloads."
+    },
+    "import": {
+      "intro": "Escolha um arquivo de cópia de segurança exportado por este app. Você verá o que ele adicionaria antes de salvar qualquer coisa. Importar o mesmo arquivo de novo não muda nada.",
+      "modeLabel": "Para onde vai?",
+      "modeRestore": "Um bebê novo",
+      "modeMerge": "Adicionar a {{name}}",
+      "restoreHint": "Cria um bebê novo com tudo que está no arquivo, e você passa a ser a titular. Ideal para mudar de conta ou de servidor.",
+      "mergeHint": "Adiciona o que falta em {{name}}. Nada é apagado, e quando os dois têm o mesmo registro vale a edição mais recente.",
+      "choose": "Escolher arquivo de backup",
+      "hint": ".json ou .json.gz, até {{limit}}",
+      "readFailed": "Não foi possível ler {{name}}.",
+      "busy": {
+        "reading": "Lendo o arquivo...",
+        "previewing": "Verificando o arquivo...",
+        "importing": "Importando..."
+      },
+      "previewNotice": "Esta é uma pré-visualização: nada foi salvo ainda.",
+      "cannotImport": "Alguns registros deste arquivo não são válidos, então ele não pode ser importado.",
+      "alreadyRestored": "Você já restaurou este arquivo em um bebê seu. Importar de novo adiciona o que faltar a esse bebê.",
+      "nothingToDo": "Não há nada a importar: tudo que está neste arquivo já existe.",
+      "confirmRestore": "Importar para um bebê novo",
+      "confirmMerge": "Adicionar a {{name}}",
+      "doneRestore": "Pronto. O bebê foi criado e os dados aparecem em instantes.",
+      "doneMerge": "Pronto. Os dados que faltavam foram adicionados e aparecem em instantes.",
+      "open": "Abrir o app"
+    },
+    "report": {
+      "source": "Backup de {{name}}, exportado em {{date}}.",
+      "empty": "O arquivo não tem registros.",
+      "listLabel": "O que o arquivo contém",
+      "issuesLabel": "Registros que não são válidos",
+      "new": "{{count}} novos",
+      "unchanged": "{{count}} já existem",
+      "updated": "{{count}} atualizados",
+      "kept": "{{count}} mantidos como estão",
+      "invalid": "{{count}} inválidos",
+      "invalidTitle_one": "{{count}} registro não é válido:",
+      "invalidTitle_other": "{{count}} registros não são válidos:",
+      "issue": "{{kind}}: {{reason}}",
+      "moreIssues_one": "E mais {{count}}.",
+      "moreIssues_other": "E mais {{count}}."
+    },
+    "notices": {
+      "authors_remapped": "Registros escritos por outras pessoas ({{count}}) aparecerão como feitos por você.",
+      "doctor_provenance_dropped": "Receitas que vieram da proposta de um médico ({{count}}) viram registros seus.",
+      "doctor_measurements_flattened": "Medidas de consulta ({{count}}) perdem a marca \"registrada por\".",
+      "product_links_dropped": "Remédios ligados a um produto do catálogo que este servidor não conhece ({{count}}) ficam sem a ligação."
+    },
+    "errors": {
+      "tooLarge": "Este arquivo é grande demais para enviar (até {{limit}}). Exporte um arquivo compactado .json.gz e tente de novo."
+    }
+  }
+}

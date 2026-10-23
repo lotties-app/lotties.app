@@ -105,6 +105,16 @@
         "hint": "Traga o histórico de outro app",
         "keywords": "napper exportação arquivo csv histórico"
       },
+      "export": {
+        "title": "Exportar dados",
+        "hint": "Baixe uma cópia deste bebê",
+        "keywords": "backup baixar arquivo json salvar cópia dados mudar"
+      },
+      "backupImport": {
+        "title": "Importar backup",
+        "hint": "Restaure um arquivo exportado do app",
+        "keywords": "backup restaurar enviar arquivo json mudar conta"
+      },
       "updates": {
         "title": "Buscar atualizações",
         "hint": "Receba a versão mais recente",

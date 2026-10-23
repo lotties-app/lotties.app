@@ -7,6 +7,7 @@ import { mergeCatalogFiles } from './mergeCatalog';
  */
 export type Catalog = typeof import('./locales/en/appointments.json') &
   typeof import('./locales/en/auth.json') &
+  typeof import('./locales/en/backup.json') &
   typeof import('./locales/en/baby.json') &
   typeof import('./locales/en/common.json') &
   typeof import('./locales/en/day.json') &
