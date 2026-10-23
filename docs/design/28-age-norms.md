@@ -470,10 +470,24 @@ Every default that now comes from a norm. Values that come from norms in the tab
 | Bottle cold-start chips, days 183-364 | same | 5 m / 7 m rows 180-240 | 180-240 ml (same chips) | `feed_volume_ml_per_feed.formula.183-365`, high (sbp-alimentacao-2024, aap-formula-2022) |
 | Feed-gap cut-off of the feeding average, 12 to under 18 months (days 365-547) | web `code/web/src/insights/feedGapLimit.ts` (used by `feedingModel.ts` `feedGaps`/`feedingSummary`, Insights feeding card); API `Lotties.Domain/Clinical/FeedGapLimit.cs` (used by `FeedingSummaries.Summarize`, clinical summary feeding section) | 8 h | 13.6 h (the band's high end, 97.5th-98th percentile night) | `night_sleep_hours.all.365-548`, medium (pelotas-2017, iglowstein-2003) |
 | Feed-gap cut-off, 24 to under 36 months (days 731-1095) | same | 8 h | 13.4 h | `night_sleep_hours.all.731-1096`, medium (pelotas-2017, iglowstein-2003) |
+| Cry ranker hunger default gap, breastfed, days 0-27 | `code/web/src/now/cryReasons.ts` `normFeedGapMinutes` (used only without her own usual gap) | `newborn` band 150 min | 120 min (the published typical gap) | `feed_gap_minutes.breastfed.0-28`, medium (aap-feeding-2024) |
+| Cry ranker hunger default gap, breastfed, days 28-182 | same | `newborn` 150 min (to 41 days), `weeks6to3m` 180 min, `months3to6` 210 min | 131 min (24 h / 11 feeds) | `feeds_per_24h.breastfed.28-183`, medium (kent-2006) |
+| Benchmark bed-time prior, 3 months and over (`ml/benchmark/priors.py`, benchmark only) | `PUBLISHED_BEDTIME` | 20:00 sd 60 (3-6 m), 19:45 sd 45 (6 m+) | 22:00, sd 77 min | `bedtime_minutes_after_noon.all.91-122` and `.365-731`, Pelotas values (pelotas-2017; the 365-731 norm is flagged for the Swiss disagreement, the Pelotas value is the unflagged part) |
+| Benchmark night-length prior, 3 months and over | `PUBLISHED_NIGHT` | 11 h (3-6 m), 11.5 h (6 m+) | 9.5 h (3-6 m), 9.75 h (6-12 m), 10 h (12 m+); log sd 0.15-0.19 | `night_sleep_hours.all.91-122`, `.365-548` (pelotas-2017) |
+
+Cry-ranker golden cases (cryReasons.test.ts): a breastfed 3-week-old 120 minutes after the start of her feed, hunger 0.633 before, 0.9 after; a breastfed 2-month-old, 0.286 before, 0.639 after (both without a usual gap of their own). The 55 earlier tests are unchanged (they pass no norms, which keeps every band value).
 
 Feed-gap rule (both engines, shared vectors `feedGapLimits`): under 183 days always 8 h (identical results for babies under 6 months, by design); from 183 days the high end of `longest_sleep_hours` if usable, else of `night_sleep_hours`, clamped to 8-14 h (14 h: above every published night, 13.7 h, and below the 16 h night-session cap `MaxNightSessionLength`); 8 h when neither is usable. The age is the baby's on the local date the gap starts (API: the family's clock of the clinical window). The doctor's patient list (`DoctorPatientsService`) reports no gap and is untouched.
 
 ### 15.3 Deliberately not changed
+
+- **Bottle chips, first week** (days 0-6): `feed_volume_ml_per_feed.formula.0-7` needs review (SBP 60-120 vs AAP 30-60 ml, D7): the month table's 30-90 ml stays. **From 12 months**: no published band, the 7 m+ row stays. **No birth date**: the neutral set (I2) stays.
+- **Feed-gap cut-off, 6 to under 12 months and 18 to under 24 months**: the only norms there are flagged (`longest_sleep_hours.all.183-731` needs review because Galland's table and text differ by 0.1 h, D5; `night_sleep_hours.all.244-365`, `.122-244` and `.548-731` are low confidence, Swiss only): 8 h stays. Clearing the review flag of `longest_sleep_hours.all.183-731` after the owner's check would raise the cut-off to 13.7 h from 6 months with no code change. **Under 6 months** 8 h by design (results identical). **From 36 months** no band.
+- **Night window and wake window** (I6, I7): measured in section 15.4, unchanged.
+- **Cry ranker**: the wake-window defaults (no published norm: `wake_window_minutes` is missing, section 9), the diaper-gap defaults (only counts and minimums are published; a minimum is a checklist, section 0), the formula-fed defaults (ranges without a central value, or needing review), everything from 6 months (milk-only norms do not describe a day with meals), and the ranker's own 8-hour history filter (`feedGapMaxMinutes`).
+- **Wet-diaper drop line** (I11) and **the gates** (I12): section 7.6 and 7.7; **age band boundaries, the 16-hour night cap, the 04:00 evening boundary** (I3, I8, I9): they fit.
+- **Quoted context in docs/design/04** (I5): parent-facing wording is an owner and UX decision; not touched.
+- **The doctor's patient list**: shows no feed gap, nothing to change.
 
 ### 15.4 Night window: measured, not changed
 
@@ -497,3 +511,19 @@ Sensitivity to one unsourced generator choice, the time from the last feed to be
 **Conclusion: no clear improvement, code unchanged.** The feed result changes sign with an unsourced detail of the synthetic day, the evening sleep prediction gets worse with every later window, and a fixed 22:00 window hurts babies who go to bed early (+2.8 min on feeds for the swiss control). The only consistent signal is a smaller next-sleep error with a per-baby window, and that is exactly what a synthetic generator built from per-baby bed times favours. **Synthetic data cannot prove a real-world gain**, so `NightStartsAt`/`NightEndsAt` and the wake window's `DayStartsAt`/`DayEndsAt` keep their values and no past sample is classified differently. (The overtired heads-up has no Python port, so I7 was not measured; the same per-baby derivation would apply.)
 
 **Recommendation.** Before any change: run `python -m benchmark.night_window --data <the owner's export>` (and the full `benchmark.run`) on real logs. If the owner pursues it, the candidate is a clearly named, default-off option such as `PredictionOptions.NightWindowFromBedtimes` (the night starts at the baby's median `bed_time` clock over the look-back minus a margin and ends at her median `woke_up` clock, from at least 5 logged nights; below that the fixed 19:00-07:00 window, not the norm prior, since `norm_prior` alone was worse for early sleepers), applied first to the sleep (awake-window) prediction only, and with the evening sleep error watched.
+
+### 15.5 Benchmark priors (`ml/benchmark/priors.py`, benchmark only, not shipped)
+
+- **Changed** (rows in 15.2): bed time 22:00 (sd 77 min = the Pelotas 20:00-01:00 range / 3.92) from 3 months; night 9.5 h (3-6 m), 9.75 h (6-12 m, midpoint of the Pelotas 3 and 12 month medians), 10 h (12 m+), log sd from the Pelotas 97.5th percentile. The 6-12 month bed time and night have no Brazilian measurement of their own (only the low-confidence Swiss norm): the benchmark uses the Pelotas values on both sides, said so in the code. The 12-24 month bed-time norm is flagged (Swiss and Brazilian means disagree, D3); its Pelotas value is what the benchmark uses, openly, because the benchmark is the place to measure such a choice and nothing here ships.
+- **Explicitly unsourced** (`UNSOURCED_*` constants, values unchanged): awake windows 75/105/165/240 min, nap lengths 60/60/75/105 min, feed gaps 150/180/210/240 min, diaper gaps 180/210/240/270 min, and the under-3-month bed time (21:00) and night (10 h), for which nothing is published.
+- `LEGACY_PRIORS` keeps the old table; `use_legacy_priors()` / `run --legacy-priors` switch to it.
+- **Before/after on synthetic data** (`python -m benchmark.prior_check`, prior median against every valid outcome, 30 babies per cohort, MAE in minutes):
+
+| Cohort | Target | n | Before | After |
+|---|---|---:|---:|---:|
+| brazil | bed time | 2990 | 127.9 | 47.8 |
+| brazil | night length | 1020 | 84.3 | 50.0 |
+| swiss_control | bed time | 2920 | 30.4 | 126.3 |
+| swiss_control | night length | 1020 | 32.7 | 84.8 |
+
+  This is circular by construction: the Brazilian cohort is drawn from the same Pelotas medians as the new priors, the Swiss control from the values the old priors resembled. It only confirms that the priors now describe Brazilian families as the published cohort does, and shows the cost for a family that keeps a Swiss-like rhythm (the priors matter only until the baby's own log takes over). Synthetic data cannot prove a real-world gain.

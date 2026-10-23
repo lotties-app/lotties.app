@@ -100,6 +100,18 @@ not turn "likely" early.
 | 3 - 6 m | 210 min | 120 min | 180 min |
 | 6 m + | 240 min | 180 min | 210 min |
 
+**Published feed norms (2026-10-23, docs/design/28-age-norms.md section 15.2).** When the age norms are on the device
+(`CryReasonInput.ageNorms`, passed by the Now screen) and the baby is under 6 months (183 days: milk-only feeds), the feed
+gap default comes from a usable published norm for her milk (`normFeedGapMinutes`): `breastfed` when every logged milk
+feed was breast or expressed breast milk, `formula` when every one was formula, else none. The published gap when it has
+a central value, else 24 h divided by the published typical feeds a day. Today that is breastfed under 4 weeks 120 min
+(AAP, `feed_gap_minutes.breastfed.0-28`) and breastfed 4 weeks to 6 months 131 min (11 feeds a day, Kent 2006,
+`feeds_per_24h.breastfed.28-183`). Formula-fed babies keep the band values (the formula norms give ranges only, or need
+review), as do mixed or unknown milk, 6 months and over, and every baby when the norms are missing. The wake window and
+diaper gap defaults have no published counterpart and stay. Note that the breastfed values are shorter than the band
+defaults, which were chosen "on the long side": hunger reaches `likely` sooner for a breastfed baby without a usual gap
+of her own.
+
 **Hunger.** Ratio = minutes since the start of the latest feed / her usual gap. Her usual gap is the median of the
 start-to-start gaps of the last 72 h (feeds less than 30 min apart merged as one, gaps over 8 h dropped) when there are at
 least 4 gaps; else the server's feeding `basis.medianGapMinutes` (30-720 min); else the age default (and the fact says

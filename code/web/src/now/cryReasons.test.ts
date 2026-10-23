@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent, EventPayload, EventType } from '../db/models';
+import { SHIPPED_AGE_NORMS } from '../test/ageNorms';
 import type {
   DiaperPredictionsDto,
   PredictionsDto,
@@ -21,6 +23,8 @@ import {
   CRY_WEIGHTS,
   cryAgeBand,
   cryOutcomeHistory,
+  milkPopulationOf,
+  normFeedGapMinutes,
   outcomeCause,
   rankCryReasons,
   type CryCause,
@@ -901,5 +905,86 @@ describe('cryOutcomeHistory', () => {
     expect(empty.spells).toBe(0);
     expect(empty.byCause.hunger).toEqual({ helped: 0, total: 0 });
     expect(cryOutcomeHistory([fussy(60, 'feeding')], TYPES, NOON, 0).spells).toBe(0);
+  });
+});
+
+describe('published feed norms as the default gap (docs/design/28-age-norms.md section 15.2)', () => {
+  const breast = (startAgo: number, endAgo: number) => feed(startAgo, endAgo, { method: 'breast' });
+  const formula = (startAgo: number, endAgo: number) =>
+    feed(startAgo, endAgo, { bottle_feeding_type: 'formula' });
+  const hungerWith = (events: BabyEvent[], birthDate: string, ageNorms: AgeNormSet | null) =>
+    causeOf(
+      rankCryReasons({
+        events,
+        types: TYPES,
+        now: NOON,
+        birthDate,
+        predictions: null,
+        ageNorms,
+      }),
+      'hunger',
+    ).score;
+
+  it('the default gap: breastfed under 4 weeks 120 min, 4 weeks to 6 months 131 min (11 a day)', () => {
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, NEWBORN, NOON, [breast(60, 40)])).toBe(120);
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, TWO_MONTHS, NOON, [breast(60, 40)])).toBe(131);
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, FOUR_MONTHS, NOON, [breast(60, 40)])).toBe(131);
+    const expressed = feed(60, 50, { bottle_feeding_type: 'breast_milk' });
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, TWO_MONTHS, NOON, [expressed])).toBe(131);
+  });
+
+  it('no default from the norms: formula (ranges only, or under review), mixed, unknown milk, 6 months and over, no norms', () => {
+    const norms = SHIPPED_AGE_NORMS;
+    expect(normFeedGapMinutes(norms, NEWBORN, NOON, [formula(60, 50)])).toBeNull();
+    expect(normFeedGapMinutes(norms, TWO_MONTHS, NOON, [formula(60, 50)])).toBeNull();
+    expect(normFeedGapMinutes(norms, TWO_MONTHS, NOON, [formula(90, 80), breast(60, 40)])).toBe(
+      null,
+    );
+    expect(normFeedGapMinutes(norms, TWO_MONTHS, NOON, [feed(60, 50)])).toBeNull();
+    expect(normFeedGapMinutes(norms, TWO_MONTHS, NOON, [])).toBeNull();
+    expect(normFeedGapMinutes(norms, EIGHT_MONTHS, NOON, [breast(60, 40)])).toBeNull();
+    expect(normFeedGapMinutes(null, TWO_MONTHS, NOON, [breast(60, 40)])).toBeNull();
+    expect(normFeedGapMinutes(norms, null, NOON, [breast(60, 40)])).toBeNull();
+  });
+
+  it('reads the milk of the logged feeds; solids do not count', () => {
+    expect(milkPopulationOf([breast(60, 40), feed(30, 20, { method: 'solid' })])).toBe('breastfed');
+    expect(milkPopulationOf([formula(60, 50), feed(30, 30, { formula_name: 'Nan' })])).toBe(
+      'formula',
+    );
+    expect(milkPopulationOf([breast(60, 40), formula(30, 20)])).toBeNull();
+  });
+
+  it('golden: breastfed newborn, 120 min since the feed: 0.633 before, 0.9 after', () => {
+    const events = [breast(120, 110)];
+    expect(hungerWith(events, NEWBORN, null)).toBeCloseTo(0.633, 3);
+    expect(hungerWith(events, NEWBORN, SHIPPED_AGE_NORMS)).toBeCloseTo(0.9, 3);
+  });
+
+  it('golden: breastfed 2 months, 120 min since the feed: 0.286 before, 0.639 after', () => {
+    const events = [breast(120, 110)];
+    expect(hungerWith(events, TWO_MONTHS, null)).toBeCloseTo(0.286, 3);
+    expect(hungerWith(events, TWO_MONTHS, SHIPPED_AGE_NORMS)).toBeCloseTo(0.639, 3);
+  });
+
+  it('unchanged: formula, 8 months, her own usual gap, a flagged norm', () => {
+    expect(hungerWith([formula(120, 110)], TWO_MONTHS, SHIPPED_AGE_NORMS)).toBe(
+      hungerWith([formula(120, 110)], TWO_MONTHS, null),
+    );
+    expect(hungerWith([breast(120, 110)], EIGHT_MONTHS, SHIPPED_AGE_NORMS)).toBe(
+      hungerWith([breast(120, 110)], EIGHT_MONTHS, null),
+    );
+    const own = [breast(600, 590), breast(450, 440), breast(300, 290), breast(240, 230)];
+    own.push(breast(120, 110));
+    expect(hungerWith(own, TWO_MONTHS, SHIPPED_AGE_NORMS)).toBe(hungerWith(own, TWO_MONTHS, null));
+    const flagged = {
+      ...SHIPPED_AGE_NORMS,
+      norms: SHIPPED_AGE_NORMS.norms.map((norm) =>
+        norm.id === 'feeds_per_24h.breastfed.28-183' ? { ...norm, confidence: 'low' } : norm,
+      ),
+    } as AgeNormSet;
+    expect(hungerWith([breast(120, 110)], TWO_MONTHS, flagged)).toBe(
+      hungerWith([breast(120, 110)], TWO_MONTHS, null),
+    );
   });
 });
