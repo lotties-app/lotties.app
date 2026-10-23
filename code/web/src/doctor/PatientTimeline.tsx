@@ -142,7 +142,10 @@ function Timeline() {
     types.find((candidate) => candidate.id === event.typeId);
 
   return (
-    <Box {...swipe} sx={{ display: 'grid', gap: 2, touchAction: 'pan-y', alignContent: 'start' }}>
+    <Box
+      {...swipe}
+      sx={{ display: 'grid', gap: 2, touchAction: 'pan-y pinch-zoom', alignContent: 'start' }}
+    >
       <Stack spacing={0.5}>{header}</Stack>
       <DaySummary summary={summary}>
         <DayRibbon

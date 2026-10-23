@@ -214,3 +214,9 @@ Offline-first: everything is worked out on the device from the selected baby's l
 - Landing: "Install on your phone" section (h2, after How it works) with the button and an outlined "Step-by-step guide"; footer link "Install the app".
 - `/install` and `/hub/install`: one accordion per platform (the detected one first and open), troubleshooting below; installed shows "You are already using the installed app" with update and uninstall answers only.
 - Public pages (`/credits`, `/install`) share a small top bar: Back, the brand mark, Home. `/welcome` is the landing page for a signed-in person with "Back to the app" (header) and "Open the app" (hero). Hub > App lists Install the app, Check for updates, Home page, About, Credits and licenses.
+## 21. Mobile overflow, zoom and bounce (2026-10-23; docs/design/30-mobile-overflow-audit.md)
+- Pinch zoom always stays: the viewport meta is `width=device-width, initial-scale=1, viewport-fit=cover`, never `maximum-scale` or `user-scalable=no` (WCAG 1.4.4); a swipe area uses `touch-action: pan-y pinch-zoom`, never plain `pan-y`.
+- Nothing is wider than the screen at 320-430 px with text up to 160 %: screen-reader-only text is `1px` in pixels (`width: 1` in `sx` is 100 %); grid columns that hold text are `minmax(0, 1fr)`; a flex item that must not shrink gets `max-width: 100%`; chips wrap or ellipsize instead of widening a row.
+- Text fields are at least 16 px on touch screens (`@media (pointer: coarse)`, `max(16px, 1rem)`; `TOUCH_FIELD_FONT` for hand-made fields) so iOS never zooms into a focused field; desktop keeps 15 px.
+- No page bounce or scroll chaining: `overscroll-behavior-y: none` on the page, `contain` in sheets, dialogs and popovers; controls have `touch-action: manipulation`.
+- Run the overflow audit before a release (docs/E2E.md, "Mobile overflow audit"); it fails on any finding.

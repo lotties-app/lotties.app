@@ -291,6 +291,7 @@ export default function DoctorPreview() {
                       pb: 12,
                       display: 'grid',
                       gap: 2,
+                      gridTemplateColumns: 'minmax(0, 1fr)',
                     }}
                   >
                     {(scenario === 'profile' || scenario === 'members') && (

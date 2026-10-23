@@ -180,7 +180,7 @@ export function ImportBackupSection({ baby }: { baby: Baby | undefined }) {
           variant="outlined"
           startIcon={<Icon name="upload-file" />}
           disabled={busy !== null || !online}
-          sx={{ minHeight: 48, flexShrink: 0 }}
+          sx={{ minHeight: 48, flexShrink: 0, maxWidth: '100%' }}
         >
           {t('backup.import.choose')}
           <input

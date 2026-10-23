@@ -25,9 +25,12 @@ export function DayAppointmentsStrip({ appointments, now, onOpen }: Props) {
     <Box
       component="section"
       aria-label={t('appointments.day.label')}
-      sx={{ display: 'grid', gap: 0.75 }}
+      sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 0.75 }}
     >
-      <Box component="ul" sx={{ m: 0, p: 0, display: 'grid', gap: 0.75 }}>
+      <Box
+        component="ul"
+        sx={{ m: 0, p: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 0.75 }}
+      >
         {appointments.map((appointment) => (
           <Box component="li" key={appointment.id} sx={{ listStyle: 'none' }}>
             <ButtonBase

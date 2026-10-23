@@ -201,8 +201,32 @@ export function buildTheme(localization?: Localization) {
       components: {
         MuiCssBaseline: {
           styleOverrides: {
-            html: { scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING },
-            body: NUMERIC,
+            // Mobile (docs/design/30-mobile-overflow-audit.md): no page bounce or scroll chaining
+            // past the ends, no text inflation on rotation. Pinch zoom always stays (WCAG 1.4.4).
+            html: {
+              scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING,
+              overscrollBehaviorY: 'none',
+              WebkitTextSizeAdjust: '100%',
+              textSizeAdjust: '100%',
+            },
+            // A word longer than the line (a name, a long Portuguese word at large text) breaks
+            // instead of pushing the page sideways; headings also let their flex row shrink them.
+            body: { ...NUMERIC, overscrollBehaviorY: 'none', overflowWrap: 'break-word' },
+            'h1, h2, h3, h4, h5, h6': { overflowWrap: 'anywhere' },
+            // Sheets, dialogs and popovers (and the scrolling parts inside them) keep their scroll:
+            // reaching their end never scrolls or bounces the page behind.
+            '.MuiDrawer-paper, .MuiDrawer-paper *, .MuiDialog-paper, .MuiDialog-paper *, .MuiPopover-paper, .MuiPopover-paper *':
+              { overscrollBehavior: 'contain' },
+            // Removes the double-tap zoom delay on controls; pinch zoom and panning stay.
+            'a, button, input, select, textarea, label, summary, [role="button"], [role="tab"], [role="switch"]':
+              { touchAction: 'manipulation' },
+            // iOS zooms the page into a focused field under 16 px: text fields get a 16 px floor on
+            // touch screens (the user's larger text size still wins through `1rem`). `html` makes
+            // the rule outrank the component's own class.
+            '@media (pointer: coarse)': {
+              'html input, html select, html textarea, html .MuiInputBase-root, html .MuiPickersInputBase-root':
+                { fontSize: 'max(16px, 1rem)' },
+            },
             // Reduced motion and the night view keep opacity changes only.
             '@media (prefers-reduced-motion: reduce)': {
               '*, *::before, *::after': {
@@ -267,6 +291,8 @@ export function buildTheme(localization?: Localization) {
             root: ({ theme, ownerState }) => ({
               borderRadius: RADIUS.pill,
               fontWeight: 500,
+              // In a row a chip may shrink (its label ends in "…") instead of pushing the row wider.
+              minWidth: 0,
               ...(ownerState.variant === 'filled' &&
                 (ownerState.color === 'default' || ownerState.color === undefined) && {
                   backgroundColor: colors(theme).surfaceRaised,
