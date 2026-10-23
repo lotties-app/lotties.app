@@ -23,10 +23,10 @@ namespace Lotties.Api.Tests.Assistants;
 /// </summary>
 internal static class AssistantTestKit
 {
-    public static AssistantInvocation Invocation(string? requestId = null, string? fallbackZone = null) =>
-        new("test", requestId ?? $"req-{Guid.NewGuid():N}", fallbackZone);
+    public static AssistantInvocation Invocation(string? requestId = null, string? fallbackZone = null, Guid? babyId = null) =>
+        new("test", requestId ?? $"req-{Guid.NewGuid():N}", fallbackZone, babyId);
 
-    public static async Task<TResult> RunAsAsync<TResult>(this ApiFactory factory, string subject, Func<IAssistantService, Task<TResult>> work)
+    public static async Task<TResult> RunAsAsync<TResult>(this Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory, string subject, Func<IAssistantService, Task<TResult>> work)
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var accessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();

@@ -88,5 +88,16 @@ internal sealed class SpokenClock(CultureInfo culture, string clockPattern, Spok
         result.TimeZone is { } id && TimeZoneInfo.TryFindSystemTimeZoneById(id, out var zone) ? zone : null;
 }
 
+/// <summary>The totals a spoken day or week summary tells: sleep minutes, naps, feeds, bottle ml and diapers over its days.</summary>
+internal sealed record SpokenDayTotals(int SleepMinutes, int Naps, int Feeds, int BottleMl, int Diapers)
+{
+    public static SpokenDayTotals Of(IReadOnlyList<AssistantDaySummary> days) => new(
+        days.Sum(day => day.Sleep.TotalMinutes),
+        days.Sum(day => day.Sleep.Naps),
+        days.Sum(day => day.Feeding.Feeds),
+        (int)Math.Round(days.Sum(day => day.Feeding.BottleMl), MidpointRounding.AwayFromZero),
+        days.Sum(day => day.Diapers.Total));
+}
+
 /// <summary>The duration and list words of a language.</summary>
 internal sealed record SpokenWords(string Minute, string Minutes, string Hour, string Hours, string And, string LessThanAMinute);

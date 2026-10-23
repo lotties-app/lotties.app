@@ -154,5 +154,27 @@ public sealed class AlexaSpeechTests
         Window = AssistantDayWindow.Today,
         Appointment = new AssistantAppointment(AsOf.AddDays(5), "Pediatra", "consultation"),
         Vaccines = [new AssistantVaccineDose("bcg", new Dictionary<string, string> { ["en"] = "BCG", ["pt-BR"] = "BCG" }, new Dictionary<string, string>(), true, new DateOnly(2026, 10, 1))],
+        Babies = [new AssistantBabyAccess(Guid.NewGuid(), "Lia", "parent", true, true), new AssistantBabyAccess(Guid.NewGuid(), "Theo", "viewer", false, false)],
+        Age = new AssistantBabyAge(97, 13, 3),
+        Days = [Day(new DateOnly(2026, 10, 22), complete: true), Day(new DateOnly(2026, 10, 23), complete: false)],
+        EarliestDate = new DateOnly(2025, 10, 23),
+        LatestDate = new DateOnly(2026, 10, 23),
     };
+
+    private static AssistantDaySummary Day(DateOnly date, bool complete) => new(
+        date,
+        complete,
+        new Lotties.Application.Clinical.SleepDayResponse { Date = date, TotalMinutes = 600, NightMinutes = 480, NapMinutes = 120, Naps = 2, LongestMinutes = 300 },
+        new Lotties.Application.Clinical.FeedingDayResponse { Date = date, Feeds = 7, BottleMl = 360, Breast = 4, Bottle = 3, Solid = 0 },
+        new Lotties.Application.Clinical.DiaperDayResponse { Date = date, Total = 6, Wet = 5, Dirty = 2 });
+
+    [Theory]
+    [InlineData("en-US", "On October 22, Charlotte slept 10 hours with 2 naps, had 7 feeds with 360 ml in bottles, and 6 diapers.")]
+    [InlineData("pt-BR", "Em 22 de outubro, Charlotte dormiu 10 horas com 2 sonecas, teve 7 alimentações, 360 ml em mamadeiras e 6 fraldas.")]
+    public void Say_DaySummary_TellsTheDayTotals(string locale, string expected)
+    {
+        var result = Result(AssistantResultCode.DaySummary, "America/Sao_Paulo") with { Days = [Day(new DateOnly(2026, 10, 22), complete: true)] };
+
+        Assert.Equal(expected, AlexaLanguages.For(locale).Say(result));
+    }
 }
