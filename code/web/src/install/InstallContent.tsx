@@ -188,7 +188,7 @@ export function InstallContent() {
     <Stack spacing={3}>
       <Typography>{t('install.intro')}</Typography>
       <InstallButton showFullGuideLink={false} />
-      <Box>{order.map((os) => sections[os])}</Box>
+      <Stack spacing={1.5}>{order.map((os) => sections[os])}</Stack>
       <Typography color="text.secondary">{t('install.storeNote')}</Typography>
       <Stack spacing={2} component="section" aria-labelledby="install-troubleshooting">
         <Typography id="install-troubleshooting" variant="h6" component="h2">
