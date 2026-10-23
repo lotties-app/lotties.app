@@ -357,6 +357,7 @@ function NowContent({
             action={action}
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
             bedTime={predictions?.bedTime ?? null}
+            {...(predictions ? { predictions } : {})}
           />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard

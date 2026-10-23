@@ -105,7 +105,8 @@
     },
     "ruler": {
       "withWindow": "Acordado desde {{since}}, agora {{now}}. Janela da soneca das {{from}} às {{to}}.",
-      "noWindow": "Acordado desde {{since}}, agora {{now}}."
+      "noWindow": "Acordado desde {{since}}, agora {{now}}.",
+      "legendLabel": "O que a régua mostra"
     },
     "learning": {
       "title": "Aprendendo o ritmo de {{name}}",
@@ -299,7 +300,45 @@
       "legendNap": "Soneca",
       "legendWaking": "Despertar noturno",
       "legendWindow": "Janela de soneca",
+      "legendProjected": "Próximas sonecas (estimativa)",
+      "legendWake": "Despertar provável (estimativa)",
+      "legendBedtime": "Janela da hora de dormir",
       "legendNow": "Agora"
+    },
+    "rhythm": {
+      "night": "Sono da noite das {{from}} às {{to}}, {{duration}}",
+      "nap": "Soneca das {{from}} às {{to}}, {{duration}}",
+      "waking": "Despertar noturno às {{time}}, {{duration}}",
+      "nightRunning": "Sono da noite desde {{time}}, há {{duration}}",
+      "napRunning": "Soneca desde {{time}}, há {{duration}}",
+      "wakingRunning": "Despertar noturno desde {{time}}, há {{duration}}",
+      "window": "Janela da soneca abre às {{from}}, fecha às {{to}}",
+      "windowAhead": "Abre em {{duration}}",
+      "windowOpen": "Aberta agora, fecha em {{duration}}",
+      "windowPast": "A janela fechou às {{time}}",
+      "basisAwake": "Com base no tempo acordado de costume, cerca de {{duration}}",
+      "basisInterval": "Com base no intervalo de costume entre sonecas, cerca de {{duration}}",
+      "face": "Agora, {{time}}, {{state}}",
+      "faceAwake": "acordado",
+      "faceDrowsy": "acordado, janela da soneca aberta",
+      "faceAsleep": "dormindo",
+      "faceTired": "acordado, perto do maior tempo acordado de costume",
+      "awakeFor": "Acordado há {{duration}}",
+      "asleepFor": "Dormindo há {{duration}}",
+      "wakingFor": "Despertar noturno há {{duration}}",
+      "nextWindow": "A seguir: janela da soneca abre às {{time}}",
+      "nextWindowCloses": "A seguir: janela da soneca fecha às {{time}}",
+      "nextBedtime": "A seguir: janela da hora de dormir das {{from}} às {{to}}",
+      "nextWindowEstimate": "A seguir: janela da soneca por volta das {{time}} (estimativa)",
+      "nextWake": "A seguir: deve acordar por volta das {{time}} (estimativa)",
+      "projectedNext": "Próxima janela de soneca por volta de {{from}} a {{to}} (estimativa)",
+      "projectedLater": "Janela de soneca mais tarde, por volta de {{from}} a {{to}} (estimativa)",
+      "projectedBasisAwake": "Com base no tempo acordado de costume, cerca de {{gap}}, e em sonecas de cerca de {{nap}}",
+      "projectedBasisInterval": "Com base no intervalo de costume entre sonecas, cerca de {{gap}}, e em sonecas de cerca de {{nap}}",
+      "wake": "Deve acordar por volta das {{time}} (estimativa)",
+      "wakeBasis": "Com base em sonecas de cerca de {{duration}}",
+      "bedtime": "Janela da hora de dormir por volta de {{from}} a {{to}}",
+      "clear": "Limpar a seleção"
     }
   }
 }
