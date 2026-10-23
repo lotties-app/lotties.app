@@ -98,6 +98,7 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
     {
         var baby = patient.Baby;
         var scopes = patient.Member!.EffectiveDoctorScopes;
+        var view = SectionView.Of(patient.Member);
         await _accessLog.RecordViewAsync(baby.Id, BabyRole.Doctor, cancellationToken);
         return new DoctorPatientResponse
         {
@@ -105,7 +106,7 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
             Name = baby.Name,
             BirthDate = baby.BirthDate,
             DoctorScopes = scopes.Codes,
-            LastEventAt = scopes.Contains(DoctorScope.DailyLog) ? await _events.FindLatestStartAsync(baby.Id, now, cancellationToken) : null,
+            LastEventAt = scopes.Contains(DoctorScope.DailyLog) ? await _events.FindLatestStartAsync(baby.Id, now, view.HiddenEventTypeIds, cancellationToken) : null,
             Week = scopes.Contains(DoctorScope.DailyLog) ? await WeekAsync(baby.Id, clock, now, cancellationToken) : null,
             LatestWeight = scopes.Contains(DoctorScope.Growth) ? await LatestWeightAsync(baby.Id, cancellationToken) : null,
             PendingProposals = scopes.Contains(DoctorScope.Medications) ? await _proposals.CountPendingByAuthorAsync(baby.Id, doctorId, cancellationToken) : null,

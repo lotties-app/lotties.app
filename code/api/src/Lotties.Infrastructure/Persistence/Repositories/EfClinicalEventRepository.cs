@@ -56,26 +56,37 @@ internal sealed class EfClinicalEventRepository(LottiesDbContext context) : ICli
         return Typed(found, keys);
     }
 
-    public async Task<IReadOnlyList<Event>> ListOverlappingAsync(Guid babyId, DateTimeOffset from, DateTimeOffset to, int take, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Event>> ListOverlappingAsync(
+        Guid babyId,
+        DateTimeOffset from,
+        DateTimeOffset to,
+        int take,
+        IReadOnlyCollection<Guid> hiddenTypeIds,
+        CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+        ArgumentNullException.ThrowIfNull(hiddenTypeIds);
         var start = from.ToUniversalTime();
         var end = to.ToUniversalTime();
+        var hidden = hiddenTypeIds.ToList();
         return await context.Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && item.StartedAt < end && (item.EndedAt == null || item.EndedAt > start || item.StartedAt >= start))
+            .Where(item => !hidden.Contains(item.TypeId))
             .OrderBy(item => item.StartedAt)
             .ThenBy(item => item.Id)
             .Take(take)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<DateTimeOffset?> FindLatestStartAsync(Guid babyId, DateTimeOffset notAfter, CancellationToken cancellationToken = default)
+    public async Task<DateTimeOffset?> FindLatestStartAsync(Guid babyId, DateTimeOffset notAfter, IReadOnlyCollection<Guid> hiddenTypeIds, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(hiddenTypeIds);
         var limit = notAfter.ToUniversalTime();
+        var hidden = hiddenTypeIds.ToList();
         return await context.Events
             .AsNoTracking()
-            .Where(item => item.BabyId == babyId && item.StartedAt <= limit)
+            .Where(item => item.BabyId == babyId && item.StartedAt <= limit && !hidden.Contains(item.TypeId))
             .OrderByDescending(item => item.StartedAt)
             .Select(item => (DateTimeOffset?)item.StartedAt)
             .FirstOrDefaultAsync(cancellationToken);

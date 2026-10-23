@@ -1,4 +1,6 @@
+using Lotties.Api.Tests.Support;
 using Lotties.Application.Predictions;
+using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Predictions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -116,8 +118,67 @@ public sealed class PredictionServiceTests
         Assert.Equal(3, missing.RequiredSamples);
     }
 
-    private static PredictionService CreateService(IPredictionHistoryRepository repository) =>
-        new(repository, PredictionOptions.Default, NullLogger<PredictionService>.Instance);
+    [Fact]
+    public async Task GetAsync_DoctorWithoutMedications_LeavesOutTheMedicationDoses()
+    {
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), RegularDoses())), DoctorOf([DoctorScope.DailyLog]));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.DoesNotContain("medication", TypeKeysOf(response!));
+        Assert.Contains("tummy_time", TypeKeysOf(response!));
+    }
+
+    [Fact]
+    public async Task GetAsync_DoctorWithMedications_KeepsTheMedicationDoses()
+    {
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), RegularDoses())), DoctorOf([DoctorScope.DailyLog, DoctorScope.Medications]));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.Contains("medication", TypeKeysOf(response!));
+    }
+
+    [Fact]
+    public async Task GetAsync_Parent_KeepsTheMedicationDoses()
+    {
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), RegularDoses())));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.Contains("medication", TypeKeysOf(response!));
+    }
+
+    /// <summary>A dose and a tummy time every three hours.</summary>
+    private static ObservedEvent[] RegularDoses() =>
+        Enumerable.Range(1, 12)
+            .Select(index => Now.AddHours(-3 * index))
+            .SelectMany(start => new[]
+            {
+                new ObservedEvent(BuiltInEventTypes.Medication.Key, start, null),
+                new ObservedEvent(TummyTime, start, start.AddMinutes(20)),
+            })
+            .ToArray();
+
+    private static string[] TypeKeysOf(PredictionsResponse response) =>
+        response.Predictions.Select(item => item.TypeKey).Concat(response.InsufficientData.Select(item => item.TypeKey)).ToArray();
+
+    private static BabyMember OwnerOf()
+    {
+        var baby = Baby.Create("Lia", new DateOnly(2025, 11, 1), Guid.NewGuid(), Now);
+        return baby.Members.Single();
+    }
+
+    private static BabyMember DoctorOf(IReadOnlyCollection<DoctorScope> scopes)
+    {
+        var ownerId = Guid.NewGuid();
+        var baby = Baby.Create("Lia", new DateOnly(2025, 11, 1), ownerId, Now);
+        var issued = Invite.Issue(baby.Id, BabyRole.Doctor, ownerId, Now, TimeSpan.FromDays(7), DoctorScopeSet.Create(scopes));
+        return baby.AdmitWith(issued.Invite, Guid.NewGuid(), Now, isDeclaredProfessional: true);
+    }
+
+    private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null) =>
+        new(repository, new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()), PredictionOptions.Default, NullLogger<PredictionService>.Instance);
 
     private sealed class FakePredictionHistoryRepository(PredictionHistory? history) : IPredictionHistoryRepository
     {

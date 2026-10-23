@@ -1,3 +1,4 @@
+using Lotties.Application.Babies;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
@@ -22,7 +23,9 @@ namespace Lotties.Application.Events;
 /// (<see cref="FormulaPayload"/>): a referenced formula must be one of the baby's (archived included). Every write to a stored event (edit or delete, no-ops
 /// included) checks that the caller may change it: a Caregiver changes only the events they logged, except that they may
 /// stop, pause or resume someone else's running event (<see cref="Event.EnsureEditableBy"/>, deletes
-/// <see cref="Event.EnsureChangeableBy"/>); creating needs only the role the endpoint policy already checked.
+/// <see cref="Event.EnsureChangeableBy"/>); creating needs only the role the endpoint policy already checked. Reads go
+/// through the caller's <see cref="SectionView"/>: a Doctor without the medications section gets no medication doses (404
+/// for one), and without the formulas section no formula on a bottle.
 /// </remarks>
 internal sealed class EventService : IEventService
 {
@@ -31,6 +34,7 @@ internal sealed class EventService : IEventService
     private readonly IPrescriptionRepository _prescriptions;
     private readonly IFormulaRepository _formulas;
     private readonly IBabyMembershipRepository _memberships;
+    private readonly IBabyAccessService _access;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<EventService> _logger;
@@ -41,6 +45,7 @@ internal sealed class EventService : IEventService
         IPrescriptionRepository prescriptions,
         IFormulaRepository formulas,
         IBabyMembershipRepository memberships,
+        IBabyAccessService access,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
         ILogger<EventService> logger)
@@ -50,6 +55,7 @@ internal sealed class EventService : IEventService
         _prescriptions = prescriptions ?? throw new ArgumentNullException(nameof(prescriptions));
         _formulas = formulas ?? throw new ArgumentNullException(nameof(formulas));
         _memberships = memberships ?? throw new ArgumentNullException(nameof(memberships));
+        _access = access ?? throw new ArgumentNullException(nameof(access));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -80,15 +86,20 @@ internal sealed class EventService : IEventService
         _logger.LogInformation("Soft deleted event {EventId} of baby {BabyId}", eventId, babyId);
     }
 
-    public async Task<EventResponse> GetAsync(Guid babyId, Guid eventId, CancellationToken cancellationToken = default) =>
-        await _events.FindForBabyAsync(babyId, eventId, cancellationToken) ?? throw new EventNotFoundException(babyId, eventId);
+    public async Task<EventResponse> GetAsync(Guid babyId, Guid eventId, CancellationToken cancellationToken = default)
+    {
+        var view = await _access.ViewOfCallerAsync(babyId, cancellationToken);
+        var stored = await _events.FindForBabyAsync(babyId, eventId, cancellationToken);
+        return stored is not null && view.Shows(stored) ? EventResponse.In(stored, view) : throw new EventNotFoundException(babyId, eventId);
+    }
 
     public async Task<EventChangesPage> ListChangesAsync(Guid babyId, ListEventChangesRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var view = await _access.ViewOfCallerAsync(babyId, cancellationToken);
         var pageSize = EventSyncPageSize.From(request.Limit);
         var fetched = await _events.ListChangesAsync(babyId, StartingPoint(request), pageSize.Value + 1, cancellationToken);
-        return BuildPage(fetched, pageSize);
+        return BuildPage(fetched, pageSize, view);
     }
 
     private async Task<UpsertEventResult> CreateAsync(Guid babyId, Guid eventId, UpsertEventRequest request, CancellationToken cancellationToken)
@@ -220,9 +231,13 @@ internal sealed class EventService : IEventService
         _ => null,
     };
 
-    private static EventChangesPage BuildPage(IReadOnlyList<Event> fetched, EventSyncPageSize pageSize)
+    /// <summary>
+    /// The page of <paramref name="view"/>: events it does not show are left out of the items (the cursor still moves past
+    /// them, so a page may be empty and still have a next one).
+    /// </summary>
+    private static EventChangesPage BuildPage(IReadOnlyList<Event> fetched, EventSyncPageSize pageSize, SectionView view)
     {
-        var items = fetched.Take(pageSize.Value).Select(stored => (EventResponse)stored).ToArray();
+        var items = fetched.Take(pageSize.Value).Where(view.Shows).Select(stored => EventResponse.In(stored, view)).ToArray();
         var nextCursor = fetched.Count > pageSize.Value ? EventSyncCursor.After(fetched[pageSize.Value - 1]).Value : null;
         return new EventChangesPage(items, nextCursor);
     }

@@ -1,3 +1,5 @@
+using Lotties.Application.Babies;
+using Lotties.Domain.Babies;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Microsoft.Extensions.Logging;
@@ -7,25 +9,28 @@ namespace Lotties.Application.Predictions;
 internal sealed class PredictionService : IPredictionService
 {
     private readonly IPredictionHistoryRepository _history;
+    private readonly IBabyAccessService _access;
     private readonly PredictionOptions _options;
     private readonly ILogger<PredictionService> _logger;
 
-    public PredictionService(IPredictionHistoryRepository history, PredictionOptions options, ILogger<PredictionService> logger)
+    public PredictionService(IPredictionHistoryRepository history, IBabyAccessService access, PredictionOptions options, ILogger<PredictionService> logger)
     {
         _history = history ?? throw new ArgumentNullException(nameof(history));
+        _access = access ?? throw new ArgumentNullException(nameof(access));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<PredictionsResponse?> GetAsync(Guid babyId, DateTimeOffset now, string? timeZone = null, CancellationToken cancellationToken = default)
     {
-        var history = await _history.LoadAsync(babyId, now - _options.LookBack, cancellationToken);
-        if (history is null)
+        var stored = await _history.LoadAsync(babyId, now - _options.LookBack, cancellationToken);
+        if (stored is null)
         {
             _logger.LogDebug("Predictions requested for unknown baby {BabyId}", babyId);
             return null;
         }
 
+        var history = VisibleIn(stored, await _access.ViewOfCallerAsync(babyId, cancellationToken));
         var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options);
         _logger.LogDebug(
             "Computed {PredictionCount} predictions for baby {BabyId} from {EventCount} events ({InsufficientCount} types lack data)",
@@ -36,6 +41,10 @@ internal sealed class PredictionService : IPredictionService
         var clock = LocalClock.ForZoneOrOffset(timeZone, now.Offset);
         return PredictionsResponse.Create(babyId, now, predictions, Patterns(history, now, clock), WakeWindowOf(history, now, clock), DiapersOf(history, now));
     }
+
+    /// <summary>The history of the event types the caller's view shows (a Doctor without medications predicts no medication dose).</summary>
+    private static PredictionHistory VisibleIn(PredictionHistory history, SectionView view) =>
+        history with { Events = history.Events.Where(item => view.ShowsType(item.TypeKey)).ToArray() };
 
     /// <summary>The next wet and dirty diaper (docs/design/11-patterns.md section 8); elapsed gaps, so no clock is needed.</summary>
     private static DiaperPredictionsResponse DiapersOf(PredictionHistory history, DateTimeOffset now) =>

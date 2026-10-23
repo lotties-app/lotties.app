@@ -34,8 +34,11 @@ public sealed record BabyResponse
     /// </summary>
     public IReadOnlyList<string>? DoctorScopes { get; init; }
 
-    /// <summary>Which recommendations the vaccine schedule shows: <c>public</c> or <c>public+private</c> (additive).</summary>
-    public string VaccineProfile { get; init; } = Domain.Vaccinations.VaccineProfile.PublicCode;
+    /// <summary>
+    /// Which recommendations the vaccine schedule shows: <c>public</c> or <c>public+private</c> (additive); <c>null</c> for a
+    /// Doctor without the vaccines section, like the other two fields of the vaccine profile.
+    /// </summary>
+    public string? VaccineProfile { get; init; }
 
     /// <summary>Weeks of gestation at birth, or <c>null</c> (additive).</summary>
     public int? GestationalAgeWeeks { get; init; }
@@ -48,7 +51,7 @@ public sealed record BabyResponse
     {
         ArgumentNullException.ThrowIfNull(baby);
         ArgumentNullException.ThrowIfNull(member);
-        return new BabyResponse
+        var response = new BabyResponse
         {
             Id = baby.Id,
             Name = baby.Name,
@@ -57,11 +60,16 @@ public sealed record BabyResponse
             CreatedAt = baby.CreatedAt,
             UserId = member.UserId,
             DoctorScopes = MemberScopeCodes.Of(member),
-            VaccineProfile = Domain.Vaccinations.VaccineProfile.CodeOf(baby.VaccineCoverage),
-            GestationalAgeWeeks = baby.GestationalAgeWeeks,
-            RsvMaternalVaccination = baby.RsvMaternalVaccination,
         };
+        return member.Sees(DoctorScope.Vaccines) ? WithVaccineProfile(response, baby) : response;
     }
+
+    private static BabyResponse WithVaccineProfile(BabyResponse response, Baby baby) => response with
+    {
+        VaccineProfile = Domain.Vaccinations.VaccineProfile.CodeOf(baby.VaccineCoverage),
+        GestationalAgeWeeks = baby.GestationalAgeWeeks,
+        RsvMaternalVaccination = baby.RsvMaternalVaccination,
+    };
 }
 
 /// <summary>

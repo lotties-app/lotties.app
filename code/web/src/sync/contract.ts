@@ -244,8 +244,11 @@ export interface BabyDto {
   role?: string;
   /** The caller's own user id (additive; absent from older servers). */
   userId?: string;
-  /** Vaccine profile (additive): `public` or `public+private`. */
-  vaccineProfile?: string;
+  /**
+   * Vaccine profile (additive): `public` or `public+private`; `null`, like the two fields below, for a Doctor the
+   * vaccines section is not shared with.
+   */
+  vaccineProfile?: string | null;
   /** Weeks at birth, 20-44 (additive); `null` = not told. */
   gestationalAgeWeeks?: number | null;
   /** `unknown`, `yes` or `no` (additive); `null` = not answered. */
@@ -661,7 +664,7 @@ const RSV_ANSWERS: readonly RsvMaternalAnswer[] = ['unknown', 'yes', 'no'];
 export function vaccineProfileFromDto(
   dto: Pick<BabyDto, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'>,
 ): Pick<Baby, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'> {
-  const profile = matchEnum(VACCINE_PROFILES, dto.vaccineProfile);
+  const profile = matchEnum(VACCINE_PROFILES, dto.vaccineProfile ?? undefined);
   const rsv = matchEnum(RSV_ANSWERS, dto.rsvMaternalVaccination ?? undefined);
   const weeks = dto.gestationalAgeWeeks;
   return {

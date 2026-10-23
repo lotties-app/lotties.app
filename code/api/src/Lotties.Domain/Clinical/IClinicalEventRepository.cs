@@ -33,10 +33,20 @@ public interface IClinicalEventRepository
 
     /// <summary>
     /// Up to <paramref name="take"/> events overlapping [<paramref name="from"/>, <paramref name="to"/>) (started before
-    /// <paramref name="to"/>, and still running, ended after <paramref name="from"/> or started at or after it), by start then id.
+    /// <paramref name="to"/>, and still running, ended after <paramref name="from"/> or started at or after it), by start then
+    /// id, leaving out the types in <paramref name="hiddenTypeIds"/> (the caller's <c>SectionView.HiddenEventTypeIds</c>).
     /// </summary>
-    Task<IReadOnlyList<Event>> ListOverlappingAsync(Guid babyId, DateTimeOffset from, DateTimeOffset to, int take, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Event>> ListOverlappingAsync(
+        Guid babyId,
+        DateTimeOffset from,
+        DateTimeOffset to,
+        int take,
+        IReadOnlyCollection<Guid> hiddenTypeIds,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>The start of the baby's newest event that started at or before <paramref name="notAfter"/>, or <c>null</c> without one.</summary>
-    Task<DateTimeOffset?> FindLatestStartAsync(Guid babyId, DateTimeOffset notAfter, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The start of the baby's newest event that started at or before <paramref name="notAfter"/>, leaving out the types in
+    /// <paramref name="hiddenTypeIds"/>, or <c>null</c> without one.
+    /// </summary>
+    Task<DateTimeOffset?> FindLatestStartAsync(Guid babyId, DateTimeOffset notAfter, IReadOnlyCollection<Guid> hiddenTypeIds, CancellationToken cancellationToken = default);
 }

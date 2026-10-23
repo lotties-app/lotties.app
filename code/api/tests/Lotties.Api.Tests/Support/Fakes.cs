@@ -57,7 +57,7 @@ internal sealed class FakeMembershipRepository(params BabyMember[] members) : IB
         Task.FromResult(members.FirstOrDefault(member => member.BabyId == babyId && member.UserId == userId));
 }
 
-internal sealed class FakeBabyAccessService(BabyAccessDecision decision) : IBabyAccessService
+internal sealed class FakeBabyAccessService(BabyAccessDecision decision, BabyMember? member = null) : IBabyAccessService
 {
     public List<(Guid BabyId, BabyRole RequiredRole)> Calls { get; } = [];
 
@@ -79,7 +79,7 @@ internal sealed class FakeBabyAccessService(BabyAccessDecision decision) : IBaby
         Task.FromResult<BabyRole?>(decision == BabyAccessDecision.NotMember ? null : BabyRole.Viewer);
 
     public Task<BabyMember?> FindMembershipAsync(Guid babyId, CancellationToken cancellationToken = default) =>
-        Task.FromResult<BabyMember?>(null);
+        Task.FromResult(member);
 }
 
 internal sealed class FakeUserProvisioningService : IUserProvisioningService

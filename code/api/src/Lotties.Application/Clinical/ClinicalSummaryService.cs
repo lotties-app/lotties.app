@@ -93,7 +93,7 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
             GeneratedAt = now,
             Scopes = scopes.Codes,
             Sleep = daily is null ? null : (SleepSectionResponse)SleepSummaries.Summarize(daily.Sleep, window),
-            Feeding = daily is null ? null : (FeedingSectionResponse)FeedingSummaries.Summarize(daily.Feeds, window),
+            Feeding = daily is null ? null : FeedingOf(daily, window, scopes),
             Diapers = daily is null ? null : (DiaperSectionResponse)DiaperSummaries.Summarize(daily.Diapers, window),
             Symptoms = scopes.Contains(DoctorScope.DailyLog) ? await SymptomsAsync(babyId, window, cancellationToken) : null,
             Medications = scopes.Contains(DoctorScope.Medications) ? await MedicationsAsync(babyId, window, cancellationToken) : null,
@@ -108,6 +108,13 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
     {
         var member = await _access.FindMembershipAsync(babyId, cancellationToken) ?? throw new BabyNotFoundException(babyId);
         return member.Role.IsDoctor() ? member.EffectiveDoctorScopes : DoctorScopeSet.All;
+    }
+
+    /// <summary>The feeding section; the formulas the bottles named only with the formulas section (an empty list without it).</summary>
+    private static FeedingSectionResponse FeedingOf(DailyObservations daily, ClinicalWindow window, DoctorScopeSet scopes)
+    {
+        FeedingSectionResponse feeding = FeedingSummaries.Summarize(daily.Feeds, window);
+        return scopes.Contains(DoctorScope.Formulas) ? feeding : feeding with { Formulas = [] };
     }
 
     private async Task<SymptomsSectionResponse> SymptomsAsync(Guid babyId, ClinicalWindow window, CancellationToken cancellationToken)
