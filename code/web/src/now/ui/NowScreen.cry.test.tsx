@@ -224,7 +224,7 @@ describe('"Why is she crying?" on Now', () => {
       SLOW,
     );
     expect(within(card(sheet, 'comfort')).getByText('Helped 1 of your last 3 times')).toBeTruthy();
-    expect(within(card(sheet, 'gas')).getByText('Helped 0 of your last 3 times')).toBeTruthy();
+    expect(within(card(sheet, 'gas')).queryByText(/Helped 0/)).toBeNull();
   });
 
   it('returns the focus to the entry when closed, and closing logs nothing', async () => {

@@ -139,7 +139,7 @@ function CauseCard({
       <Typography variant="body2" color="text.secondary">
         {tryText(rank.cause)}
       </Typography>
-      {stat && (
+      {stat && stat.helped > 0 && (
         <Typography variant="caption" color="text.secondary" component="p">
           {t('cryReasons.suggests.helped', { helped: stat.helped, total: stat.total })}
         </Typography>
