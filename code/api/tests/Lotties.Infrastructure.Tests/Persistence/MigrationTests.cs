@@ -67,6 +67,7 @@ public sealed class MigrationTests
         "20261022230039_Vaccines",
         "20261023005632_FeedingAmounts",
         "20261023023038_CareProviders",
+        "20261023032350_DoctorScopes",
     ];
 
     [Fact]
