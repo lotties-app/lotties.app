@@ -1,0 +1,17 @@
+{
+  "nowLayout": {
+    "running": {
+      "title": "Running now",
+      "more_one": "{{count}} more",
+      "more_other": "{{count}} more",
+      "fewer": "Show fewer"
+    },
+    "quickLog": {
+      "title": "Quick log"
+    },
+    "ring": {
+      "show": "Show the ring",
+      "hide": "Hide the ring"
+    }
+  }
+}

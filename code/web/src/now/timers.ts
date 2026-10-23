@@ -119,16 +119,3 @@ export function forgottenTimers(
   }
   return result;
 }
-
-/**
- * The running timers that have no card of their own on Now: everything except sleep (the state
- * card) and the nursing session (the nursing card), oldest first as given.
- */
-export function otherTimers(
-  running: readonly BabyEvent[],
-  types: readonly EventType[],
-  nursingId: string | null,
-): BabyEvent[] {
-  const sleepIds = typeIdsForKey(types, 'sleep');
-  return running.filter((e) => !sleepIds.has(e.typeId) && e.id !== nursingId);
-}

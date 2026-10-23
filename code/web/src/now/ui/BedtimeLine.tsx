@@ -31,7 +31,11 @@ export function BedtimeLine({ bedTime, now }: { bedTime: BedTimeDto; now: Date }
         <Icon name="moon" size={16} />
         <span>{describeBedTime(bedTime, now)}</span>
       </Typography>
-      <Button size="small" onClick={() => setOpen(true)} sx={{ minHeight: 44, minWidth: 44 }}>
+      <Button
+        size="small"
+        onClick={() => setOpen(true)}
+        sx={{ minHeight: 44, minWidth: 44, flexShrink: 0, whiteSpace: 'nowrap' }}
+      >
         {t('predictions.why')}
       </Button>
       <SheetFrame open={open} onClose={() => setOpen(false)} title={t('now.why.title')}>

@@ -125,7 +125,8 @@ describe('the sleep toggle', () => {
 
     await holdToast();
     expect(await screen.findByText('Nap from 14:12')).toBeTruthy();
-    expect(await screen.findByText('Asleep · Nap')).toBeTruthy();
+    // The pill, and the middle of the day ring when it is open.
+    expect((await screen.findAllByText('Asleep · Nap')).length).toBeGreaterThan(0);
     expect(await screen.findByRole('button', { name: 'Woke up' })).toBeTruthy();
     const created = (await allEvents()).filter(
       (e) => e.payload.kind === 'nap' && e.endedAt === null,
@@ -192,7 +193,8 @@ describe('the sleep toggle', () => {
     const night = await putEvent(db, 'sleep', 252, null, { kind: 'night' });
     renderNow();
 
-    expect(await screen.findByText('Asleep · Night')).toBeTruthy();
+    // The pill, and the middle of the day ring when it is open.
+    expect((await screen.findAllByText('Asleep · Night')).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Up for the day' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Night waking' }));
 
@@ -270,8 +272,10 @@ describe('nursing, left and right', () => {
         .getAttribute('aria-pressed'),
     ).toBe('true');
     expect(within(region).getByText('running')).toBeTruthy();
-    // The nursing session has its own card, not a second row in the timers.
-    expect(screen.queryByRole('region', { name: 'Running timers' })).toBeNull();
+    // The nursing session keeps its own card (with the side clocks) inside Running now, once.
+    const running = screen.getByRole('region', { name: 'Running timers' });
+    expect(running.contains(region)).toBe(true);
+    expect(within(running).queryByRole('article')).toBeNull();
 
     fireEvent.click(within(region).getByRole('button', { name: /^Left/ }));
     await holdToast();

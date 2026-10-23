@@ -99,7 +99,7 @@ const openTray = async () => {
 };
 
 describe('the inbox on Now', () => {
-  it('shows the doctor cards to an Owner right below the state card', async () => {
+  it('shows the doctor cards to an Owner right below the state card (quick log comes first)', async () => {
     await db.proposals.put(proposal('p1'));
     await db.notes.put(recommendation('r1'));
     await renderNow('Owner');
@@ -115,7 +115,7 @@ describe('the inbox on Now', () => {
     expect(
       stateCard.compareDocumentPosition(suggestion) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(suggestion.compareDocumentPosition(log) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(log.compareDocumentPosition(stateCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('is empty when there is nothing from the doctor', async () => {

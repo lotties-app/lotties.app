@@ -5,8 +5,7 @@ import { describeApiError } from '../api/errorMessages';
 import { canLog } from '../baby/permissions';
 import { useEventAccess } from '../baby/useEventAccess';
 import { useEventTypes, useRunningEvents } from '../db/hooks';
-import type { Baby, BabyEvent, EventType } from '../db/models';
-import { EventSheet } from '../events/EventSheet';
+import type { Baby, EventType } from '../db/models';
 import { formatElapsed, useNow } from '../events/time';
 import { formatDuration } from '../i18n/format';
 import { NAV_HEIGHT, NAV_INSET, TIMER_BAR_OFFSET_VAR } from '../layout/navMetrics';
@@ -19,8 +18,9 @@ import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { effectiveElapsedSeconds, isPaused } from './pauseMath';
 import { runningTimers, type RunningTimer } from './runningTimers';
 import { PauseAnnouncer, PauseResumeButton, PausedClock } from './TimerParts';
+import { useInlineTimersShown } from './inlineTimers';
 import { useTimerTitle } from './useTimerTitle';
-import { TimerSheet } from './TimerSheet';
+import { TimerSheetHost } from './TimerSheetHost';
 import { TimerTarget } from './TimerTarget';
 import { useTimerCommands } from './useTimerCommands';
 
@@ -52,12 +52,17 @@ function useBarOffset(visible: boolean) {
   return ref;
 }
 
+/**
+ * An elevated surface that reads apart from the page under it: the paper (raised in the dark
+ * schemes), a visible edge mixed from the text colour, and the lift of the navigation pill.
+ */
 const cardSx = (theme: Parameters<typeof palette>[0]) => ({
   pointerEvents: 'auto' as const,
   overflow: 'hidden',
   borderRadius: `${RADIUS.card}px`,
   backgroundColor: palette(theme).background.paper,
-  boxShadow: `${palette(theme).navShadow}, inset 0 0 0 1px ${palette(theme).hairline}`,
+  border: `1px solid color-mix(in srgb, ${palette(theme).text.primary} 16%, ${palette(theme).hairline})`,
+  boxShadow: palette(theme).navShadow,
   '[data-dark] &': { backgroundColor: palette(theme).surfaceRaised },
 });
 
@@ -250,7 +255,7 @@ function Bar({ baby, timers, readOnly, isLocked, onOpen, onToggle, onStop }: Bar
         })}
       >
         <PauseAnnouncer paused={paused} name={name} />
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, p: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, py: 0.5, px: 1 }}>
           <ButtonBase
             onClick={() => onOpen(main.event.id)}
             aria-label={t('timers.mini.open', { name })}
@@ -267,34 +272,48 @@ function Bar({ baby, timers, readOnly, isLocked, onOpen, onToggle, onStop }: Bar
               pr: 0.5,
             }}
           >
-            <EventIllustration type={main.type} payload={main.event.payload} size={32} />
-            <Box sx={{ minWidth: 0 }}>
+            <EventIllustration type={main.type} payload={main.event.payload} size={28} />
+            {/* One line: name, then the time; it wraps under the name only when text is large. */}
+            <Box
+              sx={{
+                minWidth: 0,
+                flex: '1 1 auto',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'baseline',
+                columnGap: 1,
+              }}
+            >
               <Typography
-                variant="caption"
+                variant="body2"
                 component="span"
-                color="text.secondary"
                 noWrap
-                sx={{ display: 'block', lineHeight: 1.2 }}
+                sx={(theme) => ({
+                  minWidth: 0,
+                  maxWidth: '100%',
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  color: palette(theme).text.primary,
+                })}
               >
                 {name}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <Typography
-                  component="span"
-                  aria-hidden
-                  data-testid="mini-timer-elapsed"
-                  sx={(theme) => ({
-                    fontFamily: theme.typography.fontFamilyDisplay,
-                    fontSize: '1.375rem',
-                    lineHeight: 1.15,
-                    fontVariantNumeric: 'tabular-nums lining-nums',
-                    color: paused ? palette(theme).text.secondary : palette(theme).text.primary,
-                  })}
-                >
-                  {formatElapsed(effective * 1000)}
-                </Typography>
-                {paused && <PausedClock event={main.event} nowMs={nowMs} compact />}
-              </Box>
+              <Typography
+                component="span"
+                aria-hidden
+                data-testid="mini-timer-elapsed"
+                sx={(theme) => ({
+                  fontFamily: theme.typography.fontFamilyDisplay,
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  fontVariantNumeric: 'tabular-nums lining-nums',
+                  color: paused ? palette(theme).text.secondary : palette(theme).text.primary,
+                })}
+              >
+                {formatElapsed(effective * 1000)}
+              </Typography>
+              {paused && <PausedClock event={main.event} nowMs={nowMs} compact />}
               <Box
                 component="span"
                 sx={{
@@ -367,23 +386,26 @@ const NO_TYPES: EventType[] = [];
  * then nursing, then the rest): illustration, live pause-aware time, the quiet target with its
  * progress for a sleep, Pause/Resume and Stop. Several timers add a count chip that opens the
  * list. Tapping the card opens the timer sheet. Hidden in the Night view (its giant buttons do the
- * job) and while nothing runs. Mount it once in the app shell, keyed by baby. The component also
+ * job), on the Now screen (its "Running now" cards show the same timers, `useClaimInlineTimers`)
+ * and while nothing runs. One compact line on an elevated surface; the page reserves its height
+ * through `--timer-bar-offset`, so it never covers content or the pill. Mount it once in the app shell, keyed by baby. The component also
  * owns what outlives the card: the timer sheet, the finish sheet of a stop, and the Undo snackbar.
  */
 export function MiniTimerBar({ baby }: { baby: Baby }) {
   const night = useNightFeed().active;
+  // The Now screen shows the same timers as cards at the top of its page.
+  const inline = useInlineTimersShown();
   const types = useEventTypes(baby.id);
   const running = useRunningEvents(baby.id);
   const commands = useTimerCommands();
   const actions = usePresetActions(baby.id, types ?? NO_TYPES);
   const [sheetId, setSheetId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<BabyEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const readOnly = !canLog(baby);
   const access = useEventAccess(baby);
   const title = useTimerTitle();
 
-  const timers = types && running && !night ? runningTimers(running, types) : [];
+  const timers = types && running && !night && !inline ? runningTimers(running, types) : [];
   const sheetTimer = timers.find((timer) => timer.event.id === sheetId);
 
   const run = (action: () => Promise<unknown>) => {
@@ -410,33 +432,17 @@ export function MiniTimerBar({ baby }: { baby: Baby }) {
           onStop={stop}
         />
       )}
-      {sheetTimer && types && (
-        <TimerSheet
+      {types && (
+        <TimerSheetHost
           babyId={baby.id}
           types={types}
-          event={sheetTimer.event}
+          event={sheetTimer?.event}
           readOnly={readOnly}
-          lockedBy={access.lockedBy(sheetTimer.event)}
-          controlLockedBy={access.controlLockedBy(sheetTimer.event)}
+          access={access}
           commands={commands}
+          actions={actions}
           run={run}
           onClose={() => setSheetId(null)}
-          onStop={(event, label) => {
-            setSheetId(null);
-            run(() => actions.stop(event, { name: label }));
-          }}
-          onEditAll={(event) => {
-            setSheetId(null);
-            setEditing(event);
-          }}
-        />
-      )}
-      {editing && types && (
-        <EventSheet
-          babyId={baby.id}
-          types={types}
-          event={editing}
-          onDone={() => setEditing(null)}
         />
       )}
       {actions.elements}
