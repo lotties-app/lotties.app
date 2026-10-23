@@ -2,7 +2,8 @@ namespace Lotties.Domain.Clinical;
 
 /// <summary>
 /// A logged feed as the clinical summary reads it: its start, the payload <c>method</c> (<c>breast</c>, <c>bottle</c>,
-/// <c>solid</c>), the bottle <c>amount_ml</c> and <c>bottle_feeding_type</c> and the formula members
+/// <c>solid</c>), the bottle's drunk amount (<see cref="Events.BottleAmounts.DrunkMl"/>: <c>amount_drunk_ml</c>, else the
+/// prepared <c>amount_ml</c>, as the web's Insights count it) and <c>bottle_feeding_type</c> and the formula members
 /// (<c>formula_id</c>, <c>formula_name</c>). Callers pass only events that are not soft deleted.
 /// </summary>
 public sealed record FeedObservation(
@@ -20,7 +21,7 @@ public sealed record FeedObservation(
 
     public bool IsBottle => Method == BottleMethod;
 
-    /// <summary>The logged amount of a bottle feed (ml), or <c>null</c> (no amount, or not a bottle).</summary>
+    /// <summary>What the baby drank from a bottle feed (ml), or <c>null</c> (no amount, or not a bottle).</summary>
     public double? BottleMl => IsBottle && AmountMl is > 0 ? AmountMl : null;
 
     /// <summary>Whether it is a bottle of formula: the bottle content says so, or a formula was named.</summary>

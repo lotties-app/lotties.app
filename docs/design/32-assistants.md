@@ -94,10 +94,12 @@ The queries added with the MCP server (`ListBabies`, `ReadBabyProfile`, `ReadDay
 `ReadWeekSummary(endDate?)`) are adapter-neutral too: Alexa renders their codes in both languages (no intent uses them
 yet). The summaries reuse the clinical summary's reader and math unchanged (`DailyObservationReader`, `SleepSummaries`,
 `FeedingSummaries`, `DiaperSummaries`: the day rows of `GET /clinical-summary`, ported from the parents' Insights); the
-tests compare them with that endpoint on the shared golden scenario. Days are the user's local days (her stored zone),
-UTC days when none is known (`timeZone` null). `bottleMl` is that math's number: the bottles' logged `amount_ml`
-(prepared), not the drunk amount the web's Insights use since the feeding amounts change (an existing difference of the
-server math, left as it is here).
+tests compare them with that endpoint on the shared golden scenario. Days are local days in the zone of section 5's zone
+rule; the summaries always name it (`timeZone`, `UTC` when none is known, and `timeZoneSource`: `requested`, `stored`,
+`adapter`, `language`, `utc`), so an assistant can tell the user which days it counted. `bottleMl` is what the baby drank
+(`BottleAmounts.DrunkMl`, the web's `drunkMl`: `amount_drunk_ml`, else the prepared `amount_ml` because a bottle without a
+drunk value was fully drunk, which keeps old bottles' totals); the clinical summary, the formula usage and `last_feed`
+read the same function (docs/design/20-feeding-amounts.md).
 
 ## 4. Which baby
 
@@ -139,9 +141,13 @@ when she logs for at least one. Account deletion removes her row and clears othe
 - **Nursing** starts a timer (`method: breast`, `side`, `side_since`, as the web's `startNursing`) on the side said,
   else opposite to where the last finished feed ended. It is stopped in the app.
 - **Reads** use the clinical event reads (no deleted events), the appointment repository (upcoming only) and the vaccine
-  status engine (`VaccineOverviewReader`, the reminders' engine). Local days and clock times use the user's time zone:
-  the one stored with her notification settings, else the adapter's fallback (pt-BR: `America/Sao_Paulo`; en: none, so
-  answers say "20 minutes ago" and diapers count the last 24 hours).
+  status engine (`VaccineOverviewReader`, the reminders' engine). Local days and clock times use one zone, chosen by
+  `AssistantZoneChoice` (the same rule for every adapter): the zone the caller asked for (an MCP tool's `timeZone`), else
+  the one stored with her notification settings, else the adapter's fallback for the request's language (Alexa pt-BR:
+  `America/Sao_Paulo`), else `America/Sao_Paulo` when her app language is Portuguese (Brazil) (the locale of her newest
+  active push subscription, the only language the server keeps), else none. With none, answers say "20 minutes ago",
+  diapers today count the last 24 hours (`window: last_day`), and the day summaries use UTC days and say so
+  (`timeZone: "UTC"`, `timeZoneSource: "utc"`): never silently.
 
 ## 6. The Alexa adapter (`POST /api/v1/alexa`)
 
@@ -251,7 +257,8 @@ request's scheme and host (after the trusted proxy headers) plus `/api/v1/mcp`. 
 ### 9.3 Tools
 
 Every tool but `list_babies` takes an optional `babyId` (from `list_babies`; without it the baby choice of section 4
-applies, and several babies answer `choose_baby`, whose text names `list_babies`). Schemas are strict
+applies, and several babies answer `choose_baby`, whose text names `list_babies`) and an optional `timeZone` (an IANA id
+the server knows, else `invalid_arguments`; it wins over the stored zone, section 5). Schemas are strict
 (`additionalProperties: false`, exact JSON types, no coercion) and come from the same definitions the validator enforces
 (`McpParameter`). Descriptions end with "Facts from the parents' own Lotties log, not medical advice." Hints: reads
 `readOnlyHint: true`; writes `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: true`; all

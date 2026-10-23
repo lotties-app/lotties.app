@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Lotties.Domain.Notifications;
 
 namespace Lotties.Api.Assistants.Mcp;
 
@@ -22,6 +23,9 @@ internal enum McpParameterKind
 
     /// <summary>An idempotency key: <see cref="McpParameter.Min"/>..<see cref="McpParameter.Max"/> characters of <c>[A-Za-z0-9._:-]</c>.</summary>
     Key,
+
+    /// <summary>An IANA time zone id the server knows (<c>America/Sao_Paulo</c>).</summary>
+    TimeZone,
 }
 
 /// <summary>
@@ -45,6 +49,11 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         Min: MinKeyLength,
         Max: MaxKeyLength);
 
+    public static McpParameter TimeZone { get; } = new(
+        "timeZone",
+        McpParameterKind.TimeZone,
+        "The IANA time zone to answer in, e.g. America/Sao_Paulo (local days and times). Omit it to use the family's zone stored in Lotties; the result always names the zone it used.");
+
     /// <summary>The parameter's JSON schema (draft 2020-12 keywords).</summary>
     public JsonObject Schema() => Kind switch
     {
@@ -53,6 +62,7 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         McpParameterKind.Choice => new JsonObject { ["type"] = "string", ["enum"] = new JsonArray(Values!.Select(value => (JsonNode)JsonValue.Create(value)).ToArray()), ["description"] = Description },
         McpParameterKind.Date => new JsonObject { ["type"] = "string", ["format"] = "date", ["pattern"] = DatePattern, ["description"] = Description },
         McpParameterKind.Key => new JsonObject { ["type"] = "string", ["minLength"] = Min, ["maxLength"] = Max, ["pattern"] = KeyPattern, ["description"] = Description },
+        McpParameterKind.TimeZone => new JsonObject { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = NotificationTimeZone.MaxLength, ["description"] = Description },
         _ => throw new InvalidOperationException($"Unknown parameter kind {Kind}."),
     };
 
@@ -74,6 +84,9 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         McpParameterKind.Key => element.ValueKind == JsonValueKind.String && element.GetString() is { } key && key.Length >= Min && key.Length <= Max && KeyRegex().IsMatch(key)
             ? (key, null)
             : (null, $"{Name} must be {Min} to {Max} characters of letters, digits, '.', '_', ':' or '-'."),
+        McpParameterKind.TimeZone => element.ValueKind == JsonValueKind.String && NotificationTimeZone.TryFrom(element.GetString(), out var zone)
+            ? (zone.Value, null)
+            : (null, $"{Name} must be an IANA time zone id such as America/Sao_Paulo."),
         _ => (null, $"{Name} is not supported."),
     };
 
@@ -103,6 +116,8 @@ internal sealed class McpArguments
     public Guid? BabyId => _values.TryGetValue(McpParameter.BabyId.Name, out var value) ? (Guid)value : null;
 
     public string? IdempotencyKey => _values.TryGetValue(McpParameter.IdempotencyKey.Name, out var value) ? (string)value : null;
+
+    public string? TimeZone => _values.TryGetValue(McpParameter.TimeZone.Name, out var value) ? (string)value : null;
 
     /// <summary>The arguments, or the first error in parameter order (unknown members first).</summary>
     public static (McpArguments? Arguments, McpArgumentError? Error) Parse(IDictionary<string, JsonElement>? arguments, IReadOnlyList<McpParameter> parameters)

@@ -173,6 +173,9 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
     [InlineData("log_diaper", """{"kind":"wet","idempotencyKey":"has spaces in it"}""", "idempotencyKey")]
     [InlineData("get_day_summary", """{"date":"23/10/2026"}""", "date")]
     [InlineData("list_babies", """{"babyId":"6f3c2b1e-9a54-5d7e-8c21-4b0e7d9a1f35"}""", "babyId")]
+    [InlineData("get_day_summary", """{"timeZone":"Mars/Olympus_Mons"}""", "timeZone")]
+    [InlineData("log_diaper", """{"kind":"wet","timeZone":42}""", "timeZone")]
+    [InlineData("list_babies", """{"timeZone":"America/Sao_Paulo"}""", "timeZone")]
     public async Task Call_InvalidArguments_IsAToolErrorNamingTheFieldAndWritesNothing(string tool, string arguments, string field)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -183,6 +186,32 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
         Assert.True(result.IsError);
         Assert.Equal(("invalid_arguments", field), (Code(result), Structured(result).GetProperty("field").GetString()));
         Assert.Empty(await Factory.EventsAsync(baby.BabyId));
+    }
+
+    [Fact]
+    public async Task DaySummary_AlwaysNamesTheZoneItUsed_RequestedOrUtc()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        await using var client = await host.ClientAsync(host.TokenFor(baby.OwnerSubject));
+
+        var requested = await client.CallToolAsync("get_day_summary", Args(("timeZone", "America/Sao_Paulo")));
+        var unknown = await client.CallToolAsync("get_week_summary", Args());
+
+        Assert.Equal(("America/Sao_Paulo", "requested"), (Structured(requested).GetProperty("timeZone").GetString(), Structured(requested).GetProperty("timeZoneSource").GetString()));
+        Assert.Equal(("UTC", "utc"), (Structured(unknown).GetProperty("timeZone").GetString(), Structured(unknown).GetProperty("timeZoneSource").GetString()));
+        Assert.Contains("days in UTC", Text(unknown), StringComparison.Ordinal);
+        Assert.Equal(7, Structured(unknown).GetProperty("days").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task ListTools_EveryToolButListBabies_TakesATimeZone()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        await using var client = await host.ClientAsync(host.TokenFor(baby.OwnerSubject, McpApiHost.ReadWrite));
+
+        var tools = (await client.ListToolsAsync()).Select(tool => tool.ProtocolTool).ToArray();
+
+        Assert.Equal(["list_babies"], tools.Where(tool => !tool.InputSchema.GetProperty("properties").TryGetProperty("timeZone", out _)).Select(tool => tool.Name));
     }
 
     [Fact]

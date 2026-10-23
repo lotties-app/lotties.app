@@ -156,6 +156,14 @@ public sealed record AssistantResult
 
     public string? TimeZone { get; init; }
 
+    /// <summary>
+    /// Where <see cref="TimeZone"/> came from, on the day-based summaries (<see cref="AssistantResultCode.DaySummary"/>,
+    /// <see cref="AssistantResultCode.WeekSummary"/>, <see cref="AssistantResultCode.InvalidDate"/>), which always name the zone
+    /// their days are in (<c>UTC</c> with <see cref="AssistantZoneSource.Utc"/> when none is known).
+    /// </summary>
+    [JsonConverter(typeof(SnakeCaseStringEnumConverter))]
+    public AssistantZoneSource? TimeZoneSource { get; init; }
+
     public DateTimeOffset? At { get; init; }
 
     public DateTimeOffset? EndedAt { get; init; }

@@ -68,7 +68,7 @@ internal sealed class McpToolRunner(
             return (McpToolResults.InvalidArguments, McpToolResults.Error(McpToolResults.InvalidArguments, error.Message, error.Field));
         }
 
-        var invocation = new AssistantInvocation(AdapterName, RequestIdOf(tool, user, arguments!), FallbackTimeZone: null, arguments!.BabyId);
+        var invocation = new AssistantInvocation(AdapterName, RequestIdOf(tool, user, arguments!), FallbackTimeZone: null, arguments!.BabyId, arguments.TimeZone);
         try
         {
             return Rendered(await tool.Run(assistant, invocation, arguments, cancellationToken));

@@ -78,6 +78,23 @@ internal static class AssistantTestKit
         });
     }
 
+    /// <summary>Stores an active push subscription of the user in <paramref name="locale"/> (the app language the server knows).</summary>
+    public static Task SeedPushSubscriptionAsync(this ApiFactory factory, Guid userId, string locale) =>
+        factory.SeedAsync(context =>
+        {
+            context.PushSubscriptions.Add(PushSubscription.Create(
+                userId,
+                PushEndpoint.From($"https://fcm.googleapis.com/fcm/send/{Guid.NewGuid():N}"),
+                PushKeys.Create(Base64Url([0x04, .. Enumerable.Range(1, 64).Select(value => (byte)value)]), Base64Url(Enumerable.Range(100, 16).Select(value => (byte)value).ToArray())),
+                NotificationLocale.FromOrDefault(locale),
+                "Test browser",
+                expiresAt: null,
+                DateTimeOffset.UtcNow));
+            return Task.CompletedTask;
+        });
+
+    private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
     /// <summary>A user who is a member of each baby with the given role (babies of a new owner each).</summary>
     public static async Task<(string Subject, Guid[] BabyIds)> SeedMemberOfAsync(this ApiFactory factory, params BabyRole[] roles)
     {

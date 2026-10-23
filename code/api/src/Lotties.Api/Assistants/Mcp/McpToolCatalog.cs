@@ -176,10 +176,10 @@ internal static class McpToolCatalog
     public static IReadOnlyList<McpTool> AllowedBy(IReadOnlySet<string> scopes) => All.Where(tool => scopes.Contains(tool.Scope)).ToArray();
 
     private static McpTool Read(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run) =>
-        new(name, title, description + Facts, McpScopes.Read, parameters, run);
+        new(name, title, description + Facts, McpScopes.Read, parameters.Length == 0 ? parameters : [.. parameters, McpParameter.TimeZone], run);
 
     private static McpTool Write(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run) =>
-        new(name, title, description + Retry + Facts, McpScopes.Write, [McpParameter.BabyId, .. parameters, McpParameter.IdempotencyKey], run);
+        new(name, title, description + Retry + Facts, McpScopes.Write, [McpParameter.BabyId, .. parameters, McpParameter.IdempotencyKey, McpParameter.TimeZone], run);
 
     private static BottleKind BottleKindOf(string? kind) => kind switch
     {

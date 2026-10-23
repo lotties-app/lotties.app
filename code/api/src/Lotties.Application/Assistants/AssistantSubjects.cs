@@ -14,7 +14,7 @@ internal enum AssistantAccess
 }
 
 /// <summary>The baby a command acts on, the caller's role, the zone to tell local times in and the command's clock.</summary>
-internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now)
+internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc)
 {
     /// <summary>A result about this subject's baby.</summary>
     public AssistantResult Result(AssistantResultCode code) =>
@@ -32,14 +32,17 @@ internal sealed record AssistantFamilyLookup(IReadOnlyList<AssistantFamilyMember
 
 /// <summary>
 /// Resolves the subject of a command for the current user: her family memberships and stored default
-/// (<see cref="AssistantBabyChoice"/>), the role the command needs, and her time zone (the one stored with her notification
-/// settings, else the adapter's fallback).
+/// (<see cref="AssistantBabyChoice"/>), the role the command needs, and her time zone (<see cref="AssistantZoneChoice"/>: the
+/// requested one, else the one stored with her notification settings, else the adapter's fallback, else
+/// <c>America/Sao_Paulo</c> when her app language is Portuguese (Brazil): the locale of her newest push subscription, the
+/// only language the server keeps).
 /// </summary>
 internal sealed class AssistantSubjects(
     ICurrentUser currentUser,
     IBabyRepository babies,
     IUserAssistantSettingsRepository assistantSettings,
     IUserNotificationSettingsRepository notificationSettings,
+    IPushSubscriptionRepository pushSubscriptions,
     TimeProvider timeProvider)
 {
     public async Task<AssistantSubjectLookup> LoadAsync(AssistantInvocation invocation, AssistantAccess access, CancellationToken cancellationToken = default)
@@ -56,8 +59,8 @@ internal sealed class AssistantSubjects(
         }
 
         var baby = userBabies.Single(candidate => candidate.Id == babyId);
-        var zoneId = await ZoneIdAsync(user.Id, invocation.FallbackTimeZone, cancellationToken);
-        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zoneId), zoneId, now);
+        var zone = await ZoneAsync(user.Id, invocation, now, cancellationToken);
+        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source);
         return Allows(subject.Role, access)
             ? new AssistantSubjectLookup(subject, null)
             : new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));
@@ -91,14 +94,22 @@ internal sealed class AssistantSubjects(
         return new AssistantFamilyLookup(family, null, now);
     }
 
-    private async Task<string?> ZoneIdAsync(Guid userId, string? fallback, CancellationToken cancellationToken)
+    private async Task<AssistantZone> ZoneAsync(Guid userId, AssistantInvocation invocation, DateTimeOffset now, CancellationToken cancellationToken)
     {
         var stored = await notificationSettings.FindAsync(userId, cancellationToken);
         var storedZone = stored?.TimeZone.Value;
-        return !string.IsNullOrEmpty(storedZone) ? storedZone : KnownZoneOrNull(fallback);
+        var appLocale = string.IsNullOrEmpty(storedZone) && !NotificationTimeZone.TryFrom(invocation.TimeZone, out _) && !NotificationTimeZone.TryFrom(invocation.FallbackTimeZone, out _)
+            ? await AppLocaleAsync(userId, now, cancellationToken)
+            : null;
+        return AssistantZoneChoice.Decide(invocation.TimeZone, storedZone, invocation.FallbackTimeZone, appLocale);
     }
 
-    private static string? KnownZoneOrNull(string? zoneId) => NotificationTimeZone.TryFrom(zoneId, out var zone) ? zone.Value : null;
+    /// <summary>The language of the user's most recently seen active push subscription (her app's language), or <c>null</c>.</summary>
+    private async Task<string?> AppLocaleAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var subscriptions = await pushSubscriptions.ListActiveForUserAsync(userId, cancellationToken);
+        return subscriptions.Where(subscription => subscription.IsActiveAt(now)).MaxBy(subscription => subscription.LastSeenAt)?.Locale.Value;
+    }
 
     private static TimeZoneInfo? ZoneOf(string? zoneId) => zoneId is null ? null : TimeZoneInfo.FindSystemTimeZoneById(zoneId);
 

@@ -11,7 +11,11 @@ namespace Lotties.Application.Assistants;
 /// The baby the user named (an MCP tool's <c>babyId</c>), or <c>null</c> for her assistant baby (stored default, else the
 /// only one). A baby that is not one of her family memberships answers <see cref="AssistantResultCode.UnknownBaby"/>.
 /// </param>
-public sealed record AssistantInvocation(string Adapter, string RequestId, string? FallbackTimeZone = null, Guid? BabyId = null)
+/// <param name="TimeZone">
+/// The IANA zone the user asked to be answered in (an MCP tool's <c>timeZone</c>), or <c>null</c>: it wins over her stored zone
+/// (<see cref="Domain.Assistants.AssistantZoneChoice"/>). An unknown id is ignored.
+/// </param>
+public sealed record AssistantInvocation(string Adapter, string RequestId, string? FallbackTimeZone = null, Guid? BabyId = null, string? TimeZone = null)
 {
     /// <summary>The longest adapter name or request id accepted.</summary>
     public const int MaxIdLength = 200;

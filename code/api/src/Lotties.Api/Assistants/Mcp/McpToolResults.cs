@@ -92,7 +92,7 @@ internal static class McpResultText
             AssistantResultCode.UnknownBaby => "unknown_baby: that babyId is not one of the user's babies; call list_babies.",
             AssistantResultCode.RateLimited => "rate_limited: too many requests; try again in a minute.",
             AssistantResultCode.InvalidAmount => $"invalid_amount: the amount must be from {result.Min} to {result.Max} ml.",
-            AssistantResultCode.InvalidDate => $"invalid_date: the date must be from {result.EarliestDate:yyyy-MM-dd} to {result.LatestDate:yyyy-MM-dd}.",
+            AssistantResultCode.InvalidDate => $"invalid_date: the date must be from {result.EarliestDate:yyyy-MM-dd} to {result.LatestDate:yyyy-MM-dd}{DaysIn(result)}.",
             AssistantResultCode.SleepStarted => $"Sleep started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.SleepAlreadyRunning => $"{baby} is already sleeping, since {Time(result, result.At)}; nothing was logged.",
             AssistantResultCode.SleepEnded => $"{baby} woke up at {Time(result, result.At)}{Minutes(", after ", result.Minutes, " minutes of sleep")}.",
@@ -114,8 +114,8 @@ internal static class McpResultText
             AssistantResultCode.NoVaccinesDue => $"No vaccine dose is due for {baby} by the schedule.",
             AssistantResultCode.Babies => $"{result.Babies.Count} babies.",
             AssistantResultCode.BabyProfile => $"{baby} is {result.Age?.Days} days old.",
-            AssistantResultCode.DaySummary => $"Summary of {baby}'s day {result.Days.FirstOrDefault()?.Date:yyyy-MM-dd}.",
-            AssistantResultCode.WeekSummary => $"Summary of {baby}'s 7 days up to {result.Days.LastOrDefault()?.Date:yyyy-MM-dd}.",
+            AssistantResultCode.DaySummary => $"Summary of {baby}'s day {result.Days.FirstOrDefault()?.Date:yyyy-MM-dd}{DaysIn(result)}.",
+            AssistantResultCode.WeekSummary => $"Summary of {baby}'s 7 days up to {result.Days.LastOrDefault()?.Date:yyyy-MM-dd}{DaysIn(result)}.",
             _ => AssistantResult.CodeName(result.Code),
         };
     }
@@ -132,6 +132,11 @@ internal static class McpResultText
             ? $"{TimeZoneInfo.ConvertTime(value, zone).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} {zoneId}"
             : $"{value.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
     }
+
+    /// <summary>" (days in America/Sao_Paulo)", or the UTC notice when no zone is known: never silently UTC.</summary>
+    private static string DaysIn(AssistantResult result) => result.TimeZoneSource == Domain.Assistants.AssistantZoneSource.Utc
+        ? " (days in UTC: no time zone is set for this family; pass timeZone to use local days)"
+        : $" (days in {result.TimeZone})";
 
     private static string Minutes(string before, int? minutes, string after) =>
         minutes is { } value ? $"{before}{value.ToString(CultureInfo.InvariantCulture)}{after}" : string.Empty;

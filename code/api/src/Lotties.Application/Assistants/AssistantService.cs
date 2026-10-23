@@ -134,9 +134,10 @@ internal sealed class AssistantService(
         var clock = ClockOf(subject);
         var today = clock.DateOf(subject.Now);
         var earliest = today.AddDays(-SummaryHistoryDays);
+        var zoned = subject.Result(code) with { TimeZone = subject.ZoneId ?? AssistantZoneChoice.UtcId, TimeZoneSource = subject.ZoneSource };
         if (lastDay is { } asked && (asked > today || asked < earliest))
         {
-            return subject.Result(AssistantResultCode.InvalidDate) with { EarliestDate = earliest, LatestDate = today };
+            return zoned with { Code = AssistantResultCode.InvalidDate, EarliestDate = earliest, LatestDate = today };
         }
 
         var window = ClinicalWindow.Create(ClinicalRange.LastDays(lastDay ?? today, dayCount), clock, subject.Now);
@@ -147,7 +148,7 @@ internal sealed class AssistantService(
         var days = window.Days
             .Select((day, index) => new AssistantDaySummary(day.Date, day.Date < today, sleep.Days[index], feeding.Days[index], diapers.Days[index]))
             .ToArray();
-        return subject.Result(code) with { Days = days };
+        return zoned with { Days = days };
     }
 
     private static AssistantResult Profile(AssistantSubject subject)
@@ -161,7 +162,7 @@ internal sealed class AssistantService(
     private static AssistantBabyAccess AccessOf(AssistantFamilyMember member) =>
         new(member.Baby.Id, member.Baby.Name, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
 
-    /// <summary>The user's local clock, or UTC days when her zone is unknown.</summary>
+    /// <summary>The user's local clock, or UTC days when no zone is known (summaries then report <c>UTC</c>).</summary>
     private static LocalClock ClockOf(AssistantSubject subject) =>
         subject.Zone is { } zone ? LocalClock.InZone(zone) : LocalClock.WithOffset(TimeSpan.Zero);
 

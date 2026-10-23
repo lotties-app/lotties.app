@@ -3,6 +3,7 @@ using Lotties.Api.Tests.Support;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
+using Lotties.Domain.EventTypes;
 using Microsoft.AspNetCore.Mvc.Testing;
 using static Lotties.Api.Tests.Assistants.AssistantTestKit;
 using static Lotties.Api.Tests.Support.ClinicalTestData;
@@ -97,9 +98,78 @@ public sealed class AssistantQueriesTests(ApiFactory factory) : IClassFixture<Ap
 
         var result = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadDaySummaryAsync(Invocation(), new DateOnly(2026, 1, 9)));
 
-        Assert.Null(result.TimeZone);
+        Assert.Equal(("UTC", (AssistantZoneSource?)AssistantZoneSource.Utc), (result.TimeZone, result.TimeZoneSource));
         // 9 January UTC is 8 January 21:00 to 9 January 21:00 in São Paulo: the night from 21:00 (9 h 30) and the 90-minute nap.
         Assert.Equal(660, Assert.Single(result.Days).Sleep.TotalMinutes);
+    }
+
+    /// <summary>
+    /// The zone rule (AssistantZoneChoice): a diaper at 22:00 on 9 January in São Paulo is 01:00 UTC on 10 January, so it counts
+    /// on 9 January only when the days are São Paulo's.
+    /// </summary>
+    [Theory]
+    [InlineData(null, null, null, null, "UTC", AssistantZoneSource.Utc, 0)]
+    [InlineData(null, "America/Sao_Paulo", null, null, "America/Sao_Paulo", AssistantZoneSource.Stored, 1)]
+    [InlineData(null, "Asia/Tokyo", null, null, "Asia/Tokyo", AssistantZoneSource.Stored, 0)]
+    [InlineData("America/Sao_Paulo", "Asia/Tokyo", null, null, "America/Sao_Paulo", AssistantZoneSource.Requested, 1)]
+    [InlineData("Not/AZone", "Asia/Tokyo", null, null, "Asia/Tokyo", AssistantZoneSource.Stored, 0)]
+    [InlineData(null, null, "America/Sao_Paulo", null, "America/Sao_Paulo", AssistantZoneSource.Adapter, 1)]
+    [InlineData(null, null, null, "pt-BR", "America/Sao_Paulo", AssistantZoneSource.Language, 1)]
+    [InlineData(null, null, null, "en", "UTC", AssistantZoneSource.Utc, 0)]
+    public async Task DaySummary_ZoneRule_RequestedThenStoredThenAdapterThenAppLanguageElseUtc(
+        string? requested, string? stored, string? adapterFallback, string? appLocale, string expectedZone, AssistantZoneSource expectedSource, int diapersOnThe9th)
+    {
+        var baby = await factory.SeedBabyAsync();
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        await factory.SeedAsync(context =>
+        {
+            context.Events.Add(NewEvent(baby.BabyId, ownerId, BuiltInEventTypes.DiaperId, Local(9, 22), Local(9, 22), """{"content":"WET"}"""));
+            return Task.CompletedTask;
+        });
+        if (stored is not null)
+        {
+            await factory.SetTimeZoneAsync(baby.OwnerSubject, stored);
+        }
+
+        if (appLocale is not null)
+        {
+            await factory.SeedPushSubscriptionAsync(ownerId, appLocale);
+        }
+
+        var invocation = Invocation(fallbackZone: adapterFallback) with { TimeZone = requested };
+        var ninth = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadDaySummaryAsync(invocation, new DateOnly(2026, 1, 9)));
+        var week = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadWeekSummaryAsync(invocation, new DateOnly(2026, 1, 10)));
+
+        Assert.Equal((expectedZone, (AssistantZoneSource?)expectedSource), (ninth.TimeZone, ninth.TimeZoneSource));
+        Assert.Equal((expectedZone, (AssistantZoneSource?)expectedSource), (week.TimeZone, week.TimeZoneSource));
+        Assert.Equal(diapersOnThe9th, Assert.Single(ninth.Days).Diapers.Total);
+        Assert.Equal((diapersOnThe9th, 1 - diapersOnThe9th), (week.Days[^2].Diapers.Total, week.Days[^1].Diapers.Total));
+    }
+
+    [Fact]
+    public async Task DaySummary_BottleMl_IsTheDrunkAmount_AsTheClinicalSummaryAndLastFeedCountIt()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        await factory.SetTimeZoneAsync(baby.OwnerSubject, Zone);
+        await factory.SeedAsync(context =>
+        {
+            context.Events.AddRange(
+                NewEvent(baby.BabyId, ownerId, BuiltInEventTypes.FeedingId, Local(9, 6), Local(9, 6, 15), """{"method":"bottle","amount_ml":120,"amount_drunk_ml":80,"bottle_feeding_type":"formula"}"""),
+                NewEvent(baby.BabyId, ownerId, BuiltInEventTypes.FeedingId, Local(9, 10), Local(9, 10, 15), """{"method":"bottle","amount_ml":90,"bottle_feeding_type":"breast_milk"}"""),
+                NewEvent(baby.BabyId, ownerId, BuiltInEventTypes.FeedingId, Local(9, 14), Local(9, 14, 15), """{"method":"bottle","amount_ml":60}"""),
+                NewEvent(baby.BabyId, ownerId, BuiltInEventTypes.FeedingId, Local(10, 7), Local(10, 7, 10), """{"method":"bottle","amount_ml":150,"amount_drunk_ml":110}"""));
+            return Task.CompletedTask;
+        });
+
+        var ninth = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadDaySummaryAsync(Invocation(), new DateOnly(2026, 1, 9)));
+        var last = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadLastFeedAsync(Invocation()));
+        var summary = await (await _host.ClientFor(baby.OwnerSubject).GetAsync($"/api/v1/babies/{baby.BabyId}/clinical-summary?from=2026-01-09&to=2026-01-10&{ZoneQuery}")).ReadAsync<JsonElement>();
+
+        // 80 drunk of 120, 90 with no drunk value (all of it), 60 of a legacy bottle (no type, no drunk value).
+        Assert.Equal((3, 230d), (Assert.Single(ninth.Days).Feeding.Bottle, ninth.Days[0].Feeding.BottleMl));
+        Assert.Equal([230d, 110d], summary.GetProperty("feeding").GetProperty("days").EnumerateArray().Select(day => day.GetProperty("bottleMl").GetDouble()));
+        Assert.Equal(110, last.AmountMl);
     }
 
     [Theory]
