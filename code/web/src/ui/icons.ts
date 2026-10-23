@@ -7,6 +7,7 @@ import IconPencil from '@tabler/icons-react/dist/esm/icons/IconPencil.mjs';
 import IconTrash from '@tabler/icons-react/dist/esm/icons/IconTrash.mjs';
 import IconArchive from '@tabler/icons-react/dist/esm/icons/IconArchive.mjs';
 import IconShare from '@tabler/icons-react/dist/esm/icons/IconShare.mjs';
+import IconDownload from '@tabler/icons-react/dist/esm/icons/IconDownload.mjs';
 import IconCopy from '@tabler/icons-react/dist/esm/icons/IconCopy.mjs';
 import IconFileUpload from '@tabler/icons-react/dist/esm/icons/IconFileUpload.mjs';
 import IconChevronDown from '@tabler/icons-react/dist/esm/icons/IconChevronDown.mjs';
@@ -248,6 +249,7 @@ export const ICON_COMPONENTS = {
   hospital: IconBuildingHospital,
   'star-filled': IconStarFilled,
   'external-link': IconExternalLink,
+  download: IconDownload,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

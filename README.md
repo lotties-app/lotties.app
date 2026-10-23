@@ -57,6 +57,16 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 
 Never commit `.env`. See `.env.example` for placeholders.
 
+## Install on your phone
+
+Lotties is a web app you add from the browser, no app store needed. Full guide with pictures: <https://lotties.app/install>.
+
+- **iPhone or iPad** (iOS/iPadOS 16.4 or later): open lotties.app in Safari, tap Share (bottom toolbar, or under ••• on newer iOS; top right on iPad), scroll to **Add to Home Screen**, tap **Add**, then open Lotties from the Home Screen. On iPhone and iPad notifications only work in the Home Screen app. Chrome, Edge and Firefox on recent iOS can do the same from their Share menu; Safari is the most reliable.
+- **Android**: in Chrome tap **Install app** on the page, or the menu (three dots) > **Install app** (or **Add to Home screen**) > **Install**. Samsung Internet: menu > **Add page to** > **Home screen**. Then allow notifications when Lotties asks.
+- **Computer**: Chrome or Edge, the install icon at the right of the address bar; Safari on a Mac, **File > Add to Dock**.
+
+Inside Instagram, Facebook or another app's browser the option is missing: open the page in Safari or Chrome first.
+
 ## Credits and open-source acknowledgements
 
 Lotties is free software and stands on the work of many people: the open-source libraries it ships, the public data it uses

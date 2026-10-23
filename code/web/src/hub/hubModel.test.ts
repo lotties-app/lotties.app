@@ -17,6 +17,7 @@ const ctx = (role: Baby['role'] | null, extra: Partial<HubContext> = {}): HubCon
   hasPatients: false,
   hasDoctorContent: false,
   native: false,
+  installed: false,
   ...extra,
 });
 
@@ -24,7 +25,15 @@ describe('who sees which entry', () => {
   it('shows the baby entries only with a baby', () => {
     const ids = visibleEntries(ctx(null)).map((e) => e.id);
     // Without a baby, a person can still restore a backup into a new one.
-    expect(ids).toEqual(['settings', 'backupImport', 'updates', 'about', 'credits']);
+    expect(ids).toEqual([
+      'settings',
+      'backupImport',
+      'install',
+      'updates',
+      'welcome',
+      'about',
+      'credits',
+    ]);
   });
 
   it.each(['Owner', 'Parent', 'Caregiver', 'Viewer', 'Doctor', null] as const)(
@@ -32,6 +41,17 @@ describe('who sees which entry', () => {
     (role) => {
       expect(isEntryVisible('credits', ctx(role))).toBe(true);
       expect(isEntryVisible('credits', ctx(role, { native: true }))).toBe(true);
+    },
+  );
+
+  it.each(['Owner', 'Parent', 'Caregiver', 'Viewer', 'Doctor', null] as const)(
+    'shows Home page to every role and Install the app until it is installed: %s',
+    (role) => {
+      expect(isEntryVisible('welcome', ctx(role))).toBe(true);
+      expect(isEntryVisible('welcome', ctx(role, { native: true }))).toBe(true);
+      expect(isEntryVisible('install', ctx(role))).toBe(true);
+      expect(isEntryVisible('install', ctx(role, { installed: true }))).toBe(false);
+      expect(isEntryVisible('install', ctx(role, { native: true }))).toBe(false);
     },
   );
 

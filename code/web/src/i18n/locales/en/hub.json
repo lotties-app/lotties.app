@@ -115,6 +115,16 @@
         "hint": "Restore a file exported from the app",
         "keywords": "backup restore upload file json move account"
       },
+      "install": {
+        "title": "Install the app",
+        "hint": "On your phone or computer",
+        "keywords": "install home screen add phone iphone android pwa app shortcut"
+      },
+      "welcome": {
+        "title": "Home page",
+        "hint": "The Lotties welcome page",
+        "keywords": "home welcome landing page start website"
+      },
       "updates": {
         "title": "Check for updates",
         "hint": "Get the latest version",

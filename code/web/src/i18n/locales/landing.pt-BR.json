@@ -7,7 +7,8 @@
     "text": "Levando você para a página de entrada"
   },
   "header": {
-    "signIn": "Entrar"
+    "signIn": "Entrar",
+    "backToApp": "Voltar ao app"
   },
   "notice": {
     "failedTitle": "Não foi possível entrar",
@@ -23,7 +24,8 @@
     "headline": "Acompanhe o dia do seu bebê, em conjunto",
     "sub": "Sono, mamadas, fraldas e remédios em um só lugar tranquilo. Funciona sem internet e compartilha com quem cuida junto com você.",
     "signIn": "Entrar",
-    "register": "Criar uma conta"
+    "register": "Criar uma conta",
+    "openApp": "Abrir o app"
   },
   "features": {
     "title": "O que ele faz",
@@ -68,6 +70,7 @@
     }
   },
   "footer": {
+    "install": "Instalar o app",
     "language": "Idioma",
     "languageSystem": "Sistema",
     "theme": "Tema",

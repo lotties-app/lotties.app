@@ -12,7 +12,7 @@ import { useThemeMode } from '../theme/ThemeModeContext';
 import { useNightFeed } from '../theme/NightFeedContext';
 import type { ThemeMode } from '../theme/theme';
 import { NIGHT_FEED_SETTINGS, type NightFeedSetting } from '../theme/nightFeed';
-import { InstallAppButton } from '../pwa/InstallAppButton';
+import { InstallButton } from '../install/InstallButton';
 
 const OPTIONS: ThemeMode[] = ['system', 'light', 'dark'];
 
@@ -67,7 +67,7 @@ export function AppearanceSection() {
           {t('settings.appearance.nightFeedHint')}
         </FormHelperText>
       </FormControl>
-      <InstallAppButton />
+      <InstallButton />
     </Stack>
   );
 }

@@ -85,7 +85,9 @@ describe('the sections', () => {
       'import',
       'export',
       'backupImport',
+      'install',
       'updates',
+      'welcome',
       'about',
       'credits',
     ]);
@@ -96,6 +98,8 @@ describe('the sections', () => {
     expect(href('invite')).toBe('/hub/family#invite');
     expect(href('settings')).toBe('/settings');
     expect(href('updates')).toBe('/hub/updates');
+    expect(href('install')).toBe('/hub/install');
+    expect(href('welcome')).toBe('/welcome');
   });
 
   it('hides what a Caregiver and a Viewer cannot use', async () => {
@@ -110,7 +114,9 @@ describe('the sections', () => {
       'notes',
       'members',
       'settings',
+      'install',
       'updates',
+      'welcome',
       'about',
       'credits',
     ]);

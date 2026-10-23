@@ -115,6 +115,16 @@
         "hint": "Restaure um arquivo exportado do app",
         "keywords": "backup restaurar enviar arquivo json mudar conta"
       },
+      "install": {
+        "title": "Instalar o app",
+        "hint": "No celular ou no computador",
+        "keywords": "instalar tela inicio adicionar celular iphone android pwa app atalho"
+      },
+      "welcome": {
+        "title": "Página inicial",
+        "hint": "A página de boas-vindas do Lotties",
+        "keywords": "inicio boas vindas pagina inicial site comecar"
+      },
       "updates": {
         "title": "Buscar atualizações",
         "hint": "Receba a versão mais recente",

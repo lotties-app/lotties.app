@@ -36,7 +36,9 @@ export const HUB_ENTRY_IDS = [
   'import',
   'export',
   'backupImport',
+  'install',
   'updates',
+  'welcome',
   'about',
   'credits',
 ] as const;
@@ -68,7 +70,9 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'import', section: 'app', icon: 'upload-file', to: '/hub/import' },
   { id: 'export', section: 'app', icon: 'archive', to: '/hub/export' },
   { id: 'backupImport', section: 'app', icon: 'cloud-upload', to: '/hub/backup' },
+  { id: 'install', section: 'app', icon: 'download', to: '/hub/install' },
   { id: 'updates', section: 'app', icon: 'refresh', to: '/hub/updates' },
+  { id: 'welcome', section: 'app', icon: 'home', to: '/welcome' },
   { id: 'about', section: 'app', icon: 'info', to: '/hub/about' },
   { id: 'credits', section: 'app', icon: 'heart', to: '/hub/credits' },
 ];
@@ -82,6 +86,8 @@ export interface HubContext {
   hasDoctorContent: boolean;
   /** The iOS/Android app: store releases update it, so there is no update check. */
   native: boolean;
+  /** Running as the installed web app (standalone): nothing left to install. */
+  installed: boolean;
 }
 
 /** Whether the person sees the entry (role-aware: the server enforces the same rules). */
@@ -91,7 +97,10 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
     case 'settings':
     case 'about':
     case 'credits':
+    case 'welcome':
       return true;
+    case 'install':
+      return !ctx.native && !ctx.installed;
     case 'updates':
       return !ctx.native;
     case 'patients':
