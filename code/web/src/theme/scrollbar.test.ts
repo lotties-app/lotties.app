@@ -65,17 +65,22 @@ describe('themed scrollbars', () => {
   it('keep the bar clear of the rounded corners of sheets and dialogs', () => {
     expect(fine['*::-webkit-scrollbar-track']).toEqual({ marginBlock: 4 });
     expect(
-      fine[
-        '.MuiDrawer-paper::-webkit-scrollbar-track, .MuiDialog-paper::-webkit-scrollbar-track'
-      ],
+      fine['.MuiDrawer-paper::-webkit-scrollbar-track, .MuiDialog-paper::-webkit-scrollbar-track'],
     ).toEqual({ marginBlock: RADIUS.sheetTop });
   });
 
   it('read the CSS variables of the scheme, which carry each scheme token', () => {
-    expect(theme.vars.palette.scrollThumb).toMatch(/^var\(--mui-palette-scrollThumb[,)]/);
-    expect(theme.vars.palette.scrollThumbHover).toMatch(/^var\(--mui-palette-scrollThumbHover[,)]/);
+    expect(theme.vars?.palette.scrollThumb).toMatch(/^var\(--mui-palette-scrollThumb[,)]/);
+    expect(theme.vars?.palette.scrollThumbHover).toMatch(
+      /^var\(--mui-palette-scrollThumbHover[,)]/,
+    );
+    const schemes = (
+      theme as unknown as {
+        colorSchemes: Record<'light' | 'dark' | 'night', { palette: typeof theme.palette }>;
+      }
+    ).colorSchemes;
     for (const [name, tokens] of Object.entries(SCHEMES)) {
-      const palette = theme.colorSchemes[name as keyof typeof theme.colorSchemes]!.palette;
+      const palette = schemes[name as keyof typeof schemes].palette;
       expect(palette.scrollThumb).toBe(tokens.scrollThumb);
       expect(palette.scrollThumbHover).toBe(tokens.scrollThumbHover);
     }

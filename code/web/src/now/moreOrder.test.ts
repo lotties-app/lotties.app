@@ -133,7 +133,13 @@ describe('orderMoreTypes', () => {
   it('promotes a tile only from two uses in the window', () => {
     const one = orderMoreTypes(presets(), [logged(DIAPER_T, 1)], ME, NOW, 'en');
     expect(ids(one)[0]).toBe('bath');
-    const two = orderMoreTypes(presets(), times(2, () => logged(DIAPER_T, 1)), ME, NOW, 'en');
+    const two = orderMoreTypes(
+      presets(),
+      times(2, () => logged(DIAPER_T, 1)),
+      ME,
+      NOW,
+      'en',
+    );
     expect(ids(two)[0]).toBe('diaper');
     expect(ids(two).slice(1, 4)).toEqual(['bath', 'bedtime', 'bottle']);
   });

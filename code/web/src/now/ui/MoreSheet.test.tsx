@@ -12,7 +12,7 @@ import { NOW_TYPES, putEvent } from './nowKit';
 
 let db: BabyRoutineDb;
 let actions: PresetActions;
-let onClose: ReturnType<typeof vi.fn>;
+let onClose: ReturnType<typeof vi.fn<() => void>>;
 
 beforeEach(() => {
   db = testDatabase();
@@ -111,9 +111,7 @@ describe('More sheet search', () => {
 
     fireEvent.change(input, { target: { value: 'AMAMENTACAO' } });
     expect(grid.textContent).toMatch(/Amamentação/);
-    expect(within(screen.getByRole('search')).getByRole('status').textContent).toBe(
-      '1 resultado',
-    );
+    expect(within(screen.getByRole('search')).getByRole('status').textContent).toBe('1 resultado');
   });
 
   it('keeps the usage order under a query', async () => {

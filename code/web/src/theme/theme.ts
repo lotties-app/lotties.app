@@ -167,8 +167,9 @@ function scrollbarStyles({ thumb, hover }: typeof SCROLLBAR_VARS) {
         backgroundColor: hover,
       },
       '*::-webkit-scrollbar-button': { display: 'none', width: 0, height: 0 },
-      '.MuiDrawer-paper::-webkit-scrollbar-track, .MuiDialog-paper::-webkit-scrollbar-track':
-        { marginBlock: RADIUS.sheetTop },
+      '.MuiDrawer-paper::-webkit-scrollbar-track, .MuiDialog-paper::-webkit-scrollbar-track': {
+        marginBlock: RADIUS.sheetTop,
+      },
     },
   };
 }
