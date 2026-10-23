@@ -1,6 +1,5 @@
 import { clearCachedPredictions } from '../predictions/predictionsCache';
 import { clearPinned } from '../presets/pinnedStorage';
-import { clearTimeBottles } from '../presets/timeBottlesStorage';
 import { clearSelectedBabyId } from '../baby/selectedBabyStorage';
 import { clearLastUsedForBaby } from '../events/lastUsedValues';
 import { clearLastSeen } from '../now/lastSeen';
@@ -57,7 +56,6 @@ export function clearBabyDeviceState(babyIds: string[]): void {
     clearSelectedBabyId(id);
     clearCachedPredictions(id);
     clearPinned(id);
-    clearTimeBottles(id);
     clearLastUsedForBaby(id);
     clearLastSeen(id);
   }

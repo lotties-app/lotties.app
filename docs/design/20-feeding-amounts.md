@@ -62,10 +62,16 @@ A bottle has two amounts in the generic feeding payload (no new table):
 
 ## 3. Setting: Time bottle feedings (default off)
 
-- Stored **per baby, on this device**, in localStorage `baby-routine.time-bottles.<babyId>` (`presets/timeBottlesStorage.ts`),
-  the same pattern as the pinned presets (`pinnedStorage.ts`): cleared when the baby leaves the device
-  (`clearBabyDeviceState`) and on sign-out or account switch (`clearAccountDeviceState`). It is not synced: another
-  device has its own choice. Settings > Feeding (shown to roles that log events).
+- A preference of the **signed-in account**: one value for all its babies, because caregivers differ (one parent
+  records when the feeding ended, the other does not). Stored on this device in the account's localStorage entries,
+  key `baby-routine.time-bottles` (`presets/timeBottlesStorage.ts`), like the pinned presets: cleared on sign-out
+  or account switch (`clearAccountDeviceState`, `claimDeviceState`) so it never leaks between accounts; leaving one
+  baby does not touch it. Settings > Feeding, next to Appearance and Language, shown when the user can log events
+  on at least one baby; the helper text says it applies to the account on all babies.
+- **Migration.** The first version stored it per baby (`baby-routine.time-bottles.<babyId>`). On first read the
+  old keys are folded in once: if any baby had it on, the preference is on; the old keys are then deleted.
+- **Follow-up (not done):** it is not synced, so a second device of the same account has its own choice; syncing it
+  would need a server-side per-user preferences store.
 - **Off (default):** the Bottle quick action (the Bottle preset: Track sheet, More sheet, pinned tile) does not start
   a timer. It opens the event sheet for a new bottle as a moment (start = end = now, no "Still running"), which asks
   the prepared and drunk amounts. The Feed tray already logged a bottle at once and keeps doing so, now with the

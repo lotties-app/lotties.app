@@ -80,15 +80,6 @@ export function SettingsPage() {
           >
             <EventTypesSection baby={baby} />
           </SettingsSection>
-          {canLog(baby) && (
-            <SettingsSection
-              id="feeding"
-              title={t('feedingAmounts.timeBottles.title')}
-              defaultExpanded={wants('feeding')}
-            >
-              <FeedingSection babyId={baby.id} />
-            </SettingsSection>
-          )}
         </>
       ) : (
         <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
@@ -107,6 +98,15 @@ export function SettingsPage() {
           defaultExpanded={wants('notifications')}
         >
           <NotificationsSection babies={babies} publicKey={push.publicKey} />
+        </SettingsSection>
+      )}
+      {babies.some(canLog) && (
+        <SettingsSection
+          id="feeding"
+          title={t('feedingAmounts.timeBottles.title')}
+          defaultExpanded={wants('feeding')}
+        >
+          <FeedingSection />
         </SettingsSection>
       )}
       <SettingsSection

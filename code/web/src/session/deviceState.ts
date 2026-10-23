@@ -12,7 +12,7 @@ import {
 import { clearAllLastSeen } from '../now/lastSeen';
 import { clearAllCachedPredictions } from '../predictions/predictionsCache';
 import { clearAllPinned } from '../presets/pinnedStorage';
-import { clearAllTimeBottles } from '../presets/timeBottlesStorage';
+import { clearTimeBottles } from '../presets/timeBottlesStorage';
 
 /** Which account (its database name, not the raw subject) the entries below belong to. */
 const ACCOUNT_KEY = 'baby-routine.account';
@@ -28,7 +28,7 @@ export function clearAccountDeviceState(): void {
   forgetSelectedBaby();
   clearAllCachedPredictions();
   clearAllPinned();
-  clearAllTimeBottles();
+  clearTimeBottles();
   clearAllLastUsed();
   clearAllLastSeen();
   clearAllBellyDismissals();
