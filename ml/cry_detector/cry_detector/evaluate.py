@@ -20,7 +20,8 @@ from pathlib import Path
 
 import numpy as np
 
-from . import HOP_S, SAMPLE_RATE as SR
+from . import HOP_S
+from . import SAMPLE_RATE as SR
 from . import audio as A
 from .corpus import Clip, inventory, load
 from .fetch import cache_dir
@@ -44,7 +45,11 @@ from .trigger import TriggerParams, detect
 
 CACHE_VERSION = "v1"
 MODELS = ["yamnet_baby", "yamnet_cry", "yamnet_head", "baseline"]
-THRESHOLDS = [0.01, 0.02, 0.03, 0.04] + [round(float(t), 2) for t in np.arange(0.05, 0.96, 0.05)]
+THRESHOLDS = (
+    [0.002, 0.005, 0.01, 0.02, 0.03, 0.04]
+    + [round(float(t), 2) for t in np.arange(0.05, 0.96, 0.05)]
+    + [0.97, 0.98, 0.99, 0.995]
+)
 NEEDS = [10.0, 15.0, 20.0, 30.0]
 WINDOWS = [30.0, 60.0]
 SMOOTHS = [1, 3]
@@ -59,7 +64,7 @@ GRACE_S = 4 * HOP_S
 def cached(path: Path, build, rebuild: bool):
     if path.exists() and not rebuild:
         with path.open("rb") as fh:
-            return pickle.load(fh)  # noqa: S301 (written by this harness, never downloaded)
+            return pickle.load(fh)
     t0 = time.perf_counter()
     value = build()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -150,10 +155,11 @@ def _rate(run: dict, keys) -> float:
 
 
 def headline(run: dict) -> dict:
-    """The selection numbers: detection over the usable conditions (all but 0 dB SNR and the closed door), over all
-    conditions and over the near ones; false alarms per 24 h on household days and on the one-type stress days."""
+    """The selection numbers: detection over the in-room conditions (the monitor is in the baby's room: near, 10 and
+    5 dB SNR, realistic days), over all conditions (adds 0 dB, open and closed door) and over the near ones; false
+    alarms per 24 h on household days and on the one-type stress days."""
     conditions = [c.name for c in POSITIVE_CONDITIONS] + [k for k in run["detection"] if k.startswith("real:")]
-    usable = [k for k in conditions if not k.endswith("snr0") and not k.endswith("other_room")]
+    usable = [k for k in conditions if not k.endswith(("snr0", "other_room", "door_open"))]
     det = [r for k in usable for r in run["detection"].get(k, [])]
     household = [n for k, v in run["false_alarms"].items() if k.endswith(":household") or k.startswith("real:") for n in v]
     stress = [
@@ -224,8 +230,31 @@ def detection_table(run: dict) -> dict:
     return {k: summarise(v) for k, v in sorted(run["detection"].items())}
 
 
+def poisson_upper(count: int, days: int, level: float = 0.95) -> float:
+    """One-sided upper confidence bound of a Poisson rate per day (0 events in n days gives about 3/n)."""
+    from scipy.stats import chi2
+
+    return float(chi2.ppf(level, 2 * (count + 1)) / 2 / max(1, days))
+
+
 def fa_table(run: dict) -> dict:
-    return {k: {"days": len(v), "per_24h": float(np.mean(v)), "max": int(max(v))} for k, v in sorted(run["false_alarms"].items())}
+    out = {
+        k: {"days": len(v), "count": int(sum(v)), "per_24h": float(np.mean(v)), "upper95_per_24h": poisson_upper(int(sum(v)), len(v)), "max": int(max(v))}
+        for k, v in sorted(run["false_alarms"].items())
+    }
+    groups = {
+        "all_household": [n for k, v in run["false_alarms"].items() if k.endswith(":household") or k.startswith("real:") for n in v],
+        "all_stress": [
+            n
+            for k, v in run["false_alarms"].items()
+            if k.split(":")[0] in NEGATIVE_BEDS and k.split(":")[1] not in ("none", "household")
+            for n in v
+        ],
+        "all_bed_only": [n for k, v in run["false_alarms"].items() if k.endswith(":none") or k.startswith("pos-bed:") for n in v],
+    }
+    for k, v in groups.items():
+        out[k] = {"days": len(v), "count": int(sum(v)), "per_24h": float(np.mean(v)) if v else 0.0, "upper95_per_24h": poisson_upper(int(sum(v)), len(v)), "max": int(max(v)) if v else 0}
+    return out
 
 
 def confusion(items, scores, model: str, threshold: float, labels: list[str] | None) -> dict:
@@ -370,25 +399,34 @@ def markdown(res: dict) -> str:
     for row in res["corpus"]:
         lines.append(f"| {row['split']} | {row['source']} | {row['clips']} | {row['cry']} |")
     lines += ["", "## Defaults chosen on the validation days", ""]
-    lines += ["| model | level | params | val detection | val household FA/24h | test detection | test household FA/24h | test latency median s |", "|---|---|---|---|---|---|---|---|"]
+    lines += [
+        "| model | level | params | val in-room det. | val all det. | val household FA/24h | val stress FA/24h | test in-room det. | test all det. | test near det. | test household FA/24h | test stress FA/24h | test latency median s |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
     for m, levels in res["defaults"].items():
         for level, d in levels.items():
-            p = d["params"]
+            p, v, t = d["params"], d["val"], d["test"]
             lines.append(
                 f"| {m} | {level} | T={p['threshold']} N={p['need_s']:g} M={p['window_s']:g} smooth={p['smooth']} | "
-                f"{d['val']['detection_rate']:.3f} | {d['val']['household_fa_per_24h']:.2f} | "
-                f"{d['test']['detection_rate']:.3f} | {d['test']['household_fa_per_24h']:.2f} | {d['test']['latency_median_s']} |"
+                f"{v['detection_rate']:.3f} | {v['detection_all']:.3f} | {v['household_fa_per_24h']:.2f} | {v['stress_fa_per_24h']:.2f} | "
+                f"{t['detection_rate']:.3f} | {t['detection_all']:.3f} | {t['detection_near']:.3f} | {t['household_fa_per_24h']:.2f} | "
+                f"{t['stress_fa_per_24h']:.2f} | {t['latency_median_s'] if t['latency_median_s'] is None else round(t['latency_median_s'], 1)} |"
             )
     for m, block in res["test"].items():
-        lines += ["", f"## Test days, {m} at the standard default", "", "| condition | episodes | detected | rate | latency median s | p90 s | start error median s | fragmented |", "|---|---|---|---|---|---|---|---|"]
+        lines += ["", f"## Test days, {m} at the standard default", "", "| condition | episodes | detected | rate | Wilson 95 % | latency median s | p90 s | start error median s | fragmented |", "|---|---|---|---|---|---|---|---|---|"]
+
+        def fmt(x):
+            return f"{x:.1f}" if isinstance(x, (int, float)) else "-"
+
         for k, v in block["detection"].items():
+            lo, hi = v.get("wilson95", (0, 1))
             lines.append(
-                f"| {k} | {v.get('episodes')} | {v.get('detected')} | {v.get('detection_rate', 0):.3f} | "
-                f"{v.get('latency_median_s', '-')} | {v.get('latency_p90_s', '-')} | {v.get('start_error_median_s', '-')} | {v.get('fragmented')} |"
+                f"| {k} | {v.get('episodes')} | {v.get('detected')} | {v.get('detection_rate', 0):.3f} | {lo:.2f}-{hi:.2f} | "
+                f"{fmt(v.get('latency_median_s'))} | {fmt(v.get('latency_p90_s'))} | {fmt(v.get('start_error_median_s'))} | {v.get('fragmented')} |"
             )
-        lines += ["", "| days | n | false alarms per 24 h | max |", "|---|---|---|---|"]
+        lines += ["", "| days | n | false alarms | per 24 h | upper 95 % per 24 h | max in a day |", "|---|---|---|---|---|---|"]
         for k, v in block["false_alarms"].items():
-            lines.append(f"| {k} | {v['days']} | {v['per_24h']:.2f} | {v['max']} |")
+            lines.append(f"| {k} | {v['days']} | {v['count']} | {v['per_24h']:.2f} | {v['upper95_per_24h']:.2f} | {v['max']} |")
         lines += ["", "False alarm causes (segment under the trigger window): " + ", ".join(f"{c[0]}/{c[1]} {n}" for c, n in block["causes"])]
     lines += ["", "## Window metrics (test library, all conditions)", "", "| model | ROC AUC | average precision | best F1 | at default T: precision | recall | FPR |", "|---|---|---|---|---|---|---|"]
     for m, w in res["windows"].items():
@@ -542,7 +580,11 @@ def main(argv: list[str] | None = None) -> int:
         "p99_by_category": {m: mean_scores_by_category(test_items, test_scores, m) for m in MODELS},
     }
     if not args.quick:
-        res["clip_level"] = clip_level(cache, yam, head, baseline, by_split["test"], args.seed + 3, args.ast_workers, args.skip_ast)
+        res["clip_level"] = cached(
+            store / f"clip_level_{tag}{'_noast' if args.skip_ast else ''}.pkl",
+            lambda: clip_level(cache, yam, head, baseline, by_split["test"], args.seed + 3, args.ast_workers, args.skip_ast),
+            args.rebuild,
+        )
     res["meta"]["runtime_s"] = round(time.perf_counter() - t_start)
     (out / "results.json").write_text(json.dumps(to_jsonable(res), indent=1))
     (out / "results.md").write_text(markdown(to_jsonable(res)))

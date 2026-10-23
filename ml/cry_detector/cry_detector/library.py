@@ -17,7 +17,8 @@ from pathlib import Path
 
 import numpy as np
 
-from . import SAMPLE_RATE as SR, WINDOW
+from . import SAMPLE_RATE as SR
+from . import WINDOW
 from . import audio as A
 from .corpus import ESC_GROUPS, Clip, load
 from .features import features as baseline_features

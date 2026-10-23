@@ -108,6 +108,16 @@ def test_missed_episode():
     assert summarise(results)["detection_rate"] == 0.0
 
 
+def test_intervals():
+    from cry_detector.evaluate import poisson_upper
+    from cry_detector.metrics import wilson
+
+    lo, hi = wilson(48, 48)
+    assert hi == 1.0 and 0.92 < lo < 0.93
+    assert abs(poisson_upper(0, 36) - 3.0 / 36) < 0.002  # "rule of three"
+    assert poisson_upper(5, 10) > 0.5
+
+
 def test_order_and_determinism():
     rng = np.random.default_rng(1)
     s = rng.random(5000)

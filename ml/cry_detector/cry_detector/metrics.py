@@ -75,15 +75,27 @@ def match(events: list[CryEvent], episodes: list[tuple[float, float]], grace_s: 
     return results, false_alarms
 
 
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95 % Wilson score interval of a proportion."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = k / n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    return (round(float(max(0.0, centre - half)), 4), round(float(min(1.0, centre + half)), 4))
+
+
 def summarise(results: list[EpisodeResult]) -> dict:
     if not results:
         return {"episodes": 0}
     lat = np.array([r.latency_s for r in results if r.detected])
     err = np.array([r.start_error_s for r in results if r.detected])
+    k, n = int(sum(r.detected for r in results)), len(results)
     out = {
-        "episodes": len(results),
-        "detected": int(sum(r.detected for r in results)),
-        "detection_rate": float(np.mean([r.detected for r in results])),
+        "episodes": n,
+        "detected": k,
+        "detection_rate": k / n,
+        "wilson95": wilson(k, n),
         "fragmented": int(sum(r.fragments > 1 for r in results)),
     }
     if lat.size:

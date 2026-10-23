@@ -14,8 +14,8 @@ import numpy as np
 from . import HOP_S
 from .library import NEGATIVE_BEDS, POSITIVE_CONDITIONS, Item
 
-DAY_WINDOWS = int(round(24 * 3600 / HOP_S))
-MIN_EPISODE_GAP = int(round(600 / HOP_S))
+DAY_WINDOWS = round(24 * 3600 / HOP_S)
+MIN_EPISODE_GAP = round(600 / HOP_S)
 EPISODES_PER_DAY = 8
 
 # Negative stretches per 24 h. "household" is a guess at a busy home with a baby (stated as such in the report); the

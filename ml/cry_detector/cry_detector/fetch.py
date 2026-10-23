@@ -48,7 +48,7 @@ def cache_dir(arg: str | None) -> Path:
 
 def _download(src: Source, dest: Path) -> None:
     tmp = dest.with_suffix(dest.suffix + ".part")
-    with urllib.request.urlopen(src.url, timeout=120) as resp, tmp.open("wb") as out:  # noqa: S310 (pinned https)
+    with urllib.request.urlopen(src.url, timeout=120) as resp, tmp.open("wb") as out:
         while chunk := resp.read(1 << 20):
             out.write(chunk)
     tmp.replace(dest)

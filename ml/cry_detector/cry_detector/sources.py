@@ -33,7 +33,10 @@ SOURCES: dict[str, Source] = {
         filename="yamnet.tflite",
         sha256="4d8b4a53282dc83ef04e3e7dbc4fbc98082e34e44ed798e16c3a0cdd4c584faf",
         size=4_126_810,
-        licence="Apache-2.0 (tensorflow/models research/audioset/yamnet); the MediaPipe page names no licence",
+        licence=(
+            "Apache-2.0 (tensorflow/models research/audioset/yamnet; Kaggle google/yamnet lists all variants as "
+            "Apache 2.0); the MediaPipe page for this file names no licence"
+        ),
         note="MediaPipe Tasks Audio Classifier model (YAMNet, float32, 521 AudioSet classes, 15600-sample input)",
     ),
     "ast": Source(

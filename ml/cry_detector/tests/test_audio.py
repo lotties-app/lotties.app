@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from cry_detector import SAMPLE_RATE as SR, WINDOW
+from cry_detector import SAMPLE_RATE as SR
+from cry_detector import WINDOW
 from cry_detector import audio as A
 from cry_detector.ast_features import MAX_FRAMES, fbank, input_values, mel_filters
 from cry_detector.features import NAMES, features
@@ -35,7 +36,7 @@ def test_beds_have_the_requested_rms_and_are_seeded():
 def test_wall_filter_removes_high_frequencies():
     x = harmonic_cry()
     y = A.other_room(x, np.random.default_rng(0), wall=True)
-    spec = lambda s: np.abs(np.fft.rfft(s)) ** 2  # noqa: E731
+    spec = lambda s: np.abs(np.fft.rfft(s)) ** 2
     f = np.fft.rfftfreq(len(x), 1 / SR)
     hi = f > 3000
     ratio_x = spec(x)[hi].sum() / spec(x).sum()

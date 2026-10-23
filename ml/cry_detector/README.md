@@ -39,7 +39,7 @@ $env:BR_CRY_CACHE = "C:\path\outside\the\repo\cry-cache"
 ```
 
 Bash: the same with `export BR_CRY_CACHE=...` and `.venv/bin/python`. Options: `--skip-ast` (no AST clip-level
-comparison, saves about 10 minutes), `--rebuild` (re-score the cached libraries after a code change),
+comparison, saves about 20 minutes), `--rebuild` (re-score the cached libraries after a code change),
 `--positive-days`, `--negative-days`, `--seed`.
 
 What `evaluate` does:

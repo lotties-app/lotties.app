@@ -4,14 +4,15 @@ The lower bound: infant cry is loud, voiced, with a fundamental of about 300-600
 in bursts of about a second. The features say that and nothing more: band energies (50-250, 250-700, 1000-5000 Hz and
 100-7000 Hz), band ratios, spectral flatness and centroid, voicing (normalised autocorrelation peak for a fundamental of
 250-700 Hz), the share of voiced frames, the median fundamental and the frame energy spread. A logistic regression on
-them is the "simple classifier" (scorers.BaselineModel).
+them is the "simple classifier" (scorers.fit_logistic, fitted in evaluate.py).
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from . import SAMPLE_RATE as SR, WINDOW
+from . import SAMPLE_RATE as SR
+from . import WINDOW
 
 FRAME = 400
 HOP = 160
