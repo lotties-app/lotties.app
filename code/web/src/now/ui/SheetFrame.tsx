@@ -12,14 +12,30 @@ export interface SheetFrameProps {
   subtitle?: string;
   /** Icon or stamp before the title. */
   leading?: ReactNode;
+  /** Takes the whole screen height on phones (long content scrolls inside). */
+  fullHeight?: boolean;
   children: ReactNode;
 }
+
+/** Full height on phones, at most the screen height elsewhere; the paper scrolls. */
+const FULL_HEIGHT = {
+  height: { xs: 'calc(100dvh - 16px)', sm: 'auto' },
+  maxHeight: 'calc(100dvh - 16px)',
+} as const;
 
 /**
  * The bottom sheet of the Now trays and the Why sheet: a handle, a titled header with a close
  * button, then the content. Named by its title; Esc, the scrim and the close button dismiss it.
  */
-export function SheetFrame({ open, onClose, title, subtitle, leading, children }: SheetFrameProps) {
+export function SheetFrame({
+  open,
+  onClose,
+  title,
+  subtitle,
+  leading,
+  fullHeight = false,
+  children,
+}: SheetFrameProps) {
   const { t } = useTranslation();
   const titleId = useId();
   return (
@@ -30,7 +46,12 @@ export function SheetFrame({ open, onClose, title, subtitle, leading, children }
       slotProps={{
         paper: {
           'aria-labelledby': titleId,
-          sx: { maxWidth: CONTENT_MAX_WIDTH, mx: 'auto', width: '100%' },
+          sx: {
+            maxWidth: CONTENT_MAX_WIDTH,
+            mx: 'auto',
+            width: '100%',
+            ...(fullHeight ? FULL_HEIGHT : {}),
+          },
         },
       }}
     >

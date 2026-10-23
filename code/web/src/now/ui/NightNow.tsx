@@ -35,6 +35,8 @@ interface Props {
   running: ReactNode;
   onOpenFeed: () => void;
   onOpenDiaper: () => void;
+  /** The quiet "Why is she crying?" entry, after the sleep buttons (only for those who log). */
+  cryEntry?: ReactNode;
 }
 
 function GiantButton({
@@ -148,7 +150,15 @@ function headline(state: NowState): { key: HeadlineKey; minutes: number } | null
  * now", the nursing session with its large side clocks), then the state line and the one primary
  * action. The screen is kept awake while this view is open.
  */
-export function NightNow({ model, babyName, action, running, onOpenFeed, onOpenDiaper }: Props) {
+export function NightNow({
+  model,
+  babyName,
+  action,
+  running,
+  onOpenFeed,
+  onOpenDiaper,
+  cryEntry,
+}: Props) {
   const { t } = useTranslation();
   useWakeLock(true);
   const { state, now } = model;
@@ -259,6 +269,7 @@ export function NightNow({ model, babyName, action, running, onOpenFeed, onOpenD
         </Box>
       )}
       {!disabled && sleepLock !== null && <LockedNote name={sleepLock} />}
+      {cryEntry && <Box sx={{ display: 'flex', justifyContent: 'center' }}>{cryEntry}</Box>}
       {canKeepScreenOn() && (
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
           {t('now.night.screenOn')}
