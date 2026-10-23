@@ -25,6 +25,13 @@ Owner-approved redesign of 2026-10-22. Screens and tokens are in `docs/DESIGN.md
 
 - Replaces the floating bar. Lives in the header, takes no page space, hides on Now (Running now cards) and in the Night view. Controls follow `canLog`, with the Caregiver rules unchanged. Same commands (`useTimerCommands`, `usePresetActions`) and sheets (`TimerSheetHost`) as before, so Pause/Resume/Stop/Undo behave identically.
 
+## 4b. Catch-up button ("Since you last looked")
+
+- Owner feedback: the inline catch-up card in the middle of Now cluttered the page. It now sits behind a header icon button (`now/ui/CatchUpButton.tsx`, in `TopBar` between the sync icon and the avatar), 44 px, `history` icon, with a count badge of the new entries (MUI Badge, `max` 9 so "9+"; the number is text, not colour only). Hidden when nothing is new; no animation or blink.
+- Same rules as the card: the Now screen still owns the period (`useHandover`, `catchUp.ts`) and offers its catch-up through `now/catchUpSlot.ts` only on the day view (not the Night view, not first-run); the header button shows only the offer for the baby it is keyed to. Viewers see it as before; the Doctor never has the parents' shell.
+- Tap opens the same content (`now/ui/CatchUpContent.tsx`: who-did-what rows from `catchUpText.ts`, Share as text, Got it) in a popover on `sm` and up, a bottom sheet (`SheetFrame`) on phones. Got it marks it seen (the button goes); Esc, the scrim or Close leave it for later and give focus back to the button. The accessible name carries the count ("What changed since your last look, 3 new" / "O que mudou desde a sua última olhada, 3 novos").
+- Later candidates for the same pattern (not moved): the doctor inbox card and the overtired, belly pain, fussy pattern and diaper suggestion cards are informational and dismissible; the next appointment and vaccines due cards are informational but link to their pages. The reminder prompt card is actionable (it sets up notifications) and stays inline.
+
 ## 5. Check for updates and About
 
 - `ReloadPrompt` still registers the service worker (`registerType: 'prompt'`); it now also publishes the registration, the "new version waiting" flag and the reload function to `pwa/updateStore.ts`. The Updates screen calls `registration.update()` and waits for an installing worker to finish; states: checking, up to date, ready (reload on demand), error, unsupported (native app or no service worker).
@@ -32,4 +39,4 @@ Owner-approved redesign of 2026-10-22. Screens and tokens are in `docs/DESIGN.md
 
 ## 6. Checks
 
-Unit tests: `hub/hubModel.test.ts` (visibility per role, shortcut choice, stored prefs, search, appointments soon). Component tests: `hub/HubScreen.test.tsx`, `hub/UpdatesAbout.test.tsx`, `timers/RunningTimerPill.test.tsx`, `layout/AppShell.test.tsx`, `pages/SettingsPage.test.tsx`. Screenshots: `tests/e2e/design-review/hub-preview.review.ts` (320, 390 and 430 px, light, dark, large text).
+Unit tests: `hub/hubModel.test.ts` (visibility per role, shortcut choice, stored prefs, search, appointments soon). Component tests: `hub/HubScreen.test.tsx`, `hub/UpdatesAbout.test.tsx`, `timers/RunningTimerPill.test.tsx`, `now/ui/NowScreen.views.test.tsx` (catch-up button), `layout/AppShell.test.tsx`, `pages/SettingsPage.test.tsx`. Screenshots: `tests/e2e/design-review/hub-preview.review.ts` (320, 390 and 430 px, light, dark, large text).

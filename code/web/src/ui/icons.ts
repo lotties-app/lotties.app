@@ -35,6 +35,7 @@ import IconInfoCircle from '@tabler/icons-react/dist/esm/icons/IconInfoCircle.mj
 import IconPlayerPlay from '@tabler/icons-react/dist/esm/icons/IconPlayerPlay.mjs';
 import IconPlayerStop from '@tabler/icons-react/dist/esm/icons/IconPlayerStop.mjs';
 import IconStopwatch from '@tabler/icons-react/dist/esm/icons/IconStopwatch.mjs';
+import IconHistory from '@tabler/icons-react/dist/esm/icons/IconHistory.mjs';
 import IconClock from '@tabler/icons-react/dist/esm/icons/IconClock.mjs';
 import IconCalendar from '@tabler/icons-react/dist/esm/icons/IconCalendar.mjs';
 import IconCalendarEvent from '@tabler/icons-react/dist/esm/icons/IconCalendarEvent.mjs';
@@ -167,6 +168,7 @@ export const ICON_COMPONENTS = {
   stop: IconPlayerStop,
   stopwatch: IconStopwatch,
   clock: IconClock,
+  history: IconHistory,
   calendar: IconCalendar,
   event: IconCalendarEvent,
   note: IconNotes,

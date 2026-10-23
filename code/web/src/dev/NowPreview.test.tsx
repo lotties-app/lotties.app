@@ -44,13 +44,16 @@ describe('Now preview (developer route)', () => {
     ['waking', /Night waking/],
     ['nursing', /Nursing/],
     ['forgotten', /Still asleep\?/],
-    ['catchup', /Since you last looked/],
+    ['catchup', /What changed since your last look/],
     ['viewer', /view-only access/],
     ['cry', /Why is she crying\?/],
   ])('seeds and renders the %s scenario', async (state, expected) => {
     renderPreview(state);
-    await waitFor(() => expect(screen.getAllByText(expected).length).toBeGreaterThan(0), {
-      timeout: 8000,
-    });
+    // The catch-up is a header button now: its text is its accessible name.
+    const found = () =>
+      state === 'catchup'
+        ? screen.queryAllByRole('button', { name: expected })
+        : screen.queryAllByText(expected);
+    await waitFor(() => expect(found().length).toBeGreaterThan(0), { timeout: 8000 });
   });
 });

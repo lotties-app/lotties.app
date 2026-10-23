@@ -27,6 +27,7 @@ import {
   TUMMY_TIME_TYPE,
 } from '../test/builtInTypes';
 import { RunningTimerPill } from '../timers/RunningTimerPill';
+import { CatchUpButton } from '../now/ui/CatchUpButton';
 import { useNightFeed } from '../theme/NightFeedContext';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import { SegmentedControl } from '../ui/form';
@@ -881,6 +882,7 @@ export default function NowPreview() {
           {ready?.scenario === scenario && (
             <Box sx={{ position: 'fixed', top: 8, right: 8, zIndex: 1100, display: 'flex' }}>
               <RunningTimerPill key={scenario} baby={ready.baby} />
+              <CatchUpButton babyId={ready.baby.id} />
             </Box>
           )}
           <BottomNav />

@@ -42,6 +42,8 @@
       "shiftGroup": "When it happened"
     },
     "catchUp": {
+      "button_one": "What changed since your last look, {{count}} new",
+      "button_other": "What changed since your last look, {{count}} new",
       "someone": "Someone",
       "title": "Since you last looked",
       "logged_one": "{{name}} logged {{count}} thing since {{time}}",
