@@ -1,6 +1,6 @@
 # Published age norms as prediction priors (data and sources, 2026-10-23)
 
-This note documents `code/api/data/age-norms.json`: published norms by age for sleep, feeding, diapers, crying and meals, collected to replace guessed age defaults with cited numbers. They are meant as **priors** for a baby's first weeks of tracking and as a **fallback** while a baby has too few logged events. This task is research, data and docs only: no prediction code changed and the file is not embedded in any app project yet. A later wiring task decides how to use it; section 7 lists the material differences from today's defaults that drive that decision. The file is validated by `AgeNormsDataTests` (section 11).
+This note documents `code/api/data/age-norms.json`: published norms by age for sleep, feeding, diapers, crying and meals, collected to replace guessed age defaults with cited numbers. They are meant as **priors** for a baby's first weeks of tracking and as a **fallback** while a baby has too few logged events. The research (sections 1 to 14) changed no code; section 7 lists the material differences from today's defaults that drove the wiring. The wiring task (section 15) embeds the file in the API, validates it at startup, serves it to the web and replaces a few guessed defaults with norms, conservatively: only norms that are not low confidence and not `needsReview`, each change listed with its old value, new value and source in section 15.2. The file is validated by `AgeNormsValidator` (section 11).
 
 ## 0. Guardrails: priors, not advice
 
@@ -111,7 +111,7 @@ Units: `hours`, `minutes`, `count`, `ml`, `g`, `ml_per_kg`, `minutes_after_noon`
 
 Counts: 18 sources, 22 metrics (20 with norms, 2 missing), 91 norms (27 high, 57 medium, 7 low confidence), 17 with `needsReview`.
 
-Not embedded in any project: only `Lotties.Domain.Tests` links it into its output to validate it. The wiring task embeds it (as `vaccine-schedule.br.json` is, docs/design/18 section 1) and decides whether the web also gets a copy.
+Embedded in `Lotties.Application` (logical name `Lotties.Application.AgeNorms.age-norms.json`), like `vaccine-schedule.br.json` (docs/design/18 section 1); `Lotties.Domain.Tests` also links it into its output. The web has no copy in its bundle: it downloads the file from `GET /api/v1/age-norms` and keeps it in Dexie (section 15.1).
 
 ## 6. The norms
 
@@ -415,7 +415,7 @@ Age band boundaries (I3) carry no values; the 16-hour night cap (I9) and the 04:
 
 ## 11. Validation
 
-`code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsDataTests.cs` reads the file linked into the test output (`Lotties.Domain.Tests.csproj`, `AgeNorms\age-norms.json`) and checks:
+`code/api/src/Lotties.Domain/AgeNorms/AgeNormsValidator.cs` holds the rules (rules 1 and 3 to 8 below); the API runs it at startup (`EmbeddedAgeNormsProvider`: an invalid file stops the API) and `code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsDataTests.cs` runs it on the file linked into the test output (`Lotties.Domain.Tests.csproj`, `AgeNorms\age-norms.json`), plus the trailing newline, the pinned counts (rule 2) and the lookup (rule 9). `AgeNormsValidatorTests` breaks each rule once. The checks:
 1. a trailing newline, schema version 1, `generatedAt` date, the allowed units, populations, range and typical kinds;
 2. pinned counts (18 sources, 22 metrics, 91 norms, 17 to review, missing metrics `nap_minutes` and `wake_window_minutes`);
 3. metrics: unique snake_case keys, allowed units, norms present unless `missingReason`;
@@ -434,9 +434,9 @@ Age band boundaries (I3) carry no values; the 16-hour night cap (I9) and the 04:
 4. Run `dotnet test code/api/Lotties.sln` (update the pinned counts in `File_KeepsTheResearchCounts` with the data).
 5. Update this doc (sections 2, 6, 8, 9, 10) and the credits (section 13).
 
-## 13. Credits: TODO for the wiring task
+## 13. Credits
 
-Adding curated credits changes `CREDITS.md`, which only the generator writes (docs/design/25-credits.md section 3); a worker runs `generate-credits.mjs --check` only, which would then fail. So no credit entry was added here. When the file ships, the wiring task (or the orchestrator in the main clone) should add `kind: "data"` entries to `code/web/src/credits/curated.json` with their `credits.curated.<id>` sentences in en and pt-BR `credits.json`, then regenerate. Suggested grouping (names and links are facts; the wording is the owner's):
+Done by the wiring task: three `kind: "data"` entries in `code/web/src/credits/curated.json` (`agenormsSleep`, `agenormsFeeding`, `agenormsDiapersCrying`), each linking to this document (it lists every citation, DOI and licence), with their `credits.curated.<id>` sentences in en and pt-BR `credits.json`; `CREDITS.md` regenerated (`node code/web/scripts/generate-credits.mjs`). The sentences are a first draft for the owner to review. The grouping follows the research suggestion:
 - `agenorms-sleep`: "Infant sleep norms: National Sleep Foundation (2015), American Academy of Sleep Medicine (2016), SBP (2025), Galland et al. (2012), Iglowstein et al. (2003), Pelotas 2004 Birth Cohort (Netsi et al. 2017, CC BY 4.0)";
 - `agenorms-feeding`: "Infant feeding norms: SBP Manual de Alimentação (2024), Ministério da Saúde Guia alimentar (2019), AAP HealthyChildren, Academy of Breastfeeding Medicine, Kent et al. (2006), MILQ Study (2025, CC BY 4.0), WHO";
 - `agenorms-diapers-crying`: "Diaper and crying norms: UNICEF UK Baby Friendly checklist (via NHS), den Hertog et al. (2012), HELMi cohort (2024, CC BY 4.0), Wolke et al. (2017)".
@@ -447,3 +447,84 @@ The existing `sbp` credit (vaccine schedule) could also mention the sleep and fe
 - **Growth percentiles**: the app draws the baby's own measurements only. WHO Child Growth Standards (and the Caderneta da Criança curves) are a separate data task with its own licence check (docs/design/04 section 5).
 - **Premature babies** (corrected age), twins, babies with medical conditions, special formulas, solid food amounts and water.
 - **Colic**: Wolke 2017 reports 17-25 % in the first 6 weeks, 11 % at 8-9 weeks and 0.6 % at 10-12 weeks (modified Wessel criteria). Recorded here as context only; the app never diagnoses colic (docs/design/04 never-say list). The cry-reason ranking is designed separately (docs/design/27-cry-reasons.md).
+
+## 15. Wiring (2026-10-23)
+
+### 15.1 Plumbing
+- **API**: `Lotties.Domain/AgeNorms/` (`AgeNormSet` with `For(metric, population, ageDays)` and `PriorFor(...)`, `AgeNormsJson` strict parser, `AgeNormsValidator`), `Lotties.Application/AgeNorms/AgeNormsProvider.cs` (embedded resource, parsed and validated once, strong ETag `"agenorms-{generatedAt}-{hash8}"`), `GET /api/v1/age-norms` (any signed-in user, `Cache-Control: private, max-age=86400`, 304 on `If-None-Match`; docs/SPEC.md).
+- **Web**: `code/web/src/ageNorms/` (`normFor`, `priorFor`, `ageInDaysAt`; `ageNormsCache.ts` and `useAgeNorms()`: Dexie table `ageNorms` (schema v10), one row, asked again at most daily with `If-None-Match`). Without a copy (a first run offline, or before the first download) every caller keeps its built-in default, so behaviour without the norms is exactly the old one.
+- **Lookup**: the band of the metric whose `[fromDays, toDays)` holds the age in completed days since birth (local calendar dates), for the requested population, else for `all`. Days rather than weeks: the bands are defined in days, weeks are rounded. `For`/`normFor` return any norm with its flags; `PriorFor`/`priorFor` return it only when it may replace a default: **never a norm with `confidence: low` or `needsReview: true`**. Every wiring below goes through `PriorFor`/`priorFor`, so clearing a review flag in the data (after the owner's review) is enough to activate a norm, and flagging one switches it off.
+- **Shared vectors**: `code/web/src/ageNorms/ageNormsVectors.json`, run by `ageNorms.test.ts` and by `Lotties.Domain.Tests/AgeNorms/AgeNormsVectorTests.cs` (linked file), against the shipped file.
+
+### 15.2 Wired
+
+Every default that now comes from a norm. Values that come from norms in the table below change only when a norm that is usable as a prior covers the age; elsewhere the old value stays.
+
+| Default | Where | Old value | New value | Norm (source ids) |
+|---|---|---|---|---|
+| Bottle cold-start chips, days 7-29 | `code/web/src/events/bottleAgeDefaults.ts` `normBottleRange`, used by `bottleSuggestions.ts` | 0 m row: 30-90 ml (chips 30, 60, 90) | 60-120 ml (60, 90, 120) | `feed_volume_ml_per_feed.formula.7-30`, high (sbp-alimentacao-2024, aap-formula-2022) |
+| Bottle cold-start chips, days 30-60 | same | 0 m row 30-90 until the first monthly birthday, then 1 m row 90-120 (90, 120) | 90-150 ml (90, 120, 150) | `feed_volume_ml_per_feed.formula.30-61`, medium (sbp-alimentacao-2024, aap-formula-2022) |
+| Bottle cold-start chips, days 61-90 | same | 1 m row 90-120, then 2 m row 120-150 (120, 150) | 150-180 ml (150, 180) | `feed_volume_ml_per_feed.formula.61-91`, medium (sbp-alimentacao-2024) |
+| Bottle cold-start chips, days 91-121 | same | 2 m row 120-150, then 3 m row 120-180 (120, 150, 180) | 180-200 ml (180, 200) | `feed_volume_ml_per_feed.formula.91-122`, medium (sbp-alimentacao-2024) |
+| Bottle cold-start chips, days 122-182 | same | 3 m row 120-180, 4 m row 160-200 (160, 190), 5 m row 180-240 (180, 210, 240) | 180-200 ml (180, 200) | `feed_volume_ml_per_feed.formula.122-183`, medium (sbp-alimentacao-2024) |
+| Bottle cold-start chips, days 183-364 | same | 5 m / 7 m rows 180-240 | 180-240 ml (same chips) | `feed_volume_ml_per_feed.formula.183-365`, high (sbp-alimentacao-2024, aap-formula-2022) |
+| Feed-gap cut-off of the feeding average, 12 to under 18 months (days 365-547) | web `code/web/src/insights/feedGapLimit.ts` (used by `feedingModel.ts` `feedGaps`/`feedingSummary`, Insights feeding card); API `Lotties.Domain/Clinical/FeedGapLimit.cs` (used by `FeedingSummaries.Summarize`, clinical summary feeding section) | 8 h | 13.6 h (the band's high end, 97.5th-98th percentile night) | `night_sleep_hours.all.365-548`, medium (pelotas-2017, iglowstein-2003) |
+| Feed-gap cut-off, 24 to under 36 months (days 731-1095) | same | 8 h | 13.4 h | `night_sleep_hours.all.731-1096`, medium (pelotas-2017, iglowstein-2003) |
+| Cry ranker hunger default gap, breastfed, days 0-27 | `code/web/src/now/cryReasons.ts` `normFeedGapMinutes` (used only without her own usual gap) | `newborn` band 150 min | 120 min (the published typical gap) | `feed_gap_minutes.breastfed.0-28`, medium (aap-feeding-2024) |
+| Cry ranker hunger default gap, breastfed, days 28-182 | same | `newborn` 150 min (to 41 days), `weeks6to3m` 180 min, `months3to6` 210 min | 131 min (24 h / 11 feeds) | `feeds_per_24h.breastfed.28-183`, medium (kent-2006) |
+| Benchmark bed-time prior, 3 months and over (`ml/benchmark/priors.py`, benchmark only) | `PUBLISHED_BEDTIME` | 20:00 sd 60 (3-6 m), 19:45 sd 45 (6 m+) | 22:00, sd 77 min | `bedtime_minutes_after_noon.all.91-122` and `.365-731`, Pelotas values (pelotas-2017; the 365-731 norm is flagged for the Swiss disagreement, the Pelotas value is the unflagged part) |
+| Benchmark night-length prior, 3 months and over | `PUBLISHED_NIGHT` | 11 h (3-6 m), 11.5 h (6 m+) | 9.5 h (3-6 m), 9.75 h (6-12 m), 10 h (12 m+); log sd 0.15-0.19 | `night_sleep_hours.all.91-122`, `.365-548` (pelotas-2017) |
+
+Cry-ranker golden cases (cryReasons.test.ts): a breastfed 3-week-old 120 minutes after the start of her feed, hunger 0.633 before, 0.9 after; a breastfed 2-month-old, 0.286 before, 0.639 after (both without a usual gap of their own). The 55 earlier tests are unchanged (they pass no norms, which keeps every band value).
+
+Feed-gap rule (both engines, shared vectors `feedGapLimits`): under 183 days always 8 h (identical results for babies under 6 months, by design); from 183 days the high end of `longest_sleep_hours` if usable, else of `night_sleep_hours`, clamped to 8-14 h (14 h: above every published night, 13.7 h, and below the 16 h night-session cap `MaxNightSessionLength`); 8 h when neither is usable. The age is the baby's on the local date the gap starts (API: the family's clock of the clinical window). The doctor's patient list (`DoctorPatientsService`) reports no gap and is untouched.
+
+### 15.3 Deliberately not changed
+
+- **Bottle chips, first week** (days 0-6): `feed_volume_ml_per_feed.formula.0-7` needs review (SBP 60-120 vs AAP 30-60 ml, D7): the month table's 30-90 ml stays. **From 12 months**: no published band, the 7 m+ row stays. **No birth date**: the neutral set (I2) stays.
+- **Feed-gap cut-off, 6 to under 12 months and 18 to under 24 months**: the only norms there are flagged (`longest_sleep_hours.all.183-731` needs review because Galland's table and text differ by 0.1 h, D5; `night_sleep_hours.all.244-365`, `.122-244` and `.548-731` are low confidence, Swiss only): 8 h stays. Clearing the review flag of `longest_sleep_hours.all.183-731` after the owner's check would raise the cut-off to 13.7 h from 6 months with no code change. **Under 6 months** 8 h by design (results identical). **From 36 months** no band.
+- **Night window and wake window** (I6, I7): measured in section 15.4, unchanged.
+- **Cry ranker**: the wake-window defaults (no published norm: `wake_window_minutes` is missing, section 9), the diaper-gap defaults (only counts and minimums are published; a minimum is a checklist, section 0), the formula-fed defaults (ranges without a central value, or needing review), everything from 6 months (milk-only norms do not describe a day with meals), and the ranker's own 8-hour history filter (`feedGapMaxMinutes`).
+- **Wet-diaper drop line** (I11) and **the gates** (I12): section 7.6 and 7.7; **age band boundaries, the 16-hour night cap, the 04:00 evening boundary** (I3, I8, I9): they fit.
+- **Quoted context in docs/design/04** (I5): parent-facing wording is an owner and UX decision; not touched.
+- **The doctor's patient list**: shows no feed gap, nothing to change.
+
+### 15.4 Night window: measured, not changed
+
+**Question.** `PredictionOptions.NightStartsAt`/`NightEndsAt` (19:00-07:00, I6) split feed and sleep samples into day and night; `WakeWindowOptions.DayStartsAt`/`DayEndsAt` (05:00-18:00, I7) bound the overtired heads-up. Brazilian babies go to bed at a median 22:00 (section 7.4), so their evening is classed as night. Would a later or per-baby window predict better?
+
+**Method.** `python -m benchmark.night_window --out out` (ml/, synthetic only; `--data <csv>` runs it on an export the owner provides, aggregates only). Two synthetic cohorts of 30 babies, 35 days each, 4 to 20 months old (`benchmark/synthetic.py` `cohort_baby`): **brazil** (each baby's usual bed time drawn around the Pelotas median 22:00, sd 70 min, 20:00-01:00; night length around the Pelotas medians 9.5 / 10 / 10.5 h at 3 / 12 / 24 months, sd 1 h; about one night waking) and a **swiss_control** (bed time around 20:00, sd 30 min; nights 11-11.7 h, Iglowstein). Unsourced generator parts (no published norm): awake windows, nap lengths, a 3-hour day feed gap, a last feed before bed, feeds only at night wakings, all jitter. The faithful heuristic port (`benchmark/heuristic.py`) predicts the next feed (asked after each feed) and the next sleep (asked at each wake-up) after a 14-day warm-up; MAE in minutes on points where every variant predicts, Δ = variant minus current, 95 % bootstrap CI over babies. Variants: `current` 19:00-07:00; `norm_prior` 22:00-08:00 (Pelotas median bed and wake times); `norm_prior_m60` 21:00-08:00; `learned` the baby's own median `bed_time` and `woke_up` clocks over the 14-day look-back (at least 5 nights, else the norm prior); `learned_m60` the same starting one hour before her median bed time; `learned_m60_or_current` falling back to 19:00-07:00.
+
+**Results** (Δ MAE in minutes, 95 % CI; the generator's last feed 15 minutes before bed):
+
+| Cohort | Target | current MAE | norm_prior | learned | learned_m60 |
+|---|---|---:|---|---|---|
+| brazil | next feed, all | 37.1 | -1.4 (-2.7..+0.1) | -0.1 (-0.8..+0.7) | -1.7 (-2.9..-0.8) |
+| brazil | next feed, asked 18:00-24:00 | 76.3 | -9.7 (-13.7..-6.1) | -8.3 (-11.4..-5.2) | -16.5 (-22.2..-11.4) |
+| brazil | next sleep, all | 50.9 | -2.2 (-7.1..+0.7) | -7.5 (-14.9..-1.6) | -7.5 (-15.0..-1.7) |
+| brazil | next sleep, asked 18:00-24:00 | 47.6 | +3.9 (+0.0..+9.0) | +5.1 (+1.5..+10.8) | +5.1 (+1.5..+11.2) |
+| swiss_control | next feed, all | 41.0 | +2.8 (+1.2..+4.6) | +3.0 (+1.2..+5.1) | +1.0 (-0.4..+2.5) |
+| swiss_control | next sleep, all | 51.0 | -11.2 (-19.5..-5.0) | -6.9 (-13.8..-1.4) | -6.9 (-13.8..-0.7) |
+
+Sensitivity to one unsourced generator choice, the time from the last feed to bed (Δ of `learned_m60`, next feed, all): 15 min -1.7 (brazil) / +1.0 (swiss); 45 min -0.4 (-1.3..+0.5) / +1.3 (-0.4..+3.0); 90 min **+3.4 (+0.9..+6.2)** / **+3.2 (+1.1..+5.7)**. The next-sleep gain of the learned window holds in all three settings (-4.2 to -7.5 min for brazil, -6.0 to -6.9 for swiss, the CI touching 0 in some), while next-sleep asked in the evening gets worse in all of them (+4 to +11 min).
+
+**Conclusion: no clear improvement, code unchanged.** The feed result changes sign with an unsourced detail of the synthetic day, the evening sleep prediction gets worse with every later window, and a fixed 22:00 window hurts babies who go to bed early (+2.8 min on feeds for the swiss control). The only consistent signal is a smaller next-sleep error with a per-baby window, and that is exactly what a synthetic generator built from per-baby bed times favours. **Synthetic data cannot prove a real-world gain**, so `NightStartsAt`/`NightEndsAt` and the wake window's `DayStartsAt`/`DayEndsAt` keep their values and no past sample is classified differently. (The overtired heads-up has no Python port, so I7 was not measured; the same per-baby derivation would apply.)
+
+**Recommendation.** Before any change: run `python -m benchmark.night_window --data <the owner's export>` (and the full `benchmark.run`) on real logs. If the owner pursues it, the candidate is a clearly named, default-off option such as `PredictionOptions.NightWindowFromBedtimes` (the night starts at the baby's median `bed_time` clock over the look-back minus a margin and ends at her median `woke_up` clock, from at least 5 logged nights; below that the fixed 19:00-07:00 window, not the norm prior, since `norm_prior` alone was worse for early sleepers), applied first to the sleep (awake-window) prediction only, and with the evening sleep error watched.
+
+### 15.5 Benchmark priors (`ml/benchmark/priors.py`, benchmark only, not shipped)
+
+- **Changed** (rows in 15.2): bed time 22:00 (sd 77 min = the Pelotas 20:00-01:00 range / 3.92) from 3 months; night 9.5 h (3-6 m), 9.75 h (6-12 m, midpoint of the Pelotas 3 and 12 month medians), 10 h (12 m+), log sd from the Pelotas 97.5th percentile. The 6-12 month bed time and night have no Brazilian measurement of their own (only the low-confidence Swiss norm): the benchmark uses the Pelotas values on both sides, said so in the code. The 12-24 month bed-time norm is flagged (Swiss and Brazilian means disagree, D3); its Pelotas value is what the benchmark uses, openly, because the benchmark is the place to measure such a choice and nothing here ships.
+- **Explicitly unsourced** (`UNSOURCED_*` constants, values unchanged): awake windows 75/105/165/240 min, nap lengths 60/60/75/105 min, feed gaps 150/180/210/240 min, diaper gaps 180/210/240/270 min, and the under-3-month bed time (21:00) and night (10 h), for which nothing is published.
+- `LEGACY_PRIORS` keeps the old table; `use_legacy_priors()` / `run --legacy-priors` switch to it.
+- **Before/after on synthetic data** (`python -m benchmark.prior_check`, prior median against every valid outcome, 30 babies per cohort, MAE in minutes):
+
+| Cohort | Target | n | Before | After |
+|---|---|---:|---:|---:|
+| brazil | bed time | 2990 | 127.9 | 47.8 |
+| brazil | night length | 1020 | 84.3 | 50.0 |
+| swiss_control | bed time | 2920 | 30.4 | 126.3 |
+| swiss_control | night length | 1020 | 32.7 | 84.8 |
+
+  This is circular by construction: the Brazilian cohort is drawn from the same Pelotas medians as the new priors, the Swiss control from the values the old priors resembled. It only confirms that the priors now describe Brazilian families as the published cohort does, and shows the cost for a family that keeps a Swiss-like rhythm (the priors matter only until the baby's own log takes over). Synthetic data cannot prove a real-world gain.
+- **The full harness still runs** (`python -m benchmark.run --synthetic brazil [--legacy-priors] --resamples 500`, one synthetic Brazilian baby, seed 0, 70 days; about 30 minutes for both runs in parallel on a laptop). Test window, MAE in minutes, before → after: `age_band_prior` bed time 104.7 → 28.4 (n 67), night length 32.5 → 57.5 (n 20: this baby's nights are longer than the cohort median); `shrinkage` bed time 17.6 → 17.5, night 12.5 → 12.1; `ensemble` bed time 18.3 → 19.5, night 12.6 → 11.9. Cold start (rolling, week 3): shrinkage bed time 17.3 → 10.5, night 18.0 → 18.6. Every other target and method is identical before and after (feed, sleep start, nap length, diapers), as expected: only the bed-time and night priors changed. One baby; read it as a smoke test, not evidence. (To run on synthetic data the cohort babies log a weekly medication: an all-missing feature column makes scikit-learn 1.9's HistGradientBoosting binning fail, so the harness also fails on any export without medication events; not fixed here.)

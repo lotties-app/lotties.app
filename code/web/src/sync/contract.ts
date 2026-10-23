@@ -165,6 +165,7 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/vaccinations/${enc(vaccinationId)}`,
   vaccineProfile: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/vaccine-profile`,
   vaccineSchedule: () => `${API_PREFIX}/vaccine-schedule`,
+  ageNorms: () => `${API_PREFIX}/age-norms`,
   notes: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
   note: (babyId: string, noteId: string) =>

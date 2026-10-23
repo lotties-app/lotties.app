@@ -1,3 +1,10 @@
+import {
+  AGE_NORM_METRICS,
+  ageInDaysAt,
+  priorFor,
+  type AgeNormPopulation,
+  type AgeNormSet,
+} from '../ageNorms/ageNorms';
 import type { BabyEvent, EventType } from '../db/models';
 import { ageInMonths } from '../events/bottleAgeDefaults';
 import type { PredictionsDto } from '../sync/contract';
@@ -319,6 +326,12 @@ export interface CryReasonInput {
   predictions: PredictionsDto | null | undefined;
   /** Replaces `CRY_WEIGHTS` (tests, a later learner). */
   weights?: CryWeights;
+  /**
+   * The published age norms on the device: under 6 months they replace the band's guessed
+   * `feedGapMinutes` when a usable norm covers the baby's age and milk (`normFeedGapMinutes`).
+   * Without them the band's value is used, as before.
+   */
+  ageNorms?: AgeNormSet | null;
 }
 
 const BIRTH_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -333,6 +346,63 @@ export function cryAgeBand(birthDate: string | null | undefined, now: Date): Cry
   const birth = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   return Math.round((today - birth) / DAY_MS) < 42 ? 'newborn' : 'weeks6to3m';
+}
+
+/**
+ * Published feed norms seed the default gap only before 6 months: until then feeds are milk only,
+ * which is what the norms count (complementary food starts at 6 months, docs/design/28 section 6).
+ */
+export const CRY_NORM_MAX_AGE_DAYS = 183;
+
+type Milk = 'breastfed' | 'formula' | null;
+
+/** What a logged feed was: breast milk (breast or an expressed-milk bottle), formula, or unknown. */
+function milkOf(feed: BabyEvent): Milk | 'solid' {
+  const method = payloadString(feed, 'method');
+  if (method === 'solid') return 'solid';
+  if (method === 'breast') return 'breastfed';
+  if (method !== 'bottle') return null;
+  const content = payloadString(feed, 'bottle_feeding_type');
+  if (content === 'breast_milk') return 'breastfed';
+  const formulaNamed =
+    payloadValue(feed, 'formula_id') != null || payloadString(feed, 'formula_name');
+  return content === 'formula' || formulaNamed ? 'formula' : null;
+}
+
+/**
+ * The population of the norms that describe her milk feeds: `breastfed` when every logged milk
+ * feed was breast milk, `formula` when every one was formula, else `null` (mixed, unknown or none).
+ */
+export function milkPopulationOf(feeds: readonly BabyEvent[]): AgeNormPopulation | null {
+  const kinds = new Set(
+    feeds.map(milkOf).filter((kind): kind is Exclude<Milk, null> | null => kind !== 'solid'),
+  );
+  if (kinds.size !== 1) return null;
+  const [only] = kinds;
+  return only;
+}
+
+/**
+ * The published usual gap between feeds (minutes) for her age and milk, or `null`: only under
+ * `CRY_NORM_MAX_AGE_DAYS`, only from a norm usable as a prior (not low confidence, not needing
+ * review), from the published gap when there is a central value, else from the published feeds a
+ * day (24 h / typical count: the mean gap of that many feeds). Ranges without a central value are
+ * not turned into a number.
+ */
+export function normFeedGapMinutes(
+  norms: AgeNormSet | null | undefined,
+  birthDate: string | null | undefined,
+  now: Date,
+  feeds: readonly BabyEvent[],
+): number | null {
+  const ageDays = ageInDaysAt(birthDate, now);
+  if (!norms || ageDays === null || ageDays >= CRY_NORM_MAX_AGE_DAYS) return null;
+  const population = milkPopulationOf(feeds);
+  if (!population) return null;
+  const gap = priorFor(norms, AGE_NORM_METRICS.feedGapMinutes, population, ageDays)?.typical;
+  if (gap != null && gap > 0) return Math.round(gap);
+  const perDay = priorFor(norms, AGE_NORM_METRICS.feedsPer24h, population, ageDays)?.typical;
+  return perDay != null && perDay > 0 ? Math.round((24 * 60) / perDay) : null;
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -361,6 +431,8 @@ interface Context {
   nowMs: number;
   past: BabyEvent[];
   feeds: BabyEvent[];
+  /** Her feed gap when she has none of her own: the published one, else the band's. */
+  defaultFeedGapMinutes: number;
 }
 
 const noData = (w: CryWeights, reason: 'noLog' | 'asleep'): Scored => ({
@@ -408,7 +480,7 @@ function hungerOf(ctx: Context): Scored {
   const lastStart = ctx.feeds.reduce((max, e) => (e.startedAt > max ? e.startedAt : max), '');
   const minutes = minutesBetween(lastStart, input.now);
   const own = usualFeedGap(ctx);
-  let score = ramp(minutes / (own ?? band.feedGapMinutes), band.hunger);
+  let score = ramp(minutes / (own ?? ctx.defaultFeedGapMinutes), band.hunger);
   const lastEnd = latestFeedEnd(input.events, input.types, input.now);
   if (lastEnd !== undefined && ctx.nowMs - lastEnd < w.freshFeedMinutes * MINUTE_MS) {
     score = Math.min(score, w.freshCap);
@@ -570,13 +642,16 @@ export function rankCryReasons(input: CryReasonInput): CryReasonResult {
   const band = w.bands[cryAgeBand(input.birthDate, input.now) ?? DEFAULT_CRY_AGE_BAND];
   const past = pastLiveEvents(input.events, input.now);
   const feedIds = typeIdsForKey(input.types, FEEDING_KEY);
+  const feeds = past.filter((e) => feedIds.has(e.typeId));
   const ctx: Context = {
     input,
     w,
     band,
     nowMs: input.now.getTime(),
     past,
-    feeds: past.filter((e) => feedIds.has(e.typeId)),
+    feeds,
+    defaultFeedGapMinutes:
+      normFeedGapMinutes(input.ageNorms, input.birthDate, input.now, feeds) ?? band.feedGapMinutes,
   };
   const state = deriveNowState(
     input.events,

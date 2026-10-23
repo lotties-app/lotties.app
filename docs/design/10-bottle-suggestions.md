@@ -34,7 +34,16 @@ the birth date. Values are 30 ml steps inside each range (the range top is added
 | 7+ | 180-240 ml | 180, 210, 240 |
 
 The 3 and 4 month rows follow the owner's own observation (about 120-180 ml at 3 months,
-160-200 ml at 4 months); the others are common published pediatric ranges. Without a birth date
+160-200 ml at 4 months); the others are common published pediatric ranges.
+
+**Published norms first (2026-10-23, docs/design/28-age-norms.md section 15.2)**: when the device has
+the age norms (`GET /age-norms`, cached), the cold-start range is the published formula volume per
+feed for the baby's age in days (`feed_volume_ml_per_feed`, formula; SBP Manual de Alimentação 2024
+and AAP): days 7-29 60-120 ml, days 30-60 90-150, 61-90 150-180, 91-182 180-200, 183-364 180-240,
+chips built the same way (30 ml steps, top kept when 20 ml away). The table above stays the
+fallback: the first week (that band needs review: SBP and AAP disagree), from 12 months (no band),
+and whenever the norms are not on the device yet. The caption still says "Typical for N months"
+(whole months). Without a birth date
 (or with a malformed or future one) the neutral set 60 / 90 / 120 / 150 / 180 shows and nothing is
 said about age.
 

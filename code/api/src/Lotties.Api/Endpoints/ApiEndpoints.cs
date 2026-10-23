@@ -25,6 +25,7 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapCareProviderEndpoints();
         api.MapAddressEndpoints();
         api.MapVaccineScheduleEndpoints();
+        api.MapAgeNormsEndpoints();
         api.MapBabyScopedGroup().MapVaccinationEndpoints();
         api.MapBabyScopedGroup().MapNoteEndpoints().MapAccessLogEndpoints();
         api.MapBabyScopedGroup().MapProposalEndpoints();

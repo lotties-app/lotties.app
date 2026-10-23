@@ -157,6 +157,10 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["PUT /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
         ["DELETE /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
 
+        // Age norms (docs/design/28-age-norms.md): published facts, the same file for everyone, no baby involved: any
+        // signed-in user.
+        ["GET /api/v1/age-norms"] = Access.SignedIn,
+
         ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
         ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,
         // A Caregiver passes the policy; the use case then allows only their own events, plus stopping, pausing or

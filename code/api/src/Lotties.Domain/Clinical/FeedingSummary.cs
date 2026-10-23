@@ -36,8 +36,8 @@ public sealed record FormulaUsage(Guid? FormulaId, string Name, int Feeds, doubl
 
 /// <summary>
 /// The feeding of a range, as the parents' Insights compute it (<c>feedingModel.ts</c>): feeds per local day (by the day a
-/// feed started), the mean gap between consecutive feeds (gaps up to 8 hours), the averages over the completed days with
-/// data, and the counts by method and by formula.
+/// feed started), the mean gap between consecutive feeds (gaps up to the age-aware <see cref="FeedGapLimit"/>, 8 hours
+/// by default), the averages over the completed days with data, and the counts by method and by formula.
 /// </summary>
 public sealed record FeedingSummary(
     IReadOnlyList<FeedingDaySummary> Days,
@@ -52,15 +52,17 @@ public sealed record FeedingSummary(
 /// <summary>Computes the <see cref="FeedingSummary"/>; pure, no I/O.</summary>
 public static class FeedingSummaries
 {
-    /// <summary>A longer gap means a feed was probably not logged, so it is left out of the average.</summary>
-    public static readonly TimeSpan MaxFeedGap = TimeSpan.FromHours(8);
+    /// <summary>A longer gap means a feed was probably not logged, so it is left out of the average (without age norms).</summary>
+    public static readonly TimeSpan MaxFeedGap = FeedGapLimit.Default;
 
     /// <param name="observed">The baby's non-deleted feeds.</param>
     /// <param name="window">The local days to cover; only feeds that started inside them and not after now count.</param>
-    public static FeedingSummary Summarize(IReadOnlyList<FeedObservation> observed, ClinicalWindow window)
+    /// <param name="gapLimit">The longest gap that counts, by the local date it starts; <see cref="FeedGapLimit.Fixed"/> (8 hours) when omitted.</param>
+    public static FeedingSummary Summarize(IReadOnlyList<FeedObservation> observed, ClinicalWindow window, FeedGapLimit? gapLimit = null)
     {
         ArgumentNullException.ThrowIfNull(observed);
         ArgumentNullException.ThrowIfNull(window);
+        var limit = gapLimit ?? FeedGapLimit.Fixed;
         var feeds = observed
             .Where(item => item.StartedAt >= window.Start && item.StartedAt < window.End && item.StartedAt <= window.Now)
             .OrderBy(item => item.StartedAt)
@@ -71,7 +73,7 @@ public static class FeedingSummaries
         return new FeedingSummary(
             days,
             ClinicalStatistics.Mean(withFeeds.Select(day => (double)day.Feeds).ToArray()),
-            ClinicalStatistics.Mean(Gaps(feeds)),
+            ClinicalStatistics.Mean(Gaps(feeds, window, limit)),
             ClinicalStatistics.Mean(withMl.Select(day => day.BottleMl).ToArray()),
             feeds.Count(item => item.Method == FeedObservation.BreastMethod),
             feeds.Count(item => item.IsBottle),
@@ -91,10 +93,14 @@ public static class FeedingSummaries
             started.Count(item => item.Method == FeedObservation.SolidMethod));
     }
 
-    /// <summary>Gaps in milliseconds between consecutive feed starts, longer than zero and up to <see cref="MaxFeedGap"/>.</summary>
-    private static double[] Gaps(IReadOnlyList<FeedObservation> feeds) =>
-        feeds.Zip(feeds.Skip(1), (previous, next) => (next.StartedAt - previous.StartedAt).TotalMilliseconds)
-            .Where(gap => gap > 0 && gap <= MaxFeedGap.TotalMilliseconds)
+    /// <summary>
+    /// Gaps in milliseconds between consecutive feed starts, longer than zero and up to the limit of the local date the gap
+    /// starts on.
+    /// </summary>
+    private static double[] Gaps(IReadOnlyList<FeedObservation> feeds, ClinicalWindow window, FeedGapLimit limit) =>
+        feeds.Zip(feeds.Skip(1), (previous, next) => (Gap: (next.StartedAt - previous.StartedAt).TotalMilliseconds, Max: limit.On(window.Clock.DateOf(previous.StartedAt)).TotalMilliseconds))
+            .Where(pair => pair.Gap > 0 && pair.Gap <= pair.Max)
+            .Select(pair => pair.Gap)
             .ToArray();
 
     /// <summary>

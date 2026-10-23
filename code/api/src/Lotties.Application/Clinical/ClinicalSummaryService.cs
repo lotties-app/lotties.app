@@ -1,3 +1,4 @@
+using Lotties.Application.AgeNorms;
 using Lotties.Application.Babies;
 using Lotties.Application.Events;
 using Lotties.Application.Formulas;
@@ -47,6 +48,7 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
     private readonly IPrescriptionService _prescriptions;
     private readonly IMeasurementService _measurements;
     private readonly IFormulaService _formulas;
+    private readonly IAgeNormsProvider _ageNorms;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ClinicalSummaryService> _logger;
 
@@ -59,6 +61,7 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
         IPrescriptionService prescriptions,
         IMeasurementService measurements,
         IFormulaService formulas,
+        IAgeNormsProvider ageNorms,
         TimeProvider timeProvider,
         ILogger<ClinicalSummaryService> logger)
     {
@@ -70,6 +73,7 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
         _prescriptions = prescriptions ?? throw new ArgumentNullException(nameof(prescriptions));
         _measurements = measurements ?? throw new ArgumentNullException(nameof(measurements));
         _formulas = formulas ?? throw new ArgumentNullException(nameof(formulas));
+        _ageNorms = ageNorms ?? throw new ArgumentNullException(nameof(ageNorms));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -93,7 +97,7 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
             GeneratedAt = now,
             Scopes = scopes.Codes,
             Sleep = daily is null ? null : (SleepSectionResponse)SleepSummaries.Summarize(daily.Sleep, window),
-            Feeding = daily is null ? null : FeedingOf(daily, window, scopes),
+            Feeding = daily is null ? null : await FeedingOfAsync(babyId, daily, window, scopes, cancellationToken),
             Diapers = daily is null ? null : (DiaperSectionResponse)DiaperSummaries.Summarize(daily.Diapers, window),
             Symptoms = scopes.Contains(DoctorScope.DailyLog) ? await SymptomsAsync(babyId, window, cancellationToken) : null,
             Medications = scopes.Contains(DoctorScope.Medications) ? await MedicationsAsync(babyId, window, cancellationToken) : null,
@@ -110,10 +114,14 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
         return member.Role.IsDoctor() ? member.EffectiveDoctorScopes : DoctorScopeSet.All;
     }
 
-    /// <summary>The feeding section; the formulas the bottles named only with the formulas section (an empty list without it).</summary>
-    private static FeedingSectionResponse FeedingOf(DailyObservations daily, ClinicalWindow window, DoctorScopeSet scopes)
+    /// <summary>
+    /// The feeding section (gaps up to the age-aware <see cref="FeedGapLimit"/>); the formulas the bottles named only with the
+    /// formulas section (an empty list without it).
+    /// </summary>
+    private async Task<FeedingSectionResponse> FeedingOfAsync(Guid babyId, DailyObservations daily, ClinicalWindow window, DoctorScopeSet scopes, CancellationToken cancellationToken)
     {
-        FeedingSectionResponse feeding = FeedingSummaries.Summarize(daily.Feeds, window);
+        var baby = await _babies.FindAsync(babyId, cancellationToken) ?? throw new BabyNotFoundException(babyId);
+        FeedingSectionResponse feeding = FeedingSummaries.Summarize(daily.Feeds, window, new FeedGapLimit(_ageNorms.Norms, baby.BirthDate));
         return scopes.Contains(DoctorScope.Formulas) ? feeding : feeding with { Formulas = [] };
     }
 

@@ -7,6 +7,7 @@
 import type { DoctorScope } from '../doctor/scopes';
 import type { ProductDto } from '../sync/contract';
 import type { VaccineNetwork, VaccineSchedule } from '../vaccines/vaccineSchedule';
+import type { AgeNormSet } from '../ageNorms/ageNorms';
 
 /**
  * Owner > Parent > Caregiver > Viewer (docs/SPEC.md "Roles and permissions"); `Doctor` is outside that
@@ -347,6 +348,19 @@ export interface VaccineScheduleCache {
   /** The `ETag` the server sent with it (sent back as `If-None-Match`); `null` when it sent none. */
   etag: string | null;
   schedule: VaccineSchedule;
+  /** UTC ISO instant the content last changed on this device. */
+  fetchedAt: string;
+  /** UTC ISO instant the server was last asked (and agreed it is current). */
+  checkedAt: string;
+}
+
+/** The published age norms served by the API (docs/design/28-age-norms.md), one row. */
+export interface AgeNormsCache {
+  /** Always `current`: the API serves one file for everybody. */
+  key: string;
+  /** The `ETag` the server sent with it (sent back as `If-None-Match`); `null` when it sent none. */
+  etag: string | null;
+  norms: AgeNormSet;
   /** UTC ISO instant the content last changed on this device. */
   fetchedAt: string;
   /** UTC ISO instant the server was last asked (and agreed it is current). */

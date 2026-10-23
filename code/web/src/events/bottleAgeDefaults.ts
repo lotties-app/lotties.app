@@ -1,7 +1,14 @@
+import { AGE_NORM_METRICS, priorFor, type AgeNormSet } from '../ageNorms/ageNorms';
+
 /*
  * Cold-start bottle amounts by age (docs/design/10-bottle-suggestions.md): used only until the baby
  * has a few bottles of their own. Typical ranges, not medical advice, review with the pediatrician.
  * The values are informational chips, never a target: the stepper stays free entry.
+ *
+ * The range comes from the published formula volume per feed for the baby's age in days
+ * (`feed_volume_ml_per_feed`, formula; docs/design/28-age-norms.md section 15.2) when that norm may
+ * be used as a prior; otherwise (no norms on the device, a band that needs review, low confidence,
+ * or no band for the age) from the month table below, as before.
  */
 
 export interface BottleAgeRange {
@@ -11,7 +18,10 @@ export interface BottleAgeRange {
   maxMl: number;
 }
 
-/** Typical per-feed ranges (ml) by whole months of age; typical ranges, not medical advice. */
+/**
+ * Typical per-feed ranges (ml) by whole months of age; the fallback when no usable published norm
+ * covers the age. Typical ranges, not medical advice.
+ */
 export const BOTTLE_AGE_RANGES: readonly BottleAgeRange[] = [
   { fromMonths: 0, minMl: 30, maxMl: 90 },
   { fromMonths: 1, minMl: 90, maxMl: 120 },
@@ -50,6 +60,28 @@ export function ageRangeFor(months: number): BottleAgeRange {
   let row = BOTTLE_AGE_RANGES[0];
   for (const candidate of BOTTLE_AGE_RANGES) if (months >= candidate.fromMonths) row = candidate;
   return row;
+}
+
+/** A per-feed range (ml) from a published norm, with the norm's id. */
+export interface NormBottleRange {
+  minMl: number;
+  maxMl: number;
+  normId: string;
+}
+
+/**
+ * The published formula volume per feed at `ageDays` as a chip range, or `null` when no norm that
+ * may be used as a prior (not low confidence, not needing review) gives both ends for that age.
+ */
+export function normBottleRange(
+  norms: AgeNormSet | null | undefined,
+  ageDays: number | null,
+): NormBottleRange | null {
+  if (ageDays === null) return null;
+  const norm = priorFor(norms, AGE_NORM_METRICS.feedVolumeMlPerFeed, 'formula', ageDays);
+  if (!norm || norm.unit !== 'ml' || norm.low === null || norm.high === null) return null;
+  if (norm.low <= 0 || norm.high < norm.low) return null;
+  return { minMl: norm.low, maxMl: norm.high, normId: norm.id };
 }
 
 /** Chips inside a range: from its bottom at 30 ml steps, plus its top when it is not too close. */

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
+import { useAgeNorms } from '../../ageNorms/useAgeNorms';
 import { canLog, canPropose, canSeeAppointments, canWrite, isOwner } from '../../baby/permissions';
 import { NextAppointment } from '../../appointments/NextAppointmentCard';
 import { VaccinesDue } from '../../vaccines/VaccinesDueCard';
@@ -146,6 +147,7 @@ function NowContent({
   const actions = usePresetActions(baby.id, model.types);
   const snooze = useSnooze(model.now);
   const predictions = usePredictions(baby.id).query.data;
+  const ageNorms = useAgeNorms();
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
   const [addingPrescription, setAddingPrescription] = useState(false);
@@ -474,6 +476,7 @@ function NowContent({
           events={model.events}
           types={model.types}
           predictions={predictions}
+          ageNorms={ageNorms ?? null}
           shortcuts={cryShortcuts()}
           onAnswer={answerCry}
         />

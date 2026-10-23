@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Box, Button, Typography } from '@mui/material';
+import type { AgeNormSet } from '../../ageNorms/ageNorms';
 import { useEventsStartedSince } from '../../db/hooks';
 import type { BabyEvent, EventType } from '../../db/models';
 import type { PredictionsDto } from '../../sync/contract';
@@ -50,6 +51,8 @@ interface Props {
   types: readonly EventType[];
   /** The cached predictions response; `null`/`undefined` offline without a cache. */
   predictions: PredictionsDto | null | undefined;
+  /** The published age norms on the device (read by the parent, so they are loaded when it opens). */
+  ageNorms?: AgeNormSet | null;
   shortcuts: Partial<Record<CryCause, CryShortcut>>;
   /** "What worked?" was answered: log the spell (the caller closes this sheet). */
   onAnswer: (answer: CryAnswerChoice) => void;
@@ -308,6 +311,7 @@ export function CryReasonsSheet({
   events,
   types,
   predictions,
+  ageNorms,
   shortcuts,
   onAnswer,
 }: Props) {
@@ -318,7 +322,14 @@ export function CryReasonsSheet({
     const now = new Date();
     return {
       now,
-      result: rankCryReasons({ events, types, now, birthDate, predictions: predictions ?? null }),
+      result: rankCryReasons({
+        events,
+        types,
+        now,
+        birthDate,
+        predictions: predictions ?? null,
+        ageNorms: ageNorms ?? null,
+      }),
     };
   });
   const history = useOutcomeHistory(babyId, events, types, opened.now);

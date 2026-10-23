@@ -37,6 +37,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<AddressLookup.IAddressLookupService, AddressLookup.AddressLookupService>();
         services.AddScoped<Vaccinations.IVaccinationService, Vaccinations.VaccinationService>();
         services.TryAddSingleton<Vaccinations.IVaccineScheduleProvider, Vaccinations.EmbeddedVaccineScheduleProvider>();
+        services.TryAddSingleton<AgeNorms.IAgeNormsProvider, AgeNorms.EmbeddedAgeNormsProvider>();
         services.AddScoped<Professionals.IPersonDirectory, Professionals.PersonDirectory>();
         services.AddScoped<Professionals.IProfessionalProfileService, Professionals.ProfessionalProfileService>();
         services.AddScoped<Notes.INoteService, Notes.NoteService>();
