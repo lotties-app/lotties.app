@@ -32,6 +32,8 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapClinicalEndpoints();
         api.MapDoctorEndpoints();
         api.MapBabyScopedGroup().MapImportEndpoints();
+        api.MapBabyScopedGroup().MapBackupEndpoints();
+        api.MapBackupRestoreEndpoints();
         api.MapPushEndpoints();
         api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();
         return app;

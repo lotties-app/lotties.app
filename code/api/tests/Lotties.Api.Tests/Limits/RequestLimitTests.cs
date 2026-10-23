@@ -128,7 +128,8 @@ public sealed class RequestLimitTests(ApiFactory factory) : IClassFixture<ApiFac
             .Where(endpoint => endpoint.Metadata.GetMetadata<ImportRequestLimitsMetadata>() is not null)
             .ToArray();
 
-        Assert.Equal(2, endpoints.Length);
+        // The two Napper import routes and the five backup routes (export, merge preview and import, restore preview and import).
+        Assert.Equal(7, endpoints.Length);
         Assert.All(endpoints, endpoint => Assert.Equal(RequestLimitPolicies.Import, endpoint.Metadata.GetMetadata<RequestTimeoutAttribute>()?.PolicyName));
         Assert.All(endpoints, endpoint => Assert.Equal(RequestLimitPolicies.Import, endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute>()?.PolicyName));
     }

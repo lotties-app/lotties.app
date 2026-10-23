@@ -42,6 +42,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<AccessLogs.IAccessLogService, AccessLogs.AccessLogService>();
         services.AddScoped<Prescriptions.IMedicationStatusService, Prescriptions.MedicationStatusService>();
         services.AddScoped<Imports.INapperImportService, Imports.NapperImportService>();
+        services.AddScoped<Backups.IBackupExportService, Backups.BackupExportService>();
+        services.AddScoped<Backups.BackupApplier>();
+        services.AddScoped<Backups.IBackupImportService, Backups.BackupImportService>();
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         services.AddScoped<Clinical.DailyObservationReader>();

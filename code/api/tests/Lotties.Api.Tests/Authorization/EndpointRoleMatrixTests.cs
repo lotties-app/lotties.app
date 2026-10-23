@@ -190,6 +190,13 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["POST /api/v1/babies/{babyId:guid}/import/napper/preview"] = Access.Write,
         ["POST /api/v1/babies/{babyId:guid}/import/napper"] = Access.Write,
 
+        // Export and import of a baby's data (docs/design/24-export-import.md): Owner and Parent export and merge; anyone signed in restores into a new baby of their own.
+        ["GET /api/v1/babies/{babyId:guid}/export"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/import/backup/preview"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/import/backup"] = Access.Write,
+        ["POST /api/v1/babies/import/preview"] = Access.SignedIn,
+        ["POST /api/v1/babies/import"] = Access.SignedIn,
+
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions/revoke"] = Access.SignedIn,
@@ -289,6 +296,9 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         "PUT /api/v1/babies/{babyId:guid}/notification-preferences",
         "POST /api/v1/babies/{babyId:guid}/import/napper/preview",
         "POST /api/v1/babies/{babyId:guid}/import/napper",
+        "GET /api/v1/babies/{babyId:guid}/export",
+        "POST /api/v1/babies/{babyId:guid}/import/backup/preview",
+        "POST /api/v1/babies/{babyId:guid}/import/backup",
     };
 
     public static TheoryData<string, Caller> Cases()

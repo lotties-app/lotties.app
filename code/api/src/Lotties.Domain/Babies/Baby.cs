@@ -45,12 +45,20 @@ public sealed class Baby
     /// <summary>What the vaccine schedule needs to know about the baby besides the birth date.</summary>
     public VaccineProfile VaccineProfile => VaccineProfile.Create(VaccineCoverage, GestationalAgeWeeks, RsvMaternalVaccination);
 
-    public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
+    public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt) =>
+        Create(Guid.NewGuid(), name, birthDate, ownerUserId, createdAt);
+
+    /// <summary>
+    /// Creates a baby with a chosen id: the backup restore derives the id from the importer and the source baby, so
+    /// restoring the same file twice finds the baby restored the first time instead of creating a second one.
+    /// </summary>
+    public static Baby Create(Guid id, string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
     {
+        Ids.Required(id, nameof(id));
         Ids.Required(ownerUserId, nameof(ownerUserId));
         var normalizedCreatedAt = UtcTime.Normalize(createdAt);
         var baby = new Baby(
-            Guid.NewGuid(),
+            id,
             Text.Required(name, nameof(Name), NameMaxLength),
             EnsureBirthDateNotInFuture(birthDate, normalizedCreatedAt),
             normalizedCreatedAt);
