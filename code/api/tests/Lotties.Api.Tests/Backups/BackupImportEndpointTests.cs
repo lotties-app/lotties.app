@@ -128,6 +128,25 @@ public sealed partial class BackupImportEndpointTests(ApiFactory factory) : ICla
     }
 
     [Fact]
+    public async Task Restore_KeepsTheFussyOutcomeAndSuggestedCause()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var owner = factory.As(baby, BabyRole.Owner);
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FussyId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(10), payload = new { intensity = "moderate", what_helped = "burping", suggested_cause = "gas" } }).Ok();
+        var text = await owner.ExportTextAsync(baby.BabyId);
+        var restorer = factory.NewUser();
+
+        var report = await ReportAsync(await restorer.Restore(text));
+
+        Assert.Equal(0, report.IssueCount);
+        var events = (await (await restorer.GetAsync($"{BackupFixture.BabyPath(report.BabyId)}/events?limit=500").Ok()).Content.ReadFromJsonAsync<JsonArray>())!.OfType<JsonObject>();
+        var payload = events.Single(item => (Guid)item["typeId"]! == BuiltInEventTypes.FussyId)["payload"]!;
+        Assert.Equal(("moderate", "burping", "gas"), ((string?)payload["intensity"], (string?)payload["what_helped"], (string?)payload["suggested_cause"]));
+    }
+
+    [Fact]
     public async Task Restore_MakesTheImporterTheOnlyMemberAndTheAuthorOfEverything()
     {
         var rich = await factory.SeedRichBabyAsync();

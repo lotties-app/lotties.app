@@ -159,8 +159,19 @@ public sealed class BuiltInEventTypesTests
             [("intensity", "Intensity", EventFieldKind.Select), ("what_helped", "What helped", EventFieldKind.Select)],
             visible.Select(field => (field.Key, field.Label, field.Kind)));
         Assert.Equal(["mild", "moderate", "intense"], visible[0].Options);
-        Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing"], visible[1].Options);
+        Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing", "diaper_change", "burping", "holding"], visible[1].Options);
         Assert.All(visible, field => Assert.Equal((false, (FieldVisibilityCondition?)null), (field.IsRequired, field.VisibleWhen)));
+    }
+
+    [Fact]
+    public void Fussy_KeepsTheSuggestedCauseHiddenAndOptionalAfterWhatHelped()
+    {
+        var fields = BuiltInEventTypes.Fussy.Fields;
+
+        Assert.Equal(["intensity", "what_helped", "suggested_cause", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
+        var cause = fields[2];
+        Assert.Equal(("First suggestion", EventFieldKind.Select, false, true), (cause.Label, cause.Kind, cause.IsRequired, cause.IsHidden));
+        Assert.Equal(["hunger", "sleepy", "diaper", "gas", "comfort"], cause.Options);
     }
 
     [Fact]

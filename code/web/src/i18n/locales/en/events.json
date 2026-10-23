@@ -370,6 +370,9 @@
         "what_helped": {
           "label": "What helped"
         },
+        "suggested_cause": {
+          "label": "First suggestion"
+        },
         "pause_count": {
           "label": "Pauses"
         },
@@ -393,7 +396,17 @@
           "massage": "Massage",
           "sleep": "Sleep",
           "other": "Other",
-          "nothing": "Nothing"
+          "nothing": "Nothing",
+          "diaper_change": "Diaper change",
+          "burping": "Burping",
+          "holding": "Holding / skin to skin"
+        },
+        "suggested_cause": {
+          "hunger": "Hunger",
+          "sleepy": "Sleepiness",
+          "diaper": "Diaper",
+          "gas": "Gas",
+          "comfort": "Comfort"
         }
       }
     },
