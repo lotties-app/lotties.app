@@ -21,6 +21,17 @@ public sealed class AssistantSettingsEndpointTests(ApiFactory factory) : IClassF
         Assert.Equal(JsonValueKind.Null, json.GetProperty("updatedAt").ValueKind);
     }
 
+    [Fact]
+    public async Task GetAndPut_McpDisabledByDefault_SayOffWithoutAUrl()
+    {
+        var client = factory.CreateClientFor(TestUsers.NewSubject());
+
+        var read = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+        var saved = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = (Guid?)null })).ReadAsync<JsonElement>();
+
+        Assert.All([read, saved], json => Assert.Equal((false, JsonValueKind.Null), (json.GetProperty("mcpEnabled").GetBoolean(), json.GetProperty("mcpUrl").ValueKind)));
+    }
+
     [Theory]
     [InlineData(BabyRole.Owner)]
     [InlineData(BabyRole.Parent)]

@@ -232,6 +232,17 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
     }
 
     [Fact]
+    public async Task AssistantSettings_McpEnabled_GiveTheUrlToPasteEqualToTheMetadataResource()
+    {
+        var settings = await ClinicalTestData.ClientFor(host.Host, TestUsers.NewSubject()).GetFromJsonAsync<JsonElement>("/api/v1/me/assistant-settings");
+        var metadata = await host.HttpFor(token: null).GetFromJsonAsync<JsonElement>("/.well-known/oauth-protected-resource/api/v1/mcp");
+
+        Assert.True(settings.GetProperty("mcpEnabled").GetBoolean());
+        Assert.Equal(metadata.GetProperty("resource").GetString(), settings.GetProperty("mcpUrl").GetString());
+        Assert.Equal("http://localhost/api/v1/mcp", settings.GetProperty("mcpUrl").GetString());
+    }
+
+    [Fact]
     public void McpScheme_IsTheApisValidationWithOnlyTheAudienceChanged()
     {
         var schemes = host.Host.Services.GetRequiredService<IOptionsMonitor<Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions>>();
