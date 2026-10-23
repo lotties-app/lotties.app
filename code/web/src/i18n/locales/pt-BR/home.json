@@ -1,0 +1,16 @@
+{
+  "home": {
+    "noTypes": "Ainda não há tipos de evento. Eles aparecem aqui depois da primeira sincronização.",
+    "start": "Iniciar {{name}}",
+    "log": "Registrar {{name}}",
+    "runningTimers": "Cronômetros em andamento",
+    "stop": "Parar",
+    "stopNamed": "Parar {{name}}",
+    "editNamed": "Editar {{name}}",
+    "unreachable": {
+      "title": "Não foi possível falar com o servidor",
+      "body": "Seus bebês aparecem quando o servidor responder. Verifique sua conexão e tente de novo.",
+      "offline": "Você está sem conexão. Seus bebês aparecem quando a conexão voltar."
+    }
+  }
+}

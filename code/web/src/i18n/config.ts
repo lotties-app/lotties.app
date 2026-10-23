@@ -1,4 +1,4 @@
-/** Supported UI languages. To add one: a catalog in `locales/`, an entry here, a loader in `i18n.ts`. */
+/** Supported UI languages. To add one: a catalog folder `locales/<code>/`, an entry here, a loader in `i18n.ts`. */
 export const LOCALES = [
   { code: 'en', nativeName: 'English' },
   { code: 'pt-BR', nativeName: 'Português (Brasil)' },

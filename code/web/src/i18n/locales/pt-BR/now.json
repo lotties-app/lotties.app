@@ -1,0 +1,303 @@
+{
+  "now": {
+    "tiles": {
+      "feed": "Mamada",
+      "diaper": "Fralda",
+      "meds": "Remédios",
+      "more": "Mais",
+      "region": "Registro rápido",
+      "title": "Registrar",
+      "moreHint": "Banho, bomba e mais"
+    },
+    "sleepActions": {
+      "fellAsleep": "Adormeceu",
+      "bedtime": "Hora de dormir",
+      "wokeUp": "Acordou",
+      "nightWaking": "Despertar noturno",
+      "upForTheDay": "Acordou de vez",
+      "backAsleep": "Voltou a dormir"
+    },
+    "shift": {
+      "now": "Agora",
+      "minutesAgo": "−{{minutes}} min"
+    },
+    "sides": {
+      "left": "esquerdo",
+      "right": "direito"
+    },
+    "toast": {
+      "fellAsleepNap": "Soneca desde {{time}}",
+      "fellAsleepNight": "Sono da noite desde {{time}}",
+      "bedtime": "Hora de dormir às {{time}}",
+      "wokeUp": "Acordou às {{time}}",
+      "nightWaking": "Despertar noturno desde {{time}}",
+      "backAsleep": "Voltou a dormir às {{time}}",
+      "bottle": "Mamadeira registrada, {{amount}} ml",
+      "diaper": "Fralda registrada, {{content}}",
+      "medication": "Remédio registrado, {{names}}",
+      "bellyPain": "Dor de barriga registrada, {{intensity}} de 5",
+      "nursingStarted": "Amamentação no lado {{side}}",
+      "nursingSwitched": "Trocou para o lado {{side}}",
+      "nursingStopped": "Amamentação concluída, esquerdo {{left}}, direito {{right}}",
+      "shiftGroup": "Quando aconteceu"
+    },
+    "catchUp": {
+      "someone": "Alguém",
+      "title": "Desde a sua última olhada",
+      "logged_one": "{{name}} registrou {{count}} coisa desde {{time}}",
+      "logged_other": "{{name}} registrou {{count}} coisas desde {{time}}",
+      "sleeps_one": "{{count}} sono",
+      "sleeps_other": "{{count}} sonos",
+      "total": "{{duration}} no total",
+      "nightWakings_one": "{{count}} despertar noturno",
+      "nightWakings_other": "{{count}} despertares noturnos",
+      "feeds_one": "{{count}} mamada",
+      "feeds_other": "{{count}} mamadas",
+      "diapers_one": "{{count}} fralda",
+      "diapers_other": "{{count}} fraldas",
+      "wet_one": "{{count}} xixi",
+      "wet_other": "{{count}} xixi",
+      "dirty_one": "{{count}} cocô",
+      "dirty_other": "{{count}} cocô",
+      "mixed_one": "{{count}} misto",
+      "mixed_other": "{{count}} mistos",
+      "last": "última às {{time}}",
+      "nextFrom": "próxima a partir das {{time}}",
+      "times_one": "{{count}} vez",
+      "times_other": "{{count}} vezes",
+      "shareHeader": "{{name}}: desde {{time}}",
+      "share": "Compartilhar como texto",
+      "gotIt": "Entendi",
+      "copied": "Copiado para a área de transferência.",
+      "shareFailed": "Não foi possível compartilhar. Tente de novo."
+    },
+    "sheet": {
+      "close": "Fechar"
+    },
+    "state": {
+      "region": "Estado atual",
+      "awake": "Acordado",
+      "asleepNap": "Dormindo · Soneca",
+      "asleepNight": "Dormindo · Noite",
+      "asleepNapLower": "soneca",
+      "asleepNightLower": "sono da noite",
+      "nightWaking": "Despertar noturno",
+      "since": "desde {{time}}",
+      "sinceAfterNap": "desde {{time}}, depois de uma soneca",
+      "sinceAfterNight": "desde {{time}}, depois da noite",
+      "wakingSince": "desde {{time}} · sono da noite desde {{sleepTime}}"
+    },
+    "ask": {
+      "title": "O que {{name}} está fazendo agora?",
+      "hint": "Isso começa o dia. Você pode mudar quando quiser.",
+      "sleeping": "Dormindo",
+      "awake": "Acordado"
+    },
+    "nap": {
+      "title": "Janela da soneca",
+      "range": "{{from}} – {{to}}",
+      "opensIn": "abre em {{duration}}",
+      "open": "aberta agora",
+      "past": "passou da janela usual",
+      "openDetails": "Soneca estimada de {{from}} a {{to}}, abrir detalhes"
+    },
+    "ruler": {
+      "withWindow": "Acordado desde {{since}}, agora {{now}}. Janela da soneca das {{from}} às {{to}}.",
+      "noWindow": "Acordado desde {{since}}, agora {{now}}."
+    },
+    "learning": {
+      "title": "Aprendendo o ritmo de {{name}}",
+      "body": "Registre alguns dias e as previsões aparecem aqui.",
+      "stale": "As previsões voltam depois do próximo sono.",
+      "progress": "{{done}} de {{total}} sonos registrados"
+    },
+    "why": {
+      "title": "Por que essa janela?",
+      "noBasis": "Com base no seu histórico de registros."
+    },
+    "bellyPattern": {
+      "label": "Padrão de dor de barriga",
+      "text": "A dor de barriga costuma aparecer por volta de {{time}}. Uma massagem na barriguinha pode ajudar.",
+      "start": "Começar massagem",
+      "notToday": "Hoje não",
+      "whyTitle": "Por que essa sugestão?",
+      "window": "Horário de costume: das {{start}} às {{end}}.",
+      "count": "A dor de barriga foi registrada nesse horário em {{count}} dos últimos {{recent}} dias.",
+      "rule": "A sugestão aparece quando isso acontece em pelo menos {{minimum}} dos últimos {{recent}} dias e em pelo menos {{coverage}}% dos dias com dor de barriga nos últimos {{lookBack}} dias.",
+      "daysTitle": "Dias e horários usados",
+      "day": "{{date}}: {{times}}",
+      "disclaimer": "Este é um padrão do que você registrou, não é orientação médica. Se a dor continuar voltando, comente com o pediatra."
+    },
+    "overtired": {
+      "label": "Aviso da hora da bruxa",
+      "text": "A hora da bruxa está chegando: tempo acordado {{awake}}, e a irritação costuma começar depois de cerca de {{limit}}. Uma soneca em breve pode ajudar.",
+      "start": "Começar soneca",
+      "notNow": "Agora não",
+      "whyTitle": "Por que essa sugestão?",
+      "awake": "Tempo acordado desde {{time}}: {{duration}}.",
+      "limit": "Maior tempo acordado confortável de costume: cerca de {{duration}}.",
+      "rule": "Cerca de {{percentile}}% dos {{count}} períodos acordados de dia listados abaixo duraram isso ou menos (do fim de um sono ao início do seguinte, começando entre {{dayStart}} e {{dayEnd}} nos últimos {{lookBack}} dias; são necessários pelo menos {{minimum}}). O aviso aparece de {{lead}} min antes até {{grace}} min depois desse tempo.",
+      "stretchesTitle": "Períodos acordados usados",
+      "stretch": "{{date}}, das {{start}} às {{end}}: {{duration}}",
+      "disclaimer": "Este é um padrão do que você registrou, não é orientação médica. Se o choro preocupar, converse com o pediatra."
+    },
+    "fussyPattern": {
+      "label": "Padrão de irritação",
+      "text": "A irritação costuma começar por volta de {{time}}. Uma rotina calma pode ajudar.",
+      "notToday": "Hoje não",
+      "whyTitle": "Por que essa sugestão?",
+      "window": "Horário de costume: das {{start}} às {{end}}.",
+      "count": "Choro ou irritação foi registrado nesse horário em {{count}} dos últimos {{recent}} dias.",
+      "rule": "A sugestão aparece quando isso acontece em pelo menos {{minimum}} dos últimos {{recent}} dias e em pelo menos {{coverage}}% dos dias com choro ou irritação nos últimos {{lookBack}} dias.",
+      "daysTitle": "Dias e horários usados",
+      "day": "{{date}}: {{times}}",
+      "disclaimer": "Este é um padrão do que você registrou, não é orientação médica. Se o choro preocupar, comente com o pediatra."
+    },
+    "diaper": {
+      "wetLabel": "Aviso de fralda molhada",
+      "dirtyLabel": "Aviso de fralda suja",
+      "wetText": "Troca de fralda provável por volta de {{time}}.",
+      "dirtyText": "Uma fralda suja pode vir por volta de {{time}}.",
+      "afterFeedText_one": "Uma fralda suja costuma vir cerca de {{count}} minuto depois das mamadas.",
+      "afterFeedText_other": "Uma fralda suja costuma vir cerca de {{count}} minutos depois das mamadas.",
+      "log": "Registrar fralda",
+      "notNow": "Agora não",
+      "whyTitle": "Por que essa sugestão?",
+      "wetExpected": "Próxima fralda molhada provável por volta de {{time}}, em geral entre {{start}} e {{end}}.",
+      "wetLast": "Última fralda molhada: {{when}}.",
+      "wetGap_one": "Intervalo de costume entre fraldas molhadas: cerca de {{duration}}, a partir de {{count}} fralda molhada nos últimos {{days}} dias.",
+      "wetGap_other": "Intervalo de costume entre fraldas molhadas: cerca de {{duration}}, a partir de {{count}} fraldas molhadas nos últimos {{days}} dias.",
+      "dirtyExpected": "Próxima fralda suja provável por volta de {{time}}, em geral entre {{start}} e {{end}}.",
+      "dirtyLast": "Última fralda suja: {{when}}.",
+      "dirtyGap_one": "Intervalo de costume entre fraldas sujas: cerca de {{duration}}, a partir de {{count}} fralda suja nos últimos {{days}} dias.",
+      "dirtyGap_other": "Intervalo de costume entre fraldas sujas: cerca de {{duration}}, a partir de {{count}} fraldas sujas nos últimos {{days}} dias.",
+      "afterFeedExpected": "A última mamada terminou às {{time}}: uma fralda suja costuma vir entre {{start}} e {{end}}.",
+      "afterFeedLag_one": "Depois de uma mamada, a fralda suja veio cerca de {{median}} min após o fim (em geral de {{lower}} a {{upper}} min), a partir de {{count}} fralda suja com uma mamada nas {{hours}} horas anteriores.",
+      "afterFeedLag_other": "Depois de uma mamada, a fralda suja veio cerca de {{median}} min após o fim (em geral de {{lower}} a {{upper}} min), a partir de {{count}} fraldas sujas com uma mamada nas {{hours}} horas anteriores.",
+      "wetRule": "Fralda molhada é a registrada como xixi ou misto. A estimativa precisa de pelo menos {{minimum}} fraldas molhadas nos últimos {{days}} dias; a janela é a metade do meio dos intervalos entre elas (do percentil {{lower}} ao {{upper}}), e os dias recentes contam mais. O aviso aparece de {{lead}} min antes até {{grace}} min depois do horário esperado.",
+      "dirtyRule": "Fralda suja é a registrada como cocô ou misto. Pelos intervalos: pelo menos {{minimum}} fraldas sujas nos últimos {{days}} dias. Depois das mamadas: pelo menos {{pairs}} fraldas sujas com uma mamada nas {{hours}} horas anteriores, e a metade do meio desses tempos com no máximo {{spread}} min de largura. O aviso aparece de {{lead}} min antes até {{grace}} min depois do horário esperado.",
+      "confidence": "Confiança: {{level}}.",
+      "confidenceLevel": {
+        "Low": "baixa",
+        "Medium": "média",
+        "High": "alta"
+      },
+      "dayTime": "{{date}}, {{time}}",
+      "wetDrop": "Fraldas molhadas nas últimas 24 horas: {{recent}}, menos do que o de costume (cerca de {{usual}} por dia). Se continuar assim, comente com o pediatra.",
+      "disclaimer": "Este é um padrão do que você registrou, não é orientação médica."
+    },
+    "forgotten": {
+      "keep": "Ainda continua",
+      "asleep": "Ainda dormindo? A {{kind}} está há {{duration}}",
+      "waking": "Ainda acordado? O despertar noturno está há {{duration}}",
+      "running": "Ainda em andamento? {{name}} está há {{duration}}",
+      "wokeAt": "Acordou às {{time}}",
+      "stopAt": "Parar às {{time}}"
+    },
+    "nursing": {
+      "region": "Amamentação",
+      "title": "Amamentação",
+      "started": "começou às {{time}}",
+      "left": "Esquerdo",
+      "right": "Direito",
+      "running": "em andamento",
+      "done": "feito",
+      "switch": "Trocar lado",
+      "finish": "Terminar"
+    },
+    "feedTray": {
+      "title": "Mamada",
+      "method": "Forma de alimentação",
+      "amount": "Quantidade",
+      "otherAmount": "Outra quantidade",
+      "content": "Na mamadeira",
+      "log": "Registrar {{amount}} ml",
+      "logContent": "Registrar {{amount}} ml de {{content}}",
+      "lastSide": "Da última vez foi o lado {{side}}.",
+      "alreadyRunning": "A amamentação já está em andamento.",
+      "startOn": "Começar no lado {{side}}",
+      "solidHint": "Comida sólida abre o formulário para anotar o que foi comido.",
+      "solidOpen": "Abrir o formulário"
+    },
+    "diaperTray": {
+      "title": "Fralda",
+      "hint": "Um toque registra. Dá para corrigir o horário logo em seguida."
+    },
+    "medsTray": {
+      "title": "Remédio",
+      "same": "Igual à última vez: {{names}}",
+      "none": "Ainda não há remédios cadastrados.",
+      "open": "Cadastre em Ajustes",
+      "choose": "Quais?",
+      "log_one": "Registrar {{count}} remédio",
+      "log_other": "Registrar {{count}} remédios",
+      "pick": "Escolha um remédio"
+    },
+    "bellyTray": {
+      "title": "Dor de barriga",
+      "hint": "Qual a intensidade?",
+      "mild": "Leve",
+      "severe": "Forte"
+    },
+    "more": {
+      "title": "Mais"
+    },
+    "today": {
+      "title": "Hoje",
+      "lastNight": "Última noite",
+      "naps": "Sonecas",
+      "feeds": "Mamadas",
+      "diapers": "Fraldas"
+    },
+    "firstRun": {
+      "title": "Registre o primeiro evento de {{name}}",
+      "body": "Um toque basta. Dá para corrigir o horário logo em seguida.",
+      "viewer": "Nada foi registrado ainda.",
+      "learning": "Registre alguns dias e as previsões aparecem aqui. Importar o histórico pula a espera.",
+      "importTitle": "Vindo do Napper?",
+      "importBody": "Traga o histórico em cerca de 2 minutos.",
+      "importAction": "Importar",
+      "inviteTitle": "Compartilhe {{name}} com alguém",
+      "inviteBody": "Vocês verão o mesmo dia.",
+      "inviteAction": "Convidar"
+    },
+    "night": {
+      "region": "Visual noturno",
+      "screenOn": "A tela fica ligada enquanto esta tela está aberta."
+    },
+    "napSheet": {
+      "title": "Soneca estimada",
+      "about": "cerca de {{duration}}",
+      "windDown": "Um bom momento para começar a desacelerar é por volta das {{time}}",
+      "soon": "A janela abre em breve.",
+      "open": "A janela está aberta agora.",
+      "past": "A janela de costume já passou.",
+      "skip": "Pular",
+      "log": "Registrar soneca agora",
+      "skipped": "Soneca estimada ignorada",
+      "show": "Mostrar de novo"
+    },
+    "ring": {
+      "title": "Ritmo do dia",
+      "view": "Visualização do dia",
+      "ruler": "Régua",
+      "ring": "Anel",
+      "show": "Ver o anel do dia",
+      "slept": "Dormiu {{duration}} até agora hoje.",
+      "noSleep": "Nenhum sono registrado hoje.",
+      "wokeAt": "Acordou às {{time}}.",
+      "bedAt": "Hora de dormir às {{time}}.",
+      "nowAt": "Agora são {{time}}.",
+      "windowAt": "Janela da soneca de {{from}} a {{to}}.",
+      "nextWindowAt": "Próxima janela de soneca de {{from}} a {{to}}.",
+      "nextWindow": "Próxima soneca por volta de {{from}}–{{to}}",
+      "windowOpen": "Janela de soneca aberta até {{to}}",
+      "legendLabel": "O que o anel mostra",
+      "legendNight": "Sono da noite",
+      "legendNap": "Soneca",
+      "legendWaking": "Despertar noturno",
+      "legendWindow": "Janela de soneca",
+      "legendNow": "Agora"
+    }
+  }
+}

@@ -1,0 +1,303 @@
+{
+  "now": {
+    "tiles": {
+      "feed": "Feed",
+      "diaper": "Diaper",
+      "meds": "Meds",
+      "more": "More",
+      "region": "Quick log",
+      "title": "Log",
+      "moreHint": "Bath, pump and more"
+    },
+    "sleepActions": {
+      "fellAsleep": "Fell asleep",
+      "bedtime": "Bedtime",
+      "wokeUp": "Woke up",
+      "nightWaking": "Night waking",
+      "upForTheDay": "Up for the day",
+      "backAsleep": "Back asleep"
+    },
+    "shift": {
+      "now": "Now",
+      "minutesAgo": "−{{minutes}} min"
+    },
+    "sides": {
+      "left": "left",
+      "right": "right"
+    },
+    "toast": {
+      "fellAsleepNap": "Nap from {{time}}",
+      "fellAsleepNight": "Night sleep from {{time}}",
+      "bedtime": "Bedtime at {{time}}",
+      "wokeUp": "Woke up at {{time}}",
+      "nightWaking": "Night waking from {{time}}",
+      "backAsleep": "Back asleep at {{time}}",
+      "bottle": "Bottle logged, {{amount}} ml",
+      "diaper": "Diaper logged, {{content}}",
+      "medication": "Medication logged, {{names}}",
+      "bellyPain": "Belly pain logged, {{intensity}} of 5",
+      "nursingStarted": "Nursing on the {{side}}",
+      "nursingSwitched": "Switched to the {{side}}",
+      "nursingStopped": "Nursing done, left {{left}}, right {{right}}",
+      "shiftGroup": "When it happened"
+    },
+    "catchUp": {
+      "someone": "Someone",
+      "title": "Since you last looked",
+      "logged_one": "{{name}} logged {{count}} thing since {{time}}",
+      "logged_other": "{{name}} logged {{count}} things since {{time}}",
+      "sleeps_one": "{{count}} sleep",
+      "sleeps_other": "{{count}} sleeps",
+      "total": "{{duration}} total",
+      "nightWakings_one": "{{count}} night waking",
+      "nightWakings_other": "{{count}} night wakings",
+      "feeds_one": "{{count}} feed",
+      "feeds_other": "{{count}} feeds",
+      "diapers_one": "{{count}} diaper",
+      "diapers_other": "{{count}} diapers",
+      "wet_one": "{{count}} wet",
+      "wet_other": "{{count}} wet",
+      "dirty_one": "{{count}} dirty",
+      "dirty_other": "{{count}} dirty",
+      "mixed_one": "{{count}} mixed",
+      "mixed_other": "{{count}} mixed",
+      "last": "last {{time}}",
+      "nextFrom": "next from {{time}}",
+      "times_one": "{{count}} time",
+      "times_other": "{{count}} times",
+      "shareHeader": "{{name}}: since {{time}}",
+      "share": "Share as text",
+      "gotIt": "Got it",
+      "copied": "Copied to the clipboard.",
+      "shareFailed": "Could not share. Try again."
+    },
+    "sheet": {
+      "close": "Close"
+    },
+    "state": {
+      "region": "Current state",
+      "awake": "Awake",
+      "asleepNap": "Asleep · Nap",
+      "asleepNight": "Asleep · Night",
+      "asleepNapLower": "nap",
+      "asleepNightLower": "night sleep",
+      "nightWaking": "Night waking",
+      "since": "since {{time}}",
+      "sinceAfterNap": "since {{time}}, after a nap",
+      "sinceAfterNight": "since {{time}}, after the night",
+      "wakingSince": "since {{time}} · night sleep since {{sleepTime}}"
+    },
+    "ask": {
+      "title": "What is {{name}} doing now?",
+      "hint": "This starts the day. You can change it anytime.",
+      "sleeping": "Sleeping",
+      "awake": "Awake"
+    },
+    "nap": {
+      "title": "Nap window",
+      "range": "{{from}} – {{to}}",
+      "opensIn": "opens in {{duration}}",
+      "open": "open now",
+      "past": "past the usual window",
+      "openDetails": "Estimated nap {{from}} to {{to}}, open details"
+    },
+    "ruler": {
+      "withWindow": "Awake since {{since}}, now {{now}}. Nap window {{from}} to {{to}}.",
+      "noWindow": "Awake since {{since}}, now {{now}}."
+    },
+    "learning": {
+      "title": "Learning {{name}}'s rhythm",
+      "body": "Log a few days and predictions appear here.",
+      "stale": "Predictions refresh after the next sleep.",
+      "progress": "{{done}} of {{total}} sleeps logged"
+    },
+    "why": {
+      "title": "Why this window?",
+      "noBasis": "Based on your logged history."
+    },
+    "bellyPattern": {
+      "label": "Belly pain pattern",
+      "text": "Belly pain often shows up around {{time}}. A belly massage may help.",
+      "start": "Start massage",
+      "notToday": "Not today",
+      "whyTitle": "Why this suggestion?",
+      "window": "Usual time: {{start}} to {{end}}.",
+      "count": "Belly pain was logged in this window on {{count}} of the last {{recent}} days.",
+      "rule": "The suggestion shows when that happens on at least {{minimum}} of the last {{recent}} days and on at least {{coverage}}% of the days with belly pain in the last {{lookBack}} days.",
+      "daysTitle": "Days and times used",
+      "day": "{{date}}: {{times}}",
+      "disclaimer": "This is a pattern from what you logged, not medical advice. If the pain keeps coming back, mention it to your pediatrician."
+    },
+    "overtired": {
+      "label": "Witching hour heads-up",
+      "text": "Witching hour soon: awake for {{awake}}, usually fussy after about {{limit}}. A nap soon may help.",
+      "start": "Start nap",
+      "notNow": "Not now",
+      "whyTitle": "Why this suggestion?",
+      "awake": "Awake since {{time}}: {{duration}}.",
+      "limit": "Usual longest comfortable awake time: about {{duration}}.",
+      "rule": "About {{percentile}}% of the {{count}} daytime awake stretches below lasted this long or less (from the end of one sleep to the start of the next, starting between {{dayStart}} and {{dayEnd}} in the last {{lookBack}} days; at least {{minimum}} are needed). The note shows from {{lead}} min before that time until {{grace}} min after it.",
+      "stretchesTitle": "Awake stretches used",
+      "stretch": "{{date}}, {{start}} to {{end}}: {{duration}}",
+      "disclaimer": "This is a pattern from what you logged, not medical advice. If the crying worries you, talk to your pediatrician."
+    },
+    "fussyPattern": {
+      "label": "Fussy time pattern",
+      "text": "Fussiness often starts around {{time}}. A calm routine may help.",
+      "notToday": "Not today",
+      "whyTitle": "Why this suggestion?",
+      "window": "Usual time: {{start}} to {{end}}.",
+      "count": "A fussy spell was logged in this window on {{count}} of the last {{recent}} days.",
+      "rule": "The suggestion shows when that happens on at least {{minimum}} of the last {{recent}} days and on at least {{coverage}}% of the days with a fussy spell in the last {{lookBack}} days.",
+      "daysTitle": "Days and times used",
+      "day": "{{date}}: {{times}}",
+      "disclaimer": "This is a pattern from what you logged, not medical advice. If the crying worries you, mention it to your pediatrician."
+    },
+    "diaper": {
+      "wetLabel": "Wet diaper heads-up",
+      "dirtyLabel": "Dirty diaper heads-up",
+      "wetText": "Diaper check likely around {{time}}.",
+      "dirtyText": "A dirty diaper may come around {{time}}.",
+      "afterFeedText_one": "A dirty diaper often follows feeds after about {{count}} minute.",
+      "afterFeedText_other": "A dirty diaper often follows feeds after about {{count}} minutes.",
+      "log": "Log diaper",
+      "notNow": "Not now",
+      "whyTitle": "Why this suggestion?",
+      "wetExpected": "Next wet diaper likely around {{time}}, usually between {{start}} and {{end}}.",
+      "wetLast": "Last wet diaper: {{when}}.",
+      "wetGap_one": "Typical time between wet diapers: about {{duration}}, from {{count}} wet diaper in the last {{days}} days.",
+      "wetGap_other": "Typical time between wet diapers: about {{duration}}, from {{count}} wet diapers in the last {{days}} days.",
+      "dirtyExpected": "Next dirty diaper likely around {{time}}, usually between {{start}} and {{end}}.",
+      "dirtyLast": "Last dirty diaper: {{when}}.",
+      "dirtyGap_one": "Typical time between dirty diapers: about {{duration}}, from {{count}} dirty diaper in the last {{days}} days.",
+      "dirtyGap_other": "Typical time between dirty diapers: about {{duration}}, from {{count}} dirty diapers in the last {{days}} days.",
+      "afterFeedExpected": "The last feed ended at {{time}}: a dirty diaper usually follows between {{start}} and {{end}}.",
+      "afterFeedLag_one": "After a feed, a dirty diaper came about {{median}} min after it ended (usually {{lower}} to {{upper}} min), from {{count}} dirty diaper with a feed in the {{hours}} hours before.",
+      "afterFeedLag_other": "After a feed, a dirty diaper came about {{median}} min after it ended (usually {{lower}} to {{upper}} min), from {{count}} dirty diapers with a feed in the {{hours}} hours before.",
+      "wetRule": "A wet diaper is one logged as wet or mixed. The estimate needs at least {{minimum}} wet diapers in the last {{days}} days; the window is the middle half of the gaps between them ({{lower}}th to {{upper}}th percentile), and recent days count more. The note shows from {{lead}} min before the expected time until {{grace}} min after it.",
+      "dirtyRule": "A dirty diaper is one logged as dirty or mixed. From the gaps: at least {{minimum}} dirty diapers in the last {{days}} days. After feeds: at least {{pairs}} dirty diapers with a feed in the {{hours}} hours before, and the middle half of those times at most {{spread}} min wide. The note shows from {{lead}} min before the expected time until {{grace}} min after it.",
+      "confidence": "Confidence: {{level}}.",
+      "confidenceLevel": {
+        "Low": "low",
+        "Medium": "medium",
+        "High": "high"
+      },
+      "dayTime": "{{date}}, {{time}}",
+      "wetDrop": "Wet diapers in the last 24 hours: {{recent}}, fewer than usual (about {{usual}} a day). If that continues, mention it to your pediatrician.",
+      "disclaimer": "This is a pattern from what you logged, not medical advice."
+    },
+    "forgotten": {
+      "keep": "Still going",
+      "asleep": "Still asleep? The {{kind}} has run for {{duration}}",
+      "waking": "Still awake? The night waking has run for {{duration}}",
+      "running": "Still running? {{name}} has run for {{duration}}",
+      "wokeAt": "Woke up at {{time}}",
+      "stopAt": "Stop at {{time}}"
+    },
+    "nursing": {
+      "region": "Nursing",
+      "title": "Nursing",
+      "started": "started {{time}}",
+      "left": "Left",
+      "right": "Right",
+      "running": "running",
+      "done": "done",
+      "switch": "Switch side",
+      "finish": "Finish"
+    },
+    "feedTray": {
+      "title": "Feed",
+      "method": "Feeding method",
+      "amount": "Amount",
+      "otherAmount": "Other amount",
+      "content": "In the bottle",
+      "log": "Log {{amount}} ml",
+      "logContent": "Log {{amount}} ml {{content}}",
+      "lastSide": "Last time you used the {{side}} side.",
+      "alreadyRunning": "Nursing is already running.",
+      "startOn": "Start on the {{side}}",
+      "solidHint": "Solid food opens the form so you can note what was eaten.",
+      "solidOpen": "Open the form"
+    },
+    "diaperTray": {
+      "title": "Diaper",
+      "hint": "One tap logs it. You can fix the time right after."
+    },
+    "medsTray": {
+      "title": "Medication",
+      "same": "Same as last time: {{names}}",
+      "none": "No medications yet.",
+      "open": "Add them in Settings",
+      "choose": "Which ones?",
+      "log_one": "Log {{count}} medication",
+      "log_other": "Log {{count}} medications",
+      "pick": "Choose a medication"
+    },
+    "bellyTray": {
+      "title": "Belly pain",
+      "hint": "How strong is it?",
+      "mild": "Mild",
+      "severe": "Severe"
+    },
+    "more": {
+      "title": "More"
+    },
+    "today": {
+      "title": "Today",
+      "lastNight": "Last night",
+      "naps": "Naps",
+      "feeds": "Feeds",
+      "diapers": "Diapers"
+    },
+    "firstRun": {
+      "title": "Log {{name}}'s first event",
+      "body": "One tap is enough. You can fix the time right after.",
+      "viewer": "Nothing has been logged yet.",
+      "learning": "Log a few days and predictions appear here. Importing history skips the wait.",
+      "importTitle": "Coming from Napper?",
+      "importBody": "Bring the history in about 2 minutes.",
+      "importAction": "Import",
+      "inviteTitle": "Share {{name}} with someone",
+      "inviteBody": "You'll both see the same day.",
+      "inviteAction": "Invite"
+    },
+    "night": {
+      "region": "Night view",
+      "screenOn": "The screen stays on while this view is open."
+    },
+    "napSheet": {
+      "title": "Estimated nap",
+      "about": "about {{duration}}",
+      "windDown": "A good moment to start winding down around {{time}}",
+      "soon": "The window opens soon.",
+      "open": "The window is open now.",
+      "past": "The usual window has passed.",
+      "skip": "Skip",
+      "log": "Log nap now",
+      "skipped": "Estimated nap skipped",
+      "show": "Show again"
+    },
+    "ring": {
+      "title": "Day rhythm",
+      "view": "Day view",
+      "ruler": "Ruler",
+      "ring": "Ring",
+      "show": "Show the day ring",
+      "slept": "Slept {{duration}} so far today.",
+      "noSleep": "No sleep logged today.",
+      "wokeAt": "Woke up at {{time}}.",
+      "bedAt": "Bedtime at {{time}}.",
+      "nowAt": "Now {{time}}.",
+      "windowAt": "Nap window {{from}} to {{to}}.",
+      "nextWindowAt": "Next nap window {{from}} to {{to}}.",
+      "nextWindow": "Next nap about {{from}}–{{to}}",
+      "windowOpen": "Nap window open until {{to}}",
+      "legendLabel": "What the ring shows",
+      "legendNight": "Night sleep",
+      "legendNap": "Nap",
+      "legendWaking": "Night waking",
+      "legendWindow": "Nap window",
+      "legendNow": "Now"
+    }
+  }
+}

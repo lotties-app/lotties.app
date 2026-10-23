@@ -1,0 +1,217 @@
+{
+  "access": {
+    "someoneElse": "outra pessoa",
+    "givenBy": "Dado por {{name}}",
+    "lockedTimer": "Iniciado por {{name}}. Só essa pessoa ou um responsável pode alterar.",
+    "lockedEntry": "Registrado por {{name}}. Só essa pessoa ou um responsável pode alterar.",
+    "controlOnly": "Iniciado por {{name}}. Você pode pausar ou parar; só essa pessoa ou um responsável pode alterar o resto."
+  },
+  "doctor": {
+    "name": "Dr(a). {{name}}",
+    "nameNoAccess": "Dr(a). {{name}} (não tem mais acesso)",
+    "selfDeclared": "Médico(a) autodeclarado(a)",
+    "verifiedDoctor": "Profissional verificado",
+    "settingsNotice": "Você é médico(a) de {{name}}: pode ver tudo o que é registrado, escrever notas e adicionar medidas da consulta. Os responsáveis cuidam do resto.",
+    "profile": {
+      "sectionTitle": "Sou profissional de saúde",
+      "intro": "Pediatras e outros médicos se identificam aqui. Assim uma família pode convidar você para o bebê com o papel Médico(a).",
+      "declared": "Seu perfil profissional",
+      "selfDeclaredNotice": "Autodeclarado: o Lotties não verifica registros. As famílias veem “Médico(a) autodeclarado(a)” ao lado do seu nome.",
+      "displayName": "Nome que as famílias veem",
+      "displayNameHelp": "Sem o título: as famílias veem “Dr(a).” antes dele.",
+      "displayNameRequired": "Informe o nome que as famílias vão ver.",
+      "specialty": "Especialidade",
+      "specialtyPlaceholder": "ex.: Pediatria",
+      "registrationNumber": "Número de registro",
+      "registrationNumberHelp": "Por exemplo, seu CRM. As famílias podem vê-lo.",
+      "loadFailed": "Não foi possível carregar seu perfil profissional. Verifique sua conexão."
+    },
+    "invite": {
+      "consent": "O(a) médico(a) que aceitar vai ver tudo o que for registrado de {{name}} e poderá adicionar notas e medidas. Você pode remover o acesso a qualquer momento."
+    },
+    "inviteAccept": {
+      "title": "Entrar como médico(a) do bebê",
+      "body": "Este convite é para um(a) médico(a). Primeiro diga à família quem você é: seu perfil é autodeclarado e aparece ao lado das suas notas.",
+      "saveAndJoin": "Salvar e entrar"
+    },
+    "members": {
+      "removeBody": "Perde o acesso a {{baby}} na hora. As notas compartilhadas continuam visíveis para a família."
+    },
+    "notes": {
+      "title": "Notas",
+      "add": "Escrever nota",
+      "newTitle": "Nova nota",
+      "editTitle": "Editar nota",
+      "kind": "Tipo",
+      "kinds": {
+        "note": "Nota",
+        "recommendation": "Recomendação"
+      },
+      "visibility": "Quem vê",
+      "visibilities": {
+        "shared": "Compartilhada com a família",
+        "private": "Só eu"
+      },
+      "visibilityChip": {
+        "shared": "Compartilhada com a família",
+        "private": "Privada"
+      },
+      "visibilityHelp": "Notas compartilhadas são vistas por todos que acompanham o bebê. Notas privadas são só suas.",
+      "staysShared": "Esta nota já foi compartilhada com a família. Para retirá-la, exclua-a.",
+      "body": "Nota",
+      "bodyRequired": "Escreva a nota.",
+      "saveFailed": "Não foi possível salvar a nota. Tente de novo.",
+      "byYou": "Você",
+      "unknownAuthor": "Autor desconhecido",
+      "cardLabel": "Nota de {{date}}",
+      "edit": "Editar nota de {{date}}",
+      "delete": "Excluir nota de {{date}}",
+      "deleteTitle": "Excluir esta nota?",
+      "deleteBody": "Ela sai das suas notas.",
+      "deleteSharedBody": "A família não vai mais vê-la.",
+      "deleteConfirm": "Excluir nota",
+      "emptyTitle": "Nenhuma nota ainda",
+      "emptyDoctor": "Escreva o que a família deve lembrar depois de uma consulta de {{name}}. As notas compartilhadas aparecem para a família.",
+      "emptyFamily": "As notas do(a) médico(a) de {{name}} aparecem aqui.",
+      "familyNotice": "Notas do(a) médico(a) de {{name}}. Você pode lê-las; só quem escreveu uma nota pode alterá-la.",
+      "timeline": "Notas, das mais recentes",
+      "createBabyFirst": "Cadastre um bebê primeiro para ver as notas."
+    },
+    "patients": {
+      "title": "Pacientes",
+      "subtitle": "Bebês cujas famílias convidaram você como médico(a).",
+      "list": "Pacientes",
+      "none": "Nenhum paciente ainda. Uma família adiciona você com um link de convite para médico(a).",
+      "open": "Abrir {{name}}",
+      "notesOf": "Notas sobre {{name}}",
+      "lastEntry": "Último registro {{when}}",
+      "noEntries": "Nada registrado ainda",
+      "sharedNotes_one": "{{count}} nota compartilhada sua",
+      "sharedNotes_other": "{{count}} notas compartilhadas suas",
+      "proposals": "Propostas",
+      "proposalsOf": "Propostas para {{name}}"
+    },
+    "growth": {
+      "doctorNotice": "Como médico(a) de {{name}}, você pode adicionar medidas da consulta e alterar as suas.",
+      "recordedBy": "Registrado por {{name}} (médico(a) autodeclarado(a))",
+      "recordedByDoctor": "Registrado pelo(a) médico(a)"
+    },
+    "accessLog": {
+      "title": "Registro de acessos",
+      "explainer": "Quando o app de um(a) médico(a) carrega os dados de {{name}}, isso fica registrado aqui, no máximo uma vez por hora. Os 50 mais recentes aparecem.",
+      "none": "Nenhum(a) médico(a) abriu os dados de {{name}} ainda.",
+      "entry": "{{role}} · {{when}}",
+      "loadFailed": "Não foi possível carregar o registro de acessos. Verifique sua conexão."
+    }
+  },
+  "proposals": {
+    "status": {
+      "pending": "Pendente",
+      "accepted": "Aceita",
+      "declined": "Recusada",
+      "cancelled": "Cancelada",
+      "superseded": "Substituída"
+    },
+    "waitingToSync": "Aguardando sincronizar",
+    "accessRemoved": "Acesso removido",
+    "unknownDoctor": "Seu médico",
+    "sent": "Enviada em {{date}}",
+    "reason": "Motivo: {{reason}}",
+    "badgeLabel_one": "{{count}} novo do seu médico",
+    "badgeLabel_other": "{{count}} novos do seu médico",
+    "sheet": {
+      "titleNew": "Prescrever",
+      "titleEdit": "Editar proposta",
+      "titleChange": "Propor uma mudança",
+      "instructions": "Instruções para os pais",
+      "send": "Enviar aos pais",
+      "withdraw": "Retirar",
+      "reviewNote": "Os pais revisam antes de qualquer mudança.",
+      "replaces": "Muda a prescrição atual: {{summary}}",
+      "saveFailed": "Não foi possível salvar a proposta. Tente de novo.",
+      "alreadyDecided": "Os pais já decidiram esta proposta, então ela não pode mais ser editada."
+    },
+    "chooser": {
+      "useName": "Usar \"{{name}}\"",
+      "noneYet": "A lista de remédios do bebê está vazia. Busque no catálogo ou digite um nome."
+    },
+    "facts": {
+      "course": "Tratamento",
+      "courseRange": "De {{start}} a {{end}}",
+      "courseOpen": "A partir de {{start}}, sem data final",
+      "instructions": "Instruções do médico"
+    },
+    "provenance": {
+      "prescribedBy": "Prescrito por {{doctor}}",
+      "changedByParent": "Alterado pelos pais",
+      "seeOriginal": "Ver o que {{doctor}} prescreveu",
+      "originalTitle": "O que {{doctor}} prescreveu",
+      "originalNote": "Do jeito que o médico enviou. É um registro: não pode ser editado."
+    },
+    "mine": {
+      "title": "Minhas propostas",
+      "subtitle": "Prescrições que você sugeriu para {{name}}. Nada muda até os pais aceitarem.",
+      "prescribe": "Prescrever",
+      "listLabel": "Propostas, da mais recente para a mais antiga",
+      "emptyTitle": "Nenhuma proposta ainda",
+      "emptyBody": "Prescreva um remédio para {{name}} e os pais recebem para aceitar ou recusar.",
+      "edit": "Editar",
+      "editNamed": "Editar proposta de {{name}}",
+      "withdraw": "Retirar",
+      "withdrawNamed": "Retirar proposta de {{name}}",
+      "proposeChange": "Propor uma mudança",
+      "proposeChangeNamed": "Propor uma mudança em {{name}}",
+      "withdrawTitle": "Retirar esta proposta?",
+      "withdrawBody": "Os pais não verão mais a proposta para aceitar.",
+      "withdrawConfirm": "Retirar proposta",
+      "onlyDoctor": "As propostas são enviadas pelo médico do bebê.",
+      "noBaby": "Escolha um paciente primeiro."
+    },
+    "inbox": {
+      "region": "Do seu médico",
+      "proposalTitle": "{{doctor}} sugeriu uma prescrição",
+      "recommendationTitle": "{{doctor}} enviou uma recomendação",
+      "review": "Revisar",
+      "reviewNamed": "Revisar a sugestão de {{name}}",
+      "read": "Ler",
+      "readNamed": "Ler a recomendação de {{doctor}}",
+      "seeAll": "Ver tudo do seu médico"
+    },
+    "details": {
+      "suggestedBy": "Sugerido por",
+      "replacesCurrent": "Muda a prescrição atual: {{summary}}",
+      "replacesEnds": "Ao aceitar, a atual termina hoje.",
+      "acceptAdds": "Ao aceitar, esta prescrição é adicionada para {{name}}. Você pode encerrá-la quando quiser.",
+      "accept": "Aceitar",
+      "decline": "Recusar",
+      "reasonLabel": "Motivo (opcional)",
+      "reasonHelp": "O médico vê o que você escrever.",
+      "addedTitle": "Adicionado aos remédios de {{name}}",
+      "addedPending": "Aparece nos remédios assim que sincronizar.",
+      "acceptedOn": "Aceita em {{date}}",
+      "declinedOn": "Recusada em {{date}}",
+      "cancelledWithdrawn": "O médico retirou esta sugestão.",
+      "cancelledAccess": "Cancelada porque o médico não tem mais acesso.",
+      "superseded": "Substituída quando outra sugestão para a mesma prescrição foi aceita.",
+      "missing": "Esta sugestão ainda não está neste aparelho.",
+      "alreadyDecided": "Esta sugestão já foi decidida.",
+      "decisionFailed": "Não foi possível salvar sua decisão. Tente de novo."
+    },
+    "fromDoctor": {
+      "title": "Do seu médico",
+      "subtitle": "Prescrições e recomendações do médico de {{name}}. Nada muda até você aceitar.",
+      "waiting": "Aguardando você",
+      "nothingWaiting": "Nada aguardando você.",
+      "recommendations": "Recomendações",
+      "decided": "Decididas",
+      "emptyTitle": "Nada do médico ainda",
+      "emptyBody": "Quando o médico de {{name}} sugerir uma prescrição ou enviar uma recomendação, aparece aqui.",
+      "unread": "Nova",
+      "recommendation": "Recomendação",
+      "openProposal": "Abrir a sugestão de {{name}}",
+      "openRecommendation": "Abrir a recomendação de {{date}}",
+      "parentsOnly": "Só os pais do bebê veem o que o médico envia.",
+      "noBaby": "Escolha um bebê primeiro."
+    }
+  }
+}

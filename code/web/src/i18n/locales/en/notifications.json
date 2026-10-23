@@ -1,0 +1,113 @@
+{
+  "notifications": {
+    "intro": "Get a reminder for scheduled medicine doses and when a nap window opens, even with the app closed.",
+    "guardrail": "Reminders come from the prescriptions you entered. They can be late or missing (no connection, phone settings), so don't rely on them alone. Not medical advice.",
+    "syncedOnly": "Reminders follow synced data: a dose logged offline stops reminders only after it syncs.",
+    "offline": "Connect to the internet to change notification settings.",
+    "deviceLabel": "{{browser}} on {{os}}",
+    "device": {
+      "heading": "This device",
+      "switch": "Notifications on this device",
+      "on": "On",
+      "onNamed": "On for {{label}}",
+      "off": "Off",
+      "test": "Send a test notification"
+    },
+    "states": {
+      "unsupported": "This browser can't show notifications from Lotties.",
+      "iosNeedsInstall": "On iPhone and iPad, notifications work after you add Lotties to your Home Screen: tap Share, then Add to Home Screen, and open it from there.",
+      "iosTooOld": "Needs iOS 16.4 or later.",
+      "denied": "Notifications are blocked for this site. To allow them, open your browser or system settings, find this site and allow notifications, then come back here."
+    },
+    "explainer": {
+      "title": "Turn on notifications?",
+      "kinds": "Lotties can remind you of scheduled medicine doses and tell you when a nap window opens. You choose which reminders, for each baby.",
+      "lockScreen": "The lock screen shows generic text, without baby or medicine names, unless you turn on Show names.",
+      "turnOff": "You can turn them off anytime in Settings.",
+      "turnOn": "Turn on",
+      "notNow": "Not now"
+    },
+    "announce": {
+      "on": "Notifications are on for this device",
+      "off": "Notifications are off for this device",
+      "denied": "Notifications were not allowed",
+      "testSent": "Test sent. It should arrive in a few seconds.",
+      "testFailed": "The test couldn't be delivered. Turn notifications off and on again, then retry.",
+      "subscribeFailed": "Couldn't turn on notifications on this device. Try again."
+    },
+    "reminders": {
+      "heading": "Reminders",
+      "viewerOnly": "Only parents get reminders for this baby.",
+      "dose": "Medicine reminders",
+      "doseHelp": "Scheduled doses only, never as-needed medicines.",
+      "nap": "Nap window",
+      "napHelp": "When the estimated nap window opens during the day.",
+      "bellyPain": "Belly pain heads-up",
+      "bellyPainHelp": "When belly pain often shows up around the same time, a note 30 min before.",
+      "overtired": "Overtired heads-up",
+      "overtiredHelp": "When the baby has been awake nearly as long as usual, a note 15 min before.",
+      "fussy": "Fussy time heads-up",
+      "fussyHelp": "When fussiness often starts around the same time, a note 30 min before.",
+      "diaperWet": "Wet diaper heads-up",
+      "diaperWetHelp": "When a wet diaper is usually due, a note 10 min before.",
+      "diaperDirty": "Dirty diaper heads-up",
+      "diaperDirtyHelp": "When a dirty diaper usually comes, after a feed or from the usual gaps, a note shortly before.",
+      "appointments": "Appointment reminders",
+      "appointmentsHelp": "Before each appointment, at the times chosen for it.",
+      "vaccines": "Vaccine reminders",
+      "vaccinesHelp": "A note on the day a dose may be due, according to the schedule.",
+      "lead": "Remind me",
+      "doseLeads": {
+        "0": "At the scheduled time",
+        "5": "5 min before",
+        "15": "15 min before"
+      },
+      "napLeads": {
+        "0": "When it opens",
+        "10": "10 min before",
+        "20": "20 min before"
+      },
+      "doctor": "Doctor suggestions",
+      "doctorHelp": "When the doctor sends a prescription suggestion or a recommendation."
+    },
+    "quiet": {
+      "switch": "Quiet hours",
+      "help": "No nap reminders or belly pain heads-ups between these times.",
+      "start": "From",
+      "end": "To",
+      "sameTime": "Start and end must be different times.",
+      "medicine": "Also silence medicine reminders in quiet hours",
+      "medicineHelp": "When off, medicine reminders still arrive at the times you scheduled."
+    },
+    "names": {
+      "switch": "Show baby and medicine names on notifications",
+      "help": "Anyone who can see your lock screen will see them. Dose amounts are never shown."
+    },
+    "timeZone": "Times use {{zone}}.",
+    "devices": {
+      "heading": "Your devices",
+      "empty": "No devices get notifications yet.",
+      "thisDevice": "This device",
+      "unnamed": "Unnamed device",
+      "added": "Added {{date}}",
+      "remove": "Remove",
+      "removeNamed": "Remove {{label}}"
+    },
+    "prompt": {
+      "title": "Get a reminder at the scheduled times?",
+      "body": "Lotties can notify this device when a scheduled dose is not logged yet.",
+      "turnOn": "Turn on",
+      "notNow": "Not now",
+      "done": "Medicine reminders are on for {{name}}."
+    },
+    "reminderLine": {
+      "at": "Reminder for {{time}}",
+      "snooze": "Snooze 30 min",
+      "snoozed": "Snoozed for 30 min.",
+      "stop": "Stop reminders for this dose",
+      "stopped": "No more reminders for this dose.",
+      "offline": "Connect to the internet to snooze."
+    },
+    "whyLink": "Remind me when the window opens"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "predictions": {
+    "title": "Próximos previstos",
+    "region": "Previsões",
+    "next": "Próxima: {{name}}",
+    "overdue": "Atrasada",
+    "confidence": {
+      "high": "Confiança alta",
+      "medium": "Confiança média",
+      "low": "Confiança baixa"
+    },
+    "why": "Por quê?",
+    "window": "por volta das {{expected}}, entre {{earliest}} e {{latest}}",
+    "duration": "costuma durar {{duration}}",
+    "windowWithDuration": "{{window}}; {{duration}}",
+    "needMore": "Faltam dados para: {{names}}",
+    "empty": "As previsões aparecem depois de alguns dias de registros.",
+    "offline": "As previsões carregam quando você voltar a ficar online.",
+    "unavailable": "As previsões não estão disponíveis agora.",
+    "loading": "Carregando previsões…",
+    "lastUpdated": "Atualizado por último em {{when}}",
+    "lastUpdatedOffline": "Sem conexão · Atualizado por último em {{when}}",
+    "disclaimer": "Estimativas baseadas no seu histórico de registros, não são orientação médica.",
+    "tomorrow": "amanhã {{time}}",
+    "yesterday": "ontem {{time}}",
+    "basis": {
+      "startInterval_one": "Em geral a cada {{gap}}, com base no último {{count}} dia.",
+      "startInterval_other": "Em geral a cada {{gap}}, com base nos últimos {{count}} dias.",
+      "awakeWindow_one": "Em geral {{gap}} acordado depois de acordar, com base no último {{count}} dia.",
+      "awakeWindow_other": "Em geral {{gap}} acordado depois de acordar, com base nos últimos {{count}} dias.",
+      "samples_one": "{{count}} registro usado.",
+      "samples_other": "{{count}} registros usados.",
+      "phaseDay": "Só foram usados eventos do dia.",
+      "phaseNight": "Só foram usados eventos da noite.",
+      "ageBand": "Só foram usados eventos da faixa de idade {{band}}.",
+      "ageBands": {
+        "0-3m": "0 a 3 meses",
+        "3-6m": "3 a 6 meses",
+        "6-12m": "6 a 12 meses",
+        "12m+": "12 meses ou mais"
+      },
+      "typicalDuration_one": "Duração típica de {{duration}} (a partir de {{count}} registro).",
+      "typicalDuration_other": "Duração típica de {{duration}} (a partir de {{count}} registros).",
+      "inProgress": "Calculado a partir do fim previsto do que está em andamento."
+    },
+    "bedtime": {
+      "line": "Hora de dormir por volta das {{time}}",
+      "window": "Provavelmente entre {{earliest}} e {{latest}}.",
+      "basis_one": "A hora de dormir habitual do bebê foi por volta das {{clock}}, com base em {{count}} noite recente.",
+      "basis_other": "A hora de dormir habitual do bebê foi por volta das {{clock}}, com base em {{count}} noites recentes."
+    }
+  },
+  "insights": {
+    "soonTitle": "Mais análises a caminho",
+    "soonBody": "O ritmo de sono e as tendências de mamadas e fraldas aparecem aqui conforme você registra.",
+    "readyBody": "Cada uma abre depois de alguns dias de registros. O histórico importado também conta.",
+    "ready": "Pronto",
+    "rangeLabel": "Período",
+    "range_one": "{{count}} dia",
+    "range_other": "{{count}} dias",
+    "onTheWay": "A caminho",
+    "progress": "Dia {{done}} de {{total}}",
+    "estimateDays_one": "Cerca de mais {{count}} dia de registros",
+    "estimateDays_other": "Cerca de mais {{count}} dias de registros",
+    "showTable": "Ver como tabela",
+    "showChart": "Ver como gráfico",
+    "tableDay": "Dia",
+    "averageCaption_one": "Média dos dias registrados, último {{count}} dia",
+    "averageCaption_other": "Média dos dias registrados, últimos {{count}} dias",
+    "perDay": "{{value}} / dia",
+    "average": "Média",
+    "noData": "Nada registrado neste período ainda.",
+    "chartLabel": "{{title}}, de {{from}} a {{to}}: {{summary}}",
+    "columnTitle": "{{day}}: {{values}}",
+    "seriesValue": "{{label}} {{value}}",
+    "footnote": "Calculado neste aparelho a partir do que você registrou. Uma estimativa, não um conselho médico.",
+    "names": {
+      "sleep": "Sono",
+      "sleepRhythm": "Ritmo do sono",
+      "feeding": "Alimentação",
+      "diapers": "Fraldas",
+      "formulas": "Fórmulas"
+    },
+    "start": {
+      "sleep": "Comece a registrar sonecas e noites para desbloquear",
+      "feeding": "Comece a registrar as mamadas para desbloquear",
+      "diapers": "Comece a registrar as fraldas para desbloquear"
+    },
+    "moreEvents": {
+      "sleep_one": "Registre mais {{count}} soneca ou noite para desbloquear",
+      "sleep_other": "Registre mais {{count}} sonecas ou noites para desbloquear",
+      "feeding_one": "Registre mais {{count}} mamada para desbloquear",
+      "feeding_other": "Registre mais {{count}} mamadas para desbloquear",
+      "diapers_one": "Registre mais {{count}} fralda para desbloquear",
+      "diapers_other": "Registre mais {{count}} fraldas para desbloquear"
+    },
+    "sleep": {
+      "summary": "Em média {{total}} de sono por dia: {{night}} à noite e {{naps}} em sonecas.",
+      "night": "Noite",
+      "naps": "Sonecas"
+    },
+    "rhythm": {
+      "bedtime": "Hora de dormir habitual",
+      "wake": "Despertar habitual",
+      "tableBedtime": "Hora de dormir",
+      "tableWake": "Despertar",
+      "summary": "A hora de dormir costuma ser por volta das {{bedtime}} e o despertar por volta das {{wake}}.",
+      "summaryBedtime": "A hora de dormir costuma ser por volta das {{bedtime}}.",
+      "summaryWake": "O despertar costuma ser por volta das {{wake}}.",
+      "caption": "Uma linha por dia, das 06:00 às 06:00 da manhã seguinte. Os intervalos à noite são despertares."
+    },
+    "feeding": {
+      "summary_one": "Cerca de {{count}} mamada por dia.",
+      "summary_other": "Cerca de {{count}} mamadas por dia.",
+      "gapSummary": "Em média, as mamadas ficam a cerca de {{gap}} uma da outra.",
+      "feeds": "Mamadas",
+      "gap": "Intervalo médio",
+      "bottle": "Mamadeira média",
+      "bottleTime": "Tempo médio da mamadeira",
+      "headline_one": "{{count, number}} mamada / dia",
+      "headline_other": "{{count, number}} mamadas / dia",
+      "feedsChart": "Mamadas por dia",
+      "mlChart": "Leite na mamadeira por dia (ml)",
+      "mlSummary": "Nos dias com mamadeira, cerca de {{ml}} por dia na mamadeira.",
+      "tableMl": "ml na mamadeira"
+    },
+    "diapers": {
+      "summary_one": "Cerca de {{count}} fralda por dia.",
+      "summary_other": "Cerca de {{count}} fraldas por dia.",
+      "wetDirty": "Cerca de {{wet}} com xixi e {{dirty}} com cocô por dia.",
+      "total": "Fraldas",
+      "wet": "Xixi",
+      "dirty": "Cocô",
+      "headline_one": "{{count, number}} fralda / dia",
+      "headline_other": "{{count, number}} fraldas / dia",
+      "chart": "Fraldas por dia",
+      "mixedNote": "Uma fralda mista conta como xixi e como cocô."
+    },
+    "formulas": {
+      "rowTitle": "Fórmula: {{name}}",
+      "moreDays_one": "Aparece depois de mais {{count}} dia com esta fórmula",
+      "moreDays_other": "Aparece depois de mais {{count}} dias com esta fórmula",
+      "moreBottles_one": "Aparece depois de mais {{count}} mamadeira desta fórmula",
+      "moreBottles_other": "Aparece depois de mais {{count}} mamadeiras desta fórmula",
+      "metrics": {
+        "bottlesPerDay": "Mamadeiras por dia",
+        "mlPerDay": "Leite na mamadeira por dia",
+        "mlPerKgPerDay": "Leite na mamadeira por kg por dia",
+        "bellyPainsPerDay": "Dores de barriga por dia",
+        "bellyPainsAfterBottlePerDay": "Dores de barriga até 2 h depois de uma mamadeira, por dia",
+        "fussyPerDay": "Episódios de choro por dia",
+        "dirtyPerDay": "Fraldas com cocô por dia"
+      },
+      "values": {
+        "bellyPains_one": "{{count, number}} dor de barriga/dia",
+        "bellyPains_other": "{{count, number}} dores de barriga/dia",
+        "fussy_one": "{{count, number}} episódio de choro/dia",
+        "fussy_other": "{{count, number}} episódios de choro/dia",
+        "ml": "{{value}}/dia"
+      },
+      "statementOne": "Com {{name}}: {{value}}.",
+      "statementMany": "Com {{name}}: {{value}}; {{others}}.",
+      "onOther": "com {{name}}: {{value}}",
+      "range": "{{from}} a {{to}}",
+      "days_one": "{{count}} dia",
+      "days_other": "{{count}} dias",
+      "bottles_one": "{{count}} mamadeira",
+      "bottles_other": "{{count}} mamadeiras",
+      "headlineBottles_one": "{{count, number}} mamadeira / dia",
+      "headlineBottles_other": "{{count, number}} mamadeiras / dia",
+      "singleCaption_one": "Com {{name}}, média de {{count}} dia registrado",
+      "singleCaption_other": "Com {{name}}, média de {{count}} dias registrados",
+      "caption_one": "Os dias com mamadeira de cada fórmula, último {{count}} dia",
+      "caption_other": "Os dias com mamadeira de cada fórmula, últimos {{count}} dias",
+      "chartLabel": "Fórmulas: {{summary}}",
+      "tableMeasure": "Por dia",
+      "note": "Isto compara o que você registrou. Muita coisa muda com o tempo (idade, crescimento, doenças), então isto não mostra que uma fórmula causa alguma coisa. Converse com o pediatra antes de trocar a fórmula ou a quantidade.",
+      "weightNote": "O leite por kg usa o peso registrado mais perto antes de cada dia, em até 14 dias (senão o mais perto depois).",
+      "collecting": "Ainda coletando"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "growth": {
+    "title": "Crescimento",
+    "add": "Adicionar medida",
+    "edit": "Editar medida",
+    "none": "Nenhuma medida ainda.",
+    "loadFailed": "Não foi possível carregar as medidas. Tente de novo mais tarde.",
+    "createBabyFirst": "Cadastre um bebê na tela Agora para acompanhar o crescimento.",
+    "deleteTitle": "Excluir esta medida?",
+    "deleteBody": "Ela some da lista e dos gráficos.",
+    "deleteConfirm": "Excluir medida",
+    "list": "Medidas",
+    "editOn": "Editar medida de {{date}}",
+    "deleteOn": "Excluir medida de {{date}}",
+    "date": "Data",
+    "range": "{{min}} a {{max}} {{unit}}",
+    "metricLabel": "{{label}} ({{unit}})",
+    "chart": "Gráfico de {{label}}",
+    "latest": "Última: {{value}} {{unit}}",
+    "noneForMetric": "Nenhuma medida de {{label}} ainda.",
+    "valueWithUnit": "{{label}} {{value}} {{unit}}",
+    "pointTitle": "{{date}}: {{value}} {{unit}}",
+    "chartDescription": "{{label}} de {{from}} a {{to}}: {{points}}.",
+    "chartPoint": "{{value}} {{unit}} em {{date}}",
+    "metrics": {
+      "weightKg": "Peso",
+      "heightCm": "Altura",
+      "headCircumferenceCm": "Perímetro da cabeça"
+    },
+    "validation": {
+      "pickDate": "Escolha uma data.",
+      "dateFuture": "A data não pode ser no futuro.",
+      "dateTooOld": "A data é antiga demais.",
+      "outOfRange": "{{label}} deve estar entre {{min}} e {{max}} {{unit}}.",
+      "needValue": "Informe pelo menos um entre peso, altura ou perímetro da cabeça.",
+      "notesTooLong": "As observações podem ter até {{max}} caracteres."
+    }
+  }
+}

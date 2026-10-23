@@ -73,10 +73,22 @@ export function writeState(patch: ReviewState): void {
 /* ---------- i18n catalogs (to drive both locales with the app's own strings) ---------- */
 
 type Catalog = Record<string, unknown>;
-const catalogs: Record<LocaleName, Catalog> = {
-  en: JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'code/web/src/i18n/locales/en.json'), 'utf8')),
-  'pt-BR': JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'code/web/src/i18n/locales/pt-BR.json'), 'utf8')),
-};
+
+/** The app's catalog of `locale`: its per-feature files (`locales/<locale>/*.json`) merged, as the app does. */
+function readCatalog(locale: LocaleName): Catalog {
+  const dir = path.join(REPO_ROOT, 'code/web/src/i18n/locales', locale);
+  const merged: Catalog = {};
+  for (const file of fs.readdirSync(dir).filter((name) => name.endsWith('.json')).sort()) {
+    const content = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')) as Catalog;
+    for (const [key, value] of Object.entries(content)) {
+      if (Object.hasOwn(merged, key)) throw new Error(`Duplicate top-level catalog key ${locale}:${key} (${file})`);
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
+const catalogs: Record<LocaleName, Catalog> = { en: readCatalog('en'), 'pt-BR': readCatalog('pt-BR') };
 
 function lookup(catalog: Catalog, key: string): unknown {
   return key.split('.').reduce<unknown>((node, part) => (node as Catalog | undefined)?.[part], catalog);

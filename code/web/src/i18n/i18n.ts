@@ -1,8 +1,8 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import type { Localization } from '@mui/material/locale';
+import { enCatalog } from './catalogEn';
 import { DEFAULT_LOCALE, type Locale } from './config';
-import en from './locales/en.json';
 
 interface LoadedLocale {
   messages: object;
@@ -14,17 +14,17 @@ interface LoadedLocale {
 const LOADERS: Record<Exclude<Locale, typeof DEFAULT_LOCALE>, () => Promise<LoadedLocale>> = {
   'pt-BR': async () => {
     const [messages, muiLocales] = await Promise.all([
-      import('./locales/pt-BR.json'),
+      import('./catalogPtBR'),
       import('@mui/material/locale'),
     ]);
-    return { messages: messages.default, mui: muiLocales.ptBR };
+    return { messages: messages.ptBRCatalog, mui: muiLocales.ptBR };
   },
 };
 
 export const i18n = i18next.createInstance();
 
 void i18n.use(initReactI18next).init({
-  resources: { en: { translation: en } },
+  resources: { en: { translation: enCatalog } },
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
   interpolation: { escapeValue: false },

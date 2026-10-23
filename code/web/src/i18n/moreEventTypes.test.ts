@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import en from './locales/en.json';
-import ptBR from './locales/pt-BR.json';
+import { enCatalog as en } from './catalogEn';
+import { ptBRCatalog as ptBR } from './catalogPtBR';
 import {
   MILESTONE_TYPE,
   MORE_BUILT_IN_TYPES,
