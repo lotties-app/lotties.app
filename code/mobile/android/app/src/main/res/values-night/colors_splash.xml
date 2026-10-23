@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warm dark (dark first-paint colour of the web app). -->
+    <color name="splash_background">#1B1814</color>
+</resources>
