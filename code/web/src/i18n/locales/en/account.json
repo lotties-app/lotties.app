@@ -1,0 +1,24 @@
+{
+  "account": {
+    "sectionTitle": "Account and data",
+    "intro": "You can delete your account and your data from here. This cannot be undone.",
+    "exportHint": "Want to keep a copy first? Download what this device holds of your babies' records as a JSON file.",
+    "export": "Download my data",
+    "exportFailed": "This browser could not save the file.",
+    "exportOnWeb": "To keep a copy of your data first, open Lotties in a browser at lotties.app and download it from Settings > Account and data.",
+    "delete": "Delete my account…",
+    "confirmTitle": "Delete your account?",
+    "previewFailed": "Could not check what the deletion affects. Try again.",
+    "willDelete": "These babies and all their records will be deleted, because nobody else uses them:",
+    "willLeave": "You will leave these babies. Their records stay for the other members, and the entries you added stay without your name:",
+    "blocked": "You are the only owner of these babies, and other people use them. Make another member an owner, or remove the other members, then try again:",
+    "whatElse": "Your reminders, notes only you can see, doctor profile and sign-in account are deleted too.",
+    "unsynced": "{{changes}} on this device have not reached the server yet and will be lost.",
+    "understand": "I understand that this is permanent.",
+    "confirm": "Delete everything",
+    "doneTitle": "Account deleted",
+    "doneBody": "Your data was deleted. Select Finish to leave the app.",
+    "identityKept": "Your sign-in account still exists at the identity provider. It holds no baby data. Ask the person who runs this server to remove it.",
+    "finish": "Finish"
+  }
+}

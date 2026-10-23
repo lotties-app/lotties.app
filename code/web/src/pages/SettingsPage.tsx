@@ -10,6 +10,7 @@ import { EventTypesSection } from '../settings/EventTypesSection';
 import { FeedingSection } from '../settings/FeedingSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
+import { DeleteAccountSection } from '../settings/DeleteAccountSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
 import { canLog, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { hasPatients } from '../doctor/appMode';
@@ -133,6 +134,13 @@ export function SettingsPage() {
         defaultExpanded={wants('sync')}
       >
         <SyncSection />
+      </SettingsSection>
+      <SettingsSection
+        id="account"
+        title={t('account.sectionTitle')}
+        defaultExpanded={wants('account')}
+      >
+        <DeleteAccountSection />
       </SettingsSection>
     </Stack>
   );

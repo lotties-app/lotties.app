@@ -10,6 +10,8 @@ internal static class EnvironmentAliases
     {
         ["AUTH_AUTHORITY"] = "Auth:Authority",
         ["AUTH_AUDIENCE"] = "Auth:Audience",
+        ["AUTH_ADMIN_CLIENT_ID"] = "Auth:AdminClientId",
+        ["AUTH_ADMIN_CLIENT_SECRET"] = "Auth:AdminClientSecret",
         ["CORS_ALLOWED_ORIGINS"] = "Cors:AllowedOrigins",
         ["FORWARDED_HEADERS_TRUSTED_NETWORKS"] = "ForwardedHeaders:TrustedNetworks",
     }

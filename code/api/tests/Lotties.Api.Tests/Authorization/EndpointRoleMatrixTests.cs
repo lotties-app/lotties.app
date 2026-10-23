@@ -75,6 +75,8 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
     {
         ["GET /health"] = Access.Anonymous,
         ["GET /api/v1/me"] = Access.SignedIn,
+        ["GET /api/v1/me/deletion-preview"] = Access.SignedIn,
+        ["DELETE /api/v1/me"] = Access.SignedIn,
         // The caller's own professional profile: any signed-in user may declare one (needed to accept a Doctor invite).
         ["GET /api/v1/me/professional-profile"] = Access.SignedIn,
         ["PUT /api/v1/me/professional-profile"] = Access.SignedIn,

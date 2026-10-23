@@ -20,6 +20,7 @@ internal static class AuthenticationServiceCollectionExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
+        services.AddHttpClient<IIdentityAccountRemover, KeycloakAccountRemover>(client => client.Timeout = TimeSpan.FromSeconds(10));
         return services;
     }
 }

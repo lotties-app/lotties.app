@@ -56,6 +56,7 @@
     "note_baby_mismatch": "Esta nota pertence a outro bebê.",
     "note_already_shared": "Esta nota já foi compartilhada com a família e não pode ficar privada. Exclua-a.",
     "measurement_not_owned": "Você só pode alterar as medidas que registrou.",
-    "vaccination_baby_mismatch": "Este registro de vacina pertence a outro bebê."
+    "vaccination_baby_mismatch": "Este registro de vacina pertence a outro bebê.",
+    "account_deletion_blocked": "Você é a única pessoa responsável por um bebê que outras pessoas usam. Torne outro membro responsável primeiro."
   }
 }

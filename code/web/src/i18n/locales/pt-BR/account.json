@@ -1,0 +1,24 @@
+{
+  "account": {
+    "sectionTitle": "Conta e dados",
+    "intro": "Aqui você pode excluir sua conta e seus dados. Isso não pode ser desfeito.",
+    "exportHint": "Quer guardar uma cópia antes? Baixe em um arquivo JSON o que este aparelho tem dos registros dos seus bebês.",
+    "export": "Baixar meus dados",
+    "exportFailed": "Este navegador não conseguiu salvar o arquivo.",
+    "exportOnWeb": "Para guardar uma cópia dos seus dados antes, abra o Lotties no navegador, em lotties.app, e baixe em Configurações > Conta e dados.",
+    "delete": "Excluir minha conta…",
+    "confirmTitle": "Excluir sua conta?",
+    "previewFailed": "Não foi possível verificar o que a exclusão afeta. Tente de novo.",
+    "willDelete": "Estes bebês e todos os registros deles serão excluídos, porque mais ninguém os usa:",
+    "willLeave": "Você vai sair destes bebês. Os registros ficam para os outros membros, e as entradas que você fez ficam sem o seu nome:",
+    "blocked": "Você é a única pessoa responsável (owner) por estes bebês e outras pessoas os usam. Torne outro membro responsável ou remova os outros membros e tente de novo:",
+    "whatElse": "Seus lembretes, anotações que só você vê, perfil de médico e conta de acesso também são excluídos.",
+    "unsynced": "{{changes}} neste aparelho ainda não chegaram ao servidor e serão perdidas.",
+    "understand": "Entendo que isso é permanente.",
+    "confirm": "Excluir tudo",
+    "doneTitle": "Conta excluída",
+    "doneBody": "Seus dados foram excluídos. Toque em Concluir para sair do app.",
+    "identityKept": "Sua conta de acesso ainda existe no provedor de identidade. Ela não guarda dados de bebês. Peça a quem administra este servidor para removê-la.",
+    "finish": "Concluir"
+  }
+}

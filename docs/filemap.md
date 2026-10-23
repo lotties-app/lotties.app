@@ -62,6 +62,7 @@
 - code/api/src/Lotties.Infrastructure/Persistence/Configurations/RowVersions.cs — shadow `xmin` row version (optimistic concurrency) used by invites and babies
 - code/api/src/Lotties.Infrastructure/Persistence/Migrations/*_EventClientUpdatedAt.cs — adds events.client_updated_at, backfilled from updated_at
 - code/api/src/Lotties.Infrastructure/Persistence/Migrations/*_Wave2Hardening.cs — users.issuer ('' for existing rows) + unique (issuer, subject), email-like display names -> 'Parent'; xmin row versions need no DDL
+- code/api/src/Lotties.Infrastructure/Persistence/Repositories/EfAccountDataEraser.cs — account deletion in bulk (babies only the user uses are erased, others keep their records under the anonymized user); Application/Users/AccountDeletionService.cs, Api/Authentication/KeycloakAccountRemover.cs (optional Keycloak admin delete), migration `*_AccountDeletion` (users.deleted_at); web: settings/DeleteAccountSection.tsx, account/
 - code/api/src/Lotties.Api/Limits/ — RequestLimitsOptions (section RequestLimits) + validator, body size middleware (413), per-user rate limits (429), request timeouts, WithImportLimits
 - code/api/tests/Lotties.Api.Tests/Support/SqliteUniqueViolationDetector.cs — test-only SQLite unique/PK violation detector
 - code/api/tests/Lotties.Api.Tests/Limits/, Endpoints/StorageLimitEndpointTests.cs — request limit and DB-limit (NUL, dose) endpoint tests
