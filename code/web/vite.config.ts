@@ -13,7 +13,14 @@ const MUI_LOCALES = /@mui[\\/]material[\\/](esm[\\/])?locale[\\/]/;
 /** The date pickers (and date-fns) load on demand with the date field: keep them out of vendor-mui. */
 const LAZY_PICKERS = /@mui[\\/]x-date-pickers[\\/]/;
 
+/**
+ * Per-checkout caches (gitignored): git worktrees share node_modules through a junction, so the
+ * default node_modules/.vite and node_modules/.vitest-cache would be shared by every checkout.
+ */
+const CACHE_DIR = '.vite-cache';
+
 export default defineConfig({
+  cacheDir: CACHE_DIR,
   plugins: [
     react(),
     VitePWA({
@@ -86,5 +93,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     // jsdom + MUI renders (and the lazy date pickers) are slow when the machine is busy (CI, parallel builds)
     testTimeout: 30000,
+    fsModuleCachePath: `${CACHE_DIR}/vitest-modules`,
   },
 });
