@@ -211,7 +211,7 @@ export function buildTheme(localization?: Localization) {
             },
             // A word longer than the line (a name, a long Portuguese word at large text) breaks
             // instead of pushing the page sideways; headings also let their flex row shrink them.
-            body: { ...NUMERIC, overscrollBehaviorY: 'none', overflowWrap: 'break-word' },
+            body: { ...NUMERIC, overflowWrap: 'break-word' },
             'h1, h2, h3, h4, h5, h6': { overflowWrap: 'anywhere' },
             // Sheets, dialogs and popovers (and the scrolling parts inside them) keep their scroll:
             // reaching their end never scrolls or bounces the page behind.

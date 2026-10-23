@@ -79,8 +79,8 @@ Causes, by weight:
 
 Global (`code/web/src/theme/theme.ts`, `MuiCssBaseline`):
 
-- `html`/`body`: `overscroll-behavior-y: none` (no rubber band or scroll chaining past the page ends; in a browser
-  tab this also turns off pull-to-refresh, the app syncs on its own), `text-size-adjust: 100%`.
+- `html`/`body`: `text-size-adjust: 100%` only. No `overscroll-behavior`: the page keeps the browser's pull-to-refresh
+  (owner decision 2026-10-23; the first version of this audit had turned it off).
 - `.MuiDrawer-paper`, `.MuiDialog-paper`, `.MuiPopover-paper` and everything inside them: `overscroll-behavior:
   contain` (a sheet's scroll never moves the page behind).
 - `a, button, input, select, textarea, label, summary, [role=button|tab|switch]`: `touch-action: manipulation`

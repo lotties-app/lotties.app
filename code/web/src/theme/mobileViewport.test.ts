@@ -51,10 +51,12 @@ describe('global mobile CSS', () => {
     expect(rule.fontSize).toBe('max(16px, 1rem)');
   });
 
-  it('stops the page bounce and double-tap zoom, never pinch zoom', () => {
+  it('keeps pull-to-refresh on the page, stops double-tap zoom, never pinch zoom', () => {
     const styles = baseline();
-    expect(styles.html).toMatchObject({ overscrollBehaviorY: 'none', textSizeAdjust: '100%' });
-    expect(styles.body).toMatchObject({ overscrollBehaviorY: 'none' });
+    expect(styles.html).toMatchObject({ textSizeAdjust: '100%' });
+    // The page itself keeps the browser's pull-to-refresh: no overscroll rule on html or body.
+    expect(styles.html).not.toHaveProperty('overscrollBehaviorY');
+    expect(styles.body).not.toHaveProperty('overscrollBehaviorY');
     const interactive = Object.entries(styles).find(([selector]) => selector.includes('button'));
     expect(interactive?.[1]).toEqual({ touchAction: 'manipulation' });
     const sheets = Object.entries(styles).find(([selector]) =>
