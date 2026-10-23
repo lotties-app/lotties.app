@@ -8,6 +8,6 @@ Thanks for helping out.
    - `dotnet build code/api/Lotties.sln` and `dotnet test code/api/Lotties.sln`
    - `npm --prefix code/web run lint`, `npm --prefix code/web run test -- --run`, `npm --prefix code/web run build`
 4. Never commit secrets. `.env` is gitignored; use `.env.example` for placeholders.
-5. Project docs and specs live under `docs/`. See `docs/SPEC.md` and `docs/PLAN.md`; deployment is in `docs/DEPLOY.md`.
+5. Project docs and specs live under `docs/`. See `docs/SPEC.md` and `docs/agents/PLAN.md`; deployment is in `docs/DEPLOY.md`.
 
 By contributing you agree that your contributions are licensed under AGPL-3.0.

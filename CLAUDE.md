@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/PLAN.md`. Open review findings: `docs/REVIEW.md`. Deploy: `docs/DEPLOY.md`. Navigation: `docs/filemap.md` (update when adding/moving files).
+Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/agents/PLAN.md`. Open review findings: `docs/agents/REVIEW.md`. Deploy: `docs/DEPLOY.md`. Navigation: `docs/agents/filemap.md` (update when adding/moving files).
 
 ## Stack
 - Layout: application code under `code/` (`api`, `web`, `keycloak-theme`), the Playwright suite in `tests/e2e/`, the Python benchmark in `ml/`; docs, workflows, `docker-compose.yml` and the root `.env` stay at the root.

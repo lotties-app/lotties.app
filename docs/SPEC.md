@@ -23,7 +23,7 @@ SSR, native apps, ML models, pro/paid tiers, growth charts. (Pediatrician sharin
 ```
 /api   .NET solution (src/*, tests/*)
 /web   Vite React app
-/docs  SPEC.md, PLAN.md
+/docs  SPEC.md, agents/PLAN.md
 docker-compose.yml, LICENSE (AGPL-3.0), README, CONTRIBUTING, CLAUDE.md
 ```
 

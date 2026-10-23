@@ -1,9 +1,10 @@
 # filemap
 
 - CLAUDE.md — agent instructions
-- docs/filemap.md — this index
+- docs/agents/filemap.md — this index
+- docs/agents/README.md — what lives in docs/agents (agent-only status, findings, navigation)
 - docs/SPEC.md — product + architecture spec
-- docs/PLAN.md — task list and status
+- docs/agents/PLAN.md — task list and status
 - docs/E2E.md — how to run the Playwright smoke suite, required env, coverage
 - docs/DEPLOY.md — deployment: compose, env vars, IdP, Keycloak theme, reverse proxy (trusted forwarded headers, unprivileged web image), home lab pointer, push notifications (VAPID keys, migration, grants), database roles; docs/sql/grant-app-role.sql — app role grants
 - docs/PROCESS.md — parallel work process: one git worktree per agent (feat/<name>), worker rules, port slots, integration one feature at a time, hot spots and how each conflict is resolved, deploy and rollback rules

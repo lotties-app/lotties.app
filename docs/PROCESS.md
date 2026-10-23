@@ -118,7 +118,7 @@ the rule of each conflicting file).
 | Dexie `SCHEMA_VERSIONS` (`code/web/src/db/database.ts`) | append one entry with the next version number | keep `main`'s entries unchanged and renumber yours to the next free number (`database.test.ts` checks 1..n). Only versions never deployed may be renumbered |
 | Endpoint-role matrix (`EndpointRoleMatrixTests.cs`) | your routes as one block, with a comment line naming the feature, after the block of the closest feature (or at the end) | keep both blocks |
 | Enums and lists that grow (`NotificationKind` + `NotificationCodes`, `BuiltInEventTypes.All`) | append at the end | keep both, `main`'s first; the tests pin only the deployed prefix |
-| `docs/SPEC.md`, `docs/PLAN.md`, `docs/filemap.md`, `CLAUDE.md`, other docs | your own lines or section | keep both sides, `main`'s first |
+| `docs/SPEC.md`, `docs/agents/PLAN.md`, `docs/agents/filemap.md`, `CLAUDE.md`, other docs | your own lines or section | keep both sides, `main`'s first |
 
 After each deploy that shipped a migration, a built-in event type or a notification kind, the orchestrator appends it
 to the pinned list (`DeployedMigrations` in `MigrationTests.cs`, `DeployedKeys` in `BuiltInEventTypesTests.cs`, the
