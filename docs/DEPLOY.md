@@ -337,6 +337,23 @@ Apply the `PushNotifications` migration (`20261021182304_PushNotifications`) as 
 - Database errors on push routes (permission denied): the app role lacks grants on the new tables, see Database above.
 - No reminders but test works: the user has no time zone saved (open Settings once), quiet hours, per-baby reminders off, or the scheduler disabled on every instance.
 
+## Address lookup
+
+The provider sheet's "Find address" calls `GET /api/v1/address/lookup` (Brazilian CEP: BrasilAPI, then ViaCEP) and `GET /api/v1/address/search` (OpenStreetMap Nominatim). The API is the proxy, so the browser calls no third party and the CSP is unchanged. No keys or accounts. Only the CEP digits or the search text the user typed leave the server (plus an identifying `User-Agent`); the typed text is never logged. Design: docs/design/23-address-lookup.md.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `AddressLookup__Enabled` | `true` | `false` turns the feature off: the routes answer 503 `address_lookup_disabled` and nothing is called |
+| `AddressLookup__ContactEmail` | empty | Operator e-mail added to the `User-Agent` (`Lotties-baby-tracker/1.0 (+repo; you@example.com)`), as the Nominatim policy asks; set it |
+| `AddressLookup__BrasilApiBaseUrl`, `__ViaCepBaseUrl`, `__NominatimBaseUrl` | `https://brasilapi.com.br`, `https://viacep.com.br`, `https://nominatim.openstreetmap.org` | Upstream bases (absolute http(s), no query). Point `NominatimBaseUrl` at your own instance for more than light use: the public one allows 1 request per second and may block abuse |
+| `AddressLookup__TimeoutSeconds` | `5` | Timeout of each upstream call (also how long a search waits for its Nominatim slot) |
+| `AddressLookup__CepCacheMinutes`, `__SearchCacheMinutes` | `1440`, `60` | In-memory cache lifetime of CEP answers (not found included) and search answers |
+| `AddressLookup__CacheMaxEntries` | `1000` | Cached answers per kind; emptied when full |
+| `AddressLookup__NominatimMinIntervalMilliseconds` | `1100` | Least time between two Nominatim requests of this server (0 only for a private instance) |
+| `RequestLimits__AddressLookupPermitsPerMinute` | `20` | Lookups per user per minute (both routes; 429 `rate_limited`) |
+
+Invalid values fail startup. Egress: the API pod must reach `brasilapi.com.br`, `viacep.com.br` and `nominatim.openstreetmap.org` over HTTPS (or your replacements); if it cannot, the feature answers 502 and the address field stays manual. Keep the log level of `System.Net.Http.HttpClient.AddressLookup` at `None` (set in `appsettings.json`: a higher level would print request URLs, i.e. the typed text). A reverse proxy's access log may record the query string of `/api/v1/address/*`; exclude that path from the log if you do not want it kept.
+
 ## Token storage trade-off
 
 The OIDC library keeps the user, access token and refresh token in `localStorage`, which is required for offline use and silent renew in a pure SPA. Any script that runs on the page can read them, so the main mitigation is the CSP: no inline or eval scripts and no third-party script origins (`style-src 'unsafe-inline'` is allowed only because MUI/emotion injects styles). Further mitigations: refresh token rotation, short access token lifetimes, and a minimal dependency set (`npm audit` runs in CI). If your threat model needs more, put a backend-for-frontend with HttpOnly cookies in front instead.

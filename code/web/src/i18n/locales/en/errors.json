@@ -56,6 +56,9 @@
     "note_baby_mismatch": "This note belongs to another baby.",
     "note_already_shared": "This note is already shared with the parents and cannot be made private. Delete it instead.",
     "measurement_not_owned": "You can change only the measurements you recorded.",
-    "vaccination_baby_mismatch": "This vaccine record belongs to another baby."
+    "vaccination_baby_mismatch": "This vaccine record belongs to another baby.",
+    "address_not_found": "No address was found for that postal code. Check it or type the address by hand.",
+    "address_lookup_unavailable": "The address lookup is unavailable right now.",
+    "address_lookup_disabled": "The address lookup is turned off on this server."
   }
 }

@@ -30,6 +30,23 @@
       "dentist": "Dentist",
       "other": "Other"
     },
+    "address": {
+      "label": "Find the address",
+      "help": "Type a postal code (CEP) or a street or place name, then press Find address. Only what you type is sent, never anything about your baby.",
+      "placeholder": "e.g. 01001-000 or Rua Augusta, São Paulo",
+      "find": "Find address",
+      "finding": "Searching...",
+      "tooShort": "Type a CEP or at least 3 characters to search.",
+      "offline": "You are offline, so the address can't be looked up. Type it below.",
+      "manual": "You can type the address below.",
+      "empty": "No address found.",
+      "filled": "Address filled in below. Add the number and complement, and check it.",
+      "results": "Addresses found",
+      "number": "Number",
+      "complement": "Complement",
+      "complementPlaceholder": "e.g. Suite 12",
+      "attribution": "Data © OpenStreetMap contributors"
+    },
     "sheet": {
       "newTitle": "New doctor or clinic",
       "editTitle": "Edit doctor or clinic",

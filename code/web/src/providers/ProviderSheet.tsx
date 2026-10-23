@@ -6,6 +6,7 @@ import type { CareProvider } from '../db/models';
 import { SheetFrame } from '../now/ui/SheetFrame';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import { ChipGroup, Field, NotesRow, SwitchRow, TextInput } from '../ui/form';
+import { AddressFinder } from './AddressFinder';
 import {
   PROVIDER_LIMITS,
   SPECIALTY_CODES,
@@ -172,6 +173,7 @@ export function ProviderSheet({ babyId, provider, initialName = '', onClose, onS
             maxLength={PROVIDER_LIMITS.clinicName}
           />
         </Field>
+        <AddressFinder address={text('address')} onAddress={(address) => change({ address })} />
         <Field label={t('providers.sheet.address')} optional icon="map-pin">
           <NotesRow
             value={text('address')}

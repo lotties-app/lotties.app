@@ -30,6 +30,7 @@ Owner request: keep the baby's doctors and clinics once, with phone, address and
 - i18n: `locales/<lang>/providers.json` (en + pt-BR, typed in `catalogEn.ts`), `hub.entries.providers`, `appointments.detail.savedDoctor`, `settings.sync.entities.careProvider`.
 
 ## 5. Not done
+- Address help while typing the address (CEP and place search through the API) is its own feature: docs/design/23-address-lookup.md.
 - "Add to my doctors" from a Doctor-role member's self-declared professional profile: skipped. The profile is only exposed on `MemberDto.professional` for Doctor members and the members list is another feature's file (the Doctor dashboard worker is changing the same area); worth doing with it, as one button on the member row that opens `ProviderSheet` prefilled with name, specialty and registration number.
 - No import of providers from past appointments, no duplicates check, no per-provider history of visits.
 
