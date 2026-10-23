@@ -35,6 +35,9 @@ public sealed record UpsertAppointmentRequest
 
     public IReadOnlyList<int>? ReminderOffsetsMinutes { get; init; }
 
+    /// <summary>The care provider picked from the baby's directory; the text fields keep the copied details.</summary>
+    public Guid? ProviderId { get; init; }
+
     public DateTimeOffset? UpdatedAt { get; init; }
 
     /// <summary>Validates every rule but the clock one; throws <see cref="DomainValidationException"/> naming the field.</summary>
@@ -51,7 +54,8 @@ public sealed record UpsertAppointmentRequest
             request.Notes,
             request.Outcome,
             request.Status ?? AppointmentStatus.Upcoming,
-            AppointmentReminders.From(request.ReminderOffsetsMinutes?.ToArray()));
+            AppointmentReminders.From(request.ReminderOffsetsMinutes?.ToArray()),
+            request.ProviderId);
     }
 }
 
@@ -85,6 +89,8 @@ public sealed record AppointmentResponse
     /// <summary>Minutes before the start, largest first.</summary>
     public required IReadOnlyList<int> ReminderOffsetsMinutes { get; init; }
 
+    public Guid? ProviderId { get; init; }
+
     public Guid CreatedBy { get; init; }
 
     public DateTimeOffset CreatedAt { get; init; }
@@ -112,6 +118,7 @@ public sealed record AppointmentResponse
             Outcome = appointment.Outcome,
             Status = appointment.Status,
             ReminderOffsetsMinutes = appointment.Reminders.Minutes,
+            ProviderId = appointment.ProviderId,
             CreatedBy = appointment.CreatedBy,
             CreatedAt = appointment.CreatedAt,
             UpdatedAt = appointment.UpdatedAt,

@@ -37,6 +37,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Lotties.Domain.Prescriptions.IMedicationDoseHistoryRepository, EfMedicationDoseHistoryRepository>();
         services.AddScoped<Lotties.Domain.Formulas.IFormulaRepository, EfFormulaRepository>();
         services.AddScoped<Lotties.Domain.Appointments.IAppointmentRepository, EfAppointmentRepository>();
+        services.AddScoped<Lotties.Domain.CareProviders.ICareProviderRepository, EfCareProviderRepository>();
         services.AddScoped<Lotties.Domain.Vaccinations.IVaccinationRepository, EfVaccinationRepository>();
         services.AddScoped<Lotties.Domain.Professionals.IProfessionalProfileRepository, EfProfessionalProfileRepository>();
         services.AddScoped<Lotties.Domain.Notes.INoteRepository, EfNoteRepository>();

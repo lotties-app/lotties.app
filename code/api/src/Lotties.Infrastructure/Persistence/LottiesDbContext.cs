@@ -1,6 +1,7 @@
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Catalog;
+using Lotties.Domain.CareProviders;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Formulas;
@@ -44,6 +45,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
 
     /// <summary>The babies' appointments, cancelled ones included (appointments are never deleted).</summary>
     public DbSet<Appointment> Appointments => Set<Appointment>();
+
+    /// <summary>The babies' directories of care providers, soft-deleted ones included (clients learn deletes through the delta).</summary>
+    public DbSet<CareProvider> CareProviders => Set<CareProvider>();
 
     /// <summary>The babies' recorded vaccines, soft-deleted ones included (readers of the schedule filter them).</summary>
     public DbSet<Lotties.Domain.Vaccinations.Vaccination> Vaccinations => Set<Lotties.Domain.Vaccinations.Vaccination>();
