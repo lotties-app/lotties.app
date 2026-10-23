@@ -21,6 +21,7 @@ const hubSubPage = (name: HubSubPageName) =>
   lazy(() => import('./pages/HubSubPages').then((m) => ({ default: m[name] })));
 const HubMedicinesPage = hubSubPage('HubMedicinesPage');
 const HubFormulasPage = hubSubPage('HubFormulasPage');
+const HubProvidersPage = hubSubPage('HubProvidersPage');
 const HubFamilyPage = hubSubPage('HubFamilyPage');
 const HubImportPage = hubSubPage('HubImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
@@ -275,6 +276,7 @@ export function AppRoutes() {
             <Route path="hub" element={<HubPage />} />
             <Route path="hub/medicines" element={<HubMedicinesPage />} />
             <Route path="hub/formulas" element={<HubFormulasPage />} />
+            <Route path="hub/providers" element={<HubProvidersPage />} />
             <Route path="hub/family" element={<HubFamilyPage />} />
             <Route path="hub/import" element={<HubImportPage />} />
             <Route path="hub/updates" element={<HubUpdatesPage />} />

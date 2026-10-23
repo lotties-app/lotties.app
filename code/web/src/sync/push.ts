@@ -6,6 +6,7 @@ import { backoffDelay } from './backoff';
 import {
   apiPaths,
   fromAppointmentDto,
+  fromCareProviderDto,
   fromEventDto,
   fromFormulaDto,
   fromNoteDto,
@@ -13,6 +14,7 @@ import {
   fromProposalDto,
   fromVaccinationDto,
   isAppointmentDtoFor,
+  isCareProviderDtoFor,
   isEventDtoFor,
   isFormulaDtoFor,
   isNoteDtoFor,
@@ -156,6 +158,8 @@ function pathOf(mutation: OutboxMutation): string {
       return apiPaths.formula(mutation.babyId, mutation.entityId);
     case 'appointment':
       return apiPaths.appointment(mutation.babyId, mutation.entityId);
+    case 'careProvider':
+      return apiPaths.careProvider(mutation.babyId, mutation.entityId);
     case 'vaccination':
       return apiPaths.vaccination(mutation.babyId, mutation.entityId);
     case 'note':
@@ -195,6 +199,7 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
     db.prescriptions,
     db.formulas,
     db.appointments,
+    db.careProviders,
     db.vaccinations,
     db.notes,
     db.proposals,
@@ -217,6 +222,10 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
       entityType === 'appointment' && isAppointmentDtoFor(response, entityId)
         ? response
         : undefined;
+    const careProviderCopy =
+      entityType === 'careProvider' && isCareProviderDtoFor(response, entityId)
+        ? response
+        : undefined;
     const vaccinationCopy =
       entityType === 'vaccination' && isVaccinationDtoFor(response, entityId)
         ? response
@@ -230,6 +239,7 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
       !prescriptionCopy &&
       !formulaCopy &&
       !appointmentCopy &&
+      !careProviderCopy &&
       !vaccinationCopy &&
       !noteCopy &&
       !proposalCopy
@@ -246,6 +256,7 @@ async function acknowledge(db: BabyRoutineDb, mutation: OutboxMutation, response
     if (prescriptionCopy) await db.prescriptions.put(fromPrescriptionDto(prescriptionCopy));
     if (formulaCopy) await db.formulas.put(fromFormulaDto(formulaCopy));
     if (appointmentCopy) await db.appointments.put(fromAppointmentDto(appointmentCopy));
+    if (careProviderCopy) await db.careProviders.put(fromCareProviderDto(careProviderCopy));
     if (vaccinationCopy) await db.vaccinations.put(fromVaccinationDto(vaccinationCopy));
     if (noteCopy) await db.notes.put(fromNoteDto(noteCopy));
     if (proposalCopy) await db.proposals.put(fromProposalDto(proposalCopy));

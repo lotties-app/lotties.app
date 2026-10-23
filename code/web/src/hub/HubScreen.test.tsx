@@ -71,6 +71,7 @@ describe('the sections', () => {
     await waitFor(() => expect(rows()).toContain('fromDoctor'));
     expect(rows()).toEqual([
       'appointments',
+      'providers',
       'vaccines',
       'growth',
       'medicines',
@@ -98,6 +99,7 @@ describe('the sections', () => {
     await renderHub('Caregiver', MEMBERS.slice(0, 1));
     expect(rows()).toEqual([
       'appointments',
+      'providers',
       'vaccines',
       'growth',
       'medicines',
@@ -115,7 +117,14 @@ describe('the sections', () => {
     const list = rows();
     expect(list).toContain('myProposals');
     expect(list).toContain('notes');
-    for (const hidden of ['appointments', 'fromDoctor', 'invite', 'doctorAccess', 'import']) {
+    for (const hidden of [
+      'appointments',
+      'providers',
+      'fromDoctor',
+      'invite',
+      'doctorAccess',
+      'import',
+    ]) {
       expect(list).not.toContain(hidden);
     }
   });

@@ -10,8 +10,17 @@ import {
   type AppointmentTerms,
 } from './appointmentCommands';
 import {
+  createCareProvider,
+  deleteCareProvider,
+  restoreCareProvider,
+  setCareProviderFavorite,
+  updateCareProvider,
+  type CareProviderTerms,
+} from './careProviderCommands';
+import {
   allBabies,
   appointmentsFor,
+  careProvidersFor,
   entitySyncStates,
   eventsInRange,
   eventsStartedSince,
@@ -195,6 +204,23 @@ export function useAppointmentCommands() {
     markDone: (id: string, outcome: string | null) => markAppointmentDone(db, id, outcome),
     cancel: (id: string) => cancelAppointment(db, id),
     restore: (id: string) => restoreAppointment(db, id),
+  };
+}
+
+/** Every provider of the baby's directory, deleted ones included (`undefined` while loading). */
+export function useCareProviders(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(() => careProvidersFor(db, babyId), [db, babyId]);
+}
+
+export function useCareProviderCommands() {
+  const db = useDatabase();
+  return {
+    create: (babyId: string, terms: CareProviderTerms) => createCareProvider(db, babyId, terms),
+    update: (id: string, terms: CareProviderTerms) => updateCareProvider(db, id, terms),
+    setFavorite: (id: string, favorite: boolean) => setCareProviderFavorite(db, id, favorite),
+    remove: (id: string) => deleteCareProvider(db, id),
+    restore: (id: string) => restoreCareProvider(db, id),
   };
 }
 

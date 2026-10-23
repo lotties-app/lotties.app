@@ -1,0 +1,84 @@
+{
+  "providers": {
+    "search": "Buscar médicos e clínicas",
+    "list": "Médicos e clínicas",
+    "noMatch": "Nenhum médico ou clínica corresponde a \"{{query}}\".",
+    "add": "Adicionar médico ou clínica",
+    "viewOnly": "Você pode ver os médicos e clínicas, mas não alterá-los.",
+    "favoriteMark": "Favorito",
+    "empty": {
+      "title": "Os médicos do bebê, num só lugar",
+      "body": "Salve uma vez o pediatra, os especialistas e as clínicas, com telefone, endereço e registro. Ao marcar uma consulta, escolha um deles e o médico e o local são preenchidos sozinhos.",
+      "bodyReadOnly": "Nada salvo ainda. Um responsável pode adicionar aqui os médicos e clínicas do bebê."
+    },
+    "contact": {
+      "call": "Ligar",
+      "whatsapp": "Enviar mensagem no WhatsApp",
+      "email": "Enviar e-mail",
+      "website": "Abrir o site",
+      "maps": "Abrir no mapa"
+    },
+    "specialties": {
+      "pediatrician": "Pediatra",
+      "dermatologist": "Dermatologista",
+      "ent": "Otorrinolaringologista",
+      "cardiologist": "Cardiologista",
+      "allergist": "Alergista",
+      "gastro": "Gastroenterologista",
+      "ophthalmologist": "Oftalmologista",
+      "orthopedist": "Ortopedista",
+      "dentist": "Dentista",
+      "other": "Outra"
+    },
+    "sheet": {
+      "newTitle": "Novo médico ou clínica",
+      "editTitle": "Editar médico ou clínica",
+      "name": "Nome",
+      "namePlaceholder": "ex.: Dra. Ana Lima",
+      "nameRequired": "Digite um nome de até 80 caracteres.",
+      "specialty": "Especialidade",
+      "specialtySuggestions": "Especialidades comuns",
+      "registrationCouncil": "Conselho",
+      "registrationCouncilPlaceholder": "ex.: CRM",
+      "registrationRegion": "Estado",
+      "registrationRegionPlaceholder": "ex.: SP",
+      "registrationNumber": "Número do registro",
+      "clinicName": "Clínica ou hospital",
+      "address": "Endereço",
+      "phone": "Telefone",
+      "whatsapp": "WhatsApp",
+      "whatsappHelp": "Com o código do país, ex.: +55 11 91234-5678.",
+      "email": "E-mail",
+      "website": "Site",
+      "websitePlaceholder": "https://exemplo.com.br",
+      "notes": "Observações",
+      "notesHelp": "Só dados de contato. As informações de saúde do bebê ficam nos registros do bebê.",
+      "favorite": "Favorito",
+      "favoriteHelp": "Os favoritos aparecem primeiro.",
+      "saveFailed": "Não foi possível salvar. Tente de novo."
+    },
+    "detail": {
+      "registration": "Registro profissional",
+      "clinic": "Clínica ou hospital",
+      "notes": "Observações",
+      "edit": "Editar",
+      "favorite": "Marcar como favorito",
+      "unfavorite": "Remover dos favoritos",
+      "delete": "Excluir",
+      "deletedNotice": "{{name}} excluído. As consultas mantêm o que copiaram."
+    },
+    "picker": {
+      "label": "Médico ou clínica",
+      "help": "Escolha um salvo para preencher o médico e o local. Você ainda pode editá-los abaixo.",
+      "search": "Buscar médicos salvos",
+      "results": "Médicos e clínicas salvos",
+      "noMatch": "Nenhum médico salvo corresponde.",
+      "more_one": "Mais {{count}}: continue digitando para filtrar.",
+      "more_other": "Mais {{count}}: continue digitando para filtrar.",
+      "addNew": "Adicionar novo",
+      "remove": "Remover",
+      "removeNamed": "Remover o vínculo com {{name}}",
+      "removed": "Um médico salvo que não está mais na lista"
+    }
+  }
+}

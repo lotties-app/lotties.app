@@ -2,6 +2,7 @@ import Dexie from 'dexie';
 import type { BabyRoutineDb } from './database';
 import type {
   Appointment,
+  CareProvider,
   Baby,
   BabyEvent,
   EventType,
@@ -117,6 +118,11 @@ export function appointmentsFor(db: BabyRoutineDb, babyId: string): Promise<Appo
     .where('[babyId+startsAt]')
     .between([babyId, Dexie.minKey], [babyId, Dexie.maxKey])
     .toArray();
+}
+
+/** Every provider of the baby's directory, deleted ones included (the list filters them). */
+export function careProvidersFor(db: BabyRoutineDb, babyId: string): Promise<CareProvider[]> {
+  return db.careProviders.where('babyId').equals(babyId).toArray();
 }
 
 /** Every formula of the baby, archived ones included (bottles still name them). */

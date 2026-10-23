@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable, type Table, type Transaction } from 'dexie';
 import type {
   Appointment,
+  CareProvider,
   Baby,
   BabyEvent,
   EventType,
@@ -103,6 +104,13 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       vaccineSchedules: 'profile',
     },
   },
+  {
+    // Care providers: the baby's directory "My doctors" (synced like formulas, soft deleted).
+    version: 9,
+    stores: {
+      careProviders: 'id, babyId, [babyId+updatedAt]',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -115,6 +123,7 @@ export class BabyRoutineDb extends Dexie {
   declare bodyWeights: EntityTable<BodyWeightRow, 'babyId'>;
   declare formulas: EntityTable<Formula, 'id'>;
   declare appointments: EntityTable<Appointment, 'id'>;
+  declare careProviders: EntityTable<CareProvider, 'id'>;
   declare notes: EntityTable<Note, 'id'>;
   declare proposals: EntityTable<Proposal, 'id'>;
   declare noteReads: EntityTable<NoteRead, 'noteId'>;

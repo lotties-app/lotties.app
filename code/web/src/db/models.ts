@@ -255,6 +255,46 @@ export interface Appointment {
   status: AppointmentStatus;
   /** Minutes before the start, largest first; `[]` = no reminders. */
   reminderOffsetsMinutes: ReminderOffset[];
+  /**
+   * The care provider picked from the baby's directory (docs/design/22-care-providers.md), or
+   * absent/`null`. Only a link: `location` and `doctorName` hold the copied text, so editing or
+   * deleting the provider never rewrites the appointment.
+   */
+  providerId?: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+}
+
+/**
+ * One entry of the baby's directory of care providers, "My doctors" (docs/design/22-care-providers.md):
+ * contact details only, shared by the family members who may see appointments. Synced like
+ * formulas; `deleted` is the soft delete (kept so the delete reaches the other devices).
+ */
+export interface CareProvider {
+  id: string;
+  babyId: string;
+  /** 1-80 characters. */
+  name: string;
+  /** Free text; the form suggests common specialties. */
+  specialty: string | null;
+  /** Council, number and region as free text (e.g. CRM, 123456, SP). */
+  registrationCouncil: string | null;
+  registrationNumber: string | null;
+  registrationRegion: string | null;
+  /** Clinic or hospital. */
+  clinicName: string | null;
+  /** One multi-line text. */
+  address: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  notes: string | null;
+  favorite: boolean;
+  deleted: boolean;
   createdBy: string | null;
   createdAt: string;
   /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
@@ -490,6 +530,7 @@ export type MutationEntityType =
   | 'prescription'
   | 'formula'
   | 'appointment'
+  | 'careProvider'
   | 'vaccination'
   | 'note'
   | 'proposal'
@@ -540,6 +581,7 @@ export type SyncEntity =
   | 'prescriptions'
   | 'formulas'
   | 'appointments'
+  | 'careProviders'
   | 'vaccinations'
   | 'notes'
   | 'proposals'

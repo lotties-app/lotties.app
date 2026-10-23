@@ -39,6 +39,7 @@ import {
   NEXT_CURSOR_HEADER,
 } from './contract';
 import { pullNotes } from '../notes/noteSync';
+import { syncCareProviders } from './careProviderSync';
 import { pullNoteReads, pullProposals } from '../proposals/proposalSync';
 import { classifyFailure, describeFailure } from './failures';
 import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
@@ -441,6 +442,7 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await pullPrescriptions(ctx, babyId);
       await pullFormulas(ctx, babyId);
       await syncAppointments(ctx, babyId);
+      await syncCareProviders(ctx, babyId);
       await pullVaccinations(ctx, babyId);
       await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);

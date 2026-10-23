@@ -1,11 +1,13 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink, Navigate, useLocation } from 'react-router-dom';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
+import { canSeeFamilyRecords } from '../baby/permissions';
+import { ProvidersScreen } from '../providers/ProvidersScreen';
 import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
@@ -54,6 +56,18 @@ export function HubMedicinesPage() {
   return (
     <BabyPage title={t('hub.entries.medicines.title')}>
       {(baby) => <MedicationsSection baby={baby} />}
+    </BabyPage>
+  );
+}
+
+/** "Doctors and clinics": the baby's directory of care providers. A Doctor never sees it. */
+export function HubProvidersPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  if (babies && baby && !canSeeFamilyRecords(baby)) return <Navigate to="/patients" replace />;
+  return (
+    <BabyPage title={t('hub.entries.providers.title')}>
+      {(current) => <ProvidersScreen key={current.id} baby={current} />}
     </BabyPage>
   );
 }

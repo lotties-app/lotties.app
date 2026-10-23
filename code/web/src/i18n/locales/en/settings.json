@@ -192,6 +192,7 @@
         "prescription": "prescription",
         "formula": "formula",
         "appointment": "appointment",
+        "careProvider": "doctor or clinic",
         "vaccination": "vaccine record",
         "note": "note",
         "proposal": "proposal",

@@ -133,6 +133,12 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.ReadFamily,
         ["PUT /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Write,
 
+        // Care providers ("My doctors", docs/design/22-care-providers.md): every family member reads the directory (list
+        // with its delta); only Owners and Parents create, edit or soft delete (no delete route). Caregivers and Viewers
+        // read only. The Doctor gets 403 on every route.
+        ["GET /api/v1/babies/{babyId:guid}/care-providers"] = Access.ReadFamily,
+        ["PUT /api/v1/babies/{babyId:guid}/care-providers/{providerId:guid}"] = Access.Write,
+
         // Vaccines: the schedule is the same for everyone (any signed-in user); every member reads a baby's records,
         // a Doctor included; only Owners and Parents record, edit or delete. Caregivers, Viewers and the Doctor read only.
         ["GET /api/v1/vaccine-schedule"] = Access.SignedIn,

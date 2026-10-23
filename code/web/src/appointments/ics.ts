@@ -1,4 +1,5 @@
-import type { Appointment } from '../db/models';
+import type { Appointment, CareProvider } from '../db/models';
+import { singleLineAddress } from '../providers/providerModel';
 import { endOf } from './appointmentModel';
 import { dayKeyOf } from './calendarModel';
 
@@ -12,12 +13,20 @@ import { dayKeyOf } from './calendarModel';
 export interface IcsLabels {
   /** "Doctor" before the doctor's name in the description. */
   doctor: string;
+  /** "Phone" before the provider's phone in the description (only needed with a provider). */
+  phone?: string;
 }
 
 export interface IcsOptions {
   /** The export time (DTSTAMP). */
   now: Date;
   labels: IcsLabels;
+  /**
+   * The care provider the appointment links to, when it is still on the device
+   * (docs/design/22-care-providers.md): its address completes the LOCATION and its phone joins
+   * the description.
+   */
+  provider?: Pick<CareProvider, 'address' | 'phone'> | null;
 }
 
 const CRLF = '\r\n';
@@ -67,10 +76,31 @@ export function foldLine(line: string): string {
 
 const statusOf = (a: Appointment) => (a.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED');
 
-function descriptionOf(a: Appointment, labels: IcsLabels): string | null {
-  const lines = [a.doctorName ? `${labels.doctor}: ${a.doctorName}` : null, a.notes].filter(
-    (line): line is string => !!line,
-  );
+/**
+ * The place: the appointment's own text, completed with the linked provider's address on one line
+ * unless the text already holds it (a picked provider copies it, so usually it does).
+ */
+export function locationOf(
+  a: Pick<Appointment, 'location'>,
+  provider?: IcsOptions['provider'],
+): string | null {
+  const place = a.location?.trim() ?? '';
+  const address = singleLineAddress(provider?.address);
+  if (!address || place.includes(address)) return place || null;
+  return place ? `${place}, ${address}` : address;
+}
+
+function descriptionOf(
+  a: Appointment,
+  labels: IcsLabels,
+  provider?: IcsOptions['provider'],
+): string | null {
+  const phone = provider?.phone?.trim();
+  const lines = [
+    a.doctorName ? `${labels.doctor}: ${a.doctorName}` : null,
+    phone ? `${labels.phone ?? 'Phone'}: ${phone}` : null,
+    a.notes,
+  ].filter((line): line is string => !!line);
   return lines.length > 0 ? lines.join('\n') : null;
 }
 
@@ -85,8 +115,9 @@ function alarmLines(a: Appointment): string[] {
 }
 
 /** The `.ics` text of one appointment. */
-export function appointmentToIcs(a: Appointment, { now, labels }: IcsOptions): string {
-  const description = descriptionOf(a, labels);
+export function appointmentToIcs(a: Appointment, { now, labels, provider }: IcsOptions): string {
+  const description = descriptionOf(a, labels, provider);
+  const location = locationOf(a, provider);
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -99,7 +130,7 @@ export function appointmentToIcs(a: Appointment, { now, labels }: IcsOptions): s
     `DTSTART:${icsDateTime(a.startsAt)}`,
     `DTEND:${icsDateTime(endOf(a))}`,
     `SUMMARY:${escapeText(a.title)}`,
-    ...(a.location ? [`LOCATION:${escapeText(a.location)}`] : []),
+    ...(location ? [`LOCATION:${escapeText(location)}`] : []),
     ...(description ? [`DESCRIPTION:${escapeText(description)}`] : []),
     `STATUS:${statusOf(a)}`,
     `LAST-MODIFIED:${icsDateTime(a.updatedAt)}`,

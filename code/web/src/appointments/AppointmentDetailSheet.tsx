@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Card, Stack, Typography } from '@mui/material';
-import { useAppointmentCommands } from '../db/hooks';
+import { useAppointmentCommands, useCareProviders } from '../db/hooks';
 import type { Appointment } from '../db/models';
 import { formatRelative } from '../i18n/format';
 import { SheetFrame } from '../now/ui/SheetFrame';
@@ -11,6 +11,8 @@ import { Field, NotesRow } from '../ui/form';
 import { Icon } from '../ui/Icon';
 import type { IconName } from '../ui/icons';
 import { announceUndo } from '../ui/undoNotice';
+import { ProviderContact } from '../providers/ProviderContact';
+import { providerOf, singleLineAddress } from '../providers/providerModel';
 import { StatusChip } from './AgendaList';
 import { APPOINTMENT_LIMITS, needsOutcome } from './appointmentModel';
 import { remindersLine, TYPE_ICON, whenLine } from './appointmentText';
@@ -117,6 +119,12 @@ function MarkDoneCard({ appointment, onDone }: { appointment: Appointment; onDon
 export function AppointmentDetailSheet({ appointment, writable, now, onClose, onEdit }: Props) {
   const { t } = useTranslation();
   const commands = useAppointmentCommands();
+  const providers = useCareProviders(appointment.babyId);
+  // The saved doctor, while it is still on the list; a deleted one leaves only the copied text.
+  const provider = providers ? providerOf(appointment, providers) : null;
+  // The place already prints the address when the provider's was copied into it.
+  const address = singleLineAddress(provider?.address);
+  const placeHasAddress = !address || (appointment.location ?? '').includes(address);
   const start = Date.parse(appointment.startsAt);
   const ahead = appointment.status === 'upcoming' && start > now;
   const reminders = remindersLine(t, appointment.reminderOffsetsMinutes);
@@ -126,7 +134,8 @@ export function AppointmentDetailSheet({ appointment, writable, now, onClose, on
   const exportIcs = () => {
     const text = appointmentToIcs(appointment, {
       now: new Date(now),
-      labels: { doctor: t('appointments.detail.doctor') },
+      labels: { doctor: t('appointments.detail.doctor'), phone: t('providers.sheet.phone') },
+      provider,
     });
     downloadIcs(text, icsFileName(appointment));
   };
@@ -169,6 +178,22 @@ export function AppointmentDetailSheet({ appointment, writable, now, onClose, on
           <DetailRow icon="stethoscope" label={t('appointments.detail.doctor')}>
             {appointment.doctorName}
           </DetailRow>
+        )}
+        {provider && (
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+            <Box sx={{ color: 'text.secondary', pt: 0.25, flex: 'none' }}>
+              <Icon name="phone" size={20} />
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+              <Typography variant="caption" color="text.secondary" component="p">
+                {t('appointments.detail.savedDoctor')}
+              </Typography>
+              <Typography sx={{ fontWeight: 500, overflowWrap: 'anywhere' }}>
+                {provider.name}
+              </Typography>
+              <ProviderContact provider={provider} withAddress={!placeHasAddress} />
+            </Box>
+          </Box>
         )}
         <DetailRow icon="bell" label={t('appointments.detail.reminders')}>
           {reminders ?? t('appointments.detail.noReminders')}

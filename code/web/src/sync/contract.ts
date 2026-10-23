@@ -7,6 +7,7 @@ import { isProposalStatus } from '../proposals/proposalModel';
 import {
   editTimeOf,
   type Appointment,
+  type CareProvider,
   type Note,
   type NoteRead,
   type PrescriptionContent,
@@ -91,6 +92,8 @@ import type { VaccineNetwork } from '../vaccines/vaccineSchedule';
  * - Doctor access: GET/PUT /me/professional-profile (404 `professional_profile_not_found` before
  *          one is declared; a Doctor invite needs one: 422 `professional_profile_required`), GET
  *          /babies/{id}/access-log (Owner).
+ * - Care providers (docs/SPEC.md "Care providers"): GET /babies/{id}/care-providers?since= (deleted
+ *          included, no DELETE), PUT /babies/{id}/care-providers/{id} (Owner/Parent). Family roles only.
  * - Appointments (docs/SPEC.md "Appointments"): GET /babies/{id}/appointments?since= (cancelled and
  *          done included, no delete), PUT /babies/{id}/appointments/{id} (Owner/Parent). `done` is
  *          refused (422 `appointment_not_started`) while the start is in the future.
@@ -145,6 +148,10 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/appointments` + query({ since }),
   appointment: (babyId: string, appointmentId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/appointments/${enc(appointmentId)}`,
+  careProviders: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/care-providers` + query({ since }),
+  careProvider: (babyId: string, providerId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/care-providers/${enc(providerId)}`,
   vaccinations: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/vaccinations` + query({ since }),
   vaccination: (babyId: string, vaccinationId: string) =>
@@ -1113,6 +1120,7 @@ export interface AppointmentDto {
   outcome?: string | null;
   status?: string;
   reminderOffsetsMinutes?: number[] | null;
+  providerId?: string | null;
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1131,6 +1139,7 @@ export interface AppointmentUpsertRequest {
   outcome: string | null;
   status: AppointmentStatus;
   reminderOffsetsMinutes: ReminderOffset[];
+  providerId: string | null;
   updatedAt?: string;
 }
 
@@ -1146,6 +1155,7 @@ export function toAppointmentUpsertRequest(a: Appointment): AppointmentUpsertReq
     outcome: a.outcome,
     status: a.status,
     reminderOffsetsMinutes: a.reminderOffsetsMinutes,
+    providerId: a.providerId ?? null,
     updatedAt: a.clientUpdatedAt ?? a.updatedAt,
   };
 }
@@ -1170,6 +1180,101 @@ export function fromAppointmentDto(dto: AppointmentDto): Appointment {
     outcome: dto.outcome ?? null,
     status: isAppointmentStatus(dto.status) ? dto.status : 'upcoming',
     reminderOffsetsMinutes: normalizeReminders(dto.reminderOffsetsMinutes ?? []),
+    providerId: dto.providerId ?? null,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
+/* Care providers (docs/design/22-care-providers.md) */
+
+export interface CareProviderDto {
+  id: string;
+  babyId: string;
+  name: string;
+  specialty?: string | null;
+  registrationCouncil?: string | null;
+  registrationNumber?: string | null;
+  registrationRegion?: string | null;
+  clinicName?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  website?: string | null;
+  notes?: string | null;
+  isFavorite?: boolean;
+  isDeleted?: boolean;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full editable state of a provider plus the client edit time (`PUT` replaces it). */
+export interface CareProviderUpsertRequest {
+  name: string;
+  specialty: string | null;
+  registrationCouncil: string | null;
+  registrationNumber: string | null;
+  registrationRegion: string | null;
+  clinicName: string | null;
+  address: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  notes: string | null;
+  isFavorite: boolean;
+  isDeleted: boolean;
+  updatedAt?: string;
+}
+
+export function toCareProviderUpsertRequest(p: CareProvider): CareProviderUpsertRequest {
+  return {
+    name: p.name,
+    specialty: p.specialty,
+    registrationCouncil: p.registrationCouncil,
+    registrationNumber: p.registrationNumber,
+    registrationRegion: p.registrationRegion,
+    clinicName: p.clinicName,
+    address: p.address,
+    phone: p.phone,
+    whatsapp: p.whatsapp,
+    email: p.email,
+    website: p.website,
+    notes: p.notes,
+    isFavorite: p.favorite,
+    isDeleted: p.deleted,
+    updatedAt: p.clientUpdatedAt ?? p.updatedAt,
+  };
+}
+
+export function isCareProviderDtoFor(value: unknown, id: string): value is CareProviderDto {
+  const dto = value as Partial<CareProviderDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromCareProviderDto(dto: CareProviderDto): CareProvider {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    name: dto.name,
+    specialty: dto.specialty ?? null,
+    registrationCouncil: dto.registrationCouncil ?? null,
+    registrationNumber: dto.registrationNumber ?? null,
+    registrationRegion: dto.registrationRegion ?? null,
+    clinicName: dto.clinicName ?? null,
+    address: dto.address ?? null,
+    phone: dto.phone ?? null,
+    whatsapp: dto.whatsapp ?? null,
+    email: dto.email ?? null,
+    website: dto.website ?? null,
+    notes: dto.notes ?? null,
+    favorite: dto.isFavorite === true,
+    deleted: dto.isDeleted === true,
     createdBy: dto.createdBy ?? null,
     createdAt: toUtcIso(dto.createdAt),
     updatedAt: toUtcIso(dto.updatedAt),

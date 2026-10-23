@@ -47,6 +47,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
             .HasMaxLength(AppointmentReminders.StorageMaxLength)
             .HasColumnName("reminder_offsets_minutes")
             .IsRequired();
+        builder.Property(appointment => appointment.ProviderId);
         builder.Property(appointment => appointment.CreatedAt).IsRequired();
         builder.Property(appointment => appointment.UpdatedAt).IsRequired();
         builder.Property(appointment => appointment.ClientUpdatedAt).IsRequired();
