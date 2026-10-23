@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 
 from .data import SECONDS_PER_MINUTE, Dataset, Event
+from .priors import UNSOURCED_AWAKE, UNSOURCED_NAP
 
 LOCAL_OFFSET = -3 * 3600.0
 
@@ -107,10 +108,11 @@ SWISS = Cohort(
 COHORTS = {cohort.name: cohort for cohort in (BRAZIL, SWISS)}
 
 # Unsourced day-rhythm parameters by heuristic age band (0-3 m, 3-6 m, 6-12 m, 12 m+): awake window and nap length
-# in minutes. The same values as the benchmark's unsourced priors (priors.UNSOURCED_AWAKE / UNSOURCED_NAP).
-UNSOURCED_AWAKE_MINUTES = (75, 105, 165, 240)
-UNSOURCED_NAP_MINUTES = (60, 60, 75, 105)
+# in minutes, the medians of the benchmark's unsourced priors.
+UNSOURCED_AWAKE_MINUTES = tuple(UNSOURCED_AWAKE[band][0] for band in range(4))
+UNSOURCED_NAP_MINUTES = tuple(UNSOURCED_NAP[band][0] for band in range(4))
 UNSOURCED_DAY_FEED_GAP_MINUTES = 180
+UNSOURCED_DIAPER_GAP_MINUTES = 210
 
 
 def _interpolate(points: tuple[tuple[int, float], ...], age_days: float) -> float:
@@ -139,6 +141,7 @@ def cohort_baby(cohort: Cohort, seed: int, days: int = 35, first_day: date = dat
     band = _band(age_days)
     awake, nap = UNSOURCED_AWAKE_MINUTES[band], UNSOURCED_NAP_MINUTES[band]
     jitter = lambda spread: rng.uniform(-spread, spread)  # noqa: E731
+    diaper_rng = random.Random(f"{cohort.name}-{seed}-diapers")  # its own stream: diapers never shift the sleep and feed draws
     events: list[Event] = []
     wake = _instant(first_day, usual_bed + usual_night * 60 - 24 * 60 + jitter(30))
     for offset in range(days):
@@ -159,6 +162,15 @@ def cohort_baby(cohort: Cohort, seed: int, days: int = 35, first_day: date = dat
             feed += (UNSOURCED_DAY_FEED_GAP_MINUTES + jitter(25)) * SECONDS_PER_MINUTE
         last_feed = bed - bedtime_feed_lead * SECONDS_PER_MINUTE
         events.append(Event("feeding", last_feed, last_feed, None, "bottle"))
+        diaper = wake + 10 * SECONDS_PER_MINUTE
+        while diaper < bed:
+            events.append(Event("diaper", diaper, diaper, None, None, "WET"))
+            diaper += (UNSOURCED_DIAPER_GAP_MINUTES + diaper_rng.uniform(-30, 30)) * SECONDS_PER_MINUTE
+        if offset % 7 == 0:
+            # A weekly medication instant, like a real export has: the full backtest's medication feature is then not
+            # all missing (an all-missing column breaks scikit-learn's HistGradientBoosting binning).
+            dose = wake + 120 * SECONDS_PER_MINUTE
+            events.append(Event("medication", dose, dose))
         events.append(Event("sleep", bed, bed, "bed_time"))
         next_wake = bed + (usual_night * 60 + jitter(30)) * SECONDS_PER_MINUTE
         wakings = min(4, _poisson(rng, cohort.wakings_per_night))

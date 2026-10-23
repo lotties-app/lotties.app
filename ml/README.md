@@ -60,6 +60,17 @@ cd ml
 .venv/bin/python -m benchmark.night_window --out out --data /path/outside/the/repo/events.csv   # the owner's export
 ```
 
+Priors (`benchmark/priors.py`, docs/design/28-age-norms.md section 15.5): bed time and night length from 3 months come
+from the published Brazilian cohort; awake windows, nap lengths, feed and diaper gaps are explicit `UNSOURCED_*`
+constants. Before/after on synthetic cohorts, and the full harness on one synthetic baby (no CSV needed):
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.prior_check --out out
+.venv/bin/python -m benchmark.run --synthetic brazil --out out/after
+.venv/bin/python -m benchmark.run --synthetic brazil --legacy-priors --out out/before
+```
+
 Tests (heuristic parity with the C# unit tests, leakage checks, synthetic end-to-end backtest):
 
 ```bash
@@ -91,3 +102,4 @@ Every method outputs q10, q25, q50, q75 and q90 in minutes from the decision ins
 | `benchmark/run.py` | CLI and report |
 | `benchmark/synthetic.py` | Synthetic histories: `generate` (tests) and `cohort_baby` (Brazilian and Swiss-like cohorts from published bed times and night lengths) |
 | `benchmark/night_window.py` | Night-window evaluation CLI (`night_window.json`, `night_window.md` in `--out`) |
+| `benchmark/prior_check.py` | Before/after of the age-band priors on synthetic cohorts (`prior_check.json`, `prior_check.md`) |
