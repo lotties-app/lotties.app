@@ -9,7 +9,8 @@ namespace Lotties.Domain.Catalog;
 /// source (<c>anvisa</c>, <c>curated</c>) with the product's stable key in it, the shared name when products with other
 /// ingredients use the same name (<see cref="AmbiguousName"/>), and the substances (existing ids, at most
 /// <see cref="Product.OfficialMaxSubstances"/>, each once; may be empty when the source lists none). Composition names
-/// only: no strength, no dose.
+/// only: no dose. The optional <see cref="StrengthKey"/> and <see cref="StrengthText"/> are the structured and the
+/// displayed strength (<see cref="StrengthKeys"/>), set only when the source states them unambiguously.
 /// </summary>
 public sealed record SourcedProductData(
     string Name,
@@ -19,7 +20,9 @@ public sealed record SourcedProductData(
     string Source,
     string ExternalRef,
     IReadOnlyList<Guid> SubstanceIds,
-    string? AmbiguousName = null)
+    string? AmbiguousName = null,
+    string? StrengthKey = null,
+    string? StrengthText = null)
 {
     /// <summary>The data with the name sanitised and every field checked; throws <see cref="DomainValidationException"/>.</summary>
     public SourcedProductData Validated()
@@ -35,6 +38,8 @@ public sealed record SourcedProductData(
             Source = Text.Required(Source, "source", Product.SourceMaxLength),
             ExternalRef = Text.Required(ExternalRef, "externalRef", Product.ExternalRefMaxLength),
             AmbiguousName = Text.Optional(AmbiguousName, "ambiguousName", Product.AmbiguousNameMaxLength),
+            StrengthKey = Text.Optional(StrengthKey, "strengthKey", Product.StrengthKeyMaxLength),
+            StrengthText = Text.Optional(StrengthText, "strengthText", Product.StrengthTextMaxLength),
         };
     }
 

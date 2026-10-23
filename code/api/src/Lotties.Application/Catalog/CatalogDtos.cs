@@ -97,6 +97,12 @@ public sealed record ProductResponse
     /// <summary>Dosage or presentation text the official name carried (e.g. <c>0,9%</c>); <c>null</c> when none.</summary>
     public string? Presentation { get; init; }
 
+    /// <summary>
+    /// The strength as the source states it (e.g. <c>75 mg/mL</c>, <c>9 mg/mL (0,9%)</c>); <c>null</c> when not known.
+    /// Composition information, never a dose.
+    /// </summary>
+    public string? StrengthText { get; init; }
+
     /// <summary>The official product left its source (no longer registered): search no longer offers it.</summary>
     public bool Inactive { get; init; }
 
@@ -136,10 +142,29 @@ public sealed record ProductSummary
     [JsonConverter(typeof(CamelCaseStringEnumConverter))]
     public ProductStatus Status { get; init; }
 
+    /// <summary>The strength as the source states it; <c>null</c> when not known.</summary>
+    public string? StrengthText { get; init; }
+
+    /// <summary>
+    /// How this alternative compares to the searched product, set in the "same active ingredient" list (<c>null</c>
+    /// elsewhere): <c>equivalent</c> (same ingredients, strength and known form), <c>differentForm</c> (same strength,
+    /// form differs or is not known), <c>strengthNotKnown</c> (strength missing or not comparable) or
+    /// <c>differentStrength</c>. Only <c>equivalent</c> may be read as "the same product"; none is a substitution advice.
+    /// </summary>
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public AlternativeLevel? MatchLevel { get; init; }
+
     public static implicit operator ProductSummary(Product product)
     {
         ArgumentNullException.ThrowIfNull(product);
-        return new ProductSummary { Id = product.Id, Name = product.Name, Form = product.Form, Country = product.Country.Value, Status = product.Status };
+        return new ProductSummary { Id = product.Id, Name = product.Name, Form = product.Form, Country = product.Country.Value, Status = product.Status, StrengthText = product.StrengthText };
+    }
+
+    /// <summary>The summary of an alternative with its match level.</summary>
+    public static ProductSummary From(ProductAlternative alternative)
+    {
+        ArgumentNullException.ThrowIfNull(alternative);
+        return ((ProductSummary)alternative.Product) with { MatchLevel = alternative.Level };
     }
 }
 

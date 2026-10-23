@@ -15,7 +15,9 @@ namespace Lotties.Domain.Catalog.Official;
 /// <see cref="Category"/> is <c>medicine</c>, <c>homeopathic</c> or <c>supplement</c> (what the label says it is; the
 /// verifier refuses to let two categories share an ingredient set). <see cref="AliasOf"/> marks an entry that is not a
 /// product but another name people use for the entry with that id: it is imported as an alias (a merged product), so
-/// searching the old name finds the real one.
+/// searching the old name finds the real one. <see cref="Strengths"/> is the optional structured form of the strength
+/// (one item per ingredient, all of them or none): it becomes the product's <see cref="CatalogProductPlan.StrengthKey"/>
+/// that the alternatives rule compares; only enter it where the label or the <see cref="Basis"/> states the amount.
 /// </summary>
 public sealed record CuratedProductEntry(
     string Id,
@@ -31,7 +33,16 @@ public sealed record CuratedProductEntry(
     string? Strength = null,
     string? PackageSize = null,
     string? Category = null,
-    string? AliasOf = null);
+    string? AliasOf = null,
+    IReadOnlyList<CuratedStrength>? Strengths = null);
+
+/// <summary>
+/// The structured strength of one ingredient of a curated entry, as the label states it: <see cref="Ingredient"/> (a
+/// spelling of the curated substance map, one of the entry's ingredients) with either an <see cref="Amount"/> and a
+/// <see cref="Unit"/> (<c>9</c> + <c>mg/mL</c>, <c>0,25</c> + <c>mL/mL</c>; units as in <see cref="StrengthParser"/>) or a
+/// probiotic <see cref="Strain"/> (<c>DSM 17938</c>). Composition, never a dose.
+/// </summary>
+public sealed record CuratedStrength(string Ingredient, string? Amount = null, string? Unit = null, string? Strain = null);
 
 /// <summary>
 /// The recorded result of the machine cross-check of an entry against ANVISA's open data (<c>verify-curated</c>): the
@@ -63,7 +74,7 @@ public static partial class CuratedCatalogPlanner
         EnsureUnique(entries);
         EnsureValidMetadata(entries);
         var resolved = entries.Select(entry => (entry, ingredients: Ingredients(entry, dictionary))).ToArray();
-        var products = resolved.Select(item => ToPlan(item.entry, item.ingredients)).ToArray();
+        var products = resolved.Select(item => ToPlan(item.entry, item.ingredients, dictionary)).ToArray();
         var substances = resolved
             .SelectMany(item => item.ingredients)
             .DistinctBy(substance => substance.Key, StringComparer.Ordinal)
@@ -72,9 +83,10 @@ public static partial class CuratedCatalogPlanner
         return new CuratedCatalogPlan(products, substances);
     }
 
-    private static CatalogProductPlan ToPlan(CuratedProductEntry entry, IReadOnlyList<SubstanceDefinition> ingredients)
+    private static CatalogProductPlan ToPlan(CuratedProductEntry entry, IReadOnlyList<SubstanceDefinition> ingredients, SubstanceDictionary dictionary)
     {
         var name = ProductNames.Sanitize(entry.Name, "name", Product.NameMaxLength);
+        var strength = StrengthOf(entry, ingredients, dictionary);
         return new CatalogProductPlan(
             CuratedSource,
             ProductStatus.Curated,
@@ -86,7 +98,46 @@ public static partial class CuratedCatalogPlanner
             ingredients.Select(ingredient => ingredient.Key).ToArray(),
             [],
             null,
-            entry.AliasOf);
+            entry.AliasOf,
+            strength?.Key,
+            strength?.Text);
+    }
+
+    /// <summary>
+    /// The canonical key and the display text of the entry's structured strengths, or <c>null</c> when it has none.
+    /// Every ingredient needs exactly one item (an amount with a known unit, or a strain), else the list is broken and
+    /// <see cref="ArgumentException"/> is thrown: a half-structured strength would compare wrongly.
+    /// </summary>
+    private static (string Key, string Text)? StrengthOf(CuratedProductEntry entry, IReadOnlyList<SubstanceDefinition> ingredients, SubstanceDictionary dictionary)
+    {
+        if (entry.Strengths is not { Count: > 0 } strengths)
+        {
+            return null;
+        }
+
+        var tokens = strengths.Select(strength => StrengthToken(entry, strength, dictionary)).ToArray();
+        var covered = tokens.Select(token => token.SubstanceKey).Order(StringComparer.Ordinal).ToArray();
+        if (!covered.SequenceEqual(ingredients.Select(ingredient => ingredient.Key).Order(StringComparer.Ordinal), StringComparer.Ordinal))
+        {
+            throw new ArgumentException($"Curated product '{entry.Id}' must give a structured strength for each of its ingredients, once.", nameof(entry));
+        }
+
+        var text = string.IsNullOrWhiteSpace(entry.Strength) ? string.Join("; ", tokens.Select(token => token.Display)) : entry.Strength.Trim();
+        return (StrengthKeys.Of(tokens.Select(token => token.Token)), ProductNames.Sanitize(text, "strength", Product.StrengthTextMaxLength));
+    }
+
+    private static (string SubstanceKey, string Token, string Display) StrengthToken(CuratedProductEntry entry, CuratedStrength strength, SubstanceDictionary dictionary)
+    {
+        var key = dictionary.Resolve(strength.Ingredient).Key;
+        if (!string.IsNullOrWhiteSpace(strength.Strain))
+        {
+            return (key, StrengthKeys.StrainToken(key, strength.Strain), strength.Strain.Trim());
+        }
+
+        var reading = StrengthParser.Read($"{strength.Amount?.Trim()} {strength.Unit?.Trim()} ");
+        return reading.Amount is { } amount
+            ? (key, StrengthKeys.Single(key, amount), reading.Display!)
+            : throw new ArgumentException($"Curated product '{entry.Id}' has a strength that is not understood ('{strength.Amount} {strength.Unit}').", nameof(entry));
     }
 
     /// <summary>The presentation text of an entry: strength as printed, then package size; <c>null</c> when it has neither.</summary>

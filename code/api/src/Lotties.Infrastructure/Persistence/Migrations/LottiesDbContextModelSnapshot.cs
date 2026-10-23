@@ -515,6 +515,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("status");
 
+                    b.Property<string>("StrengthKey")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("strength_key");
+
+                    b.Property<string>("StrengthText")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("strength_text");
+
                     b.HasKey("Id")
                         .HasName("pk_products");
 

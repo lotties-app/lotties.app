@@ -54,11 +54,38 @@ public sealed record OfficialProductEvidence(
     IReadOnlyList<string> Forms,
     IReadOnlyList<string> Routes,
     IReadOnlyList<string> Strengths,
-    IReadOnlyList<string> CmedSubstances)
+    IReadOnlyList<string> CmedSubstances,
+    IReadOnlyList<string>? StrengthTokens = null,
+    int UnreadableStrengths = 0)
 {
     /// <summary>The registration number, or <c>notified:&lt;name&gt;</c> for a product without one.</summary>
     public string Reference => Registration.Length > 0 ? Registration : "notified:" + Name;
 }
+
+/// <summary>How the strength an entry states compares with the CMED strengths of the matched official record.</summary>
+public enum StrengthOutcome
+{
+    /// <summary>The entry states no single structured strength (none, a combination, a strain): nothing to compare.</summary>
+    NotStated,
+
+    /// <summary>The matched record has no CMED presentation (notified products and unpriced registrations).</summary>
+    NoCmed,
+
+    /// <summary>CMED has presentations but none reads as one unambiguous amount.</summary>
+    NotReadable,
+
+    /// <summary>CMED strengths exist in another unit family than the entry's (for example % against mg/mL): not converted.</summary>
+    NotComparable,
+
+    /// <summary>One of the readable CMED strengths equals the entry's.</summary>
+    Agrees,
+
+    /// <summary>CMED has readable strengths in the entry's unit family and none equals the entry's.</summary>
+    Differs,
+}
+
+/// <summary>The strength comparison of one entry: the outcome, the entry's token and the CMED tokens it was compared with.</summary>
+public sealed record StrengthCheck(StrengthOutcome Outcome, string? EntryStrength, IReadOnlyList<string> CmedStrengths, string Detail);
 
 /// <summary>The verification of one curated entry.</summary>
 public sealed record EntryVerification(
@@ -70,7 +97,8 @@ public sealed record EntryVerification(
     IReadOnlyList<FieldDiff> Diffs,
     IReadOnlyList<OfficialProductEvidence> Evidence,
     IReadOnlyList<string> Notes,
-    IReadOnlyList<string> RelatedOfficialNames);
+    IReadOnlyList<string> RelatedOfficialNames,
+    StrengthCheck? Strength = null);
 
 /// <summary>Severity of a consistency finding: errors fail the command, warnings are listed.</summary>
 public enum FindingSeverity
@@ -83,7 +111,7 @@ public enum FindingSeverity
 public sealed record ConsistencyFinding(string Code, FindingSeverity Severity, string Message, IReadOnlyList<string> EntryIds);
 
 /// <summary>One "same active ingredient" suggestion the app would show for a curated entry.</summary>
-public sealed record AlternativeCheck(string EntryId, string AlternativeName, string AlternativeSource, string Outcome, string Detail, bool SameForm = true)
+public sealed record AlternativeCheck(string EntryId, string AlternativeName, string AlternativeSource, string Outcome, string Detail, bool SameForm = true, string? MatchLevel = null)
 {
     public const string Agrees = "AGREES";
     public const string Differs = "DIFFERS";

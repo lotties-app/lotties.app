@@ -57,7 +57,33 @@ public static partial class CuratedVerificationRunner
         Categories(entries, verifier, findings);
         RecordedChecks(entries, verifications, findings);
         BasisRegistrations(entries, verifier, findings);
+        Strengths(entries, verifications, findings);
         return findings;
+    }
+
+    /// <summary>
+    /// The structured strength of an entry against CMED: a difference inside the same unit family is an error (the
+    /// entry or the data is wrong); a strength CMED cannot confirm (no presentation, unreadable text, another unit
+    /// family) is only listed as a warning, because the label is the primary source.
+    /// </summary>
+    private static void Strengths(IReadOnlyList<CuratedProductEntry> entries, IReadOnlyList<EntryVerification> verifications, List<ConsistencyFinding> findings)
+    {
+        foreach (var (entry, verification) in entries.Zip(verifications))
+        {
+            if (verification.Strength is not { } check)
+            {
+                continue;
+            }
+
+            if (check.Outcome == StrengthOutcome.Differs)
+            {
+                findings.Add(new ConsistencyFinding("STRENGTH_MISMATCH", FindingSeverity.Error, $"'{entry.Id}': {check.Detail}", [entry.Id]));
+            }
+            else if (check.Outcome is StrengthOutcome.NotReadable or StrengthOutcome.NotComparable)
+            {
+                findings.Add(new ConsistencyFinding("STRENGTH_UNCONFIRMED", FindingSeverity.Warning, $"'{entry.Id}': {check.Detail}", [entry.Id]));
+            }
+        }
     }
 
     private static void Duplicates(IReadOnlyList<CuratedProductEntry> entries, List<ConsistencyFinding> findings)
@@ -224,17 +250,19 @@ public static partial class CuratedVerificationRunner
         foreach (var entry in plannable.Where(entry => !aliasIds.Contains(entry.Id)))
         {
             var product = curatedProducts[entry.Id];
-            foreach (var sibling in ProductSearch.SameActiveIngredient(product, pool))
+            foreach (var alternative in ProductSearch.Alternatives(product, pool))
             {
-                checks.Add(Compare(entry, officialKeys[entry.Id], sibling, officialKeys, keyById));
+                checks.Add(Compare(entry, officialKeys[entry.Id], alternative, officialKeys, keyById));
             }
         }
 
         return checks;
     }
 
-    private static AlternativeCheck Compare(CuratedProductEntry entry, IReadOnlyList<string>? entryOfficial, Product sibling, IReadOnlyDictionary<string, IReadOnlyList<string>?> officialKeys, IReadOnlyDictionary<Guid, string> keyById)
+    private static AlternativeCheck Compare(CuratedProductEntry entry, IReadOnlyList<string>? entryOfficial, ProductAlternative alternative, IReadOnlyDictionary<string, IReadOnlyList<string>?> officialKeys, IReadOnlyDictionary<Guid, string> keyById)
     {
+        var sibling = alternative.Product;
+        var level = alternative.Level.ToString();
         var curatedSibling = sibling.Source == CuratedCatalogPlanner.CuratedSource;
         var siblingOfficial = curatedSibling ? officialKeys.GetValueOrDefault(sibling.ExternalRef ?? string.Empty) : null;
         var source = curatedSibling ? "curated" : "official";
@@ -242,14 +270,14 @@ public static partial class CuratedVerificationRunner
         var formNote = sameForm ? string.Empty : $" Form differs: {OfficialCatalogPlanner.FormCode(sibling.Form)} vs {OfficialCatalogPlanner.FormCode(entry.Form)}.";
         if (entryOfficial is null || (curatedSibling && siblingOfficial is null))
         {
-            return new AlternativeCheck(entry.Id, sibling.Name, source, AlternativeCheck.Unverified, "The official ingredient set of " + (entryOfficial is null ? "the entry" : "the suggested curated product") + " could not be read from the official data: the suggestion rests on curated data only." + formNote, sameForm);
+            return new AlternativeCheck(entry.Id, sibling.Name, source, AlternativeCheck.Unverified, "The official ingredient set of " + (entryOfficial is null ? "the entry" : "the suggested curated product") + " could not be read from the official data: the suggestion rests on curated data only." + formNote, sameForm, level);
         }
 
         // An official sibling's set is the one the official data lists for it; a curated sibling counts through its own official record.
         var other = curatedSibling ? siblingOfficial! : sibling.Substances.Select(substance => keyById[substance.SubstanceId]).Order(StringComparer.Ordinal).ToArray();
         return entryOfficial.SequenceEqual(other)
-            ? new AlternativeCheck(entry.Id, sibling.Name, source, AlternativeCheck.Agrees, "Same official ingredient set." + formNote, sameForm)
-            : new AlternativeCheck(entry.Id, sibling.Name, source, AlternativeCheck.Differs, $"Official ingredient sets differ: {string.Join("+", entryOfficial)} vs {string.Join("+", other)}." + formNote, sameForm);
+            ? new AlternativeCheck(entry.Id, sibling.Name, source, AlternativeCheck.Agrees, "Same official ingredient set." + formNote, sameForm, level)
+            : new AlternativeCheck(entry.Id, sibling.Name, source, AlternativeCheck.Differs, $"Official ingredient sets differ: {string.Join("+", entryOfficial)} vs {string.Join("+", other)}." + formNote, sameForm, level);
     }
 
     private static IReadOnlyList<string>? OfficialKeys(EntryVerification verification) =>
@@ -260,7 +288,7 @@ public static partial class CuratedVerificationRunner
     private static Product ToProduct(CatalogProductPlan plan)
     {
         var substanceIds = plan.SubstanceKeys.Select(SubstanceId).ToArray();
-        var data = new SourcedProductData(plan.Name, plan.Form, plan.Presentation, plan.Status, plan.Source, plan.ExternalRef, substanceIds, plan.AmbiguousName);
+        var data = new SourcedProductData(plan.Name, plan.Form, plan.Presentation, plan.Status, plan.Source, plan.ExternalRef, substanceIds, plan.AmbiguousName, plan.StrengthKey, plan.StrengthText);
         return Product.FromSource(StableId(plan.Source + "/" + plan.ExternalRef), data, Brazil, DateTimeOffset.UnixEpoch);
     }
 

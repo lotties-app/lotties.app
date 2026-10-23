@@ -10,7 +10,7 @@ import {
   searchCachedProducts,
 } from '../db/catalogCache';
 import type { BabyRoutineDb } from '../db/database';
-import type { ProductDto, ProductMatchDto } from '../sync/contract';
+import type { AlternativeLevel, ProductDto, ProductMatchDto } from '../sync/contract';
 import { BABY_ID, fakeApi, testDatabase, type ApiCall } from '../test/fakeApi';
 import { useTestLocale } from '../test/locale';
 import { renderWithDb, settleSync } from '../test/renderApp';
@@ -47,16 +47,19 @@ const match = (
   p: ProductDto,
   siblings: ProductDto[] = [],
   matchedBy: ProductMatchDto['matchedBy'] = 'name',
+  levels: Record<string, AlternativeLevel> = {},
 ): ProductMatchDto => ({
   product: p,
   matchedBy,
   distance: 0,
-  sameActiveIngredient: siblings.map(({ id, name, form, country, status }) => ({
+  sameActiveIngredient: siblings.map(({ id, name, form, country, status, strengthText }) => ({
     id,
     name,
     form,
     country,
     status,
+    ...(strengthText !== undefined ? { strengthText } : {}),
+    ...(levels[id] ? { matchLevel: levels[id] } : {}),
   })),
 });
 
@@ -115,9 +118,12 @@ describe('shared catalog search', () => {
     const result = await screen.findByRole('button', { name: 'Add Flygas from the catalog' });
     expect(result.textContent).toMatch(/Flygas/);
     expect(result.textContent).toMatch(/Drops · 75 mg\/1 mL · Simethicone/);
-    expect(screen.getByRole('note').textContent).toBe(
-      'Contains the same active ingredient as Luftal: Simethicone. Ask your doctor or pharmacist before substituting.',
-    );
+    const note = screen.getByRole('note').textContent;
+    expect(note).toContain('Contains the same active ingredient: Simethicone.');
+    // An alternative without a level (older server) is "strength not known", never "equivalent".
+    expect(note).toContain('Same ingredient, strength not known: Luftal (Drops)');
+    expect(note).not.toContain('Same ingredient, strength and form');
+    expect(note).toContain('Ask your doctor or pharmacist before substituting.');
     expect(calls.filter((c) => c.path.includes('/catalog/'))).toHaveLength(1);
     // The found product is kept for offline search.
     expect(await db.catalogProducts.count()).toBe(1);
@@ -306,8 +312,8 @@ describe('search by active ingredient and the official list', () => {
         'Source: Anvisa open data (registered medicines and the CMED price list). Not reviewed by a pharmacist; not medical advice.',
       ),
     ).toHaveLength(1);
-    expect(screen.getAllByRole('note')[0].textContent).toBe(
-      'Contains the same active ingredient as Luftal and Flygas: Simethicone. Ask your doctor or pharmacist before substituting.',
+    expect(screen.getAllByRole('note')[0].textContent).toContain(
+      'Same ingredient, strength not known: Luftal (Drops) and Flygas (Drops)',
     );
   });
 
@@ -469,7 +475,7 @@ describe('shared catalog search offline', () => {
     expect(result).toBeTruthy();
     expect(screen.getByText('Saved on this device (offline)')).toBeTruthy();
     // The same active ingredient is found among the cached products too.
-    expect(screen.getByRole('note').textContent).toMatch(/same active ingredient as Flygas/);
+    expect(screen.getByRole('note').textContent).toMatch(/strength not known: Flygas/);
     expect(calls.filter((c) => c.path.includes('/catalog/'))).toHaveLength(0);
     expect(
       (screen.getByRole('button', { name: /^Not listed\?/ }) as HTMLButtonElement).disabled,
@@ -545,8 +551,9 @@ describe('shared catalog search in Portuguese', () => {
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'flygas' } });
     const result = await screen.findByRole('button', { name: 'Adicionar Flygas do catálogo' });
     expect(result.textContent).toMatch(/Gotas · 75 mg\/1 mL · Simeticona/);
-    expect(screen.getByRole('note').textContent).toBe(
-      'Contém o mesmo princípio ativo de Luftal: Simeticona. Pergunte ao médico ou ao farmacêutico antes de trocar.',
-    );
+    const note = screen.getByRole('note').textContent;
+    expect(note).toContain('Contém o mesmo princípio ativo: Simeticona.');
+    expect(note).toContain('Mesmo princípio ativo, concentração não informada: Luftal (Gotas)');
+    expect(note).toContain('Pergunte ao médico ou ao farmacêutico antes de trocar.');
   });
 });

@@ -70,7 +70,7 @@ public sealed class CuratedProductListTests
     public void List_PackagingFacts_AreRecordedAsPrinted()
     {
         Assert.Equal(("9 mg/mL (0,9%); 100 mL", "medicine"), (Product("rinosoro-jet-infantil-spray").Presentation, Entry("rinosoro-jet-infantil-spray").Category));
-        Assert.Equal(("0,9%; 100 mL", "medicine"), (Product("sorine-jet-baby-spray").Presentation, Entry("sorine-jet-baby-spray").Category));
+        Assert.Equal(("0,9% (9 mg/mL); 100 mL", "medicine"), (Product("sorine-jet-baby-spray").Presentation, Entry("sorine-jet-baby-spray").Category));
         Assert.Equal(("150 mg/mL; 15 mL", "medicine"), (Product("fly-gotas-drops").Presentation, Entry("fly-gotas-drops").Category));
         Assert.Equal(("10 mL", "supplement"), (Product("colidis-drops").Presentation, Entry("colidis-drops").Category));
         Assert.Equal("homeopathic", Entry("colicaliv-drops").Category);
@@ -93,7 +93,7 @@ public sealed class CuratedProductListTests
         var ids = Plan.Products.SelectMany(product => product.SubstanceKeys).Distinct().ToDictionary(key => key, _ => Guid.NewGuid());
         var pool = Plan.Products
             .Where(product => product.AliasOfExternalRef is null)
-            .Select(product => Lotties.Domain.Catalog.Product.FromSource(Guid.NewGuid(), new SourcedProductData(product.Name, product.Form, product.Presentation, product.Status, product.Source, product.ExternalRef, product.SubstanceKeys.Select(key => ids[key]).ToArray()), CountryCode.From("BR"), DateTimeOffset.UnixEpoch))
+            .Select(product => Lotties.Domain.Catalog.Product.FromSource(Guid.NewGuid(), new SourcedProductData(product.Name, product.Form, product.Presentation, product.Status, product.Source, product.ExternalRef, product.SubstanceKeys.Select(key => ids[key]).ToArray(), product.AmbiguousName, product.StrengthKey, product.StrengthText), CountryCode.From("BR"), DateTimeOffset.UnixEpoch))
             .ToArray();
         var colicaliv = pool.Single(product => product.ExternalRef == "colicaliv-drops");
         var flyGotas = pool.Single(product => product.ExternalRef == "fly-gotas-drops");
@@ -103,6 +103,41 @@ public sealed class CuratedProductListTests
         Assert.Empty(ProductSearch.SameActiveIngredient(colicaliv, pool));
         Assert.All(pool.Where(product => product.Id != colicaliv.Id), other => Assert.DoesNotContain("Colicaliv", ProductSearch.SameActiveIngredient(other, pool).Select(sibling => sibling.Name)));
         Assert.Equal(["Luftal"], ProductSearch.SameActiveIngredient(flyGotas, pool).Select(sibling => sibling.Name));
+    }
+
+    [Fact]
+    public void List_StructuredStrengths_AreStatedOnlyWhereTheLabelOrBasisStatesThem()
+    {
+        Assert.Equal("simethicone=150 mg/ml", Product("fly-gotas-drops").StrengthKey);
+        Assert.Equal("simethicone=75 mg/ml", Product("luftal-drops").StrengthKey);
+        Assert.Equal("sodium_chloride=9 mg/ml", Product("rinosoro-jet-infantil-spray").StrengthKey);
+        Assert.Equal("sodium_chloride=9 mg/ml", Product("sorine-jet-baby-spray").StrengthKey);
+        Assert.Equal("limosilactobacillus_reuteri=strain:dsm 17938", Product("colidis-drops").StrengthKey);
+        Assert.Equal(
+            "colocynthis_6ch=0.25 ml/ml;magnesia_phosphorica_5ch=0.25 ml/ml;matricaria_chamomilla_4ch=0.25 ml/ml;mentha_piperita_6ch=0.25 ml/ml",
+            Product("colicaliv-drops").StrengthKey);
+        Assert.All(Entries.Where(entry => entry.Id is "sorine-saline-spray" or "sorine-saline-drops" or "rinosoro-saline-spray" or "rinosoro-saline-drops" or "flygas-drops" or "sorine-infantil-jet-baby-spray"),
+            entry => Assert.Null(Product(entry.Id).StrengthKey));
+        Assert.All(Entries.Where(entry => entry.Strengths is not null), entry => Assert.False(string.IsNullOrWhiteSpace(Product(entry.Id).StrengthText), entry.Id));
+    }
+
+    [Fact]
+    public void List_Alternatives_SeparateFlyGotasFromLuftal_AndKeepTheUnknownSalinesApartFromTheIsotonicOnes()
+    {
+        var ids = Plan.Products.SelectMany(product => product.SubstanceKeys).Distinct().ToDictionary(key => key, _ => Guid.NewGuid());
+        var pool = Plan.Products
+            .Where(product => product.AliasOfExternalRef is null)
+            .Select(product => Lotties.Domain.Catalog.Product.FromSource(Guid.NewGuid(), new SourcedProductData(product.Name, product.Form, product.Presentation, product.Status, product.Source, product.ExternalRef, product.SubstanceKeys.Select(key => ids[key]).ToArray(), product.AmbiguousName, product.StrengthKey, product.StrengthText), CountryCode.From("BR"), DateTimeOffset.UnixEpoch))
+            .ToArray();
+        string Level(string from, string to) => ProductSearch.Alternatives(pool.Single(product => product.ExternalRef == from), pool).Single(alternative => alternative.Product.ExternalRef == to).Level.ToString();
+
+        Assert.Equal("DifferentStrength", Level("fly-gotas-drops", "luftal-drops"));
+        Assert.Equal("DifferentStrength", Level("luftal-drops", "fly-gotas-drops"));
+        Assert.Equal("Equivalent", Level("rinosoro-jet-infantil-spray", "sorine-jet-baby-spray"));
+        Assert.Equal("StrengthNotKnown", Level("rinosoro-jet-infantil-spray", "rinosoro-saline-spray"));
+        Assert.Equal("StrengthNotKnown", Level("sorine-saline-drops", "rinosoro-saline-drops"));
+        Assert.Equal("StrengthNotKnown", Level("sorine-saline-spray", "sorine-jet-baby-spray"));
+        Assert.DoesNotContain(ProductSearch.Alternatives(pool.Single(product => product.ExternalRef == "rinosoro-jet-infantil-spray"), pool), alternative => alternative.Level == AlternativeLevel.Equivalent && alternative.Product.ExternalRef != "sorine-jet-baby-spray");
     }
 
     [Fact]
@@ -159,6 +194,14 @@ public sealed class CuratedProductListTests
         var entry = Assert.Single(CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"drops","ingredients":["simeticona"],"reviewed":false,"basis":"b","strength":"150 mg/mL","packageSize":"15 mL","category":"medicine","aliasOf":"y-1"}]}"""));
 
         Assert.Equal(("150 mg/mL", "15 mL", "medicine", "y-1"), (entry.Strength, entry.PackageSize, entry.Category, entry.AliasOf));
+    }
+
+    [Fact]
+    public void Parse_StructuredStrengthsAreRead()
+    {
+        var entry = Assert.Single(CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"drops","ingredients":["simeticona"],"reviewed":false,"basis":"b","strengths":[{"ingredient":"simeticona","amount":"150","unit":"mg/mL"},{"ingredient":"x","strain":"DSM 1"}]}]}"""));
+
+        Assert.Equal([new CuratedStrength("simeticona", "150", "mg/mL"), new CuratedStrength("x", null, null, "DSM 1")], entry.Strengths);
     }
 
     [Fact]

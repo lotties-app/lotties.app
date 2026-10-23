@@ -179,7 +179,15 @@ public sealed partial class CuratedVerifier
         IReadOnlyList<FieldDiff> diffs,
         IReadOnlyList<OfficialProductEvidence> evidence,
         IReadOnlyList<string> notes) =>
-        new(entry.Id, entry.Name, status, summary, keys, diffs, evidence, notes, []);
+        WithStrength(new EntryVerification(entry.Id, entry.Name, status, summary, keys, diffs, evidence, notes, []), entry, keys);
+
+    private static EntryVerification WithStrength(EntryVerification verification, CuratedProductEntry entry, IReadOnlyList<string> keys)
+    {
+        var check = CompareStrength(entry, keys, verification.Evidence);
+        return check.Outcome == StrengthOutcome.NotStated
+            ? verification with { Strength = check }
+            : verification with { Strength = check, Notes = [.. verification.Notes, $"Strength ({check.Outcome}): {check.Detail}"] };
+    }
 
     private (IReadOnlyList<OfficialProductEvidence> Candidates, string Label, List<string> Notes) Lookup(CuratedProductEntry entry)
     {
@@ -229,6 +237,9 @@ public sealed partial class CuratedVerifier
         var preferred = rows.Any(row => row.IsActive) ? rows.Where(row => row.IsActive).ToArray() : rows.ToArray();
         var ingredients = ActiveIngredientNames.Split(preferred.Select(row => row.ActiveIngredients).FirstOrDefault(field => !string.IsNullOrWhiteSpace(field)));
         var cmed = registration.Length > 0 && presentations.TryGetValue(registration, out var found) ? found : [];
+        var readings = ingredients.Count == 1
+            ? cmed.Select(presentation => StrengthParser.Read(presentation.Presentation)).ToArray()
+            : cmed.Select(_ => StrengthReading.Unknown).ToArray();
         var holder = HolderPrefix().Replace(preferred[0].Holder, string.Empty).Trim();
         return new OfficialProductEvidence(
             preferred[0].ProductName,
@@ -241,8 +252,50 @@ public sealed partial class CuratedVerifier
             Distinct(cmed.Select(presentation => OfficialCatalogPlanner.FormCode(PharmaceuticalForms.FromPresentation(presentation.Presentation)))),
             Distinct(cmed.SelectMany(presentation => Routes(presentation.Presentation))),
             Distinct(cmed.Select(presentation => Strength(presentation.Presentation)).Where(strength => strength.Length > 0)).Take(MaxStrengths).ToArray(),
-            Distinct(cmed.SelectMany(presentation => ActiveIngredientNames.Split(presentation.Substance.Replace(';', ','))).Select(ActiveIngredientNames.Normalize)));
+            Distinct(cmed.SelectMany(presentation => ActiveIngredientNames.Split(presentation.Substance.Replace(';', ','))).Select(ActiveIngredientNames.Normalize)),
+            readings.Where(reading => reading.IsKnown).Select(reading => reading.Amount!.Token).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+            readings.Count(reading => !reading.IsKnown));
     }
+
+    /// <summary>
+    /// Compares the single structured strength an entry states with the CMED strengths of the matched records that have
+    /// the same ingredient set. A strength in another unit family is reported as not comparable, never converted; a
+    /// combination or a strain has no single amount and is not compared. Pure and information only.
+    /// </summary>
+    public static StrengthCheck CompareStrength(CuratedProductEntry entry, IReadOnlyList<string> entryKeys, IReadOnlyList<OfficialProductEvidence> evidence)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(entryKeys);
+        ArgumentNullException.ThrowIfNull(evidence);
+        if (EntryAmount(entry) is not { } stated)
+        {
+            return new StrengthCheck(StrengthOutcome.NotStated, null, [], "The entry states no single structured strength, so none is compared.");
+        }
+
+        var related = evidence.Where(product => product.IngredientKeys.SequenceEqual(entryKeys)).ToArray();
+        var tokens = related.SelectMany(product => product.StrengthTokens ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        var unreadable = related.Sum(product => product.UnreadableStrengths);
+        var sameUnit = tokens.Where(token => UnitOf(token) == stated.Unit).ToArray();
+        var (outcome, detail) = (tokens.Length, sameUnit.Length, tokens.Contains(stated.Token, StringComparer.Ordinal)) switch
+        {
+            (_, _, true) => (StrengthOutcome.Agrees, $"CMED lists {stated.Token}{Others(tokens, stated.Token)}."),
+            (> 0, > 0, false) => (StrengthOutcome.Differs, $"The entry states {stated.Token} but CMED lists {string.Join(", ", tokens)}."),
+            (> 0, 0, false) => (StrengthOutcome.NotComparable, $"CMED lists {string.Join(", ", tokens)}, in another unit than the entry's {stated.Token}: not converted."),
+            _ when unreadable > 0 => (StrengthOutcome.NotReadable, $"CMED has {unreadable} presentation(s) whose strength does not read as one unambiguous amount."),
+            _ => (StrengthOutcome.NoCmed, "The matched record has no CMED presentation to compare with."),
+        };
+        var unreadableNote = unreadable > 0 && outcome != StrengthOutcome.NotReadable ? $" {unreadable} other presentation(s) are not readable." : string.Empty;
+        return new StrengthCheck(outcome, stated.Token, tokens, detail + unreadableNote);
+    }
+
+    private static string Others(string[] tokens, string stated) =>
+        tokens.Length > 1 ? $" (and {string.Join(", ", tokens.Where(token => token != stated))})" : string.Empty;
+
+    private static string UnitOf(string token) => token[(token.IndexOf(' ', StringComparison.Ordinal) + 1)..];
+
+    /// <summary>The one numeric strength of a single-ingredient entry, or <c>null</c>.</summary>
+    private static StrengthAmount? EntryAmount(CuratedProductEntry entry) =>
+        entry.Strengths is { Count: 1 } list && string.IsNullOrWhiteSpace(list[0].Strain) ? StrengthParser.Canonical(list[0].Amount, list[0].Unit) : null;
 
     private static string[] Distinct(IEnumerable<string> values) => values.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 

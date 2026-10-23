@@ -148,7 +148,7 @@ public sealed class OfficialCatalogImporter(LottiesDbContext context, TimeProvid
 
         try
         {
-            var data = new SourcedProductData(plan.Name, plan.Form, plan.Presentation, plan.Status, plan.Source, plan.ExternalRef, plan.SubstanceKeys.Select(key => substanceIds[key]).ToArray(), plan.AmbiguousName);
+            var data = new SourcedProductData(plan.Name, plan.Form, plan.Presentation, plan.Status, plan.Source, plan.ExternalRef, plan.SubstanceKeys.Select(key => substanceIds[key]).ToArray(), plan.AmbiguousName, plan.StrengthKey, plan.StrengthText);
             return existing is not null ? Update(existing, data) : Add(plan, data, index, now);
         }
         catch (DomainValidationException exception)

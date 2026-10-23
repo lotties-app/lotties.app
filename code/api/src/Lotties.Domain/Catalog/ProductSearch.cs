@@ -23,6 +23,22 @@ public sealed record CatalogNameMatch(int Rank, int Distance)
 /// <summary>A ranked catalog search result; <see cref="Distance"/> is the edit distance of a typo match (0 otherwise).</summary>
 public sealed record ProductMatch(Product Product, CatalogMatchKind MatchedBy, int Rank, int Distance);
 
+/// <summary>
+/// How safe an alternative with the same active ingredients is to read as "the same" (best first). Only
+/// <see cref="Equivalent"/> means same ingredients, same strength and same known form; the others are labelled
+/// differences or unknowns and are never shown as equivalent.
+/// </summary>
+public enum AlternativeLevel
+{
+    Equivalent,
+    DifferentForm,
+    StrengthNotKnown,
+    DifferentStrength,
+}
+
+/// <summary>A product with the same active ingredients as another, and how it compares (<see cref="AlternativeLevel"/>).</summary>
+public sealed record ProductAlternative(Product Product, AlternativeLevel Level);
+
 /// <summary>A substance matched by a search.</summary>
 public sealed record SubstanceMatch(Substance Substance, int Rank, int Distance);
 
@@ -185,15 +201,30 @@ public static class ProductSearch
             : [match];
 
     /// <summary>
-    /// Other non-merged, active products of <paramref name="pool"/> with exactly the same active ingredients, one per
-    /// name (the same brand in another form is listed once, in the product's own form when it has it). Order: products
-    /// in the same form as <paramref name="product"/> first (a known form only: "other" means the form is not known and
-    /// never counts as the same), then official before curated before the rest, then by name. The set is the whole of
-    /// the equivalence rule: strength is not part of the data of official products, so it cannot be compared, and a
-    /// product with another form or another strength is still only "contains the same ingredients" information, never a
-    /// substitution (the response carries each sibling's form so the app can say it differs).
+    /// The products of <see cref="Alternatives"/> without their levels (same order, same cap).
     /// </summary>
-    public static IReadOnlyList<Product> SameActiveIngredient(Product product, IReadOnlyList<Product> pool)
+    public static IReadOnlyList<Product> SameActiveIngredient(Product product, IReadOnlyList<Product> pool) =>
+        Alternatives(product, pool).Select(alternative => alternative.Product).ToArray();
+
+    /// <summary>
+    /// Other non-merged, active products of <paramref name="pool"/> with exactly the same active ingredients, one per
+    /// name (the best level of a brand's forms), each with its explicit <see cref="AlternativeLevel"/> and never silent:
+    /// <list type="number">
+    /// <item><see cref="AlternativeLevel.Equivalent"/>: same ingredient set, same structured strength (<see cref="Product.StrengthKey"/>)
+    /// and the same <em>known</em> form (form "other" means unknown and never counts);</item>
+    /// <item><see cref="AlternativeLevel.DifferentForm"/>: same strength, but the form differs or is not known;</item>
+    /// <item><see cref="AlternativeLevel.StrengthNotKnown"/>: either side has no structured strength, or the two are
+    /// not comparable (another unit family: 0,9% is not turned into mg/mL);</item>
+    /// <item><see cref="AlternativeLevel.DifferentStrength"/>: both strengths known and different.</item>
+    /// </list>
+    /// Within <see cref="AlternativeLevel.DifferentForm"/> a product of a known form (nasal drops, say) comes before one
+    /// whose form is "other" (an injectable or irrigation solution). Within a level, products in the same known form as <paramref name="product"/> come first, then official, curated,
+    /// the rest, then by name. At most <see cref="MaxSiblings"/> are returned, best levels first, so a different-strength
+    /// product is never listed ahead of an equivalent one. Every alternative is information only, never a substitution:
+    /// the doctor's prescription is the only source of a dose, and the app never picks an alternative for the user.
+    /// Different ingredient sets (homeopathic, supplement, combinations) are never alternatives.
+    /// </summary>
+    public static IReadOnlyList<ProductAlternative> Alternatives(Product product, IReadOnlyList<Product> pool)
     {
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(pool);
@@ -204,13 +235,29 @@ public static class ProductSearch
             && product.HasSameActiveIngredientsAs(candidate));
         return candidates
             .DistinctBy(candidate => candidate.Id)
-            .OrderBy(candidate => IsSameKnownForm(product, candidate) ? 0 : 1)
-            .ThenBy(candidate => candidate.SourceRank)
-            .ThenBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(candidate => candidate.Id)
-            .DistinctBy(candidate => candidate.NormalizedName, StringComparer.Ordinal)
+            .Select(candidate => new ProductAlternative(candidate, LevelOf(product, candidate)))
+            .OrderBy(alternative => alternative.Level)
+            .ThenBy(alternative => alternative.Level == AlternativeLevel.DifferentForm && alternative.Product.Form == ProductForm.Other ? 1 : 0)
+            .ThenBy(alternative => IsSameKnownForm(product, alternative.Product) ? 0 : 1)
+            .ThenBy(alternative => alternative.Product.SourceRank)
+            .ThenBy(alternative => alternative.Product.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(alternative => alternative.Product.Id)
+            .DistinctBy(alternative => alternative.Product.NormalizedName, StringComparer.Ordinal)
             .Take(MaxSiblings)
             .ToArray();
+    }
+
+    /// <summary>The level of <paramref name="candidate"/> as an alternative to <paramref name="product"/> (same ingredient sets assumed).</summary>
+    public static AlternativeLevel LevelOf(Product product, Product candidate)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        ArgumentNullException.ThrowIfNull(candidate);
+        return product.CompareStrengthTo(candidate) switch
+        {
+            StrengthComparison.Unknown => AlternativeLevel.StrengthNotKnown,
+            StrengthComparison.Different => AlternativeLevel.DifferentStrength,
+            _ => IsSameKnownForm(product, candidate) ? AlternativeLevel.Equivalent : AlternativeLevel.DifferentForm,
+        };
     }
 
     private static bool IsSameKnownForm(Product product, Product candidate) =>
