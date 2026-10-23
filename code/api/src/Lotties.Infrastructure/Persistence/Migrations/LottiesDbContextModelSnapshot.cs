@@ -169,6 +169,29 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("appointments", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Assistants.UserAssistantSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid?>("DefaultBabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("default_baby_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_assistant_settings");
+
+                    b.HasIndex("DefaultBabyId")
+                        .HasDatabaseName("ix_user_assistant_settings_default_baby_id");
+
+                    b.ToTable("user_assistant_settings", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Babies.Baby", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2064,6 +2087,22 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_appointments_users_created_by");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Assistants.UserAssistantSettings", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultBabyId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_user_assistant_settings_babies_default_baby_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.Assistants.UserAssistantSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_assistant_settings_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Babies.BabyMember", b =>

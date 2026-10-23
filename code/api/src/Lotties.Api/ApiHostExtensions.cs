@@ -1,3 +1,4 @@
+using Lotties.Api.Assistants.Alexa;
 using Lotties.Api.Authentication;
 using Lotties.Api.Authorization;
 using Lotties.Api.Configuration;
@@ -19,7 +20,7 @@ namespace Lotties.Api;
 
 public static class ApiHostExtensions
 {
-    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers and JSON converters.</summary>
+    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers, the Alexa skill (off by default) and JSON converters.</summary>
     public static WebApplicationBuilder AddLottiesApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -40,6 +41,7 @@ public static class ApiHostExtensions
         builder.Services.AddApiProblemDetails();
         builder.Services.AddRequestLimits(builder.Configuration);
         builder.Services.AddTrustedProxyHeaders(builder.Configuration);
+        builder.Services.AddAlexaSkill(builder.Configuration);
         builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new EventPayloadJsonConverter()));
         return builder;
     }

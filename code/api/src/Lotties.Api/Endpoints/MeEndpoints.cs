@@ -1,3 +1,4 @@
+using Lotties.Application.Assistants;
 using Lotties.Application.Professionals;
 using Lotties.Application.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,11 +8,13 @@ namespace Lotties.Api.Endpoints;
 internal static class MeEndpoints
 {
     private const string ProfessionalProfilePath = "/me/professional-profile";
+    private const string AssistantSettingsPath = "/me/assistant-settings";
 
     /// <summary>
     /// Maps <c>GET /me</c> (the signed-in user, created on first sign-in) and the caller's own professional profile:
     /// <c>GET /me/professional-profile</c> (404 <c>professional_profile_not_found</c> before she declares one) and
-    /// <c>PUT /me/professional-profile</c> (201 declared / 200 updated; any signed-in user, self-declared).
+    /// <c>PUT /me/professional-profile</c> (201 declared / 200 updated; any signed-in user, self-declared), and the
+    /// caller's voice assistant settings <c>GET</c>/<c>PUT /me/assistant-settings</c> (the default baby; docs/design/32-assistants.md).
     /// </summary>
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder api)
     {
@@ -30,8 +33,22 @@ internal static class MeEndpoints
         api.MapDelete("/me", DeleteAccountAsync)
             .WithName("DeleteAccount")
             .ProducesProblem(StatusCodes.Status409Conflict);
+        api.MapGet(AssistantSettingsPath, GetAssistantSettingsAsync)
+            .WithName("GetAssistantSettings");
+        api.MapPut(AssistantSettingsPath, SaveAssistantSettingsAsync)
+            .WithName("SaveAssistantSettings")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         return api;
     }
+
+    private static async Task<Ok<AssistantSettingsResponse>> GetAssistantSettingsAsync(IAssistantSettingsService settings, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await settings.GetMineAsync(cancellationToken));
+
+    private static async Task<Ok<AssistantSettingsResponse>> SaveAssistantSettingsAsync(
+        SaveAssistantSettingsRequest request,
+        IAssistantSettingsService settings,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await settings.SaveMineAsync(request, cancellationToken));
 
     private static async Task<Ok<AccountDeletionPreviewResponse>> PreviewDeletionAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
         TypedResults.Ok(await deletion.PreviewAsync(cancellationToken));

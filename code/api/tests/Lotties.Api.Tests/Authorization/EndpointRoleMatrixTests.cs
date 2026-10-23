@@ -220,6 +220,14 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["POST /api/v1/push/test"] = Access.SignedIn,
         ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = Access.Anonymous,
         ["PUT /api/v1/babies/{babyId:guid}/notification-preferences"] = Access.Log,
+
+        // Voice assistants (docs/design/32-assistants.md): the caller's own default baby (any signed-in user; the PUT accepts
+        // only a baby she can log for). The Alexa skill route is anonymous at the ASP.NET level: Amazon's request signature
+        // and the account-linking token in the body authenticate it (like the push action route's token); it answers 404
+        // while Alexa is disabled (the default, as in this host).
+        ["GET /api/v1/me/assistant-settings"] = Access.SignedIn,
+        ["PUT /api/v1/me/assistant-settings"] = Access.SignedIn,
+        ["POST /api/v1/alexa"] = Access.Anonymous,
     };
 
     /// <summary>

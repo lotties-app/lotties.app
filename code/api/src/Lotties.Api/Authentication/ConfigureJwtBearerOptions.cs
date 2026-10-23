@@ -3,13 +3,24 @@ using Microsoft.Extensions.Options;
 
 namespace Lotties.Api.Authentication;
 
-/// <summary>Applies <see cref="AuthOptions"/> to the JWT bearer scheme. Provider-neutral: only issuer and audience come from config.</summary>
+/// <summary>
+/// Applies <see cref="AuthOptions"/> to the JWT bearer scheme, and identically to the account-linking scheme
+/// (<see cref="AccountLinkTokens"/>: the same issuer, audience, signing keys, lifetime and <c>sub</c> rules; only where the
+/// token is read from differs). Provider-neutral: only issuer and audience come from config.
+/// </summary>
 internal sealed class ConfigureJwtBearerOptions(IOptions<AuthOptions> authOptions) : IConfigureNamedOptions<JwtBearerOptions>
 {
     public const string MissingSubjectMessage = "The access token has no sub claim.";
 
     public void Configure(string? name, JwtBearerOptions options)
     {
+        if (name == AccountLinkTokens.SchemeName)
+        {
+            Configure(options);
+            options.Events.OnMessageReceived = AccountLinkTokens.ReadFromRequestItems;
+            return;
+        }
+
         if (name != JwtBearerDefaults.AuthenticationScheme)
         {
             return;

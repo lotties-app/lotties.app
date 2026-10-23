@@ -55,6 +55,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Clinical.IClinicalSummaryService, Clinical.ClinicalSummaryService>();
         services.AddScoped<Clinical.ITimelineService, Clinical.TimelineService>();
         services.AddScoped<Clinical.IDoctorPatientsService, Clinical.DoctorPatientsService>();
+        services.AddScoped<Assistants.AssistantSubjects>();
+        services.AddScoped<Assistants.IAssistantService, Assistants.AssistantService>();
+        services.AddScoped<Assistants.IAssistantSettingsService, Assistants.AssistantSettingsService>();
         return services;
     }
 }

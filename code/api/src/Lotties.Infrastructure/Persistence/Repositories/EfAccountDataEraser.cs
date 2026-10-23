@@ -94,6 +94,9 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.NotificationDeliveries.IgnoreQueryFilters().Where(row => row.BabyId != null && ids.Contains(row.BabyId.Value)).ExecuteDeleteAsync(cancellationToken);
         await context.BabyNotificationPreferences.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.BabyMembers.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
+        await context.UserAssistantSettings
+            .Where(row => row.DefaultBabyId != null && ids.Contains(row.DefaultBabyId.Value))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.DefaultBabyId, (Guid?)null), cancellationToken);
         await context.Babies.IgnoreQueryFilters().Where(row => ids.Contains(row.Id)).ExecuteDeleteAsync(cancellationToken);
     }
 
@@ -119,5 +122,6 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.PushSubscriptions.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserNotificationSettings.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.ProfessionalProfiles.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await context.UserAssistantSettings.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
     }
 }

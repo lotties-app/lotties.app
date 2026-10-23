@@ -41,6 +41,9 @@ public sealed class RequestLimitsOptions
     /// <summary>Anonymous snooze/dismiss requests per remote address per fixed one-minute window (default 20).</summary>
     public int PushActionPermitsPerMinute { get; set; } = 20;
 
+    /// <summary>Voice assistant commands per linked user per fixed one-minute window (default 30; over it the assistant answers "try again in a minute").</summary>
+    public int AssistantPermitsPerMinute { get; set; } = 30;
+
     /// <summary>Names of the settings that are not positive; empty when the options are valid.</summary>
     public IReadOnlyList<string> NonPositiveSettings() =>
         new (string Name, long Value)[]
@@ -56,6 +59,7 @@ public sealed class RequestLimitsOptions
             (nameof(PushWritePermitsPerMinute), PushWritePermitsPerMinute),
             (nameof(PushTestPermitsPerMinute), PushTestPermitsPerMinute),
             (nameof(PushActionPermitsPerMinute), PushActionPermitsPerMinute),
+            (nameof(AssistantPermitsPerMinute), AssistantPermitsPerMinute),
         }
         .Where(setting => setting.Value <= 0)
         .Select(setting => $"{SectionName}:{setting.Name}")
