@@ -58,7 +58,7 @@ export function describeDuration(prediction: PredictionDto): string | null {
 const MINUTE_MS = 60_000;
 
 /** Structured parts of the server's `basis` (API `PredictionBasisResponse`), validated. */
-interface Basis {
+export interface Basis {
   kind: 'StartInterval' | 'AwakeWindow';
   medianGapMinutes: number;
   lookBackDays: number;
@@ -67,7 +67,7 @@ interface Basis {
   assumesEventInProgressEnds: boolean;
 }
 
-function readBasis(raw: Record<string, unknown> | undefined): Basis | null {
+export function readBasis(raw: Record<string, unknown> | undefined): Basis | null {
   if (!raw) return null;
   const { medianGapMinutes, lookBackDays } = raw;
   if (typeof medianGapMinutes !== 'number' || typeof lookBackDays !== 'number') return null;

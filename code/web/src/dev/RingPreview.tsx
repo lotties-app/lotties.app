@@ -8,6 +8,8 @@ import { DayRing } from '../now/ui/DayRing';
 import { DayRuler } from '../now/ui/DayRuler';
 import { RhythmToggle } from '../now/ui/RhythmToggle';
 import type { NowView } from '../now/ringPrefs';
+import { projectNaps } from '../now/napProjection';
+import type { RhythmNow } from '../now/rhythmDetails';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { RADIUS } from '../theme/tokens';
 import { palette } from '../ui/form/styles';
@@ -16,11 +18,12 @@ import { PreviewToolbar } from './PreviewToolbar';
 /*
  * Developer-only (route `/dev/ring`, never in production builds): the day rhythm ring and the
  * ruler at a fixed clock, one state at a time, in the same frame as on the Now card. No database,
- * no sign-in, no server. `?state=ahead|inside|asleep|night|empty|busy`, `&view=ring|ruler`,
+ * no sign-in, no server. `?state=ahead|inside|tired|asleep|night|empty|busy` (ahead and asleep
+ * carry projected naps and a bedtime window, tired the overtired face), `&view=ring|ruler`,
  * `&scale=130` (root font size in percent, like a large iOS text size), `&scheme=dark`.
  */
 
-const SCENARIOS = ['ahead', 'inside', 'asleep', 'night', 'empty', 'busy'] as const;
+const SCENARIOS = ['ahead', 'inside', 'tired', 'asleep', 'night', 'empty', 'busy'] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const TYPES: EventType[] = [SLEEP_TYPE, FEEDING_TYPE, DIAPER_TYPE];
 const MIN = 60_000;
@@ -64,27 +67,62 @@ const MORNING: BabyEvent[] = [
   ev('d1', DIAPER_TYPE, at(10, 35), at(10, 35), { content: 'WET' }),
 ];
 
+/** Two earlier days of three naps each: enough history for the projected naps. */
+const PAST: BabyEvent[] = [-1, -2].flatMap((day) => [
+  sleep(`p${day}a`, at(8, 40, day), at(10, 0, day), 'nap'),
+  sleep(`p${day}b`, at(12, 30, day), at(13, 40, day), 'nap'),
+  sleep(`p${day}c`, at(16, 10, day), at(16, 50, day), 'nap'),
+  sleep(`p${day}d`, at(18, 0, day), at(18, 30, day), 'nap'),
+]);
+
+const BASIS = { kind: 'AwakeWindow', medianGapMinutes: 110, lookBackDays: 7 };
+const BED_TIME = { earliest: at(19, 20).toISOString(), latest: at(20, 10).toISOString() };
+
 interface Setup {
   now: Date;
   events: BabyEvent[];
-  window?: { earliest: string; latest: string };
+  window?: { earliest: string; latest: string; basis?: Record<string, unknown> };
   state: 'awake' | 'nap' | 'night';
   since: Date;
+  overtired?: boolean;
+  bedTime?: { earliest: string; latest: string };
 }
 
 function setupFor(scenario: Scenario): Setup {
-  const window = { earliest: at(11, 20).toISOString(), latest: at(12, 11).toISOString() };
+  const window = {
+    earliest: at(11, 20).toISOString(),
+    latest: at(12, 11).toISOString(),
+    basis: BASIS,
+  };
+  const day = [...PAST, ...MORNING];
   switch (scenario) {
     case 'ahead':
-      return { now: at(11, 11), events: MORNING, window, state: 'awake', since: at(10, 19) };
+      return {
+        now: at(11, 11),
+        events: day,
+        window,
+        state: 'awake',
+        since: at(10, 19),
+        bedTime: BED_TIME,
+      };
     case 'inside':
-      return { now: at(11, 40), events: MORNING, window, state: 'awake', since: at(10, 19) };
+      return { now: at(11, 40), events: day, window, state: 'awake', since: at(10, 19) };
+    case 'tired':
+      return {
+        now: at(11, 50),
+        events: day,
+        window,
+        state: 'awake',
+        since: at(10, 19),
+        overtired: true,
+      };
     case 'asleep':
       return {
         now: at(11, 11),
-        events: [...MORNING, sleep('run', at(10, 55), null, 'nap')],
+        events: [...day, sleep('run', at(10, 55), null, 'nap')],
         state: 'nap',
         since: at(10, 55),
+        bedTime: BED_TIME,
       };
     case 'night':
       return {
@@ -122,6 +160,10 @@ function setupFor(scenario: Scenario): Setup {
   }
 }
 
+/** The middle of a window (its expected start, as the server sends it). */
+const middle = (window: { earliest: string; latest: string }) =>
+  new Date((Date.parse(window.earliest) + Date.parse(window.latest)) / 2).toISOString();
+
 /** Developer-only: the ring and the ruler at a fixed clock (route `/dev/ring?state=ahead`). */
 export default function RingPreview() {
   const { t } = useTranslation();
@@ -148,35 +190,62 @@ export default function RingPreview() {
       : setup.state === 'nap'
         ? t('now.state.asleepNap')
         : t('now.state.asleepNight');
+  const state: RhythmNow =
+    setup.state === 'awake'
+      ? { kind: 'awake', since: setup.since.toISOString(), minutes }
+      : { kind: 'asleep', since: setup.since.toISOString(), minutes };
+  const projection = projectNaps({
+    events: setup.events,
+    types: TYPES,
+    now: setup.now,
+    state:
+      setup.state === 'awake'
+        ? { kind: 'awake', since: setup.since.toISOString() }
+        : { kind: 'asleep', since: setup.since.toISOString(), sleepKind: setup.state },
+    prediction: {
+      nextStart: setup.window
+        ? { ...setup.window, expected: middle(setup.window) }
+        : {
+            earliest: at(11, 20).toISOString(),
+            expected: at(11, 45).toISOString(),
+            latest: at(12, 11).toISOString(),
+          },
+      basis: BASIS,
+      expectedDuration: { minutes: 75 },
+    },
+    bedTime: setup.bedTime ?? null,
+  });
+  const shared = {
+    now: setup.now,
+    ...(setup.window ? { window: setup.window } : {}),
+    overtired: setup.overtired ?? false,
+    bedTime: setup.bedTime ?? null,
+    projection,
+  };
   const body =
     view === 'ring' || setup.state !== 'awake' ? (
       <DayRing
         events={setup.events}
         types={TYPES}
-        now={setup.now}
-        {...(setup.window ? { window: setup.window } : {})}
         stateLabel={stateLabel}
         duration={formatDuration(minutes * MIN)}
+        state={state}
+        {...shared}
       />
     ) : (
-      <DayRuler
-        since={setup.since.toISOString()}
-        now={setup.now}
-        {...(setup.window ? { window: setup.window } : {})}
-      />
+      <DayRuler since={setup.since.toISOString()} minutes={minutes} {...shared} />
     );
 
   return (
     <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
       <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 2, pb: 4 }}>
         <h1 style={{ fontSize: '1rem', margin: '0 0 8px' }}>Ring preview</h1>
-        <Card component="section" sx={{ p: 2.5 }} data-testid="ring-card">
+        <Card component="section" sx={{ p: 2 }} data-testid="ring-card">
           <Box
             sx={(theme) => ({
-              p: 1.5,
               borderRadius: `${RADIUS.input}px`,
-              backgroundColor:
-                setup.state === 'awake' ? palette(theme).surfaceRaised : 'transparent',
+              // The ring and the ruler sit on the card itself, as in the state card.
+              backgroundColor: palette(theme).background.paper,
             })}
           >
             {body}

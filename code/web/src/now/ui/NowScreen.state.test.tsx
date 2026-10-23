@@ -58,8 +58,8 @@ describe('state card, awake', () => {
     expect(await screen.findByText('Nap window')).toBeTruthy();
     expect(screen.getByText(/open now/)).toBeTruthy();
     expect(screen.getByText('Medium confidence')).toBeTruthy();
-    // The ruler is an image with a text equivalent and an ink line, a band and a now mark.
-    const ruler = screen.getByRole('img', {
+    // The ruler is a labelled group with an ink line, a band and a now mark.
+    const ruler = screen.getByRole('group', {
       name: /^Awake since \d\d:\d\d, now \d\d:\d\d\. Nap window/,
     });
     expect(within(ruler).getByTestId('ruler-window')).toBeTruthy();
