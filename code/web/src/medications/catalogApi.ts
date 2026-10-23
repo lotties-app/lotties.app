@@ -3,6 +3,7 @@ import type { ApiClient } from '../api/apiClient';
 import { productKey } from '../db/catalogCache';
 import {
   apiPaths,
+  type AlternativeLevel,
   type CreateProductRequest,
   type ProductDto,
   type ProductMatchDto,
@@ -40,6 +41,22 @@ export function isCurated(product: Pick<ProductDto, 'status'>): boolean {
 export function sourceRank(product: Pick<ProductDto, 'status'>): number {
   if (isOfficial(product)) return 0;
   return isCurated(product) ? 1 : 2;
+}
+
+/** Groups of alternatives, best first. */
+export const ALTERNATIVE_LEVELS: readonly AlternativeLevel[] = [
+  'equivalent',
+  'differentForm',
+  'strengthNotKnown',
+  'differentStrength',
+];
+
+/**
+ * The level of an alternative. A missing or unknown value (an older server, the offline list) is
+ * `strengthNotKnown`: it never reads as equivalent.
+ */
+export function alternativeLevel(sibling: Pick<SiblingProductDto, 'matchLevel'>): AlternativeLevel {
+  return ALTERNATIVE_LEVELS.find((level) => level === sibling.matchLevel) ?? 'strengthNotKnown';
 }
 
 export async function searchProducts(
@@ -134,5 +151,12 @@ export function siblingsIn(
     )
     .sort((a, b) => sourceRank(a) - sourceRank(b))
     .slice(0, 10)
-    .map(({ id, name, form, country, status }) => ({ id, name, form, country, status }));
+    .map(({ id, name, form, country, status, strengthText }) => ({
+      id,
+      name,
+      form,
+      country,
+      status,
+      strengthText: strengthText ?? null,
+    }));
 }

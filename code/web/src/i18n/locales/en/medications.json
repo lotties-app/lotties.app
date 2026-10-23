@@ -54,7 +54,15 @@
       "asNeeded": "When needed"
     },
     "guardrail": "This app is a log and a reminder, not a medical device, and it gives no dosing advice. The prescription from your doctor is the source for every dose and interval.",
-    "sameIngredient": "Contains the same active ingredient as {{names}}: {{substances}}. Ask your doctor or pharmacist before substituting.",
+    "alternatives": {
+      "intro": "Contains the same active ingredient: {{substances}}.",
+      "equivalent": "Same ingredient, strength and form",
+      "differentForm": "Same ingredient and strength, other or unknown form",
+      "strengthNotKnown": "Same ingredient, strength not known",
+      "differentStrength": "Same ingredient, different strength",
+      "item": "{{name}} ({{details}})",
+      "footer": "Information only. Ask your doctor or pharmacist before substituting. The dose comes only from the prescription."
+    },
     "prescriptionDeleted": "Prescription deleted",
     "dose": {
       "perKg": "{{dose}} per kg"
