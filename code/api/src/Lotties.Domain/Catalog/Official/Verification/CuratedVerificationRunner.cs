@@ -36,6 +36,9 @@ public static partial class CuratedVerificationRunner
     public static IReadOnlyList<CuratedProductEntry> Plannable(IReadOnlyList<CuratedProductEntry> entries) =>
         entries
             .Where(entry => entry.Ingredients.Any(name => !string.IsNullOrWhiteSpace(name)) && !string.IsNullOrWhiteSpace(entry.Name))
+            .Where(entry => entry.Category is null || CuratedCatalogPlanner.Categories.Contains(entry.Category, StringComparer.Ordinal))
+            .Where(entry => (CuratedCatalogPlanner.PresentationOf(entry)?.Length ?? 0) <= Product.PresentationMaxLength)
+            .Where(entry => entry.AliasOf is null || entries.Any(target => target.Id == entry.AliasOf && target.Id != entry.Id && target.AliasOf is null))
             .DistinctBy(entry => entry.Id, StringComparer.Ordinal)
             .DistinctBy(entry => (ProductNames.Key(entry.Name), entry.Form))
             .ToArray();
@@ -50,6 +53,8 @@ public static partial class CuratedVerificationRunner
         }
 
         Equivalence(entries, verifier, dictionary, findings);
+        Aliases(entries, findings);
+        Categories(entries, verifier, findings);
         RecordedChecks(entries, verifications, findings);
         BasisRegistrations(entries, verifier, findings);
         return findings;
@@ -119,6 +124,46 @@ public static partial class CuratedVerificationRunner
         }
     }
 
+    /// <summary>An alias must name another entry that is not an alias, with the same ingredient set and form.</summary>
+    private static void Aliases(IReadOnlyList<CuratedProductEntry> entries, List<ConsistencyFinding> findings)
+    {
+        foreach (var entry in entries.Where(entry => entry.AliasOf is not null))
+        {
+            var target = entries.FirstOrDefault(other => other.Id == entry.AliasOf);
+            if (target is null || target.AliasOf is not null || target.Id == entry.Id)
+            {
+                findings.Add(new ConsistencyFinding("ALIAS_TARGET", FindingSeverity.Error, $"'{entry.Id}' is an alias of '{entry.AliasOf}', which is not another entry that is a product (not an alias itself).", [entry.Id]));
+            }
+            else if (entry.Form != target.Form || !entry.Ingredients.Select(ActiveIngredientNames.Normalize).Order(StringComparer.Ordinal).SequenceEqual(target.Ingredients.Select(ActiveIngredientNames.Normalize).Order(StringComparer.Ordinal)))
+            {
+                findings.Add(new ConsistencyFinding("ALIAS_TARGET", FindingSeverity.Error, $"'{entry.Id}' is an alias of '{target.Id}' but has another form or ingredient set.", [entry.Id, target.Id]));
+            }
+        }
+    }
+
+    /// <summary>
+    /// A homeopathic product or a food supplement is never an equivalent of a medicine: two entries of different
+    /// categories (an entry without a category counts as <c>medicine</c>) must not share an ingredient set, because the
+    /// "same active ingredient" suggestions are exact ingredient-set equality.
+    /// </summary>
+    private static void Categories(IReadOnlyList<CuratedProductEntry> entries, CuratedVerifier verifier, List<ConsistencyFinding> findings)
+    {
+        foreach (var entry in entries.Where(entry => entry.Category is not null && !CuratedCatalogPlanner.Categories.Contains(entry.Category, StringComparer.Ordinal)))
+        {
+            findings.Add(new ConsistencyFinding("UNKNOWN_CATEGORY", FindingSeverity.Error, $"'{entry.Id}' has the category '{entry.Category}'; the known ones are {string.Join(", ", CuratedCatalogPlanner.Categories)}.", [entry.Id]));
+        }
+
+        var usable = entries.Where(entry => entry.AliasOf is null && entry.Ingredients.Any(name => !string.IsNullOrWhiteSpace(name)));
+        foreach (var group in usable.GroupBy(entry => string.Join("+", verifier.KeysOf(entry.Ingredients))))
+        {
+            var categories = group.Select(entry => entry.Category ?? "medicine").Distinct(StringComparer.Ordinal).ToArray();
+            if (categories.Length > 1)
+            {
+                findings.Add(new ConsistencyFinding("CATEGORY_EQUIVALENCE", FindingSeverity.Error, $"Entries of different categories ({string.Join(", ", categories)}) share the ingredient set {group.Key}: they would be suggested as alternatives to each other.", group.Select(entry => entry.Id).ToArray()));
+            }
+        }
+    }
+
     private static void RecordedChecks(IReadOnlyList<CuratedProductEntry> entries, IReadOnlyList<EntryVerification> verifications, List<ConsistencyFinding> findings)
     {
         foreach (var (entry, verification) in entries.Zip(verifications))
@@ -163,6 +208,7 @@ public static partial class CuratedVerificationRunner
     private static List<AlternativeCheck> Alternatives(IReadOnlyList<CuratedProductEntry> entries, IReadOnlyList<EntryVerification> verifications, SubstanceDictionary dictionary, OfficialCatalogPlan officialPlan)
     {
         var plannable = Plannable(entries);
+        var aliasIds = plannable.Where(entry => entry.AliasOf is not null).Select(entry => entry.Id).ToHashSet(StringComparer.Ordinal);
         if (plannable.Count == 0)
         {
             return [];
@@ -171,11 +217,11 @@ public static partial class CuratedVerificationRunner
         var curated = CuratedCatalogPlanner.Plan(plannable, dictionary);
         var plan = officialPlan.With(curated.Products, curated.Substances);
         var keyById = plan.Products.SelectMany(product => product.SubstanceKeys).Distinct(StringComparer.Ordinal).ToDictionary(SubstanceId, key => key);
-        var pool = plan.Products.Select(ToProduct).ToArray();
+        var pool = plan.Products.Where(product => product.AliasOfExternalRef is null).Select(ToProduct).ToArray();
         var officialKeys = verifications.GroupBy(verification => verification.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => OfficialKeys(group.First()), StringComparer.Ordinal);
         var curatedProducts = pool.Where(product => product.Source == CuratedCatalogPlanner.CuratedSource).ToDictionary(product => product.ExternalRef!, StringComparer.Ordinal);
         var checks = new List<AlternativeCheck>();
-        foreach (var entry in plannable)
+        foreach (var entry in plannable.Where(entry => !aliasIds.Contains(entry.Id)))
         {
             var product = curatedProducts[entry.Id];
             foreach (var sibling in ProductSearch.SameActiveIngredient(product, pool))

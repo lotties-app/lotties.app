@@ -5,7 +5,8 @@ namespace Lotties.Domain.Catalog.Official;
 /// form (the same brand is often registered several times, and one registration covers several forms).
 /// <see cref="ExternalRef"/> is the stable key <c>{normalized name}:{form}</c> in <see cref="Source"/>;
 /// <see cref="AmbiguousName"/> is set when products with other ingredients share the source name (the name then
-/// carries the ingredients); <see cref="RegistrationNumbers"/> are kept for the report only (empty for notified products).
+/// carries the ingredients); <see cref="AliasOfExternalRef"/> is set for a curated alias (another name of the curated
+/// product with that external ref: the importer merges it into that product); <see cref="RegistrationNumbers"/> are kept for the report only (empty for notified products).
 /// </summary>
 public sealed record CatalogProductPlan(
     string Source,
@@ -17,7 +18,8 @@ public sealed record CatalogProductPlan(
     string? Presentation,
     IReadOnlyList<string> SubstanceKeys,
     IReadOnlyList<string> RegistrationNumbers,
-    string? AmbiguousName);
+    string? AmbiguousName,
+    string? AliasOfExternalRef = null);
 
 /// <summary>A text and how often it occurred (report samples).</summary>
 public sealed record SampleCount(string Text, int Count);

@@ -66,6 +66,42 @@ public sealed class OfficialCatalogImportTests(ApiFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task ImportAsync_CuratedAlias_IsMergedIntoItsProductOnceAndKeepsAnExistingRowId()
+    {
+        var target = OfficialImports.Curated("zelgas-gotas-drops", "Zelgas Gotas", ProductForm.Drops, "simeticona");
+        var oldName = OfficialImports.Curated("zelgas-drops", "Zelgas", ProductForm.Drops, "simeticona");
+        var before = OfficialImports.Plan([]).WithCurated(target, oldName);
+        var after = OfficialImports.Plan([]).WithCurated(target, oldName with { AliasOf = "zelgas-gotas-drops" });
+
+        await OfficialImports.ImportAsync(factory, before);
+        var existing = await OfficialImports.ProductAsync(factory, "zelgas");
+        var merged = await OfficialImports.ImportAsync(factory, after);
+        var again = await OfficialImports.ImportAsync(factory, after);
+
+        var alias = await OfficialImports.ProductAsync(factory, "zelgas");
+        var product = await OfficialImports.ProductAsync(factory, "zelgasgotas");
+        Assert.Null(existing.MergedIntoId);
+        Assert.Equal((existing.Id, product.Id), (alias.Id, alias.MergedIntoId));
+        Assert.Equal((1, 0, 0), (merged.AliasesMerged, merged.Skipped.Count, merged.ProductsUpdated));
+        Assert.Equal((0, 0, 0), (again.AliasesMerged, again.Skipped.Count, again.ProductsUpdated));
+    }
+
+    [Fact]
+    public async Task ImportAsync_NewCuratedAlias_IsAddedAlreadyMerged()
+    {
+        var plan = OfficialImports.Plan([]).WithCurated(
+            OfficialImports.Curated("quelgas-gotas-drops", "Quelgas Gotas", ProductForm.Drops, "simeticona"),
+            OfficialImports.Curated("quelgas-drops", "Quelgas", ProductForm.Drops, "simeticona") with { AliasOf = "quelgas-gotas-drops" });
+
+        var result = await OfficialImports.ImportAsync(factory, plan);
+
+        var alias = await OfficialImports.ProductAsync(factory, "quelgas");
+        var product = await OfficialImports.ProductAsync(factory, "quelgasgotas");
+        Assert.Equal((2, 1), (result.ProductsAdded, result.AliasesMerged));
+        Assert.Equal(product.Id, alias.MergedIntoId);
+    }
+
+    [Fact]
     public async Task ImportAsync_ReusesSeededSubstancesAndUsesDeterministicIds()
     {
         var plan = OfficialImports.Plan([OfficialImports.Row("VORTALIX", "199000010", "dipirona monoidratada, cloridrato de vortalina")]);

@@ -185,8 +185,13 @@ public static class ProductSearch
             : [match];
 
     /// <summary>
-    /// Other non-merged, active products of <paramref name="pool"/> with exactly the same active ingredients, official
-    /// first, then by name; one per name (the same brand in another form is listed once).
+    /// Other non-merged, active products of <paramref name="pool"/> with exactly the same active ingredients, one per
+    /// name (the same brand in another form is listed once, in the product's own form when it has it). Order: products
+    /// in the same form as <paramref name="product"/> first (a known form only: "other" means the form is not known and
+    /// never counts as the same), then official before curated before the rest, then by name. The set is the whole of
+    /// the equivalence rule: strength is not part of the data of official products, so it cannot be compared, and a
+    /// product with another form or another strength is still only "contains the same ingredients" information, never a
+    /// substitution (the response carries each sibling's form so the app can say it differs).
     /// </summary>
     public static IReadOnlyList<Product> SameActiveIngredient(Product product, IReadOnlyList<Product> pool)
     {
@@ -197,11 +202,19 @@ public static class ProductSearch
             && !candidate.IsMerged
             && candidate.IsActive
             && product.HasSameActiveIngredientsAs(candidate));
-        return OfficialFirst(candidates.DistinctBy(candidate => candidate.Id))
+        return candidates
+            .DistinctBy(candidate => candidate.Id)
+            .OrderBy(candidate => IsSameKnownForm(product, candidate) ? 0 : 1)
+            .ThenBy(candidate => candidate.SourceRank)
+            .ThenBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(candidate => candidate.Id)
             .DistinctBy(candidate => candidate.NormalizedName, StringComparer.Ordinal)
             .Take(MaxSiblings)
             .ToArray();
     }
+
+    private static bool IsSameKnownForm(Product product, Product candidate) =>
+        product.Form != ProductForm.Other && candidate.Form == product.Form;
 
     private static ProductMatch? NameMatchOrNull(CatalogQuery query, Product candidate, IReadOnlyDictionary<Guid, Product> targets)
     {

@@ -281,6 +281,34 @@ public sealed class CuratedVerificationTests
     }
 
     [Fact]
+    public void Run_DifferentCategoriesSharingAnIngredientSet_IsAnError()
+    {
+        var report = Run(
+            Entry("a-drops", "Aname", ["simeticona"]) with { Category = "medicine" },
+            Entry("b-drops", "Bname", ["simeticona"]) with { Category = "homeopathic" });
+
+        Assert.Contains(report.Findings, finding => finding is { Code: "CATEGORY_EQUIVALENCE", Severity: FindingSeverity.Error });
+    }
+
+    [Fact]
+    public void Run_AliasWithOtherIngredientsOrAMissingTarget_IsAnError()
+    {
+        var target = Entry("a-drops", "Aname", ["simeticona"]);
+
+        Assert.DoesNotContain(Run(target, Entry("b-drops", "Bname", ["simeticona"]) with { AliasOf = "a-drops" }).Findings, finding => finding.Code == "ALIAS_TARGET");
+        Assert.Contains(Run(target, Entry("b-drops", "Bname", ["dipirona"]) with { AliasOf = "a-drops" }).Findings, finding => finding is { Code: "ALIAS_TARGET", Severity: FindingSeverity.Error });
+        Assert.Contains(Run(target, Entry("b-drops", "Bname", ["simeticona"]) with { AliasOf = "nowhere" }).Findings, finding => finding.Code == "ALIAS_TARGET");
+    }
+
+    [Fact]
+    public void Run_AliasIsNeverSuggestedAsAnAlternativeToItsProduct()
+    {
+        var report = Run(Entry("a-drops", "Aname", ["simeticona"]), Entry("b-drops", "Bname", ["simeticona"]) with { AliasOf = "a-drops" });
+
+        Assert.DoesNotContain(report.Alternatives, alternative => alternative.EntryId == "b-drops" || alternative.AlternativeName == "Bname");
+    }
+
+    [Fact]
     public void Run_SameIngredientSetSpelledTwoWays_IsAWarningNotAnError()
     {
         var report = Run(Entry("a-drops", "Aname", ["dipirona"]), Entry("b-drops", "Bname", ["dipirona sódica"]));

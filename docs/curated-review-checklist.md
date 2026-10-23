@@ -4,9 +4,9 @@ The script `verify-curated` (docs/design/26-curated-verification.md) already did
 
 Scope: composition, suitability and equivalence information shown next to product names. **Doses are out of scope**: the app never suggests one; the only source is the doctor's prescription.
 
-## For every entry (7 entries today)
+## For every entry (12 entries today, 10 products and 2 aliases)
 
-- [ ] The ingredient is the one the product contains (the script could confirm none of the seven against ANVISA data: see the table in the design doc).
+- [ ] The ingredient is the one the product contains (the script could confirm none against ANVISA data: see the table in the design doc; for the five newest, Fly Gotas, Colicaliv, Rinosoro Jet Infantil, Sorine Jet Baby and Colidis, the owner's packaging photos of 2026-10-23 state the composition, see below).
 - [ ] Age suitability: the product is appropriate for the ages a parent would use it for, and any minimum age or "ask a doctor first" for babies is known. The app currently says nothing about age.
 - [ ] Warnings parents must know (for example: not a substitute for medical advice, when to see a doctor, products that should not be mixed). Decide whether any warning text belongs in the app, and who owns its wording.
 - [ ] The name and brand are not confusable with another product that has other ingredients (Sorine naphazoline vs saline; check the spray and drops names for the others).
@@ -15,17 +15,20 @@ Scope: composition, suitability and equivalence information shown next to produc
 
 The app treats two products as alternatives when their ingredient sets are equal, ignoring strength, form, excipients and indication. Please judge:
 
-- [ ] Simethicone: Flygas and Luftal drops are suggested for each other. Do the usual drop concentrations differ in a way that matters for the parent comparing them? (The scripted CMED data shows Luftal drops at 75 mg/mL; Flygas is not in the official data.)
+- [ ] Simethicone: Fly Gotas (150 mg/mL on the box) and Luftal drops (75 mg/mL per CMED) are suggested for each other. The concentration is twice as high: is "same ingredient" acceptable here, or must the app say the concentration differs? (The app shows the printed 150 mg/mL on Fly Gotas' line, it cannot compare strengths.)
 - [ ] Sodium chloride: saline nasal sprays and drops are suggested together with every other sodium chloride product, including products of another form. Should a nasal saline be suggested next to an irrigation or infusion solution, or next to a hypertonic product? Should the suggestion be limited to the same form or to nasal products?
-- [ ] Colidis (L. reuteri, a food supplement) has no official counterpart, so it only has curated suggestions. Is "same ingredient" meaningful for probiotic strains (the entry names the species; the product uses a specific strain, DSM 17938 per the manufacturer)?
+- [ ] Colidis (L. reuteri DSM 17938, a food supplement) has no official counterpart, so it only has curated suggestions (none today). Is "same ingredient" meaningful for probiotic strains (the entry names the species; the box names the strain)? Colidis and Colicaliv are kept out of the medicine suggestions by construction (a test and a verifier check); confirm that is what you want.
 - [ ] Combination products: confirm none of the entries should be matched with combination products (the rule is exact set equality).
 
 ## Per-entry facts only a person can establish
 
-- [ ] Flygas: composition (no official record; the basis is an owner statement). Needs the package leaflet or the manufacturer's page.
+- [ ] Flygas / Fly Gotas: Flygas is not a product; the owner's box is Biolab's "Fly Gotas 150" (simethicone 150 mg/mL, orange, 15 mL, "uso adulto e pediátrico"). Composition and concentration now come from the packaging; the official data only has inactive notified Fly Gotas records. Open: is the product still notified/sold under that name, and is "adulto e pediátrico" at this concentration suitable for the babies it will be used for (age suitability is not decided by the app).
 - [ ] Luftal: the registration is inactive; is the product still sold, and in which formulation? (CMED still lists presentations.)
-- [ ] Colidis: confirm it is a supplement and which presentation (drops only?) is sold.
-- [ ] Sorine and Rinosoro saline: the notified products list no ingredient. Confirm the sodium chloride claim from the label, and the concentration (0.9 % vs hypertonic), because the entries deliberately state no concentration.
+- [ ] Colidis: the box says "Suplemento alimentar em suspensão gotas", L. reuteri DSM 17938, 10 mL, "Alívio da cólica em bebês de 0 a 6 meses de idade". Confirmed by the packaging: it is a supplement, 10 mL drops. Open: the age and "alívio da cólica" claims are the manufacturer's, nobody checked them; decide whether the app should show any claim.
+- [ ] Sorine and Rinosoro saline (the older generic entries `sorine-saline-*`, `rinosoro-saline-*`): the notified products list no ingredient. Confirm the sodium chloride claim and the concentration (0.9 % vs hypertonic) from the box, because these entries deliberately state no concentration.
+- [ ] Rinosoro Jet Infantil: confirmed by the packaging: sodium chloride 9 mg/mL (0,9 %), spray, 100 mL, "uso pediátrico". Open: the official record "Rinosoro Jet" was matched by name only (it may cover other presentations); is the isotonic spray suited for newborns as the box suggests ("bebês e crianças")?
+- [ ] Sorine Jet Baby (shop name "Sorine Infantil Jet Baby"): confirmed by the packaging: sodium chloride 0,9 %, spray, 100 mL, no preservatives. Open: the box says "uso pediátrico acima de 0 (zero) dias" (partly legible, read as "acima de 0 dias"): confirm the printed minimum age with the owner or a second photo, then decide what, if anything, the app says about age. The plain "Sorine" is naphazoline (registration 1.0573.0050): the name rule keeps them apart, confirm no one will mix them up.
+- [ ] Colicaliv (Herbarium, homeopathic): confirmed by the packaging: Matricaria chamomilla 4CH, Mentha piperita 6CH, Magnesia phosphorica 5CH, Colocynthis 6CH, 0,25 mL/mL of each, oral drops, 30 mL, "uso pediátrico". Open for a pharmacist: the "auxiliar no alívio do desconforto causado por cólicas" claim is the label's and homeopathic (the app never states an effect); whether the potency (CH) belongs in the ingredient name as modelled; whether the app should say "homeopathic" next to it. It is never offered as an alternative to simethicone (or the reverse), by design.
 
 ## Questions to ask the pharmacist
 
