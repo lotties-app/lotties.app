@@ -70,6 +70,7 @@ public sealed class MigrationTests
         "20261023032350_DoctorScopes",
         "20261023071720_AccountDeletion",
         "20261023162441_ProductStrength",
+        "20261023172942_FussyOutcomes",
     ];
 
     [Fact]
