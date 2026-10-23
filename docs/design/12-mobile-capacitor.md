@@ -126,9 +126,8 @@ nothing a page on the user's own machine could not already do with a token it do
   bundle, used every time the app opens. To verify on device: WebKit's documented behaviour for non-browser apps (the
   7-day cap is described for browsers and home-screen web apps).
 - First launch works offline after install (assets bundled); sign-in and sync need the network, as in the PWA.
-- Open decisions: Android `allowBackup="true"` (template default) lets Android back up WebView storage, refresh token
-  included, and restore it on a new phone: keep (convenience) or set `false` / data extraction rules (safer).
-  The nginx Content-Security-Policy does not exist in the app (no server): add a `<meta>` CSP to the native build.
+- Android backup: decided **off** (`allowBackup="false"`, `fullBackupContent="false"` and `res/xml/data_extraction_rules.xml` excluding cloud backup and device transfer). The WebView storage holds the refresh token and the unsynced outbox; a restored token on another phone is a session nobody opened, and everything else comes back from the server after sign-in.
+- Content-Security-Policy: the nginx header does not exist in the app (no server), so the native build gets the same policy as a `<meta>` tag (`code/web/native-csp.ts`, only in `vite build --mode native`): own bundle only, `connect-src` = the API and identity provider origins read from `.env.native`, no inline or remote script, `form-action 'none'`. **Untested on a device**: if the first run shows a blank screen, look for a CSP violation in the WebView console (chrome://inspect, Safari Web Inspector) before suspecting anything else.
 
 ## 7. Push notifications (decision, not built; full design in docs/design/19-native-push.md)
 
@@ -203,9 +202,7 @@ app can register; PKCE already blocks code interception).
   native push (section 7), widgets and quick actions (section 8), no web chrome inside the app (no install prompts, no
   "open in browser"), correct icons/splash/launch screen, keyboard and safe areas handled. Push and at least one
   widget should exist before the first iOS review.
-- Placeholder assets: `android/app/src/main/res` and `ios/App/App/Assets.xcassets` still hold Capacitor's default icon
-  and splash. Generate them from the brand icons (docs/design/icons, concept B) with `@capacitor/assets` before any
-  tester build; splash colours follow the design owner (light `#f5efe4`, dark `#1b1814` are today's first-paint colours).
+- Icons and splash: generated from the brand icons (docs/design/icons, concept B) by `npm --prefix code/mobile run assets` (`code/mobile/scripts/generate-native-assets.mjs`, uses `sharp` from code/web; no new dependency). Android: legacy, round, adaptive foreground (background colour `#F5EFE4`) and monochrome (themed icons) mipmaps, pre-Android 12 `splash.png` per density, Android 12+ splash from `values/styles.xml` (`windowSplashScreenBackground` + the foreground icon; dark `#1B1814` in `values-night`). iOS: 1024 px opaque app icon, `Splash.imageset` with light and dark 2732 px images. Splash colours: light `#f5efe4`, dark `#1b1814` (the web first-paint colours). Not checked on a device: the glyph sits in the adaptive icon safe zone by construction (0.78 of the canvas, as the maskable art), look at it on a launcher first.
 
 ## 11. AGPL-3.0 and the App Store
 

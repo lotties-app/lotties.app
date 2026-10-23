@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { nativeCspPlugin } from './native-csp';
 import { darkManifestPlugin, LIGHT_MANIFEST } from './pwa-manifest';
 import pkg from './package.json' with { type: 'json' };
 
@@ -72,6 +73,8 @@ export default defineConfig({
     }),
     // After VitePWA: it also removes the duplicate manifest link VitePWA injects.
     darkManifestPlugin(),
+    // Native build only: the app has no server to send a Content-Security-Policy header.
+    nativeCspPlugin(),
   ],
   build: {
     rolldownOptions: {
