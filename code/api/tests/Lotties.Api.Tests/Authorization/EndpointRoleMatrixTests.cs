@@ -142,6 +142,12 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/babies/{babyId:guid}/care-providers"] = Access.ReadFamily,
         ["PUT /api/v1/babies/{babyId:guid}/care-providers/{providerId:guid}"] = Access.Write,
 
+        // Address lookup proxy (docs/design/23-address-lookup.md): instance-wide, no baby involved and nothing about a baby is
+        // sent upstream, so any signed-in user (the web only offers it in the provider sheet, i.e. to Owners and Parents).
+        // Rate limited per user.
+        ["GET /api/v1/address/lookup"] = Access.SignedIn,
+        ["GET /api/v1/address/search"] = Access.SignedIn,
+
         // Vaccines: the schedule is the same for everyone (any signed-in user); every member reads a baby's records,
         // a Doctor included; only Owners and Parents record, edit or delete. Caregivers, Viewers and the Doctor read only.
         ["GET /api/v1/vaccine-schedule"] = Access.SignedIn,

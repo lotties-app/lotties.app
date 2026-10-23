@@ -74,6 +74,9 @@ internal static class DomainExceptionStatusCodes
         [typeof(PushEndpointNotAllowedException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(NotificationActionNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(SnoozeLimitReachedException)] = StatusCodes.Status409Conflict,
+        [typeof(AddressNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(AddressLookupUnavailableException)] = StatusCodes.Status502BadGateway,
+        [typeof(AddressLookupDisabledException)] = StatusCodes.Status503ServiceUnavailable,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

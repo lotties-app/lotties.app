@@ -29,6 +29,9 @@ public sealed class RequestLimitsOptions
     /// <summary>Shared catalog product creations per user per fixed one-minute window (default 10).</summary>
     public int CatalogWritePermitsPerMinute { get; set; } = 10;
 
+    /// <summary>Address lookups (CEP and place search together, cache hits included) per user per fixed one-minute window (default 20).</summary>
+    public int AddressLookupPermitsPerMinute { get; set; } = 20;
+
     /// <summary>Push device, settings and preference writes per user per fixed one-minute window (default 30).</summary>
     public int PushWritePermitsPerMinute { get; set; } = 30;
 
@@ -49,6 +52,7 @@ public sealed class RequestLimitsOptions
             (nameof(PermitsPerMinute), PermitsPerMinute),
             (nameof(ImportPermitsPerMinute), ImportPermitsPerMinute),
             (nameof(CatalogWritePermitsPerMinute), CatalogWritePermitsPerMinute),
+            (nameof(AddressLookupPermitsPerMinute), AddressLookupPermitsPerMinute),
             (nameof(PushWritePermitsPerMinute), PushWritePermitsPerMinute),
             (nameof(PushTestPermitsPerMinute), PushTestPermitsPerMinute),
             (nameof(PushActionPermitsPerMinute), PushActionPermitsPerMinute),

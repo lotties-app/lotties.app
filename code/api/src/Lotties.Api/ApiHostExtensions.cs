@@ -10,6 +10,7 @@ using Lotties.Api.Serialization;
 using Lotties.Application;
 using Lotties.Application.Push;
 using Lotties.Infrastructure;
+using Lotties.Infrastructure.AddressLookup;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.AutoMigration;
 using Lotties.Infrastructure.Push;
@@ -31,6 +32,7 @@ public static class ApiHostExtensions
         builder.Services.AddPushNotifications();
         builder.Services.AddSingleton<IPushConfiguration, PushOptionsConfiguration>();
 
+        builder.Services.AddAddressLookup(builder.Configuration);
         builder.Services.AddNotificationScheduler();
         builder.Services.AddOidcAuthentication(builder.Configuration);
         builder.Services.AddBabyAuthorization();
