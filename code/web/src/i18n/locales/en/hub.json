@@ -124,6 +124,11 @@
         "title": "About",
         "hint": "Version and licence",
         "keywords": "version build licence license source"
+      },
+      "credits": {
+        "title": "Credits and licenses",
+        "hint": "Open-source software, data and services behind Lotties",
+        "keywords": "credits licenses licences open source thanks libraries data attribution agpl third party"
       }
     },
     "updates": {
@@ -150,6 +155,7 @@
       "license": "Licence",
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
+      "credits": "Built on open source. Credits and licenses",
       "unknown": "Unknown"
     }
   }

@@ -11,6 +11,7 @@ import { Hero } from './Hero';
 import { ImportantNotice } from './ImportantNotice';
 import { LandingFooter } from './LandingFooter';
 import { LandingHeader } from './LandingHeader';
+import { OpenSourceStrip } from './OpenSourceStrip';
 import { SessionNotice, type NoticeKind } from './SessionNotice';
 import { StepsStrip } from './StepsStrip';
 
@@ -79,6 +80,7 @@ export default function LandingPage({ unsyncedOverride }: { unsyncedOverride?: n
         <FeatureGrid />
         <ImportantNotice />
         <StepsStrip />
+        <OpenSourceStrip />
       </Box>
       <LandingFooter />
     </Box>

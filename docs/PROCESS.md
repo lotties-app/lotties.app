@@ -80,6 +80,15 @@ scripts/regen-migrations.sh <MigrationName> [--base main] [--checkout <path>] [-
    `npm --prefix code/web run test -- --run`, `npm --prefix code/web run build`, `dotnet build code/api/Lotties.sln`,
    `dotnet test code/api/Lotties.sln`, everything committed.
 
+## Credits after a dependency change
+
+Whoever changes dependencies (the orchestrator, in the main clone) regenerates the credits in the same commit:
+`dotnet restore code/api/Lotties.sln` then `node code/web/scripts/generate-credits.mjs` (docs/design/25-credits.md). It rewrites
+`code/web/src/credits/*.generated.json`, `CREDITS.md` and `THIRD_PARTY_NOTICES.md`; `node ... --check` verifies without writing.
+The web test `src/credits/thirdParty.test.ts` fails when a production package or `PackageReference` is missing, and when a
+new package has a license outside the reviewed list (decide, then add it to `credits-lib.mjs`). Workers only run
+`--check`, never the writing run (it needs the main clone's `node_modules` and would touch root files).
+
 ## Ports
 
 Each worker gets a slot (the orchestrator assigns it in the brief). Nothing else may use these ports.

@@ -29,6 +29,9 @@ const HubExportPage = hubSubPage('HubExportPage');
 const HubBackupImportPage = hubSubPage('HubBackupImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
+const HubCreditsPage = hubSubPage('HubCreditsPage');
+// The public credits page: outside the auth gate, so it opens without signing in.
+const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -268,6 +271,14 @@ export function AppRoutes() {
       {/* The sign-in page is gone (the landing page and the identity provider replace it). */}
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/auth/callback" element={<CallbackPage />} />
+      <Route
+        path="/credits"
+        element={
+          <Suspense fallback={null}>
+            <CreditsPage />
+          </Suspense>
+        }
+      />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
       <Route path="/invite" element={<InviteEntry />}>
         <Route element={<RequireAuth />}>
@@ -296,6 +307,7 @@ export function AppRoutes() {
             <Route path="hub/backup" element={<HubBackupImportPage />} />
             <Route path="hub/updates" element={<HubUpdatesPage />} />
             <Route path="hub/about" element={<HubAboutPage />} />
+            <Route path="hub/credits" element={<HubCreditsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="vaccines" element={<VaccinesPage />} />

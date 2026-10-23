@@ -124,6 +124,11 @@
         "title": "Sobre",
         "hint": "Versão e licença",
         "keywords": "versão build licença código"
+      },
+      "credits": {
+        "title": "Créditos e licenças",
+        "hint": "Software livre, dados e serviços por trás do Lotties",
+        "keywords": "créditos licenças licencas software livre open source agradecimentos bibliotecas dados atribuição agpl terceiros"
       }
     },
     "updates": {
@@ -150,6 +155,7 @@
       "license": "Licença",
       "licenseValue": "Software livre, AGPL-3.0",
       "source": "Código-fonte",
+      "credits": "Feito sobre software livre. Créditos e licenças",
       "unknown": "Desconhecido"
     }
   }

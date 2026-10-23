@@ -76,7 +76,19 @@
     "themeDark": "Escuro",
     "source": "Código-fonte",
     "licence": "Software livre e de código aberto, sob a licença AGPL-3.0.",
-    "notMedical": "Não é um dispositivo médico."
+    "notMedical": "Não é um dispositivo médico.",
+    "credits": "Créditos e licenças"
+  },
+  "openSource": {
+    "title": "Feito sobre software livre",
+    "body": "O Lotties se apoia no trabalho da comunidade de software livre e em dados públicos de saúde. Obrigado a cada autor e mantenedor.",
+    "count_one": "{{count}} pacote de software livre",
+    "count_other": "{{count}} pacotes de software livre",
+    "including": "Incluindo {{names}} e mais.",
+    "license": "O próprio Lotties é software livre sob a AGPL-3.0.",
+    "source": "Código-fonte no GitHub",
+    "seeAll": "Ver todos os créditos e licenças",
+    "notMedical": "O Lotties não é um dispositivo médico."
   },
   "important": {
     "eyebrow": "Importante",

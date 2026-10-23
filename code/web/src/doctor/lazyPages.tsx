@@ -28,3 +28,6 @@ export const PatientNotes = lazy(() =>
 export const DoctorSettingsPage = lazy(() =>
   import('./PatientPages').then((m) => ({ default: m.DoctorSettingsPage })),
 );
+export const DoctorCreditsPage = lazy(() =>
+  import('./PatientPages').then((m) => ({ default: m.DoctorCreditsPage })),
+);

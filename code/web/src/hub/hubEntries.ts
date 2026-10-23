@@ -38,6 +38,7 @@ export const HUB_ENTRY_IDS = [
   'backupImport',
   'updates',
   'about',
+  'credits',
 ] as const;
 export type HubEntryId = (typeof HUB_ENTRY_IDS)[number];
 
@@ -69,6 +70,7 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'backupImport', section: 'app', icon: 'cloud-upload', to: '/hub/backup' },
   { id: 'updates', section: 'app', icon: 'refresh', to: '/hub/updates' },
   { id: 'about', section: 'app', icon: 'info', to: '/hub/about' },
+  { id: 'credits', section: 'app', icon: 'heart', to: '/hub/credits' },
 ];
 
 export interface HubContext {
@@ -88,6 +90,7 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
   switch (id) {
     case 'settings':
     case 'about':
+    case 'credits':
       return true;
     case 'updates':
       return !ctx.native;

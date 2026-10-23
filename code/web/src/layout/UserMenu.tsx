@@ -151,6 +151,19 @@ export function UserMenu() {
           </ListItemIcon>
           {t('layout.appearanceLanguage')}
         </MenuItem>
+        {doctorMode && (
+          <MenuItem
+            component={Link}
+            to="/doctor/credits"
+            sx={{ minHeight: 48 }}
+            onClick={() => setAnchor(null)}
+          >
+            <ListItemIcon>
+              <Icon name="heart" size={20} />
+            </ListItemIcon>
+            {t('credits.title')}
+          </MenuItem>
+        )}
         {!doctorMode && (
           <MenuItem
             sx={{ minHeight: 48 }}

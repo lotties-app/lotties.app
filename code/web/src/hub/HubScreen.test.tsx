@@ -87,6 +87,7 @@ describe('the sections', () => {
       'backupImport',
       'updates',
       'about',
+      'credits',
     ]);
     const href = (id: string) => screen.getByTestId(`hub-row-${id}`).getAttribute('href');
     expect(href('appointments')).toBe('/appointments');
@@ -111,6 +112,7 @@ describe('the sections', () => {
       'settings',
       'updates',
       'about',
+      'credits',
     ]);
   });
 

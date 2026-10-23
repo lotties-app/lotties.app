@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link as RouterLink } from 'react-router-dom';
 import { Box, Link, Stack, Typography } from '@mui/material';
 import { isLocalePreference, LOCALES, type LocalePreference } from '../i18n/config';
 import { useLocale } from '../i18n/useLocale';
@@ -79,6 +80,9 @@ export function LandingFooter() {
               {t('footer.source')}
             </Link>
           )}
+          <Link component={RouterLink} to="/credits" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.credits')}
+          </Link>
           <Typography variant="body2" color="text.secondary">
             {t('footer.licence')}
           </Typography>
