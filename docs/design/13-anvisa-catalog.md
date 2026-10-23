@@ -90,6 +90,8 @@ In the medication picker (prescription editor and Settings), results matched by 
 
 Saline variants say "Solução Nasal Salina" in the name, so they never collide with the official "Sorine (cloridrato de nafazolina)" and do not claim a concentration ("soro fisiológico" means 0.9 %, and some Rinosoro products are 3 %).
 
+**Machine verification (2026-10-23).** `verify-curated` cross-checks every entry against the official files in the importer's cache (name, ingredients, form, route, registration status, internal consistency, the suggestions the app would make) and records the result per entry as `anvisaCheck` (date, status, evidence references), separate from `reviewed`. Result today: Flygas NOT_FOUND, Luftal CANCELLED (ingredient agrees), Colidis NOT_FOUND, Sorine saline spray UNVERIFIABLE, Sorine saline drops AMBIGUOUS, Rinosoro saline spray and drops UNVERIFIABLE; none VERIFIED, none wrong. Details, statuses and the residual human checklist: docs/design/26-curated-verification.md and docs/curated-review-checklist.md. The machine check is not a pharmacist review and changes no label.
+
 How to edit the file: add or change an entry with `id` (lower-case letters, digits, dashes; never reuse or change an id, it is the product's key: a new id creates a new product and retires the old one), `name` (distinct from any official name used with other ingredients), `form` (one of the catalog forms), `ingredients` (pt-BR spellings the curated substance map knows, at least one), `reviewed` (`false` until a pharmacist or pediatrician checked it) and `basis` (the primary source, or the owner's statement). Never add a dose, strength or indication; never guess an ingredient from a name. Run the tests, then the importer (dry run first): the curated products are planned and printed with the official ones, and a name used by an official product is reported and skipped.
 
 ## 8. Running the importer
@@ -114,6 +116,8 @@ dotnet run --project code/api/tools/Lotties.CatalogImporter -- --refresh
 Options: `--source <url|path>` (registered medicines, default the ANVISA URL), `--forms-source <url|path|none>` (CMED price list; `none` = every product "other"), `--curated <path|none>` (curated list, default `Data/curated-products.json` next to the tool; `none` skips it and does not retire curated products), `--cache-dir <dir>` (default `<temp>/lotties-anvisa-cache`; downloads never go into the repository), `--refresh`, `--dry-run`, `--limit <n>` (first n rows, no retiring), `--lookup <a,b,...>`, `--use-migrator`, `--help`. The tool prints the database host and name, never the user or password. Exit codes: 0 done, 1 failed (nothing written: one transaction), 2 bad arguments.
 
 Refresh cadence: monthly, after ANVISA's monthly update (the registrations file covers up to the last day of the previous month).
+
+After a refresh, also run `dotnet run --project code/api/tools/Lotties.CatalogImporter -- verify-curated --fix-proposals` (reads the cache, no download, no database; writes reports to `<cache-dir>/verify-curated`, never committed). It exits non-zero on a mismatch or an inconsistency in the curated list.
 
 ## 9. Verification (2026-10-22, real files, no real database)
 
@@ -147,7 +151,7 @@ Throwaway PostgreSQL 16 (podman, `br-pg-anvisa`, port 55435, removed afterwards)
 ## 11. Open questions for the owner
 
 1. Licence: the registered-medicines dataset page is gone from dados.gov.br; the decree and the sibling datasets (CC BY, public domain) support reuse with attribution. Confirm, or ask ANVISA (Ouvidoria) for the dataset's licence label if a formal statement is wanted.
-2. Review of the curated list by a pharmacist or pediatrician (and who may set `reviewed: true`; the UI label would then need a "reviewed" wording).
+2. Review of the curated list by a pharmacist or pediatrician (and who may set `reviewed: true`; the UI label would then need a "reviewed" wording). The mechanical part is automated by `verify-curated`; the rest is the checklist in docs/curated-review-checklist.md.
 3. Products still priced by CMED but inactive in the registry (707): keep them out, or curate the common ones (as done for Luftal)?
 4. Capsules and oral solutions are "other". Add catalog forms (capsule, oral solution) later? That is a UI/UX change (labels, dose units).
 5. Strengths are not imported (one product groups several strengths). Parse CMED strengths for single-strength products?

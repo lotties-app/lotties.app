@@ -8,6 +8,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 // Admin tool: imports ANVISA's registered medicines into the shared catalog. Run from a machine that can reach the
 // database, never from the API pod; see docs/design/13-anvisa-catalog.md and docs/DEPLOY.md.
+if (args.Length > 0 && args[0] == VerifyCommand.Name)
+{
+    return await VerifyCommand.RunAsync(args[1..], Console.Out, Console.Error, CancellationToken.None);
+}
+
 ImporterArguments arguments;
 try
 {

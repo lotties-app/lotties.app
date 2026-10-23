@@ -1,5 +1,6 @@
 using Lotties.Domain.Catalog;
 using Lotties.Domain.Catalog.Official;
+using Lotties.Domain.Catalog.Official.Verification;
 using Lotties.Infrastructure.Catalog.Official;
 
 namespace Lotties.Infrastructure.Tests.Catalog;
@@ -65,5 +66,43 @@ public sealed class CuratedProductListTests
         Assert.Throws<ArgumentException>(() => CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"capsule","ingredients":["simeticona"],"reviewed":false,"basis":"b"}]}"""));
         Assert.Throws<ArgumentException>(() => CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"drops","ingredients":["simeticona"],"basis":"b"}]}"""));
         Assert.Throws<ArgumentException>(() => CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"drops","ingredients":["simeticona"],"reviewed":false,"basis":""}]}"""));
+    }
+
+    [Fact]
+    public void List_RecordedAnvisaChecks_AreWellFormedAndNeverMeanAPharmacistReview()
+    {
+        var statuses = Enum.GetValues<VerificationStatus>().Select(CuratedVerificationRunner.StatusCode).ToHashSet(StringComparer.Ordinal);
+
+        Assert.All(Entries.Where(entry => entry.AnvisaCheck is not null), entry =>
+        {
+            var check = entry.AnvisaCheck!;
+            Assert.Contains(check.Status, statuses);
+            Assert.True(DateOnly.TryParseExact(check.Date, "yyyy-MM-dd", out _), entry.Id);
+            Assert.False(entry.Reviewed, entry.Id);
+            Assert.True(check.Status != "VERIFIED" || check.Evidence.Count > 0, $"{entry.Id}: VERIFIED needs its evidence references");
+        });
+        Assert.All(Entries, entry => Assert.NotNull(entry.AnvisaCheck));
+    }
+
+    [Fact]
+    public void List_HasNoInternalInconsistency_WhateverTheOfficialData()
+    {
+        var dictionary = CuratedSubstances.Dictionary();
+        var verifier = new CuratedVerifier([], [], dictionary);
+
+        var report = CuratedVerificationRunner.Run(Entries, verifier, dictionary, OfficialCatalogPlanner.Plan([], [], dictionary), new DateOnly(2026, 10, 23));
+
+        Assert.DoesNotContain(report.Findings, finding => finding.Severity == FindingSeverity.Error && finding.Code != "STALE_CHECK");
+        Assert.DoesNotContain(report.Findings, finding => finding.Code is "UNMAPPED_INGREDIENT" or "EQUIVALENCE_SPLIT" or "EMPTY_INGREDIENTS");
+    }
+
+    [Fact]
+    public void Parse_OptionalVerifierFieldsAreRead()
+    {
+        var entry = Assert.Single(CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"drops","ingredients":["simeticona"],"reviewed":false,"basis":"b","officialName":"Xx","registration":"1.0000.0001","route":"oral","anvisaCheck":{"date":"2026-10-23","status":"NOT_FOUND","evidence":["r1"]}}]}"""));
+
+        Assert.Equal(("Xx", "1.0000.0001", "oral"), (entry.OfficialName, entry.Registration, entry.Route));
+        Assert.Equal(new AnvisaCheck("2026-10-23", "NOT_FOUND", ["r1"]).Status, entry.AnvisaCheck!.Status);
+        Assert.Equal(["r1"], entry.AnvisaCheck.Evidence);
     }
 }

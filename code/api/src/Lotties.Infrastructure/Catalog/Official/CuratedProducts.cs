@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Lotties.Domain.Catalog;
 using Lotties.Domain.Catalog.Official;
 
@@ -44,6 +45,15 @@ public static class CuratedProducts
 
         public string Basis { get; set; } = string.Empty;
 
+        public string? OfficialName { get; set; }
+
+        public string? Registration { get; set; }
+
+        public string? Route { get; set; }
+
+        [JsonPropertyName("anvisaCheck")]
+        public Check? Recorded { get; set; }
+
         public static explicit operator CuratedProductEntry(Entry entry) => new(
             entry.Id,
             entry.Name,
@@ -52,6 +62,19 @@ public static class CuratedProducts
                 : throw new ArgumentException($"Curated product '{entry.Id}' has an unknown form '{entry.Form}'.", nameof(entry)),
             entry.Ingredients.ToArray(),
             entry.Reviewed ?? throw new ArgumentException($"Curated product '{entry.Id}' must say whether it was reviewed.", nameof(entry)),
-            string.IsNullOrWhiteSpace(entry.Basis) ? throw new ArgumentException($"Curated product '{entry.Id}' needs its basis.", nameof(entry)) : entry.Basis);
+            string.IsNullOrWhiteSpace(entry.Basis) ? throw new ArgumentException($"Curated product '{entry.Id}' needs its basis.", nameof(entry)) : entry.Basis,
+            entry.OfficialName,
+            entry.Registration,
+            entry.Route,
+            entry.Recorded is { } check ? new AnvisaCheck(check.Date, check.Status, check.Evidence.ToArray()) : null);
+    }
+
+    private sealed class Check
+    {
+        public string Date { get; set; } = string.Empty;
+
+        public string Status { get; set; } = string.Empty;
+
+        public List<string> Evidence { get; set; } = [];
     }
 }
