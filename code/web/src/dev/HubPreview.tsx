@@ -21,6 +21,13 @@ import { SyncEngine } from '../sync/SyncEngine';
 import { SyncEngineContext } from '../sync/SyncEngineContext';
 import { fakeApi } from '../test/fakeApi';
 import { SettingsPage } from '../pages/SettingsPage';
+import {
+  HubBackupImportPage,
+  HubCreditsPage,
+  HubExportPage,
+  HubImportPage,
+  HubProvidersPage,
+} from '../pages/HubSubPages';
 import { RunningTimerPill } from '../timers/RunningTimerPill';
 import { addDays } from '../vaccines/vaccineStatus';
 import { PREVIEW_BABY_ID, PREVIEW_TYPES, typeIdOf } from './previewData';
@@ -31,8 +38,9 @@ import { PreviewToolbar } from './PreviewToolbar';
  * with the floating dock and, in `timers`, the running-timer pill in the header, over a
  * throw-away local database. `?state=owner` (vaccines due, an appointment soon, a doctor
  * suggestion: every badge), `quiet` (nothing waits), `caregiver`, `viewer`, `doctor` (patients and
- * proposals), `timers` (a night sleep and tummy time running; the review script opens the pill), `updates`, `about` and
- * `settings` (the pages opened from the Hub, in the page column).
+ * proposals), `timers` (a night sleep and tummy time running; the review script opens the pill), `updates`, `about`,
+ * `settings`, `providers`, `import`, `export`, `backup` and `credits` (the pages opened from the Hub, in the page
+ * column; the overflow audit visits them).
  * No sign-in, no server.
  */
 
@@ -46,7 +54,23 @@ const SCENARIOS = [
   'updates',
   'about',
   'settings',
+  'providers',
+  'import',
+  'export',
+  'backup',
+  'credits',
 ] as const;
+/** Scenarios that show a page opened from the Hub instead of the Hub itself. */
+const PAGES: readonly Scenario[] = [
+  'updates',
+  'about',
+  'settings',
+  'providers',
+  'import',
+  'export',
+  'backup',
+  'credits',
+];
 type Scenario = (typeof SCENARIOS)[number];
 
 const MIN = 60_000;
@@ -102,7 +126,7 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
   ]);
   await db.babies.put(baby);
   await db.eventTypes.bulkPut(PREVIEW_TYPES);
-  if (['quiet', 'viewer', 'doctor', 'updates', 'about', 'settings'].includes(scenario)) return baby;
+  if (['quiet', 'viewer', 'doctor'].includes(scenario) || PAGES.includes(scenario)) return baby;
   await seedSchedule(db);
   if (scenario === 'timers') {
     await db.events.bulkPut([
@@ -201,7 +225,12 @@ export default function HubPreview() {
                   {context && scenario === 'updates' && <UpdatesScreen />}
                   {context && scenario === 'about' && <AboutScreen />}
                   {context && scenario === 'settings' && <SettingsPage />}
-                  {context && !['updates', 'about', 'settings'].includes(scenario) && (
+                  {context && scenario === 'providers' && <HubProvidersPage />}
+                  {context && scenario === 'import' && <HubImportPage />}
+                  {context && scenario === 'export' && <HubExportPage />}
+                  {context && scenario === 'backup' && <HubBackupImportPage />}
+                  {context && scenario === 'credits' && <HubCreditsPage />}
+                  {context && !PAGES.includes(scenario) && (
                     <HubScreen key={scenario} context={context} />
                   )}
                   <PreviewToolbar

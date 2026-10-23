@@ -48,7 +48,10 @@ function chipSx(selected: boolean) {
     borderRadius: '999px',
     backgroundColor: palette(theme).surfaceRaised,
     fontSize: '0.875rem',
-    whiteSpace: 'nowrap' as const,
+    // One line while it fits; a label longer than the whole row (large text) wraps inside the
+    // chip instead of pushing the sheet sideways.
+    maxWidth: '100%',
+    textAlign: 'start' as const,
     ...(selected && selectedOption(theme)),
   });
 }

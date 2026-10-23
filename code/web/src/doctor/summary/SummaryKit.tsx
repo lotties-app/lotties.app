@@ -32,7 +32,15 @@ export function SummarySection({
     <Paper
       component="section"
       aria-labelledby={headingId}
-      sx={{ borderRadius: `${RADIUS.card}px`, p: 2, display: 'grid', gap: 1.5, minWidth: 0 }}
+      sx={{
+        borderRadius: `${RADIUS.card}px`,
+        p: 2,
+        display: 'grid',
+        // A column of the card's width, never its widest content's (no sideways push).
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        gap: 1.5,
+        minWidth: 0,
+      }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <CategoryIcon name={icon} category={category} size={20} />
@@ -153,7 +161,9 @@ export function Row({
       component="li"
       sx={(theme) => ({
         display: 'flex',
-        gap: 1.5,
+        // A trailing value too long for the row (large text) goes under the title.
+        flexWrap: 'wrap',
+        columnGap: 1.5,
         alignItems: 'baseline',
         py: 1,
         borderBottom: `1px solid ${palette(theme).hairline}`,
@@ -171,7 +181,7 @@ export function Row({
       {trailing && (
         <Typography
           variant="body2"
-          sx={{ flexShrink: 0, fontVariantNumeric: 'lining-nums tabular-nums' }}
+          sx={{ flexShrink: 0, maxWidth: '100%', fontVariantNumeric: 'lining-nums tabular-nums' }}
         >
           {trailing}
         </Typography>

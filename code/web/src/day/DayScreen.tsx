@@ -229,8 +229,10 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
       {...swipe}
       sx={{
         display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr)',
         gap: 2,
-        touchAction: 'pan-y',
+        // Swipes change the day; vertical scroll and pinch zoom stay with the browser.
+        touchAction: 'pan-y pinch-zoom',
         minHeight: '60dvh',
         alignContent: 'start',
       }}
@@ -359,8 +361,8 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
 
 const visuallyHidden = {
   position: 'absolute',
-  width: 1,
-  height: 1,
+  width: '1px',
+  height: '1px',
   overflow: 'hidden',
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',

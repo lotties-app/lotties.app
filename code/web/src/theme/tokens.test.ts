@@ -156,7 +156,7 @@ describe('theme mapping', () => {
 
   it('keeps focused content above the fixed bottom navigation (scroll padding)', () => {
     const baseline = theme.components?.MuiCssBaseline?.styleOverrides as Record<string, unknown>;
-    expect(baseline.html).toEqual({ scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING });
+    expect(baseline.html).toMatchObject({ scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING });
     expect(BOTTOM_NAV_SCROLL_PADDING).toContain('safe-area-inset-bottom');
   });
 

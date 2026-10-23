@@ -73,6 +73,8 @@ export function Field({
           htmlFor={group ? undefined : controlId}
           sx={(theme) => ({
             display: 'flex',
+            // "· optional" goes under the label when a narrow column has no room for both.
+            flexWrap: 'wrap',
             alignItems: 'center',
             gap: 0.75,
             mb: 1,

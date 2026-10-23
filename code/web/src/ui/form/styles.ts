@@ -18,6 +18,15 @@ export const filledSurface = (theme: Theme, invalid = false) => ({
   boxShadow: invalid ? `0 0 0 2px ${palette(theme).error.main}` : 'none',
 });
 
+/**
+ * Spread after `font: 'inherit'` on a text input, textarea or select: iOS zooms the page into a
+ * focused field under 16 px, so touch screens get a 16 px floor (a larger text size still wins
+ * through `1rem`). The theme does the same for MUI fields (docs/design/30-mobile-overflow-audit.md).
+ */
+export const TOUCH_FIELD_FONT = {
+  '@media (pointer: coarse)': { fontSize: 'max(16px, 1rem)' },
+} as const;
+
 /** Shared look of a pressable option (segment, chip, quick value) that is not selected. */
 export const optionBase = (theme: Theme) => ({
   appearance: 'none' as const,
