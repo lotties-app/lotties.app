@@ -1,4 +1,5 @@
 import type { BabyEvent } from '../db/models';
+import { normalizeText } from '../hub/searchEntries';
 import { presetLabel } from '../presets/presetLabel';
 import { eventMatchesPreset } from '../presets/status';
 import type { Preset } from '../presets/types';
@@ -49,6 +50,17 @@ function scores(
     }
   }
   return result;
+}
+
+/**
+ * Whether a tile name matches the More sheet search: every typed word appears somewhere in the
+ * name, in any order, ignoring case and accents ("agua" finds "Água", "time tum" finds "Tummy
+ * time"). An empty query matches everything.
+ */
+export function moreTileMatches(query: string, name: string): boolean {
+  const words = normalizeText(query).split(/\s+/).filter(Boolean);
+  const haystack = normalizeText(name);
+  return words.every((word) => haystack.includes(word));
 }
 
 /**

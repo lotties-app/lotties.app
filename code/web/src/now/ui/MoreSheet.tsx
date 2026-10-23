@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useEventsStartedSince } from '../../db/hooks';
 import type { BabyEvent, EventType } from '../../db/models';
 import { currentLocale } from '../../i18n/i18n';
-import { MORE_USAGE_WINDOW_DAYS, orderMoreTypes } from '../moreOrder';
+import { MORE_USAGE_WINDOW_DAYS, moreTileMatches, orderMoreTypes } from '../moreOrder';
+import { presetLabel } from '../../presets/presetLabel';
 import { PresetTile } from '../../presets/PresetTile';
 import { presetsForBaby } from '../../presets/resolve';
 import type { Preset } from '../../presets/types';
 import type { PresetActions } from '../../presets/usePresetActions';
 import { usePresetStates } from '../../presets/usePresetEvents';
 import { CryReasonsButton } from './CryReasonsSheet';
+import { MoreSearch } from './MoreSearch';
 import { SheetFrame } from './SheetFrame';
 import type { TrayName } from './trays';
 
@@ -91,7 +93,20 @@ export function MoreSheet({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const stateOf = usePresetStates(events);
-  const presets = useMoreOrder(babyId, userId, presetsForBaby([...types]));
+  const allTypes = presetsForBaby([...types]);
+  const ordered = useMoreOrder(babyId, userId, allTypes);
+  // A new query each time the sheet opens: it mounts on open.
+  const [query, setQuery] = useState('');
+  const searching = query.trim() !== '';
+  const presets = searching
+    ? ordered?.filter((preset) => moreTileMatches(query, presetLabel(preset)))
+    : ordered;
+  /** Esc clears a typed query first; with none it closes the sheet as usual. */
+  const clearOnEscape = (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key !== 'Escape' || !searching) return;
+    e.stopPropagation();
+    setQuery('');
+  };
 
   const select = (preset: Preset, running?: BabyEvent) => {
     onClose();
@@ -108,11 +123,15 @@ export function MoreSheet({
 
   return (
     <SheetFrame open={open} onClose={onClose} title={t('now.more.title')}>
-      {presets?.length === 0 ? (
+      {allTypes.length > 0 && (
+        <MoreSearch query={query} onChange={setQuery} resultCount={presets?.length ?? 0} />
+      )}
+      {allTypes.length === 0 ? (
         <Typography color="text.secondary">{t('home.noTypes')}</Typography>
       ) : (
         <Box
           data-testid="more-grid"
+          onKeyDown={clearOnEscape}
           sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}
         >
           {presets?.map((preset) => {

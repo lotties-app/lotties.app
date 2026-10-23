@@ -240,7 +240,14 @@
       "severe": "Forte"
     },
     "more": {
-      "title": "Mais"
+      "title": "Mais",
+      "search": {
+        "label": "Buscar",
+        "clear": "Limpar a busca",
+        "none": "Nenhum resultado",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados"
+      }
     },
     "today": {
       "title": "Hoje",

@@ -240,7 +240,14 @@
       "severe": "Severe"
     },
     "more": {
-      "title": "More"
+      "title": "More",
+      "search": {
+        "label": "Search",
+        "clear": "Clear the search",
+        "none": "No results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results"
+      }
     },
     "today": {
       "title": "Today",

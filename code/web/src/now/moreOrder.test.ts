@@ -10,7 +10,7 @@ import {
 } from '../presets/presetFixtures';
 import { presetsForBaby } from '../presets/resolve';
 import type { Preset } from '../presets/types';
-import { orderMoreTypes } from './moreOrder';
+import { moreTileMatches, orderMoreTypes } from './moreOrder';
 
 const NOW = new Date('2026-10-23T12:00:00.000Z');
 const DAY = 24 * 3_600_000;
@@ -43,6 +43,24 @@ function logged(
   });
 }
 const times = (n: number, make: () => BabyEvent) => Array.from({ length: n }, make);
+
+describe('moreTileMatches', () => {
+  it.each([
+    ['', 'Bath', true],
+    ['   ', 'Bath', true],
+    ['BAT', 'Bath', true],
+    ['ath', 'Bath', true],
+    ['time tummy', 'Tummy time', true],
+    ['agua', 'Água', true],
+    ['ÁGUA', 'agua', true],
+    ['remedio', 'Remédio', true],
+    ['dor barriga', 'Dor de barriga', true],
+    ['bath x', 'Bath', false],
+    ['nap', 'Bath', false],
+  ])('%j in %j: %s', (query, name, expected) => {
+    expect(moreTileMatches(query, name)).toBe(expected);
+  });
+});
 
 describe('orderMoreTypes', () => {
   it('is alphabetical by English name without history, the Custom link last', () => {
