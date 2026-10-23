@@ -10,6 +10,7 @@ import { seedBaby } from '../test/seed';
 import { nightPeriodKey } from '../theme/nightFeed';
 import { NIGHT_FEED_STATE_STORAGE_KEY } from '../theme/nightFeedStorage';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
+import { storeTimeBottles } from '../presets/timeBottlesStorage';
 import { EventSheet } from './EventSheet';
 
 let db: BabyRoutineDb;
@@ -58,7 +59,8 @@ const save = () => fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 const choose = (name: string) => fireEvent.click(screen.getByRole('radio', { name }));
 
 describe('a bottle has a duration like nursing; solid food is a moment', () => {
-  it('a new bottle starts as a running timer with Start, End and "Still running"', async () => {
+  it('with "Time bottle feedings" on, a new bottle starts as a running timer with Start, End and "Still running"', async () => {
+    storeTimeBottles(BABY_ID, true);
     const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
     choose('Bottle');
     const running = screen.getByRole('switch', { name: 'Still running' });
@@ -72,7 +74,8 @@ describe('a bottle has a duration like nursing; solid food is a moment', () => {
     expect(saved.endedAt).toBeNull();
   });
 
-  it('a bottle logged afterwards: "Still running" off sets an end and shows the duration', async () => {
+  it('a timed bottle logged afterwards: "Still running" off sets an end and shows the duration', async () => {
+    storeTimeBottles(BABY_ID, true);
     const onDone = renderSheet({ initialTypeId: FEEDING_TYPE.id });
     choose('Bottle');
     fireEvent.click(screen.getByRole('switch', { name: 'Still running' }));

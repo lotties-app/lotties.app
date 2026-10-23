@@ -53,7 +53,7 @@ describe('the built-in feeding definition from the API', () => {
   it.each([
     [{}, ['method']],
     [{ method: 'breast' }, ['method', 'side', 'breast_left_seconds', 'breast_right_seconds']],
-    [{ method: 'bottle' }, ['method', 'amount_ml', 'bottle_feeding_type']],
+    [{ method: 'bottle' }, ['method', 'amount_ml', 'amount_drunk_ml', 'bottle_feeding_type']],
     [{ method: 'solid' }, ['method', 'food']],
   ])('shows only the fields of the chosen method %j', (payload, shown) => {
     const valueOf = (key: string) => (payload as Record<string, unknown>)[key];

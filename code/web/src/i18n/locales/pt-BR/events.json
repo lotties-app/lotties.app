@@ -110,7 +110,10 @@
           "label": "Lado"
         },
         "amount_ml": {
-          "label": "Quantidade"
+          "label": "Quantidade preparada"
+        },
+        "amount_drunk_ml": {
+          "label": "Quantidade bebida"
         },
         "bottle_feeding_type": {
           "label": "Conteúdo da mamadeira"
@@ -123,6 +126,9 @@
         },
         "food": {
           "label": "Alimento"
+        },
+        "ended_by": {
+          "label": "Encerrada por"
         },
         "pause_count": {
           "label": "Pausas"
@@ -148,6 +154,9 @@
         "bottle_feeding_type": {
           "formula": "Fórmula",
           "breast_milk": "Leite materno"
+        },
+        "ended_by": {
+          "sleep": "Sono"
         }
       }
     },

@@ -110,7 +110,10 @@
           "label": "Side"
         },
         "amount_ml": {
-          "label": "Amount"
+          "label": "Amount prepared"
+        },
+        "amount_drunk_ml": {
+          "label": "Amount drunk"
         },
         "bottle_feeding_type": {
           "label": "Bottle content"
@@ -123,6 +126,9 @@
         },
         "food": {
           "label": "Food"
+        },
+        "ended_by": {
+          "label": "Ended by"
         },
         "pause_count": {
           "label": "Pauses"
@@ -148,6 +154,9 @@
         "bottle_feeding_type": {
           "formula": "Formula",
           "breast_milk": "Breast milk"
+        },
+        "ended_by": {
+          "sleep": "Sleep"
         }
       }
     },

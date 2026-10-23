@@ -5,6 +5,7 @@ import type { BottleSuggestions } from './bottleSuggestions';
 import type { EventFormState } from './formModel';
 import { visibleFields } from './payloadRules';
 import { FieldControl } from './FieldControl';
+import { PREPARED_KEY } from './bottleAmounts';
 
 interface Props {
   type: EventType;
@@ -22,7 +23,14 @@ interface Props {
   onChange: (key: string, value: string | boolean) => void;
 }
 
-const BOTTLE_AMOUNT_KEY = 'amount_ml';
+/** The prepared amount typed in the form (ml), if any. */
+function preparedOf(values: EventFormState['values']): number | null {
+  const raw = getOwn(values, PREPARED_KEY);
+  const n = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : Number.NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+const BOTTLE_AMOUNT_KEY = PREPARED_KEY;
 
 /** Whether `field` is one of `keys` or shown because of one of them (through its `visibleWhen`). */
 function dependsOn(
@@ -73,6 +81,7 @@ export function ConditionalFields({
           error={errors ? getOwn(errors, field.key) : undefined}
           remembered={remembered ? getOwn(remembered, field.key) : undefined}
           {...(bottle && field.key === BOTTLE_AMOUNT_KEY ? { bottle } : {})}
+          prepared={preparedOf(values)}
           onChange={(value) => onChange(field.key, value)}
         />
       </Box>

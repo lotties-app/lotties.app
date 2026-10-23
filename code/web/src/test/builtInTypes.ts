@@ -65,7 +65,16 @@ export const FEEDING_DTO: EventTypeDto = {
       options: ['left', 'right', 'both'],
       ...whenMethodIs('breast'),
     }),
-    field('amount_ml', 'Amount', 'number', { min: 0, unit: 'ml', ...whenMethodIs('bottle') }),
+    field('amount_ml', 'Amount prepared', 'number', {
+      min: 0,
+      unit: 'ml',
+      ...whenMethodIs('bottle'),
+    }),
+    field('amount_drunk_ml', 'Amount drunk', 'number', {
+      min: 0,
+      unit: 'ml',
+      ...whenMethodIs('bottle'),
+    }),
     field('bottle_feeding_type', 'Bottle content', 'select', {
       options: ['formula', 'breast_milk'],
       ...whenMethodIs('bottle'),
@@ -83,6 +92,7 @@ export const FEEDING_DTO: EventTypeDto = {
       ...whenMethodIs('breast'),
     }),
     field('food', 'Food', 'text', whenMethodIs('solid')),
+    field('ended_by', 'Ended by', 'select', { options: ['sleep'], hidden: true }),
     ...PAUSE_FIELD_DTOS,
   ],
 };

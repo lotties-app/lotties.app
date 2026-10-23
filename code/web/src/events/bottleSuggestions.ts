@@ -1,5 +1,6 @@
 import type { BabyEvent } from '../db/models';
 import { getOwn } from '../util/ownProperty';
+import { drunkMl } from './bottleAmounts';
 import { ageInMonths, ageRangeFor, NEUTRAL_BOTTLE_AMOUNTS, rangeChips } from './bottleAgeDefaults';
 
 /*
@@ -80,8 +81,8 @@ export function recentBottleAmounts(
 }
 
 function amountOf(event: BabyEvent): number | null {
-  const value = getOwn(event.payload, 'amount_ml');
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+  const value = drunkMl(event.payload);
+  return value !== undefined && value > 0 ? value : null;
 }
 
 /** `value` rounded to the nearest `BOTTLE_STEP_ML`. */

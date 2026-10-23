@@ -1,5 +1,6 @@
 import type { EventFieldDefinition, EventPayload, EventType } from '../db/models';
 import { getOwn, setOwn } from '../util/ownProperty';
+import { DRUNK_KEY } from './bottleAmounts';
 import { isFieldVisible } from './payloadRules';
 
 /*
@@ -46,7 +47,7 @@ export function readLastUsed(babyId: string, typeId: string): Remembered {
 export function recordLastUsed(babyId: string, type: EventType, payload: EventPayload): void {
   const next = readLastUsed(babyId, type.id);
   for (const field of type.fields) {
-    if (field.hidden === true) continue;
+    if (field.hidden === true || field.key === DRUNK_KEY) continue;
     const value = getOwn(payload, field.key);
     if (isRememberable(field, value)) setOwn(next, field.key, value);
   }

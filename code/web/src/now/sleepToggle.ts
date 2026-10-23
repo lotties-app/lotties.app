@@ -142,22 +142,36 @@ export async function runSleepAction(
   const options: CommandOptions = { ...ctx.options, now: () => when };
   const base = { babyId: ctx.babyId, options };
 
-  const token = await db.transaction('rw', db.events, db.outbox, db.eventTypes, async () => {
-    if (action === 'back_asleep') {
-      const preset = sleepPreset(ctx.types, 'night_waking');
+  const token = await db.transaction(
+    'rw',
+    db.events,
+    db.outbox,
+    db.eventTypes,
+    db.babies,
+    async () => {
+      if (action === 'back_asleep') {
+        const preset = sleepPreset(ctx.types, 'night_waking');
+        const sleepType = ctx.types.find((t) => t.id === preset.typeId);
+        const stops = await stopNightWakings(
+          db,
+          ctx.babyId,
+          sleepType,
+          preset.typeId,
+          iso,
+          options,
+        );
+        return mergeTokens({ babyId: ctx.babyId, createdIds: [], stopped: [] }, stops);
+      }
+      const preset = sleepPreset(ctx.types, PRESET_OF[action] as string);
+      const ran = await runPreset(db, preset, base);
+      if (action !== 'woke_up' && action !== 'up_for_the_day') return ran;
       const sleepType = ctx.types.find((t) => t.id === preset.typeId);
-      const stops = await stopNightWakings(db, ctx.babyId, sleepType, preset.typeId, iso, options);
-      return mergeTokens({ babyId: ctx.babyId, createdIds: [], stopped: [] }, stops);
-    }
-    const preset = sleepPreset(ctx.types, PRESET_OF[action] as string);
-    const ran = await runPreset(db, preset, base);
-    if (action !== 'woke_up' && action !== 'up_for_the_day') return ran;
-    const sleepType = ctx.types.find((t) => t.id === preset.typeId);
-    return mergeTokens(
-      ran,
-      await stopNightWakings(db, ctx.babyId, sleepType, preset.typeId, iso, options),
-    );
-  });
+      return mergeTokens(
+        ran,
+        await stopNightWakings(db, ctx.babyId, sleepType, preset.typeId, iso, options),
+      );
+    },
+  );
   return { ...token, at: iso, shiftMinutes: 0 };
 }
 

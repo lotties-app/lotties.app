@@ -11,6 +11,7 @@ import { t } from '../i18n/i18n';
 import { getOwn, setOwn } from '../util/ownProperty';
 import { formatNumber } from '../i18n/format';
 import { declaresFormula, FORMULA_KEYS } from '../formulas/formulaModel';
+import { DRUNK_KEY, PREPARED_KEY, withoutRedundantDrunk } from './bottleAmounts';
 import { visibleFields, withinDecimals } from './payloadRules';
 import { fromLocalInput, toLocalInput } from './time';
 
@@ -75,8 +76,18 @@ export function isInstantByNature(
 export function defaultRunning(
   type: Pick<EventType, 'key' | 'babyId' | 'hasDuration'> | undefined,
   values: EventFormState['values'],
+  timeBottles = true,
 ): boolean {
+  if (!timeBottles && isBottle(type, values)) return false;
   return !!type?.hasDuration && !isInstantByNature(type, values);
+}
+
+/** A bottle of the built-in feeding type (the "Time bottle feedings" setting decides if it is timed). */
+function isBottle(
+  type: Pick<EventType, 'key' | 'babyId'> | undefined,
+  values: EventFormState['values'],
+): boolean {
+  return type?.babyId === null && type.key === 'feeding' && getOwn(values, 'method') === 'bottle';
 }
 
 export function isMedicationType(type: EventType | undefined): boolean {
@@ -187,6 +198,21 @@ function fieldError(label: string, field: EventFieldDefinition, raw: string | bo
   return null;
 }
 
+/** The drunk amount of a bottle above the prepared one. */
+function drunkError(
+  label: string,
+  type: EventType,
+  field: EventFieldDefinition,
+  values: EventFormState['values'],
+): string | null {
+  if (type.babyId !== null || type.key !== 'feeding' || field.key !== DRUNK_KEY) return null;
+  const drunk = parseNumber(getOwn(values, DRUNK_KEY));
+  const prepared = parseNumber(getOwn(values, PREPARED_KEY));
+  return drunk !== null && prepared !== null && drunk > prepared
+    ? t('feedingAmounts.drunkAbovePrepared', { label })
+    : null;
+}
+
 function doseError(name: string, m: MedicationSelection) {
   if (!m.amount.trim()) return null;
   const amount = parseNumber(m.amount);
@@ -250,11 +276,9 @@ export function formProblems(
     problems.push({ field: 'end', message: t('events.validation.endBeforeStart') });
   }
   for (const field of shownFields(form, type)) {
-    const message = fieldError(
-      names.fieldLabel(type, field),
-      field,
-      getOwn(form.values, field.key),
-    );
+    const message =
+      fieldError(names.fieldLabel(type, field), field, getOwn(form.values, field.key)) ??
+      drunkError(names.fieldLabel(type, field), type, field, form.values);
     if (message) problems.push({ field: field.key, message });
   }
   if (isMedicationType(type)) {
@@ -319,7 +343,8 @@ export function buildPayload(
     if (raw === undefined || raw === '') continue;
     setOwn<unknown>(payload, field.key, field.kind === 'number' ? parseNumber(raw) : raw);
   }
-  return payload;
+  // "All was drunk" is stored as no drunk amount, so editing the prepared amount later cannot leave it above.
+  return type.babyId === null && type.key === 'feeding' ? withoutRedundantDrunk(payload) : payload;
 }
 
 /**

@@ -12,6 +12,14 @@ import { t } from '../i18n/i18n';
 import { getOwn } from '../util/ownProperty';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { FORMULA_NAME_KEY } from '../formulas/formulaModel';
+import {
+  DRUNK_KEY,
+  ENDED_BY_KEY,
+  ENDED_BY_SLEEP,
+  PREPARED_KEY,
+  drunkMl,
+  preparedMl,
+} from '../events/bottleAmounts';
 
 const SEPARATOR = ' · ';
 
@@ -31,6 +39,10 @@ function fieldPart(
   // A bottle's formula, as named when it was logged (renames and archiving keep the history).
   if (type.babyId === null && type.key === 'feeding' && field.key === FORMULA_NAME_KEY) {
     return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
+  }
+  // A feeding a starting sleep stopped says so (the hidden `ended_by` field).
+  if (type.babyId === null && type.key === 'feeding' && field.key === ENDED_BY_KEY) {
+    return raw === ENDED_BY_SLEEP ? t('feedingAmounts.endedBySleep') : null;
   }
   // Forms never show hidden fields (pause keys, deprecated ones); neither does the detail line.
   if (field.hidden === true) return null;
@@ -144,9 +156,38 @@ export function payloadParts(
       .filter(([key]) => !known.has(key) && !INTERNAL_KEYS.has(key))
       .map(([key, raw]) => ({ key, text: extraPart(key, raw) })),
   ];
-  return parts
+  return withBottleAmounts(parts, payload, type)
     .filter((p): p is PayloadPart => !!p.text)
     .filter((p) => !isOtherMilestoneWithWords(type, payload, p));
+}
+
+/**
+ * A bottle with less drunk than prepared reads `80 of 120 ml` in place of the prepared amount's
+ * part; the drunk part is then left out (a fully drunk bottle keeps `120 ml`).
+ */
+function withBottleAmounts<P extends { key: string; text: string | null }>(
+  parts: P[],
+  payload: EventPayload,
+  type: EventType | undefined,
+): P[] {
+  if (type?.babyId !== null || type.key !== 'feeding') return parts;
+  const prepared = preparedMl(payload);
+  const drunk = drunkMl(payload);
+  if (prepared === undefined || drunk === undefined) return parts;
+  // A drunk amount equal to the prepared one (all of it) adds nothing to say.
+  const shown = parts.filter((p) => p.key !== DRUNK_KEY);
+  if (drunk >= prepared) return shown;
+  return shown.map((p) =>
+    p.key === PREPARED_KEY ? { ...p, text: amountOfText(drunk, prepared) } : p,
+  );
+}
+
+/** `80 of 120 ml`: what was drunk of what was prepared. */
+export function amountOfText(drunk: number, prepared: number): string {
+  return t('feedingAmounts.amountOf', {
+    drunk: formatNumber(drunk),
+    prepared: formatNumber(prepared),
+  });
 }
 
 /**

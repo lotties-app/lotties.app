@@ -10,6 +10,7 @@ import {
 } from '../db/eventCommands';
 import { eventsStartedSince, runningEvents } from '../db/queries';
 import { planStop } from '../events/stopPlan';
+import { startsSleep, stopFeedingForSleep } from '../now/sleepStopsFeeding';
 import { eventMatchesPreset, inferFellAsleepKind } from './status';
 import type { Preset } from './types';
 
@@ -93,6 +94,8 @@ function isRunningSleepTimer(preset: Preset, event: BabyEvent) {
  *   required fields are missing is left running and listed in `needsFinish`);
  * - Fell asleep additionally starts a sleep timer (kind inferred, see `inferFellAsleepKind`),
  *   unless a nap/night timer already runs.
+ * - Any nap/night timer that starts (the Nap preset, Fell asleep) also stops the running feeding
+ *   timers at the same moment, marking them `ended_by: sleep` (see `stopFeedingForSleep`).
  * All events share the tap moment (`ctx.options.now`, default the current time).
  */
 export async function runPreset(
@@ -124,8 +127,15 @@ export async function runPreset(
     token.createdIds.push(event.id);
   };
 
-  await db.transaction('rw', db.events, db.outbox, db.eventTypes, async () => {
+  await db.transaction('rw', db.events, db.outbox, db.eventTypes, db.babies, async () => {
     const running = await runningEvents(db, ctx.babyId);
+
+    // A sleep that starts ends the feeding timers that run (they are recorded for Undo).
+    const stopFeeding = async () => {
+      const stops = await stopFeedingForSleep(db, ctx.babyId, iso, options);
+      if (stops.edited.length > 0) (token.edited ??= []).push(...stops.edited);
+      if (stops.needsFinish.length > 0) (token.needsFinish ??= []).push(...stops.needsFinish);
+    };
 
     if (preset.mode === 'timer') {
       const existing = running.find((e) => eventMatchesPreset(preset, e));
@@ -148,7 +158,12 @@ export async function runPreset(
       }
     }
 
-    await create({ ...(ctx.payload ?? preset.payloadDefaults) }, preset.mode === 'instant');
+    const payload = { ...(ctx.payload ?? preset.payloadDefaults) };
+    const sleepType = await db.eventTypes.get(typeId);
+    if (preset.mode === 'timer' && startsSleep(sleepType, payload)) {
+      await stopFeeding();
+    }
+    await create(payload, preset.mode === 'instant');
 
     if (preset.startsInferredSleepTimer && !running.some((e) => isRunningSleepTimer(preset, e))) {
       const recent = await eventsStartedSince(
@@ -156,6 +171,7 @@ export async function runPreset(
         ctx.babyId,
         new Date(when.getTime() - 3 * 3_600_000).toISOString(),
       );
+      await stopFeeding();
       await create({ kind: inferFellAsleepKind(recent, when) }, false);
     }
   });

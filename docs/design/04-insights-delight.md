@@ -50,7 +50,7 @@ In order, the layer answers: what happened, what's typical now, what changed (on
 | Night sleep · longest stretch | Sum and maximum of the night's asleep pieces; "in bed" = bedtime to wake-up |
 | Awake window | Session end → next start (first and last of the day kept apart) |
 | Bedtime consistency | IQR in minutes, measured from noon |
-| Feeds | Count, night feeds, ml (Σ`amount_ml` by `bottle_feeding_type`), nursing minutes, median daytime gap, longest night gap |
+| Feeds | Count, night feeds, ml (Σ the drunk amount, `amount_drunk_ml` else `amount_ml`, by `bottle_feeding_type`), nursing minutes, median daytime gap, longest night gap |
 | Diapers | Wet = WET+MIXED, poop = DIRTY+MIXED; last poop |
 | Medication | Doses per day; days given; last given |
 | Fully logged day | Finished night, ≥ 1 nap, no daytime gap > 5 h; otherwise "partly logged" |

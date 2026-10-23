@@ -103,7 +103,12 @@ function sleepMessage(receipt: Extract<Receipt, { kind: 'sleep' }>, time: string
 function trayMessage(choice: TrayChoice, types: readonly EventType[]): string {
   switch (choice.kind) {
     case 'bottle':
-      return t('now.toast.bottle', { amount: formatNumber(choice.amountMl) });
+      return choice.drunkMl !== undefined && choice.drunkMl < choice.amountMl
+        ? t('feedingAmounts.toastBottle', {
+            drunk: formatNumber(choice.drunkMl),
+            prepared: formatNumber(choice.amountMl),
+          })
+        : t('now.toast.bottle', { amount: formatNumber(choice.amountMl) });
     case 'diaper': {
       const type = typeForKey(types, 'diaper');
       const content = type

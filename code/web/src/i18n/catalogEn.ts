@@ -13,6 +13,7 @@ export type Catalog = typeof import('./locales/en/appointments.json') &
   typeof import('./locales/en/doctor.json') &
   typeof import('./locales/en/errors.json') &
   typeof import('./locales/en/events.json') &
+  typeof import('./locales/en/feeding.json') &
   typeof import('./locales/en/formulas.json') &
   typeof import('./locales/en/growth.json') &
   typeof import('./locales/en/home.json') &

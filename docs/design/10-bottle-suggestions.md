@@ -47,6 +47,10 @@ ranges, not advice." (newborns: "Typical for newborns..."). From history: "From 
 feeds". Neutral set: no caption. Never judgement words (too little, too much) and never a target
 or a recommendation: the chips are shortcuts, the parent decides.
 
+## Drunk amount (2026-10-22, docs/design/20-feeding-amounts.md)
+
+Bottles now record an amount prepared (`amount_ml`) and an amount drunk (`amount_drunk_ml`, absent = fully drunk). The history the chips are computed from (typical amount, top-ups, frequent amounts) reads the **drunk** amount; the last or remembered amount that is always a chip is still the last prepared one.
+
 ## Phase 2 (later, not built): opt-in anonymous aggregate
 
 Idea: on a shared instance, show what babies of the same age typically drink, as a cold-start

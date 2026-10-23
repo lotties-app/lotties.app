@@ -1,6 +1,7 @@
 import type { BabyEvent, EventType, Formula } from '../db/models';
 import { formulaIdOf, FORMULA_NAME_KEY } from '../formulas/formulaModel';
-import { HOUR_MS, payloadNumber, payloadString, typeIdsForKey } from '../now/eventFacts';
+import { drunkMl } from '../events/bottleAmounts';
+import { HOUR_MS, payloadString, typeIdsForKey } from '../now/eventFacts';
 import { getOwn } from '../util/ownProperty';
 import { completedDaysWithData, dayKeyOf, lastDays, mean, type LocalDay } from './days';
 
@@ -134,7 +135,7 @@ function bottlesOf(events: readonly BabyEvent[], types: readonly EventType[]): B
   return events.flatMap((e) => {
     const formulaId = formulaIdOf(e.payload);
     if (!feeding.has(e.typeId) || !formulaId || payloadString(e, 'method') !== 'bottle') return [];
-    const ml = payloadNumber(e, 'amount_ml');
+    const ml = drunkMl(e.payload);
     const snapshot = getOwn(e.payload, FORMULA_NAME_KEY);
     const start = Date.parse(e.startedAt);
     return [

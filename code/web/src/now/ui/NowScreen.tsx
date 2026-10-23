@@ -316,7 +316,9 @@ function NowContent({
           type={typeForKey(model.types, 'feeding')}
           subtitle={feedSubtitle}
           disabled={disabled}
-          onBottle={(amountMl, content) => choose({ kind: 'bottle', amountMl, content })}
+          onBottle={(amountMl, content, drunkMl) =>
+            choose({ kind: 'bottle', amountMl, content, ...(drunkMl !== null ? { drunkMl } : {}) })
+          }
           onBreast={(side) => choose({ kind: 'breast', side })}
           onSolid={() => {
             close();
