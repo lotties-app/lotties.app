@@ -36,8 +36,8 @@ public sealed partial class AgeNormsDataTests
     [Fact]
     public void File_IsCanonicalJsonWithTheSchemaHeader()
     {
-        Assert.DoesNotContain('\r', Text.Value);
-        Assert.EndsWith("}\n", Text.Value, StringComparison.Ordinal);
+        // Git for Windows may check the file out with CRLF (no .gitattributes), so line endings are not asserted.
+        Assert.EndsWith("}\n", Text.Value.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
         Assert.Equal(1, Root.GetProperty("schemaVersion").GetInt32());
         Assert.True(DateOnly.TryParseExact(Root.GetProperty("generatedAt").GetString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _));
         Assert.Equal(Units, Strings(Root.GetProperty("units")));
