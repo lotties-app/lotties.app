@@ -42,6 +42,8 @@
       "shiftGroup": "Quando aconteceu"
     },
     "catchUp": {
+      "button_one": "O que mudou desde a sua última olhada, {{count}} novo",
+      "button_other": "O que mudou desde a sua última olhada, {{count}} novos",
       "someone": "Alguém",
       "title": "Desde a sua última olhada",
       "logged_one": "{{name}} registrou {{count}} coisa desde {{time}}",

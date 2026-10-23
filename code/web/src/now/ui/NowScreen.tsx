@@ -23,6 +23,7 @@ import { usePredictions } from '../../predictions/usePredictions';
 import { useNightFeed } from '../../theme/NightFeedContext';
 import { presetsForBaby } from '../../presets/resolve';
 import { BELLY_MASSAGE_KEY } from '../bellyPattern';
+import { useOfferCatchUp } from '../catchUpSlot';
 import type { CryCause } from '../cryReasons';
 import { typeForKey } from '../eventFacts';
 import { formatTileStatus, sleepActionLabel } from '../nowText';
@@ -34,7 +35,6 @@ import { todayStats } from '../todayStats';
 import { useNowScreen, type NowScreenModel } from '../useNow';
 import { BellyPainSuggestion } from './BellyPainCard';
 import { BellyPainTraySheet } from './BellyPainTraySheet';
-import { CatchUpCard } from './CatchUpCard';
 import {
   CryReasonsButton,
   CryReasonsSheet,
@@ -154,6 +154,22 @@ function NowContent({
   const [offeringReminders, setOfferingReminders] = useState(false);
   const reminderLink = useReminderLink(baby.id, !!model.trays.meds, () => setTray('meds'));
   useRefreshPredictions(baby.id, model);
+  // "Since you last looked" lives behind the header button (CatchUpButton), offered on the day
+  // view only, as the inline card was.
+  const catchUpOffer = useMemo(
+    () =>
+      !night && hasEvents && model.catchUp
+        ? {
+            babyId: baby.id,
+            babyName: baby.name,
+            catchUp: model.catchUp,
+            types: model.types,
+            acknowledge: model.acknowledgeCatchUp,
+          }
+        : null,
+    [night, hasEvents, baby.id, baby.name, model.catchUp, model.types, model.acknowledgeCatchUp],
+  );
+  useOfferCatchUp(catchUpOffer);
   // The "+" of the bottom navigation opens the More sheet here (viewers have no "+").
   useAddRequests(() => {
     if (!model.readOnly) setTray('more');
@@ -342,14 +358,6 @@ function NowContent({
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
             bedTime={predictions?.bedTime ?? null}
           />
-          {model.catchUp && (
-            <CatchUpCard
-              catchUp={model.catchUp}
-              babyName={baby.name}
-              types={model.types}
-              onDone={model.acknowledgeCatchUp}
-            />
-          )}
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
