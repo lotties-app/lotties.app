@@ -20,7 +20,7 @@ import { NowScreen } from '../now/ui/NowScreen';
 import { writeLastSeenAt } from '../now/lastSeen';
 import type { PredictionsDto } from '../sync/contract';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE, TUMMY_TIME_TYPE } from '../test/builtInTypes';
-import { MiniTimerBar } from '../timers/MiniTimerBar';
+import { RunningTimerPill } from '../timers/RunningTimerPill';
 import { useNightFeed } from '../theme/NightFeedContext';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import { SegmentedControl } from '../ui/form';
@@ -852,7 +852,11 @@ export default function NowPreview() {
               onScenario={(next) => setParams({ state: next }, { replace: true })}
             />
           </Box>
-          {ready?.scenario === scenario && <MiniTimerBar key={scenario} baby={ready.baby} />}
+          {ready?.scenario === scenario && (
+            <Box sx={{ position: 'fixed', top: 8, right: 8, zIndex: 1100, display: 'flex' }}>
+              <RunningTimerPill key={scenario} baby={ready.baby} />
+            </Box>
+          )}
           <BottomNav />
         </Box>
       </AddSheetProvider>

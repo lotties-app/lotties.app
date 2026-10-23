@@ -200,8 +200,17 @@ export function MembersSection({ baby }: { baby: Baby }) {
           ))}
         </List>
       )}
-      {manage && <InvitesPanel baby={baby} />}
-      {manage && <AccessLogPanel baby={baby} />}
+      {/* Anchors of the Hub entries "Invite someone" and "Doctor access" (/hub/family#invite). */}
+      {manage && (
+        <div id="invite">
+          <InvitesPanel baby={baby} />
+        </div>
+      )}
+      {manage && (
+        <div id="doctor-access">
+          <AccessLogPanel baby={baby} />
+        </div>
+      )}
       {family && !manage && (
         <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>
       )}

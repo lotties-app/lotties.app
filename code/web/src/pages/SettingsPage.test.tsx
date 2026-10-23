@@ -14,7 +14,37 @@ import { renderWithDb, settleSync } from '../test/renderApp';
 import { FEEDING, seedBaby } from '../test/seed';
 import { createEvent, stopEvent } from '../db/eventCommands';
 import { FEEDING_TYPE } from '../test/builtInTypes';
+import { Link, Route, Routes } from 'react-router-dom';
+import { HubFamilyPage, HubFormulasPage, HubImportPage, HubMedicinesPage } from './HubSubPages';
 import { SettingsPage } from './SettingsPage';
+
+/** Sections that moved from Settings to the Hub: their page and a test link to reach it. */
+const MOVED: Record<string, string> = {
+  Medications: '/hub/medicines',
+  Formulas: '/hub/formulas',
+  Import: '/hub/import',
+  'Members & invites': '/hub/family',
+};
+
+function SettingsAndHub() {
+  return (
+    <>
+      <nav>
+        {Object.values(MOVED).map((to) => (
+          <Link key={to} to={to}>{`go ${to}`}</Link>
+        ))}
+        <Link to="/settings">go settings</Link>
+      </nav>
+      <Routes>
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/hub/medicines" element={<HubMedicinesPage />} />
+        <Route path="/hub/formulas" element={<HubFormulasPage />} />
+        <Route path="/hub/family" element={<HubFamilyPage />} />
+        <Route path="/hub/import" element={<HubImportPage />} />
+      </Routes>
+    </>
+  );
+}
 
 let db: BabyRoutineDb;
 
@@ -54,11 +84,16 @@ async function setup(
 ) {
   await seedBaby(db, { medications: true, role });
   const fake = fakeApi(handler);
-  renderWithDb(db, <SettingsPage />, { api: fake.api });
+  renderWithDb(db, <SettingsAndHub />, { api: fake.api, route: '/settings' });
   return fake;
 }
 
 const openSection = async (name: string) => {
+  const moved = Object.hasOwn(MOVED, name) ? MOVED[name] : undefined;
+  if (moved) {
+    fireEvent.click(await screen.findByRole('link', { name: `go ${moved}` }));
+    return;
+  }
   fireEvent.click(await screen.findByRole('button', { name }));
 };
 
@@ -721,14 +756,11 @@ describe('SettingsPage links to one section (#hash)', () => {
   it('opens the baby section by default', async () => {
     await renderAt('/settings');
     expect(await expanded('Baby')).toBe('true');
-    expect(await expanded('Members & invites')).toBe('false');
+    expect(await expanded('Sync')).toBe('false');
   });
 
   it.each([
     ['#baby', 'Baby'],
-    ['#members', 'Members & invites'],
-    ['#import', 'Import'],
-    ['#medications', 'Medications'],
     ['#event-types', 'Event types'],
     ['#sync', 'Sync'],
   ])('%s opens %s', async (hash, title) => {
@@ -737,8 +769,8 @@ describe('SettingsPage links to one section (#hash)', () => {
   });
 
   it('a link to another section collapses the baby section', async () => {
-    await renderAt('/settings#members');
-    expect(await expanded('Members & invites')).toBe('true');
+    await renderAt('/settings#sync');
+    expect(await expanded('Sync')).toBe('true');
     expect(await expanded('Baby')).toBe('false');
   });
 
@@ -749,8 +781,8 @@ describe('SettingsPage links to one section (#hash)', () => {
   });
 
   it('a section can still be closed by hand', async () => {
-    await renderAt('/settings#members');
-    fireEvent.click(await screen.findByRole('button', { name: 'Members & invites' }));
-    await waitFor(async () => expect(await expanded('Members & invites')).toBe('false'));
+    await renderAt('/settings#sync');
+    fireEvent.click(await screen.findByRole('button', { name: 'Sync' }));
+    await waitFor(async () => expect(await expanded('Sync')).toBe('false'));
   });
 });

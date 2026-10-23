@@ -126,14 +126,13 @@ describe('patients', () => {
     expect(await screen.findByText(/view-only access/)).toBeTruthy();
   });
 
-  it('is a Settings entry for a user who also has a baby of her own', async () => {
+  it('is a Hub entry for a user who also has a baby of her own', async () => {
     const babies = [baby('b-own', 'Ana', 'Owner'), baby('b-lia', 'Lia', 'Doctor')];
     await db.babies.bulkPut(babies);
-    renderWithDb(db, <AppRoutes />, { route: '/settings', api: babiesApi(babies) });
+    renderWithDb(db, <AppRoutes />, { route: '/hub', api: babiesApi(babies) });
 
-    const link = await screen.findByRole('link', { name: 'Patients' });
+    const link = await screen.findByRole('link', { name: /^Patients/ });
     expect(link.getAttribute('href')).toBe('/patients');
-    expect(screen.getByRole('button', { name: "I'm a healthcare professional" })).toBeTruthy();
   });
 
   it('reads Pacientes in pt-BR', async () => {

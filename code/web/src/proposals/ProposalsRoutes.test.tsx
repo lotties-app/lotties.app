@@ -55,10 +55,10 @@ describe('the Doctor', () => {
     expect(readSelectedBabyId()).toBe(BABY_ID);
   });
 
-  it('finds "My proposals" in Settings, and no inbox', async () => {
-    await renderApp('Doctor', '/settings');
+  it('finds "My proposals" in the Hub, and no inbox', async () => {
+    await renderApp('Doctor', '/hub');
 
-    const link = await screen.findByRole('link', { name: 'My proposals' });
+    const link = await screen.findByRole('link', { name: /^My proposals/ });
     expect(link.getAttribute('href')).toBe('/proposals');
     expect(screen.queryByRole('link', { name: /From your doctor/ })).toBeNull();
   });
@@ -71,17 +71,15 @@ describe('the Doctor', () => {
 });
 
 describe('the parents', () => {
-  it('see what the doctor sent on /from-doctor and find it in Settings with its badge', async () => {
+  it('see what the doctor sent on /from-doctor and find it in the Hub with its badge', async () => {
     await db.proposals.put(proposal('p1', { authorUserId: DOCTOR_ID }));
     await db.notes.put(recommendation('r1'));
-    await renderApp('Owner', '/settings');
+    await renderApp('Owner', '/hub');
 
-    const link = await screen.findByRole('link', { name: /^From your doctor/ });
+    const link = await screen.findByTestId('hub-row-fromDoctor');
     expect(link.getAttribute('href')).toBe('/from-doctor');
-    await waitFor(() => expect(link.textContent).toContain('2 new from your doctor'));
-    expect(screen.getByRole('link', { name: /^Notes/ }).textContent).toContain(
-      '1 new from your doctor',
-    );
+    await waitFor(() => expect(link.textContent).toContain('2 need attention'));
+    expect(screen.getByTestId('hub-row-notes').textContent).toContain('1 needs attention');
 
     fireEvent.click(link);
 

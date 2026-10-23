@@ -313,7 +313,7 @@ describe('Meds tray', () => {
     expect(within(tray).getByText(/No medications yet\./)).toBeTruthy();
     expect(
       within(tray).getByRole('link', { name: 'Add them in Settings' }).getAttribute('href'),
-    ).toBe('/settings#medications');
+    ).toBe('/hub/medicines');
   });
 });
 

@@ -15,6 +15,16 @@ const InsightsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
+const HubPage = lazy(() => import('./pages/HubPage').then((m) => ({ default: m.HubPage })));
+type HubSubPageName = Exclude<keyof typeof import('./pages/HubSubPages'), never>;
+const hubSubPage = (name: HubSubPageName) =>
+  lazy(() => import('./pages/HubSubPages').then((m) => ({ default: m[name] })));
+const HubMedicinesPage = hubSubPage('HubMedicinesPage');
+const HubFormulasPage = hubSubPage('HubFormulasPage');
+const HubFamilyPage = hubSubPage('HubFamilyPage');
+const HubImportPage = hubSubPage('HubImportPage');
+const HubUpdatesPage = hubSubPage('HubUpdatesPage');
+const HubAboutPage = hubSubPage('HubAboutPage');
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -66,6 +76,7 @@ const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
 const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPreview')) : null;
+const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
 
 export function AppRoutes() {
   return (
@@ -220,6 +231,16 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevHubPreview && (
+        <Route
+          path="/dev/hub"
+          element={
+            <Suspense fallback={null}>
+              <DevHubPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevRingPreview && (
         <Route
           path="/dev/ring"
@@ -251,6 +272,13 @@ export function AppRoutes() {
             {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
             <Route path="timeline" element={<Navigate to="/day" replace />} />
             <Route path="growth" element={<Navigate to="/insights" replace />} />
+            <Route path="hub" element={<HubPage />} />
+            <Route path="hub/medicines" element={<HubMedicinesPage />} />
+            <Route path="hub/formulas" element={<HubFormulasPage />} />
+            <Route path="hub/family" element={<HubFamilyPage />} />
+            <Route path="hub/import" element={<HubImportPage />} />
+            <Route path="hub/updates" element={<HubUpdatesPage />} />
+            <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="vaccines" element={<VaccinesPage />} />
