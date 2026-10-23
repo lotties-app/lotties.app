@@ -17,6 +17,9 @@ public sealed class User
     /// </summary>
     public const string UnknownIssuer = "";
 
+    /// <summary>Issuer of an anonymized (deleted) user; no identity provider ever issues it.</summary>
+    public const string DeletedIssuer = "urn:lotties:deleted";
+
     private User()
     {
     }
@@ -43,7 +46,12 @@ public sealed class User
     public DateTimeOffset CreatedAt { get; private set; }
 
     /// <summary>Whether the issuer is <see cref="UnknownIssuer"/> (a user from before issuers were stored).</summary>
+    /// <summary>When the account was deleted; the row stays (as an anonymous author) so shared babies keep their history.</summary>
+    public DateTimeOffset? DeletedAt { get; private set; }
+
     public bool HasUnknownIssuer => Issuer.Length == 0;
+
+    public bool IsDeleted => DeletedAt is not null;
 
     public static User Create(string issuer, string subject, string displayName, DateTimeOffset createdAt) => new(
         Guid.NewGuid(),
@@ -63,6 +71,18 @@ public sealed class User
         DisplayName = Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength);
 
     /// <summary>Records the issuer of a user whose issuer is unknown; a known issuer never changes.</summary>
+    /// <summary>
+    /// Erases everything personal: the identity (so a later sign-in with the old subject provisions a new, empty user)
+    /// and the name. What the user wrote on babies that other people still use keeps pointing at this anonymous row.
+    /// </summary>
+    public void Anonymize(string anonymousName, DateTimeOffset deletedAt)
+    {
+        Issuer = DeletedIssuer;
+        Subject = Id.ToString("N");
+        DisplayName = Text.Required(anonymousName, nameof(DisplayName), DisplayNameMaxLength);
+        DeletedAt = UtcTime.Normalize(deletedAt);
+    }
+
     public void ClaimIssuer(string issuer)
     {
         if (!HasUnknownIssuer)

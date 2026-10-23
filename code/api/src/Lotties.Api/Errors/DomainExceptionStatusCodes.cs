@@ -29,6 +29,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(MemberNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(InviteNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(EventTypeNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(AccountDeletionBlockedException)] = StatusCodes.Status409Conflict,
         [typeof(LastOwnerException)] = StatusCodes.Status409Conflict,
         [typeof(EventTypeKeyTakenException)] = StatusCodes.Status409Conflict,
         [typeof(EventTypeInUseException)] = StatusCodes.Status409Conflict,

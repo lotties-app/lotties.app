@@ -45,6 +45,7 @@ Compose reads `.env` from the repository root.
 | `POSTGRES_PASSWORD` | localdb | with `localdb` | Superuser password of the local container (no default) |
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
+| `AUTH_ADMIN_CLIENT_ID`, `AUTH_ADMIN_CLIENT_SECRET` | api | no (both or none) | Keycloak service account that may delete users in the realm; with it, account deletion also removes the sign-in account (see "Account deletion"). Secret: keep it with the other API secrets |
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
@@ -77,6 +78,10 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 2. Valid redirect URIs `${origin}/auth/callback`, valid post logout redirect URIs `${origin}/login`, web origins `${origin}`.
 3. Audience: add an Audience mapper (client scope) that puts the API id in `aud`; use that value as `AUTH_AUDIENCE` and `VITE_OIDC_AUDIENCE` can stay empty. Refresh tokens are issued with the `offline_access` scope (assign it as an optional or default client scope); enable "Revoke refresh token" for rotation.
 4. Authority: `https://HOST/realms/REALM`.
+
+#### Account deletion (Keycloak)
+
+`DELETE /api/v1/me` erases the user's data in the database (docs/design/12-mobile-capacitor.md section 10). Removing the sign-in account at Keycloak is optional and needs a service account: Clients, create a client `lotties-api-admin` with client authentication **on**, service accounts roles **on**, standard flow off; Service account roles, assign the client role `realm-management` > `manage-users` (nothing else); copy its secret into `AUTH_ADMIN_CLIENT_ID` / `AUTH_ADMIN_CLIENT_SECRET`. Without them the data is still deleted and the app tells the user that the sign-in account stays (then remove it in the Keycloak admin console, Users). The API only deletes the user whose token issuer is `AUTH_AUTHORITY`.
 
 ### Authentik
 

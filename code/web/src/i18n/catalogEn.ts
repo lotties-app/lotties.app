@@ -5,7 +5,8 @@ import { mergeCatalogFiles } from './mergeCatalog';
  * `t('home.typo')` fails `tsc`). One line per file of `locales/en/`, sorted: a new feature file
  * adds its line here (catalogs.test.ts fails when a file is missing).
  */
-export type Catalog = typeof import('./locales/en/appointments.json') &
+export type Catalog = typeof import('./locales/en/account.json') &
+  typeof import('./locales/en/appointments.json') &
   typeof import('./locales/en/auth.json') &
   typeof import('./locales/en/baby.json') &
   typeof import('./locales/en/common.json') &

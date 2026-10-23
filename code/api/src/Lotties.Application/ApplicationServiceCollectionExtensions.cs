@@ -20,6 +20,7 @@ public static class ApplicationServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         services.AddScoped<IBabyAccessService, BabyAccessService>();
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IBabyService, BabyService>();

@@ -56,6 +56,7 @@
     "note_baby_mismatch": "This note belongs to another baby.",
     "note_already_shared": "This note is already shared with the parents and cannot be made private. Delete it instead.",
     "measurement_not_owned": "You can change only the measurements you recorded.",
-    "vaccination_baby_mismatch": "This vaccine record belongs to another baby."
+    "vaccination_baby_mismatch": "This vaccine record belongs to another baby.",
+    "account_deletion_blocked": "You are the only owner of a baby that other people use. Make another member an owner first."
   }
 }

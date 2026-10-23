@@ -25,8 +25,19 @@ internal static class MeEndpoints
         api.MapPut(ProfessionalProfilePath, SaveProfessionalProfileAsync)
             .WithName("SaveProfessionalProfile")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapGet("/me/deletion-preview", PreviewDeletionAsync)
+            .WithName("PreviewAccountDeletion");
+        api.MapDelete("/me", DeleteAccountAsync)
+            .WithName("DeleteAccount")
+            .ProducesProblem(StatusCodes.Status409Conflict);
         return api;
     }
+
+    private static async Task<Ok<AccountDeletionPreviewResponse>> PreviewDeletionAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await deletion.PreviewAsync(cancellationToken));
+
+    private static async Task<Ok<AccountDeletionResponse>> DeleteAccountAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await deletion.DeleteAsync(cancellationToken));
 
     private static async Task<Ok<CurrentUserResponse>> GetCurrentUserAsync(ICurrentUser currentUser, CancellationToken cancellationToken) =>
         TypedResults.Ok<CurrentUserResponse>(await currentUser.GetUserAsync(cancellationToken));

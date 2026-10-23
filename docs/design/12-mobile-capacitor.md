@@ -190,7 +190,8 @@ app can register; PKCE already blocks code interception).
   identifiers, linked to the user, no tracking), Google Play Data safety (health info, personal info; encrypted in
   transit; deletion available). Google Play also has a Health apps declaration. Medication reminders: no medical
   advice claims (Apple 1.4.1); age rating questionnaire; not the Kids category (the users are parents).
-- **Account deletion (TODO, blocking)**: Apple 5.1.1(v) and Google Play require deleting the account from inside the
+- **Account deletion (built, branch `feat/account-deletion`; spec in docs/SPEC.md, Keycloak step in docs/DEPLOY.md)**: `GET /me/deletion-preview` + `DELETE /me`, Settings > Account and data (web and app), data download first on the web (the app has no file-share plugin yet, so it points to the web; a share/filesystem plugin needs a dependency change). The original analysis follows.
+- **Account deletion (analysis)**: Apple 5.1.1(v) and Google Play require deleting the account from inside the
   app (Google also a web link) when the app can create accounts (it can: Keycloak registration). The app has no account
   deletion today (`/api/v1/me` is read-only). API work: `DELETE /api/v1/me` that removes the user's memberships, deletes
   babies where the user is the only member (events, measurements, medications, prescriptions, invites, notification
