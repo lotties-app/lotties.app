@@ -1,0 +1,4722 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-23",
+  "purpose": "Published age norms used only as priors for a baby's first weeks of tracking and as a fallback when a baby has too few logged events. Never a verdict: the app never tells a family that a baby is above, below or outside a norm. See docs/design/28-age-norms.md.",
+  "ageConvention": "Age in completed days since birth (birth day = day 0); fromDays inclusive, toDays exclusive. Months to days: 30.4375 days a month, halves rounded up (1 m = 30, 2 m = 61, 3 m = 91, 4 m = 122, 6 m = 183, 8 m = 244, 12 m = 365, 18 m = 548, 24 m = 731, 36 m = 1096). fromWeeks/toWeeks = days / 7, two decimals. Day of life N (as in 'day 1-2') is age N-1 days.",
+  "mergeRule": "low = the smallest evidence low or evidence typical, high = the largest evidence high or evidence typical (the wider range wins and contains every published central value); low is null when no evidence gives a low, high is null when none gives a high. typical = the typical of the evidence from typicalSourceId (Brazilian source first, then systematic review or meta-analysis, then other studies, then guidance statements); null when no source gives a central value.",
+  "units": [
+    "hours",
+    "minutes",
+    "count",
+    "ml",
+    "g",
+    "ml_per_kg",
+    "minutes_after_noon",
+    "minutes_after_midnight"
+  ],
+  "populations": [
+    "all",
+    "breastfed",
+    "formula"
+  ],
+  "rangeKinds": [
+    "recommended",
+    "may_be_appropriate",
+    "mean_pm_1.96sd",
+    "p2_p98",
+    "p2.5_p97.5",
+    "iqr",
+    "min_max",
+    "minimum",
+    "maximum",
+    "reported_range",
+    "statement"
+  ],
+  "typicalKinds": [
+    "mean",
+    "pooled_mean",
+    "median",
+    "recommended",
+    "statement"
+  ],
+  "metrics": [
+    {
+      "key": "total_sleep_hours_24h",
+      "unit": "hours",
+      "description": "Total sleep in 24 hours, naps included.",
+      "missingReason": null
+    },
+    {
+      "key": "night_sleep_hours",
+      "unit": "hours",
+      "description": "Night-time sleep (one night).",
+      "missingReason": null
+    },
+    {
+      "key": "day_sleep_hours_24h",
+      "unit": "hours",
+      "description": "Daytime sleep in 24 hours (all naps together; children who did not nap count as 0 in the Brazilian cohort).",
+      "missingReason": null
+    },
+    {
+      "key": "naps_per_day",
+      "unit": "count",
+      "description": "Number of daytime naps a day.",
+      "missingReason": null
+    },
+    {
+      "key": "nap_minutes",
+      "unit": "minutes",
+      "description": "Length of one nap.",
+      "missingReason": "No published norm for the length of a single nap was found; sources give daytime sleep per day (day_sleep_hours_24h) and naps per day only. Dividing one by the other would make up a number, so the norm stays missing."
+    },
+    {
+      "key": "wake_window_minutes",
+      "unit": "minutes",
+      "description": "Awake time between two sleeps.",
+      "missingReason": "No peer-reviewed or official norm was found; the wake-window charts in circulation are rules of thumb from blogs and sleep consultants that disagree with each other. Keep wake windows learned from the baby's own log."
+    },
+    {
+      "key": "longest_sleep_hours",
+      "unit": "hours",
+      "description": "Longest sleep period in 24 hours (usually at night).",
+      "missingReason": null
+    },
+    {
+      "key": "night_wakings_per_night",
+      "unit": "count",
+      "description": "Night wakings reported by parents per night.",
+      "missingReason": null
+    },
+    {
+      "key": "bedtime_minutes_after_noon",
+      "unit": "minutes_after_noon",
+      "description": "Evening bedtime as minutes after 12:00 local time (20:00 = 480, 01:00 = 780).",
+      "missingReason": null
+    },
+    {
+      "key": "wake_time_minutes_after_midnight",
+      "unit": "minutes_after_midnight",
+      "description": "Morning wake-up time as minutes after 00:00 local time (07:30 = 450).",
+      "missingReason": null
+    },
+    {
+      "key": "feeds_per_24h",
+      "unit": "count",
+      "description": "Milk feeds in 24 hours (breastfeeds or bottles of formula or other milk).",
+      "missingReason": null
+    },
+    {
+      "key": "feed_gap_minutes",
+      "unit": "minutes",
+      "description": "Time from the start of one feed to the start of the next.",
+      "missingReason": null
+    },
+    {
+      "key": "feed_volume_ml_per_feed",
+      "unit": "ml",
+      "description": "Milk volume per feed (colostrum for breastfed newborns, formula for bottle-fed babies).",
+      "missingReason": null
+    },
+    {
+      "key": "breast_milk_g_per_feed",
+      "unit": "g",
+      "description": "Breast milk taken per breastfeed, measured by test weighing (grams).",
+      "missingReason": null
+    },
+    {
+      "key": "breast_milk_g_per_24h",
+      "unit": "g",
+      "description": "Breast milk taken per 24 hours (grams; dose-to-mother isotope method or test weighing).",
+      "missingReason": null
+    },
+    {
+      "key": "milk_ml_per_24h",
+      "unit": "ml",
+      "description": "Formula or other milk per 24 hours.",
+      "missingReason": null
+    },
+    {
+      "key": "milk_ml_per_kg_per_24h",
+      "unit": "ml_per_kg",
+      "description": "Formula per kilogram of body weight per 24 hours.",
+      "missingReason": null
+    },
+    {
+      "key": "wet_diapers_per_24h",
+      "unit": "count",
+      "description": "Wet diapers in 24 hours.",
+      "missingReason": null
+    },
+    {
+      "key": "dirty_diapers_per_24h",
+      "unit": "count",
+      "description": "Dirty diapers (stools) in 24 hours.",
+      "missingReason": null
+    },
+    {
+      "key": "crying_minutes_per_24h",
+      "unit": "minutes",
+      "description": "Fussing and crying in 24 hours, from parent diaries.",
+      "missingReason": null
+    },
+    {
+      "key": "solid_meals_per_day",
+      "unit": "count",
+      "description": "Main meals with complementary food a day (lunch, dinner, and from 12 months breakfast), from 6 months.",
+      "missingReason": null
+    },
+    {
+      "key": "solid_snacks_per_day",
+      "unit": "count",
+      "description": "Snacks with complementary food (usually fruit) a day, from 6 months.",
+      "missingReason": null
+    }
+  ],
+  "sources": [
+    {
+      "id": "nsf-2015",
+      "kind": "consensus",
+      "country": "US",
+      "citation": "Hirshkowitz M, Whiton K, Albert SM, et al. National Sleep Foundation's sleep time duration recommendations: methodology and results summary. Sleep Health. 2015;1(1):40-43.",
+      "doi": "10.1016/j.sleh.2014.12.010",
+      "url": "https://www.thensf.org/how-many-hours-of-sleep-do-you-really-need/",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright of the publisher (Elsevier) and the National Sleep Foundation; all rights reserved.",
+      "licenceNote": "Only the published hour ranges are used, with attribution; no text, table or chart is copied. The recommended ranges were read on thensf.org; the 'may be appropriate' ranges were read from a reprint of the NSF chart (therapytoronto.ca, 2015-02-03) because the journal table was not reachable (HTTP 403)."
+    },
+    {
+      "id": "aasm-2016",
+      "kind": "consensus",
+      "country": "US",
+      "citation": "Paruthi S, Brooks LJ, D'Ambrosio C, et al. Recommended amount of sleep for pediatric populations: a consensus statement of the American Academy of Sleep Medicine. J Clin Sleep Med. 2016;12(6):785-786.",
+      "doi": "10.5664/jcsm.5866",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4877308/",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright 2016 American Academy of Sleep Medicine; no open licence stated.",
+      "licenceNote": "Only the published hour ranges are used, with attribution."
+    },
+    {
+      "id": "sbp-sono-2025",
+      "kind": "society-guidance",
+      "country": "BR",
+      "citation": "Sociedade Brasileira de Pediatria, Departamento Científico de Sono (Lumertz M). Privação de sono na população pediátrica. Pediatria para Famílias, setembro de 2025.",
+      "doi": null,
+      "url": "https://www.sbp.com.br/pediatria-para-familias/cuidados-com-a-saude/privacao-de-sono-na-populacao-pediatrica/",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright 2026 Sociedade Brasileira de Pediatria. Todos os direitos reservados.",
+      "licenceNote": "All rights reserved. Only the hour ranges (which SBP takes from the AASM 2016 statement) are recorded, with attribution; owner to decide whether facts-only reuse is enough (same open question as docs/design/17 R-DOC-1)."
+    },
+    {
+      "id": "galland-2012",
+      "kind": "systematic-review",
+      "country": "international",
+      "citation": "Galland BC, Taylor BJ, Elder DE, Herbison P. Normal sleep patterns in infants and children: a systematic review of observational studies. Sleep Med Rev. 2012;16(3):213-222.",
+      "doi": "10.1016/j.smrv.2011.06.001",
+      "url": "https://doi.org/10.1016/j.smrv.2011.06.001",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright 2011 Elsevier Ltd. All rights reserved.",
+      "licenceNote": "Only reference values (means and mean +/- 1.96 SD ranges) from Tables 2 and 3 are used, with attribution; parent-reported data from 34 studies in 18 countries."
+    },
+    {
+      "id": "iglowstein-2003",
+      "kind": "cohort",
+      "country": "CH",
+      "citation": "Iglowstein I, Jenni OG, Molinari L, Largo RH. Sleep duration from infancy to adolescence: reference values and generational trends. Pediatrics. 2003;111(2):302-307.",
+      "doi": "10.1542/peds.111.2.302",
+      "url": "https://doi.org/10.1542/peds.111.2.302",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright American Academy of Pediatrics; no open licence.",
+      "licenceNote": "Only percentile values (Table 1) and mean bed/wake times (Table 2) are used, with attribution. Zurich Longitudinal Studies, children born 1974-1993; durations are time in bed."
+    },
+    {
+      "id": "pelotas-2017",
+      "kind": "cohort",
+      "country": "BR",
+      "citation": "Netsi E, Santos IS, Stein A, Barros FC, Barros AJD, Matijasevich A. A different rhythm of life: sleep patterns in the first 4 years of life and associated sociodemographic characteristics in a large Brazilian birth cohort. Sleep Med. 2017;37:77-87.",
+      "doi": "10.1016/j.sleep.2017.06.001",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5609565/",
+      "accessedOn": "2026-10-23",
+      "licence": "CC BY 4.0",
+      "licenceNote": "Open access under CC BY 4.0: reuse allowed with attribution. Values from Table 1 (2004 Pelotas Birth Cohort, maternal report at 3, 12, 24 months)."
+    },
+    {
+      "id": "sbp-alimentacao-2024",
+      "kind": "society-guidance",
+      "country": "BR",
+      "citation": "Sociedade Brasileira de Pediatria. Manual de Alimentação: orientações para alimentação do lactente ao adolescente, na escola, na gestante, na prevenção de doenças e segurança alimentar. 5ª ed. rev. ampl. São Paulo: SBP; 2024. ISBN 978-85-88520-54-7.",
+      "doi": null,
+      "url": "https://sbp.com.br/fileadmin/user_upload/24607c-ManAlim-OrientAlim_Lactente_ao_adl_na_escola-gest.pdf",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright Sociedade Brasileira de Pediatria; no reuse licence found (site footer: todos os direitos reservados).",
+      "licenceNote": "All rights reserved. Only the volume and feed-count ranges of chapter 1, Tabela 5 are recorded, with attribution; owner decision as for the vaccine data (docs/design/17 R-DOC-1)."
+    },
+    {
+      "id": "ms-guia-2019",
+      "kind": "government-guidance",
+      "country": "BR",
+      "citation": "Brasil. Ministério da Saúde. Guia alimentar para crianças brasileiras menores de 2 anos. Brasília: Ministério da Saúde; 2019.",
+      "doi": null,
+      "url": "https://portaldeboaspraticas.iff.fiocruz.br/wp-content/uploads/2019/11/guia_da_crianca_2019.pdf",
+      "accessedOn": "2026-10-23",
+      "licence": "Not verified: the licence line of the copyright page could not be read from the PDF text.",
+      "licenceNote": "Copy hosted by the Fiocruz (IFF) Portal de Boas Práticas. Only the number of meals, snacks and milk feeds in the guide's day-by-age examples are recorded, with attribution. Owner to confirm the licence (Ministry publications often carry a Creative Commons licence; if it has a non-commercial clause, facts-only reuse still applies)."
+    },
+    {
+      "id": "aap-formula-2022",
+      "kind": "society-guidance",
+      "country": "US",
+      "citation": "American Academy of Pediatrics, HealthyChildren.org. Amount and Schedule of Baby Formula Feedings. Last updated 2022-05-16 (adapted from Caring for Your Baby and Young Child: Birth to Age 5, 7th ed., 2019).",
+      "doi": null,
+      "url": "https://www.healthychildren.org/English/ages-stages/baby/formula-feeding/Pages/Amount-and-Schedule-of-Formula-Feedings.aspx",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright American Academy of Pediatrics. All rights reserved.",
+      "licenceNote": "Only amounts and intervals are recorded, with attribution."
+    },
+    {
+      "id": "aap-feeding-2024",
+      "kind": "society-guidance",
+      "country": "US",
+      "citation": "American Academy of Pediatrics, HealthyChildren.org. How Often and How Much Should Your Baby Eat? Last updated 2024-04-02.",
+      "doi": null,
+      "url": "https://www.healthychildren.org/English/ages-stages/baby/feeding-nutrition/Pages/How-Often-and-How-Much-Should-Your-Baby-Eat.aspx",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright 2024 American Academy of Pediatrics. All rights reserved.",
+      "licenceNote": "Only feed counts and intervals are recorded, with attribution."
+    },
+    {
+      "id": "kent-2006",
+      "kind": "cohort",
+      "country": "AU",
+      "citation": "Kent JC, Mitoulas LR, Cregan MD, Ramsay DT, Doherty DA, Hartmann PE. Volume and frequency of breastfeedings and fat content of breast milk throughout the day. Pediatrics. 2006;117(3):e387-e395.",
+      "doi": "10.1542/peds.2005-1417",
+      "url": "https://doi.org/10.1542/peds.2005-1417",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright American Academy of Pediatrics; no open licence.",
+      "licenceNote": "Only the abstract's numbers are used (71 exclusively breastfed infants aged 1-6 months, test weighing over 24 h), with attribution."
+    },
+    {
+      "id": "abm-protocol-3-2017",
+      "kind": "society-guidance",
+      "country": "international",
+      "citation": "Kellams A, Harrel C, Omage S, Gregory C, Rosen-Carole C; Academy of Breastfeeding Medicine. ABM Clinical Protocol #3: Supplementary Feedings in the Healthy Term Breastfed Neonate, Revised 2017. Breastfeed Med. 2017;12:188-198.",
+      "doi": "10.1089/bfm.2017.29038.ajk",
+      "url": "https://www.bfmed.org/assets/DOCUMENTS/PROTOCOLS/3-supplementation-protocol-english.pdf",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright Academy of Breastfeeding Medicine / Mary Ann Liebert; no open licence.",
+      "licenceNote": "Only the per-feed colostrum intakes of Table 2 are recorded, with attribution."
+    },
+    {
+      "id": "milq-2025",
+      "kind": "cohort",
+      "country": "international (BD, BR, DK, GM)",
+      "citation": "Moore SE, Devi S, Kurpad A, et al.; MILQ Study Consortium. Breast Milk Intake from 1 to 8.5 Months of Lactation in the Multisite Mothers, Infants and Lactation Quality (MILQ) Study. Adv Nutr. 2025;16(Suppl 1):100456.",
+      "doi": "10.1016/j.advnut.2025.100456",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12673386/",
+      "accessedOn": "2026-10-23",
+      "licence": "CC BY 4.0",
+      "licenceNote": "Open access under CC BY: reuse allowed with attribution. Milk intake by visit (pooled and Brazil site, deuterium dose-to-mother in Brazil)."
+    },
+    {
+      "id": "unicef-uk-nappies",
+      "kind": "public-health-guidance",
+      "country": "GB",
+      "citation": "Cambridge University Hospitals NHS Foundation Trust. Signs your baby is getting enough milk (newborn nappy guide adapted from the UNICEF UK mothers' breastfeeding checklist). Page printed 2026-10-23.",
+      "doi": null,
+      "url": "https://www.cuh.nhs.uk/rosie-hospital/maternity/infant-feeding/signs-your-baby-is-getting-enough-milk/",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright 2026 Cambridge University Hospitals; the underlying checklist is UNICEF UK Baby Friendly Initiative material. No open licence stated.",
+      "licenceNote": "Only the minimum counts are recorded, with attribution; several NHS trust pages publish the same chart."
+    },
+    {
+      "id": "helmi-2024",
+      "kind": "cohort",
+      "country": "FI",
+      "citation": "Solasaari T, Korpela K, Lommi S, et al. Bowel function in a prospective cohort of 1052 healthy term infants up to 4 months of age. Eur J Pediatr. 2024;183(8):3557-3565.",
+      "doi": "10.1007/s00431-024-05625-0",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11263225/",
+      "accessedOn": "2026-10-23",
+      "licence": "CC BY 4.0",
+      "licenceNote": "Open access under CC BY: reuse allowed with attribution. Only the values stated in the text are used (the weekly curve is a figure)."
+    },
+    {
+      "id": "denhertog-2012",
+      "kind": "cohort",
+      "country": "NL",
+      "citation": "den Hertog J, van Leengoed E, Kolk F, et al. The defecation pattern of healthy term infants up to the age of 3 months. Arch Dis Child Fetal Neonatal Ed. 2012;97(6):F465-F470.",
+      "doi": "10.1136/archdischild-2011-300539",
+      "url": "https://doi.org/10.1136/archdischild-2011-300539",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright BMJ Publishing Group; subscription article.",
+      "licenceNote": "Only the abstract's mean frequencies are used, with attribution."
+    },
+    {
+      "id": "wolke-2017",
+      "kind": "meta-analysis",
+      "country": "international",
+      "citation": "Wolke D, Bilgin A, Samara M. Systematic review and meta-analysis: fussing and crying durations and prevalence of colic in infants. J Pediatr. 2017;185:55-61.e4.",
+      "doi": "10.1016/j.jpeds.2017.02.020",
+      "url": "https://wrap.warwick.ac.uk/87542/",
+      "accessedOn": "2026-10-23",
+      "licence": "Copyright Elsevier; the accepted manuscript is in the Warwick repository (WRAP) without an open licence.",
+      "licenceNote": "Only the pooled means and SDs stated in the results text are used, with attribution."
+    },
+    {
+      "id": "who-cf-2011",
+      "kind": "government-guidance",
+      "country": "international",
+      "citation": "World Health Organization. Child health and development: questions and answers (complementary feeding). 2011-07-01.",
+      "doi": null,
+      "url": "https://www.who.int/news-room/questions-and-answers/item/child-health-and-development",
+      "accessedOn": "2026-10-23",
+      "licence": "WHO website terms of use; no licence shown on the page.",
+      "licenceNote": "Only the meal and snack counts are recorded, with attribution. WHO's 2023 Guideline for complementary feeding of infants and young children 6-23 months (ISBN 9789240081864) supersedes earlier guidance and was not read."
+    }
+  ],
+  "norms": [
+    {
+      "id": "total_sleep_hours_24h.all.0-91",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 91,
+        "fromWeeks": 0,
+        "toWeeks": 13,
+        "label": "0 to under 3 months"
+      },
+      "low": 9.3,
+      "typical": 14.6,
+      "high": 20.0,
+      "unit": "hours",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012",
+        "nsf-2015"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": "AASM and SBP give no recommendation under 4 months (wide normal variation).",
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "0-2 months",
+          "low": 9.3,
+          "typical": 14.6,
+          "high": 20.0,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, newborns",
+          "sourceAge": "0-3 months",
+          "low": 14,
+          "typical": null,
+          "high": 17,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, newborns",
+          "sourceAge": "0-3 months",
+          "low": 11,
+          "typical": null,
+          "high": 19,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "total_sleep_hours_24h.all.91-122",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 8.35,
+      "typical": 13,
+      "high": 19.5,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "galland-2012",
+        "pelotas-2017",
+        "nsf-2015"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "about 3 months",
+          "low": 9.4,
+          "typical": 13.6,
+          "high": 17.8,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "3 months",
+          "low": 8.35,
+          "typical": 13,
+          "high": 19.5,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 2.91,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, newborns",
+          "sourceAge": "0-3 months",
+          "low": 14,
+          "typical": null,
+          "high": 17,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, newborns",
+          "sourceAge": "0-3 months",
+          "low": 11,
+          "typical": null,
+          "high": 19,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "total_sleep_hours_24h.all.122-244",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 244,
+        "fromWeeks": 17.43,
+        "toWeeks": 34.86,
+        "label": "4 to under 8 months"
+      },
+      "low": 8.8,
+      "typical": 12.9,
+      "high": 18.1,
+      "unit": "hours",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012",
+        "iglowstein-2003",
+        "nsf-2015",
+        "aasm-2016",
+        "sbp-sono-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "about 6 months",
+          "low": 8.8,
+          "typical": 12.9,
+          "high": 17.0,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "6 months",
+          "low": 10.4,
+          "typical": 14.2,
+          "high": 18.1,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.9,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, infants",
+          "sourceAge": "4-11 months",
+          "low": 12,
+          "typical": null,
+          "high": 15,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, infants",
+          "sourceAge": "4-11 months",
+          "low": 10,
+          "typical": null,
+          "high": 18,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aasm-2016",
+          "location": "Recommendations, infants",
+          "sourceAge": "4-12 months",
+          "low": 12,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Including naps."
+        },
+        {
+          "sourceId": "sbp-sono-2025",
+          "location": "Recommended sleep by age (AASM)",
+          "sourceAge": "4-12 months",
+          "low": 12,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "SBP repeats the AASM ranges and gives none under 4 months."
+        }
+      ]
+    },
+    {
+      "id": "total_sleep_hours_24h.all.244-365",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 244,
+        "toDays": 365,
+        "fromWeeks": 34.86,
+        "toWeeks": 52.14,
+        "label": "8 to under 12 months"
+      },
+      "low": 9.4,
+      "typical": 12.6,
+      "high": 18,
+      "unit": "hours",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012",
+        "iglowstein-2003",
+        "nsf-2015",
+        "aasm-2016",
+        "sbp-sono-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "about 9 months",
+          "low": 9.4,
+          "typical": 12.6,
+          "high": 15.8,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "9 months",
+          "low": 10.5,
+          "typical": 13.9,
+          "high": 17.4,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.7,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, infants",
+          "sourceAge": "4-11 months",
+          "low": 12,
+          "typical": null,
+          "high": 15,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, infants",
+          "sourceAge": "4-11 months",
+          "low": 10,
+          "typical": null,
+          "high": 18,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aasm-2016",
+          "location": "Recommendations, infants",
+          "sourceAge": "4-12 months",
+          "low": 12,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Including naps."
+        },
+        {
+          "sourceId": "sbp-sono-2025",
+          "location": "Recommended sleep by age (AASM)",
+          "sourceAge": "4-12 months",
+          "low": 12,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "SBP repeats the AASM ranges and gives none under 4 months."
+        }
+      ]
+    },
+    {
+      "id": "total_sleep_hours_24h.all.365-548",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 548,
+        "fromWeeks": 52.14,
+        "toWeeks": 78.29,
+        "label": "12 to under 18 months"
+      },
+      "low": 8.97,
+      "typical": 12.25,
+      "high": 16.5,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "galland-2012",
+        "iglowstein-2003",
+        "pelotas-2017",
+        "nsf-2015",
+        "aasm-2016",
+        "sbp-sono-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "about 12 months",
+          "low": 10.1,
+          "typical": 12.9,
+          "high": 15.8,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "1-2 years",
+          "low": 10.0,
+          "typical": 12.6,
+          "high": 15.2,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "1 year",
+          "low": 11.4,
+          "typical": 13.9,
+          "high": 16.5,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.2,
+          "note": null
+        },
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "12 months",
+          "low": 8.97,
+          "typical": 12.25,
+          "high": 16,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.81,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, toddlers",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, toddlers",
+          "sourceAge": "1-2 years",
+          "low": 9,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aasm-2016",
+          "location": "Recommendations, children 1-2 years",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Including naps."
+        },
+        {
+          "sourceId": "sbp-sono-2025",
+          "location": "Recommended sleep by age (AASM)",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "total_sleep_hours_24h.all.548-731",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 548,
+        "toDays": 731,
+        "fromWeeks": 78.29,
+        "toWeeks": 104.43,
+        "label": "18 to under 24 months"
+      },
+      "low": 9,
+      "typical": 12.6,
+      "high": 16.0,
+      "unit": "hours",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012",
+        "iglowstein-2003",
+        "nsf-2015",
+        "aasm-2016",
+        "sbp-sono-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "1-2 years",
+          "low": 10.0,
+          "typical": 12.6,
+          "high": 15.2,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "18 months",
+          "low": 11.1,
+          "typical": 13.6,
+          "high": 16.0,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.2,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, toddlers",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, toddlers",
+          "sourceAge": "1-2 years",
+          "low": 9,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aasm-2016",
+          "location": "Recommendations, children 1-2 years",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Including naps."
+        },
+        {
+          "sourceId": "sbp-sono-2025",
+          "location": "Recommended sleep by age (AASM)",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "total_sleep_hours_24h.all.731-1096",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 731,
+        "toDays": 1096,
+        "fromWeeks": 104.43,
+        "toWeeks": 156.57,
+        "label": "24 to under 36 months"
+      },
+      "low": 9,
+      "typical": 12,
+      "high": 16,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "galland-2012",
+        "iglowstein-2003",
+        "pelotas-2017",
+        "nsf-2015",
+        "aasm-2016",
+        "sbp-sono-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 2",
+          "sourceAge": "2-3 years",
+          "low": 9.7,
+          "typical": 12.0,
+          "high": 14.2,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "2 years",
+          "low": 10.8,
+          "typical": 13.2,
+          "high": 15.6,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.2,
+          "note": null
+        },
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "24 months",
+          "low": 9,
+          "typical": 12,
+          "high": 14.75,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.36,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, toddlers",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "nsf-2015",
+          "location": "NSF chart, toddlers",
+          "sourceAge": "1-2 years",
+          "low": 9,
+          "typical": null,
+          "high": 16,
+          "rangeKind": "may_be_appropriate",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aasm-2016",
+          "location": "Recommendations, children 1-2 years",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Including naps."
+        },
+        {
+          "sourceId": "sbp-sono-2025",
+          "location": "Recommended sleep by age (AASM)",
+          "sourceAge": "1-2 years",
+          "low": 11,
+          "typical": null,
+          "high": 14,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_sleep_hours.all.91-122",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 6,
+      "typical": 9.5,
+      "high": 12.78,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "3 months",
+          "low": 6,
+          "typical": 9.5,
+          "high": 12.78,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.69,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Results text",
+          "sourceAge": "3 months",
+          "low": null,
+          "typical": 10.0,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 1.5,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_sleep_hours.all.122-244",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 244,
+        "fromWeeks": 17.43,
+        "toWeeks": 34.86,
+        "label": "4 to under 8 months"
+      },
+      "low": 8.8,
+      "typical": 11.0,
+      "high": 13.2,
+      "unit": "hours",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Only the Swiss cohort (children born 1974-1993, time in bed) covers this band; the Brazilian cohort reports shorter nights where both measured (median 9.5 h at 3 months and 10 h at 12 months, against Swiss means of 10.0 and 11.7 h).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "6 months",
+          "low": 8.8,
+          "typical": 11.0,
+          "high": 13.2,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.1,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_sleep_hours.all.244-365",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 244,
+        "toDays": 365,
+        "fromWeeks": 34.86,
+        "toWeeks": 52.14,
+        "label": "8 to under 12 months"
+      },
+      "low": 9.2,
+      "typical": 11.2,
+      "high": 13.3,
+      "unit": "hours",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Only the Swiss cohort (children born 1974-1993, time in bed) covers this band; the Brazilian cohort reports shorter nights where both measured (median 9.5 h at 3 months and 10 h at 12 months, against Swiss means of 10.0 and 11.7 h).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "9 months",
+          "low": 9.2,
+          "typical": 11.2,
+          "high": 13.3,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.0,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_sleep_hours.all.365-548",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 548,
+        "fromWeeks": 52.14,
+        "toWeeks": 78.29,
+        "label": "12 to under 18 months"
+      },
+      "low": 7.48,
+      "typical": 10,
+      "high": 13.6,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": "Brazilian median 10 h against a Swiss mean of 11.7 h (time in bed).",
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "12 months",
+          "low": 7.48,
+          "typical": 10,
+          "high": 12.75,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.33,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "1 year",
+          "low": 9.7,
+          "typical": 11.7,
+          "high": 13.6,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.0,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_sleep_hours.all.548-731",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 548,
+        "toDays": 731,
+        "fromWeeks": 78.29,
+        "toWeeks": 104.43,
+        "label": "18 to under 24 months"
+      },
+      "low": 9.7,
+      "typical": 11.6,
+      "high": 13.5,
+      "unit": "hours",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Only the Swiss cohort (children born 1974-1993, time in bed) covers this band; the Brazilian cohort reports shorter nights where both measured (median 9.5 h at 3 months and 10 h at 12 months, against Swiss means of 10.0 and 11.7 h).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "18 months",
+          "low": 9.7,
+          "typical": 11.6,
+          "high": 13.5,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 0.9,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_sleep_hours.all.731-1096",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 731,
+        "toDays": 1096,
+        "fromWeeks": 104.43,
+        "toWeeks": 156.57,
+        "label": "24 to under 36 months"
+      },
+      "low": 8,
+      "typical": 10.5,
+      "high": 13.4,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "24 months",
+          "low": 8,
+          "typical": 10.5,
+          "high": 12.5,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.19,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "2 years",
+          "low": 9.7,
+          "typical": 11.5,
+          "high": 13.4,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 0.9,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "day_sleep_hours_24h.all.91-122",
+      "metric": "day_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 0.5,
+      "typical": 3,
+      "high": 9,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "3 months",
+          "low": 0.5,
+          "typical": 3,
+          "high": 9,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 2.42,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "day_sleep_hours_24h.all.122-244",
+      "metric": "day_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 244,
+        "fromWeeks": 17.43,
+        "toWeeks": 34.86,
+        "label": "4 to under 8 months"
+      },
+      "low": 0.4,
+      "typical": 3.4,
+      "high": 6.4,
+      "unit": "hours",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "6 months",
+          "low": 0.4,
+          "typical": 3.4,
+          "high": 6.4,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.5,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "day_sleep_hours_24h.all.244-365",
+      "metric": "day_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 244,
+        "toDays": 365,
+        "fromWeeks": 34.86,
+        "toWeeks": 52.14,
+        "label": "8 to under 12 months"
+      },
+      "low": 0.2,
+      "typical": 2.8,
+      "high": 5.3,
+      "unit": "hours",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "9 months",
+          "low": 0.2,
+          "typical": 2.8,
+          "high": 5.3,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.2,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "day_sleep_hours_24h.all.365-548",
+      "metric": "day_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 548,
+        "fromWeeks": 52.14,
+        "toWeeks": 78.29,
+        "label": "12 to under 18 months"
+      },
+      "low": 0.2,
+      "typical": 2,
+      "high": 6,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "12 months",
+          "low": 0.33,
+          "typical": 2,
+          "high": 6,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.35,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "1 year",
+          "low": 0.2,
+          "typical": 2.4,
+          "high": 4.6,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 1.1,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "day_sleep_hours_24h.all.548-731",
+      "metric": "day_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 548,
+        "toDays": 731,
+        "fromWeeks": 78.29,
+        "toWeeks": 104.43,
+        "label": "18 to under 24 months"
+      },
+      "low": 0.5,
+      "typical": 2.0,
+      "high": 3.6,
+      "unit": "hours",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "18 months",
+          "low": 0.5,
+          "typical": 2.0,
+          "high": 3.6,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 0.7,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "day_sleep_hours_24h.all.731-1096",
+      "metric": "day_sleep_hours_24h",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 731,
+        "toDays": 1096,
+        "fromWeeks": 104.43,
+        "toWeeks": 156.57,
+        "label": "24 to under 36 months"
+      },
+      "low": 0,
+      "typical": 1.5,
+      "high": 3,
+      "unit": "hours",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "24 months",
+          "low": 0,
+          "typical": 1.5,
+          "high": 3,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 0.91,
+          "note": null
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 1",
+          "sourceAge": "2 years",
+          "low": 0.7,
+          "typical": 1.8,
+          "high": 2.9,
+          "rangeKind": "p2_p98",
+          "typicalKind": "mean",
+          "sd": 0.5,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "naps_per_day.all.0-183",
+      "metric": "naps_per_day",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 183,
+        "fromWeeks": 0,
+        "toWeeks": 26.14,
+        "label": "0 to under 6 months"
+      },
+      "low": 1.2,
+      "typical": 3.1,
+      "high": 5.0,
+      "unit": "count",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "0-5 months",
+          "low": 1.2,
+          "typical": 3.1,
+          "high": 5.0,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "naps_per_day.all.183-365",
+      "metric": "naps_per_day",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 365,
+        "fromWeeks": 26.14,
+        "toWeeks": 52.14,
+        "label": "6 to under 12 months"
+      },
+      "low": 0.9,
+      "typical": 2.2,
+      "high": 3.5,
+      "unit": "count",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "6-11 months",
+          "low": 0.9,
+          "typical": 2.2,
+          "high": 3.5,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "naps_per_day.all.365-731",
+      "metric": "naps_per_day",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 731,
+        "fromWeeks": 52.14,
+        "toWeeks": 104.43,
+        "label": "12 to under 24 months"
+      },
+      "low": 0.4,
+      "typical": 1.2,
+      "high": 2.1,
+      "unit": "count",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": "Iglowstein 2003: at 18 months most children moved from 2 or more naps to 1 nap.",
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "1-2 years",
+          "low": 0.4,
+          "typical": 1.2,
+          "high": 2.1,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "longest_sleep_hours.all.0-183",
+      "metric": "longest_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 183,
+        "fromWeeks": 0,
+        "toWeeks": 26.14,
+        "label": "0 to under 6 months"
+      },
+      "low": 1.8,
+      "typical": 5.7,
+      "high": 9.6,
+      "unit": "hours",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "Galland 2012 prints 5.7 and 8.3 h in Table 3 but 5.8 and 8.4 h in the text; the table values are used. Only 4 studies (10 datasets) contributed.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "0-5 months",
+          "low": 1.8,
+          "typical": 5.7,
+          "high": 9.6,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "longest_sleep_hours.all.183-731",
+      "metric": "longest_sleep_hours",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 731,
+        "fromWeeks": 26.14,
+        "toWeeks": 104.43,
+        "label": "6 to under 24 months"
+      },
+      "low": 3.0,
+      "typical": 8.3,
+      "high": 13.7,
+      "unit": "hours",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "Galland 2012 prints 5.7 and 8.3 h in Table 3 but 5.8 and 8.4 h in the text; the table values are used. Only 4 studies (10 datasets) contributed.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "6-24 months",
+          "low": 3.0,
+          "typical": 8.3,
+          "high": 13.7,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_wakings_per_night.all.0-91",
+      "metric": "night_wakings_per_night",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 91,
+        "fromWeeks": 0,
+        "toWeeks": 13,
+        "label": "0 to under 3 months"
+      },
+      "low": 0,
+      "typical": 1.7,
+      "high": 3.4,
+      "unit": "count",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "0-2 months",
+          "low": 0,
+          "typical": 1.7,
+          "high": 3.4,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_wakings_per_night.all.91-213",
+      "metric": "night_wakings_per_night",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 213,
+        "fromWeeks": 13,
+        "toWeeks": 30.43,
+        "label": "3 to under 7 months"
+      },
+      "low": 0,
+      "typical": 1,
+      "high": 4,
+      "unit": "count",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "galland-2012",
+        "pelotas-2017"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "3-6 months",
+          "low": 0,
+          "typical": 0.8,
+          "high": 3.0,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "3 months",
+          "low": 0,
+          "typical": 1,
+          "high": 4,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.04,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_wakings_per_night.all.213-365",
+      "metric": "night_wakings_per_night",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 213,
+        "toDays": 365,
+        "fromWeeks": 30.43,
+        "toWeeks": 52.14,
+        "label": "7 to under 12 months"
+      },
+      "low": 0,
+      "typical": 1.1,
+      "high": 3.1,
+      "unit": "count",
+      "typicalSourceId": "galland-2012",
+      "sourceIds": [
+        "galland-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "7-11 months",
+          "low": 0,
+          "typical": 1.1,
+          "high": 3.1,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_wakings_per_night.all.365-731",
+      "metric": "night_wakings_per_night",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 731,
+        "fromWeeks": 52.14,
+        "toWeeks": 104.43,
+        "label": "12 to under 24 months"
+      },
+      "low": 0,
+      "typical": 1,
+      "high": 4,
+      "unit": "count",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "galland-2012",
+        "pelotas-2017"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "galland-2012",
+          "location": "Table 3",
+          "sourceAge": "1-2 years",
+          "low": 0,
+          "typical": 0.7,
+          "high": 2.5,
+          "rangeKind": "mean_pm_1.96sd",
+          "typicalKind": "pooled_mean",
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "12 months",
+          "low": 0,
+          "typical": 1,
+          "high": 4,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.29,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "night_wakings_per_night.all.731-1096",
+      "metric": "night_wakings_per_night",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 731,
+        "toDays": 1096,
+        "fromWeeks": 104.43,
+        "toWeeks": 156.57,
+        "label": "24 to under 36 months"
+      },
+      "low": 0,
+      "typical": 0,
+      "high": 3,
+      "unit": "count",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1",
+          "sourceAge": "24 months",
+          "low": 0,
+          "typical": 0,
+          "high": 3,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": 1.01,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "bedtime_minutes_after_noon.all.91-122",
+      "metric": "bedtime_minutes_after_noon",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 480,
+      "typical": 600,
+      "high": 780,
+      "unit": "minutes_after_noon",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1 (decimal clock hours)",
+          "sourceAge": "3 months",
+          "low": 480,
+          "typical": 600,
+          "high": 780,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "Median 22:00, 2.5th percentile 20:00, 97.5th percentile 01:00."
+        }
+      ]
+    },
+    {
+      "id": "bedtime_minutes_after_noon.all.122-365",
+      "metric": "bedtime_minutes_after_noon",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 365,
+        "fromWeeks": 17.43,
+        "toWeeks": 52.14,
+        "label": "4 to under 12 months"
+      },
+      "low": null,
+      "typical": 496,
+      "high": null,
+      "unit": "minutes_after_noon",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Only the Swiss cohort (children born 1986-1993) covers this band; the Brazilian cohort puts bed and wake times about 2 hours later than in high-income countries (Netsi 2017).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 2, cohort 1986-1993",
+          "sourceAge": "6 months",
+          "low": null,
+          "typical": 496,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 68,
+          "note": "Mean 20:16 (SD 1:08)."
+        }
+      ]
+    },
+    {
+      "id": "bedtime_minutes_after_noon.all.365-731",
+      "metric": "bedtime_minutes_after_noon",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 731,
+        "fromWeeks": 52.14,
+        "toWeeks": 104.43,
+        "label": "12 to under 24 months"
+      },
+      "low": 466,
+      "typical": 600,
+      "high": 780,
+      "unit": "minutes_after_noon",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "The Swiss mean (19:46) lies outside the Brazilian 2.5th-97.5th percentile range (20:00-01:00): the sources disagree by culture; the Brazilian value is the prior.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1 (decimal clock hours)",
+          "sourceAge": "12 months",
+          "low": 480,
+          "typical": 600,
+          "high": 780,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "Median 22:00, 2.5th percentile 20:00, 97.5th percentile 01:00."
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 2, cohort 1986-1993",
+          "sourceAge": "1 year",
+          "low": null,
+          "typical": 466,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 50,
+          "note": "Mean 19:46 (SD 0:50)."
+        }
+      ]
+    },
+    {
+      "id": "bedtime_minutes_after_noon.all.731-1096",
+      "metric": "bedtime_minutes_after_noon",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 731,
+        "toDays": 1096,
+        "fromWeeks": 104.43,
+        "toWeeks": 156.57,
+        "label": "24 to under 36 months"
+      },
+      "low": 480,
+      "typical": 600,
+      "high": 720,
+      "unit": "minutes_after_noon",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1 (decimal clock hours)",
+          "sourceAge": "24 months",
+          "low": 480,
+          "typical": 600,
+          "high": 720,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "Median 22:00, 2.5th percentile 20:00, 97.5th percentile 00:00."
+        }
+      ]
+    },
+    {
+      "id": "wake_time_minutes_after_midnight.all.91-122",
+      "metric": "wake_time_minutes_after_midnight",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 360,
+      "typical": 450,
+      "high": 630,
+      "unit": "minutes_after_midnight",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1 (decimal clock hours)",
+          "sourceAge": "3 months",
+          "low": 360,
+          "typical": 450,
+          "high": 630,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "Median 07:30, 2.5th percentile 06:00, 97.5th percentile 10:30."
+        }
+      ]
+    },
+    {
+      "id": "wake_time_minutes_after_midnight.all.122-365",
+      "metric": "wake_time_minutes_after_midnight",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 365,
+        "fromWeeks": 17.43,
+        "toWeeks": 52.14,
+        "label": "4 to under 12 months"
+      },
+      "low": null,
+      "typical": 433,
+      "high": null,
+      "unit": "minutes_after_midnight",
+      "typicalSourceId": "iglowstein-2003",
+      "sourceIds": [
+        "iglowstein-2003"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Only the Swiss cohort (children born 1986-1993) covers this band; the Brazilian cohort puts bed and wake times about 2 hours later than in high-income countries (Netsi 2017).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 2, cohort 1986-1993",
+          "sourceAge": "6 months",
+          "low": null,
+          "typical": 433,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": null,
+          "note": "Mean 07:13."
+        }
+      ]
+    },
+    {
+      "id": "wake_time_minutes_after_midnight.all.365-731",
+      "metric": "wake_time_minutes_after_midnight",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 731,
+        "fromWeeks": 52.14,
+        "toWeeks": 104.43,
+        "label": "12 to under 24 months"
+      },
+      "low": 360,
+      "typical": 480,
+      "high": 660,
+      "unit": "minutes_after_midnight",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017",
+        "iglowstein-2003"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1 (decimal clock hours)",
+          "sourceAge": "12 months",
+          "low": 360,
+          "typical": 480,
+          "high": 660,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "Median 08:00, 2.5th percentile 06:00, 97.5th percentile 11:00."
+        },
+        {
+          "sourceId": "iglowstein-2003",
+          "location": "Table 2, cohort 1986-1993",
+          "sourceAge": "1 year",
+          "low": null,
+          "typical": 439,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 52,
+          "note": "Mean 07:19 (SD 0:52)."
+        }
+      ]
+    },
+    {
+      "id": "wake_time_minutes_after_midnight.all.731-1096",
+      "metric": "wake_time_minutes_after_midnight",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 731,
+        "toDays": 1096,
+        "fromWeeks": 104.43,
+        "toWeeks": 156.57,
+        "label": "24 to under 36 months"
+      },
+      "low": 360,
+      "typical": 510,
+      "high": 660,
+      "unit": "minutes_after_midnight",
+      "typicalSourceId": "pelotas-2017",
+      "sourceIds": [
+        "pelotas-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "pelotas-2017",
+          "location": "Table 1 (decimal clock hours)",
+          "sourceAge": "24 months",
+          "low": 360,
+          "typical": 510,
+          "high": 660,
+          "rangeKind": "p2.5_p97.5",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "Median 08:30, 2.5th percentile 06:00, 97.5th percentile 11:00."
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.breastfed.0-28",
+      "metric": "feeds_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed on demand (SBP 2024 and the Ministry of Health guide recommend breastfeeding on demand without a number).",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 28,
+        "fromWeeks": 0,
+        "toWeeks": 4,
+        "label": "first 4 weeks (days 0 to 27)"
+      },
+      "low": 8,
+      "typical": null,
+      "high": 12,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies",
+        "aap-feeding-2024"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn feeding and nappy guide",
+          "sourceAge": "first weeks",
+          "low": 8,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "'Feed a minimum of 8 times in 24 hours'."
+        },
+        {
+          "sourceId": "aap-feeding-2024",
+          "location": "Breastfeeding section",
+          "sourceAge": "newborn",
+          "low": 10,
+          "typical": null,
+          "high": 12,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": "10-12 sessions in 24 hours is the norm; breastfed newborns usually nurse about every 2 hours; at least 8 times in 24 hours."
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.breastfed.28-183",
+      "metric": "feeds_per_24h",
+      "population": "breastfed",
+      "populationNote": "Exclusively breastfed, growing well (71 Australian infants, test weighing).",
+      "ageBand": {
+        "fromDays": 28,
+        "toDays": 183,
+        "fromWeeks": 4,
+        "toWeeks": 26.14,
+        "label": "1 to under 6 months"
+      },
+      "low": 6,
+      "typical": 11,
+      "high": 18,
+      "unit": "count",
+      "typicalSourceId": "kent-2006",
+      "sourceIds": [
+        "kent-2006"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "kent-2006",
+          "location": "Abstract",
+          "sourceAge": "1-6 months",
+          "low": 6,
+          "typical": 11,
+          "high": 18,
+          "rangeKind": "min_max",
+          "typicalKind": "mean",
+          "sd": 3,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.0-30",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 30,
+        "fromWeeks": 0,
+        "toWeeks": 4.29,
+        "label": "birth to 30 days"
+      },
+      "low": 6,
+      "typical": null,
+      "high": 8,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "aap-feeding-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "SBP gives 6-8 formula feeds; the AAP's minimum of 8 is stated for newborns in general.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "birth to 30 days",
+          "low": 6,
+          "typical": null,
+          "high": 8,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aap-feeding-2024",
+          "location": "Bottle feeding section",
+          "sourceAge": "newborn",
+          "low": 8,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Most newborns eat every 2 to 3 hours; 8 times in 24 hours is the usual minimum (stated for newborns in general)."
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.30-61",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 30,
+        "toDays": 61,
+        "fromWeeks": 4.29,
+        "toWeeks": 8.71,
+        "label": "30 days to under 2 months"
+      },
+      "low": 6,
+      "typical": null,
+      "high": 8,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "30 to 60 days",
+          "low": 6,
+          "typical": null,
+          "high": 8,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.61-91",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 61,
+        "toDays": 91,
+        "fromWeeks": 8.71,
+        "toWeeks": 13,
+        "label": "2 to under 3 months"
+      },
+      "low": 5,
+      "typical": null,
+      "high": 6,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "2 to 3 months",
+          "low": 5,
+          "typical": null,
+          "high": 6,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.91-122",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 5,
+      "typical": null,
+      "high": 6,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "3 to 4 months",
+          "low": 5,
+          "typical": null,
+          "high": 6,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.122-183",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 183,
+        "fromWeeks": 17.43,
+        "toWeeks": 26.14,
+        "label": "4 to under 6 months"
+      },
+      "low": 2,
+      "typical": null,
+      "high": 3,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "SBP's 2-3 milk feeds after 4 months assume complementary food started at 4 months for non-breastfed infants; a baby not yet on solids drinks more often (the AAP gives 4-5 feeds at 6 months).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "over 4 months",
+          "low": 2,
+          "typical": null,
+          "high": 3,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.183-213",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 213,
+        "fromWeeks": 26.14,
+        "toWeeks": 30.43,
+        "label": "6 to under 7 months"
+      },
+      "low": 2,
+      "typical": 4,
+      "high": 5,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "ms-guia-2019",
+        "aap-formula-2022"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "Sources disagree: SBP 2-3, Ministry of Health 4, AAP 4-5 milk feeds at 6 months.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "over 4 months",
+          "low": 2,
+          "typical": null,
+          "high": 3,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Alimentação da criança que recebe fórmula infantil, p. 148",
+          "sourceAge": "6 months",
+          "low": null,
+          "typical": 4,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Formula at breakfast, afternoon snack, between snack and supper, and supper."
+        },
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "Feeding at 6 months",
+          "sourceAge": "6 months",
+          "low": 4,
+          "typical": null,
+          "high": 5,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.213-274",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 213,
+        "toDays": 274,
+        "fromWeeks": 30.43,
+        "toWeeks": 39.14,
+        "label": "7 to under 9 months"
+      },
+      "low": 2,
+      "typical": 3,
+      "high": 3,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "ms-guia-2019"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "over 4 months",
+          "low": 2,
+          "typical": null,
+          "high": 3,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Alimentação da criança que recebe fórmula infantil, p. 149",
+          "sourceAge": "7-8 months",
+          "low": null,
+          "typical": 3,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Formula at breakfast, afternoon snack and supper."
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.274-365",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 274,
+        "toDays": 365,
+        "fromWeeks": 39.14,
+        "toWeeks": 52.14,
+        "label": "9 to under 12 months"
+      },
+      "low": 2,
+      "typical": 3,
+      "high": 3,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "ms-guia-2019"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "over 4 months",
+          "low": 2,
+          "typical": null,
+          "high": 3,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Alimentação da criança que recebe fórmula infantil, p. 150",
+          "sourceAge": "9-11 months",
+          "low": null,
+          "typical": 3,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Whole cow's milk at breakfast, afternoon snack and supper."
+        }
+      ]
+    },
+    {
+      "id": "feeds_per_24h.formula.365-731",
+      "metric": "feeds_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 731,
+        "fromWeeks": 52.14,
+        "toWeeks": 104.43,
+        "label": "12 to under 24 months"
+      },
+      "low": null,
+      "typical": 3,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "ms-guia-2019"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Alimentação da criança que recebe fórmula infantil, p. 151",
+          "sourceAge": "1-2 years",
+          "low": null,
+          "typical": 3,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Whole cow's milk at breakfast, afternoon snack and supper."
+        }
+      ]
+    },
+    {
+      "id": "feed_gap_minutes.breastfed.0-28",
+      "metric": "feed_gap_minutes",
+      "population": "breastfed",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 28,
+        "fromWeeks": 0,
+        "toWeeks": 4,
+        "label": "first 4 weeks (days 0 to 27)"
+      },
+      "low": 120,
+      "typical": 120,
+      "high": 180,
+      "unit": "minutes",
+      "typicalSourceId": "aap-feeding-2024",
+      "sourceIds": [
+        "aap-feeding-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "aap-feeding-2024",
+          "location": "Breastfeeding and bottle feeding sections",
+          "sourceAge": "newborn",
+          "low": 120,
+          "typical": 120,
+          "high": 180,
+          "rangeKind": "statement",
+          "typicalKind": "statement",
+          "sd": null,
+          "note": "Breastfed newborns usually nurse every 2 hours (start to start); most newborns eat every 2 to 3 hours."
+        }
+      ]
+    },
+    {
+      "id": "feed_gap_minutes.formula.0-28",
+      "metric": "feed_gap_minutes",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 28,
+        "fromWeeks": 0,
+        "toWeeks": 4,
+        "label": "first 4 weeks (days 0 to 27)"
+      },
+      "low": 120,
+      "typical": null,
+      "high": 240,
+      "unit": "minutes",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "aap-feeding-2024",
+        "aap-formula-2022"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "The two AAP pages differ for the first weeks (every 2-3 h for newborns in general, every 3-4 h for formula-fed babies).",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "aap-feeding-2024",
+          "location": "Bottle feeding section",
+          "sourceAge": "newborn",
+          "low": 120,
+          "typical": null,
+          "high": 180,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Most newborns eat every 2 to 3 hours."
+        },
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "First month",
+          "sourceAge": "first month",
+          "low": 180,
+          "typical": null,
+          "high": 240,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Formula-fed babies typically feed every 3 or 4 hours; wake a baby who sleeps longer than 4 to 5 hours in the first weeks."
+        }
+      ]
+    },
+    {
+      "id": "feed_gap_minutes.formula.28-61",
+      "metric": "feed_gap_minutes",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 28,
+        "toDays": 61,
+        "fromWeeks": 4,
+        "toWeeks": 8.71,
+        "label": "4 weeks to under 2 months"
+      },
+      "low": 180,
+      "typical": null,
+      "high": 240,
+      "unit": "minutes",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "aap-formula-2022",
+        "aap-feeding-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "End of the first month",
+          "sourceAge": "end of first month",
+          "low": 180,
+          "typical": null,
+          "high": 240,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aap-feeding-2024",
+          "location": "Bottle feeding section",
+          "sourceAge": "end of first month",
+          "low": 180,
+          "typical": null,
+          "high": 240,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.breastfed.0-1",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "breastfed",
+      "populationNote": "Average reported intakes of colostrum by healthy term breastfed infants; volumes should follow the baby's satiety cues.",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 1,
+        "fromWeeks": 0,
+        "toWeeks": 0.14,
+        "label": "first 24 hours"
+      },
+      "low": 2,
+      "typical": null,
+      "high": 10,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "abm-protocol-3-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "abm-protocol-3-2017",
+          "location": "Table 2",
+          "sourceAge": "first 24 hours",
+          "low": 2,
+          "typical": null,
+          "high": 10,
+          "rangeKind": "reported_range",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.breastfed.1-2",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "breastfed",
+      "populationNote": "Average reported intakes of colostrum by healthy term breastfed infants; volumes should follow the baby's satiety cues.",
+      "ageBand": {
+        "fromDays": 1,
+        "toDays": 2,
+        "fromWeeks": 0.14,
+        "toWeeks": 0.29,
+        "label": "24 to 48 hours"
+      },
+      "low": 5,
+      "typical": null,
+      "high": 15,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "abm-protocol-3-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "abm-protocol-3-2017",
+          "location": "Table 2",
+          "sourceAge": "24-48 hours",
+          "low": 5,
+          "typical": null,
+          "high": 15,
+          "rangeKind": "reported_range",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.breastfed.2-3",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "breastfed",
+      "populationNote": "Average reported intakes of colostrum by healthy term breastfed infants; volumes should follow the baby's satiety cues.",
+      "ageBand": {
+        "fromDays": 2,
+        "toDays": 3,
+        "fromWeeks": 0.29,
+        "toWeeks": 0.43,
+        "label": "48 to 72 hours"
+      },
+      "low": 15,
+      "typical": null,
+      "high": 30,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "abm-protocol-3-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "abm-protocol-3-2017",
+          "location": "Table 2",
+          "sourceAge": "48-72 hours",
+          "low": 15,
+          "typical": null,
+          "high": 30,
+          "rangeKind": "reported_range",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.breastfed.3-4",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "breastfed",
+      "populationNote": "Average reported intakes of colostrum by healthy term breastfed infants; volumes should follow the baby's satiety cues.",
+      "ageBand": {
+        "fromDays": 3,
+        "toDays": 4,
+        "fromWeeks": 0.43,
+        "toWeeks": 0.57,
+        "label": "72 to 96 hours"
+      },
+      "low": 30,
+      "typical": null,
+      "high": 60,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "abm-protocol-3-2017"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "abm-protocol-3-2017",
+          "location": "Table 2",
+          "sourceAge": "72-96 hours",
+          "low": 30,
+          "typical": null,
+          "high": 60,
+          "rangeKind": "reported_range",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.0-7",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 7,
+        "fromWeeks": 0,
+        "toWeeks": 1,
+        "label": "first week (days 0 to 6)"
+      },
+      "low": 30,
+      "typical": null,
+      "high": 120,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "aap-formula-2022"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "SBP gives 60-120 ml for the whole first month; the AAP says 30-60 ml in the first week.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "birth to 30 days",
+          "low": 60,
+          "typical": null,
+          "high": 120,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "First week",
+          "sourceAge": "first week",
+          "low": 30,
+          "typical": null,
+          "high": 60,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": "No more than about 1 to 2 ounces (30 to 60 ml) per feed in the first week."
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.7-30",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 7,
+        "toDays": 30,
+        "fromWeeks": 1,
+        "toWeeks": 4.29,
+        "label": "days 7 to 29"
+      },
+      "low": 60,
+      "typical": null,
+      "high": 120,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "aap-formula-2022"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "birth to 30 days",
+          "low": 60,
+          "typical": null,
+          "high": 120,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "First month",
+          "sourceAge": "first month",
+          "low": 90,
+          "typical": null,
+          "high": 120,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.30-61",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 30,
+        "toDays": 61,
+        "fromWeeks": 4.29,
+        "toWeeks": 8.71,
+        "label": "30 days to under 2 months"
+      },
+      "low": 90,
+      "typical": null,
+      "high": 150,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "aap-formula-2022"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "30 to 60 days",
+          "low": 120,
+          "typical": null,
+          "high": 150,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "End of the first month",
+          "sourceAge": "end of first month",
+          "low": 90,
+          "typical": null,
+          "high": 120,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": "At least 3 to 4 ounces (90-120 ml) per feed by the end of the first month."
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.61-91",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 61,
+        "toDays": 91,
+        "fromWeeks": 8.71,
+        "toWeeks": 13,
+        "label": "2 to under 3 months"
+      },
+      "low": 150,
+      "typical": null,
+      "high": 180,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "2 to 3 months",
+          "low": 150,
+          "typical": null,
+          "high": 180,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.91-122",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 91,
+        "toDays": 122,
+        "fromWeeks": 13,
+        "toWeeks": 17.43,
+        "label": "3 to under 4 months"
+      },
+      "low": 180,
+      "typical": null,
+      "high": 200,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "3 to 4 months",
+          "low": 180,
+          "typical": null,
+          "high": 200,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.122-183",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 122,
+        "toDays": 183,
+        "fromWeeks": 17.43,
+        "toWeeks": 26.14,
+        "label": "4 to under 6 months"
+      },
+      "low": 180,
+      "typical": null,
+      "high": 200,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "over 4 months",
+          "low": 180,
+          "typical": null,
+          "high": 200,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "feed_volume_ml_per_feed.formula.183-365",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 365,
+        "fromWeeks": 26.14,
+        "toWeeks": 52.14,
+        "label": "6 to under 12 months"
+      },
+      "low": 180,
+      "typical": null,
+      "high": 240,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "sbp-alimentacao-2024",
+        "aap-formula-2022"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "sbp-alimentacao-2024",
+          "location": "Cap. 1, Tabela 5",
+          "sourceAge": "over 4 months",
+          "low": 180,
+          "typical": null,
+          "high": 200,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        },
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "Feeding at 6 months",
+          "sourceAge": "6 months",
+          "low": 180,
+          "typical": null,
+          "high": 240,
+          "rangeKind": "statement",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "breast_milk_g_per_feed.breastfed.28-183",
+      "metric": "breast_milk_g_per_feed",
+      "population": "breastfed",
+      "populationNote": "Exclusively breastfed (test weighing, grams per breastfeed).",
+      "ageBand": {
+        "fromDays": 28,
+        "toDays": 183,
+        "fromWeeks": 4,
+        "toWeeks": 26.14,
+        "label": "1 to under 6 months"
+      },
+      "low": 0,
+      "typical": 76.0,
+      "high": 240,
+      "unit": "g",
+      "typicalSourceId": "kent-2006",
+      "sourceIds": [
+        "kent-2006"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "kent-2006",
+          "location": "Abstract",
+          "sourceAge": "1-6 months",
+          "low": 0,
+          "typical": 76.0,
+          "high": 240,
+          "rangeKind": "min_max",
+          "typicalKind": "mean",
+          "sd": 12.6,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "breast_milk_g_per_24h.breastfed.30-107",
+      "metric": "breast_milk_g_per_24h",
+      "population": "breastfed",
+      "populationNote": "Well-nourished, unsupplemented mothers; deuterium dose-to-mother in Bangladesh, Brazil and The Gambia, test weighing in Denmark.",
+      "ageBand": {
+        "fromDays": 30,
+        "toDays": 107,
+        "fromWeeks": 4.29,
+        "toWeeks": 15.29,
+        "label": "1 to under 3.5 months"
+      },
+      "low": null,
+      "typical": 843,
+      "high": null,
+      "unit": "g",
+      "typicalSourceId": "milq-2025",
+      "sourceIds": [
+        "milq-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "milq-2025",
+          "location": "Milk intake by visit, Brazil site (n=120)",
+          "sourceAge": "1-3.49 months",
+          "low": null,
+          "typical": 843,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 155,
+          "note": "All infants exclusively breastfed at this visit."
+        },
+        {
+          "sourceId": "milq-2025",
+          "location": "Milk intake by visit, pooled (n=558)",
+          "sourceAge": "1-3.49 months",
+          "low": null,
+          "typical": 818,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 152,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "breast_milk_g_per_24h.breastfed.107-183",
+      "metric": "breast_milk_g_per_24h",
+      "population": "breastfed",
+      "populationNote": "Well-nourished, unsupplemented mothers; deuterium dose-to-mother in Bangladesh, Brazil and The Gambia, test weighing in Denmark. Mixed-fed infants included.",
+      "ageBand": {
+        "fromDays": 107,
+        "toDays": 183,
+        "fromWeeks": 15.29,
+        "toWeeks": 26.14,
+        "label": "3.5 to under 6 months"
+      },
+      "low": null,
+      "typical": 856,
+      "high": null,
+      "unit": "g",
+      "typicalSourceId": "milq-2025",
+      "sourceIds": [
+        "milq-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "milq-2025",
+          "location": "Milk intake by visit, Brazil site (n=92)",
+          "sourceAge": "3.5-5.99 months",
+          "low": null,
+          "typical": 856,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 199,
+          "note": "Exclusively breastfed Brazilian infants (n=45): 919 (SD 150)."
+        },
+        {
+          "sourceId": "milq-2025",
+          "location": "Milk intake by visit, pooled (n=464)",
+          "sourceAge": "3.5-5.99 months",
+          "low": null,
+          "typical": 833,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 186,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "breast_milk_g_per_24h.breastfed.183-259",
+      "metric": "breast_milk_g_per_24h",
+      "population": "breastfed",
+      "populationNote": "Well-nourished, unsupplemented mothers; deuterium dose-to-mother in Bangladesh, Brazil and The Gambia, test weighing in Denmark. Almost all infants also eat complementary food at this age.",
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 259,
+        "fromWeeks": 26.14,
+        "toWeeks": 37,
+        "label": "6 to under 8.5 months"
+      },
+      "low": null,
+      "typical": 740,
+      "high": null,
+      "unit": "g",
+      "typicalSourceId": "milq-2025",
+      "sourceIds": [
+        "milq-2025"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "milq-2025",
+          "location": "Milk intake by visit, Brazil site (n=63)",
+          "sourceAge": "6-8.5 months",
+          "low": null,
+          "typical": 740,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 203,
+          "note": null
+        },
+        {
+          "sourceId": "milq-2025",
+          "location": "Milk intake by visit, pooled (n=436)",
+          "sourceAge": "6-8.5 months",
+          "low": null,
+          "typical": 691,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": 206,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "milk_ml_per_24h.formula.0-365",
+      "metric": "milk_ml_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 365,
+        "fromWeeks": 0,
+        "toWeeks": 52.14,
+        "label": "birth to under 12 months"
+      },
+      "low": null,
+      "typical": null,
+      "high": 960,
+      "unit": "ml",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "aap-formula-2022"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "How much formula",
+          "sourceAge": "infants",
+          "low": null,
+          "typical": null,
+          "high": 960,
+          "rangeKind": "maximum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Usually no more than an average of about 32 ounces (960 ml) of formula in 24 hours."
+        }
+      ]
+    },
+    {
+      "id": "milk_ml_per_kg_per_24h.formula.0-183",
+      "metric": "milk_ml_per_kg_per_24h",
+      "population": "formula",
+      "populationNote": "Not breastfed: infant formula (from 9 months the Ministry of Health guide uses whole cow's milk).",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 183,
+        "fromWeeks": 0,
+        "toWeeks": 26.14,
+        "label": "birth to under 6 months"
+      },
+      "low": null,
+      "typical": 165,
+      "high": null,
+      "unit": "ml_per_kg",
+      "typicalSourceId": "aap-formula-2022",
+      "sourceIds": [
+        "aap-formula-2022"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Unit converted from a per-pound statement; a single society statement without a range.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "aap-formula-2022",
+          "location": "How much formula",
+          "sourceAge": "infants",
+          "low": null,
+          "typical": 165,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "statement",
+          "sd": null,
+          "note": "Published as 2.5 ounces (75 ml) a day for every pound of body weight; converted here: 75 / 0.45359 = 165 ml per kg."
+        }
+      ]
+    },
+    {
+      "id": "wet_diapers_per_24h.breastfed.0-2",
+      "metric": "wet_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 2,
+        "fromWeeks": 0,
+        "toWeeks": 0.29,
+        "label": "days 1 and 2 of life"
+      },
+      "low": 1,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "1-2 days old",
+          "low": 1,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "1-2 or more a day; red or orange urate stains may appear."
+        }
+      ]
+    },
+    {
+      "id": "wet_diapers_per_24h.breastfed.2-4",
+      "metric": "wet_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 2,
+        "toDays": 4,
+        "fromWeeks": 0.29,
+        "toWeeks": 0.57,
+        "label": "days 3 and 4 of life"
+      },
+      "low": 3,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "3-4 days old",
+          "low": 3,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "wet_diapers_per_24h.breastfed.4-6",
+      "metric": "wet_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 4,
+        "toDays": 6,
+        "fromWeeks": 0.57,
+        "toWeeks": 0.86,
+        "label": "days 5 and 6 of life"
+      },
+      "low": 5,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "5-6 days old",
+          "low": 5,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "wet_diapers_per_24h.breastfed.6-28",
+      "metric": "wet_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 6,
+        "toDays": 28,
+        "fromWeeks": 0.86,
+        "toWeeks": 4,
+        "label": "days 7 to 28 of life"
+      },
+      "low": 6,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "7-28 days old",
+          "low": 6,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Heavy and wet."
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.0-2",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 0,
+        "toDays": 2,
+        "fromWeeks": 0,
+        "toWeeks": 0.29,
+        "label": "days 1 and 2 of life"
+      },
+      "low": 1,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "1-2 days old",
+          "low": 1,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Meconium."
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.2-4",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 2,
+        "toDays": 4,
+        "fromWeeks": 0.29,
+        "toWeeks": 0.57,
+        "label": "days 3 and 4 of life"
+      },
+      "low": 2,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "3-4 days old",
+          "low": 2,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.4-6",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 4,
+        "toDays": 6,
+        "fromWeeks": 0.57,
+        "toWeeks": 0.86,
+        "label": "days 5 and 6 of life"
+      },
+      "low": 2,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "5-6 days old",
+          "low": 2,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.6-28",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed babies; the chart gives the minimum expected count.",
+      "ageBand": {
+        "fromDays": 6,
+        "toDays": 28,
+        "fromWeeks": 0.86,
+        "toWeeks": 4,
+        "label": "days 7 to 28 of life"
+      },
+      "low": 2,
+      "typical": null,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": null,
+      "sourceIds": [
+        "unicef-uk-nappies"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "unicef-uk-nappies",
+          "location": "Newborn nappy guide",
+          "sourceAge": "7-28 days old",
+          "low": 2,
+          "typical": null,
+          "high": null,
+          "rangeKind": "minimum",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Each at least the size of a GBP 2 coin."
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.28-56",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed Dutch infants without complaints (cohort of 600). SBP 2024: a breastfed baby may stool at every feed or go days without stooling, which is normal with soft stools and good weight gain.",
+      "ageBand": {
+        "fromDays": 28,
+        "toDays": 56,
+        "fromWeeks": 4,
+        "toWeeks": 8,
+        "label": "4 to under 8 weeks"
+      },
+      "low": null,
+      "typical": 3.65,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": "denhertog-2012",
+      "sourceIds": [
+        "denhertog-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "denhertog-2012",
+          "location": "Abstract",
+          "sourceAge": "1 month",
+          "low": null,
+          "typical": 3.65,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.84-112",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed Dutch infants without complaints.",
+      "ageBand": {
+        "fromDays": 84,
+        "toDays": 112,
+        "fromWeeks": 12,
+        "toWeeks": 16,
+        "label": "12 to under 16 weeks"
+      },
+      "low": null,
+      "typical": 1.88,
+      "high": null,
+      "unit": "count",
+      "typicalSourceId": "denhertog-2012",
+      "sourceIds": [
+        "denhertog-2012"
+      ],
+      "confidence": "medium",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "denhertog-2012",
+          "location": "Abstract",
+          "sourceAge": "3 months",
+          "low": null,
+          "typical": 1.88,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "mean",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.breastfed.112-140",
+      "metric": "dirty_diapers_per_24h",
+      "population": "breastfed",
+      "populationNote": "Breastfed Finnish infants (HELMi cohort).",
+      "ageBand": {
+        "fromDays": 112,
+        "toDays": 140,
+        "fromWeeks": 16,
+        "toWeeks": 20,
+        "label": "16 to under 20 weeks"
+      },
+      "low": 0.9,
+      "typical": 2,
+      "high": 3.6,
+      "unit": "count",
+      "typicalSourceId": "helmi-2024",
+      "sourceIds": [
+        "helmi-2024"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "helmi-2024",
+          "location": "Abstract",
+          "sourceAge": "17 weeks",
+          "low": 0.9,
+          "typical": 2,
+          "high": 3.6,
+          "rangeKind": "iqr",
+          "typicalKind": "median",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.formula.112-140",
+      "metric": "dirty_diapers_per_24h",
+      "population": "formula",
+      "populationNote": "Formula-fed Finnish infants (formula as main food for at least 14 of 17 weeks).",
+      "ageBand": {
+        "fromDays": 112,
+        "toDays": 140,
+        "fromWeeks": 16,
+        "toWeeks": 20,
+        "label": "16 to under 20 weeks"
+      },
+      "low": 0.6,
+      "typical": 1.1,
+      "high": 1.4,
+      "unit": "count",
+      "typicalSourceId": "helmi-2024",
+      "sourceIds": [
+        "helmi-2024"
+      ],
+      "confidence": "low",
+      "needsReview": true,
+      "needsReviewReason": "Only 31 infants were mainly formula-fed in this cohort.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "helmi-2024",
+          "location": "Abstract",
+          "sourceAge": "17 weeks",
+          "low": 0.6,
+          "typical": 1.1,
+          "high": 1.4,
+          "rangeKind": "iqr",
+          "typicalKind": "median",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.all.14-28",
+      "metric": "dirty_diapers_per_24h",
+      "population": "all",
+      "populationNote": "Whole HELMi cohort (1052 infants; about 9 in 10 breastfed).",
+      "ageBand": {
+        "fromDays": 14,
+        "toDays": 28,
+        "fromWeeks": 2,
+        "toWeeks": 4,
+        "label": "2 to under 4 weeks"
+      },
+      "low": 2.9,
+      "typical": 4,
+      "high": 5,
+      "unit": "count",
+      "typicalSourceId": "helmi-2024",
+      "sourceIds": [
+        "helmi-2024"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "helmi-2024",
+          "location": "Results",
+          "sourceAge": "3 weeks",
+          "low": 2.9,
+          "typical": 4,
+          "high": 5,
+          "rangeKind": "iqr",
+          "typicalKind": "median",
+          "sd": null,
+          "note": "The peak of the first 17 weeks."
+        }
+      ]
+    },
+    {
+      "id": "dirty_diapers_per_24h.all.112-140",
+      "metric": "dirty_diapers_per_24h",
+      "population": "all",
+      "populationNote": "Whole HELMi cohort (1052 infants; about 9 in 10 breastfed).",
+      "ageBand": {
+        "fromDays": 112,
+        "toDays": 140,
+        "fromWeeks": 16,
+        "toWeeks": 20,
+        "label": "16 to under 20 weeks"
+      },
+      "low": 0.7,
+      "typical": 2,
+      "high": 3.3,
+      "unit": "count",
+      "typicalSourceId": "helmi-2024",
+      "sourceIds": [
+        "helmi-2024"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "helmi-2024",
+          "location": "Results",
+          "sourceAge": "17 weeks",
+          "low": 0.7,
+          "typical": 2,
+          "high": 3.3,
+          "rangeKind": "iqr",
+          "typicalKind": "median",
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "crying_minutes_per_24h.all.7-21",
+      "metric": "crying_minutes_per_24h",
+      "population": "all",
+      "populationNote": "Fussing and crying from parent diaries (28 studies, 8690 infants); Danish and German samples cried less, Canadian and Dutch more.",
+      "ageBand": {
+        "fromDays": 7,
+        "toDays": 21,
+        "fromWeeks": 1,
+        "toWeeks": 3,
+        "label": "1 to 2 weeks"
+      },
+      "low": null,
+      "typical": 117.3,
+      "high": null,
+      "unit": "minutes",
+      "typicalSourceId": "wolke-2017",
+      "sourceIds": [
+        "wolke-2017"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "wolke-2017",
+          "location": "Results text",
+          "sourceAge": "1-2 weeks",
+          "low": null,
+          "typical": 117.3,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "pooled_mean",
+          "sd": 66.8,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "crying_minutes_per_24h.all.21-35",
+      "metric": "crying_minutes_per_24h",
+      "population": "all",
+      "populationNote": "Fussing and crying from parent diaries (28 studies, 8690 infants); Danish and German samples cried less, Canadian and Dutch more.",
+      "ageBand": {
+        "fromDays": 21,
+        "toDays": 35,
+        "fromWeeks": 3,
+        "toWeeks": 5,
+        "label": "3 to 4 weeks"
+      },
+      "low": null,
+      "typical": 118.2,
+      "high": null,
+      "unit": "minutes",
+      "typicalSourceId": "wolke-2017",
+      "sourceIds": [
+        "wolke-2017"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "wolke-2017",
+          "location": "Results text",
+          "sourceAge": "3-4 weeks",
+          "low": null,
+          "typical": 118.2,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "pooled_mean",
+          "sd": 69.3,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "crying_minutes_per_24h.all.35-49",
+      "metric": "crying_minutes_per_24h",
+      "population": "all",
+      "populationNote": "Fussing and crying from parent diaries (28 studies, 8690 infants); Danish and German samples cried less, Canadian and Dutch more.",
+      "ageBand": {
+        "fromDays": 35,
+        "toDays": 49,
+        "fromWeeks": 5,
+        "toWeeks": 7,
+        "label": "5 to 6 weeks"
+      },
+      "low": null,
+      "typical": 133.3,
+      "high": null,
+      "unit": "minutes",
+      "typicalSourceId": "wolke-2017",
+      "sourceIds": [
+        "wolke-2017"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": "No statistical evidence of a universal peak at 6 weeks: the first 6 weeks do not differ significantly.",
+      "evidence": [
+        {
+          "sourceId": "wolke-2017",
+          "location": "Results text",
+          "sourceAge": "5-6 weeks",
+          "low": null,
+          "typical": 133.3,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "pooled_mean",
+          "sd": 70.1,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "crying_minutes_per_24h.all.70-91",
+      "metric": "crying_minutes_per_24h",
+      "population": "all",
+      "populationNote": "Fussing and crying from parent diaries (28 studies, 8690 infants); Danish and German samples cried less, Canadian and Dutch more.",
+      "ageBand": {
+        "fromDays": 70,
+        "toDays": 91,
+        "fromWeeks": 10,
+        "toWeeks": 13,
+        "label": "10 to 12 weeks"
+      },
+      "low": null,
+      "typical": 68.0,
+      "high": null,
+      "unit": "minutes",
+      "typicalSourceId": "wolke-2017",
+      "sourceIds": [
+        "wolke-2017"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": "The 8-9 week mean is shown only in a figure and is not recorded.",
+      "evidence": [
+        {
+          "sourceId": "wolke-2017",
+          "location": "Results text",
+          "sourceAge": "10-12 weeks",
+          "low": null,
+          "typical": 68.0,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "pooled_mean",
+          "sd": 46.2,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "solid_meals_per_day.all.183-213",
+      "metric": "solid_meals_per_day",
+      "population": "all",
+      "populationNote": "Main meals with complementary food (Ministry of Health: lunch, then lunch and dinner, then breakfast too); breast milk continues on demand.",
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 213,
+        "fromWeeks": 26.14,
+        "toWeeks": 30.43,
+        "label": "6 to under 7 months"
+      },
+      "low": 1,
+      "typical": 1,
+      "high": 3,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "ms-guia-2019",
+        "who-cf-2011"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "The WHO counts any complementary feed (2-3 a day at 6-8 months); the Ministry of Health counts one main meal plus two fruit snacks at 6 months.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Day by age, pp. 117-118",
+          "sourceAge": "6 months",
+          "low": null,
+          "typical": 1,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Lunch, plus fruit at the morning and afternoon snacks."
+        },
+        {
+          "sourceId": "who-cf-2011",
+          "location": "Q&A table",
+          "sourceAge": "6-8 months",
+          "low": 2,
+          "typical": null,
+          "high": 3,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "Complementary foods 2-3 times a day."
+        }
+      ]
+    },
+    {
+      "id": "solid_meals_per_day.all.213-274",
+      "metric": "solid_meals_per_day",
+      "population": "all",
+      "populationNote": "Main meals with complementary food (Ministry of Health: lunch, then lunch and dinner, then breakfast too); breast milk continues on demand.",
+      "ageBand": {
+        "fromDays": 213,
+        "toDays": 274,
+        "fromWeeks": 30.43,
+        "toWeeks": 39.14,
+        "label": "7 to under 9 months"
+      },
+      "low": 2,
+      "typical": 2,
+      "high": 3,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "ms-guia-2019",
+        "who-cf-2011"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Day by age, p. 120",
+          "sourceAge": "7-8 months",
+          "low": null,
+          "typical": 2,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Lunch and dinner."
+        },
+        {
+          "sourceId": "who-cf-2011",
+          "location": "Q&A table",
+          "sourceAge": "6-8 months",
+          "low": 2,
+          "typical": null,
+          "high": 3,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "solid_meals_per_day.all.274-365",
+      "metric": "solid_meals_per_day",
+      "population": "all",
+      "populationNote": "Main meals with complementary food (Ministry of Health: lunch, then lunch and dinner, then breakfast too); breast milk continues on demand.",
+      "ageBand": {
+        "fromDays": 274,
+        "toDays": 365,
+        "fromWeeks": 39.14,
+        "toWeeks": 52.14,
+        "label": "9 to under 12 months"
+      },
+      "low": 2,
+      "typical": 2,
+      "high": 4,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "ms-guia-2019",
+        "who-cf-2011"
+      ],
+      "confidence": "medium",
+      "needsReview": true,
+      "needsReviewReason": "The Ministry of Health's 2 main meals (plus 2 snacks) are below the WHO's 3-4 meals at 9-11 months.",
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Day by age, p. 123",
+          "sourceAge": "9-11 months",
+          "low": null,
+          "typical": 2,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Lunch and dinner."
+        },
+        {
+          "sourceId": "who-cf-2011",
+          "location": "Q&A table",
+          "sourceAge": "9-11 months",
+          "low": 3,
+          "typical": null,
+          "high": 4,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "solid_meals_per_day.all.365-731",
+      "metric": "solid_meals_per_day",
+      "population": "all",
+      "populationNote": "Main meals with complementary food (Ministry of Health: lunch, then lunch and dinner, then breakfast too); breast milk continues on demand.",
+      "ageBand": {
+        "fromDays": 365,
+        "toDays": 731,
+        "fromWeeks": 52.14,
+        "toWeeks": 104.43,
+        "label": "12 to under 24 months"
+      },
+      "low": 3,
+      "typical": 3,
+      "high": 4,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "ms-guia-2019",
+        "who-cf-2011"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Day by age, p. 127",
+          "sourceAge": "1-2 years",
+          "low": null,
+          "typical": 3,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Breakfast, lunch and dinner."
+        },
+        {
+          "sourceId": "who-cf-2011",
+          "location": "Q&A table",
+          "sourceAge": "12-23 months",
+          "low": 3,
+          "typical": null,
+          "high": 4,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "solid_snacks_per_day.all.183-731",
+      "metric": "solid_snacks_per_day",
+      "population": "all",
+      "populationNote": null,
+      "ageBand": {
+        "fromDays": 183,
+        "toDays": 731,
+        "fromWeeks": 26.14,
+        "toWeeks": 104.43,
+        "label": "6 to under 24 months"
+      },
+      "low": 1,
+      "typical": 2,
+      "high": 2,
+      "unit": "count",
+      "typicalSourceId": "ms-guia-2019",
+      "sourceIds": [
+        "ms-guia-2019",
+        "who-cf-2011"
+      ],
+      "confidence": "high",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "notes": null,
+      "evidence": [
+        {
+          "sourceId": "ms-guia-2019",
+          "location": "Day by age, pp. 117-127",
+          "sourceAge": "6-24 months",
+          "low": null,
+          "typical": 2,
+          "high": null,
+          "rangeKind": null,
+          "typicalKind": "recommended",
+          "sd": null,
+          "note": "Morning and afternoon snacks with fruit."
+        },
+        {
+          "sourceId": "who-cf-2011",
+          "location": "Q&A table",
+          "sourceAge": "6-23 months",
+          "low": 1,
+          "typical": null,
+          "high": 2,
+          "rangeKind": "recommended",
+          "typicalKind": null,
+          "sd": null,
+          "note": "1-2 snacks may be offered, depending on appetite."
+        }
+      ]
+    }
+  ]
+}
