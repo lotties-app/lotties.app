@@ -180,6 +180,12 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"intensity":"moderate","what_helped":"rocking"}""")]
     [InlineData("""{"intensity":"intense","what_helped":"nothing"}""")]
     [InlineData("""{"what_helped":"pacifier","pause_count":1,"paused_seconds":30}""")]
+    [InlineData("""{"what_helped":"diaper_change"}""")]
+    [InlineData("""{"what_helped":"burping","suggested_cause":"gas"}""")]
+    [InlineData("""{"what_helped":"holding","suggested_cause":"comfort"}""")]
+    [InlineData("""{"suggested_cause":"hunger"}""")]
+    [InlineData("""{"intensity":"mild","suggested_cause":"sleepy"}""")]
+    [InlineData("""{"suggested_cause":"diaper"}""")]
     public void Fussy_OptionalIntensityAndWhatHelped_AreAcceptedRunningOrEnded(string json)
     {
         Ensure(BuiltInEventTypes.Fussy, json, Ended);
@@ -191,6 +197,9 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"intensity":"MILD"}""", "intensity")]
     [InlineData("""{"what_helped":"singing"}""", "what_helped")]
     [InlineData("""{"what_helped":true}""", "what_helped")]
+    [InlineData("""{"suggested_cause":"teething"}""", "suggested_cause")]
+    [InlineData("""{"suggested_cause":"Hunger"}""", "suggested_cause")]
+    [InlineData("""{"suggested_cause":1}""", "suggested_cause")]
     public void Fussy_UnknownIntensityOrWhatHelped_IsRejected(string json, string field)
     {
         Assert.Equal(field, Rejected(BuiltInEventTypes.Fussy, json).Field);

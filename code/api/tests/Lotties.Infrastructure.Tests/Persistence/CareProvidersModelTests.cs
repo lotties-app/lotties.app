@@ -46,7 +46,7 @@ public sealed class CareProvidersModelTests
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
         var start = script.IndexOf("_CareProviders'", StringComparison.Ordinal);
-        var section = script[start..];
+        var section = script[start..script.IndexOf("_DoctorScopes'", start, StringComparison.Ordinal)];
 
         Assert.Contains("ALTER TABLE appointments ADD provider_id uuid;", section, StringComparison.Ordinal);
         Assert.Contains("CREATE TABLE care_providers (", section, StringComparison.Ordinal);
