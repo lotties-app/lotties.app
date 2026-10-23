@@ -24,13 +24,6 @@ export function isStandalone(): boolean {
   return displayStandalone || (navigator as NavigatorWithStandalone).standalone === true;
 }
 
-/** iPhone/iPad/iPod Safari (not Chrome, Firefox or Edge on iOS, which cannot add to home screen). */
-export function isIosSafari(userAgent: string = navigator.userAgent): boolean {
-  const isIos = /iPhone|iPad|iPod/i.test(userAgent);
-  const isSafari = /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(userAgent);
-  return isIos && isSafari;
-}
-
 let snapshot: InstallPromptSnapshot = { deferred: null, installed: isStandalone() };
 const listeners = new Set<() => void>();
 

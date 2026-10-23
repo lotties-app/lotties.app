@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { BrandMark } from '../ui/BrandMark';
 import { PAGE_WIDTH } from './features';
@@ -9,9 +10,11 @@ interface Props {
   notice?: ReactNode;
   onSignIn: () => void;
   onRegister: () => void;
+  /** A signed-in visitor (/welcome): one "Open the app" button instead of Sign in and Create. */
+  signedIn?: boolean;
 }
 
-export function Hero({ notice, onSignIn, onRegister }: Props) {
+export function Hero({ notice, onSignIn, onRegister, signedIn }: Props) {
   const { t } = useTranslation('landing');
   return (
     <Box
@@ -45,17 +48,36 @@ export function Hero({ notice, onSignIn, onRegister }: Props) {
           spacing={1.5}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Button variant="contained" size="large" onClick={onSignIn} sx={{ minHeight: 56, px: 4 }}>
-            {t('hero.signIn')}
-          </Button>
-          <Button
-            variant="outlined"
-            size="large"
-            onClick={onRegister}
-            sx={{ minHeight: 56, px: 4 }}
-          >
-            {t('hero.register')}
-          </Button>
+          {signedIn ? (
+            <Button
+              component={RouterLink}
+              to="/"
+              variant="contained"
+              size="large"
+              sx={{ minHeight: 56, px: 4 }}
+            >
+              {t('hero.openApp')}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={onSignIn}
+                sx={{ minHeight: 56, px: 4 }}
+              >
+                {t('hero.signIn')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={onRegister}
+                sx={{ minHeight: 56, px: 4 }}
+              >
+                {t('hero.register')}
+              </Button>
+            </>
+          )}
         </Stack>
       </Stack>
       <HeroArt />

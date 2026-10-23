@@ -5,6 +5,7 @@ import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/materia
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { CreditsContent } from '../credits/CreditsContent';
+import { InstallContent } from '../install/InstallContent';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
 import { canSeeFamilyRecords, canWrite } from '../baby/permissions';
@@ -174,6 +175,16 @@ export function HubCreditsPage() {
   return (
     <HubSubPage title={t('credits.title')}>
       <CreditsContent />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Install the app: the same guide as the public /install page, inside the shell. */
+export function HubInstallPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('install.title')}>
+      <InstallContent />
     </HubSubPage>
   );
 }

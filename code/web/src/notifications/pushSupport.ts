@@ -20,6 +20,11 @@ export interface PushEnvironmentFacts {
 const IN_APP_BROWSER =
   /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Snapchat|TikTok|musical_ly|Twitter|LinkedInApp|; wv\)/i;
 
+/** A social app's built-in browser or an Android WebView (no push, no install). */
+export function isInAppBrowser(userAgent: string): boolean {
+  return IN_APP_BROWSER.test(userAgent);
+}
+
 const IOS_MIN = { major: 16, minor: 4 };
 
 export function isIosDevice(userAgent: string, maxTouchPoints: number): boolean {

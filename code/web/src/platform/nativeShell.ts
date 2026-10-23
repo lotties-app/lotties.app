@@ -22,6 +22,13 @@ export interface NativeShell {
   shareFile(file: SharedFile): Promise<void>;
   /** Text and icon colour of the status and navigation bars. */
   setSystemBarsStyle(style: SystemBarsStyle): Promise<void>;
+  /**
+   * Android's hardware/gesture back. While a listener is registered Capacitor does nothing by
+   * itself; `canGoBack` says whether the WebView has history to go back to.
+   */
+  onBackButton(listener: (canGoBack: boolean) => void): Promise<() => void>;
+  /** Closes the app (Android; the Activity finishes). */
+  exitApp(): Promise<void>;
 }
 
 /** A file for `NativeShell.shareFile`: the bytes as base64 (no data-URL prefix). */
@@ -89,5 +96,13 @@ export const capacitorShell: NativeShell = {
       DEFAULT: SystemBarsStyle.Default,
     };
     await SystemBars.setStyle({ style: styles[style] });
+  },
+  onBackButton: async (listener) => {
+    const { App } = await load();
+    return removing(await App.addListener('backButton', (event) => listener(event.canGoBack)));
+  },
+  exitApp: async () => {
+    const { App } = await load();
+    await App.exitApp();
   },
 };

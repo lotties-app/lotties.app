@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { LandingGate } from './landing/LandingGate';
+import { WelcomeRoute } from './landing/WelcomeRoute';
 import { CallbackPage } from './auth/CallbackPage';
 import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
@@ -30,8 +31,10 @@ const HubBackupImportPage = hubSubPage('HubBackupImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
 const HubCreditsPage = hubSubPage('HubCreditsPage');
-// The public credits page: outside the auth gate, so it opens without signing in.
+const HubInstallPage = hubSubPage('HubInstallPage');
+// The public credits and install pages: outside the auth gate, so they open without signing in.
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
+const InstallPage = lazy(() => import('./install/InstallPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -279,6 +282,16 @@ export function AppRoutes() {
           </Suspense>
         }
       />
+      <Route
+        path="/install"
+        element={
+          <Suspense fallback={null}>
+            <InstallPage />
+          </Suspense>
+        }
+      />
+      {/* The landing page on purpose for a signed-in person; `/` keeps opening the app. */}
+      <Route path="/welcome" element={<WelcomeRoute />} />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
       <Route path="/invite" element={<InviteEntry />}>
         <Route element={<RequireAuth />}>
@@ -308,6 +321,7 @@ export function AppRoutes() {
             <Route path="hub/updates" element={<HubUpdatesPage />} />
             <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="hub/credits" element={<HubCreditsPage />} />
+            <Route path="hub/install" element={<HubInstallPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="vaccines" element={<VaccinesPage />} />

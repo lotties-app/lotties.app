@@ -168,6 +168,7 @@ export default function HubPreview() {
     hasPatients: scenario === 'doctor',
     hasDoctorContent: scenario === 'owner',
     native: false,
+    installed: false,
   };
   const selected: SelectedBaby = {
     babies: baby ? [baby] : undefined,
