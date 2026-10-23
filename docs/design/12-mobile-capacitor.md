@@ -130,7 +130,7 @@ nothing a page on the user's own machine could not already do with a token it do
   included, and restore it on a new phone: keep (convenience) or set `false` / data extraction rules (safer).
   The nginx Content-Security-Policy does not exist in the app (no server): add a `<meta>` CSP to the native build.
 
-## 7. Push notifications (decision, not built)
+## 7. Push notifications (decision, not built; full design in docs/design/19-native-push.md)
 
 Inside the shell Web Push is not available (WKWebView has no Push API; Android WebView neither), and the service worker
 is not registered. Plan: native push.
