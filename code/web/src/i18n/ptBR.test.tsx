@@ -264,7 +264,9 @@ describe('pt-BR texts outside components', () => {
       ),
     ).toEqual(['Fome', 'Sono', 'Fralda', 'Gases', 'Conforto']);
     expect(
-      ['diaper_change', 'burping', 'holding'].map((o) => eventTypeText.optionLabel(type, helped, o)),
+      ['diaper_change', 'burping', 'holding'].map((o) =>
+        eventTypeText.optionLabel(type, helped, o),
+      ),
     ).toEqual(['Troca de fralda', 'Arroto', 'Colo / pele a pele']);
     expect(payloadSummary({ what_helped: 'burping', suggested_cause: 'gas' }, type)).toBe(
       'arrotar ajudou',
