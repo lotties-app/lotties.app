@@ -15,6 +15,11 @@ export interface ProblemDetails {
   maxNames?: number;
   token?: string;
   tokens?: string[];
+  /** Backup import extensions (API): the schema versions of `backup_unsupported_version`, the limit of `backup_too_large`, the count of `backup_rejected`. */
+  schemaVersion?: number;
+  maxSupported?: number;
+  max?: number;
+  issueCount?: number;
   /** The existing catalog product of a 409 `product_exists` (API extension). */
   product?: unknown;
 }

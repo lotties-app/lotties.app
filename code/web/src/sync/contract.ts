@@ -209,6 +209,14 @@ export const apiPaths = {
   importNapper: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/napper`,
   importNapperPreview: (babyId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/import/napper/preview`,
+  /** Export and import of a baby's data (docs/design/24-export-import.md). */
+  backupExport: (babyId: string, compress: boolean) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/export?compress=${compress}`,
+  backupMergePreview: (babyId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/import/backup/preview`,
+  backupMerge: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/backup`,
+  backupRestorePreview: () => `${API_PREFIX}/babies/import/preview`,
+  backupRestore: () => `${API_PREFIX}/babies/import`,
   /** `timeZone` (IANA) places the recurring patterns in local time, daylight saving included. */
   predictions: (babyId: string, utcOffsetMinutes: number, timeZone?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}` +

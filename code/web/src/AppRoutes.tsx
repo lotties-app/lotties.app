@@ -25,6 +25,8 @@ const HubFormulasPage = hubSubPage('HubFormulasPage');
 const HubProvidersPage = hubSubPage('HubProvidersPage');
 const HubFamilyPage = hubSubPage('HubFamilyPage');
 const HubImportPage = hubSubPage('HubImportPage');
+const HubExportPage = hubSubPage('HubExportPage');
+const HubBackupImportPage = hubSubPage('HubBackupImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
 const InvitePage = lazy(() =>
@@ -290,6 +292,8 @@ export function AppRoutes() {
             <Route path="hub/providers" element={<HubProvidersPage />} />
             <Route path="hub/family" element={<HubFamilyPage />} />
             <Route path="hub/import" element={<HubImportPage />} />
+            <Route path="hub/export" element={<HubExportPage />} />
+            <Route path="hub/backup" element={<HubBackupImportPage />} />
             <Route path="hub/updates" element={<HubUpdatesPage />} />
             <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="settings" element={<SettingsPage />} />

@@ -60,6 +60,13 @@
     "account_deletion_blocked": "Você é a única pessoa responsável por um bebê que outras pessoas usam. Torne outro membro responsável primeiro.",
     "address_not_found": "Nenhum endereço foi encontrado para esse CEP. Confira o CEP ou digite o endereço.",
     "address_lookup_unavailable": "A busca de endereço está indisponível no momento.",
-    "address_lookup_disabled": "A busca de endereço está desativada neste servidor."
+    "address_lookup_disabled": "A busca de endereço está desativada neste servidor.",
+    "backup_invalid_file": "Este não é um arquivo de backup deste app, ou está danificado. Exporte de novo e tente outra vez.",
+    "backup_unsupported_version": "Este backup foi feito por uma versão mais nova do app (versão do arquivo {{schemaVersion}}, este servidor lê até {{maxSupported}}). Atualize o app e tente de novo.",
+    "backup_checksum_mismatch": "O arquivo foi alterado ou danificado depois de exportado, por isso não foi importado. Exporte de novo.",
+    "backup_too_large": "Este backup é grande demais para importar.",
+    "backup_rejected": "Alguns registros do backup não são válidos, por isso nada foi importado.",
+    "backup_baby_unavailable": "Este backup já foi restaurado em um bebê a que você não tem mais acesso. Adicione-o a um dos seus bebês.",
+    "backup_not_allowed": "Só titulares e responsáveis podem exportar ou importar os dados de um bebê."
   }
 }

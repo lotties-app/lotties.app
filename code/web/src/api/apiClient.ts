@@ -20,6 +20,11 @@ export interface RequestOptions {
   /** Extra request headers (e.g. `If-None-Match`); a `304` answer then resolves with an empty body. */
   headers?: Record<string, string>;
   signal?: AbortSignal;
+  /** A body sent as it is (a file) instead of JSON; give its `contentType` with it. */
+  rawBody?: Blob;
+  contentType?: string;
+  /** Resolve with the answer as a `Blob` (a file download) instead of parsing it as JSON. */
+  responseType?: 'blob';
   /**
    * Skip `onUnauthorized` on a 401 (the `ApiError` is still thrown). Background work such as sync
    * sets this so it can pause itself instead of navigating away to the login page.
@@ -56,17 +61,18 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
   function send(
     token: string | null,
-    { method = 'GET', body, signal, headers: extraHeaders }: RequestOptions,
+    { method = 'GET', body, rawBody, contentType, signal, headers: extraHeaders }: RequestOptions,
     path: string,
   ) {
     const headers: Record<string, string> = { Accept: 'application/json', ...extraHeaders };
     if (token) headers.Authorization = `Bearer ${token}`;
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (rawBody !== undefined) headers['Content-Type'] = contentType ?? 'application/octet-stream';
+    else if (body !== undefined) headers['Content-Type'] = 'application/json';
     const doFetch = options.fetchImpl ?? fetch;
     return doFetch(`${baseUrl}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: rawBody ?? (body === undefined ? undefined : JSON.stringify(body)),
       signal,
     });
   }
@@ -80,6 +86,11 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     if (response.status === 401 && renewAccessToken) {
       const renewed = await renewAccessToken();
       if (renewed) response = await send(renewed, requestOptions, path);
+    }
+
+    if (requestOptions.responseType === 'blob' && response.ok) {
+      const file = await response.blob();
+      return { data: file as T, status: response.status, headers: response.headers };
     }
 
     const payload = await parseBody(response);

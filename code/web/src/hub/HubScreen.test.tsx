@@ -83,6 +83,8 @@ describe('the sections', () => {
       'doctorAccess',
       'settings',
       'import',
+      'export',
+      'backupImport',
       'updates',
       'about',
     ]);
@@ -125,6 +127,8 @@ describe('the sections', () => {
       'invite',
       'doctorAccess',
       'import',
+      'export',
+      'backupImport',
       'myProposals',
       'notes',
       'members',
