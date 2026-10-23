@@ -1,9 +1,10 @@
-# 32. Voice assistants (Alexa first, an MCP server next)
+# 32. Voice and AI assistants (Alexa, MCP server)
 
 Parents with full hands log and ask by voice: "Alexa, tell Lotties baby the baby fell asleep", "Alexa, ask Lotties baby
 when was the last feed". Two layers: an adapter-neutral **assistant command layer** in Application, and one **adapter**
-per platform in Api (Alexa now; an MCP server is the next adapter and reuses the command layer unchanged). The owner's
-step-by-step for the Alexa developer console and Keycloak is [docs/ALEXA.md](../ALEXA.md).
+per platform in Api: Alexa (section 6) and a remote MCP server for AI assistants such as Claude (section 9), both over the
+same command layer. The owner's step-by-step guides: [docs/ALEXA.md](../ALEXA.md) (Alexa developer console and Keycloak)
+and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Claude and other MCP clients).
 
 ## 1. What a parent can say
 
@@ -35,9 +36,9 @@ suction and the like were skipped: they add utterances, not value, and are easy 
 ## 2. Layers
 
 ```
-Alexa service ──HTTPS──> Api/Assistants/Alexa (AlexaSkill)      MCP client ──> (future) Api/Assistants/Mcp
-                            verify signature, skill id, time            authenticate the bearer token
-                            validate the account-link token             set the user
+Alexa service ──HTTPS──> Api/Assistants/Alexa (AlexaSkill)      MCP client ──HTTPS──> Api/Assistants/Mcp (McpToolRunner)
+                            verify signature, skill id, time            authenticate the bearer token (own audience)
+                            validate the account-link token             set the user, check the scopes
                             set HttpContext.User                        map tools to commands
                             render AssistantResult as speech            render AssistantResult as JSON
                                          │                                           │
@@ -57,8 +58,8 @@ Alexa service ──HTTPS──> Api/Assistants/Alexa (AlexaSkill)      MCP clie
   `UserAssistantSettings` (the stored default baby).
 - **Application** (`Application/Assistants`): `IAssistantService` with one method per command, `AssistantResult`
   (section 3), `AssistantSubjects`, `IAssistantSettingsService` (`GET`/`PUT /me/assistant-settings`).
-- **Api**: `Assistants/Alexa/*` (the adapter), `Authentication/AccountLinkTokens.cs` (token validation, section 6),
-  `Limits/AssistantRateLimiter.cs`.
+- **Api**: `Assistants/Alexa/*` (the Alexa adapter), `Authentication/AccountLinkTokens.cs` (token validation, section 6),
+  `Assistants/Mcp/*` (the MCP adapter, section 9), `Limits/AssistantRateLimiter.cs`.
 
 ## 3. Results are language-neutral
 
@@ -83,13 +84,29 @@ with a line for every code, tested for every code in both languages.
 | `diapers_today` | `count`, `wet`, `dirty`, `window` (`today` in the user's zone, else `last_day`) |
 | `next_appointment`, `no_appointment` | the next upcoming appointment within a year: `appointment` (start, the family's title, type) |
 | `vaccines_due`, `no_vaccines_due` | `count` due or overdue, `overdue`, up to five doses with their names in `en` and `pt-BR` (the vaccine status engine, facts only) |
+| `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
+| `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
+| `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
+| `baby_profile` | the baby's name and `age` (`days`, `weeks`, whole calendar `months` on the user's local date); nothing else of the profile |
+| `day_summary`, `week_summary` | `days`: one or seven local days, oldest first, each `date`, `complete` (false for today) and the clinical summary's day rows: `sleep` (`totalMinutes`, `nightMinutes`, `napMinutes`, `naps`, `longestMinutes`), `feeding` (`feeds`, `bottleMl`, `breast`, `bottle`, `solid`), `diapers` (`total`, `wet`, `dirty`) |
+
+The queries added with the MCP server (`ListBabies`, `ReadBabyProfile`, `ReadDaySummary(date?)`,
+`ReadWeekSummary(endDate?)`) are adapter-neutral too: Alexa renders their codes in both languages (no intent uses them
+yet). The summaries reuse the clinical summary's reader and math unchanged (`DailyObservationReader`, `SleepSummaries`,
+`FeedingSummaries`, `DiaperSummaries`: the day rows of `GET /clinical-summary`, ported from the parents' Insights); the
+tests compare them with that endpoint on the shared golden scenario. Days are the user's local days (her stored zone),
+UTC days when none is known (`timeZone` null). `bottleMl` is that math's number: the bottles' logged `amount_ml`
+(prepared), not the drunk amount the web's Insights use since the feeding amounts change (an existing difference of the
+server math, left as it is here).
 
 ## 4. Which baby
 
 `AssistantBabyChoice.Decide` over the user's memberships, Doctor memberships left out (a Doctor's patients never enter
 the assistant, like the parents' shell): the stored default when she is still a family member of it; else the only baby
 she can log for; else, when she logs for none, her only baby (read-only answers); else `choose_baby`. A user who is only
-a Doctor gets `not_allowed`.
+a Doctor gets `not_allowed`. An adapter that lets the user name the baby (the MCP tools' `babyId`,
+`AssistantInvocation.BabyId`) gets that baby when it is one of her family memberships, else `unknown_baby`; the role rules
+then apply as usual.
 
 The default lives in `user_assistant_settings(user_id PK/FK users ON DELETE CASCADE, default_baby_id FK babies ON DELETE
 SET NULL, updated_at)` (migration `VoiceAssistants`), set by `PUT /me/assistant-settings {defaultBabyId|null}` (only a
@@ -174,7 +191,7 @@ account-linking token in the body authenticate it. In order:
   never in this repository). Unlinking the skill in the Alexa app, or removing the client's sessions in Keycloak,
   revokes it.
 
-## 8. Adding an adapter (the MCP server)
+## 8. Adding an adapter (how the MCP server was added)
 
 1. Authenticate the user the adapter's way (an MCP server behind the normal bearer auth already has
    `HttpContext.User`; a platform that sends a token elsewhere validates it with `IAccountLinkTokenValidator`), so
@@ -186,8 +203,126 @@ account-linking token in the body authenticate it. In order:
    `EndpointRoleMatrixTests` with a role and scope decision.
 4. Never add a medication command, a free-text field, or advice.
 
-## 9. Not verifiable here
+## 9. The MCP adapter (`/api/v1/mcp`)
+
+A remote MCP server, so an AI assistant the user chooses (Claude, any MCP client) can read the baby's log and, only if she
+allows it, log events, by tool calls. It follows the MCP specification revision **2026-07-28**
+(modelcontextprotocol.io/specification/2026-07-28: Streamable HTTP transport, Authorization) and also serves clients of
+**2025-11-25** and earlier (the `initialize` handshake) on the same endpoint. It is built on the official C# SDK
+`ModelContextProtocol.AspNetCore` 2.3.0 (Apache-2.0) in stateless mode: no `Mcp-Session-Id`, no GET stream, every POST
+self-contained (the SDK checks `MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name` and the per-request `_meta`). Code:
+`code/api/src/Lotties.Api/Assistants/Mcp/`.
+
+### 9.1 Routes
+
+| Route | What |
+| --- | --- |
+| `POST /api/v1/mcp` | the MCP endpoint (JSON-RPC: `initialize`, `server/discover`, `tools/list`, `tools/call`, `ping`) |
+| `GET`, `DELETE /api/v1/mcp` | 405 `Allow: POST` (no stream, no session; never the API's fallback 401, which would send a client into a sign-in loop) |
+| `GET /.well-known/oauth-protected-resource/api/v1/mcp`, `GET /.well-known/oauth-protected-resource` | RFC 9728 protected resource metadata: `resource` (the canonical URL), `authorization_servers` [the OIDC authority, the realm's issuer], `scopes_supported` [`lotties.read`, `lotties.write`], `bearer_methods_supported` [`header`], `resource_name`; public, any origin |
+
+`Mcp:Enabled` false (the default): every one of them answers 404 before any authentication (`McpRequestGuard`), so a
+disabled server looks like no route. The canonical URL is `Mcp:ResourceUrl` when set (recommended in production), else the
+request's scheme and host (after the trusted proxy headers) plus `/api/v1/mcp`. The ingress sends
+`/.well-known/oauth-protected-resource` to the API (deploy/homelab/manifests/ingress.yaml).
+
+### 9.2 Authentication and scopes
+
+- **Tokens**: OAuth access tokens Keycloak issues to the MCP client, in the `Authorization: Bearer` header only (never the
+  query string). A third JWT bearer scheme, `McpTokens.SchemeName` ("Mcp"), is configured by the API's own
+  `ConfigureJwtBearerOptions` (issuer from the discovery document, signing keys, lifetime, `sub` required) with one change:
+  the audience is `Mcp:Audience` (default `lotties-mcp`, added by Keycloak's audience mapper on the two client scopes). It
+  must differ from `AUTH_AUDIENCE` (startup fails otherwise): the web app's tokens never work on MCP, and the tokens an AI
+  provider holds never work on the REST API (no token passthrough, no confused deputy). The user is mapped as for the web
+  (issuer + `sub` through `ICurrentUser`).
+- **401** without a valid token: `WWW-Authenticate: Bearer resource_metadata="<metadata URL>", scope="lotties.read"`
+  (`error="invalid_token"` first when a token was sent). Clients start their sign-in from it, and asking for
+  `lotties.read` only keeps the default read-only.
+- **Scopes** (`McpScopes`, read from the token's space-separated `scope` claim or `scp` claims; independent, neither implies
+  the other): `lotties.read` opens the read tools, `lotties.write` the logging tools. `tools/list` shows only the tools the
+  token opens. A token with neither is **403** on every message; a `tools/call` of a tool whose scope the token lacks is
+  **403** `WWW-Authenticate: Bearer error="insufficient_scope", scope="<missing>", resource_metadata=...` before the SDK
+  runs (`McpScopeGate`: the body is read once, bounded, then handed on), so a client can step up; the tool runner checks
+  the scope again.
+- **Roles** are the command layer's, unchanged: writes need Owner, Parent or Caregiver (a Viewer holding `lotties.write`
+  still gets `not_allowed`), the Caregiver rules of the event service apply, reads any family role, a user who is only a
+  Doctor gets `not_allowed`, and a Doctor's patients never appear (not in `list_babies`, `unknown_baby` by id).
+
+### 9.3 Tools
+
+Every tool but `list_babies` takes an optional `babyId` (from `list_babies`; without it the baby choice of section 4
+applies, and several babies answer `choose_baby`, whose text names `list_babies`). Schemas are strict
+(`additionalProperties: false`, exact JSON types, no coercion) and come from the same definitions the validator enforces
+(`McpParameter`). Descriptions end with "Facts from the parents' own Lotties log, not medical advice." Hints: reads
+`readOnlyHint: true`; writes `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: true`; all
+`openWorldHint: false`.
+
+| Tool | Scope | Arguments | Command |
+| --- | --- | --- | --- |
+| `list_babies` | read | none | `ListBabies` |
+| `get_baby_profile` | read | `babyId?` | `ReadBabyProfile` |
+| `get_last_feed` | read | `babyId?` | `ReadLastFeed` |
+| `get_sleep_status` | read | `babyId?` | `ReadSleepStatus` |
+| `get_diapers_today` | read | `babyId?` | `ReadDiapersToday` |
+| `get_next_appointment` | read | `babyId?` | `ReadNextAppointment` |
+| `get_due_vaccines` | read | `babyId?` | `ReadDueVaccines` |
+| `get_day_summary` | read | `babyId?`, `date?` (YYYY-MM-DD) | `ReadDaySummary` |
+| `get_week_summary` | read | `babyId?`, `endDate?` (YYYY-MM-DD) | `ReadWeekSummary` |
+| `log_sleep_start` | write | `babyId?`, `idempotencyKey?` | `LogSleepStart` |
+| `log_sleep_end` | write | `babyId?`, `idempotencyKey?` | `LogSleepEnd` |
+| `log_bottle` | write | `babyId?`, `amountMl` (1-500), `kind?` (`formula`, `breast_milk`), `idempotencyKey?` | `LogBottle` |
+| `log_nursing` | write | `babyId?`, `side?` (`left`, `right`), `idempotencyKey?` | `LogNursing` |
+| `log_diaper` | write | `babyId?`, `kind` (`wet`, `dirty`, `both`), `idempotencyKey?` | `LogDiaper` |
+
+No medication tool, no dose, no free-text argument (nothing a model writes is stored as text), no advice.
+
+**Idempotency.** The adapter's request id (what the event id derives from, section 5) is, for a write with an
+`idempotencyKey` (8-64 of `[A-Za-z0-9._:-]`), `key:<hash of issuer and sub>:<key>`: the same key from the same user
+answers the stored outcome and logs nothing again; the same key from another user is another event. Without a key every
+call is new (`call:<random>`). The JSON-RPC id and the session are deliberately not used: MCP is stateless since
+2026-07-28 (no session id) and JSON-RPC ids repeat across conversations and may be reused after a response, so they cannot
+tell a retry from a genuine second bottle (a false replay would silently drop a log, worse than a double one). The tool
+descriptions ask the model for a new key per action and the same key on a retry.
+
+### 9.4 Results
+
+`structuredContent` is the `AssistantResult` as JSON (camelCase, codes and enums snake_case, instants UTC, `timeZone` the
+family's zone, null and empty members left out); `content` holds one short plain-English sentence and the same JSON as
+text (MCP's backward-compatibility rule for structured results). The refusals `not_allowed`, `no_baby`, `choose_baby`,
+`unknown_baby`, `rate_limited`, `invalid_amount`, `invalid_date` are tool errors (`isError: true`) carrying their code; so
+are the adapter's own `invalid_arguments` (with `field`), `insufficient_scope`, `rejected` (a domain refusal, its code
+only) and `internal_error`. Facts such as `sleep_already_running` are normal results. An unknown tool is a JSON-RPC
+`-32602` error. Nothing beyond the baby's id and the user's own log is returned: no user ids, no stack traces, no exception
+text. Outputs are bounded (at most five vaccine doses, seven days).
+
+### 9.5 Safety and privacy
+
+- Limits: the per-user `RequestLimits:AssistantPermitsPerMinute` (shared with Alexa) per `tools/call` (`rate_limited`);
+  the global per-user HTTP limit counts the MCP user (the guard puts the MCP principal on the request before the rate
+  limiter); the body is at most `Mcp:MaxRequestBodyBytes` (64 KiB, else 413); the request timeout applies.
+- Origin (the Streamable HTTP DNS rebinding rule): a request with an `Origin` not in `Mcp:AllowedOrigins` is 403.
+  Server-side clients (Claude's connectors) send none. CORS on the endpoint allows only those origins (none by default;
+  exposes `WWW-Authenticate`, `Mcp-Session-Id`, `MCP-Protocol-Version`); the metadata documents allow any origin (public,
+  GET only). The host header is the server's `AllowedHosts`.
+- Logs: one line per tool call (tool name, result code, correlation id `HttpContext.TraceIdentifier`) and refusals by
+  reason. Never arguments, idempotency keys, tokens, results or user ids; the SDK's own log categories are filtered to
+  Warning. The command layer logs as for Alexa (adapter `mcp`, command, baby id, result code).
+- The child's data goes to the AI provider the user connects: that is what the tools are for, and the consent screens and
+  the Settings panel say so (docs/MCP.md has the texts in en and pt-BR). Read-only unless she grants `lotties.write`;
+  revocable in the Keycloak account console, Applications. Short access tokens are recommended (5 minutes; the client
+  refreshes).
+- Web: Settings > Voice assistants shows an "AI assistants (MCP)" panel when `GET /me/assistant-settings` says
+  `mcpEnabled` (with `mcpUrl`, the same canonical URL as the metadata): the URL with Copy URL, the privacy note, and Manage
+  connected apps (the account console's Applications page of the configured authority).
+
+## 10. Not verifiable here
 
 Without Amazon: the real certificate chain and signature (tested with a chain generated in the test), the interaction
 models' build in the developer console, entity resolution and dialog delegation behaviour, the account-linking flow
 against Keycloak, the invocation name approval, certification. docs/ALEXA.md lists the console tests to run.
+
+Without a real MCP client and Keycloak: the OAuth flow itself (discovery from the 401, client registration or the
+pre-registered client, the consent screen texts, PKCE, the `resource` parameter, refresh), Keycloak's audience mapper and
+`scope` claim in real tokens, Claude's connector UI and the scopes it asks for, a client's step-up after a 403, the ingress
+route for the metadata path. The tests cover the server with tokens signed by a test key and the official SDK's client in
+both protocol eras; docs/MCP.md lists the manual checks (MCP Inspector, Claude).
