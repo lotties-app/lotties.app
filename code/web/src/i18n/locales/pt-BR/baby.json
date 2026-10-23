@@ -22,7 +22,7 @@
       "Parent": "Pode registrar e editar tudo, e gerenciar remédios e ajustes",
       "Caregiver": "Pode registrar eventos e editar os próprios registros",
       "Viewer": "Só pode visualizar",
-      "Doctor": "Profissional de saúde: vê tudo, escreve notas e medidas"
+      "Doctor": "Profissional de saúde: vê as seções que você compartilhar, escreve notas e medidas"
     },
     "caregiverNamed": "Você é cuidador(a) de {{name}}: pode registrar eventos e editar os seus próprios registros. Os responsáveis cuidam do resto."
   }

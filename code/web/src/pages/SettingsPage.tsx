@@ -12,6 +12,8 @@ import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
 import { canLog, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
+import { hasPatients } from '../doctor/appMode';
+import { useBabies } from '../db/hooks';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 
@@ -29,6 +31,8 @@ const MOVED_TO_HUB: Readonly<Record<string, string>> = {
 export function SettingsPage() {
   const { t } = useTranslation();
   const { babies, baby } = useSelectedBaby();
+  const all = useBabies();
+  const doctor = hasPatients(all);
   // Links open one section: the header's sync icon (#sync), the account menu (#baby, #appearance)
   // the first-run cards (#import, #members) and the reminder prompts (#notifications).
   const { hash } = useLocation();
@@ -43,7 +47,7 @@ export function SettingsPage() {
   }, [target, babies]);
 
   if (moved) return <Navigate to={moved} replace />;
-  if (!babies) return <CircularProgress aria-label={t('common.loading')} />;
+  if (!babies || !all) return <CircularProgress aria-label={t('common.loading')} />;
 
   return (
     <Stack spacing={1} useFlexGap>
@@ -82,7 +86,7 @@ export function SettingsPage() {
           </SettingsSection>
         </>
       ) : (
-        <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
+        !doctor && <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
       )}
       <SettingsSection
         id="professional"

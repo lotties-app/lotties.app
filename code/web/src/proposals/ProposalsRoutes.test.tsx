@@ -43,31 +43,46 @@ async function renderApp(role: BabyRole, route: string, babies?: Baby[]) {
 }
 
 describe('the Doctor', () => {
-  it("opens a patient's proposals from the Patients list", async () => {
+  it("finds a patient's proposals under Medications in her dashboard", async () => {
     await db.proposals.bulkPut([proposal('p1'), proposal('p2', { medicationName: 'Vitamin D' })]);
-    await renderApp('Doctor', '/patients');
+    await renderApp('Doctor', `/doctor/${BABY_ID}/medications`);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Proposals for Lia' }));
-
-    expect(await screen.findByRole('heading', { name: 'My proposals', level: 1 })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Medications', level: 1 })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'My proposals', level: 2 })).toBeTruthy();
     expect(await screen.findByRole('list', { name: 'Proposals, newest first' })).toBeTruthy();
     expect(screen.getByText('Vitamin D')).toBeTruthy();
-    expect(readSelectedBabyId()).toBe(BABY_ID);
+    expect(readSelectedBabyId()).toBeNull();
   });
 
-  it('finds "My proposals" in the Hub, and no inbox', async () => {
+  it('finds her patients in the Hub, with no inbox and no baby of the family', async () => {
     await renderApp('Doctor', '/hub');
 
-    const link = await screen.findByRole('link', { name: /^My proposals/ });
-    expect(link.getAttribute('href')).toBe('/proposals');
-    expect(screen.queryByRole('link', { name: /From your doctor/ })).toBeNull();
+    const link = await screen.findByTestId('hub-row-patients');
+    expect(link.getAttribute('href')).toBe('/doctor');
+    expect(screen.queryByTestId('hub-row-fromDoctor')).toBeNull();
+    expect(screen.queryByTestId('hub-row-myProposals')).toBeNull();
+    expect(screen.queryByTestId('hub-row-appointments')).toBeNull();
   });
 
-  it("is never sent to the parents' page", async () => {
-    await renderApp('Doctor', '/from-doctor');
+  it('reads no "create a baby" prompt in Settings', async () => {
+    await renderApp('Doctor', '/settings');
 
-    expect(await screen.findByRole('heading', { name: 'My proposals', level: 1 })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeTruthy();
+    expect(screen.queryByText(/unlock these settings/)).toBeNull();
   });
+
+  it.each(['/from-doctor', '/proposals', '/patients', '/notes', '/'])(
+    "is sent from %s to her dashboard, never to the parents' pages",
+    async (route) => {
+      await renderApp('Doctor', route);
+
+      expect(await screen.findByRole('heading', { name: 'Patients', level: 1 })).toBeTruthy();
+      const nav = screen.getByRole('navigation', { name: 'Doctor dashboard' });
+      expect(within(nav).getByRole('link', { name: 'Patients' }).getAttribute('aria-current')).toBe(
+        'page',
+      );
+    },
+  );
 });
 
 describe('the parents', () => {

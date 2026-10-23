@@ -16,10 +16,13 @@ export function useBabyActions() {
   const engine = useSyncEngine();
   const { select } = useSelectedBaby();
 
-  /** Stores a baby the server just returned, selects it and refreshes everything else. */
+  /**
+   * Stores a baby the server just returned, selects it and refreshes everything else. A baby the
+   * user follows as its Doctor is not selected: it lives in the doctor's dashboard.
+   */
   const adopt = async (baby: Baby) => {
     await db.babies.put(baby);
-    select(baby.id);
+    if (baby.role !== 'Doctor') select(baby.id);
     void engine.syncNow();
   };
 
@@ -28,7 +31,7 @@ export function useBabyActions() {
     create: async (request: BabyRequest) => adopt(await createBaby(api, request)),
     update: async (id: string, request: BabyRequest) => {
       await updateBaby(api, id, request);
-      await db.babies.update(id, request);
+      await db.babies.update(id, { name: request.name, birthDate: request.birthDate });
       void engine.syncNow();
     },
   };

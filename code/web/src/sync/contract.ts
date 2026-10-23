@@ -4,6 +4,7 @@ import {
   normalizeReminders,
 } from '../appointments/appointmentModel';
 import { isProposalStatus } from '../proposals/proposalModel';
+import { parseScopes, type DoctorScope } from '../doctor/scopes';
 import {
   editTimeOf,
   type Appointment,
@@ -175,6 +176,22 @@ export const apiPaths = {
   noteReads: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/note-reads` + query({ since }),
   accessLog: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/access-log`,
+  /** The doctor's patients with their card data (docs/design/19-doctor-dashboard.md). */
+  doctorPatients: (timeZone: string | undefined, utcOffsetMinutes: number) =>
+    `${API_PREFIX}/doctor/patients` +
+    query({ timeZone, utcOffsetMinutes: String(utcOffsetMinutes) }),
+  /** Server-side aggregates over local dates `from`..`to` (inclusive, `yyyy-mm-dd`). */
+  clinicalSummary: (
+    babyId: string,
+    range: { from: string; to: string },
+    timeZone: string | undefined,
+    utcOffsetMinutes: number,
+  ) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/clinical-summary` +
+    query({ ...range, timeZone, utcOffsetMinutes: String(utcOffsetMinutes) }),
+  /** Non-deleted events overlapping `[from, to)` (UTC instants, at most 8 days). */
+  timeline: (babyId: string, from: string, to: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/timeline` + query({ from, to }),
   professionalProfile: () => `${API_PREFIX}/me/professional-profile`,
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
@@ -233,6 +250,8 @@ export interface BabyDto {
   gestationalAgeWeeks?: number | null;
   /** `unknown`, `yes` or `no` (additive); `null` = not answered. */
   rsvMaternalVaccination?: string | null;
+  /** The sections shared with the caller when her role is Doctor (additive); `null` otherwise. */
+  doctorScopes?: string[] | null;
 }
 
 export interface FieldVisibilityDto {
@@ -344,6 +363,8 @@ export interface MemberDto {
   joinedAt: string;
   /** A Doctor member's professional details (additive; absent or `null` for other roles). */
   professional?: ProfessionalSummaryDto | null;
+  /** The sections shared with a Doctor member (additive; `null` for other roles). */
+  doctorScopes?: string[] | null;
 }
 
 export interface InviteDto {
@@ -353,6 +374,8 @@ export interface InviteDto {
   createdBy: string | null;
   createdAt: string;
   expiresAt: string;
+  /** The sections a Doctor invite shares (additive; `null` for other roles). */
+  doctorScopes?: string[] | null;
 }
 
 /** Returned once by `POST /invites`: the only time the plain token is available. */
@@ -363,6 +386,14 @@ export interface CreatedInviteDto extends InviteDto {
 export interface CreateInviteRequest {
   role: BabyRole;
   expiresInDays?: number;
+  /** Only for a Doctor invite: the sections she will see (absent = all six). */
+  doctorScopes?: DoctorScope[];
+}
+
+/** Body of `PATCH /babies/{id}/members/{userId}`: a new role, a Doctor's sections, or both. */
+export interface ChangeMemberRequest {
+  role?: BabyRole;
+  doctorScopes?: DoctorScope[];
 }
 
 export interface EventFieldRequest {
@@ -652,6 +683,7 @@ export function fromBabyDto(dto: BabyDto): Baby {
     role: role ?? 'Viewer',
     ...(typeof dto.userId === 'string' && dto.userId !== '' ? { userId: dto.userId } : {}),
     ...vaccineProfileFromDto(dto),
+    ...(role === 'Doctor' ? { doctorScopes: parseScopes(dto.doctorScopes) } : {}),
   };
 }
 

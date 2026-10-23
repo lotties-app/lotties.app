@@ -122,7 +122,14 @@ function ProposalRow({
  * withdraws a pending proposal and proposes a change to an accepted one. Offline first: everything
  * is saved on the device and queued.
  */
-export function ProposalsScreen({ baby }: { baby: Baby }) {
+export function ProposalsScreen({
+  baby,
+  heading = 'h1',
+}: {
+  baby: Baby;
+  /** `h2` inside the doctor's Medications page, which owns the `h1`. */
+  heading?: 'h1' | 'h2';
+}) {
   const { t } = useTranslation();
   const proposals = useProposals(baby.id);
   const prescriptions = useAllPrescriptions(baby.id);
@@ -156,7 +163,7 @@ export function ProposalsScreen({ baby }: { baby: Baby }) {
     <Stack spacing={2.5}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Stack sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h4" component="h1">
+          <Typography variant={heading === 'h1' ? 'h4' : 'h5'} component={heading}>
             {t('proposals.mine.title')}
           </Typography>
           <Typography color="text.secondary">

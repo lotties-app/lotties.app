@@ -9,7 +9,10 @@ import { seedBaby } from '../test/seed';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import { MembersSection } from './MembersSection';
 
-/* Members with a doctor: the Doctor invite and its consent line, her row, the access log. */
+/*
+ * Members with a doctor: the Doctor invite with its consent line and the sections to share, her row
+ * with what she sees and the "Doctor access" sheet, the access log (docs/design/19-doctor-dashboard.md).
+ */
 
 let db: BabyRoutineDb;
 
@@ -27,6 +30,7 @@ const MEMBERS = [
     role: 'Doctor',
     joinedAt: '2026-10-01T10:00:00Z',
     professional: PROFILE,
+    doctorScopes: ['daily_log', 'growth', 'notes'],
   },
 ];
 const LOG = [
@@ -53,6 +57,12 @@ function renderMembers(log: unknown[] = LOG) {
   const fake = fakeApi((call) => {
     if (call.path.endsWith('/members')) return MEMBERS;
     if (call.path.endsWith('/access-log')) return log;
+    if (call.path.endsWith('/members/doc') && call.method === 'PATCH') {
+      return {
+        ...MEMBERS[1],
+        doctorScopes: (call.body as { doctorScopes: string[] }).doctorScopes,
+      };
+    }
     if (call.path.endsWith('/invites') && call.method === 'POST') {
       return {
         id: 'i1',
@@ -88,20 +98,90 @@ describe('members with a doctor', () => {
     ).toBeTruthy();
   });
 
-  it('invites a doctor with the consent line', async () => {
+  it('invites a doctor with the consent line and the sections to share, all on by default', async () => {
     const fake = renderMembers();
 
     fireEvent.mouseDown(await screen.findByRole('combobox', { name: 'Invite role' }));
     fireEvent.click(await screen.findByRole('option', { name: /^Doctor/ }));
     expect(
       await screen.findByText(
-        'The doctor who accepts will see everything logged for Lia and can add notes and measurements. You can remove access at any time.',
+        'The doctor who accepts will see the sections you choose for Lia and can add notes and measurements. You can change what you share or remove access at any time.',
       ),
     ).toBeTruthy();
+    const sections = screen.getByRole('group', { name: 'What the doctor sees' });
+    const switches = within(sections).getAllByRole('switch');
+    expect(switches).toHaveLength(6);
+    expect(switches.every((toggle) => (toggle as HTMLInputElement).checked)).toBe(true);
+    expect(within(sections).getByText('Weight, length and head measurements.')).toBeTruthy();
+    expect(
+      screen.getByText('Appointments, members and settings are never shared with doctors.'),
+    ).toBeTruthy();
+    fireEvent.click(within(sections).getByRole('switch', { name: /^Formulas/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Create invite link' }));
 
     await waitFor(() => expect(fake.writes()).toHaveLength(1));
-    expect(fake.writes()[0].body).toMatchObject({ role: 'Doctor' });
+    expect(fake.writes()[0].body).toEqual({
+      role: 'Doctor',
+      expiresInDays: 7,
+      doctorScopes: ['daily_log', 'growth', 'medications', 'vaccines', 'notes'],
+    });
+  });
+
+  it('warns that a doctor with no section sees only the name and age', async () => {
+    renderMembers();
+
+    fireEvent.mouseDown(await screen.findByRole('combobox', { name: 'Invite role' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Doctor/ }));
+    const sections = await screen.findByRole('group', { name: 'What the doctor sees' });
+    for (const toggle of within(sections).getAllByRole('switch')) fireEvent.click(toggle);
+
+    expect(
+      screen.getByText("With every section off, the doctor sees only the baby's name and age."),
+    ).toBeTruthy();
+  });
+
+  it('sends no sections with another role', async () => {
+    const fake = renderMembers();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Create invite link' }));
+
+    await waitFor(() => expect(fake.writes()).toHaveLength(1));
+    expect(fake.writes()[0].body).toEqual({ role: 'Parent', expiresInDays: 7 });
+  });
+
+  it('shows what the doctor sees and changes it in "Doctor access"', async () => {
+    const fake = renderMembers();
+
+    const list = await screen.findByRole('list', { name: 'Members' });
+    const doctorRow = (await within(list).findByText('Dr. Ana Souza')).closest('li')!;
+    expect(within(doctorRow).getByText('Sees: daily log, growth, and notes')).toBeTruthy();
+    fireEvent.click(within(doctorRow).getByRole('button', { name: 'Doctor access of ana.s' }));
+
+    const sheet = await screen.findByRole('presentation');
+    expect(
+      within(sheet).getByText('Choose what Dr. Ana Souza sees of Lia. Changes apply right away.'),
+    ).toBeTruthy();
+    const save = within(sheet).getByRole('button', { name: 'Save' });
+    expect((save as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(within(sheet).getByRole('switch', { name: /^Notes/ }));
+    fireEvent.click(within(sheet).getByRole('switch', { name: /^Vaccines/ }));
+    fireEvent.click(save);
+
+    await waitFor(() => expect(fake.writes()).toHaveLength(1));
+    expect(fake.writes()[0]).toMatchObject({
+      method: 'PATCH',
+      path: `/api/v1/babies/${BABY_ID}/members/doc`,
+      body: { doctorScopes: ['daily_log', 'growth', 'vaccines'] },
+    });
+    await waitFor(() => expect(screen.queryByRole('presentation')).toBeNull());
+  });
+
+  it('names what each doctor sees above the access log', async () => {
+    renderMembers();
+
+    expect(
+      await screen.findByText('Dr. Ana Souza sees: daily log, growth, and notes'),
+    ).toBeTruthy();
   });
 
   it('lists the access log for the owner', async () => {
@@ -125,7 +205,15 @@ describe('members with a doctor', () => {
     expect(await screen.findByRole('list', { name: 'Registro de acessos' })).toBeTruthy();
     fireEvent.mouseDown(await screen.findByRole('combobox', { name: 'Papel do convite' }));
     fireEvent.click(await screen.findByRole('option', { name: /^Médico\(a\)/ }));
-    expect(await screen.findByText(/Você pode remover o acesso a qualquer momento/)).toBeTruthy();
+    expect(
+      await screen.findByText(
+        /Você pode mudar o que compartilha ou remover o acesso a qualquer momento/,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'O que o(a) médico(a) vê' })).toBeTruthy();
+    expect(
+      screen.getByText('Consultas, membros e ajustes nunca são compartilhados com médicos.'),
+    ).toBeTruthy();
   });
 
   it.each(['light', 'dark'] as const)(

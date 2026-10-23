@@ -36,6 +36,10 @@ import { fromProfessionalDto } from '../sync/contract';
 import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
+import { DoctorAccessSheet } from '../doctor/DoctorAccessSheet';
+import { seesText } from '../doctor/scopeText';
+import { parseScopes } from '../doctor/scopes';
+import { doctorLabel } from '../professional/doctorLabel';
 
 const ROLES: BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer'];
 
@@ -47,17 +51,21 @@ function MemberRow({
   disabled,
   onRole,
   onRemove,
+  onAccess,
 }: {
   member: MemberDto;
   manage: boolean;
   disabled: boolean;
   onRole: (role: BabyRole) => void;
   onRemove: () => void;
+  /** Opens the doctor's "Doctor access" sheet (Owner, Doctor rows). */
+  onAccess: () => void;
 }) {
   const { t } = useTranslation();
   const name = memberName(member);
   const role = parseRole(member.role);
   const professional = role === 'Doctor' ? fromProfessionalDto(member.professional) : null;
+  const sees = role === 'Doctor' ? seesText(parseScopes(member.doctorScopes), t) : null;
   return (
     <ListItem divider sx={{ gap: 1, flexWrap: 'wrap' }}>
       <ListItemText
@@ -71,9 +79,16 @@ function MemberRow({
         }
         secondary={
           professional ? (
-            <Typography variant="body2" color="text.secondary" component="p">
-              {t('settings.members.joined', { date: formatDate(member.joinedAt) })}
-            </Typography>
+            <>
+              <Typography variant="body2" color="text.secondary" component="p">
+                {t('settings.members.joined', { date: formatDate(member.joinedAt) })}
+              </Typography>
+              {sees && (
+                <Typography variant="body2" color="text.secondary" component="p">
+                  {sees}
+                </Typography>
+              )}
+            </>
           ) : (
             t('settings.members.joined', { date: formatDate(member.joinedAt) })
           )
@@ -81,9 +96,19 @@ function MemberRow({
       />
       {manage && role === 'Doctor' ? (
         // Doctor access comes with an invite (it needs her professional profile) and ends by
-        // removing her: no role picker.
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        // removing her: no role picker; what she sees is chosen in "Doctor access".
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
           <Chip size="small" label={t('baby.roles.Doctor')} />
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={disabled}
+            onClick={onAccess}
+            aria-label={t('doctorDashboard.access.buttonNamed', { name })}
+            sx={{ minHeight: 40 }}
+          >
+            {t('doctorDashboard.access.button')}
+          </Button>
           <IconButton
             aria-label={t('settings.members.removeNamed', { name })}
             disabled={disabled}
@@ -131,6 +156,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
   const { run, pending, error, online, clearError } = useServerAction();
   const manage = isOwner(baby);
   const [removing, setRemoving] = useState<MemberDto | null>(null);
+  const [access, setAccess] = useState<MemberDto | null>(null);
   const [leaving, setLeaving] = useState<'confirm' | 'unsynced' | null>(null);
   const countUnsynced = () => countUnsyncedMutations(db, baby.id);
   const unsynced = useLiveQuery(countUnsynced, [db, baby.id]) ?? 0;
@@ -196,6 +222,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
               disabled={pending || !online}
               onRole={(role) => void setRole(m, role)}
               onRemove={() => setRemoving(m)}
+              onAccess={() => setAccess(m)}
             />
           ))}
         </List>
@@ -208,7 +235,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
       )}
       {manage && (
         <div id="doctor-access">
-          <AccessLogPanel baby={baby} />
+          <AccessLogPanel baby={baby} members={members.data} />
         </div>
       )}
       {family && !manage && (
@@ -223,6 +250,18 @@ export function MembersSection({ baby }: { baby: Baby }) {
       >
         {t('settings.members.leave')}
       </Button>
+      {access && (
+        <DoctorAccessSheet
+          baby={baby}
+          userId={access.userId}
+          doctor={doctorLabel(t, {
+            displayName: memberName(access),
+            professional: fromProfessionalDto(access.professional),
+          })}
+          initial={parseScopes(access.doctorScopes)}
+          onClose={() => setAccess(null)}
+        />
+      )}
       {removing && (
         <ConfirmDialog
           title={t('settings.members.removeTitle', { name: memberName(removing) })}

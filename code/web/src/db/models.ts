@@ -4,6 +4,7 @@
  * (`Date#toISOString()`, e.g. `2026-10-20T08:15:00.000Z`) so string order equals time order.
  */
 
+import type { DoctorScope } from '../doctor/scopes';
 import type { ProductDto } from '../sync/contract';
 import type { VaccineNetwork, VaccineSchedule } from '../vaccines/vaccineSchedule';
 
@@ -38,6 +39,11 @@ export interface Baby {
    * `null`/absent until a babies refresh from a server that sends it.
    */
   userId?: string | null;
+  /**
+   * The sections the family shared with the user when her role is `Doctor` (from `GET /babies`,
+   * docs/design/19-doctor-dashboard.md); absent for every other role and on older rows (= all).
+   */
+  doctorScopes?: DoctorScope[];
 }
 
 export type EventFieldKind = 'text' | 'number' | 'select' | 'bool';

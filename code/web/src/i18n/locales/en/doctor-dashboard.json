@@ -1,0 +1,269 @@
+{
+  "doctorDashboard": {
+    "title": "My patients",
+    "onlyShared": "You see only what the family shared.",
+    "mode": {
+      "label": "Show",
+      "babies": "My babies",
+      "patients": "My patients"
+    },
+    "nav": {
+      "label": "Doctor dashboard",
+      "patients": "Patients",
+      "summary": "Summary",
+      "timeline": "Timeline",
+      "growth": "Growth",
+      "medications": "Meds",
+      "notes": "Notes",
+      "needsPatient": "Open a patient first"
+    },
+    "sections": {
+      "summary": "Summary",
+      "timeline": "Timeline",
+      "growth": "Growth",
+      "medications": "Medications",
+      "notes": "Notes"
+    },
+    "scopes": {
+      "label": "What the doctor sees",
+      "never": "Appointments, members and settings are never shared with doctors.",
+      "noneWarning": "With every section off, the doctor sees only the baby's name and age.",
+      "names": {
+        "daily_log": "daily log",
+        "growth": "growth",
+        "medications": "medications",
+        "vaccines": "vaccines",
+        "formulas": "formulas",
+        "notes": "notes"
+      },
+      "titles": {
+        "daily_log": "Daily log",
+        "growth": "Growth",
+        "medications": "Medications",
+        "vaccines": "Vaccines",
+        "formulas": "Formulas",
+        "notes": "Notes"
+      },
+      "hints": {
+        "daily_log": "Sleep, feeds, diapers, symptoms and temperatures, and the patterns computed from them.",
+        "growth": "Weight, length and head measurements.",
+        "medications": "Medications, prescriptions, doses given and the status of the doctor's suggestions.",
+        "vaccines": "Vaccination records and what is due.",
+        "formulas": "Formulas in use and their history.",
+        "notes": "The doctor's notes and recommendations shared with you."
+      }
+    },
+    "access": {
+      "button": "Doctor access",
+      "buttonNamed": "Doctor access of {{name}}",
+      "title": "Doctor access",
+      "intro": "Choose what {{doctor}} sees of {{baby}}. Changes apply right away.",
+      "save": "Save",
+      "sees": "Sees: {{list}}",
+      "seesNothing": "Sees only the name and age",
+      "logHeader": "{{doctor}} sees: {{list}}",
+      "logHeaderNothing": "{{doctor}} sees only {{baby}}'s name and age"
+    },
+    "accept": {
+      "title": "You now follow {{name}}",
+      "shared": "Shared with you: {{list}}.",
+      "sharedNothing": "The family has not shared any section yet: you see only the name and age.",
+      "open": "Open {{name}}",
+      "patients": "Go to my patients"
+    },
+    "patients": {
+      "title": "Patients",
+      "count_one": "{{count}} patient",
+      "count_other": "{{count}} patients",
+      "search": "Search patients",
+      "sort": "Sort by",
+      "sorts": {
+        "recent": "Recent activity",
+        "name": "Name",
+        "age": "Age"
+      },
+      "list": "Your patients",
+      "noMatch": "No patient matches “{{search}}”.",
+      "emptyTitle": "No patients yet",
+      "emptyBody": "A family adds you from their baby's Members: they create a doctor invite link, choose what to share and send it to you. Opening the link while signed in adds the baby to this list.",
+      "emptyProfile": "Families see the name of your professional profile, in Settings.",
+      "offline": "Offline: showing the patients saved on this device. The numbers come back when you are online.",
+      "loadFailed": "Could not load your patients' numbers. Try again.",
+      "retry": "Try again"
+    },
+    "card": {
+      "lastLog": "Last log {{when}}",
+      "noLogs": "No logs yet",
+      "quiet_one": "No logs in {{count}} day",
+      "quiet_other": "No logs in {{count}} days",
+      "dailyLogOff": "Daily log not shared",
+      "week": "Last 7 days, per day",
+      "sleep": "Sleep",
+      "feeds": "Feeds",
+      "diapers": "Diapers",
+      "weight": "Weight",
+      "weightOn": "{{weight}} · {{date}}",
+      "noWeight": "No weight yet",
+      "proposalPending": "Your proposal is pending",
+      "proposalsPending": "{{number}} of your proposals are pending",
+      "vaccinesDue": "Vaccines due: {{count}}",
+      "flags": "Notices"
+    },
+    "switcher": {
+      "button": "{{name}}, {{age}}. Change patient",
+      "title": "Change patient",
+      "recent": "Recently opened",
+      "all": "All patients",
+      "previous": "Previous patient",
+      "next": "Next patient",
+      "previousNamed": "Previous patient: {{name}}",
+      "nextNamed": "Next patient: {{name}}",
+      "position": "{{index}} of {{count}}",
+      "shortcut": "Tip: the [ and ] keys move between patients."
+    },
+    "patient": {
+      "notFound": "This baby is not on your patient list. The family may have removed your access.",
+      "back": "Back to patients"
+    },
+    "notShared": {
+      "title": "Not shared with you",
+      "body": "The family did not share {{section}}. They can change it in their baby's Members."
+    },
+    "summary": {
+      "range": "Period",
+      "ranges": {
+        "last7": "Last 7 days",
+        "last14": "14 days",
+        "last30": "30 days",
+        "sinceNote": "Since last note",
+        "custom": "Custom"
+      },
+      "from": "From",
+      "to": "To",
+      "apply": "Apply",
+      "rangeText": "{{from}} to {{to}}",
+      "rangeInvalid": "Choose a start on or before the end, at most 92 days.",
+      "noData": "No data in this period.",
+      "offline": "Offline: the summary needs a connection.",
+      "loadFailed": "Could not load the summary. Try again.",
+      "updated": "Updated {{when}}",
+      "howComputed": "How {{label}} is computed",
+      "averagesOver_one": "Averages over {{count}} day with data",
+      "averagesOver_other": "Averages over {{count}} days with data",
+      "perDay": "{{value}}/day",
+      "sleep": {
+        "title": "Sleep",
+        "total": "Total per day",
+        "totalHelp": "Average over the days with sleep logged; today counts only when it is the only one. Pauses are left out, and a sleep across midnight is split between the two days.",
+        "night": "Night sleep per day",
+        "nightHelp": "Average per day of the sleep logged as night.",
+        "naps": "Naps per day",
+        "napsHelp": "Average number of naps that started each day, and their time. A sleep without a kind counts as a nap.",
+        "napsValue": "{{value}} · {{time}}",
+        "longest": "Longest stretch",
+        "longestHelp": "The longest single sleep that started in the period, pauses left out.",
+        "longestOn": "{{duration}} · {{date}}",
+        "bedtime": "Usual bedtime",
+        "bedtimeHelp": "Median of the evenings: the first bedtime mark from 15:00 to 03:00, else the start of the first night sleep then.",
+        "wake": "Usual wake-up",
+        "wakeHelp": "Median of the mornings: the latest end of a night sleep from 03:00 to 12:00, else the first wake-up mark from 04:00 to 11:00.",
+        "chart": "Sleep per day: night and naps",
+        "legendNight": "Night",
+        "legendNaps": "Naps"
+      },
+      "feeding": {
+        "title": "Feeding",
+        "perDay": "Feeds per day",
+        "perDayHelp": "Average over the days with feeds logged, each feed on the day it started; today counts only when it is the only one.",
+        "interval": "Average interval",
+        "intervalHelp": "Average time between the starts of consecutive feeds; gaps over 8 hours are left out (probably a feed not logged).",
+        "ml": "Bottle per day",
+        "mlHelp": "Average of the logged bottle amounts per day, over the days with an amount.",
+        "methods": "Feeds in the period",
+        "breast": "Breast",
+        "bottle": "Bottle",
+        "solid": "Solids",
+        "formulas": "Formulas in the bottles",
+        "formulaFeeds_one": "{{count}} bottle · {{amount}}",
+        "formulaFeeds_other": "{{count}} bottles · {{amount}}",
+        "unnamedFormula": "Formula without a name",
+        "chart": "Feeds per day"
+      },
+      "diapers": {
+        "title": "Diapers",
+        "perDay": "Changes per day",
+        "perDayHelp": "Average over the days with diapers logged; a mixed diaper counts as wet and as dirty.",
+        "wet": "Wet per day",
+        "dirty": "Dirty per day",
+        "chart": "Diapers per day",
+        "dayDetail": "{{total}} changes: {{wet}} wet, {{dirty}} dirty"
+      },
+      "symptoms": {
+        "title": "Symptoms and temperatures",
+        "help": "As the family logged them, newest first: temperatures, symptoms, spit-ups, belly pain and teething.",
+        "list": "Symptoms and temperatures, newest first"
+      },
+      "medications": {
+        "title": "Medications",
+        "doses": "Doses given in the period",
+        "dosesHelp": "Counted from the doses the family logged, per medication.",
+        "doseCount_one": "{{count}} dose",
+        "doseCount_other": "{{count}} doses",
+        "lastGiven": "last on {{date}}",
+        "noDoses": "No doses logged in this period.",
+        "active": "Active prescriptions",
+        "noActive": "No active prescriptions.",
+        "unknownMedication": "Medication"
+      },
+      "vaccines": {
+        "title": "Vaccines",
+        "help": "From the vaccination records and the schedule the family follows, as on their Vaccines page.",
+        "given": "Given",
+        "due": "Due",
+        "overdue": "Overdue",
+        "upcoming": "Upcoming",
+        "dueList": "Due now",
+        "dueSince": "{{state}} since {{date}}",
+        "noneDue": "Nothing due."
+      },
+      "growth": {
+        "title": "Growth",
+        "latest": "Latest measurements",
+        "noPercentiles": "Percentile curves are not shown yet.",
+        "open": "All measurements"
+      },
+      "notes": {
+        "title": "Notes",
+        "recent": "Your notes in the period",
+        "none": "No notes of yours in this period.",
+        "open": "All notes"
+      },
+      "formulas": {
+        "title": "Formulas",
+        "current": "In use",
+        "none": "No formula in use.",
+        "history": "History",
+        "since": "Since {{date}}",
+        "between": "{{from}} to {{to}}"
+      }
+    },
+    "timeline": {
+      "readOnly": "Read only: these are the family's entries.",
+      "empty": "Nothing logged on this day.",
+      "loadFailed": "Could not load this day. Try again.",
+      "offline": "Offline: the timeline needs a connection."
+    },
+    "medications": {
+      "prescriptionsHelp": "The baby's prescriptions, as the family keeps them. To change one, propose a change below."
+    },
+    "settings": {
+      "title": "Settings"
+    },
+    "leave": {
+      "button": "Stop following {{name}}",
+      "title": "Stop following {{name}}?",
+      "body": "You lose access to {{name}} right away. The notes you shared stay with the family; your pending proposals are cancelled.",
+      "confirm": "Stop following"
+    }
+  }
+}

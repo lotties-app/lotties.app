@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { LandingGate } from './landing/LandingGate';
 import { CallbackPage } from './auth/CallbackPage';
 import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { InviteEntry, LegacyInviteEntry } from './invite/InviteEntry';
+import { doctorRoutes } from './doctor/doctorRoutes';
 
 // Everything except Now is split into route chunks so the first load stays small.
 const DayPage = lazy(() => import('./pages/DayPage').then((m) => ({ default: m.DayPage })));
@@ -39,9 +40,6 @@ const VaccinationCardPage = lazy(() =>
   import('./pages/VaccinationCardPage').then((m) => ({ default: m.VaccinationCardPage })),
 );
 const NotesPage = lazy(() => import('./pages/NotesPage').then((m) => ({ default: m.NotesPage })));
-const PatientsPage = lazy(() =>
-  import('./pages/PatientsPage').then((m) => ({ default: m.PatientsPage })),
-);
 const ProposalsPage = lazy(() =>
   import('./pages/ProposalsPage').then((m) => ({ default: m.ProposalsPage })),
 );
@@ -70,6 +68,9 @@ const DevAppointmentsPreview = import.meta.env.DEV
   : null;
 const DevVaccinesPreview = import.meta.env.DEV ? lazy(() => import('./dev/VaccinesPreview')) : null;
 const DevDoctorPreview = import.meta.env.DEV ? lazy(() => import('./dev/DoctorPreview')) : null;
+const DevDoctorDashboardPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/DoctorDashboardPreview'))
+  : null;
 const DevProposalsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/ProposalsPreview'))
   : null;
@@ -80,6 +81,16 @@ const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPrevie
 const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
 
 export function AppRoutes() {
+  const { pathname } = useLocation();
+  // The dashboard preview mounts the real `/doctor` route tree at a fixed location, which a nested
+  // <Routes> cannot do: it is rendered instead of the app's routes.
+  if (DevDoctorDashboardPreview && pathname === '/dev/doctor-dashboard') {
+    return (
+      <Suspense fallback={null}>
+        <DevDoctorDashboardPreview />
+      </Suspense>
+    );
+  }
   return (
     <Routes>
       {DevUiGallery && (
@@ -286,10 +297,12 @@ export function AppRoutes() {
             <Route path="vaccines" element={<VaccinesPage />} />
             <Route path="vaccines/card" element={<VaccinationCardPage />} />
             <Route path="notes" element={<NotesPage />} />
-            <Route path="patients" element={<PatientsPage />} />
+            {/* The old Patients list is the doctor's dashboard now. */}
+            <Route path="patients" element={<Navigate to="/doctor" replace />} />
             <Route path="proposals" element={<ProposalsPage />} />
             <Route path="from-doctor" element={<FromDoctorPage />} />
           </Route>
+          {doctorRoutes()}
         </Route>
       </Route>
     </Routes>

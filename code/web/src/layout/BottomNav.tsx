@@ -28,7 +28,6 @@ const HUB_ROUTES = [
   '/appointments',
   '/vaccines',
   '/notes',
-  '/patients',
   '/proposals',
   '/from-doctor',
   '/invite',

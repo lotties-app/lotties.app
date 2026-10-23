@@ -112,11 +112,12 @@ describe('the sections', () => {
     ]);
   });
 
-  it('gives the Doctor her proposals and patients view, never the family records', async () => {
+  it('gives a Doctor her patients (her dashboard), never the family records', async () => {
     await renderHub('Doctor', []);
+    await screen.findByTestId('hub-row-patients');
     const list = rows();
-    expect(list).toContain('myProposals');
-    expect(list).toContain('notes');
+    expect(list).toContain('patients');
+    // A patient's proposals and notes are in the doctor's dashboard, not in the parents' Hub.
     for (const hidden of [
       'appointments',
       'providers',
@@ -124,9 +125,13 @@ describe('the sections', () => {
       'invite',
       'doctorAccess',
       'import',
+      'myProposals',
+      'notes',
+      'members',
     ]) {
       expect(list).not.toContain(hidden);
     }
+    expect(screen.getByTestId('hub-row-patients').getAttribute('href')).toBe('/doctor');
   });
 
   it('shows "From your doctor" only when the baby has a doctor or something from one', async () => {
