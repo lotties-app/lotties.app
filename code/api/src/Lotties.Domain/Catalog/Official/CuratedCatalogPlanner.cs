@@ -10,6 +10,12 @@ namespace Lotties.Domain.Catalog.Official;
 /// steer the verifier: <see cref="OfficialName"/> (the exact official name to look up when it differs from the display
 /// name), <see cref="Registration"/> (nine-digit ANVISA registration to look up instead of the name), <see cref="Route"/>
 /// (<c>oral</c>, <c>nasal</c>, <c>topical</c>...) and the last recorded <see cref="AnvisaCheck"/>.
+/// <see cref="Strength"/> (the concentration exactly as printed on the label, e.g. <c>9 mg/mL (0,9%)</c>; composition,
+/// never a dose) and <see cref="PackageSize"/> (e.g. <c>100 mL</c>) become the product's presentation text.
+/// <see cref="Category"/> is <c>medicine</c>, <c>homeopathic</c> or <c>supplement</c> (what the label says it is; the
+/// verifier refuses to let two categories share an ingredient set). <see cref="AliasOf"/> marks an entry that is not a
+/// product but another name people use for the entry with that id: it is imported as an alias (a merged product), so
+/// searching the old name finds the real one.
 /// </summary>
 public sealed record CuratedProductEntry(
     string Id,
@@ -21,7 +27,11 @@ public sealed record CuratedProductEntry(
     string? OfficialName = null,
     string? Registration = null,
     string? Route = null,
-    AnvisaCheck? AnvisaCheck = null);
+    AnvisaCheck? AnvisaCheck = null,
+    string? Strength = null,
+    string? PackageSize = null,
+    string? Category = null,
+    string? AliasOf = null);
 
 /// <summary>
 /// The recorded result of the machine cross-check of an entry against ANVISA's open data (<c>verify-curated</c>): the
@@ -43,11 +53,15 @@ public static partial class CuratedCatalogPlanner
 {
     public const string CuratedSource = "curated";
 
+    /// <summary>The values of <see cref="CuratedProductEntry.Category"/>.</summary>
+    public static readonly IReadOnlyList<string> Categories = ["medicine", "homeopathic", "supplement"];
+
     public static CuratedCatalogPlan Plan(IReadOnlyList<CuratedProductEntry> entries, SubstanceDictionary dictionary)
     {
         ArgumentNullException.ThrowIfNull(entries);
         ArgumentNullException.ThrowIfNull(dictionary);
         EnsureUnique(entries);
+        EnsureValidMetadata(entries);
         var resolved = entries.Select(entry => (entry, ingredients: Ingredients(entry, dictionary))).ToArray();
         var products = resolved.Select(item => ToPlan(item.entry, item.ingredients)).ToArray();
         var substances = resolved
@@ -68,10 +82,19 @@ public static partial class CuratedCatalogPlanner
             name,
             ProductNames.Key(name),
             entry.Form,
-            null,
+            PresentationOf(entry) is { } presentation ? ProductNames.Sanitize(presentation, "presentation", Product.PresentationMaxLength) : null,
             ingredients.Select(ingredient => ingredient.Key).ToArray(),
             [],
-            null);
+            null,
+            entry.AliasOf);
+    }
+
+    /// <summary>The presentation text of an entry: strength as printed, then package size; <c>null</c> when it has neither.</summary>
+    public static string? PresentationOf(CuratedProductEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        var parts = new[] { entry.Strength, entry.PackageSize }.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()).ToArray();
+        return parts.Length == 0 ? null : string.Join("; ", parts);
     }
 
     private static IReadOnlyList<SubstanceDefinition> Ingredients(CuratedProductEntry entry, SubstanceDictionary dictionary)
@@ -80,6 +103,20 @@ public static partial class CuratedCatalogPlanner
         return ingredients.Length > 0 && ingredients.Length <= Product.OfficialMaxSubstances
             ? ingredients
             : throw new ArgumentException($"Curated product '{entry.Id}' needs between 1 and {Product.OfficialMaxSubstances} ingredients.", nameof(entry));
+    }
+
+    private static void EnsureValidMetadata(IReadOnlyList<CuratedProductEntry> entries)
+    {
+        var badCategory = entries.FirstOrDefault(entry => entry.Category is not null && !Categories.Contains(entry.Category, StringComparer.Ordinal));
+        var badAlias = entries.FirstOrDefault(entry => entry.AliasOf is not null
+            && (entry.AliasOf == entry.Id || entries.FirstOrDefault(target => target.Id == entry.AliasOf) is not { AliasOf: null }));
+        var tooLong = entries.FirstOrDefault(entry => (PresentationOf(entry)?.Length ?? 0) > Product.PresentationMaxLength);
+        if (badCategory is not null || badAlias is not null || tooLong is not null)
+        {
+            throw new ArgumentException(
+                $"Curated products need a known category (medicine, homeopathic, supplement), an alias that points to another entry which is not an alias itself, and a presentation of at most {Product.PresentationMaxLength} characters (category '{badCategory?.Id}', alias '{badAlias?.Id}', presentation '{tooLong?.Id}').",
+                nameof(entries));
+        }
     }
 
     private static void EnsureUnique(IReadOnlyList<CuratedProductEntry> entries)

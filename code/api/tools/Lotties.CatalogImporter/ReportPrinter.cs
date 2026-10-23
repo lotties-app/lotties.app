@@ -61,7 +61,7 @@ internal sealed class ReportPrinter(TextWriter output)
         output.WriteLine($"== Curated list: {curated.Products.Count} product(s), not reviewed by a pharmacist");
         foreach (var product in curated.Products)
         {
-            output.WriteLine($"  {product.ExternalRef}: {product.Name} | {OfficialCatalogPlanner.FormCode(product.Form)} | {string.Join(" + ", product.SubstanceKeys)}");
+            output.WriteLine($"  {product.ExternalRef}: {product.Name} | {OfficialCatalogPlanner.FormCode(product.Form)} | {string.Join(" + ", product.SubstanceKeys)}{(product.Presentation is null ? string.Empty : " | " + product.Presentation)}{(product.AliasOfExternalRef is null ? string.Empty : " | alias of " + product.AliasOfExternalRef)}");
         }
 
         Samples("Name collisions between sources (only the first is written)", collisions);
@@ -95,6 +95,7 @@ internal sealed class ReportPrinter(TextWriter output)
         Line("community products adopted", result.ProductsAdopted);
         Line("products unchanged", result.ProductsUnchanged);
         Line("products retired (no longer in their source)", result.ProductsRetired);
+        Line("curated aliases merged into their product", result.AliasesMerged);
         Line("products skipped", result.Skipped.Count);
         Samples("Skipped", result.Skipped.Take(20));
         output.WriteLine($"  elapsed: {elapsed.TotalSeconds:N1} s");

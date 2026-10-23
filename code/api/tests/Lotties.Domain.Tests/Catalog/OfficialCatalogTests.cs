@@ -372,6 +372,42 @@ public sealed class CuratedCatalogPlannerTests
     }
 
     [Fact]
+    public void Plan_StrengthAndPackageSize_BecomeThePresentationText()
+    {
+        var plan = CuratedCatalogPlanner.Plan(
+            [Entry("a-spray", "Aname", "cloreto de sódio") with { Strength = "9 mg/mL (0,9%)", PackageSize = "100 mL" }, Entry("b-spray", "Bname", "cloreto de sódio") with { PackageSize = "10 mL" }, Entry("c-spray", "Cname", "cloreto de sódio")],
+            OfficialData.Dictionary);
+
+        Assert.Equal(["9 mg/mL (0,9%); 100 mL", "10 mL", null], plan.Products.Select(product => product.Presentation));
+    }
+
+    [Fact]
+    public void Plan_Alias_CarriesTheExternalRefOfItsProduct()
+    {
+        var plan = CuratedCatalogPlanner.Plan([Entry("a-drops", "Aname", "simeticona"), Entry("b-drops", "Bname", "simeticona") with { AliasOf = "a-drops" }], OfficialData.Dictionary);
+
+        Assert.Equal([null, "a-drops"], plan.Products.Select(product => product.AliasOfExternalRef));
+    }
+
+    [Theory]
+    [InlineData("nowhere")]
+    [InlineData("b-drops")]
+    [InlineData("c-drops")]
+    public void Plan_AliasOfItselfAnUnknownEntryOrAnotherAlias_Throws(string target)
+    {
+        var entries = new[] { Entry("a-drops", "Aname", "simeticona"), Entry("b-drops", "Bname", "simeticona") with { AliasOf = target }, Entry("c-drops", "Cname", "simeticona") with { AliasOf = "a-drops" } };
+
+        Assert.Throws<ArgumentException>(() => CuratedCatalogPlanner.Plan(entries, OfficialData.Dictionary));
+    }
+
+    [Fact]
+    public void Plan_UnknownCategoryOrTooLongPresentation_Throws()
+    {
+        Assert.Throws<ArgumentException>(() => CuratedCatalogPlanner.Plan([Entry("a-drops", "Aname", "simeticona") with { Category = "herbal" }], OfficialData.Dictionary));
+        Assert.Throws<ArgumentException>(() => CuratedCatalogPlanner.Plan([Entry("a-drops", "Aname", "simeticona") with { Strength = new string('x', 101) }], OfficialData.Dictionary));
+    }
+
+    [Fact]
     public void Plan_EntryWithoutIngredients_Throws()
     {
         Assert.Throws<ArgumentException>(() => CuratedCatalogPlanner.Plan([Entry("empty-drops", "Empty")], OfficialData.Dictionary));
@@ -519,6 +555,34 @@ public sealed class OfficialSearchTests
         var siblings = ProductSearch.SameActiveIngredient(luftal, [flygas, luftalTablet, myliconTablet, mylicon, retired]);
 
         Assert.Equal(["Mylicon", "Flygas"], siblings.Select(sibling => sibling.Name));
+    }
+
+    [Fact]
+    public void SameActiveIngredient_PutsTheSameKnownFormFirstAndNeverTreatsUnknownAsTheSame()
+    {
+        var spray = Official("Aaa Spray", ProductForm.Spray);
+        var otherForm = Official("Aaa Irrigation", ProductForm.Other);
+        var drops = Official("Zzz Drops", ProductForm.Drops);
+        var sameFormCurated = Product.FromSource(Guid.NewGuid(), OfficialData.Data("Mmm Curated", ProductForm.Spray, "mmmcurated:spray", [CatalogData.Simethicone.Id]) with { Status = ProductStatus.Curated, Source = "curated" }, Brazil, TestClock.Now);
+
+        var siblings = ProductSearch.SameActiveIngredient(spray, [otherForm, drops, sameFormCurated]);
+        var fromUnknown = ProductSearch.SameActiveIngredient(otherForm, [spray, drops, Official("Bbb Other", ProductForm.Other)]);
+
+        Assert.Equal(["Mmm Curated", "Aaa Irrigation", "Zzz Drops"], siblings.Select(sibling => sibling.Name));
+        Assert.Equal(["Aaa Spray", "Bbb Other", "Zzz Drops"], fromUnknown.Select(sibling => sibling.Name));
+    }
+
+    [Fact]
+    public void SameActiveIngredient_HomeopathicIngredientSetsAreNeverTheSameAsSimethicone()
+    {
+        var chamomile = Substance.Seed(Guid.NewGuid(), "matricaria_chamomilla_4ch", "Matricaria chamomilla 4CH", "Matricaria chamomilla 4CH", [], TestClock.Now);
+        var mint = Substance.Seed(Guid.NewGuid(), "mentha_piperita_6ch", "Mentha piperita 6CH", "Mentha piperita 6CH", [], TestClock.Now);
+        var simethicone = Official("Luftal");
+        var homeopathic = Official("Colicaliv", substances: [chamomile, mint]);
+        var partOfIt = Official("Camomilina", substances: [chamomile]);
+
+        Assert.Empty(ProductSearch.SameActiveIngredient(homeopathic, [simethicone, partOfIt]));
+        Assert.Empty(ProductSearch.SameActiveIngredient(simethicone, [homeopathic, partOfIt]));
     }
 
     [Fact]

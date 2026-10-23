@@ -16,6 +16,8 @@ public sealed class CuratedProductListTests
 
     private static readonly CuratedCatalogPlan Plan = CuratedCatalogPlanner.Plan(Entries, CuratedSubstances.Dictionary());
 
+    private static CuratedProductEntry Entry(string id) => Assert.Single(Entries, entry => entry.Id == id);
+
     private static CatalogProductPlan Product(string id) => Assert.Single(Plan.Products, product => product.ExternalRef == id);
 
     [Fact]
@@ -33,6 +35,10 @@ public sealed class CuratedProductListTests
     [InlineData("flygas-drops", "Flygas", ProductForm.Drops, "simethicone")]
     [InlineData("luftal-drops", "Luftal", ProductForm.Drops, "simethicone")]
     [InlineData("colidis-drops", "Colidis", ProductForm.Drops, "limosilactobacillus_reuteri")]
+    [InlineData("fly-gotas-drops", "Fly Gotas", ProductForm.Drops, "simethicone")]
+    [InlineData("rinosoro-jet-infantil-spray", "Rinosoro Jet Infantil", ProductForm.Spray, "sodium_chloride")]
+    [InlineData("sorine-jet-baby-spray", "Sorine Jet Baby", ProductForm.Spray, "sodium_chloride")]
+    [InlineData("sorine-infantil-jet-baby-spray", "Sorine Infantil Jet Baby", ProductForm.Spray, "sodium_chloride")]
     [InlineData("sorine-saline-spray", "Sorine Solução Nasal Salina", ProductForm.Spray, "sodium_chloride")]
     [InlineData("sorine-saline-drops", "Sorine Solução Nasal Salina", ProductForm.Drops, "sodium_chloride")]
     [InlineData("rinosoro-saline-spray", "Rinosoro Solução Nasal Salina", ProductForm.Spray, "sodium_chloride")]
@@ -50,7 +56,7 @@ public sealed class CuratedProductListTests
     {
         Assert.All(
             Plan.Products.Where(product => product.SubstanceKeys.Contains("sodium_chloride")),
-            product => Assert.Contains("Salina", product.Name, StringComparison.Ordinal));
+            product => Assert.Matches("Salina|Jet", product.Name));
         Assert.DoesNotContain(Plan.Products, product => product.NormalizedName is "sorine" or "rinosoro");
     }
 
@@ -58,6 +64,57 @@ public sealed class CuratedProductListTests
     public void List_ColidisIsTheProbioticNotSimethicone()
     {
         Assert.DoesNotContain("simethicone", Product("colidis-drops").SubstanceKeys);
+    }
+
+    [Fact]
+    public void List_PackagingFacts_AreRecordedAsPrinted()
+    {
+        Assert.Equal(("9 mg/mL (0,9%); 100 mL", "medicine"), (Product("rinosoro-jet-infantil-spray").Presentation, Entry("rinosoro-jet-infantil-spray").Category));
+        Assert.Equal(("0,9%; 100 mL", "medicine"), (Product("sorine-jet-baby-spray").Presentation, Entry("sorine-jet-baby-spray").Category));
+        Assert.Equal(("150 mg/mL; 15 mL", "medicine"), (Product("fly-gotas-drops").Presentation, Entry("fly-gotas-drops").Category));
+        Assert.Equal(("10 mL", "supplement"), (Product("colidis-drops").Presentation, Entry("colidis-drops").Category));
+        Assert.Equal("homeopathic", Entry("colicaliv-drops").Category);
+        Assert.All(Entries, entry => Assert.True(entry.Category is null || CuratedCatalogPlanner.Categories.Contains(entry.Category), entry.Id));
+        Assert.All(Entries.Where(entry => entry.Id is "rinosoro-jet-infantil-spray" or "sorine-jet-baby-spray" or "fly-gotas-drops" or "colicaliv-drops" or "colidis-drops"),
+            entry => Assert.Contains("packaging photo provided by the owner, 2026-10-23", entry.Basis, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void List_FlygasIsOnlyAnAliasOfFlyGotas_AndSoIsTheStoreNameOfSorineJetBaby()
+    {
+        Assert.Equal("fly-gotas-drops", Entry("flygas-drops").AliasOf);
+        Assert.Equal("sorine-jet-baby-spray", Entry("sorine-infantil-jet-baby-spray").AliasOf);
+        Assert.Equal(["flygas-drops", "sorine-infantil-jet-baby-spray"], Entries.Where(entry => entry.AliasOf is not null).Select(entry => entry.Id));
+    }
+
+    [Fact]
+    public void List_ColicalivIsFourHomeopathicIngredientsAndNeverEquivalentToSimethiconeOrAnyOtherEntry()
+    {
+        var ids = Plan.Products.SelectMany(product => product.SubstanceKeys).Distinct().ToDictionary(key => key, _ => Guid.NewGuid());
+        var pool = Plan.Products
+            .Where(product => product.AliasOfExternalRef is null)
+            .Select(product => Lotties.Domain.Catalog.Product.FromSource(Guid.NewGuid(), new SourcedProductData(product.Name, product.Form, product.Presentation, product.Status, product.Source, product.ExternalRef, product.SubstanceKeys.Select(key => ids[key]).ToArray()), CountryCode.From("BR"), DateTimeOffset.UnixEpoch))
+            .ToArray();
+        var colicaliv = pool.Single(product => product.ExternalRef == "colicaliv-drops");
+        var flyGotas = pool.Single(product => product.ExternalRef == "fly-gotas-drops");
+
+        Assert.Equal(4, Product("colicaliv-drops").SubstanceKeys.Count);
+        Assert.DoesNotContain("simethicone", Product("colicaliv-drops").SubstanceKeys);
+        Assert.Empty(ProductSearch.SameActiveIngredient(colicaliv, pool));
+        Assert.All(pool.Where(product => product.Id != colicaliv.Id), other => Assert.DoesNotContain("Colicaliv", ProductSearch.SameActiveIngredient(other, pool).Select(sibling => sibling.Name)));
+        Assert.Equal(["Luftal"], ProductSearch.SameActiveIngredient(flyGotas, pool).Select(sibling => sibling.Name));
+    }
+
+    [Fact]
+    public void List_NoCategoryClashAndNoAliasProblem_AndSupplementsAndHomeopathicsHaveNoMedicineAlternatives()
+    {
+        var dictionary = CuratedSubstances.Dictionary();
+        var verifier = new CuratedVerifier([], [], dictionary);
+
+        var report = CuratedVerificationRunner.Run(Entries, verifier, dictionary, OfficialCatalogPlanner.Plan([], [], dictionary), new DateOnly(2026, 10, 23));
+
+        Assert.DoesNotContain(report.Alternatives, alternative => alternative.EntryId is "colidis-drops" or "colicaliv-drops" || alternative.AlternativeName is "Colidis" or "Colicaliv");
+        Assert.DoesNotContain(report.Findings, finding => finding.Code is "CATEGORY_EQUIVALENCE" or "ALIAS_TARGET");
     }
 
     [Fact]
@@ -94,6 +151,14 @@ public sealed class CuratedProductListTests
 
         Assert.DoesNotContain(report.Findings, finding => finding.Severity == FindingSeverity.Error && finding.Code != "STALE_CHECK");
         Assert.DoesNotContain(report.Findings, finding => finding.Code is "UNMAPPED_INGREDIENT" or "EQUIVALENCE_SPLIT" or "EMPTY_INGREDIENTS");
+    }
+
+    [Fact]
+    public void Parse_LabelFieldsAreRead()
+    {
+        var entry = Assert.Single(CuratedProducts.Parse("""{"products":[{"id":"x-1","name":"X","form":"drops","ingredients":["simeticona"],"reviewed":false,"basis":"b","strength":"150 mg/mL","packageSize":"15 mL","category":"medicine","aliasOf":"y-1"}]}"""));
+
+        Assert.Equal(("150 mg/mL", "15 mL", "medicine", "y-1"), (entry.Strength, entry.PackageSize, entry.Category, entry.AliasOf));
     }
 
     [Fact]

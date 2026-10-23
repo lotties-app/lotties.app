@@ -51,6 +51,14 @@ public static class CuratedProducts
 
         public string? Route { get; set; }
 
+        public string? Strength { get; set; }
+
+        public string? PackageSize { get; set; }
+
+        public string? Category { get; set; }
+
+        public string? AliasOf { get; set; }
+
         [JsonPropertyName("anvisaCheck")]
         public Check? Recorded { get; set; }
 
@@ -66,7 +74,11 @@ public static class CuratedProducts
             entry.OfficialName,
             entry.Registration,
             entry.Route,
-            entry.Recorded is { } check ? new AnvisaCheck(check.Date, check.Status, check.Evidence.ToArray()) : null);
+            entry.Recorded is { } check ? new AnvisaCheck(check.Date, check.Status, check.Evidence.ToArray()) : null,
+            entry.Strength,
+            entry.PackageSize,
+            entry.Category,
+            entry.AliasOf);
     }
 
     private sealed class Check
