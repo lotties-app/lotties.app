@@ -49,6 +49,7 @@ Compose reads `.env` from the repository root.
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
+| `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
@@ -358,6 +359,28 @@ The provider sheet's "Find address" calls `GET /api/v1/address/lookup` (Brazilia
 | `RequestLimits__AddressLookupPermitsPerMinute` | `20` | Lookups per user per minute (both routes; 429 `rate_limited`) |
 
 Invalid values fail startup. Egress: the API pod must reach `brasilapi.com.br`, `viacep.com.br` and `nominatim.openstreetmap.org` over HTTPS (or your replacements); if it cannot, the feature answers 502 and the address field stays manual. Keep the log level of `System.Net.Http.HttpClient.AddressLookup` at `None` (set in `appsettings.json`: a higher level would print request URLs, i.e. the typed text). A reverse proxy's access log may record the query string of `/api/v1/address/*`; exclude that path from the log if you do not want it kept.
+
+## Alexa skill
+
+`POST /api/v1/alexa` is the backend of the Lotties Alexa custom skill (docs/design/32-assistants.md); the owner's setup
+(developer console, Keycloak account-linking client, certification) is [docs/ALEXA.md](ALEXA.md). Off by default: the
+route answers 404. It needs migration `VoiceAssistants` (table `user_assistant_settings`). No secret is configured
+here: the account-linking client secret lives only in Keycloak and the Alexa console.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Alexa__Enabled` | `false` | `true` answers Alexa requests (startup fails without a valid skill id) |
+| `Alexa__SkillIds` | empty | Skill ids (`amzn1.ask.skill.<uuid>`) whose requests are answered: one comma-separated value, or `Alexa__SkillIds__0`, `__1`, ... |
+| `Alexa__CertCacheMinutes` | `60` | How long Amazon's downloaded signing certificate chain is reused (1-1440; never past its expiry) |
+| `Alexa__CertDownloadTimeoutSeconds` | `5` | Timeout of that download (1-30) |
+| `Alexa__CertMaxBytes` | `65536` | Largest certificate chain accepted (1024-1048576) |
+| `Alexa__MaxRequestBodyBytes` | `131072` | Largest request body (1024-1048576; larger is 413) |
+| `RequestLimits__AssistantPermitsPerMinute` | `30` | Voice commands per linked user per minute (over it the skill says to try again) |
+
+Egress: the API pod must reach `https://s3.amazonaws.com` (path `/echo.api/...`, Amazon's request-signing certificate);
+nothing else of Amazon is called. Access tokens from account linking are validated with `AUTH_AUTHORITY` /
+`AUTH_AUDIENCE` like every other token, so the Keycloak client of the skill needs the same `lotties-api` audience mapper
+as the SPA client. Logs carry the intent name, the result code and the correlation id only.
 
 ## Token storage trade-off
 

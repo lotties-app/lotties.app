@@ -224,7 +224,7 @@ internal sealed class AssistantService(
 
     private async Task<AssistantResult> DiapersTodayAsync(AssistantSubject subject, CancellationToken cancellationToken)
     {
-        var window = subject.Zone is null ? AssistantDayWindow.Last24Hours : AssistantDayWindow.Today;
+        var window = subject.Zone is null ? AssistantDayWindow.LastDay : AssistantDayWindow.Today;
         var from = subject.Zone is { } zone ? LocalMidnight(zone, subject.Now) : subject.Now.AddDays(-1);
         var diapers = (await clinicalEvents.ListByTypesAsync(subject.Baby.Id, [DiaperKey], from, subject.Now + FutureSkew, cancellationToken))
             .Select(typed => AssistantEventFacts.DiaperKindOf(typed.Event))

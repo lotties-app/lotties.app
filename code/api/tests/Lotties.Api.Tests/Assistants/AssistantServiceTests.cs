@@ -388,7 +388,7 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
         await factory.SetTimeZoneAsync(baby.OwnerSubject, "Etc/UTC");
         var withZone = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadDiapersTodayAsync(Invocation()));
 
-        Assert.Equal((AssistantResultCode.DiapersToday, AssistantDayWindow.Last24Hours, 2, 2, 1, (string?)null), (withoutZone.Code, withoutZone.Window!.Value, withoutZone.Count!.Value, withoutZone.Wet!.Value, withoutZone.Dirty!.Value, withoutZone.TimeZone));
+        Assert.Equal((AssistantResultCode.DiapersToday, AssistantDayWindow.LastDay, 2, 2, 1, (string?)null), (withoutZone.Code, withoutZone.Window!.Value, withoutZone.Count!.Value, withoutZone.Wet!.Value, withoutZone.Dirty!.Value, withoutZone.TimeZone));
         Assert.Equal((AssistantDayWindow.Today, "Etc/UTC"), (withZone.Window!.Value, withZone.TimeZone));
         Assert.InRange(withZone.Count!.Value, 0, 2);
     }

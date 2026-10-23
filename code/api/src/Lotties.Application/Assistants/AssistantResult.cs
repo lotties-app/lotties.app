@@ -93,7 +93,7 @@ public enum AssistantDayWindow
     Today,
 
     /// <summary>The last 24 hours (no time zone is known for the user).</summary>
-    Last24Hours,
+    LastDay,
 }
 
 /// <summary>The baby a result is about (her name from the profile).</summary>
