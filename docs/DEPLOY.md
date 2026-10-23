@@ -50,6 +50,7 @@ Compose reads `.env` from the repository root.
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
+| `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
@@ -381,6 +382,29 @@ Egress: the API pod must reach `https://s3.amazonaws.com` (path `/echo.api/...`,
 nothing else of Amazon is called. Access tokens from account linking are validated with `AUTH_AUTHORITY` /
 `AUTH_AUDIENCE` like every other token, so the Keycloak client of the skill needs the same `lotties-api` audience mapper
 as the SPA client. Logs carry the intent name, the result code and the correlation id only.
+
+## MCP server
+
+`POST /api/v1/mcp` is a remote MCP server for AI assistants such as Claude (docs/design/32-assistants.md section 9); the
+owner's setup (Keycloak client scopes `lotties.read`/`lotties.write` with consent texts, the audience mapper, the AI
+clients, Claude, the MCP Inspector, revoking) is [docs/MCP.md](MCP.md). Off by default: every MCP route, the protected
+resource metadata included, answers 404. No migration and no secret: the API only validates the tokens Keycloak issues to
+the AI clients.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Mcp__Enabled` | `false` | `true` serves the MCP endpoint and its OAuth metadata (startup fails without `AUTH_AUTHORITY`) |
+| `Mcp__ResourceUrl` | empty (derived from the request) | The canonical MCP URL, e.g. `https://lotties.app/api/v1/mcp`: the metadata's `resource`, the URL Settings shows (absolute http(s), no query or fragment) |
+| `Mcp__Audience` | `lotties-mcp` | The `aud` MCP tokens must carry (Keycloak's audience mapper on the two client scopes; docs/MCP.md recommends the MCP URL). Must differ from `AUTH_AUDIENCE` (startup fails otherwise) |
+| `Mcp__AllowedOrigins` | empty | Browser origins allowed to call the endpoint (comma-separated, or `__0`, `__1`, ...); any other `Origin` is 403. Server-side clients send none; set it only for a browser-based test client |
+| `Mcp__MaxRequestBodyBytes` | `65536` | Largest request body (1024-1048576; larger is 413) |
+| `RequestLimits__AssistantPermitsPerMinute` | `30` | Tool calls (and voice commands) per user per minute; over it a tool answers `rate_limited` |
+
+The ingress sends `/.well-known/oauth-protected-resource` (RFC 9728, with the path-suffixed
+`/.well-known/oauth-protected-resource/api/v1/mcp`) to the API next to `/api` (deploy/homelab/manifests/ingress.yaml);
+another reverse proxy needs the same route. Keycloak must be reachable from the AI provider's servers (Anthropic publishes
+its egress range). Logs carry the tool name, the result code and the correlation id only; the SDK's own log categories
+(`ModelContextProtocol*`) are kept at Warning in code.
 
 ## Token storage trade-off
 

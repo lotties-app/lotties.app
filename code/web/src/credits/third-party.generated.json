@@ -1687,6 +1687,32 @@
     },
     {
       "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.AI.Abstractions",
+      "version": "10.11.0",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/extensions",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Caching.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Caching.Abstractions",
       "version": "8.0.0",
       "license": "MIT",
@@ -1723,6 +1749,19 @@
         "api"
       ],
       "licenseId": "8f33ccd8a40f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Configuration.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1766,6 +1805,19 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": true,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
       "version": "8.0.2",
       "license": "MIT",
       "homepage": "https://dot.net/",
@@ -1792,6 +1844,19 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Diagnostics.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Diagnostics.Abstractions",
       "version": "8.0.1",
       "license": "MIT",
       "homepage": "https://dot.net/",
@@ -1805,6 +1870,19 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.FileProviders.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.FileProviders.Abstractions",
       "version": "8.0.0",
       "license": "MIT",
       "homepage": "https://dot.net/",
@@ -1814,6 +1892,19 @@
         "api"
       ],
       "licenseId": "8f33ccd8a40f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Hosting.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": true,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1857,6 +1948,19 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": true,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Logging.Abstractions",
       "version": "8.0.2",
       "license": "MIT",
       "homepage": "https://dot.net/",
@@ -1866,6 +1970,19 @@
         "api"
       ],
       "licenseId": "8f33ccd8a40f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Options",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1892,6 +2009,19 @@
         "api"
       ],
       "licenseId": "8f33ccd8a40f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "Microsoft.Extensions.Primitives",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1986,6 +2116,45 @@
     },
     {
       "ecosystem": "nuget",
+      "name": "ModelContextProtocol",
+      "version": "2.3.0",
+      "license": "Apache-2.0",
+      "homepage": "https://csharp.sdk.modelcontextprotocol.io/",
+      "repository": "https://github.com/modelcontextprotocol/csharp-sdk",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "bcb5cdcdbd11"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "ModelContextProtocol.AspNetCore",
+      "version": "2.3.0",
+      "license": "Apache-2.0",
+      "homepage": "https://csharp.sdk.modelcontextprotocol.io/",
+      "repository": "https://github.com/modelcontextprotocol/csharp-sdk",
+      "direct": true,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "bcb5cdcdbd11"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "ModelContextProtocol.Core",
+      "version": "2.3.0",
+      "license": "Apache-2.0",
+      "homepage": "https://csharp.sdk.modelcontextprotocol.io/",
+      "repository": "https://github.com/modelcontextprotocol/csharp-sdk",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "bcb5cdcdbd11"
+    },
+    {
+      "ecosystem": "nuget",
       "name": "Npgsql",
       "version": "8.0.6",
       "license": "PostgreSQL",
@@ -2012,11 +2181,76 @@
     },
     {
       "ecosystem": "nuget",
+      "name": "System.Diagnostics.DiagnosticSource",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
       "name": "System.IdentityModel.Tokens.Jwt",
       "version": "7.1.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "System.IO.Pipelines",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "System.Net.ServerSentEvents",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "System.Text.Encodings.Web",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
+      "name": "System.Text.Json",
+      "version": "10.0.13",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"

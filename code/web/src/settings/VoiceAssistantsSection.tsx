@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   CircularProgress,
+  Divider,
   FormHelperText,
   Stack,
   TextField,
@@ -15,9 +16,11 @@ import {
   getAssistantSettings,
   saveAssistantSettings,
 } from '../assistants/assistantSettingsApi';
+import { configuredAuthority } from '../assistants/connectedApps';
 import { canLog } from '../baby/permissions';
 import type { Baby } from '../db/models';
 import { ErrorNotice } from './ErrorNotice';
+import { McpConnectorPanel } from './McpConnectorPanel';
 import { useServerAction } from './useServerAction';
 
 const NONE = '';
@@ -25,9 +28,17 @@ const NONE = '';
 /**
  * Settings > Voice assistants (docs/design/32-assistants.md): the baby that voice commands log and
  * answer for, chosen among the babies the user can log for (the server refuses any other). With
- * one such baby it is used without a choice. Online only.
+ * one such baby it is used without a choice. When the server offers the MCP server, the AI
+ * assistants panel follows (`authority` is the OIDC issuer whose account console lists the
+ * connected apps). Online only.
  */
-export function VoiceAssistantsSection({ babies }: { babies: readonly Baby[] }) {
+export function VoiceAssistantsSection({
+  babies,
+  authority = configuredAuthority(),
+}: {
+  babies: readonly Baby[];
+  authority?: string | null;
+}) {
   const { t } = useTranslation();
   const api = useApiClient();
   const queryClient = useQueryClient();
@@ -89,6 +100,12 @@ export function VoiceAssistantsSection({ babies }: { babies: readonly Baby[] }) 
       <Typography variant="body2" role="status" aria-live="polite">
         {saved ? t('assistants.saved') : ''}
       </Typography>
+      {settings.data.mcpEnabled && settings.data.mcpUrl && (
+        <>
+          <Divider />
+          <McpConnectorPanel url={settings.data.mcpUrl} authority={authority} />
+        </>
+      )}
     </Stack>
   );
 }

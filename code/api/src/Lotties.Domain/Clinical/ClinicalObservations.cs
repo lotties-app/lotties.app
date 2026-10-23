@@ -11,7 +11,6 @@ namespace Lotties.Domain.Clinical;
 public static class ClinicalObservations
 {
     private const string MethodMember = "method";
-    private const string AmountMlMember = "amount_ml";
     private const string BottleFeedingTypeMember = "bottle_feeding_type";
     private const string ContentMember = "content";
 
@@ -30,7 +29,7 @@ public static class ClinicalObservations
         return new FeedObservation(
             stored.StartedAt,
             Text(root, MethodMember),
-            Number(root, AmountMlMember),
+            BottleAmounts.DrunkMl(root),
             Text(root, BottleFeedingTypeMember),
             GuidMember(root, FormulaPayload.FormulaIdMember),
             Text(root, FormulaPayload.FormulaNameMember));
@@ -45,11 +44,6 @@ public static class ClinicalObservations
 
     private static string? Text(JsonElement root, string member) =>
         root.ValueKind == JsonValueKind.Object && root.TryGetProperty(member, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static double? Number(JsonElement root, string member) =>
-        root.ValueKind == JsonValueKind.Object && root.TryGetProperty(member, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var number) && double.IsFinite(number)
-            ? number
-            : null;
 
     private static Guid? GuidMember(JsonElement root, string member) =>
         Guid.TryParse(Text(root, member), out var id) && id != Guid.Empty ? id : null;

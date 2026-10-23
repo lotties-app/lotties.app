@@ -132,17 +132,9 @@ public static class AssistantEventFacts
         _ => BottleKind.Unspecified,
     };
 
-    /// <summary>The drunk amount (never above the prepared one), else the prepared one: the web's <c>drunkMl</c>.</summary>
-    private static int? AmountOf(JsonElement root)
-    {
-        var prepared = Number(root, BottleAmounts.PreparedMember);
-        var drunk = Number(root, BottleAmounts.DrunkMember);
-        var amount = drunk is { } drank && prepared is { } made ? Math.Min(drank, made) : drunk ?? prepared;
-        return amount is { } value ? (int)Math.Round(value, MidpointRounding.AwayFromZero) : null;
-    }
-
-    private static double? Number(JsonElement root, string key) =>
-        root.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var number) && number >= 0 ? number : null;
+    /// <summary>The drunk amount, whole ml (<see cref="BottleAmounts.DrunkMl"/>, the web's <c>drunkMl</c>).</summary>
+    private static int? AmountOf(JsonElement root) =>
+        BottleAmounts.DrunkMl(root) is { } value ? (int)Math.Round(value, MidpointRounding.AwayFromZero) : null;
 
     private static string? Text(JsonElement root, string key) =>
         root.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;

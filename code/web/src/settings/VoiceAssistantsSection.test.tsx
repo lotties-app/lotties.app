@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import type { Baby } from '../db/models';
 import { fakeApi, httpError, testDatabase, type ApiCall } from '../test/fakeApi';
@@ -34,6 +34,19 @@ const BABIES = [
 ];
 
 const PATH = '/api/v1/me/assistant-settings';
+
+const MCP_URL = 'https://lotties.example/api/v1/mcp';
+const AUTHORITY = 'https://id.example/realms/lotties.app';
+
+function renderMcp(
+  mcp: { mcpEnabled?: boolean; mcpUrl?: string | null },
+  authority: string | null = AUTHORITY,
+) {
+  const { api } = fakeApi((call) =>
+    call.path === PATH ? { defaultBabyId: null, updatedAt: null, ...mcp } : undefined,
+  );
+  renderWithDb(db, <VoiceAssistantsSection babies={BABIES} authority={authority} />, { api });
+}
 
 function renderSection(
   babies: Baby[],
@@ -128,5 +141,49 @@ describe('VoiceAssistantsSection', () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByText('Saved.')).toBeNull();
+  });
+
+  it('hides the AI assistants panel while the server has MCP off (or does not say)', async () => {
+    renderMcp({ mcpEnabled: false, mcpUrl: null });
+    await screen.findByLabelText('Baby for voice commands');
+    expect(screen.queryByText('AI assistants (MCP)')).toBeNull();
+  });
+
+  it('shows the MCP URL, the privacy note and the link to the connected apps', async () => {
+    renderMcp({ mcpEnabled: true, mcpUrl: MCP_URL });
+
+    expect(await screen.findByRole('heading', { name: 'AI assistants (MCP)' })).toBeTruthy();
+    const url = screen.getByLabelText('MCP server URL') as HTMLInputElement;
+    expect(url.value).toBe(MCP_URL);
+    expect(url.readOnly).toBe(true);
+    expect(url.getAttribute('aria-describedby')).toBe('mcp-connector-url-hint');
+    expect(screen.getByText(/read-only unless you also approve logging/)).toBeTruthy();
+    const manage = screen.getByRole('link', { name: /Manage connected apps/ });
+    expect(manage.getAttribute('href')).toBe(`${AUTHORITY}/account/applications`);
+    expect(manage.getAttribute('target')).toBe('_blank');
+    expect(manage.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('copies the URL and says so, or explains a failed copy', async () => {
+    const writeText = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderMcp({ mcpEnabled: true, mcpUrl: MCP_URL });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Copy URL' }));
+    expect(await screen.findByText('URL copied.')).toBeTruthy();
+    expect(writeText).toHaveBeenCalledWith(MCP_URL);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy URL' }));
+    expect(await screen.findByText("Couldn't copy. Select the URL and copy it.")).toBeTruthy();
+  });
+
+  it('leaves out the connected apps link without a configured authority', async () => {
+    renderMcp({ mcpEnabled: true, mcpUrl: MCP_URL }, null);
+
+    expect(await screen.findByLabelText('MCP server URL')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Manage connected apps/ })).toBeNull();
   });
 });

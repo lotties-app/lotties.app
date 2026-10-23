@@ -4,7 +4,7 @@ namespace Lotties.Application.Assistants;
 
 /// <summary>
 /// The assistant command layer (docs/design/32-assistants.md): adapter-neutral commands and queries for voice assistants and
-/// other adapters (Alexa today, an MCP server next). Each answers a language-neutral <see cref="AssistantResult"/>; the
+/// other adapters (Alexa and the MCP server). Each answers a language-neutral <see cref="AssistantResult"/>; the
 /// adapter renders it. The user is the request's authenticated user; the baby is her assistant baby
 /// (<see cref="AssistantBabyChoice"/>). Writes go through the normal event service (same validation, roles and idempotent
 /// upsert, with an id derived from the request: <see cref="AssistantEventIds"/>) and need a role that logs events; reads
@@ -42,4 +42,24 @@ public interface IAssistantService
 
     /// <summary>The vaccine doses due or overdue today by the shipped schedule (the vaccine status engine; facts only).</summary>
     Task<AssistantResult> ReadDueVaccinesAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The babies the user may ask about (<see cref="AssistantResultCode.Babies"/>): her family memberships with her role,
+    /// whether she can log for each, and which one commands use without a named baby. Never a baby she is only the Doctor of.
+    /// <see cref="AssistantInvocation.BabyId"/> is ignored.
+    /// </summary>
+    Task<AssistantResult> ListBabiesAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>The baby's name and age on the user's local date (<see cref="AssistantResultCode.BabyProfile"/>); nothing else of the profile.</summary>
+    Task<AssistantResult> ReadBabyProfileAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One local day (<paramref name="date"/>, else today) of sleep, feeding and diapers, by the clinical summary's math
+    /// (<see cref="AssistantResultCode.DaySummary"/>); a date in the future or more than a year back is
+    /// <see cref="AssistantResultCode.InvalidDate"/>. Days are the user's local days (UTC days without a known zone).
+    /// </summary>
+    Task<AssistantResult> ReadDaySummaryAsync(AssistantInvocation invocation, DateOnly? date, CancellationToken cancellationToken = default);
+
+    /// <summary>The seven local days ending with <paramref name="endDate"/> (else today), oldest first, as <see cref="ReadDaySummaryAsync"/> computes each.</summary>
+    Task<AssistantResult> ReadWeekSummaryAsync(AssistantInvocation invocation, DateOnly? endDate, CancellationToken cancellationToken = default);
 }

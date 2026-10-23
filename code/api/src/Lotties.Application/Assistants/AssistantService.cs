@@ -2,6 +2,7 @@ using Lotties.Application.Clinical;
 using Lotties.Application.Events;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Babies;
 using Lotties.Domain.Clinical;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
@@ -29,8 +30,14 @@ internal sealed class AssistantService(
     IFormulaRepository formulas,
     IAppointmentRepository appointments,
     VaccineOverviewReader vaccines,
+    DailyObservationReader dailyObservations,
     ILogger<AssistantService> logger) : IAssistantService
 {
+    /// <summary>How far back a day or week summary may be asked for, in days before the user's today.</summary>
+    public const int SummaryHistoryDays = 365;
+
+    private const int WeekDays = 7;
+
     private const string SleepKey = "sleep";
     private const string FeedingKey = "feeding";
     private const string DiaperKey = "diaper";
@@ -73,6 +80,29 @@ internal sealed class AssistantService(
     public Task<AssistantResult> ReadDueVaccinesAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.DueVaccines, AssistantAccess.Read, subject => DueVaccinesAsync(subject, cancellationToken), cancellationToken);
 
+    public async Task<AssistantResult> ListBabiesAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(invocation);
+        var family = await subjects.LoadFamilyAsync(invocation, cancellationToken);
+        var result = family.Refusal ?? new AssistantResult
+        {
+            Code = AssistantResultCode.Babies,
+            AsOf = family.Now,
+            Babies = family.Members.Select(AccessOf).ToArray(),
+        };
+        Log(invocation, AssistantCommands.ListBabies, result);
+        return result;
+    }
+
+    public Task<AssistantResult> ReadBabyProfileAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BabyProfile, AssistantAccess.Read, subject => Task.FromResult(Profile(subject)), cancellationToken);
+
+    public Task<AssistantResult> ReadDaySummaryAsync(AssistantInvocation invocation, DateOnly? date, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.DaySummary, AssistantAccess.Read, subject => SummaryAsync(subject, date, 1, AssistantResultCode.DaySummary, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadWeekSummaryAsync(AssistantInvocation invocation, DateOnly? endDate, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.WeekSummary, AssistantAccess.Read, subject => SummaryAsync(subject, endDate, WeekDays, AssistantResultCode.WeekSummary, cancellationToken), cancellationToken);
+
     private async Task<AssistantResult> RunAsync(
         AssistantInvocation invocation,
         string command,
@@ -83,14 +113,58 @@ internal sealed class AssistantService(
         ArgumentNullException.ThrowIfNull(invocation);
         var lookup = await subjects.LoadAsync(invocation, access, cancellationToken);
         var result = lookup.Subject is { } subject ? await work(subject) : lookup.Refusal!;
+        Log(invocation, command, result);
+        return result;
+    }
+
+    private void Log(AssistantInvocation invocation, string command, AssistantResult result) =>
         logger.LogInformation(
             "Assistant {Adapter} {Command} for baby {BabyId}: {ResultCode}",
             invocation.Adapter,
             command,
             result.Baby?.Id,
             AssistantResult.CodeName(result.Code));
-        return result;
+
+    /// <summary>
+    /// The <paramref name="dayCount"/> local days ending with <paramref name="lastDay"/> (else today) through the clinical
+    /// summary's reader and math, unchanged: the same days, buckets and rounding the doctor's summary and the Insights use.
+    /// </summary>
+    private async Task<AssistantResult> SummaryAsync(AssistantSubject subject, DateOnly? lastDay, int dayCount, AssistantResultCode code, CancellationToken cancellationToken)
+    {
+        var clock = ClockOf(subject);
+        var today = clock.DateOf(subject.Now);
+        var earliest = today.AddDays(-SummaryHistoryDays);
+        var zoned = subject.Result(code) with { TimeZone = subject.ZoneId ?? AssistantZoneChoice.UtcId, TimeZoneSource = subject.ZoneSource };
+        if (lastDay is { } asked && (asked > today || asked < earliest))
+        {
+            return zoned with { Code = AssistantResultCode.InvalidDate, EarliestDate = earliest, LatestDate = today };
+        }
+
+        var window = ClinicalWindow.Create(ClinicalRange.LastDays(lastDay ?? today, dayCount), clock, subject.Now);
+        var daily = await dailyObservations.LoadAsync(subject.Baby.Id, window, cancellationToken);
+        var sleep = SleepSummaries.Summarize(daily.Sleep, window);
+        var feeding = FeedingSummaries.Summarize(daily.Feeds, window);
+        var diapers = DiaperSummaries.Summarize(daily.Diapers, window);
+        var days = window.Days
+            .Select((day, index) => new AssistantDaySummary(day.Date, day.Date < today, sleep.Days[index], feeding.Days[index], diapers.Days[index]))
+            .ToArray();
+        return zoned with { Days = days };
     }
+
+    private static AssistantResult Profile(AssistantSubject subject)
+    {
+        var today = ClockOf(subject).DateOf(subject.Now);
+        var days = Math.Max(0, today.DayNumber - subject.Baby.BirthDate.DayNumber);
+        var months = Math.Max(0, AgeBands.CompletedMonths(subject.Baby.BirthDate, today));
+        return subject.Result(AssistantResultCode.BabyProfile) with { Age = new AssistantBabyAge(days, days / WeekDays, months) };
+    }
+
+    private static AssistantBabyAccess AccessOf(AssistantFamilyMember member) =>
+        new(member.Baby.Id, member.Baby.Name, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
+
+    /// <summary>The user's local clock, or UTC days when no zone is known (summaries then report <c>UTC</c>).</summary>
+    private static LocalClock ClockOf(AssistantSubject subject) =>
+        subject.Zone is { } zone ? LocalClock.InZone(zone) : LocalClock.WithOffset(TimeSpan.Zero);
 
     private async Task<AssistantResult> StartSleepAsync(AssistantInvocation invocation, AssistantSubject subject, CancellationToken cancellationToken)
     {
@@ -353,4 +427,8 @@ internal static class AssistantCommands
     public const string DiapersToday = "diapers_today";
     public const string NextAppointment = "next_appointment";
     public const string DueVaccines = "due_vaccines";
+    public const string ListBabies = "list_babies";
+    public const string BabyProfile = "baby_profile";
+    public const string DaySummary = "day_summary";
+    public const string WeekSummary = "week_summary";
 }

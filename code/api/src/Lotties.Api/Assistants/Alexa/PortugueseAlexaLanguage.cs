@@ -63,7 +63,47 @@ internal sealed class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoAppointment] = result => $"{Name(result)} não tem consultas marcadas.",
         [AssistantResultCode.VaccinesDue] = VaccinesDue,
         [AssistantResultCode.NoVaccinesDue] = result => $"Pelo calendário de vacinas, {Name(result)} não tem nenhuma dose pendente agora.",
+        [AssistantResultCode.UnknownBaby] = _ => "Não encontrei esse bebê na sua conta do Lotties.",
+        [AssistantResultCode.InvalidDate] = _ => "Pergunte sobre um dia do último ano, até hoje.",
+        [AssistantResultCode.Babies] = result => result.Babies.Count == 0
+            ? "Ainda não há nenhum bebê na sua conta do Lotties."
+            : $"Seus bebês no Lotties: {Speech.List(result.Babies.Select(baby => baby.Name).ToArray())}.",
+        [AssistantResultCode.BabyProfile] = result => $"{Name(result)} tem {Age(result.Age)}.",
+        [AssistantResultCode.DaySummary] = DaySummary,
+        [AssistantResultCode.WeekSummary] = WeekSummary,
     };
+
+    private static string Age(AssistantBabyAge? age) => age switch
+    {
+        null or { Days: 0 } => "menos de um dia",
+        { Months: > 0 } => Speech.Count(age.Months, "mês", "meses"),
+        { Weeks: > 0 } => Speech.Count(age.Weeks, "semana", "semanas"),
+        _ => Speech.Count(age.Days, "dia", "dias"),
+    };
+
+    private static string DaySummary(AssistantResult result)
+    {
+        var day = result.Days.FirstOrDefault();
+        var when = day switch
+        {
+            null => "Nesse dia",
+            { Complete: false } => "Até agora, hoje",
+            _ => $"Em {day.Date.ToString("d 'de' MMMM", Speech.Culture)}",
+        };
+        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+    }
+
+    private static string WeekSummary(AssistantResult result)
+    {
+        var last = result.Days.Count == 0 ? "hoje" : result.Days[^1].Date.ToString("d 'de' MMMM", Speech.Culture);
+        return $"Nos 7 dias até {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+    }
+
+    private static string Totals(SpokenDayTotals totals)
+    {
+        var bottles = totals.BottleMl > 0 ? $", {totals.BottleMl} ml em mamadeiras" : string.Empty;
+        return $"dormiu {Speech.Duration(totals.SleepMinutes)} com {Speech.Count(totals.Naps, "soneca", "sonecas")}, teve {Speech.Count(totals.Feeds, "alimentação", "alimentações")}{bottles} e {Speech.Count(totals.Diapers, "fralda", "fraldas")}";
+    }
 
     private static Dictionary<AlexaPrompt, AlexaLine> Prompts() => new()
     {

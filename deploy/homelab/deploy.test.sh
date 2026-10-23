@@ -155,6 +155,7 @@ run "dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered" STUB_NS_EXISTS=no STUB_PULL
   check "dry run: the Secret keys are listed" out_has 'keys: DB_APP_PASSWORD DB_APP_USER DB_HOST DB_NAME DB_PORT'
   check "dry run: the Ingress is rendered for lotties.app" grep -q 'host: "lotties.app"' "$WORK/rendered/ingress.yaml"
   check "dry run: /api goes to the API" bash -c "grep -A4 'path: /api' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
+  check "dry run: the MCP resource metadata goes to the API" bash -c "grep -A4 'path: /.well-known/oauth-protected-resource' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
   check "dry run: the certificate comes from the issuer" grep -q 'cert-manager.io/cluster-issuer: letsencrypt-production-lotties-app-issuer' "$WORK/rendered/ingress.yaml"
   check "dry run: the namespace is labelled" grep -q 'app.kubernetes.io/part-of: lotties' "$WORK/rendered/namespace.yaml"
   check "dry run: both releases are rendered" bash -c "[ -s '$WORK/rendered/lotties-api.yaml' ] && [ -s '$WORK/rendered/lotties-web.yaml' ]"

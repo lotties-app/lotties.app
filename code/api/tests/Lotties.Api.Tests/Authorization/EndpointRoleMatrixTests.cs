@@ -228,6 +228,16 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/me/assistant-settings"] = Access.SignedIn,
         ["PUT /api/v1/me/assistant-settings"] = Access.SignedIn,
         ["POST /api/v1/alexa"] = Access.Anonymous,
+
+        // MCP server (docs/design/32-assistants.md section 9): authenticated by its own OAuth scheme (McpTokens, audience
+        // lotties-mcp, scopes lotties.read / lotties.write), never the API's, so Anonymous here; the roles and the baby choice
+        // are the command layer's (McpProtocolTests, McpHttpTests). Every route answers 404 while MCP is disabled (the
+        // default, as in this host). GET and DELETE answer 405 (stateless Streamable HTTP); the metadata is public.
+        ["POST /api/v1/mcp"] = Access.Anonymous,
+        ["GET /api/v1/mcp"] = Access.Anonymous,
+        ["DELETE /api/v1/mcp"] = Access.Anonymous,
+        ["GET /.well-known/oauth-protected-resource"] = Access.Anonymous,
+        ["GET /.well-known/oauth-protected-resource/api/v1/mcp"] = Access.Anonymous,
     };
 
     /// <summary>

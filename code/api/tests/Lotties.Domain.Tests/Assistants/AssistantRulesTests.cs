@@ -54,6 +54,33 @@ public sealed class AssistantRulesTests
         Assert.Equal(AssistantBabyOutcome.ChooseBaby, AssistantBabyChoice.Decide([new(BabyA, BabyRole.Viewer), new(BabyB, BabyRole.Viewer)], null).Outcome);
 
     [Theory]
+    [InlineData(BabyRole.Owner)]
+    [InlineData(BabyRole.Caregiver)]
+    [InlineData(BabyRole.Viewer)]
+    public void Decide_RequestedFamilyBaby_WinsOverTheStoredDefault(BabyRole role) =>
+        Assert.Equal(AssistantBabyResolution.Of(BabyB), AssistantBabyChoice.Decide([new(BabyA, BabyRole.Parent), new(BabyB, role)], BabyA, BabyB));
+
+    [Fact]
+    public void Decide_RequestedBabyNotInTheFamily_IsUnknownBabyAlikeForStrangersAndPatients()
+    {
+        var memberships = new AssistantMembership[] { new(BabyA, BabyRole.Parent), new(BabyB, BabyRole.Doctor) };
+
+        Assert.Equal(AssistantBabyOutcome.UnknownBaby, AssistantBabyChoice.Decide(memberships, null, Guid.NewGuid()).Outcome);
+        Assert.Equal(AssistantBabyOutcome.UnknownBaby, AssistantBabyChoice.Decide(memberships, BabyA, BabyB).Outcome);
+    }
+
+    [Fact]
+    public void Decide_RequestedBabyWithoutFamily_KeepsNoBabyAndNotAllowed()
+    {
+        Assert.Equal(AssistantBabyOutcome.NoBaby, AssistantBabyChoice.Decide([], null, BabyA).Outcome);
+        Assert.Equal(AssistantBabyOutcome.NotAllowed, AssistantBabyChoice.Decide([new(BabyA, BabyRole.Doctor)], null, BabyA).Outcome);
+    }
+
+    [Fact]
+    public void Family_LeavesOutDoctorMemberships() =>
+        Assert.Equal([BabyA], AssistantBabyChoice.Family([new(BabyA, BabyRole.Viewer), new(BabyB, BabyRole.Doctor)]).Select(membership => membership.BabyId));
+
+    [Theory]
     [InlineData(BabyRole.Owner, true)]
     [InlineData(BabyRole.Parent, true)]
     [InlineData(BabyRole.Caregiver, true)]
@@ -208,6 +235,16 @@ public sealed class AssistantRulesTests
     [InlineData(500, true)]
     [InlineData(501, false)]
     public void IsBottleAmount_Limits(int? amount, bool expected) => Assert.Equal(expected, AssistantLimits.IsBottleAmount(amount));
+
+    [Theory]
+    [InlineData("Europe/Lisbon", "Asia/Tokyo", "America/Sao_Paulo", "pt-BR", "Europe/Lisbon", AssistantZoneSource.Requested)]
+    [InlineData("Bad/Zone", "Asia/Tokyo", "America/Sao_Paulo", "pt-BR", "Asia/Tokyo", AssistantZoneSource.Stored)]
+    [InlineData(null, null, "America/Sao_Paulo", "en", "America/Sao_Paulo", AssistantZoneSource.Adapter)]
+    [InlineData(null, null, null, "pt-br", "America/Sao_Paulo", AssistantZoneSource.Language)]
+    [InlineData(null, null, null, "en", null, AssistantZoneSource.Utc)]
+    [InlineData(null, "", null, null, null, AssistantZoneSource.Utc)]
+    public void ZoneChoice_RequestedThenStoredThenAdapterThenLanguage(string? requested, string? stored, string? adapter, string? locale, string? zone, AssistantZoneSource source) =>
+        Assert.Equal(new AssistantZone(zone, source), AssistantZoneChoice.Decide(requested, stored, adapter, locale));
 
     private static Event Event(Guid typeId, string payload, DateTimeOffset startedAt, DateTimeOffset? endedAt) =>
         Domain.Events.Event.Create(Guid.NewGuid(), BabyA, typeId, Guid.NewGuid(), startedAt, endedAt, EventPayload.From(payload), null, Now);

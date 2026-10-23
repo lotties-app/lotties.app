@@ -34,6 +34,27 @@ public static class BottleAmounts
         }
     }
 
+    /// <summary>
+    /// What the baby drank (ml), as the web's <c>drunkMl</c> reads it: the drunk amount (never above the prepared one), else the
+    /// prepared amount (a bottle without a drunk value was fully drunk: old bottles keep their totals), else the drunk amount
+    /// alone; <c>null</c> without either. Only finite, non-negative numbers count. Every server total of bottle ml (clinical
+    /// summary, assistants) reads it.
+    /// </summary>
+    public static double? DrunkMl(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var prepared = Amount(root, PreparedMember);
+        var drunk = Amount(root, DrunkMember);
+        return drunk is { } drank && prepared is { } made ? Math.Min(drank, made) : drunk ?? prepared;
+    }
+
+    private static double? Amount(JsonElement root, string key) =>
+        TryNumber(root, key, out var value) && double.IsFinite(value) && value >= 0 ? value : null;
+
     private static bool TryNumber(JsonElement root, string key, out double value)
     {
         value = 0;
