@@ -1,0 +1,17 @@
+{
+  "nowLayout": {
+    "running": {
+      "title": "Em andamento",
+      "more_one": "mais {{count}}",
+      "more_other": "mais {{count}}",
+      "fewer": "Mostrar menos"
+    },
+    "quickLog": {
+      "title": "Registro rápido"
+    },
+    "ring": {
+      "show": "Ver anel",
+      "hide": "Ocultar anel"
+    }
+  }
+}

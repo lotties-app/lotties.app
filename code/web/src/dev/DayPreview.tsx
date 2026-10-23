@@ -10,6 +10,7 @@ import type { Baby, BabyEvent, EventPayload } from '../db/models';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
+import { NAV_CONTENT_PADDING } from '../layout/navMetrics';
 import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { MORE_BUILT_IN_TYPES } from '../test/builtInTypes';
 import { PREVIEW_BABY_ID, PREVIEW_MEDICATIONS, PREVIEW_TYPES, typeIdOf } from './previewData';
@@ -289,7 +290,7 @@ export default function DayPreview() {
     <DatabaseProvider db={db}>
       <AddSheetProvider enabled={scenario !== 'viewer'}>
         <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-          <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, pt: 1, pb: 12 }}>
+          <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, pt: 1, pb: NAV_CONTENT_PADDING }}>
             <Typography variant="h5" component="p" sx={{ py: 1 }}>
               Lia
             </Typography>

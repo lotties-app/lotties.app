@@ -4,6 +4,7 @@ import { Box, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
+import { NAV_CONTENT_PADDING } from '../layout/navMetrics';
 import { createDatabase, type BabyRoutineDb } from '../db/database';
 import { DatabaseProvider } from '../db/DatabaseProvider';
 import type {
@@ -50,6 +51,9 @@ const SCENARIOS = [
   'fussy',
   'wet',
   'dirty',
+  'bottle',
+  'stack',
+  'caregiver',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 type Scheme = 'light' | 'dark' | 'night';
@@ -671,11 +675,58 @@ function seedFor(scenario: Scenario, now: number): Seeded {
         ],
         predictions: diaperPredictions(now, 'dirty'),
       };
-    case 'awake':
+    case 'bottle':
+      return {
+        baby,
+        events: [...morning(now, 112), eventAt(now, 'feeding', 6, null, RUNNING_BOTTLE)],
+        predictions: prediction(now),
+      };
+    case 'stack':
+      return {
+        baby,
+        events: [
+          ...morning(now, 400),
+          eventAt(now, 'sleep', 24, null, { kind: 'nap' }),
+          eventAt(now, 'feeding', 6, null, RUNNING_BOTTLE),
+          eventAt(now, 'tummy_time', 9, null, {
+            pause_count: 1,
+            paused_seconds: 60,
+            paused_at: new Date(now - 70 * 1000).toISOString(),
+          }),
+          eventAt(now, 'bath', 3, null, {}),
+        ],
+        predictions: prediction(now),
+      };
+    case 'caregiver':
+      return {
+        baby: { ...baby, role: 'Caregiver', userId: 'u-me' },
+        events: [
+          ...morning(now, 95),
+          eventAt(
+            now,
+            'feeding',
+            8,
+            null,
+            { method: 'breast', side: 'left', side_since: new Date(now - 8 * MIN).toISOString() },
+            { createdBy: 'u-ana' },
+          ),
+          eventAt(now, 'feeding', 4, null, RUNNING_BOTTLE, { createdBy: 'u-ana' }),
+        ],
+        predictions: prediction(now),
+      };
     case 'viewer':
+      return {
+        baby,
+        events: [...morning(now, 112), eventAt(now, 'feeding', 6, null, RUNNING_BOTTLE)],
+        predictions: prediction(now),
+      };
+    case 'awake':
       return { baby, events: morning(now, 112), predictions: prediction(now) };
   }
 }
+
+/** A bottle being given: what the "Running now" card shows as "Bottle · 120 ml". */
+const RUNNING_BOTTLE = { method: 'bottle', amount_ml: 120, bottle_feeding_type: 'formula' };
 
 async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Seeded> {
   const seeded = seedFor(scenario, Date.now());
@@ -791,7 +842,7 @@ export default function NowPreview() {
     <DatabaseProvider db={db}>
       <AddSheetProvider enabled={scenario !== 'viewer'}>
         <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-          <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: 12 }}>
+          <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: NAV_CONTENT_PADDING }}>
             <Typography variant="h5" component="p" sx={{ py: 1 }}>
               Lia
             </Typography>

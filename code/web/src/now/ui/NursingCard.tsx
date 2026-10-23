@@ -168,37 +168,42 @@ export function NursingCard({
           />
         ))}
       </Box>
-      <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
-        <Button
-          variant="outlined"
-          color="inherit"
-          disabled={disabled}
-          startIcon={<Icon name="arrow-right" size={20} />}
-          onClick={() => void action.run(() => commands.switchSide(event.id))}
-          sx={{ flex: 1, minHeight: 56 }}
-        >
-          {t('now.nursing.switch')}
-        </Button>
-        <PauseResumeButton
-          paused={paused}
-          name={t('now.nursing.title')}
-          large
-          disabled={disabled}
-          onPress={() =>
-            void action.run(() => (paused ? timers.resume(event.id) : timers.pause(event.id)))
-          }
-        />
-      </Box>
-      <Button
-        variant="contained"
-        fullWidth
-        disabled={disabled}
-        startIcon={<Icon name="check" size={20} />}
-        onClick={() => void action.run(() => commands.stopNursing(event.id))}
-        sx={{ mt: 1.5, minHeight: 56 }}
-      >
-        {t('now.nursing.finish')}
-      </Button>
+      {/* Readers (Viewer, Doctor) follow the session without its controls. */}
+      {!readOnly && (
+        <>
+          <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              disabled={disabled}
+              startIcon={<Icon name="arrow-right" size={20} />}
+              onClick={() => void action.run(() => commands.switchSide(event.id))}
+              sx={{ flex: 1, minHeight: 56 }}
+            >
+              {t('now.nursing.switch')}
+            </Button>
+            <PauseResumeButton
+              paused={paused}
+              name={t('now.nursing.title')}
+              large
+              disabled={disabled}
+              onPress={() =>
+                void action.run(() => (paused ? timers.resume(event.id) : timers.pause(event.id)))
+              }
+            />
+          </Box>
+          <Button
+            variant="contained"
+            fullWidth
+            disabled={disabled}
+            startIcon={<Icon name="check" size={20} />}
+            onClick={() => void action.run(() => commands.stopNursing(event.id))}
+            sx={{ mt: 1.5, minHeight: 56 }}
+          >
+            {t('now.nursing.finish')}
+          </Button>
+        </>
+      )}
       {lockedBy !== null && (
         <Box sx={{ mt: 1 }}>
           <LockedNote name={lockedBy} />

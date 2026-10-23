@@ -52,7 +52,27 @@ const renderShell = (route = '/', api = fakeApi().api) =>
 const stored = async (id: string) => (await db.events.get(id))!;
 
 describe('the global mini timer bar', () => {
-  it.each(['/', '/day', '/insights', '/settings'])(
+  it('stays away from Now, whose Running now cards show the same timers', async () => {
+    await seed();
+    await start(SLEEP_TYPE, { kind: 'nap' }, 12);
+    renderShell('/');
+    const running = await screen.findByRole('region', { name: 'Running timers' });
+    expect(within(running).getByRole('article', { name: 'Nap' })).toBeTruthy();
+    expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
+    expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toBe('');
+  });
+
+  it('comes back when leaving Now for Day', async () => {
+    await seed();
+    await start(SLEEP_TYPE, { kind: 'nap' }, 12);
+    renderShell('/');
+    await screen.findByRole('article', { name: 'Nap' });
+    expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
+    fireEvent.click(screen.getByRole('link', { name: /^Day/ }));
+    expect(await screen.findByTestId('mini-timer-bar')).toBeTruthy();
+  });
+
+  it.each(['/day', '/insights', '/settings'])(
     'floats above the navigation on %s while a timer runs',
     async (route) => {
       await seed();
@@ -203,8 +223,10 @@ describe('the global mini timer bar', () => {
     await seed();
     await start(SLEEP_TYPE, { kind: 'night' }, 90);
     renderShell('/');
-    await screen.findByRole('region', { name: 'Night view' });
-    expect(screen.queryByRole('region', { name: 'Running timers' })).toBeNull();
+    const view = await screen.findByRole('region', { name: 'Night view' });
+    expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
+    // The night view lists the running timer first itself.
+    expect(within(view).getByRole('region', { name: 'Running timers' })).toBeTruthy();
   });
 
   it('lets viewers see the timer but not change it', async () => {

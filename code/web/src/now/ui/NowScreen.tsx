@@ -15,8 +15,8 @@ import { useNotificationLink } from '../../notifications/notificationLinkContext
 import type { NotificationLink } from '../../pwa/sw/deepLink';
 import { ReminderPromptCard } from '../../notifications/ui/ReminderPromptCard';
 import { tileStateLine } from '../../medications/statusText';
-import { eventTypeText } from '../../i18n/eventTypeText';
 import type { SheetPrefill } from '../../presets/actions';
+import { useClaimInlineTimers } from '../../timers/inlineTimers';
 import { useAddRequests } from '../../layout/addSheetContext';
 import { usePresetActions } from '../../presets/usePresetActions';
 import { usePredictions } from '../../predictions/usePredictions';
@@ -42,10 +42,9 @@ import { MoreSheet } from './MoreSheet';
 import { NightNow } from './NightNow';
 import { NightStars } from './NightStars';
 import { NowSkeleton } from './NowSkeleton';
-import { NursingCard } from './NursingCard';
 import { OvertiredSuggestionCard } from './OvertiredCard';
+import { RunningNow } from './RunningNow';
 import { StateCard } from './StateCard';
-import { TimersBar } from './TimersBar';
 import { ToastHost } from './ToastHost';
 import { TodayStrip } from './TodayStrip';
 import type { TrayName } from './trays';
@@ -151,14 +150,24 @@ function NowContent({
   });
 
   const feedTile = model.tiles.find((tile) => tile.id === 'feed');
-  const nursing = feedTile?.running ?? null;
   const sleepPrediction = predictions?.predictions.find((p) => p.typeKey === 'sleep');
   const stats = useMemo(
     () => todayStats(model.events, model.types, model.now),
     [model.events, model.types, model.now],
   );
   const disabled = model.readOnly;
-  const sleepType = typeForKey(model.types, 'sleep');
+  /** "Running now": every running timer, first on the page (large targets at night). */
+  const running = (large: boolean) => (
+    <RunningNow
+      babyId={baby.id}
+      model={model}
+      actions={actions}
+      action={action}
+      isSnoozed={snooze.isSnoozed}
+      onKeepRunning={snooze.keep}
+      large={large}
+    />
+  );
 
   const close = () => {
     setTray(null);
@@ -170,14 +179,6 @@ function NowContent({
   };
   const openTile = (id: TileId) => setTray(id);
   const openDiaperTray = () => setTray('diaper');
-  const endForgottenSleep = (eventId: string, endedAt: string) => {
-    const event = model.events.find((candidate) => candidate.id === eventId);
-    if (!event) return;
-    void actions.stop(event, {
-      endedAt,
-      ...(sleepType ? { name: eventTypeText.typeName(sleepType) } : {}),
-    });
-  };
   const feedSubtitle = feedTile
     ? [formatTileStatus(feedTile, model.now), tileDetailText(feedTile, model.types)]
         .filter(Boolean)
@@ -227,6 +228,7 @@ function NowContent({
           model={model}
           babyName={baby.name}
           action={action}
+          running={running(true)}
           onOpenFeed={() => setTray('feed')}
           onOpenDiaper={() => setTray('diaper')}
         />
@@ -252,6 +254,24 @@ function NowContent({
         </>
       ) : (
         <>
+          {running(false)}
+          <LogTiles
+            tiles={model.tiles}
+            types={model.types}
+            now={model.now}
+            readOnly={model.readOnly}
+            medsLine={medsLine}
+            viewable={proposing && model.trays.meds ? ['meds'] : []}
+            onOpen={openTile}
+          />
+          <StateCard
+            model={model}
+            babyId={baby.id}
+            babyName={baby.name}
+            action={action}
+            {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
+            bedTime={predictions?.bedTime ?? null}
+          />
           {model.catchUp && (
             <CatchUpCard
               catchUp={model.catchUp}
@@ -260,17 +280,6 @@ function NowContent({
               onDone={model.acknowledgeCatchUp}
             />
           )}
-          <StateCard
-            model={model}
-            babyId={baby.id}
-            babyName={baby.name}
-            action={action}
-            {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
-            bedTime={predictions?.bedTime ?? null}
-            onEndAt={endForgottenSleep}
-            isSnoozed={snooze.isSnoozed}
-            onKeepRunning={snooze.keep}
-          />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
@@ -295,36 +304,6 @@ function NowContent({
             <NextAppointment babyId={baby.id} now={model.now.getTime()} />
           )}
           <VaccinesDue baby={baby} now={model.now.getTime()} />
-          {nursing && (
-            <NursingCard
-              event={nursing}
-              commands={model.commands}
-              action={action}
-              readOnly={model.readOnly}
-              lockedBy={model.access.controlLockedBy(nursing)}
-            />
-          )}
-          <TimersBar
-            running={model.running}
-            types={model.types}
-            forgotten={model.forgotten}
-            nursingId={nursing?.id ?? null}
-            actions={actions}
-            readOnly={model.readOnly}
-            lockedBy={model.access.controlLockedBy}
-            isSnoozed={snooze.isSnoozed}
-            onKeepRunning={snooze.keep}
-            action={action}
-          />
-          <LogTiles
-            tiles={model.tiles}
-            types={model.types}
-            now={model.now}
-            readOnly={model.readOnly}
-            medsLine={medsLine}
-            viewable={proposing && model.trays.meds ? ['meds'] : []}
-            onOpen={openTile}
-          />
           <TodayStrip stats={stats} />
         </>
       )}
@@ -440,12 +419,15 @@ function NowScreenBody({ baby }: { baby: Baby }) {
 }
 
 /**
- * The Now screen of one baby (docs/design/01-ux-strategy.md "A. Now dashboard"): state card with
- * the sleep toggle, nursing and timers, the "last and log" tiles with their trays, the Today
- * strip and the hand-over card; the simple night layout in the night scheme. Mount with
- * `key={baby.id}`.
+ * The Now screen of one baby (docs/design/01-ux-strategy.md "A. Now dashboard", docs/DESIGN.md
+ * "Now"), what you act on first: "Running now" (every running timer as a card), "Quick log" (the
+ * tiles with their trays), the compact state card with the sleep toggle and the folded day ring,
+ * then the hand-over, suggestion and pattern cards and the Today strip; the simple night layout
+ * in the night scheme. The floating mini timer bar stays away here (`useClaimInlineTimers`).
+ * Mount with `key={baby.id}`.
  */
 export function NowScreen({ baby }: { baby: Baby }) {
+  useClaimInlineTimers();
   return (
     <QuickLogToastProvider>
       {/* A stacking context of its own, so the night stars can sit behind the content. */}
