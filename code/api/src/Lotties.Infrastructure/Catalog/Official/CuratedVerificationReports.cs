@@ -30,7 +30,7 @@ public static class CuratedVerificationReports
         var text = new StringBuilder();
         text.AppendLine(CultureInfo.InvariantCulture, $"# Curated list verification against ANVISA open data ({report.GeneratedOn})");
         text.AppendLine();
-        text.AppendLine("Machine cross-check only: it compares names, ingredients, form and route with the official files. It is not a pharmacist's review and says nothing about age, warnings, dose or equivalence for treatment.");
+        text.AppendLine("Machine cross-check only: it compares names, ingredients, form, route and the stated strength with the official files. It is not a pharmacist's review and says nothing about age, warnings, dose or equivalence for treatment.");
         text.AppendLine();
         text.AppendLine("| Entry | Form | Status | Evidence (registration or notified name) |");
         text.AppendLine("|---|---|---|---|");
@@ -66,6 +66,10 @@ public static class CuratedVerificationReports
         var differing = report.Alternatives.Count(alternative => alternative.Outcome == AlternativeCheck.Differs);
         var unverified = report.Alternatives.Count(alternative => alternative.Outcome == AlternativeCheck.Unverified);
         lines.Add($"  Suggestions checked: {report.Alternatives.Count} ({report.Alternatives.Count(alternative => alternative.Outcome == AlternativeCheck.Agrees)} agree, {differing} differ, {unverified} rest on curated data only; {report.Alternatives.Count(alternative => !alternative.SameForm)} are of another form than the entry)");
+        var levels = report.Alternatives.Where(alternative => alternative.MatchLevel is not null).GroupBy(alternative => alternative.MatchLevel!).OrderBy(group => group.Key, StringComparer.Ordinal).ToArray();
+        lines.Add($"  App labels of those suggestions: {(levels.Length == 0 ? "none" : string.Join(", ", levels.Select(group => $"{group.Key} {group.Count()}")))}");
+        var strengths = report.Entries.Where(verification => verification.Strength is not null).GroupBy(verification => verification.Strength!.Outcome).OrderBy(group => group.Key).ToArray();
+        lines.Add($"  Strength check against CMED: {string.Join(", ", strengths.Select(group => $"{group.Key} {group.Count()}"))}");
         return lines;
     }
 

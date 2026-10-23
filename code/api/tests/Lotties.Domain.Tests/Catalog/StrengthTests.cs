@@ -210,6 +210,16 @@ public sealed class AlternativesTests
     }
 
     [Fact]
+    public void Alternatives_DifferentForm_ListsKnownFormsBeforeFormOther()
+    {
+        var spray = Salt("Mira Spray", ProductForm.Spray, "9 mg/ml");
+        var irrigation = Salt("Alfa Irrigation", ProductForm.Other, "9 mg/ml");
+        var drops = Salt("Zeta Drops", ProductForm.Drops, "9 mg/ml");
+
+        Assert.Equal(["Zeta Drops:DifferentForm", "Alfa Irrigation:DifferentForm"], Levels(ProductSearch.Alternatives(spray, [irrigation, drops])));
+    }
+
+    [Fact]
     public void Alternatives_NoStructuredStrengthAnywhere_EverythingIsStrengthNotKnown_InTheOldOrder()
     {
         var spray = Simethicone("Aaa Spray", ProductForm.Spray, null);

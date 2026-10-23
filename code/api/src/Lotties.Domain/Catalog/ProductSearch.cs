@@ -217,7 +217,8 @@ public static class ProductSearch
     /// not comparable (another unit family: 0,9% is not turned into mg/mL);</item>
     /// <item><see cref="AlternativeLevel.DifferentStrength"/>: both strengths known and different.</item>
     /// </list>
-    /// Within a level, products in the same known form as <paramref name="product"/> come first, then official, curated,
+    /// Within <see cref="AlternativeLevel.DifferentForm"/> a product of a known form (nasal drops, say) comes before one
+    /// whose form is "other" (an injectable or irrigation solution). Within a level, products in the same known form as <paramref name="product"/> come first, then official, curated,
     /// the rest, then by name. At most <see cref="MaxSiblings"/> are returned, best levels first, so a different-strength
     /// product is never listed ahead of an equivalent one. Every alternative is information only, never a substitution:
     /// the doctor's prescription is the only source of a dose, and the app never picks an alternative for the user.
@@ -236,6 +237,7 @@ public static class ProductSearch
             .DistinctBy(candidate => candidate.Id)
             .Select(candidate => new ProductAlternative(candidate, LevelOf(product, candidate)))
             .OrderBy(alternative => alternative.Level)
+            .ThenBy(alternative => alternative.Level == AlternativeLevel.DifferentForm && alternative.Product.Form == ProductForm.Other ? 1 : 0)
             .ThenBy(alternative => IsSameKnownForm(product, alternative.Product) ? 0 : 1)
             .ThenBy(alternative => alternative.Product.SourceRank)
             .ThenBy(alternative => alternative.Product.Name, StringComparer.OrdinalIgnoreCase)
