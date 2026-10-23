@@ -7,6 +7,7 @@ import { presetsForBaby } from '../../presets/resolve';
 import type { Preset } from '../../presets/types';
 import type { PresetActions } from '../../presets/usePresetActions';
 import { usePresetStates } from '../../presets/usePresetEvents';
+import { CryReasonsButton } from './CryReasonsSheet';
 import { SheetFrame } from './SheetFrame';
 import type { TrayName } from './trays';
 
@@ -21,6 +22,8 @@ interface Props {
   onOpenTray: (tray: TrayName) => void;
   /** Nursing starts the live timer through the Now commands. */
   onStartNursing: () => void;
+  /** Opens "Why is she crying?" (on Now, for those who log); absent elsewhere. */
+  onCryReasons?: () => void;
 }
 
 /** The Bottle preset is a timer (start, then stop with the amount), so it runs like the others. */
@@ -44,6 +47,7 @@ export function MoreSheet({
   readOnly,
   onOpenTray,
   onStartNursing,
+  onCryReasons,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -86,6 +90,14 @@ export function MoreSheet({
             );
           })}
         </Box>
+      )}
+      {onCryReasons && !readOnly && (
+        <CryReasonsButton
+          onClick={() => {
+            onClose();
+            onCryReasons();
+          }}
+        />
       )}
     </SheetFrame>
   );

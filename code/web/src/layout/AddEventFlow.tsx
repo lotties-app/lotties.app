@@ -14,6 +14,7 @@ const TRAY_TYPE_KEY: Readonly<Record<TrayName, string>> = {
   meds: 'medication',
   bellyPain: 'belly_pain',
   more: '',
+  cry: '',
 };
 
 interface Props {

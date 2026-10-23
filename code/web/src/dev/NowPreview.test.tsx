@@ -46,6 +46,7 @@ describe('Now preview (developer route)', () => {
     ['forgotten', /Still asleep\?/],
     ['catchup', /Since you last looked/],
     ['viewer', /view-only access/],
+    ['cry', /Why is she crying\?/],
   ])('seeds and renders the %s scenario', async (state, expected) => {
     renderPreview(state);
     await waitFor(() => expect(screen.getAllByText(expected).length).toBeGreaterThan(0), {

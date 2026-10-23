@@ -1,7 +1,7 @@
 # "Why is she crying?" — ranking what the log suggests (design, 2026-10-23)
 
-Status: phase 1 logic implemented (`code/web/src/now/cryReasons.ts`, tests `cryReasons.test.ts`). The sheet on Now is a
-later task built on top of it; its copy, layout and i18n are not part of this document.
+Status: phase 1 logic implemented (`code/web/src/now/cryReasons.ts`, tests `cryReasons.test.ts`) and the sheet on Now
+built on top of it (section 9: `now/ui/CryReasonsSheet.tsx`, `now/crySpell.ts`, `now/cryReasonsText.ts`).
 
 A parent with a crying baby opens a sheet on Now and sees a short, ordered list of everyday causes (hungry, sleepy,
 diaper, gas, wants comfort) with the facts from her own log behind each one ("2 h 40 min since the last feed, she
@@ -188,3 +188,60 @@ The built-in `fussy` event type records the outcome (migration `FussyOutcomes`, 
   hidden fields are not drawn in the event sheet nor in the detail line.
 - Unknown option values are rejected like any other select (400 `validation_failed` with the field); both fields are
   optional. Export/import round-trips them (the backup import validates against the type definition).
+
+## 9. The sheet on Now (UI, 2026-10-23)
+
+**Entry.** A quiet text button "Why is she crying?" / "Por que ela está chorando?" (crying-face icon and label, 44 px,
+`CryReasonsButton`) right under the Quick log tiles of the day view, centred under the sleep buttons in the night
+view, and at the bottom of the More sheet on Now. No card, no badge. Only for roles that log (`canLog`: Owner,
+Parent, Caregiver); hidden for Viewers and the Doctor. Not in the first-run layout (no tiles there).
+
+**Sheet** (`now/ui/CryReasonsSheet.tsx`, the Now `SheetFrame` bottom sheet with `fullHeight`: the whole screen
+height on phones, scrolling inside, focus trapped, Esc/scrim/close dismiss, focus back on the entry; theme tokens in
+light, dark and night; reduced motion through the global rule). The ranking runs once when the sheet opens
+(`rankCryReasons` with the Now events, the birth date and the cached predictions), so the list never reorders under
+the parent's thumb. Top to bottom:
+
+1. **Red flags**, always, never folded: a warning `Alert` (warning tokens, warning icon and text) that is a
+   `region` "When to call for help": "Call your pediatrician or emergency services if she has:" and the five
+   `CRY_RED_FLAGS` in plain words (fever, with "Babies under 3 months with a fever need a call right away." on every
+   baby; crying that you cannot soothe; refusing feeds; unusual sleepiness or hard to wake; a bulging or stiff soft
+   spot on the head). The same text for every baby and every log; it never reassures and never names an illness.
+2. **What your log suggests**: the five causes as a list of cards in score order. Each card: the cause name as a
+   heading (Hunger, Sleepiness, Diaper, Gas, Comfort), a level tag "Likely" / "Possible" / "Unlikely" with three dots
+   filled 3 / 2 / 1 (the non-colour cue; the word is read aloud), at most two sentences built only from the
+   structured facts (`now/cryReasonsText.ts`, one catalog sentence per fact kind with interpolated durations and
+   times, e.g. "Last fed 2h 40m ago; she usually goes about 2h 30m."; `noData` `noLog` reads "Not enough logged
+   yet.", `asleep` "A sleep timer is still running, so the log may be behind."), one static "Try ..." line of safe
+   everyday care (offer a feed; dim the room and wind down; check the diaper; hold upright, burp, gentle belly
+   massage; skin to skin, snug swaddle or gentle rocking, soft white noise; never a treatment, product, dose or
+   medicine) and, once `cryOutcomeHistory` has at least 3 answered spells in the last 14 days, "Helped 2 of your last
+   5 times" on every cause (a hint only: no cause is hidden or moved for it). `basis: 'generic'` adds no text.
+3. **Shortcuts** (one per card at most, each closes the sheet first and reuses the Now handler): Hunger "Log a
+   feed" opens the Feed tray; Diaper "Log a diaper" the Diaper tray; Sleepiness runs the Fell asleep (or Back
+   asleep during a night waking) sleep action like the state card, unless the running sleep is locked for a
+   Caregiver; Gas "Start belly massage" runs the Belly massage preset (hidden while a massage runs); Comfort has
+   none.
+4. **What worked?** (optional): a radio group of chips Fed, Changed diaper, Slept, Burped, Held, Rocked, Pacifier,
+   Massage, Nothing yet (only the options the baby's `fussy` type declares). A choice (tap, Space or Enter; the
+   arrow keys only move the focus so a stray arrow never writes) logs one fussy spell through the Now commands
+   (`crySpell`, `now/crySpell.ts`: client id, events + outbox, the receipt toast "Crying spell logged, Held" with
+   Undo and no time-shift chips): from when the sheet opened to now, `what_helped` mapped (feeding, diaper_change,
+   sleep, burping, holding, rocking, pacifier, massage, nothing) and `suggested_cause` = the cause ranked first when
+   the sheet opened. A running fussy timer is stopped and filled in instead (Undo re-opens it with its old payload);
+   on someone else's running spell a Caregiver fills only empty values (the running-timer control rule). Then the
+   sheet closes. Closing without a choice logs nothing.
+5. **Footer**: "This list only uses what you have logged. It is not a diagnosis or medical advice, and Lotties is
+   not a medical device."
+
+Copy: catalog `cryReasons` (`locales/en/cryReasons.json`, `locales/pt-BR/cryReasons.json`), calm, short, sentence
+case, no exclamation marks, pt-BR with "você". Offline: only the local store and the cached predictions are read;
+the spell waits in the outbox.
+
+Tests: `now/crySpell.test.ts` (payload mapping, running-timer reuse and undo, Caregiver fill-empty, options the type
+lacks), `now/cryReasonsText.test.ts` (every fact sentence, en and pt-BR), `now/ui/NowScreen.cry.test.tsx` (entry,
+red flags, order equals the ranking, no data, running sleep, running feed, the hint, focus return, shortcuts,
+chip payload and undo, running fussy reuse, offline, Viewer/Doctor hidden, Caregiver, More sheet, night view,
+pt-BR, axe in light/dark/night). Screenshots: `tests/e2e/design-review/cry-preview.{config,review}.ts` from
+`/dev/now?state=cry` (320 and 390 px, light/dark, en/pt-BR, the night view, 160 % text) to
+`docs/design/screenshots/cry-*.png`.
