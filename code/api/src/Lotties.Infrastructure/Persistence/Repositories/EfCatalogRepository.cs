@@ -49,7 +49,7 @@ internal sealed class EfCatalogRepository(LottiesDbContext context, UniqueViolat
                 .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Product>> FindWithSameSubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Product>> FindWithSameSubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, AlternativePreference? prefer = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(substanceIds);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
@@ -61,14 +61,13 @@ internal sealed class EfCatalogRepository(LottiesDbContext context, UniqueViolat
 
         var first = ids[0];
         var count = ids.Count;
-        return await OfficialFirst(ProductsWithSubstances()
-                .Where(product => product.MergedIntoId == null
-                    && product.InactiveSince == null
-                    && product.Substances.Any(link => link.SubstanceId == first)
-                    && product.Substances.Count == count
-                    && product.Substances.All(link => ids.Contains(link.SubstanceId))))
-            .Take(take)
-            .ToListAsync(cancellationToken);
+        var same = ProductsWithSubstances()
+            .Where(product => product.MergedIntoId == null
+                && product.InactiveSince == null
+                && product.Substances.Any(link => link.SubstanceId == first)
+                && product.Substances.Count == count
+                && product.Substances.All(link => ids.Contains(link.SubstanceId)));
+        return await PreferStrength(same, prefer).Take(take).ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Product>> FindAmbiguousVariantsAsync(IReadOnlyCollection<string> ambiguousNames, int take, CancellationToken cancellationToken = default)
@@ -125,6 +124,19 @@ internal sealed class EfCatalogRepository(LottiesDbContext context, UniqueViolat
     }
 
     private IQueryable<Product> ProductsWithSubstances() => context.Products.AsNoTracking().Include(product => product.Substances);
+
+    /// <summary>Products with the preferred strength key (and form) first, then <see cref="OfficialFirst"/>.</summary>
+    private static IOrderedQueryable<Product> PreferStrength(IQueryable<Product> products, AlternativePreference? prefer)
+    {
+        var key = prefer?.StrengthKey;
+        var form = prefer?.Form ?? ProductForm.Other;
+        var knownForm = prefer is not null && form != ProductForm.Other;
+        return products
+            .OrderBy(product => key != null && product.StrengthKey == key ? (knownForm && product.Form == form ? 0 : 1) : 2)
+            .ThenBy(product => product.Status == ProductStatus.Official ? 0 : product.Status == ProductStatus.Curated ? 1 : 2)
+            .ThenBy(product => product.Name)
+            .ThenBy(product => product.Id);
+    }
 
     private static IOrderedQueryable<Product> OfficialFirst(IQueryable<Product> products) =>
         products

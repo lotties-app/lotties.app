@@ -128,7 +128,7 @@ public static class CuratedVerificationReports
 
         foreach (var product in verification.Evidence.Take(MaxEvidenceShown))
         {
-            text.AppendLine(CultureInfo.InvariantCulture, $"- Official `{product.Reference}` \"{product.Name}\" {(product.Active ? "active" : "inactive")}, {product.Category}, holder {product.Holder}; ingredients: {(product.Ingredients.Count == 0 ? "not listed" : string.Join(" + ", product.Ingredients))}; CMED forms: {Join(product.Forms)}; routes: {Join(product.Routes)}; strengths: {Join(product.Strengths)}; CMED substance: {Join(product.CmedSubstances)}");
+            text.AppendLine(CultureInfo.InvariantCulture, $"- Official `{product.Reference}` \"{product.Name}\" {(product.Active ? "active" : "inactive")}, {product.Category}, holder {product.Holder}; ingredients: {(product.Ingredients.Count == 0 ? "not listed" : string.Join(" + ", product.Ingredients))}; CMED forms: {Join(product.Forms)}; routes: {Join(product.Routes)}; strengths: {Join(product.Strengths)} (read as: {Join(product.StrengthTokens ?? [])}; {product.UnreadableStrengths} not readable); CMED substance: {Join(product.CmedSubstances)}");
         }
     }
 
@@ -153,11 +153,11 @@ public static class CuratedVerificationReports
         text.AppendLine();
         text.AppendLine("## \"Same active ingredient\" suggestions the app produces for each entry");
         text.AppendLine();
-        text.AppendLine("| Entry | Suggested | Source | Outcome |");
-        text.AppendLine("|---|---|---|---|");
+        text.AppendLine("| Entry | Suggested | Source | App label | Outcome |");
+        text.AppendLine("|---|---|---|---|---|");
         foreach (var alternative in report.Alternatives)
         {
-            text.AppendLine(CultureInfo.InvariantCulture, $"| `{alternative.EntryId}` | {alternative.AlternativeName} | {alternative.AlternativeSource} | {alternative.Outcome}: {alternative.Detail} |");
+            text.AppendLine(CultureInfo.InvariantCulture, $"| `{alternative.EntryId}` | {alternative.AlternativeName} | {alternative.AlternativeSource} | {alternative.MatchLevel ?? "-"} | {alternative.Outcome}: {alternative.Detail} |");
         }
     }
 

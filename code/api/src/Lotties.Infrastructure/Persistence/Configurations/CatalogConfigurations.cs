@@ -63,6 +63,8 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(product => product.ExternalRef).HasMaxLength(Product.ExternalRefMaxLength);
         builder.Property(product => product.Presentation).HasMaxLength(Product.PresentationMaxLength);
         builder.Property(product => product.AmbiguousName).HasMaxLength(Product.AmbiguousNameMaxLength);
+        builder.Property(product => product.StrengthKey).HasMaxLength(Product.StrengthKeyMaxLength);
+        builder.Property(product => product.StrengthText).HasMaxLength(Product.StrengthTextMaxLength);
         builder.Property(product => product.InactiveSince);
         builder.Ignore(product => product.SubstanceIds);
         builder.Ignore(product => product.IsMerged);

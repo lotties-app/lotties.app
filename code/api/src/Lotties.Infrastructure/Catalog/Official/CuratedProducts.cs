@@ -59,6 +59,8 @@ public static class CuratedProducts
 
         public string? AliasOf { get; set; }
 
+        public List<Strength>? Strengths { get; set; }
+
         [JsonPropertyName("anvisaCheck")]
         public Check? Recorded { get; set; }
 
@@ -78,7 +80,19 @@ public static class CuratedProducts
             entry.Strength,
             entry.PackageSize,
             entry.Category,
-            entry.AliasOf);
+            entry.AliasOf,
+            entry.Strengths?.Select(strength => new CuratedStrength(strength.Ingredient, strength.Amount, strength.Unit, strength.Strain)).ToArray());
+    }
+
+    private sealed class Strength
+    {
+        public string Ingredient { get; set; } = string.Empty;
+
+        public string? Amount { get; set; }
+
+        public string? Unit { get; set; }
+
+        public string? Strain { get; set; }
     }
 
     private sealed class Check

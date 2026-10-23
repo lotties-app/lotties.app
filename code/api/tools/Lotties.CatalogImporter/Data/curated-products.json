@@ -1,5 +1,5 @@
 {
-  "about": "Curated products of the catalog importer (docs/design/13-anvisa-catalog.md section 7): common Brazilian baby products that are missing or ambiguous in ANVISA's registered-medicines file. Imported with status 'curated' and source 'curated', shown as 'Curated list (not reviewed by a pharmacist)'. NOT reviewed by a pharmacist or pediatrician: every entry keeps reviewed=false until such a review, and must not be trusted before it. Each entry: id (stable key, lower-case letters, digits, dashes; never reuse or change it), name (display name; a name that ANVISA uses for a product with other ingredients must be made distinct, e.g. with 'Solução Nasal Salina'), form (drops, syrup, tablet, powder, spray, ointment, suppository, inhaler, other), ingredients (active-ingredient spellings of the curated substance map, pt-BR), reviewed, basis (where the composition comes from: a primary source or the owner's statement). Never add a dose or an indication. The concentration printed on the label may be recorded in 'strength' (composition, e.g. '9 mg/mL (0,9%)'), never an amount to give. Never guess an ingredient from a name. Optional fields: strength (concentration exactly as printed on the label), packageSize (as printed, e.g. '100 mL'), category (medicine, homeopathic or supplement: what the label says it is; a homeopathic product or a supplement is never an equivalent of a medicine), aliasOf (the id of another entry: this entry is only another name people use for that product, imported as an alias so that searching the name finds the product; keep the id, never reuse it), officialName (the exact ANVISA name to look up when it differs from name), registration (nine-digit ANVISA registration to look up instead), route (oral, nasal, topical...), anvisaCheck (the last result of the machine cross-check `verify-curated` against ANVISA open data: date, status, evidence references; only status VERIFIED means the composition agrees with an active official registration, and it is NOT a pharmacist or pediatrician review, which stays reviewed=false until a person does it).",
+  "about": "Curated products of the catalog importer (docs/design/13-anvisa-catalog.md section 7): common Brazilian baby products that are missing or ambiguous in ANVISA's registered-medicines file. Imported with status 'curated' and source 'curated', shown as 'Curated list (not reviewed by a pharmacist)'. NOT reviewed by a pharmacist or pediatrician: every entry keeps reviewed=false until such a review, and must not be trusted before it. Each entry: id (stable key, lower-case letters, digits, dashes; never reuse or change it), name (display name; a name that ANVISA uses for a product with other ingredients must be made distinct, e.g. with 'Solução Nasal Salina'), form (drops, syrup, tablet, powder, spray, ointment, suppository, inhaler, other), ingredients (active-ingredient spellings of the curated substance map, pt-BR), reviewed, basis (where the composition comes from: a primary source or the owner's statement). Never add a dose or an indication. The concentration printed on the label may be recorded in 'strength' (composition, e.g. '9 mg/mL (0,9%)'), never an amount to give. Never guess an ingredient from a name. Optional fields: strengths (the STRUCTURED concentration the alternatives rule compares: one item per ingredient, all of them or none, {ingredient, amount, unit} with units such as 'mg/mL', 'mL/mL', '%', or {ingredient, strain} for a probiotic strain; fill it only where the label or the basis states the amount, never guess; a missing list means strength not known), strength (concentration exactly as printed on the label), packageSize (as printed, e.g. '100 mL'), category (medicine, homeopathic or supplement: what the label says it is; a homeopathic product or a supplement is never an equivalent of a medicine), aliasOf (the id of another entry: this entry is only another name people use for that product, imported as an alias so that searching the name finds the product; keep the id, never reuse it), officialName (the exact ANVISA name to look up when it differs from name), registration (nine-digit ANVISA registration to look up instead), route (oral, nasal, topical...), anvisaCheck (the last result of the machine cross-check `verify-curated` against ANVISA open data: date, status, evidence references; only status VERIFIED means the composition agrees with an active official registration, and it is NOT a pharmacist or pediatrician review, which stays reviewed=false until a person does it).",
   "products": [
     {
       "id": "flygas-drops",
@@ -18,9 +18,13 @@
       "name": "Luftal",
       "form": "drops",
       "ingredients": ["simeticona"],
+      "strength": "75 mg/mL",
+      "strengths": [
+        { "ingredient": "simeticona", "amount": "75", "unit": "mg/mL" }
+      ],
       "anvisaCheck": { "date": "2026-10-23", "status": "CANCELLED", "evidence": ["101800120", "173900009"] },
       "reviewed": false,
-      "basis": "CMED price list TA_PRECO_MEDICAMENTO.csv (2026-10-09): LUFTAL, presentation registration 1739000090031, substance SIMETICONA, emulsion with dropper. Its registration rows in DADOS_ABERTOS_MEDICAMENTOS.csv are all 'Inativo', so the official import leaves it out. Owner statement as for Flygas."
+      "basis": "CMED price list TA_PRECO_MEDICAMENTO.csv (2026-10-09): LUFTAL, presentation registration 1739000090031, substance SIMETICONA, emulsion with dropper. Its registration rows in DADOS_ABERTOS_MEDICAMENTOS.csv are all 'Inativo', so the official import leaves it out. Owner statement as for Flygas. Strength: the four CMED drops presentations of LUFTAL (173900009) read '75 MG ML EMU OR ... GOT X 15 ML' (the slash is missing in the file; the importer's parser reads it as unknown, so this value was entered by hand), consistent with other simethicone drops in CMED ('75 MG/ML')."
     },
     {
       "id": "colidis-drops",
@@ -32,6 +36,9 @@
       "reviewed": false,
       "basis": "Packaging photo provided by the owner, 2026-10-23 (Aché): 'Suplemento alimentar em suspensão gotas', Limosilactobacillus reuteri DSM 17938, content 10 mL, 'Alívio da cólica em bebês de 0 a 6 meses de idade' (age claim as printed; not checked by anyone). Also the manufacturer page https://www.ache.com.br/produto/suplementos-alimentares/colidis/ (checked 2026-10-22): a food supplement (not a registered medicine), drops. It is not simethicone. Label of the shop: 'Suplemento Probiótico Infantil Colidis Gotas 10ml'.",
       "category": "supplement",
+      "strengths": [
+        { "ingredient": "limosilactobacillus reuteri", "strain": "DSM 17938" }
+      ],
       "packageSize": "10 mL"
     },
     {
@@ -90,6 +97,9 @@
       "form": "spray",
       "ingredients": ["cloreto de sódio"],
       "strength": "9 mg/mL (0,9%)",
+      "strengths": [
+        { "ingredient": "cloreto de sódio", "amount": "9", "unit": "mg/mL" }
+      ],
       "packageSize": "100 mL",
       "category": "medicine",
       "anvisaCheck": { "date": "2026-10-23", "status": "UNVERIFIABLE", "evidence": ["notified:RINOSORO JET"] },
@@ -102,12 +112,15 @@
       "name": "Sorine Jet Baby",
       "form": "spray",
       "ingredients": ["cloreto de sódio"],
-      "strength": "0,9%",
+      "strength": "0,9% (9 mg/mL)",
+      "strengths": [
+        { "ingredient": "cloreto de sódio", "amount": "9", "unit": "mg/mL" }
+      ],
       "packageSize": "100 mL",
       "category": "medicine",
       "anvisaCheck": { "date": "2026-10-23", "status": "UNVERIFIABLE", "evidence": ["notified:SORINE JET BABY"] },
       "reviewed": false,
-      "basis": "Packaging photo provided by the owner, 2026-10-23 (Aché): 'solução de cloreto de sódio 0,9%', 'Fluidificante e descongestionante nasal', 'Uso pediátrico acima de 0 (zero) dias' (partly legible: 'acima de 0 dias'; age claim as printed, not checked by anyone), 'Sem conservantes', 'Jato contínuo suave', 100 mL. Shop label: 'Sorine Infantil Jet Baby Descongestionante Spray 100ml'. The plain name 'Sorine' is naphazoline in some presentations (registration 1.0573.0050): this is the saline Jet Baby product."
+      "basis": "Packaging photo provided by the owner, 2026-10-23 (Aché): 'solução de cloreto de sódio 0,9%', 'Fluidificante e descongestionante nasal', 'Uso pediátrico acima de 0 (zero) dias' (partly legible: 'acima de 0 dias'; age claim as printed, not checked by anyone), 'Sem conservantes', 'Jato contínuo suave', 100 mL. Shop label: 'Sorine Infantil Jet Baby Descongestionante Spray 100ml'. The plain name 'Sorine' is naphazoline in some presentations (registration 1.0573.0050): this is the saline Jet Baby product. Second source (2026-10-23, pharmacy retailer product page, Pague Menos, pasted by the owner; facts only): active ingredient cloreto de sódio 0,9% (9 mg/mL), excipient purified water, sterile, no preservatives, isotonic, spray 100 mL, manufacturer Aché, age indication 'uso adulto e pediátrico', indicated as fluidificante e descongestionante nasal. The 9 mg/mL structured strength is the retailer's equivalent of the printed 0,9% (w/v saline: 0,9 g per 100 mL). The retailer's age indication and the box ('uso pediátrico acima de 0 dias', partly legible) agree that it is usable from birth; both are the seller's and manufacturer's claims, not a clinical review."
     },
     {
       "id": "sorine-infantil-jet-baby-spray",
@@ -128,6 +141,9 @@
       "form": "drops",
       "ingredients": ["simeticona"],
       "strength": "150 mg/mL",
+      "strengths": [
+        { "ingredient": "simeticona", "amount": "150", "unit": "mg/mL" }
+      ],
       "packageSize": "15 mL",
       "category": "medicine",
       "anvisaCheck": { "date": "2026-10-23", "status": "CANCELLED", "evidence": ["notified:FLY GOTAS"] },
@@ -141,6 +157,12 @@
       "form": "drops",
       "ingredients": ["matricaria chamomilla 4CH", "mentha piperita 6CH", "magnesia phosphorica 5CH", "colocynthis 6CH"],
       "strength": "0,25 mL/mL de cada dinamização",
+      "strengths": [
+        { "ingredient": "matricaria chamomilla 4CH", "amount": "0,25", "unit": "mL/mL" },
+        { "ingredient": "mentha piperita 6CH", "amount": "0,25", "unit": "mL/mL" },
+        { "ingredient": "magnesia phosphorica 5CH", "amount": "0,25", "unit": "mL/mL" },
+        { "ingredient": "colocynthis 6CH", "amount": "0,25", "unit": "mL/mL" }
+      ],
       "packageSize": "30 mL",
       "category": "homeopathic",
       "anvisaCheck": { "date": "2026-10-23", "status": "UNVERIFIABLE", "evidence": ["notified:COLICALIV"] },

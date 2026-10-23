@@ -26,6 +26,8 @@ public sealed class Product
     public const int ExternalRefMaxLength = 128;
     public const int PresentationMaxLength = 100;
     public const int AmbiguousNameMaxLength = 100;
+    public const int StrengthKeyMaxLength = 512;
+    public const int StrengthTextMaxLength = 100;
 
     private readonly List<ProductSubstance> _substances = [];
 
@@ -77,6 +79,16 @@ public sealed class Product
 
     /// <summary>Dosage or presentation text the source kept in the name (e.g. <c>0,9%</c>), shown apart from it.</summary>
     public string? Presentation { get; private set; }
+
+    /// <summary>
+    /// The canonical structured strength (<see cref="StrengthKeys"/>, e.g. <c>simethicone=75 mg/ml</c>), only when every
+    /// ingredient's amount is unambiguous in the source; <c>null</c> = unknown (not imported yet, a combination, several
+    /// strengths, a text that could not be read). Information for comparing alternatives, never a dose.
+    /// </summary>
+    public string? StrengthKey { get; private set; }
+
+    /// <summary>The strength as the source writes it, for display (e.g. <c>75 mg/mL</c> or <c>9 mg/mL (0,9%)</c>); <c>null</c> when unknown.</summary>
+    public string? StrengthText { get; private set; }
 
     /// <summary>When an official product left its source (no longer registered); <c>null</c> while it is listed.</summary>
     public DateTimeOffset? InactiveSince { get; private set; }
@@ -192,6 +204,13 @@ public sealed class Product
         return _substances.Count > 0 && SubstanceIds.SetEquals(other.SubstanceIds);
     }
 
+    /// <summary>How the structured strengths of this and <paramref name="other"/> compare (unknown when either has none).</summary>
+    public StrengthComparison CompareStrengthTo(Product other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return StrengthKeys.Compare(StrengthKey, other.StrengthKey);
+    }
+
     /// <summary>Whether a new product with this key, form and country would duplicate this (non-merged) product.</summary>
     public bool Duplicates(string normalizedName, ProductForm form, CountryCode country) =>
         !IsMerged && NormalizedName == normalizedName && Form == form && Country == country;
@@ -203,6 +222,8 @@ public sealed class Product
         && ExternalRef == data.ExternalRef
         && Presentation == data.Presentation
         && AmbiguousName == data.AmbiguousName
+        && StrengthKey == data.StrengthKey
+        && StrengthText == data.StrengthText
         && IsActive
         && _substances.All(link => link.Strength is null)
         && SubstanceIds.SetEquals(data.SubstanceIds);
@@ -213,6 +234,8 @@ public sealed class Product
         ExternalRef = data.ExternalRef;
         Presentation = data.Presentation;
         AmbiguousName = data.AmbiguousName;
+        StrengthKey = data.StrengthKey;
+        StrengthText = data.StrengthText;
         InactiveSince = null;
         ReplaceSubstances(data.SubstanceIds);
     }
