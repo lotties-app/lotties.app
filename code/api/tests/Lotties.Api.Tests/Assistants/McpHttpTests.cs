@@ -3,9 +3,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Lotties.Api.Assistants.Mcp;
-using Lotties.Api.Authentication;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -269,7 +269,10 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
     [InlineData(true, "https://id.test/realms/x", "lotties-api", "lotties-mcp", "https://lotties.example/mcp#x", false)]
     public void Options_Validation(bool enabled, string? authority, string? apiAudience, string audience, string? resourceUrl, bool valid)
     {
-        var validator = new McpOptionsValidator(Options.Create(new AuthOptions { Authority = authority, Audience = apiAudience }));
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection([KeyValuePair.Create("Auth:Authority", authority), KeyValuePair.Create("Auth:Audience", apiAudience)])
+            .Build();
+        var validator = new McpOptionsValidator(configuration);
 
         var result = validator.Validate(null, new McpOptions { Enabled = enabled, Audience = audience, ResourceUrl = resourceUrl });
 

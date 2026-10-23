@@ -44,28 +44,33 @@ public sealed class McpOptions
         AllowedOrigins.Any(allowed => string.Equals(allowed.Trim().TrimEnd('/'), origin.Trim().TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
 }
 
-/// <summary>Fails startup when the MCP settings are unusable: no OIDC authority, a blank or shared audience, a bad URL or limit.</summary>
-internal sealed class McpOptionsValidator(IOptions<AuthOptions> auth) : IValidateOptions<McpOptions>
+/// <summary>
+/// Fails startup when the MCP settings are unusable: no OIDC authority, a blank or shared audience, a bad URL or limit. The
+/// <c>Auth</c> section is read from configuration as it is (not through <c>IOptions&lt;AuthOptions&gt;</c>), so a bad
+/// <c>Auth</c> section fails startup once, with its own message.
+/// </summary>
+internal sealed class McpOptionsValidator(IConfiguration configuration) : IValidateOptions<McpOptions>
 {
     public ValidateOptionsResult Validate(string? name, McpOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        var failures = CollectFailures(options).ToArray();
+        var auth = configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>() ?? new AuthOptions();
+        var failures = CollectFailures(options, auth).ToArray();
         return failures.Length == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }
 
-    private IEnumerable<string> CollectFailures(McpOptions options)
+    private static IEnumerable<string> CollectFailures(McpOptions options, AuthOptions auth)
     {
         if (string.IsNullOrWhiteSpace(options.Audience))
         {
             yield return "Mcp:Audience must not be empty.";
         }
-        else if (string.Equals(options.Audience.Trim(), auth.Value.Audience?.Trim(), StringComparison.Ordinal))
+        else if (string.Equals(options.Audience.Trim(), auth.Audience?.Trim(), StringComparison.Ordinal))
         {
             yield return "Mcp:Audience must differ from Auth:Audience (AUTH_AUDIENCE): MCP tokens and the web app's tokens must not work in each other's place.";
         }
 
-        if (options.Enabled && string.IsNullOrWhiteSpace(auth.Value.Authority))
+        if (options.Enabled && string.IsNullOrWhiteSpace(auth.Authority))
         {
             yield return "Mcp:Enabled needs Auth:Authority (AUTH_AUTHORITY): it is the authorization server the MCP clients are sent to.";
         }
