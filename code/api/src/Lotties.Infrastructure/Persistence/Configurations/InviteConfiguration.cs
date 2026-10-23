@@ -26,6 +26,9 @@ internal sealed class InviteConfiguration : IEntityTypeConfiguration<Invite>
             .HasConversion<string>()
             .HasMaxLength(BabyMemberConfiguration.RoleMaxLength)
             .IsRequired();
+        builder.Property(invite => invite.DoctorScopes)
+            .HasConversion(ValueObjectConverters.DoctorScopes)
+            .HasMaxLength(DoctorScopeSet.StorageMaxLength);
         builder.Property(invite => invite.CreatedAt).IsRequired();
         builder.Property(invite => invite.ExpiresAt).IsRequired();
         builder.HasIndex(invite => invite.Token).IsUnique();

@@ -17,6 +17,9 @@ public interface IPrescriptionProposalRepository
     /// <summary>The pending proposals of <paramref name="authorUserId"/> for the baby (tracked).</summary>
     Task<IReadOnlyList<PrescriptionProposal>> ListPendingByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default);
 
+    /// <summary>How many pending proposals <paramref name="authorUserId"/> has for the baby (the doctor's dashboard); reads nothing else.</summary>
+    Task<int> CountPendingByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default);
+
     /// <summary>The pending proposals of the baby that change <paramref name="prescriptionId"/> (tracked).</summary>
     Task<IReadOnlyList<PrescriptionProposal>> ListPendingReplacingAsync(Guid babyId, Guid prescriptionId, CancellationToken cancellationToken = default);
 

@@ -44,6 +44,11 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Imports.INapperImportService, Imports.NapperImportService>();
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
+        services.AddScoped<Clinical.DailyObservationReader>();
+        services.AddScoped<Clinical.VaccineOverviewReader>();
+        services.AddScoped<Clinical.IClinicalSummaryService, Clinical.ClinicalSummaryService>();
+        services.AddScoped<Clinical.ITimelineService, Clinical.TimelineService>();
+        services.AddScoped<Clinical.IDoctorPatientsService, Clinical.DoctorPatientsService>();
         return services;
     }
 }

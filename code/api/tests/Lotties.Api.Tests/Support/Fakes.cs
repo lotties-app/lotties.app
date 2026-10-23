@@ -61,14 +61,25 @@ internal sealed class FakeBabyAccessService(BabyAccessDecision decision) : IBaby
 {
     public List<(Guid BabyId, BabyRole RequiredRole)> Calls { get; } = [];
 
+    public List<(Guid BabyId, DoctorScope? Scope)> ScopeCalls { get; } = [];
+
     public Task<BabyAccessDecision> CheckAsync(Guid babyId, BabyRole requiredRole, CancellationToken cancellationToken = default)
     {
         Calls.Add((babyId, requiredRole));
         return Task.FromResult(decision);
     }
 
+    public Task<BabyAccessDecision> CheckScopeAsync(Guid babyId, DoctorScope? scope, CancellationToken cancellationToken = default)
+    {
+        ScopeCalls.Add((babyId, scope));
+        return Task.FromResult(decision);
+    }
+
     public Task<BabyRole?> FindRoleAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         Task.FromResult<BabyRole?>(decision == BabyAccessDecision.NotMember ? null : BabyRole.Viewer);
+
+    public Task<BabyMember?> FindMembershipAsync(Guid babyId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<BabyMember?>(null);
 }
 
 internal sealed class FakeUserProvisioningService : IUserProvisioningService

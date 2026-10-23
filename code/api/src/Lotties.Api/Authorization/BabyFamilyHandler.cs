@@ -20,7 +20,7 @@ internal sealed class BabyFamilyHandler(IBabyAccessService babyAccess, ILogger<B
             return;
         }
 
-        if (context.Resource is not HttpContext httpContext || BabyAccessHandler.ReadBabyId(httpContext) is not { } babyId)
+        if (context.Resource is not HttpContext httpContext || BabyRouteValues.ReadBabyId(httpContext) is not { } babyId)
         {
             logger.LogWarning("Baby family requirement evaluated on a route without a valid {RouteParameter}", BabyRoutes.BabyIdParameter);
             context.Fail(new AuthorizationFailureReason(this, BabyAccessHandler.MissingBabyIdMessage));

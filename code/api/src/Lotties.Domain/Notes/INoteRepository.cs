@@ -15,6 +15,9 @@ public interface INoteRepository
     /// </summary>
     Task<IReadOnlyList<BabyNote>> ListChangesVisibleToAsync(Guid babyId, Guid readerUserId, DateTimeOffset? since, CancellationToken cancellationToken = default);
 
+    /// <summary>How many shared, non-deleted notes <paramref name="authorUserId"/> wrote about the baby (the doctor's dashboard).</summary>
+    Task<int> CountSharedByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default);
+
     /// <summary>Saves a new note. Returns <c>false</c>, leaving nothing tracked, when the id was saved first (concurrent upsert).</summary>
     Task<bool> TryAddAsync(BabyNote note, CancellationToken cancellationToken = default);
 

@@ -6,7 +6,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// Event types of one baby: built-in templates (read-only) plus the baby's custom types. Reads need
-/// <see cref="BabyPolicies.Read"/> (from the baby group), writes <see cref="BabyPolicies.Write"/>.
+/// <see cref="BabyPolicies.Read"/> (from the baby group) and, for a Doctor, the daily log scope
+/// (<see cref="BabyPolicies.ScopeDailyLog"/>); writes <see cref="BabyPolicies.Write"/>.
 /// </summary>
 internal static class EventTypeEndpoints
 {
@@ -21,7 +22,9 @@ internal static class EventTypeEndpoints
     public static RouteGroupBuilder MapEventTypeEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(EventTypesPath, ListAsync).WithName("ListEventTypes");
+        baby.MapGet(EventTypesPath, ListAsync)
+            .RequireAuthorization(BabyPolicies.ScopeDailyLog)
+            .WithName("ListEventTypes");
         baby.MapPost(EventTypesPath, CreateAsync)
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("CreateEventType")

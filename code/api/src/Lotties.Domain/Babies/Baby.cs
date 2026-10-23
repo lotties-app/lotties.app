@@ -76,11 +76,17 @@ public sealed class Baby
 
     public BabyMember? FindMember(Guid userId) => _members.Find(member => member.UserId == userId);
 
-    public BabyMember AddMember(Guid userId, BabyRole role, DateTimeOffset joinedAt)
+    /// <summary>
+    /// Adds a member. <paramref name="doctorScopes"/> limit a Doctor to some sections (<c>null</c> = the defaults, every
+    /// section); for another role they are a <see cref="DomainValidationException"/> (field <c>doctorScopes</c>).
+    /// </summary>
+    public BabyMember AddMember(Guid userId, BabyRole role, DateTimeOffset joinedAt, DoctorScopeSet? doctorScopes = null)
     {
         Ids.Required(userId, nameof(userId));
         EnsureNotMember(userId);
-        var member = new BabyMember(Id, userId, BabyRoleRules.EnsureDefined(role), UtcTime.Normalize(joinedAt));
+        var validatedRole = BabyRoleRules.EnsureDefined(role);
+        EnsureScopesFitRole(validatedRole, doctorScopes);
+        var member = new BabyMember(Id, userId, validatedRole, UtcTime.Normalize(joinedAt), doctorScopes);
         _members.Add(member);
         return member;
     }
@@ -96,6 +102,19 @@ public sealed class Baby
         EnsureProfessionalWhenRequired(newRole, userId, isDeclaredProfessional);
         EnsureOwnerRemains(member, newRole == BabyRole.Owner);
         member.ChangeRole(newRole);
+        return member;
+    }
+
+    /// <summary>
+    /// Limits a Doctor member to <paramref name="scopes"/>. Throws <see cref="MemberNotFoundException"/> for a user who is
+    /// not a member, and <see cref="DomainValidationException"/> (field <c>doctorScopes</c>) when the member is not a Doctor.
+    /// </summary>
+    public BabyMember ChangeDoctorScopes(Guid userId, DoctorScopeSet scopes)
+    {
+        ArgumentNullException.ThrowIfNull(scopes);
+        var member = GetMember(userId);
+        EnsureScopesFitRole(member.Role, scopes);
+        member.ChangeDoctorScopes(scopes);
         return member;
     }
 
@@ -119,7 +138,7 @@ public sealed class Baby
         EnsureNotMember(userId);
         EnsureProfessionalWhenRequired(invite.Role, userId, isDeclaredProfessional);
         invite.Accept(userId, now);
-        return AddMember(userId, invite.Role, now);
+        return AddMember(userId, invite.Role, now, invite.DoctorScopes);
     }
 
     private BabyMember GetMember(Guid userId) => FindMember(userId) ?? throw new MemberNotFoundException(Id, userId);
@@ -130,6 +149,14 @@ public sealed class Baby
         if (isLastOwner && !remainsOwner)
         {
             throw new LastOwnerException(Id, member.UserId);
+        }
+    }
+
+    private static void EnsureScopesFitRole(BabyRole role, DoctorScopeSet? scopes)
+    {
+        if (scopes is not null && !role.IsDoctor())
+        {
+            throw new DomainValidationException(DoctorScopeSet.Field, "doctorScopes apply to the Doctor role only.");
         }
     }
 

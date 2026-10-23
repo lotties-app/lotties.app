@@ -9,7 +9,8 @@ namespace Lotties.Api.Endpoints;
 /// client GUID, delta pull). Reads need <see cref="BabyPolicies.Read"/> (from the baby group) and return only what the
 /// caller sees (Owner and Parent: all; the Doctor: her own; Caregiver and Viewer: none, 404 by id); the Doctor writes
 /// and withdraws her own (<see cref="BabyPolicies.Propose"/>); Owners and Parents accept or decline
-/// (<see cref="BabyPolicies.Write"/>).
+/// (<see cref="BabyPolicies.Write"/>). A Doctor needs the medications scope (<see cref="BabyPolicies.ScopeMedications"/>)
+/// to list, read, write or withdraw proposals.
 /// </summary>
 internal static class ProposalEndpoints
 {
@@ -24,17 +25,22 @@ internal static class ProposalEndpoints
     public static RouteGroupBuilder MapProposalEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(ProposalsPath, ListChangesAsync).WithName("ListProposalChanges");
-        baby.MapGet(ProposalPath, GetAsync).WithName("GetProposal").ProducesProblem(StatusCodes.Status404NotFound);
+        baby.MapGet(ProposalsPath, ListChangesAsync)
+            .RequireAuthorization(BabyPolicies.ScopeMedications)
+            .WithName("ListProposalChanges");
+        baby.MapGet(ProposalPath, GetAsync)
+            .RequireAuthorization(BabyPolicies.ScopeMedications)
+            .WithName("GetProposal")
+            .ProducesProblem(StatusCodes.Status404NotFound);
         baby.MapPut(ProposalPath, UpsertAsync)
-            .RequireAuthorization(BabyPolicies.Propose)
+            .RequireAuthorization(BabyPolicies.Propose, BabyPolicies.ScopeMedications)
             .WithName("UpsertProposal")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
         baby.MapDelete(ProposalPath, WithdrawAsync)
-            .RequireAuthorization(BabyPolicies.Propose)
+            .RequireAuthorization(BabyPolicies.Propose, BabyPolicies.ScopeMedications)
             .WithName("WithdrawProposal");
         baby.MapPost(ProposalPath + "/accept", AcceptAsync)
             .RequireAuthorization(BabyPolicies.Write)

@@ -37,6 +37,13 @@ internal static class ValueObjectConverters
     public static readonly ValueConverter<DayPartSet?, string> DayParts =
         new(parts => string.Join(',', parts!.ToCodes()), value => DayPartSet.Parse(value.Split(',', StringSplitOptions.None)));
 
+    /// <summary>
+    /// <see cref="DoctorScopeSet"/> as comma-separated scope codes, e.g. <c>daily_log,growth</c> (empty text for none; EF
+    /// never converts <c>null</c>, which means the defaults). Reading ignores unknown codes, so an older server never fails on a row.
+    /// </summary>
+    public static readonly ValueConverter<DoctorScopeSet?, string> DoctorScopes =
+        new(scopes => scopes!.ToStorage(), value => DoctorScopeSet.FromStorage(value));
+
     /// <summary><see cref="Domain.Prescriptions.DayPartReminders"/> as <c>morning=08:00,night=22:00</c> (EF never converts <c>null</c>).</summary>
     public static readonly ValueConverter<DayPartReminders?, string> DayPartReminders =
         new(reminders => reminders!.ToStorage(), value => Domain.Prescriptions.DayPartReminders.FromStorage(value));

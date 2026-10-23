@@ -53,16 +53,17 @@ internal sealed class MemberService : IMemberService
             .ToArray();
     }
 
-    public async Task<MemberResponse> ChangeRoleAsync(Guid babyId, Guid userId, ChangeMemberRoleRequest request, CancellationToken cancellationToken = default)
+    public async Task<MemberResponse> ChangeAsync(Guid babyId, Guid userId, ChangeMemberRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        EnsureSomethingToChange(request);
+        var scopes = ScopesOf(request);
         var baby = await LoadAsync(babyId, cancellationToken);
-        var isDeclaredProfessional = request.Role.RequiresProfessionalProfile() && await _professionals.FindAsync(userId, cancellationToken) is not null;
-        var previousRole = baby.FindMember(userId)?.Role;
-        var member = baby.ChangeMemberRole(userId, request.Role, isDeclaredProfessional);
-        await CancelProposalsWhenDoctorAccessEndsAsync(babyId, userId, previousRole, member.Role, cancellationToken);
+        await ChangeRoleWhenRequestedAsync(baby, userId, request.Role, cancellationToken);
+        ChangeScopesWhenRequested(baby, userId, scopes);
         await _babies.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Member {UserId} of baby {BabyId} is now {Role}", userId, babyId, member.Role);
+        var member = baby.FindMember(userId) ?? throw new MemberNotFoundException(babyId, userId);
+        _logger.LogInformation("Member {UserId} of baby {BabyId} is now {Role} (doctor scopes {DoctorScopes})", userId, babyId, member.Role, member.DoctorScopes?.ToStorage());
         var users = await LoadUsersAsync([member], cancellationToken);
         var doctors = await LoadDoctorProfilesAsync([member], cancellationToken);
         return MemberResponse.For(member, users.GetValueOrDefault(userId), doctors.GetValueOrDefault(userId));
@@ -82,6 +83,38 @@ internal sealed class MemberService : IMemberService
     {
         var user = await _currentUser.GetUserAsync(cancellationToken);
         await RemoveAsync(babyId, user.Id, cancellationToken);
+    }
+
+    private async Task ChangeRoleWhenRequestedAsync(Baby baby, Guid userId, BabyRole? role, CancellationToken cancellationToken)
+    {
+        if (role is not { } newRole)
+        {
+            return;
+        }
+
+        var isDeclaredProfessional = newRole.RequiresProfessionalProfile() && await _professionals.FindAsync(userId, cancellationToken) is not null;
+        var previousRole = baby.FindMember(userId)?.Role;
+        var member = baby.ChangeMemberRole(userId, newRole, isDeclaredProfessional);
+        await CancelProposalsWhenDoctorAccessEndsAsync(baby.Id, userId, previousRole, member.Role, cancellationToken);
+    }
+
+    private static void ChangeScopesWhenRequested(Baby baby, Guid userId, DoctorScopeSet? scopes)
+    {
+        if (scopes is not null)
+        {
+            baby.ChangeDoctorScopes(userId, scopes);
+        }
+    }
+
+    private static DoctorScopeSet? ScopesOf(ChangeMemberRequest request) =>
+        request.DoctorScopes is null ? null : DoctorScopeSet.Parse(request.DoctorScopes);
+
+    private static void EnsureSomethingToChange(ChangeMemberRequest request)
+    {
+        if (request.Role is null && request.DoctorScopes is null)
+        {
+            throw new DomainValidationException("role", "Send a role, doctorScopes or both.");
+        }
     }
 
     /// <summary>Cancels the member's pending proposals (reason <c>access_removed</c>) when she was a Doctor and no longer is.</summary>

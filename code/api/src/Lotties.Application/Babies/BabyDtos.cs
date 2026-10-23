@@ -28,6 +28,12 @@ public sealed record BabyResponse
     /// </summary>
     public Guid UserId { get; init; }
 
+    /// <summary>
+    /// The sections the caller sees when her role is Doctor (codes such as <c>daily_log</c>, <c>growth</c>, <c>medications</c>,
+    /// <c>vaccines</c>, <c>formulas</c>, <c>notes</c>; the defaults are all six); <c>null</c> for every other role (additive).
+    /// </summary>
+    public IReadOnlyList<string>? DoctorScopes { get; init; }
+
     /// <summary>Which recommendations the vaccine schedule shows: <c>public</c> or <c>public+private</c> (additive).</summary>
     public string VaccineProfile { get; init; } = Domain.Vaccinations.VaccineProfile.PublicCode;
 
@@ -50,6 +56,7 @@ public sealed record BabyResponse
             Role = member.Role,
             CreatedAt = baby.CreatedAt,
             UserId = member.UserId,
+            DoctorScopes = MemberScopeCodes.Of(member),
             VaccineProfile = Domain.Vaccinations.VaccineProfile.CodeOf(baby.VaccineCoverage),
             GestationalAgeWeeks = baby.GestationalAgeWeeks,
             RsvMaternalVaccination = baby.RsvMaternalVaccination,
@@ -105,6 +112,9 @@ public sealed record MemberResponse
     /// <summary>A Doctor member's professional details (additive; <c>null</c> for every other role).</summary>
     public ProfessionalSummary? Professional { get; init; }
 
+    /// <summary>The sections a Doctor member sees (additive; <c>null</c> for every other role).</summary>
+    public IReadOnlyList<string>? DoctorScopes { get; init; }
+
     public static MemberResponse For(BabyMember member, User? user, ProfessionalProfile? doctorProfile = null)
     {
         ArgumentNullException.ThrowIfNull(member);
@@ -115,15 +125,21 @@ public sealed record MemberResponse
             Role = member.Role,
             JoinedAt = member.JoinedAt,
             Professional = member.Role.IsDoctor() && doctorProfile is not null ? (ProfessionalSummary)doctorProfile : null,
+            DoctorScopes = MemberScopeCodes.Of(member),
         };
     }
 }
 
-/// <summary>Body of <c>PATCH /api/v1/babies/{babyId}/members/{userId}</c>.</summary>
-public sealed record ChangeMemberRoleRequest
+/// <summary>
+/// Body of <c>PATCH /api/v1/babies/{babyId}/members/{userId}</c>: a new <c>role</c>, new <c>doctorScopes</c> (the sections
+/// a Doctor sees) or both; at least one is required, and when both are sent the role is applied first.
+/// </summary>
+public sealed record ChangeMemberRequest
 {
     [JsonConverter(typeof(RoleStringEnumConverter))]
-    public required BabyRole Role { get; init; }
+    public BabyRole? Role { get; init; }
+
+    public IReadOnlyList<string?>? DoctorScopes { get; init; }
 }
 
 /// <summary>
@@ -143,6 +159,9 @@ public sealed record CreateInviteRequest
 
     /// <summary>Days until the invite expires; defaults to 7, at most 30.</summary>
     public int? ExpiresInDays { get; init; }
+
+    /// <summary>The sections a Doctor invite opens; <c>null</c> or absent = all of them. Only for the Doctor role (else 400 on <c>doctorScopes</c>).</summary>
+    public IReadOnlyList<string?>? DoctorScopes { get; init; }
 }
 
 /// <summary>A pending invite. Never carries the token, which exists only in <see cref="CreatedInviteResponse"/>.</summary>
@@ -161,6 +180,9 @@ public record InviteResponse
 
     public DateTimeOffset ExpiresAt { get; init; }
 
+    /// <summary>The sections a Doctor invite opens (additive; <c>null</c> for every other role).</summary>
+    public IReadOnlyList<string>? DoctorScopes { get; init; }
+
     public static implicit operator InviteResponse(Invite invite)
     {
         ArgumentNullException.ThrowIfNull(invite);
@@ -172,6 +194,7 @@ public record InviteResponse
             CreatedBy = invite.CreatedBy,
             CreatedAt = invite.CreatedAt,
             ExpiresAt = invite.ExpiresAt,
+            DoctorScopes = invite.Role.IsDoctor() ? invite.EffectiveDoctorScopes.Codes : null,
         };
     }
 }
@@ -193,7 +216,18 @@ public sealed record CreatedInviteResponse : InviteResponse
             CreatedBy = invite.CreatedBy,
             CreatedAt = invite.CreatedAt,
             ExpiresAt = invite.ExpiresAt,
+            DoctorScopes = invite.DoctorScopes,
             Token = issued.Token.Value,
         };
+    }
+}
+
+/// <summary>The scope codes a response carries for a member: a Doctor's effective sections, <c>null</c> for any other role.</summary>
+internal static class MemberScopeCodes
+{
+    public static IReadOnlyList<string>? Of(BabyMember member)
+    {
+        ArgumentNullException.ThrowIfNull(member);
+        return member.Role.IsDoctor() ? member.EffectiveDoctorScopes.Codes : null;
     }
 }

@@ -43,6 +43,11 @@ internal sealed class EfNoteRepository(LottiesDbContext context, UniqueViolation
         return await changed.OrderBy(note => note.UpdatedAt).ThenBy(note => note.Id).ToListAsync(cancellationToken);
     }
 
+    public Task<int> CountSharedByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default) =>
+        context.BabyNotes.CountAsync(
+            note => note.BabyId == babyId && note.AuthorUserId == authorUserId && note.Visibility == NoteVisibility.Shared && note.DeletedAt == null,
+            cancellationToken);
+
     public Task<bool> TryAddAsync(BabyNote note, CancellationToken cancellationToken = default) =>
         UniqueInserts.TryInsertAsync(context, uniqueViolations, note, cancellationToken);
 

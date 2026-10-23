@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Lotties.Api.Endpoints;
 
 /// <summary>
-/// Medication catalog of one baby. Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes
+/// Medication catalog of one baby. Reads need <see cref="BabyPolicies.Read"/> (from the baby group) and, for a Doctor,
+/// the medications scope (<see cref="BabyPolicies.ScopeMedications"/>), writes
 /// <see cref="BabyPolicies.Write"/>. Deletion is a hard delete; events keep their own copy of the medication name.
 /// </summary>
 internal static class MedicationEndpoints
@@ -20,7 +21,9 @@ internal static class MedicationEndpoints
     public static RouteGroupBuilder MapMedicationEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(MedicationsPath, ListAsync).WithName("ListMedications");
+        baby.MapGet(MedicationsPath, ListAsync)
+            .RequireAuthorization(BabyPolicies.ScopeMedications)
+            .WithName("ListMedications");
         baby.MapPut(MedicationPath, UpsertAsync)
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("UpsertMedication")

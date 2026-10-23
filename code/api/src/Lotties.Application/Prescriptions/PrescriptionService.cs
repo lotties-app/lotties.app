@@ -13,6 +13,9 @@ public interface IPrescriptionService
     /// <summary>The baby's prescriptions changed at or after <paramref name="since"/> (all when <c>null</c>), soft-deleted included, by (updatedAt, id).</summary>
     Task<IReadOnlyList<PrescriptionResponse>> ListChangesAsync(Guid babyId, DateTimeOffset? since, CancellationToken cancellationToken = default);
 
+    /// <summary>The baby's active, non-deleted prescriptions with their provenance (the doctor's clinical summary), by (updatedAt, id).</summary>
+    Task<IReadOnlyList<PrescriptionResponse>> ListActiveAsync(Guid babyId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Idempotent upsert by client id (see <see cref="Prescription.DecideUpsert"/> for the deleted, stale and other-baby
     /// rules). The medication must be in the baby's catalog (<see cref="PrescriptionMedicationNotFoundException"/>).
@@ -57,6 +60,12 @@ internal sealed class PrescriptionService : IPrescriptionService
     {
         var changed = await _prescriptions.ListChangesAsync(babyId, since, cancellationToken);
         return await DescribeAsync(changed, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<PrescriptionResponse>> ListActiveAsync(Guid babyId, CancellationToken cancellationToken = default)
+    {
+        var active = await _prescriptions.ListActiveAsync(babyId, cancellationToken);
+        return await DescribeAsync(active.OrderBy(prescription => prescription.UpdatedAt).ThenBy(prescription => prescription.Id).ToArray(), cancellationToken);
     }
 
     public async Task<UpsertPrescriptionResult> UpsertAsync(Guid babyId, Guid prescriptionId, UpsertPrescriptionRequest request, CancellationToken cancellationToken = default)

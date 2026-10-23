@@ -36,7 +36,7 @@ internal sealed class InviteService : IInviteService
         ArgumentNullException.ThrowIfNull(request);
         var lifetime = LifetimeOf(request);
         var user = await _currentUser.GetUserAsync(cancellationToken);
-        var issued = Invite.Issue(babyId, request.Role, user.Id, _timeProvider.GetUtcNow(), lifetime);
+        var issued = Invite.Issue(babyId, request.Role, user.Id, _timeProvider.GetUtcNow(), lifetime, ScopesOf(request));
         await _invites.AddAsync(issued.Invite, cancellationToken);
         _logger.LogInformation("User {UserId} invited as {Role} to baby {BabyId} (invite {InviteId})", user.Id, request.Role, babyId, issued.Invite.Id);
         return CreatedInviteResponse.For(issued);
@@ -85,6 +85,10 @@ internal sealed class InviteService : IInviteService
 
         return await _invites.FindByHashedTokenAsync(plainToken.Hash(), cancellationToken) ?? throw new InviteNotFoundException();
     }
+
+    /// <summary>The scopes a request names, or <c>null</c> (the defaults) when it names none.</summary>
+    private static DoctorScopeSet? ScopesOf(CreateInviteRequest request) =>
+        request.DoctorScopes is null ? null : DoctorScopeSet.Parse(request.DoctorScopes);
 
     private static TimeSpan LifetimeOf(CreateInviteRequest request)
     {

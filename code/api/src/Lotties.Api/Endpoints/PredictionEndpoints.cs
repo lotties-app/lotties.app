@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Lotties.Api.Endpoints;
 
-/// <summary>Computed predictions of one baby. Needs <see cref="Authorization.BabyPolicies.Read"/> (from the baby group).</summary>
+/// <summary>
+/// Computed predictions of one baby. Needs <see cref="Authorization.BabyPolicies.Read"/> (from the baby group) and, for a
+/// Doctor, the daily log scope (<see cref="Authorization.BabyPolicies.ScopeDailyLog"/>).
+/// </summary>
 internal static class PredictionEndpoints
 {
     /// <summary>Optional query parameter: the family's current UTC offset in minutes (e.g. <c>-180</c>), used to tell day from night.</summary>
@@ -24,7 +27,9 @@ internal static class PredictionEndpoints
     public static RouteGroupBuilder MapPredictionEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(PredictionsPath, GetAsync).WithName("GetPredictions");
+        baby.MapGet(PredictionsPath, GetAsync)
+            .RequireAuthorization(Authorization.BabyPolicies.ScopeDailyLog)
+            .WithName("GetPredictions");
         return baby;
     }
 

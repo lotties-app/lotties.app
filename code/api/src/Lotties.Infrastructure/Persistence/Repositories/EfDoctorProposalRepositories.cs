@@ -47,6 +47,11 @@ internal sealed class EfPrescriptionProposalRepository(
             .Where(proposal => proposal.BabyId == babyId && proposal.AuthorUserId == authorUserId && proposal.Status == ProposalStatus.Pending)
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountPendingByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default) =>
+        context.PrescriptionProposals.CountAsync(
+            proposal => proposal.BabyId == babyId && proposal.AuthorUserId == authorUserId && proposal.Status == ProposalStatus.Pending,
+            cancellationToken);
+
     public async Task<IReadOnlyList<PrescriptionProposal>> ListPendingReplacingAsync(Guid babyId, Guid prescriptionId, CancellationToken cancellationToken = default) =>
         await context.PrescriptionProposals
             .Where(proposal => proposal.BabyId == babyId && proposal.ReplacesPrescriptionId == prescriptionId && proposal.Status == ProposalStatus.Pending)
