@@ -1,3 +1,5 @@
+using Lotties.Api.Assistants.Alexa;
+
 namespace Lotties.Api.Endpoints;
 
 public static class ApiEndpoints
@@ -38,6 +40,7 @@ public static class ApiEndpoints
         api.MapBackupRestoreEndpoints();
         api.MapPushEndpoints();
         api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();
+        api.MapAlexaEndpoints();
         return app;
     }
 }

@@ -1,0 +1,264 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "lotties baby",
+      "intents": [
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "SleepStartIntent",
+          "slots": [],
+          "samples": [
+            "baby fell asleep",
+            "the baby fell asleep",
+            "she fell asleep",
+            "he fell asleep",
+            "she is sleeping",
+            "he is sleeping",
+            "she's asleep",
+            "he's asleep",
+            "the baby is asleep",
+            "the baby went to sleep",
+            "start sleep",
+            "start a nap",
+            "start the nap",
+            "nap started",
+            "log sleep"
+          ]
+        },
+        {
+          "name": "SleepEndIntent",
+          "slots": [],
+          "samples": [
+            "baby woke up",
+            "the baby woke up",
+            "she woke up",
+            "he woke up",
+            "she is awake now",
+            "he is awake now",
+            "end sleep",
+            "stop sleep",
+            "stop the nap",
+            "the nap is over",
+            "log wake up"
+          ]
+        },
+        {
+          "name": "BottleIntent",
+          "slots": [
+            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} ml", "{amount} milliliters"] },
+            { "name": "kind", "type": "BOTTLE_KIND" }
+          ],
+          "samples": [
+            "log a {amount} ml bottle",
+            "log a {amount} milliliter bottle",
+            "log a bottle of {amount} ml",
+            "log a {amount} ml bottle of {kind}",
+            "log a {amount} ml {kind} bottle",
+            "a {amount} ml bottle",
+            "she drank {amount} ml",
+            "he drank {amount} ml",
+            "the baby drank {amount} ml",
+            "she had {amount} ml of {kind}",
+            "he had {amount} ml of {kind}",
+            "she drank a {kind} bottle of {amount} ml",
+            "log a bottle",
+            "log a {kind} bottle"
+          ]
+        },
+        {
+          "name": "NursingIntent",
+          "slots": [{ "name": "side", "type": "BREAST_SIDE" }],
+          "samples": [
+            "start nursing",
+            "start breastfeeding",
+            "she is nursing",
+            "he is nursing",
+            "start nursing on the {side}",
+            "start nursing on the {side} side",
+            "nursing on the {side} side",
+            "start breastfeeding on the {side} side",
+            "start feeding on the {side} breast",
+            "log nursing"
+          ]
+        },
+        {
+          "name": "DiaperIntent",
+          "slots": [{ "name": "kind", "type": "DIAPER_KIND", "samples": ["{kind}", "it was {kind}", "a {kind} one"] }],
+          "samples": [
+            "log a {kind} diaper",
+            "a {kind} diaper",
+            "{kind} diaper",
+            "she had a {kind} diaper",
+            "he had a {kind} diaper",
+            "changed a {kind} diaper",
+            "diaper change {kind}",
+            "log a diaper",
+            "log a diaper change"
+          ]
+        },
+        {
+          "name": "LastFeedIntent",
+          "slots": [],
+          "samples": [
+            "when was the last feed",
+            "when was the last feeding",
+            "when was the last bottle",
+            "when did she last eat",
+            "when did he last eat",
+            "when did the baby eat",
+            "when did she eat last",
+            "last feed"
+          ]
+        },
+        {
+          "name": "SleepStatusIntent",
+          "slots": [],
+          "samples": [
+            "is the baby sleeping",
+            "is she sleeping",
+            "is he sleeping",
+            "how long has she been sleeping",
+            "how long has he been sleeping",
+            "how long has she been awake",
+            "how long has he been awake",
+            "when did she wake up",
+            "when did he wake up",
+            "how long was the last nap",
+            "sleep status"
+          ]
+        },
+        {
+          "name": "DiapersTodayIntent",
+          "slots": [],
+          "samples": [
+            "how many diapers today",
+            "how many diapers has she had today",
+            "how many diapers has he had today",
+            "how many diapers did we change today",
+            "diapers today",
+            "diaper count"
+          ]
+        },
+        {
+          "name": "NextAppointmentIntent",
+          "slots": [],
+          "samples": [
+            "when is the next appointment",
+            "when is the next doctor appointment",
+            "when is her next appointment",
+            "when is his next appointment",
+            "what is the next appointment",
+            "next appointment"
+          ]
+        },
+        {
+          "name": "DueVaccinesIntent",
+          "slots": [],
+          "samples": [
+            "which vaccines are due",
+            "what vaccines are due",
+            "are any vaccines due",
+            "is she due for vaccines",
+            "is he due for vaccines",
+            "vaccines due"
+          ]
+        },
+        {
+          "name": "SetBabyHelpIntent",
+          "slots": [],
+          "samples": [
+            "choose the baby",
+            "change the baby",
+            "switch baby",
+            "set the baby",
+            "use another baby",
+            "how do I choose the baby"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "BOTTLE_KIND",
+          "values": [
+            { "id": "FORMULA", "name": { "value": "formula", "synonyms": ["formula milk"] } },
+            { "id": "BREAST_MILK", "name": { "value": "breast milk", "synonyms": ["breastmilk", "pumped milk", "mommy's milk"] } }
+          ]
+        },
+        {
+          "name": "DIAPER_KIND",
+          "values": [
+            { "id": "WET", "name": { "value": "wet", "synonyms": ["pee", "peed", "pee pee"] } },
+            { "id": "DIRTY", "name": { "value": "dirty", "synonyms": ["poop", "poopy", "pooped", "poo"] } },
+            { "id": "BOTH", "name": { "value": "both", "synonyms": ["wet and dirty", "pee and poop"] } }
+          ]
+        },
+        {
+          "name": "BREAST_SIDE",
+          "values": [
+            { "id": "LEFT", "name": { "value": "left" } },
+            { "id": "RIGHT", "name": { "value": "right" } }
+          ]
+        }
+      ]
+    },
+    "dialog": {
+      "intents": [
+        {
+          "name": "BottleIntent",
+          "delegationStrategy": "ALWAYS",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "amount",
+              "type": "AMAZON.NUMBER",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
+            },
+            {
+              "name": "kind",
+              "type": "BOTTLE_KIND",
+              "elicitationRequired": false,
+              "confirmationRequired": false,
+              "prompts": {}
+            }
+          ]
+        },
+        {
+          "name": "DiaperIntent",
+          "delegationStrategy": "ALWAYS",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "kind",
+              "type": "DIAPER_KIND",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.kind" }
+            }
+          ]
+        }
+      ],
+      "delegationStrategy": "ALWAYS"
+    },
+    "prompts": [
+      {
+        "id": "Elicit.Slot.BottleIntent.amount",
+        "variations": [
+          { "type": "PlainText", "value": "How many milliliters?" },
+          { "type": "PlainText", "value": "How much was in the bottle, in milliliters?" }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.DiaperIntent.kind",
+        "variations": [{ "type": "PlainText", "value": "Was it wet, dirty, or both?" }]
+      }
+    ]
+  }
+}

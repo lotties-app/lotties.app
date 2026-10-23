@@ -1,0 +1,13 @@
+{
+  "assistants": {
+    "title": "Voice assistants",
+    "intro": "Log and ask by voice, for example: “Alexa, tell Lotties baby the baby fell asleep”. Link your Lotties account in the Alexa app first.",
+    "babyLabel": "Baby for voice commands",
+    "noneChosen": "Not chosen",
+    "hintOne": "You log for one baby, so voice commands use {{name}}.",
+    "hintSeveral": "You log for more than one baby: choose the one voice commands log and answer for.",
+    "saved": "Saved.",
+    "saveFailed": "This baby can't be used for voice commands. Choose a baby you log for.",
+    "loadFailed": "Couldn't load the voice assistant settings."
+  }
+}

@@ -12,6 +12,7 @@ import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { DeleteAccountSection } from '../settings/DeleteAccountSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
+import { VoiceAssistantsSection } from '../settings/VoiceAssistantsSection';
 import { canLog, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { hasPatients } from '../doctor/appMode';
 import { useBabies } from '../db/hooks';
@@ -112,6 +113,15 @@ export function SettingsPage() {
           defaultExpanded={wants('feeding')}
         >
           <FeedingSection />
+        </SettingsSection>
+      )}
+      {babies.some(canLog) && (
+        <SettingsSection
+          id="voice-assistants"
+          title={t('assistants.title')}
+          defaultExpanded={wants('voice-assistants')}
+        >
+          <VoiceAssistantsSection babies={babies} />
         </SettingsSection>
       )}
       <SettingsSection

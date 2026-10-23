@@ -86,6 +86,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
 
     public DbSet<JobLease> JobLeases => Set<JobLease>();
 
+    /// <summary>Users' voice assistant settings (one per user: the default baby).</summary>
+    public DbSet<Lotties.Domain.Assistants.UserAssistantSettings> UserAssistantSettings => Set<Lotties.Domain.Assistants.UserAssistantSettings>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);
 }
