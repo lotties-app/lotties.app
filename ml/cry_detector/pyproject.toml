@@ -1,0 +1,32 @@
+[project]
+name = "baby-routine-cry-detector"
+version = "0.1.0"
+description = "Research spike: on-device baby cry detection, offline evaluation harness (docs/design/31-cry-detector-spike.md)."
+readme = "README.md"
+license = { text = "AGPL-3.0-only" }
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "soundfile>=0.12",
+    "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+# The same YAMNet .tflite and the same MediaPipe Tasks version (1.1.1) as @mediapipe/tasks-audio in the browser.
+yamnet = ["mediapipe==1.1.1"]
+# The same int8 ONNX file as Transformers.js; the AST feature extractor of transformers (numpy path, no torch).
+ast = ["onnxruntime>=1.18", "transformers>=4.44"]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["cry_detector*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

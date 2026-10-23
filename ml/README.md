@@ -6,6 +6,8 @@ diaper, sleep start, wake-up and bed time better than the heuristic, for that ba
 
 Results: [`docs/ml/BENCHMARK.md`](../docs/ml/BENCHMARK.md). Service design: [`docs/ml/ARCHITECTURE.md`](../docs/ml/ARCHITECTURE.md).
 
+The on-device cry detection spike is a separate project with its own environment: [`cry_detector/`](cry_detector/README.md).
+
 ## Data rules
 
 - Real event exports contain a child's data. Keep them **outside the repository** and point `BR_ML_DATA` at the CSV.
