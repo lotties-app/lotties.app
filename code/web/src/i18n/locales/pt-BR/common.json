@@ -39,6 +39,9 @@
   "format": {
     "durationH": "{{h}} h",
     "durationM": "{{m}} min",
-    "durationHM": "{{h}} h {{m}} min"
+    "durationHM": "{{h}} h {{m}} min",
+    "durationCompactH": "{{h}}h",
+    "durationCompactM": "{{m}}min",
+    "durationCompactHM": "{{h}}h {{m}}min"
   }
 }

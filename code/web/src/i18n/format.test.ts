@@ -4,6 +4,7 @@ import {
   formatAge,
   formatDate,
   formatDuration,
+  formatDurationCompact,
   formatList,
   formatNumber,
   formatRelative,
@@ -73,6 +74,16 @@ describe('formatDuration', () => {
     expect(formatDuration(45 * MINUTE, 'pt-BR')).toBe('45 min');
     expect(formatDuration(60 * MINUTE, 'pt-BR')).toBe('1 h');
     expect(formatDuration(65 * MINUTE, 'pt-BR')).toBe('1 h 05 min');
+  });
+});
+
+describe('formatDurationCompact', () => {
+  it('keeps a value short and on one line in both languages', () => {
+    expect(formatDurationCompact(576 * MINUTE, 'pt-BR')).toBe('9h 36min');
+    expect(formatDurationCompact(60 * MINUTE, 'pt-BR')).toBe('1h');
+    expect(formatDurationCompact(45 * MINUTE, 'pt-BR')).toBe('45min');
+    expect(formatDurationCompact(576 * MINUTE, 'en')).toBe('9h 36m');
+    expect(formatDurationCompact(65 * MINUTE, 'en')).toBe('1h 05m');
   });
 });
 
