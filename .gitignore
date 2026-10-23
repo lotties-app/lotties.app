@@ -24,6 +24,11 @@ ml/out/
 ml/**/__pycache__/
 ml/.pytest_cache/
 ml/*.egg-info/
+# cry detector spike: venv, outputs, caches; datasets and models stay in a cache dir outside the repository
+ml/cry_detector/.venv/
+ml/cry_detector/out/
+ml/cry_detector/.pytest_cache/
+ml/cry_detector/*.egg-info/
 
 # keycloak-theme: build outputs and the throwaway local Keycloak runtime (generated passwords)
 code/keycloak-theme/node_modules/

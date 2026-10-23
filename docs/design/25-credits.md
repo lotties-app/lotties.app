@@ -59,3 +59,4 @@ A new curated credit: add it to `curated.json`, add `credits.curated.<id>` to bo
 - The Gradle/CocoaPods native dependency list (section 4).
 - The Keycloak theme's own npm tree is not listed package by package (it is a separate build that runs inside the identity provider).
 - The credits are not translated per license text (original English by design).
+- Cry detector (spike only, docs/design/31-cry-detector-spike.md section 12): if it is built, add a curated credit for the YAMNet model (Google, Apache-2.0; confirm the licence of the MediaPipe-hosted `.tflite`, flag C1) and regenerate the credits for `@mediapipe/tasks-audio` (Apache-2.0). The evaluation datasets (ESC-50 CC BY-NC 3.0, Donate-a-cry ODbL/DbCL, Mini LibriSpeech CC BY 4.0) do not ship and are cited in that report only.
