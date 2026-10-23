@@ -2,6 +2,7 @@ import { ApiError } from '../api/ApiError';
 import { describeApiError } from '../api/errorMessages';
 import { renderCatalogText } from '../i18n/catalog';
 import { t } from '../i18n/i18n';
+import { saveFile } from '../platform/saveFile';
 
 /*
  * Export and import of a baby's data (docs/design/24-export-import.md). The server builds and reads
@@ -128,19 +129,9 @@ export function backupFileName(babyName: string, now: Date, gzip: boolean): stri
   return `lotties-backup${slug ? `-${slug}` : ''}-${stamp}.json${gzip ? '.gz' : ''}`;
 }
 
-/** Saves `file` through the browser's download (a link to an object URL, clicked once). */
-export function saveBlob(file: Blob, name: string): void {
-  const url = URL.createObjectURL(file);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = name;
-  link.rel = 'noopener';
-  link.style.display = 'none';
-  document.body.append(link);
-  link.click();
-  link.remove();
-  // The download has started by the time the task ends; revoking later keeps slow browsers safe.
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+/** Saves `file`: a browser download, or the share sheet inside the native app (platform/saveFile.ts). */
+export async function saveBlob(file: Blob, name: string): Promise<void> {
+  await saveFile(file, name);
 }
 
 /** A sentence for a failed export, upload, preview or import (the problem `code` first). */

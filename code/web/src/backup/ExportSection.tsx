@@ -76,7 +76,7 @@ export function ExportSection({ baby }: { baby: Baby }) {
       setPhase('exporting');
       const file = await exportBackup(api, baby.id, compress);
       const name = backupFileName(baby.name, new Date(), compress);
-      saveBlob(file, name);
+      await saveBlob(file, name);
       setSaved({ name, size: file.size });
       setPhase('done');
     } catch (e) {
