@@ -1,0 +1,39 @@
+{
+  "growth": {
+    "title": "Growth",
+    "add": "Add measurement",
+    "edit": "Edit measurement",
+    "none": "No measurements yet.",
+    "loadFailed": "Could not load measurements. Try again later.",
+    "createBabyFirst": "Create a baby on the Now screen to track growth.",
+    "deleteTitle": "Delete this measurement?",
+    "deleteBody": "This removes it from the list and the charts.",
+    "deleteConfirm": "Delete measurement",
+    "list": "Measurements",
+    "editOn": "Edit measurement of {{date}}",
+    "deleteOn": "Delete measurement of {{date}}",
+    "date": "Date",
+    "range": "{{min}} to {{max}} {{unit}}",
+    "metricLabel": "{{label}} ({{unit}})",
+    "chart": "{{label}} chart",
+    "latest": "Latest {{value}} {{unit}}",
+    "noneForMetric": "No {{label}} measurements yet.",
+    "valueWithUnit": "{{label}} {{value}} {{unit}}",
+    "pointTitle": "{{date}}: {{value}} {{unit}}",
+    "chartDescription": "{{label}} from {{from}} to {{to}}: {{points}}.",
+    "chartPoint": "{{value}} {{unit}} on {{date}}",
+    "metrics": {
+      "weightKg": "Weight",
+      "heightCm": "Height",
+      "headCircumferenceCm": "Head circumference"
+    },
+    "validation": {
+      "pickDate": "Pick a date.",
+      "dateFuture": "The date cannot be in the future.",
+      "dateTooOld": "The date is too far in the past.",
+      "outOfRange": "{{label}} must be between {{min}} and {{max}} {{unit}}.",
+      "needValue": "Enter at least one of weight, height or head circumference.",
+      "notesTooLong": "Notes can have up to {{max}} characters."
+    }
+  }
+}

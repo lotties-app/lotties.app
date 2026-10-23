@@ -1,0 +1,58 @@
+{
+  "timers": {
+    "paused": "Pausado",
+    "pausedFor": "pausa de {{duration}}",
+    "pausedClock": "Pausado {{time}}",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "pauseNamed": "Pausar {{name}}",
+    "resumeNamed": "Retomar {{name}}",
+    "stop": "Parar",
+    "stopNamed": "Parar {{name}}",
+    "region": "Cronômetros em andamento",
+    "elapsed": "Decorrido",
+    "announce": {
+      "paused": "{{name}} pausado",
+      "resumed": "{{name}} retomado",
+      "running": "{{name}} em andamento, {{duration}}"
+    },
+    "target": {
+      "usualNap": "Soneca costuma durar cerca de {{duration}}",
+      "usualNight": "Sono da noite costuma durar cerca de {{duration}}",
+      "usual": "Duração habitual: cerca de {{duration}}",
+      "progress": "{{elapsed}} de cerca de {{target}}",
+      "past": "Além da duração habitual"
+    },
+    "mini": {
+      "open": "Abrir o cronômetro de {{name}}",
+      "expand": "Mostrar todos os cronômetros",
+      "collapse": "Ocultar a lista",
+      "list": "Todos os cronômetros em andamento",
+      "count_one": "{{count}} cronômetro",
+      "count_other": "{{count}} cronômetros",
+      "other": "Outros cronômetros"
+    },
+    "sheet": {
+      "started": "Início às {{time}}",
+      "close": "Fechar",
+      "more": "Mais opções",
+      "discard": "Descartar",
+      "discarded": "{{name}} descartado",
+      "adjustStart": "Ajustar a hora de início",
+      "adjustTitle": "Hora de início",
+      "adjustHint": "Quando começou? Não pode ser depois de agora.",
+      "adjustDone": "Pronto",
+      "addNote": "Adicionar uma nota",
+      "editNote": "Editar a nota",
+      "noteDone": "Pronto",
+      "switchToNight": "Mudar para sono da noite",
+      "switchToNap": "Mudar para soneca",
+      "switchSide": "Trocar de lado",
+      "editAll": "Editar todos os detalhes",
+      "sleepDetails": "Detalhes do sono",
+      "pausedNote": "Em pausa. O relógio está esperando.",
+      "pauses_one": "{{count}} pausa, {{duration}} no total",
+      "pauses_other": "{{count}} pausas, {{duration}} no total"
+    }
+  }
+}

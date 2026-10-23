@@ -1,0 +1,92 @@
+{
+  "timeline": {
+    "noBaby": "Nenhum bebê ainda. Os eventos aparecem aqui quando um bebê for sincronizado com o servidor.",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "since": "Desde {{time}}",
+    "notSynced": "Ainda não sincronizado",
+    "unknownMedication": "Remédio desconhecido",
+    "intensity": "{{label}} {{value}}/{{max}}",
+    "labelValue": "{{label}} {{value}}",
+    "moodOnWake": "Humor ao acordar: {{mood}}",
+    "fellAsleepIn": "pegou no sono em {{duration}}",
+    "massageHelped": {
+      "yes": "ajudou",
+      "aLittle": "ajudou um pouco",
+      "no": "não ajudou"
+    },
+    "fussyHelped": {
+      "feeding": "a mamada ajudou",
+      "rocking": "o balanço ajudou",
+      "pacifier": "a chupeta ajudou",
+      "massage": "a massagem ajudou",
+      "sleep": "dormir ajudou",
+      "other": "outra coisa ajudou",
+      "nothing": "nada ajudou"
+    },
+    "pauses_one": "{{count}} pausa",
+    "pauses_other": "{{count}} pausas"
+  },
+  "day": {
+    "title": "Dia",
+    "previous": "Dia anterior",
+    "next": "Próximo dia",
+    "relativeDate": "{{relative}}, {{date}}",
+    "chooseDate": "Escolher a data. Mostrando {{date}}",
+    "pickTitle": "Escolha um dia",
+    "pickLabel": "Dia",
+    "filter": "Filtrar",
+    "filterActive": "Filtrar, filtros ativos: {{count}}",
+    "filterTitle": "Mostrar neste dia",
+    "clear": "Limpar",
+    "category": {
+      "sleep": "Sono",
+      "feeding": "Alimentação",
+      "diaper": "Fraldas",
+      "health": "Saúde",
+      "care": "Cuidados",
+      "activity": "Atividades",
+      "nightWaking": "Despertar noturno",
+      "custom": "Outros"
+    },
+    "summary": {
+      "title": "Resumo do dia",
+      "sleep": "Sono",
+      "feeds": "Mamadas",
+      "diapers": "Fraldas"
+    },
+    "ribbon": {
+      "label": "O dia em resumo: {{sleep}}, {{feeds}}, {{diapers}}",
+      "sleep": "{{duration}} de sono",
+      "noSleep": "nenhum sono registrado",
+      "legend": "O que as cores significam",
+      "range": "{{from}} – {{to}}",
+      "itemName": "{{name}} {{time}}, {{details}}",
+      "itemNameShort": "{{name}} {{time}}",
+      "cluster_one": "{{count}} evento, de {{from}} a {{to}}",
+      "cluster_other": "{{count}} eventos, de {{from}} a {{to}}",
+      "clusterTitle_one": "{{count}} evento",
+      "clusterTitle_other": "{{count}} eventos",
+      "naps_one": "{{count}} soneca",
+      "naps_other": "{{count}} sonecas",
+      "open": "Abrir",
+      "showInList": "Mostrar na lista",
+      "legendHint": "Toque em uma cor para mostrar ou ocultar"
+    },
+    "empty": {
+      "title": "Um dia tranquilo. Nada registrado ainda."
+    },
+    "addEvent": "Adicionar evento",
+    "noMatches": "Nenhum evento corresponde a este filtro.",
+    "editRow": "Editar {{title}}, {{time}}",
+    "stopNamed": "Parar {{title}}",
+    "needsAttention": "Precisa de atenção",
+    "week": "Semana",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Próxima semana",
+    "chooseMonth": "{{month}}. Escolher uma data. Mostrando {{date}}",
+    "sessionEnded": "Sessão de sono encerrada, {{duration}}",
+    "pausedFor": "pausa de {{duration}}",
+    "viewRow": "{{title}}, {{time}}, registrado por {{name}} (somente visualização)"
+  }
+}

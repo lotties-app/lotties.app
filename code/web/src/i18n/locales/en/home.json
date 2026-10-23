@@ -1,0 +1,16 @@
+{
+  "home": {
+    "noTypes": "No event types yet. They appear here after the first sync.",
+    "start": "Start {{name}}",
+    "log": "Log {{name}}",
+    "runningTimers": "Running timers",
+    "stop": "Stop",
+    "stopNamed": "Stop {{name}}",
+    "editNamed": "Edit {{name}}",
+    "unreachable": {
+      "title": "Couldn't reach the server",
+      "body": "Your babies load once the server answers. Check your connection and try again.",
+      "offline": "You are offline. Your babies load once you are back online."
+    }
+  }
+}

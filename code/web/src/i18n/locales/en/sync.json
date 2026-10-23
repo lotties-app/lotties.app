@@ -1,0 +1,26 @@
+{
+  "sync": {
+    "signInToSync": "Sign in to sync",
+    "syncing": "Syncing…",
+    "offline": "Offline",
+    "error": "Sync error",
+    "synced": "Synced",
+    "failedSuffix": "{{count}} failed",
+    "labelWithFailed": "{{label}} · {{failed}}",
+    "iconLabel": "Sync: {{label}}. Open sync settings",
+    "statusLabel": "Sync status: {{label}}",
+    "unauthorized": "Unauthorized: sign in again to resume sync.",
+    "pending_one": "{{count}} pending",
+    "pending_other": "{{count}} pending",
+    "waitingForSignIn": "Reconnecting",
+    "waitingForToken": "Waiting for your sign-in to be renewed.",
+    "networkError": "Could not reach the server.",
+    "gaveUp": "The server kept failing after {{attempts}} attempts ({{error}}). Retry later or discard the change.",
+    "attentionSuffix_one": "{{count}} needs your attention",
+    "attentionSuffix_other": "{{count}} need your attention",
+    "rejected": "The server rejected this change.",
+    "rejectedNotOwned": "A change to an entry someone else added was not saved: you can change only your own entries.",
+    "rejectedRole": "Your access to this baby changed, so a change was not saved. It is kept in Settings > Sync.",
+    "rejectedProposalDecided": "This suggestion was already decided, so your change was not applied."
+  }
+}

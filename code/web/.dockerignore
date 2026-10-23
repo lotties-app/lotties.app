@@ -1,6 +1,7 @@
 node_modules
 dist
 coverage
+.vite-cache
 .env
 .env.*
 !.env.example

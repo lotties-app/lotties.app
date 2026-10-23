@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import en from './locales/en.json';
-import ptBR from './locales/pt-BR.json';
+import { enCatalog as en } from './catalogEn';
+import catalogEnSource from './catalogEn.ts?raw';
+import { ptBRCatalog as ptBR } from './catalogPtBR';
+import { activateLocale, i18n, t } from './i18n';
 import landingEn from './locales/landing.en.json';
 import landingPtBR from './locales/landing.pt-BR.json';
 import pushEn from './locales/push.en.json';
@@ -100,5 +102,74 @@ describe('translation catalogs', () => {
         .map(([key]) => key);
       expect(missing, name).toEqual([]);
     }
+  });
+});
+
+/** The per-feature files of each language (`locales/<lang>/*.json`), keyed by their glob path. */
+const FILES = {
+  en: import.meta.glob<Record<string, unknown>>('./locales/en/*.json', {
+    eager: true,
+    import: 'default',
+  }),
+  'pt-BR': import.meta.glob<Record<string, unknown>>('./locales/pt-BR/*.json', {
+    eager: true,
+    import: 'default',
+  }),
+};
+
+/** `vaccines.json` -> its sorted top-level keys. */
+const topLevelKeysByFile = (files: Record<string, Record<string, unknown>>) =>
+  Object.fromEntries(
+    Object.entries(files).map(([path, content]) => [
+      path.slice(path.lastIndexOf('/') + 1),
+      Object.keys(content).sort(),
+    ]),
+  );
+
+describe('per-feature catalog files', () => {
+  it('exist for every feature in both languages, with the same top-level keys in the same file', () => {
+    expect(Object.keys(FILES.en).length).toBeGreaterThan(0);
+    expect(topLevelKeysByFile(FILES['pt-BR'])).toEqual(topLevelKeysByFile(FILES.en));
+  });
+
+  it('give each top-level key to one file only', () => {
+    for (const [name, files] of Object.entries(FILES)) {
+      const keys = Object.values(files).flatMap((content) => Object.keys(content));
+      expect(
+        keys.filter((key, index) => keys.indexOf(key) !== index),
+        name,
+      ).toEqual([]);
+    }
+  });
+
+  it('merge into one catalog holding every file', () => {
+    for (const [name, catalog] of Object.entries({ en, 'pt-BR': ptBR })) {
+      const fromFiles = Object.assign({}, ...Object.values(FILES[name as keyof typeof FILES]));
+      expect(catalog, name).toEqual(fromFiles);
+    }
+  });
+
+  it('are all part of the typed catalog (catalogEn.ts)', () => {
+    const untyped = Object.keys(FILES.en).filter(
+      (path) => !catalogEnSource.includes(`import('${path}')`),
+    );
+    expect(untyped).toEqual([]);
+  });
+});
+
+describe('the merged catalog at runtime', () => {
+  it('resolves keys of several feature files in English and in Brazilian Portuguese', async () => {
+    const sample = () => [
+      t('common.save'),
+      t('vaccines.title'),
+      t('nav.settings'),
+      t('appointments.title'),
+      t('age.day', { count: 2 }),
+    ];
+    expect(sample()).toEqual(['Save', 'Vaccines', 'Settings', 'Appointments', '2 days']);
+
+    await activateLocale('pt-BR');
+    expect(i18n.language).toBe('pt-BR');
+    expect(sample()).toEqual(['Salvar', 'Vacinas', 'Ajustes', 'Consultas', '2 dias']);
   });
 });

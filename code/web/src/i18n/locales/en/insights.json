@@ -1,0 +1,182 @@
+{
+  "predictions": {
+    "title": "Next predicted",
+    "region": "Predictions",
+    "next": "Next {{name}}",
+    "overdue": "Overdue",
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "why": "Why?",
+    "window": "around {{expected}}, between {{earliest}} and {{latest}}",
+    "duration": "usually lasts {{duration}}",
+    "windowWithDuration": "{{window}}; {{duration}}",
+    "needMore": "Need more data for: {{names}}",
+    "empty": "Predictions appear after a few days of logging.",
+    "offline": "Predictions load when you are back online.",
+    "unavailable": "Predictions are unavailable right now.",
+    "loading": "Loading predictions…",
+    "lastUpdated": "Last updated {{when}}",
+    "lastUpdatedOffline": "Offline · Last updated {{when}}",
+    "disclaimer": "Estimates from your logged history, not medical advice.",
+    "tomorrow": "tomorrow {{time}}",
+    "yesterday": "yesterday {{time}}",
+    "basis": {
+      "startInterval_one": "Usually every {{gap}}, based on the last {{count}} day.",
+      "startInterval_other": "Usually every {{gap}}, based on the last {{count}} days.",
+      "awakeWindow_one": "Usually {{gap}} awake after waking up, based on the last {{count}} day.",
+      "awakeWindow_other": "Usually {{gap}} awake after waking up, based on the last {{count}} days.",
+      "samples_one": "{{count}} sample used.",
+      "samples_other": "{{count}} samples used.",
+      "phaseDay": "Only daytime events were used.",
+      "phaseNight": "Only night events were used.",
+      "ageBand": "Only events from the age range {{band}} were used.",
+      "ageBands": {
+        "0-3m": "0-3 months",
+        "3-6m": "3-6 months",
+        "6-12m": "6-12 months",
+        "12m+": "12 months and older"
+      },
+      "typicalDuration_one": "Typical duration {{duration}} (from {{count}} sample).",
+      "typicalDuration_other": "Typical duration {{duration}} (from {{count}} samples).",
+      "inProgress": "Measured from the expected end of the one in progress."
+    },
+    "bedtime": {
+      "line": "Bedtime around {{time}}",
+      "window": "Likely between {{earliest}} and {{latest}}.",
+      "basis_one": "Your baby's usual bedtime was around {{clock}}, from {{count}} recent night.",
+      "basis_other": "Your baby's usual bedtime was around {{clock}}, from {{count}} recent nights."
+    }
+  },
+  "insights": {
+    "soonTitle": "More insights are coming",
+    "soonBody": "Sleep rhythm, feeding and diaper trends will appear here as you keep logging.",
+    "readyBody": "Each one opens after a few days of logging. Imported history counts too.",
+    "ready": "Ready",
+    "rangeLabel": "Period",
+    "range_one": "{{count}} day",
+    "range_other": "{{count}} days",
+    "onTheWay": "On the way",
+    "progress": "Day {{done}} of {{total}}",
+    "estimateDays_one": "About {{count}} more day of logging",
+    "estimateDays_other": "About {{count}} more days of logging",
+    "showTable": "View as table",
+    "showChart": "View as chart",
+    "tableDay": "Day",
+    "averageCaption_one": "Average of the logged days, last {{count}} day",
+    "averageCaption_other": "Average of the logged days, last {{count}} days",
+    "perDay": "{{value}} / day",
+    "average": "Average",
+    "noData": "Nothing logged in this period yet.",
+    "chartLabel": "{{title}}, {{from}} to {{to}}: {{summary}}",
+    "columnTitle": "{{day}}: {{values}}",
+    "seriesValue": "{{label}} {{value}}",
+    "footnote": "Worked out on this device from what you logged. An estimate, not medical advice.",
+    "names": {
+      "sleep": "Sleep",
+      "sleepRhythm": "Sleep rhythm",
+      "feeding": "Feeding",
+      "diapers": "Diapers",
+      "formulas": "Formulas"
+    },
+    "start": {
+      "sleep": "Start logging naps and nights to unlock",
+      "feeding": "Start logging feeds to unlock",
+      "diapers": "Start logging diapers to unlock"
+    },
+    "moreEvents": {
+      "sleep_one": "Log {{count}} more nap or night to unlock",
+      "sleep_other": "Log {{count}} more naps or nights to unlock",
+      "feeding_one": "Log {{count}} more feed to unlock",
+      "feeding_other": "Log {{count}} more feeds to unlock",
+      "diapers_one": "Log {{count}} more diaper to unlock",
+      "diapers_other": "Log {{count}} more diapers to unlock"
+    },
+    "sleep": {
+      "summary": "On average {{total}} of sleep a day: {{night}} at night and {{naps}} in naps.",
+      "night": "Night",
+      "naps": "Naps"
+    },
+    "rhythm": {
+      "bedtime": "Usual bedtime",
+      "wake": "Usual wake-up",
+      "tableBedtime": "Bedtime",
+      "tableWake": "Wake-up",
+      "summary": "Bedtime is usually around {{bedtime}} and wake-up around {{wake}}.",
+      "summaryBedtime": "Bedtime is usually around {{bedtime}}.",
+      "summaryWake": "Wake-up is usually around {{wake}}.",
+      "caption": "One row per day, from 06:00 to 06:00 the next morning. Gaps in the night are wakings."
+    },
+    "feeding": {
+      "summary_one": "About {{count}} feed a day.",
+      "summary_other": "About {{count}} feeds a day.",
+      "gapSummary": "Feeds are about {{gap}} apart on average.",
+      "feeds": "Feeds",
+      "gap": "Average gap",
+      "bottle": "Average bottle",
+      "bottleTime": "Average bottle time",
+      "headline_one": "{{count, number}} feed / day",
+      "headline_other": "{{count, number}} feeds / day",
+      "feedsChart": "Feeds per day",
+      "mlChart": "Bottle milk per day (ml)",
+      "mlSummary": "On the days with bottles, about {{ml}} a day from bottles.",
+      "tableMl": "Bottle ml"
+    },
+    "diapers": {
+      "summary_one": "About {{count}} diaper a day.",
+      "summary_other": "About {{count}} diapers a day.",
+      "wetDirty": "About {{wet}} wet and {{dirty}} dirty a day.",
+      "total": "Diapers",
+      "wet": "Wet",
+      "dirty": "Dirty",
+      "headline_one": "{{count, number}} diaper / day",
+      "headline_other": "{{count, number}} diapers / day",
+      "chart": "Diapers per day",
+      "mixedNote": "A mixed diaper counts as both wet and dirty."
+    },
+    "formulas": {
+      "rowTitle": "Formula: {{name}}",
+      "moreDays_one": "Shows after {{count}} more day with this formula",
+      "moreDays_other": "Shows after {{count}} more days with this formula",
+      "moreBottles_one": "Shows after {{count}} more bottle of this formula",
+      "moreBottles_other": "Shows after {{count}} more bottles of this formula",
+      "metrics": {
+        "bottlesPerDay": "Bottles per day",
+        "mlPerDay": "Bottle milk per day",
+        "mlPerKgPerDay": "Bottle milk per kg per day",
+        "bellyPainsPerDay": "Belly pains per day",
+        "bellyPainsAfterBottlePerDay": "Belly pains within 2 h after a bottle, per day",
+        "fussyPerDay": "Fussy spells per day",
+        "dirtyPerDay": "Dirty diapers per day"
+      },
+      "values": {
+        "bellyPains_one": "{{count, number}} belly pain/day",
+        "bellyPains_other": "{{count, number}} belly pains/day",
+        "fussy_one": "{{count, number}} fussy spell/day",
+        "fussy_other": "{{count, number}} fussy spells/day",
+        "ml": "{{value}}/day"
+      },
+      "statementOne": "While on {{name}}: {{value}}.",
+      "statementMany": "While on {{name}}: {{value}}, {{others}}.",
+      "onOther": "on {{name}}: {{value}}",
+      "range": "{{from}} to {{to}}",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "bottles_one": "{{count}} bottle",
+      "bottles_other": "{{count}} bottles",
+      "headlineBottles_one": "{{count, number}} bottle / day",
+      "headlineBottles_other": "{{count, number}} bottles / day",
+      "singleCaption_one": "While on {{name}}, average of {{count}} logged day",
+      "singleCaption_other": "While on {{name}}, average of {{count}} logged days",
+      "caption_one": "The days with a bottle of each formula, last {{count}} day",
+      "caption_other": "The days with a bottle of each formula, last {{count}} days",
+      "chartLabel": "Formulas: {{summary}}",
+      "tableMeasure": "Per day",
+      "note": "This compares what you logged. Many things change over time (age, growth, illness), so it does not show that a formula causes anything. Talk to your pediatrician before changing a formula or the amount.",
+      "weightNote": "Milk per kg uses the weight logged nearest before each day, within 14 days (else the nearest after it).",
+      "collecting": "Still collecting"
+    }
+  }
+}

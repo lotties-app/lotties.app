@@ -1,0 +1,113 @@
+{
+  "notifications": {
+    "intro": "Receba um lembrete das doses agendadas de remédio e de quando a janela de soneca abre, mesmo com o app fechado.",
+    "guardrail": "Os lembretes vêm das prescrições que você cadastrou. Eles podem atrasar ou não chegar (sem conexão, configurações do celular), então não dependa só deles. Não é orientação médica.",
+    "syncedOnly": "Os lembretes seguem os dados sincronizados: uma dose registrada offline só para os lembretes depois de sincronizar.",
+    "offline": "Conecte-se à internet para mudar as configurações de notificação.",
+    "deviceLabel": "{{browser}} no {{os}}",
+    "device": {
+      "heading": "Este dispositivo",
+      "switch": "Notificações neste dispositivo",
+      "on": "Ativadas",
+      "onNamed": "Ativadas em {{label}}",
+      "off": "Desativadas",
+      "test": "Enviar uma notificação de teste"
+    },
+    "states": {
+      "unsupported": "Este navegador não consegue mostrar notificações do Lotties.",
+      "iosNeedsInstall": "No iPhone e no iPad, as notificações funcionam depois que você adiciona o Lotties à Tela de Início: toque em Compartilhar, depois em Adicionar à Tela de Início, e abra por lá.",
+      "iosTooOld": "Precisa do iOS 16.4 ou mais recente.",
+      "denied": "As notificações estão bloqueadas para este site. Para permitir, abra as configurações do navegador ou do sistema, encontre este site e permita notificações, depois volte aqui."
+    },
+    "explainer": {
+      "title": "Ativar notificações?",
+      "kinds": "O Lotties pode lembrar você das doses agendadas de remédio e avisar quando a janela de soneca abre. Você escolhe quais lembretes, para cada bebê.",
+      "lockScreen": "A tela de bloqueio mostra um texto genérico, sem nome do bebê ou do remédio, a menos que você ative Mostrar nomes.",
+      "turnOff": "Você pode desativar quando quiser em Ajustes.",
+      "turnOn": "Ativar",
+      "notNow": "Agora não"
+    },
+    "announce": {
+      "on": "As notificações estão ativadas neste dispositivo",
+      "off": "As notificações estão desativadas neste dispositivo",
+      "denied": "As notificações não foram permitidas",
+      "testSent": "Teste enviado. Ele deve chegar em alguns segundos.",
+      "testFailed": "Não foi possível entregar o teste. Desative e ative as notificações de novo e tente outra vez.",
+      "subscribeFailed": "Não foi possível ativar as notificações neste dispositivo. Tente de novo."
+    },
+    "reminders": {
+      "heading": "Lembretes",
+      "viewerOnly": "Só os pais recebem lembretes deste bebê.",
+      "dose": "Lembretes de remédio",
+      "doseHelp": "Só doses agendadas, nunca remédios se necessário.",
+      "nap": "Janela de soneca",
+      "napHelp": "Quando a janela estimada de soneca abre durante o dia.",
+      "bellyPain": "Aviso de dor de barriga",
+      "bellyPainHelp": "Quando a dor de barriga costuma aparecer no mesmo horário, um aviso 30 min antes.",
+      "overtired": "Aviso de cansaço",
+      "overtiredHelp": "Quando o tempo acordado estiver perto do de costume, um aviso 15 min antes.",
+      "fussy": "Aviso da hora do choro",
+      "fussyHelp": "Quando a irritação costuma começar no mesmo horário, um aviso 30 min antes.",
+      "diaperWet": "Aviso de fralda molhada",
+      "diaperWetHelp": "Quando costuma ser hora de uma fralda molhada, um aviso 10 min antes.",
+      "diaperDirty": "Aviso de fralda suja",
+      "diaperDirtyHelp": "Quando uma fralda suja costuma vir, depois de uma mamada ou pelos intervalos de costume, um aviso pouco antes.",
+      "appointments": "Lembretes de consultas",
+      "appointmentsHelp": "Antes de cada consulta, nos horários escolhidos para ela.",
+      "vaccines": "Lembretes de vacinas",
+      "vaccinesHelp": "Um aviso no dia em que uma dose pode estar na época, segundo o calendário.",
+      "lead": "Lembrar",
+      "doseLeads": {
+        "0": "No horário agendado",
+        "5": "5 min antes",
+        "15": "15 min antes"
+      },
+      "napLeads": {
+        "0": "Quando abrir",
+        "10": "10 min antes",
+        "20": "20 min antes"
+      },
+      "doctor": "Sugestões do médico",
+      "doctorHelp": "Quando o médico envia uma sugestão de prescrição ou uma recomendação."
+    },
+    "quiet": {
+      "switch": "Horário de silêncio",
+      "help": "Sem lembretes de soneca nem avisos de dor de barriga entre estes horários.",
+      "start": "Das",
+      "end": "Até",
+      "sameTime": "O início e o fim precisam ser horários diferentes.",
+      "medicine": "Silenciar também os lembretes de remédio nesse horário",
+      "medicineHelp": "Desativado, os lembretes de remédio continuam chegando nos horários que você agendou."
+    },
+    "names": {
+      "switch": "Mostrar nomes do bebê e do remédio nas notificações",
+      "help": "Qualquer pessoa que veja sua tela de bloqueio vai ver os nomes. A quantidade da dose nunca aparece."
+    },
+    "timeZone": "Os horários usam {{zone}}.",
+    "devices": {
+      "heading": "Seus dispositivos",
+      "empty": "Nenhum dispositivo recebe notificações ainda.",
+      "thisDevice": "Este dispositivo",
+      "unnamed": "Dispositivo sem nome",
+      "added": "Adicionado em {{date}}",
+      "remove": "Remover",
+      "removeNamed": "Remover {{label}}"
+    },
+    "prompt": {
+      "title": "Receber um lembrete nos horários agendados?",
+      "body": "O Lotties pode avisar neste aparelho quando uma dose agendada ainda não foi registrada.",
+      "turnOn": "Ativar",
+      "notNow": "Agora não",
+      "done": "Lembretes de remédio ativados para {{name}}."
+    },
+    "reminderLine": {
+      "at": "Lembrete para {{time}}",
+      "snooze": "Adiar 30 min",
+      "snoozed": "Adiado por 30 min.",
+      "stop": "Parar lembretes desta dose",
+      "stopped": "Sem mais lembretes para esta dose.",
+      "offline": "Conecte-se à internet para adiar."
+    },
+    "whyLink": "Me lembrar quando a janela abrir"
+  }
+}

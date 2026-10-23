@@ -4,12 +4,19 @@ namespace Lotties.Domain.Tests.EventTypes;
 
 public sealed class BuiltInEventTypesTests
 {
+    /// <summary>
+    /// The built-in types already deployed, in order. This list never changes: a new built-in type is appended to
+    /// <see cref="BuiltInEventTypes.All"/> (after these) and needs no edit here.
+    /// </summary>
+    private static readonly string[] DeployedKeys = ["feeding", "sleep", "diaper", "bath", "tummy_time", "medication", "belly_pain", "breast_pump", "nasal_suction", "belly_massage", "fussy", "nail_trim", "temperature", "spit_up", "teething", "milestone", "symptom", "outdoor", "skin_care"];
+
     [Fact]
-    public void All_ContainsSpecTemplates()
+    public void All_StartsWithTheDeployedTypesInOrderAndHasUniqueKeys()
     {
         var keys = BuiltInEventTypes.All.Select(type => type.Key.Value).ToArray();
 
-        Assert.Equal(["feeding", "sleep", "diaper", "bath", "tummy_time", "medication", "belly_pain", "breast_pump", "nasal_suction", "belly_massage", "fussy", "nail_trim", "temperature", "spit_up", "teething", "milestone", "symptom", "outdoor", "skin_care"], keys);
+        Assert.Equal(DeployedKeys, keys.Take(DeployedKeys.Length));
+        Assert.Equal(keys.Length, keys.Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]

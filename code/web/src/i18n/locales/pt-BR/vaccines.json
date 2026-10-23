@@ -1,0 +1,163 @@
+{
+  "vaccines": {
+    "title": "Vacinas",
+    "createBabyFirst": "Cadastre um bebê primeiro para acompanhar as vacinas.",
+    "record": "Registrar vacina",
+    "cardLink": "Caderneta de vacinação",
+    "caregiverNotice": "Você pode ver o calendário e os registros de vacinas. Só os pais adicionam ou alteram.",
+    "viewerNotice": "Você pode ver o calendário e os registros de vacinas, mas não alterá-los.",
+    "noSchedule": {
+      "title": "O calendário de vacinas ainda não está neste aparelho",
+      "body": "Abra o Lotties uma vez com internet para baixá-lo. Depois ele funciona sem conexão."
+    },
+    "noBirthDate": {
+      "title": "Informe a data de nascimento",
+      "body": "O calendário é contado a partir da data de nascimento.",
+      "action": "Informar a data de nascimento",
+      "ownerOnly": "Peça ao titular do bebê para informar a data de nascimento."
+    },
+    "profile": {
+      "title": "Sobre este bebê",
+      "birthDate": "Data de nascimento",
+      "born": "{{date}} · {{age}} de vida",
+      "premature": "Nasceu antes de 37 semanas?",
+      "weeks": "Semanas de gestação ao nascer",
+      "weeksUnit": "semanas",
+      "rsv": "A mãe tomou a vacina contra o VSR na gravidez?",
+      "rsvAnswers": {
+        "yes": "Sim",
+        "no": "Não",
+        "unknown": "Não sei"
+      },
+      "private": "Mostrar recomendações de clínicas particulares",
+      "privateHelp": "Inclui o que as sociedades de pediatria recomendam e a rede pública (SUS) não oferece.",
+      "save": "Salvar alterações",
+      "saved": "Salvo",
+      "summary": {
+        "public": "Calendário da rede pública (SUS)",
+        "withPrivate": "Rede pública e recomendações de clínicas particulares",
+        "premature": "Nasceu com {{weeks}} semanas",
+        "rsv": "Vacina contra o VSR na gravidez: {{answer}}"
+      }
+    },
+    "premature": "Bebês prematuros podem seguir um calendário especial. Siga a orientação do pediatra.",
+    "filters": {
+      "label": "Mostrar",
+      "all": "Todas",
+      "public": "Pública (SUS)",
+      "private": "Particular"
+    },
+    "privateHint": "Recomendadas por sociedades de pediatria e fora do calendário da rede pública. Ative as recomendações de clínicas particulares acima para ver quando ficam na época.",
+    "timeline": {
+      "label": "Calendário de vacinas",
+      "none": "Nada para mostrar neste filtro."
+    },
+    "age": {
+      "birth": "Ao nascer"
+    },
+    "dose": {
+      "protects": "Protege contra {{list}}",
+      "given": "Aplicada em {{date}}",
+      "givenWith": "Aplicada em {{date}} (com {{product}})",
+      "due": "Prevista agora",
+      "dueIn_one": "Prevista em {{count}} dia",
+      "dueIn_other": "Prevista em {{count}} dias",
+      "dueOn": "Prevista para {{date}}",
+      "overdue": "Em atraso",
+      "recommendedAt": "Recomendada aos {{age}}",
+      "recommendedAtBirth": "Recomendada ao nascer",
+      "waiting": "Depois das doses anteriores",
+      "notInPublic": "Fora do calendário da rede pública",
+      "expired": "Fora do calendário: pergunte ao pediatra",
+      "yearly": "Anual",
+      "nextOn": "Próxima em {{date}}",
+      "privateClinic": "Clínica particular",
+      "confirm": "Confirme com o pediatra",
+      "recommendedBy": "Fontes",
+      "sources": {
+        "pni": "PNI",
+        "sbp": "SBP",
+        "sbim": "SBIm"
+      },
+      "record": "Registrar",
+      "recordNamed": "Registrar {{name}}, {{dose}}",
+      "scheduleIt": "Agendar",
+      "scheduleNamed": "Agendar {{name}}, {{dose}}",
+      "edit": "Editar",
+      "editNamed": "Editar o registro de {{name}}, {{dose}}",
+      "delete": "Excluir",
+      "deleteNamed": "Excluir o registro de {{name}}, {{dose}}"
+    },
+    "history": {
+      "title": "Histórico",
+      "empty": "Nada registrado ainda.",
+      "lot": "Lote {{lot}}",
+      "by": "Aplicada por {{name}}",
+      "otherVaccine": "Outra vacina",
+      "editNamed": "Editar o registro de {{name}} de {{date}}",
+      "deleteNamed": "Excluir o registro de {{name}} de {{date}}"
+    },
+    "deleted": "Registro de {{name}} excluído",
+    "scheduleTitle": "Vacina: {{name}}",
+    "sheet": {
+      "newTitle": "Registrar vacina",
+      "editTitle": "Editar registro de vacina",
+      "vaccine": "Vacina",
+      "vaccinePlaceholder": "Escolha uma vacina",
+      "vaccineRequired": "Escolha a vacina.",
+      "other": "Outra vacina",
+      "customName": "Nome da vacina",
+      "customNameRequired": "Informe o nome da vacina, com até 80 caracteres.",
+      "dose": "Dose",
+      "notInSchedule": "Fora do calendário",
+      "alreadyRecorded": "{{label}} · já registrada",
+      "doseFree": "Dose",
+      "doseFreePlaceholder": "ex.: 1ª dose",
+      "givenOn": "Data da aplicação",
+      "givenOnRequired": "Escolha a data em que foi aplicada.",
+      "givenOnFuture": "A data não pode ser no futuro.",
+      "network": "Onde foi aplicada",
+      "networks": {
+        "public": "Rede pública (SUS)",
+        "private": "Clínica particular"
+      },
+      "clinic": "Clínica ou posto de saúde",
+      "lot": "Número do lote",
+      "administeredBy": "Aplicada por",
+      "notes": "Observações",
+      "saveFailed": "Não foi possível salvar o registro. Tente novamente."
+    },
+    "sources": {
+      "button": "Fontes",
+      "title": "Fontes",
+      "edition": "Edição: {{edition}}",
+      "retrieved": "Consultada em {{date}}",
+      "open": "Abrir a fonte",
+      "openNamed": "Abrir a fonte: {{name}}",
+      "informational": "Este calendário é informativo. Siga a orientação do pediatra e a sua caderneta de vacinação."
+    },
+    "card": {
+      "title": "Caderneta de vacinação",
+      "back": "Voltar para as vacinas",
+      "print": "Imprimir / Salvar como PDF",
+      "born": "Nascimento: {{date}}",
+      "table": "Vacinas registradas de {{name}}",
+      "columns": {
+        "date": "Data",
+        "vaccine": "Vacina",
+        "dose": "Dose",
+        "lot": "Lote",
+        "clinic": "Local"
+      },
+      "empty": "Nenhuma vacina registrada ainda.",
+      "note": "Um registro pessoal guardado no Lotties. Não substitui a caderneta de vacinação oficial.",
+      "printedOn": "Impresso em {{date}}"
+    },
+    "due": {
+      "label": "Vacinas previstas",
+      "count_one": "{{count}} vacina pode estar na época",
+      "count_other": "{{count}} vacinas podem estar na época",
+      "first": "{{name}} · {{dose}}"
+    }
+  }
+}

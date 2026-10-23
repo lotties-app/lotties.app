@@ -1,0 +1,92 @@
+{
+  "timeline": {
+    "noBaby": "No baby yet. Events appear here once a baby syncs from the server.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "since": "Since {{time}}",
+    "notSynced": "Not synced yet",
+    "unknownMedication": "Unknown medication",
+    "intensity": "{{label}} {{value}}/{{max}}",
+    "labelValue": "{{label}} {{value}}",
+    "moodOnWake": "Mood on waking: {{mood}}",
+    "fellAsleepIn": "fell asleep in {{duration}}",
+    "massageHelped": {
+      "yes": "helped",
+      "aLittle": "helped a little",
+      "no": "didn't help"
+    },
+    "fussyHelped": {
+      "feeding": "feeding helped",
+      "rocking": "rocking helped",
+      "pacifier": "the pacifier helped",
+      "massage": "massage helped",
+      "sleep": "sleep helped",
+      "other": "something else helped",
+      "nothing": "nothing helped"
+    },
+    "pauses_one": "{{count}} pause",
+    "pauses_other": "{{count}} pauses"
+  },
+  "day": {
+    "title": "Day",
+    "previous": "Previous day",
+    "next": "Next day",
+    "relativeDate": "{{relative}}, {{date}}",
+    "chooseDate": "Choose a date. Showing {{date}}",
+    "pickTitle": "Choose a day",
+    "pickLabel": "Day",
+    "filter": "Filter",
+    "filterActive": "Filter, {{count}} active",
+    "filterTitle": "Show on this day",
+    "clear": "Clear",
+    "category": {
+      "sleep": "Sleep",
+      "feeding": "Feeding",
+      "diaper": "Diapers",
+      "health": "Health",
+      "care": "Care",
+      "activity": "Activity",
+      "nightWaking": "Night waking",
+      "custom": "Other"
+    },
+    "summary": {
+      "title": "Summary of the day",
+      "sleep": "Sleep",
+      "feeds": "Feeds",
+      "diapers": "Diapers"
+    },
+    "ribbon": {
+      "label": "The day at a glance: {{sleep}}, {{feeds}}, {{diapers}}",
+      "sleep": "{{duration}} of sleep",
+      "noSleep": "no sleep logged",
+      "legend": "What the colours mean",
+      "range": "{{from}} – {{to}}",
+      "itemName": "{{name}} {{time}}, {{details}}",
+      "itemNameShort": "{{name}} {{time}}",
+      "cluster_one": "{{count}} event, {{from}} to {{to}}",
+      "cluster_other": "{{count}} events, {{from}} to {{to}}",
+      "clusterTitle_one": "{{count}} event",
+      "clusterTitle_other": "{{count}} events",
+      "naps_one": "{{count}} nap",
+      "naps_other": "{{count}} naps",
+      "open": "Open",
+      "showInList": "Show in list",
+      "legendHint": "Tap a colour to show or hide it"
+    },
+    "empty": {
+      "title": "A quiet day. Nothing logged yet."
+    },
+    "addEvent": "Add event",
+    "noMatches": "No events match this filter.",
+    "editRow": "Edit {{title}}, {{time}}",
+    "stopNamed": "Stop {{title}}",
+    "needsAttention": "Needs attention",
+    "week": "Week",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "chooseMonth": "{{month}}. Choose a date. Showing {{date}}",
+    "sessionEnded": "Sleep session ended, {{duration}}",
+    "pausedFor": "paused {{duration}}",
+    "viewRow": "{{title}}, {{time}}, added by {{name}} (view only)"
+  }
+}

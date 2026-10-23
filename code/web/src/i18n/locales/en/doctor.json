@@ -1,0 +1,217 @@
+{
+  "access": {
+    "someoneElse": "someone else",
+    "givenBy": "Given by {{name}}",
+    "lockedTimer": "Started by {{name}}. Only they or a parent can change it.",
+    "lockedEntry": "Added by {{name}}. Only they or a parent can change it.",
+    "controlOnly": "Started by {{name}}. You can pause or stop it; only they or a parent can change the rest."
+  },
+  "doctor": {
+    "name": "Dr. {{name}}",
+    "nameNoAccess": "Dr. {{name}} (no longer has access)",
+    "selfDeclared": "Self-declared doctor",
+    "verifiedDoctor": "Verified professional",
+    "settingsNotice": "You are {{name}}'s doctor: you can read everything logged, write notes and add consultation measurements. The parents manage everything else.",
+    "profile": {
+      "sectionTitle": "I'm a healthcare professional",
+      "intro": "Pediatricians and other doctors declare it here. A family can then invite you to their baby with the Doctor role.",
+      "declared": "Your professional profile",
+      "selfDeclaredNotice": "Self-declared: Lotties does not check registrations. Families see “Self-declared doctor” next to your name.",
+      "displayName": "Name shown to families",
+      "displayNameHelp": "Without a title: families see “Dr.” before it.",
+      "displayNameRequired": "Enter the name families will see.",
+      "specialty": "Specialty",
+      "specialtyPlaceholder": "e.g. Pediatrics",
+      "registrationNumber": "Registration number",
+      "registrationNumberHelp": "For example your CRM. Families can see it.",
+      "loadFailed": "Could not load your professional profile. Check your connection."
+    },
+    "invite": {
+      "consent": "The doctor who accepts will see everything logged for {{name}} and can add notes and measurements. You can remove access at any time."
+    },
+    "inviteAccept": {
+      "title": "Join as the baby's doctor",
+      "body": "This invite is for a doctor. First tell the family who you are: your profile is self-declared and they see it next to your notes.",
+      "saveAndJoin": "Save and join"
+    },
+    "members": {
+      "removeBody": "They lose access to {{baby}} immediately. The notes they shared stay visible to the family."
+    },
+    "notes": {
+      "title": "Notes",
+      "add": "Write a note",
+      "newTitle": "New note",
+      "editTitle": "Edit note",
+      "kind": "Kind",
+      "kinds": {
+        "note": "Note",
+        "recommendation": "Recommendation"
+      },
+      "visibility": "Who sees it",
+      "visibilities": {
+        "shared": "Shared with parents",
+        "private": "Only me"
+      },
+      "visibilityChip": {
+        "shared": "Shared with parents",
+        "private": "Private"
+      },
+      "visibilityHelp": "Shared notes are seen by everyone who follows the baby. Private notes are only for you.",
+      "staysShared": "This note is already shared with the parents. To take it back, delete it.",
+      "body": "Note",
+      "bodyRequired": "Write the note.",
+      "saveFailed": "Could not save the note. Try again.",
+      "byYou": "You",
+      "unknownAuthor": "Unknown author",
+      "cardLabel": "Note of {{date}}",
+      "edit": "Edit note of {{date}}",
+      "delete": "Delete note of {{date}}",
+      "deleteTitle": "Delete this note?",
+      "deleteBody": "It is removed from your notes.",
+      "deleteSharedBody": "The parents will no longer see it.",
+      "deleteConfirm": "Delete note",
+      "emptyTitle": "No notes yet",
+      "emptyDoctor": "Write what the family should remember after a visit for {{name}}. Shared notes appear for the parents.",
+      "emptyFamily": "Notes from {{name}}'s doctor will appear here.",
+      "familyNotice": "Notes from {{name}}'s doctor. You can read them; only the doctor who wrote a note can change it.",
+      "timeline": "Notes, newest first",
+      "createBabyFirst": "Create a baby first to see notes."
+    },
+    "patients": {
+      "title": "Patients",
+      "subtitle": "Babies whose families invited you as their doctor.",
+      "list": "Patients",
+      "none": "No patients yet. A family adds you with a doctor invite link.",
+      "open": "Open {{name}}",
+      "notesOf": "Notes about {{name}}",
+      "lastEntry": "Last entry {{when}}",
+      "noEntries": "Nothing logged yet",
+      "sharedNotes_one": "{{count}} shared note by you",
+      "sharedNotes_other": "{{count}} shared notes by you",
+      "proposals": "Proposals",
+      "proposalsOf": "Proposals for {{name}}"
+    },
+    "growth": {
+      "doctorNotice": "As {{name}}'s doctor you can add consultation measurements and change your own.",
+      "recordedBy": "Recorded by {{name}} (self-declared doctor)",
+      "recordedByDoctor": "Recorded by the doctor"
+    },
+    "accessLog": {
+      "title": "Access log",
+      "explainer": "When a doctor's app loads {{name}}'s data it is recorded here, at most once an hour. The latest 50 are shown.",
+      "none": "No doctor has opened {{name}}'s data yet.",
+      "entry": "{{role}} · {{when}}",
+      "loadFailed": "Could not load the access log. Check your connection."
+    }
+  },
+  "proposals": {
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "superseded": "Replaced"
+    },
+    "waitingToSync": "Waiting to sync",
+    "accessRemoved": "Access removed",
+    "unknownDoctor": "Your doctor",
+    "sent": "Sent {{date}}",
+    "reason": "Reason: {{reason}}",
+    "badgeLabel_one": "{{count}} new from your doctor",
+    "badgeLabel_other": "{{count}} new from your doctor",
+    "sheet": {
+      "titleNew": "Prescribe",
+      "titleEdit": "Edit proposal",
+      "titleChange": "Propose a change",
+      "instructions": "Instructions for the parents",
+      "send": "Send to parents",
+      "withdraw": "Withdraw",
+      "reviewNote": "The parents review it before anything changes.",
+      "replaces": "Changes the current prescription: {{summary}}",
+      "saveFailed": "Could not save the proposal. Try again.",
+      "alreadyDecided": "The parents already decided this proposal, so it can no longer be edited."
+    },
+    "chooser": {
+      "useName": "Use \"{{name}}\"",
+      "noneYet": "The baby's medication list is empty. Search the catalog or type a name."
+    },
+    "facts": {
+      "course": "Course",
+      "courseRange": "From {{start}} to {{end}}",
+      "courseOpen": "From {{start}}, no end date",
+      "instructions": "Instructions from the doctor"
+    },
+    "provenance": {
+      "prescribedBy": "Prescribed by {{doctor}}",
+      "changedByParent": "Changed by parent",
+      "seeOriginal": "See what {{doctor}} prescribed",
+      "originalTitle": "What {{doctor}} prescribed",
+      "originalNote": "As the doctor sent it. This is a record: it cannot be edited."
+    },
+    "mine": {
+      "title": "My proposals",
+      "subtitle": "Prescriptions you suggested for {{name}}. Nothing changes until the parents accept.",
+      "prescribe": "Prescribe",
+      "listLabel": "Proposals, newest first",
+      "emptyTitle": "No proposals yet",
+      "emptyBody": "Prescribe a medicine for {{name}} and the parents get it to accept or decline.",
+      "edit": "Edit",
+      "editNamed": "Edit proposal for {{name}}",
+      "withdraw": "Withdraw",
+      "withdrawNamed": "Withdraw proposal for {{name}}",
+      "proposeChange": "Propose a change",
+      "proposeChangeNamed": "Propose a change to {{name}}",
+      "withdrawTitle": "Withdraw this proposal?",
+      "withdrawBody": "The parents will no longer see it to accept.",
+      "withdrawConfirm": "Withdraw proposal",
+      "onlyDoctor": "Proposals are sent by the baby's doctor.",
+      "noBaby": "Choose a patient first."
+    },
+    "inbox": {
+      "region": "From your doctor",
+      "proposalTitle": "{{doctor}} suggested a prescription",
+      "recommendationTitle": "{{doctor}} sent a recommendation",
+      "review": "Review",
+      "reviewNamed": "Review the suggestion for {{name}}",
+      "read": "Read",
+      "readNamed": "Read the recommendation from {{doctor}}",
+      "seeAll": "See all from your doctor"
+    },
+    "details": {
+      "suggestedBy": "Suggested by",
+      "replacesCurrent": "Changes the current prescription: {{summary}}",
+      "replacesEnds": "Accepting ends the current one today.",
+      "acceptAdds": "Accepting adds this prescription to {{name}}. You can end it at any time.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "reasonLabel": "Reason (optional)",
+      "reasonHelp": "The doctor sees it.",
+      "addedTitle": "Added to {{name}}'s medicines",
+      "addedPending": "It shows in the medicines as soon as it syncs.",
+      "acceptedOn": "Accepted on {{date}}",
+      "declinedOn": "Declined on {{date}}",
+      "cancelledWithdrawn": "The doctor withdrew this suggestion.",
+      "cancelledAccess": "Cancelled because the doctor no longer has access.",
+      "superseded": "Replaced when another suggestion for the same prescription was accepted.",
+      "missing": "This suggestion is not on this device yet.",
+      "alreadyDecided": "This suggestion was already decided.",
+      "decisionFailed": "Could not save your decision. Try again."
+    },
+    "fromDoctor": {
+      "title": "From your doctor",
+      "subtitle": "Prescriptions and recommendations from {{name}}'s doctor. Nothing changes until you accept.",
+      "waiting": "Waiting for you",
+      "nothingWaiting": "Nothing is waiting for you.",
+      "recommendations": "Recommendations",
+      "decided": "Decided",
+      "emptyTitle": "Nothing from the doctor yet",
+      "emptyBody": "When {{name}}'s doctor suggests a prescription or sends a recommendation, it shows here.",
+      "unread": "New",
+      "recommendation": "Recommendation",
+      "openProposal": "Open the suggestion for {{name}}",
+      "openRecommendation": "Open the recommendation of {{date}}",
+      "parentsOnly": "Only the baby's parents see what the doctor sends.",
+      "noBaby": "Choose a baby first."
+    }
+  }
+}

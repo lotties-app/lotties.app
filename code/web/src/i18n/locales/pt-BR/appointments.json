@@ -1,0 +1,98 @@
+{
+  "appointments": {
+    "title": "Consultas",
+    "add": "Nova consulta",
+    "open": "Agenda de consultas",
+    "createBabyFirst": "Cadastre um bebê primeiro para guardar as consultas.",
+    "viewOnly": "Você pode ver as consultas, mas não alterá-las.",
+    "caregiverNotice": "Você pode ver as consultas. Só os pais adicionam ou alteram.",
+    "viewerNotice": "Você pode ver as consultas, mas não alterá-las.",
+    "types": {
+      "consultation": "Consulta",
+      "vaccine": "Vacina",
+      "exam": "Exame",
+      "other": "Outro"
+    },
+    "status": {
+      "done": "Realizada",
+      "cancelled": "Cancelada",
+      "ask": "Aconteceu?"
+    },
+    "reminders": {
+      "30": "30 min",
+      "120": "2 horas",
+      "1440": "1 dia",
+      "10080": "1 semana"
+    },
+    "calendar": {
+      "previousMonth": "Mês anterior",
+      "nextMonth": "Próximo mês",
+      "today": "Hoje",
+      "todayMark": "hoje",
+      "count_one": "{{count}} consulta",
+      "count_other": "{{count}} consultas"
+    },
+    "agenda": {
+      "upcoming": "Próximas",
+      "past": "Anteriores",
+      "showAll": "Mostrar todas as consultas",
+      "noneOnDay": "Nenhuma consulta em {{date}}.",
+      "noneUpcoming": "Nenhuma consulta marcada."
+    },
+    "empty": {
+      "title": "Nenhuma consulta ainda",
+      "body": "Guarde aqui consultas, vacinas e exames, com um lembrete antes de cada um."
+    },
+    "next": {
+      "label": "Próxima consulta"
+    },
+    "day": {
+      "label": "Consultas do dia"
+    },
+    "sheet": {
+      "newTitle": "Nova consulta",
+      "editTitle": "Editar consulta",
+      "title": "Título",
+      "titlePlaceholder": "ex.: Pediatra, vacinas de 2 meses",
+      "titleRequired": "Digite um título de até 80 caracteres.",
+      "type": "Tipo",
+      "date": "Data",
+      "time": "Horário",
+      "whenRequired": "Escolha a data e o horário.",
+      "duration": "Duração",
+      "minutesUnit": "min",
+      "durationChoices": "Durações comuns",
+      "durationChips": {
+        "15": "15 minutos",
+        "30": "30 minutos",
+        "60": "1 hora"
+      },
+      "location": "Local",
+      "doctor": "Médico(a)",
+      "notes": "Observações",
+      "outcome": "Como foi",
+      "reminders": "Me lembrar",
+      "remindersHelp": "Enviados antes do horário para os aparelhos com notificações ativadas.",
+      "notStarted": "Uma consulta realizada não pode começar no futuro.",
+      "saveFailed": "Não foi possível salvar a consulta. Tente de novo."
+    },
+    "detail": {
+      "when": "Quando",
+      "location": "Local",
+      "doctor": "Médico(a)",
+      "reminders": "Lembretes",
+      "remindersBefore": "{{list}} antes",
+      "noReminders": "Sem lembretes",
+      "notes": "Observações",
+      "outcome": "Como foi",
+      "addToCalendar": "Adicionar ao calendário",
+      "edit": "Editar",
+      "cancel": "Cancelar consulta",
+      "restore": "Restaurar consulta",
+      "markDone": "Marcar como realizada",
+      "ask": "A consulta aconteceu? Marque como realizada e anote como foi.",
+      "addMeasurements": "Adicionar medidas",
+      "cancelledNotice": "{{title}} cancelada"
+    }
+  }
+}

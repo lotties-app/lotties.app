@@ -1,3 +1,4 @@
+using Lotties.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -33,16 +34,99 @@ public sealed class MigrationTests
         Assert.Single(migrations, migration => migration.EndsWith("_InitialCreate", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The migrations already applied in production, in order. This list never changes: a deployed migration is never
+    /// renamed, regenerated or reordered. A new migration is NOT added here; the rules below check it (docs/PROCESS.md).
+    /// </summary>
+    private static readonly string[] DeployedMigrations =
+    [
+        "20261020231413_InitialCreate",
+        "20261021000249_BuiltInFieldFixups",
+        "20261021000934_AddMeasurements",
+        "20261021002724_SleepKindBedWake",
+        "20261021010818_EventClientUpdatedAt",
+        "20261021014553_Wave2Hardening",
+        "20261021043358_SleepKindFellAsleep",
+        "20261021045736_ConditionalFieldsAndBreastPump",
+        "20261021104705_MedicationsPrescriptionsCatalog",
+        "20261021120142_PauseAndSleepDetailFields",
+        "20261021182304_PushNotifications",
+        "20261022000952_NasalSuction",
+        "20261022004855_PrescriptionDayParts",
+        "20261022011434_BellyMassage",
+        "20261022014026_BellyPainPattern",
+        "20261022020422_FussyEvent",
+        "20261022021117_FussyAndOvertiredPrefs",
+        "20261022045238_DiaperHeadsUpPrefs",
+        "20261022143647_ProductExternalRef",
+        "20261022154530_Formulas",
+        "20261022175012_Appointments",
+        "20261022185120_DoctorAccess",
+        "20261022203709_DoctorProposals",
+        "20261022213633_MoreEventTypes",
+        "20261022230039_Vaccines",
+    ];
+
     [Fact]
-    public void Migrations_AreOrderedInTheOrderTheyWereAdded()
+    public void Migrations_StartWithTheDeployedOnesUnchangedAndInOrder()
     {
         using var context = ModelTestContext.Create();
 
         var migrations = context.Database.GetMigrations().ToArray();
-        var expectedOrder = new[] { "_InitialCreate", "_BuiltInFieldFixups", "_AddMeasurements", "_SleepKindBedWake", "_EventClientUpdatedAt", "_Wave2Hardening", "_SleepKindFellAsleep", "_ConditionalFieldsAndBreastPump", "_MedicationsPrescriptionsCatalog", "_PauseAndSleepDetailFields", "_PushNotifications", "_NasalSuction", "_PrescriptionDayParts", "_BellyMassage", "_BellyPainPattern", "_FussyEvent", "_FussyAndOvertiredPrefs", "_DiaperHeadsUpPrefs", "_ProductExternalRef", "_Formulas", "_Appointments", "_DoctorAccess", "_DoctorProposals", "_MoreEventTypes", "_Vaccines" };
 
-        Assert.Equal(expectedOrder, expectedOrder.OrderBy(suffix => Array.FindIndex(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal))));
-        Assert.All(expectedOrder, suffix => Assert.Single(migrations, migration => migration.EndsWith(suffix, StringComparison.Ordinal)));
+        // A newer migration sorts after the last deployed one: its timestamp must be later (scripts/regen-migrations.sh).
+        Assert.Equal(DeployedMigrations, migrations.Take(DeployedMigrations.Length));
+    }
+
+    [Fact]
+    public void Migrations_HaveWellFormedUniqueIdsAndNames()
+    {
+        using var context = ModelTestContext.Create();
+
+        var migrations = context.Database.GetMigrations().ToArray();
+
+        Assert.All(migrations, id => Assert.Matches("^[0-9]{14}_[A-Z][A-Za-z0-9]*$", id));
+        Assert.Equal(migrations.Length, migrations.Select(id => id[..14]).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(migrations.Length, migrations.Select(id => id[15..]).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(migrations.Order(StringComparer.Ordinal), migrations);
+    }
+
+    [Fact]
+    public void Migrations_EveryMigrationClassHasItsDesignerAndMatchesItsId()
+    {
+        using var context = ModelTestContext.Create();
+        var assembly = context.GetService<IMigrationsAssembly>();
+
+        // A migration class without its .Designer.cs has no [Migration]/[DbContext] attributes: EF would skip it silently.
+        var classes = typeof(LottiesDbContext).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(Migration)) && !type.IsAbstract).ToArray();
+        var discovered = assembly.Migrations;
+
+        Assert.Equal(classes.Length, discovered.Count);
+        Assert.All(discovered, pair => Assert.Equal(pair.Key[15..], pair.Value.Name));
+        Assert.All(discovered, pair => Assert.NotEmpty(assembly.CreateMigration(pair.Value, context.Database.ProviderName!).TargetModel.GetEntityTypes()));
+    }
+
+    [Fact]
+    public void Migrations_LatestTargetModelMatchesTheSnapshot()
+    {
+        using var context = ModelTestContext.Create();
+        var assembly = context.GetService<IMigrationsAssembly>();
+        var latest = assembly.Migrations.MaxBy(pair => pair.Key, StringComparer.Ordinal);
+        var latestModel = assembly.CreateMigration(latest.Value, context.Database.ProviderName!).TargetModel;
+
+        // Fails after an integration where main gained migrations and the branch's migration (its Designer) or the
+        // snapshot was not regenerated on top of them: run scripts/regen-migrations.sh <MigrationName>.
+        var differences = context.GetService<IMigrationsModelDiffer>().GetDifferences(
+            Initialize(context, latestModel).GetRelationalModel(),
+            Initialize(context, assembly.ModelSnapshot!.Model).GetRelationalModel());
+
+        Assert.Empty(differences);
+    }
+
+    private static IModel Initialize(LottiesDbContext context, IModel model)
+    {
+        var finalized = model is IMutableModel mutable ? mutable.FinalizeModel() : model;
+        return context.GetService<IModelRuntimeInitializer>().Initialize(finalized);
     }
 
     [Fact]
@@ -243,10 +327,32 @@ public sealed class MigrationTests
 
         Assert.Contains("CREATE TABLE events", script, StringComparison.Ordinal);
         Assert.Contains("payload jsonb NOT NULL", script, StringComparison.Ordinal);
-        // Every index is recreated right after (issuer + subject; the wider belly pain, then overtired and fussy, then
-        // diaper, then appointment, then doctor suggestions, then vaccine reminders candidate filter): no data is dropped.
-        Assert.Equal(["DROP INDEX ix_users_subject;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;", "DROP INDEX ix_baby_notification_preferences_baby_id;"], DropStatements(script));
+        // Only indexes are ever dropped (they hold no data), and each one is created again further on (a wider filter,
+        // for example), so no data is dropped. ix_users_subject (deployed) was replaced by ix_users_issuer_subject.
+        var drops = DropStatements(script);
+        Assert.NotEmpty(drops);
+        Assert.All(drops, drop => Assert.Matches("^DROP INDEX [a-z0-9_]+;$", drop));
+        Assert.All(
+            drops.Select(drop => drop["DROP INDEX ".Length..^1]).Where(index => index != "ix_users_subject"),
+            index => Assert.True(IsCreatedAfterEachDrop(script, index), $"{index} is dropped and not created again"));
+        Assert.Contains("CREATE UNIQUE INDEX ix_users_issuer_subject ON users (issuer, subject);", script, StringComparison.Ordinal);
         Assert.DoesNotContain("TRUNCATE", script, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Every <c>DROP INDEX index;</c> of the script is followed, later on, by a <c>CREATE ... INDEX index ON</c>.</summary>
+    private static bool IsCreatedAfterEachDrop(string script, string index)
+    {
+        var drop = $"DROP INDEX {index};";
+        var create = new System.Text.RegularExpressions.Regex($@"CREATE (UNIQUE )?INDEX {index} ON ");
+        for (var at = script.IndexOf(drop, StringComparison.Ordinal); at >= 0; at = script.IndexOf(drop, at + drop.Length, StringComparison.Ordinal))
+        {
+            if (!create.IsMatch(script, at + drop.Length))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     [Fact]

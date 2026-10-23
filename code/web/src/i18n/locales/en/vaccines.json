@@ -1,0 +1,163 @@
+{
+  "vaccines": {
+    "title": "Vaccines",
+    "createBabyFirst": "Add a baby first to follow their vaccines.",
+    "record": "Record vaccine",
+    "cardLink": "Vaccination card",
+    "caregiverNotice": "You can see the vaccine schedule and the records. Only parents add or change them.",
+    "viewerNotice": "You can see the vaccine schedule and the records but not change them.",
+    "noSchedule": {
+      "title": "The vaccine schedule isn't on this device yet",
+      "body": "Open Lotties once while online to download it. It then works without a connection."
+    },
+    "noBirthDate": {
+      "title": "Add the birth date",
+      "body": "The schedule is counted from the birth date.",
+      "action": "Add the birth date",
+      "ownerOnly": "Ask the baby's owner to add the birth date."
+    },
+    "profile": {
+      "title": "About this baby",
+      "birthDate": "Birth date",
+      "born": "{{date}} · {{age}} old",
+      "premature": "Born before 37 weeks?",
+      "weeks": "Weeks of pregnancy at birth",
+      "weeksUnit": "weeks",
+      "rsv": "Did the mother get the RSV vaccine in pregnancy?",
+      "rsvAnswers": {
+        "yes": "Yes",
+        "no": "No",
+        "unknown": "Don't know"
+      },
+      "private": "Show private clinic recommendations",
+      "privateHelp": "Adds what the pediatric societies recommend and the public network (SUS) does not offer.",
+      "save": "Save changes",
+      "saved": "Saved",
+      "summary": {
+        "public": "Public schedule (SUS)",
+        "withPrivate": "Public schedule and private clinic recommendations",
+        "premature": "Born at {{weeks}} weeks",
+        "rsv": "RSV vaccine in pregnancy: {{answer}}"
+      }
+    },
+    "premature": "Premature babies may follow a special schedule. Follow your pediatrician's guidance.",
+    "filters": {
+      "label": "Show",
+      "all": "All",
+      "public": "Public (SUS)",
+      "private": "Private"
+    },
+    "privateHint": "Recommended by pediatric societies and not part of the public schedule. Turn on private clinic recommendations above to see when they are due.",
+    "timeline": {
+      "label": "Vaccine schedule",
+      "none": "Nothing to show under this filter."
+    },
+    "age": {
+      "birth": "At birth"
+    },
+    "dose": {
+      "protects": "Protects against {{list}}",
+      "given": "Given on {{date}}",
+      "givenWith": "Given on {{date}} (with {{product}})",
+      "due": "Due now",
+      "dueIn_one": "Due in {{count}} day",
+      "dueIn_other": "Due in {{count}} days",
+      "dueOn": "Due on {{date}}",
+      "overdue": "Overdue",
+      "recommendedAt": "Recommended at {{age}}",
+      "recommendedAtBirth": "Recommended at birth",
+      "waiting": "After the earlier doses",
+      "notInPublic": "Not in the public schedule",
+      "expired": "No longer in the schedule: ask your pediatrician",
+      "yearly": "Yearly",
+      "nextOn": "Next on {{date}}",
+      "privateClinic": "Private clinic",
+      "confirm": "Confirm this with your pediatrician",
+      "recommendedBy": "Recommended by",
+      "sources": {
+        "pni": "PNI",
+        "sbp": "SBP",
+        "sbim": "SBIm"
+      },
+      "record": "Record",
+      "recordNamed": "Record {{name}}, {{dose}}",
+      "scheduleIt": "Schedule it",
+      "scheduleNamed": "Schedule {{name}}, {{dose}}",
+      "edit": "Edit",
+      "editNamed": "Edit the record of {{name}}, {{dose}}",
+      "delete": "Delete",
+      "deleteNamed": "Delete the record of {{name}}, {{dose}}"
+    },
+    "history": {
+      "title": "History",
+      "empty": "Nothing recorded yet.",
+      "lot": "Lot {{lot}}",
+      "by": "Given by {{name}}",
+      "otherVaccine": "Other vaccine",
+      "editNamed": "Edit the record of {{name}} from {{date}}",
+      "deleteNamed": "Delete the record of {{name}} from {{date}}"
+    },
+    "deleted": "{{name}} record deleted",
+    "scheduleTitle": "Vaccine: {{name}}",
+    "sheet": {
+      "newTitle": "Record vaccine",
+      "editTitle": "Edit vaccine record",
+      "vaccine": "Vaccine",
+      "vaccinePlaceholder": "Choose a vaccine",
+      "vaccineRequired": "Choose the vaccine.",
+      "other": "Other vaccine",
+      "customName": "Vaccine name",
+      "customNameRequired": "Enter the vaccine name, up to 80 characters.",
+      "dose": "Dose",
+      "notInSchedule": "Not in the schedule",
+      "alreadyRecorded": "{{label}} · already recorded",
+      "doseFree": "Dose",
+      "doseFreePlaceholder": "e.g. 1st dose",
+      "givenOn": "Date given",
+      "givenOnRequired": "Choose the date it was given.",
+      "givenOnFuture": "The date can't be in the future.",
+      "network": "Where it was given",
+      "networks": {
+        "public": "Public (SUS)",
+        "private": "Private clinic"
+      },
+      "clinic": "Clinic or health post",
+      "lot": "Lot number",
+      "administeredBy": "Given by",
+      "notes": "Notes",
+      "saveFailed": "Couldn't save the record. Try again."
+    },
+    "sources": {
+      "button": "Sources",
+      "title": "Sources",
+      "edition": "Edition: {{edition}}",
+      "retrieved": "Retrieved on {{date}}",
+      "open": "Open the source",
+      "openNamed": "Open the source: {{name}}",
+      "informational": "This schedule is informational. Follow your pediatrician and your vaccination card."
+    },
+    "card": {
+      "title": "Vaccination card",
+      "back": "Back to vaccines",
+      "print": "Print / Save as PDF",
+      "born": "Born {{date}}",
+      "table": "Vaccines recorded for {{name}}",
+      "columns": {
+        "date": "Date",
+        "vaccine": "Vaccine",
+        "dose": "Dose",
+        "lot": "Lot",
+        "clinic": "Clinic"
+      },
+      "empty": "No vaccines recorded yet.",
+      "note": "A personal record kept in Lotties. It does not replace the official vaccination card.",
+      "printedOn": "Printed on {{date}}"
+    },
+    "due": {
+      "label": "Vaccines due",
+      "count_one": "{{count}} vaccine may be due",
+      "count_other": "{{count}} vaccines may be due",
+      "first": "{{name}} · {{dose}}"
+    }
+  }
+}

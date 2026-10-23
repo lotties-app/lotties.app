@@ -1,0 +1,569 @@
+{
+  "presets": {
+    "wake_up": "Wake-up",
+    "nap": "Nap",
+    "bedtime": "Bedtime",
+    "fell_asleep": "Fell asleep",
+    "night_waking": "Night waking",
+    "bottle": "Bottle",
+    "nursing": "Nursing",
+    "diaper": "Diaper",
+    "medication": "Medication",
+    "belly_pain": "Belly pain",
+    "nasal_suction": "Nasal suction",
+    "belly_massage": "Belly massage",
+    "bath": "Bath",
+    "fussy": "Fussy",
+    "tummy_time": "Tummy time",
+    "nail_trim": "Nail trim",
+    "temperature": "Temperature",
+    "spit_up": "Spit-up / vomit",
+    "teething": "Teething",
+    "milestone": "Milestone",
+    "symptom": "Symptom",
+    "outdoor": "Outdoor time",
+    "skin_care": "Skin care",
+    "pumping": "Pumping",
+    "custom": "Custom",
+    "status": {
+      "running": "Running {{time}}",
+      "lastClock": "Last {{time}}",
+      "lastJustNow": "Last just now",
+      "lastMinutes": "Last {{count}} min ago",
+      "lastHours": "Last {{count}}h ago",
+      "untrackedToday": "Not tracked today"
+    },
+    "tileLabel": "{{action}}, {{status}}",
+    "undo": {
+      "action": "Undo",
+      "started": "{{name}} started",
+      "logged": "{{name}} logged",
+      "stopped": "{{name}} stopped"
+    }
+  },
+  "events": {
+    "addTitle": "Add event",
+    "editTitle": "Edit event",
+    "time": "Time",
+    "start": "Start",
+    "end": "End",
+    "saveFailed": "Could not save the event.",
+    "medications": "Medications",
+    "usual": "Usual",
+    "validation": {
+      "chooseType": "Choose an event type.",
+      "startRequired": "Start time is required.",
+      "endBeforeStart": "End time must not be before the start time.",
+      "fieldRequired": "{{label}} is required.",
+      "fieldNumber": "{{label}} must be a number.",
+      "fieldMin": "{{label}} must be at least {{min}}.",
+      "fieldMax": "{{label}} must be at most {{max}}.",
+      "selectMedication": "Select at least one medication.",
+      "doseInvalid": "Dose for {{name}} must be a positive number.",
+      "doseUnit": "Dose for {{name}} needs a unit.",
+      "fieldInteger": "{{label}} must be a whole number.",
+      "fieldDecimals_one": "{{label}} can have at most {{count}} decimal place.",
+      "fieldDecimals_other": "{{label}} can have at most {{count}} decimal places."
+    },
+    "finishTitle": "Finish this {{name}}",
+    "saveAndStop": "Save and stop",
+    "sheet": {
+      "startingNow": "Starting now",
+      "startingAt": "Starting at {{time}}",
+      "loggedAt": "Logged {{time}}",
+      "startedAt": "Started {{time}}",
+      "changeType": "Change type",
+      "moreActions": "More actions",
+      "typeChanged": "Changed to {{name}}.",
+      "typeChangedCleared": "Changed to {{name}}. Details that don't apply were cleared.",
+      "discardQuestion": "Discard your changes?",
+      "keepEditing": "Keep editing",
+      "discard": "Discard",
+      "problems_one": "{{count}} thing to fix: {{first}}",
+      "problems_other": "{{count}} things to fix. First: {{first}}",
+      "duration": "Duration {{duration}}",
+      "editTime": "Change the time, {{time}} {{day}}"
+    },
+    "deleted": "{{name}} deleted",
+    "sleepDetails": {
+      "title": "Sleep details",
+      "optional": "All optional",
+      "filled_one": "{{count}} detail added",
+      "filled_other": "{{count}} details added",
+      "moodAria": "Mood on waking"
+    },
+    "bottleSuggestions": {
+      "age_one": "Typical for {{count}} month. Based on common ranges, not advice.",
+      "age_other": "Typical for {{count}} months. Based on common ranges, not advice.",
+      "newborn": "Typical for newborns. Based on common ranges, not advice.",
+      "history": "From your recent feeds"
+    }
+  },
+  "eventTypes": {
+    "feeding": {
+      "name": "Feeding",
+      "fields": {
+        "method": {
+          "label": "Method"
+        },
+        "side": {
+          "label": "Side"
+        },
+        "amount_ml": {
+          "label": "Amount"
+        },
+        "bottle_feeding_type": {
+          "label": "Bottle content"
+        },
+        "breast_left_seconds": {
+          "label": "Left breast"
+        },
+        "breast_right_seconds": {
+          "label": "Right breast"
+        },
+        "food": {
+          "label": "Food"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "method": {
+          "breast": "Breast",
+          "bottle": "Bottle",
+          "solid": "Solid food"
+        },
+        "side": {
+          "left": "Left",
+          "right": "Right",
+          "both": "Both"
+        },
+        "bottle_feeding_type": {
+          "formula": "Formula",
+          "breast_milk": "Breast milk"
+        }
+      }
+    },
+    "sleep": {
+      "name": "Sleep",
+      "fields": {
+        "kind": {
+          "label": "Kind"
+        },
+        "mood": {
+          "label": "Mood"
+        },
+        "how_slept": {
+          "label": "Where and how"
+        },
+        "fall_asleep": {
+          "label": "Falling asleep"
+        },
+        "time_to_fall_asleep_minutes": {
+          "label": "Time to fall asleep"
+        },
+        "how_woke": {
+          "label": "Waking up"
+        },
+        "mood_on_wake": {
+          "label": "Mood on waking"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "kind": {
+          "nap": "Nap",
+          "night": "Night sleep",
+          "night_waking": "Night waking",
+          "bed_time": "Bedtime",
+          "woke_up": "Woke up",
+          "fell_asleep": "Fell asleep"
+        },
+        "how_slept": {
+          "in_bed": "In bed",
+          "nursing": "Nursing",
+          "held": "Held",
+          "next_to_me": "Next to me",
+          "bottle": "Bottle",
+          "stroller": "Stroller",
+          "car": "Car",
+          "swing": "Swing",
+          "other": "Other"
+        },
+        "fall_asleep": {
+          "easy": "Fell asleep easily",
+          "took_long": "Took a long time",
+          "fussy": "Fussy"
+        },
+        "how_woke": {
+          "naturally": "Woke naturally",
+          "woken": "Was woken"
+        },
+        "mood_on_wake": {
+          "good": "Good",
+          "neutral": "Neutral",
+          "bad": "Bad"
+        }
+      }
+    },
+    "diaper": {
+      "name": "Diaper",
+      "fields": {
+        "content": {
+          "label": "Content"
+        }
+      },
+      "options": {
+        "content": {
+          "wet": "Wet",
+          "dirty": "Dirty",
+          "mixed": "Mixed"
+        }
+      }
+    },
+    "bath": {
+      "name": "Bath",
+      "fields": {
+        "temperature_c": {
+          "label": "Water temperature"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      }
+    },
+    "tummy_time": {
+      "name": "Tummy time",
+      "fields": {
+        "mood": {
+          "label": "Mood"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      }
+    },
+    "medication": {
+      "name": "Medication"
+    },
+    "belly_pain": {
+      "name": "Belly pain",
+      "fields": {
+        "intensity": {
+          "label": "Intensity"
+        }
+      }
+    },
+    "breast_pump": {
+      "name": "Breast pump",
+      "fields": {
+        "amount_left_ml": {
+          "label": "Left amount"
+        },
+        "amount_right_ml": {
+          "label": "Right amount"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      }
+    },
+    "nasal_suction": {
+      "name": "Nasal suction",
+      "fields": {
+        "tool": {
+          "label": "Tool"
+        },
+        "saline": {
+          "label": "Saline used"
+        }
+      },
+      "options": {
+        "tool": {
+          "bulb": "Bulb",
+          "electric": "Electric",
+          "mouth": "Mouth suction"
+        }
+      }
+    },
+    "belly_massage": {
+      "name": "Belly massage",
+      "fields": {
+        "reason": {
+          "label": "Reason"
+        },
+        "helped": {
+          "label": "Did it help?"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "reason": {
+          "gas": "Gas",
+          "constipation": "Constipation",
+          "colic": "Colic",
+          "other": "Other"
+        },
+        "helped": {
+          "yes": "Yes",
+          "a_little": "A little",
+          "no": "No"
+        }
+      }
+    },
+    "fussy": {
+      "name": "Fussy / crying",
+      "fields": {
+        "intensity": {
+          "label": "Intensity"
+        },
+        "what_helped": {
+          "label": "What helped"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "intensity": {
+          "mild": "Mild",
+          "moderate": "Moderate",
+          "intense": "Intense"
+        },
+        "what_helped": {
+          "feeding": "Feeding",
+          "rocking": "Rocking",
+          "pacifier": "Pacifier",
+          "massage": "Massage",
+          "sleep": "Sleep",
+          "other": "Other",
+          "nothing": "Nothing"
+        }
+      }
+    },
+    "nail_trim": {
+      "name": "Nail trim",
+      "fields": {
+        "where": {
+          "label": "Where"
+        }
+      },
+      "options": {
+        "where": {
+          "hands": "Hands",
+          "feet": "Feet",
+          "both": "Both"
+        }
+      }
+    },
+    "temperature": {
+      "name": "Temperature",
+      "fields": {
+        "value_c": {
+          "label": "Temperature"
+        },
+        "method": {
+          "label": "Where measured"
+        }
+      },
+      "options": {
+        "method": {
+          "armpit": "Armpit",
+          "ear": "Ear",
+          "forehead": "Forehead",
+          "rectal": "Rectal",
+          "mouth": "Mouth"
+        }
+      }
+    },
+    "spit_up": {
+      "name": "Spit-up / vomit",
+      "fields": {
+        "kind": {
+          "label": "Kind"
+        },
+        "amount": {
+          "label": "Amount"
+        }
+      },
+      "options": {
+        "kind": {
+          "spit_up": "Spit-up",
+          "vomit": "Vomit"
+        },
+        "amount": {
+          "little": "A little",
+          "some": "Some",
+          "a_lot": "A lot"
+        }
+      }
+    },
+    "teething": {
+      "name": "Teething",
+      "fields": {
+        "stage": {
+          "label": "Stage"
+        },
+        "tooth": {
+          "label": "Tooth"
+        }
+      },
+      "options": {
+        "stage": {
+          "gums_sore": "Sore gums",
+          "tooth_came_through": "Tooth came through"
+        },
+        "tooth": {
+          "lower_central_incisor": "Lower central incisor",
+          "upper_central_incisor": "Upper central incisor",
+          "lower_lateral_incisor": "Lower lateral incisor",
+          "upper_lateral_incisor": "Upper lateral incisor",
+          "first_molar": "First molar",
+          "canine": "Canine",
+          "second_molar": "Second molar",
+          "other": "Other"
+        }
+      }
+    },
+    "milestone": {
+      "name": "Milestone",
+      "fields": {
+        "milestone": {
+          "label": "Milestone"
+        },
+        "custom": {
+          "label": "Which milestone?"
+        }
+      },
+      "options": {
+        "milestone": {
+          "first_smile": "First smile",
+          "laughs": "Laughs",
+          "holds_head": "Holds head up",
+          "rolls_over": "Rolls over",
+          "sits": "Sits",
+          "crawls": "Crawls",
+          "stands": "Stands",
+          "first_steps": "First steps",
+          "first_word": "First word",
+          "other": "Other"
+        }
+      }
+    },
+    "symptom": {
+      "name": "Symptom",
+      "fields": {
+        "symptom": {
+          "label": "Symptom"
+        },
+        "severity": {
+          "label": "Severity"
+        }
+      },
+      "options": {
+        "symptom": {
+          "cough": "Cough",
+          "runny_nose": "Runny nose",
+          "congestion": "Stuffy nose",
+          "rash": "Rash",
+          "diarrhea": "Diarrhea",
+          "constipation": "Constipation",
+          "other": "Other"
+        },
+        "severity": {
+          "mild": "Mild",
+          "moderate": "Moderate",
+          "severe": "Severe"
+        }
+      }
+    },
+    "outdoor": {
+      "name": "Outdoor time",
+      "fields": {
+        "kind": {
+          "label": "Kind"
+        },
+        "pause_count": {
+          "label": "Pauses"
+        },
+        "paused_seconds": {
+          "label": "Paused time"
+        },
+        "paused_at": {
+          "label": "Paused since"
+        }
+      },
+      "options": {
+        "kind": {
+          "sun": "Sunbathing",
+          "stroller_walk": "Stroller walk",
+          "park": "Playground",
+          "other": "Other"
+        }
+      }
+    },
+    "skin_care": {
+      "name": "Skin care",
+      "fields": {
+        "product": {
+          "label": "Product"
+        }
+      },
+      "options": {
+        "product": {
+          "moisturizer": "Moisturizer",
+          "diaper_cream": "Diaper cream",
+          "sunscreen": "Sunscreen",
+          "other": "Other"
+        }
+      }
+    }
+  }
+}

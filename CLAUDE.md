@@ -19,7 +19,9 @@ Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec:
 - Persistence: Entity Framework Core (Npgsql), code-first migrations only; no raw SQL schema changes, no `EnsureCreated` outside the SQLite test host. Migrations are applied with `dotnet ef database update` (default) or, opt-in, at API startup with `DB_AUTO_MIGRATE=true` (migrator role, advisory lock); see docs/DEPLOY.md "Applying migrations".
 - Predictions are pure Domain functions, no I/O.
 - All AI-produced docs, plans, specs, reports and graphs go in `docs/` (graphify writes to `docs/graphify`, set via `.claude/settings.json`). Only CLAUDE.md, README, LICENSE, CONTRIBUTING stay at root.
-- UI text: every user-visible string goes through i18n `t()` (en + pt-BR catalogs in code/web/src/i18n/locales); dates/numbers via Intl helpers; see docs/DESIGN.md section 9. Add keys to both catalogs.
+- UI text: every user-visible string goes through i18n `t()` (en + pt-BR catalogs in code/web/src/i18n/locales); dates/numbers via Intl helpers; see docs/DESIGN.md section 9. Add UI strings to the feature's own file under `locales/<lang>/` (`locales/en/<feature>.json` and `locales/pt-BR/<feature>.json`).
+- Parallel work: one git worktree per agent (`scripts/worktree-new.sh`, `worktree-integrate.sh`, `worktree-remove.sh`), integrated and deployed one feature at a time from the main clone; see `docs/PROCESS.md`.
+- In a worktree never run `npm install`/`npm ci` or change dependencies: its node_modules are junctions to the main clone's.
 - Use skills `develop:dotnet8` (api) and `refactor:react` (web).
 - Subagents: Opus plans/orchestrates, Sonnet medium-hard, Haiku simple, never Fable.
 - Container runtime is Podman inside WSL (archlinux distro), not Docker: run `wsl -- podman ...` or `podman-compose`. The WSL host runs the user's OTHER containers (traefik on :80, databases, etc.): never stop, remove or prune anything not named `br-*`; use only your own names and high ports. Rootful bridge networks fail there (nftables), use `--network host`.
