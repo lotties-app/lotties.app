@@ -6,6 +6,7 @@ import type { UndoToken } from '../presets/actions';
 import { formatPresetStatus } from '../presets/status';
 import { MINUTE_MS, typeForKey } from './eventFacts';
 import type { CatchUpGroup } from './catchUp';
+import type { WhatWorkedChip } from './crySpell';
 import type { BreastSide } from './nursing';
 import type { QuickTile, TileId, TrayChoice } from './quickLog';
 import type { SleepActionKind } from './sleepToggle';
@@ -74,7 +75,9 @@ export type Receipt =
   | { kind: 'tray'; choice: TrayChoice }
   | { kind: 'nursing_started'; side: BreastSide }
   | { kind: 'nursing_switched'; side: BreastSide }
-  | { kind: 'nursing_stopped'; leftSeconds: number; rightSeconds: number };
+  | { kind: 'nursing_stopped'; leftSeconds: number; rightSeconds: number }
+  /** A crying spell from "Why is she crying?" with what worked. */
+  | { kind: 'cry_spell'; chip: WhatWorkedChip };
 
 /** The moment the token's events now carry: `at` minus the shift. */
 export function tokenTime(token: Pick<UndoToken, 'at' | 'shiftMinutes'>): string | undefined {
@@ -149,5 +152,12 @@ export function receiptMessage(
         left: formatDuration(receipt.leftSeconds * 1000),
         right: formatDuration(receipt.rightSeconds * 1000),
       });
+    case 'cry_spell':
+      return t('cryReasons.toast', { helped: whatWorkedLabel(receipt.chip) });
   }
+}
+
+/** The label of a "What worked?" chip ("Held", "Nothing yet"). */
+export function whatWorkedLabel(chip: WhatWorkedChip): string {
+  return t(`cryReasons.worked.options.${chip}`);
 }

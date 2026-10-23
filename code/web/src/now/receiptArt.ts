@@ -27,6 +27,8 @@ export function receiptArt(receipt: Receipt): string {
         default:
           return receipt.choice.kind;
       }
+    case 'cry_spell':
+      return 'fussy';
     default:
       return 'nursing';
   }

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import type { Baby, EventType } from '../db/models';
 import type { UndoToken } from '../presets/actions';
+import { logCrySpell, type CryAnswer } from './crySpell';
 import { useQuickLogToastContext } from './QuickLogToastContext';
 import type { SleepKind } from './nowState';
 import type { Receipt } from './nowText';
@@ -24,6 +25,8 @@ export interface NowCommands {
   startNursing: (side?: BreastSide) => Promise<UndoToken>;
   switchSide: (eventId: string, to?: BreastSide) => Promise<UndoToken>;
   stopNursing: (eventId: string) => Promise<UndoToken>;
+  /** Logs the "What worked?" answer of "Why is she crying?" as one fussy spell. */
+  crySpell: (answer: CryAnswer) => Promise<UndoToken>;
 }
 
 /**
@@ -80,6 +83,11 @@ export function useNowCommands(
           rightSeconds: elapsed.right,
         });
       },
+      crySpell: async (answer) =>
+        receipt(await logCrySpell(db, { ...answer, babyId, types }), {
+          kind: 'cry_spell',
+          chip: answer.chip,
+        }),
     } satisfies NowCommands;
   }, [db, baby.id, baby.birthDate, types, show]);
 }
