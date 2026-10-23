@@ -60,6 +60,17 @@ The loader is not `dotenv`: `dotenv` treats an unquoted `#` in a value as a comm
 
 There is no baby delete API, so every run leaves `E2E-<label>-<timestamp>` babies (and their events, medications, custom types) in the database. Use the `E2E-` prefix to find them. Nothing in Keycloak or other databases is touched.
 
+## Mobile overflow audit (before releases)
+
+A separate, credential-free Playwright run (no API, no Keycloak, no `.env`) that loads every developer-only `/dev/*` preview scenario and `/credits` on a touch phone at 320, 360, 390 and 430 px, in English and Portuguese, light and dark, with the root text at 100 % and 160 %. It fails (non-zero exit) on horizontal overflow, a visible sideways scrollbar, nested page scrollers, a control left under the bottom dock, a `vh` height, a text field under 16 px (iOS focus zoom) or a viewport meta that caps zoom. Method and findings: `docs/design/30-mobile-overflow-audit.md`.
+
+```
+(cd tests/e2e && npx playwright test -c design-review/overflow-audit.config.ts)
+# narrower: AUDIT_ROUTES=hub,now AUDIT_WIDTHS=320 AUDIT_LOCALES=en AUDIT_SCHEMES=dark AUDIT_TEXT=160
+```
+
+It starts its own Vite dev server on port 5191 (`AUDIT_PORT`), runs 3 workers (`AUDIT_WORKERS`) and takes about 12-15 minutes for the full matrix. The report is `tests/e2e/design-review/output/overflow-audit.md` (gitignored), with the raw findings per group in `output/overflow-audit/*.json`.
+
 ## CI
 
 `.github/workflows/e2e.yml` is manual (`workflow_dispatch`) because it needs secrets: `E2E_DB_HOST`, `E2E_DB_PORT`, `E2E_DB_NAME`, `E2E_DB_APP_USER`, `E2E_DB_APP_PASSWORD`, `E2E_AUTH_AUTHORITY`, `E2E_AUTH_AUDIENCE`, `E2E_OIDC_CLIENT_ID`, `E2E_USERNAME`, `E2E_PASSWORD`. The database host must be reachable from GitHub-hosted runners. On CI there is one retry and a trace on the first retry (never for the login specs); the report is uploaded when the run fails.
