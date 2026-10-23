@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import type { AgeNormSet } from '../ageNorms/ageNorms';
+import { useAgeNorms } from '../ageNorms/useAgeNorms';
 import { useDatabase } from '../db/DatabaseContext';
 import { useEventsStartedSince } from '../db/hooks';
 import type { BabyEvent, EventType } from '../db/models';
@@ -14,13 +16,15 @@ export interface BottleHistory {
   events: readonly BabyEvent[];
   /** The baby's birth date, when the baby is stored locally. */
   birthDate: string | null;
+  /** The published age norms on the device (`null` without a copy: the month table is used). */
+  ageNorms: AgeNormSet | null;
   /** The clock the window was read at (moves every minute). */
   now: Date;
 }
 
 /**
  * What the bottle suggestions read, from the local store (live: chips follow new bottles): the
- * last 30 days of events and the baby's birth date. `undefined` while loading.
+ * last 30 days of events, the baby's birth date and the age norms. `undefined` while loading.
  */
 export function useBottleHistory(babyId: string): BottleHistory | undefined {
   const db = useDatabase();
@@ -31,12 +35,13 @@ export function useBottleHistory(babyId: string): BottleHistory | undefined {
   ).toISOString();
   const events = useEventsStartedSince(babyId, since);
   const baby = useLiveQuery(async () => (await db.babies.get(babyId)) ?? null, [db, babyId]);
+  const ageNorms = useAgeNorms();
   return useMemo(
     () =>
-      events === undefined || baby === undefined
+      events === undefined || baby === undefined || ageNorms === undefined
         ? undefined
-        : { events, birthDate: baby?.birthDate ?? null, now: new Date(tick) },
-    [events, baby, tick],
+        : { events, birthDate: baby?.birthDate ?? null, ageNorms, now: new Date(tick) },
+    [events, baby, ageNorms, tick],
   );
 }
 
@@ -58,6 +63,7 @@ export function useBottleSuggestions(
       events: history.events,
       feedingTypeId: type.id,
       birthDate: history.birthDate,
+      ageNorms: history.ageNorms,
       now: history.now,
       min: field.min,
       max: field.max,

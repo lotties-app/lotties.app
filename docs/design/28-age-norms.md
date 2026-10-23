@@ -462,5 +462,11 @@ Every default that now comes from a norm. Values that come from norms in the tab
 
 | Default | Where | Old value | New value | Norm (source ids) |
 |---|---|---|---|---|
+| Bottle cold-start chips, days 7-29 | `code/web/src/events/bottleAgeDefaults.ts` `normBottleRange`, used by `bottleSuggestions.ts` | 0 m row: 30-90 ml (chips 30, 60, 90) | 60-120 ml (60, 90, 120) | `feed_volume_ml_per_feed.formula.7-30`, high (sbp-alimentacao-2024, aap-formula-2022) |
+| Bottle cold-start chips, days 30-60 | same | 0 m row 30-90 until the first monthly birthday, then 1 m row 90-120 (90, 120) | 90-150 ml (90, 120, 150) | `feed_volume_ml_per_feed.formula.30-61`, medium (sbp-alimentacao-2024, aap-formula-2022) |
+| Bottle cold-start chips, days 61-90 | same | 1 m row 90-120, then 2 m row 120-150 (120, 150) | 150-180 ml (150, 180) | `feed_volume_ml_per_feed.formula.61-91`, medium (sbp-alimentacao-2024) |
+| Bottle cold-start chips, days 91-121 | same | 2 m row 120-150, then 3 m row 120-180 (120, 150, 180) | 180-200 ml (180, 200) | `feed_volume_ml_per_feed.formula.91-122`, medium (sbp-alimentacao-2024) |
+| Bottle cold-start chips, days 122-182 | same | 3 m row 120-180, 4 m row 160-200 (160, 190), 5 m row 180-240 (180, 210, 240) | 180-200 ml (180, 200) | `feed_volume_ml_per_feed.formula.122-183`, medium (sbp-alimentacao-2024) |
+| Bottle cold-start chips, days 183-364 | same | 5 m / 7 m rows 180-240 | 180-240 ml (same chips) | `feed_volume_ml_per_feed.formula.183-365`, high (sbp-alimentacao-2024, aap-formula-2022) |
 
 ### 15.3 Deliberately not changed

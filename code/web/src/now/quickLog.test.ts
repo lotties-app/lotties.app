@@ -4,6 +4,7 @@ import type { BabyEvent, EventType, Medication } from '../db/models';
 import { readLastUsed, readLastUsedMedications, recordLastUsed } from '../events/lastUsedValues';
 import { undoPreset } from '../presets/actions';
 import { event, eventType } from '../presets/presetFixtures';
+import { SHIPPED_AGE_NORMS } from '../test/ageNorms';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import {
@@ -257,6 +258,22 @@ describe('trays', () => {
       amounts: [120, 150, 180],
       suggestions: { source: 'age', ageMonths: 3 },
       amountMl: 150,
+    });
+
+    // With the published norms on the device: 103 days old, formula 180-200 ml per feed (SBP).
+    const withNorms = feedTrayOptions(BABY_ID, TYPES, [], at(14), {
+      events: [],
+      birthDate: '2026-07-10',
+      ageNorms: SHIPPED_AGE_NORMS,
+    })!;
+    expect(withNorms.bottle).toMatchObject({
+      amounts: [180, 200],
+      suggestions: {
+        source: 'age',
+        ageMonths: 3,
+        ageNormId: 'feed_volume_ml_per_feed.formula.91-122',
+      },
+      amountMl: 180,
     });
 
     // Bottles older than the Now window still count (30 days), deleted ones never.

@@ -1,3 +1,4 @@
+import type { AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent, type CommandOptions } from '../db/eventCommands';
 import { formulasFor } from '../db/queries';
@@ -228,10 +229,14 @@ export interface FeedTray {
   solid: SheetPrefill;
 }
 
-/** What the bottle chips read beyond the Now window: 30 days of events and the birth date. */
+/**
+ * What the bottle chips read beyond the Now window: 30 days of events, the birth date and the
+ * published age norms (without them the month table is used).
+ */
 export interface BottleHistoryInput {
   events: readonly BabyEvent[];
   birthDate: string | null;
+  ageNorms?: AgeNormSet | null;
 }
 
 function bottleTray(
@@ -260,6 +265,7 @@ function bottleTray(
     events: history?.events ?? feeds,
     feedingTypeId: type.id,
     birthDate: history?.birthDate ?? null,
+    ageNorms: history?.ageNorms ?? null,
     now,
     min: field?.min ?? null,
     max: field?.max ?? null,
