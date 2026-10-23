@@ -228,6 +228,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("baby_id");
 
+                    b.Property<string>("DoctorScopes")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("doctor_scopes");
+
                     b.Property<DateTimeOffset>("JoinedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("joined_at");
@@ -283,6 +288,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
+
+                    b.Property<string>("DoctorScopes")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("doctor_scopes");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone")

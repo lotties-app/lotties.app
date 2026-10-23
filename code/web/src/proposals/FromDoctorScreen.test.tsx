@@ -172,18 +172,18 @@ describe('the page', () => {
 });
 
 describe('the route', () => {
-  it('sends the Doctor to her proposals', async () => {
+  it('sends a doctor without a baby of her own to her dashboard', async () => {
     await seedFamily(db, 'Doctor');
     renderWithDb(
       db,
       <Routes>
         <Route path="/" element={<FromDoctorPage />} />
-        <Route path="/proposals" element={<p>MY PROPOSALS PAGE</p>} />
+        <Route path="/doctor" element={<p>DOCTOR DASHBOARD</p>} />
       </Routes>,
       { api: fakeApi().api },
     );
 
-    expect(await screen.findByText('MY PROPOSALS PAGE')).toBeTruthy();
+    expect(await screen.findByText('DOCTOR DASHBOARD')).toBeTruthy();
   });
 
   it('shows the page for the parents', async () => {

@@ -6,7 +6,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// The formulas of one baby (offline sync: idempotent upsert by client GUID, delta pull). Reads need
-/// <see cref="BabyPolicies.Read"/> (from the baby group, so a Caregiver can pick one when logging a bottle); writes,
+/// <see cref="BabyPolicies.Read"/> (from the baby group, so a Caregiver can pick one when logging a bottle; a Doctor needs
+/// the formulas scope, <see cref="BabyPolicies.ScopeFormulas"/>); writes,
 /// archiving included, need <see cref="BabyPolicies.Write"/>. There is no delete: a formula is archived.
 /// </summary>
 internal static class FormulaEndpoints
@@ -21,7 +22,9 @@ internal static class FormulaEndpoints
     public static RouteGroupBuilder MapFormulaEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(FormulasPath, ListChangesAsync).WithName("ListFormulaChanges");
+        baby.MapGet(FormulasPath, ListChangesAsync)
+            .RequireAuthorization(BabyPolicies.ScopeFormulas)
+            .WithName("ListFormulaChanges");
         baby.MapPut(FormulaPath, UpsertAsync)
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("UpsertFormula")

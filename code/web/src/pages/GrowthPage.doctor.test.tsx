@@ -7,7 +7,7 @@ import { BABY_ID, fakeApi, testDatabase } from '../test/fakeApi';
 import { useTestLocale } from '../test/locale';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { seedBaby } from '../test/seed';
-import { GrowthPage } from './GrowthPage';
+import { Growth, GrowthPage } from './GrowthPage';
 
 /* Consultation measurements (docs/design/16-doctor-access.md): "Recorded by Dr.", the doctor's own. */
 
@@ -57,9 +57,20 @@ afterEach(async () => {
 });
 
 async function renderGrowth(role: BabyRole) {
-  await seedBaby(db, { role, userId: role === 'Doctor' ? DOCTOR : 'mom' });
+  const userId = role === 'Doctor' ? DOCTOR : 'mom';
+  await seedBaby(db, { role, userId });
   const fake = fakeApi((call) => (call.path.endsWith('/measurements') ? SERVER : undefined));
-  renderWithDb(db, <GrowthPage />, { api: fake.api });
+  // The doctor's growth page lives in her dashboard: the parents' pages never show her patients.
+  const ui =
+    role === 'Doctor' ? (
+      <Growth
+        baby={{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role, userId }}
+        heading="h1"
+      />
+    ) : (
+      <GrowthPage />
+    );
+  renderWithDb(db, ui, { api: fake.api });
 }
 
 describe('growth with a doctor', () => {

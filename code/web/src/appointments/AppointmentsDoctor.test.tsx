@@ -92,13 +92,13 @@ describe('Now', () => {
 });
 
 describe('Day', () => {
-  it('shows a Doctor no appointments strip and no calendar button', async () => {
+  it("shows a Doctor no appointments strip and no calendar button (her patient is not in the parents' Day)", async () => {
     await seedBaby(db, { role: 'Doctor' });
     await db.appointments.put(appointment('Second opinion', todayAt(23)));
     const fake = fakeApi();
     renderWithDb(db, <DayPage />, { api: fake.api });
 
-    await screen.findByRole('button', { name: /Filter/ });
+    await screen.findByText(/No baby yet/);
     expect(screen.queryByRole('region', { name: 'Appointments of the day' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Appointments calendar' })).toBeNull();
     expect(screen.queryByText('Second opinion')).toBeNull();
@@ -126,12 +126,13 @@ describe('the Hub', () => {
     expect(askedForMembers(fake.calls)).toBe(false);
   });
 
-  it('lets a Doctor leave from the family page, without a members list', async () => {
+  it('shows a Doctor no family page of her patient (she stops following from her dashboard)', async () => {
     await seedBaby(db, { role: 'Doctor' });
     const fake = fakeApi();
     renderWithDb(db, <HubFamilyPage />, { route: '/hub/family', api: fake.api });
 
-    expect(await screen.findByRole('button', { name: 'Leave this baby' })).toBeTruthy();
+    expect(await screen.findByText(/unlock these settings/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Leave this baby' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Members' })).toBeNull();
     expect(screen.queryByText('Only the owner can manage members and invites.')).toBeNull();
     await settleSync();
@@ -160,7 +161,7 @@ describe('the /appointments route', () => {
       db,
       <Routes>
         <Route path="/appointments" element={<AppointmentsPage />} />
-        <Route path="/patients" element={<p>Patients page</p>} />
+        <Route path="/doctor" element={<p>Patients page</p>} />
       </Routes>,
       { route: '/appointments' },
     );

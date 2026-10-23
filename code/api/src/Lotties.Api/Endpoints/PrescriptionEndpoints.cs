@@ -6,7 +6,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// Prescriptions of one baby (offline sync: idempotent upsert by client GUID, soft delete, delta pull) and the computed
-/// medication status. Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes <see cref="BabyPolicies.Write"/>.
+/// medication status. Reads need <see cref="BabyPolicies.Read"/> (from the baby group) and, for a Doctor, the medications
+/// scope (<see cref="BabyPolicies.ScopeMedications"/>), writes <see cref="BabyPolicies.Write"/>.
 /// </summary>
 internal static class PrescriptionEndpoints
 {
@@ -22,7 +23,9 @@ internal static class PrescriptionEndpoints
     public static RouteGroupBuilder MapPrescriptionEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(PrescriptionsPath, ListChangesAsync).WithName("ListPrescriptionChanges");
+        baby.MapGet(PrescriptionsPath, ListChangesAsync)
+            .RequireAuthorization(BabyPolicies.ScopeMedications)
+            .WithName("ListPrescriptionChanges");
         baby.MapPut(PrescriptionPath, UpsertAsync)
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("UpsertPrescription")
@@ -33,6 +36,7 @@ internal static class PrescriptionEndpoints
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("DeletePrescription");
         baby.MapGet(StatusPath, GetStatusAsync)
+            .RequireAuthorization(BabyPolicies.ScopeMedications)
             .WithName("GetMedicationStatus")
             .ProducesValidationProblem();
         return baby;

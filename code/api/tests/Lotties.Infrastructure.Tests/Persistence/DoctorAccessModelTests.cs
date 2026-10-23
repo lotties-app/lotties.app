@@ -68,7 +68,8 @@ public sealed class DoctorAccessModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_DoctorAccess'", StringComparison.Ordinal)..script.IndexOf("_FeedingAmounts'", StringComparison.Ordinal)];
+        var start = script.IndexOf("_DoctorAccess'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_DoctorProposals'", start, StringComparison.Ordinal)];
 
         Assert.Contains("CREATE TABLE professional_profiles (", section, StringComparison.Ordinal);
         Assert.Contains("CREATE TABLE baby_notes (", section, StringComparison.Ordinal);

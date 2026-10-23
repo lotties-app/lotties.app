@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Lotties.Api.Endpoints;
 
 /// <summary>
-/// Growth measurements of one baby. Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes
+/// Growth measurements of one baby. Everything needs, for a Doctor, the growth scope (<see cref="BabyPolicies.ScopeGrowth"/>).
+/// Reads need <see cref="BabyPolicies.Read"/> (from the baby group), writes
 /// <see cref="BabyPolicies.Measure"/> (Owner, Parent, and a Doctor for her consultation measurements, who changes only
 /// her own). Deletion is a hard delete.
 /// </summary>
@@ -21,16 +22,18 @@ internal static class MeasurementEndpoints
     public static RouteGroupBuilder MapMeasurementEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(MeasurementsPath, ListAsync).WithName("ListMeasurements");
+        baby.MapGet(MeasurementsPath, ListAsync)
+            .RequireAuthorization(BabyPolicies.ScopeGrowth)
+            .WithName("ListMeasurements");
         baby.MapPut(MeasurementPath, UpsertAsync)
-            .RequireAuthorization(BabyPolicies.Measure)
+            .RequireAuthorization(BabyPolicies.Measure, BabyPolicies.ScopeGrowth)
             .WithName("UpsertMeasurement")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
         baby.MapDelete(MeasurementPath, DeleteAsync)
-            .RequireAuthorization(BabyPolicies.Measure)
+            .RequireAuthorization(BabyPolicies.Measure, BabyPolicies.ScopeGrowth)
             .WithName("DeleteMeasurement")
             .ProducesProblem(StatusCodes.Status403Forbidden);
         return baby;

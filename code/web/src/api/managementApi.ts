@@ -4,6 +4,7 @@ import {
   fromEventTypeDto,
   type BabyDto,
   type BabyRequest,
+  type ChangeMemberRequest,
   type CreateEventTypeRequest,
   type CreateInviteRequest,
   type CreatedInviteDto,
@@ -13,6 +14,7 @@ import {
   type MemberDto,
 } from '../sync/contract';
 import type { Baby, BabyRole, EventType } from '../db/models';
+import type { DoctorScope } from '../doctor/scopes';
 import type { ApiClient } from './apiClient';
 
 /*
@@ -42,6 +44,17 @@ export async function changeMemberRole(
   role: BabyRole,
 ): Promise<void> {
   await api.request<unknown>(apiPaths.member(babyId, userId), { method: 'PATCH', body: { role } });
+}
+
+/** The Owner changes which sections a Doctor member sees; the server answers with the member. */
+export function changeDoctorScopes(
+  api: ApiClient,
+  babyId: string,
+  userId: string,
+  doctorScopes: readonly DoctorScope[],
+): Promise<MemberDto> {
+  const body: ChangeMemberRequest = { doctorScopes: [...doctorScopes] };
+  return api.request<MemberDto>(apiPaths.member(babyId, userId), { method: 'PATCH', body });
 }
 
 export async function removeMember(api: ApiClient, babyId: string, userId: string): Promise<void> {

@@ -7,6 +7,9 @@ namespace Lotties.Domain.Prescriptions;
 /// <summary>One medication given, read from a medication event: <see cref="GivenAt"/> is the event start.</summary>
 public sealed record MedicationDose(DateTimeOffset GivenAt, Guid? MedicationId, Guid? PrescriptionId, bool Override);
 
+/// <summary>One medication given, with the name the event copied when it was logged (<c>null</c> when the entry has none).</summary>
+public sealed record GivenMedication(DateTimeOffset GivenAt, Guid? MedicationId, string? Name);
+
 /// <summary>A prescription referenced by entry <see cref="Index"/> of a medication payload, with the entry's medication id.</summary>
 public sealed record PrescriptionReference(int Index, Guid PrescriptionId, Guid? MedicationId)
 {
@@ -24,6 +27,7 @@ public static class MedicationDosePayload
 {
     public const string MedicationsMember = "medications";
     public const string MedicationIdMember = "medicationId";
+    public const string NameMember = "name";
     public const string PrescriptionIdMember = "prescriptionId";
     public const string OverrideMember = "override";
     public const string KgUsedMember = "kgUsed";
@@ -35,6 +39,15 @@ public static class MedicationDosePayload
         using var document = JsonDocument.Parse(payload.Value);
         return Entries(document.RootElement)
             .Select(entry => new MedicationDose(givenAt, GuidMember(entry, MedicationIdMember), GuidMember(entry, PrescriptionIdMember), entry.TryGetProperty(OverrideMember, out var flag) && flag.ValueKind == JsonValueKind.True))
+            .ToArray();
+    }
+
+    /// <summary>The medications of a stored payload with their copied names, tolerating any shape (the doctor's summary of what was given).</summary>
+    public static IReadOnlyList<GivenMedication> ReadGiven(EventPayload payload, DateTimeOffset givenAt)
+    {
+        using var document = JsonDocument.Parse(payload.Value);
+        return Entries(document.RootElement)
+            .Select(entry => new GivenMedication(givenAt, GuidMember(entry, MedicationIdMember), StringMember(entry, NameMember)))
             .ToArray();
     }
 
@@ -96,6 +109,9 @@ public static class MedicationDosePayload
 
     private static bool IsValidKg(JsonElement value) =>
         value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var kg) && kg > 0 && kg <= MaxKgUsed;
+
+    private static string? StringMember(JsonElement entry, string member) =>
+        entry.TryGetProperty(member, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static Guid? GuidMember(JsonElement entry, string member) =>
         entry.TryGetProperty(member, out var value) && value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var id) ? id : null;

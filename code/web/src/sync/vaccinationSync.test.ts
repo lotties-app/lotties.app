@@ -470,4 +470,22 @@ describe('the baby profile on the wire', () => {
       'vaccineProfile',
     );
   });
+
+  it('keeps no vaccine profile for a doctor the vaccines section is not shared with', () => {
+    const baby = fromBabyDto({
+      id: 'b',
+      name: 'Lia',
+      birthDate: '2026-08-01',
+      role: 'Doctor',
+      doctorScopes: ['daily_log'],
+      vaccineProfile: null,
+      gestationalAgeWeeks: null,
+      rsvMaternalVaccination: null,
+    });
+
+    expect(baby).not.toHaveProperty('vaccineProfile');
+    expect(baby.gestationalAgeWeeks ?? null).toBeNull();
+    expect(baby.rsvMaternalVaccination ?? null).toBeNull();
+    expect(baby.doctorScopes).toEqual(['daily_log']);
+  });
 });

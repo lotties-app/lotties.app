@@ -27,7 +27,7 @@
       "loadFailed": "Could not load your professional profile. Check your connection."
     },
     "invite": {
-      "consent": "The doctor who accepts will see everything logged for {{name}} and can add notes and measurements. You can remove access at any time."
+      "consent": "The doctor who accepts will see the sections you choose for {{name}} and can add notes and measurements. You can change what you share or remove access at any time."
     },
     "inviteAccept": {
       "title": "Join as the baby's doctor",

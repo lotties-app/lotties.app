@@ -6,15 +6,17 @@ namespace Lotties.Api.Authorization;
 internal static class AuthorizationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the baby-scoped policies (<see cref="BabyPolicies"/>) and makes authentication the fallback,
-    /// so endpoints are protected unless they opt out with <c>AllowAnonymous()</c>.
+    /// Registers the baby-scoped policies (<see cref="BabyPolicies"/>: the role policies, the family policy and one scope
+    /// policy per <see cref="DoctorScope"/>) and makes authentication the fallback, so endpoints are protected unless they
+    /// opt out with <c>AllowAnonymous()</c>.
     /// </summary>
     public static IServiceCollection AddBabyAuthorization(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddScoped<IAuthorizationHandler, BabyAccessHandler>();
         services.AddScoped<IAuthorizationHandler, BabyFamilyHandler>();
-        services.AddAuthorizationBuilder()
+        services.AddScoped<IAuthorizationHandler, BabyScopeHandler>();
+        var authorization = services.AddAuthorizationBuilder()
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
             .AddPolicy(BabyPolicies.Read, policy => RequireBabyRole(policy, BabyRole.Viewer))
             .AddPolicy(BabyPolicies.ReadFamily, policy => policy.RequireAuthenticatedUser().AddRequirements(new BabyFamilyRequirement()))
@@ -24,9 +26,17 @@ internal static class AuthorizationServiceCollectionExtensions
             .AddPolicy(BabyPolicies.Note, policy => RequireBabyRole(policy, BabyRole.Doctor))
             .AddPolicy(BabyPolicies.Propose, policy => RequireBabyRole(policy, BabyRole.Doctor))
             .AddPolicy(BabyPolicies.Measure, policy => RequireBabyRole(policy, BabyRole.Parent, BabyRole.Doctor));
+        foreach (var scope in DoctorScopes.All)
+        {
+            authorization.AddPolicy(BabyPolicies.ForScope(scope), policy => RequireScope(policy, scope));
+        }
+
         return services;
     }
 
     private static void RequireBabyRole(AuthorizationPolicyBuilder policy, BabyRole requiredRole, params BabyRole[] alternativeRoles) =>
         policy.RequireAuthenticatedUser().AddRequirements(new BabyAccessRequirement(requiredRole, alternativeRoles));
+
+    private static void RequireScope(AuthorizationPolicyBuilder policy, DoctorScope scope) =>
+        policy.RequireAuthenticatedUser().AddRequirements(new BabyScopeRequirement(scope));
 }

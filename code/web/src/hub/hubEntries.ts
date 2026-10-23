@@ -57,7 +57,7 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'notes', section: 'care', icon: 'note', to: '/notes' },
   { id: 'fromDoctor', section: 'care', icon: 'stethoscope', to: '/from-doctor' },
   { id: 'myProposals', section: 'care', icon: 'stethoscope', to: '/proposals' },
-  { id: 'patients', section: 'care', icon: 'users', to: '/patients' },
+  { id: 'patients', section: 'care', icon: 'users', to: '/doctor' },
   { id: 'members', section: 'family', icon: 'users', to: '/hub/family' },
   { id: 'invite', section: 'family', icon: 'user-plus', to: '/hub/family#invite' },
   { id: 'doctorAccess', section: 'family', icon: 'stethoscope', to: '/hub/family#doctor-access' },

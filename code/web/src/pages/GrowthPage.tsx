@@ -22,9 +22,10 @@ import { Icon } from '../ui/Icon';
 
 type Editing = MeasurementDto | 'new' | null;
 
-type HeadingLevel = 'h1' | 'h2';
+export type HeadingLevel = 'h1' | 'h2';
 
-function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
+/** The growth list and charts of one baby (also the doctor's Growth page). */
+export function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
   const { t } = useTranslation();
   const { query, online } = useMeasurements(baby.id);
   const actions = useMeasurementActions(baby.id);

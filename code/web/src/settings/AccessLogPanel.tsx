@@ -3,6 +3,10 @@ import { CircularProgress, List, ListItem, ListItemText, Stack, Typography } fro
 import { useQuery } from '@tanstack/react-query';
 import { useApiClient } from '../api/ApiClientContext';
 import type { Baby } from '../db/models';
+import { scopeList } from '../doctor/scopeText';
+import { parseScopes } from '../doctor/scopes';
+import { fromProfessionalDto, parseRole, type MemberDto } from '../sync/contract';
+import { doctorLabel } from '../professional/doctorLabel';
 import { formatDateTime } from '../i18n/format';
 import { DoctorName } from '../professional/DoctorName';
 import { listAccessLog, type AccessLogEntry } from '../professional/professionalApi';
@@ -35,11 +39,37 @@ function EntryRow({ entry }: { entry: AccessLogEntry }) {
   );
 }
 
+/** What each doctor of the baby sees, above the log ("Dr. Ana Souza sees: daily log and growth"). */
+function DoctorScopesHeader({ baby, members }: { baby: Baby; members: readonly MemberDto[] }) {
+  const { t } = useTranslation();
+  const doctors = members.filter((member) => parseRole(member.role) === 'Doctor');
+  if (doctors.length === 0) return null;
+  return (
+    <Stack component="ul" spacing={0.5} sx={{ m: 0, p: 0, listStyle: 'none' }}>
+      {doctors.map((member) => {
+        const doctor = doctorLabel(t, {
+          displayName: member.displayName?.trim() || t('settings.members.unnamed'),
+          professional: fromProfessionalDto(member.professional),
+        });
+        const scopes = parseScopes(member.doctorScopes);
+        return (
+          <Typography component="li" variant="body2" key={member.userId}>
+            {scopes.length === 0
+              ? t('doctorDashboard.access.logHeaderNothing', { doctor, baby: baby.name })
+              : t('doctorDashboard.access.logHeader', { doctor, list: scopeList(scopes, t) })}
+          </Typography>
+        );
+      })}
+    </Stack>
+  );
+}
+
 /**
  * Owner only, inside Members: who among the baby's doctors loaded its data and when (written by the
- * server at most once an hour per doctor; the newest 50). Read-only, online only.
+ * server at most once an hour per doctor; the newest 50), under what each doctor sees. Read-only,
+ * online only.
  */
-export function AccessLogPanel({ baby }: { baby: Baby }) {
+export function AccessLogPanel({ baby, members }: { baby: Baby; members?: readonly MemberDto[] }) {
   const { t } = useTranslation();
   const api = useApiClient();
   const online = useOnline();
@@ -57,6 +87,7 @@ export function AccessLogPanel({ baby }: { baby: Baby }) {
       <Typography variant="body2" color="text.secondary">
         {t('doctor.accessLog.explainer', { name: baby.name })}
       </Typography>
+      {members && <DoctorScopesHeader baby={baby} members={members} />}
       {log.isError && <ErrorNotice message={t('doctor.accessLog.loadFailed')} />}
       {log.isPending && online && <CircularProgress size={24} aria-label={t('common.loading')} />}
       {log.data?.length === 0 && (

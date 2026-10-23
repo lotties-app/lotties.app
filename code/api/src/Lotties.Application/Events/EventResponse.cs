@@ -1,3 +1,4 @@
+using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
 
 namespace Lotties.Application.Events;
@@ -50,5 +51,13 @@ public sealed record EventResponse
             ClientUpdatedAt = stored.ClientUpdatedAt,
             DeletedAt = stored.DeletedAt,
         };
+    }
+
+    /// <summary>The event as <paramref name="view"/> reads it: the payload of <see cref="SectionView.PayloadOf"/>.</summary>
+    public static EventResponse In(Event stored, SectionView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        EventResponse response = stored;
+        return response with { Payload = view.PayloadOf(stored) };
     }
 }

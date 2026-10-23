@@ -22,7 +22,7 @@
       "Parent": "Can log and edit everything, and manage medications and settings",
       "Caregiver": "Can log events and edit their own entries",
       "Viewer": "Can only view",
-      "Doctor": "A healthcare professional: sees everything, writes notes and measurements"
+      "Doctor": "A healthcare professional: sees the sections you share, writes notes and measurements"
     },
     "caregiverNamed": "You are a caregiver for {{name}}: you can log events and edit your own entries. The parents manage everything else."
   }

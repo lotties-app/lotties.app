@@ -705,7 +705,8 @@ describe('scheduling a dose', () => {
 });
 
 describe('read-only roles', () => {
-  it.each(['Caregiver', 'Viewer', 'Doctor'] as const)(
+  // A Doctor never reaches the parents' Vaccines page: her dashboard summary shows the vaccines.
+  it.each(['Caregiver', 'Viewer'] as const)(
     'a %s sees everything without dead buttons',
     async (role) => {
       await renderScreen({

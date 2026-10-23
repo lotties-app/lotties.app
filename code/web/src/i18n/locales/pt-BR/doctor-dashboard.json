@@ -1,0 +1,269 @@
+{
+  "doctorDashboard": {
+    "title": "Meus pacientes",
+    "onlyShared": "Você vê apenas o que a família compartilhou.",
+    "mode": {
+      "label": "Mostrar",
+      "babies": "Meus bebês",
+      "patients": "Meus pacientes"
+    },
+    "nav": {
+      "label": "Painel do(a) médico(a)",
+      "patients": "Pacientes",
+      "summary": "Resumo",
+      "timeline": "Registros",
+      "growth": "Medidas",
+      "medications": "Remédios",
+      "notes": "Notas",
+      "needsPatient": "Abra um paciente primeiro"
+    },
+    "sections": {
+      "summary": "Resumo",
+      "timeline": "Linha do tempo",
+      "growth": "Crescimento",
+      "medications": "Medicamentos",
+      "notes": "Notas"
+    },
+    "scopes": {
+      "label": "O que o(a) médico(a) vê",
+      "never": "Consultas, membros e ajustes nunca são compartilhados com médicos.",
+      "noneWarning": "Com todas as seções desligadas, o(a) médico(a) vê apenas o nome e a idade do bebê.",
+      "names": {
+        "daily_log": "diário",
+        "growth": "crescimento",
+        "medications": "medicamentos",
+        "vaccines": "vacinas",
+        "formulas": "fórmulas",
+        "notes": "notas"
+      },
+      "titles": {
+        "daily_log": "Diário",
+        "growth": "Crescimento",
+        "medications": "Medicamentos",
+        "vaccines": "Vacinas",
+        "formulas": "Fórmulas",
+        "notes": "Notas"
+      },
+      "hints": {
+        "daily_log": "Sono, mamadas, fraldas, sintomas e temperaturas, e os padrões calculados a partir deles.",
+        "growth": "Medidas de peso, comprimento e perímetro cefálico.",
+        "medications": "Remédios, prescrições, doses dadas e a situação das sugestões do(a) médico(a).",
+        "vaccines": "Registros de vacinação e o que está pendente.",
+        "formulas": "Fórmulas em uso e o histórico.",
+        "notes": "Notas e recomendações do(a) médico(a) compartilhadas com vocês."
+      }
+    },
+    "access": {
+      "button": "Acesso do(a) médico(a)",
+      "buttonNamed": "Acesso de {{name}}",
+      "title": "Acesso do(a) médico(a)",
+      "intro": "Escolha o que {{doctor}} vê de {{baby}}. As mudanças valem na hora.",
+      "save": "Salvar",
+      "sees": "Vê: {{list}}",
+      "seesNothing": "Vê apenas o nome e a idade",
+      "logHeader": "{{doctor}} vê: {{list}}",
+      "logHeaderNothing": "{{doctor}} vê apenas o nome e a idade de {{baby}}"
+    },
+    "accept": {
+      "title": "Agora você acompanha {{name}}",
+      "shared": "Compartilhado com você: {{list}}.",
+      "sharedNothing": "A família ainda não compartilhou nenhuma seção: você vê apenas o nome e a idade.",
+      "open": "Abrir {{name}}",
+      "patients": "Ir para meus pacientes"
+    },
+    "patients": {
+      "title": "Pacientes",
+      "count_one": "{{count}} paciente",
+      "count_other": "{{count}} pacientes",
+      "search": "Buscar pacientes",
+      "sort": "Ordenar por",
+      "sorts": {
+        "recent": "Atividade recente",
+        "name": "Nome",
+        "age": "Idade"
+      },
+      "list": "Seus pacientes",
+      "noMatch": "Nenhum paciente corresponde a “{{search}}”.",
+      "emptyTitle": "Nenhum paciente ainda",
+      "emptyBody": "A família adiciona você em Membros do bebê: cria um link de convite para médico(a), escolhe o que compartilhar e envia para você. Ao abrir o link com sua conta, o bebê entra nesta lista.",
+      "emptyProfile": "As famílias veem o nome do seu perfil profissional, em Ajustes.",
+      "offline": "Sem conexão: mostrando os pacientes salvos neste aparelho. Os números voltam quando você estiver on-line.",
+      "loadFailed": "Não foi possível carregar os números dos seus pacientes. Tente de novo.",
+      "retry": "Tentar de novo"
+    },
+    "card": {
+      "lastLog": "Último registro {{when}}",
+      "noLogs": "Nenhum registro ainda",
+      "quiet_one": "Sem registros há {{count}} dia",
+      "quiet_other": "Sem registros há {{count}} dias",
+      "dailyLogOff": "Diário não compartilhado",
+      "week": "Últimos 7 dias, por dia",
+      "sleep": "Sono",
+      "feeds": "Mamadas",
+      "diapers": "Fraldas",
+      "weight": "Peso",
+      "weightOn": "{{weight}} · {{date}}",
+      "noWeight": "Sem peso registrado",
+      "proposalPending": "Sua proposta está pendente",
+      "proposalsPending": "{{number}} propostas suas estão pendentes",
+      "vaccinesDue": "Vacinas pendentes: {{count}}",
+      "flags": "Avisos"
+    },
+    "switcher": {
+      "button": "{{name}}, {{age}}. Trocar paciente",
+      "title": "Trocar paciente",
+      "recent": "Abertos recentemente",
+      "all": "Todos os pacientes",
+      "previous": "Paciente anterior",
+      "next": "Próximo paciente",
+      "previousNamed": "Paciente anterior: {{name}}",
+      "nextNamed": "Próximo paciente: {{name}}",
+      "position": "{{index}} de {{count}}",
+      "shortcut": "Dica: as teclas [ e ] alternam entre os pacientes."
+    },
+    "patient": {
+      "notFound": "Este bebê não está na sua lista de pacientes. A família pode ter removido seu acesso.",
+      "back": "Voltar aos pacientes"
+    },
+    "notShared": {
+      "title": "Não compartilhado com você",
+      "body": "A família não compartilhou {{section}}. Ela pode mudar isso em Membros do bebê."
+    },
+    "summary": {
+      "range": "Período",
+      "ranges": {
+        "last7": "Últimos 7 dias",
+        "last14": "14 dias",
+        "last30": "30 dias",
+        "sinceNote": "Desde a última nota",
+        "custom": "Personalizado"
+      },
+      "from": "De",
+      "to": "Até",
+      "apply": "Aplicar",
+      "rangeText": "{{from}} a {{to}}",
+      "rangeInvalid": "Escolha um início igual ou anterior ao fim, com no máximo 92 dias.",
+      "noData": "Sem dados neste período.",
+      "offline": "Sem conexão: o resumo precisa de internet.",
+      "loadFailed": "Não foi possível carregar o resumo. Tente de novo.",
+      "updated": "Atualizado {{when}}",
+      "howComputed": "Como {{label}} é calculado",
+      "averagesOver_one": "Médias de {{count}} dia com dados",
+      "averagesOver_other": "Médias de {{count}} dias com dados",
+      "perDay": "{{value}}/dia",
+      "sleep": {
+        "title": "Sono",
+        "total": "Total por dia",
+        "totalHelp": "Média dos dias com sono registrado; hoje só conta quando é o único. As pausas ficam de fora, e um sono que passa da meia-noite é dividido entre os dois dias.",
+        "night": "Sono noturno por dia",
+        "nightHelp": "Média por dia do sono registrado como noite.",
+        "naps": "Sonecas por dia",
+        "napsHelp": "Média de sonecas que começaram em cada dia, e o tempo delas. Um sono sem tipo conta como soneca.",
+        "napsValue": "{{value}} · {{time}}",
+        "longest": "Maior período",
+        "longestHelp": "O maior sono único que começou no período, sem as pausas.",
+        "longestOn": "{{duration}} · {{date}}",
+        "bedtime": "Hora habitual de dormir",
+        "bedtimeHelp": "Mediana das noites: a primeira marcação de hora de dormir entre 15:00 e 03:00, senão o início do primeiro sono noturno nesse intervalo.",
+        "wake": "Hora habitual de acordar",
+        "wakeHelp": "Mediana das manhãs: o último fim de sono noturno entre 03:00 e 12:00, senão a primeira marcação de acordou entre 04:00 e 11:00.",
+        "chart": "Sono por dia: noite e sonecas",
+        "legendNight": "Noite",
+        "legendNaps": "Sonecas"
+      },
+      "feeding": {
+        "title": "Alimentação",
+        "perDay": "Mamadas por dia",
+        "perDayHelp": "Média dos dias com mamadas registradas, cada mamada no dia em que começou; hoje só conta quando é o único.",
+        "interval": "Intervalo médio",
+        "intervalHelp": "Tempo médio entre o início de mamadas seguidas; intervalos de mais de 8 horas ficam de fora (provavelmente uma mamada não registrada).",
+        "ml": "Mamadeira por dia",
+        "mlHelp": "Média das quantidades de mamadeira registradas por dia, nos dias com quantidade.",
+        "methods": "Mamadas no período",
+        "breast": "Peito",
+        "bottle": "Mamadeira",
+        "solid": "Sólidos",
+        "formulas": "Fórmulas nas mamadeiras",
+        "formulaFeeds_one": "{{count}} mamadeira · {{amount}}",
+        "formulaFeeds_other": "{{count}} mamadeiras · {{amount}}",
+        "unnamedFormula": "Fórmula sem nome",
+        "chart": "Mamadas por dia"
+      },
+      "diapers": {
+        "title": "Fraldas",
+        "perDay": "Trocas por dia",
+        "perDayHelp": "Média dos dias com fraldas registradas; uma fralda mista conta como xixi e como cocô.",
+        "wet": "Xixi por dia",
+        "dirty": "Cocô por dia",
+        "chart": "Fraldas por dia",
+        "dayDetail": "{{total}} trocas: {{wet}} com xixi, {{dirty}} com cocô"
+      },
+      "symptoms": {
+        "title": "Sintomas e temperaturas",
+        "help": "Como a família registrou, dos mais recentes: temperaturas, sintomas, regurgitações, cólicas e dentição.",
+        "list": "Sintomas e temperaturas, dos mais recentes"
+      },
+      "medications": {
+        "title": "Medicamentos",
+        "doses": "Doses dadas no período",
+        "dosesHelp": "Contadas a partir das doses que a família registrou, por remédio.",
+        "doseCount_one": "{{count}} dose",
+        "doseCount_other": "{{count}} doses",
+        "lastGiven": "última em {{date}}",
+        "noDoses": "Nenhuma dose registrada neste período.",
+        "active": "Prescrições ativas",
+        "noActive": "Nenhuma prescrição ativa.",
+        "unknownMedication": "Remédio"
+      },
+      "vaccines": {
+        "title": "Vacinas",
+        "help": "A partir dos registros de vacinação e do calendário que a família segue, como na página Vacinas dela.",
+        "given": "Aplicadas",
+        "due": "Pendentes",
+        "overdue": "Atrasadas",
+        "upcoming": "Próximas",
+        "dueList": "Pendentes agora",
+        "dueSince": "{{state}} desde {{date}}",
+        "noneDue": "Nada pendente."
+      },
+      "growth": {
+        "title": "Crescimento",
+        "latest": "Últimas medidas",
+        "noPercentiles": "As curvas de percentil ainda não são exibidas.",
+        "open": "Todas as medidas"
+      },
+      "notes": {
+        "title": "Notas",
+        "recent": "Suas notas no período",
+        "none": "Nenhuma nota sua neste período.",
+        "open": "Todas as notas"
+      },
+      "formulas": {
+        "title": "Fórmulas",
+        "current": "Em uso",
+        "none": "Nenhuma fórmula em uso.",
+        "history": "Histórico",
+        "since": "Desde {{date}}",
+        "between": "{{from}} a {{to}}"
+      }
+    },
+    "timeline": {
+      "readOnly": "Só leitura: estes são os registros da família.",
+      "empty": "Nada registrado neste dia.",
+      "loadFailed": "Não foi possível carregar este dia. Tente de novo.",
+      "offline": "Sem conexão: a linha do tempo precisa de internet."
+    },
+    "medications": {
+      "prescriptionsHelp": "As prescrições do bebê, como a família as mantém. Para mudar uma, proponha uma mudança abaixo."
+    },
+    "settings": {
+      "title": "Ajustes"
+    },
+    "leave": {
+      "button": "Deixar de acompanhar {{name}}",
+      "title": "Deixar de acompanhar {{name}}?",
+      "body": "Você perde o acesso a {{name}} na hora. As notas que você compartilhou ficam com a família; suas propostas pendentes são canceladas.",
+      "confirm": "Deixar de acompanhar"
+    }
+  }
+}

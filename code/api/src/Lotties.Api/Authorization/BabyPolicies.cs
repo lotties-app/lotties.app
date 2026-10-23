@@ -1,3 +1,5 @@
+using Lotties.Domain.Babies;
+
 namespace Lotties.Api.Authorization;
 
 /// <summary>
@@ -49,4 +51,28 @@ public static class BabyPolicies
     /// proposal, checked by the use case (another doctor's is 404 <c>proposal_not_found</c>).
     /// </summary>
     public const string Propose = "BabyPropose";
+
+    /// <summary>Prefix of the scope policies: <c>BabyScope:daily_log</c>, <c>BabyScope:growth</c>, ... (see <see cref="ForScope"/>).</summary>
+    public const string ScopePrefix = "BabyScope:";
+
+    /// <summary>The daily log (events, event types, predictions, the timeline): any member but a Doctor without the <c>daily_log</c> scope.</summary>
+    public const string ScopeDailyLog = ScopePrefix + DoctorScopes.DailyLogCode;
+
+    /// <summary>Growth measurements: any member but a Doctor without the <c>growth</c> scope.</summary>
+    public const string ScopeGrowth = ScopePrefix + DoctorScopes.GrowthCode;
+
+    /// <summary>Medications, prescriptions, the medication status and the proposals: any member but a Doctor without the <c>medications</c> scope.</summary>
+    public const string ScopeMedications = ScopePrefix + DoctorScopes.MedicationsCode;
+
+    /// <summary>Recorded vaccines: any member but a Doctor without the <c>vaccines</c> scope.</summary>
+    public const string ScopeVaccines = ScopePrefix + DoctorScopes.VaccinesCode;
+
+    /// <summary>Formulas: any member but a Doctor without the <c>formulas</c> scope.</summary>
+    public const string ScopeFormulas = ScopePrefix + DoctorScopes.FormulasCode;
+
+    /// <summary>Notes and note reads: any member but a Doctor without the <c>notes</c> scope.</summary>
+    public const string ScopeNotes = ScopePrefix + DoctorScopes.NotesCode;
+
+    /// <summary>The policy name of a doctor scope (<see cref="ScopePrefix"/> plus its code).</summary>
+    public static string ForScope(DoctorScope scope) => ScopePrefix + DoctorScopes.CodeOf(scope);
 }

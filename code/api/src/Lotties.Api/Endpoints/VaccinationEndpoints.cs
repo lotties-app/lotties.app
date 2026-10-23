@@ -8,7 +8,8 @@ namespace Lotties.Api.Endpoints;
 /// <summary>
 /// The vaccine schedule (any signed-in user) and the recorded vaccines of one baby (offline sync: idempotent upsert by
 /// client GUID, delta pull, soft delete; docs/design/18-vaccines.md). Reads of a baby's records need
-/// <see cref="BabyPolicies.Read"/> (every member: Caregivers, Viewers and Doctors read only); recording, editing and
+/// <see cref="BabyPolicies.Read"/> (every member: Caregivers, Viewers and Doctors read only; a Doctor needs the vaccines
+/// scope, <see cref="BabyPolicies.ScopeVaccines"/>); recording, editing and
 /// deleting need <see cref="BabyPolicies.Write"/> (Owner, Parent).
 /// </summary>
 internal static class VaccinationEndpoints
@@ -43,7 +44,9 @@ internal static class VaccinationEndpoints
     public static RouteGroupBuilder MapVaccinationEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(VaccinationsPath, ListAsync).WithName("ListVaccinations");
+        baby.MapGet(VaccinationsPath, ListAsync)
+            .RequireAuthorization(BabyPolicies.ScopeVaccines)
+            .WithName("ListVaccinations");
         baby.MapPut(VaccinationPath, UpsertAsync)
             .RequireAuthorization(BabyPolicies.Write)
             .WithName("UpsertVaccination")
