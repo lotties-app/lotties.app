@@ -1,6 +1,6 @@
 # Published age norms as prediction priors (data and sources, 2026-10-23)
 
-This note documents `code/api/data/age-norms.json`: published norms by age for sleep, feeding, diapers, crying and meals, collected to replace guessed age defaults with cited numbers. They are meant as **priors** for a baby's first weeks of tracking and as a **fallback** while a baby has too few logged events. This task is research, data and docs only: no prediction code changed and the file is not embedded in any app project yet. A later wiring task decides how to use it; section 7 lists the material differences from today's defaults that drive that decision. The file is validated by `AgeNormsDataTests` (section 11).
+This note documents `code/api/data/age-norms.json`: published norms by age for sleep, feeding, diapers, crying and meals, collected to replace guessed age defaults with cited numbers. They are meant as **priors** for a baby's first weeks of tracking and as a **fallback** while a baby has too few logged events. The research (sections 1 to 14) changed no code; section 7 lists the material differences from today's defaults that drove the wiring. The wiring task (section 15) embeds the file in the API, validates it at startup, serves it to the web and replaces a few guessed defaults with norms, conservatively: only norms that are not low confidence and not `needsReview`, each change listed with its old value, new value and source in section 15.2. The file is validated by `AgeNormsValidator` (section 11).
 
 ## 0. Guardrails: priors, not advice
 
@@ -111,7 +111,7 @@ Units: `hours`, `minutes`, `count`, `ml`, `g`, `ml_per_kg`, `minutes_after_noon`
 
 Counts: 18 sources, 22 metrics (20 with norms, 2 missing), 91 norms (27 high, 57 medium, 7 low confidence), 17 with `needsReview`.
 
-Not embedded in any project: only `Lotties.Domain.Tests` links it into its output to validate it. The wiring task embeds it (as `vaccine-schedule.br.json` is, docs/design/18 section 1) and decides whether the web also gets a copy.
+Embedded in `Lotties.Application` (logical name `Lotties.Application.AgeNorms.age-norms.json`), like `vaccine-schedule.br.json` (docs/design/18 section 1); `Lotties.Domain.Tests` also links it into its output. The web has no copy in its bundle: it downloads the file from `GET /api/v1/age-norms` and keeps it in Dexie (section 15.1).
 
 ## 6. The norms
 
@@ -415,7 +415,7 @@ Age band boundaries (I3) carry no values; the 16-hour night cap (I9) and the 04:
 
 ## 11. Validation
 
-`code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsDataTests.cs` reads the file linked into the test output (`Lotties.Domain.Tests.csproj`, `AgeNorms\age-norms.json`) and checks:
+`code/api/src/Lotties.Domain/AgeNorms/AgeNormsValidator.cs` holds the rules (rules 1 and 3 to 8 below); the API runs it at startup (`EmbeddedAgeNormsProvider`: an invalid file stops the API) and `code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsDataTests.cs` runs it on the file linked into the test output (`Lotties.Domain.Tests.csproj`, `AgeNorms\age-norms.json`), plus the trailing newline, the pinned counts (rule 2) and the lookup (rule 9). `AgeNormsValidatorTests` breaks each rule once. The checks:
 1. a trailing newline, schema version 1, `generatedAt` date, the allowed units, populations, range and typical kinds;
 2. pinned counts (18 sources, 22 metrics, 91 norms, 17 to review, missing metrics `nap_minutes` and `wake_window_minutes`);
 3. metrics: unique snake_case keys, allowed units, norms present unless `missingReason`;
@@ -434,9 +434,9 @@ Age band boundaries (I3) carry no values; the 16-hour night cap (I9) and the 04:
 4. Run `dotnet test code/api/Lotties.sln` (update the pinned counts in `File_KeepsTheResearchCounts` with the data).
 5. Update this doc (sections 2, 6, 8, 9, 10) and the credits (section 13).
 
-## 13. Credits: TODO for the wiring task
+## 13. Credits
 
-Adding curated credits changes `CREDITS.md`, which only the generator writes (docs/design/25-credits.md section 3); a worker runs `generate-credits.mjs --check` only, which would then fail. So no credit entry was added here. When the file ships, the wiring task (or the orchestrator in the main clone) should add `kind: "data"` entries to `code/web/src/credits/curated.json` with their `credits.curated.<id>` sentences in en and pt-BR `credits.json`, then regenerate. Suggested grouping (names and links are facts; the wording is the owner's):
+Done by the wiring task: three `kind: "data"` entries in `code/web/src/credits/curated.json` (`agenormsSleep`, `agenormsFeeding`, `agenormsDiapersCrying`), each linking to this document (it lists every citation, DOI and licence), with their `credits.curated.<id>` sentences in en and pt-BR `credits.json`; `CREDITS.md` regenerated (`node code/web/scripts/generate-credits.mjs`). The sentences are a first draft for the owner to review. The grouping follows the research suggestion:
 - `agenorms-sleep`: "Infant sleep norms: National Sleep Foundation (2015), American Academy of Sleep Medicine (2016), SBP (2025), Galland et al. (2012), Iglowstein et al. (2003), Pelotas 2004 Birth Cohort (Netsi et al. 2017, CC BY 4.0)";
 - `agenorms-feeding`: "Infant feeding norms: SBP Manual de Alimentação (2024), Ministério da Saúde Guia alimentar (2019), AAP HealthyChildren, Academy of Breastfeeding Medicine, Kent et al. (2006), MILQ Study (2025, CC BY 4.0), WHO";
 - `agenorms-diapers-crying`: "Diaper and crying norms: UNICEF UK Baby Friendly checklist (via NHS), den Hertog et al. (2012), HELMi cohort (2024, CC BY 4.0), Wolke et al. (2017)".
@@ -447,3 +447,20 @@ The existing `sbp` credit (vaccine schedule) could also mention the sleep and fe
 - **Growth percentiles**: the app draws the baby's own measurements only. WHO Child Growth Standards (and the Caderneta da Criança curves) are a separate data task with its own licence check (docs/design/04 section 5).
 - **Premature babies** (corrected age), twins, babies with medical conditions, special formulas, solid food amounts and water.
 - **Colic**: Wolke 2017 reports 17-25 % in the first 6 weeks, 11 % at 8-9 weeks and 0.6 % at 10-12 weeks (modified Wessel criteria). Recorded here as context only; the app never diagnoses colic (docs/design/04 never-say list). The cry-reason ranking is designed separately (docs/design/27-cry-reasons.md).
+
+## 15. Wiring (2026-10-23)
+
+### 15.1 Plumbing
+- **API**: `Lotties.Domain/AgeNorms/` (`AgeNormSet` with `For(metric, population, ageDays)` and `PriorFor(...)`, `AgeNormsJson` strict parser, `AgeNormsValidator`), `Lotties.Application/AgeNorms/AgeNormsProvider.cs` (embedded resource, parsed and validated once, strong ETag `"agenorms-{generatedAt}-{hash8}"`), `GET /api/v1/age-norms` (any signed-in user, `Cache-Control: private, max-age=86400`, 304 on `If-None-Match`; docs/SPEC.md).
+- **Web**: `code/web/src/ageNorms/` (`normFor`, `priorFor`, `ageInDaysAt`; `ageNormsCache.ts` and `useAgeNorms()`: Dexie table `ageNorms` (schema v10), one row, asked again at most daily with `If-None-Match`). Without a copy (a first run offline, or before the first download) every caller keeps its built-in default, so behaviour without the norms is exactly the old one.
+- **Lookup**: the band of the metric whose `[fromDays, toDays)` holds the age in completed days since birth (local calendar dates), for the requested population, else for `all`. Days rather than weeks: the bands are defined in days, weeks are rounded. `For`/`normFor` return any norm with its flags; `PriorFor`/`priorFor` return it only when it may replace a default: **never a norm with `confidence: low` or `needsReview: true`**. Every wiring below goes through `PriorFor`/`priorFor`, so clearing a review flag in the data (after the owner's review) is enough to activate a norm, and flagging one switches it off.
+- **Shared vectors**: `code/web/src/ageNorms/ageNormsVectors.json`, run by `ageNorms.test.ts` and by `Lotties.Domain.Tests/AgeNorms/AgeNormsVectorTests.cs` (linked file), against the shipped file.
+
+### 15.2 Wired
+
+Every default that now comes from a norm. Values that come from norms in the table below change only when a norm that is usable as a prior covers the age; elsewhere the old value stays.
+
+| Default | Where | Old value | New value | Norm (source ids) |
+|---|---|---|---|---|
+
+### 15.3 Deliberately not changed
