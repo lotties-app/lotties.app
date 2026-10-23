@@ -22,6 +22,8 @@ public sealed class EventPayloadValidationTests
     [Theory]
     [InlineData("""{"method":"bottle","amount_ml":120,"bottle_feeding_type":"formula"}""")]
     [InlineData("""{"method":"breast","side":"both","breast_left_seconds":600,"breast_right_seconds":540}""")]
+    [InlineData("""{"method":"bottle","amount_ml":120,"amount_drunk_ml":80,"bottle_feeding_type":"formula"}""")]
+    [InlineData("""{"method":"breast","ended_by":"sleep"}""")]
     [InlineData("""{"method":"solid","food":"Banana"}""")]
     [InlineData("""{"method":"bottle","amount_ml":null,"side":null}""")]
     [InlineData("""{"method":"bottle","amount":120,"extra":{"nested":[1,2]}}""")]
@@ -33,6 +35,7 @@ public sealed class EventPayloadValidationTests
     [Theory]
     [InlineData("""{"method":"bottle","side":"left"}""", "side")]
     [InlineData("""{"method":"breast","amount_ml":120}""", "amount_ml")]
+    [InlineData("""{"method":"breast","amount_drunk_ml":60}""", "amount_drunk_ml")]
     [InlineData("""{"method":"breast","bottle_feeding_type":"formula"}""", "bottle_feeding_type")]
     [InlineData("""{"method":"bottle","breast_left_seconds":60}""", "breast_left_seconds")]
     [InlineData("""{"method":"bottle","food":"Banana"}""", "food")]
@@ -58,6 +61,8 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"bottle","bottle_feeding_type":"FORMULA"}""", "bottle_feeding_type")]
     [InlineData("""{"method":"bottle","amount_ml":-1}""", "amount_ml")]
     [InlineData("""{"method":"bottle","amount_ml":"120"}""", "amount_ml")]
+    [InlineData("""{"method":"bottle","amount_drunk_ml":-1}""", "amount_drunk_ml")]
+    [InlineData("""{"method":"bottle","ended_by":"timer"}""", "ended_by")]
     [InlineData("""{"method":"solid","food":42}""", "food")]
     public void Feeding_WrongKindOptionOrRange_IsRejectedOnThatField(string json, string field)
     {

@@ -130,7 +130,7 @@ describe('Now for a caregiver', () => {
     const timers = await screen.findByRole('region', { name: 'Running timers' });
     fireEvent.click(within(timers).getByRole('button', { name: /^Stop / }));
     const sheet = await screen.findByRole('dialog', { name: /^Finish this/ });
-    fireEvent.change(within(sheet).getByRole('spinbutton', { name: /Amount/ }), {
+    fireEvent.change(within(sheet).getByRole('spinbutton', { name: /Amount prepared/ }), {
       target: { value: '90' },
     });
     fireEvent.click(within(sheet).getByRole('button', { name: /^Save/ }));

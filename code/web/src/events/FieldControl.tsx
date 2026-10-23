@@ -1,4 +1,5 @@
 import type { EventFieldDefinition, EventType } from '../db/models';
+import { useTranslation } from 'react-i18next';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import {
   ChipGroup,
@@ -10,6 +11,7 @@ import {
   TextInput,
 } from '../ui/form';
 import { BottleSuggestionCaption } from './BottleSuggestionCaption';
+import { DRUNK_KEY, drunkChoices, type DrunkShare } from './bottleAmounts';
 import type { BottleSuggestions } from './bottleSuggestions';
 import { optionIcon } from './optionIcons';
 
@@ -25,6 +27,8 @@ export interface FieldControlProps {
   remembered?: string | number | boolean;
   /** Bottle amount chips that follow the baby (the feeding `amount_ml` field only). */
   bottle?: BottleSuggestions;
+  /** What was prepared (ml): the drunk amount's quick choices and ceiling (feeding `amount_drunk_ml`). */
+  prepared?: number | null;
   onChange: (value: string | boolean) => void;
 }
 
@@ -104,7 +108,50 @@ function SelectControl({ type, field, value, onChange }: FieldControlProps) {
   );
 }
 
-function NumberControl({ type, field, value, remembered, bottle, onChange }: FieldControlProps) {
+const isDrunkAmount = (type: EventType, field: EventFieldDefinition) =>
+  type.babyId === null && type.key === 'feeding' && field.key === DRUNK_KEY;
+
+const SHARE_KEY = {
+  all: 'feedingAmounts.share.all',
+  threeQuarters: 'feedingAmounts.share.threeQuarters',
+  half: 'feedingAmounts.share.half',
+  quarter: 'feedingAmounts.share.quarter',
+} as const satisfies Record<DrunkShare, string>;
+
+/** The drunk amount of a bottle: chips for all, 3/4, half and 1/4 of what was prepared, plus free entry. */
+function DrunkControl({ field, value, prepared, onChange }: FieldControlProps) {
+  const { t } = useTranslation();
+  const choices = drunkChoices(prepared);
+  const max = prepared != null && prepared > 0 ? prepared : (field.max ?? undefined);
+  return (
+    <NumberStepper
+      value={toNumber(value)}
+      onChange={(next) => onChange(next === null ? '' : String(next))}
+      step={stepFor(field)}
+      min={field.min ?? 0}
+      {...(max !== undefined ? { max } : {})}
+      unit={unitLabel(field.unit ?? 'ml')}
+      quickValues={choices.map((choice) => choice.ml)}
+      quickTags={Object.fromEntries(
+        choices.map((choice) => [choice.ml, t(SHARE_KEY[choice.share])]),
+      )}
+      {...(prepared != null && prepared > 0 ? { start: prepared } : {})}
+    />
+  );
+}
+
+function NumberControl({
+  type,
+  field,
+  value,
+  remembered,
+  bottle,
+  onChange,
+  ...rest
+}: FieldControlProps) {
+  if (isDrunkAmount(type, field)) {
+    return <DrunkControl type={type} field={field} value={value} onChange={onChange} {...rest} />;
+  }
   const choices = scaleChoices(field);
   if (choices) {
     return (
@@ -168,6 +215,7 @@ function NumberControl({ type, field, value, remembered, bottle, onChange }: Fie
 export function FieldControl(props: FieldControlProps) {
   const { type, field, value, error, onChange } = props;
   const text = useEventTypeText();
+  const { t } = useTranslation();
   const label = text.fieldLabel(type, field);
   if (field.kind === 'bool') {
     return <SwitchRow label={label} checked={value === true} onChange={onChange} />;
@@ -180,6 +228,7 @@ export function FieldControl(props: FieldControlProps) {
       required={field.isRequired}
       optional={!field.isRequired}
       error={error}
+      {...(isDrunkAmount(type, field) ? { help: t('feedingAmounts.drunkHint') } : {})}
     >
       {field.kind === 'select' && <SelectControl {...props} />}
       {field.kind === 'number' && <NumberControl {...props} />}

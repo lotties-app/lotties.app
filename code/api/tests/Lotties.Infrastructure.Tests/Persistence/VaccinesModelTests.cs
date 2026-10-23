@@ -74,7 +74,7 @@ public sealed class VaccinesModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_Vaccines'", StringComparison.Ordinal)..];
+        var section = script[script.IndexOf("_Vaccines'", StringComparison.Ordinal)..script.IndexOf("_FeedingAmounts'", StringComparison.Ordinal)];
 
         Assert.Contains("CREATE TABLE vaccinations (", section, StringComparison.Ordinal);
         Assert.Contains("ALTER TABLE babies ADD vaccine_profile character varying(16) NOT NULL DEFAULT 'public';", section, StringComparison.Ordinal);

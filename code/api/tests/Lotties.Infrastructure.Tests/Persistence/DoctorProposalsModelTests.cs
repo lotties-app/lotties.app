@@ -12,7 +12,7 @@ namespace Lotties.Infrastructure.Tests.Persistence;
 public sealed class DoctorProposalsModelTests
 {
     private static string Section(string script) =>
-        script[script.IndexOf("_DoctorProposals'", StringComparison.Ordinal)..];
+        script[script.IndexOf("_DoctorProposals'", StringComparison.Ordinal)..script.IndexOf("_FeedingAmounts'", StringComparison.Ordinal)];
 
     [Fact]
     public void Proposals_ShareThePrescriptionColumnsAndHaveTheirIndexesAndRowVersion()

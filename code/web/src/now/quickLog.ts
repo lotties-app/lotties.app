@@ -15,6 +15,7 @@ import {
   recordLastUsed,
   recordLastUsedMedications,
 } from '../events/lastUsedValues';
+import { drunkMl, preparedMl } from '../events/bottleAmounts';
 import { bottleSuggestions, type BottleSuggestions } from '../events/bottleSuggestions';
 import { validatePayload } from '../events/payloadRules';
 import { PresetNotRunnableError, type SheetPrefill, type UndoToken } from '../presets/actions';
@@ -46,6 +47,8 @@ export type TileDetail =
       kind: 'feed';
       method: string | null;
       amountMl: number | null;
+      /** What the baby drank when that is less than `amountMl`; `null` otherwise. */
+      drunkMl: number | null;
       bottleContent: string | null;
       side: string | null;
       /**
@@ -111,12 +114,20 @@ function bottleLength(event: BabyEvent): number | null {
   return ms > 0 ? ms : null;
 }
 
+/** What was drunk when it is less than what was prepared, else `null`. */
+function partlyDrunkMl(event: BabyEvent): number | null {
+  const drunk = drunkMl(event.payload);
+  const prepared = preparedMl(event.payload);
+  return drunk !== undefined && prepared !== undefined && drunk < prepared ? drunk : null;
+}
+
 function detailOf(id: TileId, last: BabyEvent | null): TileDetail | null {
   if (id === 'feed') {
     return {
       kind: 'feed',
       method: last ? (payloadString(last, 'method') ?? null) : null,
-      amountMl: last ? (payloadNumber(last, 'amount_ml') ?? null) : null,
+      amountMl: last ? (preparedMl(last.payload) ?? null) : null,
+      drunkMl: last ? partlyDrunkMl(last) : null,
       bottleContent: last ? (payloadString(last, 'bottle_feeding_type') ?? null) : null,
       side: last ? (payloadString(last, 'side') ?? null) : null,
       bottleMs: last ? bottleLength(last) : null,
@@ -407,7 +418,8 @@ export function bellyPainTray(types: readonly EventType[]): BellyPainTray | null
 /* ---------- committing a tray choice ---------- */
 
 export type TrayChoice =
-  | { kind: 'bottle'; amountMl: number; content?: string | null }
+  /** `drunkMl`: what the baby drank when that is less than `amountMl` (else all of it). */
+  | { kind: 'bottle'; amountMl: number; content?: string | null; drunkMl?: number }
   | { kind: 'diaper'; content: string }
   | { kind: 'medication'; medications: MedicationEntry[] }
   | { kind: 'belly_pain'; intensity: number }
@@ -447,6 +459,9 @@ function payloadOf(choice: Exclude<TrayChoice, { kind: 'breast' }>): EventPayloa
       return {
         method: 'bottle',
         amount_ml: choice.amountMl,
+        ...(choice.drunkMl !== undefined && choice.drunkMl < choice.amountMl
+          ? { amount_drunk_ml: choice.drunkMl }
+          : {}),
         ...(choice.content ? { bottle_feeding_type: choice.content } : {}),
       };
     case 'diaper':

@@ -62,7 +62,13 @@ describe('planStop', () => {
 
   it('asks for the amount (optional) when a bottle timer without one stops', () => {
     // The content and, for formula, which one (the sheet's formula chips) are asked with it.
-    const asked = ['amount_ml', 'bottle_feeding_type', 'formula_id', 'formula_name'];
+    const asked = [
+      'amount_ml',
+      'amount_drunk_ml',
+      'bottle_feeding_type',
+      'formula_id',
+      'formula_name',
+    ];
     expect(planStop(FEEDING_TYPE, { method: 'bottle' })).toEqual({ kind: 'finish', fields: asked });
     // Hidden values go with the finish sheet, which drops them on save.
     expect(planStop(FEEDING_TYPE, { method: 'bottle', side: 'left' })).toEqual({
@@ -71,11 +77,25 @@ describe('planStop', () => {
     });
   });
 
-  it('stops a bottle with its amount at once, with or without the content', () => {
-    expect(planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120 })).toEqual({ kind: 'stop' });
+  it('stops a bottle with both amounts at once, with or without the content', () => {
+    const both = { method: 'bottle', amount_ml: 120, amount_drunk_ml: 80 };
+    expect(planStop(FEEDING_TYPE, both)).toEqual({ kind: 'stop' });
+    expect(planStop(FEEDING_TYPE, { ...both, bottle_feeding_type: 'formula' })).toEqual({
+      kind: 'stop',
+    });
+  });
+
+  it('still asks how much was drunk while only the prepared amount is known', () => {
+    expect(planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120 })).toEqual({
+      kind: 'finish',
+      fields: ['amount_ml', 'amount_drunk_ml', 'bottle_feeding_type', 'formula_id', 'formula_name'],
+    });
+  });
+
+  it('asks again for a drunk amount above the prepared one (the server would reject it)', () => {
     expect(
-      planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120, bottle_feeding_type: 'formula' }),
-    ).toEqual({ kind: 'stop' });
+      planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 100, amount_drunk_ml: 130 }),
+    ).toEqual({ kind: 'finish', fields: ['amount_drunk_ml'] });
   });
 
   it('never asks a custom type for a bottle amount', () => {

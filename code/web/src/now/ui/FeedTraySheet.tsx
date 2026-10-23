@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import type { EventType } from '../../db/models';
 import { BottleSuggestionCaption } from '../../events/BottleSuggestionCaption';
+import { drunkChoices } from '../../events/bottleAmounts';
 import { eventTypeText } from '../../i18n/eventTypeText';
 import { formatNumber } from '../../i18n/format';
 import { Illustration } from '../../ui/illustrations';
@@ -25,7 +26,8 @@ interface Props {
   /** "Last 2h ago · Bottle · 120 ml" under the title. */
   subtitle: string;
   disabled: boolean;
-  onBottle: (amountMl: number, content: string | null) => void;
+  /** `drunkMl`: what the baby drank when it is less than `amountMl`, else `null` (all of it). */
+  onBottle: (amountMl: number, content: string | null, drunkMl: number | null) => void;
   onBreast: (side: BreastSide) => void;
   /** Solid food: the event sheet prefilled. */
   onSolid: () => void;
@@ -49,7 +51,11 @@ function BottlePanel({
   const [amount, setAmount] = useState<number | null>(bottle.amountMl);
   const [custom, setCustom] = useState(!bottle.amounts.includes(bottle.amountMl));
   const [content, setContent] = useState<string | null>(bottle.content);
+  // Drunk less than prepared (ml); `null` = all of it, the default.
+  const [drunk, setDrunk] = useState<number | null>(null);
   const chosen = amount ?? 0;
+  const partly = drunk !== null && drunk < chosen ? drunk : null;
+  const shares = drunkChoices(chosen);
   const contentLabel = (value: string) =>
     type ? eventTypeText.optionLabel(type, { key: 'bottle_feeding_type' }, value) : value;
 
@@ -69,6 +75,7 @@ function BottlePanel({
           if (value !== null) {
             setCustom(false);
             setAmount(Number(value));
+            setDrunk(null);
           }
         }}
         options={[
@@ -84,13 +91,34 @@ function BottlePanel({
         <NumberStepper
           aria-label={t('now.feedTray.amount')}
           value={amount}
-          onChange={setAmount}
+          onChange={(next) => {
+            setAmount(next);
+            setDrunk(null);
+          }}
           step={bottle.suggestions.step}
           min={field?.min ?? 0}
           max={field?.max ?? 500}
           start={bottle.amountMl}
           unit="ml"
         />
+      )}
+      {chosen > 0 && (
+        <>
+          <Typography variant="overline" component="p" color="text.secondary">
+            {t('feedingAmounts.tray.drunk')}
+          </Typography>
+          <ChipGroup
+            aria-label={t('feedingAmounts.tray.drunk')}
+            value={String(partly ?? chosen)}
+            onChange={(value) => {
+              if (value !== null) setDrunk(Number(value) < chosen ? Number(value) : null);
+            }}
+            options={shares.map((choice) => ({
+              value: String(choice.ml),
+              label: `${formatNumber(choice.ml)} ml \u00b7 ${t(`feedingAmounts.share.${choice.share}`)}`,
+            }))}
+          />
+        </>
       )}
       {bottle.contents.length > 0 && (
         <>
@@ -111,15 +139,26 @@ function BottlePanel({
         size="large"
         fullWidth
         disabled={disabled || chosen <= 0}
-        onClick={() => onBottle(chosen, content)}
+        onClick={() => onBottle(chosen, content, partly)}
         sx={{ minHeight: 56 }}
       >
-        {content
-          ? t('now.feedTray.logContent', {
-              amount: formatNumber(chosen),
-              content: contentLabel(content).toLocaleLowerCase(),
-            })
-          : t('now.feedTray.log', { amount: formatNumber(chosen) })}
+        {partly !== null
+          ? content
+            ? t('feedingAmounts.tray.logDrunkContent', {
+                drunk: formatNumber(partly),
+                prepared: formatNumber(chosen),
+                content: contentLabel(content).toLocaleLowerCase(),
+              })
+            : t('feedingAmounts.tray.logDrunk', {
+                drunk: formatNumber(partly),
+                prepared: formatNumber(chosen),
+              })
+          : content
+            ? t('now.feedTray.logContent', {
+                amount: formatNumber(chosen),
+                content: contentLabel(content).toLocaleLowerCase(),
+              })
+            : t('now.feedTray.log', { amount: formatNumber(chosen) })}
       </Button>
     </>
   );

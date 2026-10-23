@@ -7,6 +7,7 @@ import { AppearanceSection } from '../settings/AppearanceSection';
 import { LanguageSection } from '../settings/LanguageSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
+import { FeedingSection } from '../settings/FeedingSection';
 import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
@@ -14,7 +15,7 @@ import { SettingsLinkRow } from '../settings/SettingsLinkRow';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
-import { canSeeAppointments, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
+import { canLog, canSeeAppointments, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { patientBabies } from '../patients/patientsModel';
 import { DoctorSettingsEntries } from '../proposals/SettingsEntries';
 import { usePushConfig } from '../notifications/usePush';
@@ -91,6 +92,15 @@ export function SettingsPage() {
           >
             <FormulasSection baby={baby} />
           </SettingsSection>
+          {canLog(baby) && (
+            <SettingsSection
+              id="feeding"
+              title={t('feedingAmounts.timeBottles.title')}
+              defaultExpanded={wants('feeding')}
+            >
+              <FeedingSection babyId={baby.id} />
+            </SettingsSection>
+          )}
           {canSeeAppointments(baby) && (
             <SettingsLinkRow to="/appointments" title={t('settings.sections.appointments')} />
           )}

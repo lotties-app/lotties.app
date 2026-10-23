@@ -184,6 +184,10 @@ internal sealed class EventService : IEventService
     {
         await EnsurePrescriptionReferencesAsync(babyId, request, cancellationToken);
         await EnsureFormulaReferenceAsync(babyId, request, cancellationToken);
+        if (request.TypeId == BuiltInEventTypes.FeedingId)
+        {
+            BottleAmounts.EnsureDrunkWithinPrepared(request.Payload);
+        }
     }
 
     private async Task EnsureFormulaReferenceAsync(Guid babyId, UpsertEventRequest request, CancellationToken cancellationToken)

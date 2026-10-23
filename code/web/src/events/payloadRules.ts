@@ -1,5 +1,6 @@
 import type { EventFieldDefinition, EventPayload, EventType } from '../db/models';
 import { getOwn, setOwn } from '../util/ownProperty';
+import { DRUNK_KEY, PREPARED_KEY } from './bottleAmounts';
 
 /*
  * Client mirror of the API's payload field rules (docs/SPEC.md "Payload field rules",
@@ -117,7 +118,7 @@ const payloadValue = (payload: EventPayload) => (key: string) => getOwn(payload,
  * Members no field declares are not checked (e.g. the medication list).
  */
 export function validatePayload(
-  type: Pick<EventType, 'fields'>,
+  type: Pick<EventType, 'fields'> & Partial<Pick<EventType, 'key' | 'babyId'>>,
   payload: EventPayload,
   completing: boolean,
 ): PayloadProblem[] {
@@ -140,7 +141,21 @@ export function validatePayload(
     const code = kindProblem(field, value);
     if (code) problems.push({ field: field.key, code });
   }
+  if (drunkAbovePrepared(type, payload) && !problems.some((p) => p.field === DRUNK_KEY)) {
+    problems.push({ field: DRUNK_KEY, code: 'max' });
+  }
   return problems;
+}
+
+/** The built-in feeding rule: the drunk amount is never above the prepared one (server: `BottleAmounts`). */
+function drunkAbovePrepared(
+  type: Partial<Pick<EventType, 'key' | 'babyId'>>,
+  payload: EventPayload,
+): boolean {
+  if (type.babyId !== null || type.key !== 'feeding') return false;
+  const prepared = getOwn(payload, PREPARED_KEY);
+  const drunk = getOwn(payload, DRUNK_KEY);
+  return typeof prepared === 'number' && typeof drunk === 'number' && drunk > prepared;
 }
 
 /** Whether the event is complete once it has `endedAt` (instant types always are). */

@@ -208,7 +208,10 @@ describe('pt-BR texts outside components', () => {
       'tube_feeding',
     );
     expect(eventTypeText.fieldLabel(type, { key: 'amount_ml', label: 'Amount' })).toBe(
-      'Quantidade',
+      'Quantidade preparada',
+    );
+    expect(eventTypeText.fieldLabel(type, { key: 'amount_drunk_ml', label: 'Amount drunk' })).toBe(
+      'Quantidade bebida',
     );
   });
 

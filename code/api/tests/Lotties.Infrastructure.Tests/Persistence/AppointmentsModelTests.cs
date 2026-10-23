@@ -65,7 +65,7 @@ public sealed class AppointmentsModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_Appointments'", StringComparison.Ordinal)..];
+        var section = script[script.IndexOf("_Appointments'", StringComparison.Ordinal)..script.IndexOf("_FeedingAmounts'", StringComparison.Ordinal)];
 
         Assert.Contains("CREATE TABLE appointments (", section, StringComparison.Ordinal);
         Assert.Contains("ALTER TABLE baby_notification_preferences ADD appointment_reminders boolean NOT NULL DEFAULT TRUE;", section, StringComparison.Ordinal);

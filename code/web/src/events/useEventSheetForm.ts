@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../api/errorMessages';
+import { useDatabase } from '../db/DatabaseContext';
 import { useEventCommands } from '../db/hooks';
 import type { EventPayload, EventType } from '../db/models';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
@@ -21,6 +22,8 @@ import {
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
 import { fillEmptyFields } from './stopPlan';
 import { useFormulaChoice } from '../formulas/useFormulaChoice';
+import { createEventStoppingFeeding } from '../now/sleepStopsFeeding';
+import { loadTimeBottles } from '../presets/timeBottlesStorage';
 
 /** Required choices that are never pre-selected: a wrong silent value costs more than one tap. */
 const NEVER_DEFAULT: ReadonlyMap<string, string> = new Map([['diaper', 'content']]);
@@ -85,6 +88,7 @@ export function useEventSheetForm(props: EventSheetProps) {
   const { t } = useTranslation();
   const names = useEventTypeText();
   const commands = useEventCommands();
+  const db = useDatabase();
   const [form, setForm] = useState<EventFormState>(() => startForm(props));
   const [initial] = useState(() => JSON.stringify(form));
   const [openedAt] = useState(() => new Date());
@@ -93,6 +97,8 @@ export function useEventSheetForm(props: EventSheetProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [switched, setSwitched] = useState<TypeSwitch | null>(null);
+  // A new bottle is timed only with the "Time bottle feedings" setting; stored events keep their times.
+  const [timeBottles] = useState(() => !!event || loadTimeBottles(babyId));
 
   const type = types.find((candidate) => candidate.id === form.typeId);
   const formula = useFormulaChoice({ babyId, type, event, finish, values: form.values, setForm });
@@ -100,7 +106,7 @@ export function useEventSheetForm(props: EventSheetProps) {
   // Solid food or a bedtime marker is a moment, not a timer; a finished event keeps its own length.
   const instant =
     !!type?.hasDuration &&
-    !defaultRunning(type, form.values) &&
+    !defaultRunning(type, form.values, timeBottles) &&
     (!event || event.endedAt === null || event.endedAt === event.startedAt);
 
   const edit = (changes: Partial<EventFormState>) => {
@@ -143,7 +149,9 @@ export function useEventSheetForm(props: EventSheetProps) {
       event ? editBase(event.payload, selected, event.typeId === selected.id) : {},
     );
     const data = { typeId: selected.id, ...times, payload, notes: toSave.notes.trim() || null };
-    await (event ? commands.edit(event.id, data) : commands.create({ babyId, ...data }));
+    await (event
+      ? commands.edit(event.id, data)
+      : createEventStoppingFeeding(db, { babyId, ...data }));
     return payload;
   };
 

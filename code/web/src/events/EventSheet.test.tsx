@@ -342,7 +342,7 @@ describe('EventSheet conditional fields (visibleWhen)', () => {
     expect(await screen.findByText('Side')).toBeTruthy();
     expect(screen.getByText('Left breast')).toBeTruthy();
     expect(screen.getByText('Right breast')).toBeTruthy();
-    expect(screen.queryByText('Amount')).toBeNull();
+    expect(screen.queryByText('Amount prepared')).toBeNull();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Solid food' }));
     expect(await screen.findByLabelText(/Food/)).toBeTruthy();
@@ -362,7 +362,7 @@ describe('EventSheet conditional fields (visibleWhen)', () => {
     }
     recordLastUsed(BABY_ID, FEEDING_TYPE, { method: 'bottle', amount_ml: 100 });
     renderFeeding();
-    expect(await screen.findByText('Amount')).toBeTruthy();
+    expect(await screen.findByText('Amount prepared')).toBeTruthy();
     // Typical 120, topped up to 150 and 180, plus the remembered 100.
     expect(await screen.findByText('From your recent feeds')).toBeTruthy();
     for (const amount of ['120', '150', '180']) {
@@ -378,7 +378,9 @@ describe('EventSheet conditional fields (visibleWhen)', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: 'Bottle' }));
     // Typed, not a chip: the chips follow the baby's age and history.
-    fireEvent.change(await screen.findByRole('spinbutton'), { target: { value: '90' } });
+    fireEvent.change(await screen.findByRole('spinbutton', { name: /Amount prepared/ }), {
+      target: { value: '90' },
+    });
     fireEvent.click(screen.getByRole('radio', { name: 'Breast milk' }));
     save();
 
