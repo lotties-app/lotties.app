@@ -474,3 +474,26 @@ Every default that now comes from a norm. Values that come from norms in the tab
 Feed-gap rule (both engines, shared vectors `feedGapLimits`): under 183 days always 8 h (identical results for babies under 6 months, by design); from 183 days the high end of `longest_sleep_hours` if usable, else of `night_sleep_hours`, clamped to 8-14 h (14 h: above every published night, 13.7 h, and below the 16 h night-session cap `MaxNightSessionLength`); 8 h when neither is usable. The age is the baby's on the local date the gap starts (API: the family's clock of the clinical window). The doctor's patient list (`DoctorPatientsService`) reports no gap and is untouched.
 
 ### 15.3 Deliberately not changed
+
+### 15.4 Night window: measured, not changed
+
+**Question.** `PredictionOptions.NightStartsAt`/`NightEndsAt` (19:00-07:00, I6) split feed and sleep samples into day and night; `WakeWindowOptions.DayStartsAt`/`DayEndsAt` (05:00-18:00, I7) bound the overtired heads-up. Brazilian babies go to bed at a median 22:00 (section 7.4), so their evening is classed as night. Would a later or per-baby window predict better?
+
+**Method.** `python -m benchmark.night_window --out out` (ml/, synthetic only; `--data <csv>` runs it on an export the owner provides, aggregates only). Two synthetic cohorts of 30 babies, 35 days each, 4 to 20 months old (`benchmark/synthetic.py` `cohort_baby`): **brazil** (each baby's usual bed time drawn around the Pelotas median 22:00, sd 70 min, 20:00-01:00; night length around the Pelotas medians 9.5 / 10 / 10.5 h at 3 / 12 / 24 months, sd 1 h; about one night waking) and a **swiss_control** (bed time around 20:00, sd 30 min; nights 11-11.7 h, Iglowstein). Unsourced generator parts (no published norm): awake windows, nap lengths, a 3-hour day feed gap, a last feed before bed, feeds only at night wakings, all jitter. The faithful heuristic port (`benchmark/heuristic.py`) predicts the next feed (asked after each feed) and the next sleep (asked at each wake-up) after a 14-day warm-up; MAE in minutes on points where every variant predicts, Δ = variant minus current, 95 % bootstrap CI over babies. Variants: `current` 19:00-07:00; `norm_prior` 22:00-08:00 (Pelotas median bed and wake times); `norm_prior_m60` 21:00-08:00; `learned` the baby's own median `bed_time` and `woke_up` clocks over the 14-day look-back (at least 5 nights, else the norm prior); `learned_m60` the same starting one hour before her median bed time; `learned_m60_or_current` falling back to 19:00-07:00.
+
+**Results** (Δ MAE in minutes, 95 % CI; the generator's last feed 15 minutes before bed):
+
+| Cohort | Target | current MAE | norm_prior | learned | learned_m60 |
+|---|---|---:|---|---|---|
+| brazil | next feed, all | 37.1 | -1.4 (-2.7..+0.1) | -0.1 (-0.8..+0.7) | -1.7 (-2.9..-0.8) |
+| brazil | next feed, asked 18:00-24:00 | 76.3 | -9.7 (-13.7..-6.1) | -8.3 (-11.4..-5.2) | -16.5 (-22.2..-11.4) |
+| brazil | next sleep, all | 50.9 | -2.2 (-7.1..+0.7) | -7.5 (-14.9..-1.6) | -7.5 (-15.0..-1.7) |
+| brazil | next sleep, asked 18:00-24:00 | 47.6 | +3.9 (+0.0..+9.0) | +5.1 (+1.5..+10.8) | +5.1 (+1.5..+11.2) |
+| swiss_control | next feed, all | 41.0 | +2.8 (+1.2..+4.6) | +3.0 (+1.2..+5.1) | +1.0 (-0.4..+2.5) |
+| swiss_control | next sleep, all | 51.0 | -11.2 (-19.5..-5.0) | -6.9 (-13.8..-1.4) | -6.9 (-13.8..-0.7) |
+
+Sensitivity to one unsourced generator choice, the time from the last feed to bed (Δ of `learned_m60`, next feed, all): 15 min -1.7 (brazil) / +1.0 (swiss); 45 min -0.4 (-1.3..+0.5) / +1.3 (-0.4..+3.0); 90 min **+3.4 (+0.9..+6.2)** / **+3.2 (+1.1..+5.7)**. The next-sleep gain of the learned window holds in all three settings (-4.2 to -7.5 min for brazil, -6.0 to -6.9 for swiss, the CI touching 0 in some), while next-sleep asked in the evening gets worse in all of them (+4 to +11 min).
+
+**Conclusion: no clear improvement, code unchanged.** The feed result changes sign with an unsourced detail of the synthetic day, the evening sleep prediction gets worse with every later window, and a fixed 22:00 window hurts babies who go to bed early (+2.8 min on feeds for the swiss control). The only consistent signal is a smaller next-sleep error with a per-baby window, and that is exactly what a synthetic generator built from per-baby bed times favours. **Synthetic data cannot prove a real-world gain**, so `NightStartsAt`/`NightEndsAt` and the wake window's `DayStartsAt`/`DayEndsAt` keep their values and no past sample is classified differently. (The overtired heads-up has no Python port, so I7 was not measured; the same per-baby derivation would apply.)
+
+**Recommendation.** Before any change: run `python -m benchmark.night_window --data <the owner's export>` (and the full `benchmark.run`) on real logs. If the owner pursues it, the candidate is a clearly named, default-off option such as `PredictionOptions.NightWindowFromBedtimes` (the night starts at the baby's median `bed_time` clock over the look-back minus a margin and ends at her median `woke_up` clock, from at least 5 logged nights; below that the fixed 19:00-07:00 window, not the norm prior, since `norm_prior` alone was worse for early sleepers), applied first to the sleep (awake-window) prediction only, and with the evening sleep error watched.

@@ -49,6 +49,17 @@ Options: `--test-days 21` (length of the scored window at the end of the data; t
 window), `--resamples 2000` (day-block bootstrap draws), `--skip-cold-start`, `--sensitivity` (LightGBM variants on both
 windows). A full run takes 7-10 minutes on a laptop CPU (LightGBM single-threaded).
 
+Night-window evaluation (docs/design/28-age-norms.md section 15.4): the heuristic with the shipped 19:00-07:00
+day/night split against later and per-baby windows, on synthetic Brazilian and Swiss-like cohorts built from the
+published bed times and night lengths (no real data; under a minute):
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.night_window --out out            # synthetic cohorts (default)
+.venv/bin/python -m benchmark.night_window --out out --bedtime-feed-lead 90   # sensitivity of one unsourced choice
+.venv/bin/python -m benchmark.night_window --out out --data /path/outside/the/repo/events.csv   # the owner's export
+```
+
 Tests (heuristic parity with the C# unit tests, leakage checks, synthetic end-to-end backtest):
 
 ```bash
@@ -78,3 +89,5 @@ Every method outputs q10, q25, q50, q75 and q90 in minutes from the decision ins
 | `benchmark/backtest.py` | Rolling-origin evaluation with daily refits, cold-start variants, timings |
 | `benchmark/metrics.py` | MAE, pinball, coverage, day-block bootstrap |
 | `benchmark/run.py` | CLI and report |
+| `benchmark/synthetic.py` | Synthetic histories: `generate` (tests) and `cohort_baby` (Brazilian and Swiss-like cohorts from published bed times and night lengths) |
+| `benchmark/night_window.py` | Night-window evaluation CLI (`night_window.json`, `night_window.md` in `--out`) |
