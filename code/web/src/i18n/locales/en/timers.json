@@ -23,14 +23,14 @@
       "progress": "{{elapsed}} of about {{target}}",
       "past": "Past the usual length"
     },
+    "pill": {
+      "open": "{{name}} timer, open the running timers",
+      "openMany_one": "{{name}} timer, {{count}} timer running, open the running timers",
+      "openMany_other": "{{name}} timer, {{count}} timers running, open the running timers"
+    },
     "mini": {
       "open": "Open the {{name}} timer",
-      "expand": "Show all running timers",
-      "collapse": "Hide the list",
-      "list": "All running timers",
-      "count_one": "{{count}} timer",
-      "count_other": "{{count}} timers",
-      "other": "Other timers"
+      "list": "All running timers"
     },
     "sheet": {
       "started": "Started {{time}}",

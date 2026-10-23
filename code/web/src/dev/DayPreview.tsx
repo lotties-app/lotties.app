@@ -11,7 +11,7 @@ import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
 import { NAV_CONTENT_PADDING } from '../layout/navMetrics';
-import { MiniTimerBar } from '../timers/MiniTimerBar';
+import { RunningTimerPill } from '../timers/RunningTimerPill';
 import { MORE_BUILT_IN_TYPES } from '../test/builtInTypes';
 import { PREVIEW_BABY_ID, PREVIEW_MEDICATIONS, PREVIEW_TYPES, typeIdOf } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
@@ -305,7 +305,11 @@ export default function DayPreview() {
               }
             />
           </Box>
-          {ready?.scenario === scenario && <MiniTimerBar key={scenario} baby={ready.baby} />}
+          {ready?.scenario === scenario && (
+            <Box sx={{ position: 'fixed', top: 8, right: 8, zIndex: 1100, display: 'flex' }}>
+              <RunningTimerPill key={scenario} baby={ready.baby} />
+            </Box>
+          )}
           <BottomNav />
           <DeletedEventSnackbar />
         </Box>

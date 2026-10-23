@@ -8,7 +8,6 @@ import { RejectedChangeSnackbar } from '../sync/RejectedChangeSnackbar';
 import { NotificationLinkProvider } from '../notifications/NotificationLinkProvider';
 import { useCloseResolvedNotifications } from '../notifications/useCloseResolvedNotifications';
 import { usePushReconcile } from '../notifications/usePushReconcile';
-import { MiniTimerBar } from '../timers/MiniTimerBar';
 import { UndoSnackbar } from '../ui/UndoSnackbar';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
@@ -51,7 +50,7 @@ function ShellBody() {
             mx: 'auto',
           }}
         >
-          <TopBar />
+          <TopBar baby={baby} />
           <SessionBanner />
           <NightFeedBanner />
           <Box
@@ -65,7 +64,6 @@ function ShellBody() {
             </ErrorBoundary>
           </Box>
         </Box>
-        {baby && <MiniTimerBar key={baby.id} baby={baby} />}
         <BottomNav />
         <DeletedEventSnackbar />
         <RejectedChangeSnackbar />

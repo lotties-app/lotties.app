@@ -51,15 +51,27 @@ const renderShell = (route = '/', api = fakeApi().api) =>
 
 const stored = async (id: string) => (await db.events.get(id))!;
 
-describe('the global mini timer bar', () => {
+/** The header pill of the running timers, with its popover open: the dialog with each timer's controls. */
+async function openPopover() {
+  fireEvent.click(await screen.findByTestId('timer-pill'));
+  return screen.findByRole('dialog', { name: 'Running timers' });
+}
+
+/** The timer sheet of one timer, opened from the popover. */
+async function openSheet(kind = 'Nap') {
+  const bar = await openPopover();
+  fireEvent.click(within(bar).getByRole('button', { name: `Open the ${kind} timer` }));
+  return screen.findByRole('dialog', { name: kind });
+}
+
+describe('the running-timer pill in the header', () => {
   it('stays away from Now, whose Running now cards show the same timers', async () => {
     await seed();
     await start(SLEEP_TYPE, { kind: 'nap' }, 12);
     renderShell('/');
     const running = await screen.findByRole('region', { name: 'Running timers' });
     expect(within(running).getByRole('article', { name: 'Nap' })).toBeTruthy();
-    expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
-    expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toBe('');
+    expect(screen.queryByTestId('timer-pill')).toBeNull();
   });
 
   it('comes back when leaving Now for Day', async () => {
@@ -67,64 +79,74 @@ describe('the global mini timer bar', () => {
     await start(SLEEP_TYPE, { kind: 'nap' }, 12);
     renderShell('/');
     await screen.findByRole('article', { name: 'Nap' });
-    expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
+    expect(screen.queryByTestId('timer-pill')).toBeNull();
     fireEvent.click(screen.getByRole('link', { name: /^Day/ }));
-    expect(await screen.findByTestId('mini-timer-bar')).toBeTruthy();
+    expect(await screen.findByTestId('timer-pill')).toBeTruthy();
   });
 
-  it.each(['/day', '/insights', '/settings'])(
-    'floats above the navigation on %s while a timer runs',
+  it.each(['/day', '/insights', '/hub', '/settings'])(
+    'sits in the header beside the sync icon on %s while a timer runs',
     async (route) => {
       await seed();
       await start(SLEEP_TYPE, { kind: 'nap' }, 12);
       renderShell(route);
-      const bar = await screen.findByRole('region', { name: 'Running timers' });
-      expect(within(bar).getByTestId('mini-timer-elapsed').textContent).toMatch(/^1[12]:\d\d$/);
-      expect(within(bar).getByRole('button', { name: 'Open the Nap timer' })).toBeTruthy();
-      expect(within(bar).getByRole('button', { name: 'Pause Nap' })).toBeTruthy();
-      expect(within(bar).getByRole('button', { name: 'Stop Nap' })).toBeTruthy();
-      // It sits in the document before the navigation pill it floats above.
-      const nav = screen.getByRole('navigation', { name: 'Main' });
-      expect(bar.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const pill = await screen.findByTestId('timer-pill');
+      const header = screen.getByRole('banner');
+      expect(header.contains(pill)).toBe(true);
+      expect(within(header).getByTestId('timer-pill-elapsed').textContent).toMatch(/^1[12]:\d\d$/);
+      expect(pill.getAttribute('aria-label')).toBe('Nap timer, open the running timers');
+      // No floating bar, and no page space reserved for one.
+      expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
+      expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toBe('');
+      // The pill is a 44 px target.
+      expect(getComputedStyle(pill).minHeight).toBe('44px');
     },
   );
+
+  it('shows hours once a timer passes the hour', async () => {
+    await seed();
+    await start(SLEEP_TYPE, { kind: 'night' }, 61);
+    renderShell('/day');
+    expect((await screen.findByTestId('timer-pill-elapsed')).textContent).toMatch(/^1:0[01]:\d\d$/);
+  });
 
   it('is not there without a running timer, and appears when one starts', async () => {
     await seed();
     renderShell('/day');
     await screen.findByRole('heading', { name: 'Day' });
-    expect(screen.queryByRole('region', { name: 'Running timers' })).toBeNull();
+    expect(screen.queryByTestId('timer-pill')).toBeNull();
     await start(SLEEP_TYPE, { kind: 'nap' }, 1);
-    expect(await screen.findByRole('region', { name: 'Running timers' })).toBeTruthy();
+    expect(await screen.findByTestId('timer-pill')).toBeTruthy();
   });
 
-  it('keeps the page clear of the bar with a root variable and removes it when it goes', async () => {
+  it('opens a popover with Pause and Stop of the timer, and closes with Escape', async () => {
     await seed();
-    const timer = await start(SLEEP_TYPE, { kind: 'nap' }, 5);
+    await start(SLEEP_TYPE, { kind: 'nap' }, 12);
     renderShell('/day');
-    await screen.findByRole('region', { name: 'Running timers' });
-    // The variable is set by a passive effect that can run just after the bar is in the document.
+    const pill = await screen.findByTestId('timer-pill');
+    expect(pill.getAttribute('aria-expanded')).toBe('false');
+    const bar = await openPopover();
+    expect(pill.getAttribute('aria-expanded')).toBe('true');
+    expect(within(bar).getByRole('button', { name: 'Open the Nap timer' })).toBeTruthy();
+    expect(within(bar).getByRole('button', { name: 'Pause Nap' })).toBeTruthy();
+    expect(within(bar).getByRole('button', { name: 'Stop Nap' })).toBeTruthy();
+    fireEvent.keyDown(bar, { key: 'Escape' });
     await waitFor(() =>
-      expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toMatch(/px$/),
+      expect(screen.queryByRole('dialog', { name: 'Running timers' })).toBeNull(),
     );
-    await db.events.update(timer.id, { endedAt: new Date().toISOString() });
-    await waitFor(() =>
-      expect(screen.queryByRole('region', { name: 'Running timers' })).toBeNull(),
-    );
-    expect(document.documentElement.style.getPropertyValue('--timer-bar-offset')).toBe('');
   });
 
   it('pauses and resumes: paused_at, then paused_seconds and pause_count, announced politely', async () => {
     await seed();
     const timer = await start(SLEEP_TYPE, { kind: 'nap' }, 20);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     fireEvent.click(within(bar).getByRole('button', { name: 'Pause Nap' }));
 
     expect(await within(bar).findByRole('button', { name: 'Resume Nap' })).toBeTruthy();
     expect((await stored(timer.id)).payload.paused_at).toEqual(expect.any(String));
     expect(within(bar).getByTestId('timer-paused').textContent).toMatch(/^Paused 00:0\d$/);
-    expect(await within(bar).findByText('Nap paused')).toBeTruthy();
+    expect(await screen.findByText('Nap paused')).toBeTruthy();
     // The change is queued for sync like any edit (works offline).
     expect(await db.outbox.count()).toBe(2);
 
@@ -134,7 +156,7 @@ describe('the global mini timer bar', () => {
     expect(resumed.payload).toMatchObject({ pause_count: 1, paused_seconds: expect.any(Number) });
     expect(resumed.payload).not.toHaveProperty('paused_at');
     expect(within(bar).queryByTestId('timer-paused')).toBeNull();
-    expect(await within(bar).findByText('Nap resumed')).toBeTruthy();
+    expect(await screen.findByText('Nap resumed')).toBeTruthy();
   });
 
   it('freezes the time while paused: the elapsed shown is the effective one', async () => {
@@ -149,23 +171,26 @@ describe('the global mini timer bar', () => {
       30,
     );
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     // 30 minutes minus the 10 paused.
-    expect(within(bar).getByTestId('mini-timer-elapsed').textContent).toMatch(/^(19|20):\d\d$/);
+    expect(within(bar).getByTestId('timer-row-elapsed').textContent).toMatch(/^(19|20):\d\d$/);
+    expect(screen.getByTestId('timer-pill-elapsed').textContent).toMatch(/^(19|20):\d\d$/);
   });
 
-  it('shows the main timer with a count chip and lists the others on tap', async () => {
+  it('shows the main timer with a +N count and lists every timer in the popover', async () => {
     await seed();
     await start(TUMMY_TIME_TYPE, {}, 3);
     const nap = await start(SLEEP_TYPE, { kind: 'nap' }, 25);
     renderShell('/insights');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const pill = await screen.findByTestId('timer-pill');
     // A sleep is the main timer even though it started later.
-    expect(within(bar).getByRole('button', { name: 'Open the Nap timer' })).toBeTruthy();
-    const chip = within(bar).getByTestId('mini-timer-count');
-    expect(chip.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(chip);
-    const list = await screen.findByRole('list', { name: 'All running timers' });
+    expect(pill.getAttribute('aria-label')).toBe(
+      'Nap timer, 2 timers running, open the running timers',
+    );
+    expect(screen.getByTestId('timer-pill-count').textContent).toBe('+1');
+    expect(screen.getByTestId('timer-pill-elapsed').textContent).toMatch(/^2[45]:\d\d$/);
+    const bar = await openPopover();
+    const list = within(bar).getByRole('list', { name: 'All running timers' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
     fireEvent.click(within(list).getByRole('button', { name: 'Pause Tummy time' }));
     await waitFor(async () => {
@@ -173,14 +198,15 @@ describe('the global mini timer bar', () => {
       expect(others[0].payload.paused_at).toEqual(expect.any(String));
     });
     expect((await stored(nap.id)).payload).not.toHaveProperty('paused_at');
-    expect(chip.getAttribute('aria-expanded')).toBe('true');
+    // The popover stays open for the next tap.
+    expect(screen.getByRole('dialog', { name: 'Running timers' })).toBeTruthy();
   });
 
   it('stops a timer through the stop flow: required fields are asked first', async () => {
     await seed();
     const feeding = await start(FEEDING_TYPE, {}, 8);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     fireEvent.click(within(bar).getByRole('button', { name: 'Stop Feeding' }));
     const sheet = await screen.findByRole('dialog', { name: /Finish this feeding/i });
     expect(sheet).toBeTruthy();
@@ -192,20 +218,18 @@ describe('the global mini timer bar', () => {
     await seed();
     const nap = await start(SLEEP_TYPE, { kind: 'nap' }, 8);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     fireEvent.click(within(bar).getByRole('button', { name: 'Stop Nap' }));
     await waitFor(async () => expect((await stored(nap.id)).endedAt).not.toBeNull());
     expect(await screen.findByText('Nap stopped')).toBeTruthy();
-    await waitFor(() =>
-      expect(screen.queryByRole('region', { name: 'Running timers' })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByTestId('timer-pill')).toBeNull());
   });
 
   it('stopping while paused finalizes the pause (no paused_at once ended)', async () => {
     await seed();
     const nap = await start(SLEEP_TYPE, { kind: 'nap' }, 15);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     fireEvent.click(within(bar).getByRole('button', { name: 'Pause Nap' }));
     await within(bar).findByRole('button', { name: 'Resume Nap' });
     fireEvent.click(within(bar).getByRole('button', { name: 'Stop Nap' }));
@@ -224,23 +248,23 @@ describe('the global mini timer bar', () => {
     await start(SLEEP_TYPE, { kind: 'night' }, 90);
     renderShell('/');
     const view = await screen.findByRole('region', { name: 'Night view' });
-    expect(screen.queryByTestId('mini-timer-bar')).toBeNull();
+    expect(screen.queryByTestId('timer-pill')).toBeNull();
     // The night view lists the running timer first itself.
     expect(within(view).getByRole('region', { name: 'Running timers' })).toBeTruthy();
   });
 
-  it('lets viewers see the timer but not change it', async () => {
-    await seed('Viewer');
-    await start(SLEEP_TYPE, { kind: 'nap' }, 9);
-    renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
-    expect(
-      (within(bar).getByRole('button', { name: 'Pause Nap' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
-    expect(
-      (within(bar).getByRole('button', { name: 'Stop Nap' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
-  });
+  it.each<BabyRole>(['Viewer', 'Doctor'])(
+    'lets a %s see the timer but gives no controls',
+    async (role) => {
+      await seed(role);
+      await start(SLEEP_TYPE, { kind: 'nap' }, 9);
+      renderShell('/day');
+      const bar = await openPopover();
+      expect(within(bar).getByText('Nap')).toBeTruthy();
+      expect(within(bar).queryByRole('button', { name: 'Pause Nap' })).toBeNull();
+      expect(within(bar).queryByRole('button', { name: 'Stop Nap' })).toBeNull();
+    },
+  );
 
   it('lets a caregiver pause and stop someone else’s timer, and nothing else about it', async () => {
     await db.babies.put({
@@ -259,7 +283,7 @@ describe('the global mini timer bar', () => {
         : undefined,
     ).api;
     renderShell('/day', api);
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     expect(
       (within(bar).getByRole('button', { name: 'Pause Nap' }) as HTMLButtonElement).disabled,
     ).toBe(false);
@@ -302,7 +326,7 @@ describe('the global mini timer bar', () => {
     );
     await db.events.update(nursing.id, { createdBy: 'u-ana' });
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     expect(within(bar).queryByRole('button', { name: /^Pause / })).toBeNull();
     expect(within(bar).queryByRole('button', { name: /^Stop / })).toBeNull();
   });
@@ -311,7 +335,7 @@ describe('the global mini timer bar', () => {
     await seed('Caregiver');
     await start(TUMMY_TIME_TYPE, {}, 5);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const bar = await openPopover();
     expect(
       (within(bar).getByRole('button', { name: /^Pause / }) as HTMLButtonElement).disabled,
     ).toBe(false);
@@ -355,9 +379,9 @@ describe('the global mini timer bar', () => {
       };
     });
     renderShell('/day', api);
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
-    expect(await within(bar).findByText('Usual nap about 45m')).toBeTruthy();
-    const progress = within(bar).getByRole('progressbar');
+    const sheet = await openSheet();
+    expect(await within(sheet).findByText('Usual nap about 45m')).toBeTruthy();
+    const progress = within(sheet).getByRole('progressbar');
     expect(progress.getAttribute('aria-valuenow')).toBe('22');
     expect(progress.getAttribute('aria-label')).toMatch(/of about 45m$/);
   });
@@ -366,20 +390,14 @@ describe('the global mini timer bar', () => {
     await seed();
     await start(SLEEP_TYPE, { kind: 'nap' }, 10);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
+    const sheet = await openSheet();
     await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(within(bar).queryByTestId('timer-target')).toBeNull();
+    expect(within(sheet).queryByTestId('timer-target')).toBeNull();
   });
 });
 
 describe('the timer sheet', () => {
-  async function openSheet(kind = 'Nap') {
-    const bar = await screen.findByRole('region', { name: 'Running timers' });
-    fireEvent.click(within(bar).getByRole('button', { name: `Open the ${kind} timer` }));
-    return screen.findByRole('dialog', { name: kind });
-  }
-
-  it('opens from the bar with the big time, Pause, Stop and Discard', async () => {
+  it('opens from the popover with the big time, Pause, Stop and Discard', async () => {
     await seed();
     await start(SLEEP_TYPE, { kind: 'nap' }, 14);
     renderShell('/insights');
@@ -530,12 +548,17 @@ describe('the timer sheet', () => {
 });
 
 describe('in Portuguese', () => {
-  it('names the bar, the buttons and the sheet in pt-BR', async () => {
+  it('names the pill, the buttons and the sheet in pt-BR', async () => {
     await useTestLocale('pt-BR');
     await seed();
     await start(SLEEP_TYPE, { kind: 'nap' }, 12);
     renderShell('/day');
-    const bar = await screen.findByRole('region', { name: 'Cronômetros em andamento' });
+    const pill = await screen.findByTestId('timer-pill');
+    expect(pill.getAttribute('aria-label')).toBe(
+      'Cronômetro de Soneca, abrir os cronômetros em andamento',
+    );
+    fireEvent.click(pill);
+    const bar = await screen.findByRole('dialog', { name: 'Cronômetros em andamento' });
     expect(within(bar).getByRole('button', { name: 'Pausar Soneca' })).toBeTruthy();
     expect(within(bar).getByRole('button', { name: 'Parar Soneca' })).toBeTruthy();
     fireEvent.click(within(bar).getByRole('button', { name: 'Abrir o cronômetro de Soneca' }));
@@ -560,19 +583,17 @@ describe('accessibility (axe)', () => {
   }
 
   it.each(['light', 'dark'])(
-    'the bar, its list and the sheet have no violations (%s)',
+    'the pill, its popover and the sheet have no violations (%s)',
     async (mode) => {
       window.localStorage.setItem(THEME_STORAGE_KEY, mode);
       await seed();
       await start(TUMMY_TIME_TYPE, { pause_count: 1, paused_seconds: 90 }, 4);
       await start(SLEEP_TYPE, { kind: 'nap' }, 12);
       renderShell('/day');
-      const bar = await screen.findByRole('region', { name: 'Running timers' });
-      fireEvent.click(within(bar).getByTestId('mini-timer-count'));
+      const bar = await openPopover();
       await screen.findByRole('list', { name: 'All running timers' });
       expect(await violations()).toEqual([]);
 
-      fireEvent.click(within(bar).getByTestId('mini-timer-count'));
       fireEvent.click(within(bar).getByRole('button', { name: 'Open the Nap timer' }));
       const sheet = await screen.findByRole('dialog', { name: 'Nap' });
       fireEvent.click(within(sheet).getByRole('button', { name: /Sleep details/ }));
@@ -583,7 +604,7 @@ describe('accessibility (axe)', () => {
     },
   );
 
-  it('the night view, where the bar hides, has no violations either', async () => {
+  it('the night view, where the pill hides, has no violations either', async () => {
     window.localStorage.setItem(
       NIGHT_FEED_STATE_STORAGE_KEY,
       JSON.stringify({ override: { on: true, key: nightPeriodKey(new Date()) } }),

@@ -23,14 +23,14 @@
       "progress": "{{elapsed}} de cerca de {{target}}",
       "past": "Além da duração habitual"
     },
+    "pill": {
+      "open": "Cronômetro de {{name}}, abrir os cronômetros em andamento",
+      "openMany_one": "Cronômetro de {{name}}, {{count}} cronômetro em andamento, abrir os cronômetros",
+      "openMany_other": "Cronômetro de {{name}}, {{count}} cronômetros em andamento, abrir os cronômetros"
+    },
     "mini": {
       "open": "Abrir o cronômetro de {{name}}",
-      "expand": "Mostrar todos os cronômetros",
-      "collapse": "Ocultar a lista",
-      "list": "Todos os cronômetros em andamento",
-      "count_one": "{{count}} cronômetro",
-      "count_other": "{{count}} cronômetros",
-      "other": "Outros cronômetros"
+      "list": "Todos os cronômetros em andamento"
     },
     "sheet": {
       "started": "Início às {{time}}",
