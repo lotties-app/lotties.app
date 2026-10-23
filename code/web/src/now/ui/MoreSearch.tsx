@@ -44,6 +44,7 @@ export function MoreSearch({ query, onChange, resultCount }: Props) {
       <TextField
         type="search"
         fullWidth
+        hiddenLabel
         autoFocus={autoFocus}
         autoComplete="off"
         value={query}
@@ -57,8 +58,14 @@ export function MoreSearch({ query, onChange, resultCount }: Props) {
             spellCheck: false,
           },
           input: {
-            // 16 px or more: iOS does not zoom into the field on focus.
-            sx: { fontSize: '1rem' },
+            sx: {
+              // 16 px or more: iOS does not zoom into the field on focus.
+              fontSize: '1rem',
+              // No floating label, so the text sits in the middle of the field.
+              '& .MuiFilledInput-input': { py: 1.5 },
+              // The browser's own clear cross would double the clear button.
+              '& input::-webkit-search-cancel-button': { display: 'none' },
+            },
             startAdornment: (
               <InputAdornment position="start">
                 <Icon name="search" size={20} />
