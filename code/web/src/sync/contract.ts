@@ -95,6 +95,10 @@ import type { VaccineNetwork } from '../vaccines/vaccineSchedule';
  *          /babies/{id}/access-log (Owner).
  * - Care providers (docs/SPEC.md "Care providers"): GET /babies/{id}/care-providers?since= (deleted
  *          included, no DELETE), PUT /babies/{id}/care-providers/{id} (Owner/Parent). Family roles only.
+ * - Address lookup (docs/design/23-address-lookup.md): GET /address/lookup?cep= (a Brazilian CEP:
+ *          street, neighborhood, city, state; 404 `address_not_found`) and GET /address/search?q=&lang=
+ *          (OpenStreetMap places). Any signed-in user, online only, user-triggered, rate limited;
+ *          502 `address_lookup_unavailable` / 503 `address_lookup_disabled` leave the manual field.
  * - Appointments (docs/SPEC.md "Appointments"): GET /babies/{id}/appointments?since= (cancelled and
  *          done included, no delete), PUT /babies/{id}/appointments/{id} (Owner/Parent). `done` is
  *          refused (422 `appointment_not_started`) while the start is in the future.
@@ -153,6 +157,8 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/care-providers` + query({ since }),
   careProvider: (babyId: string, providerId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/care-providers/${enc(providerId)}`,
+  addressLookup: (cep: string) => `${API_PREFIX}/address/lookup` + query({ cep }),
+  addressSearch: (q: string, lang?: string) => `${API_PREFIX}/address/search` + query({ q, lang }),
   vaccinations: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/vaccinations` + query({ since }),
   vaccination: (babyId: string, vaccinationId: string) =>

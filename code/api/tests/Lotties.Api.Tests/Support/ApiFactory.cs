@@ -1,4 +1,5 @@
 using Lotties.Api.Configuration;
+using Lotties.Infrastructure.AddressLookup;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.Errors;
 using Microsoft.AspNetCore.Authentication;
@@ -82,6 +83,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
         services.PostConfigure<AuthenticationOptions>(UseTestSchemeByDefault);
         services.AddSingleton<IStartupFilter, ProbeEndpointsStartupFilter>();
+        services.AddHttpClient(AddressLookupServiceCollectionExtensions.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => new NoNetworkHandler());
     }
 
     private static void UseTestSchemeByDefault(AuthenticationOptions options)

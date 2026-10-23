@@ -30,6 +30,23 @@
       "dentist": "Dentista",
       "other": "Outra"
     },
+    "address": {
+      "label": "Buscar o endereço",
+      "help": "Digite um CEP ou o nome de uma rua ou lugar e toque em Buscar endereço. Só o que você digita é enviado, nunca nada sobre o seu bebê.",
+      "placeholder": "ex.: 01001-000 ou Rua Augusta, São Paulo",
+      "find": "Buscar endereço",
+      "finding": "Buscando...",
+      "tooShort": "Digite um CEP ou pelo menos 3 caracteres para buscar.",
+      "offline": "Você está sem conexão, então não dá para buscar o endereço. Digite abaixo.",
+      "manual": "Você pode digitar o endereço abaixo.",
+      "empty": "Nenhum endereço encontrado.",
+      "filled": "Endereço preenchido abaixo. Informe o número e o complemento e confira.",
+      "results": "Endereços encontrados",
+      "number": "Número",
+      "complement": "Complemento",
+      "complementPlaceholder": "ex.: Sala 12",
+      "attribution": "Dados © colaboradores do OpenStreetMap"
+    },
     "sheet": {
       "newTitle": "Novo médico ou clínica",
       "editTitle": "Editar médico ou clínica",

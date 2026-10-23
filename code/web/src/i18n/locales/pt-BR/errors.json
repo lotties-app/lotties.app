@@ -57,6 +57,9 @@
     "note_already_shared": "Esta nota já foi compartilhada com a família e não pode ficar privada. Exclua-a.",
     "measurement_not_owned": "Você só pode alterar as medidas que registrou.",
     "vaccination_baby_mismatch": "Este registro de vacina pertence a outro bebê.",
-    "account_deletion_blocked": "Você é a única pessoa responsável por um bebê que outras pessoas usam. Torne outro membro responsável primeiro."
+    "account_deletion_blocked": "Você é a única pessoa responsável por um bebê que outras pessoas usam. Torne outro membro responsável primeiro.",
+    "address_not_found": "Nenhum endereço foi encontrado para esse CEP. Confira o CEP ou digite o endereço.",
+    "address_lookup_unavailable": "A busca de endereço está indisponível no momento.",
+    "address_lookup_disabled": "A busca de endereço está desativada neste servidor."
   }
 }

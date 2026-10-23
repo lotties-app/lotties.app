@@ -9,6 +9,9 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of shared catalog writes (product creation).</summary>
     public const string CatalogWrite = "catalog-write";
 
+    /// <summary>Rate limit policy of the address lookup proxy (per user): the upstream services are shared and free.</summary>
+    public const string AddressLookup = "address-lookup";
+
     /// <summary>Rate limit policy of push device, settings and preference writes (per user).</summary>
     public const string PushWrite = "push-write";
 
