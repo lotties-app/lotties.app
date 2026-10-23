@@ -110,6 +110,13 @@ import IconLayoutGrid from '@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mj
 import IconRefresh from '@tabler/icons-react/dist/esm/icons/IconRefresh.mjs';
 import IconUserPlus from '@tabler/icons-react/dist/esm/icons/IconUserPlus.mjs';
 import IconPalette from '@tabler/icons-react/dist/esm/icons/IconPalette.mjs';
+import IconPhone from '@tabler/icons-react/dist/esm/icons/IconPhone.mjs';
+import IconMail from '@tabler/icons-react/dist/esm/icons/IconMail.mjs';
+import IconWorld from '@tabler/icons-react/dist/esm/icons/IconWorld.mjs';
+import IconBrandWhatsapp from '@tabler/icons-react/dist/esm/icons/IconBrandWhatsapp.mjs';
+import IconBuildingHospital from '@tabler/icons-react/dist/esm/icons/IconBuildingHospital.mjs';
+import IconStarFilled from '@tabler/icons-react/dist/esm/icons/IconStarFilled.mjs';
+import IconExternalLink from '@tabler/icons-react/dist/esm/icons/IconExternalLink.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -234,6 +241,13 @@ export const ICON_COMPONENTS = {
   refresh: IconRefresh,
   'user-plus': IconUserPlus,
   palette: IconPalette,
+  phone: IconPhone,
+  mail: IconMail,
+  world: IconWorld,
+  whatsapp: IconBrandWhatsapp,
+  hospital: IconBuildingHospital,
+  'star-filled': IconStarFilled,
+  'external-link': IconExternalLink,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

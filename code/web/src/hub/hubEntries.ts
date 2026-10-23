@@ -2,6 +2,7 @@ import {
   canDecideProposals,
   canPropose,
   canSeeAppointments,
+  canSeeFamilyRecords,
   canWrite,
   isOwner,
 } from '../baby/permissions';
@@ -19,6 +20,7 @@ export type HubSectionId = (typeof HUB_SECTIONS)[number];
 
 export const HUB_ENTRY_IDS = [
   'appointments',
+  'providers',
   'vaccines',
   'growth',
   'medicines',
@@ -47,6 +49,7 @@ export interface HubEntry {
 /** In the order the sections list them. */
 export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'appointments', section: 'care', icon: 'event', to: '/appointments' },
+  { id: 'providers', section: 'care', icon: 'stethoscope', to: '/hub/providers' },
   { id: 'vaccines', section: 'care', icon: 'vaccine', to: '/vaccines' },
   { id: 'growth', section: 'care', icon: 'ruler', to: '/insights#growth' },
   { id: 'medicines', section: 'care', icon: 'pill', to: '/hub/medicines' },
@@ -88,6 +91,9 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
       return ctx.hasPatients;
     case 'appointments':
       return !!baby && canSeeAppointments(baby);
+    case 'providers':
+      // The directory names the family's own doctors and clinics: never shown to the Doctor.
+      return !!baby && canSeeFamilyRecords(baby);
     case 'fromDoctor':
       return !!baby && canDecideProposals(baby) && ctx.hasDoctorContent;
     case 'myProposals':
@@ -131,6 +137,7 @@ export const DEFAULT_SHORTCUT_ORDER: readonly HubEntryId[] = [
   'myProposals',
   'formulas',
   'members',
+  'providers',
 ];
 
 export const SHORTCUT_COUNT = 4;

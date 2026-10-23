@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Appointment } from '../db/models';
-import { appointmentToIcs, escapeText, foldLine, icsDateTime, icsFileName } from './ics';
+import {
+  appointmentToIcs,
+  escapeText,
+  foldLine,
+  icsDateTime,
+  icsFileName,
+  locationOf,
+} from './ics';
 
 /* The "Add to calendar" file (RFC 5545): golden output, escaping, folding and alarms. */
 
@@ -118,6 +125,40 @@ describe('ics helpers', () => {
     expect(icsFileName(BASE, 'America/Sao_Paulo')).toBe('lotties-appointment-2026-03-04.ics');
     expect(icsFileName({ startsAt: '2026-03-05T01:00:00.000Z' }, 'America/New_York')).toBe(
       'lotties-appointment-2026-03-04.ics',
+    );
+  });
+});
+
+describe('with a care provider (docs/design/22-care-providers.md)', () => {
+  const provider = { address: 'Rua das Flores, 10\nSão Paulo', phone: '+55 11 5555-0000' };
+
+  it('completes the location with the provider address on one line', () => {
+    expect(locationOf({ location: 'Annex' }, provider)).toBe(
+      'Annex, Rua das Flores, 10, São Paulo',
+    );
+    expect(locationOf({ location: null }, provider)).toBe('Rua das Flores, 10, São Paulo');
+    expect(locationOf({ location: 'Annex' }, null)).toBe('Annex');
+    expect(locationOf({ location: null }, null)).toBeNull();
+  });
+
+  it('does not repeat an address the location already holds', () => {
+    const place = 'Clinic Sol, Rua das Flores, 10, São Paulo';
+    expect(locationOf({ location: place }, provider)).toBe(place);
+  });
+
+  it('writes the completed LOCATION and the phone in the description', () => {
+    const text = appointmentToIcs(
+      { ...BASE, location: 'Annex', notes: null },
+      { ...OPTIONS, labels: { doctor: 'Doctor', phone: 'Phone' }, provider },
+    );
+
+    expect(text).toContain('LOCATION:Annex\\, Rua das Flores\\, 10\\, São Paulo\r\n');
+    expect(text).toContain('DESCRIPTION:Doctor: Dra. Ana Lima\\nPhone: +55 11 5555-0000\r\n');
+  });
+
+  it('is unchanged without a provider', () => {
+    expect(appointmentToIcs(BASE, OPTIONS)).toBe(
+      appointmentToIcs(BASE, { ...OPTIONS, provider: null }),
     );
   });
 });

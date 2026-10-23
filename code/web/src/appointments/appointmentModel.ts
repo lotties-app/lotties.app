@@ -51,6 +51,7 @@ export type AppointmentTerms = Pick<
   | 'outcome'
   | 'status'
   | 'reminderOffsetsMinutes'
+  | 'providerId'
 >;
 
 export function appointmentTermsOf(a: Appointment): AppointmentTerms {
@@ -65,6 +66,7 @@ export function appointmentTermsOf(a: Appointment): AppointmentTerms {
     outcome: a.outcome,
     status: a.status,
     reminderOffsetsMinutes: a.reminderOffsetsMinutes,
+    providerId: a.providerId ?? null,
   };
 }
 

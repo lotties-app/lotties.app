@@ -21,6 +21,8 @@ import {
   DEFAULT_REMINDERS,
   REMINDER_OFFSETS,
 } from './appointmentModel';
+import { appointmentFieldsFrom } from '../providers/providerModel';
+import { ProviderPicker } from '../providers/ProviderPicker';
 import { TYPE_ICON } from './appointmentText';
 import { FieldContext } from '../ui/form/fieldContext';
 import { dayKeyOf, instantOf, timeOfDayOf, type DayKey } from './calendarModel';
@@ -50,6 +52,7 @@ interface FormState {
   notes: string;
   outcome: string;
   reminders: ReminderOffset[];
+  providerId: string | null;
 }
 
 type FormError = 'title' | 'when' | 'notStarted' | 'failed';
@@ -82,6 +85,7 @@ function initialState(
       notes: '',
       outcome: '',
       reminders: [...DEFAULT_REMINDERS],
+      providerId: null,
     };
   }
   return {
@@ -95,6 +99,7 @@ function initialState(
     notes: appointment.notes ?? '',
     outcome: appointment.outcome ?? '',
     reminders: [...appointment.reminderOffsetsMinutes],
+    providerId: appointment.providerId ?? null,
   };
 }
 
@@ -143,6 +148,7 @@ export function AppointmentSheet({
       outcome: showOutcome ? form.outcome : (appointment?.outcome ?? null),
       status: appointment?.status ?? 'upcoming',
       reminderOffsetsMinutes: form.reminders,
+      providerId: form.providerId,
     };
     try {
       const saved = appointment
@@ -243,6 +249,16 @@ export function AppointmentSheet({
             </Box>
           </FieldContext>
         </Field>
+        <ProviderPicker
+          babyId={babyId}
+          providerId={form.providerId}
+          onPick={(provider) =>
+            change({
+              providerId: provider?.id ?? null,
+              ...(provider ? appointmentFieldsFrom(provider) : {}),
+            })
+          }
+        />
         <Field label={t('appointments.sheet.location')} optional icon="map-pin">
           <TextInput
             value={form.location}

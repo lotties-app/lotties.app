@@ -37,6 +37,7 @@ describe('schema', () => {
         'appointments',
         'babies',
         'bodyWeights',
+        'careProviders',
         'catalogProducts',
         'eventTypes',
         'events',

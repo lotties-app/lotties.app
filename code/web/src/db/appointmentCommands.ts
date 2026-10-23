@@ -79,6 +79,7 @@ function normalized(terms: AppointmentTerms, now: number): AppointmentTerms {
     outcome: optional(terms.outcome, APPOINTMENT_LIMITS.outcome),
     status: terms.status,
     reminderOffsetsMinutes: normalizeReminders(terms.reminderOffsetsMinutes),
+    providerId: terms.providerId || null,
   };
 }
 

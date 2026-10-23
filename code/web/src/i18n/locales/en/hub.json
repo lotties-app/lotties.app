@@ -35,6 +35,11 @@
         "hint": "Visits and reminders",
         "keywords": "visits doctor calendar pediatrician checkup"
       },
+      "providers": {
+        "title": "Doctors and clinics",
+        "hint": "Phones, addresses and registrations",
+        "keywords": "doctor pediatrician specialist clinic hospital phone address crm contacts"
+      },
       "vaccines": {
         "title": "Vaccines",
         "hint": "Schedule and card",

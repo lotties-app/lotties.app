@@ -35,6 +35,11 @@
         "hint": "Visitas e lembretes",
         "keywords": "visitas médico calendário pediatra retorno agenda"
       },
+      "providers": {
+        "title": "Médicos e clínicas",
+        "hint": "Telefones, endereços e registros",
+        "keywords": "médico pediatra especialista clínica hospital telefone endereço crm contatos"
+      },
       "vaccines": {
         "title": "Vacinas",
         "hint": "Calendário e carteirinha",

@@ -50,6 +50,9 @@ describe('who sees which entry', () => {
   it('keeps the appointments from the Doctor and the proposals for her only', () => {
     expect(isEntryVisible('appointments', ctx('Doctor'))).toBe(false);
     expect(isEntryVisible('appointments', ctx('Viewer'))).toBe(true);
+    expect(isEntryVisible('providers', ctx('Doctor'))).toBe(false);
+    expect(isEntryVisible('providers', ctx('Viewer'))).toBe(true);
+    expect(isEntryVisible('providers', ctx('Owner'))).toBe(true);
     expect(isEntryVisible('myProposals', ctx('Doctor'))).toBe(true);
     expect(isEntryVisible('myProposals', ctx('Owner'))).toBe(false);
   });
