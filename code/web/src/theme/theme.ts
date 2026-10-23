@@ -201,11 +201,10 @@ export function buildTheme(localization?: Localization) {
       components: {
         MuiCssBaseline: {
           styleOverrides: {
-            // Mobile (docs/design/30-mobile-overflow-audit.md): no page bounce or scroll chaining
-            // past the ends, no text inflation on rotation. Pinch zoom always stays (WCAG 1.4.4).
+            // Mobile (docs/design/30-mobile-overflow-audit.md): no text inflation on rotation; the page keeps
+            // the browser's pull-to-refresh (only sheets stop scroll chaining, below). Pinch zoom always stays (WCAG 1.4.4).
             html: {
               scrollPaddingBottom: BOTTOM_NAV_SCROLL_PADDING,
-              overscrollBehaviorY: 'none',
               WebkitTextSizeAdjust: '100%',
               textSizeAdjust: '100%',
             },
