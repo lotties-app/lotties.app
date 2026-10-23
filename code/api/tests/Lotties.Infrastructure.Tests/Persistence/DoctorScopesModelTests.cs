@@ -68,7 +68,7 @@ public sealed class DoctorScopesModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_DoctorScopes'", StringComparison.Ordinal)..];
+        var section = script[script.IndexOf("_DoctorScopes'", StringComparison.Ordinal)..script.IndexOf("_AccountDeletion'", StringComparison.Ordinal)];
 
         Assert.Contains("ALTER TABLE invites ADD doctor_scopes character varying(128);", section, StringComparison.Ordinal);
         Assert.Contains("ALTER TABLE baby_members ADD doctor_scopes character varying(128);", section, StringComparison.Ordinal);
