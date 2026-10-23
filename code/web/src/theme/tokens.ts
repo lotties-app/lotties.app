@@ -77,6 +77,10 @@ export interface SchemeTokens {
   navShadow: string;
   /** Modal backdrop. */
   scrim: string;
+  /** Scrollbar thumb at rest: the muted ink, translucent, so it floats on any surface. */
+  scrollThumb: string;
+  /** Scrollbar thumb hovered or dragged: the accent, warmer and a little stronger. */
+  scrollThumbHover: string;
   /** Paper grain opacity (0 = off). */
   grainOpacity: number;
   /** `theme-color` meta / manifest colour. */
@@ -85,7 +89,27 @@ export interface SchemeTokens {
 
 const NIGHT_PAIR: CategoryColors = { bg: '#231910', fg: '#c98f52' };
 
-export const LIGHT: SchemeTokens = {
+/** `#rrggbb` of an existing token at `alpha` opacity, so derived tokens add no new colour. */
+export function withAlpha(hex: string, alpha: number): string {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
+type BaseTokens = Omit<SchemeTokens, 'scrollThumb' | 'scrollThumbHover'>;
+
+/**
+ * The scrollbar tokens of a scheme, derived from its own muted ink (at rest) and accent (hovered):
+ * docs/DESIGN.md "Scrollbars".
+ */
+function withScrollbar(tokens: BaseTokens, rest: number, hover: number): SchemeTokens {
+  return {
+    ...tokens,
+    scrollThumb: withAlpha(tokens.textMuted, rest),
+    scrollThumbHover: withAlpha(tokens.accent, hover),
+  };
+}
+
+const LIGHT_BASE: BaseTokens = {
   background: '#f5efe4',
   surface: '#fffcf6',
   surfaceRaised: '#eee6d6',
@@ -133,8 +157,9 @@ export const LIGHT: SchemeTokens = {
   grainOpacity: 0.07,
   themeColor: '#f5efe4',
 };
+export const LIGHT: SchemeTokens = withScrollbar(LIGHT_BASE, 0.32, 0.55);
 
-export const DARK: SchemeTokens = {
+const DARK_BASE: BaseTokens = {
   background: '#1b1814',
   surface: '#24201b',
   surfaceRaised: '#2e2a23',
@@ -179,13 +204,14 @@ export const DARK: SchemeTokens = {
   grainOpacity: 0.05,
   themeColor: '#1b1814',
 };
+export const DARK: SchemeTokens = withScrollbar(DARK_BASE, 0.34, 0.6);
 
 /**
  * Night feed ("Lamplight"): near-black, one warm tone, blue channel at most 0x78, text about 45%
  * of the dark scheme's brightness, every category in the same pair (meaning moves to icon shape
  * and label), no shadows, no grain, no motion.
  */
-export const NIGHT: SchemeTokens = {
+const NIGHT_BASE: BaseTokens = {
   background: '#0d0906',
   surface: '#150f0a',
   surfaceRaised: '#1d150d',
@@ -230,6 +256,7 @@ export const NIGHT: SchemeTokens = {
   grainOpacity: 0,
   themeColor: '#0d0906',
 };
+export const NIGHT: SchemeTokens = withScrollbar(NIGHT_BASE, 0.3, 0.45);
 
 export const SCHEMES: Record<SchemeName, SchemeTokens> = {
   light: LIGHT,

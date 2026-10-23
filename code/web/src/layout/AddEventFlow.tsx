@@ -48,6 +48,8 @@ export function AddEventFlow({ baby, types, events, open, onClose }: Props) {
         <MoreSheet
           open
           onClose={onClose}
+          babyId={baby.id}
+          userId={baby.userId}
           types={[...types]}
           events={[...events]}
           actions={actions}

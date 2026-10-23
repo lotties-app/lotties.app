@@ -37,6 +37,8 @@ declare module '@mui/material/styles' {
     navShadow: string;
     scrim: string;
     grainOpacity: number;
+    scrollThumb: string;
+    scrollThumbHover: string;
   }
   interface PaletteOptions {
     surfaceRaised?: string;
@@ -54,6 +56,8 @@ declare module '@mui/material/styles' {
     navShadow?: string;
     scrim?: string;
     grainOpacity?: number;
+    scrollThumb?: string;
+    scrollThumbHover?: string;
   }
   interface TypographyVariants {
     /** Hero value: serif 48/400 with tabular lining figures. */
@@ -117,8 +121,60 @@ function paletteFor(mode: 'light' | 'dark', t: SchemeTokens) {
     navShadow: t.navShadow,
     scrim: t.scrim,
     grainOpacity: t.grainOpacity,
+    scrollThumb: t.scrollThumb,
+    scrollThumbHover: t.scrollThumbHover,
   };
 }
+
+/** Scrollbar gutter and visible thumb width, in px. */
+const SCROLLBAR_SIZE = 12;
+const SCROLLBAR_THUMB = 8;
+/** Gap between the bar and the ends of its scroll area. */
+const SCROLLBAR_INSET = 4;
+
+/**
+ * Themed scrollbars (docs/DESIGN.md "Scrollbars"): a slim pill thumb in the scheme's muted ink on a
+ * transparent track, inset so it floats like the cards, warming to the accent on hover. Only with
+ * a fine pointer: touch screens keep their own overlay bars. WebKit and Blink draw the pill from
+ * `::-webkit-scrollbar` (the standard properties would switch it off there), the others get the
+ * standard `scrollbar-width` / `scrollbar-color` with the same tokens. Sheets and dialogs keep the
+ * bar clear of their rounded corners. The colours are the scheme's CSS variables (`theme.vars`), so
+ * light, dark and night switch with the scheme.
+ */
+export const SCROLLBAR_VARS = {
+  thumb: 'var(--mui-palette-scrollThumb)',
+  hover: 'var(--mui-palette-scrollThumbHover)',
+} as const;
+
+function scrollbarStyles({ thumb, hover }: typeof SCROLLBAR_VARS) {
+  return {
+    '@media (pointer: fine)': {
+      '@supports not selector(::-webkit-scrollbar)': {
+        '*': { scrollbarWidth: 'thin', scrollbarColor: `${thumb} transparent` },
+      },
+      '*::-webkit-scrollbar': { width: SCROLLBAR_SIZE, height: SCROLLBAR_SIZE },
+      '*::-webkit-scrollbar-track, *::-webkit-scrollbar-corner': { background: 'transparent' },
+      '*::-webkit-scrollbar-track': { marginBlock: SCROLLBAR_INSET },
+      '*::-webkit-scrollbar-thumb': {
+        backgroundColor: thumb,
+        borderRadius: RADIUS.pill,
+        // The transparent border insets the 8 px pill inside the 12 px gutter.
+        border: `${(SCROLLBAR_SIZE - SCROLLBAR_THUMB) / 2}px solid transparent`,
+        backgroundClip: 'padding-box',
+        minHeight: 40,
+      },
+      '*::-webkit-scrollbar-thumb:hover, *::-webkit-scrollbar-thumb:active': {
+        backgroundColor: hover,
+      },
+      '*::-webkit-scrollbar-button': { display: 'none', width: 0, height: 0 },
+      '.MuiDrawer-paper::-webkit-scrollbar-track, .MuiDialog-paper::-webkit-scrollbar-track': {
+        marginBlock: RADIUS.sheetTop,
+      },
+    },
+  };
+}
+
+export const SCROLLBAR_STYLES = scrollbarStyles(SCROLLBAR_VARS);
 
 /** Palette entries (CSS variables when available, plain values otherwise). */
 function colors(theme: Theme) {
@@ -201,6 +257,7 @@ export function buildTheme(localization?: Localization) {
       components: {
         MuiCssBaseline: {
           styleOverrides: {
+            ...SCROLLBAR_STYLES,
             // Mobile (docs/design/30-mobile-overflow-audit.md): no text inflation on rotation; the page keeps
             // the browser's pull-to-refresh (only sheets stop scroll chaining, below). Pinch zoom always stays (WCAG 1.4.4).
             html: {
