@@ -356,7 +356,6 @@ public sealed class NotificationValueObjectTests
     [Fact]
     public void NotificationCodes_RoundTripEveryValue()
     {
-        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder", "doctor_suggestion", "vaccine_due"]);
         AssertRoundTrip<NotificationUrgency>(["normal", "high"]);
         AssertRoundTrip<NotificationSkipReason>(["stale", "quiet_hours", "unavailable", "limit", "snoozed", "dismissed", "spacing", "daily_cap"]);
         AssertRoundTrip<DeliveryStatus>(["pending", "sent", "failed", "expired", "gone", "cancelled"]);
@@ -364,6 +363,21 @@ public sealed class NotificationValueObjectTests
         AssertRoundTrip<NotificationActionKind>(["snoozed", "dismissed"]);
         Assert.False(NotificationCodes.TryParse<NotificationKind>("DoseDue", out _));
         Assert.False(NotificationCodes.TryParse<NotificationKind>(null, out _));
+    }
+
+    [Fact]
+    public void NotificationKindCodes_KeepTheDeployedCodesAndRoundTripEveryKind()
+    {
+        // Codes already stored (deliveries, preferences, push payloads): they never change. A new kind is appended to the
+        // enum and to NotificationCodes and needs no edit here: the rules below cover it.
+        string[] deployed = ["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder", "doctor_suggestion", "vaccine_due"];
+        var kinds = Enum.GetValues<NotificationKind>();
+        var codes = kinds.Select(NotificationCodes.Of).ToArray();
+
+        Assert.Equal(deployed, codes.Take(deployed.Length));
+        Assert.All(codes, code => Assert.Matches("^[a-z][a-z0-9_]*$", code));
+        Assert.Equal(codes.Length, codes.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(kinds, codes.Select(code => NotificationCodes.TryParse<NotificationKind>(code, out var kind) ? kind : throw new Xunit.Sdk.XunitException($"{code} did not parse")));
     }
 
     private static void AssertRoundTrip<TEnum>(string[] codes)
