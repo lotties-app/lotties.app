@@ -102,7 +102,8 @@ same version cannot both win.
 | `comment` | varchar(4000) | only for `commented` |
 
 One event per write request: `status_changed` when the status changed, else `decided` when a decision summary was set,
-else `updated`. Rows are never edited, except the actor fields by account deletion (section 8).
+else `updated`. The exception is `board_set_status` with a note (section 9.2): `status_changed` and `commented` in the
+same save, one version bump. Rows are never edited, except the actor fields by account deletion (section 8).
 
 ### `board_api_keys`
 
@@ -155,18 +156,27 @@ drops a field). `PATCH` accepts the same fields except `id` and `externalKey`, p
 `item`: `{id, type, topic, title, body, status, side, priority, labels[], dueDate, links[{label, url}], pinned,
 decision: {summary, rationale, decidedAt}|null, source, externalKey, createdBy: {kind, name, keyId?}, createdAt,
 updatedAt, closedAt, deletedAt, version}`. `itemSummary` is `item` without `body`, with `excerpt` (the body's first 200
-characters). User ids are never returned.
+characters). User ids are never returned. `decision` is an object only for a `decision` item that has a summary, a
+rationale or a decision time; otherwise (any other type, or an open decision with none of them) it is `null`, never `{}`,
+and it is written as `null` over MCP too, where other null members are left out (2026-10-24 fix: open decisions came back
+as `decision: {}`).
 
 History event: `{id, at, kind, actor: {kind, name, keyId?}, changes: [{field, from, to}], comment}`.
 
 ### 3.2 List filters, sort, pagination
 
-`topic`, `type`, `status`, `side`, `priority` (each repeatable or comma-separated: any of), `label` (repeatable: any
-of), `pinned` (bool), `open` (bool: status not `done`/`dropped`), `q` (case-insensitive substring of title or body),
-`updatedSince` (instant, `updated_at >=`), `includeDeleted` (admin only, else 403 `board_admin_required`), `sort`
+`topic`, `type`, `status`, `side`, `priority`, `label` (each one value, repeated, or comma-separated, mixed freely:
+`status=open`, `status=open&status=blocked`, `status=open,blocked`; blanks around commas are ignored; any of), `pinned`
+(bool), `open` (bool: status not `done`/`dropped`), `q` (case-insensitive substring of title or body), `updatedSince`
+(instant, `updated_at >=`), `dueAfter` / `dueBefore` (`yyyy-MM-dd`, **inclusive**: due on or after / on or before;
+items without a due date never match), `hasDue` (bool: with / without a due date), `includeDeleted` (admin only, else
+403 `board_admin_required`), `sort`
 (`updated` newest first, the default; `created` newest first; `priority` urgent first then due date then newest;
 `due` earliest due first, items without a due date last; `decided` newest decision first), `limit` (1-200, default 50),
-`cursor`.
+`cursor`. An unknown code is 400 `validation_failed` with `field` the filter and a `detail` that names the value and
+the allowed codes (`status has an unknown value 'sleeping'. Allowed: open, in_progress, blocked, waiting, done, dropped
+(one value, a list, or a comma-separated list).`); a malformed date is 400 `validation_failed` naming `dueAfter` or
+`dueBefore`.
 
 `cursor` is opaque (base64url, bound to the sort; another sort is 400 `invalid_cursor`). It is an offset today: with a
 board of hundreds of items a moved item can appear twice or be skipped across pages; tools that sync use
@@ -176,13 +186,29 @@ board grows.
 
 ### 3.3 Summary
 
-`{generatedAt, totals: {open, waitingOnOwner, waitingOnAssistant, blocked, overdue}, counts: [{topic, side, status,
-count}], waitingOnOwner: [itemSummary], waitingOnAssistant: [itemSummary], recentDecisions: [itemSummary],
-recentlyUpdated: [itemSummary]}`. Deleted items never count. "Open" = status not `done`/`dropped`; waiting on the owner
-= open with side `owner` or `both`; on the assistant = open with side `assistant` or `both`; ordered by priority
-(urgent first), due date (earliest first, none last), then newest update. `overdue` = open with a due date before
-today (UTC). `top` (1-50, default 10) bounds each list. Recent decisions are `decision` items by `decidedAt` (newest
-first, undecided ones excluded).
+`{generatedAt, totals: {open, waitingOnOwner, waitingOnAssistant, blocked, overdue, actionableOwner,
+actionableAssistant, dueSoon}, counts: [{topic, side, status, count}], waitingOnOwner: [itemSummary],
+waitingOnAssistant: [itemSummary], recentDecisions: [itemSummary], recentlyUpdated: [itemSummary], blocked:
+[itemSummary], dueSoon: [itemSummary], overdue: [itemSummary]}` (the last three totals and lists added 2026-10-24;
+nothing was removed or renamed). Deleted items never count. Definitions (dates are UTC):
+
+- **Open** = status not `done` and not `dropped` (blocked and waiting included). `totals.open` counts these.
+- **Actionable for a side** = status `open`, `in_progress` or `waiting`, and side that party or `both`. Never
+  `blocked` (it waits on something else: it has its own list), never `done`/`dropped`. `waiting` counts because the
+  side says who is waited on: an item waiting with side `owner` is waiting on the owner. An item with side `both` is in
+  both lists; `external` is in neither.
+- **Lists** `waitingOnOwner` / `waitingOnAssistant` = the actionable items of that side (until 2026-10-24 they held every
+  open item, blocked ones included); `totals.actionableOwner` / `totals.actionableAssistant` count them.
+- **Totals** `waitingOnOwner` / `waitingOnAssistant` keep their first meaning for existing callers: open with side
+  `owner`/`both` (`assistant`/`both`), blocked included; so `waitingOnOwner >= actionableOwner`.
+- **Blocked** = status `blocked` (`totals.blocked` and the `blocked` list).
+- **Overdue** = open with a due date before today (`totals.overdue` and the `overdue` list).
+- **Due soon** = open with a due date from today through today + 7 days, inclusive (`totals.dueSoon`, the `dueSoon`
+  list); overdue items are not in it. The same window as `GET /board/items?open=true&dueAfter=<today>&dueBefore=<today+7>`.
+
+Order: the actionable and blocked lists by priority (urgent first), due date (earliest first, none last), then newest
+update; `dueSoon` and `overdue` by due date (earliest first), then newest update. `top` (1-50, default 10) bounds each
+list. Recent decisions are `decision` items by `decidedAt` (newest first, undecided ones excluded).
 
 ### 3.4 Bulk import
 
@@ -267,7 +293,8 @@ deletes: deletion is soft for everyone.
 
 ## 5. Audit and history
 
-Every write adds one `board_item_events` row in the same `SaveChanges` as the item, with the actor (user or key, and
+Every write adds one `board_item_events` row (two for `board_set_status` with a note) in the same `SaveChanges` as the
+item, with the actor (user or key, and
 the display name at that time) and the field changes. The history is returned with `GET /board/items/{id}` and in the
 export. API key creation and revocation are visible in the key list (`createdAt`, `createdBy`, `revokedAt`).
 
@@ -339,20 +366,37 @@ from `BoardCodes`, lengths from the domain); the adapter checks only the JSON sh
 
 | Tool | Permission | Hints | Args | Result (`structuredContent`) |
 | --- | --- | --- | --- | --- |
-| `board_summary` | read | read-only | `top?` (1-20, default 5) | section 3.3 |
+| `board_summary` | read | read-only | `top?` (1-20, default 5) | section 3.3 (its description states the definitions) |
 | `board_list_topics` | read | read-only | `includeArchived?` | `{topics}` |
-| `board_list_items` | read | read-only | `topic?`, `type?`, `status?[]`, `side?`, `priority?`, `label?`, `pinned?`, `open?`, `q?`, `updatedSince?`, `sort?`, `limit?` (1-50, default 20), `cursor?` | `{items: [itemSummary], nextCursor?}` |
+| `board_list_items` | read | read-only | filters `topic?`, `type?`, `status?`, `side?`, `priority?`, `label?` (below), `pinned?`, `open?`, `q?`, `updatedSince?`, `dueBefore?`, `dueAfter?` (YYYY-MM-DD, inclusive), `hasDue?`, `sort?`, `limit?` (1-50, default 20), `cursor?` | `{items: [itemSummary], nextCursor?}` |
 | `board_get_item` | read | read-only | `id` | `{item, history (the newest 50, oldest first), historyTotal}` |
-| `board_search` | read | read-only | `q` (1-200), `type?`, `topic?`, `limit?` (1-50, default 10) | `{items}` |
-| `board_recent_changes` | read | read-only | `since`, `limit?` (1-50, default 20), `cursor?` | `{since, items, nextCursor?}` (instead of an export tool) |
+| `board_search` | read | read-only | `q` (1-200), the filters (below), `limit?` (1-50, default 10) | `{items}` |
+| `board_recent_changes` | read | read-only | `since`, the filters (below), `limit?` (1-50, default 20), `cursor?` | `{since, items, nextCursor?}` (instead of an export tool) |
 | `board_create_item` | write | not idempotent (with `externalKey` a retry returns the stored item) | `type`, `topic`, `title`, `side`, `body?`, `priority?`, `status?`, `labels?`, `dueDate?`, `links?`, `source?`, `pinned?`, `externalKey?` | `{item, created}` |
 | `board_update_item` | write | idempotent | `id`, `version` (required), any of `type`, `topic`, `title`, `status`, `side`, `priority`, `pinned`, and (null clears) `body`, `labels`, `dueDate`, `links`, `source`, `decisionSummary`, `rationale` | `{item}` |
-| `board_set_status` | write | not idempotent | `id`, `status`, `note?` (added as a comment) | `{item, comment?}` |
+| `board_set_status` | write | not idempotent | `id`, `status`, `note?` (added as a comment) | `{item, comment?}`; one write (below) |
 | `board_add_comment` | write | not idempotent | `id`, `text` | `{itemId, comment}` (the history entry) |
 | `board_record_decision` | write | not idempotent | `topic`, `title`, `decisionSummary`, `rationale`, `source?`, `relatedItemId?` | `{item, relatedItemId?}`: a `decision` item, status `done`, decided now; with `relatedItemId` its body names that item and a comment on that item points back |
 | `board_delete_item` | write | destructive, idempotent | `id` | `{id, deleted: true}` (soft delete; admins restore in the app) |
 
-Results are the REST JSON (null members left out) as `structuredContent`, plus a short sentence and the same JSON as text.
+**Filters** (`topic`, `type`, `status`, `side`, `priority`, `label` on `board_list_items`, `board_search`,
+`board_recent_changes`): each takes one value (`"open"`), an array (`["open", "blocked"]`) or a comma-separated string
+(`"open,blocked"`); an item matches any of them. Schema: `oneOf [string, array of string]` with a description and
+`examples` (`"open"`, `["open", "in_progress"]`, `"open,in_progress"`); for codes the string form has a `pattern` built
+from the codes and the array form an `enum`. The adapter checks only that shape (until 2026-10-24 `status` had to be an
+array and the others a single string: `status: "open"` failed with "status must be an array of strings"; arrays still
+work as before). The service checks the values: an unknown code is `validation_failed` with `field` the filter and a
+message naming the value and the allowed codes.
+
+**Atomic writes**: `board_set_status` with `note` saves the status change and the comment together (one `SaveChanges`:
+both or neither; the version rises once; history `status_changed` then `commented`, the comment one microsecond later so
+the time order keeps it second; a note alone on an unchanged status is one `commented` entry). `board_record_decision`
+with `relatedItemId` saves the decision item and the comment on the related item together. A note or a related item
+that is invalid is refused before anything changes; a failure while saving leaves nothing behind (tested with a
+repository that fails when a comment is saved).
+
+Results are the REST JSON (null members left out, except `decision`, which is `null` when there is none) as
+`structuredContent`, plus a short sentence and the same JSON as text.
 Errors are tool errors (`isError: true`) with `{code, message, field?, reason?, currentVersion?}`: `validation_failed`
 (`field` is the tool's argument; an unknown or archived topic is `field: topic`), `not_found`, `version_conflict`
 (`currentVersion`), `forbidden` (`reason` `board_topic_not_allowed` for a key outside its topics), `conflict`
@@ -360,8 +404,7 @@ Errors are tool errors (`isError: true`) with `{code, message, field?, reason?, 
 domain's own code, when there is one, is in `reason`.
 
 Not offered on purpose: restore, topic management, key management, bulk import (the REST `POST /board/items/bulk` stays
-the seeding path), export (too large). `board_set_status` with a note writes twice (the status, then the comment): a
-failure between the two leaves the status changed.
+the seeding path), export (too large).
 
 ## 10. Web page (built 2026-10-24)
 
@@ -395,17 +438,21 @@ Code in `code/web/src/board/` (docs/agents/filemap.md lists every file).
 - **Frame**: its own frame outside `AppShell` (no baby header, no dock, no event quick add: nothing of a baby is near
   it), "Back to Hub", the h1, content up to 1200 px wide. Lazy chunk `board/BoardPage`.
 - **Top to bottom**: admins' "API keys and topics" button; the **summary strip** (`GET /board/summary` totals: Waiting
-  on you = side owner or both, Waiting on the assistant = assistant or both, Blocked, Overdue; each a toggle button
-  that applies its filter, pressed while applied, pressed again clears); the **search** (`q`, 300 ms debounce, in the
+  on you = side owner or both, Waiting on the assistant = assistant or both, Blocked, Due soon (`totals.dueSoon`: open,
+  due today through the next 7 days; it replaced Overdue on 2026-10-24); each a toggle button that applies its filter
+  (Due soon: `due=soon`, sent as `dueAfter=<today UTC>&dueBefore=<today + 7>` sorted by due date), pressed while
+  applied, pressed again clears; only Blocked uses the error tone); the **search** (`q`, 300 ms debounce, in the
   URL); **quick add** (writers): one line, Enter, in the view's type (task, gap in Gaps, decision in Decisions, note
   in Notes) and side (owner in Mine, assistant in Claude, else the single filtered side or both), into the topic
   chosen beside it (the filtered topic, else the last used, else the first open one), client id (idempotent);
-  "More fields" opens the full form; the **views** segmented control (Topics, Mine, Claude, Decisions, Gaps, Notes
+  "More fields" opens the full form; its placeholder and caption are one sentence per type in each language (article
+  and gender included, the type and side in lower case: "Adds a task for both.", "Adiciona uma tarefa para ambos.";
+  keys `board.quickAdd.placeholders.<type>`, `hints.<type>` with `{{side}}` from `forSide.<side>`); the **views** segmented control (Topics, Mine, Claude, Decisions, Gaps, Notes
   and memories); the **filter row** (Filters button with the count, Hide done and dropped on by default (Topics,
   Mine, Claude, Gaps), Show deleted for admins, Clear filters; the collapsible panel: type (when the view lists
   several), status, side (not in Mine/Claude), priority, topic, labels, order).
-- **URL**: `view`, `q`, `type`, `status`, `side`, `priority`, `label`, `topic` (comma lists), `closed=show`,
-  `deleted=1`, `sort`, `panel=keys|topics`; unknown values are ignored. View queries: Topics `open&sort=updated`;
+- **URL**: `view`, `q`, `type`, `status`, `side`, `priority`, `label`, `topic` (comma lists), `due=soon`,
+  `closed=show`, `deleted=1`, `sort`, `panel=keys|topics`; unknown values are ignored. View queries: Topics `open&sort=updated`;
   Mine `side=owner`, Claude `side=assistant`, both `sort=priority`; Decisions `type=decision&sort=decided` (done
   included); Gaps `type=gap&sort=priority`; Notes `type=note,memory&sort=updated` (done included).
 - **Lists**: pages of 50 with "Load more" (cursor); a stale request is aborted when its list is no longer shown;
@@ -448,9 +495,10 @@ Code in `code/web/src/board/` (docs/agents/filemap.md lists every file).
 - Route `/hub/board` instead of `/board`, inside the Hub's family of routes but outside `AppShell` (the 480 px column
   of the shell cannot hold list and drawer side by side, and the shell's baby header and event quick add must not be
   near the board).
-- "Due soon" is shown as **Overdue** (`totals.overdue`): the summary has no due-soon count and the list API has no
-  due-date filter, so the Overdue shortcut sorts open items by due date (earliest first) instead of filtering.
-  Missing API piece: a `dueBefore` list filter and a due-soon total.
+- Resolved 2026-10-24: "Due soon" was first shown as **Overdue** with a sort only (no due filter, no due-soon total).
+  The API now has `dueAfter`/`dueBefore`/`hasDue` and `totals.dueSoon`, so the strip shows Due soon and filters. Overdue
+  items are no longer a strip shortcut (they show in the error tone in the lists; `totals.overdue` and the `overdue`
+  list stay in the summary).
 - Undo of a delete needs `POST /restore`, which is admin only: writers confirm before deleting instead. Missing API
   piece (optional): restore by the deleting writer within a short grace window.
 - Gaps view lists `type=gap` only (the brief); risks stay in Topics with a type filter.
