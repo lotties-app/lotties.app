@@ -106,3 +106,27 @@ Answers are in `docs/design/20-store-readiness.md` section 3 (Apple App Privacy,
 2. Raise `PRIVACY_POLICY_VERSION` and set `PRIVACY_POLICY_LAST_UPDATED` in `code/web/src/legal/privacyPolicy.ts`.
 3. Update `docs/design/33-privacy-audit.md` and, for a new data flow or company, `code/web/src/legal/dataFlows.ts`.
 4. Check the store forms (section 6) still match.
+
+## 8. Community insights (planned, not built)
+
+The policy has a section "Community insights (optional, not active yet)" / "Comparações com outros bebês (opcional,
+ainda não ativo)" that describes a future opt-in use of babies' records in pooled statistics (milk per feed, growth,
+tummy time, routines, unusual patterns, crying). It is off and nothing is collected for it; the text says so and the
+tests keep it that way. Design and the full list of decisions: `docs/design/34-community-insights.md` (section 13);
+audit: `docs/design/33-privacy-audit.md` section 11.
+
+- [ ] **Lawyer review of the section** (both languages): that describing a planned feature in the policy is
+  acceptable (or better kept out until it exists), the consent wording of the future screen (design section 3.5), and
+  the honest limit of anonymisation (art. 12: "very hard to trace back to one baby, but no method makes that
+  impossible in every case").
+- [ ] **RIPD before activation** (relatório de impacto à proteção de dados pessoais; outline in design section 8):
+  sensitive data of children, consent basis (art. 11, I and art. 14, §1), risk of re-identification in small groups.
+- [ ] **Who consents**: per baby, an Owner or a Parent who confirms being the parent or legal guardian (recommended);
+  whether one yes is enough or every Owner/Parent must agree; whether the others are notified.
+- [ ] **k and noise**: the minimum group size (proposal: 20 babies from 20 families; the policy already says "at least
+  20") and whether differential privacy is applied (proposal: yes, as defence in depth, weekly releases at
+  epsilon 0.2 per statistic, about 10 per statistic per year, or monthly at 0.5; chosen after the evaluation). If no noise is used, the "random noise" sentence must go before activation.
+- [ ] **Retention of consent records** after withdrawal or erasure (proposal: 5 years, baby id hashed after erasure).
+- [ ] **Statistics open to every user or only to families that opted in** (proposal: every signed-in user).
+- [ ] Before activation: the in-app notice of policy changes (gap G6) must exist, since the policy promises to tell
+  families in the app before the feature starts.

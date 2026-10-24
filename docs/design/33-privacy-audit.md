@@ -72,7 +72,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | GitHub | nothing from the app; a person who opens the repository or writes an issue is under GitHub's terms (issues are public) | user action | United States | |
 | Let's Encrypt, Cloudflare (DNS) | certificate issuance (no user data); DNS | infrastructure | | Cloudflare proxying `OWNER TO CONFIRM` |
 | AI assistants through an MCP server | nothing | **not built** (docs/design/32-assistants.md section 8 is the plan) | | no |
-| Bottle amount aggregate (phase 2) | nothing | **not built** (docs/design/10-bottle-suggestions.md) | | no |
+| Community insights: opt-in pooled statistics (includes the bottle amount aggregate of docs/design/10 phase 2) | nothing | **not built** (section 11, docs/design/34-community-insights.md) | none planned (own servers) | no |
 
 Analytics, telemetry, ads, crash SDKs, third-party fonts and CDNs: **none**. Evidence: no such dependency in
 `code/web/package.json`, `code/mobile/package.json` or the API projects (the landing test
@@ -191,3 +191,40 @@ does not check that the person who creates a baby is its parent or guardian, and
 `dataFlows.ts`) and this audit. `code/web/src/legal/dataFlows.test.ts` fails when a curated credit
 (`code/web/src/credits/curated.json`) has no privacy classification, when a classified recipient has no row in the
 policy's sharing table, or when the two languages' tables differ.
+
+## 11. Planned flow: community insights (not built, 2026-10-23)
+
+Status: **planned, not built, off everywhere.** No code collects, reads or publishes anything for it: there is no
+consent table, no aggregation job, no statistics endpoint, no flag (checked: no code in `code/api` or `code/web`
+combines records of different babies; the other `community`/`pooled` hits are the medicine catalog's
+user-added products, row 16, and database connection pooling). The policy describes it in its own section
+"Community insights (optional, not active yet)" / "Comparações com outros bebês (opcional, ainda não ativo)"
+(`#privacy-community-insights`), so that families know before it exists; it is **not** a row of "What we collect"
+(nothing is collected) but a separate `planned` table (caption "Planned, not collected today"). `dataFlows.ts`
+`PLANNED_FLOWS` pins it (status `planned`, trigger `optIn`, off by default, consent by Owner or Parent only, no
+recipients, minimum group size 20), and `dataFlows.test.ts` fails if the section loses its "not active yet" / "off
+for everyone" wording while the flow is planned, if its planned table rows differ from the flow, or if it appears as
+a data category.
+
+What the text promises for the future, all to be true before activation (design: docs/design/34-community-insights.md):
+
+| Promise in the policy | Design that delivers it (34) |
+| --- | --- |
+| a separate opt-in screen, never bundled; per baby; Owner or a Parent who confirms being parent or guardian; Caregiver, Viewer, Doctor cannot | section 3.1, 3.5 |
+| a record of who, which baby, when, which text version | section 3.2 (`community_consents`) |
+| legal basis art. 11, I and art. 14, §1 | section 8 |
+| inputs: age in weeks, amounts, durations, counts, growth measurements, crying outcome and part of day; never names, birth dates, exact times, notes, photos, locations, providers, medicines, vaccines, symptoms, temperatures | section 4 |
+| aggregates only, no copy of records, own servers, no recipient | section 5 (no staging table, in-memory) |
+| at least 20 babies of different families per statistic; small groups left out | section 5 (k, dominance, suppression) |
+| per-family weight limit, capped extremes | section 5 (per-baby cap, clipping, per-baby summaries) |
+| fixed statistics, no queries; optional noise (differential privacy) | sections 5, 6 (static file, no query endpoint; O2) |
+| no sale, ads, profiling or decisions | section 1 non-goals |
+| open code, published list of statistics | sections 4 (catalog), 7 |
+| anonymity strong but not absolute; RIPD before activation | section 8 (art. 12 analysis, RIPD outline) |
+| results only as in-app comparisons; doctors' access unchanged | sections 3.4, 6 |
+| withdrawal: next calculation excludes the baby; computed aggregates cannot be separated and are replaced; records never shared | section 3.3 |
+| section updated, version raised and an in-app notice before activation | section 12; needs gap G6 (no in-app notice exists yet) |
+
+Activation is a policy change of its own (docs/design/34 task T9): the section is rewritten from "not active yet" to
+the final text, the flow gets status `active` and a data category row, `PRIVACY_POLICY_VERSION` is raised, this
+section and docs/design/20 section 3 are updated, and the tests are changed on purpose.

@@ -211,6 +211,83 @@ describe('the public /privacy route', () => {
   });
 });
 
+/** The subsections of the planned section, in order (their anchors are `privacy-community-insights-<id>`). */
+const SUBSECTION_IDS = [
+  'purposes',
+  'consent',
+  'data',
+  'safeguards',
+  'results',
+  'withdraw',
+  'activation',
+];
+
+describe.each([
+  {
+    locale: 'en',
+    title: 'Community insights (optional, not active yet)',
+    status: /^Not active yet\. .*it is off for everyone/,
+    caption: 'Planned, not collected today: what each estimate would use',
+    subsections: [
+      'What it would be for',
+      'Only if you say yes',
+      'What it would use, and what it would never use',
+      'The safeguards it would have',
+      'Who would see the results',
+      'Turning it off, and your rights',
+      'Before it is switched on',
+    ],
+  },
+  {
+    locale: 'pt-BR',
+    title: 'Comparações com outros bebês (opcional, ainda não ativo)',
+    status: /^Ainda não está ativo\. .*está desligado para todos/,
+    caption: 'Planejado, não coletado hoje: o que cada estimativa usaria',
+    subsections: [
+      'Para que serviriam',
+      'Só se você disser sim',
+      'O que usariam, e o que nunca usariam',
+      'As proteções que teriam',
+      'Quem veria os resultados',
+      'Desativar, e os seus direitos',
+      'Antes de serem ativadas',
+    ],
+  },
+] as const)(
+  'the planned community insights section ($locale)',
+  ({ locale, title, status, caption, subsections }) => {
+    it('is in the contents, has its anchor, says it is not active and lists what it would use', async () => {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      renderPrivacy();
+      await screen.findByRole('heading', { level: 1 });
+      const anchor = sectionAnchor('community-insights');
+      const contents = await screen.findByRole('navigation', {
+        name: locale === 'en' ? 'On this page' : 'Nesta página',
+      });
+      await waitFor(() =>
+        expect(within(contents).getByRole('link', { name: title }).getAttribute('href')).toBe(
+          `#${anchor}`,
+        ),
+      );
+      const heading = screen.getByRole('heading', { level: 2, name: title });
+      expect(heading.id).toBe(anchor);
+      const section = screen.getByRole('region', { name: title });
+      // Right under the heading, before anything else: the status.
+      expect(within(section).getByText(status)).toBeTruthy();
+      expect(
+        within(section)
+          .getAllByRole('heading', { level: 3 })
+          .map((h) => [h.textContent, h.id]),
+      ).toEqual(subsections.map((name, index) => [name, `${anchor}-${SUBSECTION_IDS[index]}`]));
+      const table = within(section).getByRole('table', { name: caption });
+      expect(within(table).getAllByRole('rowheader')).toHaveLength(6);
+      expect(section.querySelector('[data-table="planned"]')).not.toBeNull();
+      // The status also reaches print: the section is inside the printed policy.
+      expect(section.closest('[data-privacy-policy]')).not.toBeNull();
+    });
+  },
+);
+
 describe.each([
   ['light', 'en'],
   ['dark', 'en'],
@@ -222,7 +299,7 @@ describe.each([
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
     const { container } = renderPrivacy();
     await screen.findByRole('heading', { level: 1 });
-    await waitFor(() => expect(screen.getAllByRole('table')).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByRole('table')).toHaveLength(3));
     expect(document.documentElement.hasAttribute(`data-${scheme}`)).toBe(true);
     const result = await axe.run(container, {
       runOnly: ['wcag2a', 'wcag2aa'],

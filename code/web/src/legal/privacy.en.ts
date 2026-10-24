@@ -485,6 +485,190 @@ export const privacyEn: PolicyDocument = {
       ],
     },
     {
+      // A planned feature, not built (dataFlows.ts PLANNED_FLOWS, docs/design/34-community-insights.md):
+      // keep the "not active yet" wording until the feature exists; the tests check it.
+      id: 'community-insights',
+      title: 'Community insights (optional, not active yet)',
+      blocks: [
+        {
+          kind: 'note',
+          text: "Not active yet. This feature does not exist in Lotties today: it is off for everyone, and nothing about your baby is used for it or shared with anyone. This section explains how it would work, so that you know before it exists. It would start for a baby only after the baby's Owner or a Parent turns it on.",
+        },
+        {
+          kind: 'p',
+          text: "Community insights would combine information from many babies whose families chose to take part, to give every family better estimates for their baby's age than general published tables can. It would be optional: the app works the same without it.",
+        },
+      ],
+      subsections: [
+        {
+          id: 'purposes',
+          title: 'What it would be for',
+          blocks: [
+            { kind: 'p', text: 'Group statistics, by age in weeks, for:' },
+            {
+              kind: 'list',
+              items: [
+                'How much milk to offer: typical bottle amounts per feed for babies the same age, to suggest better starting amounts.',
+                "Growth: how your baby's weight, length and head size compare with those of babies the same age, next to the official growth curves.",
+                'Tummy time: how much tummy time babies the same age usually get in a day.',
+                "Sleep and feeding routines: typical naps, night sleep, feeds and diapers at this age, as context for your baby's own patterns.",
+                "Unusual patterns: noticing when your baby's routine changes a lot from her own usual, measured against how much the routines of babies this age usually vary. It would never call a baby or a value normal or abnormal.",
+                'Crying: what the families of babies the same age most often found helped, to order the suggestions of "Why is she crying?".',
+                'Other estimates of the same kind, each added to the published list (see the safeguards below) before it is used.',
+              ],
+            },
+            {
+              kind: 'p',
+              text: 'Like everything in Lotties, these would be information, not medical advice (see [Lotties is not a medical device](#privacy-not-medical)).',
+            },
+          ],
+        },
+        {
+          id: 'consent',
+          title: 'Only if you say yes',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'It would stay off for every baby until someone turns it on, on a screen of its own that explains it in plain words. It would never be part of creating an account, accepting this policy or any other step, and the app would work the same if you say no.',
+                "The choice would be made for each baby, by the baby's Owner or a Parent who confirms being the child's parent or legal guardian. Caregivers, Viewers and doctors could not turn it on. Every Owner and Parent of the baby would see whether it is on, and any of them could turn it off.",
+                'We would keep a record of the choice: who said yes, for which baby, when and to which version of the text, to be able to show that the consent was given.',
+                "Legal basis: the specific consent of a parent or legal guardian for this purpose, separate from any other (LGPD art. 11, I, and art. 14, §1), always in the child's best interest.",
+              ],
+            },
+          ],
+        },
+        {
+          id: 'data',
+          title: 'What it would use, and what it would never use',
+          blocks: [
+            {
+              kind: 'table',
+              id: 'planned',
+              caption: 'Planned, not collected today: what each estimate would use',
+              columns: ['Estimate', 'What it would use', 'What you would see'],
+              rows: [
+                {
+                  id: 'milk',
+                  cells: [
+                    'How much milk to offer',
+                    'Age in weeks; the amount drunk in each bottle and whether it was formula or breast milk (never which formula); bottles per day.',
+                    'Typical amounts per feed for the age, as starting shortcuts for the bottle amount.',
+                  ],
+                },
+                {
+                  id: 'growth',
+                  cells: [
+                    'Growth',
+                    'Age in weeks at each measurement; weight, length and head size.',
+                    "Where your baby's measurements sit among those of babies the same age, next to the official curves.",
+                  ],
+                },
+                {
+                  id: 'tummyTime',
+                  cells: [
+                    'Tummy time',
+                    'Age in weeks; minutes of tummy time per day.',
+                    'How much tummy time babies this age usually get.',
+                  ],
+                },
+                {
+                  id: 'routine',
+                  cells: [
+                    'Sleep and feeding routines',
+                    'Age in weeks; per day, the number and length of naps and of night sleep, and the number of feeds and of diapers.',
+                    'Typical routines at this age.',
+                  ],
+                },
+                {
+                  id: 'patterns',
+                  cells: [
+                    'Unusual patterns',
+                    "The same daily counts and lengths, compared with the baby's own previous weeks.",
+                    'A gentle note when the routine changes a lot from her own usual; never a label.',
+                  ],
+                },
+                {
+                  id: 'crying',
+                  cells: [
+                    'Crying',
+                    'Age in weeks; how long each crying spell lasted and in which part of the day (morning, afternoon, evening or night); what the app suggested first and what you said helped.',
+                    'What most often helped babies this age.',
+                  ],
+                },
+              ],
+            },
+            {
+              kind: 'p',
+              text: "It would never use names (your baby's, yours or anyone else's), the date of birth (only the age in weeks), exact dates and times (only the part of the day), notes or any other text you write, photos (Lotties collects none), locations or addresses, your saved doctors and clinics, medicines, vaccines, symptoms or temperatures, or anything about a baby whose family did not turn it on.",
+            },
+          ],
+        },
+        {
+          id: 'safeguards',
+          title: 'The safeguards it would have',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                "Group numbers only: medians and ranges for each age band. No individual record will leave your family's account, and no copy of your records will be made for it.",
+                'A minimum group size: a statistic will be published only when it comes from at least 20 babies of different families. Smaller groups are left out, and the app keeps using the published tables for them.',
+                'A limit on the weight of each family: a family that logs a lot will count no more than any other, and extreme values will be capped, so that no single baby moves a number.',
+                'Fixed statistics, not searches: the results will be a fixed set of numbers, recalculated regularly, and not answers to questions anyone can ask, so that they cannot be combined to single out one baby. Where it helps, a small amount of random noise will be added (a method called differential privacy).',
+                'Calculated on our own servers (see [Who is responsible](#privacy-controller)). No other company will receive the data or the results.',
+                'No selling, no advertising, no profiling of families and no decisions about your child or your family.',
+                'Open: the code that calculates the statistics will be part of the open-source code, and the list of statistics, with what each one uses, will be published before it is used.',
+              ],
+            },
+            {
+              kind: 'p',
+              text: 'Group statistics like these are very hard to trace back to one baby, but no method makes that impossible in every case. That is why these safeguards exist and why small groups are left out. Before the feature is switched on, the safeguards will be assessed in a data protection impact report (relatório de impacto à proteção de dados pessoais, under the LGPD).',
+            },
+          ],
+        },
+        {
+          id: 'results',
+          title: 'Who would see the results',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'People using Lotties, only as comparisons inside the app, such as "babies this age usually..." next to your baby\'s own numbers. Nobody would see another family\'s records, and no other family would see yours.',
+                'The results would not be given or sold to anyone outside the app.',
+                'Doctors: what a doctor you invited can see stays the same (the sections you share, see [People you share a baby with](#privacy-sharing-people)). A doctor could not turn this on for your baby.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'withdraw',
+          title: 'Turning it off, and your rights',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                "The baby's Owner or any Parent could turn it off at any time, as easily as it was turned on. From then on the baby's records are no longer used: the next calculation leaves them out.",
+                "Statistics already calculated are group numbers with no link to any baby, so your baby's share cannot be picked out of them. They are replaced at the next calculation, which no longer includes your baby.",
+                "Your baby's records themselves would never be shared: they stay in your account, where you can still see, export and delete them.",
+                'Deleting a record, the baby or your account also takes it out of the next calculation.',
+                "You keep every right listed in [Your rights](#privacy-rights), including asking us whether your baby's data was used and asking us to delete it.",
+              ],
+            },
+          ],
+        },
+        {
+          id: 'activation',
+          title: 'Before it is switched on',
+          blocks: [
+            {
+              kind: 'p',
+              text: "Before community insights starts, we will update this section with the final details (including the minimum group size and the list of statistics), change this policy's version and date (see [Changes to this policy](#privacy-changes)) and tell you in the app. A change to this policy alone never turns it on: it starts for a baby only when the baby's Owner or a Parent says yes on its own screen.",
+            },
+          ],
+        },
+      ],
+    },
+    {
       id: 'changes',
       title: 'Changes to this policy',
       blocks: [

@@ -93,6 +93,12 @@ docs/design/19-native-push.md, not built).
 - Is all collected data required? Name and email: required to have an account. Health info: optional (the user decides
   what to record).
 
+**Community insights (planned, not built; docs/design/34-community-insights.md section 10).** The policy describes a
+future opt-in use of babies' records in pooled statistics as "not active yet". While it is off, **none of the answers
+above change**: do not declare it. Only when it is activated, add to both forms: "Community insights: optional, off
+by default, aggregated, computed on our own servers, not shared" (Apple: purpose App Functionality for Health &
+Fitness and Other Data; Google: still not shared, purpose App functionality, users can choose).
+
 ## 4. Privacy policy (published page)
 
 The draft that was here is replaced by the real page: **`https://lotties.app/privacy`** (route `/privacy`, public, no
