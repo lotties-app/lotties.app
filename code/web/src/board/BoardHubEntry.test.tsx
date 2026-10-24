@@ -95,6 +95,7 @@ describe('the Project board entry', () => {
       hasDoctorContent: false,
       native: false,
       installed: false,
+      cryMonitorSupported: false,
     };
     expect(isEntryVisible('board', base)).toBe(false);
     expect(isEntryVisible('board', { ...base, board: true })).toBe(true);
