@@ -3,15 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, Link, Typography } from '@mui/material';
 import { readBuildInfo } from '../config/buildInfo';
 import { displayVersion } from '../config/versionInfo';
-
-const visuallyHidden = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-} as const;
+import { visuallyHidden } from '../insights/charts/chartStyle';
 
 /**
  * The quiet version line at the bottom of a page (Settings, the Hub, the public footers): this
