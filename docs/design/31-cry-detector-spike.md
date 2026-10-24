@@ -493,7 +493,13 @@ Notes on CD3 and CD5 as built (docs/design/35-cry-engine.md section 8):
 
 - Section 8's proposal had "Not crying" soft-delete the spell; as built it keeps the entry and marks it, and every
   local reader of crying (patterns, outcomes, statistics) ignores it, so the false-alarm rate can still be counted
-  from events alone. The server's fussy pattern detector (predictions) does not ignore it yet: a small API change.
+  from events alone. The server does the same (2026-10-24): one Domain predicate,
+  `CryDetection.IsConfirmedNotCrying(payload)` (`cry_confirmed` is `false`; true, absent, not a boolean or an
+  unanswered automatic spell all count, like the web's `countsAsCrying`), read by the prediction history
+  (`ObservedEvent.ConfirmedNotCrying`), so `FussyPatterns.Detect` (the predictions `patterns` entry and the
+  `fussy_pattern` push) and `FussyPatterns.LastLoggedAt` (a spell that handles today's window) skip it. No other
+  server reader counts fussy spells or crying minutes (the clinical summary, doctor dashboard and assistants do not
+  read fussy; the raw timeline, events list and backup keep the record as is).
 - Sensitivity changes while listening move the threshold without restarting capture (no split spell).
 - Two monitors in one home: the second keeps the first one's running spell and ends it at its own cry end.
 

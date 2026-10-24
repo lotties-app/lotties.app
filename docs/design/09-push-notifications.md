@@ -85,7 +85,7 @@ The "hora da bruxa" heads-up: the baby has been awake nearly as long as her usua
 ### 2.7 `fussy_pattern` (2026-10-22; docs/design/11-patterns.md section 7)
 The evening fussiness pattern: the rules of section 2.5 over the baby's `fussy` pattern (`FussyPatterns.Detect`).
 - Opt-in per device and per user and baby ("Fussy time heads-up", off by default; column `baby_notification_preferences.fussy_pattern`, migration `FussyAndOvertiredPrefs`).
-- One per baby and local day at `window start - 30 min`, 30 min stale cutoff, while before the window's end, unless a fussy spell was logged from `window start - 45 min` on. Quiet hours always apply. Key `fussy:{babyId:N}:{local date yyyyMMdd}`; TTL until 15 minutes after the window ends; `Urgency: normal`.
+- One per baby and local day at `window start - 30 min`, 30 min stale cutoff, while before the window's end, unless a fussy spell was logged from `window start - 45 min` on. A cry monitor spell a parent marked "Not crying" (`cry_confirmed: false`, `CryDetection.IsConfirmedNotCrying`) neither builds the pattern nor handles the day. Quiet hours always apply. Key `fussy:{babyId:N}:{local date yyyyMMdd}`; TTL until 15 minutes after the window ends; `Urgency: normal`.
 - Payload codes only (`kind: "fussy_pattern"`, `at` = window start). Text "Fussy time is coming up / Fussiness often starts from around 17:30. A calm routine may help." Tapping opens Now (`/#notify=fussy&..`); device tag `fussy:{baby}`; closed once a fussy spell is logged from 45 min before the window.
 
 ### 2.8 `diaper_wet_headsup` and `diaper_dirty_headsup` (2026-10-22; docs/design/11-patterns.md section 8)

@@ -18,6 +18,20 @@ public sealed record CryDetection(bool AutoDetected, bool? Confirmed)
     /// <summary>A spell the monitor started that no parent marked as "Not crying".</summary>
     public bool IsOpenDetection => AutoDetected && Confirmed != false;
 
+    /// <summary>
+    /// Whether the spell counts as crying in patterns, pattern heads-ups and crying totals: every spell except one a
+    /// parent marked "Not crying" (<see cref="IsConfirmedNotCrying"/>), an unanswered automatic one included. Same rule
+    /// as the web's <c>countsAsCrying</c> (code/web/src/events/cryDetection.ts).
+    /// </summary>
+    public bool CountsAsCrying => Confirmed != false;
+
+    /// <summary>
+    /// Whether a fussy spell's payload carries the parent's "Not crying" answer (<c>cry_confirmed</c> is <c>false</c>,
+    /// docs/design/31-cry-detector-spike.md section 13, CD5). Such a spell stays a record (timeline, events list,
+    /// backup) but every server reader that counts crying leaves it out.
+    /// </summary>
+    public static bool IsConfirmedNotCrying(EventPayload payload) => !Read(payload).CountsAsCrying;
+
     public static CryDetection Read(EventPayload payload)
     {
         using var document = JsonDocument.Parse(payload.Value);

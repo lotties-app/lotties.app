@@ -98,13 +98,13 @@ public sealed class OvertiredAndFussyDispatchTests : IDisposable
         Assert.Equal(0, result.Planned);
     }
 
-    private async Task<Family> SeedFussyPatternAsync()
+    private async Task<Family> SeedFussyPatternAsync(string payload = """{"intensity":"moderate"}""")
     {
         var family = await SeedFamilyAsync(fussy: true);
         foreach (var daysAgo in Enumerable.Range(1, 6))
         {
             var start = SaoPaulo(18, 0).AddDays(-daysAgo);
-            await _host.SeedTimedEventAsync(family.BabyId, family.OwnerId, BuiltInEventTypes.FussyId, start, start.AddMinutes(40), """{"intensity":"moderate"}""");
+            await _host.SeedTimedEventAsync(family.BabyId, family.OwnerId, BuiltInEventTypes.FussyId, start, start.AddMinutes(40), payload);
         }
 
         return family;
@@ -138,5 +138,32 @@ public sealed class OvertiredAndFussyDispatchTests : IDisposable
 
         Assert.Equal(0, result.Planned);
         Assert.Empty(_host.Sender.Sent);
+    }
+
+    [Theory]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":false}""", 0)]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":true}""", 1)]
+    [InlineData("""{"auto_detected":true}""", 1)]
+    public async Task RunOnceAsync_PatternOfSpellsMarkedNotCrying_SendsNothing(string payload, int sent)
+    {
+        await SeedFussyPatternAsync(payload);
+
+        var result = await _host.RunAsync(SaoPaulo(17, 0));
+
+        Assert.Equal(sent, result.Sent);
+    }
+
+    [Theory]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":false}""", 1)]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":true}""", 0)]
+    [InlineData("""{"auto_detected":true}""", 0)]
+    public async Task RunOnceAsync_SpellMarkedNotCryingBeforeTheHeadsUp_DoesNotHandleTheWindow(string payload, int sent)
+    {
+        var family = await SeedFussyPatternAsync();
+        await _host.SeedTimedEventAsync(family.BabyId, family.OwnerId, BuiltInEventTypes.FussyId, SaoPaulo(16, 50), SaoPaulo(16, 52), payload);
+
+        var result = await _host.RunAsync(SaoPaulo(17, 0));
+
+        Assert.Equal(sent, result.Sent);
     }
 }

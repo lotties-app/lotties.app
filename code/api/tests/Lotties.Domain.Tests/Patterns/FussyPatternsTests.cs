@@ -59,6 +59,31 @@ public sealed class FussyPatternsTests
         Assert.Null(FussyPatterns.LastLoggedAt([], now));
     }
 
+    [Fact]
+    public void Detect_SpellsMarkedNotCrying_DoNotCount()
+    {
+        var now = At(20, 12);
+        var crying = new[] { 14, 15, 16 }.Select(day => Spell(Fussy, At(day, 18)));
+        var notCrying = new[] { 17, 18, 19 }.Select(day => Spell(Fussy, At(day, 18)) with { ConfirmedNotCrying = true });
+
+        Assert.Null(FussyPatterns.Detect(crying.Concat(notCrying).ToArray(), now, Clock));
+        Assert.NotNull(FussyPatterns.Detect(crying.Concat(notCrying.Select(item => item with { ConfirmedNotCrying = false })).ToArray(), now, Clock));
+    }
+
+    [Fact]
+    public void LastLoggedAt_SkipsASpellMarkedNotCrying()
+    {
+        var now = At(20, 18);
+        var events = new[]
+        {
+            Spell(Fussy, At(20, 9)),
+            Spell(Fussy, At(20, 17, 30)) with { ConfirmedNotCrying = true },
+        };
+
+        Assert.Equal(At(20, 9), FussyPatterns.LastLoggedAt(events, now));
+        Assert.Null(FussyPatterns.LastLoggedAt([events[1]], now));
+    }
+
     [Theory]
     [InlineData(-46, false)]
     [InlineData(-45, true)]
