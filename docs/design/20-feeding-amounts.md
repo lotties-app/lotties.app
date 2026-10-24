@@ -120,6 +120,75 @@ the "Last" texts and the predictions, because only the Wake-up preset logged the
   sync gives one marker. Known edge: a voice stop and an offline web stop of the same night before either syncs give
   two markers a few minutes apart (both legitimate wake-ups; one can be deleted).
 
+## 5. Drinking stretches of a timed bottle (2026-10-24)
+
+Owner request: each pause/resume should keep the level that was in the bottle and how much the baby drank until the
+next pause or the end, asked at the pause and at the stop, optional and one tap, so predictions learn her amounts
+and pace. Only timed bottles ("Time bottle feedings" on) have pauses; with it off nothing changes.
+
+- **Data.** Hidden built-in feeding field `segments` (text, visible when `method` = bottle; migration
+  `BottleSegments`, seed only). Text because the field kinds have no list or object: `start>left@seconds` per
+  stretch, joined by `;`, e.g. `120>70@300;70>0@240`. A stretch runs from the start or a resume to the next pause
+  or the stop; `start` is the level when it began (the prepared amount for the first), `left` the level when it
+  ended, each whole ml 0-2000 or `?` (unknown: the question was skipped), `seconds` its drinking time (0-86400,
+  pauses excluded). At most 20 stretches, 400 characters. Levels rather than drunk amounts are stored so a level
+  reported without a known start (no prepared amount) is never lost; what was drunk in a stretch is `start - left`
+  when both are known. Old bottles and bottles never paused have no `segments` and work as before.
+- **Totals stay single-sourced.** `amount_drunk_ml` (absent = all) is still what every total reads (Insights, the
+  formula comparison, the clinical summary, the assistants). The stretches only add detail.
+- **Rules** (Domain `BottleSegments.EnsureValid`, 400 `validation_failed` field `segments`, called by `EventService`
+  for the built-in feeding type; mirrored by `segmentsProblem` in `web/src/events/bottleSegments.ts`; both read the
+  shared vectors `web/src/events/bottleSegmentsVectors.json`): the grammar and bounds; a stretch never ends above its
+  start; a stretch starts where the previous one ended (both known and equal, or both unknown); no known level above
+  `amount_ml`; what the known levels say was drunk (`amount_ml` minus the last known level) is never above the
+  total; once the feeding ended, a known last level matches the total (`amount_ml - left = total`).
+- **Writing them** (`web/src/db/eventCommands.ts`, all local and synced as ordinary upserts):
+  - `pauseTimer` of a built-in bottle closes the open stretch with an unknown level: start = the previous level
+    (or the prepared amount floored), seconds = drinking so far minus the earlier stretches.
+  - Then "How much is left in the bottle?" (`events/bottleLevelPrompt.ts` store, `BottleLevelPromptHost` in the app
+    shell): a small bottom sheet, the pause already saved. Chips Full, 3/4, Half, 1/4, Empty of the prepared amount
+    (rounded to 5 ml, none above the level the stretch started at; a radio group of 44 px chips), an ml stepper with
+    Save, and Skip; Esc and tapping outside close it too. Without a prepared amount only the stepper shows. An
+    answer fills that stretch only (`recordBottleLevel` with the stretch count, so a late answer never lands on a
+    newer one).
+  - The stop (`stopEvent`, `finishEvent`, an edit that ends it) closes the last stretch with the level the totals
+    give (prepared minus drunk; no drunk amount = all = empty). Stopped while paused: the last stretch takes that
+    level instead of a 0 s stretch. Every save keeps the stretches agreeing with the amounts (`settleSegments`: the
+    last level follows the total, else becomes unknown, else the field is dropped), so editing the amounts later
+    never breaks a stop.
+  - "Finish this feeding" of a timed bottle adds a "Left in the bottle" chip row above the drunk amount; a chip
+    fills the drunk amount as prepared minus the level (none above where the open stretch started).
+- **Roles.** Who may pause may answer: the running-event exception now also lets `segments` change on someone
+  else's running bottle (API `RunningEventControl`, web `isRunningControlChange`), like the pause keys.
+- **A sleep that stops a bottle** (section 2) closes its last stretch with an unknown level and asks nothing at
+  that moment. On Now, under "Running now", a small calm row (`now/bottleFollowUp.ts`, `BottleFollowUpRow`):
+  "Lia fell asleep during the bottle. How much was left in it?" with the same chips and Skip. Shown for the latest
+  feed only, when it is a built-in bottle with `ended_by: "sleep"`, a prepared amount, no drunk amount and no
+  known last level, ended at most 12 hours ago, and only to who may change it. Answering fills the last stretch and
+  the drunk total; Skip stores the bottle's id (per baby, per account, cleared with the account's device state) and
+  it never comes back for that bottle; unknown stays unknown.
+- **Fell asleep while feeding** is derived, never written on the sleep: `fedToSleep(sleep, feedings)` = the
+  feeding with `ended_by: "sleep"` that ended at the sleep's start instant (`bottle` or `nursing`). The Day row and
+  the read-only detail of that sleep add a quiet "Fell asleep during a bottle" / "Fell asleep during nursing".
+- **Predictions** (pure `web/src/events/bottlePatterns.ts`, local log only, `null` without enough data):
+  - A bottle a sleep stopped with no amount given has an unknown amount (`hasUnknownFinish`): the totals still
+    count it as fully drunk (the old rule), but the bottle suggestions (typical amount, top-ups, frequent amounts)
+    and the patterns below now leave it out instead of counting it as fully drunk.
+  - Pace (`bottlePace`): median ml per minute of drinking (pauses excluded) of her timed bottles of the last 14 days
+    with a known amount (at least 3, 1-60 ml/min), plus her typical stretch (median ml between pauses, 3+ known).
+    A running bottle shows "A bottle usually takes about N min" with the same quiet flag and progress bar as a sleep
+    target (`BottleTimerTarget`, Running now card and timer sheet): prepared (else her usual amount) over her pace,
+    3-90 min, never a goal.
+  - Top-up (`topUpAdjustment`): when her latest finished feed is a bottle with a known drunk amount under 70% of her
+    usual amount at that part of the day (median of her known amounts, day 07-19 or night 19-07, else all, 3+), the
+    next feed is expected earlier by half of the missing share, at most 30% of her usual gap. Used where the client
+    computes "time to the next feed": the hunger ramp of "Why is she crying?" (its fact says "that feed was smaller
+    than usual"). The web has no other next-feed time (the server's feeding prediction is unchanged). No partial
+    feed, an unknown amount, a nursing or solid feed last, or a feed running: exactly the old behaviour.
+- **Other surfaces.** Voice and MCP log the total only (unchanged). The backup keeps the field like any payload
+  member (round trip tested). The Napper import writes none. Insights: no "finished vs interrupted" stat yet (it
+  would need a new row in the feeding card, a design change).
+
 ## Doubts and choices to review
 
 - Suggestions use the drunk history (as asked), so a baby that always leaves 40 ml gets chips around the drunk
