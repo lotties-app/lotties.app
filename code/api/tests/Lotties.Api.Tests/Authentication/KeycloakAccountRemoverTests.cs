@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Lotties.Api.Authentication;
+using Lotties.Application.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -23,9 +24,12 @@ public sealed class KeycloakAccountRemoverTests
     {
         var seen = new List<HttpRequestMessage>();
 
-        var removed = await Remover(new AuthOptions { Authority = Authority }, _ => Token(), seen).RemoveAsync(Authority, "sub-1");
+        var remover = Remover(new AuthOptions { Authority = Authority }, _ => Token(), seen);
 
-        Assert.False(removed);
+        var removed = await remover.RemoveAsync(Authority, "sub-1");
+
+        Assert.Equal(IdentityRemoval.NotConfigured, removed);
+        Assert.False(remover.CanRemove(Authority));
         Assert.Empty(seen);
     }
 
@@ -34,9 +38,12 @@ public sealed class KeycloakAccountRemoverTests
     {
         var seen = new List<HttpRequestMessage>();
 
-        var removed = await Remover(Configured(), _ => Token(), seen).RemoveAsync("https://other.example.test/realms/x", "sub-1");
+        var remover = Remover(Configured(), _ => Token(), seen);
 
-        Assert.False(removed);
+        var removed = await remover.RemoveAsync("https://other.example.test/realms/x", "sub-1");
+
+        Assert.Equal(IdentityRemoval.NotConfigured, removed);
+        Assert.False(remover.CanRemove("https://other.example.test/realms/x"));
         Assert.Empty(seen);
     }
 
@@ -52,7 +59,8 @@ public sealed class KeycloakAccountRemoverTests
 
         var removed = await remover.RemoveAsync(Authority + "/", "sub 1");
 
-        Assert.True(removed);
+        Assert.Equal(IdentityRemoval.Removed, removed);
+        Assert.True(remover.CanRemove(Authority + "/"));
         Assert.Equal(
             [
                 (HttpMethod.Post, $"{Authority}/protocol/openid-connect/token", (string?)null),
@@ -66,7 +74,29 @@ public sealed class KeycloakAccountRemoverTests
     {
         var removed = await Remover(Configured(), request => request.Method == HttpMethod.Post ? Token() : new HttpResponseMessage(HttpStatusCode.Forbidden)).RemoveAsync(Authority, "sub-1");
 
-        Assert.False(removed);
+        Assert.Equal(IdentityRemoval.Failed, removed);
+    }
+
+    [Fact]
+    public async Task Remove_KeycloakDown_ReturnsFailedWithoutThrowing()
+    {
+        var removed = await Remover(Configured(), _ => throw new HttpRequestException("connection refused")).RemoveAsync(Authority, "sub-1");
+
+        Assert.Equal(IdentityRemoval.Failed, removed);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, "{}")]
+    [InlineData(HttpStatusCode.OK, "{}")]
+    [InlineData(HttpStatusCode.OK, "not json")]
+    public async Task Remove_NoUsableToken_ReturnsFailedWithoutDeleting(HttpStatusCode status, string body)
+    {
+        var seen = new List<HttpRequestMessage>();
+
+        var removed = await Remover(Configured(), _ => new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") }, seen).RemoveAsync(Authority, "sub-1");
+
+        Assert.Equal(IdentityRemoval.Failed, removed);
+        Assert.DoesNotContain(seen, request => request.Method == HttpMethod.Delete);
     }
 
     [Fact]
@@ -74,7 +104,7 @@ public sealed class KeycloakAccountRemoverTests
     {
         var removed = await Remover(Configured(), request => request.Method == HttpMethod.Post ? Token() : new HttpResponseMessage(HttpStatusCode.NotFound)).RemoveAsync(Authority, "sub-1");
 
-        Assert.True(removed);
+        Assert.Equal(IdentityRemoval.Removed, removed);
     }
 
     private sealed class Stub(Func<HttpRequestMessage, HttpResponseMessage> respond, List<HttpRequestMessage>? seen) : HttpMessageHandler
