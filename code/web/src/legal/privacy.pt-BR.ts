@@ -489,6 +489,190 @@ export const privacyPtBR: PolicyDocument = {
       ],
     },
     {
+      // Um recurso planejado, não construído (dataFlows.ts PLANNED_FLOWS, docs/design/34-community-insights.md):
+      // mantenha o texto "ainda não está ativo" até o recurso existir; os testes conferem.
+      id: 'community-insights',
+      title: 'Comparações com outros bebês (opcional, ainda não ativo)',
+      blocks: [
+        {
+          kind: 'note',
+          text: 'Ainda não está ativo. Este recurso não existe hoje no Lotties: está desligado para todos, e nada sobre o seu bebê é usado para ele ou compartilhado com alguém. Esta seção explica como ele funcionaria, para que você saiba antes de ele existir. Ele só começaria para um bebê depois que o Titular ou um Responsável desse bebê o ativasse.',
+        },
+        {
+          kind: 'p',
+          text: 'As comparações com outros bebês juntariam informações de muitos bebês cujas famílias escolheram participar, para dar a todas as famílias estimativas melhores para a idade do bebê do que as tabelas gerais publicadas conseguem. Seriam opcionais: o app funciona do mesmo jeito sem elas.',
+        },
+      ],
+      subsections: [
+        {
+          id: 'purposes',
+          title: 'Para que serviriam',
+          blocks: [
+            { kind: 'p', text: 'Estatísticas de grupo, por idade em semanas, para:' },
+            {
+              kind: 'list',
+              items: [
+                'Quanto leite oferecer: as quantidades típicas por mamadeira de bebês da mesma idade, para sugerir quantidades iniciais melhores.',
+                'Crescimento: como o peso, o comprimento e o perímetro cefálico do seu bebê se comparam com os de bebês da mesma idade, ao lado das curvas oficiais de crescimento.',
+                'Tempo de bruços: quanto tempo de bruços por dia bebês da mesma idade costumam ter.',
+                'Rotinas de sono e de alimentação: sonecas, sono noturno, mamadas e fraldas típicos nessa idade, como contexto para os padrões do próprio bebê.',
+                'Padrões fora do comum: perceber quando a rotina do bebê muda muito em relação ao que é habitual para ele, comparando com o quanto as rotinas de bebês dessa idade costumam variar. Nunca chamariam um bebê ou um valor de normal ou anormal.',
+                'Choro: o que as famílias de bebês da mesma idade mais acharam que ajudou, para ordenar as sugestões de "Por que ela está chorando?".',
+                'Outras estimativas do mesmo tipo, cada uma incluída na lista publicada (veja as proteções abaixo) antes de ser usada.',
+              ],
+            },
+            {
+              kind: 'p',
+              text: 'Como tudo no Lotties, seriam informação, não orientação médica (veja [O Lotties não é um dispositivo médico](#privacy-not-medical)).',
+            },
+          ],
+        },
+        {
+          id: 'consent',
+          title: 'Só se você disser sim',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'Ficariam desligadas para todos os bebês até que alguém as ativasse, em uma tela própria que explica o recurso em palavras simples. Nunca fariam parte da criação da conta, do aceite desta política nem de nenhuma outra etapa, e o app funcionaria do mesmo jeito se você dissesse não.',
+                'A escolha seria feita para cada bebê, pelo Titular ou por um Responsável do bebê que confirme ser o pai, a mãe ou o responsável legal da criança. Cuidadores, Visualizadores e médicos não poderiam ativá-las. Todos os Titulares e Responsáveis do bebê veriam se elas estão ativas, e qualquer um deles poderia desativá-las.',
+                'Guardaríamos um registro da escolha: quem disse sim, para qual bebê, quando e para qual versão do texto, para poder demonstrar que o consentimento foi dado.',
+                'Base legal: o consentimento específico do pai, da mãe ou do responsável legal para essa finalidade, separado de qualquer outro (LGPD, art. 11, I, e art. 14, § 1º), sempre no melhor interesse da criança.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'data',
+          title: 'O que usariam, e o que nunca usariam',
+          blocks: [
+            {
+              kind: 'table',
+              id: 'planned',
+              caption: 'Planejado, não coletado hoje: o que cada estimativa usaria',
+              columns: ['Estimativa', 'O que usaria', 'O que você veria'],
+              rows: [
+                {
+                  id: 'milk',
+                  cells: [
+                    'Quanto leite oferecer',
+                    'Idade em semanas; a quantidade tomada em cada mamadeira e se era fórmula ou leite materno (nunca qual fórmula); mamadeiras por dia.',
+                    'Quantidades típicas por mamada para a idade, como atalhos iniciais da quantidade da mamadeira.',
+                  ],
+                },
+                {
+                  id: 'growth',
+                  cells: [
+                    'Crescimento',
+                    'Idade em semanas em cada medição; peso, comprimento e perímetro cefálico.',
+                    'Onde as medidas do seu bebê ficam entre as de bebês da mesma idade, ao lado das curvas oficiais.',
+                  ],
+                },
+                {
+                  id: 'tummyTime',
+                  cells: [
+                    'Tempo de bruços',
+                    'Idade em semanas; minutos de bruços por dia.',
+                    'Quanto tempo de bruços bebês dessa idade costumam ter.',
+                  ],
+                },
+                {
+                  id: 'routine',
+                  cells: [
+                    'Rotinas de sono e de alimentação',
+                    'Idade em semanas; por dia, a quantidade e a duração das sonecas e do sono noturno, e a quantidade de mamadas e de fraldas.',
+                    'Rotinas típicas nessa idade.',
+                  ],
+                },
+                {
+                  id: 'patterns',
+                  cells: [
+                    'Padrões fora do comum',
+                    'As mesmas contagens e durações diárias, comparadas com as semanas anteriores do próprio bebê.',
+                    'Um aviso discreto quando a rotina muda muito em relação ao habitual dele; nunca um rótulo.',
+                  ],
+                },
+                {
+                  id: 'crying',
+                  cells: [
+                    'Choro',
+                    'Idade em semanas; quanto durou cada choro e em que parte do dia (manhã, tarde, noite ou madrugada); o que o app sugeriu primeiro e o que você disse que ajudou.',
+                    'O que mais ajudou bebês dessa idade.',
+                  ],
+                },
+              ],
+            },
+            {
+              kind: 'p',
+              text: 'Nunca usariam nomes (do bebê, o seu ou de qualquer outra pessoa), a data de nascimento (só a idade em semanas), datas e horários exatos (só a parte do dia), anotações ou qualquer outro texto que você escreve, fotos (o Lotties não coleta nenhuma), localizações ou endereços, os médicos e clínicas que você salvou, remédios, vacinas, sintomas ou temperaturas, nem nada sobre um bebê cuja família não as ativou.',
+            },
+          ],
+        },
+        {
+          id: 'safeguards',
+          title: 'As proteções que teriam',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'Só números de grupo: medianas e faixas para cada faixa de idade. Nenhum registro individual sairá da conta da sua família, e nenhuma cópia dos seus registros será feita para isso.',
+                'Um tamanho mínimo de grupo: uma estatística só será publicada quando vier de pelo menos 20 bebês de famílias diferentes. Grupos menores ficam de fora, e para eles o app continua usando as tabelas publicadas.',
+                'Um limite para o peso de cada família: uma família que registra muito não contará mais do que qualquer outra, e valores extremos serão limitados, para que nenhum bebê sozinho mude um número.',
+                'Estatísticas fixas, não buscas: os resultados serão um conjunto fixo de números, recalculado periodicamente, e não respostas a perguntas que qualquer pessoa possa fazer, para que não possam ser combinados para identificar um bebê. Quando ajudar, um pouco de ruído aleatório será acrescentado (um método chamado privacidade diferencial).',
+                'Calculadas nos nossos próprios servidores (veja [Quem é o responsável](#privacy-controller)). Nenhuma outra empresa receberá os dados nem os resultados.',
+                'Sem venda, sem publicidade, sem criação de perfis de famílias e sem decisões sobre a sua criança ou a sua família.',
+                'Abertas: o código que calcula as estatísticas fará parte do código-fonte aberto, e a lista de estatísticas, com o que cada uma usa, será publicada antes de ser usada.',
+              ],
+            },
+            {
+              kind: 'p',
+              text: 'Estatísticas de grupo como essas são muito difíceis de ligar a um bebê, mas nenhum método torna isso impossível em todos os casos. Por isso existem essas proteções e os grupos pequenos ficam de fora. Antes de o recurso ser ativado, as proteções serão avaliadas em um relatório de impacto à proteção de dados pessoais (RIPD), previsto na LGPD.',
+            },
+          ],
+        },
+        {
+          id: 'results',
+          title: 'Quem veria os resultados',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'Quem usa o Lotties, apenas como comparações dentro do app, como "bebês dessa idade costumam..." ao lado dos números do seu bebê. Ninguém veria os registros de outra família, e nenhuma outra família veria os seus.',
+                'Os resultados não seriam entregues nem vendidos a ninguém fora do app.',
+                'Médicos: o que um médico que você convidou pode ver continua igual (as seções que você compartilha, veja [Pessoas com quem você compartilha um bebê](#privacy-sharing-people)). Um médico não poderia ativar as comparações para o seu bebê.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'withdraw',
+          title: 'Desativar, e os seus direitos',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'O Titular ou qualquer Responsável do bebê poderia desativá-las a qualquer momento, tão facilmente quanto foram ativadas. A partir daí, os registros do bebê deixam de ser usados: o próximo cálculo já os deixa de fora.',
+                'As estatísticas já calculadas são números de grupo sem ligação com nenhum bebê, então a parte do seu bebê não tem como ser separada delas. Elas são substituídas no próximo cálculo, que já não inclui o seu bebê.',
+                'Os registros do seu bebê em si nunca seriam compartilhados: continuam na sua conta, onde você ainda pode vê-los, exportá-los e apagá-los.',
+                'Apagar um registro, o bebê ou a sua conta também o tira do próximo cálculo.',
+                'Você mantém todos os direitos listados em [Seus direitos](#privacy-rights), inclusive perguntar se os dados do seu bebê foram usados e pedir que eles sejam apagados.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'activation',
+          title: 'Antes de serem ativadas',
+          blocks: [
+            {
+              kind: 'p',
+              text: 'Antes de as comparações com outros bebês começarem, atualizaremos esta seção com os detalhes finais (inclusive o tamanho mínimo de grupo e a lista de estatísticas), mudaremos a versão e a data desta política (veja [Mudanças nesta política](#privacy-changes)) e avisaremos você no app. Uma mudança nesta política, sozinha, nunca as ativa: elas só começam para um bebê quando o Titular ou um Responsável desse bebê disser sim na tela própria.',
+            },
+          ],
+        },
+      ],
+    },
+    {
       id: 'changes',
       title: 'Mudanças nesta política',
       blocks: [

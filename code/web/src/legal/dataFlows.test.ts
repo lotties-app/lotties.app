@@ -1,7 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { CURATED_CREDITS } from '../credits/curatedCredits';
-import { CURATED_CREDIT_PRIVACY, THIRD_PARTIES, THIRD_PARTY_IDS } from './dataFlows';
+import type { Locale } from '../i18n/config';
+import {
+  CURATED_CREDIT_PRIVACY,
+  DATA_CATEGORY_IDS,
+  PLANNED_FLOWS,
+  THIRD_PARTIES,
+  THIRD_PARTY_IDS,
+} from './dataFlows';
 import { POLICY_DOCUMENTS } from './policyDocuments';
+
+/*
+ * The status wording of a planned flow (docs/design/34-community-insights.md). It must stay in the text
+ * while the feature is not built: activating the text without the feature fails here on purpose.
+ */
+const NOT_ACTIVE: Readonly<Record<Locale, RegExp>> = {
+  en: /not active yet/i,
+  'pt-BR': /ainda não (está )?ativo/i,
+};
+const OFF_FOR_EVERYONE: Readonly<Record<Locale, RegExp>> = {
+  en: /off for everyone/,
+  'pt-BR': /desligado para todos/,
+};
+const NOT_COLLECTED: Readonly<Record<Locale, RegExp>> = {
+  en: /not collected today/i,
+  'pt-BR': /não coletado hoje/i,
+};
 
 /*
  * The policy's list of companies that receive data against the credits (credits/curated.json): a
@@ -56,6 +80,70 @@ describe('the data flows behind the privacy policy', () => {
       expect(recipientRows(locale)).toEqual([...THIRD_PARTY_IDS]);
     },
   );
+
+  describe.each(PLANNED_FLOWS.map((flow) => [flow.id, flow] as const))(
+    'the planned flow %s',
+    (_, flow) => {
+      it('is planned, opt-in, off by default and has no recipient or data category', () => {
+        expect(flow.status).toBe('planned');
+        expect(flow.trigger).toBe('optIn');
+        expect(flow.defaultOn).toBe(false);
+        expect(flow.consentBy).toEqual(['Owner', 'Parent']);
+        expect(flow.recipients).toEqual([]);
+        // Nothing is collected for it: it must not be a row of "What we collect".
+        expect(DATA_CATEGORY_IDS as readonly string[]).not.toContain(flow.id);
+        expect(flow.minGroupSize).toBeGreaterThanOrEqual(20);
+      });
+
+      it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+        'has its own %s section that says it is not active and lists what it would use',
+        (locale) => {
+          const section = POLICY_DOCUMENTS[locale].sections.find(
+            (candidate) => candidate.id === flow.sectionId,
+          );
+          expect(section).toBeDefined();
+          // The status is in the title (the contents list shows it) and in the first block, a note.
+          expect(section?.title).toMatch(NOT_ACTIVE[locale]);
+          const first = section?.blocks[0];
+          expect(first?.kind).toBe('note');
+          const note = first?.kind === 'note' ? first.text : '';
+          expect(note).toMatch(NOT_ACTIVE[locale]);
+          expect(note).toMatch(OFF_FOR_EVERYONE[locale]);
+          const blocks = [
+            ...(section?.blocks ?? []),
+            ...(section?.subsections ?? []).flatMap((sub) => sub.blocks),
+          ];
+          const tables = blocks.filter((block) => block.kind === 'table');
+          expect(tables.map((table) => (table.kind === 'table' ? table.id : ''))).toEqual([
+            'planned',
+          ]);
+          const table = tables[0];
+          expect(table?.kind === 'table' ? table.rows.map((row) => row.id) : []).toEqual([
+            ...flow.rows,
+          ]);
+          expect(table?.kind === 'table' ? table.caption : '').toMatch(NOT_COLLECTED[locale]);
+          const text = JSON.stringify(section);
+          expect(text).toContain(`${flow.minGroupSize} `);
+          expect(text).toMatch(/art\. 11/);
+          expect(text).toMatch(/art\. 14/);
+        },
+      );
+    },
+  );
+
+  it('keep the planned table out of every other section', () => {
+    const plannedSections = new Set(PLANNED_FLOWS.map((flow) => flow.sectionId));
+    for (const document of Object.values(POLICY_DOCUMENTS)) {
+      for (const section of document.sections) {
+        if (plannedSections.has(section.id)) continue;
+        const blocks = [...section.blocks, ...(section.subsections ?? []).flatMap((s) => s.blocks)];
+        expect(
+          blocks.some((block) => block.kind === 'table' && block.id === 'planned'),
+          section.id,
+        ).toBe(false);
+      }
+    }
+  });
 
   it('name the countries question for every recipient abroad in the transfers section', () => {
     // Every recipient here may process data outside Brazil; the transfers section must exist and

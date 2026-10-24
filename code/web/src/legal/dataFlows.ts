@@ -1,4 +1,5 @@
 import type { CuratedId } from '../credits/curatedCredits';
+import type { PolicySectionId } from './policyTypes';
 
 /*
  * The data flows the privacy policy must describe, as facts the tests hold the text to
@@ -64,6 +65,58 @@ export const THIRD_PARTIES: readonly ThirdParty[] = [
   { id: 'appStores', trigger: 'install', abroad: true, creditIds: [] },
   // The source repository and the default contact channel (public issues, private reports).
   { id: 'github', trigger: 'userAction', abroad: true, creditIds: [] },
+];
+
+/*
+ * Planned data flows: described in the policy, NOT built (no code collects or uses anything for them).
+ * Each has its own policy section that must say it is not active and off by default (dataFlows.test.ts),
+ * and a `planned` table listing what it would use; none of it is a row of the "What we collect" table.
+ * Activating one is a policy change of its own: build it, then update the section, this entry (status
+ * `active`, its data categories and recipients), the audit and the policy version.
+ */
+
+/** The rows of the planned table of community insights (docs/design/34-community-insights.md), in order. */
+export const COMMUNITY_INSIGHT_IDS = [
+  'milk',
+  'growth',
+  'tummyTime',
+  'routine',
+  'patterns',
+  'crying',
+] as const;
+export type CommunityInsightId = (typeof COMMUNITY_INSIGHT_IDS)[number];
+
+export interface PlannedFlow {
+  id: 'communityInsights';
+  /** `planned`: not built, nothing collected; the policy states it in the section title and its first note. */
+  status: 'planned';
+  /** Only after a separate, specific opt-in (never bundled with sign-up or the policy), off by default. */
+  trigger: 'optIn';
+  defaultOn: false;
+  /** Who may give the consent, per baby (the other roles cannot). */
+  consentBy: readonly ('Owner' | 'Parent')[];
+  /** The policy section that describes it. */
+  sectionId: PolicySectionId;
+  /** The rows of its `planned` table. */
+  rows: readonly CommunityInsightId[];
+  /** Companies that would receive data: none (computed on our own servers). */
+  recipients: readonly ThirdPartyId[];
+  /** The smallest group of babies (from different families) a published statistic may come from. */
+  minGroupSize: number;
+}
+
+export const PLANNED_FLOWS: readonly PlannedFlow[] = [
+  {
+    id: 'communityInsights',
+    status: 'planned',
+    trigger: 'optIn',
+    defaultOn: false,
+    consentBy: ['Owner', 'Parent'],
+    sectionId: 'community-insights',
+    rows: COMMUNITY_INSIGHT_IDS,
+    recipients: [],
+    minGroupSize: 20,
+  },
 ];
 
 /** How a curated credit relates to personal data. */

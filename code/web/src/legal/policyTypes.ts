@@ -38,8 +38,11 @@ export interface TableRow {
 
 export interface Table {
   kind: 'table';
-  /** `data` (what we collect) or `recipients` (who receives data). */
-  id: 'data' | 'recipients';
+  /**
+   * `data` (what we collect), `recipients` (who receives data) or `planned` (what a feature that is not
+   * built would use: nothing in it is collected; dataFlows.ts `PLANNED_FLOWS`).
+   */
+  id: 'data' | 'recipients' | 'planned';
   caption: Inline;
   columns: readonly string[];
   rows: readonly TableRow[];
@@ -74,6 +77,7 @@ export const POLICY_SECTION_IDS = [
   'transfers',
   'device-storage',
   'not-medical',
+  'community-insights',
   'changes',
   'contact',
 ] as const;
