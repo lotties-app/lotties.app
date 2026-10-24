@@ -64,7 +64,7 @@ internal sealed class AlexaTestCertificates : IDisposable
         request.CertificateExtensions.Add(X509AuthorityKeyIdentifierExtension.CreateFromCertificate(Root, true, false));
         var serial = RandomNumberGenerator.GetBytes(12);
         using var issued = request.Create(Root, notBefore, notAfter, serial);
-        return new X509Certificate2(issued.RawData);
+        return X509CertificateLoader.LoadCertificate(issued.RawData);
     }
 }
 

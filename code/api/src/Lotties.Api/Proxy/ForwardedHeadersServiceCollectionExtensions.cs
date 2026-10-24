@@ -34,7 +34,7 @@ internal static class ForwardedHeadersServiceCollectionExtensions
         forwarded.ForwardLimit = 1;
         foreach (var network in settings.Networks())
         {
-            forwarded.KnownNetworks.Add(network);
+            forwarded.KnownIPNetworks.Add(network);
         }
     }
 }

@@ -30,6 +30,10 @@ public sealed record DatabaseOptions(string Host, int Port, string Name, string 
             : FromVariables(readVariable);
     }
 
+    /// <remarks>
+    /// GSS encryption stays off, as with Npgsql 8, which had none: Npgsql 10 tries it first by default, and in the API
+    /// image, which has no Kerberos library, that attempt writes "Cannot load library libgssapi_krb5.so.2" to stderr.
+    /// </remarks>
     public string ToConnectionString() => new NpgsqlConnectionStringBuilder
     {
         Host = Host,
@@ -37,6 +41,7 @@ public sealed record DatabaseOptions(string Host, int Port, string Name, string 
         Database = Name,
         Username = User,
         Password = Password,
+        GssEncryptionMode = GssEncryptionMode.Disable,
     }.ConnectionString;
 
     private bool PrintMembers(StringBuilder builder)

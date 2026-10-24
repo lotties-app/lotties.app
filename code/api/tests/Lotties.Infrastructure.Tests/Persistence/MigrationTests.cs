@@ -25,6 +25,16 @@ public sealed class MigrationTests
     }
 
     [Fact]
+    public void Migrations_HaveNoPendingModelChangesForTheRuntimeCheck()
+    {
+        using var context = ModelTestContext.Create();
+
+        // Since EF Core 9, Migrate() (DB_AUTO_MIGRATE) and dotnet ef database update throw (PendingModelChangesWarning)
+        // when this is true. Unlike the design-time tools it reads the snapshot as written, without upgrading an older one.
+        Assert.False(context.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
     public void Migrations_ContainInitialCreate()
     {
         using var context = ModelTestContext.Create();
@@ -135,8 +145,33 @@ public sealed class MigrationTests
 
     private static IModel Initialize(LottiesDbContext context, IModel model)
     {
-        var finalized = model is IMutableModel mutable ? mutable.FinalizeModel() : model;
+        var finalized = model is IMutableModel mutable ? WrittenBeforeEfCore10(mutable).FinalizeModel() : model;
         return context.GetService<IModelRuntimeInitializer>().Initialize(finalized);
+    }
+
+    /// <summary>
+    /// EF Core 10 reads a complex property written without <c>IsRequired()</c> as optional, and EF Core 8 and 9 never wrote
+    /// it (their complex properties were always required). EF's design-time tools make those required again when they
+    /// read a model of these versions (SnapshotModelProcessor); this does the same for the Designers generated before the
+    /// .NET 10 upgrade, which are never regenerated (the snapshot itself is in EF Core 10 form).
+    /// </summary>
+    private static IMutableModel WrittenBeforeEfCore10(IMutableModel model)
+    {
+        if (model.GetProductVersion() is { } version && (version.StartsWith("8.", StringComparison.Ordinal) || version.StartsWith("9.", StringComparison.Ordinal)))
+        {
+            MakeComplexPropertiesRequired(model.GetEntityTypes());
+        }
+
+        return model;
+    }
+
+    private static void MakeComplexPropertiesRequired(IEnumerable<IMutableTypeBase> types)
+    {
+        foreach (var complexProperty in types.SelectMany(type => type.GetComplexProperties()).ToArray())
+        {
+            complexProperty.IsNullable = false;
+            MakeComplexPropertiesRequired([complexProperty.ComplexType]);
+        }
     }
 
     [Fact]

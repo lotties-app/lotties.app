@@ -80,6 +80,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         services.RemoveAll<DbContextOptions<LottiesDbContext>>();
         services.RemoveAll<DbContextOptions>();
+        // Since EF Core 9 AddDbContext also registers its options callback (UseNpgsql) separately and every registered
+        // callback runs: without removing it, both providers would be configured.
+        services.RemoveAll<IDbContextOptionsConfiguration<LottiesDbContext>>();
         services.AddDbContext<LottiesDbContext>(options => options
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()
