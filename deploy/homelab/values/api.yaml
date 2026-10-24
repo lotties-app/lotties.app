@@ -25,6 +25,10 @@ env:
   ASPNETCORE_ENVIRONMENT: "Production"
   # Traefik reaches the pod from the pod network (10.42.0.0/16 on k3s), inside the API's default trusted ranges
   # (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), so X-Forwarded-For/-Proto from it are applied.
+  # Project board (docs/KEYCLOAK-BOARD.md): the REST API and its MCP endpoint, for people with a board role or an API key.
+  # Not secrets. Off by default in the app: remove these two lines to switch the board off again.
+  Board__Enabled: "true"
+  Board__Mcp__Enabled: "true"
 
 # The Secret lotties-secrets is made by deploy.sh from deploy/homelab/.env (or keeps what it already has).
 secretEnv:
