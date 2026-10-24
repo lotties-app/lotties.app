@@ -71,5 +71,10 @@
     "body": "Abra o Lotties para ver o calendário de vacinas.",
     "bodyNamed": "{{baby}}: {{vaccine}} pode estar na época, segundo o calendário.",
     "bodyBaby": "{{baby}}: pode haver uma vacina a tomar, segundo o calendário."
+  },
+  "cry_detected": {
+    "title": "Choro detectado",
+    "body": "O monitor ouviu choro às {{time}}. Abra o Lotties.",
+    "bodyNamed": "{{baby}}: o monitor ouviu choro às {{time}}. Abra o Lotties."
   }
 }

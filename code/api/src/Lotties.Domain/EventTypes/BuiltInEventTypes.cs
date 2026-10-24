@@ -184,7 +184,9 @@ public static class BuiltInEventTypes
     /// <summary>
     /// A fussy or crying spell (the evening "witching hour"): an optional timer like tummy time, with the optional
     /// intensity and what helped. A log of what happened, never a diagnosis. The hidden <c>suggested_cause</c> keeps
-    /// what "Why is she crying?" ranked first (to measure whether the ranking helps; never shown as a cause).
+    /// what "Why is she crying?" ranked first (to measure whether the ranking helps; never shown as a cause). The hidden
+    /// booleans of <see cref="CryDetection"/> mark a spell the cry monitor started (<c>auto_detected</c>) and the parent's
+    /// answer to it (<c>cry_confirmed</c>; absent until answered).
     /// </summary>
     public static EventType Fussy { get; } = EventType.CreateBuiltIn(
         FussyId,
@@ -197,6 +199,8 @@ public static class BuiltInEventTypes
             EventFieldDefinition.Create("intensity", "Intensity", EventFieldKind.Select, options: ["mild", "moderate", "intense"]),
             EventFieldDefinition.Create("what_helped", "What helped", EventFieldKind.Select, options: ["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing", "diaper_change", "burping", "holding"]),
             EventFieldDefinition.Create("suggested_cause", "First suggestion", EventFieldKind.Select, options: ["hunger", "sleepy", "diaper", "gas", "comfort"], isHidden: true),
+            EventFieldDefinition.Create(CryDetection.AutoDetectedMember, "Detected automatically", EventFieldKind.Bool, isHidden: true),
+            EventFieldDefinition.Create(CryDetection.ConfirmedMember, "Confirmed by parent", EventFieldKind.Bool, isHidden: true),
             .. PauseFieldDefinitions(),
         ]);
 

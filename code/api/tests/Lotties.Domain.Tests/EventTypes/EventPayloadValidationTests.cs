@@ -189,6 +189,11 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"suggested_cause":"hunger"}""")]
     [InlineData("""{"intensity":"mild","suggested_cause":"sleepy"}""")]
     [InlineData("""{"suggested_cause":"diaper"}""")]
+    [InlineData("""{"auto_detected":true}""")]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":true}""")]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":false,"intensity":"mild"}""")]
+    [InlineData("""{"auto_detected":false}""")]
+    [InlineData("""{"auto_detected":null,"cry_confirmed":null}""")]
     public void Fussy_OptionalIntensityAndWhatHelped_AreAcceptedRunningOrEnded(string json)
     {
         Ensure(BuiltInEventTypes.Fussy, json, Ended);
@@ -203,6 +208,10 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"suggested_cause":"teething"}""", "suggested_cause")]
     [InlineData("""{"suggested_cause":"Hunger"}""", "suggested_cause")]
     [InlineData("""{"suggested_cause":1}""", "suggested_cause")]
+    [InlineData("""{"auto_detected":"true"}""", "auto_detected")]
+    [InlineData("""{"auto_detected":1}""", "auto_detected")]
+    [InlineData("""{"cry_confirmed":"yes"}""", "cry_confirmed")]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":0}""", "cry_confirmed")]
     public void Fussy_UnknownIntensityOrWhatHelped_IsRejected(string json, string field)
     {
         Assert.Equal(field, Rejected(BuiltInEventTypes.Fussy, json).Field);

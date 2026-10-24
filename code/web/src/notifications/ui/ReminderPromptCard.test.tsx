@@ -97,6 +97,7 @@ describe('ReminderPromptCard', () => {
       appointmentReminders: true,
       doctorSuggestions: false,
       vaccineReminders: false,
+      cryDetected: false,
     });
   });
 

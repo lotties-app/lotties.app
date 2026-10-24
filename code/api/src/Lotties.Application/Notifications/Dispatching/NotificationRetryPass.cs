@@ -114,7 +114,7 @@ internal sealed class NotificationRetryPass(
     }
 
     private static NotificationUrgency UrgencyOf(NotificationKind kind) =>
-        kind == NotificationKind.DoseDue ? NotificationUrgency.High : NotificationUrgency.Normal;
+        kind is NotificationKind.DoseDue or NotificationKind.CryDetected ? NotificationUrgency.High : NotificationUrgency.Normal;
 
     private void LogBatch(int resent, int expired, int cancelled)
     {

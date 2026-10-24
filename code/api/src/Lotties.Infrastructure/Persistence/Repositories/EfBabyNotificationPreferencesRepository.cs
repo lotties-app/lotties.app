@@ -1,6 +1,7 @@
 using Lotties.Application.Notifications;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
+using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notes;
 using Lotties.Domain.Notifications;
 using Lotties.Domain.Proposals;
@@ -16,7 +17,8 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// upcoming appointment within the reminder horizon (a stored row with only appointment reminders on likewise). Who may
 /// receive is decided by the domain rule <see cref="NotificationRules.CanReceive"/> after loading, so a member demoted to
 /// Viewer is left out. Doctor suggestions (off by default) make a stored row a candidate while the baby has a pending
-/// proposal or a shared recommendation created in the last 24 hours.
+/// proposal or a shared recommendation created in the last 24 hours. Cry monitor alerts (off by default) make a stored row a
+/// candidate while the baby has a fussy spell, not deleted, started within the stale cutoff (the monitor marks are read later).
 /// </remarks>
 internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext context, UniqueViolations uniqueViolations) : IBabyNotificationPreferencesRepository
 {
@@ -53,6 +55,7 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
     {
         var horizon = now + NotificationRules.AppointmentReminderHorizon;
         var suggestionsSince = now - NotificationRules.DoctorSuggestionLifetime;
+        var crySince = now - NotificationRules.CryDetectedStaleCutoff;
         return from preferences in context.BabyNotificationPreferences.AsNoTracking()
             join member in context.BabyMembers.AsNoTracking()
                 on new { preferences.BabyId, preferences.UserId } equals new { member.BabyId, member.UserId }
@@ -73,7 +76,12 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
                                 && note.Kind == NoteKind.Recommendation
                                 && note.Visibility == NoteVisibility.Shared
                                 && note.DeletedAt == null
-                                && note.CreatedAt >= suggestionsSince))))
+                                && note.CreatedAt >= suggestionsSince)))
+                    || (preferences.CryDetected && context.Events.Any(item =>
+                        item.BabyId == preferences.BabyId
+                        && item.TypeId == BuiltInEventTypes.FussyId
+                        && item.DeletedAt == null
+                        && item.StartedAt >= crySince)))
                 && context.PushSubscriptions.Any(subscription =>
                     subscription.UserId == preferences.UserId
                     && subscription.RevokedAt == null

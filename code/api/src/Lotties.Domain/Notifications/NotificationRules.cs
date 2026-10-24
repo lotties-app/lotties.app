@@ -91,6 +91,21 @@ public static class NotificationRules
 
     public static readonly TimeSpan VaccineTimeToLive = TimeSpan.FromHours(48);
 
+    /// <summary>
+    /// A cry monitor alert whose spell started longer ago than this is never sent: an event that reaches the server (or a
+    /// tick) later than this, e.g. after the monitor was offline, stays silent.
+    /// </summary>
+    public static readonly TimeSpan CryDetectedStaleCutoff = TimeSpan.FromMinutes(10);
+
+    /// <summary>A cry monitor alert expires this long after the spell started.</summary>
+    public static readonly TimeSpan CryDetectedTimeToLive = TimeSpan.FromMinutes(20);
+
+    /// <summary>
+    /// How far back the planner looks for an earlier monitor spell that is still running or overlaps a new one (two
+    /// monitors, or a spell merged into another: one alert per episode).
+    /// </summary>
+    public static readonly TimeSpan CryDetectedOverlapLookBack = TimeSpan.FromHours(12);
+
     public static readonly TimeSpan SnoozeLength = TimeSpan.FromMinutes(30);
 
     public const int MaxSnoozes = 3;

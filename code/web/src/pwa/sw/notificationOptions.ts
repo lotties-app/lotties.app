@@ -42,7 +42,9 @@ export function keyInstant(at: number): string {
  * expected diaper of the kind replaces the earlier one); an appointment reminder uses
  * `appt:{appointment}` (its next reminder, "in 2 hours" after "tomorrow", replaces the earlier one);
  * a doctor suggestion uses `doctor:{proposal or note}` (one notification per suggestion, only Open);
- * a vaccine reminder uses `vaccine:{baby}:{dose}` (one per dose, only Open: nothing to snooze).
+ * a vaccine reminder uses `vaccine:{baby}:{dose}` (one per dose, only Open: nothing to snooze); a
+ * cry monitor alert uses `cry:{baby}` (a new spell replaces the earlier alert instead of stacking,
+ * and alerts again: `renotify`).
  */
 export function notificationTag(payload: PushPayload): string {
   switch (payload.kind) {
@@ -66,6 +68,8 @@ export function notificationTag(payload: PushPayload): string {
       return `doctor:${compactGuid((payload.proposalId ?? payload.noteId) as string)}`;
     case 'vaccine_due':
       return `vaccine:${compactGuid(payload.babyId)}:${payload.doseId}`;
+    case 'cry_detected':
+      return `cry:${compactGuid(payload.babyId)}`;
     case 'test':
       return `test:${compactGuid(payload.id)}`;
   }
@@ -90,7 +94,7 @@ export function buildNotification(
 
   const { payload } = parsed;
   options.tag = notificationTag(payload);
-  options.renotify = payload.snooze !== undefined;
+  options.renotify = payload.snooze !== undefined || payload.kind === 'cry_detected';
   options.timestamp = payload.at;
   options.data = toWirePayload(payload);
   if (payload.kind === 'dose_due' && payload.token !== undefined) {

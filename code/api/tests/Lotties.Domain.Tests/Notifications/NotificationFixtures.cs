@@ -41,11 +41,12 @@ internal static class NotificationFixtures
         bool appointmentReminders = true,
         NotificationTimeZone? zone = null,
         bool doctorSuggestions = false,
-        bool vaccineReminders = false) =>
+        bool vaccineReminders = false,
+        bool cryDetected = false) =>
         new(
             userId ?? MomId,
             role,
-            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty, appointmentReminders, doctorSuggestions, vaccineReminders),
+            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty, appointmentReminders, doctorSuggestions, vaccineReminders, cryDetected),
             quietHours ?? QuietHours.Default,
             quietIncludesMedicine,
             showNames,
@@ -73,7 +74,8 @@ internal static class NotificationFixtures
         IReadOnlyCollection<SentHeadsUp>? sentHeadsUps = null,
         IReadOnlyList<Appointment>? appointments = null,
         IReadOnlyList<DoctorSuggestion>? doctorSuggestions = null,
-        VaccinePlanState? vaccines = null) =>
+        VaccinePlanState? vaccines = null,
+        IReadOnlyList<DetectedCrySpell>? crySpells = null) =>
         NotificationPlanner.Plan(new NotificationPlanInput(
             now,
             Prescriptions.PrescriptionFixtures.BabyId,
@@ -89,7 +91,8 @@ internal static class NotificationFixtures
             SentHeadsUps: sentHeadsUps,
             Appointments: appointments,
             DoctorSuggestions: doctorSuggestions,
-            Vaccines: vaccines));
+            Vaccines: vaccines,
+            CrySpells: crySpells));
 
     /// <summary>A belly pain pattern whose usual window runs from <paramref name="start"/> for <paramref name="widthMinutes"/> (São Paulo local times).</summary>
     public static TimeOfDayPattern BellyPattern(TimeOnly start, int widthMinutes = 60) =>

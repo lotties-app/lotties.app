@@ -117,7 +117,9 @@ export function isResolved(data: unknown, facts: ResolutionFacts): boolean {
       );
     // An appointment reminder stays until the person dismisses or opens it (its time is fixed), and
     // so does a doctor suggestion (the page it opens lists what is still waiting) and a vaccine
-    // reminder (the schedule it opens shows what is recorded).
+    // reminder (the schedule it opens shows what is recorded). A cry monitor alert is replaced by
+    // the next one of the baby (same tag) or dismissed by the person.
+    case 'cry_detected':
     case 'appointment_reminder':
     case 'doctor_suggestion':
     case 'vaccine_due':

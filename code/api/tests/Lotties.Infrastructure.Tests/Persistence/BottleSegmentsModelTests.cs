@@ -12,7 +12,8 @@ public sealed class BottleSegmentsModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_BottleSegments'", StringComparison.Ordinal)..];
+        var start = script.IndexOf("_BottleSegments'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_CryDetector'", start, StringComparison.Ordinal)];
 
         Assert.Contains("UPDATE event_types SET fields", section, StringComparison.Ordinal);
         Assert.Contains("'e6428ccb-7061-4cf4-a5d0-67c89a396a5f'", section, StringComparison.Ordinal);

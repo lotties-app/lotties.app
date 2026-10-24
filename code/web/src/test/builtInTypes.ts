@@ -233,6 +233,8 @@ export const FUSSY_DTO: EventTypeDto = {
       options: ['hunger', 'sleepy', 'diaper', 'gas', 'comfort'],
       hidden: true,
     }),
+    field('auto_detected', 'Detected automatically', 'bool', { hidden: true }),
+    field('cry_confirmed', 'Confirmed by parent', 'bool', { hidden: true }),
     ...PAUSE_FIELD_DTOS,
   ],
 };

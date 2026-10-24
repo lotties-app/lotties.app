@@ -251,12 +251,13 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
 
         var fussy = types.Single(type => type.Key == "fussy");
         Assert.Equal((BuiltInEventTypes.FussyId, (Guid?)null, "Fussy / crying", "sentiment_very_dissatisfied", "#81c784", true), (fussy.Id, fussy.BabyId, fussy.Name, fussy.Icon, fussy.Color, fussy.HasDuration));
-        Assert.Equal(["intensity", "what_helped", "suggested_cause", "pause_count", "paused_seconds", "paused_at"], fussy.Fields.Select(field => field.Key));
+        Assert.Equal(["intensity", "what_helped", "suggested_cause", "auto_detected", "cry_confirmed", "pause_count", "paused_seconds", "paused_at"], fussy.Fields.Select(field => field.Key));
         Assert.Equal(["mild", "moderate", "intense"], fussy.Fields[0].Options!);
         Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing", "diaper_change", "burping", "holding"], fussy.Fields[1].Options!);
         Assert.Equal(["hunger", "sleepy", "diaper", "gas", "comfort"], fussy.Fields[2].Options!);
         Assert.All(fussy.Fields.Take(2), field => Assert.Equal((EventFieldKind.Select, false, false), (field.Kind, field.IsRequired, field.Hidden)));
         Assert.All(fussy.Fields.Skip(2), field => Assert.True(field.Hidden));
+        Assert.All(fussy.Fields.Skip(3).Take(2), field => Assert.Equal((EventFieldKind.Bool, false), (field.Kind, field.IsRequired)));
     }
 
     [Fact]
