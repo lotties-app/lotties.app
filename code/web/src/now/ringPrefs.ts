@@ -1,6 +1,36 @@
+import { DEFAULT_RING_LAYERS, RING_LAYERS, type RingLayer } from './upcoming';
+
 export type NowView = 'ruler' | 'ring';
 
 const KEY = 'baby-routine.now-view';
+const LAYERS_KEY = 'baby-routine.now-layers';
+
+/**
+ * The layers the ring and the ruler draw (docs/DESIGN.md "Now: next up on the ring"): per device,
+ * remembered; Sleep, Feeds and Diapers until the parent changes them. Unknown stored values are
+ * ignored, so an older or newer list never breaks the chart.
+ */
+export function readRingLayers(): RingLayer[] {
+  try {
+    const stored = window.localStorage.getItem(LAYERS_KEY);
+    if (stored !== null) {
+      const parsed: unknown = JSON.parse(stored);
+      if (Array.isArray(parsed)) return RING_LAYERS.filter((layer) => parsed.includes(layer));
+    }
+  } catch {
+    // Storage unavailable or malformed: the default layers.
+  }
+  return [...DEFAULT_RING_LAYERS];
+}
+
+export function writeRingLayers(layers: readonly RingLayer[]): void {
+  try {
+    const ordered = RING_LAYERS.filter((layer) => layers.includes(layer));
+    window.localStorage.setItem(LAYERS_KEY, JSON.stringify(ordered));
+  } catch {
+    // Storage unavailable: the choice lasts while the screen is open.
+  }
+}
 const OPEN_KEY = 'baby-routine.now-ring-open';
 
 /** Below these the ring starts folded: the actions come first on a short or narrow screen. */

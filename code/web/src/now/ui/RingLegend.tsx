@@ -1,8 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, useTheme } from '@mui/material';
-import type { RingLegendKey } from '../ringGeometry';
+import type { RingLaneLegendKey, RingLegendKey } from '../ringGeometry';
 import type { FaceState } from '../rhythmDetails';
+import type { UpcomingKind } from '../upcoming';
 import { BabyFace } from './BabyFace';
+import { LaneStamp } from './LaneStamp';
+import { kindVisual } from './upcomingVisual';
 import { palette } from '../../ui/form/styles';
 import { projectedLook, ringSwatchColors } from './ringSwatch';
 
@@ -15,11 +18,27 @@ const LABEL_KEY = {
   wake: 'now.ring.legendWake',
   bedtime: 'now.ring.legendBedtime',
   now: 'now.ring.legendNow',
+  feeds: 'now.ring.legendFeeds',
+  diapers: 'now.ring.legendDiapers',
+  patterns: 'now.ring.legendPatterns',
+  medicine: 'now.ring.legendMedicine',
 } as const satisfies Record<RingLegendKey, string>;
+
+/** The stamp of each "next up" layer in the legend (the first kind of the layer). */
+const LANE_SWATCH: Record<RingLaneLegendKey, UpcomingKind> = {
+  feeds: 'feed',
+  diapers: 'diaperWet',
+  patterns: 'bellyPain',
+  medicine: 'medicine',
+};
+
+const isLaneKey = (kind: RingLegendKey): kind is RingLaneLegendKey =>
+  Object.hasOwn(LANE_SWATCH, kind);
 
 /** A small picture of one mark, drawn exactly as on the ring ("now" is the baby face shown). */
 function Swatch({ kind, face }: { kind: RingLegendKey; face: FaceState }) {
   const theme = useTheme();
+  if (isLaneKey(kind)) return <LaneStamp visual={kindVisual(LANE_SWATCH[kind])} size={20} />;
   if (kind === 'now') {
     return (
       <Box component="span" data-testid="ring-legend-face" sx={{ display: 'inline-flex' }}>
