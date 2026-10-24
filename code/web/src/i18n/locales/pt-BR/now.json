@@ -386,6 +386,7 @@
       "feedGapPart": "As mamadas {{part}} costumam começar cerca de a cada {{duration}}",
       "feedGap": "As mamadas costumam começar cerca de a cada {{duration}}",
       "feedGapNorm": "Do intervalo publicado entre mamadas nesta idade, cerca de {{duration}}",
+      "feedPartial": "A última foi menor que o habitual ({{drunk}} de cerca de {{usual}} ml), então um complemento é esperado mais cedo",
       "lowConfidence": "Confiança baixa",
       "wet": "Fralda molhada provável por volta das {{time}} (estimativa)",
       "wetDue": "Fralda molhada provável a qualquer momento (estimativa)",

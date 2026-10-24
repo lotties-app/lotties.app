@@ -263,6 +263,75 @@ describe('the next feed', () => {
   });
 });
 
+describe('the next feed after a smaller bottle than usual (the cry ranker partial-feed rule)', () => {
+  // Every 3 h, 100 ml each (her usual amount 100 ml, her usual gap 180 min): next at 16:00.
+  const before = [at(1), at(4), at(7), at(10)].map((s) => bottle(s, 100));
+  const lastBottle = (payload: BabyEvent['payload']) =>
+    event(FEEDING_TYPE, at(13), { method: 'bottle', amount_ml: 100, ...payload });
+  const feedAfter = (last: BabyEvent, over: Partial<UpcomingInput> = {}) =>
+    only(run({ events: [...before, last], ...over }), 'feed')[0];
+
+  it('is identical to before when there is no partial feed', () => {
+    const full = feedAfter(lastBottle({}));
+    expect(full.at).toEqual(at(16));
+    expect(full.basis).not.toHaveProperty('partialFeed');
+    // 80 of 100 ml is above the 70% line: still no partial feed.
+    const most = feedAfter(lastBottle({ amount_drunk_ml: 80 }));
+    expect(most.at).toEqual(at(16));
+    expect(most.basis).not.toHaveProperty('partialFeed');
+  });
+
+  it('comes earlier by half the missing share of her usual gap', () => {
+    // 60 of 100 ml: 20% earlier, 36 of 180 minutes.
+    const feed = feedAfter(lastBottle({ amount_drunk_ml: 60 }));
+    expect(feed.at).toEqual(at(15, 24));
+    expect(feed.basis).toMatchObject({
+      time: { kind: 'ownGap', gapMinutes: 180 },
+      partialFeed: { drunkMl: 60, usualMl: 100, endedBySleep: false, minutesEarlier: 36 },
+    });
+    // The expected amount is not touched.
+    expect(feed.amountMl).toEqual(feedAfter(lastBottle({})).amountMl);
+  });
+
+  it('is clamped at 30% of her usual gap', () => {
+    const feed = feedAfter(lastBottle({ amount_drunk_ml: 10 }));
+    expect(feed.at).toEqual(at(15, 6));
+    expect(feed.basis).toMatchObject({ partialFeed: { drunkMl: 10, minutesEarlier: 54 } });
+  });
+
+  it('counts a bottle a sleep stopped once its drunk amount is known', () => {
+    const feed = feedAfter(lastBottle({ amount_drunk_ml: 50, ended_by: 'sleep' }));
+    expect(feed.at).toEqual(at(15, 15));
+    expect(feed.basis).toMatchObject({
+      partialFeed: { drunkMl: 50, usualMl: 100, endedBySleep: true, minutesEarlier: 45 },
+    });
+    // Unknown drunk amount: nothing is guessed.
+    const unknown = feedAfter(lastBottle({ ended_by: 'sleep' }));
+    expect(unknown.at).toEqual(at(16));
+    expect(unknown.basis).not.toHaveProperty('partialFeed');
+  });
+
+  it('leaves the time unchanged after nursing', () => {
+    const feed = feedAfter(nursing(at(13)));
+    expect(feed.at).toEqual(at(16));
+    expect(feed.basis).not.toHaveProperty('partialFeed');
+  });
+
+  it('opens the server window earlier and keeps its end', () => {
+    const feed = feedAfter(lastBottle({ amount_drunk_ml: 40 }), {
+      predictions: predictions({ predictions: [PREDICTED] }),
+    });
+    // 190 min to 16:10, clamped 30%: 57 minutes earlier.
+    expect(feed.at).toEqual(at(15, 13));
+    expect(feed.windowStart).toEqual(at(14, 43));
+    expect(feed.windowEnd).toEqual(at(16, 40));
+    expect(feed.basis).toMatchObject({
+      time: { kind: 'prediction' },
+      partialFeed: { minutesEarlier: 57 },
+    });
+  });
+});
+
 const RULE: DiaperPredictionsDto['rule'] = {
   wetLookBackDays: 7,
   minimumWetEvents: 8,

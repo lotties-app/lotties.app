@@ -74,6 +74,30 @@ describe('upcomingText', () => {
     );
   });
 
+  it('says why a feed comes earlier after a smaller bottle, in both languages', async () => {
+    const partial = bottleItem(at(15, 20), {
+      windowStart: undefined,
+      windowEnd: undefined,
+      amountMl: undefined,
+      basis: {
+        kind: 'feed',
+        time: { kind: 'ownGap', gapMinutes: 180, dayPart: null, samples: 6 },
+        partialFeed: { drunkMl: 80, usualMl: 117.5, endedBySleep: false, minutesEarlier: 30 },
+        method: 'bottle',
+        dayPart: 'afternoon',
+        due: false,
+        amount: null,
+      },
+    });
+    expect(text(partial)).toBe(
+      'Next bottle about 15:20 (estimate). The last one was smaller than usual (80 of about 120 ml), so a top-up is expected sooner. Feeds usually start about every 3h.',
+    );
+    await useTestLocale('pt-BR');
+    expect(text(partial)).toBe(
+      'Próxima mamadeira por volta das 15:20 (estimativa). A última foi menor que o habitual (80 de cerca de 120 ml), então um complemento é esperado mais cedo. As mamadas costumam começar cerca de a cada 3 h.',
+    );
+  });
+
   it('writes diapers: the wet one, a poop window, after feeds', () => {
     expect(text(wetItem(at(16, 40)))).toBe(
       'Wet diaper likely around 16:40 (estimate). Likely between 16:20 and 17:00. Usually about every 2h 30m.',

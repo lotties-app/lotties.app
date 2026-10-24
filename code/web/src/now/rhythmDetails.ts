@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { BabyEvent, EventType } from '../db/models';
+import { roundToStep } from '../events/bottleSuggestions';
 import { formatDuration, formatList, formatNumber, formatTime } from '../i18n/format';
 import { dayPartPhrase } from '../medications/dayPartText';
 import { readBasis } from '../predictions/predictionModel';
@@ -545,6 +546,14 @@ export function upcomingText(item: UpcomingItem, t: TFunction): RhythmText {
         lines: [
           ...(window ? [t('now.upcoming.window', window)] : []),
           ...amountLines(item, basis, t),
+          ...(basis.partialFeed
+            ? [
+                t('now.upcoming.feedPartial', {
+                  drunk: ml(Math.round(basis.partialFeed.drunkMl)),
+                  usual: ml(roundToStep(basis.partialFeed.usualMl)),
+                }),
+              ]
+            : []),
           feedTimeLine(basis, t),
           ...low,
         ],

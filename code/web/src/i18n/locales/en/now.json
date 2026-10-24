@@ -386,6 +386,7 @@
       "feedGapPart": "Feeds {{part}} usually start about every {{duration}}",
       "feedGap": "Feeds usually start about every {{duration}}",
       "feedGapNorm": "From the published time between feeds at this age, about {{duration}}",
+      "feedPartial": "The last one was smaller than usual ({{drunk}} of about {{usual}} ml), so a top-up is expected sooner",
       "lowConfidence": "Low confidence",
       "wet": "Wet diaper likely around {{time}} (estimate)",
       "wetDue": "A wet diaper is likely any time now (estimate)",
