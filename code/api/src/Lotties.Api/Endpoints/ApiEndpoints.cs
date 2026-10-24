@@ -13,6 +13,7 @@ public static class ApiEndpoints
         ArgumentNullException.ThrowIfNull(app);
         app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous().DisableRateLimiting();
         var api = app.MapGroup(V1Prefix).RequireAuthorization();
+        api.MapVersionEndpoints();
         api.MapMeEndpoints();
         api.MapBabyCollectionEndpoints();
         api.MapInviteAcceptEndpoints();

@@ -74,6 +74,8 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
     public static readonly IReadOnlyDictionary<string, Access> Matrix = new Dictionary<string, Access>(StringComparer.Ordinal)
     {
         ["GET /health"] = Access.Anonymous,
+        // The running release (name, version, commit, build time): public, shown on the About screen.
+        ["GET /api/v1/version"] = Access.Anonymous,
         ["GET /api/v1/me"] = Access.SignedIn,
         ["GET /api/v1/me/deletion-preview"] = Access.SignedIn,
         ["DELETE /api/v1/me"] = Access.SignedIn,
