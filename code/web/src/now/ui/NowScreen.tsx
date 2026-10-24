@@ -360,6 +360,8 @@ function NowContent({
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
             bedTime={predictions?.bedTime ?? null}
             {...(predictions ? { predictions } : {})}
+            birthDate={baby.birthDate}
+            ageNorms={ageNorms ?? null}
           />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard

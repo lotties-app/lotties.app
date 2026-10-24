@@ -76,7 +76,7 @@ export const localDateKey = (date: Date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
 /** The occurrence of the window that starts on the local date `day` (any time of that day). */
-function occurrenceOn(pattern: TimeOfDayPatternDto, day: Date): PatternWindow {
+export function occurrenceOn(pattern: TimeOfDayPatternDto, day: Date): PatternWindow {
   const startMinutes = clockMinutes(pattern.windowStart) ?? 0;
   const typicalAfter =
     ((clockMinutes(pattern.typicalClock) ?? startMinutes) - startMinutes + MINUTES_PER_DAY) %

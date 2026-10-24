@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, ButtonBase, Card, Chip, LinearProgress, Typography } from '@mui/material';
+import type { AgeNormSet } from '../../ageNorms/ageNorms';
 import { formatDuration, formatTime } from '../../i18n/format';
 import type {
   BedTimeDto,
@@ -31,6 +32,7 @@ import { projectNaps, type NapProjection } from '../napProjection';
 import { overtiredSuggestion, wakeWindowOf } from '../overtired';
 import type { RhythmNow } from '../rhythmDetails';
 import { readNowView, writeNowView, type NowView } from '../ringPrefs';
+import { upcomingToday, type UpcomingItem } from '../upcoming';
 import { DayRing } from './DayRing';
 import { DayRuler } from './DayRuler';
 import { NapSheet } from './NapSheet';
@@ -69,6 +71,10 @@ export interface StateCardProps {
   bedTime?: BedTimeDto | null;
   /** The predictions response: the overtired heads-up gives the "now" face its tired look. */
   predictions?: PredictionsDto;
+  /** For the "next up" amounts and gaps: the age norms apply only with a birth date. */
+  birthDate?: string | null;
+  /** The published age norms on the device (`null` without a copy). */
+  ageNorms?: AgeNormSet | null;
 }
 
 /** What the ring and the ruler need to describe "now" beyond the window. */
@@ -238,6 +244,7 @@ function RhythmView({
   ring,
   facts,
   projection,
+  upcoming,
 }: {
   state: AwakeState;
   window: NapWindow;
@@ -247,6 +254,7 @@ function RhythmView({
   ring: ReactNode;
   facts: RhythmFacts;
   projection: NapProjection | null;
+  upcoming: readonly UpcomingItem[];
 }) {
   return (
     <>
@@ -261,6 +269,7 @@ function RhythmView({
           overtired={facts.overtired}
           bedTime={facts.bedTime}
           projection={projection}
+          upcoming={upcoming}
         />
       )}
       <RhythmToggle view={view} onChange={onView} />
@@ -488,6 +497,8 @@ export function StateCard({
   prediction,
   bedTime,
   predictions,
+  birthDate = null,
+  ageNorms = null,
 }: StateCardProps) {
   const { t } = useTranslation();
   const [whyOpen, setWhyOpen] = useState(false);
@@ -504,6 +515,35 @@ export function StateCard({
     writeSkippedNap(babyId, key);
   };
   const disabled = model.readOnly;
+  // What is likely still to come today, for the ring's and the ruler's "next up" layers.
+  const upcoming = useMemo(
+    () =>
+      upcomingToday({
+        events: model.events,
+        history: model.history,
+        types: model.types,
+        now,
+        birthDate,
+        predictions: predictions ?? null,
+        ageNorms,
+        medicines: model.meds.statuses.map((status) => ({
+          status,
+          name:
+            model.medications.find((m) => m.id === status.prescription.medicationId)?.name ?? '',
+        })),
+      }),
+    [
+      model.events,
+      model.history,
+      model.types,
+      model.meds,
+      model.medications,
+      now,
+      birthDate,
+      predictions,
+      ageNorms,
+    ],
+  );
   const sleepLock = runningSleepLock(
     model.running,
     typeForKey(model.types, 'sleep')?.id,
@@ -581,6 +621,7 @@ export function StateCard({
       overtired={facts.overtired}
       bedTime={facts.bedTime}
       projection={projectionFor(current, window)}
+      upcoming={upcoming}
     />
   );
 
@@ -699,6 +740,7 @@ export function StateCard({
             ring={ringFor(state, t('now.state.awake'), awakeDuration, window)}
             facts={facts}
             projection={projectionFor(state, window)}
+            upcoming={upcoming}
           />
         ) : (
           ringFor(state, t('now.state.awake'), awakeDuration)

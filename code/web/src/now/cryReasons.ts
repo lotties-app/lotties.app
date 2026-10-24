@@ -415,7 +415,8 @@ function ramp(ratio: number, r: CryRamp): number {
   return r.floor + (r.max - r.floor) * t;
 }
 
-function median(values: readonly number[]): number {
+/** The median of a non-empty list. */
+export function median(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
@@ -442,11 +443,24 @@ const noData = (w: CryWeights, reason: 'noLog' | 'asleep'): Scored => ({
   facts: [{ kind: 'noData', reason }],
 });
 
-/** Her usual feed gap: the local median of recent start-to-start gaps, else the server's. */
-function usualFeedGap(ctx: Context): number | null {
-  const { w, nowMs } = ctx;
+/** One gap between two feed sessions: when the first one started (ms) and the gap (minutes). */
+export interface FeedSessionGap {
+  from: number;
+  minutes: number;
+}
+
+/**
+ * Her recent feed gaps, as the cry ranker reads them: the feed starts of the last
+ * `feedHistoryHours` up to `nowMs`, merged into sessions when closer than `feedMergeMinutes`, and
+ * the start-to-start gaps up to `feedGapMaxMinutes` (longer ones are a missed log, not a gap).
+ */
+export function feedSessionGaps(
+  feeds: readonly BabyEvent[],
+  nowMs: number,
+  w: Pick<CryWeights, 'feedHistoryHours' | 'feedMergeMinutes' | 'feedGapMaxMinutes'> = CRY_WEIGHTS,
+): FeedSessionGap[] {
   const from = nowMs - w.feedHistoryHours * HOUR_MS;
-  const starts = ctx.feeds
+  const starts = feeds
     .map((e) => Date.parse(e.startedAt))
     .filter((t) => t >= from)
     .sort((a, b) => a - b);
@@ -455,16 +469,28 @@ function usualFeedGap(ctx: Context): number | null {
     const last = sessions[sessions.length - 1];
     if (last === undefined || start - last >= w.feedMergeMinutes * MINUTE_MS) sessions.push(start);
   }
-  const gaps = sessions
+  return sessions
     .slice(1)
-    .map((start, i) => (start - sessions[i]) / MINUTE_MS)
-    .filter((gap) => gap <= w.feedGapMaxMinutes);
-  if (gaps.length >= w.minimumFeedGaps) return Math.round(median(gaps));
-  const basis = ctx.input.predictions?.predictions?.find((p) => p.typeKey === FEEDING_KEY)?.basis;
+    .map((start, i) => ({ from: sessions[i], minutes: (start - sessions[i]) / MINUTE_MS }))
+    .filter((gap) => gap.minutes <= w.feedGapMaxMinutes);
+}
+
+/** The usual gap (minutes) of the server's feeding prediction `basis`, when plausible (30 min to 12 h). */
+export function serverFeedGapMinutes(
+  predictions: PredictionsDto | null | undefined,
+): number | null {
+  const basis = predictions?.predictions?.find((p) => p.typeKey === FEEDING_KEY)?.basis;
   const server = basis && typeof basis === 'object' ? getOwn(basis, 'medianGapMinutes') : undefined;
   return typeof server === 'number' && Number.isFinite(server) && server >= 30 && server <= 720
     ? Math.round(server)
     : null;
+}
+
+/** Her usual feed gap: the local median of recent start-to-start gaps, else the server's. */
+function usualFeedGap(ctx: Context): number | null {
+  const gaps = feedSessionGaps(ctx.feeds, ctx.nowMs, ctx.w).map((gap) => gap.minutes);
+  if (gaps.length >= ctx.w.minimumFeedGaps) return Math.round(median(gaps));
+  return serverFeedGapMinutes(ctx.input.predictions);
 }
 
 function hungerOf(ctx: Context): Scored {

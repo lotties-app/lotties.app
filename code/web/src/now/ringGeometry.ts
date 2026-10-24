@@ -286,7 +286,11 @@ export function ringHourLabels(nowAngle: number | null): RingHourLabel[] {
   );
 }
 
-export type RingLegendKey = RingSpanKind | 'window' | 'projected' | 'wake' | 'bedtime' | 'now';
+/** The "next up" layers (now/upcoming.ts) the legend names when their markers are drawn. */
+export type RingLaneLegendKey = 'feeds' | 'diapers' | 'patterns' | 'medicine';
+
+export type RingLegendKey =
+  RingSpanKind | 'window' | 'projected' | 'wake' | 'bedtime' | 'now' | RingLaneLegendKey;
 
 /** The estimates drawn besides today's sleep and the server's window. */
 export interface RingEstimates {

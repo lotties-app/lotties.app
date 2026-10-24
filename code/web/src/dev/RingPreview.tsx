@@ -10,6 +10,8 @@ import { RhythmToggle } from '../now/ui/RhythmToggle';
 import type { NowView } from '../now/ringPrefs';
 import { projectNaps } from '../now/napProjection';
 import type { RhythmNow } from '../now/rhythmDetails';
+import type { UpcomingItem } from '../now/upcoming';
+import { busyAfternoon, lowConfidenceAfternoon } from '../now/ui/upcomingKit';
 import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { RADIUS } from '../theme/tokens';
 import { palette } from '../ui/form/styles';
@@ -19,11 +21,22 @@ import { PreviewToolbar } from './PreviewToolbar';
  * Developer-only (route `/dev/ring`, never in production builds): the day rhythm ring and the
  * ruler at a fixed clock, one state at a time, in the same frame as on the Now card. No database,
  * no sign-in, no server. `?state=ahead|inside|tired|asleep|night|empty|busy` (ahead and asleep
- * carry projected naps and a bedtime window, tired the overtired face), `&view=ring|ruler`,
- * `&scale=130` (root font size in percent, like a large iOS text size), `&scheme=dark`.
+ * carry projected naps and a bedtime window, tired the overtired face, afternoon is 14:00 after
+ * a nap), `&view=ring|ruler`, `&scale=130` (root font size in percent, like a large iOS text
+ * size), `&scheme=dark`, `&upcoming=busy|low|none` (the "next up" layer: a busy afternoon of a
+ * bottle, a wet diaper, belly pain, a poop and a dose; the same with little history; nothing).
  */
 
-const SCENARIOS = ['ahead', 'inside', 'tired', 'asleep', 'night', 'empty', 'busy'] as const;
+const SCENARIOS = [
+  'ahead',
+  'inside',
+  'tired',
+  'asleep',
+  'night',
+  'empty',
+  'busy',
+  'afternoon',
+] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const TYPES: EventType[] = [SLEEP_TYPE, FEEDING_TYPE, DIAPER_TYPE];
 const MIN = 60_000;
@@ -140,6 +153,19 @@ function setupFor(scenario: Scenario): Setup {
       };
     case 'empty':
       return { now: at(11, 11), events: [], state: 'awake', since: at(11, 11) };
+    case 'afternoon':
+      return {
+        now: at(14, 0),
+        events: [...day, sleep('nap2', at(12, 0), at(13, 10), 'nap')],
+        window: {
+          earliest: at(15, 0).toISOString(),
+          latest: at(15, 45).toISOString(),
+          basis: BASIS,
+        },
+        state: 'awake',
+        since: at(13, 10),
+        bedTime: BED_TIME,
+      };
     case 'busy':
       return {
         now: at(17, 5),
@@ -173,6 +199,12 @@ export default function RingPreview() {
   const [view, setView] = useState<NowView>(params.get('view') === 'ruler' ? 'ruler' : 'ring');
   const scale = Number(params.get('scale') ?? 100);
   const setup = useMemo(() => setupFor(scenario), [scenario]);
+  const upcomingParam = params.get('upcoming');
+  const upcoming = useMemo((): UpcomingItem[] | null => {
+    if (upcomingParam === 'busy') return busyAfternoon(at);
+    if (upcomingParam === 'low') return lowConfidenceAfternoon(at);
+    return upcomingParam === 'none' ? [] : null;
+  }, [upcomingParam]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -221,6 +253,7 @@ export default function RingPreview() {
     overtired: setup.overtired ?? false,
     bedTime: setup.bedTime ?? null,
     projection,
+    ...(upcoming ? { upcoming } : {}),
   };
   const body =
     view === 'ring' || setup.state !== 'awake' ? (
@@ -256,7 +289,12 @@ export default function RingPreview() {
           <PreviewToolbar
             scenarios={SCENARIOS}
             scenario={scenario}
-            onScenario={(next) => setParams({ state: next }, { replace: true })}
+            onScenario={(next) =>
+              setParams(
+                { state: next, ...(upcomingParam ? { upcoming: upcomingParam } : {}) },
+                { replace: true },
+              )
+            }
           />
         </Box>
       </Box>
