@@ -183,8 +183,13 @@ and pace. Only timed bottles ("Time bottle feedings" on) have pauses; with it of
     usual amount at that part of the day (median of her known amounts, day 07-19 or night 19-07, else all, 3+), the
     next feed is expected earlier by half of the missing share, at most 30% of her usual gap. Used where the client
     computes "time to the next feed": the hunger ramp of "Why is she crying?" (its fact says "that feed was smaller
-    than usual"). The web has no other next-feed time (the server's feeding prediction is unchanged). No partial
-    feed, an unknown amount, a nursing or solid feed last, or a feed running: exactly the old behaviour.
+    than usual"), and the "Next up" feed on the day ring, the ruler and the Next up list (`now/upcoming.ts`, 2026-10-24):
+    the same two functions (`topUpAdjustment`, `adjustedFeedGap`) applied to the gap from the last feed to the expected
+    time (her own gap, the server basis gap, the age norm gap, or the server's expected time); a server window opens
+    as much earlier and keeps its end. The item carries `partialFeed` (drunk, usual, ended by sleep, minutes earlier)
+    and its text adds "The last one was smaller than usual (80 of about 120 ml), so a top-up is expected sooner"; the
+    expected amount is unchanged. The server's feeding prediction itself is unchanged. No partial feed, an unknown
+    amount, a nursing or solid feed last, or a feed running: exactly the old behaviour.
 - **Other surfaces.** Voice and MCP log the total only (unchanged). The backup keeps the field like any payload
   member (round trip tested). The Napper import writes none. Insights: no "finished vs interrupted" stat yet (it
   would need a new row in the feeding card, a design change).

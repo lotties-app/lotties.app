@@ -1,4 +1,5 @@
 import { fireEvent, screen, within } from '@testing-library/react';
+import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../../db/database';
 import type { BabyRole } from '../../db/models';
@@ -111,6 +112,37 @@ describe('next up on Now', () => {
     const ring = await screen.findByTestId('day-ring');
     expect(await within(ring).findByTestId('upcoming-nothing')).toBeTruthy();
     expect(within(ring).queryByTestId('ring-upcoming-feed')).toBeNull();
+  });
+
+  it('brings the next bottle forward after a smaller one, with its reason, on ring and list', async () => {
+    pinClock(14, 0);
+    await seedNow(db);
+    await seedMorning(db, 60); // a 120 ml bottle at 10:50
+    for (const ago of [13 * 60, 10 * 60, 7 * 60]) {
+      await putEvent(db, 'feeding', ago, ago, { method: 'bottle', amount_ml: 120 });
+    }
+    // 13:00: 40 of 120 ml. Her usual gap is 3 h (16:00); clamped 30% earlier: 15:06.
+    await putEvent(db, 'feeding', 60, 60, {
+      method: 'bottle',
+      amount_ml: 120,
+      amount_drunk_ml: 40,
+    });
+    const { api } = fakeApi(nowApi(sleepPredictions(40)));
+    renderWithDb(db, <NowScreen baby={BABY} />, { api });
+    const ring = await screen.findByTestId('day-ring');
+    const marker = await within(ring).findByTestId('ring-upcoming-feed');
+    expect(marker).toBeTruthy();
+    const row = within(ring).getByTestId('upcoming-row-feed');
+    expect(row.textContent).toMatch(/^Next bottle about 15:06 \(estimate\)/);
+    expect(row.textContent).toContain(
+      'The last one was smaller than usual (40 of about 120 ml), so a top-up is expected sooner',
+    );
+    fireEvent.click(row);
+    const result = await axe.run(document.body, {
+      runOnly: ['wcag2a', 'wcag2aa'],
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations.map((v) => v.id)).toEqual([]);
   });
 
   it('drops the predicted feed once a bottle is logged inside its window', async () => {

@@ -2,6 +2,7 @@ import { ageInDaysAt, type AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent, DayPart, EventType } from '../db/models';
 import { normBottleRange } from '../events/bottleAgeDefaults';
 import { drunkMl } from '../events/bottleAmounts';
+import { adjustedFeedGap, topUpAdjustment } from '../events/bottlePatterns';
 import { roundToStep } from '../events/bottleSuggestions';
 import { DAY_PARTS, partAt } from '../medications/dayParts';
 import type { MedicationStatus } from '../medications/statusCalculator';
@@ -23,7 +24,8 @@ import { dayFrame } from './ringGeometry';
  * "Next up" on the day ring and the ruler (docs/DESIGN.md "Now: next up on the ring"): what is
  * likely still to come today, from what the app already estimates elsewhere and nothing else. The
  * next feed (the server's feeding prediction, else her usual gap after the last feed, the cry
- * ranker's rule) with the amount she usually drinks at that part of the day, the next wet and
+ * ranker's rule; earlier after a smaller bottle than usual, the ranker's partial-feed rule) with
+ * the amount she usually drinks at that part of the day, the next wet and
  * dirty diaper (the diaper cards' estimates without their timing gate), the belly pain and fussy
  * windows (the pattern cards' windows) and the scheduled doses of active prescriptions (the Meds
  * calculator). Pure, offline and language-free: the ring writes the sentences. Estimates only:
@@ -93,9 +95,24 @@ export type FeedAmountBasis =
   /** Too few bottles of her own: the published range for her age (a usable norm only). */
   | { kind: 'ageNorm'; normId: string };
 
+/**
+ * The last bottle was well under her usual amount (the cry ranker's partial-feed rule,
+ * `topUpAdjustment`): the expected time moved earlier by `minutesEarlier`.
+ */
+export interface PartialFeedBasis {
+  /** What she drank at the last feed and what she usually drinks then (ml). */
+  drunkMl: number;
+  usualMl: number;
+  /** A sleep stopped that feed. */
+  endedBySleep: boolean;
+  minutesEarlier: number;
+}
+
 export interface FeedBasis {
   kind: 'feed';
   time: FeedTimeBasis;
+  /** Present only when a partial feed brought the expected time forward. */
+  partialFeed?: PartialFeedBasis;
   /** What her recent feeds at that part of the day mostly were (`null`: unknown or none). */
   method: 'bottle' | 'breast' | null;
   amount: FeedAmountBasis | null;
@@ -291,6 +308,38 @@ function gapFeed(input: UpcomingInput, feeds: readonly BabyEvent[], last: number
   };
 }
 
+/**
+ * A smaller last bottle than usual brings the next feed forward: the cry ranker's rule
+ * (`topUpAdjustment` and `adjustedFeedGap`, bounded at `MAX_TOP_UP_SHARE` of the gap) applied to
+ * the gap from the last feed to the expected time. A server window keeps its end and opens as
+ * much earlier. Unchanged without a partial feed.
+ */
+function partialFeedEarlier(
+  time: FeedTime,
+  feeds: readonly BabyEvent[],
+  last: number,
+  now: Date,
+): { time: FeedTime; partial: PartialFeedBasis | null } {
+  const gapMinutes = Math.round((time.at - last) / MINUTE_MS);
+  const topUp = gapMinutes > 0 ? topUpAdjustment(feeds, now) : null;
+  const minutesEarlier = gapMinutes - adjustedFeedGap(gapMinutes, topUp);
+  if (!topUp || minutesEarlier <= 0) return { time, partial: null };
+  const shift = minutesEarlier * MINUTE_MS;
+  return {
+    time: {
+      ...time,
+      at: time.at - shift,
+      ...(time.windowStart !== undefined ? { windowStart: time.windowStart - shift } : {}),
+    },
+    partial: {
+      drunkMl: topUp.drunkMl,
+      usualMl: topUp.usualMl,
+      endedBySleep: topUp.endedBySleep,
+      minutesEarlier,
+    },
+  };
+}
+
 /** What her recent feeds at a part of the day mostly were (all parts when none at it). */
 function methodAt(feeds: readonly BabyEvent[], part: DayPart): 'bottle' | 'breast' | null {
   const methods = (list: readonly BabyEvent[]) =>
@@ -368,9 +417,13 @@ function feedItem(input: UpcomingInput): UpcomingItem | null {
   const feeds = pastLiveEvents(input.events, input.now).filter((e) => ids.has(e.typeId));
   const starts = feeds.map((feed) => Date.parse(feed.startedAt));
   const last = starts.length > 0 ? Math.max(...starts) : undefined;
-  const time =
+  const usual =
     predictedFeed(input, starts) ?? (last === undefined ? null : gapFeed(input, feeds, last));
-  if (!time) return null;
+  if (!usual) return null;
+  const { time, partial } =
+    last === undefined
+      ? { time: usual, partial: null }
+      : partialFeedEarlier(usual, feeds, last, input.now);
   const expected = time.at;
   const overdueBy = nowMs - expected;
   // Long past the usual gap the log is likely incomplete: no guess.
@@ -407,6 +460,7 @@ function feedItem(input: UpcomingInput): UpcomingItem | null {
     basis: {
       kind: 'feed',
       time: time.basis,
+      ...(partial ? { partialFeed: partial } : {}),
       method,
       amount: amount?.basis ?? null,
       dayPart: part,
