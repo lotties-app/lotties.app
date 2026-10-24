@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCommit, buildDefines, buildTime, buildVersion } from '../../build-info';
-import { displayVersion, serverIsNewer, shortCommit } from './versionInfo';
+import { displayVersion, shortCommit } from './versionInfo';
 
 const NOW = new Date('2026-10-24T12:00:00.000Z');
 const noGit = () => {
@@ -53,15 +53,5 @@ describe('version display', () => {
     expect(displayVersion('0.1.38')).toBe('v0.1.38');
     expect(displayVersion('dev')).toBe('dev');
     expect(shortCommit('abcdef012345')).toBe('abcdef0');
-  });
-
-  it('says the server is newer only for a newer release, compared as numbers', () => {
-    expect(serverIsNewer('0.1.38', '0.1.39')).toBe(true);
-    expect(serverIsNewer('0.1.9', '0.1.10')).toBe(true);
-    expect(serverIsNewer('0.1.39', '0.2.0')).toBe(true);
-    expect(serverIsNewer('0.1.38', '0.1.38')).toBe(false);
-    expect(serverIsNewer('0.1.39', '0.1.38')).toBe(false);
-    expect(serverIsNewer('dev', '0.1.38')).toBe(false);
-    expect(serverIsNewer('0.1.38', 'dev')).toBe(false);
   });
 });

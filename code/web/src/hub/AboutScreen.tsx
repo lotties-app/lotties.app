@@ -4,16 +4,10 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Alert, Button, Link, Paper, Stack, Typography } from '@mui/material';
 import { readBuildInfo } from '../config/buildInfo';
 import { useServerVersion } from '../config/serverVersion';
-import {
-  displayVersion,
-  serverIsNewer,
-  shortCommit,
-  type VersionStamp,
-} from '../config/versionInfo';
+import { displayVersion, shortCommit, type VersionStamp } from '../config/versionInfo';
 import { formatDateTime } from '../i18n/format';
 import { repoUrl } from '../landing/repoUrl';
-import { isNativeApp } from '../platform/nativeApp';
-import { applyUpdate, checkForUpdates, useUpdateSnapshot } from '../pwa/updateStore';
+import { applyUpdate, useUpdateSnapshot } from '../pwa/updateStore';
 import { RADIUS } from '../theme/tokens';
 import { copyText } from '../util/copyText';
 
@@ -50,41 +44,18 @@ function reportPart(stamp: VersionStamp): string {
 }
 
 /**
- * The server runs a newer release: offer the existing update flow (Hub > Check for updates). In the
- * native app the store updates it. The check may also find nothing when only the API changed.
+ * A new version of the app is installed and waiting (the service worker update state, the same
+ * signal as Hub > Check for updates): offer the reload. Never driven by comparing versions.
  */
-function UpdateHint({ server }: { server: string }) {
+function UpdateReady() {
   const { t } = useTranslation();
-  const { state } = useUpdateSnapshot();
-  const native = isNativeApp();
   return (
     <Alert severity="info">
-      <Typography sx={{ fontWeight: 600 }}>
-        {t('hub.about.updateHint', { version: displayVersion(server) })}
-      </Typography>
-      {native && <Typography variant="body2">{t('hub.updates.unsupportedNative')}</Typography>}
-      {state === 'upToDate' && <Typography variant="body2">{t('hub.updates.upToDate')}</Typography>}
-      {state === 'error' && <Typography variant="body2">{t('hub.updates.error')}</Typography>}
-      {/* Ready (a waiting worker), or a browser without a service worker: a reload is the update. */}
-      {(state === 'ready' || (state === 'unsupported' && !native)) && (
-        <Button
-          variant="contained"
-          onClick={() => void applyUpdate()}
-          sx={{ mt: 1, minHeight: 44 }}
-        >
-          {t('hub.updates.reload')}
-        </Button>
-      )}
-      {(state === 'idle' || state === 'checking' || state === 'error') && (
-        <Button
-          variant="outlined"
-          disabled={state === 'checking'}
-          onClick={() => void checkForUpdates()}
-          sx={{ mt: 1, minHeight: 44 }}
-        >
-          {state === 'checking' ? t('hub.updates.checking') : t('hub.updates.check')}
-        </Button>
-      )}
+      <Typography sx={{ fontWeight: 600 }}>{t('hub.about.updateHint')}</Typography>
+      <Typography variant="body2">{t('hub.updates.readyHint')}</Typography>
+      <Button variant="contained" onClick={() => void applyUpdate()} sx={{ mt: 1, minHeight: 44 }}>
+        {t('hub.updates.reload')}
+      </Button>
     </Alert>
   );
 }
@@ -96,8 +67,9 @@ const SERVER_STATUS_KEY = {
 
 /**
  * Hub > About: what this device runs and what the server runs (release, commit, build time, stamped
- * by the deploy), a hint when the server is newer, a "Copy version info" button for bug reports,
- * and the licence. The server's version loads after the screen, with a short timeout.
+ * by the deploy), the reload when a new app version is waiting, a neutral note when the two differ
+ * (the deploy rebuilds only the image that changed), "Copy version info" for bug reports, and the
+ * licence. The server's version loads after the screen, with a short timeout.
  */
 export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
   const { t } = useTranslation();
@@ -106,6 +78,7 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
   const stampText = useStampText();
   const [copied, setCopied] = useState<'yes' | 'failed' | null>(null);
   const source = repoUrl();
+  const updateReady = useUpdateSnapshot().state === 'ready';
 
   const serverValue =
     server.status === 'ok' ? stampText(server.stamp) : t(SERVER_STATUS_KEY[server.status]);
@@ -124,8 +97,11 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
           <Fact label={t('hub.about.serverLine')} value={serverValue} />
           <Fact label={t('hub.about.license')} value={t('hub.about.licenseValue')} />
         </Stack>
-        {server.status === 'ok' && serverIsNewer(app.version, server.stamp.version) && (
-          <UpdateHint server={server.stamp.version} />
+        {updateReady && <UpdateReady />}
+        {!updateReady && server.status === 'ok' && server.stamp.version !== app.version && (
+          <Typography variant="body2" color="text.secondary">
+            {t('hub.about.updatedSeparately')}
+          </Typography>
         )}
         <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
           <Button variant="outlined" onClick={() => void copy()} sx={{ minHeight: 44 }}>

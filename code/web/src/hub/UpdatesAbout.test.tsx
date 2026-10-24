@@ -190,32 +190,43 @@ describe('About', () => {
     expect(screen.queryByText(/An update is available/)).toBeNull();
   });
 
-  it('hints at an update when the server runs a newer release, through the update flow', async () => {
+  it('shows a newer server without any update hint when no app update is waiting', async () => {
     setRegistration(registration(async () => undefined));
     serverAnswers({ version: '0.1.39', commit: 'fedcba9', builtAt: null });
     renderScreen(<AboutScreen />);
-    expect(
-      await screen.findByText('An update is available: the server runs v0.1.39.'),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
-    expect(await screen.findByText('You have the latest version.')).toBeTruthy();
+    expect(await screen.findByText(/^v0\.1\.39 · commit fedcba9$/)).toBeTruthy();
+    expect(screen.getByText('The server was updated separately.')).toBeTruthy();
+    expect(screen.queryByText('An update is available.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reload to update' })).toBeNull();
   });
 
-  it('offers the reload in the hint when a new version is already waiting', async () => {
+  it('says nothing about the server when both run the same release', async () => {
+    serverAnswers({ version: '0.1.38', commit: 'fedcba9', builtAt: null });
+    renderScreen(<AboutScreen />);
+    await screen.findByText(/commit fedcba9/);
+    expect(screen.queryByText('The server was updated separately.')).toBeNull();
+    expect(screen.queryByText('An update is available.')).toBeNull();
+  });
+
+  it('offers the reload when a new app version is waiting, whatever the server says', async () => {
     const reload = vi.fn(async () => undefined);
     setReload(reload);
     act(() => setWaiting(true));
-    serverAnswers({ version: '0.2.0', commit: '', builtAt: null });
+    serverAnswers({ version: '0.1.38', commit: 'abc1234def', builtAt: null });
     renderScreen(<AboutScreen />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Reload to update' }));
+    expect(screen.getByText('An update is available.')).toBeTruthy();
+    expect(screen.queryByText('The server was updated separately.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reload to update' }));
     expect(reload).toHaveBeenCalledWith(true);
   });
 
-  it('has no hint when this device is ahead of the server', async () => {
-    serverAnswers({ version: '0.1.37', commit: '', builtAt: null });
+  it('keeps the reload and drops the neutral note when an update waits and the versions differ', async () => {
+    act(() => setWaiting(true));
+    serverAnswers({ version: '0.2.0', commit: '', builtAt: null });
     renderScreen(<AboutScreen />);
-    expect(await screen.findByText('v0.1.37')).toBeTruthy();
-    expect(screen.queryByText(/An update is available/)).toBeNull();
+    expect(await screen.findByText('v0.2.0')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reload to update' })).toBeTruthy();
+    expect(screen.queryByText('The server was updated separately.')).toBeNull();
   });
 
   it('says the server version is unavailable when the request fails, and keeps the screen', async () => {

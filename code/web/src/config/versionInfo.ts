@@ -22,21 +22,3 @@ export function displayVersion(version: string): string {
 export function shortCommit(commit: string): string {
   return commit.slice(0, 7);
 }
-
-function releaseParts(version: string): number[] | null {
-  const match = RELEASE.exec(version);
-  return match ? match.slice(1).map(Number) : null;
-}
-
-/**
- * Whether the server runs a newer release than this device. Only releases compare (`dev` never
- * does), and only "newer": a device ahead of the server (the web image was rebuilt, the API was not)
- * needs nothing.
- */
-export function serverIsNewer(app: string, server: string): boolean {
-  const mine = releaseParts(app);
-  const theirs = releaseParts(server);
-  if (!mine || !theirs) return false;
-  const index = mine.findIndex((part, i) => part !== theirs[i]);
-  return index !== -1 && theirs[index] > mine[index];
-}

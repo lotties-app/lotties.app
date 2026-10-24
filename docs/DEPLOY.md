@@ -284,9 +284,15 @@ has no `APP_VERSION` and shows `dev` (the commit still comes from git).
 (plus the web `VITE_*` values): the release number, the commit and the build time are left out on purpose, so a new
 release does not rebuild or restart an unchanged image. The consequence: an image that is not rebuilt keeps the
 release that built it. After a release that changed only the web app, About shows for example app v0.1.39 and server
-v0.1.38; that is correct (the API did not change), and the update hint appears only when the server is newer than the
-device. The `v0.1.39` and `latest` registry tags still point at both images of the release. `deploy.test.sh` checks
-that both images get the release and that the tags do not depend on it.
+v0.1.38; that is correct (the API did not change), and About adds only the neutral note "The server was updated
+separately". The update hint ("An update is available" with Reload) never comes from comparing versions or commits: it
+appears only when the service worker has a new app version installed and waiting (`pwa/updateStore.ts`, the same
+signal as Hub > Check for updates). The `v0.1.39` and `latest` registry tags still point at both images of the
+release. `deploy.test.sh` checks that both images get the release and that the tags do not depend on it.
+
+To have both images carry the same release (one number in About), rebuild both in the release: `FORCE_BUILD=1
+./deploy/homelab/deploy.sh`. Nothing else changes: the `src-<hash>` tags stay the same (they are pushed again with the
+new stamp) and the pods restart.
 
 Other ways to build the images (podman by hand, CI) pass the same three `--build-arg`s; without them the app and the
 API say `dev`. The iOS/Android build (`npm --prefix code/mobile run build:web`) also needs `APP_VERSION` in its

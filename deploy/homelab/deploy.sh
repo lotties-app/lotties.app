@@ -23,6 +23,8 @@
 #                   It is chosen before the builds: an image built in this run carries it with the short commit and the
 #                   build time (build args APP_VERSION, APP_COMMIT, APP_BUILD_TIME; Hub > About, GET /api/v1/version).
 #                   They are not part of the source tag: an image that is not rebuilt keeps the release that built it.
+#                   To have both images carry the same release (About shows one number), rebuild both: FORCE_BUILD=1
+#                   (pods restart; the src-<hash> tags stay the same, the images are pushed again under them).
 #   COPY_PULL_SECRET=1  When the pull Secret cr-homel4b is missing in NS, copy it from namespace keycloak without asking.
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
@@ -115,7 +117,7 @@ bump_version() { # [patch|minor|major]
 # The build arguments that stamp the release into an image, one per line (both images get the same three): the
 # release number X.Y.Z (empty: the app shows "dev"), the short commit and the build time. They are never part of the
 # source tag: a new release number alone does not make an image different, so an unchanged image is not rebuilt and
-# keeps the number of the release that built it.
+# keeps the number of the release that built it. FORCE_BUILD=1 rebuilds both, so both carry the new release.
 release_build_args() { # version commit built-at
   printf -- '--build-arg\nAPP_VERSION=%s\n--build-arg\nAPP_COMMIT=%s\n--build-arg\nAPP_BUILD_TIME=%s\n' "${1#v}" "$2" "$3"
 }
