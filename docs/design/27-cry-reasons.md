@@ -202,6 +202,12 @@ The built-in `fussy` event type records the outcome (migration `FussyOutcomes`, 
   hidden fields are not drawn in the event sheet nor in the detail line.
 - Unknown option values are rejected like any other select (400 `validation_failed` with the field); both fields are
   optional. Export/import round-trips them (the backup import validates against the type definition).
+- Since migration `CryDetector` (2026-10-24, docs/design/31-cry-detector-spike.md section 8, task CD4) two more hidden
+  optional booleans follow `suggested_cause` (before the pause keys): `auto_detected` ("Detected automatically" /
+  "Detectado automaticamente": the cry monitor started the spell) and `cry_confirmed` ("Confirmed by parent" /
+  "Confirmado pelos pais": the parent's answer, `true` = "Yes, crying", `false` = "Not crying", absent until answered).
+  Booleans only (anything else is 400 `validation_failed` with the field), never required; seed only, stored events
+  untouched; export/import round-trips them. A spell logged from "Why is she crying?" never sets them.
 
 ## 9. The sheet on Now (UI, 2026-10-23)
 

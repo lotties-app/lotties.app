@@ -466,13 +466,27 @@ layout, copy) belong to the orchestrator and the owner, not to the workers.
 | CD1 | Trigger in TypeScript (`code/web/src/cry/trigger.ts`), a port of `trigger.py`, with shared vectors (`cryTriggerVectors.json`, like the vaccine status vectors) written by a small new harness command from `trigger.py`, and the sensitivity table | Careful | CD0 | Vitest vectors equal Python |
 | CD2 | Capture and inference: `getUserMedia` with processing off (read back `getSettings()`), AudioWorklet ring buffer, a dedicated worker running `AudioClassifier` (self-hosted `yamnet.tflite` and WASM under `/models/`, loaded only when the monitor opens, runtime-cached for offline use, never in the main bundle), score per 0.975 s, no sample ever leaves the worker or is stored; behind a feature flag | Careful | CD1; orchestrator adds `@mediapipe/tasks-audio` 1.1.1 in the main clone | Vitest with a fake worker; a manual check on Chrome desktop with a recorded test file played through a virtual microphone |
 | CD3 | Monitor page: consent, listening state, one-tap stop, sensitivity, Wake Lock, visibility and permission handling, failure states, i18n en + pt-BR (`locales/<lang>/cryMonitor.json`), axe, dev preview `/dev/cry-monitor?state=` | Medium | CD2 + owner-approved copy | Vitest, axe light/dark/night, screenshots 320-430 px |
-| CD4 | API seed migration `CryDetector`: hidden optional `auto_detected` and `cry_confirmed` booleans on the built-in `fussy` type, export/import round trip | Careful | CD0 | model + endpoint tests, migration tests |
+| CD4 | **Done** (2026-10-24, commit d7ec253 + web labels): API seed migration `CryDetector`: hidden optional `auto_detected` and `cry_confirmed` booleans on the built-in `fussy` type, export/import round trip | Careful | CD0 | model + endpoint tests, migration tests |
 | CD5 | Web event flow: start the running `fussy` spell on trigger (Now commands, outbox), close after quiet, merge overlapping auto spells of one baby, "Yes, crying" / "Not crying" in the event detail (sets `cry_confirmed`; "Not crying" soft-deletes) | Medium | CD3, CD4 | Vitest incl. offline outbox |
-| CD6 | Push kind `cry_detected` (docs/design/09): planner input "auto fussy events since the last tick", stale cutoff 10 min, dedupe by event id, off by default, generic text, service-worker catalog en + pt-BR | Careful | CD4 | planner and dispatch tests, `NotificationCodes` appended |
+| CD6 | **Done** (2026-10-24, commits d7ec253 API and 50d1265 web; docs/design/09 section 2.12): Push kind `cry_detected` (docs/design/09): planner input "auto fussy events since the last tick", stale cutoff 10 min, dedupe by event id, off by default, generic text, service-worker catalog en + pt-BR | Careful | CD4 | planner and dispatch tests, `NotificationCodes` appended |
 | CD7 | Credits: curated YAMNet entry and NOTICE, regenerate the generated credits after the dependency (orchestrator) | Light | CD2 | `generate-credits.mjs --check`, credits test |
 | CD8 | Device checklist on HTTPS staging: an old Android and an iPhone on iOS 18.4+ (load, CPU, battery per hour, heat, Wake Lock, relaunch, a phone call, permission persistence), fixes | Medium | CD5 | checklist in the PR |
 | CD9 | Pilot with consenting families (section 10): confirmed share and parent-reported misses per device; adjust the sensitivity table | Owner + Medium | CD8 | pilot summary (aggregates only) |
 | CD10 | Native shell, separate go/no-go: Android microphone foreground service with native capture and MediaPipe Tasks Android; iOS background audio spike with native capture | Heavy | CD9 | device tests, store declarations |
+
+Notes on CD4 and CD6 as built (migration `CryDetector` carries both: the fussy seed and the `cry_detected` preference
+column with the widened candidate index):
+
+- The planner reads the monitor's spells as "fussy spells, not deleted, `auto_detected` true, not marked Not crying,
+  started in the last 10 minutes or still running then" rather than "since the last tick": the dedupe key
+  `cry:{eventId}` makes every tick idempotent, so no tick bookkeeping is needed. A spell that starts while an earlier
+  monitor spell of the baby is still going is the same episode and sends nothing (two monitors, merged spells).
+- Recipients follow `dose_due` and the diaper heads-ups: Owners, Parents and Caregivers who turned the switch on, on
+  every opted-in device; never a Viewer or the Doctor. Delivered inside quiet hours (an owner decision to confirm: the
+  monitor mostly runs at night, when quiet hours are on by default).
+- The device that runs the monitor is not known to the server and the service worker always shows a push, so that
+  device gets the alert too when its member opted in on it; the monitor page can close it by tag `cry:{babyId}`
+  (docs/design/09 section 2.12).
 
 ## 14. Reproduce
 
