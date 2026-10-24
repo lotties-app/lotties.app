@@ -5,3 +5,5 @@ coverage
 .env
 .env.*
 !.env.example
+# The cry model is fetched and verified inside the image build (Dockerfile), never copied from the context
+public/models/cry
