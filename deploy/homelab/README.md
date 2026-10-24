@@ -89,8 +89,10 @@ built something is a release: the images also get `vX.Y.Z` (the next patch after
 ## Secrets and rotation
 
 - `lotties-secrets` holds `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD`, and when set
-  `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off) and, only with
-  `DB_AUTO_MIGRATE=true`, `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.
+  `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
+  `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
+  Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md) and, only with `DB_AUTO_MIGRATE=true`,
+  `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.
 - Values come from `deploy/homelab/.env`; a key not set there keeps what the Secret already has, a key set to an empty
   value is removed. The script writes each value to a file in a private temporary directory and builds the Secret from
   those files (server-side apply): values never appear on a command line or in the output.

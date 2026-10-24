@@ -48,7 +48,7 @@ table, `docs/DEPLOY.md` and the build wiring in step.
 | C6 | Keycloak outgoing email: is an SMTP relay (Brevo or another) configured in production? | a relay receives the account email address and the account emails: it must then be added to `THIRD_PARTIES` and both tables (the tests force the three to agree) | Companies table |
 | C7 | Log retention: API stdout (kubelet rotation or a log collector), the web container's nginx access log, Traefik access logs (on? query strings?), Keycloak | the policy says "only as long as needed"; a number (for example 30 days) is better once confirmed | Retention |
 | C8 | Backups: any routine besides the `pg_dump` before migration deploys? Where are the files, are they encrypted, who deletes them and when? Any database server snapshots? | the policy says copies are deleted when no longer needed and may still hold deleted data | Retention; Security |
-| C9 | Production settings outside the repo: `AUTH_ADMIN_CLIENT_ID/SECRET` (Keycloak account deletion; **not** in `deploy/homelab/values/api.yaml`), `Alexa__Enabled`, `AddressLookup__ContactEmail`, the three `PUSH_VAPID_*` | account deletion text, Alexa row, push row | Your rights; Companies table |
+| C9 | Production settings outside the repo: `AUTH_ADMIN_CLIENT_ID/SECRET` (Keycloak account deletion: the kit passes them from `deploy/homelab/.env`; create the client and set them, docs/KEYCLOAK-ACCOUNT-DELETION.md; the `DRY_RUN=1` plan prints whether deletion also deletes the Keycloak user), `Alexa__Enabled`, `AddressLookup__ContactEmail`, the three `PUSH_VAPID_*` | account deletion text, Alexa row, push row | Your rights; Companies table |
 | C10 | GitHub private vulnerability reporting is enabled on the repository (the default private contact) | otherwise the default "private report" link does not work: set `VITE_PRIVACY_CONTACT_EMAIL` | Contact |
 | C11 | Whether the app stores' statistics and crash reports are shared with you (App Store Connect, Play Console) | the policy mentions them | Companies table |
 | C12 | That you can answer a full access request within 15 days (LGPD art. 19) and erase a soft-deleted record on request (a manual database operation today) | the policy promises both | Your rights |
@@ -81,11 +81,14 @@ table, `docs/DEPLOY.md` and the build wiring in step.
 
 ## 5. Gaps to close before submitting (from the audit, section 8)
 
-- [ ] G1: account deletion does not erase saved doctors and clinics, and the database's `RESTRICT` key probably makes
-  `DELETE /me` fail for someone alone on a baby with providers (API fix + test).
-- [ ] G2: a doctor-only account has no "Account and data" section in `/doctor/settings` (store rule for in-app deletion).
+- [x] G1: account deletion now erases saved doctors and clinics (it failed on the `RESTRICT` key, proven by a test);
+  a model-driven test covers every table that points at a baby or a user.
+- [x] G2: `/doctor/settings` has "Account and data" (download of her own data, account deletion).
 - [ ] G3: consent capture (section 4).
-- [ ] G5: wire `AUTH_ADMIN_CLIENT_ID/SECRET` into the home lab API, so deletion also removes the sign-in account.
+- [ ] G5: the kit and the app are ready; **you** create the Keycloak client `lotties-account-deletion` (service account,
+  `realm-management` > `manage-users` only), put `AUTH_ADMIN_CLIENT_ID/SECRET` in `deploy/homelab/.env`, deploy, and
+  test with a throwaway user: docs/KEYCLOAK-ACCOUNT-DELETION.md. Until then the app tells users the sign-in account
+  stays, and you remove it on request.
 - [ ] G6: a "policy updated" notice keyed on `PRIVACY_POLICY_VERSION`.
 - [ ] G7: Google Play's deletion URL: until a public `/delete-account` page exists, decide whether
   `https://lotties.app/privacy#privacy-rights` (in-app steps plus the contact) is acceptable.
