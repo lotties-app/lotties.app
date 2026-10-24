@@ -46,6 +46,25 @@ public sealed class AuthOptionsValidatorTests
         Assert.True(Validator(Environments.Production).Validate(null, options).Succeeded);
     }
 
+    [Theory]
+    [InlineData("lotties-account-deletion", null)]
+    [InlineData(null, "secret")]
+    [InlineData("lotties-account-deletion", " ")]
+    public void Validate_OnlyOneAdminClientSetting_Fails(string? clientId, string? secret)
+    {
+        var options = new AuthOptions { Authority = "https://issuer.example.test/", Audience = "api", AdminClientId = clientId, AdminClientSecret = secret };
+
+        Assert.Contains(AuthOptionsValidator.HalfAdminClientMessage, Validator(Environments.Production).Validate(null, options).Failures!);
+    }
+
+    [Fact]
+    public void Validate_BothAdminClientSettings_Succeeds()
+    {
+        var options = new AuthOptions { Authority = "https://issuer.example.test/", Audience = "api", AdminClientId = "lotties-account-deletion", AdminClientSecret = "secret" };
+
+        Assert.True(Validator(Environments.Production).Validate(null, options).Succeeded);
+    }
+
     private static AuthOptionsValidator Validator(string environment) =>
         new(new HostingEnvironment { EnvironmentName = environment });
 }

@@ -30,7 +30,13 @@ public sealed class AccountDeletionPreviewResponse
 
     public bool CanDelete { get; set; }
 
-    public static AccountDeletionPreviewResponse For(AccountDeletionPlan plan)
+    /// <summary>
+    /// Whether this server will ask the identity provider to remove the sign-in account too (an admin client is
+    /// configured for the user's issuer); when false the account stays and the app says so before the deletion.
+    /// </summary>
+    public bool IdentityRemovable { get; set; }
+
+    public static AccountDeletionPreviewResponse For(AccountDeletionPlan plan, bool identityRemovable)
     {
         ArgumentNullException.ThrowIfNull(plan);
         return new AccountDeletionPreviewResponse
@@ -39,12 +45,19 @@ public sealed class AccountDeletionPreviewResponse
             SharedBabies = [.. plan.Left.Select(baby => (AccountDeletionBabyResponse)baby)],
             BlockedBabies = [.. plan.Blocked.Select(baby => (AccountDeletionBabyResponse)baby)],
             CanDelete = plan.Blocked.Count == 0,
+            IdentityRemovable = identityRemovable,
         };
     }
 }
 
-/// <summary><c>DELETE /api/v1/me</c> result: whether the sign-in account at the identity provider was removed too.</summary>
+/// <summary>
+/// <c>DELETE /api/v1/me</c> result. The Lotties data is always erased by then; <see cref="Identity"/> says what happened to
+/// the sign-in account (<c>removed</c>, <c>not_configured</c>, <c>failed</c>) and <see cref="IdentityRemoved"/> is its
+/// boolean form (kept for older clients).
+/// </summary>
 public sealed class AccountDeletionResponse
 {
-    public bool IdentityRemoved { get; set; }
+    public bool IdentityRemoved => Identity == IdentityRemoval.Removed;
+
+    public IdentityRemoval Identity { get; set; }
 }

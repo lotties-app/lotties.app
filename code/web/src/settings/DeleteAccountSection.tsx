@@ -22,9 +22,12 @@ import {
   ACCOUNT_DELETION_PREVIEW_KEY,
   deleteAccount,
   getDeletionPreview,
+  identityOutcome,
   type AccountDeletionBaby,
+  type IdentityRemoval,
 } from '../account/accountApi';
 import { downloadAccountData } from '../account/exportAccountData';
+import { downloadProfessionalData } from '../account/exportProfessionalData';
 import { useApiClient } from '../api/ApiClientContext';
 import { useDatabase } from '../db/DatabaseContext';
 import { countUnsyncedMutations } from '../db/outbox';
@@ -51,8 +54,23 @@ function BabyList({ title, babies }: { title?: string; babies: AccountDeletionBa
   );
 }
 
+/** What the sign-in account outcome tells the user after the deletion; nothing when it is gone. */
+const IDENTITY_NOTICE = {
+  removed: null,
+  not_configured: 'account.identityKept',
+  failed: 'account.identityFailed',
+} as const satisfies Record<IdentityRemoval, string | null>;
+
+/**
+ * Where the section is shown: the family's Settings (`family`, the default: the download is what
+ * the device holds) or the doctor's shell (`professional`: the download is only what she produced,
+ * never her patients' records, and the privacy link stays inside /doctor).
+ */
+export type AccountSectionVariant = 'family' | 'professional';
+
 /** Settings > Account and data: download your data, then delete the account (store requirement). Online only. */
-export function DeleteAccountSection() {
+export function DeleteAccountSection({ variant = 'family' }: { variant?: AccountSectionVariant }) {
+  const professional = variant === 'professional';
   const { t } = useTranslation();
   const db = useDatabase();
   const api = useApiClient();
@@ -62,8 +80,8 @@ export function DeleteAccountSection() {
   const action = useServerAction();
   const [open, setOpen] = useState(false);
   const [understood, setUnderstood] = useState(false);
-  const [exportFailed, setExportFailed] = useState(false);
-  const [finished, setFinished] = useState<{ identityRemoved: boolean } | null>(null);
+  const [exportFailed, setExportFailed] = useState<string | null>(null);
+  const [finished, setFinished] = useState<IdentityRemoval | null>(null);
   const unsynced = useLiveQuery(() => countUnsyncedMutations(db), [db]) ?? 0;
   const preview = useQuery({
     queryKey: ACCOUNT_DELETION_PREVIEW_KEY,
@@ -79,7 +97,15 @@ export function DeleteAccountSection() {
   };
 
   const download = async () => {
-    setExportFailed(!(await downloadAccountData(db)));
+    if (!professional) {
+      setExportFailed((await downloadAccountData(db)) ? null : t('account.exportFailed'));
+      return;
+    }
+    try {
+      setExportFailed((await downloadProfessionalData(db, api)) ? null : t('account.exportFailed'));
+    } catch {
+      setExportFailed(t('account.exportProfessionalFailed'));
+    }
   };
 
   const confirm = async () => {
@@ -88,7 +114,7 @@ export function DeleteAccountSection() {
     const ok = await action.run(async () => {
       // Best effort and before the delete: afterwards the request would provision a new, empty user.
       await releaseThisDevice(api)().catch(() => undefined);
-      setFinished(await deleteAccount(api));
+      setFinished(identityOutcome(await deleteAccount(api)));
     });
     if (!ok) {
       engine.start();
@@ -98,13 +124,14 @@ export function DeleteAccountSection() {
 
   const data = preview.data;
   const blocked = (data?.blockedBabies.length ?? 0) > 0;
+  const identityNotice = finished ? IDENTITY_NOTICE[finished] : null;
 
   return (
     <Stack spacing={2}>
       <Typography color="text.secondary">{t('account.intro')}</Typography>
       <Link
         component={RouterLink}
-        to="/hub/privacy"
+        to={professional ? '/doctor/privacy' : '/hub/privacy'}
         sx={{
           alignSelf: 'flex-start',
           minHeight: 44,
@@ -115,11 +142,13 @@ export function DeleteAccountSection() {
         {t('account.privacy')}
       </Link>
       <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
-        <Typography variant="body2">{t('account.exportHint')}</Typography>
+        <Typography variant="body2">
+          {t(professional ? 'account.exportHintProfessional' : 'account.exportHint')}
+        </Typography>
         <Button variant="outlined" onClick={() => void download()}>
           {t('account.export')}
         </Button>
-        {exportFailed && <ErrorNotice message={t('account.exportFailed')} />}
+        {exportFailed && <ErrorNotice message={exportFailed} />}
       </Stack>
       <Button
         color="error"
@@ -136,9 +165,7 @@ export function DeleteAccountSection() {
             {finished ? (
               <Stack spacing={2}>
                 <Typography>{t('account.doneBody')}</Typography>
-                {!finished.identityRemoved && (
-                  <Alert severity="warning">{t('account.identityKept')}</Alert>
-                )}
+                {identityNotice && <Alert severity="warning">{t(identityNotice)}</Alert>}
               </Stack>
             ) : (
               <Stack spacing={2}>
@@ -157,6 +184,13 @@ export function DeleteAccountSection() {
                       </Alert>
                     )}
                     <Typography variant="body2">{t('account.whatElse')}</Typography>
+                    <Typography variant="body2">
+                      {t(
+                        data.identityRemovable
+                          ? 'account.identityWillGo'
+                          : 'account.identityWillStay',
+                      )}
+                    </Typography>
                     {unsynced > 0 && (
                       <Alert severity="warning">
                         {t('account.unsynced', { changes: unsyncedChangesLabel(unsynced) })}

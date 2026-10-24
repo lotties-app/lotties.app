@@ -299,4 +299,28 @@ describe('the doctor settings', () => {
     expect(screen.queryByRole('button', { name: 'Members & invites' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Medications' })).toBeNull();
   });
+
+  it('let a doctor-only user download her own data and delete her account (store rule)', async () => {
+    const { calls } = await renderDashboard(db, '/doctor/settings#account', [LIA], (call) =>
+      call.path === '/api/v1/me/deletion-preview'
+        ? {
+            deletedBabies: [],
+            sharedBabies: [{ id: LIA.id, name: LIA.name }],
+            blockedBabies: [],
+            canDelete: true,
+            identityRemovable: false,
+          }
+        : handler(call),
+    );
+
+    expect(await screen.findByRole('button', { name: 'Account and data' })).toBeTruthy();
+    expect(screen.getByText(/Your patients' records are not included/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Privacy policy/ }).getAttribute('href')).toBe(
+      '/doctor/privacy',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+    expect(await screen.findByText(/You will leave these babies/)).toBeTruthy();
+    expect(screen.getByText(/This server does not delete your sign-in account/)).toBeTruthy();
+    expect(calls.some((call) => call.method === 'DELETE')).toBe(false);
+  });
 });

@@ -12,6 +12,9 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// keep, the membership, private notes, pending proposals, unaccepted invites and read marks of the user go; what she
 /// wrote that the family uses (events, measurements, shared notes, decided proposals) stays, attributed to the
 /// anonymized user row (<see cref="User.Anonymize"/>), because every such foreign key points at it.
+/// Every column of the model that points at a baby or a user has a rule in <c>AccountErasureTests.Rules</c> (Lotties.Api.Tests):
+/// a new one fails that test until it gets a rule here and a row in its fixture. Most foreign keys to <c>babies</c> are
+/// <c>RESTRICT</c>, so a table missing below makes the deletion fail (on PostgreSQL and SQLite alike) instead of leaving rows.
 /// </summary>
 internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDataEraser
 {
@@ -82,6 +85,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.PrescriptionProposals.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.AccessLog.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.Appointments.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
+        await context.CareProviders.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.Vaccinations.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.Formulas.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.Measurements.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
@@ -123,5 +127,10 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.UserNotificationSettings.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.ProfessionalProfiles.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserAssistantSettings.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+
+        // Catalog products she added stay for everyone (instance-wide), without the link to her.
+        await context.Products.IgnoreQueryFilters()
+            .Where(row => row.CreatedBy == userId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.CreatedBy, (Guid?)null), cancellationToken);
     }
 }

@@ -78,6 +78,7 @@ const KNOWN_ROUTES = new Set([
   '/settings',
   '/settings#account',
   '/settings#notifications',
+  '/doctor/settings#account',
 ]);
 
 describe('the privacy policy content', () => {

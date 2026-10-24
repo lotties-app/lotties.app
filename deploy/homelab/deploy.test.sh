@@ -215,6 +215,24 @@ run "push on" PUSH_VAPID_PUBLIC_KEY=pub PUSH_VAPID_PRIVATE_KEY=priv PUSH_VAPID_S
   check "push: the three keys go to the Secret" log_has '^secret-keys: .*PUSH_VAPID_PRIVATE_KEY PUSH_VAPID_PUBLIC_KEY PUSH_VAPID_SUBJECT'
 }
 
+run "no admin client" SKIP_BUILD=1 && {
+  check "admin client: none keeps the Keycloak user, and says so" out_has 'account deletion: keeps the Keycloak user'
+  check "admin client: no AUTH_ADMIN_* key in the Secret" log_lacks '^secret-keys: .*AUTH_ADMIN_'
+}
+
+EXPECT_FAIL=1 run "partial admin client" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion SKIP_BUILD=1
+check "admin client: the id alone is refused" out_has 'both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither'
+
+ADMIN_SECRET='Adm1n-Cl1ent-S3cret'
+run "admin client on" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion AUTH_ADMIN_CLIENT_SECRET="$ADMIN_SECRET" SKIP_BUILD=1 && {
+  check "admin client: both keys go to the Secret" log_has '^secret-keys: AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET DB_'
+  check "admin client: deletion also removes the Keycloak user" out_has 'account deletion: also deletes the Keycloak user'
+  check "admin client: the secret is never on a command line or printed" bash -c "! grep -qF -- '$ADMIN_SECRET' '$WORK/log' '$WORK/out'"
+}
+
+EXPECT_FAIL=1 run "admin client placeholder" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion AUTH_ADMIN_CLIENT_SECRET='<admin-client-secret>' SKIP_BUILD=1
+check "admin client: the .env.example placeholder is refused" out_has 'AUTH_ADMIN_CLIENT_SECRET is still the .env.example placeholder'
+
 EXPECT_FAIL=1 run "placeholder" VITE_OIDC_CLIENT_ID='<spa-client-id>' SKIP_BUILD=1
 check "placeholder: refused" out_has 'VITE_OIDC_CLIENT_ID is still the .env.example placeholder'
 

@@ -7,20 +7,28 @@ namespace Lotties.Api.Authentication;
 
 /// <summary>
 /// Removes the account at Keycloak with the admin REST API, using a service account (client credentials) that may
-/// manage users in the realm of <see cref="AuthOptions.Authority"/>. Without <c>Auth:AdminClientId</c> and
-/// <c>Auth:AdminClientSecret</c> nothing is called and the account stays (the web app tells the user).
-/// A failure is logged and reported as "not removed": the data is already erased by then.
+/// manage users in the realm of <see cref="AuthOptions.Authority"/> (docs/KEYCLOAK-ACCOUNT-DELETION.md). Without
+/// <c>Auth:AdminClientId</c> and <c>Auth:AdminClientSecret</c> nothing is called and the account stays
+/// (<see cref="IdentityRemoval.NotConfigured"/>; the web app tells the user before and after).
+/// A failure is logged with the Keycloak user id, so the operator can delete that user by hand, and reported as
+/// <see cref="IdentityRemoval.Failed"/>: the data is already erased by then.
 /// </summary>
 internal sealed class KeycloakAccountRemover(HttpClient http, IOptions<AuthOptions> options, ILogger<KeycloakAccountRemover> logger) : IIdentityAccountRemover
 {
-    public async Task<bool> RemoveAsync(string issuer, string subject, CancellationToken cancellationToken = default)
+    public bool CanRemove(string issuer)
     {
         var settings = options.Value;
-        if (!settings.CanRemoveAccounts || !IsAuthority(issuer, settings.Authority!))
+        return settings.CanRemoveAccounts && IsAuthority(issuer, settings.Authority!);
+    }
+
+    public async Task<IdentityRemoval> RemoveAsync(string issuer, string subject, CancellationToken cancellationToken = default)
+    {
+        if (!CanRemove(issuer))
         {
-            return false;
+            return IdentityRemoval.NotConfigured;
         }
 
+        var settings = options.Value;
         try
         {
             var realm = new Uri(settings.Authority!.TrimEnd('/'));
@@ -32,17 +40,20 @@ internal sealed class KeycloakAccountRemover(HttpClient http, IOptions<AuthOptio
             using var response = await http.SendAsync(request, cancellationToken);
             if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                return true;
+                return IdentityRemoval.Removed;
             }
 
-            logger.LogWarning("Keycloak refused to delete an account: HTTP {StatusCode}", (int)response.StatusCode);
+            logger.LogWarning(
+                "Keycloak refused to delete the user {KeycloakUserId}: HTTP {StatusCode}. Delete that user in the realm's admin console",
+                subject,
+                (int)response.StatusCode);
         }
-        catch (Exception exception) when (exception is HttpRequestException or JsonException or InvalidOperationException or UriFormatException or TaskCanceledException)
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or InvalidOperationException or UriFormatException or TaskCanceledException or KeyNotFoundException)
         {
-            logger.LogWarning(exception, "Removing the account at Keycloak failed");
+            logger.LogWarning(exception, "Removing the Keycloak user {KeycloakUserId} failed. Delete that user in the realm's admin console", subject);
         }
 
-        return false;
+        return IdentityRemoval.Failed;
     }
 
     private static bool IsAuthority(string issuer, string authority) =>
@@ -64,10 +75,4 @@ internal sealed class KeycloakAccountRemover(HttpClient http, IOptions<AuthOptio
         using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
         return json.RootElement.GetProperty("access_token").GetString() ?? throw new InvalidOperationException("Keycloak returned no access token.");
     }
-}
-
-/// <summary>The identity provider is not managed from here: the sign-in account stays.</summary>
-internal sealed class NoIdentityAccountRemover : IIdentityAccountRemover
-{
-    public Task<bool> RemoveAsync(string issuer, string subject, CancellationToken cancellationToken = default) => Task.FromResult(false);
 }

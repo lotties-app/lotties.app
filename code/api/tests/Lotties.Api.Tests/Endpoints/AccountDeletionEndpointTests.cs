@@ -1,11 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using Lotties.Api.Authentication;
 using Lotties.Api.Tests.Support;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Users;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lotties.Api.Tests.Endpoints;
 
@@ -13,6 +18,7 @@ public sealed class AccountDeletionEndpointTests(ApiFactory factory) : IClassFix
 {
     private const string MePath = "/api/v1/me";
     private const string PreviewPath = "/api/v1/me/deletion-preview";
+    private const string KeycloakAuthority = "https://auth.example.test/realms/lotties.app";
 
     private HttpClient As(SeededBaby baby, BabyRole role) => factory.CreateClientFor(baby.SubjectOf(role));
 
@@ -141,5 +147,100 @@ public sealed class AccountDeletionEndpointTests(ApiFactory factory) : IClassFix
         Assert.False(preview.CanDelete);
     }
 
+    [Fact]
+    public async Task Delete_AdminClientNotConfigured_ErasesTheDataAndSaysTheSignInAccountStays()
+    {
+        var subject = TestUsers.NewSubject();
+        var client = factory.CreateClientFor(subject, name: "Ana", issuer: KeycloakAuthority);
+
+        var preview = await client.GetFromJsonAsync<JsonElement>(PreviewPath);
+        var response = await client.DeleteAsync(MePath);
+
+        Assert.False(preview.GetProperty("identityRemovable").GetBoolean());
+        var body = await response.ReadAsync<JsonElement>();
+        Assert.Equal(("not_configured", false), (body.GetProperty("identity").GetString(), body.GetProperty("identityRemoved").GetBoolean()));
+        Assert.Empty(await factory.QueryAsync(context => context.Users.Where(user => user.Subject == subject).ToListAsync()));
+    }
+
+    [Fact]
+    public async Task Delete_AdminClientConfigured_RemovesTheSignInAccountAtKeycloak()
+    {
+        var keycloak = new FakeKeycloak(_ => HttpStatusCode.NoContent);
+        using var host = WithKeycloak(keycloak);
+        var subject = TestUsers.NewSubject();
+        var client = ClientFor(host, subject);
+
+        var preview = await client.GetFromJsonAsync<JsonElement>(PreviewPath);
+        var body = await (await client.DeleteAsync(MePath)).ReadAsync<JsonElement>();
+
+        Assert.True(preview.GetProperty("identityRemovable").GetBoolean());
+        Assert.Equal(("removed", true), (body.GetProperty("identity").GetString(), body.GetProperty("identityRemoved").GetBoolean()));
+        Assert.Equal(
+            [$"POST {KeycloakAuthority}/protocol/openid-connect/token", $"DELETE https://auth.example.test/admin/realms/lotties.app/users/{Uri.EscapeDataString(subject)}"],
+            keycloak.Requests);
+        Assert.Empty(await factory.QueryAsync(context => context.Users.Where(user => user.Subject == subject).ToListAsync()));
+    }
+
+    /// <summary>
+    /// Keycloak down: the data is erased anyway (it was, before Keycloak was called) and the answer says the sign-in account
+    /// stays. Retry: signing in again gives a new, empty account whose deletion asks Keycloak again; or the operator
+    /// deletes the user logged by the API (docs/KEYCLOAK-ACCOUNT-DELETION.md).
+    /// </summary>
+    [Fact]
+    public async Task Delete_KeycloakDown_ErasesTheDataAndSaysTheSignInAccountStays_AndASecondDeletionRetries()
+    {
+        var down = true;
+        var keycloak = new FakeKeycloak(_ => down ? throw new HttpRequestException("connection refused") : HttpStatusCode.NoContent);
+        using var host = WithKeycloak(keycloak);
+        var subject = TestUsers.NewSubject();
+        var baby = await (await ClientFor(host, subject).PostAsJsonAsync("/api/v1/babies", new { name = "Lia", birthDate = "2026-01-01" })).ReadAsync<JsonElement>();
+
+        var failed = await (await ClientFor(host, subject).DeleteAsync(MePath)).ReadAsync<JsonElement>();
+        down = false;
+        var retried = await (await ClientFor(host, subject).DeleteAsync(MePath)).ReadAsync<JsonElement>();
+
+        Assert.Equal(("failed", false), (failed.GetProperty("identity").GetString(), failed.GetProperty("identityRemoved").GetBoolean()));
+        Assert.Empty(await factory.QueryAsync(context => context.Babies.Where(item => item.Id == baby.GetProperty("id").GetGuid()).ToListAsync()));
+        Assert.Equal("removed", retried.GetProperty("identity").GetString());
+        Assert.Empty(await factory.QueryAsync(context => context.Users.Where(user => user.Subject == subject).ToListAsync()));
+    }
+
+    private WebApplicationFactory<Program> WithKeycloak(FakeKeycloak keycloak) =>
+        factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("Auth:Authority", KeycloakAuthority);
+            builder.UseSetting("Auth:Audience", "lotties-api");
+            builder.UseSetting("Auth:AdminClientId", "lotties-account-deletion");
+            builder.UseSetting("Auth:AdminClientSecret", "test-secret");
+            builder.ConfigureTestServices(services =>
+                services.AddHttpClient<IIdentityAccountRemover, KeycloakAccountRemover>().ConfigurePrimaryHttpMessageHandler(() => keycloak));
+        });
+
+    private static HttpClient ClientFor(WebApplicationFactory<Program> host, string subject)
+    {
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, subject);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.NameHeader, "Ana");
+        client.DefaultRequestHeaders.Add(TestAuthHandler.IssuerHeader, KeycloakAuthority);
+        return client;
+    }
+
     private sealed record BabyResponseStub(Guid Id);
+
+    /// <summary>Keycloak's token endpoint and admin users endpoint; <c>deleteUser</c> answers the delete (or throws, for "down").</summary>
+    private sealed class FakeKeycloak(Func<HttpRequestMessage, HttpStatusCode> deleteUser) : HttpMessageHandler
+    {
+        public List<string> Requests { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Requests.Add($"{request.Method} {request.RequestUri!.AbsoluteUri}");
+            if (request.Method == HttpMethod.Post)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{"access_token":"tok"}""", System.Text.Encoding.UTF8, "application/json") });
+            }
+
+            return Task.FromResult(new HttpResponseMessage(deleteUser(request)));
+        }
+    }
 }

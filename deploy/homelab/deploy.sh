@@ -25,7 +25,8 @@
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
 # App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL and VITE_PRIVACY_* (public,
-# baked into the web image), DB_* and PUSH_VAPID_* (the Secret lotties-secrets), DB_AUTO_MIGRATE, CORS_ALLOWED_ORIGINS.
+# baked into the web image), DB_*, PUSH_VAPID_* and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# CORS_ALLOWED_ORIGINS.
 #
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
 # for the web image the VITE_* values). A tag already in the registry is not rebuilt and its pods are not restarted.
@@ -225,7 +226,7 @@ put_secret() { # key value
 secret_keys() { (cd "$SECRET_DIR" && ls | tr '\n' ' '); }
 
 collect_secrets() {
-  local key value push_count=0 missing=()
+  local key value push_count=0 admin_count=0 missing=()
   step "Secret $APP_SECRET (values are not shown)"
   SECRET_DIR="$WORK/secret"
   mkdir -m 700 "$SECRET_DIR"
@@ -240,6 +241,12 @@ collect_secrets() {
     [ -z "$value" ] || push_count=$((push_count + 1))
     put_secret "$key" "$value"
   done
+  # The Keycloak service account that deletes the sign-in account with the Lotties account (docs/KEYCLOAK-ACCOUNT-DELETION.md).
+  for key in AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET; do
+    value=$(setting_or_secret "$key")
+    [ -z "$value" ] || admin_count=$((admin_count + 1))
+    put_secret "$key" "$value"
+  done
   if [ "$DB_AUTO_MIGRATE" = true ]; then
     for key in DB_MIGRATOR_USER DB_MIGRATOR_PASSWORD; do
       value=$(setting_or_secret "$key")
@@ -249,10 +256,13 @@ collect_secrets() {
   fi
   [ "${#missing[@]}" -eq 0 ] || die "missing settings: ${missing[*]} (set them in deploy/homelab/.env)"
   case "$push_count" in 0 | 3) ;; *) die "set all three PUSH_VAPID_* values or none (push is off with none)" ;; esac
+  case "$admin_count" in 0 | 2) ;; *) die "set both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither (with neither, deleting an account keeps the Keycloak user)" ;; esac
   # A pod reads its Secret only when it starts: the API pods carry this checksum, so a changed Secret restarts them.
   SECRETS_HASH=$( (cd "$SECRET_DIR" && for key in *; do printf '%s\n' "$key"; cat "$key"; printf '\n'; done) | sha256sum | cut -c1-16)
   echo "keys: $(secret_keys)"
   [ "$push_count" = 3 ] && echo "push notifications: on" || echo "push notifications: off (no PUSH_VAPID_* values)"
+  [ "$admin_count" = 2 ] && echo "account deletion: also deletes the Keycloak user" \
+    || echo "account deletion: keeps the Keycloak user (no AUTH_ADMIN_CLIENT_* values; see docs/KEYCLOAK-ACCOUNT-DELETION.md)"
   [ "$DB_AUTO_MIGRATE" = true ] && echo "DB_AUTO_MIGRATE=true: the API pod holds the migrator credentials" || true
 }
 
