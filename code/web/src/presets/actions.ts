@@ -2,7 +2,6 @@ import type { BabyRoutineDb } from '../db/database';
 import type { BabyEvent, EventPayload } from '../db/models';
 import {
   createEvent,
-  deleteEvent,
   editEvent,
   finishEvent,
   stopEvent,
@@ -10,7 +9,11 @@ import {
 } from '../db/eventCommands';
 import { eventsStartedSince, runningEvents } from '../db/queries';
 import { planStop } from '../events/stopPlan';
-import { isNightSleep, wakeUpIdForStoppedNight } from '../now/nightEndsWakeUp';
+import {
+  deleteEventWithWakeUp,
+  isNightSleep,
+  wakeUpIdForStoppedNight,
+} from '../now/nightEndsWakeUp';
 import { startsSleep, stopFeedingForSleep } from '../now/sleepStopsFeeding';
 import { eventMatchesPreset, inferFellAsleepKind } from './status';
 import type { Preset } from './types';
@@ -198,10 +201,11 @@ export async function undoPreset(
   token: UndoToken,
   options: CommandOptions = {},
 ): Promise<void> {
-  await db.transaction('rw', db.events, db.outbox, async () => {
+  await db.transaction('rw', db.events, db.outbox, db.eventTypes, db.babies, async () => {
     for (const id of token.createdIds) {
-      // Checked first: a failing nested command would abort this whole transaction.
-      if (await db.events.get(id)) await deleteEvent(db, id, options);
+      // Checked first: a failing nested command would abort this whole transaction. A created
+      // night takes its automatic wake-up with it.
+      if (await db.events.get(id)) await deleteEventWithWakeUp(db, id, options);
     }
     for (const { id, endedAt } of token.stopped) {
       const current = await db.events.get(id);

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../api/errorMessages';
 import { useDatabase } from '../db/DatabaseContext';
 import { editEvent, finishEvent } from '../db/eventCommands';
-import { useEventCommands } from '../db/hooks';
 import type { EventPayload, EventType } from '../db/models';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { useEventTypeText } from '../i18n/eventTypeText';
@@ -23,7 +22,7 @@ import {
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
 import { fillEmptyFields } from './stopPlan';
 import { useFormulaChoice } from '../formulas/useFormulaChoice';
-import { editFollowingWakeUp } from '../now/nightEndsWakeUp';
+import { deleteEventWithWakeUp, editFollowingWakeUp } from '../now/nightEndsWakeUp';
 import { createEventStoppingFeeding } from '../now/sleepStopsFeeding';
 import { loadTimeBottles } from '../presets/timeBottlesStorage';
 
@@ -89,7 +88,6 @@ export function useEventSheetForm(props: EventSheetProps) {
   const { babyId, types, event, finish, onDone } = props;
   const { t } = useTranslation();
   const names = useEventTypeText();
-  const commands = useEventCommands();
   const db = useDatabase();
   const [form, setForm] = useState<EventFormState>(() => startForm(props));
   const [initial] = useState(() => JSON.stringify(form));
@@ -180,8 +178,8 @@ export function useEventSheetForm(props: EventSheetProps) {
 
   const remove = async () => {
     if (!event) return null;
-    await commands.remove(event.id);
-    return event;
+    // A night takes its automatic wake-up with it (see `deleteEventWithWakeUp`).
+    return deleteEventWithWakeUp(db, event.id);
   };
 
   const problemFor = (key: string) => problems.find((p) => p.field === key)?.message;

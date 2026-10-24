@@ -110,6 +110,11 @@ the "Last" texts and the predictions, because only the Wake-up preset logged the
   a nap or runs again -> the automatic wake-up is soft-deleted. A hand-logged wake-up is never touched and nothing is
   created for a past night. A Caregiver only changes a marker she logged.
 - **Undo.** The stop's toast token lists the marker in `createdIds`: Undo removes it and reopens the night together.
+- **Deleting a night** (event sheet, Day timeline, a timer's discard, the Undo of a preset that created it:
+  `deleteEventWithWakeUp`) soft-deletes its live automatic wake-up in the same transaction; a hand-logged or
+  assistant wake-up stays, and a Caregiver only deletes a marker she logged. Deleting again changes nothing. The
+  "deleted" toast's Undo (`restoreDeletedEvent`) writes the night again under a new id (the API keeps a deleted id
+  deleted) and its wake-up under the restored night's automatic id, in one transaction.
 - **Assistant.** The server's `LogSleepEnd` still logs its `woke_up` under the request-derived id (needed for its
   retry detection; no API change). The web finds that marker by the 15-minute window, so a voice stop followed by a
   sync gives one marker. Known edge: a voice stop and an offline web stop of the same night before either syncs give
@@ -122,5 +127,3 @@ the "Last" texts and the predictions, because only the Wake-up preset logged the
 - A manual (past) nap or night entered in the sheet also stops a feeding timer that started before that nap and still
   runs; a feeding that started after the nap is left alone.
 - Bedtime (`bed_time`) is a marker, not a sleep start, so it does not stop a feeding.
-- Deleting a night does not delete its automatic wake-up (the delete's own Undo restores only the night); the marker
-  can be deleted by hand.

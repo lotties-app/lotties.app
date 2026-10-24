@@ -16,7 +16,9 @@ import { BUILT_IN_TYPES, SLEEP, presetById } from '../presets/presetFixtures';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import {
   autoWakeUpId,
+  deleteEventWithWakeUp,
   editFollowingWakeUp,
+  restoreDeletedEvent,
   logWakeUpForStoppedNight,
   stopLoggingWakeUp,
 } from './nightEndsWakeUp';
@@ -262,6 +264,99 @@ describe('editing a sleep in the event sheet', () => {
     await asRole('Caregiver');
     await edit(stopped, { endedAt: at(21, 5).toISOString() }, at(21, 9));
     expect((await load(wakeUpId!)).startedAt).toBe(at(21, 6).toISOString());
+  });
+});
+
+describe('deleting a night', () => {
+  it('soft-deletes its automatic wake-up in the same transaction, both queued for sync', async () => {
+    const night = await startSleep('night', at(20, 20));
+    const { wakeUpId } = await stop(night, at(21, 6));
+
+    const removed = await deleteEventWithWakeUp(db, night.id, opts(at(21, 9)));
+
+    expect(removed.deleted.id).toBe(night.id);
+    expect(removed.wakeUp?.id).toBe(wakeUpId);
+    expect((await load(night.id)).deletedAt).not.toBeNull();
+    expect((await load(wakeUpId!)).deletedAt).not.toBeNull();
+    const deletes = (await db.outbox.toArray()).filter((m) => m.kind === 'delete');
+    expect(deletes.map((m) => m.entityId).sort()).toEqual([night.id, wakeUpId].sort());
+  });
+
+  it('never touches a hand-logged wake-up', async () => {
+    const night = await startSleep('night', at(20, 20));
+    await stopEvent(db, night.id, at(21, 6).toISOString());
+    const manual = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: SLEEP,
+      startedAt: at(21, 6).toISOString(),
+      endedAt: at(21, 6).toISOString(),
+      payload: { kind: 'woke_up' },
+    });
+    const removed = await deleteEventWithWakeUp(db, night.id);
+    expect(removed.wakeUp).toBeNull();
+    expect((await load(manual.id)).deletedAt).toBeNull();
+  });
+
+  it('a nap or another event deletes alone', async () => {
+    const nap = await startSleep('nap', at(21, 13));
+    await stop(nap, at(21, 14));
+    const removed = await deleteEventWithWakeUp(db, nap.id);
+    expect(removed.wakeUp).toBeNull();
+  });
+
+  it('is idempotent: deleting again changes nothing more', async () => {
+    const night = await startSleep('night', at(20, 20));
+    await stop(night, at(21, 6));
+    await deleteEventWithWakeUp(db, night.id, opts(at(21, 9)));
+    const outbox = await db.outbox.count();
+    const again = await deleteEventWithWakeUp(db, night.id, opts(at(21, 10)));
+    expect(again.wakeUp).toBeNull();
+    expect(await db.outbox.count()).toBe(outbox);
+  });
+
+  it('a Caregiver never deletes a wake-up someone else logged', async () => {
+    const night = await startSleep('night', at(20, 20));
+    const { wakeUpId } = await stop(night, at(21, 6));
+    await db.events.put({ ...(await load(wakeUpId!)), createdBy: 'u-other' });
+    await asRole('Caregiver');
+    const removed = await deleteEventWithWakeUp(db, night.id);
+    expect(removed.wakeUp).toBeNull();
+    expect((await load(wakeUpId!)).deletedAt).toBeNull();
+  });
+
+  it('Undo of the delete restores both: the night under a new id, the wake-up under its automatic id', async () => {
+    const night = await startSleep('night', at(20, 20));
+    await stop(night, at(21, 6));
+    const { deleted, wakeUp } = await deleteEventWithWakeUp(db, night.id);
+
+    const restored = await restoreDeletedEvent(db, deleted, wakeUp);
+
+    expect(restored.id).not.toBe(night.id);
+    expect(restored).toMatchObject({
+      startedAt: night.startedAt,
+      endedAt: at(21, 6).toISOString(),
+      payload: { kind: 'night' },
+    });
+    const markers = await wakeUps();
+    expect(markers).toHaveLength(1);
+    expect(markers[0]).toMatchObject({
+      id: autoWakeUpId(restored.id, 0),
+      startedAt: at(21, 6).toISOString(),
+    });
+    // Still automatic: deleting the restored night takes it again.
+    expect((await deleteEventWithWakeUp(db, restored.id)).wakeUp?.id).toBe(markers[0].id);
+  });
+
+  it('undo of a created night (preset token) removes its automatic wake-up too', async () => {
+    const token = await runPreset(db, presetById('fell_asleep', TYPES), {
+      babyId: BABY_ID,
+      options: opts(at(20, 21)),
+    });
+    const night = (await db.events.toArray()).find((e) => e.endedAt === null)!;
+    await db.events.put({ ...night, payload: { kind: 'night' } });
+    const { wakeUpId } = await stop(await load(night.id), at(21, 6));
+    await undoPreset(db, token);
+    expect((await load(wakeUpId!)).deletedAt).not.toBeNull();
   });
 });
 

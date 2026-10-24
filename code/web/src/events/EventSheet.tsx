@@ -211,9 +211,10 @@ export function EventSheet(props: EventSheetProps) {
   };
 
   const remove = async () => {
-    const deleted = await state.remove();
-    if (!deleted) return;
-    announceEventDeleted(deleted, type ? names.typeName(type) : t('common.event'));
+    const removed = await state.remove();
+    if (!removed) return;
+    const { deleted, wakeUp } = removed;
+    announceEventDeleted(deleted, type ? names.typeName(type) : t('common.event'), wakeUp);
     onDone();
   };
 

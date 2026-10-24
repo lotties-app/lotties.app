@@ -174,3 +174,65 @@ export async function editFollowingWakeUp(
     return after;
   });
 }
+
+/** What `deleteEventWithWakeUp` deleted, as stored before (the delete's Undo writes it back). */
+export interface DeletedWithWakeUp {
+  deleted: BabyEvent;
+  /** The night's automatic wake-up deleted with it (`null`: none). */
+  wakeUp: BabyEvent | null;
+}
+
+/**
+ * Soft-deletes an event like `deleteEvent`; when it is a night, its live automatic wake-up goes
+ * with it in the same transaction (a hand-logged or assistant wake-up is never touched, and a
+ * Caregiver only deletes a marker she logged). Deleting again changes nothing (idempotent).
+ * Returns both as they were before, for Undo.
+ */
+export async function deleteEventWithWakeUp(
+  db: BabyRoutineDb,
+  id: string,
+  options: CommandOptions = {},
+): Promise<DeletedWithWakeUp> {
+  return db.transaction('rw', db.events, db.outbox, db.eventTypes, db.babies, async () => {
+    const before = await db.events.get(id);
+    await deleteEvent(db, id, options);
+    const deleted = before!;
+    if (!isNightSleep(await db.eventTypes.get(deleted.typeId), deleted)) {
+      return { deleted, wakeUp: null };
+    }
+    const { live } = await autoWakeUpSlot(db, deleted.id);
+    const baby = await db.babies.get(deleted.babyId);
+    if (!live || (baby && !canChangeEvent(baby, live))) return { deleted, wakeUp: null };
+    await deleteEvent(db, live.id, options);
+    return { deleted, wakeUp: live };
+  });
+}
+
+/**
+ * Undo of a delete: writes the event again under a new id (the API keeps a deleted id deleted)
+ * and, when its automatic wake-up was deleted with it, writes that again under the restored
+ * night's automatic id, in one transaction. Returns the restored event.
+ */
+export async function restoreDeletedEvent(
+  db: BabyRoutineDb,
+  event: BabyEvent,
+  wakeUp: BabyEvent | null = null,
+  options: CommandOptions = {},
+): Promise<BabyEvent> {
+  const copy = (source: BabyEvent) => ({
+    babyId: source.babyId,
+    typeId: source.typeId,
+    startedAt: source.startedAt,
+    endedAt: source.endedAt,
+    payload: source.payload,
+    notes: source.notes,
+  });
+  return db.transaction('rw', db.events, db.outbox, db.eventTypes, db.babies, async () => {
+    const restored = await createEvent(db, copy(event), options);
+    if (wakeUp) {
+      const id = autoWakeUpId(restored.id, 0);
+      await createEvent(db, copy(wakeUp), { now: options.now, newId: () => id });
+    }
+    return restored;
+  });
+}
