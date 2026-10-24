@@ -225,6 +225,25 @@ describe('the running-timer pill in the header', () => {
     await waitFor(() => expect(screen.queryByTestId('timer-pill')).toBeNull());
   });
 
+  it('stopping a night logs the wake-up at its end; Undo takes both back', async () => {
+    await seed();
+    const night = await start(SLEEP_TYPE, { kind: 'night' }, 600);
+    renderShell('/day');
+    const bar = await openPopover();
+    fireEvent.click(within(bar).getByRole('button', { name: /^Stop / }));
+    const wakeUps = async () =>
+      (await db.events.toArray()).filter(
+        (e) => e.deletedAt === null && e.payload.kind === 'woke_up',
+      );
+    await waitFor(async () => expect(await wakeUps()).toHaveLength(1));
+    const [marker] = await wakeUps();
+    expect(marker.startedAt).toBe((await stored(night.id)).endedAt);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    await waitFor(async () => expect((await stored(night.id)).endedAt).toBeNull());
+    expect(await wakeUps()).toEqual([]);
+  });
+
   it('stopping while paused finalizes the pause (no paused_at once ended)', async () => {
     await seed();
     const nap = await start(SLEEP_TYPE, { kind: 'nap' }, 15);

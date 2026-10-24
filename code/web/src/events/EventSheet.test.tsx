@@ -2,7 +2,8 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import axe from 'axe-core';
 import type { BabyRoutineDb } from '../db/database';
-import { createEvent } from '../db/eventCommands';
+import { createEvent, stopEvent } from '../db/eventCommands';
+import { stopLoggingWakeUp } from '../now/nightEndsWakeUp';
 import { fromEventTypeDto } from '../sync/contract';
 import {
   BELLY_MASSAGE_TYPE,
@@ -209,6 +210,33 @@ describe('EventSheet editing, deleting and discarding', () => {
       const live = (await db.events.toArray()).filter((e) => e.deletedAt === null);
       expect(live).toHaveLength(1);
       expect(live[0]).toMatchObject({ startedAt: event.startedAt, endedAt: event.endedAt });
+    });
+  });
+
+  it('deleting a night takes its automatic wake-up; Undo brings both back', async () => {
+    await db.eventTypes.put(SLEEP_TYPE);
+    const night = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: SLEEP_TYPE.id,
+      startedAt: new Date(2026, 9, 19, 20).toISOString(),
+      payload: { kind: 'night' },
+    });
+    const end = new Date(2026, 9, 20, 6).toISOString();
+    const { stopped } = await stopLoggingWakeUp(db, () => stopEvent(db, night.id, end));
+    const live = async () => (await db.events.toArray()).filter((e) => e.deletedAt === null);
+    expect(await live()).toHaveLength(2);
+
+    renderSheet({ event: stopped, types: [FEEDING_TYPE, SLEEP_TYPE] });
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+    await waitFor(async () => expect(await live()).toEqual([]));
+
+    expect(await screen.findByText(/deleted$/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo', hidden: true }));
+    await waitFor(async () => {
+      const back = await live();
+      expect(back.map((e) => e.payload.kind).sort()).toEqual(['night', 'woke_up']);
+      expect(back.find((e) => e.payload.kind === 'woke_up')?.startedAt).toBe(end);
     });
   });
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../api/errorMessages';
 import { useDatabase } from '../db/DatabaseContext';
-import { useEventCommands } from '../db/hooks';
+import { editEvent, finishEvent } from '../db/eventCommands';
 import type { EventPayload, EventType } from '../db/models';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { useEventTypeText } from '../i18n/eventTypeText';
@@ -22,6 +22,7 @@ import {
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
 import { fillEmptyFields } from './stopPlan';
 import { useFormulaChoice } from '../formulas/useFormulaChoice';
+import { deleteEventWithWakeUp, editFollowingWakeUp } from '../now/nightEndsWakeUp';
 import { createEventStoppingFeeding } from '../now/sleepStopsFeeding';
 import { loadTimeBottles } from '../presets/timeBottlesStorage';
 
@@ -87,7 +88,6 @@ export function useEventSheetForm(props: EventSheetProps) {
   const { babyId, types, event, finish, onDone } = props;
   const { t } = useTranslation();
   const names = useEventTypeText();
-  const commands = useEventCommands();
   const db = useDatabase();
   const [form, setForm] = useState<EventFormState>(() => startForm(props));
   const [initial] = useState(() => JSON.stringify(form));
@@ -139,7 +139,10 @@ export function useEventSheetForm(props: EventSheetProps) {
       const payload = finish.restricted
         ? fillEmptyFields(event.payload, built, finish.fields)
         : built;
-      await commands.finish(event.id, payload, finish.endedAt);
+      // Finishing a running night ends it: its wake-up is logged in the same transaction.
+      await editFollowingWakeUp(db, event, () =>
+        finishEvent(db, event.id, payload, finish.endedAt),
+      );
       return payload;
     }
     const times = buildTimes(toSave, selected, instant);
@@ -150,7 +153,7 @@ export function useEventSheetForm(props: EventSheetProps) {
     );
     const data = { typeId: selected.id, ...times, payload, notes: toSave.notes.trim() || null };
     await (event
-      ? commands.edit(event.id, data)
+      ? editFollowingWakeUp(db, event, () => editEvent(db, event.id, data))
       : createEventStoppingFeeding(db, { babyId, ...data }));
     return payload;
   };
@@ -175,8 +178,8 @@ export function useEventSheetForm(props: EventSheetProps) {
 
   const remove = async () => {
     if (!event) return null;
-    await commands.remove(event.id);
-    return event;
+    // A night takes its automatic wake-up with it (see `deleteEventWithWakeUp`).
+    return deleteEventWithWakeUp(db, event.id);
   };
 
   const problemFor = (key: string) => problems.find((p) => p.field === key)?.message;
