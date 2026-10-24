@@ -109,7 +109,15 @@ public sealed class McpApiHost : IDisposable
             http,
             NullLoggerFactory.Instance,
             ownsHttpClient: true);
-        var options = new McpClientOptions { ClientInfo = new() { Name = "lotties-tests", Version = "1.0" }, ProtocolVersion = protocolVersion };
+        // No separate 5 s server/discover probe (the SDK default, meant for servers that drop the method; ours answers
+        // it): the first request of a fresh host in the parallel suite can take longer, and the cancelled probe came back
+        // as a 499. The connect stays bounded by InitializationTimeout (60 s).
+        var options = new McpClientOptions
+        {
+            ClientInfo = new() { Name = "lotties-tests", Version = "1.0" },
+            ProtocolVersion = protocolVersion,
+            DiscoverProbeTimeout = Timeout.InfiniteTimeSpan,
+        };
         return await McpClient.CreateAsync(transport, options, NullLoggerFactory.Instance);
     }
 

@@ -125,7 +125,14 @@ public sealed class BoardMcpHost : IDisposable
             http,
             NullLoggerFactory.Instance,
             ownsHttpClient: true);
-        var options = new McpClientOptions { ClientInfo = new() { Name = "lotties-board-tests", Version = "1.0" }, ProtocolVersion = protocolVersion };
+        // No separate 5 s server/discover probe, as in McpApiHost: a fresh host's first request in the parallel suite can be
+        // slower, and the cancelled probe came back as a 499.
+        var options = new McpClientOptions
+        {
+            ClientInfo = new() { Name = "lotties-board-tests", Version = "1.0" },
+            ProtocolVersion = protocolVersion,
+            DiscoverProbeTimeout = Timeout.InfiniteTimeSpan,
+        };
         return await McpClient.CreateAsync(transport, options, NullLoggerFactory.Instance);
     }
 
