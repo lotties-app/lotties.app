@@ -38,6 +38,18 @@ $env:BR_CRY_CACHE = "C:\path\outside\the\repo\cry-cache"
 .venv\Scripts\python.exe -m pytest                                     # unit tests, no data needed
 ```
 
+### Web trigger vectors
+
+`code/web/src/cry/trigger.ts` is a streaming port of `cry_detector/trigger.py`. After any change to the trigger,
+regenerate the shared vectors (synthetic scores only, no data needed) and commit the JSON:
+
+```powershell
+.venv\Scripts\python.exe -m cry_detector.make_vectors           # writes code/web/src/cry/cryTriggerVectors.json
+.venv\Scripts\python.exe -m cry_detector.make_vectors --check   # exit 1 when the committed file is stale (pytest runs it too)
+```
+
+The vitest `code/web/src/cry/trigger.test.ts` runs the TypeScript trigger over every case and expects the same events.
+
 Bash: the same with `export BR_CRY_CACHE=...` and `.venv/bin/python`. Options: `--skip-ast` (no AST clip-level
 comparison, saves about 20 minutes), `--rebuild` (re-score the cached libraries after a code change),
 `--positive-days`, `--negative-days`, `--seed`.
@@ -88,6 +100,7 @@ microphone.
 | `cry_detector/library.py` | Positive conditions, episode and negative rendering, the scored library, training windows |
 | `cry_detector/simulate.py` | 24 h day composition, mixes, false-alarm attribution |
 | `cry_detector/trigger.py` | The sustained-cry trigger (pure, causal) |
+| `cry_detector/make_vectors.py` | Shared trigger vectors for the web port (`code/web/src/cry/cryTriggerVectors.json`) |
 | `cry_detector/metrics.py` | Window metrics, episode matching, summaries |
 | `cry_detector/evaluate.py` | CLI: everything above, `results.json` and `results.md` |
 | `cry_detector/parity.py` | Python side of the browser parity check |
