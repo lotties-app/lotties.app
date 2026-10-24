@@ -379,6 +379,34 @@ public sealed class MigrationTests
     }
 
     [Fact]
+    public void IdempotentScript_ProjectBoardCreatesItsFourTablesAndSeedsTheTenTopicsWithoutTouchingOtherTables()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var start = script.IndexOf("_ProjectBoard'", StringComparison.Ordinal);
+        var section = script[start..script.LastIndexOf("_ProjectBoard'", StringComparison.Ordinal)];
+
+        foreach (var table in new[] { "board_topics", "board_items", "board_item_events", "board_api_keys" })
+        {
+            Assert.Contains($"CREATE TABLE {table} (", section, StringComparison.Ordinal);
+        }
+
+        foreach (var topic in new[] { "product", "doctor-access", "assistants-alexa-mcp", "privacy-legal", "mobile-stores", "infrastructure-deploy", "data-catalog", "predictions-ml", "design-ux", "process-meta" })
+        {
+            Assert.Contains($"('{topic}', FALSE", section, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("CREATE UNIQUE INDEX ix_board_items_external_key ON board_items (external_key) WHERE external_key IS NOT NULL;", section, StringComparison.Ordinal);
+        Assert.Contains("CREATE UNIQUE INDEX ix_board_api_keys_key_hash ON board_api_keys (key_hash);", section, StringComparison.Ordinal);
+        Assert.Contains("links jsonb NOT NULL", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("babies", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("DROP ", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE ", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("ALTER TABLE users", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void IdempotentScript_RowVersionsUseTheXminSystemColumnWithoutDdl()
     {
         using var context = ModelTestContext.Create();

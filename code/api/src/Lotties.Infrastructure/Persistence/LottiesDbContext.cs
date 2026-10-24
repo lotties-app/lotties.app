@@ -89,6 +89,18 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>Users' voice assistant settings (one per user: the default baby).</summary>
     public DbSet<Lotties.Domain.Assistants.UserAssistantSettings> UserAssistantSettings => Set<Lotties.Domain.Assistants.UserAssistantSettings>();
 
+    /// <summary>The project board's topics (docs/design/36-project-board.md; internal project tracking, never baby data).</summary>
+    public DbSet<Lotties.Domain.Board.BoardTopic> BoardTopics => Set<Lotties.Domain.Board.BoardTopic>();
+
+    /// <summary>The project board's items, soft-deleted ones included.</summary>
+    public DbSet<Lotties.Domain.Board.BoardItem> BoardItems => Set<Lotties.Domain.Board.BoardItem>();
+
+    /// <summary>The immutable history of the board items.</summary>
+    public DbSet<Lotties.Domain.Board.BoardItemEvent> BoardItemEvents => Set<Lotties.Domain.Board.BoardItemEvent>();
+
+    /// <summary>The board API keys (hashes only), revoked ones included.</summary>
+    public DbSet<Lotties.Domain.Board.BoardApiKey> BoardApiKeys => Set<Lotties.Domain.Board.BoardApiKey>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);
 }

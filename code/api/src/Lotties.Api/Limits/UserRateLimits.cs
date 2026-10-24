@@ -33,6 +33,7 @@ internal static class UserRateLimits
         rateLimiter.AddPolicy(RequestLimitPolicies.PushWrite, context => PerUser(context, limits.PushWritePermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.PushTest, context => PerUser(context, limits.PushTestPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.PushAction, context => PerAddress(context, limits.PushActionPermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.Board, context => FixedWindow($"board:{PartitionKey(context)}", limits.BoardPermitsPerMinute));
         rateLimiter.OnRejected = WriteRejectionAsync;
     }
 
@@ -50,10 +51,13 @@ internal static class UserRateLimits
             QueueLimit = 0,
         });
 
+    /// <summary>The caller: the user (<c>sub</c>), a project board API key (its id; it has no <c>sub</c>), else the remote address.</summary>
     private static string PartitionKey(HttpContext context) =>
         context.User.FindFirst(OidcClaims.Subject)?.Value is { Length: > 0 } subject
             ? $"user:{subject}"
-            : $"anonymous:{context.Connection.RemoteIpAddress}";
+            : context.User.FindFirst(Board.BoardClaims.KeyId)?.Value is { Length: > 0 } keyId
+                ? $"board-key:{keyId}"
+                : $"anonymous:{context.Connection.RemoteIpAddress}";
 
     private static async ValueTask WriteRejectionAsync(OnRejectedContext rejected, CancellationToken cancellationToken)
     {

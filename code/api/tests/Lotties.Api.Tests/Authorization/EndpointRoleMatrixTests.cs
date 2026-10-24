@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Lotties.Api.Tests.Board;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Board;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +58,30 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
 
         /// <summary>The Doctor only (<c>BabyPropose</c>): prescription proposals; only the author changes or withdraws one.</summary>
         Propose,
+
+        /// <summary>
+        /// Project board readers (<c>BoardRead</c>: a board realm role or a board API key, no baby involved; docs/design/36).
+        /// Every baby caller is refused (no board role): 401 anonymous, else 403. <see cref="BoardMatrix"/> has the board callers.
+        /// </summary>
+        BoardRead,
+
+        /// <summary>Project board writers (<c>BoardWrite</c>: writer or admin role, or a write key).</summary>
+        BoardWrite,
+
+        /// <summary>Project board admins (<c>BoardAdmin</c>: the admin role only; never a key).</summary>
+        BoardAdmin,
+    }
+
+    /// <summary>The callers every board route is tried with (<see cref="BoardMatrix"/>).</summary>
+    public enum BoardCaller
+    {
+        NoRole,
+        Reader,
+        Writer,
+        Admin,
+        ReadKey,
+        WriteKey,
+        Anonymous,
     }
 
     /// <summary>The callers every route is tried with.</summary>
@@ -240,6 +266,26 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["DELETE /api/v1/mcp"] = Access.Anonymous,
         ["GET /.well-known/oauth-protected-resource"] = Access.Anonymous,
         ["GET /.well-known/oauth-protected-resource/api/v1/mcp"] = Access.Anonymous,
+
+        // Project board (docs/design/36-project-board.md): internal project tracking, no baby involved. Keycloak realm roles
+        // (lotties-board-reader / -writer / -admin) or a board API key (read / write scope, never admin); every route
+        // answers 404 while Board:Enabled is false (on in this host). Baby roles give nothing here (BoardMatrix below).
+        ["GET /api/v1/board/me"] = Access.BoardRead,
+        ["GET /api/v1/board/topics"] = Access.BoardRead,
+        ["PUT /api/v1/board/topics/{key}"] = Access.BoardAdmin,
+        ["GET /api/v1/board/items"] = Access.BoardRead,
+        ["POST /api/v1/board/items"] = Access.BoardWrite,
+        ["POST /api/v1/board/items/bulk"] = Access.BoardWrite,
+        ["GET /api/v1/board/items/{id:guid}"] = Access.BoardRead,
+        ["PATCH /api/v1/board/items/{id:guid}"] = Access.BoardWrite,
+        ["POST /api/v1/board/items/{id:guid}/comments"] = Access.BoardWrite,
+        ["DELETE /api/v1/board/items/{id:guid}"] = Access.BoardWrite,
+        ["POST /api/v1/board/items/{id:guid}/restore"] = Access.BoardAdmin,
+        ["GET /api/v1/board/summary"] = Access.BoardRead,
+        ["GET /api/v1/board/export"] = Access.BoardRead,
+        ["GET /api/v1/board/keys"] = Access.BoardAdmin,
+        ["POST /api/v1/board/keys"] = Access.BoardAdmin,
+        ["DELETE /api/v1/board/keys/{id:guid}"] = Access.BoardAdmin,
     };
 
     /// <summary>
@@ -464,6 +510,52 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
 
         Assert.Equal((HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.NoContent), (details.StatusCode, patients.StatusCode, leave.StatusCode));
     }
+
+    /// <summary>Every board route of <see cref="Matrix"/> with every board caller.</summary>
+    public static TheoryData<string, BoardCaller> BoardCases()
+    {
+        var cases = new TheoryData<string, BoardCaller>();
+        foreach (var route in Matrix.Where(entry => entry.Value is Access.BoardRead or Access.BoardWrite or Access.BoardAdmin).Select(entry => entry.Key))
+        {
+            Array.ForEach(Enum.GetValues<BoardCaller>(), caller => cases.Add(route, caller));
+        }
+
+        return cases;
+    }
+
+    /// <summary>
+    /// The board section of the matrix: users by their Keycloak realm role (admin implies writer implies reader), keys by
+    /// their scope (a write key never administers), a user without a board role 403, anonymous 401.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(BoardCases))]
+    public async Task BoardMatrix_Route_ByBoardCaller(string route, BoardCaller caller)
+    {
+        var client = caller switch
+        {
+            BoardCaller.Anonymous => factory.CreateClient(),
+            BoardCaller.NoRole => factory.BoardUser(roles: null),
+            BoardCaller.Reader => factory.BoardUser(BoardTestKit.Reader),
+            BoardCaller.Writer => factory.BoardUser(BoardTestKit.Writer),
+            BoardCaller.Admin => factory.BoardUser(BoardTestKit.Admin),
+            BoardCaller.ReadKey => factory.KeyClient(await factory.SeedKeyAsync(BoardKeyScope.Read)),
+            _ => factory.KeyClient(await factory.SeedKeyAsync(BoardKeyScope.Write)),
+        };
+
+        var response = await SendAsync(client, route, Guid.NewGuid());
+
+        AssertOutcome(ExpectedForBoard(Matrix[route], caller), response, $"{route} as board {caller}");
+    }
+
+    private static HttpStatusCode? ExpectedForBoard(Access access, BoardCaller caller) => (access, caller) switch
+    {
+        (_, BoardCaller.Anonymous) => HttpStatusCode.Unauthorized,
+        (_, BoardCaller.NoRole) => HttpStatusCode.Forbidden,
+        (Access.BoardRead, _) => null,
+        (Access.BoardWrite, BoardCaller.Writer or BoardCaller.Admin or BoardCaller.WriteKey) => null,
+        (Access.BoardAdmin, BoardCaller.Admin) => null,
+        _ => HttpStatusCode.Forbidden,
+    };
 
     /// <summary>The roles whose seeded member passes the role policy of <paramref name="access"/> (the Doctor excluded: its scopes are the subject).</summary>
     private static IEnumerable<BabyRole> RolesThatCan(Access access) =>
