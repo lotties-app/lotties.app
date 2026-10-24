@@ -204,3 +204,14 @@ size and scope refusals. Arguments, tokens and results are never logged.
 | Only read tools appear | expected for a read-only client; use `lotties-claude-write` to log (3.1.6) |
 | A tool answers `choose_baby` | the parent has several babies and no default: the assistant should call `list_babies` and pass `babyId`, or she picks a default in Settings > Voice assistants |
 | A tool answers `not_allowed` | the parent's role (a Viewer cannot log; a Doctor's patients are not available) |
+
+## Known issue (2026-10-24, after the first deploy): the well-known path still reaches the web app
+
+`deploy/homelab/manifests/ingress.yaml` routes `/.well-known/oauth-protected-resource` to `lotties-api` and the Ingress
+object in the cluster has that rule, but through Traefik and Cloudflare a request for it is answered by the **web**
+service (HTML, 200), while `/api/...` and a direct request to the API pod (port-forward to svc/lotties-api port 8080)
+answer correctly (404 `application/problem+json` while `Mcp:Enabled` is false). No other Ingress in the cluster claims
+that path. It does not matter while MCP is disabled; **before enabling MCP, fix it and check with**
+`curl -i https://lotties.app/.well-known/oauth-protected-resource` (expect JSON, not HTML). Things to try: Traefik's
+router priority for the path (a separate Ingress with `traefik.ingress.kubernetes.io/router.priority`), whether
+Traefik's config reloaded, and any Cloudflare rule on `/.well-known/`.
