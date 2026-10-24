@@ -3229,6 +3229,31 @@
       "pinned": true,
       "source": "conversation 2026-10-24 (memory)",
       "externalKey": "memory:infrastructure-map"
+    },
+    {
+      "type": "memory",
+      "topic": "infrastructure-deploy",
+      "title": "Known load-flaky web tests (pass alone)",
+      "body": "When the full vitest run fails, re-run the failing files ALONE before treating it as a regression. Known load-flaky (they pass alone): EventSheet (reduced motion), SettingsPage (creates a custom type), DoctorInbox (accepting), IllustrationGallery, LandingPage, PrescriptionSheet, ProposalSheet, CreditsPage, SettingsPage.moved. Also common: `DatabaseClosedError` unhandled rejections from AppShell/NowScreen/HubScreen tests under load (they also happen on base commits). After a merge also clear `code/web/.vite-cache` if the catalog test fails oddly.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/PROCESS.md"
+        },
+        {
+          "label": "docs/DEPLOY.md",
+          "url": "https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/DEPLOY.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24",
+      "externalKey": "memory:known-flaky-tests"
     }
   ]
 }
