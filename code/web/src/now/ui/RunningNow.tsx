@@ -12,7 +12,7 @@ import { effectiveElapsedSeconds, isPaused } from '../../timers/pauseMath';
 import { runningTimers, type RunningTimer } from '../../timers/runningTimers';
 import { PauseAnnouncer, PausedClock, PauseResumeButton } from '../../timers/TimerParts';
 import { TimerSheetHost } from '../../timers/TimerSheetHost';
-import { TimerTarget } from '../../timers/TimerTarget';
+import { BottleTimerTarget, TimerTarget } from '../../timers/TimerTarget';
 import { useTimerCommands } from '../../timers/useTimerCommands';
 import { useTimerTitle } from '../../timers/useTimerTitle';
 import { palette } from '../../ui/form/styles';
@@ -118,6 +118,15 @@ function ForgottenLine({
   );
 }
 
+/** A running bottle's usual drinking time, spaced like the sleep target (nothing without a figure). */
+function BottleTarget({ babyId, event, nowMs }: { babyId: string; event: BabyEvent; nowMs: number }) {
+  return (
+    <Box sx={{ mt: 1, '&:empty': { display: 'none' } }}>
+      <BottleTimerTarget babyId={babyId} event={event} nowMs={nowMs} />
+    </Box>
+  );
+}
+
 /**
  * One running timer as a full-width card: what runs and the detail that matters ("Bottle ·
  * 120 ml"), a large live pause-aware time, then big Pause/Resume and Stop. A paused timer turns
@@ -218,6 +227,9 @@ function RunningCard({
         <Box sx={{ mt: 1 }}>
           <TimerTarget babyId={babyId} event={timer.event} nowMs={nowMs} />
         </Box>
+      )}
+      {timer.type?.babyId === null && timer.type.key === 'feeding' && (
+        <BottleTarget babyId={babyId} event={timer.event} nowMs={nowMs} />
       )}
       {!readOnly && (
         <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>

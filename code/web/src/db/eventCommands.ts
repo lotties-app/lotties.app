@@ -8,7 +8,23 @@ import {
   InvalidEventTimeRangeError,
 } from './errors';
 import { toEventUpsertRequest, toUtcIso } from '../sync/contract';
-import { isPaused, normalizePause, withPause, withResume } from '../timers/pauseMath';
+import {
+  effectiveElapsedSeconds,
+  isPaused,
+  normalizePause,
+  withPause,
+  withResume,
+} from '../timers/pauseMath';
+import {
+  closeAtStop,
+  closeSegment,
+  isBuiltInBottle,
+  readSegments,
+  settleSegments,
+  withLastLevel,
+} from '../events/bottleSegments';
+import { DRUNK_KEY, preparedMl, withoutRedundantDrunk } from '../events/bottleAmounts';
+import { setOwn } from '../util/ownProperty';
 
 /** Injectable clock and id source (tests); defaults to the system clock and `crypto.randomUUID`. */
 export interface CommandOptions {
@@ -56,10 +72,16 @@ function ensureValidRange(event: BabyEvent) {
 /**
  * The event as the API accepts it: once it ended, an open pause is folded into `paused_seconds`
  * (stopping while paused finalizes the pause) and `paused_seconds` never exceeds the length; the
- * pause keys are whole numbers. Events without pause keys are returned unchanged.
+ * pause keys are whole numbers. A bottle that just stopped (`wasRunning`) closes its last drinking
+ * stretch, and a bottle's stretches always agree with its amounts (`settleSegments`). Events
+ * without pause keys or stretches are returned unchanged.
  */
-function withSettledPause(event: BabyEvent): BabyEvent {
-  const payload = normalizePause(event.payload, event.startedAt, event.endedAt);
+function withSettledPause(event: BabyEvent, wasRunning = false): BabyEvent {
+  let payload = normalizePause(event.payload, event.startedAt, event.endedAt);
+  if (wasRunning && event.endedAt !== null) {
+    payload = closeAtStop(payload, effectiveElapsedSeconds({ ...event, payload }));
+  }
+  payload = settleSegments(payload, event.endedAt !== null);
   return payload === event.payload ? event : { ...event, payload };
 }
 
@@ -131,7 +153,7 @@ export async function editEvent(
       ...editStamp(nowIso(options)),
     };
     ensureValidRange(edited);
-    return saveWithMutation(db, withSettledPause(edited), 'upsert');
+    return saveWithMutation(db, withSettledPause(edited, current.endedAt === null), 'upsert');
   });
 }
 
@@ -152,7 +174,7 @@ export async function stopEvent(
       ...editStamp(now),
     };
     ensureValidRange(stopped);
-    return saveWithMutation(db, withSettledPause(stopped), 'upsert');
+    return saveWithMutation(db, withSettledPause(stopped, true), 'upsert');
   });
 }
 
@@ -165,19 +187,61 @@ async function loadRunning(db: BabyRoutineDb, id: string): Promise<BabyEvent> {
 /**
  * Pauses a running timer: `paused_at` = now. Pausing a paused timer changes nothing. The elapsed
  * time stops counting from then (`effectiveElapsedSeconds`); the timer keeps running as an event.
+ * A bottle of the built-in feeding type also closes its drinking stretch, its level unknown until
+ * the parent answers (`recordBottleLevel`).
  */
 export async function pauseTimer(
   db: BabyRoutineDb,
   id: string,
   options: CommandOptions = {},
 ): Promise<BabyEvent> {
-  return db.transaction('rw', db.events, db.outbox, async () => {
+  return db.transaction('rw', db.events, db.outbox, db.eventTypes, async () => {
     const current = await loadRunning(db, id);
     if (isPaused(current)) return current;
     const now = nowIso(options);
+    const at = Date.parse(now);
+    const type = await db.eventTypes.get(current.typeId);
+    const payload = isBuiltInBottle(type, current.payload)
+      ? closeSegment(current.payload, effectiveElapsedSeconds(current, at), null)
+      : current.payload;
     return saveWithMutation(
       db,
-      { ...current, payload: withPause(current.payload, Date.parse(now)), ...editStamp(now) },
+      { ...current, payload: withPause(payload, at), ...editStamp(now) },
+      'upsert',
+    );
+  });
+}
+
+/**
+ * Records what is left in a bottle (ml): "How much is left in the bottle?" at a pause, or the
+ * follow-up after a sleep stopped it. The last drinking stretch takes the level (`expectedCount`:
+ * only while the bottle still has that many stretches, so a late answer never lands on a newer
+ * one). A bottle that already ended also gets its drunk total (prepared minus the level), so the
+ * totals and the stretches agree. Nothing changes for a level that does not fit (above the
+ * prepared amount or the stretch's start).
+ */
+export async function recordBottleLevel(
+  db: BabyRoutineDb,
+  id: string,
+  leftMl: number,
+  expectedCount?: number,
+  options: CommandOptions = {},
+): Promise<BabyEvent> {
+  return db.transaction('rw', db.events, db.outbox, async () => {
+    const current = await loadLiveEvent(db, id);
+    let payload = withLastLevel(current.payload, leftMl, expectedCount);
+    const prepared = preparedMl(current.payload);
+    const fits = readSegments(current.payload).length === 0 || payload !== current.payload;
+    if (current.endedAt !== null && prepared !== undefined && fits && leftMl <= prepared) {
+      payload = { ...payload };
+      setOwn<unknown>(payload, DRUNK_KEY, Math.max(0, prepared - Math.max(0, leftMl)));
+      payload = withoutRedundantDrunk(payload);
+    }
+    if (payload === current.payload) return current;
+    const now = nowIso(options);
+    return saveWithMutation(
+      db,
+      withSettledPause({ ...current, payload, ...editStamp(now) }),
       'upsert',
     );
   });
@@ -228,7 +292,7 @@ export async function finishEvent(
     };
     ensureValidRange(finished);
     await dropDeadUpserts(db, id);
-    return saveWithMutation(db, withSettledPause(finished), 'upsert');
+    return saveWithMutation(db, withSettledPause(finished, current.endedAt === null), 'upsert');
   });
 }
 

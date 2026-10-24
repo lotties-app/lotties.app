@@ -20,6 +20,7 @@ import { Icon } from '../ui/Icon';
 import { Field, MedicationPicker, NotesRow } from '../ui/form';
 import { daysBeforeToday } from '../ui/form/timeMath';
 import { getOwn } from '../util/ownProperty';
+import { currentStartLevel } from './bottleSegments';
 import { ConditionalFields } from './ConditionalFields';
 import { announceEventDeleted } from './deletedEvents';
 import type { EventSheetProps } from './eventSheetTypes';
@@ -319,6 +320,9 @@ export function EventSheet(props: EventSheetProps) {
               type={type}
               values={form.values}
               only={finish?.fields}
+              {...(finishing && event && event.endedAt === null
+                ? { leftCeiling: currentStartLevel(event.payload) }
+                : {})}
               {...(!finishing && type.key === 'sleep' && type.babyId === null
                 ? { exclude: SLEEP_DETAIL_SET }
                 : {})}

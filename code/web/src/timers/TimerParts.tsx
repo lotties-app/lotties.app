@@ -113,7 +113,8 @@ export function PausedClock({
 }
 
 /**
- * The quiet target of a sleep timer: a flag with "Usual nap about 45 min" and a thin progress bar.
+ * The quiet target of a sleep timer or a bottle: a flag with "Usual nap about 45 min" ("This bottle
+ * usually takes about 12 min") and a thin progress bar.
  * Effective (pause-aware) progress; reaching the target changes the wording, never the tone.
  */
 export function TargetBar({
@@ -130,9 +131,11 @@ export function TargetBar({
   const duration = formatDuration(target.minutes * 60_000);
   const caption = past
     ? t('timers.target.past')
-    : t(target.kind === 'night' ? 'timers.target.usualNight' : 'timers.target.usualNap', {
-        duration,
-      });
+    : target.kind === 'bottle'
+      ? t('feedingAmounts.target.usualBottle', { duration })
+      : t(target.kind === 'night' ? 'timers.target.usualNight' : 'timers.target.usualNap', {
+          duration,
+        });
   const progress = t('timers.target.progress', {
     elapsed: formatDuration(effectiveSeconds * 1000),
     target: duration,

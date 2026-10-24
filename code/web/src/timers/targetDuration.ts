@@ -10,7 +10,8 @@ import { readPause } from './pauseMath';
  * reaching it alarms nothing and stops nothing. Without a usable figure there is no target.
  */
 
-export type TargetKind = 'nap' | 'night';
+/** `bottle`: the drinking time of a running bottle at her pace (events/bottlePatterns.ts). */
+export type TargetKind = 'nap' | 'night' | 'bottle';
 
 export interface SleepTarget {
   /** Typical effective length of the sleep, in minutes, rounded to 5. */

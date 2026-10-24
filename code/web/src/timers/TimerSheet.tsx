@@ -29,7 +29,7 @@ import { timerKindOf } from './runningTimers';
 import { PauseAnnouncer, PauseResumeButton, PausedClock } from './TimerParts';
 import { useTimerTitle } from './useTimerTitle';
 import { LockedNote } from '../baby/LockedNote';
-import { TimerTarget } from './TimerTarget';
+import { BottleTimerTarget, TimerTarget } from './TimerTarget';
 import type { TimerCommands } from './useTimerCommands';
 
 interface Props {
@@ -274,6 +274,11 @@ export function TimerSheet({
         {isSleep && (
           <Box sx={{ px: 1 }}>
             <TimerTarget babyId={babyId} event={event} nowMs={nowMs} />
+          </Box>
+        )}
+        {type?.babyId === null && type.key === 'feeding' && (
+          <Box sx={{ px: 1, '&:empty': { display: 'none' } }}>
+            <BottleTimerTarget babyId={babyId} event={event} nowMs={nowMs} />
           </Box>
         )}
 
