@@ -136,6 +136,12 @@ export interface BoardTotals {
   waitingOnAssistant: number;
   blocked: number;
   overdue: number;
+  /** Open, in progress or waiting, side owner or both (what the owner can act on now). */
+  actionableOwner: number;
+  /** Open, in progress or waiting, side assistant or both. */
+  actionableAssistant: number;
+  /** Not done or dropped, due from today (UTC) through the next 7 days. */
+  dueSoon: number;
 }
 
 export interface BoardCount {
@@ -153,6 +159,9 @@ export interface BoardSummary {
   waitingOnAssistant: BoardItemSummary[];
   recentDecisions: BoardItemSummary[];
   recentlyUpdated: BoardItemSummary[];
+  blocked: BoardItemSummary[];
+  dueSoon: BoardItemSummary[];
+  overdue: BoardItemSummary[];
 }
 
 /** The editable fields of an item, as sent by create and patch (`null` clears an optional one). */
@@ -225,6 +234,12 @@ export interface BoardListQuery {
   pinned?: boolean;
   open?: boolean;
   q?: string;
+  /** Due on or after this date (`yyyy-MM-dd`). */
+  dueAfter?: string;
+  /** Due on or before this date (`yyyy-MM-dd`). */
+  dueBefore?: string;
+  /** Only items with (true) or without (false) a due date. */
+  hasDue?: boolean;
   includeDeleted?: boolean;
   sort?: BoardSort;
   limit?: number;
@@ -263,6 +278,9 @@ export function listQueryString(query: BoardListQuery): string {
   if (query.pinned !== undefined) params.set('pinned', String(query.pinned));
   if (query.open) params.set('open', 'true');
   if (query.q?.trim()) params.set('q', query.q.trim());
+  if (query.dueAfter) params.set('dueAfter', query.dueAfter);
+  if (query.dueBefore) params.set('dueBefore', query.dueBefore);
+  if (query.hasDue !== undefined) params.set('hasDue', String(query.hasDue));
   if (query.includeDeleted) params.set('includeDeleted', 'true');
   if (query.sort) params.set('sort', query.sort);
   if (query.limit) params.set('limit', String(query.limit));

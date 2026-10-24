@@ -230,7 +230,12 @@ public sealed class BoardQueryEndpointTests(ApiFactory factory) : IClassFixture<
 
         // Priority first, then a due date before none, then the newest update.
         Assert.Equal(["Owner urgent", "Owner overdue"], Titles(summary.GetProperty("waitingOnOwner")));
-        Assert.Equal(["Undecided", "Shared blocked"], Titles(summary.GetProperty("waitingOnAssistant")));
+        // The lists hold actionable items only: the blocked gap (side both) is in neither, it is in blocked.
+        Assert.Equal(["Undecided", "Assistant low"], Titles(summary.GetProperty("waitingOnAssistant")));
+        Assert.Equal((3, 2, 0), (Int(totals, "actionableOwner"), Int(totals, "actionableAssistant"), Int(totals, "dueSoon")));
+        Assert.Equal(["Shared blocked"], Titles(summary.GetProperty("blocked")));
+        Assert.Equal(["Owner overdue"], Titles(summary.GetProperty("overdue")));
+        Assert.Empty(summary.GetProperty("dueSoon").EnumerateArray());
         Assert.Equal(["Key format"], Titles(summary.GetProperty("recentDecisions")));
         Assert.Equal(2, summary.GetProperty("recentlyUpdated").GetArrayLength());
         var counts = summary.GetProperty("counts").EnumerateArray().ToArray();
@@ -265,6 +270,121 @@ public sealed class BoardQueryEndpointTests(ApiFactory factory) : IClassFixture<
         Assert.Equal("no-store", forAdminResponse.Headers.CacheControl?.ToString());
         Assert.DoesNotContain("Exported key?", raw, StringComparison.Ordinal);
         Assert.DoesNotContain(secret[..12], raw, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task List_EveryFilterForm_OneValueRepeatedOrCommaList_SelectsTheSameItems()
+    {
+        var topic = await NewTopicAsync(factory);
+        var other = await NewTopicAsync(factory);
+        await Writer.CreateAsync(BoardTestKit.Item("Open owner", topic, extra: [("side", "owner"), ("priority", "high"), ("labels", new[] { "api" })]));
+        await Writer.CreateAsync(BoardTestKit.Item("Blocked assistant", topic, "gap", ("side", "assistant"), ("status", "blocked"), ("labels", new[] { "web" })));
+        await Writer.CreateAsync(BoardTestKit.Item("Waiting external", topic, "risk", ("side", "external"), ("status", "waiting"), ("priority", "low")));
+        await Writer.CreateAsync(BoardTestKit.Item("Other topic", other, extra: ("side", "owner")));
+
+        Assert.Equal(["Open owner"], await TitlesAsync($"topic={topic}&status=open"));
+        foreach (var form in new[] { "status=open&status=blocked", "status=open,blocked", "status=open,%20blocked", "status=open,blocked&status=open" })
+        {
+            Assert.Equal(["Blocked assistant", "Open owner"], await TitlesAsync($"topic={topic}&{form}", sorted: true));
+        }
+
+        Assert.Equal(["Blocked assistant", "Open owner"], await TitlesAsync($"topic={topic}&side=owner,assistant", sorted: true));
+        Assert.Equal(["Open owner", "Waiting external"], await TitlesAsync($"topic={topic}&priority=high&priority=low", sorted: true));
+        Assert.Equal(["Blocked assistant", "Waiting external"], await TitlesAsync($"topic={topic}&type=gap,risk", sorted: true));
+        Assert.Equal(["Blocked assistant", "Open owner"], await TitlesAsync($"topic={topic}&label=api,web", sorted: true));
+        Assert.Equal(["Open owner", "Other topic"], await TitlesAsync($"topic={topic},{other}&side=owner", sorted: true));
+    }
+
+    [Theory]
+    [InlineData("status=open,sleeping", "status", "sleeping")]
+    [InlineData("side=me", "side", "owner, assistant, both, external")]
+    [InlineData("priority=critical", "priority", "low, normal, high, urgent")]
+    [InlineData("type=task,chore", "type", "chore")]
+    public async Task List_UnknownFilterValue_Is400NamingTheFilterTheValueAndTheAllowedCodes(string query, string field, string mentioned)
+    {
+        var response = await Writer.GetAsync($"{Path}/items?{query}");
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal(field, problem.GetProperty("field").GetString());
+        Assert.Contains(mentioned, problem.GetProperty("detail").GetString(), StringComparison.Ordinal);
+        Assert.Contains("Allowed:", problem.GetProperty("detail").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task List_DueFilters_AreInclusive_HasDueSplitsByDueDate_AndSortDueIsEarliestFirst()
+    {
+        var topic = await NewTopicAsync(factory);
+        await Writer.CreateAsync(BoardTestKit.Item("Jan 20", topic, extra: ("dueDate", "2026-01-20")));
+        await Writer.CreateAsync(BoardTestKit.Item("Jan 01", topic, extra: ("dueDate", "2026-01-01")));
+        await Writer.CreateAsync(BoardTestKit.Item("No due date", topic));
+        await Writer.CreateAsync(BoardTestKit.Item("Jan 10", topic, extra: ("dueDate", "2026-01-10")));
+
+        Assert.Equal(["Jan 10", "Jan 20"], await TitlesAsync($"topic={topic}&dueAfter=2026-01-10&dueBefore=2026-01-20&sort=due"));
+        Assert.Equal(["Jan 01", "Jan 10"], await TitlesAsync($"topic={topic}&dueBefore=2026-01-10&sort=due"));
+        Assert.Equal(["Jan 01", "Jan 10", "Jan 20"], await TitlesAsync($"topic={topic}&hasDue=true&sort=due"));
+        Assert.Equal(["No due date"], await TitlesAsync($"topic={topic}&hasDue=false"));
+        Assert.Equal(["Jan 01", "Jan 10", "Jan 20", "No due date"], await TitlesAsync($"topic={topic}&sort=due"));
+        Assert.Empty(await TitlesAsync($"topic={topic}&dueAfter=2026-02-01"));
+    }
+
+    [Theory]
+    [InlineData("dueBefore=31/01/2026", "dueBefore")]
+    [InlineData("dueAfter=tomorrow", "dueAfter")]
+    public async Task List_MalformedDueDate_Is400NamingTheFilter(string query, string field)
+    {
+        var response = await Writer.GetAsync($"{Path}/items?{query}");
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal(field, problem.GetProperty("field").GetString());
+    }
+
+    [Fact]
+    public async Task Summary_ActionableListsSkipBlockedAndClosed_BothSidesInBoth_BlockedDueSoonAndOverdueHaveTheirOwn()
+    {
+        using var fresh = new ApiFactory();
+        var writer = fresh.BoardUser(BoardTestKit.Writer);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        string Day(int offset) => today.AddDays(offset).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        await writer.CreateAsync(BoardTestKit.Item("Owner open", extra: ("side", "owner")));
+        await writer.CreateAsync(BoardTestKit.Item("Owner in progress", extra: [("side", "owner"), ("status", "in_progress"), ("dueDate", Day(3))]));
+        await writer.CreateAsync(BoardTestKit.Item("Owner waiting", extra: [("side", "owner"), ("status", "waiting"), ("dueDate", Day(10))]));
+        await writer.CreateAsync(BoardTestKit.Item("Owner blocked", extra: [("side", "owner"), ("status", "blocked"), ("priority", "urgent")]));
+        await writer.CreateAsync(BoardTestKit.Item("Owner done", extra: [("side", "owner"), ("status", "done"), ("dueDate", Day(1))]));
+        await writer.CreateAsync(BoardTestKit.Item("Owner dropped", extra: [("side", "owner"), ("status", "dropped"), ("dueDate", Day(-1))]));
+        await writer.CreateAsync(BoardTestKit.Item("Shared", extra: [("side", "both"), ("priority", "high"), ("dueDate", Day(0))]));
+        await writer.CreateAsync(BoardTestKit.Item("Assistant late", extra: [("side", "assistant"), ("dueDate", Day(-2))]));
+        await writer.CreateAsync(BoardTestKit.Item("Assistant week", extra: [("side", "assistant"), ("dueDate", Day(7))]));
+        await writer.CreateAsync(BoardTestKit.Item("External", extra: [("side", "external"), ("dueDate", Day(8))]));
+
+        var summary = await (await writer.GetAsync($"{Path}/summary?top=10")).ReadAsync<JsonElement>();
+
+        var totals = summary.GetProperty("totals");
+        // Open = not done and not dropped (8); waitingOn* keep their first meaning (open by side, blocked included).
+        Assert.Equal((8, 5, 3, 1, 1), (Int(totals, "open"), Int(totals, "waitingOnOwner"), Int(totals, "waitingOnAssistant"), Int(totals, "blocked"), Int(totals, "overdue")));
+        Assert.Equal((4, 3, 3), (Int(totals, "actionableOwner"), Int(totals, "actionableAssistant"), Int(totals, "dueSoon")));
+        Assert.Equal(["Shared", "Owner in progress", "Owner waiting", "Owner open"], Titles(summary.GetProperty("waitingOnOwner")));
+        Assert.Equal(["Shared", "Assistant late", "Assistant week"], Titles(summary.GetProperty("waitingOnAssistant")));
+        Assert.Equal(["Owner blocked"], Titles(summary.GetProperty("blocked")));
+        Assert.Equal(["Shared", "Owner in progress", "Assistant week"], Titles(summary.GetProperty("dueSoon")));
+        Assert.Equal(["Assistant late"], Titles(summary.GetProperty("overdue")));
+    }
+
+    [Fact]
+    public async Task OpenDecision_HasANullDecision_ADecidedOneHasIt_InTheItemAndInLists()
+    {
+        var topic = await NewTopicAsync(factory);
+        var open = await Writer.CreateAsync(BoardTestKit.Item("Which store first?", topic, "decision"));
+        var decided = await Writer.CreateAsync(BoardTestKit.Item("Android first", topic, "decision", ("decisionSummary", "Ship Android before iOS")));
+
+        var detail = await (await Writer.GetAsync($"{Path}/items/{open.IdOf()}")).ReadAsync<JsonElement>();
+        var page = await (await Writer.GetAsync($"{Path}/items?topic={topic}")).ReadAsync<JsonElement>();
+
+        Assert.Equal(JsonValueKind.Null, open.GetProperty("decision").ValueKind);
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("item").GetProperty("decision").ValueKind);
+        Assert.Equal("Ship Android before iOS", decided.GetProperty("decision").GetProperty("summary").GetString());
+        var listed = page.GetProperty("items").EnumerateArray().ToDictionary(item => item.GetProperty("title").GetString()!, item => item.GetProperty("decision"));
+        Assert.Equal(JsonValueKind.Null, listed["Which store first?"].ValueKind);
+        Assert.Equal(JsonValueKind.Object, listed["Android first"].ValueKind);
     }
 
     private static async Task<string> NewTopicAsync(ApiFactory host)

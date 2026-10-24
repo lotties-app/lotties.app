@@ -5,7 +5,6 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lotties.Application.Board;
 using Lotties.Domain.Board;
-using Lotties.Domain.Exceptions;
 using ModelContextProtocol.Protocol;
 using Kind = Lotties.Api.Board.Mcp.BoardMcpParameterKind;
 
@@ -114,6 +113,19 @@ internal static class BoardMcpToolCatalog
     private static readonly BoardMcpParameter Rationale = new("rationale", Kind.Text, "Why it was decided (decisions only).", Max: BoardItemContent.RationaleMaxLength);
     private static readonly BoardMcpParameter Cursor = new("cursor", Kind.Text, "The nextCursor of the previous page, to read the next one (with the same filters).", Max: 200);
 
+    private const string AnyOf = " One value, an array, or a comma-separated string; an item matches any of them.";
+
+    /// <summary>The list filters of the read tools: each takes one value, an array of values, or a comma-separated string.</summary>
+    private static readonly BoardMcpParameter[] Filters =
+    [
+        new("topic", Kind.TextFilter, "Only items of these topic keys (board_list_topics)." + AnyOf, Max: BoardTopicKeys.MaxLength, Values: ["product", "design-ux"]),
+        new("type", Kind.ChoiceFilter, "Only items of these types." + AnyOf, Max: BoardCodes.AllCodes<BoardItemType>().Count, Values: BoardCodes.AllCodes<BoardItemType>()),
+        new("status", Kind.ChoiceFilter, "Only items with these statuses (done and dropped are closed)." + AnyOf, Max: BoardCodes.AllCodes<BoardItemStatus>().Count, Values: BoardCodes.AllCodes<BoardItemStatus>()),
+        new("side", Kind.ChoiceFilter, "Only items where one of these sides acts next." + AnyOf, Max: BoardCodes.AllCodes<BoardSide>().Count, Values: BoardCodes.AllCodes<BoardSide>()),
+        new("priority", Kind.ChoiceFilter, "Only items of these priorities." + AnyOf, Max: BoardCodes.AllCodes<BoardPriority>().Count, Values: BoardCodes.AllCodes<BoardPriority>()),
+        new("label", Kind.TextFilter, "Only items with one of these labels." + AnyOf, Max: BoardLabels.MaxLength, Values: ["backend", "review:r12"]),
+    ];
+
     private static BoardMcpParameter Limit(int fallback) =>
         new("limit", Kind.Integer, $"How many items to return (1-{MaxListLimit}, {fallback} by default).", Min: 1, Max: MaxListLimit);
 
@@ -122,7 +134,7 @@ internal static class BoardMcpToolCatalog
         Read(
             "board_summary",
             "Board summary",
-            "The state of the project board: totals (open, waiting on the owner, waiting on the assistant, blocked, overdue), counts by topic, side and status, and the top items waiting on the owner and on the assistant, the latest decisions and the latest updated items (lists without bodies). Start here.",
+            "The state of the project board. Start here. totals: open (not done or dropped), waitingOnOwner / waitingOnAssistant (open by side, blocked included), actionableOwner / actionableAssistant (status open, in_progress or waiting, side owner/assistant or both: what that side should act on now), blocked, overdue, dueSoon (due today through the next 7 days). Lists (without bodies): waitingOnOwner and waitingOnAssistant hold the actionable items (never blocked, done or dropped; side both appears in both), blocked, dueSoon and overdue (earliest due first), recentDecisions, recentlyUpdated; counts by topic, side and status.",
             [new("top", Kind.Integer, $"How many items in each list (1-{MaxTop}, {DefaultTop} by default).", Min: 1, Max: MaxTop)],
             SummaryAsync),
         Read(
@@ -134,19 +146,17 @@ internal static class BoardMcpToolCatalog
         Read(
             "board_list_items",
             "List items",
-            "Board items matching every given filter (each filter is optional), newest update first by default, without bodies (excerpt: the body's first 200 characters; use board_get_item for the whole item). Page with cursor.",
+            "Board items matching every given filter (each filter is optional), newest update first by default, without bodies (excerpt: the body's first 200 characters; use board_get_item for the whole item). The topic, type, status, side, priority and label filters each take one value (status: \"open\"), an array (status: [\"open\", \"blocked\"]) or a comma-separated string (status: \"open,blocked\"). Due dates: dueBefore / dueAfter (inclusive, YYYY-MM-DD), hasDue, sort due. Page with cursor.",
             [
-                Topic,
-                Type with { Description = "Only items of this type." },
-                new("status", Kind.ChoiceList, "Only items with one of these statuses.", Max: 6, Values: BoardCodes.AllCodes<BoardItemStatus>()),
-                Side with { Description = "Only items where this side acts next." },
-                Priority with { Description = "Only items of this priority." },
-                new("label", Kind.Text, "Only items with this label.", Max: BoardLabels.MaxLength),
+                .. Filters,
                 new("pinned", Kind.Boolean, "Only pinned (true) or unpinned (false) items."),
                 new("open", Kind.Boolean, "Only open items (true: status not done or dropped) or closed ones (false)."),
                 new("q", Kind.Text, "Text the title or the body contains (case-insensitive).", Max: 200),
                 new("updatedSince", Kind.Instant, "Only items updated at or after this instant."),
-                new("sort", Kind.Choice, "updated (newest first, the default), created, priority (urgent first, then due date), due (earliest first) or decided (newest decision first).", Values: BoardCodes.AllCodes<BoardItemSort>()),
+                new("dueBefore", Kind.Date, "Only items due on or before this date, YYYY-MM-DD (items without a due date are left out)."),
+                new("dueAfter", Kind.Date, "Only items due on or after this date, YYYY-MM-DD (items without a due date are left out)."),
+                new("hasDue", Kind.Boolean, "Only items with a due date (true) or without one (false)."),
+                new("sort", Kind.Choice, "updated (newest first, the default), created, priority (urgent first, then due date), due (earliest due date first, none last) or decided (newest decision first).", Values: BoardCodes.AllCodes<BoardItemSort>()),
                 Limit(DefaultListLimit),
                 Cursor,
             ],
@@ -160,19 +170,18 @@ internal static class BoardMcpToolCatalog
         Read(
             "board_search",
             "Search items",
-            "Items whose title or body contains q (case-insensitive), newest update first, without bodies.",
+            "Items whose title or body contains q (case-insensitive), newest update first, without bodies. The optional filters (topic, type, status, side, priority, label) each take one value, an array or a comma-separated string.",
             [
                 new("q", Kind.Text, "The text to look for (1-200 characters).", Required: true, Max: 200),
-                Type with { Description = "Only items of this type." },
-                Topic with { Description = "Only items of this topic key." },
+                .. Filters,
                 Limit(DefaultSearchLimit),
             ],
             SearchAsync),
         Read(
             "board_recent_changes",
             "Recent changes",
-            "Items created or changed at or after since (any field, a status, a comment), newest first, without bodies; page with cursor. Use it to catch up instead of reading the whole board.",
-            [new("since", Kind.Instant, "The instant to look from, e.g. 2026-10-24T00:00:00Z.", Required: true), Limit(DefaultListLimit), Cursor],
+            "Items created or changed at or after since (any field, a status, a comment), newest first, without bodies; page with cursor. Use it to catch up instead of reading the whole board. The optional filters (topic, type, status, side, priority, label) each take one value, an array or a comma-separated string.",
+            [new("since", Kind.Instant, "The instant to look from, e.g. 2026-10-24T00:00:00Z.", Required: true), .. Filters, Limit(DefaultListLimit), Cursor],
             RecentChangesAsync),
         Write(
             "board_create_item",
@@ -300,7 +309,7 @@ internal static class BoardMcpToolCatalog
         var totals = summary.Totals;
         return new(
             ToJson(summary),
-            $"Board: {totals.Open} open items, {totals.WaitingOnOwner} waiting on the owner, {totals.WaitingOnAssistant} waiting on the assistant, {totals.Blocked} blocked, {totals.Overdue} overdue.");
+            $"Board: {totals.Open} open items, {totals.WaitingOnOwner} waiting on the owner ({totals.ActionableOwner} actionable), {totals.WaitingOnAssistant} waiting on the assistant ({totals.ActionableAssistant} actionable), {totals.Blocked} blocked, {totals.Overdue} overdue, {totals.DueSoon} due in the next {BoardTotalsResponse.DueSoonDays} days.");
     }
 
     private static async Task<BoardMcpOutcome> ListTopicsAsync(IBoardService board, BoardMcpArguments arguments, CancellationToken cancellationToken)
@@ -314,16 +323,19 @@ internal static class BoardMcpToolCatalog
         var page = await board.ListItemsAsync(
             new BoardItemListRequest
             {
-                Topics = One(arguments.Text("topic")),
-                Types = One(arguments.Text("type")),
-                Statuses = arguments.Strings("status"),
-                Sides = One(arguments.Text("side")),
-                Priorities = One(arguments.Text("priority")),
-                Labels = One(arguments.Text("label")),
+                Topics = arguments.Filter("topic"),
+                Types = arguments.Filter("type"),
+                Statuses = arguments.Filter("status"),
+                Sides = arguments.Filter("side"),
+                Priorities = arguments.Filter("priority"),
+                Labels = arguments.Filter("label"),
                 Pinned = arguments.Boolean("pinned"),
                 Open = arguments.Boolean("open"),
                 Q = arguments.Text("q"),
                 UpdatedSince = arguments.Instant("updatedSince"),
+                DueBefore = arguments.Text("dueBefore"),
+                DueAfter = arguments.Text("dueAfter"),
+                HasDue = arguments.Boolean("hasDue"),
                 Sort = arguments.Text("sort"),
                 Limit = arguments.Integer("limit") ?? DefaultListLimit,
                 Cursor = arguments.Text("cursor"),
@@ -352,8 +364,12 @@ internal static class BoardMcpToolCatalog
             new BoardItemListRequest
             {
                 Q = arguments.Text("q"),
-                Types = One(arguments.Text("type")),
-                Topics = One(arguments.Text("topic")),
+                Topics = arguments.Filter("topic"),
+                Types = arguments.Filter("type"),
+                Statuses = arguments.Filter("status"),
+                Sides = arguments.Filter("side"),
+                Priorities = arguments.Filter("priority"),
+                Labels = arguments.Filter("label"),
                 Limit = arguments.Integer("limit") ?? DefaultSearchLimit,
             },
             cancellationToken);
@@ -367,6 +383,12 @@ internal static class BoardMcpToolCatalog
             new BoardItemListRequest
             {
                 UpdatedSince = since,
+                Topics = arguments.Filter("topic"),
+                Types = arguments.Filter("type"),
+                Statuses = arguments.Filter("status"),
+                Sides = arguments.Filter("side"),
+                Priorities = arguments.Filter("priority"),
+                Labels = arguments.Filter("label"),
                 Limit = arguments.Integer("limit") ?? DefaultListLimit,
                 Cursor = arguments.Text("cursor"),
             },
@@ -395,13 +417,11 @@ internal static class BoardMcpToolCatalog
 
     private static async Task<BoardMcpOutcome> SetStatusAsync(IBoardService board, BoardMcpArguments arguments, CancellationToken cancellationToken)
     {
-        var id = arguments.Id("id");
-        var item = await board.PatchItemAsync(id, arguments.ObjectOf(["status"]), ifMatch: null, cancellationToken);
+        var (item, comment) = await board.SetStatusAsync(arguments.Id("id"), arguments.Text("status"), arguments.Text("note"), cancellationToken);
         var structured = new JsonObject();
-        if (arguments.Text("note") is { } note)
+        if (comment is not null)
         {
-            structured["comment"] = ToNode(await board.CommentAsync(id, new BoardCommentRequest { Comment = note }, cancellationToken));
-            item = (await board.GetItemAsync(id, cancellationToken)).Item;
+            structured["comment"] = ToNode(comment);
         }
 
         structured["item"] = ToNode(item);
@@ -418,11 +438,6 @@ internal static class BoardMcpToolCatalog
     private static async Task<BoardMcpOutcome> RecordDecisionAsync(IBoardService board, BoardMcpArguments arguments, CancellationToken cancellationToken)
     {
         var related = arguments.OptionalId("relatedItemId");
-        if (related is { } relatedId)
-        {
-            await EnsureRelatedAsync(board, relatedId, cancellationToken);
-        }
-
         var extra = new Dictionary<string, JsonNode?>
         {
             ["type"] = BoardCodes.ToCode(BoardItemType.Decision),
@@ -433,11 +448,11 @@ internal static class BoardMcpToolCatalog
             extra["body"] = $"Related board item: {settles}";
         }
 
-        var (item, _) = await board.CreateItemAsync(arguments.ObjectOf(["topic", "title", "decisionSummary", "rationale", "source"], extra), cancellationToken);
+        // One write: the decision and the comment on the related item are saved together (nothing when either fails).
+        var (item, relatedItemId) = await board.RecordDecisionAsync(arguments.ObjectOf(["topic", "title", "decisionSummary", "rationale", "source"], extra), related, cancellationToken);
         var structured = new JsonObject { ["item"] = ToNode(item) };
-        if (related is { } target)
+        if (relatedItemId is { } target)
         {
-            await board.CommentAsync(target, new BoardCommentRequest { Comment = $"Decision recorded: {item.Title} (board item {item.Id})." }, cancellationToken);
             structured["relatedItemId"] = target.ToString();
         }
 
@@ -451,29 +466,8 @@ internal static class BoardMcpToolCatalog
         return new(new JsonObject { ["id"] = id.ToString(), ["deleted"] = true }, $"Item {id} is deleted (a board admin can restore it).");
     }
 
-    /// <summary>The related item must be one the caller reads and not deleted, before anything is written.</summary>
-    private static async Task EnsureRelatedAsync(IBoardService board, Guid id, CancellationToken cancellationToken)
-    {
-        BoardItemDetailResponse detail;
-        try
-        {
-            detail = await board.GetItemAsync(id, cancellationToken);
-        }
-        catch (BoardItemNotFoundException)
-        {
-            throw new DomainValidationException("relatedItemId", "relatedItemId is not a board item you can read.");
-        }
-
-        if (detail.Item.DeletedAt is not null)
-        {
-            throw new DomainValidationException("relatedItemId", "relatedItemId is a deleted item.");
-        }
-    }
-
     private static BoardMcpOutcome Page(JsonObject structured, BoardItemPageResponse page) =>
         new(structured, $"{Count(page.Items.Count, "item")}{(page.NextCursor is null ? "." : "; more: pass nextCursor as cursor.")}");
-
-    private static IReadOnlyList<string>? One(string? value) => value is null ? null : [value];
 
     private static string Count(int count, string noun) => $"{Number(count)} {noun}{(count == 1 ? string.Empty : "s")}";
 

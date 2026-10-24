@@ -21,7 +21,7 @@ interface Props {
 
 /**
  * The summary strip (`GET /board/summary`): waiting on the owner, waiting on the assistant,
- * blocked and overdue. Each is a toggle that applies its filter (pressed while it is the filter);
+ * blocked and due soon (the next 7 days). Each is a toggle that applies its filter (pressed while it is the filter);
  * pressing it again goes back to the plain board.
  */
 export function SummaryStrip({ totals, filters, onApply }: Props) {
@@ -79,9 +79,7 @@ export function SummaryStrip({ totals, filters, onApply }: Props) {
                       lineHeight: 1.2,
                       fontFeatureSettings: '"tnum"',
                       color:
-                        valueOf(shortcut) > 0 && (shortcut === 'blocked' || shortcut === 'overdue')
-                          ? 'error.main'
-                          : undefined,
+                        valueOf(shortcut) > 0 && shortcut === 'blocked' ? 'error.main' : undefined,
                     }}
                   >
                     {formatNumber(valueOf(shortcut))}

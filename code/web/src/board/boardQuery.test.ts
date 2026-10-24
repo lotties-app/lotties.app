@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { listQueryString } from './boardApi';
 import {
+  activeFilterCount,
+  addDays,
   DEFAULT_FILTERS,
   isShortcutActive,
   listQuery,
   parseFilters,
   quickAddDefaults,
   shortcutFilters,
+  todayUtcDate,
   writeFilters,
   type BoardFilters,
 } from './boardQuery';
 import { boardTopics } from './boardTestKit';
 
 const params = (query: string) => new URLSearchParams(query);
-const query = (filters: Partial<BoardFilters>, admin = false) =>
-  listQueryString(listQuery({ ...DEFAULT_FILTERS, ...filters }, admin));
+const query = (filters: Partial<BoardFilters>, admin = false, today = '2026-10-24') =>
+  listQueryString(listQuery({ ...DEFAULT_FILTERS, ...filters }, admin, today));
 
 describe('the URL state', () => {
   it('defaults to the Topics view with done and dropped hidden', () => {
@@ -32,6 +35,7 @@ describe('the URL state', () => {
       priority: ['urgent'],
       label: ['deploy', 'ui'],
       topic: ['product'],
+      due: 'soon',
       hideClosed: false,
       deleted: true,
       sort: 'due',
@@ -46,7 +50,7 @@ describe('the URL state', () => {
     expect(
       parseFilters(
         params(
-          'view=evil&type=task,nope&status=DONE&sort=random&label=Bad Label,ok:1&topic=X,product',
+          'view=evil&type=task,nope&status=DONE&sort=random&label=Bad Label,ok:1&topic=X,product&due=later',
         ),
       ),
     ).toEqual({ ...DEFAULT_FILTERS, type: ['task'], label: ['ok:1'], topic: ['product'] });
@@ -106,10 +110,32 @@ describe('summary shortcuts', () => {
       'side=assistant%2Cboth&open=true&sort=updated',
     );
     expect(query(shortcutFilters('blocked'))).toBe('status=blocked&open=true&sort=updated');
-    expect(query(shortcutFilters('overdue'))).toBe('open=true&sort=due');
+    expect(query(shortcutFilters('dueSoon'))).toBe(
+      'open=true&dueAfter=2026-10-24&dueBefore=2026-10-31&sort=due',
+    );
+    expect(isShortcutActive('dueSoon', shortcutFilters('dueSoon'))).toBe(true);
+    expect(isShortcutActive('dueSoon', { ...DEFAULT_FILTERS, sort: 'due' })).toBe(false);
     expect(isShortcutActive('blocked', shortcutFilters('blocked'))).toBe(true);
     expect(isShortcutActive('blocked', DEFAULT_FILTERS)).toBe(false);
     expect(isShortcutActive('blocked', { ...shortcutFilters('blocked'), q: 'x' })).toBe(false);
+  });
+});
+
+describe('due dates', () => {
+  it('due soon covers today through the next 7 days (UTC dates), across months and years', () => {
+    expect(query({ due: 'soon' }, false, '2026-12-28')).toBe(
+      'open=true&dueAfter=2026-12-28&dueBefore=2027-01-04&sort=updated',
+    );
+    expect(addDays('2028-02-27', 2)).toBe('2028-02-29');
+    expect(todayUtcDate(Date.parse('2026-10-24T23:30:00-03:00'))).toBe('2026-10-25');
+  });
+
+  it('counts as a filter and is written to the list query string', () => {
+    expect(activeFilterCount({ ...DEFAULT_FILTERS, due: 'soon' })).toBe(1);
+    expect(listQueryString({ hasDue: false, dueBefore: '2026-11-01' })).toBe(
+      'dueBefore=2026-11-01&hasDue=false',
+    );
+    expect(listQueryString({ hasDue: true })).toBe('hasDue=true');
   });
 });
 

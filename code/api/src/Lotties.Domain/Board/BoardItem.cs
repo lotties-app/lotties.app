@@ -136,6 +136,33 @@ public sealed class BoardItem
         return BoardItemEvent.Record(Id, kind, actor, changes, null, at);
     }
 
+    /// <summary>
+    /// One write that edits and comments (<c>board_set_status</c> with a note): the comment is validated before anything
+    /// changes, the version rises once, and the entries are the edit's (when something changed) then the comment (one
+    /// microsecond later, so the history, ordered by time, keeps the comment after the change). No comment: <see cref="Edit"/>.
+    /// </summary>
+    public IReadOnlyList<BoardItemEvent> EditAndComment(BoardItemContent content, string? comment, BoardActor actor, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(actor);
+        EnsureNotDeleted();
+        var text = comment is null ? null : Text.Required(comment, "comment", BoardItemEvent.CommentMaxLength);
+        var at = UtcTime.Normalize(now);
+        var edited = Edit(content, actor, at);
+        if (text is null)
+        {
+            return edited is null ? [] : [edited];
+        }
+
+        if (edited is null)
+        {
+            Touch(at);
+            return [BoardItemEvent.Record(Id, BoardEventKind.Commented, actor, [], text, at)];
+        }
+
+        return [edited, BoardItemEvent.Record(Id, BoardEventKind.Commented, actor, [], text, at.AddTicks(TimeSpan.TicksPerMicrosecond))];
+    }
+
     public BoardItemEvent Comment(string? comment, BoardActor actor, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(actor);

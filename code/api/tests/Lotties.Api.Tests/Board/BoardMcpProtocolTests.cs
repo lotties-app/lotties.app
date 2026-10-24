@@ -316,6 +316,208 @@ public sealed class BoardMcpProtocolTests(BoardMcpHost host) : IClassFixture<Boa
     }
 
     [Fact]
+    public async Task FilterArguments_OneValueArrayOrCommaList_AllWork_OnListSearchAndRecentChanges()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Write));
+        var marker = BoardTestKit.Unique("forms");
+        var since = DateTimeOffset.UtcNow.AddSeconds(-1).ToString("O");
+        await client.CallToolAsync("board_create_item", Args(("type", "task"), ("topic", "design-ux"), ("title", $"{marker} open"), ("side", "owner"), ("labels", new[] { "ux" })));
+        await client.CallToolAsync("board_create_item", Args(("type", "gap"), ("topic", "design-ux"), ("title", $"{marker} blocked"), ("side", "assistant"), ("status", "blocked"), ("priority", "high")));
+        await client.CallToolAsync("board_create_item", Args(("type", "risk"), ("topic", "product"), ("title", $"{marker} waiting"), ("side", "external"), ("status", "waiting")));
+
+        async Task<IReadOnlyList<string>> TitlesAsync(string tool, params (string Name, object? Value)[] filters)
+        {
+            var arguments = filters.Append(("q", (object?)marker)).ToList();
+            if (tool == "board_recent_changes")
+            {
+                arguments = filters.Append(("since", (object?)since)).ToList();
+            }
+
+            var result = await client.CallToolAsync(tool, Args([.. arguments]));
+            Assert.NotEqual(true, result.IsError);
+            return Structured(result).GetProperty("items").EnumerateArray()
+                .Select(item => item.GetProperty("title").GetString()!)
+                .Where(title => title.StartsWith(marker, StringComparison.Ordinal))
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        string[] openAndBlocked = [$"{marker} blocked", $"{marker} open"];
+        foreach (var tool in new[] { "board_list_items", "board_search", "board_recent_changes" })
+        {
+            Assert.Equal([$"{marker} open"], await TitlesAsync(tool, ("status", "open")));
+            Assert.Equal(openAndBlocked, await TitlesAsync(tool, ("status", new[] { "open", "blocked" })));
+            Assert.Equal(openAndBlocked, await TitlesAsync(tool, ("status", "open,blocked")));
+            Assert.Equal(openAndBlocked, await TitlesAsync(tool, ("status", "open, blocked")));
+            Assert.Equal(openAndBlocked, await TitlesAsync(tool, ("side", "owner,assistant")));
+            Assert.Equal([$"{marker} blocked"], await TitlesAsync(tool, ("priority", "high"), ("type", new[] { "gap" })));
+            Assert.Equal(openAndBlocked, await TitlesAsync(tool, ("topic", "design-ux")));
+            Assert.Equal([$"{marker} open"], await TitlesAsync(tool, ("label", "ux")));
+            Assert.Equal([$"{marker} blocked", $"{marker} open", $"{marker} waiting"], await TitlesAsync(tool, ("topic", new[] { "design-ux", "product" })));
+        }
+    }
+
+    [Theory]
+    [InlineData("board_list_items", """{"status":"sleeping"}""", "status", "sleeping")]
+    [InlineData("board_list_items", """{"status":"open,sleeping"}""", "status", "in_progress")]
+    [InlineData("board_list_items", """{"side":["owner","me"]}""", "side", "owner, assistant, both, external")]
+    [InlineData("board_search", """{"q":"x","priority":"critical"}""", "priority", "critical")]
+    [InlineData("board_recent_changes", """{"since":"2026-10-24T00:00:00Z","type":"chore"}""", "type", "chore")]
+    [InlineData("board_list_items", """{"status":7}""", "status", "array of strings")]
+    [InlineData("board_list_items", """{"dueBefore":"31/10/2026"}""", "dueBefore", "date")]
+    public async Task FilterArguments_InvalidValue_IsValidationFailed_WithAMessageNamingTheProblem(string tool, string arguments, string field, string mentioned)
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Read));
+
+        var result = await client.CallToolAsync(new CallToolRequestParams { Name = tool, Arguments = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(arguments) });
+
+        Assert.True(result.IsError);
+        Assert.Equal(("validation_failed", field), (Code(result), Structured(result).GetProperty("field").GetString()));
+        Assert.Contains(mentioned, Structured(result).GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ListTools_FilterSchemas_AreOneOfStringOrArray_WithExamples_AndTheDueArguments()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Read));
+
+        var tools = (await client.ListToolsAsync()).Select(tool => tool.ProtocolTool).ToDictionary(tool => tool.Name);
+
+        foreach (var tool in new[] { "board_list_items", "board_search", "board_recent_changes" })
+        {
+            var properties = tools[tool].InputSchema.GetProperty("properties");
+            foreach (var filter in new[] { "topic", "type", "status", "side", "priority", "label" })
+            {
+                var schema = properties.GetProperty(filter);
+                var forms = schema.GetProperty("oneOf").EnumerateArray().Select(form => form.GetProperty("type").GetString()).ToArray();
+                Assert.Equal(["string", "array"], forms);
+                Assert.Equal(3, schema.GetProperty("examples").GetArrayLength());
+                Assert.Contains("comma", schema.GetProperty("description").GetString(), StringComparison.Ordinal);
+            }
+        }
+
+        var status = tools["board_list_items"].InputSchema.GetProperty("properties").GetProperty("status").GetProperty("oneOf");
+        Assert.Matches(status[0].GetProperty("pattern").GetString()!, "open, in_progress");
+        Assert.DoesNotMatch(status[0].GetProperty("pattern").GetString()!, "open,sleeping");
+        Assert.Contains("in_progress", status[1].GetProperty("items").GetProperty("enum").EnumerateArray().Select(code => code.GetString()));
+        var list = tools["board_list_items"].InputSchema.GetProperty("properties");
+        Assert.Equal(("date", "date", "boolean"), (list.GetProperty("dueBefore").GetProperty("format").GetString(), list.GetProperty("dueAfter").GetProperty("format").GetString(), list.GetProperty("hasDue").GetProperty("type").GetString()));
+    }
+
+    [Fact]
+    public async Task ListItems_DueFilters_AndSortDue()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Write));
+        var marker = BoardTestKit.Unique("due");
+        foreach (var (title, due) in new[] { ("c", "2027-03-20"), ("a", "2027-03-01"), ("none", null), ("b", "2027-03-10") })
+        {
+            await client.CallToolAsync("board_create_item", Args(("type", "task"), ("topic", "product"), ("title", $"{marker} {title}"), ("side", "owner"), ("dueDate", due)));
+        }
+
+        async Task<IReadOnlyList<string>> TitlesAsync(params (string Name, object? Value)[] filters)
+        {
+            var result = await client.CallToolAsync("board_list_items", Args([.. filters, ("q", marker), ("sort", "due")]));
+            Assert.NotEqual(true, result.IsError);
+            return Structured(result).GetProperty("items").EnumerateArray().Select(item => item.GetProperty("title").GetString()![(marker.Length + 1)..]).ToArray();
+        }
+
+        Assert.Equal(["a", "b", "c", "none"], await TitlesAsync());
+        Assert.Equal(["b", "c"], await TitlesAsync(("dueAfter", "2027-03-10"), ("dueBefore", "2027-03-20")));
+        Assert.Equal(["a", "b", "c"], await TitlesAsync(("hasDue", true)));
+        Assert.Equal(["none"], await TitlesAsync(("hasDue", false)));
+    }
+
+    [Fact]
+    public async Task Summary_HasTheActionableTotals_AndTheBlockedDueSoonAndOverdueLists()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Read));
+
+        var summary = await client.CallToolAsync("board_summary", Args());
+
+        Assert.NotEqual(true, summary.IsError);
+        var totals = Structured(summary).GetProperty("totals");
+        foreach (var total in new[] { "open", "waitingOnOwner", "waitingOnAssistant", "blocked", "overdue", "actionableOwner", "actionableAssistant", "dueSoon" })
+        {
+            Assert.Equal(JsonValueKind.Number, totals.GetProperty(total).ValueKind);
+        }
+
+        foreach (var list in new[] { "waitingOnOwner", "waitingOnAssistant", "recentDecisions", "recentlyUpdated", "blocked", "dueSoon", "overdue" })
+        {
+            Assert.Equal(JsonValueKind.Array, Structured(summary).GetProperty(list).ValueKind);
+        }
+
+        Assert.Contains("actionable", Text(summary), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SetStatus_WithANote_IsOneWrite_OneVersionBump_StatusChangeThenComment()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Write));
+        var id = await CreateAsync(client, "Atomic status");
+
+        var status = await client.CallToolAsync("board_set_status", Args(("id", id), ("status", "done"), ("note", "Shipped")));
+        var noteOnly = await client.CallToolAsync("board_set_status", Args(("id", id), ("status", "done"), ("note", "Still done")));
+        var detail = await client.CallToolAsync("board_get_item", Args(("id", id)));
+
+        Assert.NotEqual(true, status.IsError);
+        Assert.Equal(("done", 2), (Item(status).GetProperty("status").GetString(), Item(status).GetProperty("version").GetInt32()));
+        Assert.Equal("Shipped", Structured(status).GetProperty("comment").GetProperty("comment").GetString());
+        Assert.Equal(3, Item(noteOnly).GetProperty("version").GetInt32());
+        var history = Structured(detail).GetProperty("history").EnumerateArray().ToArray();
+        Assert.Equal(["created", "status_changed", "commented", "commented"], history.Select(entry => entry.GetProperty("kind").GetString()));
+        Assert.Equal(["Shipped", "Still done"], history.Where(entry => entry.GetProperty("kind").GetString() == "commented").Select(entry => entry.GetProperty("comment").GetString()));
+    }
+
+    [Fact]
+    public async Task SetStatus_WithAnInvalidNote_ChangesNothing()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Write));
+        var id = await CreateAsync(client, "Note too long");
+
+        var status = await client.CallToolAsync("board_set_status", Args(("id", id), ("status", "done"), ("note", new string('n', 4001))));
+        var detail = await client.CallToolAsync("board_get_item", Args(("id", id)));
+
+        Assert.Equal(("validation_failed", "note"), (Code(status), Structured(status).GetProperty("field").GetString()));
+        Assert.Equal(("open", 1), (Item(detail).GetProperty("status").GetString(), Item(detail).GetProperty("version").GetInt32()));
+        Assert.Equal(1, Structured(detail).GetProperty("historyTotal").GetInt32());
+    }
+
+    [Fact]
+    public async Task TwoPartWrites_WhenSavingTheCommentFails_LeaveTheFirstPartUndone()
+    {
+        using var failing = BoardMcpHost.WithServices(FailingCommentBoardRepository.Install);
+        await using var client = await failing.ClientAsync(await failing.KeyAsync(BoardKeyScope.Write));
+        var id = await CreateAsync(client, "Status must not change");
+        var title = BoardTestKit.Unique("never-recorded");
+
+        var status = await client.CallToolAsync("board_set_status", Args(("id", id), ("status", "done"), ("note", "Shipped")));
+        var decision = await client.CallToolAsync("board_record_decision", Args(("topic", "product"), ("title", title), ("decisionSummary", "x"), ("rationale", "y"), ("relatedItemId", id)));
+        var detail = await client.CallToolAsync("board_get_item", Args(("id", id)));
+        var search = await client.CallToolAsync("board_search", Args(("q", title)));
+
+        Assert.Equal(("internal_error", "internal_error"), (Code(status), Code(decision)));
+        Assert.Equal(("open", 1), (Item(detail).GetProperty("status").GetString(), Item(detail).GetProperty("version").GetInt32()));
+        Assert.Equal(["created"], Structured(detail).GetProperty("history").EnumerateArray().Select(entry => entry.GetProperty("kind").GetString()));
+        Assert.Empty(Structured(search).GetProperty("items").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task OpenDecision_HasANullDecision_NeverAnEmptyObject()
+    {
+        await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Write));
+
+        var created = await client.CallToolAsync("board_create_item", Args(("type", "decision"), ("topic", "product"), ("title", "Open decision"), ("side", "owner")));
+        var listed = await client.CallToolAsync("board_list_items", Args(("q", "Open decision"), ("type", "decision")));
+        var task = await client.CallToolAsync("board_create_item", Args(("type", "task"), ("topic", "product"), ("title", "A task"), ("side", "owner")));
+
+        Assert.Equal(JsonValueKind.Null, Item(created).GetProperty("decision").ValueKind);
+        Assert.NotEmpty(Structured(listed).GetProperty("items").EnumerateArray());
+        Assert.All(Structured(listed).GetProperty("items").EnumerateArray(), item => Assert.Equal(JsonValueKind.Null, item.GetProperty("decision").ValueKind));
+        Assert.Equal(JsonValueKind.Null, Item(task).GetProperty("decision").ValueKind);
+        Assert.DoesNotContain("\"decision\":{}", ((TextContentBlock)created.Content[1]).Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task UnknownTool_IncludingABabyTool_IsAProtocolError()
     {
         await using var client = await host.ClientAsync(await host.KeyAsync(BoardKeyScope.Write));

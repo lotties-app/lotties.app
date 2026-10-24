@@ -137,7 +137,10 @@ works on `/api/v1/mcp` and a baby MCP token never works here.
 | write key, or `lotties-board-writer` / `-admin` | the six above plus `board_create_item`, `board_update_item`, `board_set_status`, `board_add_comment`, `board_record_decision`, `board_delete_item` (soft delete) |
 
 No tool restores items, manages topics or touches API keys (that stays with admins in the app or the REST API). Every
-write goes into the item's history with the key's name (or the person's name).
+write goes into the item's history with the key's name (or the person's name). The list filters (`topic`, `type`,
+`status`, `side`, `priority`, `label`) take one value, an array or a comma-separated string: `{"status": "open"}`,
+`{"status": ["open", "blocked"]}` and `{"status": "open,blocked"}` all work (the same on the REST query string:
+`?status=open,blocked` or `?status=open&status=blocked`).
 
 ### 8.1 Turn it on
 

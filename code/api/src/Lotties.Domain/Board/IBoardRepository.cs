@@ -51,6 +51,15 @@ public sealed record BoardItemQuery
     /// <summary>Items due strictly before this date.</summary>
     public DateOnly? DueBefore { get; init; }
 
+    /// <summary>Items due on or after this date.</summary>
+    public DateOnly? DueFrom { get; init; }
+
+    /// <summary>Items due on or before this date.</summary>
+    public DateOnly? DueUntil { get; init; }
+
+    /// <summary><c>true</c>: only items with a due date; <c>false</c>: only items without one.</summary>
+    public bool? HasDue { get; init; }
+
     /// <summary>Only items with a decision time.</summary>
     public bool DecidedOnly { get; init; }
 

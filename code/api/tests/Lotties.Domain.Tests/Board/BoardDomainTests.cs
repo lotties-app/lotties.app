@@ -102,6 +102,25 @@ public sealed class BoardDomainTests
     }
 
     [Fact]
+    public void Item_EditAndComment_IsOneVersionBump_ChangeThenComment_AndAnInvalidCommentChangesNothing()
+    {
+        var (item, _) = BoardItem.Create(Guid.NewGuid(), Content("Status and note"), null, Owner, Now);
+
+        Assert.Throws<DomainValidationException>(() => item.EditAndComment(Content("Status and note", BoardItemStatus.Done), new string('n', BoardItemEvent.CommentMaxLength + 1), Owner, Now.AddMinutes(1)));
+        Assert.Equal((BoardItemStatus.Open, 1), (item.Status, item.Version));
+
+        var entries = item.EditAndComment(Content("Status and note", BoardItemStatus.Done), "Shipped", Owner, Now.AddMinutes(2));
+
+        Assert.Equal([BoardEventKind.StatusChanged, BoardEventKind.Commented], entries.Select(entry => entry.Kind));
+        Assert.True(entries[1].At > entries[0].At);
+        Assert.Equal((BoardItemStatus.Done, 2), (item.Status, item.Version));
+        Assert.Equal([BoardEventKind.Commented], item.EditAndComment(item.Content, "Still done", Owner, Now.AddMinutes(3)).Select(entry => entry.Kind));
+        Assert.Equal(3, item.Version);
+        Assert.Empty(item.EditAndComment(item.Content, null, Owner, Now.AddMinutes(4)));
+        Assert.Equal(3, item.Version);
+    }
+
+    [Fact]
     public void Item_EnsureVersion_RefusesAStaleVersion()
     {
         var (item, _) = BoardItem.Create(Guid.NewGuid(), Content("Versioned"), null, Owner, Now);
