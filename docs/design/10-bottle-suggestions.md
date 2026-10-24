@@ -62,6 +62,10 @@ Bottles now record an amount prepared (`amount_ml`) and an amount drunk (`amount
 
 ## Phase 2 (later, not built): opt-in anonymous aggregate
 
+Superseded by docs/design/34-community-insights.md (2026-10-23): the same idea for every pooled estimate, per-baby
+consent by an Owner or Parent, k = 20 babies from different families, per-family caps and weekly static statistics;
+the privacy policy describes it as "not active yet". The notes below are kept as the original sketch.
+
 Idea: on a shared instance, show what babies of the same age typically drink, as a cold-start
 improvement over the static table. Constraints, all required before building:
 
