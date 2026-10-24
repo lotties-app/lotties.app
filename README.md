@@ -49,6 +49,7 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `POSTGRES_PASSWORD` | Password of the optional `localdb` container (user is `DB_APP_USER`); no default |
 | `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, `VITE_API_BASE_URL` | Web build arguments (public, compiled into the bundle); see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | `VITE_REPO_URL` | Optional web build argument: source repository link in the landing page footer (http/https only); empty (default) hides it |
+| `VITE_PRIVACY_CONTROLLER_NAME`, `VITE_PRIVACY_CONTACT_EMAIL`, `VITE_PRIVACY_DPO` | Web build arguments (public): who is responsible for the data, the privacy contact and the encarregado shown on `/privacy`; empty = neutral defaults. Set them before a store submission ([docs/PRIVACY-OWNER-CHECKLIST.md](docs/PRIVACY-OWNER-CHECKLIST.md)) |
 | `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |
 | `AUTH_AUDIENCE` | API audience that access tokens must carry (config `Auth:Audience`); required outside Development |
 | `AUTH_ADMIN_CLIENT_ID`, `AUTH_ADMIN_CLIENT_SECRET` | Optional Keycloak service account (config `Auth:AdminClientId`/`AdminClientSecret`) so account deletion also removes the sign-in account; see docs/DEPLOY.md |
@@ -66,6 +67,12 @@ Lotties is a web app you add from the browser, no app store needed. Full guide w
 - **Computer**: Chrome or Edge, the install icon at the right of the address bar; Safari on a Mac, **File > Add to Dock**.
 
 Inside Instagram, Facebook or another app's browser the option is missing: open the page in Safari or Chrome first.
+
+## Privacy
+
+What Lotties collects, why, who receives it and how to download or delete your data: <https://lotties.app/privacy>
+(no sign-in needed; also Hub > App > Privacy policy). The audit behind it is
+[docs/design/33-privacy-audit.md](docs/design/33-privacy-audit.md).
 
 ## Credits and open-source acknowledgements
 

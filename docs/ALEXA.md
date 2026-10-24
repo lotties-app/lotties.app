@@ -134,17 +134,22 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 
 ## 8. Certification checklist
 
-- **Privacy policy URL:** required. There is no public `/privacy` page yet: the draft is in
-  [docs/design/20-store-readiness.md section 4](design/20-store-readiness.md); it must be approved and published at
-  `https://lotties.app/privacy` first, and mention that Amazon processes the voice and Lotties receives only the intent
-  and its values (design doc section 7). Terms of use URL: optional.
+- **Privacy policy URL:** `https://lotties.app/privacy` (published; the Alexa part is in "Who sees your data" >
+  "Companies and services that receive data", anchor `#privacy-sharing-companies`). It says that Amazon records and
+  processes the voice, that Lotties receives only the command and its values, **and** that the answer Lotties sends back
+  for Alexa to speak can carry the baby's name, feed and sleep times, diaper counts, the next appointment and due
+  vaccines (Amazon receives that text), plus that Amazon keeps the account-linking token. Before submitting: the
+  owner's values and the legal review in [docs/PRIVACY-OWNER-CHECKLIST.md](PRIVACY-OWNER-CHECKLIST.md). Terms of use
+  URL: optional.
 - **Distribution** > Skill preview, per language: name `Lotties`, one-sentence and full description, three example
   phrases (they must work exactly: e.g. "Alexa, open lotties baby", "Alexa, tell lotties baby the baby fell asleep",
   "Alexa, ask lotties baby when was the last feed"), small and large icons (`docs/design/icons`), category
   **Health & Fitness** or **Lifestyle**, keywords.
-- **Privacy & Compliance:** no purchases, does not collect personal information beyond account linking (answer
-  honestly: the parent's baby log is in her Lotties account), **child-directed: No** (it is used by parents, not
-  children), no advertising, export compliance. Note that the skill does not give medical advice.
+- **Privacy & Compliance:** no purchases; "collects personal information": **yes**, answer honestly: with account
+  linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers contain the
+  baby's name and log facts (docs/design/33-privacy-audit.md section 3); **child-directed: No** (it is used by parents,
+  not children, although the data is about a child), no advertising, export compliance. Note that the skill does not
+  give medical advice.
 - **Testing instructions** for the reviewers: a test Lotties account (create one for them; never a real family's),
   that account linking is required for commands, the example phrases, and that a bottle needs an amount.
 - **No health claims:** descriptions say it logs and reads back the family's own records; never "monitors", "detects",

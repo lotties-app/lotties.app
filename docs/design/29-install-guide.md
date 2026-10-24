@@ -56,7 +56,7 @@ User agents of each row are in `install/installTestKit.ts` and the table test `i
 - **`PublicTopBar`** (`landing/PublicTopBar.tsx`) on `/credits` and `/install`: Back (router history back when this tab has in-app history, `location.key !== 'default'`; otherwise to `/`), the brand (link to `/`, "Lotties home") and Home (`/`: the app when signed in, the landing page otherwise). Safe-area top padding for the standalone app. It replaces the credits page's own header and "Lotties home" button.
 - **In-app pages** reached from the Hub (`/hub/credits`, `/hub/install`, `/hub/about`, ...) keep the existing "Back to Hub" button of `HubSubPage` and the shell navigation.
 - **Android back button in the store app** (`platform/backButton.ts`, started by `startNativeShell`): `@capacitor/app` without a listener goes back in the WebView but does nothing on the first page (checked in `AppPlugin.java` of @capacitor/app 8.1.2), which feels stuck. With our `backButton` listener: `canGoBack` > `history.back()`, otherwise `App.exitApp()`. `NativeShell` gained `onBackButton` and `exitApp` (fake shell in `nativeTestKit.ts`).
-- **Privacy policy page**: none exists yet (docs/design/20-store-readiness.md section 4 is a draft for the owner and a lawyer). When `/privacy` is published it gets the same `PublicTopBar` and a Hub > App entry; no legal text is written here.
+- **Privacy policy page**: `/privacy` (2026-10-23, docs/design/33-privacy-audit.md) uses the same `PublicTopBar`, with Hub > App > Privacy policy (`/hub/privacy`) and `/doctor/privacy` inside the shells.
 
 ## 5. Wording sources (cited, no copied text)
 
@@ -82,5 +82,4 @@ One h1 per page (the route's), h2 sections, h3/h4 inside; ordered lists for step
 
 - No once-dismissible landing banner (optional in the brief; the visible section is enough and avoids nagging).
 - No screenshots of the real browser UIs (copyright, and they change every release).
-- No `/privacy` page (owner and lawyer first).
 - Not verified on real devices in this change: the manual checklist of docs/design/09 section 15 should add "install from /install" on iPhone Safari, Android Chrome and desktop Chrome.
