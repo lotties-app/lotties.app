@@ -263,6 +263,35 @@ The response headers set by the web container are a Content-Security-Policy (`de
 
 `deploy/homelab/` deploys the two images to the home lab cluster (context `home-lab-main`, namespace `lotties-app-production`, registry `cr.homel4b.dev/lotties`): one Helm chart for the API and the web releases, an Ingress on the external Traefik for `https://lotties.app` (`/api` to the API, the rest to the web app, certificate from cert-manager), the Secret `lotties-secrets` built from `deploy/homelab/.env`, and `DRY_RUN=1` to see the plan without changing anything. Prerequisites (Harbor project, pull Secret, Keycloak client settings), secrets rotation, migrations, verification and rollback: [deploy/homelab/README.md](../deploy/homelab/README.md).
 
+### Versions
+
+Every run of `deploy/homelab/deploy.sh` that builds an image is a release `vX.Y.Z` (the next patch after the git and
+registry tags, or `VERSION`). The number is chosen **before** the builds (which images need a build is known first:
+the source tag is not in the registry, or `FORCE_BUILD=1`, or a fixed `TAG`), so each image built in the run carries
+it as build arguments, the same three for both:
+
+| Build arg | Value | Web (code/web/Dockerfile -> ENV -> vite.config.ts / build-info.ts) | API (code/api/Dockerfile runtime stage -> ENV) |
+| --- | --- | --- | --- |
+| `APP_VERSION` | `X.Y.Z` (no v); empty without a release (a fixed `TAG` and no `VERSION`) | `__APP_VERSION__`, `dev` when empty | `GET /api/v1/version` `version`, `dev` when empty |
+| `APP_COMMIT` | `git rev-parse --short=12 HEAD` of the checkout | `__APP_COMMIT__` | `commit` |
+| `APP_BUILD_TIME` | UTC ISO time of the run | `__APP_BUILT_AT__` | `builtAt` |
+
+The web app shows its own and the server's version in Hub > App > About and a short `v0.1.38` line in Settings, the
+Hub, the landing footer, `/credits`, `/privacy` and the doctor's account menu. A local `npm run build` or `vite dev`
+has no `APP_VERSION` and shows `dev` (the commit still comes from git).
+
+**The version is never part of an image tag.** Tags stay `src-<hash>` of the git file list of each image's sources
+(plus the web `VITE_*` values): the release number, the commit and the build time are left out on purpose, so a new
+release does not rebuild or restart an unchanged image. The consequence: an image that is not rebuilt keeps the
+release that built it. After a release that changed only the web app, About shows for example app v0.1.39 and server
+v0.1.38; that is correct (the API did not change), and the update hint appears only when the server is newer than the
+device. The `v0.1.39` and `latest` registry tags still point at both images of the release. `deploy.test.sh` checks
+that both images get the release and that the tags do not depend on it.
+
+Other ways to build the images (podman by hand, CI) pass the same three `--build-arg`s; without them the app and the
+API say `dev`. The iOS/Android build (`npm --prefix code/mobile run build:web`) also needs `APP_VERSION` in its
+environment to show a release instead of `dev`.
+
 ## Push notifications
 
 Optional, self-hosted Web Push (VAPID, RFC 8291). There is no third-party push vendor: the API sends dose-due and nap-window reminders (and Settings test sends) straight to the browser push services (FCM, Mozilla, Apple, Windows). Contract: `docs/SPEC.md` section "Push notifications".
