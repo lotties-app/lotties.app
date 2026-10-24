@@ -41,6 +41,7 @@ export const HUB_ENTRY_IDS = [
   'welcome',
   'about',
   'credits',
+  'privacy',
 ] as const;
 export type HubEntryId = (typeof HUB_ENTRY_IDS)[number];
 
@@ -75,6 +76,7 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'welcome', section: 'app', icon: 'home', to: '/welcome' },
   { id: 'about', section: 'app', icon: 'info', to: '/hub/about' },
   { id: 'credits', section: 'app', icon: 'heart', to: '/hub/credits' },
+  { id: 'privacy', section: 'app', icon: 'lock', to: '/hub/privacy' },
 ];
 
 export interface HubContext {
@@ -97,6 +99,7 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
     case 'settings':
     case 'about':
     case 'credits':
+    case 'privacy':
     case 'welcome':
       return true;
     case 'install':

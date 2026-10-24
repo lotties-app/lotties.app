@@ -90,6 +90,7 @@ describe('the sections', () => {
       'welcome',
       'about',
       'credits',
+      'privacy',
     ]);
     const href = (id: string) => screen.getByTestId(`hub-row-${id}`).getAttribute('href');
     expect(href('appointments')).toBe('/appointments');
@@ -119,6 +120,7 @@ describe('the sections', () => {
       'welcome',
       'about',
       'credits',
+      'privacy',
     ]);
   });
 

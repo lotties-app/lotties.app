@@ -32,9 +32,11 @@ const HubUpdatesPage = hubSubPage('HubUpdatesPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
 const HubCreditsPage = hubSubPage('HubCreditsPage');
 const HubInstallPage = hubSubPage('HubInstallPage');
-// The public credits and install pages: outside the auth gate, so they open without signing in.
+const HubPrivacyPage = hubSubPage('HubPrivacyPage');
+// The public credits, install and privacy pages: outside the auth gate, so they open without signing in.
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InstallPage = lazy(() => import('./install/InstallPage'));
+const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -290,6 +292,14 @@ export function AppRoutes() {
           </Suspense>
         }
       />
+      <Route
+        path="/privacy"
+        element={
+          <Suspense fallback={null}>
+            <PrivacyPage />
+          </Suspense>
+        }
+      />
       {/* The landing page on purpose for a signed-in person; `/` keeps opening the app. */}
       <Route path="/welcome" element={<WelcomeRoute />} />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
@@ -322,6 +332,7 @@ export function AppRoutes() {
             <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="hub/credits" element={<HubCreditsPage />} />
             <Route path="hub/install" element={<HubInstallPage />} />
+            <Route path="hub/privacy" element={<HubPrivacyPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="vaccines" element={<VaccinesPage />} />

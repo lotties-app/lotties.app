@@ -2,6 +2,7 @@
   "account": {
     "sectionTitle": "Account and data",
     "intro": "You can delete your account and your data from here. This cannot be undone.",
+    "privacy": "Privacy policy: what we keep, for how long, and your rights",
     "exportHint": "Want to keep a copy first? Download what this device holds of your babies' records as a JSON file.",
     "export": "Download my data",
     "exportFailed": "This browser could not save the file.",

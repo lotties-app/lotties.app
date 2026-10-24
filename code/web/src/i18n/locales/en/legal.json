@@ -1,0 +1,9 @@
+{
+  "legal": {
+    "privacy": {
+      "title": "Privacy policy",
+      "version": "Version {{version}}, last updated on {{date}}.",
+      "contents": "On this page"
+    }
+  }
+}

@@ -164,6 +164,19 @@ export function UserMenu() {
             {t('credits.title')}
           </MenuItem>
         )}
+        {doctorMode && (
+          <MenuItem
+            component={Link}
+            to="/doctor/privacy"
+            sx={{ minHeight: 48 }}
+            onClick={() => setAnchor(null)}
+          >
+            <ListItemIcon>
+              <Icon name="lock" size={20} />
+            </ListItemIcon>
+            {t('legal.privacy.title')}
+          </MenuItem>
+        )}
         {!doctorMode && (
           <MenuItem
             sx={{ minHeight: 48 }}

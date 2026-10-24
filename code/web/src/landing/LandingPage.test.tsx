@@ -105,6 +105,16 @@ describe('LandingPage', () => {
     ).toBe('/credits');
   });
 
+  it('links the public privacy policy in the footer, next to the credits', async () => {
+    renderLanding();
+    const footer = await screen.findByRole('contentinfo');
+    const links = within(footer)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')]);
+    const credits = links.findIndex(([, href]) => href === '/credits');
+    expect(links[credits + 1]).toEqual(['Privacy policy', '/privacy']);
+  });
+
   it('starts sign-in from the header and the hero, and registration from the secondary button', async () => {
     const auth = fakeAuth({ isAuthenticated: false, user: null });
     renderLanding(auth);

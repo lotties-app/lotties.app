@@ -44,6 +44,13 @@ export function AboutScreen() {
         >
           {t('hub.about.credits')}
         </Link>
+        <Link
+          component={RouterLink}
+          to="/hub/privacy"
+          sx={{ minHeight: 44, display: 'inline-flex', alignItems: 'center' }}
+        >
+          {t('hub.about.privacy')}
+        </Link>
         {source && (
           <Link
             href={source}

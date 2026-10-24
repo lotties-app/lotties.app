@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert,
   CircularProgress,
   FormHelperText,
+  Link,
   Stack,
   TextField,
   Typography,
@@ -89,6 +91,22 @@ export function VoiceAssistantsSection({ babies }: { babies: readonly Baby[] }) 
       <Typography variant="body2" role="status" aria-live="polite">
         {saved ? t('assistants.saved') : ''}
       </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {t('assistants.privacy')}
+      </Typography>
+      <Link
+        component={RouterLink}
+        to="/hub/privacy#privacy-sharing-companies"
+        variant="body2"
+        sx={{
+          alignSelf: 'flex-start',
+          minHeight: 44,
+          display: 'inline-flex',
+          alignItems: 'center',
+        }}
+      >
+        {t('assistants.privacyLink')}
+      </Link>
     </Stack>
   );
 }

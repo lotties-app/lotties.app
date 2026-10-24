@@ -161,6 +161,11 @@ describe('dashboard memory', () => {
     expect(activeNavKey('/doctor')).toBe('patients');
     expect(activeNavKey('/doctor/lia/timeline')).toBe('timeline');
     expect(activeNavKey('/doctor/settings')).toBeNull();
+    // Her own pages are not patient ids.
+    for (const page of ['credits', 'privacy']) {
+      expect(patientIdOfPath(`/doctor/${page}`)).toBeNull();
+      expect(activeNavKey(`/doctor/${page}`)).toBeNull();
+    }
     expect(activeNavKey('/day')).toBeNull();
   });
 });

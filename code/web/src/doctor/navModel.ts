@@ -16,25 +16,22 @@ export const DASHBOARD_MAX_WIDTH = 1040;
 
 export type NavKey = 'patients' | PatientSection;
 
+/** `/doctor/<page>` paths that are hers, not a patient id: Settings, credits and the privacy policy. */
+const ACCOUNT_PAGES: ReadonlySet<string> = new Set(['settings', 'credits', 'privacy']);
+
 /** Which item the path shows: Patients on `/doctor`, a section under `/doctor/:babyId`. */
 export function activeNavKey(pathname: string): NavKey | null {
   const parts = pathname.split('/').filter(Boolean);
   if (parts[0] !== 'doctor') return null;
   if (parts.length === 1) return 'patients';
-  if (parts[1] === 'settings' || parts[1] === 'credits') return null;
+  if (ACCOUNT_PAGES.has(parts[1])) return null;
   return sectionOfPath(pathname);
 }
 
 /** The patient id of a `/doctor/:babyId/...` path, or `null` (Patients, Settings). */
 export function patientIdOfPath(pathname: string): string | null {
   const parts = pathname.split('/').filter(Boolean);
-  if (
-    parts[0] !== 'doctor' ||
-    parts.length < 2 ||
-    parts[1] === 'settings' ||
-    parts[1] === 'credits'
-  )
-    return null;
+  if (parts[0] !== 'doctor' || parts.length < 2 || ACCOUNT_PAGES.has(parts[1])) return null;
   return decodeURIComponent(parts[1]);
 }
 

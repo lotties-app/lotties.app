@@ -33,14 +33,18 @@ describe('who sees which entry', () => {
       'welcome',
       'about',
       'credits',
+      'privacy',
     ]);
   });
 
   it.each(['Owner', 'Parent', 'Caregiver', 'Viewer', 'Doctor', null] as const)(
-    'shows the credits entry to every role, also native and without a baby: %s',
+    'shows the credits and privacy entries to every role, also native and without a baby: %s',
     (role) => {
-      expect(isEntryVisible('credits', ctx(role))).toBe(true);
-      expect(isEntryVisible('credits', ctx(role, { native: true }))).toBe(true);
+      for (const id of ['credits', 'privacy'] as const) {
+        expect(isEntryVisible(id, ctx(role))).toBe(true);
+        expect(isEntryVisible(id, ctx(role, { native: true }))).toBe(true);
+        expect(isEntryVisible(id, ctx(role, { hasPatients: true, installed: true }))).toBe(true);
+      }
     },
   );
 

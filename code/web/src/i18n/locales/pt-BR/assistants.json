@@ -8,6 +8,8 @@
     "hintSeveral": "Você registra para mais de um bebê: escolha o bebê dos registros e respostas por voz.",
     "saved": "Salvo.",
     "saveFailed": "Este bebê não pode ser usado nos comandos de voz. Escolha um bebê para o qual você registra.",
-    "loadFailed": "Não foi possível carregar as configurações dos assistentes de voz."
+    "loadFailed": "Não foi possível carregar as configurações dos assistentes de voz.",
+    "privacy": "A Amazon processa o que você fala com a Alexa. O Lotties recebe só o comando e seus valores e devolve a resposta que a Alexa fala, que pode incluir o nome do bebê e registros recentes.",
+    "privacyLink": "Como os comandos de voz usam seus dados (política de privacidade)"
   }
 }

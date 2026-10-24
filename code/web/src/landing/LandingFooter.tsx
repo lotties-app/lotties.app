@@ -28,7 +28,10 @@ function Setting({ id, label, children }: { id: string; label: string; children:
   );
 }
 
-/** Language and theme switches, the source link, the install guide link, the licence line and the medical note. */
+/**
+ * Language and theme switches, the source link, the install guide, credits and privacy policy links,
+ * the licence line and the medical note.
+ */
 export function LandingFooter() {
   const { t } = useTranslation('landing');
   const { native } = useInstallState();
@@ -87,6 +90,9 @@ export function LandingFooter() {
           )}
           <Link component={RouterLink} to="/credits" sx={{ alignSelf: 'flex-start' }}>
             {t('footer.credits')}
+          </Link>
+          <Link component={RouterLink} to="/privacy" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.privacy')}
           </Link>
           <Typography variant="body2" color="text.secondary">
             {t('footer.licence')}

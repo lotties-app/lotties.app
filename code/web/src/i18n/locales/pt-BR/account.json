@@ -2,6 +2,7 @@
   "account": {
     "sectionTitle": "Conta e dados",
     "intro": "Aqui você pode excluir sua conta e seus dados. Isso não pode ser desfeito.",
+    "privacy": "Política de privacidade: o que guardamos, por quanto tempo e seus direitos",
     "exportHint": "Quer guardar uma cópia antes? Baixe em um arquivo JSON o que este aparelho tem dos registros dos seus bebês.",
     "export": "Baixar meus dados",
     "exportFailed": "Este navegador não conseguiu salvar o arquivo.",
