@@ -42,6 +42,8 @@
       "webpush": "Reminders reach your phone through the open Web Push standard with VAPID keys, sent by our own server (no third-party push service SDK).",
       "fraunces": "The display font of headings, self-hosted through Fontsource.",
       "tabler": "The line icons used across the app.",
+      "yamnet": "Sound classification for the Cry monitor: YAMNet (Apache-2.0) via MediaPipe Tasks Audio (Apache-2.0). It runs on your device, loaded from our own server; no sound is sent anywhere.",
+      "audioset": "The audio class names inside the YAMNet model come from the AudioSet ontology (CC BY-SA 4.0); the Cry monitor reads its \"Baby cry, infant cry\" class.",
       "art": "The app icon and the illustrations are original work by the Lotties contributors, released with the project under the AGPL-3.0."
     },
     "externalLink": "Open {{name}}",

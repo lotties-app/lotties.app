@@ -75,6 +75,7 @@ const KNOWN_ROUTES = new Set([
   '/hub/export',
   '/hub/family',
   '/hub/family#doctor-access',
+  '/hub/cry-monitor',
   '/settings',
   '/settings#account',
   '/settings#notifications',

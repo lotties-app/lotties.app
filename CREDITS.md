@@ -22,6 +22,7 @@ The same list is in the app: <https://lotties.app/credits> (before sign-in) and 
 | [Infant feeding norms: SBP Manual de Alimentação (2024), Ministério da Saúde Guia alimentar (2019), AAP HealthyChildren, Academy of Breastfeeding Medicine, Kent et al. (2006), MILQ Study (2025), WHO](https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/design/28-age-norms.md) | Published feeds a day, gaps and milk amounts by age. Only the numbers are used, for example for the first bottle amount chips; never as a target. No endorsement or affiliation is claimed. | [MILQ Study CC BY 4.0; the others all rights reserved or site terms (only facts are used, with attribution)](https://creativecommons.org/licenses/by/4.0/) |
 | [Diaper and crying norms: UNICEF UK Baby Friendly checklist (via NHS), den Hertog et al. (2012), HELMi cohort (2024), Wolke et al. (2017)](https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/design/28-age-norms.md) | Published diaper counts, stools and crying time by age. Only the numbers are recorded, as context for the design of the predictions; never as an alert. | [HELMi cohort CC BY 4.0; the others all rights reserved (only facts are used, with attribution)](https://creativecommons.org/licenses/by/4.0/) |
 | [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) | Map and address data behind the address search for doctors and clinics. Data © OpenStreetMap contributors. | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) |
+| [AudioSet ontology (Google)](https://research.google.com/audioset/ontology/index.html) | The audio class names inside the YAMNet model come from the AudioSet ontology (CC BY-SA 4.0); the Cry monitor reads its "Baby cry, infant cry" class. | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 
 ### Services we call
 
@@ -48,6 +49,7 @@ The same list is in the app: <https://lotties.app/credits> (before sign-in) and 
 | --- | --- | --- |
 | [Fraunces (font)](https://github.com/undercasetype/Fraunces) | The display font of headings, self-hosted through Fontsource. | [OFL-1.1](https://openfontlicense.org/open-font-license-official-text/) |
 | [Tabler Icons](https://tabler.io/icons) | The line icons used across the app. | [MIT](https://github.com/tabler/tabler-icons/blob/main/LICENSE) |
+| [YAMNet sound classification model (Google), via MediaPipe Tasks Audio](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) | Sound classification for the Cry monitor: YAMNet (Apache-2.0) via MediaPipe Tasks Audio (Apache-2.0). It runs on your device, loaded from our own server; no sound is sent anywhere. | [Apache-2.0 (YAMNet and MediaPipe Tasks Audio)](https://www.apache.org/licenses/LICENSE-2.0) |
 | [Lotties app icon and illustrations](https://github.com/dev-vinicius-andrade/lotties.app) | The app icon and the illustrations are original work by the Lotties contributors, released with the project under the AGPL-3.0. | [AGPL-3.0, original work by the Lotties contributors](https://www.gnu.org/licenses/agpl-3.0.html) |
 
 ## Open-source software

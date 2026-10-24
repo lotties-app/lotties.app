@@ -10,6 +10,7 @@ import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
+import { DATA_CATEGORY_IDS } from './dataFlows';
 import { POLICY_DOCUMENTS } from './policyDocuments';
 import { ISSUES_URL, PRIVATE_REPORT_URL } from './privacyConfig';
 import {
@@ -118,7 +119,7 @@ describe('the public /privacy route', () => {
         .getAllByRole('columnheader')
         .map((th) => th.textContent),
     ).toEqual(['Information', 'What it includes', 'Why we use it']);
-    expect(within(data).getAllByRole('rowheader')).toHaveLength(13);
+    expect(within(data).getAllByRole('rowheader')).toHaveLength(DATA_CATEGORY_IDS.length);
     expect(within(data).getByRole('rowheader', { name: 'Health information about your baby' }));
     const recipients = screen.getByRole('table', {
       name: 'Who receives data from Lotties, and when',

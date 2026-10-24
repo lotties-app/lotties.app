@@ -91,6 +91,9 @@ const DevIllustrationGallery = import.meta.env.DEV
   : null;
 const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPreview')) : null;
 const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
+const DevCryMonitorPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/CryMonitorPreview'))
+  : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -261,6 +264,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevHubPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevCryMonitorPreview && (
+        <Route
+          path="/dev/cry-monitor"
+          element={
+            <Suspense fallback={null}>
+              <DevCryMonitorPreview />
             </Suspense>
           }
         />

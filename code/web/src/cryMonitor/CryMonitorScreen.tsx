@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import {
@@ -35,6 +35,8 @@ export interface CryMonitorScreenProps {
   supported?: boolean;
   /** Tests and the developer preview: the platform the denied steps and the wake lock note are for. */
   platform?: InstallPlatform;
+  /** Developer preview only: press "Start monitoring" on mount (to show the later states). */
+  autoStart?: boolean;
 }
 
 function Section({
@@ -330,6 +332,7 @@ export function CryMonitorScreen({
   wakeLockEnvironment,
   supported,
   platform: platformProp,
+  autoStart = false,
 }: CryMonitorScreenProps) {
   const monitor = useCryMonitor({
     babyId: baby.id,
@@ -340,7 +343,13 @@ export function CryMonitorScreen({
   });
   const [platform] = useState(() => platformProp ?? currentInstallPlatform());
   const [consentAt, setConsentAt] = useState(() => readConsent()?.at ?? null);
-  const { state } = monitor;
+  const { state, start } = monitor;
+  // A timer, so React's development double mount starts it once, after the remount.
+  useEffect(() => {
+    if (!autoStart) return;
+    const timer = window.setTimeout(() => void start(), 0);
+    return () => window.clearTimeout(timer);
+  }, [autoStart, start]);
   // The listening screen has its own list; consent and "not supported" show nothing else.
   const showRecent =
     state.phase === 'intro' ||
