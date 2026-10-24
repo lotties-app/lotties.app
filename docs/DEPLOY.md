@@ -56,6 +56,9 @@ Compose reads `.env` from the repository root.
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
 | `VITE_API_BASE_URL` | web build | no (empty) | Empty = same origin through nginx |
 | `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer (http/https only); empty hides it |
+| `VITE_PRIVACY_CONTROLLER_NAME` | web build | before a store submission | The controller (person or company) the privacy policy names; empty = "the Lotties project maintainers". See "Privacy policy" |
+| `VITE_PRIVACY_CONTACT_EMAIL` | web build | before a store submission | Contact address for privacy requests (a plain email, shown as a `mailto:` link); empty = the GitHub issue tracker and private reports |
+| `VITE_PRIVACY_DPO` | web build | before a store submission | The encarregado (DPO) contact: a name, an email or both; empty = "the contact above" |
 | `WEB_PORT` | compose | no (8080) | Host port of the web container |
 | `OIDC_ORIGIN` | web runtime | no | Overrides the CSP OIDC origin derived from `VITE_OIDC_AUTHORITY` |
 | `API_UPSTREAM` | web runtime | no (`api:8080`) | `host:port` nginx proxies `/api/` to; resolved per request, so nginx starts even when it does not exist |
@@ -405,6 +408,31 @@ The ingress sends `/.well-known/oauth-protected-resource` (RFC 9728, with the pa
 another reverse proxy needs the same route. Keycloak must be reachable from the AI provider's servers (Anthropic publishes
 its egress range). Logs carry the tool name, the result code and the correlation id only; the SDK's own log categories
 (`ModelContextProtocol*`) are kept at Warning in code.
+## Privacy policy
+
+The public policy is the web route `/privacy` (https://lotties.app/privacy; also Hub > Privacy policy and
+`/doctor/privacy`). Its text is in `code/web/src/legal/privacy.en.ts` and `privacy.pt-BR.ts`, the facts behind it in
+`docs/design/33-privacy-audit.md`, and what the owner must still decide in `docs/PRIVACY-OWNER-CHECKLIST.md`. Three
+public build values name who is responsible; they are contact details the owner chooses to publish, never secrets:
+
+| Variable | Shown as | Default when empty |
+|----------|----------|--------------------|
+| `VITE_PRIVACY_CONTROLLER_NAME` | the controller ("Responsible for that data") | "the Lotties project maintainers" |
+| `VITE_PRIVACY_CONTACT_EMAIL` | the contact, as a `mailto:` link (a plain address only; anything else is ignored) | the repository's issue tracker for questions and a private GitHub report for anything personal |
+| `VITE_PRIVACY_DPO` | the encarregado (data protection contact) | "the contact above" |
+
+A value that is empty, a `<placeholder>`, longer than 200 characters or has control characters falls back to the
+default, so the page never shows a marker. They reach the bundle like `VITE_REPO_URL`: `docker-compose.yml` build
+args, the web `Dockerfile`, `deploy/homelab/deploy.sh` (from `deploy/homelab/.env`; a changed value rebuilds the web
+image) and, for the iOS/Android build, `code/web/.env.native.local`. Change them with a new web build. Keeping the
+policy honest: every change that adds a data flow or a third party updates the policy content and the audit
+(`CLAUDE.md`).
+
+Operational facts the policy relies on (check them when the setup changes): the API logs no IP addresses, request
+lines or record content; the web container's nginx keeps its stock access log (client address from
+`X-Forwarded-For`, path, user agent); a reverse proxy's access log may record the query string of
+`/api/v1/address/*` (the address search text), so exclude that path there if you do not want it kept; HSTS is not
+set yet (see "Reverse proxy and TLS").
 
 ## Token storage trade-off
 

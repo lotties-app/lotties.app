@@ -25,6 +25,10 @@ const ImportBackupSection = lazy(() =>
 const ImportSection = lazy(() =>
   import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
 );
+// The policy text (both languages) is its own chunk, loaded only when the page opens.
+const PrivacyContent = lazy(() =>
+  import('../legal/PrivacyContent').then((m) => ({ default: m.PrivacyContent })),
+);
 
 /** A page opened from the Hub: a way back, the page title as the one h1, then the content. */
 function HubSubPage({ title, children }: { title: string; children: ReactNode }) {
@@ -175,6 +179,18 @@ export function HubCreditsPage() {
   return (
     <HubSubPage title={t('credits.title')}>
       <CreditsContent />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Privacy policy: the same policy as the public /privacy page, inside the shell. */
+export function HubPrivacyPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('legal.privacy.title')}>
+      <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+        <PrivacyContent />
+      </Suspense>
     </HubSubPage>
   );
 }

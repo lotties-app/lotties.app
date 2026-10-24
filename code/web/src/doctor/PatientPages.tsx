@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { Box, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import { useAllPrescriptions, useMedications } from '../db/hooks';
 import type { Prescription } from '../db/models';
 import { summaryText } from '../medications/prescriptionForm';
@@ -184,6 +184,28 @@ export function DoctorCreditsPage() {
           {t('credits.title')}
         </Typography>
         <CreditsContent />
+      </Stack>
+    </Box>
+  );
+}
+
+// The policy text (both languages) is its own chunk, loaded only when the page opens.
+const PrivacyContent = lazy(() =>
+  import('../legal/PrivacyContent').then((m) => ({ default: m.PrivacyContent })),
+);
+
+/** `/doctor/privacy`: the privacy policy, inside the doctor's shell (her account menu links here). */
+export function DoctorPrivacyPage() {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ maxWidth: 720 }}>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h1">
+          {t('legal.privacy.title')}
+        </Typography>
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <PrivacyContent />
+        </Suspense>
       </Stack>
     </Box>
   );

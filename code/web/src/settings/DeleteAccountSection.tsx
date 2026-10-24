@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -10,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  Link,
   List,
   ListItem,
   Stack,
@@ -100,6 +102,18 @@ export function DeleteAccountSection() {
   return (
     <Stack spacing={2}>
       <Typography color="text.secondary">{t('account.intro')}</Typography>
+      <Link
+        component={RouterLink}
+        to="/hub/privacy"
+        sx={{
+          alignSelf: 'flex-start',
+          minHeight: 44,
+          display: 'inline-flex',
+          alignItems: 'center',
+        }}
+      >
+        {t('account.privacy')}
+      </Link>
       <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
         <Typography variant="body2">{t('account.exportHint')}</Typography>
         <Button variant="outlined" onClick={() => void download()}>

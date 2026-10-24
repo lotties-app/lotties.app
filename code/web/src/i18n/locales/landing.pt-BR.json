@@ -80,7 +80,8 @@
     "source": "Código-fonte",
     "licence": "Software livre e de código aberto, sob a licença AGPL-3.0.",
     "notMedical": "Não é um dispositivo médico.",
-    "credits": "Créditos e licenças"
+    "credits": "Créditos e licenças",
+    "privacy": "Política de privacidade"
   },
   "openSource": {
     "title": "Feito sobre software livre",

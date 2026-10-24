@@ -139,6 +139,11 @@
         "title": "Créditos e licenças",
         "hint": "Software livre, dados e serviços por trás do Lotties",
         "keywords": "créditos licenças licencas software livre open source agradecimentos bibliotecas dados atribuição agpl terceiros"
+      },
+      "privacy": {
+        "title": "Política de privacidade",
+        "hint": "O que coletamos, por quê e seus direitos",
+        "keywords": "política de privacidade proteção de dados lgpd dados pessoais direitos excluir exportar consentimento cookies"
       }
     },
     "updates": {
@@ -166,6 +171,7 @@
       "licenseValue": "Software livre, AGPL-3.0",
       "source": "Código-fonte",
       "credits": "Feito sobre software livre. Créditos e licenças",
+      "privacy": "Política de privacidade",
       "unknown": "Desconhecido"
     }
   }

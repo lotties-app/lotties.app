@@ -51,6 +51,10 @@ services:
         VITE_OIDC_AUDIENCE: ${VITE_OIDC_AUDIENCE:-}
         # Optional source repository link in the landing footer; empty hides it.
         VITE_REPO_URL: ${VITE_REPO_URL:-}
+        # Privacy policy contacts (public); empty = the policy's defaults (docs/PRIVACY-OWNER-CHECKLIST.md).
+        VITE_PRIVACY_CONTROLLER_NAME: ${VITE_PRIVACY_CONTROLLER_NAME:-}
+        VITE_PRIVACY_CONTACT_EMAIL: ${VITE_PRIVACY_CONTACT_EMAIL:-}
+        VITE_PRIVACY_DPO: ${VITE_PRIVACY_DPO:-}
     # The web image is nginx-unprivileged (uid 101), listening on 8080 inside the container.
     ports:
       - "${WEB_PORT:-8080}:8080"

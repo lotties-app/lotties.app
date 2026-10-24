@@ -6,7 +6,7 @@ import { Icon } from '../ui/Icon';
 import { PAGE_WIDTH } from './features';
 
 /**
- * The small top bar of the public pages (/credits, /install). The installed app has no browser
+ * The small top bar of the public pages (/credits, /install, /privacy). The installed app has no browser
  * back button, so the page brings its own: Back returns to where the person came from inside the
  * app, or to the home route when the page was opened directly (a link, a new window). Home always
  * goes to `/`: the app when signed in, the landing page otherwise.

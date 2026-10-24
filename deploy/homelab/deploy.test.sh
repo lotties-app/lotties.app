@@ -77,9 +77,12 @@ check "tag: an untracked file counts" bash -c "[ '$second' != '$first' ]"
 printf 'one!' > "$REPO/code/web/src/a.ts"
 check "tag: a changed working-tree file counts" bash -c "[ '$(source_tag "" code/web)' != '$second' ]"
 VITE_API_BASE_URL="" VITE_OIDC_AUTHORITY=https://auth.example.test/realms/r VITE_OIDC_AUDIENCE="" VITE_REPO_URL=""
+VITE_PRIVACY_CONTROLLER_NAME="" VITE_PRIVACY_CONTACT_EMAIL="" VITE_PRIVACY_DPO=""
 VITE_OIDC_CLIENT_ID=web-a; salt_a=$(web_build_salt)
 VITE_OIDC_CLIENT_ID=web-b; salt_b=$(web_build_salt)
 check "tag: a different web build argument is a different tag" bash -c "[ '$(source_tag "$salt_a" code/web)' != '$(source_tag "$salt_b" code/web)' ]"
+VITE_PRIVACY_CONTACT_EMAIL=privacy@example.test; salt_c=$(web_build_salt); VITE_PRIVACY_CONTACT_EMAIL=""
+check "tag: a different privacy contact is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_c" code/web)' ]"
 check "tag: TAG overrides the source tag" equals "$(TAG=fixed image_tag "" code/web)" fixed
 
 # ── Whole runs against stand-ins ──────────────────────────────────────────────

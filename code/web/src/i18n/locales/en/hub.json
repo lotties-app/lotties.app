@@ -139,6 +139,11 @@
         "title": "Credits and licenses",
         "hint": "Open-source software, data and services behind Lotties",
         "keywords": "credits licenses licences open source thanks libraries data attribution agpl third party"
+      },
+      "privacy": {
+        "title": "Privacy policy",
+        "hint": "What we collect, why, and your rights",
+        "keywords": "privacy policy data protection lgpd personal data rights delete export consent cookies"
       }
     },
     "updates": {
@@ -166,6 +171,7 @@
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
       "credits": "Built on open source. Credits and licenses",
+      "privacy": "Privacy policy",
       "unknown": "Unknown"
     }
   }

@@ -11,6 +11,10 @@ ARG VITE_OIDC_CLIENT_ID=""
 ARG VITE_OIDC_AUDIENCE=""
 # Source repository link in the landing footer (AGPL source offer); empty hides the link.
 ARG VITE_REPO_URL=""
+# Privacy policy contacts the owner publishes (docs/PRIVACY-OWNER-CHECKLIST.md); empty = the policy's defaults.
+ARG VITE_PRIVACY_CONTROLLER_NAME=""
+ARG VITE_PRIVACY_CONTACT_EMAIL=""
+ARG VITE_PRIVACY_DPO=""
 # Short commit shown on the About screen (the image build has no git checkout); empty hides it.
 ARG APP_COMMIT=""
 ENV APP_COMMIT=$APP_COMMIT \
@@ -18,7 +22,10 @@ VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
     VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
     VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE \
-    VITE_REPO_URL=$VITE_REPO_URL
+    VITE_REPO_URL=$VITE_REPO_URL \
+    VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME \
+    VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL \
+    VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO
 RUN npm run build
 
 # Non-root nginx: runs as uid 101 and listens on 8080. Works with a read-only root filesystem when /tmp (pid, temp

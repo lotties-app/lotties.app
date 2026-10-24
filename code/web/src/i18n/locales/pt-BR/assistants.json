@@ -9,6 +9,8 @@
     "saved": "Salvo.",
     "saveFailed": "Este bebê não pode ser usado nos comandos de voz. Escolha um bebê para o qual você registra.",
     "loadFailed": "Não foi possível carregar as configurações dos assistentes de voz.",
+    "privacy": "A Amazon processa o que você fala com a Alexa. O Lotties recebe só o comando e seus valores e devolve a resposta que a Alexa fala, que pode incluir o nome do bebê e registros recentes.",
+    "privacyLink": "Como os comandos de voz usam seus dados (política de privacidade)",
     "mcp": {
       "title": "Assistentes de IA (MCP)",
       "intro": "Conecte ao Lotties, por MCP, um assistente de IA da sua escolha, como o Claude. Ele passa a responder perguntas a partir do registro do seu bebê e, só se você permitir, a registrar sono, alimentações e fraldas por você. Com mais de um bebê, ele pergunta qual, ou usa o bebê escolhido acima.",

@@ -85,7 +85,8 @@ Google requires the **first** AAB of an app to be uploaded by hand in the consol
    APK).
 3. Testing > Internal testing > Create new release > accept **Play App Signing** (Google keeps the app signing key;
    the keystore from section 3 is only the upload key) > upload the AAB > save and roll out to internal testing.
-4. Fill the mandatory forms so the track is allowed to roll out: App content (privacy policy URL, ads: none, app access
+4. Fill the mandatory forms so the track is allowed to roll out: App content (privacy policy URL
+   `https://lotties.app/privacy`, published; set the owner's values first, docs/PRIVACY-OWNER-CHECKLIST.md; ads: none, app access
    with the demo login, target audience adults, Data safety, health apps declaration, government/news/financial: no),
    store listing (short and full description, icon 512, feature graphic 1024x500, at least two phone screenshots; put
    the credits URL https://lotties.app/credits in the full description next to the privacy policy URL, and the same
@@ -109,7 +110,8 @@ Google requires the **first** AAB of an app to be uploaded by hand in the consol
 2. appstoreconnect.apple.com > Apps > **+** New App: platform iOS, name Lotties (must be unique store-wide; have a
    fallback), primary language, bundle ID `app.lotties.app`, SKU `lotties-ios`, full access.
 3. App Information: category (Health & Fitness or Lifestyle, see doc 20 section 7), content rights, age rating
-   questionnaire, privacy policy URL; App Privacy answers (doc 20 section 3); Pricing: free.
+   questionnaire, privacy policy URL `https://lotties.app/privacy`; App Privacy answers (doc 20 section 3, checked
+   against docs/design/33-privacy-audit.md); Pricing: free.
 4. TestFlight: the first build arrives from the workflow (below). Apple processes it for about 10 to 30 minutes and
    may ask for export compliance (the Info.plist already declares `ITSAppUsesNonExemptEncryption=false`).
    Internal testers (up to 100 App Store Connect users) get the build at once with no review; external testers need
