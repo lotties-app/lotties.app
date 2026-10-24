@@ -91,6 +91,8 @@ jobs:
     env:
       LOTTIES_VERSION_NAME: ${{ needs.version.outputs.name }}
       LOTTIES_VERSION_CODE: ${{ needs.version.outputs.code }}
+      # Stamped into the web bundle by build:web (Hub > About shows it; docs/DEPLOY.md "Versions").
+      APP_VERSION: ${{ needs.version.outputs.name }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -174,6 +176,8 @@ jobs:
     env:
       LOTTIES_VERSION_NAME: ${{ needs.version.outputs.name }}
       LOTTIES_VERSION_CODE: ${{ needs.version.outputs.code }}
+      # Stamped into the web bundle by build:web (Hub > About shows it; docs/DEPLOY.md "Versions").
+      APP_VERSION: ${{ needs.version.outputs.name }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

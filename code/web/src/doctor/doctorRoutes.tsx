@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Route } from 'react-router-dom';
 import {
+  DoctorAboutPage,
   DoctorCreditsPage,
   DoctorPrivacyPage,
   DoctorSettingsPage,
@@ -32,6 +33,7 @@ export function doctorRoutes() {
       <Route index element={<PatientsHome />} />
       <Route path="settings" element={<DoctorSettingsPage />} />
       <Route path="credits" element={<DoctorCreditsPage />} />
+      <Route path="about" element={<DoctorAboutPage />} />
       <Route path="privacy" element={<DoctorPrivacyPage />} />
       <Route path=":babyId" element={<PatientRoute />}>
         <Route index element={<PatientSummary />} />

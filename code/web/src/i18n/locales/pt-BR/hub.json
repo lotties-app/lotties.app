@@ -164,15 +164,24 @@
     "about": {
       "title": "Sobre",
       "tagline": "Um registro calmo da rotina do bebê que funciona offline.",
-      "version": "Versão",
-      "builtAt": "Compilado em",
-      "commit": "Build",
+      "appVersion": "Versão do app",
+      "appLine": "App (este aparelho)",
+      "serverLine": "Servidor",
+      "commitValue": "commit {{commit}}",
+      "builtValue": "compilado em {{date}}",
+      "serverLoading": "Consultando o servidor…",
+      "serverUnavailable": "Versão do servidor indisponível",
+      "updateHint": "Há uma atualização disponível.",
+      "updatedSeparately": "O servidor foi atualizado separadamente.",
+      "copy": "Copiar dados da versão",
+      "copied": "Dados da versão copiados.",
+      "copyFailed": "Não foi possível copiar. Você pode selecionar as versões acima.",
+      "report": "Lotties app {{app}}, servidor {{server}}",
       "license": "Licença",
       "licenseValue": "Software livre, AGPL-3.0",
       "source": "Código-fonte",
       "credits": "Feito sobre software livre. Créditos e licenças",
-      "privacy": "Política de privacidade",
-      "unknown": "Desconhecido"
+      "privacy": "Política de privacidade"
     }
   }
 }

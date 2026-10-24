@@ -17,6 +17,8 @@ import { useAuth } from '../auth/useAuth';
 import { SelectedBabyContext } from '../baby/SelectedBabyContext';
 import { useDatabase } from '../db/DatabaseContext';
 import { useBabies } from '../db/hooks';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import { hasBothModes } from '../doctor/appMode';
 import { writeAppMode, type AppMode } from '../doctor/dashboardStorage';
 import { countUnsyncedMutations } from '../db/outbox';
@@ -175,6 +177,27 @@ export function UserMenu() {
               <Icon name="lock" size={20} />
             </ListItemIcon>
             {t('legal.privacy.title')}
+          </MenuItem>
+        )}
+        {doctorMode && (
+          <MenuItem
+            component={Link}
+            to="/doctor/about"
+            sx={{ minHeight: 48 }}
+            onClick={() => setAnchor(null)}
+          >
+            <ListItemIcon>
+              <Icon name="info" size={20} />
+            </ListItemIcon>
+            {t('hub.about.title')}
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="span"
+              sx={{ ml: 'auto', pl: 2 }}
+            >
+              {displayVersion(readBuildInfo().version)}
+            </Typography>
           </MenuItem>
         )}
         {!doctorMode && (

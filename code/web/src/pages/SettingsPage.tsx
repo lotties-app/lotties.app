@@ -18,6 +18,7 @@ import { hasPatients } from '../doctor/appMode';
 import { useBabies } from '../db/hooks';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
+import { VersionLine } from '../ui/VersionLine';
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -152,6 +153,7 @@ export function SettingsPage() {
       >
         <DeleteAccountSection />
       </SettingsSection>
+      <VersionLine to="/hub/about" />
     </Stack>
   );
 }

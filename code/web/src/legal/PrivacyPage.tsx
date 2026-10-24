@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Stack, Typography } from '@mui/material';
 import { PublicTopBar } from '../landing/PublicTopBar';
+import { VersionLine } from '../ui/VersionLine';
 import { PrivacyContent } from './PrivacyContent';
 
 /**
@@ -29,6 +30,9 @@ export default function PrivacyPage() {
           </Typography>
           <PrivacyContent />
         </Stack>
+        <Box component="footer" sx={{ mt: 4, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+          <VersionLine brand />
+        </Box>
       </Box>
     </Box>
   );

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
 import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import { formatTime } from '../i18n/format';
 import { isNativeApp } from '../platform/nativeApp';
 import { applyUpdate, checkForUpdates, useUpdateSnapshot } from '../pwa/updateStore';
@@ -15,7 +16,7 @@ import { RADIUS } from '../theme/tokens';
 export function UpdatesScreen() {
   const { t } = useTranslation();
   const { state, checkedAt } = useUpdateSnapshot();
-  const { version } = readBuildInfo();
+  const version = displayVersion(readBuildInfo().version);
   const busy = state === 'checking';
 
   return (
