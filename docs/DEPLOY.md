@@ -51,7 +51,7 @@ Compose reads `.env` from the repository root.
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
-| `Board__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data); see "Project board" and docs/KEYCLOAK-BOARD.md |
+| `Board__Enabled`, `Board__Mcp__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data) and its MCP endpoint for AI tools; see "Project board" and docs/KEYCLOAK-BOARD.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
@@ -461,8 +461,10 @@ board admin creates in the app (only their SHA-256 is stored). The owner's steps
 | Config key (env) | Default | Purpose |
 |----------|---------|---------|
 | `Board__Enabled` | `false` | `true` serves the board routes (the home lab kit does not set it: add it under `env:` in `deploy/homelab/values/api.yaml`) |
-| `RequestLimits__BoardPermitsPerMinute` | `120` | Board requests per user or per API key per minute (the global 300 per user still applies) |
-| `RequestLimits__BoardMaxRequestBodyBytes` | `262144` | Largest board request body (413 above) |
+| `Board__Mcp__Enabled` | `false` | `true` (with `Board__Enabled=true`) serves the board's MCP endpoint `POST /api/v1/board/mcp` for AI tools such as Claude Code (board API key or a Keycloak token with a board role; docs/KEYCLOAK-BOARD.md section 8). Off, or with the board off, it is 404 |
+| `Board__Mcp__AllowedOrigins` | empty | Browser origins allowed to call the board MCP endpoint (comma-separated, or `__0`, `__1`, ...); any other `Origin` is 403. Claude Code and the Inspector's proxy send none; set it only for a browser-based test client. A value that is not an absolute http(s) origin fails startup |
+| `RequestLimits__BoardPermitsPerMinute` | `120` | Board requests (REST calls and MCP messages together) per user or per API key per minute (the global 300 per user still applies) |
+| `RequestLimits__BoardMaxRequestBodyBytes` | `262144` | Largest board request body, MCP messages included (413 above) |
 | `RequestLimits__BoardBulkMaxRequestBodyBytes` | `4194304` | Largest bulk import body (`POST /board/items/bulk`, up to 100 items) |
 
 Keycloak in short: **Realm roles > Create role** `lotties-board-reader`, `lotties-board-writer`, `lotties-board-admin`;
