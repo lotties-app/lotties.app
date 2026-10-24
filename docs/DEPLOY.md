@@ -3,7 +3,7 @@
 The stack is two containers behind your own reverse proxy (or exposed directly for testing):
 
 ```
-browser --> web (nginx: SPA + security headers) --/api/--> api (.NET 8, :8080, internal only) --> PostgreSQL
+browser --> web (nginx: SPA + security headers) --/api/--> api (.NET 10, :8080, internal only) --> PostgreSQL
 ```
 
 The browser only talks to the `web` container. nginx serves the SPA and proxies `/api/` to the `api` service, so the app is same origin and needs no CORS configuration.
@@ -301,6 +301,31 @@ Other ways to build the images (podman by hand, CI) pass the same three `--build
 API say `dev`. The iOS/Android build (`npm --prefix code/mobile run build:web`) also needs `APP_VERSION` in its
 environment to show a release instead of `dev`.
 
+## Runtime
+
+The API runs on .NET 10 (LTS) since October 2026; before, .NET 8 (end of support 2026-11-10). What changed and why:
+[docs/design/37-dotnet10-upgrade.md](design/37-dotnet10-upgrade.md).
+
+- **Images:** built on `mcr.microsoft.com/dotnet/sdk:10.0`, run on `mcr.microsoft.com/dotnet/aspnet:10.0`. That image is
+  Ubuntu 24.04 (noble) since .NET 10 (the 8.0 one was Debian 12). It still carries what the API needs: `tzdata` (plus
+  `tzdata-legacy`) for the IANA time zones of reminders and quiet hours, ICU (globalization is not invariant), `bash`,
+  `head` and `grep` for the HEALTHCHECK, and the non-root user `app` with UID 1654 (the chart's `runAsUser`). The API
+  listens on 8080 as before (`ASPNETCORE_URLS` in the Dockerfile wins over the image's `ASPNETCORE_HTTP_PORTS=8080`). No
+  `DOTNET_*` variable, ReadyToRun, trimming or self-contained publish is used. The `src-<hash>` tag of `lotties-api`
+  changes, so the next `deploy.sh` run rebuilds the API image.
+- **Database:** EF Core 10 and Npgsql 10; no new migration, and `dotnet ef migrations script --idempotent` gives the same
+  SQL as with EF Core 8 (only the `product_version` written into new `__EFMigrationsHistory` rows becomes `10.0.13`).
+  `dotnet ef` is `dotnet-ef` 10.0.13 from the tool manifest (`dotnet tool restore`; needs .NET 10 on the machine that
+  applies migrations). Since EF Core 9 `dotnet ef database update` and `DB_AUTO_MIGRATE` also take
+  `LOCK TABLE "__EFMigrationsHistory" IN ACCESS EXCLUSIVE MODE` while migrating (the migrator role owns that table, see
+  `docs/sql/grant-migrator-role.sql`) and refuse to run when the model has changes without a migration (a test keeps it
+  that way).
+- **Connections:** GSS encryption stays off in the connection string built from `DB_*` (Npgsql 10 would try it first);
+  Npgsql 9+ closes pooled connections older than an hour (`Connection Lifetime` now defaults to 3600 s; it was unlimited).
+- **Rollback:** `helm rollback lotties-api [REVISION]` (deploy/homelab/README.md "Roll back") goes back to the .NET 8
+  image, which stays in Harbor under its old `src-<hash>` tag. The schema is the same for both, so no database step is
+  needed; a migration added later with EF Core 10 records `10.0.13` as its product version, which EF Core 8 ignores.
+
 ## Push notifications
 
 Optional, self-hosted Web Push (VAPID, RFC 8291). There is no third-party push vendor: the API sends dose-due and nap-window reminders (and Settings test sends) straight to the browser push services (FCM, Mozilla, Apple, Windows). Contract: `docs/SPEC.md` section "Push notifications".
@@ -549,7 +574,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
 
 **Dedicated migrator role.** A separate non-superuser role can run the migrations (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`) if it owns the tables and may create objects in the schema. `docs/sql/grant-migrator-role.sql` sets that up once, as an admin, and is idempotent: it makes the role the owner of the existing tables, gives it `CREATE` on the schema, and sets the API role's default privileges for tables the migrator creates. Never make the migrator a member of a superuser role.
 
-1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 8.0.32):
+1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 10.0.13, which needs the .NET 10 SDK or runtime):
 
    ```bash
    cd code/api
@@ -596,7 +621,7 @@ Built-in event types are rows in `event_types` (with `baby_id` null) inserted by
 The shared catalog can be filled with Brazil's registered medicines (brand names, forms and active ingredients) from ANVISA's open data, plus a small curated list (`code/api/tools/Lotties.CatalogImporter/Data/curated-products.json`, not reviewed by a pharmacist), by the admin tool `code/api/tools/Lotties.CatalogImporter` (design, licence, mapping and safety rules: [docs/design/13-anvisa-catalog.md](design/13-anvisa-catalog.md)). It is optional: the app works without it.
 
 1. Apply the migration `ProductExternalRef` (`20261022143647_ProductExternalRef`, right after `DiaperHeadsUpPrefs`) with the API version that ships it, like any other migration (see [Applying migrations](#applying-migrations)). It only adds nullable columns to `products` (`source`, `external_ref`, `presentation`, `ambiguous_name`, `inactive_since`) and the partial unique index `ix_products_source_external_ref`; no data is rewritten and no grant is needed.
-2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 8 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
+2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 10 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
 3. Dry run first (no database connection): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run --lookup "Luftal,Simeticona"`. Check the counts and the spot checks.
 4. Real run, with the same variables as the API: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` (the app role has `SELECT, INSERT, UPDATE, DELETE` on all tables, which is enough), or `--use-migrator` to connect with `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD` instead: `dotnet run --project code/api/tools/Lotties.CatalogImporter`. Set the variables in the shell (for example from a password manager), never on the command line or in a committed file; the tool prints the host and database name, never the user or password. One transaction; about 20 s for the full list (8,880 official + 7 curated products) on a local database; re-running changes only what changed in the sources. The curated list ships next to the tool (`--curated <path|none>` to change or skip it).
 5. Strengths (migration `ProductStrength`, `20261023162441_ProductStrength`, right after `AccountDeletion`): apply it with the API version that ships it (two nullable columns on `products`, `strength_key` and `strength_text`; no backfill; old pods ignore them). Until the importer runs again every strength is NULL and the "same active ingredient" list shows each alternative as "strength not known" (neutral, search unchanged). Rollout order: (a) deploy the API; (b) the owner, from the admin machine, runs the dry run and then the real run, both reading the cached files (use `--refresh` only if the cache is old): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run`, check the lines "CMED presentations whose strength reads as one unambiguous amount" and "products with a structured strength key", then `dotnet run --project code/api/tools/Lotties.CatalogImporter` with the `DB_*` variables set in the shell. The second run updates the products whose strength changed and the six curated ones; nothing else changes. The agent never runs these.

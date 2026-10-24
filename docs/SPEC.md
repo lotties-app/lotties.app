@@ -14,7 +14,7 @@ SSR, native apps, ML models, pro/paid tiers, growth charts. (Pediatrician sharin
 
 ## Stack
 - Web: React 19 + TypeScript + MUI, Vite SPA, `vite-plugin-pwa`, TanStack Query, Dexie (IndexedDB), `oidc-client-ts`. Tests: Vitest + Testing Library.
-- API: .NET 8 Web API, layered (Domain / Application / Infrastructure / Api), EF Core + Npgsql, xUnit. Tests: unit + Testcontainers integration.
+- API: .NET 10 Web API, layered (Domain / Application / Infrastructure / Api), EF Core + Npgsql, xUnit. Tests: unit + Testcontainers integration.
 - DB: PostgreSQL 16.
 - Auth: generic OIDC (JWT bearer). Default provider Auth0; Keycloak/Authentik work via config only (`Authority`, `Audience`).
 - Deploy: `docker-compose` (postgres + api + web via nginx).
