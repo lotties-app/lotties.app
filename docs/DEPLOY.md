@@ -51,6 +51,7 @@ Compose reads `.env` from the repository root.
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
+| `Board__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data); see "Project board" and docs/KEYCLOAK-BOARD.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
@@ -445,6 +446,38 @@ The ingress sends `/.well-known/oauth-protected-resource` (RFC 9728, with the pa
 another reverse proxy needs the same route. Keycloak must be reachable from the AI provider's servers (Anthropic publishes
 its egress range). Logs carry the tool name, the result code and the correlation id only; the SDK's own log categories
 (`ModelContextProtocol*`) are kept at Warning in code.
+
+## Project board
+
+`/api/v1/board` is the internal project board (docs/design/36-project-board.md): tasks, gaps, decisions, questions,
+risks, notes and memories that the owner and the AI assistant track together. It holds **no baby data**, calls no third
+party and lives in the same database (and the same `pg_dump` backups). Off by default: every route answers 404. It needs
+migration `ProjectBoard` (tables `board_topics` with ten seeded topics, `board_items`, `board_item_events`,
+`board_api_keys`). No secret is configured: people get in with Keycloak realm roles, tools with board API keys that a
+board admin creates in the app (only their SHA-256 is stored). The owner's steps (the three realm roles, the
+`realm_access.roles` mapper of the `roles` client scope, assigning roles, the first API key with `curl`, revoking) are in
+[docs/KEYCLOAK-BOARD.md](KEYCLOAK-BOARD.md).
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Board__Enabled` | `false` | `true` serves the board routes (the home lab kit does not set it: add it under `env:` in `deploy/homelab/values/api.yaml`) |
+| `RequestLimits__BoardPermitsPerMinute` | `120` | Board requests per user or per API key per minute (the global 300 per user still applies) |
+| `RequestLimits__BoardMaxRequestBodyBytes` | `262144` | Largest board request body (413 above) |
+| `RequestLimits__BoardBulkMaxRequestBodyBytes` | `4194304` | Largest bulk import body (`POST /board/items/bulk`, up to 100 items) |
+
+Keycloak in short: **Realm roles > Create role** `lotties-board-reader`, `lotties-board-writer`, `lotties-board-admin`;
+**Client scopes > roles > Mappers > realm roles** with Token Claim Name `realm_access.roles` and "Add to access token" on
+(Keycloak's default), the `roles` scope a Default scope of the web app's client; **Users > the person > Role mapping >
+Assign role** (Filter by realm roles). Then an admin creates a key (`POST /api/v1/board/keys`, the secret is shown once)
+and the assistant sends it as `X-Board-Key` or `Authorization: Bearer lbk_...`:
+
+```bash
+curl -s https://lotties.app/api/v1/board/summary -H "X-Board-Key: $LOTTIES_BOARD_KEY"
+```
+
+Logs carry item and key ids, the actor kind and result codes only (never a secret, a title or a body). CORS is the app's
+(no board-specific origin).
+
 ## Privacy policy
 
 The public policy is the web route `/privacy` (https://lotties.app/privacy; also Hub > Privacy policy and

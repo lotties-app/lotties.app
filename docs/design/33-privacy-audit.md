@@ -192,6 +192,25 @@ does not check that the person who creates a baby is its parent or guardian, and
 (`code/web/src/credits/curated.json`) has no privacy classification, when a classified recipient has no row in the
 policy's sharing table, or when the two languages' tables differ.
 
+## 10a. Internal project board (built 2026-10-24, off by default)
+
+`/api/v1/board` (docs/design/36-project-board.md) is the owner's and the AI assistant's project tracker, not a feature
+for families, so it is not in the public policy: it collects nothing from app users.
+
+- **No baby data**: no table or route references a baby, a family or a record of the app; it is never shown in the app's
+  shell, sync, exports or assistants. Items are project text (tasks, gaps, decisions, notes) written by the operator and
+  the assistant.
+- **Personal data**: only the author's `users` row id (which holds the Keycloak `sub`) and display name snapshot on
+  items, history entries and API keys. No email, no IP address (API keys keep a last-use time and a counter only), no
+  third party, no new outbound request.
+- **Who sees it**: Keycloak users with one of the realm roles `lotties-board-reader`/`-writer`/`-admin` (assigned by the
+  owner by hand, never by default) and holders of a board API key an admin created (only its SHA-256 is stored). The
+  owner as operator, like every table.
+- **Retention**: until the owner decides (soft-deleted items and revoked keys stay; no purge job; covered by G4). Lives
+  in the same database and `pg_dump` backups; `GET /board/export` is a JSON copy without key material.
+- **Deletion**: account deletion keeps the rows (they are the project's), clears the user links and replaces the name
+  snapshots with "Former member" (`EfAccountDataEraser`; `AccountErasureTests.Rules` rule `Clear` for the three columns).
+
 ## 11. Planned flow: community insights (not built, 2026-10-23)
 
 Status: **planned, not built, off everywhere.** No code collects, reads or publishes anything for it: there is no

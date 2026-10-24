@@ -61,7 +61,7 @@ cannot be removed, only renamed or archived by an admin): `product`, `doctor-acc
 | `status` | varchar(16) | `open`, `in_progress`, `blocked`, `waiting`, `done`, `dropped` (default `open`) |
 | `side` | varchar(16) | who acts next: `owner`, `assistant`, `both`, `external` (default `both`) |
 | `priority` | varchar(16) | `low`, `normal`, `high`, `urgent` (default `normal`) |
-| `labels` | varchar(450) | up to 10 labels of 1-40 characters (`[a-z0-9._:/-]`, stored lower-case), kept as `,a,b,` so a label filter is a portable `LIKE`-free substring test (`instr`/`strpos`); the API speaks arrays |
+| `labels` | varchar(411) | up to 10 labels of 1-40 characters (`[a-z0-9._:/-]`, stored lower-case), kept as `,a,b,` so a label filter is a portable `LIKE`-free substring test (`instr`/`strpos`); the API speaks arrays |
 | `due_date` | date | optional |
 | `links` | jsonb | up to 10 `{label (<= 100), url (<= 2000, absolute http/https only)}` |
 | `pinned` | bool | only for `note` and `memory` |
@@ -109,7 +109,7 @@ else `updated`. Rows are never edited, except the actor fields by account deleti
 | `prefix` | varchar(12) | the first 12 characters of the secret (`lbk_` + 8), shown in lists and logs-free |
 | `key_hash` | varchar(64) | lower-case hex SHA-256 of the full secret (UTF-8) |
 | `scope` | varchar(16) | `read` or `write` (write implies read) |
-| `allowed_topics` | varchar(450), null | `,a,b,` (null = every topic) |
+| `allowed_topics` | varchar(411), null | `,a,b,`, at most 10 existing topics (null = every topic) |
 | `created_by_user_id` | uuid FK `users`, null | the admin who created it (null after her account deletion) |
 | `created_by_name` | varchar(100) | snapshot |
 | `created_at`, `expires_at` (null = no expiry), `last_used_at`, `revoked_at` | timestamptz | |
@@ -119,7 +119,7 @@ Index: `(prefix)`. Keys are never deleted (revocation is the soft delete), so th
 
 ## 3. REST contract (`/api/v1/board`)
 
-Every route answers **404 with an empty body while `Board:Enabled` is false** (the default), before authentication,
+Every route answers **a plain 404 (no `code`) while `Board:Enabled` is false** (the default), before authentication,
 so a disabled board looks like no route. JSON is camelCase; codes are snake_case strings; instants ISO 8601 UTC; dates
 `yyyy-MM-dd`. Errors are RFC 7807 problems with `code` (as the rest of the API).
 
@@ -130,7 +130,7 @@ so a disabled board looks like no route. JSON is camelCase; codes are snake_case
 | `PUT /board/topics/{key}` | BoardAdmin | body `{name, description?, sortOrder?, archived?}`; 201 created / 200 |
 | `GET /board/items` | BoardRead | `{items: [itemSummary], nextCursor|null}`; filters below |
 | `GET /board/items/{id}` | BoardRead | `item` + `history[]` (oldest first); `ETag: "<version>"`; a deleted item is 404 except for an admin |
-| `POST /board/items` | BoardWrite | body `itemCreate`; 201 + `Location` + `ETag`; an `id` that exists returns the stored item (200, a retry) |
+| `POST /board/items` | BoardWrite | body `itemCreate`; 201 + `Location` + `ETag`; an `id` or `externalKey` that exists returns the stored item unchanged (200, a retry) |
 | `PATCH /board/items/{id}` | BoardWrite | merge patch (absent = unchanged, `null` clears an optional field); `If-Match: "<version>"` or body `version` (optional; stale = 412); 200 + `ETag` |
 | `POST /board/items/{id}/comments` | BoardWrite | `{comment}` (1-4000); 201 + the history event |
 | `DELETE /board/items/{id}` | BoardWrite | soft delete; 204 (again: 204, no new event) |
@@ -161,7 +161,8 @@ History event: `{id, at, kind, actor: {kind, name, keyId?}, changes: [{field, fr
 of), `pinned` (bool), `open` (bool: status not `done`/`dropped`), `q` (case-insensitive substring of title or body),
 `updatedSince` (instant, `updated_at >=`), `includeDeleted` (admin only, else 403 `board_admin_required`), `sort`
 (`updated` newest first, the default; `created` newest first; `priority` urgent first then due date then newest;
-`due` earliest due first, items without a due date last), `limit` (1-200, default 50), `cursor`.
+`due` earliest due first, items without a due date last; `decided` newest decision first), `limit` (1-200, default 50),
+`cursor`.
 
 `cursor` is opaque (base64url, bound to the sort; another sort is 400 `invalid_cursor`). It is an offset today: with a
 board of hundreds of items a moved item can appear twice or be skipped across pages; tools that sync use
@@ -181,8 +182,9 @@ first, undecided ones excluded).
 
 ### 3.4 Bulk import
 
-Validates every entry first (any invalid entry: 400 `validation_failed` with `index` and `field`, nothing saved), then
-writes all in one `SaveChanges`. Per entry:
+The body is exactly `{"items": [...]}`. Validates every entry first (any invalid entry: 400 `validation_failed` whose
+`field` names it, e.g. `items[3].title`; an `externalKey` or `id` given twice is invalid too; nothing is saved), checks
+every topic, then writes all in one `SaveChanges`. Per entry:
 
 - no `externalKey`: created (an `id` that exists: `unchanged`);
 - `externalKey` not seen: `created`;
@@ -195,13 +197,13 @@ writes all in one `SaveChanges`. Per entry:
 
 | Status | `code` | When |
 | --- | --- | --- |
-| 400 | `validation_failed` (`field`, `index` for bulk) | any invalid value, unknown property, more than 100 bulk entries |
+| 400 | `validation_failed` (`field`; `items[i].<field>` in a bulk body; `If-Match` for a malformed header) | any invalid value, unknown property, more than 100 bulk entries |
 | 400 | `invalid_cursor` | a cursor that does not parse or belongs to another sort |
 | 401 | (none) / `invalid_board_key` | no credentials / a board key that is unknown, revoked or expired |
 | 403 | (none) | no board role (users) or a write with a read key; the same plain 403 on every route, so it says nothing about items |
 | 403 | `board_admin_required` | `includeDeleted` without the admin role |
 | 403 | `board_topic_not_allowed` | a key limited to topics writes elsewhere |
-| 404 | (empty body) | the board is disabled |
+| 404 | (no `code`) | the board is disabled |
 | 404 | `board_item_not_found`, `board_api_key_not_found` | unknown id (a deleted item for a non-admin; an item outside a key's topics) |
 | 409 | `board_item_deleted` | PATCH or comment of a deleted item |
 | 409 | `concurrent_modification` | two writes raced (retry) |
@@ -347,3 +349,17 @@ Route `/board` (outside the baby shell, signed-in; hidden unless `GET /board/me`
 | `RequestLimits__BoardBulkMaxRequestBodyBytes` | `4194304` | largest bulk import body |
 
 Owner setup (realm roles, the token mapper, keys): docs/KEYCLOAK-BOARD.md.
+
+## 13. Implementation notes (for the next workers)
+
+- Code: Domain `Lotties.Domain/Board`, Application `Lotties.Application/Board` (`IBoardService`, `IBoardApiKeyService`,
+  `IBoardCaller`), Infrastructure `BoardConfigurations.cs`, `EfBoardRepository.cs`, `EfBoardApiKeyRepository.cs`, Api
+  `Lotties.Api/Board` (routes, claims transformation, `BoardKey` scheme, guard, policies). docs/agents/filemap.md lists
+  every file.
+- The MCP worker calls `IBoardService` / `BoardItemInput` (create and patch bodies are JSON elements read strictly, so a
+  tool's arguments can be passed through) and gets the caller from `IBoardCaller`; a new route needs a row in
+  `EndpointRoleMatrixTests` (board section) and the guard metadata (`BoardEndpointMetadata`) to be 404 while disabled.
+- The web worker: `GET /board/me` decides whether to show the page (200) or not (403/404); every list is
+  `itemSummary` (no body); PATCH with `If-Match` and handle 412 (`currentVersion`); key creation shows `secret` once.
+- Tests: `BoardTestKit` (users with realm roles through the test header `X-Test-Realm-Roles`, keys seeded in the
+  database); the test host turns the board on (`ApiFactory`).
