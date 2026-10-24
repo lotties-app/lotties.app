@@ -119,7 +119,15 @@ function ForgottenLine({
 }
 
 /** A running bottle's usual drinking time, spaced like the sleep target (nothing without a figure). */
-function BottleTarget({ babyId, event, nowMs }: { babyId: string; event: BabyEvent; nowMs: number }) {
+function BottleTarget({
+  babyId,
+  event,
+  nowMs,
+}: {
+  babyId: string;
+  event: BabyEvent;
+  nowMs: number;
+}) {
   return (
     <Box sx={{ mt: 1, '&:empty': { display: 'none' } }}>
       <BottleTimerTarget babyId={babyId} event={event} nowMs={nowMs} />

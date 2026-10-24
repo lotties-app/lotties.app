@@ -27,7 +27,9 @@ export function factSentence(fact: CryFact): string {
   switch (fact.kind) {
     case 'sinceLastFeed':
       if (fact.smallerFeed) {
-        return t('cryReasons.suggests.facts.sinceLastFeedSmaller', { since: duration(fact.minutes) });
+        return t('cryReasons.suggests.facts.sinceLastFeedSmaller', {
+          since: duration(fact.minutes),
+        });
       }
       return fact.usualGapMinutes === null
         ? t('cryReasons.suggests.facts.sinceLastFeed', { since: duration(fact.minutes) })

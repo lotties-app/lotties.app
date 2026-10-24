@@ -6,7 +6,11 @@ import { recordBottleLevel } from '../db/eventCommands';
 import { SheetFrame } from '../now/ui/SheetFrame';
 import { NumberStepper } from '../ui/form';
 import { BottleLevelChips } from './BottleLevelChips';
-import { dismissBottleLevel, useBottleLevelPrompt, type BottleLevelPrompt } from './bottleLevelPrompt';
+import {
+  dismissBottleLevel,
+  useBottleLevelPrompt,
+  type BottleLevelPrompt,
+} from './bottleLevelPrompt';
 import { MAX_LEVEL_ML } from './bottleSegments';
 
 const STEP_ML = 10;

@@ -93,6 +93,7 @@ export const FEEDING_DTO: EventTypeDto = {
     }),
     field('food', 'Food', 'text', whenMethodIs('solid')),
     field('ended_by', 'Ended by', 'select', { options: ['sleep'], hidden: true }),
+    field('segments', 'Bottle segments', 'text', { hidden: true, ...whenMethodIs('bottle') }),
     ...PAUSE_FIELD_DTOS,
   ],
 };

@@ -6,6 +6,7 @@ import { eventWhen, presentSafely } from '../day/ribbonText';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { SheetFrame } from '../now/ui/SheetFrame';
 import { CategoryIcon } from '../ui/CategoryIcon';
+import type { FedToSleep } from '../now/bottleFollowUp';
 import { isMedicationType } from './formModel';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
   prescriptions?: Prescription[];
   /** Who logged it (`''` while the name is unknown). */
   author: string;
+  /** A sleep that began while she was feeding (`fedToSleep`): a quiet line says so. */
+  fedToSleep?: FedToSleep;
   onClose: () => void;
 }
 
@@ -30,6 +33,7 @@ export function EventReadOnlySheet({
   medications,
   prescriptions,
   author,
+  fedToSleep = null,
   onClose,
 }: Props) {
   const { t } = useTranslation();
@@ -64,6 +68,11 @@ export function EventReadOnlySheet({
           {isMedicationType(type) && (
             <Typography variant="body2" color="text.secondary">
               {t('access.givenBy', { name: who })}
+            </Typography>
+          )}
+          {fedToSleep && (
+            <Typography variant="body2" color="text.secondary">
+              {t(`feedingAmounts.fedToSleep.${fedToSleep}`)}
             </Typography>
           )}
         </Box>

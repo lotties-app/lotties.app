@@ -4,6 +4,7 @@ import { clearAllLastUsed } from '../events/lastUsedValues';
 import { localPushDeviceRecord } from '../notifications/pushDeviceRecord';
 import { clearPromptDismissed } from '../notifications/reminderPrompt';
 import { clearAllBellyDismissals } from '../now/bellyPatternDismissal';
+import { bottleFollowUpDismissal } from '../now/bottleFollowUp';
 import {
   diaperDirtyDismissal,
   diaperWetDismissal,
@@ -38,6 +39,7 @@ export function clearAccountDeviceState(): void {
   overtiredDismissal.clearAll();
   diaperWetDismissal.clearAll();
   diaperDirtyDismissal.clearAll();
+  bottleFollowUpDismissal.clearAll();
   localPushDeviceRecord.clear();
   clearPromptDismissed();
   try {
