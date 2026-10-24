@@ -40,6 +40,15 @@ Owner-approved redesign of 2026-10-22. Screens and tokens are in `docs/DESIGN.md
 - Running version (2026-10-24, owner: "would be nice to have the current running version of the site somewhere"). About shows two facts: "App (this device)" `v0.1.38 · commit abc1234 · built <date>` and "Server" the same from the public `GET /api/v1/version` (fetched after the screen renders, 4 s timeout, no token; "Checking the server…", then the stamp or "Server version unavailable"; it never blocks the screen). The update hint is driven only by the service worker update state from `pwa/updateStore.ts` (a new app version installed and waiting, the same signal as Check for updates): an info alert "An update is available." with the reload note and Reload to update. It never compares versions or commits: the deploy rebuilds only the image that changed (an API-only release makes the server newer while the app is current, and the build commit differs between images even when the web source did not change), so comparing would raise false alarms. When the two versions differ and no update is waiting, About adds only a neutral caption, "The server was updated separately." (orchestrator review 2026-10-24). "Copy version info" copies `Lotties app v0.1.38 (commit abc1234), server v0.1.38 (commit def5678)` (Clipboard API, else a hidden textarea and `execCommand('copy')`; the result is announced). No "Report a problem" link exists in the app today, so no issue body is prefilled.
 - The quiet version line (`ui/VersionLine.tsx`, real text, caption size, a visually hidden "App version:" prefix): `v0.1.38` at the bottom of Settings and of the Hub (a link to `/hub/about`, 44 px tall), `Lotties v0.1.38` in the landing footer (before "Source code", `·` between) and in a footer under `/credits` and `/privacy`. The doctor's account menu has an About entry (info icon, the version right-aligned in caption) that opens `/doctor/about`, the same About inside her shell (its credits and privacy links stay in `/doctor`).
 
+## 5b. Project board entry
+
+- Hub > App > **Project board** (`board`, after Settings, `/hub/board`; docs/design/36-project-board.md section 10).
+  Shown only when `GET /board/me` grants read (a board realm role): `HubContext.board`, filled by `useBoardAccess`
+  in the background, so the Hub renders at once and the entry appears when the answer arrives (asked once per session
+  and account, memory only, no login redirect on a 401). Hidden when the board is disabled (404), without a board role
+  (403), in the native app (not asked) and for a Doctor with no family of her own; the doctor shell has no entry. Never
+  a shortcut (App section). Tests: `board/BoardHubEntry.test.tsx`.
+
 ## 6. Checks
 
 Unit tests: `hub/hubModel.test.ts` (visibility per role, shortcut choice, stored prefs, search, appointments soon). Component tests: `hub/HubScreen.test.tsx`, `hub/UpdatesAbout.test.tsx`, `timers/RunningTimerPill.test.tsx`, `now/ui/NowScreen.views.test.tsx` (catch-up button), `layout/AppShell.test.tsx`, `pages/SettingsPage.test.tsx`. Screenshots: `tests/e2e/design-review/hub-preview.review.ts` (320, 390 and 430 px, light, dark, large text).

@@ -100,6 +100,11 @@
         "hint": "Appearance, language, notifications, sync",
         "keywords": "preferences theme dark language notifications sync profile event types"
       },
+      "board": {
+        "title": "Project board",
+        "hint": "Tasks, gaps and decisions of the project",
+        "keywords": "board project tasks gaps decisions notes memories assistant claude api keys"
+      },
       "import": {
         "title": "Import",
         "hint": "Bring history from another app",

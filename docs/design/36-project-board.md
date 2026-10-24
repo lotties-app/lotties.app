@@ -3,6 +3,9 @@
 Status: **API built** (data model, REST API, authorization, API keys, tests; migration `ProjectBoard`) and **MCP
 endpoint built** (section 9, `POST /api/v1/board/mcp`, off by default: `Board:Mcp:Enabled`). **Not built**: the web page
 (section 10), for a later worker. Off by default (`Board:Enabled`).
+Status: **API built** (data model, REST API, authorization, API keys, tests; migration `ProjectBoard`). **Web page
+built** (section 10, 2026-10-24). **Not built**: the MCP tools (section 9), for a later worker. Off by default
+(`Board:Enabled`).
 
 ## 1. Goals and non-goals
 
@@ -360,10 +363,10 @@ Not offered on purpose: restore, topic management, key management, bulk import (
 the seeding path), export (too large). `board_set_status` with a note writes twice (the status, then the comment): a
 failure between the two leaves the status changed.
 
-## 10. Web page (for the later worker)
+## 10. Web page (built 2026-10-24)
 
-Route `/board` (outside the baby shell, signed-in; hidden unless `GET /board/me` answers 200), i18n in
-`locales/<lang>/board.json`. UI decisions belong to the orchestrator; the information architecture:
+Route `/hub/board` and `/hub/board/<item id>` (the drawer), outside the parents' shell, signed-in; i18n in
+`locales/<lang>/board.json`. The information architecture as first planned:
 
 - **Topic view** (default): topics as sections or columns, each with its open items grouped by status; counts from the
   summary.
@@ -377,6 +380,81 @@ Route `/board` (outside the baby shell, signed-in; hidden unless `GET /board/me`
   the history timeline, soft delete; restore and deleted items for admins.
 - **Admin**: topics (add, rename, archive) and API keys (create with the secret shown once and a copy button, list,
   revoke).
+
+### 10.1 Page layout (as built)
+
+Code in `code/web/src/board/` (docs/agents/filemap.md lists every file).
+
+- **Access**: `GET /board/me` (`useBoardAccess`), asked once per session and account, in memory only, never with the
+  401 login redirect. 404 (disabled), 403 (no board role) or a body that is not a `me` mean no access. The Hub entry
+  Hub > App > Project board (`board`, after Settings) appears only when the answer grants read; the Hub renders at once
+  and never waits for it. Hidden in the native app (not even asked) and for a Doctor with no family of her own; the
+  doctor shell (`/doctor`) has no entry. The page itself: offline it shows "Needs a connection" (nothing of the board is
+  stored on the device: no Dexie table, TanStack Query cache in memory only); no access shows a plain "not available"
+  message; in the native app it redirects to `/hub`.
+- **Frame**: its own frame outside `AppShell` (no baby header, no dock, no event quick add: nothing of a baby is near
+  it), "Back to Hub", the h1, content up to 1200 px wide. Lazy chunk `board/BoardPage`.
+- **Top to bottom**: admins' "API keys and topics" button; the **summary strip** (`GET /board/summary` totals: Waiting
+  on you = side owner or both, Waiting on the assistant = assistant or both, Blocked, Overdue; each a toggle button
+  that applies its filter, pressed while applied, pressed again clears); the **search** (`q`, 300 ms debounce, in the
+  URL); **quick add** (writers): one line, Enter, in the view's type (task, gap in Gaps, decision in Decisions, note
+  in Notes) and side (owner in Mine, assistant in Claude, else the single filtered side or both), into the topic
+  chosen beside it (the filtered topic, else the last used, else the first open one), client id (idempotent);
+  "More fields" opens the full form; the **views** segmented control (Topics, Mine, Claude, Decisions, Gaps, Notes
+  and memories); the **filter row** (Filters button with the count, Hide done and dropped on by default (Topics,
+  Mine, Claude, Gaps), Show deleted for admins, Clear filters; the collapsible panel: type (when the view lists
+  several), status, side (not in Mine/Claude), priority, topic, labels, order).
+- **URL**: `view`, `q`, `type`, `status`, `side`, `priority`, `label`, `topic` (comma lists), `closed=show`,
+  `deleted=1`, `sort`, `panel=keys|topics`; unknown values are ignored. View queries: Topics `open&sort=updated`;
+  Mine `side=owner`, Claude `side=assistant`, both `sort=priority`; Decisions `type=decision&sort=decided` (done
+  included); Gaps `type=gap&sort=priority`; Notes `type=note,memory&sort=updated` (done included).
+- **Lists**: pages of 50 with "Load more" (cursor); a stale request is aborted when its list is no longer shown;
+  skeletons while loading. Topics: an accordion per topic (h2), its counts by status from the summary (done and
+  dropped left out while hidden), its loaded items (expanded when it has some). Rows: type icon (type read aloud),
+  title, status chip, side chip, high/urgent flag, due date (overdue in the error tone, with the word), updated
+  (relative), pinned, deleted. Decisions: a log by decision date (h2), summary, rationale behind a toggle
+  (`aria-expanded`), the topic chip filters the board to it. Gaps: by topic (h2) then priority (h3). Notes and
+  memories: cards, pinned first (within the loaded pages), label chips, a Markdown preview of the excerpt.
+- **Drawer** (`/hub/board/<id>`, keeps the query): beside the list from `md` (sticky panel, focus moves to its title,
+  Escape and Close go back and focus the row), a full-screen dialog on phones. Title (h2), fields, decision, links
+  (http(s) only, new tab), the Markdown body, the history (who, when, field changes with codes translated, comments),
+  a comment box. Writers: Status menu (one tap, PATCH with `If-Match`), Edit (the same form; only changed fields are
+  sent; moving away from a decision clears its fields, from a note/memory its pin), Delete. A 412 shows "Someone
+  changed this item. Reload to see the latest version; your changes were not saved." with Reload (refetch, edits
+  dropped, no diff). Delete is soft: admins get an Undo snackbar (restore); writers without admin confirm first
+  (they cannot restore: see 10.2). Admins see deleted items (Show deleted) and Restore in the drawer.
+- **Markdown**: no renderer existed in the bundle, so `markdown.ts` parses a safe subset (headings, paragraphs,
+  lists, quotes, rules, fenced and inline code, bold, italic, http(s) links and bare http(s) addresses) into a tree
+  that `MarkdownView` renders as React elements: no `dangerouslySetInnerHTML`, raw HTML stays text, images become
+  their alt text, other link schemes become text; searches are bounded (no quadratic input).
+- **Admin settings** (`?panel=keys|topics`, dialog, full screen on phones, tabs): API keys (create: name, Read or Read
+  and write, optional expiry (end of that day UTC), optional topics; the answer goes straight into a dialog that shows
+  the full secret once with Copy and "You will not see it again", closed only by "Done, I stored it", which drops it
+  from memory (never in a query or mutation cache); list: name, `lbk_xxxxxxxx…`, scope, state (active, revoked,
+  expired), topics, expiry, last use and minutes used, creator; revoke with a confirmation; "How to use a key": the
+  curl line with `$LOTTIES_BOARD_KEY` and the Claude Code line `claude mcp add --transport http lotties-board
+  https://<host>/api/v1/board/mcp --header "Authorization: Bearer <key>"` labelled "when enabled", host from
+  `VITE_API_BASE_URL` (the page's origin when empty), pointing to docs/KEYCLOAK-BOARD.md). Topics: rename, describe,
+  reorder, archive, add (key slug checked), never delete.
+- **Keyboard** (desktop, never while typing or in a dialog): `j`/`k` move between rows, `/` search, `c` quick add,
+  `e` edits the open item. **A11y**: one h1, h2 per section, list semantics, polite live region for saves, comments,
+  deletions and status changes, 44 px targets, axe clean in light, dark and night, en and pt-BR. Rows wrap at 320-430
+  px. Reduced motion: the theme rule (no own animation).
+- **Preview and screenshots**: `/dev/board?state=admin|writer|reader|empty|none` (in-memory API, synthetic items);
+  `tests/e2e/design-review/board-preview.review.ts` at 390 and 1280 px.
+
+### 10.2 Deviations and missing API pieces
+
+- Route `/hub/board` instead of `/board`, inside the Hub's family of routes but outside `AppShell` (the 480 px column
+  of the shell cannot hold list and drawer side by side, and the shell's baby header and event quick add must not be
+  near the board).
+- "Due soon" is shown as **Overdue** (`totals.overdue`): the summary has no due-soon count and the list API has no
+  due-date filter, so the Overdue shortcut sorts open items by due date (earliest first) instead of filtering.
+  Missing API piece: a `dueBefore` list filter and a due-soon total.
+- Undo of a delete needs `POST /restore`, which is admin only: writers confirm before deleting instead. Missing API
+  piece (optional): restore by the deleting writer within a short grace window.
+- Gaps view lists `type=gap` only (the brief); risks stay in Topics with a type filter.
+- Notes "pinned first" orders the loaded pages only (the list API has no pinned-first sort).
 
 ## 11. Seed plan
 

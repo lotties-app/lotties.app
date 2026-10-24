@@ -71,8 +71,24 @@ curl -s -o /dev/null -w '%{http_code}\n' https://lotties.app/api/v1/board/me    
 
 ## 6. Create an API key for the assistant
 
-Once the board page exists it has an "API keys" screen (create, copy the secret once, revoke). Until then, with the
-REST API and an admin's access token:
+### 6a. In the app (board admins)
+
+1. Sign in at `https://lotties.app` with an account that has `lotties-board-admin`, open **Hub > App > Project
+   board** (the entry appears only with a board role and only while `Board__Enabled=true`; it needs a connection and is
+   not in the store app), then **API keys and topics**.
+2. Under **Create an API key**: a name saying where it is used (e.g. "Claude Code (dev machine)"), **Read** or **Read
+   and write**, an expiry date (recommended) and, optionally, **Only these topics**. **Create key**.
+3. The dialog shows the full secret **once**: **Copy**, store it (a password manager, or the environment variable
+   `LOTTIES_BOARD_KEY` of the machine that runs the assistant), then **Done, I stored it**. It cannot be shown again;
+   a lost secret means a new key.
+4. The list shows each key by its prefix (`lbk_AbCdEfGh…`), scope, state, topics, expiry and last use; **Revoke**
+   (with a confirmation) stops a key at once. **How to use a key** shows the curl line and, for when the board MCP
+   endpoint is enabled on the server, the Claude Code line
+   `claude mcp add --transport http lotties-board https://lotties.app/api/v1/board/mcp --header "Authorization: Bearer <key>"`.
+
+### 6b. With curl (no page needed)
+
+With the REST API and an admin's access token:
 
 1. Sign in at `https://lotties.app` with the admin account. Copy the access token: browser DevTools > Application >
    Local Storage > `https://lotties.app` > the key `oidc.user:https://auth.lotties.app/realms/lotties.app:<client id>` >
