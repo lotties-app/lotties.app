@@ -147,6 +147,32 @@ public sealed partial class BackupImportEndpointTests(ApiFactory factory) : ICla
     }
 
     [Fact]
+    public async Task Restore_KeepsTheCryDetectorMarks()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var owner = factory.As(baby, BabyRole.Owner);
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FussyId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(6), payload = new { auto_detected = true, cry_confirmed = true } }).Ok();
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FussyId, startedAt = BackupFixture.Start.AddHours(1), endedAt = BackupFixture.Start.AddHours(1).AddMinutes(4), payload = new { auto_detected = true } }).Ok();
+        var text = await owner.ExportTextAsync(baby.BabyId);
+        var restorer = factory.NewUser();
+
+        var report = await ReportAsync(await restorer.Restore(text));
+
+        Assert.Equal(0, report.IssueCount);
+        var events = (await (await restorer.GetAsync($"{BackupFixture.BabyPath(report.BabyId)}/events?limit=500").Ok()).Content.ReadFromJsonAsync<JsonArray>())!.OfType<JsonObject>();
+        var marks = events
+            .Where(item => (Guid)item["typeId"]! == BuiltInEventTypes.FussyId)
+            .OrderBy(item => (DateTimeOffset)item["startedAt"]!)
+            .Select(item => ((bool?)item["payload"]!["auto_detected"], (bool?)item["payload"]!["cry_confirmed"]))
+            .ToArray();
+        Assert.Equal([((bool?)true, (bool?)true), (true, null)], marks);
+    }
+
+    [Fact]
     public async Task Restore_KeepsTheBottleSegments()
     {
         var baby = await factory.SeedBabyAsync();

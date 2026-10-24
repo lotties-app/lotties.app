@@ -373,6 +373,12 @@
         "suggested_cause": {
           "label": "Primeira sugestão"
         },
+        "auto_detected": {
+          "label": "Detectado automaticamente"
+        },
+        "cry_confirmed": {
+          "label": "Confirmado pelos pais"
+        },
         "pause_count": {
           "label": "Pausas"
         },

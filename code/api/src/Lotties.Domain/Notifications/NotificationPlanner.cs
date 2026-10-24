@@ -68,6 +68,13 @@ namespace Lotties.Domain.Notifications;
 /// reminders of today or yesterday are considered (turning the switch on never sends old ones). Key
 /// <c>vaccine:{baby}:{doseId}:{n}</c> (a yearly dose adds its due date), stale cutoff 12 hours, time to live 48 hours,
 /// urgency normal.</item>
+/// <item><c>cry_detected</c> (off by default; the members who receive baby reminders, never a Viewer or the Doctor): every
+/// fussy spell the cry monitor started (<c>auto_detected</c>, not marked "Not crying", not deleted), running or ended, sent at
+/// its start. A spell that started more than 10 minutes ago is stale (it reached the server too late) and never sent; a
+/// spell that starts while an earlier monitor spell of the baby is still going (a second monitor, a merged spell) is the
+/// same episode and sends nothing. Delivered in quiet hours (the family started the monitor on purpose). Key
+/// <c>cry:{event}</c>: one per spell, so its end or a later edit never notifies again. Time to live 20 minutes from the
+/// start, urgency high, no snooze.</item>
 /// <item>Each key is planned once per user. A snooze re-sends the still open item at the snooze end with key
 /// <c>{base}:s{n}</c> (same stale cutoff and quiet hours); a dismissal stops it for that user only.</item>
 /// </list>
@@ -107,7 +114,8 @@ public static class NotificationPlanner
             .Concat(DiaperReminders(recipient, context))
             .Concat(AppointmentRemindersFor(recipient, context))
             .Concat(DoctorSuggestionReminders(recipient, context))
-            .Concat(VaccineReminders(recipient, context));
+            .Concat(VaccineReminders(recipient, context))
+            .Concat(CryDetectedReminders(recipient, context));
 
     private static IEnumerable<Reminder> StateReminders(NotificationRecipient recipient, PlanContext context) =>
         context.StateAt(recipient.UtcOffset!.Value) is { } state
@@ -400,6 +408,24 @@ public static class NotificationPlanner
             HeldBy: null);
     }
 
+    private static IEnumerable<Reminder> CryDetectedReminders(NotificationRecipient recipient, PlanContext context) =>
+        recipient.Preferences.CryDetected
+            ? context.NewCryEpisodes.Select(spell => CryDetectedReminder(recipient, spell, context))
+            : [];
+
+    private static Reminder CryDetectedReminder(NotificationRecipient recipient, DetectedCrySpell spell, PlanContext context) =>
+        new(
+            recipient,
+            NotificationKind.CryDetected,
+            NotificationKey.ForCryDetected(spell.EventId),
+            spell.StartedAt,
+            new NotificationContent(context.BabyId, null, spell.StartedAt, context.NamesFor(recipient, medicationId: null)),
+            NotificationRules.CryDetectedTimeToLive,
+            NotificationUrgency.High,
+            NotificationRules.CryDetectedStaleCutoff,
+            DeliveredInQuietHours: true,
+            HeldBy: null);
+
     /// <summary>
     /// At most one diaper heads-up per recipient in a tick (the spacing rule also holds within a tick): the earliest due
     /// wins, wet before dirty on a tie; the other is skipped as <see cref="NotificationSkipReason.Spacing"/>.
@@ -562,6 +588,8 @@ public static class NotificationPlanner
             Appointments = (input.Appointments ?? []).Where(appointment => appointment.BabyId == input.BabyId).ToArray();
             DoctorSuggestions = input.DoctorSuggestions ?? [];
             Vaccines = input.Vaccines;
+            var crySpells = input.CrySpells ?? [];
+            NewCryEpisodes = crySpells.Where(spell => !crySpells.Any(other => other.Covers(spell))).ToArray();
             _sentHeadsUps = (input.SentHeadsUps ?? [])
                 .Where(sent => sent.BabyId == input.BabyId)
                 .DistinctBy(sent => (sent.UserId, sent.DedupeKey.Value))
@@ -582,6 +610,9 @@ public static class NotificationPlanner
 
         /// <summary>The baby's vaccine schedule, profile and records as loaded (only when a recipient wants vaccine reminders).</summary>
         public VaccinePlanState? Vaccines { get; }
+
+        /// <summary>The cry monitor spells that begin an episode (no earlier spell of the baby was still going when they started).</summary>
+        public IReadOnlyList<DetectedCrySpell> NewCryEpisodes { get; }
 
         public NotificationBabyState? StateAt(TimeSpan utcOffset) => _states.GetValueOrDefault(utcOffset);
 

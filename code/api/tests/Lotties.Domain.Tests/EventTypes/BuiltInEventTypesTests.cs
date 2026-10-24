@@ -170,10 +170,21 @@ public sealed class BuiltInEventTypesTests
     {
         var fields = BuiltInEventTypes.Fussy.Fields;
 
-        Assert.Equal(["intensity", "what_helped", "suggested_cause", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
+        Assert.Equal(["intensity", "what_helped", "suggested_cause", "auto_detected", "cry_confirmed", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
         var cause = fields[2];
         Assert.Equal(("First suggestion", EventFieldKind.Select, false, true), (cause.Label, cause.Kind, cause.IsRequired, cause.IsHidden));
         Assert.Equal(["hunger", "sleepy", "diaper", "gas", "comfort"], cause.Options);
+    }
+
+    [Fact]
+    public void Fussy_KeepsTheCryDetectorMarksHiddenOptionalBooleansBeforeThePauses()
+    {
+        var fields = BuiltInEventTypes.Fussy.Fields;
+
+        Assert.Equal(
+            [("auto_detected", "Detected automatically"), ("cry_confirmed", "Confirmed by parent")],
+            fields.Skip(3).Take(2).Select(field => (field.Key, field.Label)));
+        Assert.All(fields.Skip(3).Take(2), field => Assert.Equal((EventFieldKind.Bool, false, true, (FieldVisibilityCondition?)null), (field.Kind, field.IsRequired, field.IsHidden, field.VisibleWhen)));
     }
 
     [Fact]

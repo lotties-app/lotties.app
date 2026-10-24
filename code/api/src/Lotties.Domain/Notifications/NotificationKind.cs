@@ -35,6 +35,9 @@ public enum NotificationKind
 
     /// <summary>A vaccine dose is due according to the baby's schedule (<c>vaccine_due</c>; Owners and Parents only).</summary>
     VaccineDue,
+
+    /// <summary>The cry monitor started a fussy spell of the baby (<c>cry_detected</c>; off by default, generic text only).</summary>
+    CryDetected,
 }
 
 /// <summary>Web Push <c>Urgency</c> header value.</summary>
@@ -88,6 +91,7 @@ public static class NotificationCodes
         NotificationKind.AppointmentReminder => "appointment_reminder",
         NotificationKind.DoctorSuggestion => "doctor_suggestion",
         NotificationKind.VaccineDue => "vaccine_due",
+        NotificationKind.CryDetected => "cry_detected",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown notification kind."),
     };
 
