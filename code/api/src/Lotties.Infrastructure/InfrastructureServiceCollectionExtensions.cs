@@ -52,6 +52,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Lotties.Domain.Predictions.IPredictionHistoryRepository, EfPredictionHistoryRepository>();
         services.AddScoped<Lotties.Domain.Clinical.IClinicalEventRepository, EfClinicalEventRepository>();
         services.AddScoped<Lotties.Domain.Assistants.IUserAssistantSettingsRepository, EfUserAssistantSettingsRepository>();
+        services.AddScoped<Lotties.Domain.Board.IBoardRepository, EfBoardRepository>();
+        services.AddScoped<Lotties.Domain.Board.IBoardApiKeyRepository, EfBoardApiKeyRepository>();
         return services;
     }
 }

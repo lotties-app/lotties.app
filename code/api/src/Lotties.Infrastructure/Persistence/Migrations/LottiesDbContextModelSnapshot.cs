@@ -358,6 +358,446 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("invites", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Board.BoardApiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AllowedTopicCodes")
+                        .HasMaxLength(411)
+                        .HasColumnType("character varying(411)")
+                        .HasColumnName("allowed_topics");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by_name");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("key_hash");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("prefix");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("scope");
+
+                    b.Property<long>("UseCount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("use_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_board_api_keys");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_board_api_keys_created_by_user_id");
+
+                    b.HasIndex("KeyHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_board_api_keys_key_hash");
+
+                    b.HasIndex("Prefix")
+                        .HasDatabaseName("ix_board_api_keys_prefix");
+
+                    b.ToTable("board_api_keys", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Board.BoardItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByKeyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_key_id");
+
+                    b.Property<string>("CreatedByName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by_name");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<string>("DecisionSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("decision_summary");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("ExternalKey")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("external_key");
+
+                    b.Property<int?>("ImportedVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("imported_version");
+
+                    b.Property<string>("LabelCodes")
+                        .IsRequired()
+                        .HasMaxLength(411)
+                        .HasColumnType("character varying(411)")
+                        .HasColumnName("labels");
+
+                    b.Property<string>("Links")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("links");
+
+                    b.Property<bool>("Pinned")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pinned");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("priority");
+
+                    b.Property<string>("Rationale")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("rationale");
+
+                    b.Property<string>("Side")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("side");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("TopicKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("topic_key");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_board_items");
+
+                    b.HasIndex("CreatedByKeyId")
+                        .HasDatabaseName("ix_board_items_created_by_key_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_board_items_created_by_user_id");
+
+                    b.HasIndex("ExternalKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_board_items_external_key")
+                        .HasFilter("external_key IS NOT NULL");
+
+                    b.HasIndex("UpdatedAt")
+                        .HasDatabaseName("ix_board_items_updated_at");
+
+                    b.HasIndex("TopicKey", "UpdatedAt")
+                        .HasDatabaseName("ix_board_items_topic_key_updated_at");
+
+                    b.ToTable("board_items", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Board.BoardItemEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorKeyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_key_id");
+
+                    b.Property<string>("ActorKind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("actor_kind");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("actor_name");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("changes");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("comment");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.HasKey("Id")
+                        .HasName("pk_board_item_events");
+
+                    b.HasIndex("ActorKeyId")
+                        .HasDatabaseName("ix_board_item_events_actor_key_id");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_board_item_events_actor_user_id");
+
+                    b.HasIndex("ItemId", "At")
+                        .HasDatabaseName("ix_board_item_events_item_id_at");
+
+                    b.ToTable("board_item_events", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Board.BoardTopic", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("key");
+
+                    b.Property<bool>("Archived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("archived");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Key")
+                        .HasName("pk_board_topics");
+
+                    b.ToTable("board_topics", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Key = "product",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Features, behaviour and scope of the app.",
+                            Name = "Product",
+                            SortOrder = 10,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "doctor-access",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "The Doctor role, sections, the doctor's dashboard.",
+                            Name = "Doctor access",
+                            SortOrder = 20,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "assistants-alexa-mcp",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Voice and AI assistants.",
+                            Name = "Assistants (Alexa, MCP)",
+                            SortOrder = 30,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "privacy-legal",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Privacy policy, LGPD, consent, retention, the owner checklist.",
+                            Name = "Privacy and legal",
+                            SortOrder = 40,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "mobile-stores",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Capacitor apps, App Store and Google Play.",
+                            Name = "Mobile and stores",
+                            SortOrder = 50,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "infrastructure-deploy",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Home lab, Keycloak, database, backups, deploys.",
+                            Name = "Infrastructure and deploy",
+                            SortOrder = 60,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "data-catalog",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Medicine catalog, vaccine schedule, age norms, imports.",
+                            Name = "Data and catalog",
+                            SortOrder = 70,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "predictions-ml",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Heuristics, benchmarks, the cry detector.",
+                            Name = "Predictions and ML",
+                            SortOrder = 80,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "design-ux",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Visual identity, interaction, accessibility, copy.",
+                            Name = "Design and UX",
+                            SortOrder = 90,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Key = "process-meta",
+                            Archived = false,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "How the owner and the assistants work: worktrees, reviews, this board.",
+                            Name = "Process and meta",
+                            SortOrder = 100,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 24, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        });
+                });
+
             modelBuilder.Entity("Lotties.Domain.CareProviders.CareProvider", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2149,6 +2589,59 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_invites_users_created_by");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Board.BoardApiKey", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_board_api_keys_users_created_by_user_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Board.BoardItem", b =>
+                {
+                    b.HasOne("Lotties.Domain.Board.BoardApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByKeyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_board_items_board_api_keys_created_by_key_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_board_items_users_created_by_user_id");
+
+                    b.HasOne("Lotties.Domain.Board.BoardTopic", null)
+                        .WithMany()
+                        .HasForeignKey("TopicKey")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_board_items_board_topics_topic_key");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Board.BoardItemEvent", b =>
+                {
+                    b.HasOne("Lotties.Domain.Board.BoardApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("ActorKeyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_board_item_events_board_api_keys_actor_key_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_board_item_events_users_actor_user_id");
+
+                    b.HasOne("Lotties.Domain.Board.BoardItem", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_board_item_events_board_items_item_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.CareProviders.CareProvider", b =>
