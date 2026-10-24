@@ -5,7 +5,7 @@ Thanks for helping out.
 1. Open an issue first for larger changes so we can agree on the approach.
 2. Fork, create a branch from `main`, and keep changes focused.
 3. Before opening a pull request, make sure these pass:
-   - `dotnet build code/api/Lotties.sln` and `dotnet test code/api/Lotties.sln`
+   - `dotnet build code/api/Lotties.sln` and `dotnet test code/api/Lotties.sln` (needs the .NET 10 SDK)
    - `npm --prefix code/web run lint`, `npm --prefix code/web run test -- --run`, `npm --prefix code/web run build`
 3a. Adding, removing or updating a dependency (npm or NuGet)? Regenerate the credits and commit the result:
    `dotnet restore code/api/Lotties.sln`, then `node code/web/scripts/generate-credits.mjs`

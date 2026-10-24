@@ -16,10 +16,11 @@ public sealed class EventChangesQueryTests
 
         var sql = EfEventRepository.ChangesQuery(context, Guid.NewGuid(), EventSyncCursor.After(lastDelivered), 501).ToQueryString();
 
-        Assert.Contains("e.updated_at > @__updatedAt", sql, StringComparison.Ordinal);
-        Assert.Contains("e.id > @__eventId", sql, StringComparison.Ordinal);
+        // EF Core 10 names a parameter after its variable (@updatedAt; EF Core 8 wrote @__updatedAt_0).
+        Assert.Contains("e.updated_at > @updatedAt", sql, StringComparison.Ordinal);
+        Assert.Contains("e.id > @eventId", sql, StringComparison.Ordinal);
         Assert.Contains("ORDER BY e.updated_at, e.id", sql, StringComparison.Ordinal);
-        Assert.Contains("LIMIT @__p", sql, StringComparison.Ordinal);
+        Assert.Contains("LIMIT @p", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("deleted_at", sql.Split("WHERE")[1], StringComparison.Ordinal);
     }
 
@@ -31,6 +32,6 @@ public sealed class EventChangesQueryTests
         var sql = EfEventRepository.ChangesQuery(context, Guid.NewGuid(), null, 10).ToQueryString();
 
         Assert.DoesNotContain("updated_at >", sql, StringComparison.Ordinal);
-        Assert.Contains("e.baby_id = @__babyId", sql, StringComparison.Ordinal);
+        Assert.Contains("e.baby_id = @babyId", sql, StringComparison.Ordinal);
     }
 }

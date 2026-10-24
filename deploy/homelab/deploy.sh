@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 8) and the web app (React SPA on
+# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 10) and the web app (React SPA on
 # nginx) in namespace lotties-app-production, public at https://lotties.app through the external Traefik.
 #
 # Run as root inside WSL, from anywhere:

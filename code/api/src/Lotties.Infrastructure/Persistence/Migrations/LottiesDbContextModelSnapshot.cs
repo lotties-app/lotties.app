@@ -18,7 +18,7 @@ namespace Lotties.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.11")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -2029,8 +2029,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
-                    b.ComplexProperty<Dictionary<string, object>>("Keys", "Lotties.Domain.Notifications.PushSubscription.Keys#PushKeys", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Keys", "Lotties.Domain.Notifications.PushSubscription.Keys#PushKeys", b1 =>
                         {
+                            b1.IsRequired();
+
                             b1.Property<string>("Auth")
                                 .IsRequired()
                                 .HasMaxLength(24)

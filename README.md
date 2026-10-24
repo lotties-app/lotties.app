@@ -11,14 +11,14 @@ Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routine
 ## Stack
 
 - **code/web/**: React 19, TypeScript, MUI, Vite, PWA (vite-plugin-pwa)
-- **code/api/**: .NET 8 Web API (Domain / Application / Infrastructure / Api), EF Core + Npgsql
+- **code/api/**: .NET 10 Web API (Domain / Application / Infrastructure / Api), EF Core + Npgsql
 - **Database**: PostgreSQL 16
 - **Auth**: generic OIDC (Auth0 default; Keycloak/Authentik via config)
 - **Deploy**: docker compose (api + web behind nginx, optional local Postgres)
 
 ## Quick start
 
-Prerequisites: .NET 8 SDK, Node 22, and optionally Docker.
+Prerequisites: .NET 10 SDK, Node 22, and optionally Docker.
 
 ```bash
 # API
