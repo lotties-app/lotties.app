@@ -1,4 +1,5 @@
 using Lotties.Domain.Events;
+using Lotties.Domain.EventTypes;
 using Lotties.Domain.Predictions;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,8 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// are excluded by the global query filter. Only the type key, the two timestamps and the payload are read; the
 /// payload's <c>kind</c> (sleep sessions, see <see cref="SleepKinds"/>), <c>paused_seconds</c> (effective durations) and
 /// the diaper <c>content</c> (<see cref="DiaperContents"/>) are extracted in memory (<see cref="EventPayloadFacts"/>)
-/// so the query stays provider-neutral.
+/// so the query stays provider-neutral; so is the parent's "Not crying" answer on a fussy spell
+/// (<see cref="CryDetection.IsConfirmedNotCrying"/>), which the fussy pattern skips.
 /// </remarks>
 internal sealed class EfPredictionHistoryRepository(LottiesDbContext context) : IPredictionHistoryRepository
 {
@@ -32,9 +34,13 @@ internal sealed class EfPredictionHistoryRepository(LottiesDbContext context) : 
             .Where(item => item.BabyId == babyId && item.StartedAt >= since)
             .Join(context.EventTypes, item => item.TypeId, type => type.Id, (item, type) => new { type.Key, item.StartedAt, item.EndedAt, item.Payload })
             .ToListAsync(cancellationToken);
-        return rows.Select(row => Observed(row.Key, row.StartedAt, row.EndedAt, EventPayloadFacts.Read(row.Payload))).ToArray();
+        return rows.Select(row => Observed(row.Key, row.StartedAt, row.EndedAt, row.Payload)).ToArray();
     }
 
-    private static ObservedEvent Observed(Domain.EventTypes.EventTypeKey key, DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayloadFacts facts) =>
-        new(key, startedAt, endedAt, facts.Kind, facts.Paused, facts.Content);
+    private static ObservedEvent Observed(EventTypeKey key, DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayload payload)
+    {
+        var facts = EventPayloadFacts.Read(payload);
+        var notCrying = key == BuiltInEventTypes.Fussy.Key && CryDetection.IsConfirmedNotCrying(payload);
+        return new ObservedEvent(key, startedAt, endedAt, facts.Kind, facts.Paused, facts.Content, notCrying);
+    }
 }

@@ -199,7 +199,8 @@ later), read-only in the Caregiver's sheet of someone else's spell, and in the p
 five monitor spells, with time and length) for whoever may change the entry. "Not crying" keeps the entry (it can be
 deleted as usual); `events/cryDetection.ts` `countsAsCrying` leaves it out of the fussy pattern card's "handled" check,
 the cry outcome history ("What helped before"), the formula comparison's fussy counts and the fussy heads-up clean-up.
-The server's own fussy pattern detector (predictions) still counts it: an API change, not done here (open point).
+The server leaves it out too (`CryDetection.IsConfirmedNotCrying`): the fussy pattern in predictions and the
+`fussy_pattern` push, including whether a spell already handled today's window (docs/design/31 section 13 notes).
 
 **Alerts on the monitor device** (`monitorNotifications.ts`): the service worker always shows a push and does not
 message the page about it, so while listening the page closes this device's `cry:{babyId}` notifications every 10 s
