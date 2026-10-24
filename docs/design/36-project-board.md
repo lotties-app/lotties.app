@@ -464,8 +464,10 @@ Code in `code/web/src/board/` (docs/agents/filemap.md lists every file).
   `review:<finding id>` (docs/agents/REVIEW.md), `privacy-owner-checklist:<item>` (docs/PRIVACY-OWNER-CHECKLIST.md),
   `design-<nn>:<question id>` (open questions such as docs/design/34 O3), `deferred:<feature>` (deferred features),
   `audit-33:<gap>` (docs/design/33 G1-G13). Re-running the import updates only untouched items (section 3.4).
-- The import script is a later task (it reads the Markdown and posts JSON); the REST example in docs/KEYCLOAK-BOARD.md
-  shows the call.
+- The initial seed is `docs/board-seed.json` (hand-curated from the docs and the owner conversation of 2026-10-24,
+  reviewable as a file) and `scripts/board-import.mjs` validates and posts it (docs/KEYCLOAK-BOARD.md section 9). Items
+  from the conversation use `conversation-2026-10-24:<slug>`, the decision log `decision:<slug>`, memories
+  `memory:<slug>`.
 
 ## 12. Configuration
 
