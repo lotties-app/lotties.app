@@ -193,6 +193,7 @@ export default function HubPreview() {
     hasDoctorContent: scenario === 'owner',
     native: false,
     installed: false,
+    cryMonitorSupported: true,
   };
   const selected: SelectedBaby = {
     babies: baby ? [baby] : undefined,

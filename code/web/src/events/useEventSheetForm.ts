@@ -22,6 +22,8 @@ import {
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
 import { fillEmptyFields } from './stopPlan';
 import { useFormulaChoice } from '../formulas/useFormulaChoice';
+import { setCryConfirmed } from '../cryMonitor/autoSpells';
+import { CRY_CONFIRMED_KEY, cryAnswer, isAutoDetected } from './cryDetection';
 import { deleteEventWithWakeUp, editFollowingWakeUp } from '../now/nightEndsWakeUp';
 import { createEventStoppingFeeding } from '../now/sleepStopsFeeding';
 import { loadTimeBottles } from '../presets/timeBottlesStorage';
@@ -99,6 +101,9 @@ export function useEventSheetForm(props: EventSheetProps) {
   const [switched, setSwitched] = useState<TypeSwitch | null>(null);
   // A new bottle is timed only with the "Time bottle feedings" setting; stored events keep their times.
   const [timeBottles] = useState(() => !!event || loadTimeBottles());
+  // A cry monitor spell's "Was she crying?" answer: saved at once, and kept by a later Save.
+  const [crying, setCrying] = useState<boolean | null>(() => (event ? cryAnswer(event) : null));
+  const cryQuestion = !!event && isAutoDetected(event);
 
   const type = types.find((candidate) => candidate.id === form.typeId);
   const formula = useFormulaChoice({ babyId, type, event, finish, values: form.values, setForm });
@@ -146,11 +151,11 @@ export function useEventSheetForm(props: EventSheetProps) {
       return payload;
     }
     const times = buildTimes(toSave, selected, instant);
-    const payload = buildPayload(
-      toSave,
-      selected,
-      event ? editBase(event.payload, selected, event.typeId === selected.id) : {},
-    );
+    const base = event ? editBase(event.payload, selected, event.typeId === selected.id) : {};
+    if (event && crying !== null && event.typeId === selected.id) {
+      setOwn<unknown>(base, CRY_CONFIRMED_KEY, crying);
+    }
+    const payload = buildPayload(toSave, selected, base);
     const data = { typeId: selected.id, ...times, payload, notes: toSave.notes.trim() || null };
     await (event
       ? editFollowingWakeUp(db, event, () => editEvent(db, event.id, data))
@@ -173,6 +178,17 @@ export function useEventSheetForm(props: EventSheetProps) {
     } catch (error) {
       setSaveError(error instanceof Error ? describeApiError(error) : t('events.saveFailed'));
       setSaving(false);
+    }
+  };
+
+  const answerCry = async (next: boolean) => {
+    if (!event) return;
+    const previous = crying;
+    setCrying(next);
+    try {
+      await setCryConfirmed(db, event.id, next);
+    } catch {
+      setCrying(previous);
     }
   };
 
@@ -207,5 +223,8 @@ export function useEventSheetForm(props: EventSheetProps) {
     undoSwitch,
     submit,
     remove,
+    cryQuestion,
+    crying,
+    answerCry,
   };
 }

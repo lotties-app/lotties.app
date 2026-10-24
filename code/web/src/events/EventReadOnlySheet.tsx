@@ -7,6 +7,9 @@ import { useEventTypeText } from '../i18n/eventTypeText';
 import { SheetFrame } from '../now/ui/SheetFrame';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import type { FedToSleep } from '../now/bottleFollowUp';
+import { FUSSY_KEY } from '../now/fussyPattern';
+import { CryAnswerRow } from './CryAnswerRow';
+import { cryAnswer, isAutoDetected } from './cryDetection';
 import { isMedicationType } from './formModel';
 
 interface Props {
@@ -76,6 +79,9 @@ export function EventReadOnlySheet({
             </Typography>
           )}
         </Box>
+        {type?.key === FUSSY_KEY && isAutoDetected(event) && (
+          <CryAnswerRow answer={cryAnswer(event)} />
+        )}
         {event.notes && (
           <Typography variant="body2" sx={{ overflowWrap: 'anywhere', whiteSpace: 'pre-line' }}>
             {event.notes}

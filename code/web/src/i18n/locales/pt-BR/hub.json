@@ -115,6 +115,11 @@
         "hint": "Restaure um arquivo exportado do app",
         "keywords": "backup restaurar enviar arquivo json mudar conta"
       },
+      "cryMonitor": {
+        "title": "Monitor de choro (beta)",
+        "hint": "Um celular extra no quarto do bebê percebe o choro",
+        "keywords": "choro chorar monitor microfone ouvir detectar som quarto bebê alerta"
+      },
       "install": {
         "title": "Instalar o app",
         "hint": "No celular ou no computador",

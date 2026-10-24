@@ -33,6 +33,8 @@ const HubAboutPage = hubSubPage('HubAboutPage');
 const HubCreditsPage = hubSubPage('HubCreditsPage');
 const HubInstallPage = hubSubPage('HubInstallPage');
 const HubPrivacyPage = hubSubPage('HubPrivacyPage');
+// The cry monitor's page is its own chunk; the engine loads only when monitoring starts.
+const HubCryMonitorPage = lazy(() => import('./cryMonitor/CryMonitorPage'));
 // The public credits, install and privacy pages: outside the auth gate, so they open without signing in.
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InstallPage = lazy(() => import('./install/InstallPage'));
@@ -328,6 +330,7 @@ export function AppRoutes() {
             <Route path="hub/import" element={<HubImportPage />} />
             <Route path="hub/export" element={<HubExportPage />} />
             <Route path="hub/backup" element={<HubBackupImportPage />} />
+            <Route path="hub/cry-monitor" element={<HubCryMonitorPage />} />
             <Route path="hub/updates" element={<HubUpdatesPage />} />
             <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="hub/credits" element={<HubCreditsPage />} />
