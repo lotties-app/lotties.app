@@ -48,6 +48,7 @@
       "overtiredHelp": "When the baby has been awake nearly as long as usual, a note 15 min before.",
       "fussy": "Fussy time heads-up",
       "fussyHelp": "When fussiness often starts around the same time, a note 30 min before.",
+      "cryDetected": "Cry detected by the monitor",
       "diaperWet": "Wet diaper heads-up",
       "diaperWetHelp": "When a wet diaper is usually due, a note 10 min before.",
       "diaperDirty": "Dirty diaper heads-up",

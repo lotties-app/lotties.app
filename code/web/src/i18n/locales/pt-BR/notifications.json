@@ -48,6 +48,7 @@
       "overtiredHelp": "Quando o tempo acordado estiver perto do de costume, um aviso 15 min antes.",
       "fussy": "Aviso da hora do choro",
       "fussyHelp": "Quando a irritação costuma começar no mesmo horário, um aviso 30 min antes.",
+      "cryDetected": "Choro detectado pelo monitor",
       "diaperWet": "Aviso de fralda molhada",
       "diaperWetHelp": "Quando costuma ser hora de uma fralda molhada, um aviso 10 min antes.",
       "diaperDirty": "Aviso de fralda suja",

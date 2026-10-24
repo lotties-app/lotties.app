@@ -36,6 +36,7 @@ function defaultsFor(baby: Baby): BabyPreferencesDto {
     appointmentReminders: canReceive,
     doctorSuggestions: false,
     vaccineReminders: false,
+    cryDetected: false,
   };
 }
 
@@ -68,6 +69,7 @@ function BabyRow({
       appointmentReminders: prefs.appointmentReminders ?? prefs.canReceive,
       doctorSuggestions: prefs.doctorSuggestions ?? false,
       vaccineReminders: prefs.vaccineReminders ?? false,
+      cryDetected: prefs.cryDetected ?? false,
       ...change,
     };
     const replace = (stored: BabyPreferencesDto) =>
@@ -161,6 +163,13 @@ function BabyRow({
         onChange={(fussyPattern) => update({ fussyPattern })}
         label={t('notifications.reminders.fussy')}
         description={t('notifications.reminders.fussyHelp')}
+      />
+      <SwitchRow
+        icon="mood-cry"
+        checked={prefs.cryDetected ?? false}
+        disabled={off}
+        onChange={(cryDetected) => update({ cryDetected })}
+        label={t('notifications.reminders.cryDetected')}
       />
       <SwitchRow
         icon="diaper"
