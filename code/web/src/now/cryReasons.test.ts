@@ -925,12 +925,13 @@ describe('published feed norms as the default gap (docs/design/28-age-norms.md s
       'hunger',
     ).score;
 
-  it('the default gap: breastfed under 4 weeks 120 min, 4 weeks to 6 months 131 min (11 a day)', () => {
+  it('the default gap: breastfed under 4 weeks 120 min; from 4 weeks the band default stays (no norm)', () => {
     expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, NEWBORN, NOON, [breast(60, 40)])).toBe(120);
-    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, TWO_MONTHS, NOON, [breast(60, 40)])).toBe(131);
-    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, FOUR_MONTHS, NOON, [breast(60, 40)])).toBe(131);
-    const expressed = feed(60, 50, { bottle_feeding_type: 'breast_milk' });
-    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, TWO_MONTHS, NOON, [expressed])).toBe(131);
+    const expressedNewborn = feed(60, 50, { bottle_feeding_type: 'breast_milk' });
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, NEWBORN, NOON, [expressedNewborn])).toBe(120);
+    // The flat 131 min (11 feeds a day) for 4 weeks to 6 months was too short for 3 to 6 months.
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, TWO_MONTHS, NOON, [breast(60, 40)])).toBeNull();
+    expect(normFeedGapMinutes(SHIPPED_AGE_NORMS, FOUR_MONTHS, NOON, [breast(60, 40)])).toBeNull();
   });
 
   it('no default from the norms: formula (ranges only, or under review), mixed, unknown milk, 6 months and over, no norms', () => {
@@ -961,10 +962,10 @@ describe('published feed norms as the default gap (docs/design/28-age-norms.md s
     expect(hungerWith(events, NEWBORN, SHIPPED_AGE_NORMS)).toBeCloseTo(0.9, 3);
   });
 
-  it('golden: breastfed 2 months, 120 min since the feed: 0.286 before, 0.639 after', () => {
+  it('golden: breastfed 2 months, 120 min since the feed: 0.286, the same with or without norms', () => {
     const events = [breast(120, 110)];
     expect(hungerWith(events, TWO_MONTHS, null)).toBeCloseTo(0.286, 3);
-    expect(hungerWith(events, TWO_MONTHS, SHIPPED_AGE_NORMS)).toBeCloseTo(0.639, 3);
+    expect(hungerWith(events, TWO_MONTHS, SHIPPED_AGE_NORMS)).toBeCloseTo(0.286, 3);
   });
 
   it('unchanged: formula, 8 months, her own usual gap, a flagged norm', () => {

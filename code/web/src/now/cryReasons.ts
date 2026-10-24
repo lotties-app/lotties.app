@@ -349,10 +349,12 @@ export function cryAgeBand(birthDate: string | null | undefined, now: Date): Cry
 }
 
 /**
- * Published feed norms seed the default gap only before 6 months: until then feeds are milk only,
- * which is what the norms count (complementary food starts at 6 months, docs/design/28 section 6).
+ * Published feed norms seed the default gap only in the first 4 weeks (the AAP gap for breastfed
+ * newborns). From day 28 the band's own default stays: the one published figure for 4 weeks to
+ * 6 months is a flat 11 feeds a day (131 min), which is too short for a 3 to 6 month old, so it
+ * waits for an age-banded, reviewed norm (owner decision 2026-10-24, docs/design/28 section 15).
  */
-export const CRY_NORM_MAX_AGE_DAYS = 183;
+export const CRY_NORM_MAX_AGE_DAYS = 28;
 
 type Milk = 'breastfed' | 'formula' | null;
 
