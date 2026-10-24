@@ -146,7 +146,7 @@ export const privacyEn: PolicyDocument = {
               id: 'assistants',
               cells: [
                 'Voice assistant (Alexa)',
-                'If you enable and link the Lotties Alexa skill: the baby your voice commands use and, in each request from Amazon, the command and its values (such as "bottle" and "120 ml"), the language and a sign-in token for your account.',
+                'The baby you choose for voice commands (Settings > Voice assistants) and, if you enable and link the Lotties Alexa skill, in each request from Amazon the command and its values (such as "bottle" and "120 ml"), the language and a sign-in token for your account.',
                 'To log entries and answer questions by voice.',
               ],
             },

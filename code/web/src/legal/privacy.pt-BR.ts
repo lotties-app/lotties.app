@@ -150,7 +150,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'assistants',
               cells: [
                 'Assistente de voz (Alexa)',
-                'Se você ativar e vincular a skill do Lotties na Alexa: o bebê que os comandos de voz usam e, em cada pedido vindo da Amazon, o comando e seus valores (como "mamadeira" e "120 ml"), o idioma e um token de acesso da sua conta.',
+                'O bebê que você escolhe para os comandos de voz (Ajustes > Assistentes de voz) e, se você ativar e vincular a skill do Lotties na Alexa, em cada pedido vindo da Amazon o comando e seus valores (como "mamadeira" e "120 ml"), o idioma e um token de acesso da sua conta.',
                 'Para registrar e responder perguntas por voz.',
               ],
             },
