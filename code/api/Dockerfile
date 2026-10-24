@@ -19,6 +19,14 @@ COPY --from=build /out .
 # Configuration (DB_*, AUTH_*, CORS_ALLOWED_ORIGINS) comes from the environment at run time; nothing secret is baked in.
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+# The release stamped by deploy/homelab/deploy.sh, served by GET /api/v1/version: APP_VERSION X.Y.Z (empty: "dev"),
+# APP_COMMIT the short commit, APP_BUILD_TIME an ISO time. Last in the stage so the layers above stay cached.
+ARG APP_VERSION=""
+ARG APP_COMMIT=""
+ARG APP_BUILD_TIME=""
+ENV APP_VERSION=$APP_VERSION \
+    APP_COMMIT=$APP_COMMIT \
+    APP_BUILD_TIME=$APP_BUILD_TIME
 # The aspnet image has no curl/wget; probe /health with bash's /dev/tcp.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]

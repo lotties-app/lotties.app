@@ -15,10 +15,16 @@ ARG VITE_REPO_URL=""
 ARG VITE_PRIVACY_CONTROLLER_NAME=""
 ARG VITE_PRIVACY_CONTACT_EMAIL=""
 ARG VITE_PRIVACY_DPO=""
-# Short commit shown on the About screen (the image build has no git checkout); empty hides it.
+# The release stamped by deploy/homelab/deploy.sh, shown on the About screen (vite.config.ts, build-info.ts):
+# APP_VERSION X.Y.Z (empty: "dev"), APP_COMMIT the short commit (the image build has no git checkout; empty hides
+# it), APP_BUILD_TIME an ISO time (empty: the time of `npm run build`).
+ARG APP_VERSION=""
 ARG APP_COMMIT=""
-ENV APP_COMMIT=$APP_COMMIT \
-VITE_API_BASE_URL=$VITE_API_BASE_URL \
+ARG APP_BUILD_TIME=""
+ENV APP_VERSION=$APP_VERSION \
+    APP_COMMIT=$APP_COMMIT \
+    APP_BUILD_TIME=$APP_BUILD_TIME \
+    VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
     VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
     VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE \
