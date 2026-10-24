@@ -8,7 +8,7 @@ Lotties itself is released under the [AGPL-3.0](LICENSE). It includes the third-
 
 These packages do not ship a license file; their license, as declared in their package metadata, is shown (the standard text is at <https://spdx.org/licenses/>).
 
-- none
+- @mediapipe/tasks-audio 1.1.1: Apache-2.0 (http://mediapipe.dev)
 
 ## License texts
 

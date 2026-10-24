@@ -52,7 +52,7 @@ The same list is in the app: <https://lotties.app/credits> (before sign-in) and 
 
 ## Open-source software
 
-173 open-source packages ship with Lotties (42 direct, 131 indirect). The license text of every one is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+174 open-source packages ship with Lotties (43 direct, 131 indirect). The license text of every one is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ### Web and mobile app (npm)
 
@@ -76,6 +76,7 @@ The same list is in the app: <https://lotties.app/credits> (before sign-in) and 
 | [@emotion/react](https://github.com/emotion-js/emotion/tree/main/packages/react) | 11.14.0 | MIT |
 | [@emotion/styled](https://github.com/emotion-js/emotion/tree/main/packages/styled) | 11.14.1 | MIT |
 | [@fontsource-variable/fraunces](https://fontsource.org/fonts/fraunces) | 5.3.0 | OFL-1.1 |
+| [@mediapipe/tasks-audio](http://mediapipe.dev) | 1.1.1 | Apache-2.0 |
 | [@mui/x-date-pickers](https://mui.com/x/react-date-pickers/) | 9.16.0 | MIT |
 | [@tanstack/react-query](https://tanstack.com/query) | 5.104.5 | MIT |
 | [date-fns](https://github.com/date-fns/date-fns) | 4.4.0 | MIT |

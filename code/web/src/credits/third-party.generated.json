@@ -542,6 +542,19 @@
     },
     {
       "ecosystem": "npm",
+      "name": "@mediapipe/tasks-audio",
+      "version": "1.1.1",
+      "license": "Apache-2.0",
+      "homepage": "http://mediapipe.dev",
+      "repository": null,
+      "direct": true,
+      "sources": [
+        "web"
+      ],
+      "licenseId": null
+    },
+    {
+      "ecosystem": "npm",
       "name": "@mui/core-downloads-tracker",
       "version": "9.5.0",
       "license": "MIT",
