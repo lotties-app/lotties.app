@@ -73,6 +73,7 @@ public sealed class MigrationTests
         "20261023172942_FussyOutcomes",
         "20261023213337_VoiceAssistants",
         "20261024120542_BottleSegments",
+        "20261024133642_CryDetector",
     ];
 
     [Fact]
