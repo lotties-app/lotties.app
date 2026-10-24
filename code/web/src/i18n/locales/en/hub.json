@@ -164,15 +164,23 @@
     "about": {
       "title": "About",
       "tagline": "A calm baby routine tracker that works offline.",
-      "version": "Version",
-      "builtAt": "Built",
-      "commit": "Build",
+      "appVersion": "App version",
+      "appLine": "App (this device)",
+      "serverLine": "Server",
+      "commitValue": "commit {{commit}}",
+      "builtValue": "built {{date}}",
+      "serverLoading": "Checking the server…",
+      "serverUnavailable": "Server version unavailable",
+      "updateHint": "An update is available: the server runs {{version}}.",
+      "copy": "Copy version info",
+      "copied": "Version info copied.",
+      "copyFailed": "Could not copy. You can select the versions above instead.",
+      "report": "Lotties app {{app}}, server {{server}}",
       "license": "Licence",
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
       "credits": "Built on open source. Credits and licenses",
-      "privacy": "Privacy policy",
-      "unknown": "Unknown"
+      "privacy": "Privacy policy"
     }
   }
 }

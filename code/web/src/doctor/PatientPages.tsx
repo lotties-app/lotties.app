@@ -18,6 +18,7 @@ import { SyncSection } from '../settings/SyncSection';
 import { RADIUS } from '../theme/tokens';
 import { formatDate } from '../i18n/format';
 import { CreditsContent } from '../credits/CreditsContent';
+import { AboutScreen } from '../hub/AboutScreen';
 import { usePatientBaby } from './DoctorDashboardContext';
 import { WhenShared } from './PatientRoute';
 
@@ -193,6 +194,21 @@ export function DoctorCreditsPage() {
           {t('credits.title')}
         </Typography>
         <CreditsContent />
+      </Stack>
+    </Box>
+  );
+}
+
+/** `/doctor/about`: what this device and the server run, inside the doctor's shell (her account menu links here). */
+export function DoctorAboutPage() {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ maxWidth: 720 }}>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h1">
+          {t('hub.about.title')}
+        </Typography>
+        <AboutScreen basePath="/doctor" />
       </Stack>
     </Box>
   );

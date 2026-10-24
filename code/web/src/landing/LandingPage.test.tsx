@@ -14,6 +14,8 @@ import { fakeAuth } from '../test/fakeAuth';
 import summary from '../credits/third-party-summary.generated.json';
 import LandingPage from './LandingPage';
 import { repoUrl } from './repoUrl';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import { detectInstallPlatform, guideFor } from '../install/installPlatform';
 import type { InstallState } from '../install/useInstallState';
 
@@ -158,6 +160,15 @@ describe('LandingPage', () => {
       }),
     );
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+  });
+
+  it('shows the running version in the footer, as text labelled "App version"', async () => {
+    renderLanding();
+    const footer = await screen.findByRole('contentinfo');
+    const line = within(footer).getByTestId('version-line');
+    expect(line.textContent).toBe(
+      `App version: Lotties ${displayVersion(readBuildInfo().version)}`,
+    );
   });
 
   it('hides the source link without VITE_REPO_URL and shows it for a web address', () => {

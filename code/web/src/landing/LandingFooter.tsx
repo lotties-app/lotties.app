@@ -8,6 +8,7 @@ import { useInstallState } from '../install/useInstallState';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import type { ThemeMode } from '../theme/theme';
 import { SegmentedControl } from '../ui/form';
+import { VersionLine } from '../ui/VersionLine';
 import { PAGE_WIDTH } from './features';
 import { repoUrl } from './repoUrl';
 
@@ -29,7 +30,7 @@ function Setting({ id, label, children }: { id: string; label: string; children:
 }
 
 /**
- * Language and theme switches, the source link, the install guide, credits and privacy policy links,
+ * Language and theme switches, the version line with the source link, the install guide, credits and privacy policy links,
  * the licence line and the medical note.
  */
 export function LandingFooter() {
@@ -73,16 +74,24 @@ export function LandingFooter() {
           </Setting>
         </Box>
         <Stack spacing={1}>
-          {source && (
-            <Link
-              href={source}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {t('footer.source')}
-            </Link>
-          )}
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+          >
+            <VersionLine brand />
+            {source && (
+              <>
+                <Typography variant="caption" color="text.secondary" aria-hidden>
+                  ·
+                </Typography>
+                <Link href={source} target="_blank" rel="noopener noreferrer">
+                  {t('footer.source')}
+                </Link>
+              </>
+            )}
+          </Stack>
           {!native && (
             <Link component={RouterLink} to="/install" sx={{ alignSelf: 'flex-start' }}>
               {t('footer.install')}

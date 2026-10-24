@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
+import { VersionLine } from '../ui/VersionLine';
 import { CustomizeShortcutsDialog } from './CustomizeShortcutsDialog';
 import { HUB_SECTIONS, visibleEntries, type HubContext, type HubEntry } from './hubEntries';
 import { pickShortcuts, useHubPrefs } from './hubUsage';
@@ -149,6 +150,8 @@ export function HubScreen({ context }: { context: HubContext }) {
           </Box>
         );
       })}
+
+      <VersionLine to="/hub/about" />
 
       {customizing && (
         <CustomizeShortcutsDialog

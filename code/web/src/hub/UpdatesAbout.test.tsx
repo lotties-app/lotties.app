@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../i18n/I18nProvider';
 import { useTestLocale } from '../test/locale';
 import { pretendNativeApp } from '../platform/nativeTestKit';
-import { readBuildInfo } from '../config/buildInfo';
+import { fetchServerVersion } from '../config/serverVersion';
 import {
   checkForUpdates,
   resetUpdateStore,
@@ -15,6 +15,27 @@ import {
 } from '../pwa/updateStore';
 import { AboutScreen } from './AboutScreen';
 import { UpdatesScreen } from './UpdatesScreen';
+
+// This bundle as a stamped release (a test build is otherwise "dev").
+vi.mock('../config/buildInfo', () => ({
+  readBuildInfo: () => ({
+    version: '0.1.38',
+    commit: 'abc1234def',
+    builtAt: '2026-10-24T10:00:00.000Z',
+  }),
+}));
+
+const fetchMock = vi.fn();
+
+/** The server's GET /api/v1/version answers with this body. */
+function serverAnswers(body: { version: string; commit: string; builtAt: string | null }) {
+  fetchMock.mockResolvedValue(
+    new Response(JSON.stringify({ name: 'lotties-api', ...body }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+}
 
 /** A fake service worker registration whose `update()` the test controls. */
 function registration(update: () => Promise<void>, parts: Partial<ServiceWorkerRegistration> = {}) {
@@ -42,11 +63,15 @@ beforeEach(() => {
     value: { getRegistration: vi.fn(async () => undefined), ready: new Promise(() => undefined) },
   });
   resetUpdateStore();
+  fetchMock.mockReset();
+  serverAnswers({ version: '0.1.38', commit: 'abc1234def', builtAt: '2026-10-24T10:00:00Z' });
+  vi.stubGlobal('fetch', fetchMock);
 });
 
 afterEach(() => {
   undoNative?.();
   undoNative = undefined;
+  vi.unstubAllGlobals();
   // @ts-expect-error removing the property the test added
   delete navigator.serviceWorker;
 });
@@ -54,7 +79,7 @@ afterEach(() => {
 describe('Check for updates', () => {
   it('starts with the version and a button, and no status yet', () => {
     renderScreen(<UpdatesScreen />);
-    expect(screen.getByText(`You have version ${readBuildInfo().version}.`)).toBeTruthy();
+    expect(screen.getByText('You have version v0.1.38.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Check for updates' })).toBeTruthy();
     expect(screen.getByTestId('update-status').textContent).toBe('');
   });
@@ -150,13 +175,105 @@ describe('Check for updates', () => {
 });
 
 describe('About', () => {
-  it('shows the version, build date, licence and a source link when the repo is configured', () => {
+  it('shows this device and the server, each with version, commit and build time', async () => {
+    serverAnswers({ version: '0.1.38', commit: 'fedcba9876', builtAt: '2026-10-24T09:00:00Z' });
+    renderScreen(<AboutScreen />);
+    expect(screen.getByText('App (this device)')).toBeTruthy();
+    expect(screen.getByText(/^v0\.1\.38 · commit abc1234 · built /)).toBeTruthy();
+    expect(screen.getByText('Checking the server…')).toBeTruthy();
+    expect(await screen.findByText(/^v0\.1\.38 · commit fedcba9 · built /)).toBeTruthy();
+    expect(screen.getByText('Server')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/version',
+      expect.objectContaining({ credentials: 'omit' }),
+    );
+    expect(screen.queryByText(/An update is available/)).toBeNull();
+  });
+
+  it('hints at an update when the server runs a newer release, through the update flow', async () => {
+    setRegistration(registration(async () => undefined));
+    serverAnswers({ version: '0.1.39', commit: 'fedcba9', builtAt: null });
+    renderScreen(<AboutScreen />);
+    expect(
+      await screen.findByText('An update is available: the server runs v0.1.39.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
+    expect(await screen.findByText('You have the latest version.')).toBeTruthy();
+  });
+
+  it('offers the reload in the hint when a new version is already waiting', async () => {
+    const reload = vi.fn(async () => undefined);
+    setReload(reload);
+    act(() => setWaiting(true));
+    serverAnswers({ version: '0.2.0', commit: '', builtAt: null });
+    renderScreen(<AboutScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Reload to update' }));
+    expect(reload).toHaveBeenCalledWith(true);
+  });
+
+  it('has no hint when this device is ahead of the server', async () => {
+    serverAnswers({ version: '0.1.37', commit: '', builtAt: null });
+    renderScreen(<AboutScreen />);
+    expect(await screen.findByText('v0.1.37')).toBeTruthy();
+    expect(screen.queryByText(/An update is available/)).toBeNull();
+  });
+
+  it('says the server version is unavailable when the request fails, and keeps the screen', async () => {
+    fetchMock.mockRejectedValue(new TypeError('offline'));
+    renderScreen(<AboutScreen />);
+    expect(await screen.findByText('Server version unavailable')).toBeTruthy();
+    expect(screen.getByText(/^v0\.1\.38 · commit abc1234/)).toBeTruthy();
+  });
+
+  it('gives up on a server that does not answer in time', async () => {
+    fetchMock.mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) =>
+          init.signal?.addEventListener('abort', () => reject(new DOMException('', 'AbortError'))),
+        ),
+    );
+    expect(await fetchServerVersion('', 10)).toBeNull();
+  });
+
+  it('treats an unexpected answer as unavailable', async () => {
+    fetchMock.mockResolvedValue(new Response('<html>', { status: 200 }));
+    expect(await fetchServerVersion('', 1000)).toBeNull();
+    fetchMock.mockResolvedValue(new Response('{}', { status: 500 }));
+    expect(await fetchServerVersion('', 1000)).toBeNull();
+  });
+
+  it('copies the version info for a bug report', async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    serverAnswers({ version: '0.1.38', commit: 'fedcba9876', builtAt: null });
+    renderScreen(<AboutScreen />);
+    await screen.findByText(/commit fedcba9/);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy version info' }));
+    expect(await screen.findByText('Version info copied.')).toBeTruthy();
+    expect(writeText).toHaveBeenCalledWith(
+      'Lotties app v0.1.38 (commit abc1234), server v0.1.38 (commit fedcba9)',
+    );
+    // @ts-expect-error removing the property the test added
+    delete navigator.clipboard;
+  });
+
+  it('says so when the copy fails', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) },
+    });
+    fetchMock.mockRejectedValue(new TypeError('offline'));
+    renderScreen(<AboutScreen />);
+    await screen.findByText('Server version unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'Copy version info' }));
+    expect(await screen.findByText(/Could not copy/)).toBeTruthy();
+    // @ts-expect-error removing the property the test added
+    delete navigator.clipboard;
+  });
+
+  it('has the licence and a source link when the repo is configured', () => {
     vi.stubEnv('VITE_REPO_URL', 'https://example.org/lotties');
     renderScreen(<AboutScreen />);
-    const info = readBuildInfo();
-    expect(screen.getByText('Version')).toBeTruthy();
-    expect(screen.getByText(info.version)).toBeTruthy();
-    expect(screen.getByText('Built')).toBeTruthy();
     expect(screen.getByText('Free software, AGPL-3.0')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Source code' }).getAttribute('href')).toBe(
       'https://example.org/lotties',
@@ -171,10 +288,19 @@ describe('About', () => {
     vi.unstubAllEnvs();
   });
 
-  it('stamps the build: a version and an ISO build time from the bundler', () => {
-    const info = readBuildInfo();
-    expect(info.version).toMatch(/^\d+\.\d+\.\d+/);
-    expect(Number.isNaN(Date.parse(info.builtAt))).toBe(false);
+  it('links credits and privacy inside the doctor shell', () => {
+    renderScreen(<AboutScreen basePath="/doctor" />);
+    expect(screen.getByRole('link', { name: /Credits and licenses/ }).getAttribute('href')).toBe(
+      '/doctor/credits',
+    );
+  });
+
+  it('is in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    fetchMock.mockRejectedValue(new TypeError('offline'));
+    renderScreen(<AboutScreen />);
+    expect(screen.getByText('App (este aparelho)')).toBeTruthy();
+    expect(await screen.findByText('Versão do servidor indisponível')).toBeTruthy();
   });
 });
 
