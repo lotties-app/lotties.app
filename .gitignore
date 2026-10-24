@@ -30,6 +30,9 @@ ml/cry_detector/out/
 ml/cry_detector/.pytest_cache/
 ml/cry_detector/*.egg-info/
 
+# cry monitor model (code/web/scripts/fetch-cry-model.mjs downloads and verifies it; never committed)
+code/web/public/models/cry/
+
 # keycloak-theme: build outputs and the throwaway local Keycloak runtime (generated passwords)
 code/keycloak-theme/node_modules/
 code/keycloak-theme/dist/

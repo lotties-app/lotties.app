@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { cryAssetsPlugin } from './cry-assets';
 import { nativeCspPlugin } from './native-csp';
 import { darkManifestPlugin, LIGHT_MANIFEST } from './pwa-manifest';
 import { buildDefines } from './build-info';
@@ -51,19 +52,30 @@ export default defineConfig({
       manifest: LIGHT_MANIFEST,
       // Our own TypeScript worker (src/pwa/sw/sw.ts, built to sw.js): precache, cleanup,
       // navigation fallback and SKIP_WAITING. Only built, hashed assets are precached; API calls
-      // and the OIDC callback are never cached (no runtime caching, see src/pwa/sw/navigation.ts).
+      // and the OIDC callback are never cached (see src/pwa/sw/navigation.ts). The only runtime cache
+      // holds the cry monitor's files under /models/cry/ (src/pwa/sw/cryAssets.ts).
       strategies: 'injectManifest',
       srcDir: 'src/pwa/sw',
       filename: 'sw.ts',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
+        // The cry monitor's model and MediaPipe WASM (11 MB) are cached at run time only, on first use
+        // (src/pwa/sw/cryAssets.ts), never precached for every visitor.
+        globIgnores: ['**/node_modules/**/*', 'models/**'],
       },
     }),
     // After VitePWA: it also removes the duplicate manifest link VitePWA injects.
     darkManifestPlugin(),
     // Native build only: the app has no server to send a Content-Security-Policy header.
     nativeCspPlugin(),
+    // The cry monitor's MediaPipe WASM under /models/cry/wasm/ and the model check (cry-assets.ts).
+    cryAssetsPlugin(),
   ],
+  // ES-module workers: the cry classifier worker loads MediaPipe's ES-module WASM loader, and the capture
+  // AudioWorklet (`?worker&url`) must be a module (src/cry, docs/design/35-cry-engine.md).
+  worker: {
+    format: 'es',
+  },
   build: {
     rolldownOptions: {
       output: {
