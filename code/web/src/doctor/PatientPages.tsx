@@ -10,6 +10,7 @@ import { Growth } from '../pages/GrowthPage';
 import { ProposalsScreen } from '../proposals/ProposalsScreen';
 import { Provenance } from '../proposals/Provenance';
 import { AppearanceSection } from '../settings/AppearanceSection';
+import { DeleteAccountSection } from '../settings/DeleteAccountSection';
 import { LanguageSection } from '../settings/LanguageSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
 import { SettingsSection } from '../settings/SettingsSection';
@@ -126,7 +127,8 @@ export function PatientNotes() {
 
 /**
  * `/doctor/settings`: what a doctor sets on her account (her professional profile, appearance,
- * language, sync). The family's settings (members, reminders, import) are never shown here.
+ * language, sync, and Account and data: her own data's download and the account deletion, a store
+ * requirement). The family's settings (members, reminders, import) are never shown here.
  */
 export function DoctorSettingsPage() {
   const { t } = useTranslation();
@@ -168,6 +170,13 @@ export function DoctorSettingsPage() {
           defaultExpanded={target === 'sync'}
         >
           <SyncSection />
+        </SettingsSection>
+        <SettingsSection
+          id="account"
+          title={t('account.sectionTitle')}
+          defaultExpanded={target === 'account'}
+        >
+          <DeleteAccountSection variant="professional" />
         </SettingsSection>
       </Stack>
     </Box>
