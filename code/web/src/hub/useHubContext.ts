@@ -1,4 +1,5 @@
 import { canDecideProposals } from '../baby/permissions';
+import { cryMonitorSupported } from '../cryMonitor/support';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { useBabies } from '../db/hooks';
 import { hasPatients } from '../doctor/appMode';
@@ -28,5 +29,6 @@ export function useHubContext(): HubContext | undefined {
     hasDoctorContent: !!baby && canDecideProposals(baby) && (hasDoctor || anything),
     native: isNativeApp(),
     installed,
+    cryMonitorSupported: cryMonitorSupported(),
   };
 }

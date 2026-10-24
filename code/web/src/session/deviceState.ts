@@ -1,4 +1,5 @@
 import { forgetSelectedBaby } from '../baby/selectedBabyStorage';
+import { clearCryMonitorConsent } from '../cryMonitor/monitorStorage';
 import { clearDashboardState } from '../doctor/dashboardStorage';
 import { clearAllLastUsed } from '../events/lastUsedValues';
 import { localPushDeviceRecord } from '../notifications/pushDeviceRecord';
@@ -23,11 +24,12 @@ const ACCOUNT_KEY = 'baby-routine.account';
  * Removes the account's localStorage entries: the selected baby, the cached predictions, the pinned
  * presets, the "Time bottle feedings" setting, the doctor dashboard's remembered patients and mode, the remembered field values, the Now "last seen" times, the belly pain and fussy
  * pattern cards' "Not today" and the overtired and diaper cards' "Not now" (all keyed by baby), this device's
- * push opt-in and the reminder card's "Not now".
- * Device preferences such as the theme are kept.
+ * push opt-in, the reminder card's "Not now" and the cry monitor's consent on this device.
+ * Device preferences such as the theme (and the cry monitor's sensitivity) are kept.
  */
 export function clearAccountDeviceState(): void {
   forgetSelectedBaby();
+  clearCryMonitorConsent();
   clearDashboardState();
   clearAllCachedPredictions();
   clearAllPinned();

@@ -21,7 +21,9 @@ import { Field, MedicationPicker, NotesRow } from '../ui/form';
 import { daysBeforeToday } from '../ui/form/timeMath';
 import { getOwn } from '../util/ownProperty';
 import { currentStartLevel } from './bottleSegments';
+import { FUSSY_KEY } from '../now/fussyPattern';
 import { ConditionalFields } from './ConditionalFields';
+import { CryAnswerRow } from './CryAnswerRow';
 import { announceEventDeleted } from './deletedEvents';
 import type { EventSheetProps } from './eventSheetTypes';
 import { isMedicationType } from './formModel';
@@ -302,6 +304,12 @@ export function EventSheet(props: EventSheetProps) {
               errors={state.errors}
               onChange={state.edit}
               instant={state.instant}
+            />
+          )}
+          {!finishing && state.cryQuestion && type?.key === FUSSY_KEY && (
+            <CryAnswerRow
+              answer={state.crying}
+              onAnswer={(crying) => void state.answerCry(crying)}
             />
           )}
           {type && isMedicationType(type) && (

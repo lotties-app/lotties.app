@@ -18,6 +18,7 @@ const ctx = (role: Baby['role'] | null, extra: Partial<HubContext> = {}): HubCon
   hasDoctorContent: false,
   native: false,
   installed: false,
+  cryMonitorSupported: true,
   ...extra,
 });
 
@@ -89,6 +90,24 @@ describe('who sees which entry', () => {
   ] as const)('export and import backup for %s: %s', (role, expected) => {
     expect(isEntryVisible('export', ctx(role))).toBe(expected);
     expect(isEntryVisible('backupImport', ctx(role))).toBe(expected);
+  });
+
+  it.each([
+    ['Owner', true],
+    ['Parent', true],
+    ['Caregiver', true],
+    ['Viewer', false],
+    ['Doctor', false],
+  ] as const)('cry monitor for %s: %s (roles that log)', (role, expected) => {
+    expect(isEntryVisible('cryMonitor', ctx(role))).toBe(expected);
+  });
+
+  it('hides the cry monitor in the native app, without the browser features and without a baby', () => {
+    expect(isEntryVisible('cryMonitor', ctx('Owner', { native: true }))).toBe(false);
+    expect(isEntryVisible('cryMonitor', ctx('Owner', { cryMonitorSupported: false }))).toBe(false);
+    expect(isEntryVisible('cryMonitor', ctx(null))).toBe(false);
+    const entry = HUB_ENTRIES.find((e) => e.id === 'cryMonitor');
+    expect(entry).toMatchObject({ section: 'app', icon: 'microphone', to: '/hub/cry-monitor' });
   });
 
   it('offers a backup restore without a baby, except to a doctor who only has patients', () => {

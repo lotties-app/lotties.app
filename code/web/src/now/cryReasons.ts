@@ -7,6 +7,7 @@ import {
 } from '../ageNorms/ageNorms';
 import type { BabyEvent, EventType } from '../db/models';
 import { ageInMonths } from '../events/bottleAgeDefaults';
+import { countsAsCrying } from '../events/cryDetection';
 import { adjustedFeedGap, topUpAdjustment } from '../events/bottlePatterns';
 import type { PredictionsDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
@@ -782,6 +783,7 @@ function whatHelped(event: BabyEvent): string[] {
 /**
  * What helped in the last `limit` answered fussy spells (live, started by `now`), per cause. A
  * spell without a `what_helped` answer is skipped; one whose answer is unknown counts as `none`.
+ * A cry monitor spell marked "Not crying" is never counted (a false alarm, not a crying spell).
  */
 export function cryOutcomeHistory(
   events: readonly BabyEvent[],
@@ -792,7 +794,7 @@ export function cryOutcomeHistory(
   const ids = typeIdsForKey(types, FUSSY_KEY);
   const max = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : Number.MAX_SAFE_INTEGER;
   const answered = pastLiveEvents(events, now)
-    .filter((e) => ids.has(e.typeId))
+    .filter((e) => ids.has(e.typeId) && countsAsCrying(e))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt) || a.id.localeCompare(b.id))
     .map(whatHelped)
     .filter((answers) => answers.length > 0)

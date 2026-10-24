@@ -145,6 +145,16 @@ describe('periods and the unlock rule', () => {
     expect(second.metrics.fussyPerDay).toBeCloseTo(1 / 9);
   });
 
+  it('never counts a cry monitor spell marked "Not crying" as a fussy spell', () => {
+    const events = [...days('a', 10, 2, 3), ...days('b', 10, 2, 3)];
+    events.push(make('fussy', at(5, 19), { auto_detected: true, cry_confirmed: true }, at(5, 20)));
+    events.push(make('fussy', at(6, 19), { auto_detected: true, cry_confirmed: false }, at(6, 20)));
+
+    const [first] = compare(events).qualified;
+
+    expect(first.metrics.fussyPerDay).toBeCloseTo(1 / 9);
+  });
+
   it('averages over finished days only (today counts for the unlock, not the averages)', () => {
     const result = compare([...days('a', 7, 1, 3), ...days('a', 0, 0, 1)]);
     const period = result.qualified[0];

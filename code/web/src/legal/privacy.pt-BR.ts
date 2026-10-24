@@ -17,6 +17,7 @@ export const privacyPtBR: PolicyDocument = {
           'Sua conta de acesso: nome, e-mail e senha, guardados pelo nosso próprio servidor de login.',
           'O que você e as pessoas que você convida registram sobre o bebê, inclusive informações de saúde, como remédios e vacinas.',
           'O que o serviço precisa para funcionar: as configurações de lembretes, se você ativá-los, e registros técnicos.',
+          'Se você ligar o Monitor de choro: o microfone, analisado só no seu aparelho e nunca gravado; só ficam salvos os períodos de choro detectados.',
         ],
       },
       {
@@ -147,6 +148,14 @@ export const privacyPtBR: PolicyDocument = {
               ],
             },
             {
+              id: 'cryMonitor',
+              cells: [
+                'Monitor de choro (opcional, app web)',
+                'Só se você ligar o Monitor de choro em um aparelho: o microfone desse aparelho escuta enquanto a página do monitor está aberta. O som é analisado nesse aparelho, mais ou menos um segundo por vez, e descartado na hora: nunca é gravado, guardado ou enviado, nem para nós. O que fica salvo é um período de choro no registro (quando começou e terminou, marcado como detectado automaticamente) e, se você responder, se o bebê estava mesmo chorando. O modelo de sons e o programa dele vêm do nosso próprio servidor; nenhuma outra empresa participa. No aparelho: que você concordou, quando e com qual versão do texto, e a sensibilidade escolhida.',
+                'Para perceber o choro e registrá-lo para você, e para avisar os familiares que ligaram essa notificação. Suas respostas tiram os alarmes falsos dos padrões e das estatísticas.',
+              ],
+            },
+            {
               id: 'assistants',
               cells: [
                 'Assistente de voz (Alexa)',
@@ -182,7 +191,7 @@ export const privacyPtBR: PolicyDocument = {
         },
         {
           kind: 'note',
-          text: 'O Lotties não pede sua localização, seus contatos, a câmera, as fotos nem o microfone. O app não tem ferramentas de publicidade, de análise de uso nem de relatório de falhas.',
+          text: 'O Lotties não pede sua localização, seus contatos, a câmera nem as fotos. Ele só pede o microfone quando você liga o Monitor de choro em um aparelho, no app web, e só o usa enquanto essa página está aberta; o som nunca sai do aparelho. O app não tem ferramentas de publicidade, de análise de uso nem de relatório de falhas.',
         },
       ],
     },
@@ -197,6 +206,10 @@ export const privacyPtBR: PolicyDocument = {
         {
           kind: 'p',
           text: 'A lista de Médicos e clínicas é para contatos; informações de saúde ficam nos registros do próprio bebê.',
+        },
+        {
+          kind: 'p',
+          text: 'O microfone do Monitor de choro também ouve outras pessoas no quarto, como uma babá ou visitas. Nada é gravado nem guardado, mas avise essas pessoas quando ele estiver ligado.',
         },
       ],
     },
@@ -215,6 +228,7 @@ export const privacyPtBR: PolicyDocument = {
             'Informações de saúde do seu bebê (dados sensíveis): seu consentimento para essa finalidade (art. 11, I). Você o dá ao escolher registrar essas informações no app, para manter o histórico da criança. Você pode revogá-lo quando quiser, apagando esses registros ou a sua conta.',
             'Compartilhamento com um médico que você convida: seu consentimento específico, dado ao criar o convite e escolher as seções que o médico verá (art. 11, I). Você pode mudar as seções ou encerrar o acesso a qualquer momento.',
             'Recursos opcionais que você ativa (lembretes, a skill da Alexa, a busca de endereço): seu consentimento (art. 7º, I, e art. 11, I quando o lembrete for de um remédio ou de uma vacina). Para revogá-lo, desative o recurso ou desvincule a skill.',
+            'O Monitor de choro: seu consentimento específico, pedido em cada aparelho antes de ligar, a um membro que pode registrar para o bebê (art. 11, I, e art. 14, § 1º). Você o revoga na página do monitor; os períodos já registrados continuam como registros comuns até você apagá-los.',
             'Registros técnicos e proteção do serviço: nosso legítimo interesse em mantê-lo funcionando e seguro (art. 7º, IX), limitado ao necessário e sem usar informações de saúde.',
             'Quando a lei ou uma autoridade exigir que guardemos ou entreguemos dados: cumprimento de obrigação legal (art. 7º, II, e art. 11, II, a).',
           ],
@@ -271,7 +285,7 @@ export const privacyPtBR: PolicyDocument = {
                   id: 'pushServices',
                   cells: [
                     'Serviços de push dos navegadores: Google (Chrome e a maioria dos navegadores Android), Mozilla (Firefox), Apple (Safari) e Microsoft (Edge)',
-                    'O endereço de push do seu aparelho e o horário e o tamanho de cada lembrete. O conteúdo vai criptografado, de modo que só o seu aparelho consegue lê-lo; é o seu aparelho que monta o texto que você vê.',
+                    'O endereço de push do seu aparelho e o horário e o tamanho de cada lembrete ou alerta (como o "Choro detectado" do Monitor de choro). O conteúdo vai criptografado, de modo que só o seu aparelho consegue lê-lo; é o seu aparelho que monta o texto que você vê. Nenhum som é enviado.',
                     'Só se você ativar as notificações em um aparelho.',
                   ],
                 },
@@ -341,6 +355,10 @@ export const privacyPtBR: PolicyDocument = {
           kind: 'p',
           text: 'Cadastre um bebê só se você for o pai, a mãe ou o responsável legal, ou tiver a permissão deles. Um pai, mãe ou responsável legal pode nos pedir para ver, corrigir ou apagar os dados da criança (veja [Seus direitos](#privacy-rights)).',
         },
+        {
+          kind: 'p',
+          text: 'O Monitor de choro só escuta o quarto do bebê em um aparelho onde um familiar que pode registrar para o bebê o ligou e concordou com os termos. O som é analisado nesse aparelho e nunca é guardado; só os períodos de choro são registrados.',
+        },
       ],
     },
     {
@@ -364,7 +382,7 @@ export const privacyPtBR: PolicyDocument = {
                 'Baixar uma cópia: [Central > Exportar dados](/hub/export) baixa um arquivo completo e legível de um bebê (Titulares e Responsáveis), que outro servidor Lotties pode importar. Em [Ajustes > Conta e dados](/settings#account), Baixar meus dados salva o que este aparelho tem. Um profissional de saúde encontra a opção na área do médico, [Ajustes > Conta e dados](/doctor/settings#account): seu perfil profissional e as notas, sugestões e medidas que registrou.',
                 'Apagar registros: um registro apagado some na hora em todos os aparelhos. O servidor o mantém oculto, para que todos os aparelhos fiquem sabendo da exclusão, até o bebê ou a sua conta serem excluídos; se você precisar que ele seja eliminado antes, fale com a gente.',
                 'Parar de compartilhar: o titular remove membros e médicos em [Central > Membros e papéis](/hub/family), onde qualquer pessoa também pode sair de um bebê.',
-                'Revogar o consentimento de recursos opcionais: desative as notificações em [Ajustes](/settings#notifications), desvincule a skill no app Alexa e mude ou encerre o acesso de um médico em [Central > Acesso do médico](/hub/family#doctor-access).',
+                'Revogar o consentimento de recursos opcionais: desative as notificações em [Ajustes](/settings#notifications), desvincule a skill no app Alexa, mude ou encerre o acesso de um médico em [Central > Acesso do médico](/hub/family#doctor-access) e retire o consentimento do Monitor de choro na página dele, [Central > Monitor de choro](/hub/cry-monitor), em cada aparelho.',
                 'Excluir sua conta: [Ajustes > Conta e dados](/settings#account) > Excluir minha conta (na área do médico, [Ajustes > Conta e dados](/doctor/settings#account)). Bebês que só você usa são apagados com todos os registros. Em um bebê que outras pessoas mantêm, seu acesso termina; suas notas privadas, lembretes e perfil de médico são apagados; e o que você adicionou continua para elas sob o nome "Former member" (ex-membro). Se você for o único titular de um bebê que outras pessoas usam, torne outra pessoa titular antes.',
                 'Sua conta de acesso no nosso servidor de login é excluída junto com seus dados quando o nosso servidor está configurado para isso, e o app diz antes da confirmação se ela será. Quando não está configurado, ou o servidor de login não responde naquele momento, seus dados são apagados mesmo assim, o app avisa que a conta de acesso continua (ela não guarda dados de bebês), e você pode nos pedir a remoção.',
               ],
@@ -396,6 +414,7 @@ export const privacyPtBR: PolicyDocument = {
             'Sua conta de login: até você excluir sua conta.',
             'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
+            'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',
             'Registros técnicos (logs): só pelo tempo necessário para operar e proteger o serviço.',
             'Cópias do banco feitas antes de atualizações: apagadas quando não forem mais necessárias. Até lá, ainda contêm dados apagados nesse meio-tempo.',
             'No seu aparelho: até você sair da conta (o app então apaga a cópia) ou limpar os dados do app.',
@@ -415,7 +434,8 @@ export const privacyPtBR: PolicyDocument = {
             'O login acontece no nosso próprio servidor de login (Keycloak); o app nunca vê sua senha. O acesso usa tokens que expiram, que o servidor confere a cada pedido.',
             'A cada pedido, o servidor confere o seu papel naquele bebê e, para um médico, as seções compartilhadas. Notas privadas são filtradas no próprio banco de dados para todos, menos para quem as escreveu.',
             'Links de convite e os códigos dos lembretes são guardados apenas como resumos criptográficos irreversíveis (hashes).',
-            'O app roda só o próprio código: sem scripts, fontes ou rastreadores de terceiros, o que é garantido por uma Política de Segurança de Conteúdo (CSP) rígida.',
+            'O app roda só o próprio código: sem scripts, fontes ou rastreadores de terceiros, o que é garantido por uma Política de Segurança de Conteúdo (CSP) rígida. O modelo de sons do Monitor de choro também vem do nosso próprio servidor.',
+            'Só as páginas do próprio Lotties podem usar o microfone (uma Política de Permissões), e só depois que você liga o Monitor de choro; o navegador mostra quando ele está em uso.',
             'Limites de quantidade e de tamanho de pedidos; a conexão com a Alexa confere a assinatura da Amazon em cada pedido.',
             'O servidor usa uma conta de banco de dados com permissões limitadas e mantém senhas e chaves fora do código-fonte. Os logs do próprio app deixam de fora o que você escreve.',
             'O acesso de administrador aos servidores é restrito ao mantenedor. Só olhamos os dados guardados quando é preciso para operar o serviço, resolver um problema que você relatou ou cumprir a lei.',
@@ -438,7 +458,7 @@ export const privacyPtBR: PolicyDocument = {
         {
           kind: 'list',
           items: [
-            'Notificações: os serviços de push do Google, da Mozilla, da Apple e da Microsoft, que funcionam no mundo todo, inclusive nos Estados Unidos. Eles não conseguem ler o conteúdo dos lembretes.',
+            'Notificações: os serviços de push do Google, da Mozilla, da Apple e da Microsoft, que funcionam no mundo todo, inclusive nos Estados Unidos. Eles não conseguem ler o conteúdo dos lembretes nem dos alertas.',
             'Alexa: a Amazon, que processa os pedidos de voz nos próprios data centers, inclusive nos Estados Unidos.',
             'Busca de endereço: o Nominatim do OpenStreetMap é mantido pela OpenStreetMap Foundation, sediada no Reino Unido. A BrasilAPI e o ViaCEP também podem usar servidores fora do Brasil.',
             'As lojas de apps da Apple e do Google e o GitHub, quando você os usa, segundo os termos deles.',
@@ -465,12 +485,13 @@ export const privacyPtBR: PolicyDocument = {
             'Uma cópia dos registros dos seus bebês e das alterações ainda não enviadas, no banco de dados do navegador (um por conta).',
             'Preferências e atalhos: idioma, tema, o bebê selecionado, botões fixados, cartões dispensados, valores e estimativas recentes e quantas vezes você abre cada item da Central (para ordenar seus atalhos).',
             'Um link de convite enquanto você faz login, por um instante (armazenamento de sessão).',
+            'Se você usar o Monitor de choro: que você concordou neste aparelho (quando, e com qual versão do texto) e a sensibilidade escolhida. Nunca nenhum som.',
             'Os arquivos do próprio app, para que ele abra offline. Nenhum registro fica nesse cache.',
           ],
         },
         {
           kind: 'p',
-          text: 'Sair da conta apaga do aparelho os registros e as preferências dessa conta; antes, o app avisa se há alterações ainda não enviadas. Idioma e tema continuam. Os apps para iOS e Android guardam os mesmos dados no armazenamento do próprio app; desinstalar remove tudo.',
+          text: 'Sair da conta apaga do aparelho os registros e as preferências dessa conta; antes, o app avisa se há alterações ainda não enviadas. Idioma, tema e a sensibilidade do Monitor de choro continuam. Os apps para iOS e Android guardam os mesmos dados no armazenamento do próprio app; desinstalar remove tudo.',
         },
       ],
     },
@@ -485,6 +506,10 @@ export const privacyPtBR: PolicyDocument = {
         {
           kind: 'p',
           text: 'Doses e horários de remédios vêm só do que você ou um médico cadastrou; siga sempre a orientação do seu médico. Lembretes podem atrasar ou falhar (sem conexão, configurações do celular), então não dependa só deles. Em uma emergência, procure um médico ou o serviço de emergência.',
+        },
+        {
+          kind: 'p',
+          text: 'O Monitor de choro não é uma babá eletrônica nem um dispositivo de segurança. Ele pode não perceber um choro e pode reagir a outros sons; só funciona enquanto a página dele está aberta e a tela ligada. Mantenha sempre um jeito de ouvir o seu bebê você mesmo.',
         },
       ],
     },

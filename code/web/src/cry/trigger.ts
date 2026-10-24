@@ -96,7 +96,7 @@ export function triggerWindows(config: CryTriggerConfig): TriggerWindows {
 }
 
 export class CryTrigger {
-  readonly config: Readonly<CryTriggerConfig>;
+  private currentConfig: Readonly<CryTriggerConfig>;
   readonly windows: Readonly<TriggerWindows>;
   private readonly hopMs: number;
   private readonly smoothing: number;
@@ -119,13 +119,27 @@ export class CryTrigger {
   private decidedUntil = -Infinity;
 
   constructor(config: CryTriggerConfig = DEFAULT_CRY_TRIGGER) {
-    this.config = Object.freeze({ ...config });
+    this.currentConfig = Object.freeze({ ...config });
     this.windows = Object.freeze(triggerWindows(config));
     this.hopMs = config.hopMs ?? YAMNET_HOP_MS;
     this.smoothing = Math.max(1, Math.floor(config.smoothing));
     this.active = new Uint8Array(this.windows.window);
     this.times = new Float64Array(this.windows.window);
     this.cumRing = new Float64Array(this.smoothing + 1);
+  }
+
+  get config(): Readonly<CryTriggerConfig> {
+    return this.currentConfig;
+  }
+
+  /**
+   * Moves the threshold while listening (the monitor's sensitivity control). It applies from the next window on:
+   * the windows already counted keep their active flags, and a running cry stays running (it ends by the usual
+   * quiet rule). Smoothing, N, M and Q never change.
+   */
+  setThreshold(threshold: number): void {
+    if (!Number.isFinite(threshold)) throw new RangeError('invalid cry trigger threshold');
+    this.currentConfig = Object.freeze({ ...this.currentConfig, threshold });
   }
 
   /** The last smoothed score (for a level meter), or null before the first window. */
@@ -192,7 +206,7 @@ export class CryTrigger {
       value = (this.cum - this.cumRing[lo % (k + 1)]) / (i + 1 - lo);
     }
     this.smoothed = value;
-    const isActive = value >= this.config.threshold ? 1 : 0;
+    const isActive = value >= this.currentConfig.threshold ? 1 : 0;
     const slot = i % this.windows.window;
     this.activeCount += isActive - this.active[slot];
     this.active[slot] = isActive;

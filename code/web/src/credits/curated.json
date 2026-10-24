@@ -155,6 +155,22 @@
       "licenseUrl": "https://github.com/tabler/tabler-icons/blob/main/LICENSE"
     },
     {
+      "id": "yamnet",
+      "kind": "asset",
+      "name": "YAMNet sound classification model (Google), via MediaPipe Tasks Audio",
+      "url": "https://github.com/tensorflow/models/tree/master/research/audioset/yamnet",
+      "license": "Apache-2.0 (YAMNet and MediaPipe Tasks Audio)",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "id": "audioset",
+      "kind": "data",
+      "name": "AudioSet ontology (Google)",
+      "url": "https://research.google.com/audioset/ontology/index.html",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
       "id": "art",
       "kind": "asset",
       "name": "Lotties app icon and illustrations",

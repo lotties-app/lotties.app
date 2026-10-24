@@ -191,3 +191,33 @@ describe('streaming behaviour', () => {
     ).toHaveLength(0);
   });
 });
+
+describe('sensitivity change while listening (setThreshold)', () => {
+  it('applies the new threshold from the next window, keeping the counted windows', () => {
+    const trigger = new CryTrigger(DEFAULT_CRY_TRIGGER);
+    const push = (from: number, count: number, score: number) =>
+      Array.from({ length: count }, (_, k) =>
+        trigger.push({ t: T0 + (from + k) * HOP, score }),
+      ).flat();
+    // 0.015 is below the default 0.02: nothing is active.
+    expect(push(0, 30, 0.015)).toHaveLength(0);
+    trigger.setThreshold(0.01);
+    expect(trigger.config.threshold).toBe(0.01);
+    expect(trigger.config.minSeconds).toBe(DEFAULT_CRY_TRIGGER.minSeconds);
+    const events = push(30, 30, 0.015);
+    expect(events).toHaveLength(1);
+    // The first active window is the first one after the change, never an earlier one.
+    expect(events[0]).toMatchObject({ type: 'cry_started', at: T0 + 30 * HOP });
+  });
+
+  it('keeps a running cry when the threshold rises; the quiet rule ends it', () => {
+    const trigger = new CryTrigger(DEFAULT_CRY_TRIGGER);
+    const started = Array.from({ length: 25 }, (_, i) =>
+      trigger.push({ t: T0 + i * HOP, score: 0.025 }),
+    ).flat();
+    expect(started.map((e) => e.type)).toEqual(['cry_started']);
+    trigger.setThreshold(0.03);
+    expect(trigger.crying).toBe(true);
+    expect(() => trigger.setThreshold(Number.NaN)).toThrow(RangeError);
+  });
+});

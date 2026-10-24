@@ -11,6 +11,7 @@ import type { BabyRoutineDb } from '../db/database';
 import type { BabyEvent } from '../db/models';
 import { isDirtyDiaper, isWetDiaper } from '../now/diaperPredictions';
 import { eventsStartedSince } from '../db/queries';
+import { countsAsCrying } from '../events/cryDetection';
 import { dosesFromEvents, SLOT_MATCH_MS } from '../medications/statusCalculator';
 import { validatePayload } from '../pwa/sw/payload';
 import type { PushDevice } from './pushDevice';
@@ -159,6 +160,7 @@ export async function loadResolutionFacts(
   const bellyTypes = new Set(
     types.filter((t) => t.key === 'belly_pain' || t.key === 'belly_massage').map((t) => t.id),
   );
+  // A cry monitor spell marked "Not crying" was a false alarm: it handles no fussy heads-up.
   const fussyTypes = new Set(types.filter((t) => t.key === 'fussy').map((t) => t.id));
   const diaperTypes = new Set(types.filter((t) => t.key === 'diaper').map((t) => t.id));
   const perBaby = await Promise.all(
@@ -191,7 +193,7 @@ export async function loadResolutionFacts(
     ),
     fussyStarts: perBaby.flatMap(({ babyId, events }) =>
       live(events)
-        .filter((event) => fussyTypes.has(event.typeId))
+        .filter((event) => fussyTypes.has(event.typeId) && countsAsCrying(event))
         .map((event) => ({ babyId, startedAt: Date.parse(event.startedAt) })),
     ),
     wetStarts: diaperStarts(isWetDiaper),

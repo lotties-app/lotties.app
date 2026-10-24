@@ -925,6 +925,27 @@ describe('cryOutcomeHistory', () => {
     expect(history.byCause.hunger).toEqual({ helped: 0, total: 1 });
   });
 
+  it('leaves out cry monitor spells a parent marked "Not crying", keeps the confirmed ones', () => {
+    const events = [
+      ev(FUSSY_TYPE, ago(60), ago(50), {
+        what_helped: 'feeding',
+        auto_detected: true,
+        cry_confirmed: false,
+      }),
+      ev(FUSSY_TYPE, ago(120), ago(110), {
+        what_helped: 'rocking',
+        auto_detected: true,
+        cry_confirmed: true,
+      }),
+      ev(FUSSY_TYPE, ago(180), ago(170), { what_helped: 'sleep', auto_detected: true }),
+    ];
+    const history = cryOutcomeHistory(events, TYPES, NOON, 10);
+    expect(history.spells).toBe(2);
+    expect(history.byCause.hunger.helped).toBe(0);
+    expect(history.byCause.comfort.helped).toBe(1);
+    expect(history.byCause.sleepy.helped).toBe(1);
+  });
+
   it('is empty without fussy spells or with a zero limit', () => {
     const empty = cryOutcomeHistory([feed(30, 20)], TYPES, NOON);
     expect(empty.spells).toBe(0);

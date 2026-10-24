@@ -208,6 +208,9 @@ The built-in `fussy` event type records the outcome (migration `FussyOutcomes`, 
   "Confirmado pelos pais": the parent's answer, `true` = "Yes, crying", `false` = "Not crying", absent until answered).
   Booleans only (anything else is 400 `validation_failed` with the field), never required; seed only, stored events
   untouched; export/import round-trips them. A spell logged from "Why is she crying?" never sets them.
+- Since the cry monitor page (2026-10-24, docs/design/35-cry-engine.md section 8) a spell marked "Not crying"
+  (`cry_confirmed` false) is a false alarm: "What helped before" (`cryOutcomeHistory`) and the fussy pattern card's
+  "handled" check ignore it (`events/cryDetection.ts` `countsAsCrying`). The sheet itself is unchanged.
 
 ## 9. The sheet on Now (UI, 2026-10-23)
 

@@ -193,6 +193,23 @@ describe('CryEngine lifecycle', () => {
     expect(engine.state).toBe('idle');
   });
 
+  it('changes the sensitivity while listening without restarting capture', async () => {
+    const { engine, source, classifier, of } = setup();
+    await engine.start({ sensitivity: 'less' });
+    // 0.015 is quiet at Less (0.03) and active at More (0.01): nothing starts until the switch.
+    source.feed(Array(25).fill(0.015));
+    await flush();
+    expect(of('cry_started')).toHaveLength(0);
+    engine.setSensitivity('more');
+    source.feed(Array(25).fill(0.015), 25);
+    await flush();
+    expect(of('cry_started')).toHaveLength(1);
+    expect(of('cry_started')[0].at).toBe(T0 + 25 * HOP);
+    expect(source.started).toBe(1);
+    expect(classifier.loads).toBe(1);
+    expect(engine.state).toBe('listening');
+  });
+
   it('ignores a second start while running', async () => {
     const { engine, classifier } = setup();
     await engine.start();

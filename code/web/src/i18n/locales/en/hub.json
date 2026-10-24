@@ -115,6 +115,11 @@
         "hint": "Restore a file exported from the app",
         "keywords": "backup restore upload file json move account"
       },
+      "cryMonitor": {
+        "title": "Cry monitor (beta)",
+        "hint": "A spare phone in the baby's room notices crying",
+        "keywords": "cry crying monitor microphone listen detect sound baby room alert"
+      },
       "install": {
         "title": "Install the app",
         "hint": "On your phone or computer",

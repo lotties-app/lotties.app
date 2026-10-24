@@ -1,9 +1,8 @@
 # Cry engine (CD1 + CD2)
 
-Status: built, not wired to any page. The engine behind the foreground "cry monitor" of
-[31-cry-detector-spike.md](31-cry-detector-spike.md) (tasks CD1 and CD2 of its section 13). The monitor page (CD3),
-the fussy event flow (CD5) and the push (CD6) are separate tasks; nothing here shows text, writes an event or calls the
-API.
+Status: built (CD1, CD2) and wired to the monitor page (CD3) and the fussy event flow (CD5), section 8. The engine
+behind the foreground "cry monitor" of [31-cry-detector-spike.md](31-cry-detector-spike.md) (tasks of its section 13).
+The engine itself shows no text, writes no event and calls no API; the page (`code/web/src/cryMonitor/`) does.
 
 Decisions taken before the build (CD0): foreground monitor mode only (screen on, spare plugged-in device); YAMNet
 through MediaPipe Tasks Audio, **zero-shot**, reading the model's own "Baby cry, infant cry" score (no trained head:
@@ -36,8 +35,8 @@ microphone ─ getUserMedia (processing off) ─ AudioContext (device rate)
 | File | Role |
 |---|---|
 | `index.ts` | Public API: `createCryEngine()`, `CryEngine`, types, sensitivity, trigger |
-| `engine.ts` | `CryEngine` facade: `start(options) / stop() / on(event)`; state `idle \| loading \| listening \| error` with a typed `error`; `level` (smoothed score for a meter), `crying`, `lastFrameAt`, `capture` (processing left on), `model`, `stats` (frames, missed frames, load and inference ms); events `state`, `score`, `cry_started`, `cry_ended`, `stalled` (no frame for > 5 s, once), `resumed`; injectable `AudioSource`, `Classifier` and `Scheduler` |
-| `trigger.ts` | `CryTrigger`: streaming port of `ml/cry_detector/cry_detector/trigger.py`; `push({t, score})`, `tick(now)` (closes a cry when frames stopped), `finish()` (stream end); no timers |
+| `engine.ts` | `CryEngine` facade: `start(options) / stop() / on(event) / setSensitivity(level)` (moves the threshold while listening, without restarting capture); state `idle \| loading \| listening \| error` with a typed `error`; `level` (smoothed score for a meter), `crying`, `lastFrameAt`, `capture` (processing left on), `model`, `stats` (frames, missed frames, load and inference ms); events `state`, `score`, `cry_started`, `cry_ended`, `stalled` (no frame for > 5 s, once), `resumed`; injectable `AudioSource`, `Classifier` and `Scheduler` |
+| `trigger.ts` | `CryTrigger`: streaming port of `ml/cry_detector/cry_detector/trigger.py`; `push({t, score})`, `tick(now)` (closes a cry when frames stopped), `finish()` (stream end), `setThreshold(t)` (from the next window on: counted windows keep their flags, a running cry stays); no timers |
 | `cryTriggerVectors.json` | Shared vectors written by `python -m cry_detector.make_vectors` (generated; in `.prettierignore`) |
 | `sensitivity.ts` | Levels Less / Balanced / More → thresholds (section 3) |
 | `capture.ts` | `MicrophoneSource` (`AudioSource`): constraints, `getSettings()` read-back, error codes, worklet wiring, frame timing |
@@ -109,8 +108,9 @@ These are synthetic numbers (doc 31 section 9); the pilot (CD9) may move them.
   the model and WASM fetches.
 - `Permissions-Policy: microphone=(self)` (was `microphone=()`, which blocks `getUserMedia` outright).
 - `gzip_types` adds `application/wasm`; `location /models/ { try_files $uri =404; }`.
-- Before monitor mode ships, the privacy policy (`code/web/src/legal/privacy.*.ts` says the app never asks for the
-  microphone) and docs/design/33-privacy-audit.md must be updated with the monitor page (CD3).
+- The privacy policy (version 3, 2026-10-24) and docs/design/33-privacy-audit.md section 12 describe the monitor:
+  the microphone only when someone starts it, the sound analysed on the device and never recorded, stored or sent,
+  the model from our own server, the Permissions-Policy above, the auto spells and the encrypted alert.
 
 ## 6. Performance
 
@@ -135,3 +135,87 @@ classified frames every 0.975 s; that run is a smoke check, not a benchmark.
 - Vectors: `cd ml/cry_detector; .venv/Scripts/python.exe -m cry_detector.make_vectors` (writes the JSON; `--check`
   verifies, and `tests/test_make_vectors.py` fails when the committed file is stale). Setup in ml/cry_detector/README.md.
 - Runtime bench of the model in headless Chromium: `ml/cry_detector/browser/bench.mjs` (README there).
+
+## 8. The monitor page and the event flow (CD3, CD5; 2026-10-24)
+
+Code: `code/web/src/cryMonitor/`. Design decided by the orchestrator (brief of 2026-10-24); copy in
+`locales/<lang>/cryMonitor.json`.
+
+**Entry and route.** Hub > App > "Cry monitor (beta)" / "Monitor de choro (beta)" (microphone icon), route
+`/hub/cry-monitor`, its own lazy chunk (`CryMonitorPage.tsx`). Shown to Owners, Parents and Caregivers of the selected
+baby (`canLog`), never to a Viewer or the Doctor, never in the native shell (web only for now, doc 31 CD10), and only
+when the browser has `getUserMedia`, AudioWorklet, WebAssembly and workers (`support.ts`, detected once per load). By
+URL: a Viewer and the native app go back to the Hub; the Doctor's patients are not in the family selection, so she
+sees "create a baby first"; an unsupported browser sees "Not supported on this device" (no action). Nothing of
+`src/cry` is in the main bundle or in the page chunk: `useCryMonitor` imports `../cry` with `import()` when "Start
+monitoring" is pressed (`bundleBoundary.test.ts` walks both graphs).
+
+**States** (`monitorState.ts`, a pure reducer): `intro` (what it does, how to use it, privacy, "Not a baby monitor"
+limits, Start or Continue) -> `consent` the first time on the device (two checkboxes, "I understand and agree" and "I
+am allowed to monitor this baby", then Agree; stored in localStorage as `{version, at}` under
+`lotties.cry-monitor.consent`, `CRY_MONITOR_CONSENT_VERSION` = 1, cleared at sign-out with the account's device state
+and asked again when the version changes; "Withdraw consent on this device" on the intro) -> `loading` (model, then the
+microphone; Cancel) -> `listening` -> `intro` on Stop. Failures, each a card with one action: `denied` (short steps for
+Chromium, iOS Safari, macOS Safari or Firefox, picked with the install guide's platform detection; Try again),
+`unavailable` (Try again), `lost` (a call or another app took the microphone: "Microphone interrupted", Restart),
+`stalled` (no audio frame for 5 s: the screen went off or the page was hidden; the monitor stops and says "Listening
+stopped at 21:40 ... Nothing after that was heard", Restart; it never claims it kept listening), `model` (model missing
+or invalid, classifier failed, or the engine chunk could not load: "Not available right now"), `unsupported`.
+
+**Listening screen** (`ListeningView.tsx`): a full-screen dialog with `data-night` on its root, so it always uses the
+night (Lamplight) tokens, near-black for OLED screens and never white, whatever the app scheme. A small pulsing dot
+(opacity only, 2.4 s; off with reduced motion) and "Listening", the baby's name, since when, "Crying heard since 21:40"
+while a cry runs, a 4 px level meter (the smoothed score, full at twice the threshold, never a number; static under
+the night scheme's no-transition rule), quiet notes ("The screen stays on while listening", or the platform's "may turn
+the screen off" warning when the Wake Lock is missing or refused, the iOS one naming 18.4+ for the installed app; "the
+browser kept its voice processing on" when capture reports noise suppression, echo cancellation or AGC on; "Offline:
+detected crying is saved here and syncs later"), the sensitivity control (Less / Balanced / More with the selected
+level's one-line explanation; persisted per device in `lotties.cry-monitor.sensitivity`, kept at sign-out like the
+theme; a change applies at once through `CryEngine.setSensitivity`), today's recent detections and a 72 px Stop button
+that stays in view (sticky).
+
+**Screen Wake Lock** (`screenWakeLock.ts`): requested when Start is pressed, requested again on every
+`visibilitychange` to visible when the browser released it, released on Stop, on a failure and when the page is left.
+
+**Leaving the page** (unmount, route change, `pagehide`): stops the engine (which ends a running cry at the end of its
+last frame), releases the wake lock and drops the engine.
+
+**Auto spells** (`autoSpells.ts`, the normal local commands: client GUID, Dexie, outbox; works offline, the server
+records the signed-in member as author):
+
+| Engine event | What the monitor does |
+|---|---|
+| `cry_started{at}` | Starts a running `fussy` spell of the baby at `at` (never later than the device clock) with only `auto_detected: true`. If a monitor spell of the baby already runs (another monitor, a spell kept from before), it keeps that one: one episode, one spell. If a spell started by hand runs, it creates nothing and will end nothing: the parent is already tracking. Also closes this device's `cry:{babyId}` alert. |
+| `cry_ended{at}` | Ends the spell it started or kept at `at` (the end of the last crying window, not when the end became known), never before the spell's start or past the device clock. A spell somebody stopped or deleted meanwhile stays as it is. |
+| Stop, stall, capture lost, page left | The engine emits `cry_ended` (reason `stream_end`) at the end of the last frame first, so the spell closes there. |
+
+Writes run one after another (an end never overtakes its start). Overlapping or adjacent cries closer than the quiet
+period are already one cry for the engine, and spells shorter than the rule never exist. Nothing sets
+`suggested_cause` or `what_helped`.
+
+**"Yes, crying" / "Not crying"** (`events/CryAnswerRow.tsx`): in the fussy spell's sheet for a monitor spell ("Detected
+by the cry monitor. Was she crying?"; saved at once with `setCryConfirmed`, kept by a later Save of the sheet, editable
+later), read-only in the Caregiver's sheet of someone else's spell, and in the page's "Recent detections" (today's last
+five monitor spells, with time and length) for whoever may change the entry. "Not crying" keeps the entry (it can be
+deleted as usual); `events/cryDetection.ts` `countsAsCrying` leaves it out of the fussy pattern card's "handled" check,
+the cry outcome history ("What helped before"), the formula comparison's fussy counts and the fussy heads-up clean-up.
+The server's own fussy pattern detector (predictions) still counts it: an API change, not done here (open point).
+
+**Alerts on the monitor device** (`monitorNotifications.ts`): the service worker always shows a push and does not
+message the page about it, so while listening the page closes this device's `cry:{babyId}` notifications every 10 s
+and on each detected cry (`PushDevice.shownNotifications`, by tag). Other devices keep theirs. The page links to
+Settings > Notifications ("Get a notification on your other devices when crying is detected") instead of repeating
+the switch.
+
+**Tests**: `monitorState.test.ts` (every transition), `monitorDevice.test.ts` (consent versioning and sign-out, the
+sensitivity, feature detection, wake lock request / re-request / unsupported / denied, closing alerts by tag, the
+platform wording), `autoSpells.test.ts` (start at `at`, kept, none over a manual spell, end at `at`, clamps, answers,
+outbox), `CryMonitorPage.test.tsx` (the flow with `FakeCryEngine`, failures, roles, native, recent detections, axe on
+every state in light, dark and night, en and pt-BR), `EventSheet.cryMonitor.test.tsx`, and the readers' tests. Developer
+preview `/dev/cry-monitor?state=intro|consent|loading|listening|denied|lost|stalled|unsupported&scheme=...`; screenshots
+and axe (contrast included) with `npx playwright test -c design-review/cry-monitor-preview.config.ts` in `tests/e2e`.
+
+**Not verified without a real microphone and devices** (doc 31 CD8): the browser permission prompts and their
+"denied" paths on each browser, the iOS installed-app microphone after a relaunch, Wake Lock on iOS 18.4+ and on
+Android, what happens to capture on a call or with the screen locked on each platform (the stall and `lost` paths are
+exercised with the scripted engine only), the processing read-back on real hardware, battery and heat.

@@ -83,6 +83,20 @@ describe('cry engine bundle boundary', () => {
     expect(names).not.toContain('cry/captureWorklet.ts');
   });
 
+  it('keeps the whole engine out of the main bundle and out of the monitor page chunk', () => {
+    const rel = (files: Set<string>) =>
+      [...files].map((f) => path.relative(SRC, f).replace(/\\/g, '/'));
+    // The app entry reaches the monitor's small helpers (consent clean-up at sign-out) but no engine file.
+    const app = rel(staticGraph(path.join(SRC, 'main.tsx')).files);
+    expect(app.filter((name) => name.startsWith('cry/'))).toEqual([]);
+    expect(app).not.toContain('cryMonitor/CryMonitorPage.tsx');
+    // The page loads the engine with import() only when "Start monitoring" is pressed.
+    const page = rel(staticGraph(path.join(SRC, 'cryMonitor', 'CryMonitorPage.tsx')).files);
+    expect(page.length).toBeGreaterThan(5);
+    expect(page.filter((name) => name.startsWith('cry/'))).toEqual([]);
+    expect(page).not.toContain('cryMonitor/fakeCryEngine.ts');
+  });
+
   it('only the classifier worker imports MediaPipe, and the public API loads capture and classifier lazily', () => {
     const importers = sourceFiles(SRC)
       .filter((file) => readFileSync(file, 'utf8').includes(`'${MEDIAPIPE}'`))

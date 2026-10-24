@@ -27,6 +27,9 @@ export interface ShownNotification {
 
 const compactGuid = (id: string) => id.replace(/-/g, '');
 
+/** The tag of a baby's cry monitor alert (`cry:{baby}`); the monitor page closes it on its own device. */
+export const cryDetectedTag = (babyId: string) => `cry:${compactGuid(babyId)}`;
+
 /** `yyyyMMddHHmm` in UTC, as the server's base keys. */
 export function keyInstant(at: number): string {
   return new Date(at).toISOString().slice(0, 16).replace(/[-T:]/g, '');
@@ -69,7 +72,7 @@ export function notificationTag(payload: PushPayload): string {
     case 'vaccine_due':
       return `vaccine:${compactGuid(payload.babyId)}:${payload.doseId}`;
     case 'cry_detected':
-      return `cry:${compactGuid(payload.babyId)}`;
+      return cryDetectedTag(payload.babyId);
     case 'test':
       return `test:${compactGuid(payload.id)}`;
   }
