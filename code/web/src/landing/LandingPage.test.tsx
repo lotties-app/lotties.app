@@ -100,7 +100,7 @@ describe('LandingPage', () => {
       within(section)
         .getByRole('link', { name: /Source code on GitHub/ })
         .getAttribute('href'),
-    ).toBe('https://github.com/dev-vinicius-andrade/lotties.app');
+    ).toBe('https://github.com/lotties-app/lotties.app');
     const footer = screen.getByRole('contentinfo');
     expect(
       within(footer).getByRole('link', { name: 'Credits and licenses' }).getAttribute('href'),

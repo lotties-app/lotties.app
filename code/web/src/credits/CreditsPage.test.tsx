@@ -68,7 +68,7 @@ describe('the public /credits route', () => {
     ]);
     expect(screen.getByText(/GNU Affero General Public License v3\.0/)).toBeTruthy();
     const source = screen.getByRole('link', { name: /Source code on GitHub/ });
-    expect(source.getAttribute('href')).toBe('https://github.com/dev-vinicius-andrade/lotties.app');
+    expect(source.getAttribute('href')).toBe('https://github.com/lotties-app/lotties.app');
     expect(source.getAttribute('rel')).toContain('noopener');
     expect(screen.getByText(/does not mean that it endorses/)).toBeTruthy();
     expect(screen.getByText(/not a medical device/i)).toBeTruthy();
@@ -177,9 +177,7 @@ describe('the public /credits route', () => {
       const link = await screen.findByRole('link', { name: /Source code on GitHub/ });
       fireEvent.click(link);
       await waitFor(() =>
-        expect(openBrowser).toHaveBeenCalledWith(
-          'https://github.com/dev-vinicius-andrade/lotties.app',
-        ),
+        expect(openBrowser).toHaveBeenCalledWith('https://github.com/lotties-app/lotties.app'),
       );
     } finally {
       vi.unstubAllGlobals();

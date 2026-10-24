@@ -109,7 +109,7 @@ export function sampleItems(): BoardItem[] {
       priority: 'high',
       dueDate: '2026-10-20',
       labels: ['deploy', 'config'],
-      body: '## Steps\n\n1. Add `Board__Enabled` to the API values\n2. Apply the migration\n3. Check `/api/v1/board/me`\n\nSee [the guide](https://github.com/dev-vinicius-andrade/baby-routine).',
+      body: '## Steps\n\n1. Add `Board__Enabled` to the API values\n2. Apply the migration\n3. Check `/api/v1/board/me`\n\nSee [the guide](https://github.com/lotties-app/lotties.app).',
       source: 'docs/KEYCLOAK-BOARD.md',
       updatedAt: ago(1),
     }),

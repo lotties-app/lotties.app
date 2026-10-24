@@ -1,5 +1,5 @@
 {
-  "repository": "https://github.com/dev-vinicius-andrade/lotties.app",
+  "repository": "https://github.com/lotties-app/lotties.app",
   "publicUrl": "https://lotties.app/credits",
   "items": [
     {
@@ -38,7 +38,7 @@
       "id": "agenormsSleep",
       "kind": "data",
       "name": "Infant sleep norms: National Sleep Foundation (2015), American Academy of Sleep Medicine (2016), SBP (2025), Galland et al. (2012), Iglowstein et al. (2003), Pelotas 2004 Birth Cohort (Netsi et al. 2017)",
-      "url": "https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/design/28-age-norms.md",
+      "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md",
       "license": "Pelotas cohort CC BY 4.0; the others all rights reserved (only facts are used, with attribution)",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
     },
@@ -46,7 +46,7 @@
       "id": "agenormsFeeding",
       "kind": "data",
       "name": "Infant feeding norms: SBP Manual de Alimentação (2024), Ministério da Saúde Guia alimentar (2019), AAP HealthyChildren, Academy of Breastfeeding Medicine, Kent et al. (2006), MILQ Study (2025), WHO",
-      "url": "https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/design/28-age-norms.md",
+      "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md",
       "license": "MILQ Study CC BY 4.0; the others all rights reserved or site terms (only facts are used, with attribution)",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
     },
@@ -54,7 +54,7 @@
       "id": "agenormsDiapersCrying",
       "kind": "data",
       "name": "Diaper and crying norms: UNICEF UK Baby Friendly checklist (via NHS), den Hertog et al. (2012), HELMi cohort (2024), Wolke et al. (2017)",
-      "url": "https://github.com/dev-vinicius-andrade/lotties.app/blob/main/docs/design/28-age-norms.md",
+      "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md",
       "license": "HELMi cohort CC BY 4.0; the others all rights reserved (only facts are used, with attribution)",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
     },
@@ -174,7 +174,7 @@
       "id": "art",
       "kind": "asset",
       "name": "Lotties app icon and illustrations",
-      "url": "https://github.com/dev-vinicius-andrade/lotties.app",
+      "url": "https://github.com/lotties-app/lotties.app",
       "license": "AGPL-3.0, original work by the Lotties contributors",
       "licenseUrl": "https://www.gnu.org/licenses/agpl-3.0.html"
     }

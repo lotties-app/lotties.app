@@ -332,7 +332,7 @@ describe('the item drawer', () => {
       within(drawer)
         .getByRole('link', { name: /the guide/ })
         .getAttribute('href'),
-    ).toBe('https://github.com/dev-vinicius-andrade/baby-routine');
+    ).toBe('https://github.com/lotties-app/lotties.app');
     expect(within(drawer).getByText('Vini created it')).toBeTruthy();
 
     fireEvent.click(within(drawer).getByRole('button', { name: 'Close' }));
