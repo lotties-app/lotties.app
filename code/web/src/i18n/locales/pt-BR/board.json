@@ -69,7 +69,7 @@
       "waitingOnOwner": "Aguardando você",
       "waitingOnAssistant": "Aguardando o assistente",
       "blocked": "Bloqueados",
-      "overdue": "Atrasados"
+      "dueSoon": "Vencem em breve"
     },
     "search": {
       "label": "Buscar no quadro",
@@ -79,11 +79,33 @@
     "quickAdd": {
       "label": "Adição rápida",
       "title": "Novo item",
-      "placeholder": "Adicione: {{type}}, tecle Enter",
+      "placeholders": {
+        "task": "Adicione uma tarefa e tecle Enter",
+        "gap": "Adicione uma lacuna e tecle Enter",
+        "decision": "Adicione uma decisão e tecle Enter",
+        "question": "Adicione uma pergunta e tecle Enter",
+        "risk": "Adicione um risco e tecle Enter",
+        "note": "Adicione uma nota e tecle Enter",
+        "memory": "Adicione uma memória e tecle Enter"
+      },
       "topic": "Tema",
       "add": "Adicionar",
       "more": "Mais campos",
-      "hint": "Adiciona: {{type}}, para {{side}}. Abra Mais campos para o resto.",
+      "hints": {
+        "task": "Adiciona uma tarefa para {{side}}. Abra Mais campos para o resto.",
+        "gap": "Adiciona uma lacuna para {{side}}. Abra Mais campos para o resto.",
+        "decision": "Adiciona uma decisão para {{side}}. Abra Mais campos para o resto.",
+        "question": "Adiciona uma pergunta para {{side}}. Abra Mais campos para o resto.",
+        "risk": "Adiciona um risco para {{side}}. Abra Mais campos para o resto.",
+        "note": "Adiciona uma nota para {{side}}. Abra Mais campos para o resto.",
+        "memory": "Adiciona uma memória para {{side}}. Abra Mais campos para o resto."
+      },
+      "forSide": {
+        "owner": "o titular",
+        "assistant": "o assistente",
+        "both": "ambos",
+        "external": "alguém de fora"
+      },
       "added": "Adicionado: “{{title}}”"
     },
     "views": {

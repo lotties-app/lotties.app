@@ -45,6 +45,21 @@ export const VIEW_DEFINITIONS: Record<BoardView, ViewDefinition> = {
   notes: { types: ['note', 'memory'], sort: 'updated', hidesClosed: false },
 };
 
+/** Due-date filters (`?due=`): `soon` is due from today (UTC) through the next 7 days, as the summary's dueSoon. */
+export const DUE_FILTERS = ['soon'] as const;
+export type DueFilter = (typeof DUE_FILTERS)[number];
+/** The days ahead "due soon" covers (the API's `BoardTotalsResponse.DueSoonDays`). */
+export const DUE_SOON_DAYS = 7;
+
+/** Today's UTC date (`yyyy-MM-dd`): the API's "today" for due dates. */
+export const todayUtcDate = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
+
+/** `date` (`yyyy-MM-dd`) plus `days` calendar days. */
+export function addDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 export interface BoardFilters {
   view: BoardView;
   q: string;
@@ -54,6 +69,8 @@ export interface BoardFilters {
   priority: BoardPriority[];
   label: string[];
   topic: string[];
+  /** A due-date window (`null`: any due date or none). */
+  due: DueFilter | null;
   /** Leave out done and dropped items (on by default). */
   hideClosed: boolean;
   /** Admins: list deleted items too. */
@@ -71,6 +88,7 @@ export const DEFAULT_FILTERS: BoardFilters = {
   priority: [],
   label: [],
   topic: [],
+  due: null,
   hideClosed: true,
   deleted: false,
   sort: null,
@@ -88,6 +106,7 @@ const OWN_PARAMS = [
   'priority',
   'label',
   'topic',
+  'due',
   'closed',
   'deleted',
   'sort',
@@ -124,6 +143,7 @@ export function parseFilters(params: URLSearchParams): BoardFilters {
     priority: codes(BOARD_PRIORITIES, params.get('priority')),
     label: freeList(params.get('label'), LABEL_PATTERN),
     topic: freeList(params.get('topic'), TOPIC_KEY_PATTERN),
+    due: oneOf(DUE_FILTERS, params.get('due')),
     hideClosed: params.get('closed') !== 'show',
     deleted: params.get('deleted') === '1',
     sort: oneOf(BOARD_SORTS, params.get('sort')),
@@ -145,6 +165,7 @@ export function writeFilters(filters: BoardFilters, base?: URLSearchParams): URL
   list('priority', filters.priority);
   list('label', filters.label);
   list('topic', filters.topic);
+  if (filters.due) params.set('due', filters.due);
   if (!filters.hideClosed) params.set('closed', 'show');
   if (filters.deleted) params.set('deleted', '1');
   if (filters.sort) params.set('sort', filters.sort);
@@ -163,9 +184,14 @@ export const hidesClosed = (view: BoardView) => VIEW_DEFINITIONS[view].hidesClos
 
 /**
  * The API list query of the board state: the view's fixed type and side, the person's filters
- * (types only those the view lists), `open` while done and dropped are hidden, and the order.
+ * (types only those the view lists), `open` while done and dropped are hidden, the due-date
+ * window (from `today`, a UTC `yyyy-MM-dd`), and the order.
  */
-export function listQuery(filters: BoardFilters, canAdmin: boolean): BoardListQuery {
+export function listQuery(
+  filters: BoardFilters,
+  canAdmin: boolean,
+  today: string = todayUtcDate(),
+): BoardListQuery {
   const view = VIEW_DEFINITIONS[filters.view];
   const allowed = typesOf(filters.view);
   const chosenTypes = filters.type.filter((type) => allowed.includes(type));
@@ -179,6 +205,7 @@ export function listQuery(filters: BoardFilters, canAdmin: boolean): BoardListQu
     label: filters.label,
     topic: filters.topic,
     q: filters.q.trim() || undefined,
+    ...(filters.due === 'soon' && { dueAfter: today, dueBefore: addDays(today, DUE_SOON_DAYS) }),
     open: view.hidesClosed && filters.hideClosed ? true : undefined,
     includeDeleted: canAdmin && filters.deleted ? true : undefined,
     sort: filters.sort ?? view.sort,
@@ -195,6 +222,7 @@ export function activeFilterCount(filters: BoardFilters): number {
     filters.priority.length +
     filters.label.length +
     filters.topic.length +
+    (filters.due ? 1 : 0) +
     (filters.sort ? 1 : 0)
   );
 }
@@ -204,7 +232,7 @@ export const SUMMARY_SHORTCUTS = [
   'waitingOnOwner',
   'waitingOnAssistant',
   'blocked',
-  'overdue',
+  'dueSoon',
 ] as const;
 export type SummaryShortcut = (typeof SUMMARY_SHORTCUTS)[number];
 
@@ -216,9 +244,9 @@ export function shortcutFilters(shortcut: SummaryShortcut): BoardFilters {
       return { ...DEFAULT_FILTERS, side: ['assistant', 'both'] };
     case 'blocked':
       return { ...DEFAULT_FILTERS, status: ['blocked'] };
-    case 'overdue':
-      // The list API has no due-date filter: open items, earliest due date first.
-      return { ...DEFAULT_FILTERS, sort: 'due' };
+    case 'dueSoon':
+      // Open items due from today through the next 7 days, earliest first (the summary's dueSoon).
+      return { ...DEFAULT_FILTERS, due: 'soon', sort: 'due' };
   }
 }
 
@@ -237,6 +265,7 @@ export function isShortcutActive(shortcut: SummaryShortcut, filters: BoardFilter
     sameList(filters.priority, target.priority) &&
     sameList(filters.label, target.label) &&
     sameList(filters.topic, target.topic) &&
+    filters.due === target.due &&
     filters.hideClosed === target.hideClosed &&
     filters.sort === target.sort
   );

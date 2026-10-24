@@ -69,7 +69,7 @@
       "waitingOnOwner": "Waiting on you",
       "waitingOnAssistant": "Waiting on the assistant",
       "blocked": "Blocked",
-      "overdue": "Overdue"
+      "dueSoon": "Due soon"
     },
     "search": {
       "label": "Search the board",
@@ -79,11 +79,33 @@
     "quickAdd": {
       "label": "Quick add",
       "title": "New item",
-      "placeholder": "Add a {{type}}, press Enter",
+      "placeholders": {
+        "task": "Add a task, press Enter",
+        "gap": "Add a gap, press Enter",
+        "decision": "Add a decision, press Enter",
+        "question": "Add a question, press Enter",
+        "risk": "Add a risk, press Enter",
+        "note": "Add a note, press Enter",
+        "memory": "Add a memory, press Enter"
+      },
       "topic": "Topic",
       "add": "Add",
       "more": "More fields",
-      "hint": "Adds a {{type}} for {{side}}. Open More fields for the rest.",
+      "hints": {
+        "task": "Adds a task for {{side}}. Open More fields for the rest.",
+        "gap": "Adds a gap for {{side}}. Open More fields for the rest.",
+        "decision": "Adds a decision for {{side}}. Open More fields for the rest.",
+        "question": "Adds a question for {{side}}. Open More fields for the rest.",
+        "risk": "Adds a risk for {{side}}. Open More fields for the rest.",
+        "note": "Adds a note for {{side}}. Open More fields for the rest.",
+        "memory": "Adds a memory for {{side}}. Open More fields for the rest."
+      },
+      "forSide": {
+        "owner": "the owner",
+        "assistant": "the assistant",
+        "both": "both",
+        "external": "someone external"
+      },
       "added": "Added “{{title}}”"
     },
     "views": {

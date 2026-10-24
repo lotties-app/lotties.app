@@ -145,9 +145,7 @@ export function QuickAdd({ defaults, topics, onTopic, onAdded, onMore }: QuickAd
           label={t('board.quickAdd.title')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={t('board.quickAdd.placeholder', {
-            type: t(`board.types.${defaults.type}`),
-          })}
+          placeholder={t(`board.quickAdd.placeholders.${defaults.type}`)}
           disabled={busy}
           sx={{ flex: 2, minWidth: 0 }}
           slotProps={{
@@ -203,9 +201,9 @@ export function QuickAdd({ defaults, topics, onTopic, onAdded, onMore }: QuickAd
         component="p"
         sx={{ mt: 0.5 }}
       >
-        {t('board.quickAdd.hint', {
-          type: t(`board.types.${defaults.type}`),
-          side: t(`board.sides.${defaults.side}`),
+        {/* One sentence per type (article and gender in each language), the side as a phrase. */}
+        {t(`board.quickAdd.hints.${defaults.type}`, {
+          side: t(`board.quickAdd.forSide.${defaults.side}`),
         })}
       </Typography>
       {error && (

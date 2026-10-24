@@ -1,5 +1,6 @@
 import { httpError, type ApiCall } from '../test/fakeApi';
 import { ApiError } from '../api/ApiError';
+import { DUE_SOON_DAYS } from './boardQuery';
 import {
   BOARD_PREFIX,
   BOARD_PRIORITIES,
@@ -319,6 +320,13 @@ export function fakeBoardServer(options: FakeBoardOptions = {}) {
     const deleted = url.searchParams.get('includeDeleted') === 'true';
     if (deleted && !isAdmin()) throw httpError(403, 'board_admin_required');
     const labels = all('label');
+    const dueAfter = url.searchParams.get('dueAfter');
+    const dueBefore = url.searchParams.get('dueBefore');
+    const hasDue = url.searchParams.get('hasDue');
+    const dueMatches = (due: string | null) =>
+      (!dueAfter || (!!due && due >= dueAfter)) &&
+      (!dueBefore || (!!due && due <= dueBefore)) &&
+      (hasDue === null || (hasDue === 'true') === !!due);
     const sort = url.searchParams.get('sort') ?? 'updated';
     let found = [...items.values()].filter(
       (item) =>
@@ -330,6 +338,7 @@ export function fakeBoardServer(options: FakeBoardOptions = {}) {
         anyOf('priority', item.priority) &&
         (labels.length === 0 || labels.some((label) => item.labels.includes(label))) &&
         (!open || !CLOSED_STATUSES.includes(item.status)) &&
+        dueMatches(item.dueDate) &&
         (!q || item.title.toLowerCase().includes(q) || (item.body ?? '').toLowerCase().includes(q)),
     );
     const newest = (a: BoardItem, b: BoardItem) => b.updatedAt.localeCompare(a.updatedAt);
@@ -372,21 +381,34 @@ export function fakeBoardServer(options: FakeBoardOptions = {}) {
     }
     const onOwner = open.filter((item) => item.side === 'owner' || item.side === 'both');
     const onAssistant = open.filter((item) => item.side === 'assistant' || item.side === 'both');
+    const actionable = (item: BoardItem) => item.status !== 'blocked';
     const today = iso(BOARD_NOW).slice(0, 10);
+    const soon = iso(BOARD_NOW + DUE_SOON_DAYS * DAY).slice(0, 10);
+    const blocked = open.filter((item) => item.status === 'blocked');
+    const dueSoon = open.filter(
+      (item) => item.dueDate && item.dueDate >= today && item.dueDate <= soon,
+    );
+    const overdue = open.filter((item) => item.dueDate && item.dueDate < today);
     return {
       generatedAt: iso(BOARD_NOW),
       totals: {
         open: open.length,
         waitingOnOwner: onOwner.length,
         waitingOnAssistant: onAssistant.length,
-        blocked: open.filter((item) => item.status === 'blocked').length,
-        overdue: open.filter((item) => item.dueDate && item.dueDate < today).length,
+        blocked: blocked.length,
+        overdue: overdue.length,
+        actionableOwner: onOwner.filter(actionable).length,
+        actionableAssistant: onAssistant.filter(actionable).length,
+        dueSoon: dueSoon.length,
       },
       counts: [...counts.values()] as BoardSummary['counts'],
-      waitingOnOwner: onOwner.map(summaryOf),
-      waitingOnAssistant: onAssistant.map(summaryOf),
+      waitingOnOwner: onOwner.filter(actionable).map(summaryOf),
+      waitingOnAssistant: onAssistant.filter(actionable).map(summaryOf),
       recentDecisions: live.filter((item) => item.type === 'decision').map(summaryOf),
       recentlyUpdated: live.map(summaryOf),
+      blocked: blocked.map(summaryOf),
+      dueSoon: dueSoon.map(summaryOf),
+      overdue: overdue.map(summaryOf),
     };
   }
 

@@ -18,6 +18,7 @@ import { testQueryClient } from '../test/renderApp';
 import BoardPage from './BoardPage';
 import {
   BOARD_NOW,
+  boardItem,
   fakeBoardServer,
   NEW_SECRET,
   ROLE_ME,
@@ -280,7 +281,7 @@ describe('the summary strip', () => {
     await waitFor(() => expect(owner.textContent).toContain('5'));
     expect(owner.textContent).toContain('Waiting on you');
     expect(screen.getByTestId('board-summary-blocked').textContent).toContain('1');
-    expect(screen.getByTestId('board-summary-overdue').textContent).toContain('1');
+    expect(screen.getByTestId('board-summary-dueSoon').textContent).toContain('Due soon');
 
     fireEvent.click(screen.getByTestId('board-summary-waitingOnAssistant'));
     await waitFor(() => expect(location()).toBe('/hub/board?side=assistant%2Cboth'));
@@ -289,11 +290,32 @@ describe('the summary strip', () => {
       screen.getByTestId('board-summary-waitingOnAssistant').getAttribute('aria-pressed'),
     ).toBe('true');
 
-    fireEvent.click(screen.getByTestId('board-summary-overdue'));
-    await waitFor(() => expect(location()).toBe('/hub/board?sort=due'));
+    fireEvent.click(screen.getByTestId('board-summary-dueSoon'));
+    await waitFor(() => expect(location()).toBe('/hub/board?due=soon&sort=due'));
+    // Filters the due dates (today through the next 7 days, UTC) instead of only sorting.
+    await waitFor(() => expect(lastList(fake)).toMatch(/dueAfter=\d{4}-\d{2}-\d{2}&dueBefore=/));
+    expect(lastList(fake)).toContain('sort=due');
+    expect(screen.getByTestId('board-summary-dueSoon').getAttribute('aria-pressed')).toBe('true');
 
-    fireEvent.click(screen.getByTestId('board-summary-overdue'));
+    fireEvent.click(screen.getByTestId('board-summary-dueSoon'));
     await waitFor(() => expect(location()).toBe('/hub/board'));
+  });
+
+  it('counts the items due soon from the summary', async () => {
+    const day = (offset: number) =>
+      new Date(BOARD_NOW + offset * 86_400_000).toISOString().slice(0, 10);
+    renderBoard({
+      items: [
+        boardItem({ id: 'a', title: 'Due in two days', dueDate: day(2) }),
+        boardItem({ id: 'b', title: 'Due in a week', dueDate: day(7) }),
+        boardItem({ id: 'c', title: 'Due later', dueDate: day(8) }),
+        boardItem({ id: 'd', title: 'Late', dueDate: day(-1) }),
+      ],
+    });
+    await boardReady();
+    await waitFor(() =>
+      expect(screen.getByTestId('board-summary-dueSoon').textContent).toContain('2'),
+    );
   });
 });
 
@@ -576,6 +598,36 @@ describe('in Portuguese', () => {
       'Aguardando você',
     );
     expect(screen.getByRole('textbox', { name: 'Novo item' })).toBeTruthy();
+    expect(screen.getByTestId('board-summary-dueSoon').textContent).toContain('Vencem em breve');
+  });
+
+  it('writes the quick-add caption with the article and lower-case words', async () => {
+    await useTestLocale('pt-BR');
+    renderBoard({ route: '/hub/board?view=gaps' });
+    await boardReady();
+    expect(
+      screen.getByText('Adiciona uma lacuna para ambos. Abra Mais campos para o resto.'),
+    ).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Novo item' }).getAttribute('placeholder')).toBe(
+      'Adicione uma lacuna e tecle Enter',
+    );
+  });
+});
+
+describe('the quick-add caption', () => {
+  it('names the type and the side in lower case, in a sentence', async () => {
+    renderBoard();
+    await boardReady();
+    expect(screen.getByText('Adds a task for both. Open More fields for the rest.')).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'New item' }).getAttribute('placeholder')).toBe(
+      'Add a task, press Enter',
+    );
+    fireEvent.click(screen.getByRole('radio', { name: 'Mine' }));
+    await waitFor(() =>
+      expect(
+        screen.getByText('Adds a task for the owner. Open More fields for the rest.'),
+      ).toBeTruthy(),
+    );
   });
 });
 
