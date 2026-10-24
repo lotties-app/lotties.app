@@ -46,7 +46,11 @@ describe('shared vectors (trigger.py)', () => {
     expect(scores).toHaveLength(c.windows);
     const events = run(c.config, scores);
     const expected = (c.events as VectorEvent[]).flatMap((e) => [
-      { type: 'cry_started', at: e.startWindow * HOP, detectedAt: (e.detectedAfterWindow + 1) * HOP },
+      {
+        type: 'cry_started',
+        at: e.startWindow * HOP,
+        detectedAt: (e.detectedAfterWindow + 1) * HOP,
+      },
       {
         type: 'cry_ended',
         at: (e.endWindow + 1) * HOP,
@@ -84,7 +88,12 @@ describe('rule arithmetic (windows_for)', () => {
   it('rounds seconds to windows as Python does', () => {
     expect(triggerWindows(DEFAULT_CRY_TRIGGER)).toEqual({ window: 62, need: 21, quiet: 185 });
     expect(
-      triggerWindows({ ...DEFAULT_CRY_TRIGGER, windowSeconds: 30, minSeconds: 20, quietSeconds: 180 }),
+      triggerWindows({
+        ...DEFAULT_CRY_TRIGGER,
+        windowSeconds: 30,
+        minSeconds: 20,
+        quietSeconds: 180,
+      }),
     ).toEqual({ window: 31, need: 21, quiet: 185 });
   });
 
@@ -168,7 +177,17 @@ describe('streaming behaviour', () => {
 
   it('treats the threshold as inclusive', () => {
     const at = { ...DEFAULT_CRY_TRIGGER, smoothing: 1 };
-    expect(run(at, Array.from({ length: 21 }, () => 0.02))).toHaveLength(2);
-    expect(run(at, Array.from({ length: 21 }, () => 0.0199))).toHaveLength(0);
+    expect(
+      run(
+        at,
+        Array.from({ length: 21 }, () => 0.02),
+      ),
+    ).toHaveLength(2);
+    expect(
+      run(
+        at,
+        Array.from({ length: 21 }, () => 0.0199),
+      ),
+    ).toHaveLength(0);
   });
 });

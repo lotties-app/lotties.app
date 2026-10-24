@@ -88,7 +88,9 @@ export function triggerWindows(config: CryTriggerConfig): TriggerWindows {
   const quiet = Math.max(1, Math.ceil(config.quietSeconds / hop - 1e-9));
   if (need > window) throw new RangeError('minSeconds must not exceed windowSeconds');
   if (quiet < window) {
-    throw new RangeError('quietSeconds must be at least windowSeconds (a new cry counts fresh windows)');
+    throw new RangeError(
+      'quietSeconds must be at least windowSeconds (a new cry counts fresh windows)',
+    );
   }
   return { window, need, quiet };
 }
