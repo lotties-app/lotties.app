@@ -198,6 +198,7 @@ internal sealed class EventService : IEventService
         if (request.TypeId == BuiltInEventTypes.FeedingId)
         {
             BottleAmounts.EnsureDrunkWithinPrepared(request.Payload);
+            BottleSegments.EnsureValid(request.Payload, ended: request.EndedAt is not null);
         }
     }
 

@@ -73,14 +73,15 @@ public sealed class BuiltInEventTypesTests
     {
         var fields = BuiltInEventTypes.Feeding.Fields;
 
-        Assert.Equal(["method", "side", "amount_ml", "amount_drunk_ml", "bottle_feeding_type", "formula_id", "formula_name", "breast_left_seconds", "breast_right_seconds", "food", "ended_by", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
+        Assert.Equal(["method", "side", "amount_ml", "amount_drunk_ml", "bottle_feeding_type", "formula_id", "formula_name", "breast_left_seconds", "breast_right_seconds", "food", "ended_by", "segments", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
         Assert.Equal(["breast", "bottle", "solid"], fields[0].Options);
         Assert.Equal(["formula", "breast_milk"], fields[4].Options);
-        Assert.Equal([true, false, false, false, false, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
+        Assert.Equal([true, false, false, false, false, false, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
         Assert.Equal((EventFieldKind.Number, EventFieldKind.Text), (fields[2].Kind, fields[9].Kind));
         Assert.Equal((EventFieldKind.Text, true, "bottle_feeding_type"), (fields[5].Kind, fields[5].IsHidden, fields[5].VisibleWhen!.Field));
         Assert.Equal((EventFieldKind.Select, true, null), (fields[10].Kind, fields[10].IsHidden, fields[10].VisibleWhen?.Field));
         Assert.Equal(["sleep"], fields[10].Options);
+        Assert.Equal((EventFieldKind.Text, true, "method"), (fields[11].Kind, fields[11].IsHidden, fields[11].VisibleWhen!.Field));
     }
 
     [Theory]
@@ -90,6 +91,7 @@ public sealed class BuiltInEventTypesTests
     [InlineData("breast_right_seconds", "breast")]
     [InlineData("amount_ml", "bottle")]
     [InlineData("amount_drunk_ml", "bottle")]
+    [InlineData("segments", "bottle")]
     [InlineData("bottle_feeding_type", "bottle")]
     [InlineData("food", "solid")]
     public void Feeding_DetailFieldsAreVisibleOnlyForTheirMethod(string key, string? method)

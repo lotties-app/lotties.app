@@ -7,6 +7,7 @@ import {
 } from '../ageNorms/ageNorms';
 import type { BabyEvent, EventType } from '../db/models';
 import { ageInMonths } from '../events/bottleAgeDefaults';
+import { adjustedFeedGap, topUpAdjustment } from '../events/bottlePatterns';
 import type { PredictionsDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
 import { bellyPainPattern, windowAround, BELLY_MASSAGE_KEY } from './bellyPattern';
@@ -62,8 +63,12 @@ export const DEFAULT_CRY_AGE_BAND: CryAgeBand = 'weeks6to3m';
 
 /** One structured reason behind a cause; the UI writes the sentence. Minutes are whole minutes. */
 export type CryFact =
-  /** Since the start of the latest feed; `usualGapMinutes` is her own usual gap, `null` without one. */
-  | { kind: 'sinceLastFeed'; minutes: number; usualGapMinutes: number | null }
+  /**
+   * Since the start of the latest feed; `usualGapMinutes` is her own usual gap, `null` without one.
+   * `smallerFeed`: that feed was a bottle she drank well under her usual amount of (an interrupted
+   * or partly drunk bottle), so the gap the ramp uses is shortened (`topUpAdjustment`).
+   */
+  | { kind: 'sinceLastFeed'; minutes: number; usualGapMinutes: number | null; smallerFeed?: true }
   /** A feeding timer runs (started `minutes` ago). */
   | { kind: 'feedingNow'; minutes: number }
   /** Current awake stretch; `windowMinutes` is her usual limit (server wake window) or `null`. */
@@ -508,12 +513,25 @@ function hungerOf(ctx: Context): Scored {
   const lastStart = ctx.feeds.reduce((max, e) => (e.startedAt > max ? e.startedAt : max), '');
   const minutes = minutesBetween(lastStart, input.now);
   const own = usualFeedGap(ctx);
-  let score = ramp(minutes / (own ?? ctx.defaultFeedGapMinutes), band.hunger);
+  // A smaller feed than usual (an interrupted bottle) brings the next one forward, bounded.
+  const topUp = topUpAdjustment(ctx.feeds, new Date(ctx.nowMs));
+  const gap = adjustedFeedGap(own ?? ctx.defaultFeedGapMinutes, topUp);
+  let score = ramp(minutes / gap, band.hunger);
   const lastEnd = latestFeedEnd(input.events, input.types, input.now);
   if (lastEnd !== undefined && ctx.nowMs - lastEnd < w.freshFeedMinutes * MINUTE_MS) {
     score = Math.min(score, w.freshCap);
   }
-  return { score, facts: [{ kind: 'sinceLastFeed', minutes, usualGapMinutes: own }] };
+  return {
+    score,
+    facts: [
+      {
+        kind: 'sinceLastFeed',
+        minutes,
+        usualGapMinutes: own,
+        ...(topUp ? { smallerFeed: true as const } : {}),
+      },
+    ],
+  };
 }
 
 /** The awake stretch to judge, or `null` when the state is unknown (no sleep logged). */

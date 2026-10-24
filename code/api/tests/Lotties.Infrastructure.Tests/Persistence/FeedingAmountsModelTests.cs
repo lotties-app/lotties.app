@@ -12,7 +12,8 @@ public sealed class FeedingAmountsModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_FeedingAmounts'", StringComparison.Ordinal)..];
+        var start = script.IndexOf("_FeedingAmounts'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_CareProviders'", start, StringComparison.Ordinal)];
 
         Assert.Contains("UPDATE event_types SET fields", section, StringComparison.Ordinal);
         Assert.Contains("{\"key\":\"amount_drunk_ml\",\"label\":\"Amount drunk\",\"kind\":\"number\",\"isRequired\":false,\"min\":0,\"unit\":\"ml\",\"visibleWhen\":{\"field\":\"method\",\"equals\":[\"bottle\"]}}", section, StringComparison.Ordinal);

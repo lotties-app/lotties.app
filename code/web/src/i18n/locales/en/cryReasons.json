@@ -28,6 +28,7 @@
       "facts": {
         "sinceLastFeed": "Last fed {{since}} ago.",
         "sinceLastFeedUsual": "Last fed {{since}} ago; she usually goes about {{usual}}.",
+        "sinceLastFeedSmaller": "Last fed {{since}} ago; that feed was smaller than usual, so she may want more sooner.",
         "feedingNow": "A feed is running, started {{since}} ago.",
         "awakeFor": "Awake for {{since}}.",
         "awakeForUsual": "Awake for {{since}}; she usually stays up about {{usual}}.",

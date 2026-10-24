@@ -17,6 +17,7 @@ import {
 import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
+import type { FedToSleep } from '../now/bottleFollowUp';
 import { isInstantEvent } from './ribbonText';
 
 interface Props {
@@ -45,6 +46,8 @@ interface Props {
   author?: string | null;
   /** Briefly ringed after "Show in list" on the ribbon. */
   highlighted?: boolean;
+  /** A sleep that began while she was feeding (`fedToSleep`): a quiet line says so. */
+  fedToSleep?: FedToSleep;
 }
 
 /** The live clock of a running event: effective time, so a paused timer stands still. */
@@ -249,6 +252,7 @@ export function DayRow({
   viewOnly = false,
   author = null,
   highlighted = false,
+  fedToSleep = null,
 }: Props) {
   const { t } = useTranslation();
   const authorName = author || t('access.someoneElse');
@@ -262,7 +266,8 @@ export function DayRow({
   let range = '';
   if (running) range = t('timeline.since', { time });
   else if (!instant) range = `${time} – ${formatTime(event.endedAt!)}`;
-  const detail = view.detail || range;
+  const fed = fedToSleep ? t(`feedingAmounts.fedToSleep.${fedToSleep}`) : '';
+  const detail = [view.detail || range, fed].filter(Boolean).join(' · ');
   const length = !running && !instant ? formatDuration(effectiveDurationMs(event)) : null;
   const pausedSeconds = readPause(event.payload).pausedSeconds;
   const pausedText =

@@ -289,6 +289,31 @@ describe('rankCryReasons: hunger', () => {
     expect(generic.level).toBe('unlikely');
   });
 
+  it('expects a top-up sooner after a bottle she drank well under her usual amount', () => {
+    const history = [600, 480, 360, 240].map((m) => feed(m, m - 15, { amount_ml: 120 }));
+    // Full bottle 90 min ago: 90 of her usual 120 min.
+    const full = causeOf(rank([...history, feed(90, 80, { amount_ml: 120 })]), 'hunger');
+    expect(full).toMatchObject({
+      level: 'possible',
+      facts: [{ kind: 'sinceLastFeed', minutes: 90, usualGapMinutes: 120 }],
+    });
+    // 40 of 120 ml: the gap the ramp uses is 30% shorter (the cap), so hunger is likely.
+    const partial = causeOf(
+      rank([...history, feed(90, 80, { amount_ml: 120, amount_drunk_ml: 40 })]),
+      'hunger',
+    );
+    expect(partial).toMatchObject({
+      level: 'likely',
+      facts: [{ kind: 'sinceLastFeed', minutes: 90, usualGapMinutes: 120, smallerFeed: true }],
+    });
+    // A sleep stopped it and nobody said how much: unknown, so nothing changes.
+    const unknown = causeOf(
+      rank([...history, feed(90, 80, { amount_ml: 120, ended_by: 'sleep' })]),
+      'hunger',
+    );
+    expect(unknown).toEqual(full);
+  });
+
   it('merges feeds closer than 30 min into one (a side switch is not a new feed)', () => {
     const history = [600, 590, 480, 360, 240, 230, 120].map((m) => feed(m, m - 5));
     expect(causeOf(rank(history), 'hunger').facts[0]).toMatchObject({ usualGapMinutes: 120 });

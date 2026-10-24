@@ -1,7 +1,7 @@
 import { ageInDaysAt, type AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent } from '../db/models';
 import { getOwn } from '../util/ownProperty';
-import { drunkMl } from './bottleAmounts';
+import { knownDrunkMl } from './bottlePatterns';
 import {
   ageInMonths,
   ageRangeFor,
@@ -91,9 +91,13 @@ export function recentBottleAmounts(
     .map((e) => amountOf(e) as number);
 }
 
+/**
+ * What she drank from the bottle; a bottle a sleep stopped whose amount nobody gave is unknown and
+ * left out (docs/design/20-feeding-amounts.md section 5), rather than counted as fully drunk.
+ */
 function amountOf(event: BabyEvent): number | null {
-  const value = drunkMl(event.payload);
-  return value !== undefined && value > 0 ? value : null;
+  const value = knownDrunkMl(event);
+  return value !== null && value > 0 ? value : null;
 }
 
 /** `value` rounded to the nearest `BOTTLE_STEP_ML`. */
