@@ -88,23 +88,15 @@ export function UpcomingList({
                   <Typography
                     variant="body2"
                     component="span"
-                    aria-hidden
+                    data-at={formatTime(row.item.at)}
                     sx={{
-                      flex: 'none',
-                      minWidth: '3.25em',
-                      fontWeight: 600,
-                      lineHeight: '24px',
-                      fontVariantNumeric: 'tabular-nums',
+                      minWidth: 0,
+                      overflowWrap: 'anywhere',
+                      pt: '2px',
+                      fontVariantNumeric: 'lining-nums tabular-nums',
                     }}
                   >
-                    {formatTime(row.item.at)}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    component="span"
-                    sx={{ minWidth: 0, overflowWrap: 'anywhere', pt: '2px' }}
-                  >
-                    <Box component="span" sx={{ display: 'block' }}>
+                    <Box component="span" sx={{ display: 'block', fontWeight: 600 }}>
                       {row.text.title}
                     </Box>
                     {row.text.lines.length > 0 && (

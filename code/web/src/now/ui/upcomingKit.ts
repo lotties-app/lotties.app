@@ -105,13 +105,40 @@ export function medicineItem(
   };
 }
 
-/** A busy afternoon at 14:00: a bottle, a wet diaper, belly pain, a poop and a dose. */
-export function busyAfternoon(): UpcomingItem[] {
+type Clock = (h: number, m?: number) => Date;
+
+/**
+ * A busy afternoon at 14:00: a bottle, a wet diaper, belly pain, a poop and a dose (`at` places
+ * them on another day, e.g. today for the previews).
+ */
+export function busyAfternoon(at: Clock = upAt): UpcomingItem[] {
   return [
-    bottleItem(upAt(16, 10)),
-    wetItem(upAt(16, 40)),
-    bellyItem(upAt(18, 30)),
-    dirtyItem(upAt(19, 0)),
-    medicineItem(upAt(20, 0)),
+    bottleItem(at(16, 10)),
+    wetItem(at(16, 40)),
+    bellyItem(at(18, 30)),
+    dirtyItem(at(19, 0)),
+    medicineItem(at(20, 0)),
+  ];
+}
+
+/** The same afternoon with little behind it: the age-norm bottle range, every estimate faint. */
+export function lowConfidenceAfternoon(at: Clock = upAt): UpcomingItem[] {
+  return [
+    bottleItem(at(16, 10), {
+      windowStart: undefined,
+      windowEnd: undefined,
+      confidence: 'low',
+      amountMl: { low: 90, typical: null, high: 150 },
+      basis: {
+        kind: 'feed',
+        time: { kind: 'ageNorm', gapMinutes: 150 },
+        method: 'bottle',
+        dayPart: 'afternoon',
+        due: false,
+        amount: { kind: 'ageNorm', normId: 'feed_volume_ml_per_feed.formula.30-61' },
+      },
+    }),
+    wetItem(at(17, 20), { confidence: 'low' }),
+    dirtyItem(at(19, 0)),
   ];
 }

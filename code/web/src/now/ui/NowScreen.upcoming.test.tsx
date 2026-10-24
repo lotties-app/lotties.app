@@ -78,7 +78,7 @@ describe('next up on Now', () => {
     expect(await within(ring).findByTestId('ring-upcoming-feed')).toBeTruthy();
     const list = within(ring).getByRole('list', { name: 'Next up' });
     expect(within(list).getByTestId('upcoming-row-feed').textContent).toMatch(
-      /^15:00Next bottle about 15:00 \(estimate\)Likely between 14:40 and 15:20 · /,
+      /^Next bottle about 15:00 \(estimate\)Likely between 14:40 and 15:20 · /,
     );
   });
 
@@ -91,7 +91,7 @@ describe('next up on Now', () => {
     fireEvent.click(within(ring).getByRole('button', { name: /^Show Medicine/ }));
     const row = await within(ring).findByTestId('upcoming-row-medicine');
     expect(row.textContent).toMatch(
-      /^18:00Colidis in the evening(Any time from 18:00 to 22:00 · )?From the prescription$/,
+      /^Colidis in the evening(Any time from 18:00 to 22:00 · )?From the prescription$/,
     );
   });
 
@@ -120,6 +120,6 @@ describe('next up on Now', () => {
     const ring = await screen.findByTestId('day-ring');
     // With one gap of her own no gap is guessed: the server basis gap after the new bottle.
     const row = await within(ring).findByTestId('upcoming-row-feed');
-    expect(row.textContent).toMatch(/^17:00Next bottle about 17:00 \(estimate\)/);
+    expect(row.textContent).toMatch(/^Next bottle about 17:00 \(estimate\)/);
   });
 });

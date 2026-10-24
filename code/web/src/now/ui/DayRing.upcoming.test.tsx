@@ -208,7 +208,7 @@ describe('the "Next up" list', () => {
     fireEvent.click(more);
     expect(within(list).getAllByRole('listitem')).toHaveLength(5);
     const rows = within(list).getAllByRole('button');
-    expect(rows.map((row) => row.textContent?.slice(0, 5))).toEqual([
+    expect(rows.map((row) => row.querySelector('[data-at]')?.getAttribute('data-at'))).toEqual([
       '16:10',
       '16:40',
       '18:30',
