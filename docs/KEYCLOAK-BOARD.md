@@ -216,3 +216,33 @@ answers a `forbidden` tool error.
 - Revoke the key (section 6, `DELETE /api/v1/board/keys/{id}`): the next MCP message answers 401. Remove it from Claude
   Code with `claude mcp remove lotties-board` (and the variable from the machine). To stop the endpoint for everyone:
   `Board__Mcp__Enabled=false` and deploy (the REST board keeps working).
+
+## 9. Seeding the board
+
+The initial board content is a reviewable file, `docs/board-seed.json` (as of 2026-10-24): the open owner and assistant
+items of the repository docs (privacy checklist and audit, community insights O1-O12, cry detector, data licences,
+medicine catalog, mobile stores, Alexa, MCP, Keycloak, plan and review), the decision log and pinned memories. It is
+exactly the body of `POST /api/v1/board/items/bulk` (`{"items": [...]}`), and every item has a stable `externalKey`
+(e.g. `privacy-owner-checklist:C3`, `design-34:O1`, `conversation-2026-10-24:enable-board`). It holds no secret, no
+token and no data of a child or family: only doc paths, environment variable names and public hosts.
+
+After the board is on (sections 2 to 6) and you hold a **write** key:
+
+```bash
+node scripts/board-import.mjs --dry-run      # validates the file locally, sends nothing
+read -rs LOTTIES_BOARD_KEY && export LOTTIES_BOARD_KEY   # paste the lbk_ key, Enter (no echo, no history)
+node scripts/board-import.mjs                # posts in chunks of 100, prints created / updated / unchanged
+unset LOTTIES_BOARD_KEY
+```
+
+- `LOTTIES_BOARD_URL` (default `https://lotties.app`; `http://localhost:5290` for a local API) and `LOTTIES_BOARD_KEY`
+  come from the environment only: the script takes no key argument and never prints it. An admin's access token works
+  in place of a key (sent as a bearer token).
+- `--dry-run` checks what the server checks (required fields, the enums, lengths, the ten seeded topics, labels,
+  absolute `http`/`https` links only, `pinned` only on notes and memories, decision fields only on decisions, unique
+  `externalKey` and `id`) and refuses anything that looks like a secret (an `lbk_` key, a private key block, a JWT).
+  `--file <path>` imports another file of the same shape.
+- Re-running is safe: an item edited on the board since the last import is `kept` (the board wins), a deleted one stays
+  deleted, an untouched one is `updated` only when the file changed (docs/design/36-project-board.md section 3.4). A
+  failed chunk saves nothing of that chunk; fix it and run again.
+- Tests: `node --test scripts/board-import.test.mjs` (no dependencies).
