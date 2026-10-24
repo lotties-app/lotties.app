@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../api/errorMessages';
 import { useDatabase } from '../db/DatabaseContext';
+import { editEvent, finishEvent } from '../db/eventCommands';
 import { useEventCommands } from '../db/hooks';
 import type { EventPayload, EventType } from '../db/models';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
@@ -22,6 +23,7 @@ import {
 import { quickStartPayload, readLastUsed, recordLastUsed } from './lastUsedValues';
 import { fillEmptyFields } from './stopPlan';
 import { useFormulaChoice } from '../formulas/useFormulaChoice';
+import { editFollowingWakeUp } from '../now/nightEndsWakeUp';
 import { createEventStoppingFeeding } from '../now/sleepStopsFeeding';
 import { loadTimeBottles } from '../presets/timeBottlesStorage';
 
@@ -139,7 +141,10 @@ export function useEventSheetForm(props: EventSheetProps) {
       const payload = finish.restricted
         ? fillEmptyFields(event.payload, built, finish.fields)
         : built;
-      await commands.finish(event.id, payload, finish.endedAt);
+      // Finishing a running night ends it: its wake-up is logged in the same transaction.
+      await editFollowingWakeUp(db, event, () =>
+        finishEvent(db, event.id, payload, finish.endedAt),
+      );
       return payload;
     }
     const times = buildTimes(toSave, selected, instant);
@@ -150,7 +155,7 @@ export function useEventSheetForm(props: EventSheetProps) {
     );
     const data = { typeId: selected.id, ...times, payload, notes: toSave.notes.trim() || null };
     await (event
-      ? commands.edit(event.id, data)
+      ? editFollowingWakeUp(db, event, () => editEvent(db, event.id, data))
       : createEventStoppingFeeding(db, { babyId, ...data }));
     return payload;
   };

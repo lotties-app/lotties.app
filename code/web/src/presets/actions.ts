@@ -10,6 +10,7 @@ import {
 } from '../db/eventCommands';
 import { eventsStartedSince, runningEvents } from '../db/queries';
 import { planStop } from '../events/stopPlan';
+import { isNightSleep, wakeUpIdForStoppedNight } from '../now/nightEndsWakeUp';
 import { startsSleep, stopFeedingForSleep } from '../now/sleepStopsFeeding';
 import { eventMatchesPreset, inferFellAsleepKind } from './status';
 import type { Preset } from './types';
@@ -91,7 +92,8 @@ function isRunningSleepTimer(preset: Preset, event: BabyEvent) {
  * - `timer`: starts the timer now; throws `PresetAlreadyRunningError` when it already runs;
  * - `instant`: logs the marker (`endedAt = startedAt`);
  * - Wake-up additionally stops every running nap/night timer at the same moment (one whose
- *   required fields are missing is left running and listed in `needsFinish`);
+ *   required fields are missing is left running and listed in `needsFinish`); its marker takes the
+ *   stopped night's automatic wake-up id (`wakeUpIdForStoppedNight`);
  * - Fell asleep additionally starts a sleep timer (kind inferred, see `inferFellAsleepKind`),
  *   unless a nap/night timer already runs.
  * - Any nap/night timer that starts (the Nap preset, Fell asleep) also stops the running feeding
@@ -112,7 +114,7 @@ export async function runPreset(
   const options: CommandOptions = { ...ctx.options, now: () => when };
   const token: UndoToken = { babyId: ctx.babyId, createdIds: [], stopped: [] };
 
-  const create = async (payload: EventPayload, instant: boolean) => {
+  const create = async (payload: EventPayload, instant: boolean, id?: string) => {
     const event = await createEvent(
       db,
       {
@@ -122,7 +124,7 @@ export async function runPreset(
         endedAt: instant ? iso : null,
         payload,
       },
-      options,
+      id ? { ...options, newId: () => id } : options,
     );
     token.createdIds.push(event.id);
   };
@@ -142,6 +144,9 @@ export async function runPreset(
       if (existing) throw new PresetAlreadyRunningError(preset.id, existing.id);
     }
 
+    // The Wake-up marker of a stopped night takes the night's automatic wake-up id (see
+    // `nightEndsWakeUp`), so the night's stop never logs a second one.
+    let markerId: string | undefined;
     if (preset.stopsSleepTimers) {
       const type = await db.eventTypes.get(typeId);
       for (const timer of running.filter((e) => isRunningSleepTimer(preset, e))) {
@@ -155,6 +160,9 @@ export async function runPreset(
             ? await finishEvent(db, timer.id, plan.payload, iso, options)
             : await stopEvent(db, timer.id, iso, options);
         token.stopped.push({ id: timer.id, endedAt: stopped.endedAt ?? iso });
+        if (markerId === undefined && isNightSleep(type, timer)) {
+          markerId = await wakeUpIdForStoppedNight(db, timer.id);
+        }
       }
     }
 
@@ -163,7 +171,7 @@ export async function runPreset(
     if (preset.mode === 'timer' && startsSleep(sleepType, payload)) {
       await stopFeeding();
     }
-    await create(payload, preset.mode === 'instant');
+    await create(payload, preset.mode === 'instant', markerId);
 
     if (preset.startsInferredSleepTimer && !running.some((e) => isRunningSleepTimer(preset, e))) {
       const recent = await eventsStartedSince(
