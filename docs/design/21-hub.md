@@ -20,6 +20,7 @@ Owner-approved redesign of 2026-10-22. Screens and tokens are in `docs/DESIGN.md
 - Shortcuts: counted per device in `localStorage` (`lotties.hub.v1`, a UI preference like the theme, guarded and tolerant of damaged values). Default order before any use: vaccines, appointments, growth, medicines. A manual pick wins and is kept to what the person can still see. App entries (Settings, Import, Updates, About) are never shortcuts.
 - Attention (`hub/useHubAttention.ts`): local data only. Vaccines due or overdue (same engine as the Now card), appointments starting within 3 days, the doctor inbox (proposals plus unread recommendations) for Owners and Parents, unread recommendations on Notes. The dot on the Hub tab sums vaccines, appointments and the inbox (Notes repeats the inbox, so it is not added).
 - Search matches word starts in the localized title, hint and keywords, ignoring case and accents.
+- App > "Cry monitor (beta)" (`cryMonitor`, microphone icon, `/hub/cry-monitor`, 2026-10-24, docs/design/35-cry-engine.md section 8): after Import backup, for Owners, Parents and Caregivers of the selected baby (`canLog`), hidden for a Viewer, the Doctor, in the native app (`native`) and in a browser without the microphone API, AudioWorklet, WebAssembly or workers (`HubContext.cryMonitorSupported`, detected once by `cryMonitor/support.ts`). Like every App entry it is never a shortcut.
 
 ## 4. Running-timer pill
 

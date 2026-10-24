@@ -130,3 +130,32 @@ audit: `docs/design/33-privacy-audit.md` section 11.
 - [ ] **Statistics open to every user or only to families that opted in** (proposal: every signed-in user).
 - [ ] Before activation: the in-app notice of policy changes (gap G6) must exist, since the policy promises to tell
   families in the app before the feature starts.
+
+## 9. Cry monitor (built, web only, policy version 3 of 2026-10-24)
+
+The web app now asks for the microphone, only when a family member starts Hub > App > Cry monitor on a device. The
+sound is analysed on that device and never recorded, stored or sent; only fussy spells marked "detected automatically"
+(and the parent's "Yes, crying" / "Not crying") are saved. Design: `docs/design/35-cry-engine.md` section 8; audit:
+`docs/design/33-privacy-audit.md` section 12; spike and legal notes: `docs/design/31-cry-detector-spike.md` sections
+7 and 8.
+
+- [ ] **Legal read of the consent text** (both languages, `code/web/src/i18n/locales/<lang>/cryMonitor.json`
+  `cryMonitor.consent.*` and the intro's limits): specific and highlighted consent of a parent or someone they allow
+  (LGPD art. 11, I and art. 14, §1). Today: two checkboxes ("I understand and agree", "I am allowed to monitor this
+  baby"), stored per device with the text's version and time (`CRY_MONITOR_CONSENT_VERSION`; raise it when the
+  meaning changes so every device asks again). There is no server-side record of the consent: decide whether one is
+  needed (an API change).
+- [ ] **Who may start it**: Owners, Parents and Caregivers today (the roles that log). Decide whether a Caregiver's
+  "I am allowed to monitor this baby" is enough, or only a parent or legal guardian may.
+- [ ] **ECA Digital** (Lei 15.211/2025, sanctions from November 2026 per secondary sources): get a read on whether a
+  parents' app that listens in a child's room is in scope and what it requires.
+- [ ] **People in the room**: the consent and the policy tell the parent to inform anyone who may be there (a nanny,
+  a domestic worker, visitors). Confirm the wording and whether more is needed (for example for an employee).
+- [ ] **Retention of auto spells**: they are ordinary fussy records (kept until deleted, the baby is erased or the
+  account is deleted; a "Not crying" spell is kept and marked, so false alarms can be counted). Confirm no separate
+  period is needed.
+- [ ] **Not a safety device**: confirm the limits wording on the page, in the consent and in the policy ("not a baby
+  monitor and not a safety device", "can miss crying or react to other sounds", "never rely on it").
+- [ ] **Store labels** (when the native apps offer it, docs/design/31 CD10): the native apps do not offer the monitor
+  and request no microphone permission today; the web app's on-device processing is not "collected"
+  (docs/design/20-store-readiness.md section 3).

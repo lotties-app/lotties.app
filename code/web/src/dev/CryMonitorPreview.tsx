@@ -65,7 +65,12 @@ function spell(id: string, minutesAgo: number, length: number, payload: BabyEven
 }
 
 async function seed(db: BabyRoutineDb) {
-  await Promise.all([db.babies.clear(), db.eventTypes.clear(), db.events.clear(), db.outbox.clear()]);
+  await Promise.all([
+    db.babies.clear(),
+    db.eventTypes.clear(),
+    db.events.clear(),
+    db.outbox.clear(),
+  ]);
   await db.babies.put(BABY);
   await db.eventTypes.bulkPut([...PREVIEW_TYPES, FUSSY_TYPE]);
   // Only spells of today show; early in the day these may fall on yesterday.
