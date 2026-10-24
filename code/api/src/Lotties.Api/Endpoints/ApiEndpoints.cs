@@ -1,6 +1,7 @@
 using Lotties.Api.Assistants.Alexa;
 using Lotties.Api.Assistants.Mcp;
 using Lotties.Api.Board;
+using Lotties.Api.Board.Mcp;
 
 namespace Lotties.Api.Endpoints;
 
@@ -46,6 +47,7 @@ public static class ApiEndpoints
         api.MapAlexaEndpoints();
         api.MapBoardEndpoints();
         app.MapMcpEndpoints();
+        app.MapBoardMcpEndpoints();
         return app;
     }
 }

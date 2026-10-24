@@ -286,6 +286,13 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/board/keys"] = Access.BoardAdmin,
         ["POST /api/v1/board/keys"] = Access.BoardAdmin,
         ["DELETE /api/v1/board/keys/{id:guid}"] = Access.BoardAdmin,
+
+        // The board's MCP endpoint (docs/design/36-project-board.md section 9): the board's own callers (a realm role or a
+        // board key, BoardRead; the write tools check the write permission per call, BoardMcpProtocolTests). 404 unless
+        // Board:Enabled and Board:Mcp:Enabled (both on in this host). GET and DELETE answer 405 (stateless Streamable HTTP).
+        ["POST /api/v1/board/mcp"] = Access.BoardRead,
+        ["GET /api/v1/board/mcp"] = Access.Anonymous,
+        ["DELETE /api/v1/board/mcp"] = Access.Anonymous,
     };
 
     /// <summary>
