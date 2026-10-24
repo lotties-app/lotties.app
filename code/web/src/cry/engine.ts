@@ -192,6 +192,15 @@ export class CryEngine {
     return this.currentState;
   }
 
+  /**
+   * Changes the sensitivity while loading or listening, without restarting (the microphone and a running cry
+   * stay): the trigger's threshold moves from the next window on. The next `start` always takes its own
+   * sensitivity.
+   */
+  setSensitivity(sensitivity: CrySensitivity): void {
+    this.trigger?.setThreshold(cryTriggerConfig(sensitivity).threshold);
+  }
+
   /** Stops listening and frees everything; a running cry ends now (`cry_ended`, reason stream_end). */
   stop(): void {
     if (this.currentState === 'idle') return;

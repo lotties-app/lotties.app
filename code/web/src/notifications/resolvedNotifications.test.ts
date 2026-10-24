@@ -214,6 +214,10 @@ describe('loadResolutionFacts', () => {
       event('e6', 't-fussy', SLOT - 20 * MIN),
       event('e7', 't-diaper', SLOT - 25 * MIN, { payload: { content: 'MIXED' } }),
       event('e8', 't-diaper', SLOT - 15 * MIN, { payload: { content: 'WET' } }),
+      // A cry monitor false alarm ("Not crying") handles no fussy heads-up.
+      event('e9', 't-fussy', SLOT - 5 * MIN, {
+        payload: { auto_detected: true, cry_confirmed: false },
+      }),
     ]);
     const loaded = await loadResolutionFacts(db, now);
     expect(loaded.doses).toEqual([
