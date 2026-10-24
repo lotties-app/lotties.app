@@ -12,7 +12,8 @@ public sealed class FussyOutcomesModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_FussyOutcomes'", StringComparison.Ordinal)..];
+        var start = script.IndexOf("_FussyOutcomes'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_VoiceAssistants'", start, StringComparison.Ordinal)];
 
         Assert.Contains("UPDATE event_types SET fields", section, StringComparison.Ordinal);
         Assert.Contains("'6191006e-8767-4cd8-882f-81898fad58d3'", section, StringComparison.Ordinal);

@@ -24,6 +24,7 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"breast","side":"both","breast_left_seconds":600,"breast_right_seconds":540}""")]
     [InlineData("""{"method":"bottle","amount_ml":120,"amount_drunk_ml":80,"bottle_feeding_type":"formula"}""")]
     [InlineData("""{"method":"breast","ended_by":"sleep"}""")]
+    [InlineData("""{"method":"bottle","amount_ml":120,"segments":"120>70@300;70>0@240"}""")]
     [InlineData("""{"method":"solid","food":"Banana"}""")]
     [InlineData("""{"method":"bottle","amount_ml":null,"side":null}""")]
     [InlineData("""{"method":"bottle","amount":120,"extra":{"nested":[1,2]}}""")]
@@ -39,6 +40,7 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"breast","bottle_feeding_type":"formula"}""", "bottle_feeding_type")]
     [InlineData("""{"method":"bottle","breast_left_seconds":60}""", "breast_left_seconds")]
     [InlineData("""{"method":"bottle","food":"Banana"}""", "food")]
+    [InlineData("""{"method":"breast","segments":"?>?@60"}""", "segments")]
     public void Feeding_ValueForHiddenField_IsRejectedOnThatField(string json, string field)
     {
         var exception = Rejected(BuiltInEventTypes.Feeding, json);
@@ -63,6 +65,7 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"bottle","amount_ml":"120"}""", "amount_ml")]
     [InlineData("""{"method":"bottle","amount_drunk_ml":-1}""", "amount_drunk_ml")]
     [InlineData("""{"method":"bottle","ended_by":"timer"}""", "ended_by")]
+    [InlineData("""{"method":"bottle","segments":120}""", "segments")]
     [InlineData("""{"method":"solid","food":42}""", "food")]
     public void Feeding_WrongKindOptionOrRange_IsRejectedOnThatField(string json, string field)
     {

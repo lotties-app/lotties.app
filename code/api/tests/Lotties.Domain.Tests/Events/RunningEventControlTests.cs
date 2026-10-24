@@ -100,6 +100,18 @@ public sealed class RunningEventControlTests
     }
 
     [Fact]
+    public void EnsureEditableBy_CaregiverRecordsTheBottleLevelAtAPause_IsAllowed()
+    {
+        const string stored = """{"method":"bottle","amount_ml":120,"pause_count":1,"paused_seconds":60,"segments":"120>?@300"}""";
+        var running = Event.Create(Guid.NewGuid(), Guid.NewGuid(), BuiltInEventTypes.FeedingId, Ana, Start, null, EventPayload.From(stored), "night bottle", TestClock.Now);
+        const string paused = """{"method":"bottle","amount_ml":120,"pause_count":1,"paused_seconds":60,"paused_at":"2026-01-10T11:50:00Z","segments":"120>40@300;40>?@200"}""";
+
+        var thrown = Record.Exception(() => running.EnsureEditableBy(Grandma, BabyRole.Caregiver, Edit(paused, null, "night bottle"), TestClock.Now));
+
+        Assert.Null(thrown);
+    }
+
+    [Fact]
     public void EnsureEditableBy_CaregiverOnADeletedRunningEvent_ThrowsNotOwned()
     {
         var deleted = RunningBottle();
