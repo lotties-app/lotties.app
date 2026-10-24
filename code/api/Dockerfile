@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 # Restore layer: only the API's project graph, so it stays cached until a csproj or Directory.Build.props
 # changes. The solution and the test projects are not needed to publish the API (see .dockerignore).
@@ -13,7 +13,9 @@ COPY src ./src
 COPY data ./data
 RUN dotnet publish src/Lotties.Api/Lotties.Api.csproj -c Release -o /out --no-restore --no-self-contained
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# Ubuntu 24.04 (noble) since .NET 10 (Debian before): it ships tzdata (the IANA zones the API uses), ICU, bash and the
+# "app" user below, as the .NET 8 Debian image did.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /out .
 # Configuration (DB_*, AUTH_*, CORS_ALLOWED_ORIGINS) comes from the environment at run time; nothing secret is baked in.
@@ -30,6 +32,6 @@ ENV APP_VERSION=$APP_VERSION \
 # The aspnet image has no curl/wget; probe /health with bash's /dev/tcp.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
-# Built-in non-root user ("app", UID 1654) shipped with the .NET 8 images.
+# Built-in non-root user ("app", UID 1654) shipped with the .NET images since .NET 8.
 USER app
 ENTRYPOINT ["dotnet", "Lotties.Api.dll"]

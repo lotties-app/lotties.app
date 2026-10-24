@@ -20,7 +20,7 @@ imagePullSecrets: []
 containerPort: 8080
 
 # The numeric user of the image: the kubelet cannot check "runAsNonRoot" against a user name.
-# 1654 is "app" in the .NET 8 images, 101 is nginx-unprivileged.
+# 1654 is "app" in the .NET images (since .NET 8), 101 is nginx-unprivileged.
 runAsUser: 1654
 
 probe:

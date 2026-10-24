@@ -12,7 +12,7 @@ workloads, and one Ingress on the external Traefik makes them public at **https:
 
 | Workload | Image | Release (one chart) | Notes |
 | --- | --- | --- | --- |
-| API (.NET 8) | `lotties-api` from `code/api/Dockerfile` | `lotties-api` | port 8080, uid 1654, probes on `/health`, config from env and the Secret `lotties-secrets` |
+| API (.NET 10) | `lotties-api` from `code/api/Dockerfile` | `lotties-api` | port 8080, uid 1654, probes on `/health`, config from env and the Secret `lotties-secrets` |
 | Web app (React SPA, nginx-unprivileged) | `lotties-web` from `code/web/Dockerfile` | `lotties-web` | port 8080, uid 101, OIDC settings baked in at build time |
 
 Both use [charts/lotties-app](charts/lotties-app) with a values file each in [values](values): non-root, read-only

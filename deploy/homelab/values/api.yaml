@@ -1,11 +1,11 @@
-# The API (.NET 8, image lotties-api built from code/api/Dockerfile). The Ingress sends https://<PUBLIC_HOST>/api/...
+# The API (.NET 10, image lotties-api built from code/api/Dockerfile). The Ingress sends https://<PUBLIC_HOST>/api/...
 # here unchanged: the routes already start with /api/v1. Only /api is public; /health is for the probes.
 # Set by deploy.sh: image, AUTH_AUTHORITY, AUTH_AUDIENCE, CORS_ALLOWED_ORIGINS, DB_AUTO_MIGRATE,
 # FORWARDED_HEADERS_TRUSTED_NETWORKS (when set in .env) and podAnnotations.checksum/secrets.
 imagePullSecrets:
   - name: cr-homel4b
 
-# "app" in the .NET 8 images.
+# "app" in the .NET images (since .NET 8; still 1654 in the .NET 10 Ubuntu images).
 runAsUser: 1654
 containerPort: 8080
 
