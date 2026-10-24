@@ -75,8 +75,11 @@ internal static class BoardMapping
     private static IReadOnlyList<BoardLinkResponse> Links(BoardItem item) =>
         item.Links.Values.Select(link => new BoardLinkResponse(link.Label, link.Url)).ToArray();
 
+    /// <summary>The decision of a decision item that has one; <c>null</c> otherwise (an open decision: no summary, rationale or time yet).</summary>
     private static BoardDecisionResponse? Decision(BoardItem item) =>
-        item.Type == BoardItemType.Decision ? new BoardDecisionResponse(item.DecisionSummary, item.Rationale, item.DecidedAt) : null;
+        item.Type == BoardItemType.Decision && (item.DecisionSummary is not null || item.Rationale is not null || item.DecidedAt is not null)
+            ? new BoardDecisionResponse(item.DecisionSummary, item.Rationale, item.DecidedAt)
+            : null;
 
     private static BoardActorResponse CreatedBy(BoardItem item) =>
         new(BoardCodes.ToCode(item.CreatedByKeyId is null ? BoardActorKind.User : BoardActorKind.ApiKey), item.CreatedByName, item.CreatedByKeyId);

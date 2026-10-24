@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Lotties.Domain.Board;
 
 namespace Lotties.Application.Board;
@@ -59,6 +60,15 @@ public sealed record BoardItemListRequest
 
     public DateTimeOffset? UpdatedSince { get; init; }
 
+    /// <summary>Only items due on or before this date (<c>yyyy-MM-dd</c>).</summary>
+    public string? DueBefore { get; init; }
+
+    /// <summary>Only items due on or after this date (<c>yyyy-MM-dd</c>).</summary>
+    public string? DueAfter { get; init; }
+
+    /// <summary><c>true</c>: only items with a due date; <c>false</c>: only items without one.</summary>
+    public bool? HasDue { get; init; }
+
     public bool IncludeDeleted { get; init; }
 
     public string? Sort { get; init; }
@@ -102,6 +112,8 @@ public sealed record BoardItemResponse
 
     public bool Pinned { get; init; }
 
+    /// <summary>The decision (decision items that have one), else <c>null</c>: written even where nulls are left out (MCP), never <c>{}</c>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public BoardDecisionResponse? Decision { get; init; }
 
     public string? Source { get; init; }
@@ -150,6 +162,8 @@ public sealed record BoardItemSummaryResponse
 
     public bool Pinned { get; init; }
 
+    /// <summary>The decision (decision items that have one), else <c>null</c>: written even where nulls are left out (MCP), never <c>{}</c>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public BoardDecisionResponse? Decision { get; init; }
 
     public string? Source { get; init; }
@@ -214,7 +228,24 @@ public sealed record BoardBulkResponse(IReadOnlyList<BoardBulkResult> Results);
 /// <summary>The number of (not deleted) items of one topic, side and status.</summary>
 public sealed record BoardCountResponse(string Topic, string Side, string Status, int Count);
 
-public sealed record BoardTotalsResponse(int Open, int WaitingOnOwner, int WaitingOnAssistant, int Blocked, int Overdue);
+/// <summary>
+/// The summary's totals (section 3.3). <see cref="WaitingOnOwner"/> and <see cref="WaitingOnAssistant"/> keep their first
+/// meaning (open, blocked included, by side); <see cref="ActionableOwner"/> and <see cref="ActionableAssistant"/> count what
+/// the summary's lists of the same names hold (open, in progress or waiting; never blocked).
+/// </summary>
+public sealed record BoardTotalsResponse(
+    int Open,
+    int WaitingOnOwner,
+    int WaitingOnAssistant,
+    int Blocked,
+    int Overdue,
+    int ActionableOwner,
+    int ActionableAssistant,
+    int DueSoon)
+{
+    /// <summary>"Due soon": not done or dropped, due from today (UTC) through this many days ahead.</summary>
+    public const int DueSoonDays = 7;
+}
 
 /// <summary><c>GET /board/summary</c> (section 3.3).</summary>
 public sealed record BoardSummaryResponse(
@@ -224,7 +255,16 @@ public sealed record BoardSummaryResponse(
     IReadOnlyList<BoardItemSummaryResponse> WaitingOnOwner,
     IReadOnlyList<BoardItemSummaryResponse> WaitingOnAssistant,
     IReadOnlyList<BoardItemSummaryResponse> RecentDecisions,
-    IReadOnlyList<BoardItemSummaryResponse> RecentlyUpdated);
+    IReadOnlyList<BoardItemSummaryResponse> RecentlyUpdated,
+    IReadOnlyList<BoardItemSummaryResponse> Blocked,
+    IReadOnlyList<BoardItemSummaryResponse> DueSoon,
+    IReadOnlyList<BoardItemSummaryResponse> Overdue);
+
+/// <summary>A status change with an optional note, saved as one write (<c>board_set_status</c>).</summary>
+public sealed record BoardStatusChangeResponse(BoardItemResponse Item, BoardItemEventResponse? Comment);
+
+/// <summary>A recorded decision and the item it settles, saved as one write (<c>board_record_decision</c>).</summary>
+public sealed record BoardDecisionRecordedResponse(BoardItemResponse Item, Guid? RelatedItemId);
 
 /// <summary>An item of the export: the item and its history.</summary>
 public sealed record BoardExportItem(BoardItemResponse Item, IReadOnlyList<BoardItemEventResponse> History);

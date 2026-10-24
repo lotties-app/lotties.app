@@ -121,6 +121,14 @@ internal sealed class EfBoardRepository(LottiesDbContext context, UniqueViolatio
         };
         items = query.UpdatedSince is { } since ? items.Where(item => item.UpdatedAt >= since) : items;
         items = query.DueBefore is { } due ? items.Where(item => item.DueDate != null && item.DueDate < due) : items;
+        items = query.DueFrom is { } from ? items.Where(item => item.DueDate != null && item.DueDate >= from) : items;
+        items = query.DueUntil is { } until ? items.Where(item => item.DueDate != null && item.DueDate <= until) : items;
+        items = query.HasDue switch
+        {
+            true => items.Where(item => item.DueDate != null),
+            false => items.Where(item => item.DueDate == null),
+            null => items,
+        };
         items = query.DecidedOnly ? items.Where(item => item.DecidedAt != null) : items;
         return query.Search is { Length: > 0 } search ? Searched(items, search.ToLowerInvariant()) : items;
     }

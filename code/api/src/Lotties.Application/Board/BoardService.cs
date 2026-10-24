@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Lotties.Domain.Board;
 using Lotties.Domain.Exceptions;
@@ -30,6 +31,15 @@ public interface IBoardService
 
     Task<BoardItemEventResponse> CommentAsync(Guid id, BoardCommentRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Sets the status and, with <paramref name="note"/>, adds it as a comment: one write (one save, one version bump).</summary>
+    Task<BoardStatusChangeResponse> SetStatusAsync(Guid id, string? status, string? note, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a decision item from <paramref name="body"/> (a create body) and, with <paramref name="relatedItemId"/>, comments
+    /// on that item that the decision settles it: one write (nothing is saved when any part fails).
+    /// </summary>
+    Task<BoardDecisionRecordedResponse> RecordDecisionAsync(JsonElement body, Guid? relatedItemId, CancellationToken cancellationToken = default);
+
     Task DeleteItemAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<BoardItemResponse> RestoreItemAsync(Guid id, CancellationToken cancellationToken = default);
@@ -49,6 +59,12 @@ internal sealed class BoardService(IBoardRepository board, IBoardCaller caller, 
     public const int DefaultTop = 10;
     public const int MaxTop = 50;
     public const int MaxSearchLength = 200;
+
+    /// <summary>"Due soon": due from today through this many days ahead (UTC dates).</summary>
+    public const int DueSoonDays = BoardTotalsResponse.DueSoonDays;
+
+    /// <summary>The statuses that ask the side to act (the summary's actionable lists): never blocked, done or dropped.</summary>
+    private static readonly IReadOnlyList<BoardItemStatus> Actionable = [BoardItemStatus.Open, BoardItemStatus.InProgress, BoardItemStatus.Waiting];
 
     private BoardAccess Access => caller.Access;
 
@@ -126,6 +142,9 @@ internal sealed class BoardService(IBoardRepository board, IBoardCaller caller, 
             Open = request.Open,
             Search = Search(request.Q),
             UpdatedSince = request.UpdatedSince,
+            DueFrom = Date(request.DueAfter, "dueAfter"),
+            DueUntil = Date(request.DueBefore, "dueBefore"),
+            HasDue = request.HasDue,
             IncludeDeleted = request.IncludeDeleted,
             Sort = sort,
             Offset = offset,
@@ -203,6 +222,50 @@ internal sealed class BoardService(IBoardRepository board, IBoardCaller caller, 
         return (BoardItemEventResponse)entry;
     }
 
+    public async Task<BoardStatusChangeResponse> SetStatusAsync(Guid id, string? status, string? note, CancellationToken cancellationToken = default)
+    {
+        var input = BoardItemInput.ForPatch(JsonSerializer.SerializeToElement(new Dictionary<string, string?> { ["status"] = status }));
+        var item = await FindWritableAsync(id, cancellationToken);
+        var content = input.ApplyTo(item.Content);
+        var actor = await caller.GetActorAsync(cancellationToken);
+        var entries = item.EditAndComment(content, note, actor, timeProvider.GetUtcNow());
+        foreach (var entry in entries)
+        {
+            board.AddEvent(entry);
+        }
+
+        if (entries.Count > 0)
+        {
+            await board.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Board item {ItemId} status set ({Entries} history entries) by {ActorKind}", id, entries.Count, BoardCodes.ToCode(actor.Kind));
+        }
+
+        var comment = entries.FirstOrDefault(entry => entry.Kind == BoardEventKind.Commented);
+        return new BoardStatusChangeResponse(BoardMapping.ToResponse(item), comment is null ? null : (BoardItemEventResponse)comment);
+    }
+
+    public async Task<BoardDecisionRecordedResponse> RecordDecisionAsync(JsonElement body, Guid? relatedItemId, CancellationToken cancellationToken = default)
+    {
+        var input = BoardItemInput.ForCreate(body);
+        var content = input.ToNewContent();
+        var externalKey = input.ValidExternalKey();
+        var related = relatedItemId is { } relatedId ? await RelatedAsync(relatedId, cancellationToken) : null;
+        await EnsureWritableTopicAsync(content.TopicKey, cancellationToken);
+        var actor = await caller.GetActorAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        var (item, created) = BoardItem.Create(input.Id ?? Guid.NewGuid(), content, externalKey, actor, now);
+        board.AddItem(item);
+        board.AddEvent(created);
+        if (related is not null)
+        {
+            board.AddEvent(related.Comment($"Decision recorded: {item.Title} (board item {item.Id}).", actor, now));
+        }
+
+        await board.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Board item {ItemId} recorded as a decision by {ActorKind}", item.Id, BoardCodes.ToCode(actor.Kind));
+        return new BoardDecisionRecordedResponse(BoardMapping.ToResponse(item), related?.Id);
+    }
+
     public async Task DeleteItemAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var item = await FindInTopicAsync(id, cancellationToken);
@@ -266,23 +329,33 @@ internal sealed class BoardService(IBoardRepository board, IBoardCaller caller, 
 
         var topics = Access.AllowedTopics;
         var now = timeProvider.GetUtcNow();
+        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var soon = today.AddDays(DueSoonDays);
         var counts = await board.CountByTopicSideStatusAsync(topics, cancellationToken);
         var open = counts.Where(count => !BoardCodes.IsClosed(count.Status)).ToArray();
-        var overdue = await board.CountItemsAsync(new BoardItemQuery { Topics = topics, Open = true, DueBefore = DateOnly.FromDateTime(now.UtcDateTime) }, cancellationToken);
+        var actionable = open.Where(count => Actionable.Contains(count.Status)).ToArray();
+        var overdue = await board.CountItemsAsync(new BoardItemQuery { Topics = topics, Open = true, DueBefore = today }, cancellationToken);
+        var dueSoon = await board.CountItemsAsync(new BoardItemQuery { Topics = topics, Open = true, DueFrom = today, DueUntil = soon }, cancellationToken);
         var totals = new BoardTotalsResponse(
             open.Sum(count => count.Count),
             open.Where(count => count.Side is BoardSide.Owner or BoardSide.Both).Sum(count => count.Count),
             open.Where(count => count.Side is BoardSide.Assistant or BoardSide.Both).Sum(count => count.Count),
             counts.Where(count => count.Status == BoardItemStatus.Blocked).Sum(count => count.Count),
-            overdue);
+            overdue,
+            actionable.Where(count => count.Side is BoardSide.Owner or BoardSide.Both).Sum(count => count.Count),
+            actionable.Where(count => count.Side is BoardSide.Assistant or BoardSide.Both).Sum(count => count.Count),
+            dueSoon);
         return new BoardSummaryResponse(
             now,
             totals,
             counts.Select(count => new BoardCountResponse(count.TopicKey, BoardCodes.ToCode(count.Side), BoardCodes.ToCode(count.Status), count.Count)).ToArray(),
-            await SummariesAsync(new BoardItemQuery { Topics = topics, Open = true, Sides = [BoardSide.Owner, BoardSide.Both], Sort = BoardItemSort.Priority, Limit = size }, cancellationToken),
-            await SummariesAsync(new BoardItemQuery { Topics = topics, Open = true, Sides = [BoardSide.Assistant, BoardSide.Both], Sort = BoardItemSort.Priority, Limit = size }, cancellationToken),
+            await SummariesAsync(new BoardItemQuery { Topics = topics, Statuses = Actionable, Sides = [BoardSide.Owner, BoardSide.Both], Sort = BoardItemSort.Priority, Limit = size }, cancellationToken),
+            await SummariesAsync(new BoardItemQuery { Topics = topics, Statuses = Actionable, Sides = [BoardSide.Assistant, BoardSide.Both], Sort = BoardItemSort.Priority, Limit = size }, cancellationToken),
             await SummariesAsync(new BoardItemQuery { Topics = topics, Types = [BoardItemType.Decision], DecidedOnly = true, Sort = BoardItemSort.Decided, Limit = size }, cancellationToken),
-            await SummariesAsync(new BoardItemQuery { Topics = topics, Sort = BoardItemSort.Updated, Limit = size }, cancellationToken));
+            await SummariesAsync(new BoardItemQuery { Topics = topics, Sort = BoardItemSort.Updated, Limit = size }, cancellationToken),
+            await SummariesAsync(new BoardItemQuery { Topics = topics, Statuses = [BoardItemStatus.Blocked], Sort = BoardItemSort.Priority, Limit = size }, cancellationToken),
+            await SummariesAsync(new BoardItemQuery { Topics = topics, Open = true, DueFrom = today, DueUntil = soon, Sort = BoardItemSort.Due, Limit = size }, cancellationToken),
+            await SummariesAsync(new BoardItemQuery { Topics = topics, Open = true, DueBefore = today, Sort = BoardItemSort.Due, Limit = size }, cancellationToken));
     }
 
     public async Task<BoardExportResponse> ExportAsync(CancellationToken cancellationToken = default)
@@ -401,6 +474,18 @@ internal sealed class BoardService(IBoardRepository board, IBoardCaller caller, 
         return item is not null && Access.AllowsTopic(item.TopicKey) ? item : throw new BoardItemNotFoundException(id);
     }
 
+    /// <summary>The item a decision settles: one the caller reads, not deleted (checked before anything is written).</summary>
+    private async Task<BoardItem> RelatedAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await board.FindItemAsync(id, cancellationToken);
+        if (item is null || (item.IsDeleted && !Access.CanAdmin) || !Access.AllowsTopic(item.TopicKey))
+        {
+            throw new DomainValidationException("relatedItemId", "relatedItemId is not a board item you can read.");
+        }
+
+        return item.IsDeleted ? throw new DomainValidationException("relatedItemId", "relatedItemId is a deleted item.") : item;
+    }
+
     private async Task<BoardItem> FindWritableAsync(Guid id, CancellationToken cancellationToken)
     {
         var item = await FindInTopicAsync(id, cancellationToken);
@@ -441,9 +526,32 @@ internal sealed class BoardService(IBoardRepository board, IBoardCaller caller, 
             (var asked, var allowed) => asked.Intersect(allowed, StringComparer.Ordinal).ToArray(),
         };
 
+    /// <summary>The codes of a list filter ("any of"); an unknown one names the filter, the value and the allowed codes.</summary>
     private static IReadOnlyList<TEnum>? ParseAll<TEnum>(IReadOnlyList<string>? codes, string field)
         where TEnum : struct, Enum =>
-        codes is { Count: > 0 } ? codes.Select(code => BoardCodes.Parse<TEnum>(code, field)).Distinct().ToArray() : null;
+        codes is { Count: > 0 } ? codes.Select(code => ParseFilterCode<TEnum>(code, field)).Distinct().ToArray() : null;
+
+    private static TEnum ParseFilterCode<TEnum>(string code, string field)
+        where TEnum : struct, Enum
+    {
+        if (BoardCodes.TryParse<TEnum>(code, out var value))
+        {
+            return value;
+        }
+
+        var shown = code.Length <= 40 ? code : code[..40] + "…";
+        throw new DomainValidationException(
+            field,
+            $"{field} has an unknown value '{shown}'. Allowed: {string.Join(", ", BoardCodes.AllCodes<TEnum>())} (one value, a list, or a comma-separated list).");
+    }
+
+    /// <summary>A <c>yyyy-MM-dd</c> date filter, or <c>null</c> when absent.</summary>
+    private static DateOnly? Date(string? value, string field) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : DateOnly.TryParseExact(value.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                ? date
+                : throw new DomainValidationException(field, $"{field} must be a date (yyyy-MM-dd), e.g. 2026-10-31.");
 
     private static IReadOnlyList<string>? Labels(IReadOnlyList<string>? labels)
     {

@@ -35,6 +35,18 @@ internal enum BoardMcpParameterKind
 
     /// <summary>An array of <c>{label, url}</c> objects.</summary>
     Links,
+
+    /// <summary>
+    /// A filter of codes of <see cref="BoardMcpParameter.Values"/>: one code, an array of codes, or a comma-separated string
+    /// (any of them matches); at most <see cref="BoardMcpParameter.Max"/> codes in an array. The service checks the codes.
+    /// </summary>
+    ChoiceFilter,
+
+    /// <summary>
+    /// A filter of free values (topic keys, labels): one value, an array, or a comma-separated string (any of them matches);
+    /// each value at most <see cref="BoardMcpParameter.Max"/> characters. The service checks the values.
+    /// </summary>
+    TextFilter,
 }
 
 /// <summary>
@@ -69,6 +81,8 @@ internal sealed record BoardMcpParameter(
             BoardMcpParameterKind.Date => new JsonObject { ["type"] = "string", ["format"] = "date", ["pattern"] = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
             BoardMcpParameterKind.Instant => new JsonObject { ["type"] = "string", ["format"] = "date-time" },
             BoardMcpParameterKind.Links => WithMax(new JsonObject { ["type"] = "array", ["items"] = LinkSchema() }, "maxItems"),
+            BoardMcpParameterKind.ChoiceFilter => ChoiceFilterSchema(),
+            BoardMcpParameterKind.TextFilter => TextFilterSchema(),
             _ => throw new InvalidOperationException($"Unknown parameter kind {Kind}."),
         };
         if (Nullable)
@@ -94,6 +108,10 @@ internal sealed record BoardMcpParameter(
             ? null
             : $"{Name} must be a whole number from {Min} to {Max}.",
         BoardMcpParameterKind.Boolean => element.ValueKind is JsonValueKind.True or JsonValueKind.False ? null : $"{Name} must be true or false.",
+        BoardMcpParameterKind.ChoiceFilter or BoardMcpParameterKind.TextFilter =>
+            element.ValueKind == JsonValueKind.String || (element.ValueKind == JsonValueKind.Array && element.EnumerateArray().All(value => value.ValueKind == JsonValueKind.String))
+                ? null
+                : $"{Name} must be a string (one value or a comma-separated list) or an array of strings.",
         BoardMcpParameterKind.ChoiceList or BoardMcpParameterKind.TextList =>
             element.ValueKind == JsonValueKind.Array && element.EnumerateArray().All(value => value.ValueKind == JsonValueKind.String)
                 ? null
@@ -107,7 +125,53 @@ internal sealed record BoardMcpParameter(
         _ => $"{Name} is not supported.",
     };
 
+    /// <summary>The longest comma-separated string a text filter takes (several topic keys or labels).</summary>
+    public const int FilterTextMaxLength = 500;
+
+    /// <summary>The most values in a text filter's array.</summary>
+    public const int FilterMaxItems = 20;
+
     private JsonArray Codes() => new(Values!.Select(value => (JsonNode)JsonValue.Create(value)).ToArray());
+
+    /// <summary><c>oneOf</c> a string (one code or a comma-separated list of codes, by pattern) or an array of codes, with examples.</summary>
+    private JsonObject ChoiceFilterSchema()
+    {
+        var alternatives = string.Join('|', Values!);
+        var array = new JsonObject { ["type"] = "array", ["items"] = new JsonObject { ["type"] = "string", ["enum"] = Codes() }, ["uniqueItems"] = true };
+        return new JsonObject
+        {
+            ["oneOf"] = new JsonArray(
+                new JsonObject
+                {
+                    ["type"] = "string",
+                    ["pattern"] = $"^ *({alternatives})( *, *({alternatives}))* *$",
+                    ["description"] = $"One code, or several separated by commas. Codes: {string.Join(", ", Values!)}.",
+                },
+                WithMax(array, "maxItems")),
+            ["examples"] = Examples(Values![0], Values[Math.Min(1, Values.Count - 1)]),
+        };
+    }
+
+    /// <summary><c>oneOf</c> a string (one value or a comma-separated list) or an array of values, with examples.</summary>
+    private JsonObject TextFilterSchema()
+    {
+        var item = WithMax(new JsonObject { ["type"] = "string", ["minLength"] = 1 }, "maxLength");
+        var schema = new JsonObject
+        {
+            ["oneOf"] = new JsonArray(
+                new JsonObject { ["type"] = "string", ["maxLength"] = FilterTextMaxLength, ["description"] = "One value, or several separated by commas." },
+                new JsonObject { ["type"] = "array", ["items"] = item, ["maxItems"] = FilterMaxItems }),
+        };
+        if (Values is { Count: > 0 } samples)
+        {
+            schema["examples"] = Examples(samples[0], samples[Math.Min(1, samples.Count - 1)]);
+        }
+
+        return schema;
+    }
+
+    private static JsonArray Examples(string first, string second) =>
+        new(JsonValue.Create(first), new JsonArray(JsonValue.Create(first), JsonValue.Create(second)), JsonValue.Create($"{first},{second}"));
 
     private JsonObject WithMax(JsonObject schema, string keyword)
     {
@@ -196,6 +260,27 @@ internal sealed class BoardMcpArguments
 
     public IReadOnlyList<string>? Strings(string name) =>
         _values.TryGetValue(name, out var value) ? value.EnumerateArray().Select(item => item.GetString()!).ToArray() : null;
+
+    /// <summary>
+    /// A filter's values, whatever form it came in (<c>"open"</c>, <c>["open", "blocked"]</c>, <c>"open,blocked"</c>): split at
+    /// commas, trimmed, empty ones dropped, duplicates removed; <c>null</c> when absent or when nothing is left (no filter).
+    /// </summary>
+    public IReadOnlyList<string>? Filter(string name)
+    {
+        if (!_values.TryGetValue(name, out var value))
+        {
+            return null;
+        }
+
+        IEnumerable<string> raw = value.ValueKind == JsonValueKind.Array
+            ? value.EnumerateArray().Select(item => item.GetString() ?? string.Empty)
+            : [value.GetString() ?? string.Empty];
+        var values = raw
+            .SelectMany(text => text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return values.Length > 0 ? values : null;
+    }
 
     /// <summary>The given arguments among <paramref name="names"/> as one JSON object (explicit <c>null</c>s kept), for the service's strict body reader.</summary>
     public JsonElement ObjectOf(IEnumerable<string> names, IReadOnlyDictionary<string, JsonNode?>? extra = null)
