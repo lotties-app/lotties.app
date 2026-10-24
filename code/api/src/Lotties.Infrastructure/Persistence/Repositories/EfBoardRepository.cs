@@ -152,7 +152,7 @@ internal sealed class EfBoardRepository(LottiesDbContext context, UniqueViolatio
         var codes = Expression.Property(item, nameof(BoardItem.LabelCodes));
         var contains = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
         var body = labels
-            .Select(label => (Expression)Expression.Call(codes, contains, Expression.Constant(BoardLabels.StorageToken(label))))
+            .Select(label => (Expression)Expression.Call(codes, contains, Captured(BoardLabels.StorageToken(label))))
             .Aggregate(Expression.OrElse);
         return Expression.Lambda<Func<BoardItem, bool>>(body, item);
     }
@@ -161,8 +161,10 @@ internal sealed class EfBoardRepository(LottiesDbContext context, UniqueViolatio
         AnyOf<BoardItem, TValue>(selector, values);
 
     /// <summary>
-    /// <c>selector(row) == v1 || selector(row) == v2 || ...</c> with constants; <c>false</c> for no values. Enums are
-    /// compared as the C# compiler writes it (both sides converted to the underlying type), which EF maps to the stored code.
+    /// <c>selector(row) == v1 || selector(row) == v2 || ...</c>; <c>false</c> for no values. Enums are compared as the C#
+    /// compiler writes it (both sides converted to the underlying type, constants), which EF maps to the stored code; other
+    /// values (ids, topic keys, external keys) are captured, so EF sends them as SQL parameters: the logged SQL text never
+    /// carries a caller's value (docs/design/36-project-board.md section 4.3).
     /// </summary>
     private static Expression<Func<TRow, bool>> AnyOf<TRow, TValue>(Expression<Func<TRow, TValue>> selector, IReadOnlyCollection<TValue> values)
     {
@@ -174,13 +176,20 @@ internal sealed class EfBoardRepository(LottiesDbContext context, UniqueViolatio
 
     private static Expression Equal<TValue>(Expression column, TValue value)
     {
-        var constant = Expression.Constant(value, typeof(TValue));
         if (!typeof(TValue).IsEnum)
         {
-            return Expression.Equal(column, constant);
+            return Expression.Equal(column, Captured(value));
         }
 
+        var constant = Expression.Constant(value, typeof(TValue));
         var underlying = Enum.GetUnderlyingType(typeof(TValue));
         return Expression.Equal(Expression.Convert(column, underlying), Expression.Convert(constant, underlying));
+    }
+
+    /// <summary><paramref name="value"/> read from a closure, which EF turns into a SQL parameter (never a literal in the SQL text).</summary>
+    private static Expression Captured<TValue>(TValue value)
+    {
+        Expression<Func<TValue>> read = () => value;
+        return read.Body;
     }
 }

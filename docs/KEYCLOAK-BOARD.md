@@ -19,7 +19,7 @@ in the owner's `deploy/homelab/.env` / Helm values, and in a terminal of the own
   The API reads them from the access token's `realm_access.roles` claim; a higher role includes the lower ones (no
   composite roles needed). Any other realm role is ignored. A signed-in user without one of these roles gets 403 on
   every board route.
-- A tool (Claude Code, a script, later the board MCP endpoint) uses a **board API key** instead: `lbk_` followed by 43
+- A tool (Claude Code through the board MCP endpoint, section 8, or a script) uses a **board API key** instead: `lbk_` followed by 43
   characters, sent as `Authorization: Bearer lbk_...` or `X-Board-Key: lbk_...`. A key has the scope `read` or `write`
   (never admin), optionally a list of topics and an expiry. Only a board admin creates or revokes keys, and the secret is
   shown **once**, in the answer that creates it; the database keeps only its SHA-256 and its first 12 characters.
@@ -107,3 +107,96 @@ List keys: `GET /api/v1/board/keys` (prefix, name, scope, topics, expiry, last u
 Revoke the key at once (section 6), create a new one, and look at the board history (`GET /api/v1/board/items/{id}`,
 the `actor` of each entry names the key) for writes you did not expect. The `lbk_` prefix lets GitHub secret scanning and
 similar tools flag a committed key (custom pattern `lbk_[A-Za-z0-9_-]{43}`).
+
+## 8. Connect Claude Code: the board MCP endpoint
+
+The board has its own MCP endpoint, `https://lotties.app/api/v1/board/mcp` (Streamable HTTP, stateless; design in
+docs/design/36-project-board.md section 9). It is **not** the baby-data MCP server of docs/MCP.md: its own URL, its own
+tools, and only board credentials (a board API key, or a Keycloak access token with a board role). A board key never
+works on `/api/v1/mcp` and a baby MCP token never works here.
+
+| Credential | Tools |
+| --- | --- |
+| read key, or `lotties-board-reader` | `board_summary`, `board_list_topics`, `board_list_items`, `board_get_item`, `board_search`, `board_recent_changes` |
+| write key, or `lotties-board-writer` / `-admin` | the six above plus `board_create_item`, `board_update_item`, `board_set_status`, `board_add_comment`, `board_record_decision`, `board_delete_item` (soft delete) |
+
+No tool restores items, manages topics or touches API keys (that stays with admins in the app or the REST API). Every
+write goes into the item's history with the key's name (or the person's name).
+
+### 8.1 Turn it on
+
+Both flags are needed (either off: every board MCP route answers 404). In `deploy/homelab/values/api.yaml` under `env:`
+(not secrets), in a commit of their own, then deploy as usual (docs/PROCESS.md "Integrate and deploy"; no migration, no
+ingress change: the path is under `/api`):
+
+```yaml
+Board__Enabled: "true"
+Board__Mcp__Enabled: "true"
+```
+
+Check:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://lotties.app/api/v1/board/mcp \
+  -H 'Content-Type: application/json' -d '{}'      # 401 when on (no key), 404 when off
+```
+
+### 8.2 Create a key for Claude Code
+
+As in section 6: `scope` `write` for an assistant that keeps the board, `read` for one that only reads; optionally
+`allowedTopics`; always an `expiresAt`. Name it after where it runs ("Claude Code (dev machine)"): the history shows that
+name on every change. Keep the secret in an environment variable of that machine, e.g. `LOTTIES_BOARD_KEY` (in your shell
+profile or a password manager's CLI), never in the repository.
+
+### 8.3 Add it to Claude Code
+
+For you only (Claude Code's local scope, stored in `~/.claude.json` on this machine, which then holds the secret):
+
+```bash
+claude mcp add --transport http lotties-board https://lotties.app/api/v1/board/mcp --header "Authorization: Bearer lbk_..."
+```
+
+For a project (a `.mcp.json` at the repository root that can be committed, because it holds only the variable's name;
+Claude Code expands `${LOTTIES_BOARD_KEY}` from the environment when it starts, and asks once to trust project servers):
+
+```json
+{
+  "mcpServers": {
+    "lotties-board": {
+      "type": "http",
+      "url": "https://lotties.app/api/v1/board/mcp",
+      "headers": { "Authorization": "Bearer ${LOTTIES_BOARD_KEY}" }
+    }
+  }
+}
+```
+
+`X-Board-Key: lbk_...` works in place of the `Authorization` header. Check with `claude mcp list` (lotties-board
+connected) and, in a session, `/mcp` (the tools). Then ask, for example, "what is waiting on me on the board?" or "add a
+gap to privacy-legal: ...".
+
+A Keycloak access token works too (`Authorization: Bearer <access token>` of a user with a board role, copied as in
+section 6), but only until it expires (minutes): the endpoint offers no OAuth discovery or client registration, so Claude
+cannot sign in by itself. Use a key for anything that lasts.
+
+### 8.4 Test with the MCP Inspector
+
+On a developer machine: `npx @modelcontextprotocol/inspector`, Transport **Streamable HTTP**, URL
+`https://lotties.app/api/v1/board/mcp` (or a local API, `http://localhost:5290/api/v1/board/mcp` with both flags on), and
+the header `Authorization: Bearer lbk_...` (the Inspector's authentication / custom header fields; the field names
+change between Inspector versions). Connect through the Inspector's proxy (no browser `Origin` reaches the API); a direct
+browser connection needs `Board__Mcp__AllowedOrigins=http://localhost:6274` on a test API only. Check: `tools/list`
+shows 6 tools with a read key and 12 with a write key; `board_summary` answers the totals; `board_create_item` twice with
+the same `externalKey` creates one item (the second answer has `created: false`); with a read key, `board_create_item`
+answers a `forbidden` tool error.
+
+### 8.5 Limits, logs, revoking
+
+- Every MCP message counts against `RequestLimits__BoardPermitsPerMinute` (120 per key or per user, shared with the REST
+  routes); a tool call over it answers a `rate_limited` tool error with `Retry-After`. Bodies up to
+  `RequestLimits__BoardMaxRequestBodyBytes` (256 KiB, else 413).
+- API logs: `Board MCP <tool>: <result code> (correlation <id>)` per tool call and `Board MCP request refused: origin not
+  allowed`. Arguments, titles, bodies and keys are never logged.
+- Revoke the key (section 6, `DELETE /api/v1/board/keys/{id}`): the next MCP message answers 401. Remove it from Claude
+  Code with `claude mcp remove lotties-board` (and the variable from the machine). To stop the endpoint for everyone:
+  `Board__Mcp__Enabled=false` and deploy (the REST board keeps working).

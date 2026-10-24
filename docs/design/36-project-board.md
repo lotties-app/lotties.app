@@ -1,16 +1,17 @@
 # 36. Project board (owner + AI assistant)
 
-Status: **API built** (data model, REST API, authorization, API keys, tests; migration `ProjectBoard`). **Not built**:
-the web page (section 10) and the MCP tools (section 9), each for a later worker. Off by default (`Board:Enabled`).
+Status: **API built** (data model, REST API, authorization, API keys, tests; migration `ProjectBoard`) and **MCP
+endpoint built** (section 9, `POST /api/v1/board/mcp`, off by default: `Board:Mcp:Enabled`). **Not built**: the web page
+(section 10), for a later worker. Off by default (`Board:Enabled`).
 
 ## 1. Goals and non-goals
 
 Goals:
 
-- One place where the owner and the AI assistant (Claude, through the REST API now and an MCP endpoint later) track
+- One place where the owner and the AI assistant (Claude, through the REST API and the board MCP endpoint) track
   the project: tasks, gaps, decisions, open questions, risks, notes and memories, organised by topic, with who is
   expected to act next (the owner, the assistant, both, someone external).
-- Readable by humans (a web page) and consultable by tools (REST now, MCP later) with the same data and the same rules.
+- Readable by humans (a web page) and consultable by tools (REST and MCP) with the same data and the same rules.
 - An immutable history per item (who changed what, when), comments, a decisions log, a summary ("waiting on the
   owner", "waiting on the assistant"), an export for backups and offline reading.
 - Idempotent bulk import (by `externalKey`) so the existing Markdown lists (docs/agents/PLAN.md, docs/agents/REVIEW.md,
@@ -255,7 +256,8 @@ deletes: deletion is soft for everyone.
 
 - Body caps (section 3.5), the global per-user limit, and the board limit.
 - Logging: route-level outcome only (`Board item {ItemId} {Action}`, key id on key events, result code, correlation id
-  from the problem details); never a secret, a hash, a prefix, a title or a body. The API's `Microsoft.AspNetCore`
+  from the problem details); never a secret, a hash, a prefix, a title or a body. The repository sends caller values (ids, topic and
+  external keys, labels) as SQL parameters, never literals, so EF's command log carries none. The API's `Microsoft.AspNetCore`
   logs stay at Warning (no request lines).
 - CORS: unchanged (the app origin only, as for every route; no board-specific policy).
 - `Board:Enabled` defaults to false: nothing is exposed until the owner enables it.
@@ -286,29 +288,77 @@ the matching `*_name` becomes "Former member". Items, history and keys stay (the
 `AccountErasureTests.Rules` lists the three columns as `Clear`, and its fixture writes a board row of each kind for the
 deleting user.
 
-## 9. MCP tools (for the later worker)
+## 9. MCP endpoint (built)
 
-A board MCP endpoint is a separate adapter (its own route, e.g. `/api/v1/board/mcp`, authenticated by the same
-`BoardKey` scheme or by Keycloak tokens with the board roles; never the baby MCP server's scopes or tools). Tools call
-the same application service (`IBoardService`), so rules and history are identical:
+`POST /api/v1/board/mcp`: Streamable HTTP, stateless (protocol 2026-07-28 per request, and the 2025-11-25 initialize
+handshake), served by the same official SDK registration as the baby-data MCP server (`ModelContextProtocol.AspNetCore`,
+one per process) but a **separate server** to its clients: its own route, name (`lotties-board`), instructions and tool
+list, chosen per request (`HttpServerTransportOptions.ConfigureSessionOptions` on the board route). Code:
+`Lotties.Api/Board/Mcp/` (`BoardMcpServer`: registration, mapping, `BoardMcpRequestGuard`, the rate-limit answer;
+`BoardMcpToolCatalog`; `BoardMcpToolRunner` + `BoardMcpToolResults`; `BoardMcpArguments`; `BoardMcpOptions`). Owner
+setup and Claude Code: docs/KEYCLOAK-BOARD.md section 8.
 
-| Tool | Args | Result |
-| --- | --- | --- |
-| `board_whoami` | none | `GET /board/me` |
-| `board_summary` | `top?` | section 3.3 |
-| `board_list_topics` | `includeArchived?` | topics |
-| `board_list_items` | the filters of 3.2 (`topic`, `type`, `status`, `side`, `priority`, `label`, `pinned`, `open`, `q`, `updatedSince`, `sort`, `limit`, `cursor`) | `{items: [itemSummary], nextCursor}` |
-| `board_get_item` | `id` | `item` + `history` |
-| `board_create_item` | `itemCreate` | `item` |
-| `board_update_item` | `id`, `version?`, patch fields | `item` (`board_version_mismatch` carries `currentVersion`) |
-| `board_set_status` | `id`, `status`, `comment?` | `item` (a PATCH and, with `comment`, a comment) |
-| `board_comment` | `id`, `comment` | history event |
-| `board_record_decision` | `topic`, `title`, `decisionSummary`, `rationale?`, `source?`, `id?` | `item` (type `decision`, status `done`) |
-| `board_remember` | `topic`, `title`, `body`, `pinned?`, `source?` | `item` (type `memory`) |
-| `board_bulk_upsert` | `items` (<= 100, with `externalKey`) | bulk results |
+### 9.1 Access and protections
 
-Read tools need the read permission, the others write; results are the REST JSON as `structuredContent` plus a short
-text. No tool deletes, restores or touches keys.
+- **404** unless `Board:Enabled` **and** `Board:Mcp:Enabled` (both default false), before any 401 (`BoardMcpRequestGuard`
+  runs before the board guard). GET and DELETE answer 405 (`Allow: POST`).
+- **Credentials**: a board API key (`Authorization: Bearer lbk_...` or `X-Board-Key`, through the board guard and the
+  `BoardKey` scheme: unknown, revoked, expired = 401 `invalid_board_key`, `WWW-Authenticate: Bearer error="invalid_token"`),
+  or the API's own Keycloak access token (audience `AUTH_AUDIENCE`) whose realm roles include a board role. Policy
+  `BoardRead` on the route (no credentials: 401 `Bearer`; a user without a board role: 403). There is no OAuth discovery
+  (no RFC 9728 metadata for this route, no dynamic client registration): a Keycloak token works when the client is given
+  one; the key is the supported path for tools.
+- **Separation from the baby MCP server**: the baby endpoint authenticates only its own `Mcp` JWT scheme (audience
+  `Mcp:Audience`; `lbk_` values are skipped), so a board key is 401 there; the board endpoint authenticates only the
+  board's callers, so a baby MCP token (audience `lotties-mcp`) is 401 here. Each endpoint lists and runs only its own
+  tools; an unknown tool name (a baby tool on the board, a board tool on the baby server) is a JSON-RPC invalid-params
+  error.
+- **Permissions per tool**: `tools/list` shows the read tools to a read key or the reader role, and also the write tools
+  to a write key, the writer or the admin role; a write tool called without the write permission is a `forbidden` tool
+  error (its message says `insufficient_scope`) and writes nothing. No admin tool exists, so nobody manages keys or
+  topics or restores items over MCP. A key limited to topics stays limited (the service's rules).
+- **Origin**: an `Origin` header outside `Board:Mcp:AllowedOrigins` (none by default; validated at startup) is 403 (DNS
+  rebinding protection); server-side and CLI clients send none.
+- **Limits**: the board rate limit (`RequestLimits:BoardPermitsPerMinute`, per key or per user, shared with the REST
+  routes, plus the global per-user limit); a single `tools/call` over it gets a JSON-RPC result that is a `rate_limited`
+  tool error (`retryAfterSeconds`, `Retry-After` header), any other message the API's 429 problem. Body at most
+  `RequestLimits:BoardMaxRequestBodyBytes` (256 KiB, else 413).
+- **Logs**: `Board MCP <tool>: <result code> (correlation <id>)` per call and `Board MCP request refused: origin not
+  allowed`; never arguments, titles, bodies, keys or prefixes. The repository sends ids, topic keys, external keys and
+  labels as SQL parameters (never literals), so EF's command log carries no caller value either.
+
+### 9.2 Tools
+
+Every tool maps its arguments to the same `IBoardService` calls as the REST routes (create and patch bodies go through
+`BoardItemInput` unchanged), so the rules, the versions and the history (actor kind `api_key` with the key's name, or
+`user` with the person's name) are identical. Schemas are strict (`additionalProperties: false`, required members, enums
+from `BoardCodes`, lengths from the domain); the adapter checks only the JSON shape and leaves the values to the service.
+
+| Tool | Permission | Hints | Args | Result (`structuredContent`) |
+| --- | --- | --- | --- | --- |
+| `board_summary` | read | read-only | `top?` (1-20, default 5) | section 3.3 |
+| `board_list_topics` | read | read-only | `includeArchived?` | `{topics}` |
+| `board_list_items` | read | read-only | `topic?`, `type?`, `status?[]`, `side?`, `priority?`, `label?`, `pinned?`, `open?`, `q?`, `updatedSince?`, `sort?`, `limit?` (1-50, default 20), `cursor?` | `{items: [itemSummary], nextCursor?}` |
+| `board_get_item` | read | read-only | `id` | `{item, history (the newest 50, oldest first), historyTotal}` |
+| `board_search` | read | read-only | `q` (1-200), `type?`, `topic?`, `limit?` (1-50, default 10) | `{items}` |
+| `board_recent_changes` | read | read-only | `since`, `limit?` (1-50, default 20), `cursor?` | `{since, items, nextCursor?}` (instead of an export tool) |
+| `board_create_item` | write | not idempotent (with `externalKey` a retry returns the stored item) | `type`, `topic`, `title`, `side`, `body?`, `priority?`, `status?`, `labels?`, `dueDate?`, `links?`, `source?`, `pinned?`, `externalKey?` | `{item, created}` |
+| `board_update_item` | write | idempotent | `id`, `version` (required), any of `type`, `topic`, `title`, `status`, `side`, `priority`, `pinned`, and (null clears) `body`, `labels`, `dueDate`, `links`, `source`, `decisionSummary`, `rationale` | `{item}` |
+| `board_set_status` | write | not idempotent | `id`, `status`, `note?` (added as a comment) | `{item, comment?}` |
+| `board_add_comment` | write | not idempotent | `id`, `text` | `{itemId, comment}` (the history entry) |
+| `board_record_decision` | write | not idempotent | `topic`, `title`, `decisionSummary`, `rationale`, `source?`, `relatedItemId?` | `{item, relatedItemId?}`: a `decision` item, status `done`, decided now; with `relatedItemId` its body names that item and a comment on that item points back |
+| `board_delete_item` | write | destructive, idempotent | `id` | `{id, deleted: true}` (soft delete; admins restore in the app) |
+
+Results are the REST JSON (null members left out) as `structuredContent`, plus a short sentence and the same JSON as text.
+Errors are tool errors (`isError: true`) with `{code, message, field?, reason?, currentVersion?}`: `validation_failed`
+(`field` is the tool's argument; an unknown or archived topic is `field: topic`), `not_found`, `version_conflict`
+(`currentVersion`), `forbidden` (`reason` `board_topic_not_allowed` for a key outside its topics), `conflict`
+(`board_item_deleted`, `concurrent_modification`), `rate_limited`, `internal_error` (nothing internal is returned). The
+domain's own code, when there is one, is in `reason`.
+
+Not offered on purpose: restore, topic management, key management, bulk import (the REST `POST /board/items/bulk` stays
+the seeding path), export (too large). `board_set_status` with a note writes twice (the status, then the comment): a
+failure between the two leaves the status changed.
 
 ## 10. Web page (for the later worker)
 
@@ -344,6 +394,8 @@ Route `/board` (outside the baby shell, signed-in; hidden unless `GET /board/me`
 | Key (env) | Default | Purpose |
 | --- | --- | --- |
 | `Board__Enabled` | `false` | `true` serves the board routes |
+| `Board__Mcp__Enabled` | `false` | `true` (with `Board__Enabled`) serves `POST /api/v1/board/mcp` (section 9) |
+| `Board__Mcp__AllowedOrigins` | empty | browser origins allowed on the board MCP endpoint (others 403) |
 | `RequestLimits__BoardPermitsPerMinute` | `120` | board requests per user or key per minute |
 | `RequestLimits__BoardMaxRequestBodyBytes` | `262144` | largest board request body |
 | `RequestLimits__BoardBulkMaxRequestBodyBytes` | `4194304` | largest bulk import body |
@@ -356,9 +408,10 @@ Owner setup (realm roles, the token mapper, keys): docs/KEYCLOAK-BOARD.md.
   `IBoardCaller`), Infrastructure `BoardConfigurations.cs`, `EfBoardRepository.cs`, `EfBoardApiKeyRepository.cs`, Api
   `Lotties.Api/Board` (routes, claims transformation, `BoardKey` scheme, guard, policies). docs/agents/filemap.md lists
   every file.
-- The MCP worker calls `IBoardService` / `BoardItemInput` (create and patch bodies are JSON elements read strictly, so a
-  tool's arguments can be passed through) and gets the caller from `IBoardCaller`; a new route needs a row in
-  `EndpointRoleMatrixTests` (board section) and the guard metadata (`BoardEndpointMetadata`) to be 404 while disabled.
+- MCP (built, section 9): `Lotties.Api/Board/Mcp/` calls `IBoardService` with the tool's arguments passed through to
+  `BoardItemInput`; its routes carry `BoardEndpointMetadata` (board guard) and `BoardMcpEndpointMetadata` (its own guard)
+  and have rows in `EndpointRoleMatrixTests`; tests `BoardMcpProtocolTests`, `BoardMcpHttpTests` (host `BoardMcpHost`: real
+  JWT validation, both MCP endpoints on).
 - The web worker: `GET /board/me` decides whether to show the page (200) or not (403/404); every list is
   `itemSummary` (no body); PATCH with `If-Match` and handle 412 (`currentVersion`); key creation shows `secret` once.
 - Tests: `BoardTestKit` (users with realm roles through the test header `X-Test-Realm-Roles`, keys seeded in the

@@ -56,8 +56,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment(ApiEnvironments.Testing);
 
         // The project board is off by default in production; on here so the endpoint matrix and the board tests reach
-        // its routes (BoardAuthorizationTests turns it off again to check the 404).
+        // its routes (BoardAuthorizationTests turns it off again to check the 404); its MCP endpoint too (BoardMcpHttpTests).
         builder.UseSetting("Board:Enabled", "true");
+        builder.UseSetting("Board:Mcp:Enabled", "true");
         builder.ConfigureTestServices(ReplaceDatabaseAndAuthentication);
     }
 
