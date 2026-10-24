@@ -100,6 +100,11 @@
         "hint": "Aparência, idioma, notificações, sincronização",
         "keywords": "preferências tema escuro idioma notificações sincronização perfil tipos de evento"
       },
+      "board": {
+        "title": "Quadro do projeto",
+        "hint": "Tarefas, lacunas e decisões do projeto",
+        "keywords": "quadro projeto tarefas lacunas decisões notas memórias assistente claude chaves api"
+      },
       "import": {
         "title": "Importar",
         "hint": "Traga o histórico de outro app",

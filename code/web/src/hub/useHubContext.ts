@@ -1,4 +1,5 @@
 import { canDecideProposals } from '../baby/permissions';
+import { useBoardAccess } from '../board/useBoardAccess';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { useBabies } from '../db/hooks';
 import { hasPatients } from '../doctor/appMode';
@@ -19,6 +20,8 @@ export function useHubContext(): HubContext | undefined {
   // Without a baby the members query must not run: the Doctor role switches it off.
   const members = useMembers(baby ?? { id: '', role: 'Doctor' });
   const { installed } = useInstallState();
+  // Asked in the background: the Hub renders at once and the board entry appears when granted.
+  const { access: board } = useBoardAccess();
   if (!babies || !all) return undefined;
   const hasDoctor = members?.some((member) => member.role === 'Doctor') ?? false;
   const anything = !!inbox && (inbox.proposals.length > 0 || inbox.recommendations.length > 0);
@@ -28,5 +31,6 @@ export function useHubContext(): HubContext | undefined {
     hasDoctorContent: !!baby && canDecideProposals(baby) && (hasDoctor || anything),
     native: isNativeApp(),
     installed,
+    board: !!board?.canRead,
   };
 }

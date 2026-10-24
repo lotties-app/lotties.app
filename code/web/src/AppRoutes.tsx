@@ -56,6 +56,8 @@ const ProposalsPage = lazy(() =>
 const FromDoctorPage = lazy(() =>
   import('./pages/FromDoctorPage').then((m) => ({ default: m.FromDoctorPage })),
 );
+// The project board: its own frame outside the parents' shell (no baby data near it), online only.
+const BoardPage = lazy(() => import('./board/BoardPage'));
 
 /**
  * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
@@ -89,6 +91,7 @@ const DevIllustrationGallery = import.meta.env.DEV
   : null;
 const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPreview')) : null;
 const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
+const DevBoardPreview = import.meta.env.DEV ? lazy(() => import('./dev/BoardPreview')) : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -263,6 +266,16 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevBoardPreview && (
+        <Route
+          path="/dev/board/:itemId?"
+          element={
+            <Suspense fallback={null}>
+              <DevBoardPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevRingPreview && (
         <Route
           path="/dev/ring"
@@ -343,6 +356,15 @@ export function AppRoutes() {
             <Route path="proposals" element={<ProposalsPage />} />
             <Route path="from-doctor" element={<FromDoctorPage />} />
           </Route>
+          {/* `/hub/board` and `/hub/board/<item id>` (the drawer): one route, the page stays mounted. */}
+          <Route
+            path="hub/board/:itemId?"
+            element={
+              <Suspense fallback={null}>
+                <BoardPage />
+              </Suspense>
+            }
+          />
           {doctorRoutes()}
         </Route>
       </Route>

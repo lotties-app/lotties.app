@@ -76,6 +76,15 @@ import IconArrowsHorizontal from '@tabler/icons-react/dist/esm/icons/IconArrowsH
 import IconPlayerPause from '@tabler/icons-react/dist/esm/icons/IconPlayerPause.mjs';
 import IconClockPause from '@tabler/icons-react/dist/esm/icons/IconClockPause.mjs';
 import IconFlag from '@tabler/icons-react/dist/esm/icons/IconFlag.mjs';
+// Project board (docs/design/36-project-board.md): item types, pins and API keys.
+import IconLayoutKanban from '@tabler/icons-react/dist/esm/icons/IconLayoutKanban.mjs';
+import IconSquareCheck from '@tabler/icons-react/dist/esm/icons/IconSquareCheck.mjs';
+import IconPuzzle from '@tabler/icons-react/dist/esm/icons/IconPuzzle.mjs';
+import IconHelpCircle from '@tabler/icons-react/dist/esm/icons/IconHelpCircle.mjs';
+import IconBookmark from '@tabler/icons-react/dist/esm/icons/IconBookmark.mjs';
+import IconPin from '@tabler/icons-react/dist/esm/icons/IconPin.mjs';
+import IconKey from '@tabler/icons-react/dist/esm/icons/IconKey.mjs';
+import IconMessage from '@tabler/icons-react/dist/esm/icons/IconMessage.mjs';
 import IconCar from '@tabler/icons-react/dist/esm/icons/IconCar.mjs';
 import IconBabyCarriage from '@tabler/icons-react/dist/esm/icons/IconBabyCarriage.mjs';
 import IconUsers from '@tabler/icons-react/dist/esm/icons/IconUsers.mjs';
@@ -208,6 +217,14 @@ export const ICON_COMPONENTS = {
   pause: IconPlayerPause,
   'clock-pause': IconClockPause,
   flag: IconFlag,
+  board: IconLayoutKanban,
+  'square-check': IconSquareCheck,
+  puzzle: IconPuzzle,
+  help: IconHelpCircle,
+  bookmark: IconBookmark,
+  pin: IconPin,
+  key: IconKey,
+  comment: IconMessage,
   car: IconCar,
   stroller: IconBabyCarriage,
   users: IconUsers,
