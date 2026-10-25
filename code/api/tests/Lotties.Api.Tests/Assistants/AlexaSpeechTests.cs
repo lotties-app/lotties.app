@@ -186,8 +186,8 @@ public sealed class AlexaSpeechTests
     }
 
     [Theory]
-    [InlineData("en-US", "From what is logged for Charlotte: Hunger looks likely: the last feed was 3 hours and 10 minutes ago, and the usual gap is about 2 hours and 30 minutes. Gas looks possible: belly pain often shows up around 6:30 PM. This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever (babies under 3 months with a fever need a call right away), crying you cannot soothe, refusing feeds, unusual sleepiness or being hard to wake and a bulging or stiff soft spot on the head.")]
-    [InlineData("pt-BR", "Pelo que está registrado de Charlotte: Fome parece provável: a última mamada foi há 3 horas e 10 minutos, e o intervalo habitual é de cerca de 2 horas e 30 minutos. Gases parecem possíveis: a dor de barriga costuma aparecer por volta das 18:30. Isto não é um diagnóstico nem orientação médica. Ligue para o pediatra ou para a emergência se houver febre (bebês com menos de 3 meses com febre precisam de uma ligação na hora), choro que você não consegue acalmar, recusa para mamar ou comer, sonolência fora do comum ou dificuldade para acordar e moleira estufada ou dura.")]
+    [InlineData("en-US", "From what is logged for Charlotte: hunger looks likely: the last feed was 3 hours and 10 minutes ago, and the usual gap is about 2 hours and 30 minutes. Gas looks possible: belly pain often shows up around 6:30 PM. This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever (babies under 3 months with a fever need a call right away), crying you cannot soothe, refusing feeds, unusual sleepiness or being hard to wake and a bulging or stiff soft spot on the head.")]
+    [InlineData("pt-BR", "Pelo que está registrado de Charlotte: fome parece provável: a última mamada foi há 3 horas e 10 minutos, e o intervalo habitual é de cerca de 2 horas e 30 minutos. Gases parecem possíveis: a dor de barriga costuma aparecer por volta das 18:30. Isto não é um diagnóstico nem orientação médica. Ligue para o pediatra ou para a emergência se houver febre (bebês com menos de 3 meses com febre precisam de uma ligação na hora), choro que você não consegue acalmar, recusa para mamar ou comer, sonolência fora do comum ou dificuldade para acordar e moleira estufada ou dura.")]
     public void Say_CryReasons_TellsTheTopCausesWithTheirFactsThenAlwaysTheSafetySentence(string locale, string expected)
     {
         var result = Full(AssistantResultCode.CryReasons, "America/Sao_Paulo");
@@ -195,6 +195,33 @@ public sealed class AlexaSpeechTests
         var spoken = AlexaLanguages.For(locale).Say(result with { TimeZone = "Etc/UTC" });
 
         Assert.Equal(expected, spoken);
+    }
+
+    [Theory]
+    [InlineData("en-US", "From what is logged for Charlotte: hunger looks likely: the last feed was 3 hours and 10 minutes ago, and the usual gap is about 2 hours and 30 minutes. This is not a diagnosis")]
+    [InlineData("pt-BR", "Pelo que está registrado de Charlotte: fome parece provável: a última mamada foi há 3 horas e 10 minutos, e o intervalo habitual é de cerca de 2 horas e 30 minutos. Isto não é um diagnóstico")]
+    public void Say_CryReasons_SecondCauseFarBehind_IsLeftOut_ButTheRedFlagsStayWhole(string locale, string startsWith)
+    {
+        var full = Full(AssistantResultCode.CryReasons, "America/Sao_Paulo");
+        var result = full with { TimeZone = "Etc/UTC", CryCauses = [full.CryCauses[0], full.CryCauses[1] with { Score = 0.4 }] };
+
+        var spoken = AlexaLanguages.For(locale).Say(result);
+
+        Assert.StartsWith(startsWith, spoken, StringComparison.Ordinal);
+        Assert.DoesNotContain(locale == "en-US" ? "Gas looks" : "Gases parecem", spoken, StringComparison.Ordinal);
+        Assert.Contains(locale == "en-US" ? "a bulging or stiff soft spot on the head." : "moleira estufada ou dura.", spoken, StringComparison.Ordinal);
+        Assert.Equal(AlexaLanguages.For(locale).Say(full with { TimeZone = "Etc/UTC" }).Split(". ").Last(), spoken.Split(". ").Last());
+    }
+
+    [Fact]
+    public void Spoken_KeepsTheSecondCauseOnlyWhenItsScoreIsClose()
+    {
+        var first = new AssistantCryCause(CryCause.Hunger, CryLevel.Likely, [], 0.8);
+
+        Assert.Single(AssistantCryCause.Spoken([first, new AssistantCryCause(CryCause.Gas, CryLevel.Possible, [], 0.69)]));
+        Assert.Equal(2, AssistantCryCause.Spoken([first, new AssistantCryCause(CryCause.Gas, CryLevel.Possible, [], 0.71)]).Count);
+        Assert.Single(AssistantCryCause.Spoken([first]));
+        Assert.Empty(AssistantCryCause.Spoken([]));
     }
 
     [Theory]
@@ -266,8 +293,8 @@ public sealed class AlexaSpeechTests
         LastAmountMl = 140,
         CryCauses =
         [
-            new AssistantCryCause(CryCause.Hunger, CryLevel.Likely, [new CryFact { Kind = "sinceLastFeed", Minutes = 190, UsualGapMinutes = 150 }]),
-            new AssistantCryCause(CryCause.Gas, CryLevel.Possible, [new CryFact { Kind = "bellyPattern", TypicalClock = "18:30" }]),
+            new AssistantCryCause(CryCause.Hunger, CryLevel.Likely, [new CryFact { Kind = "sinceLastFeed", Minutes = 190, UsualGapMinutes = 150 }], 0.8),
+            new AssistantCryCause(CryCause.Gas, CryLevel.Possible, [new CryFact { Kind = "bellyPattern", TypicalClock = "18:30" }], 0.75),
         ],
         RedFlags = RedFlags,
         EntryType = "feeding",

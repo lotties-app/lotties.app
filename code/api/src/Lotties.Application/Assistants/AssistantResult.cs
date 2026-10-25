@@ -193,7 +193,22 @@ public sealed record AssistantTimeWindow(DateTimeOffset Earliest, DateTimeOffset
 public sealed record AssistantCryCause(
     [property: JsonConverter(typeof(SnakeCaseStringEnumConverter))] CryCause Cause,
     [property: JsonConverter(typeof(SnakeCaseStringEnumConverter))] CryLevel Level,
-    IReadOnlyList<CryFact> Facts);
+    IReadOnlyList<CryFact> Facts,
+    [property: JsonIgnore] double Score = 0)
+{
+    /// <summary>A second cause is spoken only when its ranking score is within this of the first's (the ranker's own scores, 0 to 1).</summary>
+    public const double CloseScoreMargin = 0.1;
+
+    /// <summary>
+    /// The causes a short spoken answer tells: the most likely one, plus the second only when its score is close to the first's.
+    /// The structured result (MCP) keeps every cause.
+    /// </summary>
+    public static IReadOnlyList<AssistantCryCause> Spoken(IReadOnlyList<AssistantCryCause> causes)
+    {
+        ArgumentNullException.ThrowIfNull(causes);
+        return causes.Count < 2 || causes[0].Score - causes[1].Score > CloseScoreMargin ? causes.Take(1).ToArray() : causes.Take(2).ToArray();
+    }
+}
 
 /// <summary>A due vaccine dose (schedule facts): the vaccine's names and the dose label by language (<c>en</c>, <c>pt-BR</c>).</summary>
 public sealed record AssistantVaccineDose(string VaccineKey, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string> DoseLabel, bool Overdue, DateOnly DueOn);

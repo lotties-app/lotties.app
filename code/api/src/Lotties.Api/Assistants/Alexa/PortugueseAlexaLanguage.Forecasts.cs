@@ -163,9 +163,11 @@ internal sealed partial class PortugueseAlexaLanguage
 
     private static string CryReasons(AssistantResult result)
     {
-        var causes = result.CryCauses.Select(cause => CauseSentence(result, cause)).ToArray();
+        var causes = AssistantCryCause.Spoken(result.CryCauses).Select((cause, index) => index == 0 ? LowerFirst(CauseSentence(result, cause)) : CauseSentence(result, cause)).ToArray();
         return $"Pelo que está registrado de {Name(result)}: {string.Join(' ', causes)} {CrySafety(result)}";
     }
+
+    private static string LowerFirst(string sentence) => sentence.Length == 0 ? sentence : char.ToLowerInvariant(sentence[0]) + sentence[1..];
 
     private static string CryNoData(AssistantResult result)
     {
@@ -185,7 +187,7 @@ internal sealed partial class PortugueseAlexaLanguage
             (_, true) => "possíveis",
             _ => "possível",
         };
-        var facts = string.Join("; ", cause.Facts.Take(2).Select(fact => CryFactText(result, fact)));
+        var facts = string.Join("; ", cause.Facts.Take(1).Select(fact => CryFactText(result, fact)));
         return $"{CryCauseName(cause.Cause)} {verb} {level}: {facts}.";
     }
 

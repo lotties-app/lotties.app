@@ -163,9 +163,11 @@ internal sealed partial class EnglishAlexaLanguage
 
     private static string CryReasons(AssistantResult result)
     {
-        var causes = result.CryCauses.Select(cause => CauseSentence(result, cause)).ToArray();
+        var causes = AssistantCryCause.Spoken(result.CryCauses).Select((cause, index) => index == 0 ? LowerFirst(CauseSentence(result, cause)) : CauseSentence(result, cause)).ToArray();
         return $"From what is logged for {Name(result)}: {string.Join(' ', causes)} {CrySafety(result)}";
     }
+
+    private static string LowerFirst(string sentence) => sentence.Length == 0 ? sentence : char.ToLowerInvariant(sentence[0]) + sentence[1..];
 
     private static string CryNoData(AssistantResult result)
     {
@@ -177,7 +179,7 @@ internal sealed partial class EnglishAlexaLanguage
     private static string CauseSentence(AssistantResult result, AssistantCryCause cause)
     {
         var level = cause.Level == CryLevel.Likely ? "likely" : "possible";
-        var facts = string.Join("; ", cause.Facts.Take(2).Select(fact => CryFactText(result, fact)));
+        var facts = string.Join("; ", cause.Facts.Take(1).Select(fact => CryFactText(result, fact)));
         return $"{CryCauseName(cause.Cause)} looks {level}: {facts}.";
     }
 
