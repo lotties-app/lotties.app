@@ -62,7 +62,14 @@
             "ela tomou {amount} ml de {bottleKind}",
             "ele tomou {amount} ml de {bottleKind}",
             "registrar mamadeira",
-            "registrar mamadeira de {bottleKind}"
+            "registrar uma mamadeira",
+            "anotar mamadeira",
+            "anotar uma mamadeira",
+            "adicionar mamadeira",
+            "registrar mamadeira de {bottleKind}",
+            "registrar uma mamadeira de {bottleKind}",
+            "ela tomou mamadeira",
+            "ele tomou mamadeira"
           ]
         },
         {
@@ -93,6 +100,10 @@
             "ela fez {diaperKind}",
             "ele fez {diaperKind}",
             "registrar fralda",
+            "registrar uma fralda",
+            "anotar fralda",
+            "anotar uma fralda",
+            "troquei a fralda",
             "registrar troca de fralda"
           ]
         },
