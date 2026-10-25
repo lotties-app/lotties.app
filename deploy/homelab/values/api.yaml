@@ -29,6 +29,9 @@ env:
   # Not secrets. Off by default in the app: remove these two lines to switch the board off again.
   Board__Enabled: "true"
   Board__Mcp__Enabled: "true"
+  # Alexa skill (docs/ALEXA.md): the skill id is not a secret. Remove both lines to switch the skill endpoint off.
+  Alexa__Enabled: "true"
+  Alexa__SkillIds: "amzn1.ask.skill.f88b9689-c265-47ed-8aa3-a287fa23b0a7"
 
 # The Secret lotties-secrets is made by deploy.sh from deploy/homelab/.env (or keeps what it already has).
 secretEnv:
