@@ -110,6 +110,46 @@ public sealed class AssistantNeverDeletesTests(ApiFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task RequestDeleteLast_NewestIsTheWakeUp_StopsWithoutMarkingAnOlderBottle()
+    {
+        var (baby, _) = await SeededAsync(
+            (id, user) => Entry(id, user, BuiltInEventTypes.FeedingId, """{"method":"bottle","amount_ml":100,"via":"alexa"}""", 5),
+            (id, user) => Entry(id, user, BuiltInEventTypes.SleepId, """{"kind":"woke_up","via":"alexa"}""", 2));
+        var before = (await factory.EventsAsync(baby.BabyId)).ToDictionary(stored => stored.Id, stored => stored.Payload.Value);
+
+        var result = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.RequestDeleteLastAsync(Invocation(adapter: "alexa")));
+
+        Assert.Equal((AssistantResultCode.LastNotUndoable, "woke_up"), (result.Code, result.EntryType));
+        Assert.Equal(before, (await factory.EventsAsync(baby.BabyId)).ToDictionary(stored => stored.Id, stored => stored.Payload.Value));
+    }
+
+    [Fact]
+    public async Task RequestDeleteLast_NewestIsABottleAfterAnOlderWakeUp_MarksTheBottle()
+    {
+        var (baby, _) = await SeededAsync(
+            (id, user) => Entry(id, user, BuiltInEventTypes.SleepId, """{"kind":"woke_up","via":"alexa"}""", 8),
+            (id, user) => Entry(id, user, BuiltInEventTypes.FeedingId, """{"method":"bottle","amount_ml":100,"via":"alexa"}""", 2));
+
+        var result = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.RequestDeleteLastAsync(Invocation(adapter: "alexa")));
+
+        Assert.Equal(AssistantResultCode.DeleteRequested, result.Code);
+        Assert.Equal(BuiltInEventTypes.FeedingId, Assert.Single((await factory.EventsAsync(baby.BabyId)).Where(stored => AssistantOrigin.DeleteRequestedViaOf(stored.Payload) is not null)).TypeId);
+    }
+
+    [Fact]
+    public async Task RequestDeleteLast_NewestEntryOfTheAppOrAnotherAdapter_IsStillIgnored()
+    {
+        var (baby, _) = await SeededAsync(
+            (id, user) => Entry(id, user, BuiltInEventTypes.FeedingId, """{"method":"bottle","amount_ml":100,"via":"alexa"}""", 6),
+            (id, user) => Entry(id, user, BuiltInEventTypes.SleepId, """{"kind":"woke_up","via":"mcp"}""", 1),
+            (id, user) => Entry(id, user, BuiltInEventTypes.DiaperId, """{"content":"WET"}""", 1));
+
+        var result = await _host.RunAsAsync(baby.OwnerSubject, assistant => assistant.RequestDeleteLastAsync(Invocation(adapter: "alexa")));
+
+        Assert.Equal(AssistantResultCode.DeleteRequested, result.Code);
+    }
+
+    [Fact]
     public async Task RequestDeleteLast_Twice_ChangesNothingTheSecondTime()
     {
         var (baby, _) = await SeededAsync((id, user) => Entry(id, user, BuiltInEventTypes.DiaperId, """{"content":"DIRTY","via":"alexa"}""", 2));

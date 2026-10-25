@@ -57,6 +57,7 @@ internal sealed class AssistantService(
     private static readonly TimeSpan NursingLookback = TimeSpan.FromDays(7);
     private static readonly TimeSpan AppointmentHorizon = TimeSpan.FromDays(366);
     private const int VaccinesTold = 5;
+    private const string WokeUpEntry = "woke_up";
     private const int AverageDays = 7;
     private static readonly string[] MadeByAssistantKeys = [SleepKey, FeedingKey, DiaperKey];
     private static readonly TimeSpan DeleteWindow = TimeSpan.FromMinutes(30);
@@ -463,7 +464,7 @@ internal sealed class AssistantService(
     }
 
     /// <summary>
-    /// Marks the newest entry this adapter created in the last 30 minutes as a deletion request: the same upsert as an edit
+    /// Marks the newest entry this adapter created in the last 30 minutes (of any kind) as a deletion request, unless it is the wake-up marker, which stops the request with <see cref="AssistantResultCode.LastNotUndoable"/> (no older entry is chosen instead): the same upsert as an edit
     /// (client time never older than the stored one), every other member kept, only <c>delete_requested_*</c> added. It
     /// never deletes, and it never touches an entry another origin made.
     /// </summary>
@@ -474,14 +475,19 @@ internal sealed class AssistantService(
             .Select(typed => (typed.TypeKey, typed.Event))
             .Where(entry => !entry.Event.IsDeleted
                 && entry.Event.CreatedAt >= subject.Now - DeleteWindow
-                && AssistantOrigin.ViaOf(entry.Event.Payload) == subject.Adapter
-                && EventPayloadFacts.Read(entry.Event.Payload).Kind != SleepKinds.WokeUp)
+                && AssistantOrigin.ViaOf(entry.Event.Payload) == subject.Adapter)
             .OrderByDescending(entry => entry.Event.CreatedAt)
             .Cast<(EventTypeKey TypeKey, Event Event)?>()
             .FirstOrDefault();
         if (target is not { } found)
         {
             return subject.Result(AssistantResultCode.NoEntryToDelete);
+        }
+
+        if (EventPayloadFacts.Read(found.Event.Payload).Kind == SleepKinds.WokeUp)
+        {
+            // The very newest thing she logged is the wake-up marker: never fall back to an older entry.
+            return subject.Result(AssistantResultCode.LastNotUndoable) with { At = found.Event.StartedAt, EntryType = WokeUpEntry };
         }
 
         await MarkDeleteRequestedAsync(subject, found.Event, cancellationToken);

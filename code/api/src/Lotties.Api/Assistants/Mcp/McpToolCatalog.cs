@@ -212,7 +212,7 @@ internal static class McpToolCatalog
         Write(
             "request_delete_last_entry",
             "Ask to delete the last entry",
-            "Asks for the last entry this assistant logged in the last 30 minutes to be deleted: it only marks the entry (nothing is deleted); the person approves the deletion or keeps the entry in the Lotties app. Assistants can never delete. Answers delete_requested, or no_entry_to_delete when this assistant made no entry in that time.",
+            "Asks for the last entry this assistant logged in the last 30 minutes to be deleted: it only marks the entry (nothing is deleted); the person approves the deletion or keeps the entry in the Lotties app. Assistants can never delete. Answers delete_requested, last_not_undoable when the newest entry it made is the wake-up marker (nothing changes, no older entry is chosen), or no_entry_to_delete when it made no entry in that time.",
             [],
             (assistant, invocation, _, token) => assistant.RequestDeleteLastAsync(invocation, token)),
         Write(

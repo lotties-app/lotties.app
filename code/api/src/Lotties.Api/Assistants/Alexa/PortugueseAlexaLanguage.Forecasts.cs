@@ -39,6 +39,8 @@ internal sealed partial class PortugueseAlexaLanguage
         [AssistantResultCode.CryNoData] = CryNoData,
         [AssistantResultCode.DeleteRequested] = result =>
             $"Pedi para apagar o último registro de {EntryName(result.EntryType)} de {Name(result)}, {When(result, result.At)}. Nada foi apagado: abra o app do Lotties para aprovar ou manter.",
+        [AssistantResultCode.LastNotUndoable] = result =>
+            $"A última coisa que você registrou por voz para {Name(result)} foi o despertar, {When(result, result.At)}. Isso não pode ser desfeito por voz, então nada foi alterado. Você pode corrigir no app do Lotties.",
         [AssistantResultCode.NoEntryToDelete] = _ => "Não encontrei nenhum registro feito por voz nos últimos 30 minutos, então nada foi alterado.",
     };
 

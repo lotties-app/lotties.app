@@ -76,6 +76,15 @@ public sealed class AlexaSpeechTests
     }
 
     [Fact]
+    public void Say_LastNotUndoable_SaysItWasAWakeUpAndNothingChanged()
+    {
+        var result = Result(AssistantResultCode.LastNotUndoable, "America/Sao_Paulo") with { At = AsOf, EntryType = "woke_up" };
+
+        Assert.Equal("The last thing you logged by voice for Charlotte was a wake-up, at 3:15 PM. That can't be undone by voice, so nothing was changed. You can correct it in the Lotties app.", AlexaLanguages.For("en-US").Say(result));
+        Assert.Equal("A última coisa que você registrou por voz para Charlotte foi o despertar, às 15:15. Isso não pode ser desfeito por voz, então nada foi alterado. Você pode corrigir no app do Lotties.", AlexaLanguages.For("pt-BR").Say(result));
+    }
+
+    [Fact]
     public void Say_WithoutZone_SpeaksRelativeTimes()
     {
         var result = Result(AssistantResultCode.LastFeed, null) with { At = AsOf.AddMinutes(-80), FeedMethod = FeedMethod.Breast, Side = BreastSide.Left, Running = false };

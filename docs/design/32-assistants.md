@@ -107,7 +107,7 @@ with a line for every code, tested for every code in both languages.
 | `feeds_today` | `count` feeds since local midnight (same `window` rule), `bottleFeeds`, `breastFeeds`, `solidFeeds`; zero feeds is still this code |
 | `last_diaper`, `no_diapers` | the newest diaper of 30 days: `at`, `diaper` |
 | `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags`; `running` = a sleep timer runs so the log may be behind |
-| `delete_requested`, `no_entry_to_delete` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
+| `delete_requested`, `no_entry_to_delete`, `last_not_undoable` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
 | `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
 | `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
@@ -226,10 +226,11 @@ that no command lowers the event count or soft-deletes. A write only touches eve
 
 What it can do is **ask**: `RequestDeleteLast` ("undo the last thing I logged", "delete the last entry"; pt-BR "desfazer o
 último registro", "apagar o último registro"; MCP `request_delete_last_entry`, scope `lotties.write`) finds the newest
-non-deleted entry that the calling adapter created (`via`) in the last 30 minutes (a `woke_up` marker is never the
-target) and adds two payload members: `delete_requested_via` = the adapter name and `delete_requested_at` = the server clock
+non-deleted entry that the calling adapter created (`via`) in the last 30 minutes, of any kind, and adds two payload members: `delete_requested_via` = the adapter name and `delete_requested_at` = the server clock
 (ISO instant). It answers `delete_requested` (neutral: it asked, nothing was deleted, the person approves in the app) or
-`no_entry_to_delete`. It is the same upsert as an edit (client time never older than the stored one), idempotent: an entry
+`no_entry_to_delete`. If that newest entry is the `woke_up` marker (which voice may not mark) the request stops there: it answers
+`last_not_undoable` (the last thing logged was a wake-up, it cannot be undone by voice, correct it in the app), changes nothing
+and never falls back to an older entry. It is the same upsert as an edit (client time never older than the stored one), idempotent: an entry
 that already carries the request is left as it is, so asking twice, or replaying the request id, changes nothing. No new
 table, no migration, no new route (the markers are undeclared payload members like `via`, carried by sync, backup and the
 doctor's view). The Viewer role cannot ask (it is a write); a role that logs can.

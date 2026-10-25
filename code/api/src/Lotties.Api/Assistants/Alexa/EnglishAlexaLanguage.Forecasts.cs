@@ -39,6 +39,8 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.CryNoData] = CryNoData,
         [AssistantResultCode.DeleteRequested] = result =>
             $"I asked to delete {Name(result)}'s last {EntryName(result.EntryType)}, {When(result, result.At)}. Nothing was deleted: open the Lotties app to approve it or keep it.",
+        [AssistantResultCode.LastNotUndoable] = result =>
+            $"The last thing you logged by voice for {Name(result)} was a wake-up, {When(result, result.At)}. That can't be undone by voice, so nothing was changed. You can correct it in the Lotties app.",
         [AssistantResultCode.NoEntryToDelete] = _ => "I can't find an entry you logged by voice in the last 30 minutes, so nothing was changed.",
     };
 

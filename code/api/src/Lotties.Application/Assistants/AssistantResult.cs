@@ -164,6 +164,9 @@ public enum AssistantResultCode
 
     /// <summary>This adapter made no entry in the last 30 minutes; nothing was marked.</summary>
     NoEntryToDelete,
+
+    /// <summary>The newest entry this adapter made in 30 minutes (<see cref="AssistantResult.EntryType"/> <c>woke_up</c>, <see cref="AssistantResult.At"/>) is not something voice may mark; nothing was changed and no older entry was chosen. It can be corrected in the app.</summary>
+    LastNotUndoable,
 }
 
 /// <summary>Which days a count covers.</summary>
