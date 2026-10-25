@@ -445,6 +445,10 @@ export const privacyPtBR: PolicyDocument = {
           kind: 'p',
           text: 'Nenhum sistema é totalmente seguro. Os dados no seu aparelho e os arquivos que você exporta não são criptografados pelo app: proteja seu aparelho, saia da conta em aparelhos compartilhados e guarde bem os arquivos exportados. Se um incidente de segurança puder trazer risco ou dano relevante a você, avisaremos você e a ANPD (LGPD, art. 48).',
         },
+        {
+          kind: 'p',
+          text: 'O Lotties roda em servidores de um home lab, não em um data center comercial. O servidor é protegido por um nobreak contra quedas de energia e possui backups automáticos criptografados fora do local, mas não podemos garantir que nenhum dado será perdido. Para os registros mais importantes, mantenha sua própria cópia usando [Central > Exportar dados](/hub/export).',
+        },
       ],
     },
     {

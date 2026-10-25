@@ -441,6 +441,10 @@ export const privacyEn: PolicyDocument = {
           kind: 'p',
           text: 'No system is completely secure. Data on your device and the files you export are not encrypted by the app, so protect your device, sign out on shared devices and keep exported files safe. If a security incident may bring you relevant risk or harm, we will tell you and the ANPD (LGPD art. 48).',
         },
+        {
+          kind: 'p',
+          text: 'Lotties runs on servers in a home lab, not in a commercial data center. The server is protected by a UPS against power loss and has automated encrypted offsite backups, but we cannot guarantee that data will never be lost. For your most important records, keep your own copy using [Hub > Export data](/hub/export).',
+        },
       ],
     },
     {
