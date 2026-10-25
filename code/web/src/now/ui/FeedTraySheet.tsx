@@ -5,9 +5,11 @@ import type { EventType } from '../../db/models';
 import { BottleSuggestionCaption } from '../../events/BottleSuggestionCaption';
 import { drunkChoices } from '../../events/bottleAmounts';
 import { eventTypeText } from '../../i18n/eventTypeText';
-import { formatNumber } from '../../i18n/format';
 import { Illustration } from '../../ui/illustrations';
-import { ChipGroup, NumberStepper, SegmentedControl } from '../../ui/form';
+import { ChipGroup, SegmentedControl } from '../../ui/form';
+import { QuantityStepper } from '../../units/QuantityStepper';
+import { snapVolume, volumePresets } from '../../units/presets';
+import { useUnits } from '../../units/useUnits';
 import { Icon } from '../../ui/Icon';
 import { otherSide, type BreastSide } from '../nursing';
 import { sideLabel } from '../nowText';
@@ -46,10 +48,16 @@ function BottlePanel({
   onBottle,
 }: Pick<Props, 'tray' | 'type' | 'disabled' | 'onBottle'>) {
   const { t } = useTranslation();
+  const units = useUnits();
   const { bottle } = tray;
   const field = type?.fields.find((f) => f.key === 'amount_ml');
-  const [amount, setAmount] = useState<number | null>(bottle.amountMl);
-  const [custom, setCustom] = useState(!bottle.amounts.includes(bottle.amountMl));
+  // US: presets on half fluid ounces (stored as whole ml); the chosen amount starts on one of them.
+  const amounts = volumePresets(bottle.amounts, units.system);
+  const preferred = bottle.amounts.includes(bottle.amountMl)
+    ? snapVolume(bottle.amountMl, units.system)
+    : bottle.amountMl;
+  const [amount, setAmount] = useState<number | null>(preferred);
+  const [custom, setCustom] = useState(!amounts.includes(preferred));
   const [content, setContent] = useState<string | null>(bottle.content);
   // Drunk less than prepared (ml); `null` = all of it, the default.
   const [drunk, setDrunk] = useState<number | null>(null);
@@ -79,16 +87,17 @@ function BottlePanel({
           }
         }}
         options={[
-          ...bottle.amounts.map((ml) => ({
+          ...amounts.map((ml) => ({
             value: String(ml),
-            label: `${formatNumber(ml)} ml`,
+            label: units.formatVolume(ml),
           })),
           { value: OTHER, label: t('now.feedTray.otherAmount') },
         ]}
       />
       <BottleSuggestionCaption suggestions={bottle.suggestions} />
       {custom && (
-        <NumberStepper
+        <QuantityStepper
+          quantity="volume"
           aria-label={t('now.feedTray.amount')}
           value={amount}
           onChange={(next) => {
@@ -115,7 +124,7 @@ function BottlePanel({
             }}
             options={shares.map((choice) => ({
               value: String(choice.ml),
-              label: `${formatNumber(choice.ml)} ml \u00b7 ${t(`feedingAmounts.share.${choice.share}`)}`,
+              label: `${units.formatVolume(choice.ml)} \u00b7 ${t(`feedingAmounts.share.${choice.share}`)}`,
             }))}
           />
         </>
@@ -145,20 +154,20 @@ function BottlePanel({
         {partly !== null
           ? content
             ? t('feedingAmounts.tray.logDrunkContent', {
-                drunk: formatNumber(partly),
-                prepared: formatNumber(chosen),
+                drunk: units.volumeNumber(partly),
+                prepared: units.formatVolume(chosen),
                 content: contentLabel(content).toLocaleLowerCase(),
               })
             : t('feedingAmounts.tray.logDrunk', {
-                drunk: formatNumber(partly),
-                prepared: formatNumber(chosen),
+                drunk: units.volumeNumber(partly),
+                prepared: units.formatVolume(chosen),
               })
           : content
             ? t('now.feedTray.logContent', {
-                amount: formatNumber(chosen),
+                amount: units.formatVolume(chosen),
                 content: contentLabel(content).toLocaleLowerCase(),
               })
-            : t('now.feedTray.log', { amount: formatNumber(chosen) })}
+            : t('now.feedTray.log', { amount: units.formatVolume(chosen) })}
       </Button>
     </>
   );

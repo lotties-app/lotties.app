@@ -120,9 +120,9 @@
       "headline_one": "{{count, number}} feed / day",
       "headline_other": "{{count, number}} feeds / day",
       "feedsChart": "Feeds per day",
-      "mlChart": "Bottle milk per day (ml)",
+      "mlChart": "Bottle milk per day ({{unit}})",
       "mlSummary": "On the days with bottles, about {{ml}} a day from bottles.",
-      "tableMl": "Bottle ml"
+      "tableMl": "Bottle {{unit}}"
     },
     "diapers": {
       "summary_one": "About {{count}} diaper a day.",
@@ -146,6 +146,7 @@
         "bottlesPerDay": "Bottles per day",
         "mlPerDay": "Bottle milk per day",
         "mlPerKgPerDay": "Bottle milk per kg per day",
+        "mlPerLbPerDay": "Bottle milk per lb per day",
         "bellyPainsPerDay": "Belly pains per day",
         "bellyPainsAfterBottlePerDay": "Belly pains within 2 h after a bottle, per day",
         "fussyPerDay": "Fussy spells per day",
@@ -176,6 +177,7 @@
       "tableMeasure": "Per day",
       "note": "This compares what you logged. Many things change over time (age, growth, illness), so it does not show that a formula causes anything. Talk to your pediatrician before changing a formula or the amount.",
       "weightNote": "Milk per kg uses the weight logged nearest before each day, within 14 days (else the nearest after it).",
+      "weightNoteLb": "Milk per lb uses the weight logged nearest before each day, within 14 days (else the nearest after it).",
       "collecting": "Still collecting"
     }
   }

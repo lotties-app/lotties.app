@@ -1,6 +1,7 @@
 import type { EventType } from '../db/models';
 import { eventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatList, formatNumber, formatTime } from '../i18n/format';
+import { volumeNumberText, volumeText } from '../units/display';
 import { t } from '../i18n/i18n';
 import type { UndoToken } from '../presets/actions';
 import { formatPresetStatus } from '../presets/status';
@@ -108,10 +109,10 @@ function trayMessage(choice: TrayChoice, types: readonly EventType[]): string {
     case 'bottle':
       return choice.drunkMl !== undefined && choice.drunkMl < choice.amountMl
         ? t('feedingAmounts.toastBottle', {
-            drunk: formatNumber(choice.drunkMl),
-            prepared: formatNumber(choice.amountMl),
+            drunk: volumeNumberText(choice.drunkMl),
+            prepared: volumeText(choice.amountMl),
           })
-        : t('now.toast.bottle', { amount: formatNumber(choice.amountMl) });
+        : t('now.toast.bottle', { amount: volumeText(choice.amountMl) });
     case 'diaper': {
       const type = typeForKey(types, 'diaper');
       const content = type

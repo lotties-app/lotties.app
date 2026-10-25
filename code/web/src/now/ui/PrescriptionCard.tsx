@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
-import { formatDate, formatNumber, formatUnit } from '../../i18n/format';
+import { formatDate, formatNumber, formatMetricUnit } from '../../i18n/format';
 import { DayPartRows } from '../../medications/DayPartRows';
 import { needsConfirmation, offeredAmount, prescriptionEntry } from '../../medications/doseEntry';
 import { amountStepOf, countedUnitOf } from '../../medications/doseUnits';
@@ -68,7 +68,7 @@ function SuggestionInputs({ item }: { item: TrayPrescription }) {
       <span>{rule}</span>
       <span>
         {t('medications.confirm.weight', {
-          weight: formatUnit(suggestion.kgUsed, 'kilogram'),
+          weight: formatMetricUnit(suggestion.kgUsed, 'kilogram'),
           date: formatDate(suggestion.weightDate, 'dayMonthYear'),
         })}
       </span>

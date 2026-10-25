@@ -2,6 +2,10 @@ import type { ErrorOverrides } from '../api/errorMessages';
 import { formatNumber } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import type { MeasurementDto, MeasurementRequest } from '../sync/contract';
+import { kgToLb } from '../units/convert';
+import { lengthText, weightText } from '../units/display';
+import { cmToIn } from '../units/convert';
+import { currentUnitSystem } from '../units/state';
 
 export type MetricKey = 'weightKg' | 'heightCm' | 'headCircumferenceCm';
 
@@ -21,6 +25,26 @@ export const METRICS: readonly MetricInfo[] = [
   { key: 'heightCm', unit: 'cm', min: 20, max: 130, step: 0.5, start: 50 },
   { key: 'headCircumferenceCm', unit: 'cm', min: 20, max: 60, step: 0.5, start: 35 },
 ];
+
+/** A stored value of a metric in the person's units: `3.5 kg` / `7 lb 11 oz`, `50 cm` / `19.7 in`. */
+export function metricText(metric: Pick<MetricInfo, 'key'>, value: number): string {
+  return metric.key === 'weightKg' ? weightText(value) : lengthText(value);
+}
+
+/** The number a chart axis shows for a stored value: decimal pounds or inches in US, as stored otherwise. */
+export function axisValue(metric: Pick<MetricInfo, 'key'>, value: number): number {
+  if (currentUnitSystem() !== 'us') return value;
+  return metric.key === 'weightKg' ? kgToLb(value) : cmToIn(value);
+}
+
+/** Unit label of a metric's axis and heading in the person's system (`kg`/`lb`, `cm`/`in`). */
+export function metricUnitLabel(
+  metric: Pick<MetricInfo, 'key' | 'unit'>,
+  lengthUnit: string,
+): string {
+  if (currentUnitSystem() !== 'us') return metric.unit;
+  return metric.key === 'weightKg' ? 'lb' : lengthUnit;
+}
 
 /** Localized metric name (`Weight`, `Peso`). */
 export function metricLabel(metric: Pick<MetricInfo, 'key'>): string {
@@ -86,14 +110,23 @@ export function validateForm(form: MeasurementForm, now: Date = new Date()): Val
     if (!raw) continue;
     const n = parseNumber(raw);
     if (!Number.isFinite(n) || n < metric.min || n > metric.max) {
-      errors[metric.key] = t('growth.validation.outOfRange', {
-        label: metricLabel(metric),
-        min: formatNumber(metric.min),
-        max: formatNumber(metric.max),
-        unit: metric.unit,
-      });
+      errors[metric.key] =
+        currentUnitSystem() === 'us'
+          ? t('units.outOfRange', {
+              label: metricLabel(metric),
+              min: metricText(metric, metric.min),
+              max: metricText(metric, metric.max),
+            })
+          : t('growth.validation.outOfRange', {
+              label: metricLabel(metric),
+              min: formatNumber(metric.min),
+              max: formatNumber(metric.max),
+              unit: metric.unit,
+            });
     } else {
-      values[metric.key] = Math.round(n * 100) / 100;
+      // A pounds-and-ounces weight keeps whole grams (the API itself keeps 2 decimals); else 2 decimals.
+      const scale = metric.key === 'weightKg' && currentUnitSystem() === 'us' ? 1000 : 100;
+      values[metric.key] = Math.round(n * scale) / scale;
     }
   }
   if (!METRICS.some((m) => form[m.key].trim())) {

@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { IconButton, List, ListItem, ListItemText, Stack } from '@mui/material';
-import { formatDate, formatNumber } from '../i18n/format';
+import { formatDate } from '../i18n/format';
 import { doctorLabel } from '../professional/doctorLabel';
 import { fromPersonDto, type MeasurementDto } from '../sync/contract';
-import { METRICS, metricLabel, sortNewestFirst } from './measurementModel';
+import { METRICS, metricLabel, metricText, sortNewestFirst } from './measurementModel';
 import { Icon } from '../ui/Icon';
 
 const dateLabel = (date: string) => formatDate(date);
@@ -14,8 +14,7 @@ function valuesText(t: TFunction, m: MeasurementDto): string {
     .map((metric) =>
       t('growth.valueWithUnit', {
         label: metricLabel(metric),
-        value: formatNumber(m[metric.key] as number),
-        unit: metric.unit,
+        value: metricText(metric, m[metric.key] as number),
       }),
     )
     .join(' · ');

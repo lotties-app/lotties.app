@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { formatNumber } from '../i18n/format';
+import { useUnits } from '../units/useUnits';
 import { ChipGroup } from '../ui/form';
 import { levelChoices, type LevelShare } from './bottleSegments';
 
@@ -36,6 +36,7 @@ export function BottleLevelChips({
   disabled = false,
 }: Props) {
   const { t } = useTranslation();
+  const units = useUnits();
   const choices = levelChoices(preparedMl, ceilingMl);
   if (choices.length === 0) return null;
   return (
@@ -49,7 +50,7 @@ export function BottleLevelChips({
       options={choices.map((choice) => ({
         value: String(choice.ml),
         label: t('feedingAmounts.level.chip', {
-          ml: formatNumber(choice.ml),
+          ml: units.formatVolume(choice.ml),
           share: t(SHARE_KEY[choice.share]),
         }),
       }))}

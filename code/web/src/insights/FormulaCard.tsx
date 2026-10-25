@@ -2,6 +2,8 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import { formatList, formatNumber, formatUnit } from '../i18n/format';
+import { volumeText } from '../units/display';
+import { currentUnitSystem } from '../units/state';
 import { palette } from '../ui/form/styles';
 import { chartColor } from './charts/chartStyle';
 import { DataTable } from './charts/chartKit';
@@ -27,6 +29,7 @@ import { ReadinessRows } from './ReadinessRows';
  */
 
 const NONE = '–';
+const KG_PER_LB = 0.45359237;
 const SEPARATOR = ' · ';
 const roundOne = (value: number) => Math.round(value * 10) / 10;
 
@@ -37,7 +40,11 @@ function metricLabel(t: TFunction, metric: FormulaMetric): string {
     case 'mlPerDay':
       return t('insights.formulas.metrics.mlPerDay');
     case 'mlPerKgPerDay':
-      return t('insights.formulas.metrics.mlPerKgPerDay');
+      return t(
+        currentUnitSystem() === 'us'
+          ? 'insights.formulas.metrics.mlPerLbPerDay'
+          : 'insights.formulas.metrics.mlPerKgPerDay',
+      );
     case 'bellyPainsPerDay':
       return t('insights.formulas.metrics.bellyPainsPerDay');
     case 'bellyPainsAfterBottlePerDay':
@@ -55,6 +62,10 @@ function metricLabel(t: TFunction, metric: FormulaMetric): string {
  */
 function valueText(metric: FormulaMetric, value: number | null): string {
   if (value === null) return NONE;
+  if (metric === 'mlPerKgPerDay' && currentUnitSystem() === 'us') {
+    // ml per kg -> ml per lb, shown in fluid ounces.
+    return volumeText(Math.round(value * KG_PER_LB));
+  }
   if (metric === 'mlPerDay' || metric === 'mlPerKgPerDay') {
     return formatUnit(Math.round(value), 'milliliter');
   }
@@ -266,7 +277,11 @@ export function FormulaCard({ comparison }: { comparison: FormulaComparison }) {
         <>
           {metrics.includes('mlPerKgPerDay') && (
             <Typography variant="caption" color="text.secondary" component="p">
-              {t('insights.formulas.weightNote')}
+              {t(
+                currentUnitSystem() === 'us'
+                  ? 'insights.formulas.weightNoteLb'
+                  : 'insights.formulas.weightNote',
+              )}
             </Typography>
           )}
           {waiting.length > 0 && (

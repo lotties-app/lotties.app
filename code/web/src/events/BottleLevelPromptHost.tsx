@@ -4,7 +4,7 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { useDatabase } from '../db/DatabaseContext';
 import { recordBottleLevel } from '../db/eventCommands';
 import { SheetFrame } from '../now/ui/SheetFrame';
-import { NumberStepper } from '../ui/form';
+import { QuantityStepper } from '../units/QuantityStepper';
 import { BottleLevelChips } from './BottleLevelChips';
 import {
   dismissBottleLevel,
@@ -42,7 +42,8 @@ function LevelSheet({ prompt }: { prompt: BottleLevelPrompt }) {
         <Typography variant="overline" component="p" color="text.secondary">
           {t('feedingAmounts.level.other')}
         </Typography>
-        <NumberStepper
+        <QuantityStepper
+          quantity="volume"
           aria-label={t('feedingAmounts.level.other')}
           value={other}
           onChange={setOther}
