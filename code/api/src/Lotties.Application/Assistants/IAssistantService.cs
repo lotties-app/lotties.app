@@ -101,6 +101,16 @@ public interface IAssistantService
     /// <summary>Sleep since local midnight, naps and night together with a running sleep counted until now, and the number of naps (<see cref="AssistantResultCode.SleepToday"/>).</summary>
     Task<AssistantResult> ReadSleepTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The bottles since local midnight (the last 24 hours without a known zone): how many, and the ml drunk by the shared
+    /// drunk-amount rule (<see cref="Lotties.Domain.Events.BottleAmounts.DrunkMl"/>), with the formula and breast milk split
+    /// (<see cref="AssistantResultCode.BottleToday"/>). Facts only.
+    /// </summary>
+    Task<AssistantResult> ReadBottleTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>The feeds since local midnight (the last 24 hours without a known zone): the total and the bottle, breast and solid split (<see cref="AssistantResultCode.FeedsToday"/>).</summary>
+    Task<AssistantResult> ReadFeedsTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
     /// <summary>The newest diaper of the last 30 days: when and what (<see cref="AssistantResultCode.LastDiaper"/>), or <see cref="AssistantResultCode.NoDiapers"/>.</summary>
     Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
 

@@ -49,7 +49,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.RateLimited] = _ => "São muitos pedidos seguidos. Tente de novo daqui a um minuto.",
         [AssistantResultCode.InvalidAmount] = InvalidAmount,
         [AssistantResultCode.SleepStarted] = result => $"Certo. {Name(result)} dormiu {When(result, result.At)}.",
-        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} já está dormindo, desde {Since(result, result.At)}.",
+        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} já está dormindo{SinceClause(result)}.",
         [AssistantResultCode.SleepEnded] = result => result.Minutes is null
             ? $"{Name(result)} acordou {When(result, result.At)}."
             : $"{Name(result)} acordou {When(result, result.At)}, depois de dormir {Speech.Duration(result.Minutes)}.",
@@ -57,11 +57,11 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Name(result)} tem {result.Count} cronômetros de sono ativos. Encerre-os no app.",
         [AssistantResultCode.BottleLogged] = result => $"Registrei uma mamadeira de {Volume(result, result.AmountMl)}{BottleContent(result)} {When(result, result.At)} para {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Amamentação iniciada no peito {Side(result)} para {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} já está mamando, desde {Since(result, result.At)}.",
+        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} já está mamando{SinceClause(result)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Registrei uma fralda {Diaper(result)} para {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.LastFeed] = LastFeed,
         [AssistantResultCode.NoFeeds] = result => $"Não encontrei nenhuma alimentação de {Name(result)} nos últimos 30 dias.",
-        [AssistantResultCode.Sleeping] = result => $"{Name(result)} está dormindo desde {Since(result, result.At)}, há {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.Sleeping] = result => $"{Name(result)} está dormindo{SinceClause(result)}{(Speech.Clock(result, result.At) is null ? string.Empty : $", há {Speech.Duration(result.Minutes)}")}.",
         [AssistantResultCode.Awake] = result => $"{Name(result)} acordou {When(result, result.At)}. O último sono durou {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoSleeps] = result => $"Não encontrei nenhum sono de {Name(result)} nos últimos 30 dias.",
         [AssistantResultCode.DiapersToday] = DiapersToday,
@@ -127,7 +127,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
     {
         var feed = FeedDescription(result);
         return result.Running == true
-            ? $"{Name(result)} está se alimentando agora: {feed}, desde {Since(result, result.At)}."
+            ? $"{Name(result)} está se alimentando agora: {feed},{SinceClause(result)}."
             : $"A última alimentação de {Name(result)} foi {feed}, {AtAndAgo(result, result.At)}.";
     }
 
@@ -183,8 +183,9 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
     private static string When(AssistantResult result, DateTimeOffset? instant) =>
         Speech.Clock(result, instant) is { } clock ? $"{AtHour(clock)} {clock}" : instant is { } value && Speech.MinutesBetween(value, result.AsOf) < 1 ? "agora mesmo" : Ago(result, instant);
 
-    /// <summary>"15:15", or "há 20 minutos" without a known zone.</summary>
-    private static string Since(AssistantResult result, DateTimeOffset? instant) => Speech.Clock(result, instant) ?? Ago(result, instant);
+    /// <summary>" desde 15:15", or " há 20 minutos" without a known zone (never "desde há 20 minutos").</summary>
+    private static string SinceClause(AssistantResult result) =>
+        Speech.Clock(result, result.At) is { } clock ? $" desde {clock}" : result.At is { } at ? $" há {Speech.Duration(Speech.MinutesBetween(at, result.AsOf))}" : string.Empty;
 
     /// <summary>"às 15:15, há 20 minutos", or "há 20 minutos" without a known zone.</summary>
     private static string AtAndAgo(AssistantResult result, DateTimeOffset? instant) =>

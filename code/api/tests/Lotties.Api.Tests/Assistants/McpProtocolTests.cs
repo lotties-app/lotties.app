@@ -17,7 +17,7 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
 {
     private static readonly string[] ReadTools =
         ["list_babies", "get_baby_profile", "get_last_feed", "get_sleep_status", "get_diapers_today", "get_next_appointment", "get_due_vaccines", "get_day_summary", "get_week_summary",
-            "get_next_nap_window", "get_next_feed", "get_next_diaper", "get_diapers_average", "get_bottle_average", "get_sleep_today", "get_last_diaper", "get_cry_reasons"];
+            "get_next_nap_window", "get_next_feed", "get_next_diaper", "get_diapers_average", "get_bottle_average", "get_sleep_today", "get_bottle_today", "get_feeds_today", "get_last_diaper", "get_cry_reasons"];
 
     private static readonly string[] WriteTools = ["request_delete_last_entry", "log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper"];
 
@@ -109,7 +109,7 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
         }
 
         Assert.Equal(["babies", "baby_profile", "no_feeds", "no_sleeps", "diapers_today", "no_appointment", Code(await client.CallToolAsync("get_due_vaccines", Args())), "day_summary", "week_summary",
-                "no_nap_prediction", "no_next_feed", "no_next_diaper", "no_diapers_average", "no_bottle_data", "sleep_today", "no_diapers", "cry_no_data"], codes);
+                "no_nap_prediction", "no_next_feed", "no_next_diaper", "no_diapers_average", "no_bottle_data", "sleep_today", "bottle_today", "feeds_today", "no_diapers", "cry_no_data"], codes);
     }
 
     [Fact]

@@ -141,6 +141,12 @@ public enum AssistantResultCode
     /// <summary>Sleep since local midnight (<see cref="AssistantResult.Minutes"/>, <see cref="AssistantResult.Count"/> naps).</summary>
     SleepToday,
 
+    /// <summary>The bottles of <see cref="AssistantResult.Window"/>: <see cref="AssistantResult.Count"/> and the ml drunk (<see cref="AssistantResult.AmountMl"/>), with the formula / breast milk split; zero bottles is still this code.</summary>
+    BottleToday,
+
+    /// <summary>The feeds of <see cref="AssistantResult.Window"/>: <see cref="AssistantResult.Count"/> with the bottle, breast and solid counts; zero feeds is still this code.</summary>
+    FeedsToday,
+
     /// <summary>The newest diaper of 30 days: <see cref="AssistantResult.At"/> and <see cref="AssistantResult.Diaper"/>.</summary>
     LastDiaper,
 
@@ -302,6 +308,21 @@ public sealed record AssistantResult
     public double? WetPerDay { get; init; }
 
     public double? DirtyPerDay { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.BottleToday"/>: the bottles that held formula (count, ml drunk).</summary>
+    public AssistantBottleSplit? FormulaBottles { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.BottleToday"/>: the bottles that held breast milk (count, ml drunk).</summary>
+    public AssistantBottleSplit? BreastMilkBottles { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.FeedsToday"/>: the bottle feeds.</summary>
+    public int? BottleFeeds { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.FeedsToday"/>: the breast (nursing) feeds.</summary>
+    public int? BreastFeeds { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.FeedsToday"/>: the solid-food feeds.</summary>
+    public int? SolidFeeds { get; init; }
 
     /// <summary>The newest of the bottles <see cref="AmountMl"/> averages.</summary>
     public int? LastAmountMl { get; init; }

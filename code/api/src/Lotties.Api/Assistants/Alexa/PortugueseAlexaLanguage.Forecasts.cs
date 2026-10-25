@@ -30,6 +30,8 @@ internal sealed partial class PortugueseAlexaLanguage
         [AssistantResultCode.NoBottleData] = result =>
             $"Não há mamadeiras com quantidade registrada o bastante nos últimos 14 dias: preciso de pelo menos 3, e encontrei {result.Count ?? 0}.",
         [AssistantResultCode.SleepToday] = SleepToday,
+        [AssistantResultCode.BottleToday] = BottleToday,
+        [AssistantResultCode.FeedsToday] = FeedsToday,
         [AssistantResultCode.LastDiaper] = result =>
             $"A última fralda de {Name(result)} foi {LastDiaperContent(result)}, {AtAndAgo(result, result.At)}.",
         [AssistantResultCode.NoDiapers] = result => $"Não encontrei nenhuma fralda de {Name(result)} nos últimos 30 dias.",
@@ -47,6 +49,49 @@ internal sealed partial class PortugueseAlexaLanguage
         "diaper" => "troca de fralda",
         _ => "item",
     };
+
+    private static string TodayWindow(AssistantResult result) => result.Window == AssistantDayWindow.Today ? "hoje" : "nas últimas 24 horas";
+
+    /// <summary>As mamadeiras do dia: quantas e os ml tomados, com a divisão fórmula e leite materno quando há as duas; só fatos.</summary>
+    private static string BottleToday(AssistantResult result)
+    {
+        var window = TodayWindow(result);
+        var count = result.Count ?? 0;
+        if (count == 0)
+        {
+            return $"{Name(result)} não tomou nenhuma mamadeira {window}.";
+        }
+
+        if ((result.AmountMl ?? 0) == 0)
+        {
+            return $"{Name(result)} teve {Speech.Count(count, "mamadeira", "mamadeiras")} {window}, sem quantidade registrada.";
+        }
+
+        var total = $"{Name(result)} tomou {Volume(result, result.AmountMl)} em {Speech.Count(count, "mamadeira", "mamadeiras")} {window}";
+        return result.FormulaBottles is { Bottles: > 0 } formula && result.BreastMilkBottles is { Bottles: > 0 } milk
+            ? $"{total}: {formula.Bottles} de fórmula, {Volume(result, formula.Ml)}, e {milk.Bottles} de leite materno, {Volume(result, milk.Ml)}."
+            : $"{total}.";
+    }
+
+    /// <summary>As alimentações do dia com a divisão mamadeira, peito e comida sólida em uma frase.</summary>
+    private static string FeedsToday(AssistantResult result)
+    {
+        var window = TodayWindow(result);
+        var count = result.Count ?? 0;
+        if (count == 0)
+        {
+            return $"{Name(result)} não teve nenhuma alimentação {window}.";
+        }
+
+        var parts = new[]
+        {
+            result.BottleFeeds is > 0 ? Speech.Count(result.BottleFeeds.Value, "mamadeira", "mamadeiras") : null,
+            result.BreastFeeds is > 0 ? Speech.Count(result.BreastFeeds.Value, "mamada no peito", "mamadas no peito") : null,
+            result.SolidFeeds is > 0 ? Speech.Count(result.SolidFeeds.Value, "refeição sólida", "refeições sólidas") : null,
+        }.OfType<string>().ToArray();
+        var split = parts.Length == 0 ? string.Empty : $": {Speech.List(parts)}";
+        return $"{Name(result)} teve {Speech.Count(count, "alimentação", "alimentações")} {window}{split}.";
+    }
 
     private static string SleepToday(AssistantResult result)
     {
@@ -69,7 +114,7 @@ internal sealed partial class PortugueseAlexaLanguage
 
     private static string NapWindowAsleep(AssistantResult result)
     {
-        var asleep = $"{Name(result)} está dormindo, desde {Since(result, result.At)}.";
+        var asleep = $"{Name(result)} está dormindo{SinceClause(result)}.";
         return result.EndedAt is { } wakes ? $"{asleep} {Name(result)} deve acordar {Moment(result, wakes)}." : asleep;
     }
 

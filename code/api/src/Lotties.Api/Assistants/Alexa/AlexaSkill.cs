@@ -55,6 +55,8 @@ internal sealed class AlexaSkill(
         ["DiapersAverageIntent"] = (service, invocation, _, token) => service.ReadDiapersAverageAsync(invocation, token),
         ["BottleAverageIntent"] = (service, invocation, _, token) => service.ReadBottleAverageAsync(invocation, token),
         ["SleepTodayIntent"] = (service, invocation, _, token) => service.ReadSleepTodayAsync(invocation, token),
+        ["BottleTodayIntent"] = (service, invocation, _, token) => service.ReadBottleTodayAsync(invocation, token),
+        ["FeedsTodayIntent"] = (service, invocation, _, token) => service.ReadFeedsTodayAsync(invocation, token),
         ["LastDiaperIntent"] = (service, invocation, _, token) => service.ReadLastDiaperAsync(invocation, token),
         ["RequestDeleteLastIntent"] = (service, invocation, _, token) => service.RequestDeleteLastAsync(invocation, token),
         ["CryReasonsIntent"] = (service, invocation, _, token) => service.ReadCryReasonsAsync(invocation, token),

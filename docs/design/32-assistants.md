@@ -25,6 +25,8 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `NextDiaperIntent` | "when is the next diaper change", "when is the next diaper", "when will she need a diaper change", "when should I change the next diaper" | "quando é a próxima troca de fralda", "quando é a próxima fralda", "quando devo trocar a próxima fralda" | `ReadNextDiaper` |
 | `DiapersAverageIntent` | "how many diapers a day does she usually use", "how many diapers per day on average", "average diapers per day" | "quantas fraldas por dia ela costuma usar", "qual a média de fraldas por dia", "fraldas por dia" | `ReadDiapersAverage` |
 | `BottleAverageIntent` | "how much should I make for the next bottle", "how big was the last bottle", "how much does she usually drink" | "quanto devo preparar na próxima mamadeira", "qual foi o tamanho da última mamadeira", "quanto ela costuma tomar de mamadeira" | `ReadBottleAverage` |
+| `BottleTodayIntent` | "how much did she drink today", "how many ml of milk today", "how many bottles today" | "quanto ela tomou de mamadeira hoje", "quantos mls de mamadeira tomou hoje", "quantas mamadeiras hoje" | `ReadBottleToday` |
+| `FeedsTodayIntent` | "how many feeds today", "how many times did she eat today" | "quantas mamadas hoje", "quantas vezes ela mamou hoje", "quantas vezes ela comeu hoje" | `ReadFeedsToday` |
 | `SleepTodayIntent` | "how much did she sleep today", "how many naps today", "total sleep today" | "quanto ela dormiu hoje", "quantas sonecas ela fez hoje", "total de sono hoje" | `ReadSleepToday` |
 | `LastDiaperIntent` | "when was the last diaper change", "when did I last change her diaper", "last diaper" | "quando foi a última troca de fralda", "quando troquei a fralda dela", "última fralda" | `ReadLastDiaper` |
 | `CryReasonsIntent` | "why is she crying", "why is the baby fussy", "what could be making her cry" | "por que ela está chorando", "por que ela está irritada", "por que ela não para de chorar" | `ReadCryReasons` |
@@ -101,6 +103,8 @@ with a line for every code, tested for every code in both languages.
 | `diapers_average`, `no_diapers_average` | `perDay`, `wetPerDay`, `dirtyPerDay` (one decimal) over the complete local days with diapers among the last seven (today left out), `count` = those days, at least 3 |
 | `bottle_average`, `no_bottle_data` | `count` (up to 5), `amountMl` = their average, `lastAmountMl`, `at` = the last one; at least 3 bottles with an amount in 14 days; facts, never a recommendation |
 | `sleep_today` | `minutes` since local midnight (a running sleep until now) and `count` naps: the day summary's sleep math |
+| `bottle_today` | `count` bottles since local midnight (`window`: `today` in the user's zone, else `last_day`), `amountMl` = the ml drunk (zero bottles is still this code, `count` 0), `formulaBottles` and `breastMilkBottles` (`bottles`, `ml`, those that said what they held). The ml is **the drunk-amount rule every server total uses**, `BottleAmounts.DrunkMl` through `FeedObservation.BottleMl` (the drunk amount, else the prepared amount; a bottle without an amount counts as a bottle only), summed by `AssistantFeedTotals`; spoken in the user's unit system |
+| `feeds_today` | `count` feeds since local midnight (same `window` rule), `bottleFeeds`, `breastFeeds`, `solidFeeds`; zero feeds is still this code |
 | `last_diaper`, `no_diapers` | the newest diaper of 30 days: `at`, `diaper` |
 | `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags`; `running` = a sleep timer runs so the log may be behind |
 | `delete_requested`, `no_entry_to_delete` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
@@ -368,6 +372,8 @@ the server knows, else `invalid_arguments`; it wins over the stored zone, sectio
 | `get_diapers_average` | read | `babyId?` | `ReadDiapersAverage` |
 | `get_bottle_average` | read | `babyId?` | `ReadBottleAverage` |
 | `get_sleep_today` | read | `babyId?` | `ReadSleepToday` |
+| `get_bottle_today` | read | `babyId?` | `ReadBottleToday` |
+| `get_feeds_today` | read | `babyId?` | `ReadFeedsToday` |
 | `get_last_diaper` | read | `babyId?` | `ReadLastDiaper` |
 | `get_cry_reasons` | read | `babyId?` | `ReadCryReasons` |
 | `request_delete_last_entry` | write | `babyId?`, `idempotencyKey?` | `RequestDeleteLast` (asks only, section 5.3) |

@@ -129,6 +129,8 @@ internal static class McpResultText
             AssistantResultCode.BottleAverage => $"{baby}'s last {result.Count} bottles averaged {Volume(result.AmountMl, result.Units)}; the last was {Volume(result.LastAmountMl, result.Units)}.",
             AssistantResultCode.NoBottleData => $"Not enough bottles with an amount in the last 14 days for {baby} ({result.Count} of 3 needed).",
             AssistantResultCode.SleepToday => $"{baby} has slept {result.Minutes} minutes today, with {result.Count} naps.",
+            AssistantResultCode.BottleToday => BottleToday(result, baby),
+            AssistantResultCode.FeedsToday => $"{baby} has had {result.Count} feeds {(result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours")}: {result.BottleFeeds} bottle, {result.BreastFeeds} breast, {result.SolidFeeds} solid.",
             AssistantResultCode.LastDiaper => $"{baby}'s last diaper was at {Time(result, result.At)}.",
             AssistantResultCode.NoDiapers => $"No diaper of {baby} in the last 30 days.",
             AssistantResultCode.CryReasons => $"What {baby}'s log suggests: {string.Join(", ", result.CryCauses.Select(cause => cause.Cause.ToString().ToLowerInvariant()))}. Not a diagnosis or medical advice: call the pediatrician or emergency services for a fever, crying that cannot be soothed, refusing feeds, unusual sleepiness, or a bulging or stiff soft spot.",
@@ -137,6 +139,17 @@ internal static class McpResultText
             AssistantResultCode.CryNoData => $"Nothing in {baby}'s log points at a cause. Not a diagnosis or medical advice: call the pediatrician or emergency services for a fever, crying that cannot be soothed, refusing feeds, unusual sleepiness, or a bulging or stiff soft spot.",
             _ => AssistantResult.CodeName(result.Code),
         };
+    }
+
+    private static string BottleToday(AssistantResult result, string baby)
+    {
+        var window = result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours";
+        var split = result.FormulaBottles is { Bottles: > 0 } formula && result.BreastMilkBottles is { Bottles: > 0 } milk
+            ? $" (formula {formula.Bottles} bottles, {Volume(formula.Ml, result.Units)}; breast milk {milk.Bottles} bottles, {Volume(milk.Ml, result.Units)})"
+            : string.Empty;
+        return result.Count is null or 0
+            ? $"{baby} has had no bottles {window}."
+            : $"{baby} has had {result.Count} bottles {window}, {Volume(result.AmountMl, result.Units)} drunk{split}.";
     }
 
     /// <summary>A volume told in the user's system: <c>120 ml</c>, or <c>4.1 fl oz</c> (the structured values stay in ml).</summary>

@@ -186,6 +186,18 @@ internal static class McpToolCatalog
             [McpParameter.BabyId],
             (assistant, invocation, _, token) => assistant.ReadSleepTodayAsync(invocation, token)),
         Read(
+            "get_bottle_today",
+            "Bottles today",
+            "The bottles since local midnight (the last 24 hours when the family's time zone is unknown): the number of bottles, the total ml drunk (the drunk amount, else the prepared amount, as the app counts it) and, when the log says what the bottles held, the formula and breast milk bottles with their ml.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadBottleTodayAsync(invocation, token)),
+        Read(
+            "get_feeds_today",
+            "Feeds today",
+            "The feeds since local midnight (the last 24 hours when the family's time zone is unknown): the total and how many were bottles, breast (nursing) and solid food.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadFeedsTodayAsync(invocation, token)),
+        Read(
             "get_last_diaper",
             "Last diaper",
             "The newest diaper of the last 30 days: when (UTC) and its content (wet, dirty, both), or no_diapers.",

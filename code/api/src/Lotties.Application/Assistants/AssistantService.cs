@@ -147,6 +147,12 @@ internal sealed class AssistantService(
     public Task<AssistantResult> ReadSleepTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.SleepToday, AssistantAccess.Read, subject => SleepTodayAsync(subject, cancellationToken), cancellationToken);
 
+    public Task<AssistantResult> ReadBottleTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BottleToday, AssistantAccess.Read, subject => FeedTotalsAsync(subject, AssistantResultCode.BottleToday, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadFeedsTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.FeedsToday, AssistantAccess.Read, subject => FeedTotalsAsync(subject, AssistantResultCode.FeedsToday, cancellationToken), cancellationToken);
+
     public Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.LastDiaper, AssistantAccess.Read, subject => LastDiaperAsync(subject, cancellationToken), cancellationToken);
 
@@ -385,6 +391,24 @@ internal sealed class AssistantService(
         };
     }
 
+    /// <summary>
+    /// The feeds since local midnight (the last 24 hours without a zone, as the diapers of today do), counted by
+    /// <see cref="AssistantFeedTotals"/>: the bottle ml is the shared drunk-amount rule, never a second one.
+    /// </summary>
+    private async Task<AssistantResult> FeedTotalsAsync(AssistantSubject subject, AssistantResultCode code, CancellationToken cancellationToken)
+    {
+        var window = subject.Zone is null ? AssistantDayWindow.LastDay : AssistantDayWindow.Today;
+        var from = subject.Zone is { } zone ? LocalMidnight(zone, subject.Now) : subject.Now.AddDays(-1);
+        var feeds = (await clinicalEvents.ListByTypesAsync(subject.Baby.Id, [FeedingKey], from, subject.Now + FutureSkew, cancellationToken))
+            .Select(typed => ClinicalObservations.Feed(typed.Event))
+            .Where(feed => feed.StartedAt >= from && feed.StartedAt <= subject.Now);
+        var totals = AssistantFeedTotals.Of(feeds);
+        var result = subject.Result(code) with { Window = window };
+        return code == AssistantResultCode.BottleToday
+            ? result with { Count = totals.Bottles, AmountMl = totals.BottleMl, FormulaBottles = totals.Formula, BreastMilkBottles = totals.BreastMilk }
+            : result with { Count = totals.Feeds, BottleFeeds = totals.Bottles, BreastFeeds = totals.Breast, SolidFeeds = totals.Solid };
+    }
+
     /// <summary>The complete local days (today left out) of the last seven that have diapers, averaged to one decimal; at least three of them.</summary>
     private async Task<AssistantResult> DiapersAverageAsync(AssistantSubject subject, CancellationToken cancellationToken)
     {
@@ -620,6 +644,8 @@ internal static class AssistantCommands
     public const string BottleAverage = "bottle_average";
     public const string SleepToday = "sleep_today";
     public const string LastDiaper = "last_diaper";
+    public const string BottleToday = "bottle_today";
+    public const string FeedsToday = "feeds_today";
     public const string CryReasons = "cry_reasons";
     public const string RequestDeleteLast = "request_delete_last";
 }
