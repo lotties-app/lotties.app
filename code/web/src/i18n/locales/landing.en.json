@@ -36,28 +36,28 @@
   "features": {
     "title": "What it does",
     "log": {
-      "title": "Log in two taps",
-      "body": "One-tap tiles, timers for naps and feeds, and an undo for the moment your thumb slips."
+      "title": "Log in a few taps",
+      "body": "Sleep, breast and bottle feeds, diapers, medicines, baths and fussy spells. Start a timer, tap a tile, undo a slip. Works offline and syncs when you are back online."
     },
-    "offline": {
-      "title": "Works offline",
-      "body": "Installs like an app and keeps working without a connection. Everything syncs when it is back."
+    "today": {
+      "title": "See the day and what comes next",
+      "body": "A timeline of the day, totals for sleep, feeds and diapers, and charts of the week. The home screen shows what is likely next: nap, feed or diaper change."
     },
     "share": {
-      "title": "Share with your co-parent",
-      "body": "Invite someone with a link and see who logged what, so nobody has to ask."
+      "title": "Care together",
+      "body": "Invite a partner, grandparent or nanny with a link. Choose what each person can do, see who logged what, and share selected sections with your pediatrician."
     },
     "predict": {
       "title": "Gentle predictions",
       "body": "See the next nap window with a plain explanation of how it was worked out. Estimates from your logged history, not medical advice."
     },
-    "history": {
-      "title": "Bring your history",
-      "body": "Import from Napper, add your own event types, and track medicines with safe intervals. The doctor's prescription is always the source."
+    "health": {
+      "title": "Growth, vaccines and medicines",
+      "body": "Weight and height on growth charts, the Brazilian vaccination schedule, appointments, and medicines with safe intervals. The doctor's prescription is always the source."
     },
     "data": {
-      "title": "Your data, your rules",
-      "body": "Free and open source (AGPL-3.0) and can be self-hosted. No ads, no tracking."
+      "title": "Free, private, yours",
+      "body": "Free and open source (AGPL-3.0) and can be self-hosted. No ads, no tracking. Import from Napper and export a backup any time."
     }
   },
   "steps": {
