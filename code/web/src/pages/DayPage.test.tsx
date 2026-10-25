@@ -196,7 +196,7 @@ describe('DayPage', () => {
   it('shows an empty day with an Add event action that opens the More sheet', async () => {
     await seedBaby(db);
     renderWithDb(db, <DayPage />);
-    expect(await screen.findByText('A quiet day. Nothing logged yet.')).toBeTruthy();
+    expect(await screen.findByText('No events this day yet.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add event' }));
     expect(await screen.findByRole('dialog', { name: 'More' })).toBeTruthy();
   });

@@ -22,10 +22,16 @@
   },
   "hero": {
     "headline": "Track your baby's day, together",
-    "sub": "Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent.",
+    "sub": "Sleep, feeds, diapers and medicines in one place, made by parents of a newborn. Works offline, shares with your co-parent.",
     "signIn": "Sign in",
     "register": "Create an account",
     "openApp": "Open the app"
+  },
+  "story": {
+    "title": "Why we made Lotties",
+    "one": "Lotties is a free, open source alternative to Napper. Our first baby had just arrived, and we felt we were losing track of everything. Yearly plans for baby apps are also expensive.",
+    "two": "So we built the app we wished we had for this new journey: quick to log, calm to read, and shared between the people who care for the baby.",
+    "three": "We hope you feel the same excitement we do."
   },
   "features": {
     "title": "What it does",

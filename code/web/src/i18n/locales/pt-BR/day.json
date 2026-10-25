@@ -77,7 +77,7 @@
       "legendHint": "Toque em uma cor para mostrar ou ocultar"
     },
     "empty": {
-      "title": "Um dia tranquilo. Nada registrado ainda."
+      "title": "Nenhum evento neste dia ainda."
     },
     "addEvent": "Adicionar evento",
     "noMatches": "Nenhum evento corresponde a este filtro.",

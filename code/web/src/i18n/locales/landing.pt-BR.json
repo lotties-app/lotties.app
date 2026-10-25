@@ -22,10 +22,16 @@
   },
   "hero": {
     "headline": "Acompanhe o dia do seu bebê, em conjunto",
-    "sub": "Sono, mamadas, fraldas e remédios em um só lugar tranquilo. Funciona sem internet e compartilha com quem cuida junto com você.",
+    "sub": "Sono, mamadas, fraldas e remédios em um só lugar, feito por pais de recém-nascido. Funciona sem internet e compartilha com quem cuida junto com você.",
     "signIn": "Entrar",
     "register": "Criar uma conta",
     "openApp": "Abrir o app"
+  },
+  "story": {
+    "title": "Por que criamos o Lotties",
+    "one": "O Lotties é uma alternativa gratuita e de código aberto ao Napper. Nosso primeiro bebê tinha acabado de chegar e sentimos que estávamos perdendo o controle de tudo. Além disso, os planos anuais de apps para bebês são caros.",
+    "two": "Então criamos o app que gostaríamos de ter nesta nova jornada: rápido para registrar, claro para ler e compartilhado entre quem cuida do bebê.",
+    "three": "Esperamos que você sinta a mesma empolgação que a gente."
   },
   "features": {
     "title": "O que ele faz",

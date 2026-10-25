@@ -67,6 +67,7 @@ describe('LandingPage', () => {
       '#landing-main',
     );
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Why we made Lotties',
       'What it does',
       'Not a medical device',
       'How it works',
