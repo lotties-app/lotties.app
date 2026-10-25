@@ -10,6 +10,7 @@ import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatNumber } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import { getOwn } from '../util/ownProperty';
+import { fieldValueText, volumeNumberText, volumeText } from '../units/display';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { FORMULA_NAME_KEY } from '../formulas/formulaModel';
 import {
@@ -62,6 +63,8 @@ function fieldPart(
   if (field.kind === 'bool') return raw === true ? label : null;
   if (field.kind === 'number') {
     if (field.unit === 's' && typeof raw === 'number') return formatDuration(raw * 1000);
+    const measured = typeof raw === 'number' ? fieldValueText(field.unit, raw) : null;
+    if (measured !== null) return measured;
     const value = typeof raw === 'number' ? formatNumber(raw) : String(raw);
     if (field.unit) return `${value} ${field.unit === 'C' ? '°C' : field.unit}`;
     return field.max !== null
@@ -188,8 +191,8 @@ function withBottleAmounts<P extends { key: string; text: string | null }>(
 /** `80 of 120 ml`: what was drunk of what was prepared. */
 export function amountOfText(drunk: number, prepared: number): string {
   return t('feedingAmounts.amountOf', {
-    drunk: formatNumber(drunk),
-    prepared: formatNumber(prepared),
+    drunk: volumeNumberText(drunk),
+    prepared: volumeText(prepared),
   });
 }
 

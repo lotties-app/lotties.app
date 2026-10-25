@@ -1,0 +1,33 @@
+{
+  "units": {
+    "title": "Unidades",
+    "hint": "Escolha como quantidades, pesos, comprimentos e temperaturas aparecem e são digitados. O que fica salvo não muda: só o que você vê.",
+    "groupLabel": "Unidades de medida",
+    "system": {
+      "metric": "métrico",
+      "us": "americano"
+    },
+    "auto": {
+      "label": "Automático",
+      "hint": "Segue a região deste aparelho. Agora: {{system}}.",
+      "example": "ex.: 120 ml, 3,5 kg, 50 cm, 37 °C ou 4,1 fl oz, 7 lb 11 oz, 19,7 pol., 98,6 °F"
+    },
+    "metric": {
+      "label": "Métrico",
+      "hint": "Mililitros, quilos, centímetros, graus Celsius.",
+      "example": "ex.: 120 ml, 3,5 kg, 50 cm, 37 °C"
+    },
+    "us": {
+      "label": "Americano",
+      "hint": "Onças fluidas, libras e onças, polegadas, graus Fahrenheit.",
+      "example": "ex.: 4,1 fl oz, 7 lb 11 oz, 19,7 pol., 98,6 °F"
+    },
+    "pending": "Salvo neste aparelho. Vai sincronizar com sua conta quando você estiver online.",
+    "field": {
+      "pounds": "{{label}} (lb)",
+      "ounces": "{{label}} (oz)"
+    },
+    "range": "{{min}} a {{max}}",
+    "outOfRange": "{{label}} deve estar entre {{min}} e {{max}}."
+  }
+}

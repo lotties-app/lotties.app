@@ -1,7 +1,8 @@
 import type { TFunction } from 'i18next';
 import type { BabyEvent, EventType } from '../db/models';
 import { roundToStep } from '../events/bottleSuggestions';
-import { formatDuration, formatList, formatNumber, formatTime } from '../i18n/format';
+import { formatDuration, formatList, formatTime } from '../i18n/format';
+import { volumeNumberText, volumeText } from '../units/display';
 import { dayPartPhrase } from '../medications/dayPartText';
 import { readBasis } from '../predictions/predictionModel';
 import { effectiveDurationMs } from '../timers/pauseMath';
@@ -457,7 +458,9 @@ function projectedText(detail: ProjectedDetail, t: TFunction): RhythmText {
   };
 }
 
-const ml = (value: number) => formatNumber(value);
+/** A volume with its unit in the person's system, and the number alone (for the low end of a range). */
+const ml = volumeText;
+const mlNumber = volumeNumberText;
 const range = (from: Date, to: Date) => ({ from: formatTime(from), to: formatTime(to) });
 
 /** The sentences about the expected amount of a feed (never a number without its basis). */
@@ -467,7 +470,7 @@ function amountLines(item: UpcomingItem, basis: FeedBasis, t: TFunction): string
   if (basis.method === 'breast') return [t('now.upcoming.mostlyNursing')];
   if (!amount || !source) return [];
   if (source.kind === 'ageNorm') {
-    return [t('now.upcoming.amountNorm', { low: ml(amount.low), high: ml(amount.high) })];
+    return [t('now.upcoming.amountNorm', { low: mlNumber(amount.low), high: ml(amount.high) })];
   }
   const typical = ml(amount.typical ?? amount.low);
   const spread = amount.low !== amount.high;
@@ -479,7 +482,7 @@ function amountLines(item: UpcomingItem, basis: FeedBasis, t: TFunction): string
         ? t('now.upcoming.amountPart', {
             ml: typical,
             part,
-            low: ml(amount.low),
+            low: mlNumber(amount.low),
             high: ml(amount.high),
           })
         : t('now.upcoming.amountPartExact', { ml: typical, part }),
@@ -487,7 +490,11 @@ function amountLines(item: UpcomingItem, basis: FeedBasis, t: TFunction): string
   } else {
     lines.push(
       spread
-        ? t('now.upcoming.amountAll', { ml: typical, low: ml(amount.low), high: ml(amount.high) })
+        ? t('now.upcoming.amountAll', {
+            ml: typical,
+            low: mlNumber(amount.low),
+            high: ml(amount.high),
+          })
         : t('now.upcoming.amountAllExact', { ml: typical }),
     );
   }
@@ -549,7 +556,7 @@ export function upcomingText(item: UpcomingItem, t: TFunction): RhythmText {
           ...(basis.partialFeed
             ? [
                 t('now.upcoming.feedPartial', {
-                  drunk: ml(Math.round(basis.partialFeed.drunkMl)),
+                  drunk: mlNumber(Math.round(basis.partialFeed.drunkMl)),
                   usual: ml(roundToStep(basis.partialFeed.usualMl)),
                 }),
               ]

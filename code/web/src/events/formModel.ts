@@ -14,6 +14,7 @@ import { declaresFormula, FORMULA_KEYS } from '../formulas/formulaModel';
 import { DRUNK_KEY, PREPARED_KEY, withoutRedundantDrunk } from './bottleAmounts';
 import { visibleFields, withinDecimals } from './payloadRules';
 import { fromLocalInput, toLocalInput } from './time';
+import { fieldValueText } from '../units/display';
 
 export interface MedicationSelection {
   name: string;
@@ -173,6 +174,10 @@ function parseNumber(raw: string | boolean | undefined): number | null {
   return Number.isFinite(n) ? n : Number.NaN;
 }
 
+/** A limit of a field in the person's own units (ml and degrees C follow the unit setting). */
+const limitText = (field: EventFieldDefinition, limit: number) =>
+  fieldValueText(field.unit, limit) ?? formatNumber(limit);
+
 function fieldError(label: string, field: EventFieldDefinition, raw: string | boolean | undefined) {
   const empty = raw === undefined || raw === '';
   if (empty) {
@@ -190,10 +195,10 @@ function fieldError(label: string, field: EventFieldDefinition, raw: string | bo
     return t('events.validation.fieldDecimals', { label, count: field.decimals });
   }
   if (field.min !== null && n < field.min) {
-    return t('events.validation.fieldMin', { label, min: formatNumber(field.min) });
+    return t('events.validation.fieldMin', { label, min: limitText(field, field.min) });
   }
   if (field.max !== null && n > field.max) {
-    return t('events.validation.fieldMax', { label, max: formatNumber(field.max) });
+    return t('events.validation.fieldMax', { label, max: limitText(field, field.max) });
   }
   return null;
 }

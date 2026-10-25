@@ -8,6 +8,7 @@ import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { testDatabase } from '../test/fakeApi';
 import { useTestLocale } from '../test/locale';
 import { renderWithDb, settleSync } from '../test/renderApp';
+import { setUnitSetting } from '../units/state';
 import { InsightsSection } from './InsightsSection';
 
 /*
@@ -230,5 +231,32 @@ describe('in Portuguese', () => {
     expect(within(feeding).getByText('Média dos dias registrados, últimos 14 dias')).toBeTruthy();
     expect(screen.getByRole('radio', { name: '30 dias' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Ver como tabela' }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('in US customary units', () => {
+  afterEach(() => setUnitSetting('auto'));
+
+  it('draws the bottle chart and the table in fluid ounces', async () => {
+    setUnitSetting('us');
+    await seedDays(14);
+    renderSection();
+    const feeding = await screen.findByRole('region', { name: 'Feeding' });
+    expect(within(feeding).getByText('Bottle milk per day (fl oz)')).toBeTruthy();
+    expect(within(feeding).getByText('4.1 fl oz')).toBeTruthy();
+    fireEvent.click(within(feeding).getByRole('button', { name: 'View as table' }));
+    const rows = within(within(feeding).getByRole('table', { name: 'Feeding' })).getAllByRole(
+      'row',
+    );
+    expect(
+      within(rows[0])
+        .getAllByRole('columnheader')
+        .map((c) => c.textContent),
+    ).toEqual(['Day', 'Feeds', 'Bottle fl oz']);
+    expect(
+      within(rows[2])
+        .getAllByRole('cell')
+        .map((c) => c.textContent),
+    ).toEqual(['4', '4.1 fl oz']);
   });
 });

@@ -4,6 +4,11 @@ import { Box, Typography } from '@mui/material';
 import type { AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent, EventType } from '../db/models';
 import { formatDate, formatDuration, formatList, formatNumber, formatUnit } from '../i18n/format';
+import { currentLocale } from '../i18n/i18n';
+import { flOzToMl, mlToFlOz } from '../units/convert';
+import { formatVolume } from '../units/format';
+import type { UnitSystem } from '../units/system';
+import { useUnits } from '../units/useUnits';
 import { countAxis, hoursAxis } from './chartGeometry';
 import { insightById } from './catalogue';
 import { ColumnChart, type ColumnSeries } from './charts/ColumnChart';
@@ -42,6 +47,11 @@ const count = (value: number) => formatNumber(value);
 /** Hour ticks: a plain 0 at the baseline. */
 const hourTick = (ms: number) => (ms === 0 ? count(0) : duration(ms));
 const ml = (value: number) => formatUnit(Math.round(value), 'milliliter');
+/** A volume chart runs in the person's unit (fl oz in US): ml values become that unit before the axis is built. */
+const chartVolume = (system: UnitSystem) => (value: number) =>
+  system === 'us' ? mlToFlOz(value) : value;
+const chartVolumeText = (system: UnitSystem) => (value: number) =>
+  system === 'us' ? formatVolume(flOzToMl(value), system, currentLocale()) : ml(value);
 /** One decimal at most, as a number for the plural rules and `{{count, number}}`. */
 const roundOne = (value: number) => Math.round(value * 10) / 10;
 const tableDay = (date: Date) => formatDate(date, 'weekdayDayMonth');
@@ -211,6 +221,8 @@ export function FeedingCard({
 }: CardProps) {
   const { t } = useTranslation();
   const text = useCardText(days);
+  const { system, labels } = useUnits();
+  const shown = chartVolume(system);
   const insight = insightById('feeding');
   const data = feedsByDay(events, types, days, now);
   const facts = feedingSummary(events, types, days, now, todayKey, { birthDate, ageNorms });
@@ -255,7 +267,7 @@ export function FeedingCard({
     { key: 'feeds', label: t('insights.feeding.feeds'), color: 'feed' },
   ];
   const mlSeries: ColumnSeries[] = [
-    { key: 'ml', label: t('insights.feeding.tableMl'), color: 'feed' },
+    { key: 'ml', label: t('insights.feeding.tableMl', { unit: labels.volume }), color: 'feed' },
   ];
   const average = { key: 'avg', label: t('insights.average') };
   return (
@@ -281,16 +293,23 @@ export function FeedingCard({
             />
           </ChartBlock>
           {hasBottleMl && (
-            <ChartBlock title={t('insights.feeding.mlChart')}>
+            <ChartBlock title={t('insights.feeding.mlChart', { unit: labels.volume })}>
               <ColumnChart
-                days={data.map((d) => ({ key: d.key, start: d.start, values: [d.bottleMl] }))}
+                days={data.map((d) => ({
+                  key: d.key,
+                  start: d.start,
+                  values: [shown(d.bottleMl)],
+                }))}
                 series={mlSeries}
-                axis={countAxis(Math.max(0, ...data.map((d) => d.bottleMl)))}
+                axis={countAxis(Math.max(0, ...data.map((d) => shown(d.bottleMl))))}
                 formatTick={count}
-                formatValue={ml}
-                label={text.chartLabel(t('insights.feeding.mlChart'), summary)}
+                formatValue={chartVolumeText(system)}
+                label={text.chartLabel(
+                  t('insights.feeding.mlChart', { unit: labels.volume }),
+                  summary,
+                )}
                 todayKey={todayKey}
-                reference={facts.mlPerDay}
+                reference={facts.mlPerDay === null ? null : shown(facts.mlPerDay)}
                 height={160}
               />
             </ChartBlock>

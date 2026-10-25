@@ -1,6 +1,6 @@
 {
   "feedingAmounts": {
-    "amountOf": "{{drunk}} de {{prepared}} ml",
+    "amountOf": "{{drunk}} de {{prepared}}",
     "drunkHint": "Opcional. Deixe vazio se o bebê tomou tudo.",
     "share": {
       "all": "tudo",
@@ -11,7 +11,7 @@
     "drunkAbovePrepared": "{{label}} não pode ser maior que a quantidade preparada.",
     "endedBySleep": "Encerrada quando o sono começou",
     "stoppedBySleep": "Mamada encerrada.",
-    "toastBottle": "Mamadeira registrada, {{drunk}} de {{prepared}} ml",
+    "toastBottle": "Mamadeira registrada, {{drunk}} de {{prepared}}",
     "timeBottles": {
       "title": "Alimentação",
       "label": "Cronometrar mamadeiras",
@@ -19,14 +19,14 @@
     },
     "tray": {
       "drunk": "Quanto foi bebido",
-      "logDrunk": "Registrar {{drunk}} de {{prepared}} ml",
-      "logDrunkContent": "Registrar {{drunk}} de {{prepared}} ml {{content}}"
+      "logDrunk": "Registrar {{drunk}} de {{prepared}}",
+      "logDrunkContent": "Registrar {{drunk}} de {{prepared}} {{content}}"
     },
     "level": {
       "title": "Quanto sobrou na mamadeira?",
       "hint": "Opcional. A pausa já foi salva.",
       "chips": "Sobrou na mamadeira",
-      "chip": "{{ml}} ml · {{share}}",
+      "chip": "{{ml}} · {{share}}",
       "share": {
         "full": "cheia",
         "threeQuarters": "3/4",

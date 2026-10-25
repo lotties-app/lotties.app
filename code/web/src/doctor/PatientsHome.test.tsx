@@ -9,6 +9,7 @@ import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import { patientBaby, patientDto, renderDashboard } from './dashboardTestKit';
 import { rememberVisit } from './dashboardStorage';
 import { clinicalAge } from './clinicalAge';
+import { setUnitSetting } from '../units/state';
 
 /* The doctor's Patients home (docs/design/19-doctor-dashboard.md section 5.1). */
 
@@ -89,6 +90,15 @@ describe('Patients home', () => {
     expect(within(notices).getByText('Vaccines due: 2')).toBeTruthy();
     expect(within(cardOf('Maya')).getByText('2 of your proposals are pending')).toBeTruthy();
     expect(calls.some((call) => call.path.includes('timeZone='))).toBe(true);
+  });
+
+  it('reads the week and the weight in the own units', async () => {
+    setUnitSetting('us');
+    await renderDashboard(db, '/doctor', [LIA, THEO, MAYA, BIA], handler());
+    await waitFor(() => expect(screen.getByText('Last log 3 hours ago')).toBeTruthy());
+    const lia = cardOf('Lia');
+    expect(within(lia).getByText('24.3 fl oz/day')).toBeTruthy();
+    expect(within(lia).getByText(/^11 lb 15 oz · /)).toBeTruthy();
   });
 
   it('flags a quiet patient calmly and hides what a family did not share', async () => {

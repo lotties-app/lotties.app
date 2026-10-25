@@ -7,6 +7,7 @@ import { SetupMessage } from './config/SetupMessage';
 import { OidcAuthProvider } from './auth/OidcAuthProvider';
 import { ApiClientProvider } from './api/ApiClientProvider';
 import { AccountDataProvider } from './session/AccountDataProvider';
+import { UnitsProvider } from './units/UnitsProvider';
 import { AppRoutes } from './AppRoutes';
 import { ReloadPrompt } from './pwa/ReloadPrompt';
 
@@ -21,9 +22,11 @@ export default function App({ configResult = readConfig() }: { configResult?: Co
             <OidcAuthProvider config={configResult.config.oidc}>
               <ApiClientProvider baseUrl={configResult.config.apiBaseUrl}>
                 <AccountDataProvider>
-                  <QueryClientProvider client={queryClient}>
-                    <AppRoutes />
-                  </QueryClientProvider>
+                  <UnitsProvider>
+                    <QueryClientProvider client={queryClient}>
+                      <AppRoutes />
+                    </QueryClientProvider>
+                  </UnitsProvider>
                 </AccountDataProvider>
               </ApiClientProvider>
             </OidcAuthProvider>
