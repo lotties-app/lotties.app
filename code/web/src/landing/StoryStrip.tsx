@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
-import { PAGE_WIDTH } from './features';
+import { PAGE_WIDTH, STORY } from './features';
 
 /** Why Lotties exists, in the makers' own words. */
 export function StoryStrip() {
@@ -15,7 +15,7 @@ export function StoryStrip() {
         {t('story.title')}
       </Typography>
       <Box sx={{ maxWidth: '65ch' }}>
-        {(['one', 'two', 'three'] as const).map((p) => (
+        {STORY.map((p) => (
           <Typography key={p} color="text.secondary" sx={{ mb: 1.5 }}>
             {t(`story.${p}`)}
           </Typography>
