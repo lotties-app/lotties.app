@@ -93,10 +93,10 @@ export default function LandingPage({
           signedIn={welcome}
         />
         <StoryStrip />
+        <InstallStrip />
         <FeatureGrid />
         <ImportantNotice />
         <StepsStrip />
-        <InstallStrip />
         <OpenSourceStrip />
       </Box>
       <LandingFooter />

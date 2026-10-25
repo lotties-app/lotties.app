@@ -30,6 +30,7 @@ export function InstallStrip() {
         ) : (
           <>
             <Typography>{t('install.landing.body')}</Typography>
+            <Typography color="text.secondary">{t('install.landing.soon')}</Typography>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
