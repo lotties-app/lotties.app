@@ -34,6 +34,9 @@
 - LICENSE — AGPL-3.0
 - README.md — overview, quick start, env vars
 - CONTRIBUTING.md — contribution guide
+- SECURITY.md — vulnerability reporting policy (private advisory link, no child data in reports)
+- .github/ISSUE_TEMPLATE/ (bug_report.yml, feature_request.yml, config.yml), .github/PULL_REQUEST_TEMPLATE.md, .github/CODEOWNERS — community intake and review defaults
+- docs/TRIAGE.md — labels and triage flow, how public issues map to the board
 - docs/graphify/ — graphify output (gitignored)
 - code/api/src/Lotties.Domain/ — entities and rules (Babies, Events, EventTypes, Measurements, Medications, Users, Exceptions, Common)
 - code/api/src/Lotties.Infrastructure/Persistence/ — DbContext, entity configurations, converters, design-time factory, Migrations/
