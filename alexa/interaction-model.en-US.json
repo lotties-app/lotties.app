@@ -50,23 +50,23 @@
           "name": "BottleIntent",
           "slots": [
             { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} ml", "{amount} milliliters"] },
-            { "name": "kind", "type": "BOTTLE_KIND" }
+            { "name": "bottleKind", "type": "BOTTLE_KIND" }
           ],
           "samples": [
             "log a {amount} ml bottle",
             "log a {amount} milliliter bottle",
             "log a bottle of {amount} ml",
-            "log a {amount} ml bottle of {kind}",
-            "log a {amount} ml {kind} bottle",
+            "log a {amount} ml bottle of {bottleKind}",
+            "log a {amount} ml {bottleKind} bottle",
             "a {amount} ml bottle",
             "she drank {amount} ml",
             "he drank {amount} ml",
             "the baby drank {amount} ml",
-            "she had {amount} ml of {kind}",
-            "he had {amount} ml of {kind}",
-            "she drank a {kind} bottle of {amount} ml",
+            "she had {amount} ml of {bottleKind}",
+            "he had {amount} ml of {bottleKind}",
+            "she drank a {bottleKind} bottle of {amount} ml",
             "log a bottle",
-            "log a {kind} bottle"
+            "log a {bottleKind} bottle"
           ]
         },
         {
@@ -87,15 +87,15 @@
         },
         {
           "name": "DiaperIntent",
-          "slots": [{ "name": "kind", "type": "DIAPER_KIND", "samples": ["{kind}", "it was {kind}", "a {kind} one"] }],
+          "slots": [{ "name": "diaperKind", "type": "DIAPER_KIND", "samples": ["{diaperKind}", "it was {diaperKind}", "a {diaperKind} one"] }],
           "samples": [
-            "log a {kind} diaper",
-            "a {kind} diaper",
-            "{kind} diaper",
-            "she had a {kind} diaper",
-            "he had a {kind} diaper",
-            "changed a {kind} diaper",
-            "diaper change {kind}",
+            "log a {diaperKind} diaper",
+            "a {diaperKind} diaper",
+            "{diaperKind} diaper",
+            "she had a {diaperKind} diaper",
+            "he had a {diaperKind} diaper",
+            "changed a {diaperKind} diaper",
+            "diaper change {diaperKind}",
             "log a diaper",
             "log a diaper change"
           ]
@@ -221,7 +221,7 @@
               "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
             },
             {
-              "name": "kind",
+              "name": "bottleKind",
               "type": "BOTTLE_KIND",
               "elicitationRequired": false,
               "confirmationRequired": false,
@@ -236,11 +236,11 @@
           "prompts": {},
           "slots": [
             {
-              "name": "kind",
+              "name": "diaperKind",
               "type": "DIAPER_KIND",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.kind" }
+              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.diaperKind" }
             }
           ]
         }
@@ -256,7 +256,7 @@
         ]
       },
       {
-        "id": "Elicit.Slot.DiaperIntent.kind",
+        "id": "Elicit.Slot.DiaperIntent.diaperKind",
         "variations": [{ "type": "PlainText", "value": "Was it wet, dirty, or both?" }]
       }
     ]

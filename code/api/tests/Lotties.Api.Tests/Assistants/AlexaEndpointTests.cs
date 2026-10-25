@@ -125,7 +125,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     public async Task Post_Bottle_ResolvedKindAndAmount_IsLoggedAndConfirmed()
     {
         var baby = await Factory.SeedBabyAsync();
-        var slots = new { amount = Slot("amount", "120"), kind = ResolvedSlot("kind", "leite materno", "BREAST_MILK") };
+        var slots = new { amount = Slot("amount", "120"), bottleKind = ResolvedSlot("bottleKind", "leite materno", "BREAST_MILK") };
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("BottleIntent", host.TokenFor(baby.OwnerSubject), "pt-BR", slots), SignedHeaders));
 
@@ -151,7 +151,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     {
         var baby = await Factory.SeedBabyAsync();
 
-        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("DiaperIntent", host.TokenFor(baby.OwnerSubject), slots: new { kind = Slot("kind", "poop") }), SignedHeaders));
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("DiaperIntent", host.TokenFor(baby.OwnerSubject), slots: new { diaperKind = Slot("diaperKind", "poop") }), SignedHeaders));
 
         Assert.StartsWith("Logged a dirty diaper for Lia", AlexaApiHost.Speech(json), StringComparison.Ordinal);
         Assert.Single(await Factory.EventsAsync(baby.BabyId));

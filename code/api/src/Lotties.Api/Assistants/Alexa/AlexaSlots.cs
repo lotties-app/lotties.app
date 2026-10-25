@@ -12,7 +12,8 @@ namespace Lotties.Api.Assistants.Alexa;
 public static class AlexaSlots
 {
     public const string AmountSlot = "amount";
-    public const string KindSlot = "kind";
+    public const string BottleKindSlot = "bottleKind";
+    public const string DiaperKindSlot = "diaperKind";
     public const string SideSlot = "side";
 
     private const int MaxAmount = 100_000;
@@ -55,7 +56,7 @@ public static class AlexaSlots
     public static int? Number(AlexaIntent? intent, string slot) =>
         Value(intent, slot) is { } text && int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number <= MaxAmount ? number : null;
 
-    public static BottleKind BottleKind(AlexaIntent? intent) => Id(intent, KindSlot) switch
+    public static BottleKind BottleKind(AlexaIntent? intent) => Id(intent, BottleKindSlot) switch
     {
         "FORMULA" => Domain.Assistants.BottleKind.Formula,
         "BREAST_MILK" => Domain.Assistants.BottleKind.BreastMilk,
@@ -69,7 +70,7 @@ public static class AlexaSlots
         _ => null,
     };
 
-    public static DiaperKind? Diaper(AlexaIntent? intent) => Id(intent, KindSlot) switch
+    public static DiaperKind? Diaper(AlexaIntent? intent) => Id(intent, DiaperKindSlot) switch
     {
         "WET" => DiaperKind.Wet,
         "DIRTY" => DiaperKind.Dirty,

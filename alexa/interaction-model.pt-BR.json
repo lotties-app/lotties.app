@@ -47,22 +47,22 @@
           "name": "BottleIntent",
           "slots": [
             { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} ml", "{amount} mililitros"] },
-            { "name": "kind", "type": "BOTTLE_KIND" }
+            { "name": "bottleKind", "type": "BOTTLE_KIND" }
           ],
           "samples": [
             "registrar mamadeira de {amount} ml",
             "registrar mamadeira de {amount} mililitros",
             "registrar uma mamadeira de {amount} ml",
-            "registrar mamadeira de {amount} ml de {kind}",
+            "registrar mamadeira de {amount} ml de {bottleKind}",
             "mamadeira de {amount} ml",
-            "mamadeira de {kind} de {amount} ml",
+            "mamadeira de {bottleKind} de {amount} ml",
             "ela tomou {amount} ml",
             "ele tomou {amount} ml",
             "o bebê tomou {amount} ml",
-            "ela tomou {amount} ml de {kind}",
-            "ele tomou {amount} ml de {kind}",
+            "ela tomou {amount} ml de {bottleKind}",
+            "ele tomou {amount} ml de {bottleKind}",
             "registrar mamadeira",
-            "registrar mamadeira de {kind}"
+            "registrar mamadeira de {bottleKind}"
           ]
         },
         {
@@ -83,15 +83,15 @@
         },
         {
           "name": "DiaperIntent",
-          "slots": [{ "name": "kind", "type": "DIAPER_KIND", "samples": ["{kind}", "foi {kind}", "de {kind}"] }],
+          "slots": [{ "name": "diaperKind", "type": "DIAPER_KIND", "samples": ["{diaperKind}", "foi {diaperKind}", "de {diaperKind}"] }],
           "samples": [
-            "registrar fralda de {kind}",
-            "registrar uma fralda de {kind}",
-            "fralda de {kind}",
-            "troquei uma fralda de {kind}",
-            "troquei a fralda de {kind}",
-            "ela fez {kind}",
-            "ele fez {kind}",
+            "registrar fralda de {diaperKind}",
+            "registrar uma fralda de {diaperKind}",
+            "fralda de {diaperKind}",
+            "troquei uma fralda de {diaperKind}",
+            "troquei a fralda de {diaperKind}",
+            "ela fez {diaperKind}",
+            "ele fez {diaperKind}",
             "registrar fralda",
             "registrar troca de fralda"
           ]
@@ -214,7 +214,7 @@
               "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
             },
             {
-              "name": "kind",
+              "name": "bottleKind",
               "type": "BOTTLE_KIND",
               "elicitationRequired": false,
               "confirmationRequired": false,
@@ -229,11 +229,11 @@
           "prompts": {},
           "slots": [
             {
-              "name": "kind",
+              "name": "diaperKind",
               "type": "DIAPER_KIND",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.kind" }
+              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.diaperKind" }
             }
           ]
         }
@@ -249,7 +249,7 @@
         ]
       },
       {
-        "id": "Elicit.Slot.DiaperIntent.kind",
+        "id": "Elicit.Slot.DiaperIntent.diaperKind",
         "variations": [{ "type": "PlainText", "value": "Foi xixi, cocô ou os dois?" }]
       }
     ]
