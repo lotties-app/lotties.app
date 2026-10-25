@@ -79,7 +79,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'account',
               cells: [
                 'Sua conta de acesso',
-                'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno e o seu nome de exibição; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login.',
+                'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno e o seu nome de exibição; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login. Guardamos também a sua escolha de unidades de medida (automática, métrica ou americana), que só muda como as quantidades aparecem para você; os registros continuam em unidades métricas.',
                 'Para você entrar nos seus aparelhos e para mostrar seu nome às pessoas com quem você compartilha um bebê.',
               ],
             },
@@ -412,6 +412,7 @@ export const privacyPtBR: PolicyDocument = {
             'Registros apagados: ficam ocultos até o bebê ou a sua conta serem excluídos (veja [Seus direitos](#privacy-rights)).',
             'O que você adicionou a um bebê que outras pessoas mantêm: continua com esse bebê depois que você sai ou exclui sua conta, sem o seu nome.',
             'Sua conta de login: até você excluir sua conta.',
+            'Sua escolha de unidades de medida: até você mudá-la ou excluir sua conta.',
             'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
             'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',

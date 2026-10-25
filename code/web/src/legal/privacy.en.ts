@@ -75,7 +75,7 @@ export const privacyEn: PolicyDocument = {
               id: 'account',
               cells: [
                 'Your sign-in account',
-                'The details you register with at our sign-in server (Keycloak), such as your name and email address, and your password, which Keycloak keeps only in a protected form (a one-way hash). The Lotties server keeps just an internal id and your display name; it never reads your email. The app on your device receives your name and email from the sign-in server.',
+                'The details you register with at our sign-in server (Keycloak), such as your name and email address, and your password, which Keycloak keeps only in a protected form (a one-way hash). The Lotties server keeps just an internal id and your display name; it never reads your email. The app on your device receives your name and email from the sign-in server. We also keep your measurement unit choice (automatic, metric or US customary), which only changes how amounts are shown to you; records stay stored in metric units.',
                 'To let you sign in on your devices, and to show your name to the people you share a baby with.',
               ],
             },
@@ -408,6 +408,7 @@ export const privacyEn: PolicyDocument = {
             'Deleted entries: kept hidden until the baby or your account is deleted (see [Your rights](#privacy-rights)).',
             'What you added to a baby other people keep: stays with that baby after you leave or delete your account, without your name.',
             'Your sign-in account: until you delete your account.',
+            'Your measurement unit choice: until you change it or delete your account.',
             'Reminders: the delivery record for 14 days; snooze and dismiss choices for 7 days after the last change. A device that does not open the app for 90 days stops getting reminders, and the push address of a device that was switched off is deleted 30 days later.',
             'Doctor access log and invites: kept with the baby until it is erased.',
             'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
