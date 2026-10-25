@@ -46,8 +46,11 @@ For each language (switch with the language dropdown at the top):
 
 - Service endpoint type: **HTTPS**.
 - Default Region: `https://lotties.app/api/v1/alexa`.
-- SSL certificate type: **My development endpoint has a certificate from a trusted certificate authority** (the public
-  certificate of `lotties.app` served by Traefik). Do not choose the self-signed or wildcard options.
+- SSL certificate type: **My development endpoint is a sub-domain of a domain that has a wildcard certificate from a
+  trusted certificate authority**. Production reaches the app through Cloudflare, whose Universal certificate lists
+  `*.lotties.app` and `lotties.app`; with the plain "certificate from a trusted certificate authority" option Alexa
+  answers "I am unable to reach the requested skill" and no request ever reaches the cluster (confirmed 2026-10-25).
+  Do not choose the self-signed option.
 - Save. The API verifies Amazon's signature on every request (signature, certificate chain from `s3.amazonaws.com/echo.api/`,
   timestamp within 150 seconds, the skill id). The pod must reach `https://s3.amazonaws.com` over HTTPS to download
   Amazon's signing certificate (cached for an hour); if egress is blocked, every request is refused with 400.
@@ -162,6 +165,7 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 | Symptom | Likely cause |
 | --- | --- |
 | Console: "The remote endpoint could not be called, or the response it returned was invalid" with HTTP 404 | `Alexa__Enabled` is not `true` on the running pod |
+| "I am unable to reach the requested skill" and nothing in the nginx or API logs | the Endpoint's SSL certificate type does not match what the host serves: use the wildcard option (section 4) |
 | HTTP 400 for every request | wrong `Alexa__SkillIds`; the pod cannot reach `s3.amazonaws.com` (log line "Alexa request refused: CertificateUnavailable"); the pod's clock is off by more than 150 s (`stale_timestamp`) |
 | "Please link your account" after linking | the Alexa client's access token lacks the `lotties-api` audience (5.1.4), or the issuer is not `https://auth.lotties.app/realms/lotties.app` (`AUTH_AUTHORITY`); decode one token from the console's JSON Input (`context.System.user.accessToken`) at a JWT debugger you trust, offline |
 | Linking page shows "Invalid parameter: redirect_uri" | the Alexa Redirect URLs are not all in the client's Valid redirect URIs (5.1.2) |
