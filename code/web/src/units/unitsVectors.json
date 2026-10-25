@@ -1,0 +1,66 @@
+{
+  "_doc": "Shared vectors for the measurement-units rules (docs/design/37-measurement-units.md). The TS module code/web/src/units and the C# Domain/Units both run these cases; they must agree. Storage is always metric (ml, kg, cm, degrees C); the setting only changes what a person sees and types. Display rounding: volume in fl oz to 1 decimal (trailing .0 dropped), weight in whole ounces shown as lb + oz (under 1 lb only oz), length in inches to 1 decimal, temperature in F to 1 decimal. Input rounding: volume to whole ml, weight to whole grams, length to 0.1 cm, temperature to 0.1 C.",
+  "resolve": [
+    { "setting": "auto", "locale": "en-US", "expect": "us" },
+    { "setting": "auto", "locale": "en-us", "expect": "us" },
+    { "setting": "auto", "locale": "pt-BR", "expect": "metric" },
+    { "setting": "auto", "locale": "en-GB", "expect": "metric" },
+    { "setting": "auto", "locale": "en", "expect": "metric" },
+    { "setting": "auto", "locale": "", "expect": "metric" },
+    { "setting": "us", "locale": "pt-BR", "expect": "us" },
+    { "setting": "metric", "locale": "en-US", "expect": "metric" }
+  ],
+  "volumeMlToOz": [
+    { "ml": 0, "text": "0" },
+    { "ml": 15, "text": "0.5" },
+    { "ml": 30, "text": "1" },
+    { "ml": 60, "text": "2" },
+    { "ml": 118, "text": "4" },
+    { "ml": 120, "text": "4.1" },
+    { "ml": 150, "text": "5.1" },
+    { "ml": 240, "text": "8.1" },
+    { "ml": 500, "text": "16.9" }
+  ],
+  "volumeOzToMl": [
+    { "oz": 0.5, "ml": 15 },
+    { "oz": 2, "ml": 59 },
+    { "oz": 4, "ml": 118 },
+    { "oz": 4.5, "ml": 133 },
+    { "oz": 8, "ml": 237 }
+  ],
+  "weightKgToLbOz": [
+    { "kg": 0.5, "lb": 1, "oz": 2, "text": "1 lb 2 oz" },
+    { "kg": 0.3, "lb": 0, "oz": 11, "text": "11 oz" },
+    { "kg": 3.2, "lb": 7, "oz": 1, "text": "7 lb 1 oz" },
+    { "kg": 3.5, "lb": 7, "oz": 11, "text": "7 lb 11 oz" },
+    { "kg": 10, "lb": 22, "oz": 1, "text": "22 lb 1 oz" }
+  ],
+  "weightLbOzToKg": [
+    { "lb": 7, "oz": 1, "kg": 3.203 },
+    { "lb": 7, "oz": 11, "kg": 3.487 },
+    { "lb": 0, "oz": 11, "kg": 0.312 },
+    { "lb": 22, "oz": 0, "kg": 9.979 }
+  ],
+  "lengthCmToIn": [
+    { "cm": 33.5, "text": "13.2" },
+    { "cm": 50, "text": "19.7" },
+    { "cm": 75, "text": "29.5" }
+  ],
+  "lengthInToCm": [
+    { "in": 19.5, "cm": 49.5 },
+    { "in": 19.7, "cm": 50 },
+    { "in": 20, "cm": 50.8 }
+  ],
+  "temperatureCToF": [
+    { "c": 36.5, "text": "97.7" },
+    { "c": 37, "text": "98.6" },
+    { "c": 38, "text": "100.4" },
+    { "c": 39.4, "text": "102.9" }
+  ],
+  "temperatureFToC": [
+    { "f": 98.6, "c": 37 },
+    { "f": 100.4, "c": 38 },
+    { "f": 101, "c": 38.3 },
+    { "f": 102.2, "c": 39 }
+  ]
+}
