@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lotties.Application.Assistants;
+using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 
 namespace Lotties.Api.Assistants.Mcp;
@@ -91,14 +92,14 @@ internal static class McpResultText
             AssistantResultCode.ChooseBaby => "choose_baby: the user has several babies; call list_babies and pass babyId.",
             AssistantResultCode.UnknownBaby => "unknown_baby: that babyId is not one of the user's babies; call list_babies.",
             AssistantResultCode.RateLimited => "rate_limited: too many requests; try again in a minute.",
-            AssistantResultCode.InvalidAmount => $"invalid_amount: the amount must be from {result.Min} to {result.Max} ml.",
+            AssistantResultCode.InvalidAmount => $"invalid_amount: the amount must be from {result.Min} to {result.Max} ml{(result.Units == UnitSystem.Us ? $" (up to {Volume(result.Max, result.Units)})" : string.Empty)}.",
             AssistantResultCode.InvalidDate => $"invalid_date: the date must be from {result.EarliestDate:yyyy-MM-dd} to {result.LatestDate:yyyy-MM-dd}{DaysIn(result)}.",
             AssistantResultCode.SleepStarted => $"Sleep started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.SleepAlreadyRunning => $"{baby} is already sleeping, since {Time(result, result.At)}; nothing was logged.",
             AssistantResultCode.SleepEnded => $"{baby} woke up at {Time(result, result.At)}{Minutes(", after ", result.Minutes, " minutes of sleep")}.",
             AssistantResultCode.NoRunningSleep => $"{baby} is not sleeping; nothing was changed.",
             AssistantResultCode.SeveralRunningSleeps => $"{baby} has {result.Count} sleep timers running; nothing was changed (stop them in the app).",
-            AssistantResultCode.BottleLogged => $"Logged a {result.AmountMl} ml bottle for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.BottleLogged => $"Logged a {Volume(result.AmountMl, result.Units)} bottle for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.NursingStarted => $"Nursing started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.NursingAlreadyRunning => $"{baby} is already nursing, since {Time(result, result.At)}; nothing was logged.",
             AssistantResultCode.DiaperLogged => $"Logged a diaper for {baby} at {Time(result, result.At)}.",
@@ -125,7 +126,7 @@ internal static class McpResultText
             AssistantResultCode.NoNextDiaper => $"No next diaper estimate for {baby}: not enough diaper history.",
             AssistantResultCode.DiapersAverage => $"{baby} used about {result.PerDay?.ToString("0.#", CultureInfo.InvariantCulture)} diapers a day over {result.Count} days ({result.WetPerDay?.ToString("0.#", CultureInfo.InvariantCulture)} wet, {result.DirtyPerDay?.ToString("0.#", CultureInfo.InvariantCulture)} dirty).",
             AssistantResultCode.NoDiapersAverage => $"Not enough complete days with diapers for {baby} in the last week ({result.Count} of 3 needed).",
-            AssistantResultCode.BottleAverage => $"{baby}'s last {result.Count} bottles averaged {result.AmountMl} ml; the last was {result.LastAmountMl} ml.",
+            AssistantResultCode.BottleAverage => $"{baby}'s last {result.Count} bottles averaged {Volume(result.AmountMl, result.Units)}; the last was {Volume(result.LastAmountMl, result.Units)}.",
             AssistantResultCode.NoBottleData => $"Not enough bottles with an amount in the last 14 days for {baby} ({result.Count} of 3 needed).",
             AssistantResultCode.SleepToday => $"{baby} has slept {result.Minutes} minutes today, with {result.Count} naps.",
             AssistantResultCode.LastDiaper => $"{baby}'s last diaper was at {Time(result, result.At)}.",
@@ -137,6 +138,11 @@ internal static class McpResultText
             _ => AssistantResult.CodeName(result.Code),
         };
     }
+
+    /// <summary>A volume told in the user's system: <c>120 ml</c>, or <c>4.1 fl oz</c> (the structured values stay in ml).</summary>
+    private static string Volume(int? ml, UnitSystem units) => units == UnitSystem.Us
+        ? $"{UnitConversions.Text(UnitConversions.MlToFluidOunces(ml ?? 0))} fl oz"
+        : $"{ml} ml";
 
     /// <summary>The local time in the family's zone, else UTC (<c>2026-10-23 14:05 America/Sao_Paulo</c>).</summary>
     private static string Time(AssistantResult result, DateTimeOffset? instant)

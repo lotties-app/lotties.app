@@ -68,6 +68,11 @@ internal sealed class McpToolRunner(
             return (McpToolResults.InvalidArguments, McpToolResults.Error(McpToolResults.InvalidArguments, error.Message, error.Field));
         }
 
+        if (tool.Check?.Invoke(arguments!) is { } rejected)
+        {
+            return (McpToolResults.InvalidArguments, McpToolResults.Error(McpToolResults.InvalidArguments, rejected.Message, rejected.Field));
+        }
+
         var invocation = new AssistantInvocation(AdapterName, RequestIdOf(tool, user, arguments!), FallbackTimeZone: null, arguments!.BabyId, arguments.TimeZone);
         try
         {

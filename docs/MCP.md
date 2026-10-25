@@ -157,7 +157,7 @@ The parent, in Claude (web, desktop or mobile): **Settings** > **Connectors** > 
    secret empty (public client).
 3. **Connect**: Claude opens the Lotties sign-in, then the consent screen with the texts of 2.3. Approve.
 4. In a chat, enable the connector and ask, for example, "when did the baby last eat?", "summarise yesterday",
-   "log a 120 ml bottle". Claude asks before each tool call according to her Claude settings.
+   "log a 120 ml bottle" (or "log a 4 oz bottle": `log_bottle` takes `amountMl`, or `amount` with `unit` `ml` or `oz`). Claude asks before each tool call according to her Claude settings. The tools' structured values stay metric (`amountMl`); the one-line text follows the person's unit setting (Settings > Units, docs/design/37-measurement-units.md).
 
 A Claude Team or Enterprise organization may require an Owner to add custom connectors; the steps are the same.
 

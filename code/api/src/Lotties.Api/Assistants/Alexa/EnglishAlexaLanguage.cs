@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Globalization;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 
 namespace Lotties.Api.Assistants.Alexa;
 
@@ -9,6 +10,11 @@ namespace Lotties.Api.Assistants.Alexa;
 internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
 {
     private static readonly SpokenClock Speech = new(CultureInfo.GetCultureInfo("en-US"), "h:mm tt", new SpokenWords("minute", "minutes", "hour", "hours", "and", "less than a minute"));
+
+    private static readonly SpokenMeasures Measures = new(
+        Speech.Culture,
+        new SpokenUnitWords("ml", new("ounce", "ounces"), new("pound", "pounds"), new("kilogram", "kilograms"), new("centimeter", "centimeters"), new("inch", "inches"), new("degree", "degrees"), string.Empty),
+        value => value == 1);
 
     private readonly FrozenDictionary<AssistantResultCode, Func<AssistantResult, string>> _results;
     private readonly FrozenDictionary<AlexaPrompt, AlexaLine> _prompts;
@@ -41,7 +47,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoBaby] = _ => "There's no baby in your Lotties account yet. Add one in the app first.",
         [AssistantResultCode.ChooseBaby] = _ => "You have more than one baby in Lotties. Choose the one for voice commands in the app, in Settings, Voice assistants.",
         [AssistantResultCode.RateLimited] = _ => "That's a lot of requests. Please try again in a minute.",
-        [AssistantResultCode.InvalidAmount] = result => $"Please say an amount from {result.Min} to {result.Max} ml, for example: log a 120 ml bottle.",
+        [AssistantResultCode.InvalidAmount] = InvalidAmount,
         [AssistantResultCode.SleepStarted] = result => $"Got it. {Name(result)} fell asleep {When(result, result.At)}.",
         [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} is already sleeping, since {Since(result, result.At)}.",
         [AssistantResultCode.SleepEnded] = result => result.Minutes is null
@@ -49,7 +55,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
             : $"{Name(result)} woke up {When(result, result.At)}, after sleeping {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoRunningSleep] = result => $"{Name(result)} isn't sleeping right now, so there was nothing to stop.",
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Name(result)} has {result.Count} sleep timers running. Please stop them in the app.",
-        [AssistantResultCode.BottleLogged] = result => $"Logged a {result.AmountMl} ml bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
+        [AssistantResultCode.BottleLogged] = result => $"Logged a {VolumeModifier(result, result.AmountMl)} bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Nursing started on the {Side(result)} side for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} is already nursing, since {Since(result, result.At)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Logged a {Diaper(result)} diaper for {Name(result)} {When(result, result.At)}.",
@@ -90,18 +96,18 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
             { Complete: false } => "So far today",
             _ => $"On {day.Date.ToString("MMMM d", Speech.Culture)}",
         };
-        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
     }
 
     private static string WeekSummary(AssistantResult result)
     {
         var last = result.Days.Count == 0 ? "today" : result.Days[^1].Date.ToString("MMMM d", Speech.Culture);
-        return $"In the 7 days up to {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+        return $"In the 7 days up to {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
     }
 
-    private static string Totals(SpokenDayTotals totals)
+    private static string Totals(SpokenDayTotals totals, UnitSystem units)
     {
-        var bottles = totals.BottleMl > 0 ? $" with {totals.BottleMl} ml in bottles" : string.Empty;
+        var bottles = totals.BottleMl > 0 ? $" with {Measures.Volume(totals.BottleMl, units)} in bottles" : string.Empty;
         return $"slept {Speech.Duration(totals.SleepMinutes)} with {Speech.Count(totals.Naps, "nap", "naps")}, had {Speech.Count(totals.Feeds, "feed", "feeds")}{bottles}, and {Speech.Count(totals.Diapers, "diaper", "diapers")}";
     }
 
@@ -142,7 +148,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
 
     private static string FeedDescription(AssistantResult result) => result.FeedMethod switch
     {
-        FeedMethod.Bottle when result.AmountMl is { } amount => $"a {amount} ml bottle{BottleContent(result)}",
+        FeedMethod.Bottle when result.AmountMl is { } amount => $"a {VolumeModifier(result, amount)} bottle{BottleContent(result)}",
         FeedMethod.Bottle => $"a bottle{BottleContent(result)}",
         FeedMethod.Breast when result.Side is not null => $"nursing on the {Side(result)} side",
         FeedMethod.Breast => "nursing",
@@ -157,6 +163,14 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         BottleKind.BreastMilk => " of breast milk",
         _ => string.Empty,
     };
+
+    private static string Volume(AssistantResult result, int? ml) => Measures.Volume(ml ?? 0, result.Units);
+
+    private static string VolumeModifier(AssistantResult result, int? ml) => Measures.VolumeModifier(ml ?? 0, result.Units);
+
+    private static string InvalidAmount(AssistantResult result) => result.Units == UnitSystem.Us
+        ? $"Please say an amount up to {Measures.Number(UnitConversions.MlToFluidOunces(result.Max ?? 0))} ounces, for example: log a 4 ounce bottle."
+        : $"Please say an amount from {result.Min} to {result.Max} ml, for example: log a 120 ml bottle.";
 
     private static string Side(AssistantResult result) => result.Side == BreastSide.Right ? "right" : "left";
 

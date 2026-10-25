@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Globalization;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 
 namespace Lotties.Api.Assistants.Alexa;
 
@@ -9,6 +10,11 @@ namespace Lotties.Api.Assistants.Alexa;
 internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
 {
     private static readonly SpokenClock Speech = new(CultureInfo.GetCultureInfo("pt-BR"), "HH:mm", new SpokenWords("minuto", "minutos", "hora", "horas", "e", "menos de um minuto"));
+
+    private static readonly SpokenMeasures Measures = new(
+        Speech.Culture,
+        new SpokenUnitWords("ml", new("onça", "onças"), new("libra", "libras"), new("quilo", "quilos"), new("centímetro", "centímetros"), new("polegada", "polegadas"), new("grau", "graus"), "e"),
+        value => value < 2);
 
     private readonly FrozenDictionary<AssistantResultCode, Func<AssistantResult, string>> _results;
     private readonly FrozenDictionary<AlexaPrompt, AlexaLine> _prompts;
@@ -41,7 +47,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoBaby] = _ => "Ainda não há nenhum bebê na sua conta do Lotties. Adicione um no app primeiro.",
         [AssistantResultCode.ChooseBaby] = _ => "Você tem mais de um bebê no Lotties. Escolha o bebê dos comandos de voz no app, em Configurações, Assistentes de voz.",
         [AssistantResultCode.RateLimited] = _ => "São muitos pedidos seguidos. Tente de novo daqui a um minuto.",
-        [AssistantResultCode.InvalidAmount] = result => $"Diga uma quantidade de {result.Min} a {result.Max} ml, por exemplo: registrar mamadeira de 120 ml.",
+        [AssistantResultCode.InvalidAmount] = InvalidAmount,
         [AssistantResultCode.SleepStarted] = result => $"Certo. {Name(result)} dormiu {When(result, result.At)}.",
         [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} já está dormindo, desde {Since(result, result.At)}.",
         [AssistantResultCode.SleepEnded] = result => result.Minutes is null
@@ -49,7 +55,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
             : $"{Name(result)} acordou {When(result, result.At)}, depois de dormir {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoRunningSleep] = result => $"{Name(result)} não está dormindo agora, então não havia sono para encerrar.",
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Name(result)} tem {result.Count} cronômetros de sono ativos. Encerre-os no app.",
-        [AssistantResultCode.BottleLogged] = result => $"Registrei uma mamadeira de {result.AmountMl} ml{BottleContent(result)} {When(result, result.At)} para {Name(result)}.",
+        [AssistantResultCode.BottleLogged] = result => $"Registrei uma mamadeira de {Volume(result, result.AmountMl)}{BottleContent(result)} {When(result, result.At)} para {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Amamentação iniciada no peito {Side(result)} para {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} já está mamando, desde {Since(result, result.At)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Registrei uma fralda {Diaper(result)} para {Name(result)} {When(result, result.At)}.",
@@ -90,18 +96,18 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
             { Complete: false } => "Até agora, hoje",
             _ => $"Em {day.Date.ToString("d 'de' MMMM", Speech.Culture)}",
         };
-        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
     }
 
     private static string WeekSummary(AssistantResult result)
     {
         var last = result.Days.Count == 0 ? "hoje" : result.Days[^1].Date.ToString("d 'de' MMMM", Speech.Culture);
-        return $"Nos 7 dias até {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+        return $"Nos 7 dias até {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
     }
 
-    private static string Totals(SpokenDayTotals totals)
+    private static string Totals(SpokenDayTotals totals, UnitSystem units)
     {
-        var bottles = totals.BottleMl > 0 ? $", {totals.BottleMl} ml em mamadeiras" : string.Empty;
+        var bottles = totals.BottleMl > 0 ? $", {Measures.Volume(totals.BottleMl, units)} em mamadeiras" : string.Empty;
         return $"dormiu {Speech.Duration(totals.SleepMinutes)} com {Speech.Count(totals.Naps, "soneca", "sonecas")}, teve {Speech.Count(totals.Feeds, "alimentação", "alimentações")}{bottles} e {Speech.Count(totals.Diapers, "fralda", "fraldas")}";
     }
 
@@ -142,7 +148,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
 
     private static string FeedDescription(AssistantResult result) => result.FeedMethod switch
     {
-        FeedMethod.Bottle when result.AmountMl is { } amount => $"uma mamadeira de {amount} ml{BottleContent(result)}",
+        FeedMethod.Bottle when result.AmountMl is { } amount => $"uma mamadeira de {Volume(result, amount)}{BottleContent(result)}",
         FeedMethod.Bottle => $"uma mamadeira{BottleContent(result)}",
         FeedMethod.Breast when result.Side is not null => $"amamentação no peito {Side(result)}",
         FeedMethod.Breast => "amamentação",
@@ -157,6 +163,12 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         BottleKind.BreastMilk => " de leite materno",
         _ => string.Empty,
     };
+
+    private static string Volume(AssistantResult result, int? ml) => Measures.Volume(ml ?? 0, result.Units);
+
+    private static string InvalidAmount(AssistantResult result) => result.Units == UnitSystem.Us
+        ? $"Diga uma quantidade de até {Measures.Number(UnitConversions.MlToFluidOunces(result.Max ?? 0))} onças, por exemplo: registrar mamadeira de 4 onças."
+        : $"Diga uma quantidade de {result.Min} a {result.Max} ml, por exemplo: registrar mamadeira de 120 ml.";
 
     private static string Side(AssistantResult result) => result.Side == BreastSide.Right ? "direito" : "esquerdo";
 

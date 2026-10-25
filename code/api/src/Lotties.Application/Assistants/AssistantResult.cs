@@ -4,6 +4,7 @@ using Lotties.Application.Clinical;
 using Lotties.Application.Serialization;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.CryReasons;
+using Lotties.Domain.Units;
 
 namespace Lotties.Application.Assistants;
 
@@ -215,6 +216,13 @@ public sealed record AssistantResult
     public required AssistantResultCode Code { get; init; }
 
     public required DateTimeOffset AsOf { get; init; }
+
+    /// <summary>
+    /// The unit system the answer is told in (the user's setting, else the request locale; metric by default). A presentation
+    /// hint for adapters only: facts such as <see cref="AmountMl"/> stay canonical metric and this is not part of the wire JSON.
+    /// </summary>
+    [JsonIgnore]
+    public UnitSystem Units { get; init; } = UnitSystem.Metric;
 
     public AssistantBaby? Baby { get; init; }
 

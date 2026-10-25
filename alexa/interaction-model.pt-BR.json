@@ -46,21 +46,22 @@
         {
           "name": "BottleIntent",
           "slots": [
-            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} ml", "{amount} mililitros"] },
+            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} {volumeUnit}"] },
+            { "name": "volumeUnit", "type": "VOLUME_UNIT" },
             { "name": "bottleKind", "type": "BOTTLE_KIND" }
           ],
           "samples": [
-            "registrar mamadeira de {amount} ml",
-            "registrar mamadeira de {amount} mililitros",
-            "registrar uma mamadeira de {amount} ml",
-            "registrar mamadeira de {amount} ml de {bottleKind}",
-            "mamadeira de {amount} ml",
-            "mamadeira de {bottleKind} de {amount} ml",
-            "ela tomou {amount} ml",
-            "ele tomou {amount} ml",
-            "o bebê tomou {amount} ml",
-            "ela tomou {amount} ml de {bottleKind}",
-            "ele tomou {amount} ml de {bottleKind}",
+            "registrar mamadeira de {amount} {volumeUnit}",
+            "registrar uma mamadeira de {amount} {volumeUnit}",
+            "registrar mamadeira de {amount}",
+            "registrar mamadeira de {amount} {volumeUnit} de {bottleKind}",
+            "mamadeira de {amount} {volumeUnit}",
+            "mamadeira de {bottleKind} de {amount} {volumeUnit}",
+            "ela tomou {amount} {volumeUnit}",
+            "ele tomou {amount} {volumeUnit}",
+            "o bebê tomou {amount} {volumeUnit}",
+            "ela tomou {amount} {volumeUnit} de {bottleKind}",
+            "ele tomou {amount} {volumeUnit} de {bottleKind}",
             "registrar mamadeira",
             "registrar uma mamadeira",
             "anotar mamadeira",
@@ -312,6 +313,13 @@
       ],
       "types": [
         {
+          "name": "VOLUME_UNIT",
+          "values": [
+            { "id": "ML", "name": { "value": "mililitros", "synonyms": ["ml", "mililitro", "milílitros", "milílitro"] } },
+            { "id": "OZ", "name": { "value": "onças", "synonyms": ["oz", "onça", "onca", "oncas"] } }
+          ]
+        },
+        {
           "name": "BOTTLE_KIND",
           "values": [
             { "id": "FORMULA", "name": { "value": "fórmula", "synonyms": ["formula", "leite em pó"] } },
@@ -351,6 +359,13 @@
               "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
             },
             {
+              "name": "volumeUnit",
+              "type": "VOLUME_UNIT",
+              "elicitationRequired": false,
+              "confirmationRequired": false,
+              "prompts": {}
+            },
+            {
               "name": "bottleKind",
               "type": "BOTTLE_KIND",
               "elicitationRequired": false,
@@ -381,8 +396,8 @@
       {
         "id": "Elicit.Slot.BottleIntent.amount",
         "variations": [
-          { "type": "PlainText", "value": "Quantos mililitros?" },
-          { "type": "PlainText", "value": "Quanto tinha na mamadeira, em mililitros?" }
+          { "type": "PlainText", "value": "Quanto? Por exemplo 120 mililitros ou 4 onças." },
+          { "type": "PlainText", "value": "Quanto tinha na mamadeira? Por exemplo 120 mililitros ou 4 onças." }
         ]
       },
       {

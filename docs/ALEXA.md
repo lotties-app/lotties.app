@@ -41,8 +41,16 @@ For each language (switch with the language dropdown at the top):
    for Portuguese (BR). **Save Model**, then **Build Model**. Fix any warning the console shows (they validate the
    utterances: e.g. a sample that collides with another intent).
 3. The models define the intents of the design doc section 1, the custom slot types `BOTTLE_KIND`, `DIAPER_KIND`,
-   `BREAST_SIDE` (the API reads their value ids `FORMULA`, `BREAST_MILK`, `WET`, `DIRTY`, `BOTH`, `LEFT`, `RIGHT`, and
-   falls back to the spoken words), and dialog delegation that asks for a missing bottle amount or diaper kind.
+   `BREAST_SIDE`, `VOLUME_UNIT` (the API reads their value ids `FORMULA`, `BREAST_MILK`, `WET`, `DIRTY`, `BOTH`, `LEFT`,
+   `RIGHT`, `ML`, `OZ`, and falls back to the spoken words), and dialog delegation that asks for a missing bottle amount or
+   diaper kind.
+4. **Measurement units (2026-10-25): re-paste both models and press Build again.** `BottleIntent` gained the optional slot
+   `volumeUnit` (type `VOLUME_UNIT`: milliliters or ounces) and its sample phrases now take `{amount} {volumeUnit}`
+   ("log a 4 ounce bottle", "registrar mamadeira de 4 onças"); the amount prompt is neutral ("How much? For example 120
+   milliliters or 4 ounces."). Until the models are rebuilt a spoken unit is not captured and the amount is read in the
+   person's unit system. If the console rejects `{volumeUnit}` in the `amount` slot's own samples, delete that one sample
+   (`"{amount} {volumeUnit}"`) from the `amount` slot in both files and build again. A person who has not chosen units
+   (Settings > Units, `auto`) hears ounces in en-US and milliliters in pt-BR; see docs/design/37-measurement-units.md.
 
 ## 4. Endpoint
 
@@ -129,7 +137,7 @@ disabled.
 2. In the Alexa app (phone, same Amazon account): Skills > Your Skills > Dev > Lotties > **Link account**, sign in with a
    Lotties account. Without linking, a command answers "please link your account" and the app shows the link card.
 3. "tell lotties the baby fell asleep", then "tell lotties the baby woke up": a sleep appears in the app.
-4. "tell lotties log a bottle", answer "one hundred twenty": the bottle appears (dialog delegation asks the amount).
+4. "tell lotties log a bottle", answer "one hundred twenty milliliters" (or "four ounces"): the bottle appears (dialog delegation asks the amount). Without a unit the amount is read in the user's unit system (Settings > Units; `auto` follows the request language: en-US is ounces, pt-BR is ml). Also try "tell lotties log a 4 ounce bottle" and "... a 120 ml bottle".
 5. "ask lotties when was the last feed", "... how many diapers today", "... when is the next appointment",
    "... which vaccines are due".
 6. With a Viewer account: a command answers that the role does not allow it. With an account of several babies and

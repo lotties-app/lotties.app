@@ -128,7 +128,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         var token = host.TokenFor(baby.OwnerSubject);
 
         await host.PostAsync(Intent("SleepStartIntent", token, requestId: NewRequestId()), SignedHeaders);
-        await host.PostAsync(Intent("BottleIntent", token, slots: new { amount = Slot("amount", "100") }, requestId: NewRequestId()), SignedHeaders);
+        await host.PostAsync(Intent("BottleIntent", token, slots: new { amount = Slot("amount", "100"), volumeUnit = ResolvedSlot("volumeUnit", "ml", "ML") }, requestId: NewRequestId()), SignedHeaders);
         await host.PostAsync(Intent("DiaperIntent", token, slots: new { diaperKind = Slot("diaperKind", "wet") }, requestId: NewRequestId()), SignedHeaders);
         await host.PostAsync(Intent("NursingIntent", token, requestId: NewRequestId()), SignedHeaders);
         await host.PostAsync(Intent("SleepEndIntent", token, requestId: NewRequestId()), SignedHeaders);
@@ -146,7 +146,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     {
         var baby = await Factory.SeedBabyAsync();
         var token = host.TokenFor(baby.OwnerSubject);
-        await host.PostAsync(Intent("BottleIntent", token, slots: new { amount = Slot("amount", "100") }, requestId: NewRequestId()), SignedHeaders);
+        await host.PostAsync(Intent("BottleIntent", token, slots: new { amount = Slot("amount", "100"), volumeUnit = ResolvedSlot("volumeUnit", "ml", "ML") }, requestId: NewRequestId()), SignedHeaders);
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("RequestDeleteLastIntent", token, locale, requestId: NewRequestId()), SignedHeaders));
 
@@ -201,7 +201,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("BottleIntent", host.TokenFor(baby.OwnerSubject), slots: new { amount = Slot("amount", "?") }), SignedHeaders));
 
-        Assert.Equal("Please say an amount from 1 to 500 ml, for example: log a 120 ml bottle.", AlexaApiHost.Speech(json));
+        Assert.Equal("Please say an amount up to 16.9 ounces, for example: log a 4 ounce bottle.", AlexaApiHost.Speech(json));
         Assert.Empty(await Factory.EventsAsync(baby.BabyId));
     }
 

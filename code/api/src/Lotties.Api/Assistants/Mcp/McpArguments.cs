@@ -26,6 +26,9 @@ internal enum McpParameterKind
 
     /// <summary>An IANA time zone id the server knows (<c>America/Sao_Paulo</c>).</summary>
     TimeZone,
+
+    /// <summary>A JSON number above 0 and up to <see cref="McpParameter.Max"/>, decimals allowed (an amount in ounces).</summary>
+    Number,
 }
 
 /// <summary>
@@ -62,6 +65,7 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         McpParameterKind.Choice => new JsonObject { ["type"] = "string", ["enum"] = new JsonArray(Values!.Select(value => (JsonNode)JsonValue.Create(value)).ToArray()), ["description"] = Description },
         McpParameterKind.Date => new JsonObject { ["type"] = "string", ["format"] = "date", ["pattern"] = DatePattern, ["description"] = Description },
         McpParameterKind.Key => new JsonObject { ["type"] = "string", ["minLength"] = Min, ["maxLength"] = Max, ["pattern"] = KeyPattern, ["description"] = Description },
+        McpParameterKind.Number => new JsonObject { ["type"] = "number", ["exclusiveMinimum"] = 0, ["maximum"] = Max, ["description"] = Description },
         McpParameterKind.TimeZone => new JsonObject { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = NotificationTimeZone.MaxLength, ["description"] = Description },
         _ => throw new InvalidOperationException($"Unknown parameter kind {Kind}."),
     };
@@ -84,6 +88,9 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         McpParameterKind.Key => element.ValueKind == JsonValueKind.String && element.GetString() is { } key && key.Length >= Min && key.Length <= Max && KeyRegex().IsMatch(key)
             ? (key, null)
             : (null, $"{Name} must be {Min} to {Max} characters of letters, digits, '.', '_', ':' or '-'."),
+        McpParameterKind.Number => element.ValueKind == JsonValueKind.Number && element.TryGetDecimal(out var amount) && amount > 0 && amount <= Max
+            ? (amount, null)
+            : (null, $"{Name} must be a number above 0 and up to {Max}."),
         McpParameterKind.TimeZone => element.ValueKind == JsonValueKind.String && NotificationTimeZone.TryFrom(element.GetString(), out var zone)
             ? (zone.Value, null)
             : (null, $"{Name} must be an IANA time zone id such as America/Sao_Paulo."),
@@ -155,6 +162,8 @@ internal sealed class McpArguments
     }
 
     public int? Integer(string name) => _values.TryGetValue(name, out var value) ? (int)value : null;
+
+    public decimal? Decimal(string name) => _values.TryGetValue(name, out var value) ? (decimal)value : null;
 
     public string? Text(string name) => _values.TryGetValue(name, out var value) ? (string)value : null;
 

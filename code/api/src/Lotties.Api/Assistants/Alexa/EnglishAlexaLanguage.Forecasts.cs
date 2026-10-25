@@ -26,7 +26,7 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.NoDiapersAverage] = result =>
             $"I need at least 3 complete days of diapers in the last week to give an average, and I found {result.Count ?? 0}.",
         [AssistantResultCode.BottleAverage] = result =>
-            $"{Name(result)}'s last {Speech.Count(result.Count ?? 0, "bottle", "bottles")} averaged {result.AmountMl} ml, and the last one was {result.LastAmountMl} ml.",
+            $"{Name(result)}'s last {Speech.Count(result.Count ?? 0, "bottle", "bottles")} averaged {Volume(result, result.AmountMl)}, and the last one was {Volume(result, result.LastAmountMl)}.",
         [AssistantResultCode.NoBottleData] = result =>
             $"There aren't enough bottles with an amount logged in the last 14 days: I need at least 3, and I found {result.Count ?? 0}.",
         [AssistantResultCode.SleepToday] = SleepToday,
