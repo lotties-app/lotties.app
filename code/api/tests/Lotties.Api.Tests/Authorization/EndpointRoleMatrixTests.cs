@@ -257,6 +257,10 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["PUT /api/v1/me/assistant-settings"] = Access.SignedIn,
         ["POST /api/v1/alexa"] = Access.Anonymous,
 
+        // Measurement units (docs/design/37-measurement-units.md): the caller's own display setting; any signed-in user, Doctor included.
+        ["GET /api/v1/me/unit-settings"] = Access.SignedIn,
+        ["PUT /api/v1/me/unit-settings"] = Access.SignedIn,
+
         // MCP server (docs/design/32-assistants.md section 9): authenticated by its own OAuth scheme (McpTokens, audience
         // lotties-mcp, scopes lotties.read / lotties.write), never the API's, so Anonymous here; the roles and the baby choice
         // are the command layer's (McpProtocolTests, McpHttpTests). Every route answers 404 while MCP is disabled (the

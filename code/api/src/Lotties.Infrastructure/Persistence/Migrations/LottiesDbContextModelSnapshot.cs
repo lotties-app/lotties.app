@@ -2366,6 +2366,28 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("prescription_proposals", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("Setting")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("setting");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_unit_settings");
+
+                    b.ToTable("user_unit_settings", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3166,6 +3188,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Schedule")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.Units.UserUnitSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_unit_settings_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Vaccinations.Vaccination", b =>

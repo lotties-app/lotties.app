@@ -128,6 +128,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.UserNotificationSettings.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.ProfessionalProfiles.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserAssistantSettings.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await context.UserUnitSettings.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
 
         // Catalog products she added stay for everyone (instance-wide), without the link to her.
         await context.Products.IgnoreQueryFilters()
