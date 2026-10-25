@@ -57,6 +57,7 @@ internal sealed class AssistantService(
     private static readonly TimeSpan NursingLookback = TimeSpan.FromDays(7);
     private static readonly TimeSpan AppointmentHorizon = TimeSpan.FromDays(366);
     private const int VaccinesTold = 5;
+    private const string WokeUpEntry = "woke_up";
     private const int AverageDays = 7;
     private static readonly string[] MadeByAssistantKeys = [SleepKey, FeedingKey, DiaperKey];
     private static readonly TimeSpan DeleteWindow = TimeSpan.FromMinutes(30);
@@ -146,6 +147,12 @@ internal sealed class AssistantService(
 
     public Task<AssistantResult> ReadSleepTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.SleepToday, AssistantAccess.Read, subject => SleepTodayAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadBottleTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BottleToday, AssistantAccess.Read, subject => FeedTotalsAsync(subject, AssistantResultCode.BottleToday, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadFeedsTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.FeedsToday, AssistantAccess.Read, subject => FeedTotalsAsync(subject, AssistantResultCode.FeedsToday, cancellationToken), cancellationToken);
 
     public Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.LastDiaper, AssistantAccess.Read, subject => LastDiaperAsync(subject, cancellationToken), cancellationToken);
@@ -385,6 +392,24 @@ internal sealed class AssistantService(
         };
     }
 
+    /// <summary>
+    /// The feeds since local midnight (the last 24 hours without a zone, as the diapers of today do), counted by
+    /// <see cref="AssistantFeedTotals"/>: the bottle ml is the shared drunk-amount rule, never a second one.
+    /// </summary>
+    private async Task<AssistantResult> FeedTotalsAsync(AssistantSubject subject, AssistantResultCode code, CancellationToken cancellationToken)
+    {
+        var window = subject.Zone is null ? AssistantDayWindow.LastDay : AssistantDayWindow.Today;
+        var from = subject.Zone is { } zone ? LocalMidnight(zone, subject.Now) : subject.Now.AddDays(-1);
+        var feeds = (await clinicalEvents.ListByTypesAsync(subject.Baby.Id, [FeedingKey], from, subject.Now + FutureSkew, cancellationToken))
+            .Select(typed => ClinicalObservations.Feed(typed.Event))
+            .Where(feed => feed.StartedAt >= from && feed.StartedAt <= subject.Now);
+        var totals = AssistantFeedTotals.Of(feeds);
+        var result = subject.Result(code) with { Window = window };
+        return code == AssistantResultCode.BottleToday
+            ? result with { Count = totals.Bottles, AmountMl = totals.BottleMl, FormulaBottles = totals.Formula, BreastMilkBottles = totals.BreastMilk }
+            : result with { Count = totals.Feeds, BottleFeeds = totals.Bottles, BreastFeeds = totals.Breast, SolidFeeds = totals.Solid };
+    }
+
     /// <summary>The complete local days (today left out) of the last seven that have diapers, averaged to one decimal; at least three of them.</summary>
     private async Task<AssistantResult> DiapersAverageAsync(AssistantSubject subject, CancellationToken cancellationToken)
     {
@@ -439,7 +464,7 @@ internal sealed class AssistantService(
     }
 
     /// <summary>
-    /// Marks the newest entry this adapter created in the last 30 minutes as a deletion request: the same upsert as an edit
+    /// Marks the newest entry this adapter created in the last 30 minutes (of any kind) as a deletion request, unless it is the wake-up marker, which stops the request with <see cref="AssistantResultCode.LastNotUndoable"/> (no older entry is chosen instead): the same upsert as an edit
     /// (client time never older than the stored one), every other member kept, only <c>delete_requested_*</c> added. It
     /// never deletes, and it never touches an entry another origin made.
     /// </summary>
@@ -450,14 +475,19 @@ internal sealed class AssistantService(
             .Select(typed => (typed.TypeKey, typed.Event))
             .Where(entry => !entry.Event.IsDeleted
                 && entry.Event.CreatedAt >= subject.Now - DeleteWindow
-                && AssistantOrigin.ViaOf(entry.Event.Payload) == subject.Adapter
-                && EventPayloadFacts.Read(entry.Event.Payload).Kind != SleepKinds.WokeUp)
+                && AssistantOrigin.ViaOf(entry.Event.Payload) == subject.Adapter)
             .OrderByDescending(entry => entry.Event.CreatedAt)
             .Cast<(EventTypeKey TypeKey, Event Event)?>()
             .FirstOrDefault();
         if (target is not { } found)
         {
             return subject.Result(AssistantResultCode.NoEntryToDelete);
+        }
+
+        if (EventPayloadFacts.Read(found.Event.Payload).Kind == SleepKinds.WokeUp)
+        {
+            // The very newest thing she logged is the wake-up marker: never fall back to an older entry.
+            return subject.Result(AssistantResultCode.LastNotUndoable) with { At = found.Event.StartedAt, EntryType = WokeUpEntry };
         }
 
         await MarkDeleteRequestedAsync(subject, found.Event, cancellationToken);
@@ -620,6 +650,8 @@ internal static class AssistantCommands
     public const string BottleAverage = "bottle_average";
     public const string SleepToday = "sleep_today";
     public const string LastDiaper = "last_diaper";
+    public const string BottleToday = "bottle_today";
+    public const string FeedsToday = "feeds_today";
     public const string CryReasons = "cry_reasons";
     public const string RequestDeleteLast = "request_delete_last";
 }

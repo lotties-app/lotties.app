@@ -58,7 +58,7 @@ internal sealed class AssistantCryReasons(
     {
         var causes = ranking.Causes
             .Where(rank => rank.Cause != CryCause.Comfort && rank.Level != CryLevel.Unlikely)
-            .Select(rank => new AssistantCryCause(rank.Cause, rank.Level, rank.Facts.Where(fact => fact.Kind != "noData").ToArray()))
+            .Select(rank => new AssistantCryCause(rank.Cause, rank.Level, rank.Facts.Where(fact => fact.Kind != "noData").ToArray(), rank.Score))
             .Where(cause => cause.Facts.Count > 0)
             .Take(MaxCauses)
             .ToArray();

@@ -186,6 +186,18 @@ internal static class McpToolCatalog
             [McpParameter.BabyId],
             (assistant, invocation, _, token) => assistant.ReadSleepTodayAsync(invocation, token)),
         Read(
+            "get_bottle_today",
+            "Bottles today",
+            "The bottles since local midnight (the last 24 hours when the family's time zone is unknown): the number of bottles, the total ml drunk (the drunk amount, else the prepared amount, as the app counts it) and, when the log says what the bottles held, the formula and breast milk bottles with their ml.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadBottleTodayAsync(invocation, token)),
+        Read(
+            "get_feeds_today",
+            "Feeds today",
+            "The feeds since local midnight (the last 24 hours when the family's time zone is unknown): the total and how many were bottles, breast (nursing) and solid food.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadFeedsTodayAsync(invocation, token)),
+        Read(
             "get_last_diaper",
             "Last diaper",
             "The newest diaper of the last 30 days: when (UTC) and its content (wet, dirty, both), or no_diapers.",
@@ -200,7 +212,7 @@ internal static class McpToolCatalog
         Write(
             "request_delete_last_entry",
             "Ask to delete the last entry",
-            "Asks for the last entry this assistant logged in the last 30 minutes to be deleted: it only marks the entry (nothing is deleted); the person approves the deletion or keeps the entry in the Lotties app. Assistants can never delete. Answers delete_requested, or no_entry_to_delete when this assistant made no entry in that time.",
+            "Asks for the last entry this assistant logged in the last 30 minutes to be deleted: it only marks the entry (nothing is deleted); the person approves the deletion or keeps the entry in the Lotties app. Assistants can never delete. Answers delete_requested, last_not_undoable when the newest entry it made is the wake-up marker (nothing changes, no older entry is chosen), or no_entry_to_delete when it made no entry in that time.",
             [],
             (assistant, invocation, _, token) => assistant.RequestDeleteLastAsync(invocation, token)),
         Write(

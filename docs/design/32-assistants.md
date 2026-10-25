@@ -25,6 +25,8 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `NextDiaperIntent` | "when is the next diaper change", "when is the next diaper", "when will she need a diaper change", "when should I change the next diaper" | "quando é a próxima troca de fralda", "quando é a próxima fralda", "quando devo trocar a próxima fralda" | `ReadNextDiaper` |
 | `DiapersAverageIntent` | "how many diapers a day does she usually use", "how many diapers per day on average", "average diapers per day" | "quantas fraldas por dia ela costuma usar", "qual a média de fraldas por dia", "fraldas por dia" | `ReadDiapersAverage` |
 | `BottleAverageIntent` | "how much should I make for the next bottle", "how big was the last bottle", "how much does she usually drink" | "quanto devo preparar na próxima mamadeira", "qual foi o tamanho da última mamadeira", "quanto ela costuma tomar de mamadeira" | `ReadBottleAverage` |
+| `BottleTodayIntent` | "how much did she drink today", "how many ml of milk today", "how many bottles today" | "quanto ela tomou de mamadeira hoje", "quantos mls de mamadeira tomou hoje", "quantas mamadeiras hoje" | `ReadBottleToday` |
+| `FeedsTodayIntent` | "how many feeds today", "how many times did she eat today" | "quantas mamadas hoje", "quantas vezes ela mamou hoje", "quantas vezes ela comeu hoje" | `ReadFeedsToday` |
 | `SleepTodayIntent` | "how much did she sleep today", "how many naps today", "total sleep today" | "quanto ela dormiu hoje", "quantas sonecas ela fez hoje", "total de sono hoje" | `ReadSleepToday` |
 | `LastDiaperIntent` | "when was the last diaper change", "when did I last change her diaper", "last diaper" | "quando foi a última troca de fralda", "quando troquei a fralda dela", "última fralda" | `ReadLastDiaper` |
 | `CryReasonsIntent` | "why is she crying", "why is the baby fussy", "what could be making her cry" | "por que ela está chorando", "por que ela está irritada", "por que ela não para de chorar" | `ReadCryReasons` |
@@ -101,9 +103,11 @@ with a line for every code, tested for every code in both languages.
 | `diapers_average`, `no_diapers_average` | `perDay`, `wetPerDay`, `dirtyPerDay` (one decimal) over the complete local days with diapers among the last seven (today left out), `count` = those days, at least 3 |
 | `bottle_average`, `no_bottle_data` | `count` (up to 5), `amountMl` = their average, `lastAmountMl`, `at` = the last one; at least 3 bottles with an amount in 14 days; facts, never a recommendation |
 | `sleep_today` | `minutes` since local midnight (a running sleep until now) and `count` naps: the day summary's sleep math |
+| `bottle_today` | `count` bottles since local midnight (`window`: `today` in the user's zone, else `last_day`), `amountMl` = the ml drunk (zero bottles is still this code, `count` 0), `formulaBottles` and `breastMilkBottles` (`bottles`, `ml`, those that said what they held). The ml is **the drunk-amount rule every server total uses**, `BottleAmounts.DrunkMl` through `FeedObservation.BottleMl` (the drunk amount, else the prepared amount; a bottle without an amount counts as a bottle only), summed by `AssistantFeedTotals`; spoken in the user's unit system |
+| `feeds_today` | `count` feeds since local midnight (same `window` rule), `bottleFeeds`, `breastFeeds`, `solidFeeds`; zero feeds is still this code |
 | `last_diaper`, `no_diapers` | the newest diaper of 30 days: `at`, `diaper` |
-| `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags`; `running` = a sleep timer runs so the log may be behind |
-| `delete_requested`, `no_entry_to_delete` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
+| `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags` (each cause carries its ranking score internally; the spoken Alexa answer leads with the top cause and its first fact, and adds the second only when its score is within 0.1 of the first, while the safety sentence and the full red-flag list are never shortened; MCP keeps every cause); `running` = a sleep timer runs so the log may be behind |
+| `delete_requested`, `no_entry_to_delete`, `last_not_undoable` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
 | `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
 | `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
@@ -222,10 +226,11 @@ that no command lowers the event count or soft-deletes. A write only touches eve
 
 What it can do is **ask**: `RequestDeleteLast` ("undo the last thing I logged", "delete the last entry"; pt-BR "desfazer o
 último registro", "apagar o último registro"; MCP `request_delete_last_entry`, scope `lotties.write`) finds the newest
-non-deleted entry that the calling adapter created (`via`) in the last 30 minutes (a `woke_up` marker is never the
-target) and adds two payload members: `delete_requested_via` = the adapter name and `delete_requested_at` = the server clock
+non-deleted entry that the calling adapter created (`via`) in the last 30 minutes, of any kind, and adds two payload members: `delete_requested_via` = the adapter name and `delete_requested_at` = the server clock
 (ISO instant). It answers `delete_requested` (neutral: it asked, nothing was deleted, the person approves in the app) or
-`no_entry_to_delete`. It is the same upsert as an edit (client time never older than the stored one), idempotent: an entry
+`no_entry_to_delete`. If that newest entry is the `woke_up` marker (which voice may not mark) the request stops there: it answers
+`last_not_undoable` (the last thing logged was a wake-up, it cannot be undone by voice, correct it in the app), changes nothing
+and never falls back to an older entry. It is the same upsert as an edit (client time never older than the stored one), idempotent: an entry
 that already carries the request is left as it is, so asking twice, or replaying the request id, changes nothing. No new
 table, no migration, no new route (the markers are undeclared payload members like `via`, carried by sync, backup and the
 doctor's view). The Viewer role cannot ask (it is a write); a role that logs can.
@@ -368,6 +373,8 @@ the server knows, else `invalid_arguments`; it wins over the stored zone, sectio
 | `get_diapers_average` | read | `babyId?` | `ReadDiapersAverage` |
 | `get_bottle_average` | read | `babyId?` | `ReadBottleAverage` |
 | `get_sleep_today` | read | `babyId?` | `ReadSleepToday` |
+| `get_bottle_today` | read | `babyId?` | `ReadBottleToday` |
+| `get_feeds_today` | read | `babyId?` | `ReadFeedsToday` |
 | `get_last_diaper` | read | `babyId?` | `ReadLastDiaper` |
 | `get_cry_reasons` | read | `babyId?` | `ReadCryReasons` |
 | `request_delete_last_entry` | write | `babyId?`, `idempotencyKey?` | `RequestDeleteLast` (asks only, section 5.3) |

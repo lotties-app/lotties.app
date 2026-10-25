@@ -49,7 +49,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.RateLimited] = _ => "That's a lot of requests. Please try again in a minute.",
         [AssistantResultCode.InvalidAmount] = InvalidAmount,
         [AssistantResultCode.SleepStarted] = result => $"Got it. {Name(result)} fell asleep {When(result, result.At)}.",
-        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} is already sleeping, since {Since(result, result.At)}.",
+        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} is already sleeping{SinceClause(result)}.",
         [AssistantResultCode.SleepEnded] = result => result.Minutes is null
             ? $"{Name(result)} woke up {When(result, result.At)}."
             : $"{Name(result)} woke up {When(result, result.At)}, after sleeping {Speech.Duration(result.Minutes)}.",
@@ -57,12 +57,12 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Name(result)} has {result.Count} sleep timers running. Please stop them in the app.",
         [AssistantResultCode.BottleLogged] = result => $"Logged a {VolumeModifier(result, result.AmountMl)} bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Nursing started on the {Side(result)} side for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} is already nursing, since {Since(result, result.At)}.",
+        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} is already nursing{SinceClause(result)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Logged a {Diaper(result)} diaper for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.LastFeed] = LastFeed,
         [AssistantResultCode.NoFeeds] = result => $"I can't find a feed for {Name(result)} in the last 30 days.",
-        [AssistantResultCode.Sleeping] = result => $"{Name(result)} has been sleeping since {Since(result, result.At)}, for {Speech.Duration(result.Minutes)}.",
-        [AssistantResultCode.Awake] = result => $"{Name(result)} has been awake since {Since(result, result.At)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.Sleeping] = result => $"{Name(result)} has been sleeping{SinceClause(result)}{(Speech.Clock(result, result.At) is null ? string.Empty : $", for {Speech.Duration(result.Minutes)}")}.",
+        [AssistantResultCode.Awake] = result => $"{Name(result)} has been awake{SinceClause(result)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoSleeps] = result => $"I can't find a sleep for {Name(result)} in the last 30 days.",
         [AssistantResultCode.DiapersToday] = DiapersToday,
         [AssistantResultCode.NextAppointment] = result => $"{Name(result)}'s next appointment is {result.Appointment!.Title}, {Day(result, result.Appointment.StartsAt)}.",
@@ -185,8 +185,9 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
     private static string When(AssistantResult result, DateTimeOffset? instant) =>
         Speech.Clock(result, instant) is { } clock ? $"at {clock}" : instant is { } value && Speech.MinutesBetween(value, result.AsOf) < 1 ? "just now" : Ago(result, instant);
 
-    /// <summary>"3:15 PM", or "20 minutes ago" without a known zone.</summary>
-    private static string Since(AssistantResult result, DateTimeOffset? instant) => Speech.Clock(result, instant) ?? Ago(result, instant);
+    /// <summary>" since 3:15 PM", or " for 20 minutes" without a known zone (never "since 20 minutes ago").</summary>
+    private static string SinceClause(AssistantResult result) =>
+        Speech.Clock(result, result.At) is { } clock ? $" since {clock}" : result.At is { } at ? $" for {Speech.Duration(Speech.MinutesBetween(at, result.AsOf))}" : string.Empty;
 
     /// <summary>"at 3:15 PM, 20 minutes ago", or "20 minutes ago" without a known zone.</summary>
     private static string AtAndAgo(AssistantResult result, DateTimeOffset? instant) =>

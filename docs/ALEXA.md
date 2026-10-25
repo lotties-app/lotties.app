@@ -52,6 +52,13 @@ For each language (switch with the language dropdown at the top):
    (`"{amount} {volumeUnit}"`) from the `amount` slot in both files and build again. A person who has not chosen units
    (Settings > Units, `auto`) hears ounces in en-US and milliliters in pt-BR; see docs/design/37-measurement-units.md.
 
+5. **Totals questions (2026-10-25): re-paste both models and press Build again.** Two new intents, `BottleTodayIntent`
+   ("how much did she drink today", "quanto ela tomou de mamadeira hoje", "quantas mamadeiras hoje") and
+   `FeedsTodayIntent` ("how many feeds today", "quantas mamadas hoje"), answer questions that used to fall into
+   `BottleIntent` ("Quanto? Por exemplo 120 mililitros..."); a few `BottleIntent` samples were reworded
+   ("ela acabou de tomar mamadeira") so a question cannot match the logging intent. Until the models are rebuilt those
+   questions still land in `BottleIntent`.
+
 ## 4. Endpoint
 
 **Build** > **Endpoint**:

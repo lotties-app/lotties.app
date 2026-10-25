@@ -30,6 +30,8 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.NoBottleData] = result =>
             $"There aren't enough bottles with an amount logged in the last 14 days: I need at least 3, and I found {result.Count ?? 0}.",
         [AssistantResultCode.SleepToday] = SleepToday,
+        [AssistantResultCode.BottleToday] = BottleToday,
+        [AssistantResultCode.FeedsToday] = FeedsToday,
         [AssistantResultCode.LastDiaper] = result =>
             $"{Name(result)}'s last diaper was {LastDiaperContent(result)}, {AtAndAgo(result, result.At)}.",
         [AssistantResultCode.NoDiapers] = result => $"I can't find a diaper for {Name(result)} in the last 30 days.",
@@ -37,6 +39,8 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.CryNoData] = CryNoData,
         [AssistantResultCode.DeleteRequested] = result =>
             $"I asked to delete {Name(result)}'s last {EntryName(result.EntryType)}, {When(result, result.At)}. Nothing was deleted: open the Lotties app to approve it or keep it.",
+        [AssistantResultCode.LastNotUndoable] = result =>
+            $"The last thing you logged by voice for {Name(result)} was a wake-up, {When(result, result.At)}. That can't be undone by voice, so nothing was changed. You can correct it in the Lotties app.",
         [AssistantResultCode.NoEntryToDelete] = _ => "I can't find an entry you logged by voice in the last 30 minutes, so nothing was changed.",
     };
 
@@ -47,6 +51,49 @@ internal sealed partial class EnglishAlexaLanguage
         "diaper" => "diaper change",
         _ => "entry",
     };
+
+    private static string TodayWindow(AssistantResult result) => result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours";
+
+    /// <summary>The bottles of the day: how many and the ml drunk, with the formula and breast milk split when both exist; facts only.</summary>
+    private static string BottleToday(AssistantResult result)
+    {
+        var window = TodayWindow(result);
+        var count = result.Count ?? 0;
+        if (count == 0)
+        {
+            return $"{Name(result)} has had no bottles {window}.";
+        }
+
+        if ((result.AmountMl ?? 0) == 0)
+        {
+            return $"{Name(result)} has had {Speech.Count(count, "bottle", "bottles")} {window}, with no amount logged.";
+        }
+
+        var total = $"{Name(result)} drank {Volume(result, result.AmountMl)} in {Speech.Count(count, "bottle", "bottles")} {window}";
+        return result.FormulaBottles is { Bottles: > 0 } formula && result.BreastMilkBottles is { Bottles: > 0 } milk
+            ? $"{total}: {formula.Bottles} of formula, {Volume(result, formula.Ml)}, and {milk.Bottles} of breast milk, {Volume(result, milk.Ml)}."
+            : $"{total}.";
+    }
+
+    /// <summary>The feeds of the day with the bottle, nursing and solid split in one sentence.</summary>
+    private static string FeedsToday(AssistantResult result)
+    {
+        var window = TodayWindow(result);
+        var count = result.Count ?? 0;
+        if (count == 0)
+        {
+            return $"{Name(result)} has had no feeds {window}.";
+        }
+
+        var parts = new[]
+        {
+            result.BottleFeeds is > 0 ? Speech.Count(result.BottleFeeds.Value, "bottle", "bottles") : null,
+            result.BreastFeeds is > 0 ? Speech.Count(result.BreastFeeds.Value, "nursing session", "nursing sessions") : null,
+            result.SolidFeeds is > 0 ? Speech.Count(result.SolidFeeds.Value, "solid meal", "solid meals") : null,
+        }.OfType<string>().ToArray();
+        var split = parts.Length == 0 ? string.Empty : $": {Speech.List(parts)}";
+        return $"{Name(result)} has had {Speech.Count(count, "feed", "feeds")} {window}{split}.";
+    }
 
     private static string SleepToday(AssistantResult result)
     {
@@ -69,7 +116,7 @@ internal sealed partial class EnglishAlexaLanguage
 
     private static string NapWindowAsleep(AssistantResult result)
     {
-        var asleep = $"{Name(result)} is asleep, since {Since(result, result.At)}.";
+        var asleep = $"{Name(result)} is asleep{SinceClause(result)}.";
         return result.EndedAt is { } wakes ? $"{asleep} {Name(result)} may wake up {Moment(result, wakes)}." : asleep;
     }
 
@@ -116,9 +163,11 @@ internal sealed partial class EnglishAlexaLanguage
 
     private static string CryReasons(AssistantResult result)
     {
-        var causes = result.CryCauses.Select(cause => CauseSentence(result, cause)).ToArray();
+        var causes = AssistantCryCause.Spoken(result.CryCauses).Select((cause, index) => index == 0 ? LowerFirst(CauseSentence(result, cause)) : CauseSentence(result, cause)).ToArray();
         return $"From what is logged for {Name(result)}: {string.Join(' ', causes)} {CrySafety(result)}";
     }
+
+    private static string LowerFirst(string sentence) => sentence.Length == 0 ? sentence : char.ToLowerInvariant(sentence[0]) + sentence[1..];
 
     private static string CryNoData(AssistantResult result)
     {
@@ -130,7 +179,7 @@ internal sealed partial class EnglishAlexaLanguage
     private static string CauseSentence(AssistantResult result, AssistantCryCause cause)
     {
         var level = cause.Level == CryLevel.Likely ? "likely" : "possible";
-        var facts = string.Join("; ", cause.Facts.Take(2).Select(fact => CryFactText(result, fact)));
+        var facts = string.Join("; ", cause.Facts.Take(1).Select(fact => CryFactText(result, fact)));
         return $"{CryCauseName(cause.Cause)} looks {level}: {facts}.";
     }
 

@@ -327,7 +327,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("CryReasonsIntent", host.TokenFor(baby.OwnerSubject)), SignedHeaders));
 
         var speech = AlexaApiHost.Speech(json);
-        Assert.StartsWith("From what is logged for Lia: Hunger looks likely: the last feed was 6 hours ago", speech, StringComparison.Ordinal);
+        Assert.StartsWith("From what is logged for Lia: hunger looks likely: the last feed was 6 hours ago", speech, StringComparison.Ordinal);
         Assert.Contains("This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever", speech, StringComparison.Ordinal);
         Assert.Contains("a bulging or stiff soft spot on the head.", speech, StringComparison.Ordinal);
     }

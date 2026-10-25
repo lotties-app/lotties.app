@@ -35,7 +35,7 @@ Console limits change; use the character counters in the console and shorten if 
 
   Log by voice: the baby fell asleep or woke up, a bottle with the amount, nursing, a diaper (wet, dirty or both).
 
-  Ask about the day: when was the last feed, how long has she been sleeping, how many diapers today, how many diapers a day on average, how much she slept today, the next appointment, and which vaccines are due.
+  Ask about the day: when was the last feed, how long has she been sleeping, how many diapers today, how many diapers a day on average, how much she slept today, how much she drank in bottles today, how many feeds today, the next appointment, and which vaccines are due.
 
   Look ahead from your own history: when the next nap window may be, when the next feed or diaper change may come, and how big her last bottles were. These are patterns from what you logged, not advice.
 
@@ -70,7 +70,7 @@ Console limits change; use the character counters in the console and shorten if 
 
   Registre por voz: o bebê dormiu ou acordou, uma mamadeira com a quantidade, amamentação, uma fralda (xixi, cocô ou os dois).
 
-  Pergunte sobre o dia: quando foi a última mamada, há quanto tempo ela está dormindo, quantas fraldas hoje, quantas fraldas por dia em média, quanto ela dormiu hoje, a próxima consulta e quais vacinas estão pendentes.
+  Pergunte sobre o dia: quando foi a última mamada, há quanto tempo ela está dormindo, quantas fraldas hoje, quantas fraldas por dia em média, quanto ela dormiu hoje, quanto tomou de mamadeira hoje, quantas mamadas hoje, a próxima consulta e quais vacinas estão pendentes.
 
   Olhe para frente com o seu próprio histórico: quando pode ser a próxima janela de sono, a próxima mamada ou troca de fralda, e o tamanho das últimas mamadeiras. São padrões do que você registrou, não orientação.
 
@@ -139,6 +139,8 @@ Lotties is a baby tracker. Commands need the Alexa account to be linked to a Lot
    - "Alexa, ask lotties when was the last feed"
    - "Alexa, ask lotties how many diapers today"
    - "Alexa, ask lotties when is the next nap window" (CHECK)
+   - "Alexa, ask lotties how much did she drink today" (CHECK)
+   - "Alexa, ask lotties how many feeds today" (CHECK)
 3. The skill logs and reads back what the family recorded. It gives no medical advice, no doses and no diagnosis, and it never deletes records. Anything it logs is marked "Added by Alexa" in the Lotties app at https://lotties.app (same login).
 4. Portuguese (Brazil) works the same: "Alexa, abrir lotties", "Alexa, diga ao lotties que o bebê dormiu".
 ```

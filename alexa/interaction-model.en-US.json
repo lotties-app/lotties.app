@@ -260,6 +260,35 @@
           ]
         },
         {
+          "name": "BottleTodayIntent",
+          "slots": [],
+          "samples": [
+            "how much did she drink today",
+            "how much did he drink today",
+            "how much did the baby drink today",
+            "how much milk did she drink today",
+            "how many ml did she drink today",
+            "how many ml of milk today",
+            "how many ounces today",
+            "how many bottles today",
+            "how many bottles did she have today"
+          ]
+        },
+        {
+          "name": "FeedsTodayIntent",
+          "slots": [],
+          "samples": [
+            "how many feeds today",
+            "how many feedings today",
+            "how many times did she eat today",
+            "how many times did he eat today",
+            "how many times did the baby eat today",
+            "how many times has she eaten today",
+            "how many times did she nurse today",
+            "how many meals did she have today"
+          ]
+        },
+        {
           "name": "LastDiaperIntent",
           "slots": [],
           "samples": [

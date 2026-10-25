@@ -69,8 +69,8 @@
             "adicionar mamadeira",
             "registrar mamadeira de {bottleKind}",
             "registrar uma mamadeira de {bottleKind}",
-            "ela tomou mamadeira",
-            "ele tomou mamadeira"
+            "ela acabou de tomar mamadeira",
+            "ele acabou de tomar mamadeira"
           ]
         },
         {
@@ -255,6 +255,37 @@
             "quanto sono ela teve hoje",
             "total de sono hoje",
             "quanto ele dormiu hoje"
+          ]
+        },
+        {
+          "name": "BottleTodayIntent",
+          "slots": [],
+          "samples": [
+            "quanto ela tomou de mamadeira hoje",
+            "quanto de mamadeira ela tomou hoje",
+            "quanto o bebê tomou de mamadeira hoje",
+            "quantos ml de mamadeira hoje",
+            "quantos mls de mamadeira tomou hoje",
+            "quantos ml ela tomou hoje",
+            "quantas onças ela tomou hoje",
+            "quantas mamadeiras hoje",
+            "quantas mamadeiras ela tomou hoje",
+            "quanto leite ela tomou hoje"
+          ]
+        },
+        {
+          "name": "FeedsTodayIntent",
+          "slots": [],
+          "samples": [
+            "quantas mamadas hoje",
+            "quantas mamadas ela teve hoje",
+            "quantas vezes ela mamou hoje",
+            "quantas vezes ele mamou hoje",
+            "quantas vezes o bebê mamou hoje",
+            "quantas vezes ela comeu hoje",
+            "quantas vezes ele comeu hoje",
+            "quantas alimentações hoje",
+            "quantas refeições ela fez hoje"
           ]
         },
         {

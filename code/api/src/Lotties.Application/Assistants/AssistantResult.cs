@@ -141,6 +141,12 @@ public enum AssistantResultCode
     /// <summary>Sleep since local midnight (<see cref="AssistantResult.Minutes"/>, <see cref="AssistantResult.Count"/> naps).</summary>
     SleepToday,
 
+    /// <summary>The bottles of <see cref="AssistantResult.Window"/>: <see cref="AssistantResult.Count"/> and the ml drunk (<see cref="AssistantResult.AmountMl"/>), with the formula / breast milk split; zero bottles is still this code.</summary>
+    BottleToday,
+
+    /// <summary>The feeds of <see cref="AssistantResult.Window"/>: <see cref="AssistantResult.Count"/> with the bottle, breast and solid counts; zero feeds is still this code.</summary>
+    FeedsToday,
+
     /// <summary>The newest diaper of 30 days: <see cref="AssistantResult.At"/> and <see cref="AssistantResult.Diaper"/>.</summary>
     LastDiaper,
 
@@ -158,6 +164,9 @@ public enum AssistantResultCode
 
     /// <summary>This adapter made no entry in the last 30 minutes; nothing was marked.</summary>
     NoEntryToDelete,
+
+    /// <summary>The newest entry this adapter made in 30 minutes (<see cref="AssistantResult.EntryType"/> <c>woke_up</c>, <see cref="AssistantResult.At"/>) is not something voice may mark; nothing was changed and no older entry was chosen. It can be corrected in the app.</summary>
+    LastNotUndoable,
 }
 
 /// <summary>Which days a count covers.</summary>
@@ -184,7 +193,22 @@ public sealed record AssistantTimeWindow(DateTimeOffset Earliest, DateTimeOffset
 public sealed record AssistantCryCause(
     [property: JsonConverter(typeof(SnakeCaseStringEnumConverter))] CryCause Cause,
     [property: JsonConverter(typeof(SnakeCaseStringEnumConverter))] CryLevel Level,
-    IReadOnlyList<CryFact> Facts);
+    IReadOnlyList<CryFact> Facts,
+    [property: JsonIgnore] double Score = 0)
+{
+    /// <summary>A second cause is spoken only when its ranking score is within this of the first's (the ranker's own scores, 0 to 1).</summary>
+    public const double CloseScoreMargin = 0.1;
+
+    /// <summary>
+    /// The causes a short spoken answer tells: the most likely one, plus the second only when its score is close to the first's.
+    /// The structured result (MCP) keeps every cause.
+    /// </summary>
+    public static IReadOnlyList<AssistantCryCause> Spoken(IReadOnlyList<AssistantCryCause> causes)
+    {
+        ArgumentNullException.ThrowIfNull(causes);
+        return causes.Count < 2 || causes[0].Score - causes[1].Score > CloseScoreMargin ? causes.Take(1).ToArray() : causes.Take(2).ToArray();
+    }
+}
 
 /// <summary>A due vaccine dose (schedule facts): the vaccine's names and the dose label by language (<c>en</c>, <c>pt-BR</c>).</summary>
 public sealed record AssistantVaccineDose(string VaccineKey, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string> DoseLabel, bool Overdue, DateOnly DueOn);
@@ -302,6 +326,21 @@ public sealed record AssistantResult
     public double? WetPerDay { get; init; }
 
     public double? DirtyPerDay { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.BottleToday"/>: the bottles that held formula (count, ml drunk).</summary>
+    public AssistantBottleSplit? FormulaBottles { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.BottleToday"/>: the bottles that held breast milk (count, ml drunk).</summary>
+    public AssistantBottleSplit? BreastMilkBottles { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.FeedsToday"/>: the bottle feeds.</summary>
+    public int? BottleFeeds { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.FeedsToday"/>: the breast (nursing) feeds.</summary>
+    public int? BreastFeeds { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.FeedsToday"/>: the solid-food feeds.</summary>
+    public int? SolidFeeds { get; init; }
 
     /// <summary>The newest of the bottles <see cref="AmountMl"/> averages.</summary>
     public int? LastAmountMl { get; init; }
