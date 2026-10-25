@@ -15,7 +15,11 @@ namespace Lotties.Application.Assistants;
 /// The IANA zone the user asked to be answered in (an MCP tool's <c>timeZone</c>), or <c>null</c>: it wins over her stored zone
 /// (<see cref="Domain.Assistants.AssistantZoneChoice"/>). An unknown id is ignored.
 /// </param>
-public sealed record AssistantInvocation(string Adapter, string RequestId, string? FallbackTimeZone = null, Guid? BabyId = null, string? TimeZone = null)
+/// <param name="Locale">
+/// The request's locale tag (Alexa's <c>en-US</c>), or <c>null</c> (MCP): where the user's unit setting is <c>auto</c> it decides
+/// the unit system answers are told in and an amount without a unit is read in (<see cref="Units.IUnitPreferences"/>).
+/// </param>
+public sealed record AssistantInvocation(string Adapter, string RequestId, string? FallbackTimeZone = null, Guid? BabyId = null, string? TimeZone = null, string? Locale = null)
 {
     /// <summary>The longest adapter name or request id accepted.</summary>
     public const int MaxIdLength = 200;

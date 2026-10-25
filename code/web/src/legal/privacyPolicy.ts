@@ -5,7 +5,7 @@
  */
 
 /** Raise on every change of meaning (not for typo fixes). */
-export const PRIVACY_POLICY_VERSION = '5';
+export const PRIVACY_POLICY_VERSION = '6';
 
 /** The date the current version was written, `yyyy-mm-dd` (a calendar date, shown in the reader's language). */
 export const PRIVACY_POLICY_LAST_UPDATED = '2026-10-25';

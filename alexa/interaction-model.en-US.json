@@ -49,22 +49,23 @@
         {
           "name": "BottleIntent",
           "slots": [
-            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} ml", "{amount} milliliters"] },
+            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} {volumeUnit}"] },
+            { "name": "volumeUnit", "type": "VOLUME_UNIT" },
             { "name": "bottleKind", "type": "BOTTLE_KIND" }
           ],
           "samples": [
-            "log a {amount} ml bottle",
-            "log a {amount} milliliter bottle",
-            "log a bottle of {amount} ml",
-            "log a {amount} ml bottle of {bottleKind}",
-            "log a {amount} ml {bottleKind} bottle",
-            "a {amount} ml bottle",
-            "she drank {amount} ml",
-            "he drank {amount} ml",
-            "the baby drank {amount} ml",
-            "she had {amount} ml of {bottleKind}",
-            "he had {amount} ml of {bottleKind}",
-            "she drank a {bottleKind} bottle of {amount} ml",
+            "log a {amount} {volumeUnit} bottle",
+            "log a bottle of {amount} {volumeUnit}",
+            "log a bottle of {amount}",
+            "log a {amount} {volumeUnit} bottle of {bottleKind}",
+            "log a {amount} {volumeUnit} {bottleKind} bottle",
+            "a {amount} {volumeUnit} bottle",
+            "she drank {amount} {volumeUnit}",
+            "he drank {amount} {volumeUnit}",
+            "the baby drank {amount} {volumeUnit}",
+            "she had {amount} {volumeUnit} of {bottleKind}",
+            "he had {amount} {volumeUnit} of {bottleKind}",
+            "she drank a {bottleKind} bottle of {amount} {volumeUnit}",
             "log a bottle",
             "add a bottle",
             "record a bottle",
@@ -316,6 +317,13 @@
       ],
       "types": [
         {
+          "name": "VOLUME_UNIT",
+          "values": [
+            { "id": "ML", "name": { "value": "milliliters", "synonyms": ["ml", "milliliter", "millilitre", "millilitres", "mls"] } },
+            { "id": "OZ", "name": { "value": "ounces", "synonyms": ["oz", "ounce", "fluid ounce", "fluid ounces", "fl oz"] } }
+          ]
+        },
+        {
           "name": "BOTTLE_KIND",
           "values": [
             { "id": "FORMULA", "name": { "value": "formula", "synonyms": ["formula milk"] } },
@@ -355,6 +363,13 @@
               "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
             },
             {
+              "name": "volumeUnit",
+              "type": "VOLUME_UNIT",
+              "elicitationRequired": false,
+              "confirmationRequired": false,
+              "prompts": {}
+            },
+            {
               "name": "bottleKind",
               "type": "BOTTLE_KIND",
               "elicitationRequired": false,
@@ -385,8 +400,8 @@
       {
         "id": "Elicit.Slot.BottleIntent.amount",
         "variations": [
-          { "type": "PlainText", "value": "How many milliliters?" },
-          { "type": "PlainText", "value": "How much was in the bottle, in milliliters?" }
+          { "type": "PlainText", "value": "How much? For example 120 milliliters or 4 ounces." },
+          { "type": "PlainText", "value": "How much was in the bottle? For example 120 milliliters or 4 ounces." }
         ]
       },
       {

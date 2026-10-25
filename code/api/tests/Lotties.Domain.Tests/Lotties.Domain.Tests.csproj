@@ -38,6 +38,8 @@
     <None Include="..\..\..\web\src\ageNorms\ageNormsVectors.json" Link="AgeNorms\ageNormsVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Cry reasons scoring vectors shared with the web port (code/web/src/now/cryReasonsVectors.test.ts). -->
     <None Include="..\..\..\web\src\now\cryReasonsVectors.json" Link="CryReasons\cryReasonsVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Measurement-units vectors shared with the web port (code/web/src/units, docs/design/37-measurement-units.md). -->
+    <None Include="..\..\..\web\src\units\unitsVectors.json" Link="Units\unitsVectors.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

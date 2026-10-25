@@ -429,3 +429,7 @@ pre-registered client, the consent screen texts, PKCE, the `resource` parameter,
 `scope` claim in real tokens, Claude's connector UI and the scopes it asks for, a client's step-up after a 403, the ingress
 route for the metadata path. The tests cover the server with tokens signed by a test key and the official SDK's client in
 both protocol eras; docs/MCP.md lists the manual checks (MCP Inspector, Claude).
+
+## Units (2026-10-25)
+
+Answers are told, and bottle amounts are understood, in the user's unit system (stored setting, else the request locale, else metric); structured values stay metric. Contract, rounding, the `volumeUnit` slot and the MCP `amount` + `unit` parameters: docs/design/37-measurement-units.md section 6.

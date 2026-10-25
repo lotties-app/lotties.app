@@ -103,6 +103,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["push_subscriptions.user_id"] = Rule.Erase,
         ["user_assistant_settings.user_id"] = Rule.Erase,
         ["user_notification_settings.user_id"] = Rule.Erase,
+        ["user_unit_settings.user_id"] = Rule.Erase,
         ["vaccinations.created_by"] = Rule.KeepForTheFamily,
     };
 
@@ -440,6 +441,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
     /// <summary>The user's own records that no endpoint here creates in one call: push, reminders, voice assistant, profile.</summary>
     private async Task SeedPersonalRecordsAsync(HttpClient client, Guid babyId, Guid userId)
     {
+        await client.PutAsJsonAsync("/api/v1/me/unit-settings", new { system = "us" }).Ok();
         await client.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics" }).Ok();
         if (!(await client.PutAsJsonAsync("/api/v1/me/assistant-settings", new { defaultBabyId = babyId })).IsSuccessStatusCode)
         {

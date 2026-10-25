@@ -1,4 +1,5 @@
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 
 namespace Lotties.Application.Assistants;
 
@@ -21,6 +22,14 @@ public interface IAssistantService
 
     /// <summary>Logs a bottle given now (an instant, all of it drunk), of <paramref name="amountMl"/> ml.</summary>
     Task<AssistantResult> LogBottleAsync(AssistantInvocation invocation, int? amountMl, BottleKind kind, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Logs a bottle given now from an amount in <paramref name="unit"/> (decimals allowed: "four and a half ounces"). Without a
+    /// unit the amount is read in the user's unit system (<see cref="Units.IUnitPreferences"/>). It is converted to whole ml with
+    /// the shared rule (<see cref="UnitConversions"/>) and then limited like <see cref="LogBottleAsync"/> (1-500 ml);
+    /// storage is ml whatever was said.
+    /// </summary>
+    Task<AssistantResult> LogBottleVolumeAsync(AssistantInvocation invocation, decimal? amount, VolumeUnit? unit, BottleKind kind, CancellationToken cancellationToken = default);
 
     /// <summary>Starts a nursing timer on <paramref name="side"/>, else on the suggested side; refused when one already runs.</summary>
     Task<AssistantResult> LogNursingAsync(AssistantInvocation invocation, BreastSide? side, CancellationToken cancellationToken = default);

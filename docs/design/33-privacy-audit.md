@@ -57,6 +57,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | 19 | Backups | full `pg_dump` (everything above), taken before migration deploys and on a scheduled basis; encrypted offsite copies (e.g. Backblaze B2); UPS protects the server against power loss | recovery, resilience | LI (copies follow the bases of their data) | the owner | until the owner deletes them; deleted data may persist in them | owner | no |
 | 20 | Exported files | the per-baby backup (readable JSON, unencrypted, no account ids: stand-ins) and the device JSON | portability | Contract | whoever holds the file | outside our control | user | is the export |
 | 21 | Cry monitor (2026-10-24, section 12) | **on the device only**: the microphone signal while the monitor page listens, analysed in memory (AudioWorklet and a worker) and discarded at once, never recorded, stored or sent; **saved**: fussy spells with `auto_detected` (rows of category 4) and the parent's `cry_confirmed` answer; **device**: the consent (`{version, at}`) and the sensitivity | notice crying, log it, alert opted-in family members | Consent-H (specific, per device, art. 11, I and art. 14, §1) `OWNER TO CONFIRM` with the lawyer | the spells as row 4; nothing of the sound reaches anyone | spells as row 4; consent until withdrawn or sign-out | withdraw on the page; spells as row 4 | spells as row 4 |
+| 22 | Measurement unit setting (`user_unit_settings`, 2026-10-25, policy 6, docs/design/37-measurement-units.md) | one text value per user (`auto`, `metric` or `us`) and the time it changed; not sensitive, no baby data | show, say (voice) and accept amounts in ml or fl oz, kg or lb, cm or in, degrees C or F; storage of every record stays metric | Contract (the service the user asked for) | the user | until changed or account deletion | account deletion (`EfAccountDataEraser`, a rule and a fixture row in `AccountErasureTests`); never in the baby backup file | no |
 
 ## 3. Third parties and requests that leave our servers
 
@@ -126,7 +127,7 @@ explains the token choice.
   prescriptions, medications, custom event types, invites, notification actions, deliveries, preferences, members and
   the baby row; on kept babies her note reads, private notes, pending proposals, unaccepted invites, preferences and
   membership go, and what she added for the family stays under the anonymized row; then her deliveries, actions, push
-  subscriptions, notification settings, professional profile and assistant settings, and the `created_by` of catalog
+  subscriptions, notification settings, professional profile, assistant settings and unit setting, and the `created_by` of catalog
   products she added; the user row is anonymized. Every column of the model that points at a baby or a user has a rule
   in `code/api/tests/Lotties.Api.Tests/Endpoints/AccountErasureTests.cs` (model-driven: a new one fails the test), and
   the test erases a fixture with a row in every such table (alone on a baby; Owner, Parent, Caregiver, Viewer and

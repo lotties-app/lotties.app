@@ -9,6 +9,8 @@ using Lotties.Domain.EventTypes;
 using Lotties.Domain.Formulas;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
+using Lotties.Domain.Units;
+using Lotties.Application.Units;
 using Microsoft.Extensions.Logging;
 
 namespace Lotties.Application.Assistants;
@@ -33,12 +35,16 @@ internal sealed class AssistantService(
     DailyObservationReader dailyObservations,
     AssistantForecasts forecasts,
     AssistantCryReasons cryReasons,
+    IUnitPreferences unitPreferences,
     ILogger<AssistantService> logger) : IAssistantService
 {
     /// <summary>How far back a day or week summary may be asked for, in days before the user's today.</summary>
     public const int SummaryHistoryDays = 365;
 
     private const int WeekDays = 7;
+
+    /// <summary>An amount above this is out of range whatever its unit (keeps the ml conversion far from overflow).</summary>
+    private const decimal MaxSpokenAmount = 100_000m;
 
     private const string SleepKey = "sleep";
     private const string FeedingKey = "feeding";
@@ -70,6 +76,14 @@ internal sealed class AssistantService(
 
     public Task<AssistantResult> LogBottleAsync(AssistantInvocation invocation, int? amountMl, BottleKind kind, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.Bottle, AssistantAccess.Log, subject => LogBottleAsync(invocation, subject, amountMl, kind, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogBottleVolumeAsync(AssistantInvocation invocation, decimal? amount, VolumeUnit? unit, BottleKind kind, CancellationToken cancellationToken = default) =>
+        RunAsync(
+            invocation,
+            AssistantCommands.Bottle,
+            AssistantAccess.Log,
+            async subject => await LogBottleAsync(invocation, subject, await MillilitersOfAsync(invocation, amount, unit, cancellationToken), kind, cancellationToken),
+            cancellationToken);
 
     public Task<AssistantResult> LogNursingAsync(AssistantInvocation invocation, BreastSide? side, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.Nursing, AssistantAccess.Log, subject => StartNursingAsync(invocation, subject, side, cancellationToken), cancellationToken);
@@ -151,9 +165,29 @@ internal sealed class AssistantService(
     {
         ArgumentNullException.ThrowIfNull(invocation);
         var lookup = await subjects.LoadAsync(invocation, access, cancellationToken);
-        var result = lookup.Subject is { } subject ? await work(subject) : lookup.Refusal!;
+        var result = lookup.Subject is { } subject
+            ? await work(subject) with { Units = await unitPreferences.ResolveAsync(invocation.Locale, cancellationToken) }
+            : lookup.Refusal!;
         Log(invocation, command, result);
         return result;
+    }
+
+    /// <summary>
+    /// The whole ml of a spoken or typed amount: in ounces by <see cref="UnitConversions"/>, in ml rounded to whole ml; an amount
+    /// without a unit is read in the user's system. <c>null</c> (so: invalid amount) when there is none or it is not positive.
+    /// </summary>
+    private async Task<int?> MillilitersOfAsync(AssistantInvocation invocation, decimal? amount, VolumeUnit? unit, CancellationToken cancellationToken)
+    {
+        if (amount is not > 0)
+        {
+            return null;
+        }
+
+        var capped = Math.Min(amount.Value, MaxSpokenAmount);
+        var chosen = unit ?? (await unitPreferences.ResolveAsync(invocation.Locale, cancellationToken) == UnitSystem.Us ? VolumeUnit.FluidOunces : VolumeUnit.Milliliters);
+        return chosen == VolumeUnit.FluidOunces
+            ? UnitConversions.FluidOuncesToMl(capped)
+            : (int)Math.Round(capped, MidpointRounding.AwayFromZero);
     }
 
     private void Log(AssistantInvocation invocation, string command, AssistantResult result) =>

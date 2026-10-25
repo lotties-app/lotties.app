@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 
 namespace Lotties.Api.Assistants.Mcp;
@@ -17,7 +18,8 @@ internal sealed record McpTool(
     string Description,
     string Scope,
     IReadOnlyList<McpParameter> Parameters,
-    Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> Run)
+    Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> Run,
+    Func<McpArguments, McpArgumentError?>? Check = null)
 {
     public bool Writes => Scope == McpScopes.Write;
 
@@ -69,10 +71,21 @@ internal static class McpToolCatalog
     private static readonly McpParameter Amount = new(
         "amountMl",
         McpParameterKind.Integer,
-        "The bottle's amount in ml (all of it drunk).",
-        Required: true,
+        "The bottle's amount in ml (all of it drunk). Give this, or amount with unit, not both.",
         Min: AssistantLimits.BottleMinMl,
         Max: AssistantLimits.BottleMaxMl);
+
+    private static readonly McpParameter AmountIn = new(
+        "amount",
+        McpParameterKind.Number,
+        "The bottle's amount in the given unit (decimals allowed, e.g. 4.5 with unit oz); it is converted to whole ml (1 to 500 ml after conversion). Instead of amountMl.",
+        Max: 100_000);
+
+    private static readonly McpParameter AmountUnit = new(
+        "unit",
+        McpParameterKind.Choice,
+        "The unit of amount: ml (milliliters) or oz (US fluid ounces). Default ml. Only with amount.",
+        Values: ["ml", "oz"]);
 
     private static readonly McpParameter BottleContent = new("kind", McpParameterKind.Choice, "What the bottle held: formula or breast_milk. Omit when unknown.", Values: ["formula", "breast_milk"]);
     private static readonly McpParameter NursingSide = new("side", McpParameterKind.Choice, "The breast: left or right. Omit to use the side opposite to where the last feed ended.", Values: ["left", "right"]);
@@ -206,8 +219,11 @@ internal static class McpToolCatalog
             "log_bottle",
             "Log bottle",
             "Logs a bottle given now. A formula bottle names the baby's current formula when one is set in the app.",
-            [Amount, BottleContent],
-            (assistant, invocation, arguments, token) => assistant.LogBottleAsync(invocation, arguments.Integer(Amount.Name), BottleKindOf(arguments.Text(BottleContent.Name)), token)),
+            [Amount, AmountIn, AmountUnit, BottleContent],
+            (assistant, invocation, arguments, token) => arguments.Decimal(AmountIn.Name) is { } amount
+                ? assistant.LogBottleVolumeAsync(invocation, amount, arguments.Text(AmountUnit.Name) == "oz" ? VolumeUnit.FluidOunces : VolumeUnit.Milliliters, BottleKindOf(arguments.Text(BottleContent.Name)), token)
+                : assistant.LogBottleAsync(invocation, arguments.Integer(Amount.Name), BottleKindOf(arguments.Text(BottleContent.Name)), token),
+            BottleAmountCheck),
         Write(
             "log_nursing",
             "Log nursing",
@@ -232,8 +248,23 @@ internal static class McpToolCatalog
     private static McpTool Read(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run) =>
         new(name, title, description + Facts, McpScopes.Read, parameters.Length == 0 ? parameters : [.. parameters, McpParameter.TimeZone], run);
 
-    private static McpTool Write(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run) =>
-        new(name, title, description + Retry + Facts, McpScopes.Write, [McpParameter.BabyId, .. parameters, McpParameter.IdempotencyKey, McpParameter.TimeZone], run);
+    private static McpTool Write(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run, Func<McpArguments, McpArgumentError?>? check = null) =>
+        new(name, title, description + Retry + Facts, McpScopes.Write, [McpParameter.BabyId, .. parameters, McpParameter.IdempotencyKey, McpParameter.TimeZone], run, check);
+
+    /// <summary>Exactly one of <c>amountMl</c> and <c>amount</c>; <c>unit</c> only with <c>amount</c>.</summary>
+    private static McpArgumentError? BottleAmountCheck(McpArguments arguments)
+    {
+        var hasMl = arguments.Integer(Amount.Name) is not null;
+        var hasAmount = arguments.Decimal(AmountIn.Name) is not null;
+        if (hasMl == hasAmount)
+        {
+            return new McpArgumentError(Amount.Name, hasMl ? "Give amountMl or amount, not both." : "amountMl is required (or amount with an optional unit).");
+        }
+
+        return arguments.Text(AmountUnit.Name) is not null && !hasAmount
+            ? new McpArgumentError(AmountUnit.Name, "unit goes with amount; amountMl is always in ml.")
+            : null;
+    }
 
     private static BottleKind BottleKindOf(string? kind) => kind switch
     {

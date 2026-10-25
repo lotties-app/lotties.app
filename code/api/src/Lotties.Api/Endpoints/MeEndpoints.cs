@@ -2,6 +2,7 @@ using Lotties.Api.Assistants;
 using Lotties.Api.Assistants.Mcp;
 using Lotties.Application.Assistants;
 using Lotties.Application.Professionals;
+using Lotties.Application.Units;
 using Lotties.Application.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
@@ -12,13 +13,15 @@ internal static class MeEndpoints
 {
     private const string ProfessionalProfilePath = "/me/professional-profile";
     private const string AssistantSettingsPath = "/me/assistant-settings";
+    private const string UnitSettingsPath = "/me/unit-settings";
 
     /// <summary>
     /// Maps <c>GET /me</c> (the signed-in user, created on first sign-in) and the caller's own professional profile:
     /// <c>GET /me/professional-profile</c> (404 <c>professional_profile_not_found</c> before she declares one) and
     /// <c>PUT /me/professional-profile</c> (201 declared / 200 updated; any signed-in user, self-declared), and the
     /// caller's voice assistant settings <c>GET</c>/<c>PUT /me/assistant-settings</c> (the default baby, plus whether the MCP
-    /// server is on and its URL; docs/design/32-assistants.md).
+    /// server is on and its URL; docs/design/32-assistants.md), and her measurement unit setting <c>GET</c>/<c>PUT /me/unit-settings</c>
+    /// (<c>{system: auto|metric|us}</c>, any signed-in user; docs/design/37-measurement-units.md).
     /// </summary>
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder api)
     {
@@ -42,6 +45,11 @@ internal static class MeEndpoints
         api.MapPut(AssistantSettingsPath, SaveAssistantSettingsAsync)
             .WithName("SaveAssistantSettings")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapGet(UnitSettingsPath, GetUnitSettingsAsync)
+            .WithName("GetUnitSettings");
+        api.MapPut(UnitSettingsPath, SaveUnitSettingsAsync)
+            .WithName("SaveUnitSettings")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         return api;
     }
 
@@ -59,6 +67,12 @@ internal static class MeEndpoints
         IOptions<McpOptions> mcp,
         CancellationToken cancellationToken) =>
         TypedResults.Ok(AssistantSettingsView.Of(await settings.SaveMineAsync(request, cancellationToken), httpRequest, mcp.Value));
+
+    private static async Task<Ok<UnitSettingsResponse>> GetUnitSettingsAsync(IUnitSettingsService settings, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await settings.GetMineAsync(cancellationToken));
+
+    private static async Task<Ok<UnitSettingsResponse>> SaveUnitSettingsAsync(SaveUnitSettingsRequest request, IUnitSettingsService settings, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await settings.SaveMineAsync(request, cancellationToken));
 
     private static async Task<Ok<AccountDeletionPreviewResponse>> PreviewDeletionAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
         TypedResults.Ok(await deletion.PreviewAsync(cancellationToken));

@@ -26,7 +26,7 @@ internal sealed partial class PortugueseAlexaLanguage
         [AssistantResultCode.NoDiapersAverage] = result =>
             $"Preciso de pelo menos 3 dias completos com fraldas na última semana para dar uma média, e encontrei {result.Count ?? 0}.",
         [AssistantResultCode.BottleAverage] = result =>
-            $"As últimas {Speech.Count(result.Count ?? 0, "mamadeira", "mamadeiras")} de {Name(result)} tiveram em média {result.AmountMl} ml, e a última foi de {result.LastAmountMl} ml.",
+            $"As últimas {Speech.Count(result.Count ?? 0, "mamadeira", "mamadeiras")} de {Name(result)} tiveram em média {Volume(result, result.AmountMl)}, e a última foi de {Volume(result, result.LastAmountMl)}.",
         [AssistantResultCode.NoBottleData] = result =>
             $"Não há mamadeiras com quantidade registrada o bastante nos últimos 14 dias: preciso de pelo menos 3, e encontrei {result.Count ?? 0}.",
         [AssistantResultCode.SleepToday] = SleepToday,
