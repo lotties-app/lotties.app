@@ -13,6 +13,7 @@ import { getOwn } from '../util/ownProperty';
 import { fieldValueText, volumeNumberText, volumeText } from '../units/display';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { FORMULA_NAME_KEY } from '../formulas/formulaModel';
+import { ASSISTANT_KEYS } from '../events/assistantOrigin';
 import {
   DRUNK_KEY,
   ENDED_BY_KEY,
@@ -123,8 +124,13 @@ function fussyPart(field: EventFieldDefinition, raw: unknown): string | undefine
   return FUSSY_HELPED.get(raw)?.();
 }
 
-/** Keys of the app itself (pause keys, the open nursing segment): never shown as details. */
-const INTERNAL_KEYS: ReadonlySet<string> = new Set([...PAUSE_KEYS, SEGMENT_START_KEY]);
+/** Keys of the app itself (pause keys, the open nursing segment, assistant markers): never shown as details. */
+const INTERNAL_KEYS: ReadonlySet<string> = new Set([
+  ...PAUSE_KEYS,
+  SEGMENT_START_KEY,
+  // The assistant markers are never data: "Added by Alexa" and the delete banner present them.
+  ...ASSISTANT_KEYS,
+]);
 
 /** Simple values the type does not describe (e.g. imported or older payloads). */
 function extraPart(key: string, raw: unknown): string | null {
