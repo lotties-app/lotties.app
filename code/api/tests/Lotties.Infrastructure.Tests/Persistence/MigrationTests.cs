@@ -85,6 +85,7 @@ public sealed class MigrationTests
         "20261024120542_BottleSegments",
         "20261024133642_CryDetector",
         "20261024142612_ProjectBoard",
+        "20261025173022_UnitSettings",
     ];
 
     [Fact]
