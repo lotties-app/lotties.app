@@ -62,6 +62,9 @@ internal sealed class SpokenClock(CultureInfo culture, string clockPattern, Spok
     public string? Clock(AssistantResult result, DateTimeOffset? instant) =>
         instant is { } value && Zone(result) is { } zone ? TimeZoneInfo.ConvertTime(value, zone).ToString(clockPattern, culture) : null;
 
+    /// <summary>A local wall-clock time in this culture's clock style.</summary>
+    public string Clock(TimeOnly time) => time.ToString(clockPattern, culture);
+
     public DateTime? Local(AssistantResult result, DateTimeOffset instant) =>
         Zone(result) is { } zone ? TimeZoneInfo.ConvertTime(instant, zone).DateTime : null;
 

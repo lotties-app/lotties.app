@@ -122,6 +122,37 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     }
 
     [Fact]
+    public async Task Post_EveryWriteIntent_MarksTheStoredEventViaAlexa()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        var token = host.TokenFor(baby.OwnerSubject);
+
+        await host.PostAsync(Intent("SleepStartIntent", token, requestId: NewRequestId()), SignedHeaders);
+        await host.PostAsync(Intent("BottleIntent", token, slots: new { amount = Slot("amount", "100") }, requestId: NewRequestId()), SignedHeaders);
+        await host.PostAsync(Intent("DiaperIntent", token, slots: new { diaperKind = Slot("diaperKind", "wet") }, requestId: NewRequestId()), SignedHeaders);
+        await host.PostAsync(Intent("NursingIntent", token, requestId: NewRequestId()), SignedHeaders);
+        await host.PostAsync(Intent("SleepEndIntent", token, requestId: NewRequestId()), SignedHeaders);
+
+        var events = await Factory.EventsAsync(baby.BabyId);
+        Assert.Equal(5, events.Count);
+        Assert.All(events, stored => Assert.Equal("alexa", JsonDocument.Parse(stored.Payload.Value).RootElement.GetProperty("via").GetString()));
+        Assert.All(events, stored => Assert.False(JsonDocument.Parse(stored.Payload.Value).RootElement.TryGetProperty("updated_via", out _)));
+    }
+
+    [Fact]
+    public async Task Post_SleepEndOfASleepTheAppStarted_AddsUpdatedViaOnly()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        var id = await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, BuiltInEventTypes.SleepId, DateTimeOffset.UtcNow.AddMinutes(-30), null, """{"kind":"nap"}""");
+
+        await host.PostAsync(Intent("SleepEndIntent", host.TokenFor(baby.OwnerSubject), requestId: NewRequestId()), SignedHeaders);
+
+        var payload = JsonDocument.Parse((await Factory.EventAsync(id)).Payload.Value).RootElement;
+        Assert.False(payload.TryGetProperty("via", out _));
+        Assert.Equal("alexa", payload.GetProperty("updated_via").GetString());
+    }
+
+    [Fact]
     public async Task Post_Bottle_ResolvedKindAndAmount_IsLoggedAndConfirmed()
     {
         var baby = await Factory.SeedBabyAsync();
@@ -204,6 +235,73 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent(intent, host.TokenFor(baby.OwnerSubject)), SignedHeaders));
 
         Assert.Equal(expected, AlexaApiHost.Speech(json));
+    }
+
+    [Theory]
+    [InlineData("NextNapWindowIntent", "I don't have enough sleep history yet to estimate Lia's next nap window.")]
+    [InlineData("NextFeedIntent", "I don't have enough feeds logged yet to estimate Lia's next feed.")]
+    [InlineData("NextDiaperIntent", "I don't have enough diapers logged yet to estimate Lia's next change.")]
+    [InlineData("DiapersAverageIntent", "I need at least 3 complete days of diapers in the last week to give an average, and I found 0.")]
+    [InlineData("BottleAverageIntent", "There aren't enough bottles with an amount logged in the last 14 days: I need at least 3, and I found 0.")]
+    [InlineData("SleepTodayIntent", "Lia has no sleep logged today.")]
+    [InlineData("LastDiaperIntent", "I can't find a diaper for Lia in the last 30 days.")]
+    public async Task Post_NewReads_WithoutHistory_SaySoInEnglish(string intent, string expected)
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent(intent, host.TokenFor(baby.OwnerSubject)), SignedHeaders));
+
+        Assert.Equal(expected, AlexaApiHost.Speech(json));
+        Assert.True(json.GetProperty("response").GetProperty("shouldEndSession").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData("NextNapWindowIntent", "Ainda não tenho histórico de sono suficiente para estimar a próxima janela de sono de Lia.")]
+    [InlineData("NextFeedIntent", "Ainda não tenho mamadas registradas o bastante para estimar a próxima mamada de Lia.")]
+    [InlineData("DiapersAverageIntent", "Preciso de pelo menos 3 dias completos com fraldas na última semana para dar uma média, e encontrei 0.")]
+    [InlineData("SleepTodayIntent", "Não há sono registrado hoje para Lia.")]
+    [InlineData("LastDiaperIntent", "Não encontrei nenhuma fralda de Lia nos últimos 30 dias.")]
+    public async Task Post_NewReads_WithoutHistory_SaySoInPortuguese(string intent, string expected)
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent(intent, host.TokenFor(baby.OwnerSubject), "pt-BR"), SignedHeaders));
+
+        Assert.Equal(expected, AlexaApiHost.Speech(json));
+    }
+
+    [Theory]
+    [InlineData("en-US", "There isn't enough in the log to point at a cause. This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever")]
+    [InlineData("pt-BR", "Não há registros suficientes para apontar uma causa. Isto não é um diagnóstico nem orientação médica. Ligue para o pediatra ou para a emergência se houver febre")]
+    public async Task Post_WhyIsSheCrying_WithoutHistory_StillGivesTheSafetySentence(string locale, string startsWith)
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("CryReasonsIntent", host.TokenFor(baby.OwnerSubject), locale), SignedHeaders));
+
+        var speech = AlexaApiHost.Speech(json);
+        Assert.StartsWith(startsWith, speech, StringComparison.Ordinal);
+        Assert.EndsWith(".", speech, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Post_WhyIsSheCrying_AfterAFeedingHistory_NamesHungerWithItsFactAndTheRedFlags()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        var owner = await Factory.UserIdAsync(baby.OwnerSubject);
+        var now = DateTimeOffset.UtcNow;
+        await Factory.SeedAsync(context =>
+        {
+            context.Events.AddRange(Enumerable.Range(0, 20).Select(slot => ClinicalTestData.NewEvent(baby.BabyId, owner, BuiltInEventTypes.FeedingId, now.AddHours(-6 - (slot * 3)), now.AddHours(-6 - (slot * 3)).AddMinutes(15), """{"method":"bottle","amount_ml":120}""")));
+            return Task.CompletedTask;
+        });
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("CryReasonsIntent", host.TokenFor(baby.OwnerSubject)), SignedHeaders));
+
+        var speech = AlexaApiHost.Speech(json);
+        Assert.StartsWith("From what is logged for Lia: Hunger looks likely: the last feed was 6 hours ago", speech, StringComparison.Ordinal);
+        Assert.Contains("This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever", speech, StringComparison.Ordinal);
+        Assert.Contains("a bulging or stiff soft spot on the head.", speech, StringComparison.Ordinal);
     }
 
     [Fact]
