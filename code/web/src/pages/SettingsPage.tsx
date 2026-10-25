@@ -5,6 +5,7 @@ import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { LanguageSection } from '../settings/LanguageSection';
+import { UnitsSection } from '../settings/UnitsSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
 import { FeedingSection } from '../settings/FeedingSection';
@@ -138,6 +139,9 @@ export function SettingsPage() {
         defaultExpanded={wants('appearance', 'language')}
       >
         <LanguageSection />
+      </SettingsSection>
+      <SettingsSection id="units" title={t('units.title')} defaultExpanded={wants('units')}>
+        <UnitsSection />
       </SettingsSection>
       <SettingsSection
         id="sync"

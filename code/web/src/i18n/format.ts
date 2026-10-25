@@ -1,5 +1,7 @@
 import { currentLocale, t } from './i18n';
 import type { Locale } from './config';
+import { formatLength, formatVolume, formatWeight } from '../units/format';
+import { currentUnitSystem } from '../units/state';
 
 /**
  * Locale-aware formatting through `Intl`, with the active UI language as the default. Pass
@@ -147,9 +149,26 @@ export function formatNumber(
 
 export type MeasureUnit = 'kilogram' | 'centimeter' | 'milliliter';
 
-/** `7,5 kg` / `7.5 kg`: a number with a metric unit. */
-export function formatUnit(value: number, unit: MeasureUnit, locale: Locale = currentLocale()) {
+/** `7,5 kg` / `7.5 kg`: a number with a metric unit, always metric (dose arithmetic, never converted). */
+export function formatMetricUnit(
+  value: number,
+  unit: MeasureUnit,
+  locale: Locale = currentLocale(),
+) {
   return formatNumber(value, { style: 'unit', unit, unitDisplay: 'short' }, locale);
+}
+
+/**
+ * A metric value (ml, kg, cm) in the person's unit system (docs/design/37a-measurement-units-web.md):
+ * `7,5 kg` or `16 lb 9 oz`. Storage is metric; only the text changes. For a medicine dose use
+ * `formatMetricUnit`.
+ */
+export function formatUnit(value: number, unit: MeasureUnit, locale: Locale = currentLocale()) {
+  const system = currentUnitSystem();
+  if (system === 'metric') return formatMetricUnit(value, unit, locale);
+  if (unit === 'milliliter') return formatVolume(value, system, locale);
+  if (unit === 'kilogram') return formatWeight(value, system, locale);
+  return formatLength(value, system, locale);
 }
 
 /** `A, B and C` / `A, B e C`. */

@@ -40,6 +40,7 @@ export type Catalog = typeof import('./locales/en/account.json') &
   typeof import('./locales/en/sync.json') &
   typeof import('./locales/en/timers.json') &
   typeof import('./locales/en/ui.json') &
+  typeof import('./locales/en/units.json') &
   typeof import('./locales/en/vaccines.json');
 
 /** The English catalog (source and fallback, in the main bundle): every `locales/en/*.json`, merged. */
