@@ -139,6 +139,34 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         Assert.All(events, stored => Assert.False(JsonDocument.Parse(stored.Payload.Value).RootElement.TryGetProperty("updated_via", out _)));
     }
 
+    [Theory]
+    [InlineData("en-US", @"^I asked to delete Lia's last feed, just now\. Nothing was deleted: open the Lotties app to approve it or keep it\.$")]
+    [InlineData("pt-BR", @"^Pedi para apagar o último registro de alimentação de Lia, às? \d{2}:\d{2}\. Nada foi apagado: abra o app do Lotties para aprovar ou manter\.$")]
+    public async Task Post_UndoTheLastEntry_OnlyAsksAndNothingIsDeleted(string locale, string expectedPattern)
+    {
+        var baby = await Factory.SeedBabyAsync();
+        var token = host.TokenFor(baby.OwnerSubject);
+        await host.PostAsync(Intent("BottleIntent", token, slots: new { amount = Slot("amount", "100") }, requestId: NewRequestId()), SignedHeaders);
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("RequestDeleteLastIntent", token, locale, requestId: NewRequestId()), SignedHeaders));
+
+        var stored = Assert.Single(await Factory.EventsAsync(baby.BabyId));
+        Assert.Matches(expectedPattern, AlexaApiHost.Speech(json));
+        Assert.Null(stored.DeletedAt);
+        var payload = JsonDocument.Parse(stored.Payload.Value).RootElement;
+        Assert.Equal(("alexa", "alexa"), (payload.GetProperty("via").GetString(), payload.GetProperty("delete_requested_via").GetString()));
+    }
+
+    [Fact]
+    public async Task Post_UndoTheLastEntry_WithNothingMadeByVoice_SaysSo()
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("RequestDeleteLastIntent", host.TokenFor(baby.OwnerSubject)), SignedHeaders));
+
+        Assert.Equal("I can't find an entry you logged by voice in the last 30 minutes, so nothing was changed.", AlexaApiHost.Speech(json));
+    }
+
     [Fact]
     public async Task Post_SleepEndOfASleepTheAppStarted_AddsUpdatedViaOnly()
     {

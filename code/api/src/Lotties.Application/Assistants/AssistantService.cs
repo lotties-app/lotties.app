@@ -52,6 +52,9 @@ internal sealed class AssistantService(
     private static readonly TimeSpan AppointmentHorizon = TimeSpan.FromDays(366);
     private const int VaccinesTold = 5;
     private const int AverageDays = 7;
+    private static readonly string[] MadeByAssistantKeys = [SleepKey, FeedingKey, DiaperKey];
+    private static readonly TimeSpan DeleteWindow = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan DeleteLookback = TimeSpan.FromHours(1);
     private const int MinimumAverageDays = 3;
     private const int MinimumBottles = 3;
     private const int BottlesAveraged = 5;
@@ -132,6 +135,9 @@ internal sealed class AssistantService(
 
     public Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.LastDiaper, AssistantAccess.Read, subject => LastDiaperAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> RequestDeleteLastAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.RequestDeleteLast, AssistantAccess.Log, subject => RequestDeleteLastAsync(subject, cancellationToken), cancellationToken);
 
     public Task<AssistantResult> ReadCryReasonsAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.CryReasons, AssistantAccess.Read, subject => cryReasons.ReadAsync(subject, cancellationToken), cancellationToken);
@@ -398,6 +404,52 @@ internal sealed class AssistantService(
         return subject.Result(AssistantResultCode.SleepToday) with { Minutes = today.TotalMinutes, Count = today.Naps };
     }
 
+    /// <summary>
+    /// Marks the newest entry this adapter created in the last 30 minutes as a deletion request: the same upsert as an edit
+    /// (client time never older than the stored one), every other member kept, only <c>delete_requested_*</c> added. It
+    /// never deletes, and it never touches an entry another origin made.
+    /// </summary>
+    private async Task<AssistantResult> RequestDeleteLastAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var candidates = await clinicalEvents.ListByTypesAsync(subject.Baby.Id, MadeByAssistantKeys, subject.Now - DeleteLookback, subject.Now + FutureSkew, cancellationToken);
+        var target = candidates
+            .Select(typed => (typed.TypeKey, typed.Event))
+            .Where(entry => !entry.Event.IsDeleted
+                && entry.Event.CreatedAt >= subject.Now - DeleteWindow
+                && AssistantOrigin.ViaOf(entry.Event.Payload) == subject.Adapter
+                && EventPayloadFacts.Read(entry.Event.Payload).Kind != SleepKinds.WokeUp)
+            .OrderByDescending(entry => entry.Event.CreatedAt)
+            .Cast<(EventTypeKey TypeKey, Event Event)?>()
+            .FirstOrDefault();
+        if (target is not { } found)
+        {
+            return subject.Result(AssistantResultCode.NoEntryToDelete);
+        }
+
+        await MarkDeleteRequestedAsync(subject, found.Event, cancellationToken);
+        return subject.Result(AssistantResultCode.DeleteRequested) with { At = found.Event.StartedAt, EntryType = found.TypeKey.Value };
+    }
+
+    private async Task MarkDeleteRequestedAsync(AssistantSubject subject, Event entry, CancellationToken cancellationToken)
+    {
+        var marked = AssistantOrigin.DeleteRequested(entry.Payload, subject.Adapter, subject.Now);
+        if (marked.Value == entry.Payload.Value)
+        {
+            return;
+        }
+
+        var request = new UpsertEventRequest
+        {
+            TypeId = entry.TypeId,
+            StartedAt = entry.StartedAt,
+            EndedAt = entry.EndedAt,
+            Payload = marked,
+            Notes = entry.Notes,
+            UpdatedAt = Later(entry.ClientUpdatedAt, subject.Now),
+        };
+        await eventService.UpsertAsync(subject.Baby.Id, entry.Id, request, cancellationToken);
+    }
+
     private async Task<AssistantResult> LastDiaperAsync(AssistantSubject subject, CancellationToken cancellationToken)
     {
         var latest = (await RecentAsync(subject, DiaperKey, DiaperLookback, cancellationToken)).FirstOrDefault();
@@ -535,4 +587,5 @@ internal static class AssistantCommands
     public const string SleepToday = "sleep_today";
     public const string LastDiaper = "last_diaper";
     public const string CryReasons = "cry_reasons";
+    public const string RequestDeleteLast = "request_delete_last";
 }

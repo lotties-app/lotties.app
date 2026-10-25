@@ -18,6 +18,12 @@ public static partial class AssistantOrigin
     public const string ViaMember = "via";
     public const string UpdatedViaMember = "updated_via";
 
+    /// <summary>The adapter that asked for the entry to be deleted; the person approves or keeps it in the app (docs/design/32-assistants.md "Assistants never delete").</summary>
+    public const string DeleteRequestedViaMember = "delete_requested_via";
+
+    /// <summary>When the deletion was asked for (ISO instant, the server clock).</summary>
+    public const string DeleteRequestedAtMember = "delete_requested_at";
+
     /// <summary><paramref name="payload"/> with <c>via</c> set to <paramref name="adapter"/> (unchanged for an adapter name that is not a plain lowercase word).</summary>
     public static EventPayload Created(EventPayload payload, string adapter) => With(payload, ViaMember, adapter, replace: true);
 
@@ -30,6 +36,25 @@ public static partial class AssistantOrigin
         var name = Normalize(adapter);
         return name is null || ViaOf(payload) == name ? payload : With(payload, UpdatedViaMember, name, replace: true);
     }
+
+    /// <summary>
+    /// <paramref name="payload"/> marked as a deletion request from <paramref name="adapter"/> at <paramref name="at"/>; unchanged when a
+    /// request is already open (asking twice changes nothing). Nothing is deleted: the person decides in the app.
+    /// </summary>
+    public static EventPayload DeleteRequested(EventPayload payload, string adapter, DateTimeOffset at)
+    {
+        if (DeleteRequestedViaOf(payload) is not null || Normalize(adapter) is not { } name)
+        {
+            return payload;
+        }
+
+        var root = JsonNode.Parse(payload.Value) is JsonObject existing ? existing : new JsonObject();
+        root[DeleteRequestedViaMember] = name;
+        root[DeleteRequestedAtMember] = at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+        return EventPayload.From(root.ToJsonString());
+    }
+
+    public static string? DeleteRequestedViaOf(EventPayload payload) => Text(payload, DeleteRequestedViaMember);
 
     public static string? ViaOf(EventPayload payload) => Text(payload, ViaMember);
 

@@ -19,6 +19,7 @@ import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
 import type { FedToSleep } from '../now/bottleFollowUp';
 import { AssistantOriginNote } from '../events/AssistantOriginNote';
+import { DeleteRequestBanner } from '../events/DeleteRequestBanner';
 import { isInstantEvent } from './ribbonText';
 
 interface Props {
@@ -49,6 +50,11 @@ interface Props {
   highlighted?: boolean;
   /** A sleep that began while she was feeding (`fedToSleep`): a quiet line says so. */
   fedToSleep?: FedToSleep;
+  /**
+   * Answers to an assistant's request to delete this entry; omitted when the user may not change
+   * it (the banner then only says what was asked).
+   */
+  deleteRequest?: { onDelete: () => void; onKeep: () => void };
 }
 
 /** The live clock of a running event: effective time, so a paused timer stands still. */
@@ -254,6 +260,7 @@ export function DayRow({
   author = null,
   highlighted = false,
   fedToSleep = null,
+  deleteRequest,
 }: Props) {
   const { t } = useTranslation();
   const authorName = author || t('access.someoneElse');
@@ -367,6 +374,12 @@ export function DayRow({
           )}
           <AssistantOriginNote event={event} />
         </ButtonBase>
+        <DeleteRequestBanner
+          event={event}
+          {...(deleteRequest
+            ? { onDelete: deleteRequest.onDelete, onKeep: deleteRequest.onKeep }
+            : {})}
+        />
         {(running || length) && (
           <Box
             sx={{

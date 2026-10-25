@@ -28,6 +28,7 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `SleepTodayIntent` | "how much did she sleep today", "how many naps today", "total sleep today" | "quanto ela dormiu hoje", "quantas sonecas ela fez hoje", "total de sono hoje" | `ReadSleepToday` |
 | `LastDiaperIntent` | "when was the last diaper change", "when did I last change her diaper", "last diaper" | "quando foi a última troca de fralda", "quando troquei a fralda dela", "última fralda" | `ReadLastDiaper` |
 | `CryReasonsIntent` | "why is she crying", "why is the baby fussy", "what could be making her cry" | "por que ela está chorando", "por que ela está irritada", "por que ela não para de chorar" | `ReadCryReasons` |
+| `RequestDeleteLastIntent` | "undo the last thing I logged", "delete the last entry", "undo the last entry", "cancel the last entry" | "desfazer o último registro", "apagar o último registro", "excluir o último registro" | `RequestDeleteLast` (asks only, section 5.3) |
 | `SetBabyHelpIntent` | "choose the baby" | "escolher o bebê" | (help: Settings, Voice assistants) |
 | `AMAZON.HelpIntent`, `StopIntent`, `CancelIntent`, `FallbackIntent`, `NavigateHomeIntent` | | | built-in |
 
@@ -102,6 +103,7 @@ with a line for every code, tested for every code in both languages.
 | `sleep_today` | `minutes` since local midnight (a running sleep until now) and `count` naps: the day summary's sleep math |
 | `last_diaper`, `no_diapers` | the newest diaper of 30 days: `at`, `diaper` |
 | `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags`; `running` = a sleep timer runs so the log may be behind |
+| `delete_requested`, `no_entry_to_delete` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
 | `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
 | `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
@@ -206,6 +208,33 @@ upsert, sync, backup export/import and the doctor's view carry it as payload. Th
 (`useEventSheetForm.editBase` keeps `via`, `updated_via` and the delete-request members through an edit) and shows a quiet
 line wherever the entry is shown (day list row, event sheet, read-only sheet): "Added by Alexa" / "Added by an AI
 assistant", "Finished by Alexa" (`assistants.origin.*`).
+
+## 5.3 Assistants never delete
+
+An assistant can never delete, overwrite or edit away a record. There is no delete command, no delete in the Alexa intents
+or the MCP tools, and the assistant code reaches no `IEventService.DeleteAsync`, repository removal, `deleted` flag or payload
+overwrite: the only changes an existing event gets are the timer stop (the folded pause, `updated_via`) and the request
+below. `AssistantNeverDeletesTests` fails when that stops being true: a scan of the assistant sources (Domain, Application,
+Api) for delete and remove calls, a reflection test on `IAssistantService` (the only method named like a delete is
+`RequestDeleteLastAsync`), the MCP tool list (the only such tool is `request_delete_last_entry`) and a behavioural test
+that no command lowers the event count or soft-deletes. A write only touches events its own adapter created
+(`via` = that adapter) or stops an open timer; it never touches another origin's entry.
+
+What it can do is **ask**: `RequestDeleteLast` ("undo the last thing I logged", "delete the last entry"; pt-BR "desfazer o
+último registro", "apagar o último registro"; MCP `request_delete_last_entry`, scope `lotties.write`) finds the newest
+non-deleted entry that the calling adapter created (`via`) in the last 30 minutes (a `woke_up` marker is never the
+target) and adds two payload members: `delete_requested_via` = the adapter name and `delete_requested_at` = the server clock
+(ISO instant). It answers `delete_requested` (neutral: it asked, nothing was deleted, the person approves in the app) or
+`no_entry_to_delete`. It is the same upsert as an edit (client time never older than the stored one), idempotent: an entry
+that already carries the request is left as it is, so asking twice, or replaying the request id, changes nothing. No new
+table, no migration, no new route (the markers are undeclared payload members like `via`, carried by sync, backup and the
+doctor's view). The Viewer role cannot ask (it is a write); a role that logs can.
+
+The web shows, in the day list row and in the event sheet (not on Now), a banner "Alexa asked to delete this entry" /
+"An AI assistant asked to delete this entry" with **Delete** (the normal soft delete, then the usual Undo notice) and
+**Keep** (a normal edit that removes the two members and keeps `via`; a normal client `updatedAt` conflict rule applies). Only
+roles that may already edit the entry see the buttons; a Viewer, or a Caregiver looking at someone else's entry, sees the
+banner read-only. Strings: `assistants.deleteRequest.*`.
 
 ## 6. The Alexa adapter (`POST /api/v1/alexa`)
 
@@ -341,6 +370,7 @@ the server knows, else `invalid_arguments`; it wins over the stored zone, sectio
 | `get_sleep_today` | read | `babyId?` | `ReadSleepToday` |
 | `get_last_diaper` | read | `babyId?` | `ReadLastDiaper` |
 | `get_cry_reasons` | read | `babyId?` | `ReadCryReasons` |
+| `request_delete_last_entry` | write | `babyId?`, `idempotencyKey?` | `RequestDeleteLast` (asks only, section 5.3) |
 | `log_sleep_start` | write | `babyId?`, `idempotencyKey?` | `LogSleepStart` |
 | `log_sleep_end` | write | `babyId?`, `idempotencyKey?` | `LogSleepEnd` |
 | `log_bottle` | write | `babyId?`, `amountMl` (1-500), `kind?` (`formula`, `breast_milk`), `idempotencyKey?` | `LogBottle` |

@@ -185,6 +185,12 @@ internal static class McpToolCatalog
             [McpParameter.BabyId],
             (assistant, invocation, _, token) => assistant.ReadCryReasonsAsync(invocation, token)),
         Write(
+            "request_delete_last_entry",
+            "Ask to delete the last entry",
+            "Asks for the last entry this assistant logged in the last 30 minutes to be deleted: it only marks the entry (nothing is deleted); the person approves the deletion or keeps the entry in the Lotties app. Assistants can never delete. Answers delete_requested, or no_entry_to_delete when this assistant made no entry in that time.",
+            [],
+            (assistant, invocation, _, token) => assistant.RequestDeleteLastAsync(invocation, token)),
+        Write(
             "log_sleep_start",
             "Log sleep start",
             "Starts a sleep timer now (nap or night by the app's rule). When a sleep already runs it answers sleep_already_running and changes nothing.",

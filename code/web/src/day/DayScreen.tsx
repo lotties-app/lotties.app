@@ -16,6 +16,7 @@ import {
 } from '../db/hooks';
 import type { Baby, BabyEvent, EventType } from '../db/models';
 import { EventReadOnlySheet } from '../events/EventReadOnlySheet';
+import { useDeleteRequestResponse } from '../events/useDeleteRequestResponse';
 import { EventSheet } from '../events/EventSheet';
 import type { FormPrefill } from '../events/formModel';
 import { useNow } from '../events/time';
@@ -179,6 +180,9 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const appointments = useAppointments(baby.id);
   const appointmentSheets = useAppointmentSheets(baby, appointments, clock);
   const actions = usePresetActions(baby.id, types ?? []);
+  const deleteRequests = useDeleteRequestResponse((event) =>
+    types?.find((type) => type.id === event.typeId),
+  );
   const label = useDayLabel(day, today);
   const access = useEventAccess(baby);
   const writable = access.canLog;
@@ -313,6 +317,14 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
                   author={access.authorOf(item.event)}
                   viewOnly={writable && !access.canChange(item.event)}
                   fedToSleep={fedBefore(item.event)}
+                  {...(writable && access.canChange(item.event)
+                    ? {
+                        deleteRequest: {
+                          onDelete: () => void deleteRequests.approve(item.event),
+                          onKeep: () => void deleteRequests.keep(item.event),
+                        },
+                      }
+                    : {})}
                 />
               </ErrorBoundary>
             ),

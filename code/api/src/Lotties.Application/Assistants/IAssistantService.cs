@@ -96,6 +96,14 @@ public interface IAssistantService
     Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// "Undo the last thing I logged": asks for the newest entry this adapter created in the last 30 minutes to be deleted
+    /// (<see cref="AssistantResultCode.DeleteRequested"/>) by marking it (<c>delete_requested_via</c>, <c>delete_requested_at</c>).
+    /// Nothing is deleted: the person approves or keeps it in the Lotties app. Asking twice changes nothing; none made by this
+    /// adapter in that time is <see cref="AssistantResultCode.NoEntryToDelete"/>. Needs a role that logs events.
+    /// </summary>
+    Task<AssistantResult> RequestDeleteLastAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// "Why is she crying?": the top likely causes the baby's own log suggests, each with the logged fact behind it
     /// (<see cref="AssistantResultCode.CryReasons"/>), or that nothing in the log points at one (<see cref="AssistantResultCode.CryNoData"/>);
     /// always with the red flags to call the pediatrician for. Not a diagnosis, never a remedy or a dose.

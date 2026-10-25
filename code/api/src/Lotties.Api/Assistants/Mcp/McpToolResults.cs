@@ -131,6 +131,8 @@ internal static class McpResultText
             AssistantResultCode.LastDiaper => $"{baby}'s last diaper was at {Time(result, result.At)}.",
             AssistantResultCode.NoDiapers => $"No diaper of {baby} in the last 30 days.",
             AssistantResultCode.CryReasons => $"What {baby}'s log suggests: {string.Join(", ", result.CryCauses.Select(cause => cause.Cause.ToString().ToLowerInvariant()))}. Not a diagnosis or medical advice: call the pediatrician or emergency services for a fever, crying that cannot be soothed, refusing feeds, unusual sleepiness, or a bulging or stiff soft spot.",
+            AssistantResultCode.DeleteRequested => $"Asked to delete {baby}'s last {result.EntryType} entry from {Time(result, result.At)}. Nothing was deleted: the person approves or keeps it in the Lotties app.",
+            AssistantResultCode.NoEntryToDelete => $"No entry made by this assistant in the last 30 minutes for {baby}; nothing was changed.",
             AssistantResultCode.CryNoData => $"Nothing in {baby}'s log points at a cause. Not a diagnosis or medical advice: call the pediatrician or emergency services for a fever, crying that cannot be soothed, refusing feeds, unusual sleepiness, or a bulging or stiff soft spot.",
             _ => AssistantResult.CodeName(result.Code),
         };

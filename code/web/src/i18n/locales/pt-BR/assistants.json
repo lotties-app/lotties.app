@@ -29,6 +29,12 @@
       "addedByAssistant": "Adicionado por um assistente de IA",
       "finishedByAlexa": "Finalizado pela Alexa",
       "finishedByAssistant": "Finalizado por um assistente de IA"
+    },
+    "deleteRequest": {
+      "alexa": "A Alexa pediu para apagar este registro",
+      "assistant": "Um assistente de IA pediu para apagar este registro",
+      "delete": "Apagar",
+      "keep": "Manter"
     }
   }
 }

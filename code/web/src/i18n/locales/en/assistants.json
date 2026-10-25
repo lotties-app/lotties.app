@@ -29,6 +29,12 @@
       "addedByAssistant": "Added by an AI assistant",
       "finishedByAlexa": "Finished by Alexa",
       "finishedByAssistant": "Finished by an AI assistant"
+    },
+    "deleteRequest": {
+      "alexa": "Alexa asked to delete this entry",
+      "assistant": "An AI assistant asked to delete this entry",
+      "delete": "Delete",
+      "keep": "Keep"
     }
   }
 }

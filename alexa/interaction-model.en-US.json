@@ -289,6 +289,19 @@
           ]
         },
         {
+          "name": "RequestDeleteLastIntent",
+          "slots": [],
+          "samples": [
+            "undo the last thing I logged",
+            "undo the last entry",
+            "delete the last entry",
+            "delete the last thing I logged",
+            "remove the last entry",
+            "take back the last entry",
+            "cancel the last entry"
+          ]
+        },
+        {
           "name": "SetBabyHelpIntent",
           "slots": [],
           "samples": [

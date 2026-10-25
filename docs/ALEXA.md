@@ -142,6 +142,9 @@ disabled.
    fralda", "quantas fraldas por dia ela costuma usar", "quanto devo preparar na próxima mamadeira", "quanto ela dormiu
    hoje", "quando foi a última troca de fralda", "por que ela está chorando"). With little history they say so; the
    crying answer always ends with when to call the pediatrician.
+9. "ask lotties to undo the last entry" (pt: "peça ao lotties para desfazer o último registro") right after logging by
+   voice: it answers that it asked and that nothing was deleted; the entry shows a banner in the app (Delete or Keep).
+   Alexa never deletes by itself.
 
 The JSON Input/Output panes show the request and response; the API logs only the intent, the result code and the
 correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).

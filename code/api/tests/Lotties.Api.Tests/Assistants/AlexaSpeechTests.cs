@@ -261,6 +261,7 @@ public sealed class AlexaSpeechTests
             new AssistantCryCause(CryCause.Gas, CryLevel.Possible, [new CryFact { Kind = "bellyPattern", TypicalClock = "18:30" }]),
         ],
         RedFlags = RedFlags,
+        EntryType = "feeding",
     };
 
     private static readonly string[] RedFlags = ["fever", "inconsolable", "refusing_feeds", "unusual_sleepiness", "bulging_or_stiff_fontanelle"];

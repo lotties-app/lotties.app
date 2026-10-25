@@ -35,6 +35,17 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.NoDiapers] = result => $"I can't find a diaper for {Name(result)} in the last 30 days.",
         [AssistantResultCode.CryReasons] = CryReasons,
         [AssistantResultCode.CryNoData] = CryNoData,
+        [AssistantResultCode.DeleteRequested] = result =>
+            $"I asked to delete {Name(result)}'s last {EntryName(result.EntryType)}, {When(result, result.At)}. Nothing was deleted: open the Lotties app to approve it or keep it.",
+        [AssistantResultCode.NoEntryToDelete] = _ => "I can't find an entry you logged by voice in the last 30 minutes, so nothing was changed.",
+    };
+
+    private static string EntryName(string? type) => type switch
+    {
+        "feeding" => "feed",
+        "sleep" => "sleep",
+        "diaper" => "diaper change",
+        _ => "entry",
     };
 
     private static string SleepToday(AssistantResult result)

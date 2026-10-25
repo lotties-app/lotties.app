@@ -286,6 +286,19 @@
           ]
         },
         {
+          "name": "RequestDeleteLastIntent",
+          "slots": [],
+          "samples": [
+            "desfazer o último registro",
+            "desfazer a última coisa que registrei",
+            "apagar o último registro",
+            "apagar o último item",
+            "excluir o último registro",
+            "cancelar o último registro",
+            "remover o último registro"
+          ]
+        },
+        {
           "name": "SetBabyHelpIntent",
           "slots": [],
           "samples": [

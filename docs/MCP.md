@@ -175,7 +175,7 @@ On a developer machine (never against production data you do not own):
    `lotties.read` (add `lotties.write` to test logging).
 3. Connect via the Inspector's proxy (no browser `Origin` reaches the API). For a direct browser connection set
    `Mcp__AllowedOrigins=http://localhost:6274` on a test API only.
-4. Check: `tools/list` shows 17 read tools (22 with `lotties.write`); `list_babies`; `get_day_summary` without arguments;
+4. Check: `tools/list` shows 17 read tools (23 with `lotties.write`, the extra ones log and `request_delete_last_entry`, which only asks: the person approves in the app); `list_babies`; `get_day_summary` without arguments;
    `log_diaper {"kind":"wet","idempotencyKey":"test-0001"}` twice logs one diaper; with a read-only token, calling a log
    tool answers HTTP 403 `insufficient_scope`.
 

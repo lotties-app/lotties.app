@@ -19,7 +19,7 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
         ["list_babies", "get_baby_profile", "get_last_feed", "get_sleep_status", "get_diapers_today", "get_next_appointment", "get_due_vaccines", "get_day_summary", "get_week_summary",
             "get_next_nap_window", "get_next_feed", "get_next_diaper", "get_diapers_average", "get_bottle_average", "get_sleep_today", "get_last_diaper", "get_cry_reasons"];
 
-    private static readonly string[] WriteTools = ["log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper"];
+    private static readonly string[] WriteTools = ["request_delete_last_entry", "log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper"];
 
     private ApiFactory Factory => host.Factory;
 
@@ -125,9 +125,10 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
             Code(await client.CallToolAsync("log_nursing", Args(("side", "left")))),
             Code(await client.CallToolAsync("log_diaper", Args(("kind", "both")))),
             Code(await client.CallToolAsync("log_bottle", Args(("amountMl", 90)))),
+            Code(await client.CallToolAsync("request_delete_last_entry", Args())),
         };
 
-        Assert.Equal(["sleep_started", "sleep_ended", "nursing_started", "diaper_logged", "bottle_logged"], codes);
+        Assert.Equal(["sleep_started", "sleep_ended", "nursing_started", "diaper_logged", "bottle_logged", "delete_requested"], codes);
         Assert.Equal(5, (await Factory.EventsAsync(baby.BabyId)).Count);
     }
 

@@ -151,6 +151,12 @@ public enum AssistantResultCode
 
     /// <summary>Nothing in the log points at a cause; the red flags are still told.</summary>
     CryNoData,
+
+    /// <summary>The entry (<see cref="AssistantResult.EntryType"/>, <see cref="AssistantResult.At"/>) was marked as a deletion request; nothing was deleted, the person decides in the app.</summary>
+    DeleteRequested,
+
+    /// <summary>This adapter made no entry in the last 30 minutes; nothing was marked.</summary>
+    NoEntryToDelete,
 }
 
 /// <summary>Which days a count covers.</summary>
@@ -278,6 +284,9 @@ public sealed record AssistantResult
 
     /// <summary>The next dirty diaper's expected time, when the diaper predictions have one.</summary>
     public AssistantTimeWindow? DirtyEstimate { get; init; }
+
+    /// <summary>The kind of entry a deletion request is about (<c>feeding</c>, <c>sleep</c>, <c>diaper</c>).</summary>
+    public string? EntryType { get; init; }
 
     /// <summary>Diapers per complete local day, one decimal (a mixed diaper counts in <see cref="Wet"/> and <see cref="Dirty"/>); <see cref="Count"/> is the days it is averaged over.</summary>
     public double? PerDay { get; init; }

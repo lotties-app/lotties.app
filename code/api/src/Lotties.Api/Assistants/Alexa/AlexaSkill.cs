@@ -56,6 +56,7 @@ internal sealed class AlexaSkill(
         ["BottleAverageIntent"] = (service, invocation, _, token) => service.ReadBottleAverageAsync(invocation, token),
         ["SleepTodayIntent"] = (service, invocation, _, token) => service.ReadSleepTodayAsync(invocation, token),
         ["LastDiaperIntent"] = (service, invocation, _, token) => service.ReadLastDiaperAsync(invocation, token),
+        ["RequestDeleteLastIntent"] = (service, invocation, _, token) => service.RequestDeleteLastAsync(invocation, token),
         ["CryReasonsIntent"] = (service, invocation, _, token) => service.ReadCryReasonsAsync(invocation, token),
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
