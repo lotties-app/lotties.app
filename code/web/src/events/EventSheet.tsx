@@ -22,6 +22,7 @@ import { daysBeforeToday } from '../ui/form/timeMath';
 import { getOwn } from '../util/ownProperty';
 import { currentStartLevel } from './bottleSegments';
 import { FUSSY_KEY } from '../now/fussyPattern';
+import { AssistantOriginNote } from './AssistantOriginNote';
 import { ConditionalFields } from './ConditionalFields';
 import { CryAnswerRow } from './CryAnswerRow';
 import { announceEventDeleted } from './deletedEvents';
@@ -344,6 +345,7 @@ export function EventSheet(props: EventSheetProps) {
           {type && !finishing && (
             <SleepDetails type={type} values={form.values} onChange={state.setValue} />
           )}
+          {event && !finishing && <AssistantOriginNote event={event} />}
           {!finishing && (
             <Box data-field-key="notes">
               <NotesRow value={form.notes} onChange={(notes) => state.edit({ notes })} />

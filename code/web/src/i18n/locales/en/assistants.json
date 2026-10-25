@@ -1,7 +1,7 @@
 {
   "assistants": {
     "title": "Voice assistants",
-    "intro": "Log and ask by voice, for example: “Alexa, tell Lotties baby the baby fell asleep”. Link your Lotties account in the Alexa app first.",
+    "intro": "Log and ask by voice, for example: “Alexa, tell Lotties the baby fell asleep”. Link your Lotties account in the Alexa app first.",
     "babyLabel": "Baby for voice commands",
     "noneChosen": "Not chosen",
     "hintOne": "You log for one baby, so voice commands use {{name}}.",
@@ -23,6 +23,12 @@
       "newWindow": "(opens in a new window)",
       "privacy": "What you share: the company behind the assistant receives the facts it asks for from your baby's log (the baby's name, times, amounts) and handles them under its own terms. Access is read-only unless you also approve logging. Medications are never shared, and answers are facts from your log, not medical advice.",
       "revoke": "To disconnect an assistant, open Manage connected apps, then Applications, and remove its access."
+    },
+    "origin": {
+      "addedByAlexa": "Added by Alexa",
+      "addedByAssistant": "Added by an AI assistant",
+      "finishedByAlexa": "Finished by Alexa",
+      "finishedByAssistant": "Finished by an AI assistant"
     }
   }
 }

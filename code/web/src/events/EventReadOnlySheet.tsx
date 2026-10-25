@@ -8,6 +8,7 @@ import { SheetFrame } from '../now/ui/SheetFrame';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import type { FedToSleep } from '../now/bottleFollowUp';
 import { FUSSY_KEY } from '../now/fussyPattern';
+import { AssistantOriginNote } from './AssistantOriginNote';
 import { CryAnswerRow } from './CryAnswerRow';
 import { cryAnswer, isAutoDetected } from './cryDetection';
 import { isMedicationType } from './formModel';
@@ -82,6 +83,7 @@ export function EventReadOnlySheet({
         {type?.key === FUSSY_KEY && isAutoDetected(event) && (
           <CryAnswerRow answer={cryAnswer(event)} />
         )}
+        <AssistantOriginNote event={event} />
         {event.notes && (
           <Typography variant="body2" sx={{ overflowWrap: 'anywhere', whiteSpace: 'pre-line' }}>
             {event.notes}

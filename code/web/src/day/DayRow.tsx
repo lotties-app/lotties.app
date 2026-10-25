@@ -18,6 +18,7 @@ import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
 import type { FedToSleep } from '../now/bottleFollowUp';
+import { AssistantOriginNote } from '../events/AssistantOriginNote';
 import { isInstantEvent } from './ribbonText';
 
 interface Props {
@@ -364,6 +365,7 @@ export function DayRow({
               {givenBy}
             </Typography>
           )}
+          <AssistantOriginNote event={event} />
         </ButtonBase>
         {(running || length) && (
           <Box

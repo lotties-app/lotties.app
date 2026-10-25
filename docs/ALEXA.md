@@ -12,12 +12,16 @@ realm `lotties.app` (`https://auth.lotties.app`), and the cluster deploy kit (`d
 Alexa skills are always called as "Alexa, tell/ask/open *&lt;invocation name&gt;* ...". A bare "Lotties, ..." is not
 possible: only Amazon chooses wake words.
 
-- **Wanted:** `lotties`. A one-word invocation name that is a brand needs Amazon's approval: certification asks for
-  evidence that you own the brand (a trademark registration or equivalent). Without it, certification fails.
-- **Fallback (what the models ship with):** en-US `lotties baby`, pt-BR `lotties bebê`. Two words, no approval needed:
-  "Alexa, tell lotties baby the baby fell asleep", "Alexa, pede pro lotties bebê: o bebê dormiu".
-- To switch later: change `invocationName` in both `alexa/interaction-model.*.json` (and in the console), rebuild, and
-  update the examples in the app (`code/web/src/i18n/locales/*/assistants.json`, key `assistants.intro`).
+- **What the models ship with:** `lotties`, the same in en-US and pt-BR (the sample phrases stay in each language):
+  "Alexa, tell lotties the baby fell asleep", "Alexa, peça ao lotties: o bebê dormiu". A one-word name that is a brand may
+  be rejected at certification without evidence that you own the brand (the site lotties.app, the GitHub organisation
+  lotties-app, a trademark registration if any). The pt-BR name used to be `lotties bebê` (and en-US `lotties baby`): an
+  owner who already built the skill must re-paste both models (section 3) and **Build** again, and change the
+  invocation name in the console.
+- **Fallback:** `lotties baby` (two words, no approval needed). If certification rejects `lotties`, switch BOTH models
+  to it **before publishing**: the invocation name cannot be changed after the skill is certified and published. It is a
+  find/replace: `invocationName` in both `alexa/interaction-model.*.json` (and in the console), the example phrases in this
+  guide, and the app's examples (`code/web/src/i18n/locales/*/assistants.json`, key `assistants.intro`).
 
 ## 2. Create the skill
 
@@ -121,16 +125,23 @@ disabled.
 
 **Test** tab, set "Skill testing is enabled in" to **Development**, then type or say, in each language:
 
-1. "open lotties baby" (pt: "abrir lotties bebê"): the welcome.
+1. "open lotties" (pt: "abrir lotties"): the welcome.
 2. In the Alexa app (phone, same Amazon account): Skills > Your Skills > Dev > Lotties > **Link account**, sign in with a
    Lotties account. Without linking, a command answers "please link your account" and the app shows the link card.
-3. "tell lotties baby the baby fell asleep", then "tell lotties baby the baby woke up": a sleep appears in the app.
-4. "tell lotties baby log a bottle", answer "one hundred twenty": the bottle appears (dialog delegation asks the amount).
-5. "ask lotties baby when was the last feed", "... how many diapers today", "... when is the next appointment",
+3. "tell lotties the baby fell asleep", then "tell lotties the baby woke up": a sleep appears in the app.
+4. "tell lotties log a bottle", answer "one hundred twenty": the bottle appears (dialog delegation asks the amount).
+5. "ask lotties when was the last feed", "... how many diapers today", "... when is the next appointment",
    "... which vaccines are due".
 6. With a Viewer account: a command answers that the role does not allow it. With an account of several babies and
    none chosen: it asks to choose one in Settings, Voice assistants.
-7. pt-BR: "pede pro lotties bebê registrar mamadeira de cento e vinte ml de leite materno": answer with a 24-hour time.
+7. pt-BR: "peça ao lotties para registrar mamadeira de cento e vinte ml de leite materno": answer with a 24-hour time.
+8. The questions added later (no slots, answered from the log): "ask lotties what is the next nap window", "... when
+   is the next feed", "... when is the next diaper change", "... how many diapers a day does she usually use", "... how
+   much should I make for the next bottle", "... how much did she sleep today", "... when was the last diaper change",
+   "... why is she crying" (pt: "qual a próxima janela de sono", "quando é a próxima mamada", "quando é a próxima troca de
+   fralda", "quantas fraldas por dia ela costuma usar", "quanto devo preparar na próxima mamadeira", "quanto ela dormiu
+   hoje", "quando foi a última troca de fralda", "por que ela está chorando"). With little history they say so; the
+   crying answer always ends with when to call the pediatrician.
 
 The JSON Input/Output panes show the request and response; the API logs only the intent, the result code and the
 correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
@@ -145,8 +156,8 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
   owner's values and the legal review in [docs/PRIVACY-OWNER-CHECKLIST.md](PRIVACY-OWNER-CHECKLIST.md). Terms of use
   URL: optional.
 - **Distribution** > Skill preview, per language: name `Lotties`, one-sentence and full description, three example
-  phrases (they must work exactly: e.g. "Alexa, open lotties baby", "Alexa, tell lotties baby the baby fell asleep",
-  "Alexa, ask lotties baby when was the last feed"), small and large icons (`docs/design/icons`), category
+  phrases (they must work exactly: e.g. "Alexa, open lotties", "Alexa, tell lotties the baby fell asleep",
+  "Alexa, ask lotties when was the last feed"), small and large icons (`docs/design/icons`), category
   **Health & Fitness** or **Lifestyle**, keywords.
 - **Privacy & Compliance:** no purchases; "collects personal information": **yes**, answer honestly: with account
   linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers contain the

@@ -1,7 +1,7 @@
 {
   "assistants": {
     "title": "Assistentes de voz",
-    "intro": "Registre e pergunte por voz, por exemplo: “Alexa, peça para lotties bebê: o bebê dormiu”. Antes, vincule a sua conta do Lotties no app Alexa.",
+    "intro": "Registre e pergunte por voz, por exemplo: “Alexa, peça ao Lotties: o bebê dormiu”. Antes, vincule a sua conta do Lotties no app Alexa.",
     "babyLabel": "Bebê dos comandos de voz",
     "noneChosen": "Nenhum escolhido",
     "hintOne": "Você registra para um bebê só, então os comandos de voz usam {{name}}.",
@@ -23,6 +23,12 @@
       "newWindow": "(abre em uma nova janela)",
       "privacy": "O que você compartilha: a empresa por trás do assistente recebe os fatos que ele pedir do registro do seu bebê (o nome do bebê, horários, quantidades) e os trata pelos próprios termos. O acesso é só de leitura, a menos que você também aprove os registros. Medicamentos nunca são compartilhados, e as respostas são fatos do seu registro, não orientação médica.",
       "revoke": "Para desconectar um assistente, abra Gerenciar apps conectados, depois Aplicativos, e remova o acesso dele."
+    },
+    "origin": {
+      "addedByAlexa": "Adicionado pela Alexa",
+      "addedByAssistant": "Adicionado por um assistente de IA",
+      "finishedByAlexa": "Finalizado pela Alexa",
+      "finishedByAssistant": "Finalizado por um assistente de IA"
     }
   }
 }
