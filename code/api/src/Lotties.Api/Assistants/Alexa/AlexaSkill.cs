@@ -49,6 +49,15 @@ internal sealed class AlexaSkill(
         ["DiapersTodayIntent"] = (service, invocation, _, token) => service.ReadDiapersTodayAsync(invocation, token),
         ["NextAppointmentIntent"] = (service, invocation, _, token) => service.ReadNextAppointmentAsync(invocation, token),
         ["DueVaccinesIntent"] = (service, invocation, _, token) => service.ReadDueVaccinesAsync(invocation, token),
+        ["NextNapWindowIntent"] = (service, invocation, _, token) => service.ReadNextNapWindowAsync(invocation, token),
+        ["NextFeedIntent"] = (service, invocation, _, token) => service.ReadNextFeedAsync(invocation, token),
+        ["NextDiaperIntent"] = (service, invocation, _, token) => service.ReadNextDiaperAsync(invocation, token),
+        ["DiapersAverageIntent"] = (service, invocation, _, token) => service.ReadDiapersAverageAsync(invocation, token),
+        ["BottleAverageIntent"] = (service, invocation, _, token) => service.ReadBottleAverageAsync(invocation, token),
+        ["SleepTodayIntent"] = (service, invocation, _, token) => service.ReadSleepTodayAsync(invocation, token),
+        ["LastDiaperIntent"] = (service, invocation, _, token) => service.ReadLastDiaperAsync(invocation, token),
+        ["RequestDeleteLastIntent"] = (service, invocation, _, token) => service.RequestDeleteLastAsync(invocation, token),
+        ["CryReasonsIntent"] = (service, invocation, _, token) => service.ReadCryReasonsAsync(invocation, token),
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
     private static readonly FrozenDictionary<string, AlexaPrompt> Prompts = new Dictionary<string, AlexaPrompt>(StringComparer.Ordinal)

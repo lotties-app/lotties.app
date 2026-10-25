@@ -6,7 +6,7 @@ using Lotties.Domain.Assistants;
 namespace Lotties.Api.Assistants.Alexa;
 
 /// <summary>English (every locale that is not Portuguese): 12-hour clock times ("3:15 PM"), no fallback time zone.</summary>
-internal sealed class EnglishAlexaLanguage : IAlexaLanguage
+internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
 {
     private static readonly SpokenClock Speech = new(CultureInfo.GetCultureInfo("en-US"), "h:mm tt", new SpokenWords("minute", "minutes", "hour", "hours", "and", "less than a minute"));
 
@@ -15,7 +15,7 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
 
     public EnglishAlexaLanguage()
     {
-        _results = Results().ToFrozenDictionary();
+        _results = Results().Concat(ForecastResults()).ToFrozenDictionary();
         _prompts = Prompts().ToFrozenDictionary();
     }
 
@@ -108,7 +108,7 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
     private static Dictionary<AlexaPrompt, AlexaLine> Prompts() => new()
     {
         [AlexaPrompt.Welcome] = new("Welcome to Lotties. You can say things like: the baby fell asleep, log a 120 ml bottle, or when was the last feed?", "What would you like to do?"),
-        [AlexaPrompt.Help] = new("You can log sleep, bottles, nursing and diapers, and ask about the last feed, sleep, today's diapers, the next appointment or vaccines due. For example: the baby woke up. What would you like to do?", "What would you like to do?"),
+        [AlexaPrompt.Help] = new("You can log sleep, bottles, nursing and diapers, and ask about the last feed or diaper, sleep, today's diapers, the next nap, feed or diaper change, the next appointment, vaccines due, or why the baby is crying. For example: the baby woke up. What would you like to do?", "What would you like to do?"),
         [AlexaPrompt.Goodbye] = new("Goodbye."),
         [AlexaPrompt.Fallback] = new("Sorry, Lotties can't help with that. Say help to hear what you can do.", "What would you like to do?"),
         [AlexaPrompt.SetBabyHelp] = new("To choose the baby voice commands are about, open the Lotties app, then Settings, Voice assistants."),

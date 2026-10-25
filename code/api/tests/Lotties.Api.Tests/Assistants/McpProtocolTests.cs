@@ -16,9 +16,10 @@ namespace Lotties.Api.Tests.Assistants;
 public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost>
 {
     private static readonly string[] ReadTools =
-        ["list_babies", "get_baby_profile", "get_last_feed", "get_sleep_status", "get_diapers_today", "get_next_appointment", "get_due_vaccines", "get_day_summary", "get_week_summary"];
+        ["list_babies", "get_baby_profile", "get_last_feed", "get_sleep_status", "get_diapers_today", "get_next_appointment", "get_due_vaccines", "get_day_summary", "get_week_summary",
+            "get_next_nap_window", "get_next_feed", "get_next_diaper", "get_diapers_average", "get_bottle_average", "get_sleep_today", "get_last_diaper", "get_cry_reasons"];
 
-    private static readonly string[] WriteTools = ["log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper"];
+    private static readonly string[] WriteTools = ["request_delete_last_entry", "log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper"];
 
     private ApiFactory Factory => host.Factory;
 
@@ -107,7 +108,8 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
             codes.Add(Code(result));
         }
 
-        Assert.Equal(["babies", "baby_profile", "no_feeds", "no_sleeps", "diapers_today", "no_appointment", Code(await client.CallToolAsync("get_due_vaccines", Args())), "day_summary", "week_summary"], codes);
+        Assert.Equal(["babies", "baby_profile", "no_feeds", "no_sleeps", "diapers_today", "no_appointment", Code(await client.CallToolAsync("get_due_vaccines", Args())), "day_summary", "week_summary",
+                "no_nap_prediction", "no_next_feed", "no_next_diaper", "no_diapers_average", "no_bottle_data", "sleep_today", "no_diapers", "cry_no_data"], codes);
     }
 
     [Fact]
@@ -123,10 +125,34 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
             Code(await client.CallToolAsync("log_nursing", Args(("side", "left")))),
             Code(await client.CallToolAsync("log_diaper", Args(("kind", "both")))),
             Code(await client.CallToolAsync("log_bottle", Args(("amountMl", 90)))),
+            Code(await client.CallToolAsync("request_delete_last_entry", Args())),
         };
 
-        Assert.Equal(["sleep_started", "sleep_ended", "nursing_started", "diaper_logged", "bottle_logged"], codes);
+        Assert.Equal(["sleep_started", "sleep_ended", "nursing_started", "diaper_logged", "bottle_logged", "delete_requested"], codes);
         Assert.Equal(5, (await Factory.EventsAsync(baby.BabyId)).Count);
+    }
+
+    [Fact]
+    public async Task EveryWriteTool_MarksTheStoredEventViaMcp_AndAReplayKeepsIt()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        await using var client = await host.ClientAsync(host.TokenFor(baby.OwnerSubject, McpApiHost.ReadWrite));
+
+        await client.CallToolAsync("log_sleep_start", Args(("idempotencyKey", "origin-key-sleep")));
+        await client.CallToolAsync("log_sleep_start", Args(("idempotencyKey", "origin-key-sleep")));
+        await client.CallToolAsync("log_sleep_end", Args());
+        await client.CallToolAsync("log_nursing", Args(("side", "left")));
+        await client.CallToolAsync("log_diaper", Args(("kind", "wet")));
+        await client.CallToolAsync("log_bottle", Args(("amountMl", 90)));
+
+        var events = await Factory.EventsAsync(baby.BabyId);
+        Assert.Equal(5, events.Count);
+        Assert.All(events, stored =>
+        {
+            var payload = JsonDocument.Parse(stored.Payload.Value).RootElement;
+            Assert.Equal("mcp", payload.GetProperty("via").GetString());
+            Assert.False(payload.TryGetProperty("updated_via", out _));
+        });
     }
 
     [Fact]

@@ -289,7 +289,7 @@ export const privacyEn: PolicyDocument = {
                   id: 'alexa',
                   cells: [
                     'Amazon (Alexa)',
-                    "Amazon records and processes what you say to Alexa, under Amazon's own privacy terms. Lotties receives only the command and its values, and sends back a short answer that Alexa speaks, which can include your baby's name, feed and sleep times, diaper counts, the next appointment and vaccines that are due. Amazon also keeps the sign-in token that links the skill to your account.",
+                    "Amazon records and processes what you say to Alexa, under Amazon's own privacy terms. Lotties receives only the command and its values, and sends back a short answer that Alexa speaks, which can include your baby's name, feed and sleep times, diaper counts, the next appointment and vaccines that are due, and estimates and summaries worked out from your log: the expected next nap, feed or diaper change, the diapers a day on average, the amounts of the last bottles, the sleep so far today, and, if you ask why the baby is crying, the likeliest everyday causes with the logged facts behind them. Entries made by voice are marked in the app as made through Alexa; the mark holds only the word “alexa” and, for a deletion request, the time. Amazon also keeps the sign-in token that links the skill to your account.",
                     'Only if you enable the Lotties skill and link your account. Unlink it in the Alexa app to stop.',
                   ],
                 },

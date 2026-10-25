@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Lotties.Application.Clinical;
 using Lotties.Application.Serialization;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.CryReasons;
 
 namespace Lotties.Application.Assistants;
 
@@ -102,6 +103,60 @@ public enum AssistantResultCode
 
     /// <summary>Seven local days' sleep, feeding and diaper counts and totals (<see cref="AssistantResult.Days"/>, oldest first).</summary>
     WeekSummary,
+
+    /// <summary>The next nap window the sleep prediction expects (<see cref="AssistantResult.Estimate"/>); the baby is awake.</summary>
+    NextNapWindow,
+
+    /// <summary>The baby sleeps since <see cref="AssistantResult.At"/>; <see cref="AssistantResult.EndedAt"/> is the expected wake-up when the prediction has one.</summary>
+    NapWindowAsleep,
+
+    /// <summary>There is no nap window to tell: too few sleeps logged, or the prediction is stale.</summary>
+    NoNapPrediction,
+
+    /// <summary>The next feed the feeding prediction expects (<see cref="AssistantResult.Estimate"/>).</summary>
+    NextFeed,
+
+    /// <summary>There is no feed prediction: too few feeds logged.</summary>
+    NoNextFeed,
+
+    /// <summary>The next wet and/or dirty diaper the diaper predictions expect (<see cref="AssistantResult.WetEstimate"/>, <see cref="AssistantResult.DirtyEstimate"/>).</summary>
+    NextDiaper,
+
+    /// <summary>There is no diaper prediction: too few diapers logged.</summary>
+    NoNextDiaper,
+
+    /// <summary>The average diapers per complete local day of the last seven (<see cref="AssistantResult.PerDay"/>, wet and dirty).</summary>
+    DiapersAverage,
+
+    /// <summary>Fewer than three complete local days with diapers in the last seven: no average.</summary>
+    NoDiapersAverage,
+
+    /// <summary>The average and the last of her last bottles (<see cref="AssistantResult.AmountMl"/>, <see cref="AssistantResult.LastAmountMl"/>); facts only.</summary>
+    BottleAverage,
+
+    /// <summary>Fewer than three bottles with an amount in the last 14 days: no figure.</summary>
+    NoBottleData,
+
+    /// <summary>Sleep since local midnight (<see cref="AssistantResult.Minutes"/>, <see cref="AssistantResult.Count"/> naps).</summary>
+    SleepToday,
+
+    /// <summary>The newest diaper of 30 days: <see cref="AssistantResult.At"/> and <see cref="AssistantResult.Diaper"/>.</summary>
+    LastDiaper,
+
+    /// <summary>No diaper was logged in the last 30 days.</summary>
+    NoDiapers,
+
+    /// <summary>What the log suggests about a crying spell (<see cref="AssistantResult.CryCauses"/>, <see cref="AssistantResult.RedFlags"/>): not a diagnosis.</summary>
+    CryReasons,
+
+    /// <summary>Nothing in the log points at a cause; the red flags are still told.</summary>
+    CryNoData,
+
+    /// <summary>The entry (<see cref="AssistantResult.EntryType"/>, <see cref="AssistantResult.At"/>) was marked as a deletion request; nothing was deleted, the person decides in the app.</summary>
+    DeleteRequested,
+
+    /// <summary>This adapter made no entry in the last 30 minutes; nothing was marked.</summary>
+    NoEntryToDelete,
 }
 
 /// <summary>Which days a count covers.</summary>
@@ -120,6 +175,15 @@ public sealed record AssistantBaby(Guid Id, string Name);
 
 /// <summary>An upcoming appointment as an answer tells it: when, its title (the family's own text) and its type code.</summary>
 public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Title, string Type);
+
+/// <summary>An expected time with the range it usually falls in (UTC): the prediction's earliest, expected and latest.</summary>
+public sealed record AssistantTimeWindow(DateTimeOffset Earliest, DateTimeOffset Expected, DateTimeOffset Latest);
+
+/// <summary>One likely cause of a crying spell with the facts from the log behind it (<c>CryReasons</c>; never a diagnosis).</summary>
+public sealed record AssistantCryCause(
+    [property: JsonConverter(typeof(SnakeCaseStringEnumConverter))] CryCause Cause,
+    [property: JsonConverter(typeof(SnakeCaseStringEnumConverter))] CryLevel Level,
+    IReadOnlyList<CryFact> Facts);
 
 /// <summary>A due vaccine dose (schedule facts): the vaccine's names and the dose label by language (<c>en</c>, <c>pt-BR</c>).</summary>
 public sealed record AssistantVaccineDose(string VaccineKey, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string> DoseLabel, bool Overdue, DateOnly DueOn);
@@ -211,6 +275,34 @@ public sealed record AssistantResult
     public AssistantBabyAge? Age { get; init; }
 
     public IReadOnlyList<AssistantDaySummary> Days { get; init; } = [];
+
+    /// <summary>The expected time (and the range it usually falls in) of the next nap or feed.</summary>
+    public AssistantTimeWindow? Estimate { get; init; }
+
+    /// <summary>The next wet diaper's expected time, when the diaper predictions have one.</summary>
+    public AssistantTimeWindow? WetEstimate { get; init; }
+
+    /// <summary>The next dirty diaper's expected time, when the diaper predictions have one.</summary>
+    public AssistantTimeWindow? DirtyEstimate { get; init; }
+
+    /// <summary>The kind of entry a deletion request is about (<c>feeding</c>, <c>sleep</c>, <c>diaper</c>).</summary>
+    public string? EntryType { get; init; }
+
+    /// <summary>Diapers per complete local day, one decimal (a mixed diaper counts in <see cref="Wet"/> and <see cref="Dirty"/>); <see cref="Count"/> is the days it is averaged over.</summary>
+    public double? PerDay { get; init; }
+
+    public double? WetPerDay { get; init; }
+
+    public double? DirtyPerDay { get; init; }
+
+    /// <summary>The newest of the bottles <see cref="AmountMl"/> averages.</summary>
+    public int? LastAmountMl { get; init; }
+
+    /// <summary>Up to three likely causes of the crying, strongest first, each with its facts.</summary>
+    public IReadOnlyList<AssistantCryCause> CryCauses { get; init; } = [];
+
+    /// <summary>When to call the pediatrician instead of looking at the log (<c>fever</c>, <c>inconsolable</c>, <c>refusing_feeds</c>, <c>unusual_sleepiness</c>, <c>bulging_or_stiff_fontanelle</c>); always set with a cry answer.</summary>
+    public IReadOnlyList<string> RedFlags { get; init; } = [];
 
     /// <summary>The earliest date a summary may be asked for (with <see cref="AssistantResultCode.InvalidDate"/>).</summary>
     public DateOnly? EarliestDate { get; init; }

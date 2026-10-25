@@ -5,6 +5,7 @@ import { useDatabase } from '../db/DatabaseContext';
 import { editEvent, finishEvent } from '../db/eventCommands';
 import type { EventPayload, EventType } from '../db/models';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
+import { ASSISTANT_KEYS } from './assistantOrigin';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { getOwn, setOwn, withOwn } from '../util/ownProperty';
 import type { EventSheetProps } from './eventSheetTypes';
@@ -46,12 +47,13 @@ function defaultValues(babyId: string, type: EventType | undefined): EventFormSt
 
 /**
  * What an edit keeps of the stored payload besides the form's own values: the reserved pause keys
- * and the open nursing segment (valid for any type, never drawn), and, with the same type, the
+ * and the open nursing segment (valid for any type, never drawn), the assistants' origin marks
+ * (`via`, `updated_via`, a delete request: an edit never strips them), and, with the same type, the
  * values of its hidden fields (a deprecated `mood`). Other members the form does not know are
  * dropped, as before.
  */
 function editBase(stored: EventPayload, type: EventType, sameType: boolean): EventPayload {
-  const keep = new Set<string>([...PAUSE_KEYS, SEGMENT_START_KEY]);
+  const keep = new Set<string>([...PAUSE_KEYS, SEGMENT_START_KEY, ...ASSISTANT_KEYS]);
   if (sameType) for (const field of type.fields) if (field.hidden === true) keep.add(field.key);
   const kept: EventPayload = {};
   for (const key of keep) {

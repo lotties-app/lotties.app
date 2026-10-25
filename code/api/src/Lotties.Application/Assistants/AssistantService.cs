@@ -31,6 +31,8 @@ internal sealed class AssistantService(
     IAppointmentRepository appointments,
     VaccineOverviewReader vaccines,
     DailyObservationReader dailyObservations,
+    AssistantForecasts forecasts,
+    AssistantCryReasons cryReasons,
     ILogger<AssistantService> logger) : IAssistantService
 {
     /// <summary>How far back a day or week summary may be asked for, in days before the user's today.</summary>
@@ -49,6 +51,16 @@ internal sealed class AssistantService(
     private static readonly TimeSpan NursingLookback = TimeSpan.FromDays(7);
     private static readonly TimeSpan AppointmentHorizon = TimeSpan.FromDays(366);
     private const int VaccinesTold = 5;
+    private const int AverageDays = 7;
+    private static readonly string[] MadeByAssistantKeys = [SleepKey, FeedingKey, DiaperKey];
+    private static readonly TimeSpan DeleteWindow = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan DeleteLookback = TimeSpan.FromHours(1);
+    private const int MinimumAverageDays = 3;
+    private const int MinimumBottles = 3;
+    private const int BottlesAveraged = 5;
+    private const int BottleTake = 200;
+    private static readonly TimeSpan BottleLookback = TimeSpan.FromDays(14);
+    private static readonly TimeSpan DiaperLookback = TimeSpan.FromDays(30);
 
     public Task<AssistantResult> LogSleepStartAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.SleepStart, AssistantAccess.Log, subject => StartSleepAsync(invocation, subject, cancellationToken), cancellationToken);
@@ -102,6 +114,33 @@ internal sealed class AssistantService(
 
     public Task<AssistantResult> ReadWeekSummaryAsync(AssistantInvocation invocation, DateOnly? endDate, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.WeekSummary, AssistantAccess.Read, subject => SummaryAsync(subject, endDate, WeekDays, AssistantResultCode.WeekSummary, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadNextNapWindowAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.NextNapWindow, AssistantAccess.Read, subject => forecasts.NextNapWindowAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadNextFeedAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.NextFeed, AssistantAccess.Read, subject => forecasts.NextFeedAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadNextDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.NextDiaper, AssistantAccess.Read, subject => forecasts.NextDiaperAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadDiapersAverageAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.DiapersAverage, AssistantAccess.Read, subject => DiapersAverageAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadBottleAverageAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BottleAverage, AssistantAccess.Read, subject => BottleAverageAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadSleepTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.SleepToday, AssistantAccess.Read, subject => SleepTodayAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.LastDiaper, AssistantAccess.Read, subject => LastDiaperAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> RequestDeleteLastAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.RequestDeleteLast, AssistantAccess.Log, subject => RequestDeleteLastAsync(subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadCryReasonsAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.CryReasons, AssistantAccess.Read, subject => cryReasons.ReadAsync(subject, cancellationToken), cancellationToken);
 
     private async Task<AssistantResult> RunAsync(
         AssistantInvocation invocation,
@@ -312,6 +351,113 @@ internal sealed class AssistantService(
         };
     }
 
+    /// <summary>The complete local days (today left out) of the last seven that have diapers, averaged to one decimal; at least three of them.</summary>
+    private async Task<AssistantResult> DiapersAverageAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var clock = ClockOf(subject);
+        var yesterday = clock.DateOf(subject.Now).AddDays(-1);
+        var window = ClinicalWindow.Create(ClinicalRange.LastDays(yesterday, AverageDays), clock, subject.Now);
+        var daily = await dailyObservations.LoadAsync(subject.Baby.Id, window, cancellationToken);
+        var days = DiaperSummaries.Summarize(daily.Diapers, window).Days.Where(day => day.Total > 0).ToArray();
+        var zoned = subject.Result(AssistantResultCode.NoDiapersAverage) with { TimeZone = subject.ZoneId ?? AssistantZoneChoice.UtcId, TimeZoneSource = subject.ZoneSource, Count = days.Length };
+        return days.Length < MinimumAverageDays
+            ? zoned
+            : zoned with
+            {
+                Code = AssistantResultCode.DiapersAverage,
+                PerDay = OneDecimal(days.Average(day => day.Total)),
+                WetPerDay = OneDecimal(days.Average(day => day.Wet)),
+                DirtyPerDay = OneDecimal(days.Average(day => day.Dirty)),
+            };
+    }
+
+    /// <summary>Facts from her own bottles: the average and the last of her last five with an amount, from at least three in the last 14 days.</summary>
+    private async Task<AssistantResult> BottleAverageAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var newest = await clinicalEvents.ListNewestByTypesAsync(subject.Baby.Id, [FeedingKey], subject.Now - BottleLookback, subject.Now + FutureSkew, BottleTake, cancellationToken);
+        var bottles = newest
+            .Select(typed => (Event: typed.Event, Feed: AssistantEventFacts.ReadFeed(typed.Event)))
+            .Where(entry => entry.Feed.Method == FeedMethod.Bottle && entry.Feed.AmountMl is > 0 && entry.Event.StartedAt <= subject.Now)
+            .OrderByDescending(entry => entry.Event.StartedAt)
+            .ToArray();
+        if (bottles.Length < MinimumBottles)
+        {
+            return subject.Result(AssistantResultCode.NoBottleData) with { Count = bottles.Length };
+        }
+
+        var used = bottles.Take(BottlesAveraged).ToArray();
+        return subject.Result(AssistantResultCode.BottleAverage) with
+        {
+            Count = used.Length,
+            AmountMl = (int)Math.Round(used.Average(entry => entry.Feed.AmountMl!.Value), MidpointRounding.AwayFromZero),
+            LastAmountMl = used[0].Feed.AmountMl,
+            At = used[0].Event.StartedAt,
+        };
+    }
+
+    private async Task<AssistantResult> SleepTodayAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var clock = ClockOf(subject);
+        var window = ClinicalWindow.Create(ClinicalRange.LastDays(clock.DateOf(subject.Now), 1), clock, subject.Now);
+        var daily = await dailyObservations.LoadAsync(subject.Baby.Id, window, cancellationToken);
+        SleepDayResponse today = SleepSummaries.Summarize(daily.Sleep, window).Days[0];
+        return subject.Result(AssistantResultCode.SleepToday) with { Minutes = today.TotalMinutes, Count = today.Naps };
+    }
+
+    /// <summary>
+    /// Marks the newest entry this adapter created in the last 30 minutes as a deletion request: the same upsert as an edit
+    /// (client time never older than the stored one), every other member kept, only <c>delete_requested_*</c> added. It
+    /// never deletes, and it never touches an entry another origin made.
+    /// </summary>
+    private async Task<AssistantResult> RequestDeleteLastAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var candidates = await clinicalEvents.ListByTypesAsync(subject.Baby.Id, MadeByAssistantKeys, subject.Now - DeleteLookback, subject.Now + FutureSkew, cancellationToken);
+        var target = candidates
+            .Select(typed => (typed.TypeKey, typed.Event))
+            .Where(entry => !entry.Event.IsDeleted
+                && entry.Event.CreatedAt >= subject.Now - DeleteWindow
+                && AssistantOrigin.ViaOf(entry.Event.Payload) == subject.Adapter
+                && EventPayloadFacts.Read(entry.Event.Payload).Kind != SleepKinds.WokeUp)
+            .OrderByDescending(entry => entry.Event.CreatedAt)
+            .Cast<(EventTypeKey TypeKey, Event Event)?>()
+            .FirstOrDefault();
+        if (target is not { } found)
+        {
+            return subject.Result(AssistantResultCode.NoEntryToDelete);
+        }
+
+        await MarkDeleteRequestedAsync(subject, found.Event, cancellationToken);
+        return subject.Result(AssistantResultCode.DeleteRequested) with { At = found.Event.StartedAt, EntryType = found.TypeKey.Value };
+    }
+
+    private async Task MarkDeleteRequestedAsync(AssistantSubject subject, Event entry, CancellationToken cancellationToken)
+    {
+        var marked = AssistantOrigin.DeleteRequested(entry.Payload, subject.Adapter, subject.Now);
+        if (marked.Value == entry.Payload.Value)
+        {
+            return;
+        }
+
+        var request = new UpsertEventRequest
+        {
+            TypeId = entry.TypeId,
+            StartedAt = entry.StartedAt,
+            EndedAt = entry.EndedAt,
+            Payload = marked,
+            Notes = entry.Notes,
+            UpdatedAt = Later(entry.ClientUpdatedAt, subject.Now),
+        };
+        await eventService.UpsertAsync(subject.Baby.Id, entry.Id, request, cancellationToken);
+    }
+
+    private async Task<AssistantResult> LastDiaperAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var latest = (await RecentAsync(subject, DiaperKey, DiaperLookback, cancellationToken)).FirstOrDefault();
+        return latest is null
+            ? subject.Result(AssistantResultCode.NoDiapers)
+            : subject.Result(AssistantResultCode.LastDiaper) with { At = latest.StartedAt, Diaper = AssistantEventFacts.DiaperKindOf(latest) };
+    }
+
     private async Task<AssistantResult> NextAppointmentAsync(AssistantSubject subject, CancellationToken cancellationToken)
     {
         var next = (await appointments.ListUpcomingAsync(subject.Baby.Id, subject.Now, subject.Now + AppointmentHorizon, cancellationToken)).FirstOrDefault();
@@ -346,7 +492,7 @@ internal sealed class AssistantService(
 
     private async Task<Event> CreateAsync(AssistantSubject subject, Guid eventId, Guid typeId, DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayload payload, CancellationToken cancellationToken)
     {
-        var request = new UpsertEventRequest { TypeId = typeId, StartedAt = startedAt, EndedAt = endedAt, Payload = payload, UpdatedAt = subject.Now };
+        var request = new UpsertEventRequest { TypeId = typeId, StartedAt = startedAt, EndedAt = endedAt, Payload = AssistantOrigin.Created(payload, subject.Adapter), UpdatedAt = subject.Now };
         await eventService.UpsertAsync(subject.Baby.Id, eventId, request, cancellationToken);
         return await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken)
             ?? throw new InvalidOperationException($"Event {eventId} was saved but could not be loaded.");
@@ -375,7 +521,7 @@ internal sealed class AssistantService(
             TypeId = running.TypeId,
             StartedAt = running.StartedAt,
             EndedAt = endedAt,
-            Payload = AssistantPayloads.Stopped(running.Payload, running.StartedAt, endedAt),
+            Payload = AssistantOrigin.Changed(AssistantPayloads.Stopped(running.Payload, running.StartedAt, endedAt), subject.Adapter),
             Notes = running.Notes,
             UpdatedAt = Later(running.ClientUpdatedAt, subject.Now),
         };
@@ -411,6 +557,8 @@ internal sealed class AssistantService(
 
     private static DateTimeOffset Later(DateTimeOffset first, DateTimeOffset second) => first > second ? first : second;
 
+    private static double OneDecimal(double value) => Math.Round(value, 1, MidpointRounding.AwayFromZero);
+
     private static int? WholeMinutes(TimeSpan? duration) => duration is { } value ? (int)Math.Floor(value.TotalMinutes) : null;
 }
 
@@ -431,4 +579,13 @@ internal static class AssistantCommands
     public const string BabyProfile = "baby_profile";
     public const string DaySummary = "day_summary";
     public const string WeekSummary = "week_summary";
+    public const string NextNapWindow = "next_nap_window";
+    public const string NextFeed = "next_feed";
+    public const string NextDiaper = "next_diaper";
+    public const string DiapersAverage = "diapers_average";
+    public const string BottleAverage = "bottle_average";
+    public const string SleepToday = "sleep_today";
+    public const string LastDiaper = "last_diaper";
+    public const string CryReasons = "cry_reasons";
+    public const string RequestDeleteLast = "request_delete_last";
 }

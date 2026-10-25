@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "lotties baby",
+      "invocationName": "lotties",
       "intents": [
         { "name": "AMAZON.CancelIntent", "samples": [] },
         { "name": "AMAZON.HelpIntent", "samples": [] },
@@ -170,6 +170,135 @@
             "is she due for vaccines",
             "is he due for vaccines",
             "vaccines due"
+          ]
+        },
+        {
+          "name": "NextNapWindowIntent",
+          "slots": [],
+          "samples": [
+            "what is the next nap window",
+            "what's the next nap window",
+            "when is the next nap",
+            "when should she nap next",
+            "when will she be sleepy",
+            "when will the baby be sleepy",
+            "when is the next nap window",
+            "when does she need a nap",
+            "when is it time for the next nap",
+            "when is nap time"
+          ]
+        },
+        {
+          "name": "NextFeedIntent",
+          "slots": [],
+          "samples": [
+            "when is the next feed",
+            "when is the next feeding",
+            "when is the next bottle",
+            "when will she be hungry",
+            "when will the baby be hungry",
+            "when should she eat next",
+            "when is she due to eat",
+            "when is the next meal",
+            "when does the baby eat next"
+          ]
+        },
+        {
+          "name": "NextDiaperIntent",
+          "slots": [],
+          "samples": [
+            "when is the next diaper change",
+            "when is the next diaper",
+            "when should I change the next diaper",
+            "when will she need a diaper change",
+            "when is the next diaper due",
+            "when will the baby need changing",
+            "when is the diaper change due"
+          ]
+        },
+        {
+          "name": "DiapersAverageIntent",
+          "slots": [],
+          "samples": [
+            "how many diapers a day does she usually use",
+            "how many diapers does she use a day",
+            "how many diapers a day does the baby use",
+            "how many diapers per day on average",
+            "what is the average number of diapers a day",
+            "how many diapers does he usually go through a day",
+            "average diapers per day",
+            "diapers per day"
+          ]
+        },
+        {
+          "name": "BottleAverageIntent",
+          "slots": [],
+          "samples": [
+            "how much should I make for the next bottle",
+            "how much should I prepare for the next bottle",
+            "how big was the last bottle",
+            "how much does she usually drink",
+            "how much milk did she drink last time",
+            "what size are her bottles",
+            "how much does the baby usually drink in a bottle",
+            "how big are her bottles"
+          ]
+        },
+        {
+          "name": "SleepTodayIntent",
+          "slots": [],
+          "samples": [
+            "how much did she sleep today",
+            "how much has she slept today",
+            "how long did the baby sleep today",
+            "how much sleep did she get today",
+            "how many hours did she sleep today",
+            "how many naps today",
+            "how much has the baby slept so far today",
+            "total sleep today"
+          ]
+        },
+        {
+          "name": "LastDiaperIntent",
+          "slots": [],
+          "samples": [
+            "when was the last diaper change",
+            "when was the last diaper",
+            "when did I last change her diaper",
+            "when was she last changed",
+            "when was the baby last changed",
+            "what was the last diaper",
+            "last diaper",
+            "last diaper change",
+            "when did she last have a diaper change"
+          ]
+        },
+        {
+          "name": "CryReasonsIntent",
+          "slots": [],
+          "samples": [
+            "why is she crying",
+            "why is the baby crying",
+            "why is he crying",
+            "why is she fussy",
+            "why is the baby fussy",
+            "why is she upset",
+            "why won't she settle",
+            "what could be making her cry",
+            "what is making the baby cry"
+          ]
+        },
+        {
+          "name": "RequestDeleteLastIntent",
+          "slots": [],
+          "samples": [
+            "undo the last thing I logged",
+            "undo the last entry",
+            "delete the last entry",
+            "delete the last thing I logged",
+            "remove the last entry",
+            "take back the last entry",
+            "cancel the last entry"
           ]
         },
         {

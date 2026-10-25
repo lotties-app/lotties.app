@@ -6,7 +6,7 @@ using Lotties.Domain.Assistants;
 namespace Lotties.Api.Assistants.Alexa;
 
 /// <summary>Brazilian Portuguese (every <c>pt-*</c> locale): 24-hour clock times ("15:15"), fallback zone <c>America/Sao_Paulo</c>.</summary>
-internal sealed class PortugueseAlexaLanguage : IAlexaLanguage
+internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
 {
     private static readonly SpokenClock Speech = new(CultureInfo.GetCultureInfo("pt-BR"), "HH:mm", new SpokenWords("minuto", "minutos", "hora", "horas", "e", "menos de um minuto"));
 
@@ -15,7 +15,7 @@ internal sealed class PortugueseAlexaLanguage : IAlexaLanguage
 
     public PortugueseAlexaLanguage()
     {
-        _results = Results().ToFrozenDictionary();
+        _results = Results().Concat(ForecastResults()).ToFrozenDictionary();
         _prompts = Prompts().ToFrozenDictionary();
     }
 
@@ -108,7 +108,7 @@ internal sealed class PortugueseAlexaLanguage : IAlexaLanguage
     private static Dictionary<AlexaPrompt, AlexaLine> Prompts() => new()
     {
         [AlexaPrompt.Welcome] = new("Boas-vindas ao Lotties. Você pode dizer, por exemplo: o bebê dormiu, registrar mamadeira de 120 ml, ou quando foi a última mamada?", "O que você quer fazer?"),
-        [AlexaPrompt.Help] = new("Você pode registrar sono, mamadeiras, amamentação e fraldas, e perguntar sobre a última mamada, o sono, as fraldas de hoje, a próxima consulta ou as vacinas pendentes. Por exemplo: o bebê acordou. O que você quer fazer?", "O que você quer fazer?"),
+        [AlexaPrompt.Help] = new("Você pode registrar sono, mamadeiras, amamentação e fraldas, e perguntar sobre a última mamada ou fralda, o sono, as fraldas de hoje, a próxima janela de sono, mamada ou troca de fralda, a próxima consulta, as vacinas pendentes, ou por que o bebê está chorando. Por exemplo: o bebê acordou. O que você quer fazer?", "O que você quer fazer?"),
         [AlexaPrompt.Goodbye] = new("Até logo."),
         [AlexaPrompt.Fallback] = new("Desculpe, o Lotties não consegue ajudar com isso. Diga ajuda para saber o que dá para fazer.", "O que você quer fazer?"),
         [AlexaPrompt.SetBabyHelp] = new("Para escolher o bebê dos comandos de voz, abra o app Lotties, depois Configurações, Assistentes de voz."),

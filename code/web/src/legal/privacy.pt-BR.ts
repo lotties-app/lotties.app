@@ -293,7 +293,7 @@ export const privacyPtBR: PolicyDocument = {
                   id: 'alexa',
                   cells: [
                     'Amazon (Alexa)',
-                    'A Amazon grava e processa o que você fala com a Alexa, segundo os termos de privacidade da própria Amazon. O Lotties recebe só o comando e seus valores e devolve uma resposta curta que a Alexa fala, que pode incluir o nome do bebê, horários de mamadas e de sono, a quantidade de fraldas, a próxima consulta e as vacinas pendentes. A Amazon também guarda o token de acesso que liga a skill à sua conta.',
+                    'A Amazon grava e processa o que você fala com a Alexa, segundo os termos de privacidade da própria Amazon. O Lotties recebe só o comando e seus valores e devolve uma resposta curta que a Alexa fala, que pode incluir o nome do bebê, horários de mamadas e de sono, a quantidade de fraldas, a próxima consulta e as vacinas pendentes, e estimativas e resumos calculados a partir do seu registro: a próxima soneca, mamada ou troca de fralda esperada, a média de fraldas por dia, as quantidades das últimas mamadeiras, o sono de hoje até agora e, se você perguntar por que o bebê está chorando, as causas mais prováveis do dia a dia com os fatos registrados por trás delas. Os registros feitos por voz ficam marcados no app como feitos pela Alexa; a marca guarda só a palavra “alexa” e, num pedido de exclusão, o horário. A Amazon também guarda o token de acesso que liga a skill à sua conta.',
                     'Só se você ativar a skill do Lotties e vincular sua conta. Para parar, desvincule no app Alexa.',
                   ],
                 },

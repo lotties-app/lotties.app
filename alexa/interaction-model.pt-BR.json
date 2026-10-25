@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "lotties bebê",
+      "invocationName": "lotties",
       "intents": [
         { "name": "AMAZON.CancelIntent", "samples": [] },
         { "name": "AMAZON.HelpIntent", "samples": [] },
@@ -170,6 +170,132 @@
             "tem vacina pendente",
             "tem alguma vacina pendente",
             "vacinas pendentes"
+          ]
+        },
+        {
+          "name": "NextNapWindowIntent",
+          "slots": [],
+          "samples": [
+            "qual a próxima janela de sono",
+            "qual é a próxima janela de sono",
+            "quando é a próxima soneca",
+            "quando ela vai dormir de novo",
+            "quando ela vai ficar com sono",
+            "quando o bebê vai ficar com sono",
+            "quando é a próxima janela de soneca",
+            "quando ela precisa dormir",
+            "quando é a hora da próxima soneca",
+            "quando vai ser o próximo sono"
+          ]
+        },
+        {
+          "name": "NextFeedIntent",
+          "slots": [],
+          "samples": [
+            "quando é a próxima mamada",
+            "quando é a próxima mamadeira",
+            "quando ela vai ter fome",
+            "quando o bebê vai ter fome",
+            "quando ela vai mamar de novo",
+            "quando é a próxima alimentação",
+            "quando devo dar a próxima mamada",
+            "quando ela vai querer mamar"
+          ]
+        },
+        {
+          "name": "NextDiaperIntent",
+          "slots": [],
+          "samples": [
+            "quando é a próxima troca de fralda",
+            "quando é a próxima fralda",
+            "quando devo trocar a próxima fralda",
+            "quando ela vai precisar trocar a fralda",
+            "quando o bebê vai precisar de troca",
+            "quando é a hora da próxima troca"
+          ]
+        },
+        {
+          "name": "DiapersAverageIntent",
+          "slots": [],
+          "samples": [
+            "quantas fraldas por dia ela costuma usar",
+            "quantas fraldas por dia o bebê costuma usar",
+            "quantas fraldas ela usa por dia",
+            "quantas fraldas por dia em média",
+            "qual a média de fraldas por dia",
+            "quantas fraldas ele costuma usar por dia",
+            "média de fraldas por dia",
+            "fraldas por dia"
+          ]
+        },
+        {
+          "name": "BottleAverageIntent",
+          "slots": [],
+          "samples": [
+            "quanto devo preparar na próxima mamadeira",
+            "quanto devo fazer na próxima mamadeira",
+            "quanto preparar para a próxima mamadeira",
+            "qual foi o tamanho da última mamadeira",
+            "quanto ela costuma tomar de mamadeira",
+            "quanto ela tomou na última mamadeira",
+            "quantos ml ela costuma tomar",
+            "qual o tamanho das mamadeiras dela"
+          ]
+        },
+        {
+          "name": "SleepTodayIntent",
+          "slots": [],
+          "samples": [
+            "quanto ela dormiu hoje",
+            "quanto o bebê dormiu hoje",
+            "quanto tempo ela dormiu hoje",
+            "quantas horas ela dormiu hoje",
+            "quantas sonecas ela fez hoje",
+            "quanto sono ela teve hoje",
+            "total de sono hoje",
+            "quanto ele dormiu hoje"
+          ]
+        },
+        {
+          "name": "LastDiaperIntent",
+          "slots": [],
+          "samples": [
+            "quando foi a última troca de fralda",
+            "quando foi a última fralda",
+            "quando troquei a fralda dela",
+            "quando foi a última vez que trocei a fralda",
+            "última fralda",
+            "última troca de fralda",
+            "quando ela foi trocada pela última vez",
+            "qual foi a última fralda"
+          ]
+        },
+        {
+          "name": "CryReasonsIntent",
+          "slots": [],
+          "samples": [
+            "por que ela está chorando",
+            "por que o bebê está chorando",
+            "por que ele está chorando",
+            "por que ela está irritada",
+            "por que o bebê está irritado",
+            "por que ela não para de chorar",
+            "por que ela está agitada",
+            "o que está fazendo o bebê chorar",
+            "por que será que ela chora"
+          ]
+        },
+        {
+          "name": "RequestDeleteLastIntent",
+          "slots": [],
+          "samples": [
+            "desfazer o último registro",
+            "desfazer a última coisa que registrei",
+            "apagar o último registro",
+            "apagar o último item",
+            "excluir o último registro",
+            "cancelar o último registro",
+            "remover o último registro"
           ]
         },
         {
