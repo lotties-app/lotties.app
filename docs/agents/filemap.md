@@ -37,6 +37,7 @@
 - SECURITY.md — vulnerability reporting policy (private advisory link, no child data in reports)
 - .github/ISSUE_TEMPLATE/ (bug_report.yml, feature_request.yml, config.yml), .github/PULL_REQUEST_TEMPLATE.md, .github/CODEOWNERS — community intake and review defaults
 - docs/ALEXA-CERTIFICATION.md — copy-paste texts for the Alexa console (en-US, pt-BR), compliance answers, reviewer instructions
+- docs/ALEXA-DISTRIBUTION-FIELDS.md — the whole Alexa Distribution tab field by field (en-US, pt-BR, privacy and compliance, availability) with character counts, ready to paste
 - docs/ALEXA-SUBMISSION.md — owner's final runbook to submit the Alexa skill (name decision, demo account, console steps, rejection table); icons for it in docs/design/alexa-icons/
 - docs/PRIVACY-LAWYER-BRIEF.md — brief for the LGPD lawyer review: facts, data flows, proposed bases, 12 questions (pt-BR)
 - docs/TRIAGE.md — labels and triage flow, how public issues map to the board
