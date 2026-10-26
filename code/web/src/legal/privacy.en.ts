@@ -44,6 +44,10 @@ export const privacyEn: PolicyDocument = {
       blocks: [
         {
           kind: 'p',
+          text: 'Lotties was built to help parents navigate the journey of raising a baby without the burden of expensive tracking tools and subscriptions. It exists because we believe every family deserves access to the same tools we use for our own children, free from cost barriers.',
+        },
+        {
+          kind: 'p',
           text: "This policy explains how the Lotties service at lotties.app and its iOS and Android apps handle personal data. Responsible for that data (the controller, or controlador, under Brazil's General Data Protection Law, the LGPD): {controller}.",
         },
         { kind: 'p', text: 'Contact: {contact}. Data protection contact (encarregado): {dpo}.' },

@@ -9,8 +9,8 @@ namespace Lotties.Application.Assistants;
 /// adapter renders it. The user is the request's authenticated user; the baby is her assistant baby
 /// (<see cref="AssistantBabyChoice"/>). Writes go through the normal event service (same validation, roles and idempotent
 /// upsert, with an id derived from the request: <see cref="AssistantEventIds"/>) and need a role that logs events; reads
-/// any family role. A Doctor is refused (<see cref="AssistantResultCode.NotAllowed"/>). There is no medication command:
-/// assistants never log or read a dose, and never take free-text notes.
+/// any family role. A Doctor is refused (<see cref="AssistantResultCode.NotAllowed"/>). Medication commands log doses
+/// against active prescriptions and read reminders; they never advise or recommend.
 /// </summary>
 public interface IAssistantService
 {
@@ -72,7 +72,7 @@ public interface IAssistantService
     /// <summary>The seven local days ending with <paramref name="endDate"/> (else today), oldest first, as <see cref="ReadDaySummaryAsync"/> computes each.</summary>
     Task<AssistantResult> ReadWeekSummaryAsync(AssistantInvocation invocation, DateOnly? endDate, CancellationToken cancellationToken = default);
 
-    /// <summary>
+/// <summary>
     /// The next nap window the sleep prediction expects, by the Now screen's rules (<see cref="AssistantResultCode.NextNapWindow"/>),
     /// that the baby sleeps (<see cref="AssistantResultCode.NapWindowAsleep"/>, with the expected wake-up when the prediction has one),
     /// or that there is not enough history (<see cref="AssistantResultCode.NoNapPrediction"/>).
@@ -128,4 +128,58 @@ public interface IAssistantService
     /// always with the red flags to call the pediatrician for. Not a diagnosis, never a remedy or a dose.
     /// </summary>
     Task<AssistantResult> ReadCryReasonsAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a bath now, with optional water temperature.</summary>
+    Task<AssistantResult> LogBathAsync(AssistantInvocation invocation, decimal? temperatureC, CancellationToken cancellationToken = default);
+
+    /// <summary>Starts a tummy time timer now.</summary>
+    Task<AssistantResult> LogTummyTimeAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs belly pain with required intensity (1-5).</summary>
+    Task<AssistantResult> LogBellyPainAsync(AssistantInvocation invocation, int intensity, CancellationToken cancellationToken = default);
+
+    /// <summary>Starts a breast pump timer with optional left/right amounts.</summary>
+    Task<AssistantResult> LogBreastPumpAsync(AssistantInvocation invocation, int? amountLeftMl, int? amountRightMl, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs nasal suction with optional tool and saline flag.</summary>
+    Task<AssistantResult> LogNasalSuctionAsync(AssistantInvocation invocation, string? tool, bool? saline, CancellationToken cancellationToken = default);
+
+    /// <summary>Starts a belly massage timer with optional reason and helped flag.</summary>
+    Task<AssistantResult> LogBellyMassageAsync(AssistantInvocation invocation, string? reason, string? helped, CancellationToken cancellationToken = default);
+
+    /// <summary>Starts a fussy/crying timer with optional intensity and what helped.</summary>
+    Task<AssistantResult> LogFussyAsync(AssistantInvocation invocation, string? intensity, string? whatHelped, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a nail trim with optional location.</summary>
+    Task<AssistantResult> LogNailTrimAsync(AssistantInvocation invocation, string? where, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a temperature reading (required value, optional method).</summary>
+    Task<AssistantResult> LogTemperatureAsync(AssistantInvocation invocation, decimal valueC, string? method, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs spit-up or vomit with optional kind and amount.</summary>
+    Task<AssistantResult> LogSpitUpAsync(AssistantInvocation invocation, string? kind, string? amount, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a teething event with optional stage and tooth.</summary>
+    Task<AssistantResult> LogTeethingAsync(AssistantInvocation invocation, string? stage, string? tooth, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a milestone with optional type and custom text.</summary>
+    Task<AssistantResult> LogMilestoneAsync(AssistantInvocation invocation, string? milestone, string? custom, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a symptom with optional type and severity.</summary>
+    Task<AssistantResult> LogSymptomAsync(AssistantInvocation invocation, string? symptom, string? severity, CancellationToken cancellationToken = default);
+
+    /// <summary>Starts an outdoor time timer with optional kind.</summary>
+    Task<AssistantResult> LogOutdoorAsync(AssistantInvocation invocation, string? kind, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs skin care with optional product.</summary>
+    Task<AssistantResult> LogSkinCareAsync(AssistantInvocation invocation, string? product, CancellationToken cancellationToken = default);
+
+    /// <summary>Logs a medication dose against an active prescription (resolved by medication name).</summary>
+    Task<AssistantResult> LogMedicationAsync(AssistantInvocation invocation, string medicationName, CancellationToken cancellationToken = default);
+
+    /// <summary>Reads the next due medication dose from active prescriptions.</summary>
+    Task<AssistantResult> ReadMedicationReminderAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes the last assistant-logged event if within 30 minutes.</summary>
+    Task<AssistantResult> UndoLastLogAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
 }

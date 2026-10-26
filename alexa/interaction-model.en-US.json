@@ -26,7 +26,13 @@
             "start a nap",
             "start the nap",
             "nap started",
-            "log sleep"
+            "log sleep",
+            "baby is napping",
+            "she's napping",
+            "he's napping",
+            "start a sleep",
+            "log a nap",
+            "baby went down for a nap"
           ]
         },
         {
@@ -43,7 +49,13 @@
             "stop sleep",
             "stop the nap",
             "the nap is over",
-            "log wake up"
+            "log wake up",
+            "baby is up",
+            "she's up",
+            "he's up",
+            "the baby is up now",
+            "end the nap",
+            "finish nap"
           ]
         },
         {
@@ -67,10 +79,17 @@
             "he had {amount} {volumeUnit} of {bottleKind}",
             "she drank a {bottleKind} bottle of {amount} {volumeUnit}",
             "log a bottle",
-            "add a bottle",
+"add a bottle",
             "record a bottle",
             "log a {bottleKind} bottle",
-            "add a {bottleKind} bottle"
+            "add a {bottleKind} bottle",
+            "log a {kind} bottle",
+            "she took {amount} ml",
+            "he took {amount} ml",
+            "baby had a {amount} ml bottle",
+            "fed her {amount} ml of {kind}",
+            "fed him {amount} ml",
+            "{amount} ml of {kind}"
           ]
         },
         {
@@ -86,7 +105,13 @@
             "nursing on the {side} side",
             "start breastfeeding on the {side} side",
             "start feeding on the {side} breast",
-            "log nursing"
+            "log nursing",
+            "she's breastfeeding",
+            "he's breastfeeding",
+            "started nursing on the {side}",
+            "breastfeeding on the {side}",
+            "feed on the {side} side",
+            "nurse on the {side}"
           ]
         },
         {
@@ -103,7 +128,13 @@
             "log a diaper",
             "add a diaper",
             "record a diaper change",
-            "log a diaper change"
+            "log a diaper change",
+            "she had a {kind}",
+            "he had a {kind}",
+            "changed her diaper, it was {kind}",
+            "changed his diaper, it was {kind}",
+            "it was a {kind} diaper",
+            "diaper was {kind}"
           ]
         },
         {
@@ -117,7 +148,12 @@
             "when did he last eat",
             "when did the baby eat",
             "when did she eat last",
-            "last feed"
+            "last feed",
+            "when did she last nurse",
+            "when did he last nurse",
+            "how long since the last feed",
+            "time since last feeding",
+            "last time she ate"
           ]
         },
         {
@@ -134,7 +170,13 @@
             "when did she wake up",
             "when did he wake up",
             "how long was the last nap",
-            "sleep status"
+            "sleep status",
+            "is the baby awake",
+            "is she awake",
+            "is he awake",
+            "how long has the baby been sleeping",
+            "sleep timer",
+            "nap timer"
           ]
         },
         {
@@ -146,7 +188,10 @@
             "how many diapers has he had today",
             "how many diapers did we change today",
             "diapers today",
-            "diaper count"
+            "diaper count",
+            "diaper count today",
+            "how many diaper changes today",
+            "total diapers today"
           ]
         },
         {
@@ -158,7 +203,11 @@
             "when is her next appointment",
             "when is his next appointment",
             "what is the next appointment",
-            "next appointment"
+            "next appointment",
+            "when does she see the doctor next",
+            "when does he see the doctor next",
+            "next pediatrician visit",
+            "upcoming appointment"
           ]
         },
         {
@@ -170,7 +219,13 @@
             "are any vaccines due",
             "is she due for vaccines",
             "is he due for vaccines",
-            "vaccines due"
+            "vaccines due",
+            "what shots are due",
+            "any shots due",
+            "does she need vaccines",
+            "does he need vaccines",
+            "vaccine schedule",
+            "missed vaccines"
           ]
         },
         {
@@ -340,7 +395,11 @@
             "switch baby",
             "set the baby",
             "use another baby",
-            "how do I choose the baby"
+            "how do I choose the baby",
+            "switch to another baby",
+            "change active baby",
+            "pick a different baby",
+            "select baby"
           ]
         }
       ],

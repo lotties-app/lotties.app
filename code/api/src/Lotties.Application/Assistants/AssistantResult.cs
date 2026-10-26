@@ -105,7 +105,7 @@ public enum AssistantResultCode
     /// <summary>Seven local days' sleep, feeding and diaper counts and totals (<see cref="AssistantResult.Days"/>, oldest first).</summary>
     WeekSummary,
 
-    /// <summary>The next nap window the sleep prediction expects (<see cref="AssistantResult.Estimate"/>); the baby is awake.</summary>
+/// <summary>The next nap window the sleep prediction expects (<see cref="AssistantResult.Estimate"/>); the baby is awake.</summary>
     NextNapWindow,
 
     /// <summary>The baby sleeps since <see cref="AssistantResult.At"/>; <see cref="AssistantResult.EndedAt"/> is the expected wake-up when the prediction has one.</summary>
@@ -167,6 +167,72 @@ public enum AssistantResultCode
 
     /// <summary>The newest entry this adapter made in 30 minutes (<see cref="AssistantResult.EntryType"/> <c>woke_up</c>, <see cref="AssistantResult.At"/>) is not something voice may mark; nothing was changed and no older entry was chosen. It can be corrected in the app.</summary>
     LastNotUndoable,
+
+    /// <summary>A bath was logged.</summary>
+    BathLogged,
+
+    /// <summary>A tummy time timer started.</summary>
+    TummyTimeStarted,
+
+    /// <summary>Belly pain was logged.</summary>
+    BellyPainLogged,
+
+    /// <summary>A breast pump timer started.</summary>
+    BreastPumpStarted,
+
+    /// <summary>Nasal suction was logged.</summary>
+    NasalSuctionLogged,
+
+    /// <summary>A belly massage timer started.</summary>
+    BellyMassageStarted,
+
+    /// <summary>A fussy/crying timer started.</summary>
+    FussyStarted,
+
+    /// <summary>A nail trim was logged.</summary>
+    NailTrimLogged,
+
+    /// <summary>A temperature reading was logged.</summary>
+    TemperatureLogged,
+
+    /// <summary>Spit-up or vomit was logged.</summary>
+    SpitUpLogged,
+
+    /// <summary>A teething event was logged.</summary>
+    TeethingLogged,
+
+    /// <summary>A milestone was logged.</summary>
+    MilestoneLogged,
+
+    /// <summary>A symptom was logged.</summary>
+    SymptomLogged,
+
+    /// <summary>An outdoor time timer started.</summary>
+    OutdoorStarted,
+
+    /// <summary>Skin care was logged.</summary>
+    SkinCareLogged,
+
+    /// <summary>A medication dose was logged against a prescription.</summary>
+    MedicationLogged,
+
+    /// <summary>No active prescription found for the named medication.</summary>
+    NoActivePrescription,
+
+    /// <summary>The next due medication dose (<see cref="AssistantResult.MedicationName"/>, <see cref="AssistantResult.At"/>).</summary>
+    MedicationReminder,
+
+    /// <summary>No medication doses are due right now.</summary>
+    NoMedicationDue,
+
+    /// <summary>The last assistant log was deleted.</summary>
+    UndoSuccess,
+
+    /// <summary>The last assistant log is older than 30 minutes; nothing was deleted.</summary>
+    UndoTooOld,
+
+    /// <summary>No assistant log to undo.</summary>
+    UndoNothingToUndo,
 }
 
 /// <summary>Which days a count covers.</summary>
@@ -308,7 +374,7 @@ public sealed record AssistantResult
 
     public IReadOnlyList<AssistantDaySummary> Days { get; init; } = [];
 
-    /// <summary>The expected time (and the range it usually falls in) of the next nap or feed.</summary>
+/// <summary>The expected time (and the range it usually falls in) of the next nap or feed.</summary>
     public AssistantTimeWindow? Estimate { get; init; }
 
     /// <summary>The next wet diaper's expected time, when the diaper predictions have one.</summary>
@@ -350,6 +416,21 @@ public sealed record AssistantResult
 
     /// <summary>When to call the pediatrician instead of looking at the log (<c>fever</c>, <c>inconsolable</c>, <c>refusing_feeds</c>, <c>unusual_sleepiness</c>, <c>bulging_or_stiff_fontanelle</c>); always set with a cry answer.</summary>
     public IReadOnlyList<string> RedFlags { get; init; } = [];
+
+    /// <summary>The temperature value logged (°C).</summary>
+    public decimal? TemperatureC { get; init; }
+
+    /// <summary>The intensity value logged (belly pain 1-5, fussy as text).</summary>
+    public string? Intensity { get; init; }
+
+    /// <summary>The medication name (for MedicationLogged, MedicationReminder, NoActivePrescription).</summary>
+    public string? MedicationName { get; init; }
+
+    /// <summary>The prescription id (for MedicationLogged).</summary>
+    public Guid? PrescriptionId { get; init; }
+
+    /// <summary>The event type key logged (for generic event results).</summary>
+    public string? EventTypeKey { get; init; }
 
     /// <summary>The earliest date a summary may be asked for (with <see cref="AssistantResultCode.InvalidDate"/>).</summary>
     public DateOnly? EarliestDate { get; init; }

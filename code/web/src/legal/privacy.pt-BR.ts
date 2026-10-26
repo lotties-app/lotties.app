@@ -45,6 +45,10 @@ export const privacyPtBR: PolicyDocument = {
       blocks: [
         {
           kind: 'p',
+          text: 'O Lotties foi criado para ajudar pais e mães a atravessar a jornada de criar um bebê sem o peso de ferramentas de acompanhamento caras e assinaturas. Ele existe porque acreditamos que toda família merece acesso às mesmas ferramentas que usamos para nossos próprios filhos, livre de barreiras de custo.',
+        },
+        {
+          kind: 'p',
           text: 'Esta política explica como o serviço Lotties, em lotties.app, e os apps para iOS e Android tratam dados pessoais. Responsável por esses dados (o controlador, nos termos da Lei Geral de Proteção de Dados, a LGPD): {controller}.',
         },
         {

@@ -25,7 +25,11 @@
             "iniciar sono",
             "iniciar soneca",
             "começou a soneca",
-            "registrar sono"
+            "registrar sono",
+            "o bebê está cochilando",
+            "ela está tirando uma soneca",
+            "ele foi dormir",
+            "iniciar cochilo"
           ]
         },
         {
@@ -40,7 +44,12 @@
             "encerrar sono",
             "parar sono",
             "acabou a soneca",
-            "registrar que acordou"
+            "registrar que acordou",
+            "ela está acordada",
+            "ele está acordado",
+            "o bebê levantou",
+            "terminar a soneca",
+            "encerrar a soneca"
           ]
         },
         {
@@ -70,7 +79,12 @@
             "registrar mamadeira de {bottleKind}",
             "registrar uma mamadeira de {bottleKind}",
             "ela acabou de tomar mamadeira",
-            "ele acabou de tomar mamadeira"
+            "ele acabou de tomar mamadeira",
+            "registrar mamadeira de {kind}",
+            "ela bebeu {amount} ml",
+            "ele bebeu {amount} ml",
+            "dei {amount} ml de {kind}",
+            "o bebê bebeu {amount} ml de {kind}"
           ]
         },
         {
@@ -86,7 +100,11 @@
             "começar amamentação no peito {side}",
             "começar a mamar no peito {side}",
             "mamando no peito {side}",
-            "registrar amamentação"
+            "registrar amamentação",
+            "ela está amamentando",
+            "começou a mamar no peito {side}",
+            "amamentando no lado {side}",
+            "mamar no {side}"
           ]
         },
         {
@@ -105,7 +123,11 @@
             "anotar fralda",
             "anotar uma fralda",
             "troquei a fralda",
-            "registrar troca de fralda"
+            "registrar troca de fralda",
+            "a fralda estava de {kind}",
+            "troquei a fralda, era {kind}",
+            "era uma fralda de {kind}",
+            "fez {kind} na fralda"
           ]
         },
         {
@@ -119,7 +141,10 @@
             "quando ele mamou",
             "quando o bebê mamou",
             "quando ela comeu",
-            "última mamada"
+            "última mamada",
+            "há quanto tempo ela mamou",
+            "faz quanto tempo desde a última mamada",
+            "quando foi que ela comeu pela última vez"
           ]
         },
         {
@@ -135,7 +160,12 @@
             "quando ele acordou",
             "quanto tempo durou a última soneca",
             "como está o sono",
-            "status do sono"
+            "status do sono",
+            "o bebê está dormindo",
+            "está acordado",
+            "está acordada",
+            "tempo de sono",
+            "cronômetro do sono"
           ]
         },
         {
@@ -147,7 +177,9 @@
             "quantas fraldas ele usou hoje",
             "quantas fraldas trocamos hoje",
             "fraldas de hoje",
-            "contagem de fraldas"
+            "contagem de fraldas",
+            "total de fraldas hoje",
+            "quantas trocas de fralda hoje"
           ]
         },
         {
@@ -159,7 +191,11 @@
             "quando é a próxima consulta dela",
             "quando é a próxima consulta dele",
             "quando é a próxima ida ao médico",
-            "próxima consulta"
+            "próxima consulta",
+            "quando ela vai ao pediatra",
+            "quando ele vai ao médico",
+            "próxima ida ao pediatra",
+            "consulta marcada"
           ]
         },
         {
@@ -170,7 +206,11 @@
             "quais vacinas estão atrasadas",
             "tem vacina pendente",
             "tem alguma vacina pendente",
-            "vacinas pendentes"
+            "vacinas pendentes",
+            "tem vacina atrasada",
+            "quais vacinas faltam",
+            "precisa tomar alguma vacina",
+            "vacinas em atraso"
           ]
         },
         {
