@@ -101,6 +101,18 @@ export async function retryDeadLetter(db: BabyRoutineDb, id: number): Promise<vo
     .modify({ status: 'pending', attempts: 0, failureCount: 0, nextAttemptAt: null });
 }
 
+/**
+ * Puts every dead-lettered change that is not waiting for the user to fix its details back in the queue (after a consent
+ * the server refused them for). One the server still refuses is dead-lettered again.
+ */
+export async function requeueDeadLetters(db: BabyRoutineDb): Promise<void> {
+  await db.outbox
+    .where('status')
+    .equals('dead')
+    .filter((m) => m.needsAttention !== true)
+    .modify({ status: 'pending', attempts: 0, failureCount: 0, nextAttemptAt: null });
+}
+
 /** Prescription ids an event upsert names (`payload.medications[].prescriptionId`). */
 function prescriptionIdsOf(mutation: OutboxMutation): string[] {
   if (mutation.entityType !== 'event' || mutation.kind !== 'upsert') return [];

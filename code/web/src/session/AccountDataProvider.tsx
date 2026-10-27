@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { flushSync } from 'react-dom';
 import { Box, CircularProgress } from '@mui/material';
@@ -7,6 +7,7 @@ import { useAuth } from '../auth/useAuth';
 import { useConsent } from '../consent/ConsentContext';
 import { releaseThisDevice } from '../notifications/pushActions';
 import { DatabaseProvider } from '../db/DatabaseProvider';
+import { requeueDeadLetters } from '../db/outbox';
 import { SyncProvider } from '../sync/SyncProvider';
 import type { SyncEngineOptions } from '../sync/SyncEngine';
 import { deleteLegacyDatabase, openAccountDatabase } from './accountDatabase';
@@ -56,6 +57,19 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
     // Keep auto-open so a StrictMode remount (same instance) can reopen the store.
     return () => db.close({ disableAutoOpen: false });
   }, [db]);
+
+  // An older app version dead-letters every write the consent gate refused (403): once the consent is accepted in this
+  // run (sync was off before), those changes go back in the queue instead of waiting for a Retry tap each.
+  const syncWasOff = useRef(!consent.syncAllowed);
+  useEffect(() => {
+    if (!consent.syncAllowed) {
+      syncWasOff.current = true;
+      return;
+    }
+    if (!syncWasOff.current) return;
+    syncWasOff.current = false;
+    void requeueDeadLetters(db);
+  }, [consent.syncAllowed, db]);
 
   const session: AccountSession = {
     end: async () => {
