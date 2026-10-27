@@ -4,7 +4,7 @@
 
 Report privately, never in a public issue:
 
-- E-mail **admin@lotties.app** (works at any time).
+- E-mail **admin@lotties.app**.
 - Or use GitHub private vulnerability reporting: https://github.com/lotties-app/lotties.app/security/advisories/new (available once the repository is public).
 
 Include what you found, how to reproduce it, and the impact you expect. We aim to acknowledge a report within 7 days and to tell you the outcome of triage within 30 days. Please give us reasonable time to fix before any public disclosure.
