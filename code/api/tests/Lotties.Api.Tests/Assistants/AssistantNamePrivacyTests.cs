@@ -24,7 +24,7 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
     private const string BabyName = "Lia";
     private const string AppointmentTitle = "Dr Zyxwv Clinic";
     private const string MedicineName = "Secretmed";
-    private const string DoseAmount = "13.5";
+    private const string DoseAmount = "7.3125";
 
     // Everything a care provider or an appointment holds, each distinctive: none may appear in any rendering of any command.
     private static readonly string[] DoctorData = ["Qwxyzname", "Wvutsclinic", "99999-1234", "Jkhgfstreet", "zq@qq.test", "Notehjkl", "Plmkloc", "Bnmqtitle", "Doctornm", "Crmnumber"];
@@ -426,7 +426,7 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         put.EnsureSuccessStatusCode();
     }
 
-    /// <summary>A medicine with a scheduled prescription (every 4 hours, a dose of 13.5 drops) whose last dose was 5 hours ago: one reminder is due.</summary>
+    /// <summary>A medicine with a scheduled prescription (every 4 hours, a dose of 7.3125 drops) whose last dose was 5 hours ago: one reminder is due.</summary>
     private async Task SeedMedicineAsync(SeededBaby baby)
     {
         var client = factory.CreateClientFor(baby.OwnerSubject);
@@ -434,7 +434,7 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         (await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/medications/{medicationId}", new { name = MedicineName, isUsual = true })).EnsureSuccessStatusCode();
         var prescriptionId = Guid.NewGuid();
         var start = DateTime.UtcNow.AddDays(-3).ToString("yyyy-MM-dd");
-        var put = await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/prescriptions/{prescriptionId}", new { medicationId, kind = "scheduled", dose = new { amount = 13.5, unit = "drops" }, everyMinutes = 240, startDate = start });
+        var put = await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/prescriptions/{prescriptionId}", new { medicationId, kind = "scheduled", dose = new { amount = 7.3125, unit = "drops" }, everyMinutes = 240, startDate = start });
         Assert.True(put.IsSuccessStatusCode, await put.Content.ReadAsStringAsync());
         var payload = $$"""{"medications":[{"medicationId":"{{medicationId}}","name":"{{MedicineName}}","prescriptionId":"{{prescriptionId}}"}]}""";
         await factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, Lotties.Domain.EventTypes.BuiltInEventTypes.MedicationId, Now.AddHours(-5), Now.AddHours(-5), payload);
