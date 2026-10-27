@@ -98,13 +98,13 @@ internal static class McpToolCatalog
         Read(
             "list_babies",
             "List babies",
-            "Lists the babies the signed-in user can ask about: id, name, the user's role (owner, parent, caregiver, viewer), whether the user can log events for the baby, and which one the other tools use when no babyId is given. Use an id as babyId in the other tools.",
+            "Lists the babies the signed-in user can ask about: id, the name only when the user turned on \"say my baby's name\" in the Lotties app (otherwise no name is returned), the user's role (owner, parent, caregiver, viewer), whether the user can log events for the baby, and which one the other tools use when no babyId is given. Use an id as babyId in the other tools.",
             [],
             (assistant, invocation, _, token) => assistant.ListBabiesAsync(invocation, token)),
         Read(
             "get_baby_profile",
             "Baby profile",
-            "The baby's name and age (whole days, weeks and months).",
+            "The baby's age (whole days, weeks and months); the name only when the user turned on \"say my baby's name\" in the Lotties app.",
             [McpParameter.BabyId],
             (assistant, invocation, _, token) => assistant.ReadBabyProfileAsync(invocation, token)),
         Read(

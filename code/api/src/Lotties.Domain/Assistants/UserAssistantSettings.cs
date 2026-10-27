@@ -23,13 +23,32 @@ public sealed class UserAssistantSettings
 
     public Guid? DefaultBabyId { get; private set; }
 
+    /// <summary>
+    /// Whether answers may carry the baby's name (default <c>false</c>, data minimisation: an answer goes to Amazon or to a
+    /// third-party AI assistant, and a name would tie the child to what was asked).
+    /// </summary>
+    public bool SayBabyName { get; private set; }
+
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public static UserAssistantSettings Create(Guid userId, Guid? defaultBabyId, DateTimeOffset now)
+    public static UserAssistantSettings Create(Guid userId, Guid? defaultBabyId, DateTimeOffset now, bool sayBabyName = false)
     {
         var settings = new UserAssistantSettings(Ids.Required(userId, nameof(userId)));
         settings.Apply(defaultBabyId, now);
+        settings.SayBabyName = sayBabyName;
         return settings;
+    }
+
+    /// <summary>Turns the baby's name in answers on or off; the same value changes nothing (not even <see cref="UpdatedAt"/>).</summary>
+    public void ChangeSayBabyName(bool sayBabyName, DateTimeOffset now)
+    {
+        if (SayBabyName == sayBabyName)
+        {
+            return;
+        }
+
+        SayBabyName = sayBabyName;
+        UpdatedAt = UtcTime.Normalize(now);
     }
 
     /// <summary>Replaces the default baby; the same value changes nothing (not even <see cref="UpdatedAt"/>).</summary>

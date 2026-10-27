@@ -35,7 +35,7 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
         var stored = Assert.Single(await factory.EventsAsync(baby.BabyId));
         Assert.Equal(AssistantResultCode.SleepStarted, result.Code);
         Assert.Equal(baby.BabyId, result.Baby!.Id);
-        Assert.Equal("Lia", result.Baby.Name);
+        Assert.Null(result.Baby.Name);
         Assert.Equal(BuiltInEventTypes.SleepId, stored.TypeId);
         Assert.True(stored.IsRunning);
         Assert.Equal(await factory.UserIdAsync(subject), stored.CreatedBy);
@@ -211,7 +211,7 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
         var result = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogBottleAsync(Invocation(), 120, BottleKind.Formula));
 
         var payload = PayloadOf(Assert.Single(await factory.EventsAsync(baby.BabyId)));
-        Assert.Equal((AssistantResultCode.BottleLogged, 120, BottleKind.Formula, "Nan 1"), (result.Code, result.AmountMl, result.BottleKind, result.FormulaName));
+        Assert.Equal((AssistantResultCode.BottleLogged, 120, BottleKind.Formula), (result.Code, result.AmountMl, result.BottleKind));
         Assert.Equal("bottle", payload.GetProperty("method").GetString());
         Assert.Equal(120, payload.GetProperty("amount_ml").GetInt32());
         Assert.Equal("formula", payload.GetProperty("bottle_feeding_type").GetString());
@@ -230,7 +230,7 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
 
         var bottle = Assert.Single(await factory.EventsAsync(baby.BabyId));
         var payload = PayloadOf(bottle);
-        Assert.Equal((AssistantResultCode.BottleLogged, (string?)null), (result.Code, result.FormulaName));
+        Assert.Equal(AssistantResultCode.BottleLogged, result.Code);
         Assert.Equal(stored, payload.TryGetProperty("bottle_feeding_type", out var content) ? content.GetString() : null);
         Assert.False(payload.TryGetProperty("formula_id", out _));
         Assert.Equal(bottle.StartedAt, bottle.EndedAt);
@@ -415,7 +415,8 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
         var next = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadNextAppointmentAsync(Invocation()));
 
         Assert.Equal(AssistantResultCode.NoAppointment, none.Code);
-        Assert.Equal((AssistantResultCode.NextAppointment, "Pediatra", "consultation"), (next.Code, next.Appointment!.Title, next.Appointment.Type));
+        Assert.Equal((AssistantResultCode.NextAppointment, "consultation"), (next.Code, next.Appointment!.Type));
+        Assert.DoesNotContain("Pediatra", JsonSerializer.Serialize(next), StringComparison.Ordinal);
     }
 
     [Fact]

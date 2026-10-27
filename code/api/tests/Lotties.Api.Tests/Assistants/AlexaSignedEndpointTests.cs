@@ -35,7 +35,7 @@ public sealed class AlexaSignedEndpointTests : IDisposable
 
         var json = await AlexaApiHost.ReadAsync(await _host.PostAsync(body, Headers(_certificates.Sign(Encoding.UTF8.GetBytes(body)))));
 
-        Assert.Equal("Lia has had no diapers in the last 24 hours.", AlexaApiHost.Speech(json));
+        Assert.Equal("The baby has had no diapers in the last 24 hours.", AlexaApiHost.Speech(json));
     }
 
     [Fact]

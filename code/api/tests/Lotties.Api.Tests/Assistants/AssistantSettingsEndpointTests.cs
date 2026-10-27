@@ -22,6 +22,36 @@ public sealed class AssistantSettingsEndpointTests(ApiFactory factory) : IClassF
     }
 
     [Fact]
+    public async Task SayBabyName_IsOffByDefault_RoundTrips_AndAnOlderClientWithoutTheMemberKeepsIt()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = factory.CreateClientFor(baby.OwnerSubject);
+
+        var before = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+        var oldClient = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId })).ReadAsync<JsonElement>();
+        var on = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId, sayBabyName = true })).ReadAsync<JsonElement>();
+        var oldClientAgain = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId })).ReadAsync<JsonElement>();
+        var readOn = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+        var off = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId, sayBabyName = false })).ReadAsync<JsonElement>();
+        var readOff = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+
+        Assert.Equal([false, false, true, true, true, false, false], new[] { before, oldClient, on, oldClientAgain, readOn, off, readOff }.Select(json => json.GetProperty("sayBabyName").GetBoolean()));
+    }
+
+    [Fact]
+    public async Task SayBabyName_FirstSaveWithTheMember_CreatesTheRowWithItOn()
+    {
+        var client = factory.CreateClientFor(TestUsers.NewSubject());
+
+        var saved = await (await client.PutAsJsonAsync(Path, new { sayBabyName = true })).ReadAsync<JsonElement>();
+        var replay = await (await client.PutAsJsonAsync(Path, new { sayBabyName = true })).ReadAsync<JsonElement>();
+
+        Assert.True(saved.GetProperty("sayBabyName").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, saved.GetProperty("defaultBabyId").ValueKind);
+        Assert.Equal(saved.GetProperty("updatedAt").GetString(), replay.GetProperty("updatedAt").GetString());
+    }
+
+    [Fact]
     public async Task GetAndPut_McpDisabledByDefault_SayOffWithoutAUrl()
     {
         var client = factory.CreateClientFor(TestUsers.NewSubject());

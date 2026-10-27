@@ -15,11 +15,11 @@ internal enum AssistantAccess
 }
 
 /// <summary>The baby a command acts on, the caller's role, the zone to tell local times in and the command's clock.</summary>
-internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "")
+internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "", bool SayBabyName = false)
 {
-    /// <summary>A result about this subject's baby.</summary>
+    /// <summary>A result about this subject's baby; the name is in it only when <see cref="SayBabyName"/> (the user's opt-in).</summary>
     public AssistantResult Result(AssistantResultCode code) =>
-        new() { Code = code, AsOf = Now, Baby = new AssistantBaby(Baby.Id, Baby.Name), TimeZone = ZoneId };
+        new() { Code = code, AsOf = Now, Baby = new AssistantBaby(Baby.Id, SayBabyName ? Baby.Name : null), TimeZone = ZoneId };
 
     /// <summary>The user's local clock, or UTC days when no zone is known.</summary>
     public LocalClock Clock => Zone is { } zone ? LocalClock.InZone(zone) : LocalClock.WithOffset(TimeSpan.Zero);
@@ -35,7 +35,7 @@ internal sealed record AssistantSubjectLookup(AssistantSubject? Subject, Assista
 internal sealed record AssistantFamilyMember(Baby Baby, BabyRole Role, bool IsDefault);
 
 /// <summary>Either the user's family memberships (at least one), or the result that refuses listing them.</summary>
-internal sealed record AssistantFamilyLookup(IReadOnlyList<AssistantFamilyMember> Members, AssistantResult? Refusal, DateTimeOffset Now);
+internal sealed record AssistantFamilyLookup(IReadOnlyList<AssistantFamilyMember> Members, AssistantResult? Refusal, DateTimeOffset Now, bool SayBabyName = false);
 
 /// <summary>
 /// Resolves the subject of a command for the current user: her family memberships and stored default
@@ -67,7 +67,7 @@ internal sealed class AssistantSubjects(
 
         var baby = userBabies.Single(candidate => candidate.Id == babyId);
         var zone = await ZoneAsync(user.Id, invocation, now, cancellationToken);
-        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter);
+        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter, settings?.SayBabyName ?? false);
         return Allows(subject.Role, access)
             ? new AssistantSubjectLookup(subject, null)
             : new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));
@@ -98,7 +98,7 @@ internal sealed class AssistantSubjects(
             .ThenBy(baby => baby.Id)
             .Select(baby => new AssistantFamilyMember(baby, RoleOf(baby, user.Id), baby.Id == resolution.BabyId))
             .ToArray();
-        return new AssistantFamilyLookup(family, null, now);
+        return new AssistantFamilyLookup(family, null, now, settings?.SayBabyName ?? false);
     }
 
     private async Task<AssistantZone> ZoneAsync(Guid userId, AssistantInvocation invocation, DateTimeOffset now, CancellationToken cancellationToken)

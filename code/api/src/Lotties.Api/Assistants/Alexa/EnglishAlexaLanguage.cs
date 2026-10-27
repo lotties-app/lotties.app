@@ -48,33 +48,35 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.ChooseBaby] = _ => "You have more than one baby in Lotties. Choose the one for voice commands in the app, in Settings, Voice assistants.",
         [AssistantResultCode.RateLimited] = _ => "That's a lot of requests. Please try again in a minute.",
         [AssistantResultCode.InvalidAmount] = InvalidAmount,
-        [AssistantResultCode.SleepStarted] = result => $"Got it. {Name(result)} fell asleep {When(result, result.At)}.",
-        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} is already sleeping{SinceClause(result)}.",
+        [AssistantResultCode.SleepStarted] = result => $"Got it. {Subject(result)} fell asleep {When(result, result.At)}.",
+        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Subject(result)} is already sleeping{SinceClause(result)}.",
         [AssistantResultCode.SleepEnded] = result => result.Minutes is null
-            ? $"{Name(result)} woke up {When(result, result.At)}."
-            : $"{Name(result)} woke up {When(result, result.At)}, after sleeping {Speech.Duration(result.Minutes)}.",
-        [AssistantResultCode.NoRunningSleep] = result => $"{Name(result)} isn't sleeping right now, so there was nothing to stop.",
-        [AssistantResultCode.SeveralRunningSleeps] = result => $"{Name(result)} has {result.Count} sleep timers running. Please stop them in the app.",
+            ? $"{Subject(result)} woke up {When(result, result.At)}."
+            : $"{Subject(result)} woke up {When(result, result.At)}, after sleeping {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.NoRunningSleep] = result => $"{Subject(result)} isn't sleeping right now, so there was nothing to stop.",
+        [AssistantResultCode.SeveralRunningSleeps] = result => $"{Subject(result)} has {result.Count} sleep timers running. Please stop them in the app.",
         [AssistantResultCode.BottleLogged] = result => $"Logged a {VolumeModifier(result, result.AmountMl)} bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Nursing started on the {Side(result)} side for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} is already nursing{SinceClause(result)}.",
+        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Subject(result)} is already nursing{SinceClause(result)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Logged a {Diaper(result)} diaper for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.LastFeed] = LastFeed,
         [AssistantResultCode.NoFeeds] = result => $"I can't find a feed for {Name(result)} in the last 30 days.",
-        [AssistantResultCode.Sleeping] = result => $"{Name(result)} has been sleeping{SinceClause(result)}{(Speech.Clock(result, result.At) is null ? string.Empty : $", for {Speech.Duration(result.Minutes)}")}.",
-        [AssistantResultCode.Awake] = result => $"{Name(result)} has been awake{SinceClause(result)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.Sleeping] = result => $"{Subject(result)} has been sleeping{SinceClause(result)}{(Speech.Clock(result, result.At) is null ? string.Empty : $", for {Speech.Duration(result.Minutes)}")}.",
+        [AssistantResultCode.Awake] = result => $"{Subject(result)} has been awake{SinceClause(result)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoSleeps] = result => $"I can't find a sleep for {Name(result)} in the last 30 days.",
         [AssistantResultCode.DiapersToday] = DiapersToday,
-        [AssistantResultCode.NextAppointment] = result => $"{Name(result)}'s next appointment is {result.Appointment!.Title}, {Day(result, result.Appointment.StartsAt)}.",
-        [AssistantResultCode.NoAppointment] = result => $"{Name(result)} has no upcoming appointments.",
+        [AssistantResultCode.NextAppointment] = result => $"{Subject(result)}'s next appointment is {(AppointmentKind(result.Appointment!.Type) is { Length: > 0 } kind ? kind + ", " : string.Empty)}{Day(result, result.Appointment.StartsAt)}.",
+        [AssistantResultCode.NoAppointment] = result => $"{Subject(result)} has no upcoming appointments.",
         [AssistantResultCode.VaccinesDue] = VaccinesDue,
         [AssistantResultCode.NoVaccinesDue] = result => $"By the vaccine schedule, {Name(result)} has no vaccine doses due right now.",
         [AssistantResultCode.UnknownBaby] = _ => "I can't find that baby in your Lotties account.",
         [AssistantResultCode.InvalidDate] = _ => "Please ask about a day within the last year, up to today.",
         [AssistantResultCode.Babies] = result => result.Babies.Count == 0
             ? "There's no baby in your Lotties account yet."
-            : $"Your babies in Lotties: {Speech.List(result.Babies.Select(baby => baby.Name).ToArray())}.",
-        [AssistantResultCode.BabyProfile] = result => $"{Name(result)} is {Age(result.Age)}.",
+            : SpokenBaby.NamesOfListed(result) is { } names
+                ? $"Your babies in Lotties: {Speech.List(names.ToArray())}."
+                : $"You have {Speech.Count(result.Babies.Count, "baby", "babies")} in Lotties. To choose the one voice commands are about, open the app, then Settings, Voice assistants.",
+        [AssistantResultCode.BabyProfile] = result => $"{Subject(result)} is {Age(result.Age)}.",
         [AssistantResultCode.DaySummary] = DaySummary,
         [AssistantResultCode.WeekSummary] = WeekSummary,
         [AssistantResultCode.BathLogged] = result => $"Logged a bath for {Name(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", water at {temp} degrees" : "")}.",
@@ -92,9 +94,9 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.SymptomLogged] = result => $"Logged a symptom for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.OutdoorStarted] = result => $"Outdoor time started for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.SkinCareLogged] = result => $"Logged skin care for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.MedicationLogged] = result => $"Logged {result.MedicationName ?? "medication"} for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NoActivePrescription] = result => $"I can't find an active prescription for {result.MedicationName ?? "that medication"} for {Name(result)}. Check the app.",
-        [AssistantResultCode.MedicationReminder] = result => $"{result.MedicationName ?? "Medication"} is due for {Name(result)}{When(result, result.At)}.",
+        [AssistantResultCode.MedicationLogged] = result => $"Logged a medication dose for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NoActivePrescription] = result => $"I can't find an active prescription for that medication for {Name(result)}. Check the app.",
+        [AssistantResultCode.MedicationReminder] = result => $"A medication dose is due for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.NoMedicationDue] = result => $"No medication doses are due right now for {Name(result)}.",
             };
 
@@ -146,16 +148,16 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
     {
         var feed = FeedDescription(result);
         return result.Running == true
-            ? $"{Name(result)} is feeding now: {feed}, started {When(result, result.At)}."
-            : $"{Name(result)}'s last feed was {feed}, {AtAndAgo(result, result.At)}.";
+            ? $"{Subject(result)} is feeding now: {feed}, started {When(result, result.At)}."
+            : $"{Subject(result)}'s last feed was {feed}, {AtAndAgo(result, result.At)}.";
     }
 
     private static string DiapersToday(AssistantResult result)
     {
         var window = result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours";
         return result.Count is null or 0
-            ? $"{Name(result)} has had no diapers {window}."
-            : $"{Name(result)} has had {Speech.Count(result.Count.Value, "diaper", "diapers")} {window}: {result.Wet} wet and {result.Dirty} dirty.";
+            ? $"{Subject(result)} has had no diapers {window}."
+            : $"{Subject(result)} has had {Speech.Count(result.Count.Value, "diaper", "diapers")} {window}: {result.Wet} wet and {result.Dirty} dirty.";
     }
 
     private static string VaccinesDue(AssistantResult result)
@@ -177,7 +179,6 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
 
     private static string BottleContent(AssistantResult result) => result.BottleKind switch
     {
-        BottleKind.Formula when !string.IsNullOrWhiteSpace(result.FormulaName) => $" of {result.FormulaName}",
         BottleKind.Formula => " of formula",
         BottleKind.BreastMilk => " of breast milk",
         _ => string.Empty,
@@ -231,5 +232,17 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
     private static string Localized(IReadOnlyDictionary<string, string> names) =>
         names.TryGetValue("en", out var english) ? english : names.Values.FirstOrDefault() ?? string.Empty;
 
-    private static string Name(AssistantResult result) => result.Baby?.Name ?? "the baby";
+    /// <summary>The baby's name when the user allowed it, else "the baby" (mid-sentence).</summary>
+    private static string Name(AssistantResult result) => SpokenBaby.NameOf(result) ?? "the baby";
+
+    /// <summary>As <see cref="Name"/> at the start of a sentence.</summary>
+    private static string Subject(AssistantResult result) => SpokenBaby.NameOf(result) ?? "The baby";
+
+    private static string AppointmentKind(string? type) => type switch
+    {
+        "consultation" => "a consultation",
+        "vaccine" => "a vaccination",
+        "exam" => "an exam",
+        _ => string.Empty,
+    };
 }
