@@ -100,3 +100,10 @@ public enum VolumeUnit
     Milliliters,
     FluidOunces,
 }
+
+/// <summary>A temperature unit a person may say or type for a reading or the bath water.</summary>
+public enum TemperatureUnit
+{
+    Celsius,
+    Fahrenheit,
+}

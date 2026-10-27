@@ -136,6 +136,15 @@ tuning is in docs/DEPLOY.md "Alexa skill". The migration `VoiceAssistants` must 
 Check: `curl -i -X POST https://lotties.app/api/v1/alexa -d '{}'` answers **400** when enabled (unsigned), **404** when
 disabled.
 
+## 6a. Models of 2026-10-27 (the review of the 21 added intents)
+
+Re-paste both models and **Build** again: the choice slot types (`FUSSY_INTENSITY`, `TEMP_METHOD`, `MILESTONE_TYPE`,
+`SYMPTOM_TYPE`, `SYMPTOM_SEVERITY`) now have ids equal to the Lotties field options (the API reads the ids), the symptoms are
+the ones the app offers (cough, runny nose, congestion, rash, diarrhea, constipation: no fever, vomiting, lethargy or
+dehydration), and the temperature samples without a number are gone. A temperature is always said with its number
+("log temperature thirty seven"), in the unit system of Settings > Units. Settings > Voice assistants has two opt-in
+switches: the baby's name and the names of your medicines in answers (both off by default).
+
 ## 7. Test in the console
 
 **Test** tab, set "Skill testing is enabled in" to **Development**, then type or say, in each language:
@@ -186,7 +195,10 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 - **Testing instructions** for the reviewers: a test Lotties account (create one for them; never a real family's),
   that account linking is required for commands, the example phrases, and that a bottle needs an amount.
 - **No health claims:** descriptions say it logs and reads back the family's own records; never "monitors", "detects",
-  "keeps your baby healthy" or anything about doses. The skill has no medication intent.
+  "keeps your baby healthy" or anything about doses. Medication by voice is limited to two things (docs/design/32-assistants.md
+  section 5.4): saying that a dose of a medicine you registered was given (recorded as said, never checked or suggested) and
+  asking for the reminders you registered (always with "these are reminders of the medicines you registered in Lotties, not
+  recommendations from Lotties"). Describe them that way, never as dosing, advice or "reminds you what to give".
 - **Availability:** the countries of each language (US for en-US, Brazil for pt-BR).
 - Submit for review. After approval of the brand invocation name (section 1), switch it in a later version.
 

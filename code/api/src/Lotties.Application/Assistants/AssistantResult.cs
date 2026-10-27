@@ -213,17 +213,27 @@ public enum AssistantResultCode
     /// <summary>Skin care was logged.</summary>
     SkinCareLogged,
 
-    /// <summary>A medication dose was logged against a prescription.</summary>
+    /// <summary>It was recorded that a dose of a registered medicine was given (<see cref="AssistantResult.At"/>); the medicine and the dose are never told.</summary>
     MedicationLogged,
 
     /// <summary>No active prescription found for the named medication.</summary>
     NoActivePrescription,
 
-    /// <summary>The next due medication dose (<see cref="AssistantResult.At"/>; the medicine's name is never told).</summary>
+    /// <summary>
+    /// The family's own medicine reminders (the schedule they registered): <see cref="AssistantResult.Count"/> due now (may be 0) and
+    /// <see cref="AssistantResult.At"/> the next scheduled time after now, when there is one. No name, no amount.
+    /// </summary>
     MedicationReminder,
 
-    /// <summary>No medication doses are due right now.</summary>
+    /// <summary>No registered medicine reminder is due now or scheduled ahead.</summary>
     NoMedicationDue,
+
+    /// <summary>
+    /// A number the command needs is missing or outside its limits (<see cref="AssistantResult.Field"/>: <c>temperature</c>,
+    /// <c>water_temperature</c>, <c>pain_level</c>, <c>pump_amount</c>; <see cref="AssistantResult.Min"/>..<see cref="AssistantResult.Max"/>,
+    /// degrees Celsius or ml or the level); nothing was logged.
+    /// </summary>
+    InvalidValue,
 
     }
 
@@ -246,10 +256,11 @@ public enum AssistantDayWindow
 public sealed record AssistantBaby(Guid Id, string? Name = null);
 
 /// <summary>
-/// An upcoming appointment as an answer tells it: when and its built-in kind code (<c>consultation</c>, <c>vaccine</c>,
-/// <c>exam</c>, <c>other</c>). Never its title or the provider: both are text the family typed.
+/// An upcoming appointment as an answer tells it: when, its built-in kind code (<c>consultation</c>, <c>vaccine</c>, <c>exam</c>,
+/// <c>other</c>) and, only when the care provider's typed specialty is one of the known ones (<c>DoctorSpecialties</c>), that
+/// specialty's CODE. Never the title, the doctor's or clinic's name, the location, notes, outcome, phone, address or registration.
 /// </summary>
-public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Type);
+public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Type, string? Specialty = null);
 
 /// <summary>An expected time with the range it usually falls in (UTC): the prediction's earliest, expected and latest.</summary>
 public sealed record AssistantTimeWindow(DateTimeOffset Earliest, DateTimeOffset Expected, DateTimeOffset Latest);
@@ -414,14 +425,24 @@ public sealed record AssistantResult
     /// <summary>When to call the pediatrician instead of looking at the log (<c>fever</c>, <c>inconsolable</c>, <c>refusing_feeds</c>, <c>unusual_sleepiness</c>, <c>bulging_or_stiff_fontanelle</c>); always set with a cry answer.</summary>
     public IReadOnlyList<string> RedFlags { get; init; } = [];
 
-    /// <summary>The temperature value logged (°C).</summary>
+    /// <summary>The temperature value logged (°C): what was said, converted to Celsius, never judged.</summary>
     public decimal? TemperatureC { get; init; }
 
     /// <summary>The intensity value logged (belly pain 1-5, fussy: mild, moderate or intense; both validated choices, never free text).</summary>
     public string? Intensity { get; init; }
 
-    /// <summary>The prescription id (for MedicationLogged).</summary>
-    public Guid? PrescriptionId { get; init; }
+    /// <summary>
+    /// The medicine an answer is about, as the family registered its name, ONLY when the user turned on "say my medicines' names"
+    /// (<c>UserAssistantSettings.SayMedicineNames</c>); never an amount, dose, schedule or interval. Renderers read it only through
+    /// <c>SpokenMedicine</c>. <see cref="AssistantResultCode.MedicationLogged"/>: the one given; a reminder: the next one.
+    /// </summary>
+    public string? Medicine { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.MedicationReminder"/>, same opt-in as <see cref="Medicine"/>: the names of the medicines due now.</summary>
+    public IReadOnlyList<string> DueMedicines { get; init; } = [];
+
+    /// <summary>Which value <see cref="AssistantResultCode.InvalidValue"/> is about (<c>temperature</c>, <c>water_temperature</c>, <c>pain_level</c>, <c>pump_amount</c>).</summary>
+    public string? Field { get; init; }
 
     /// <summary>The event type key logged (for generic event results).</summary>
     public string? EventTypeKey { get; init; }

@@ -19,6 +19,7 @@ internal sealed class UserAssistantSettingsConfiguration : IEntityTypeConfigurat
         builder.Property(settings => settings.UserId).ValueGeneratedNever();
         builder.Property(settings => settings.DefaultBabyId);
         builder.Property(settings => settings.SayBabyName).IsRequired().HasDefaultValue(false);
+        builder.Property(settings => settings.SayMedicineNames).IsRequired().HasDefaultValue(false);
         builder.Property(settings => settings.UpdatedAt).IsRequired();
         builder.HasIndex(settings => settings.DefaultBabyId);
         builder.HasOne<User>().WithOne().HasForeignKey<UserAssistantSettings>(settings => settings.UserId).OnDelete(DeleteBehavior.Cascade);

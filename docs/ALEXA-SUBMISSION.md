@@ -150,11 +150,14 @@ Português (nome do skill sempre, com "ao" quando a frase pede):
 - `pergunte ao lotties quantas mamadas hoje`
 - `pergunte ao lotties qual a próxima janela de sono`
 - `pergunte ao lotties por que ela está chorando` (tem que terminar com o aviso e os sinais de alerta)
+- `peça ao lotties para registrar banho`
+- `peça ao lotties para registrar temperatura 37` e `pergunte ao lotties quando é o próximo remédio` (a resposta de lembrete tem que terminar com: são lembretes dos medicamentos que você cadastrou, não recomendações do Lotties)
+- `pergunte ao lotties quando é a próxima consulta` (pode dizer a especialidade, como "com pediatra", nunca o nome de um médico ou clínica)
 - `peça ao lotties para desfazer o último registro` (deve dizer que nada foi apagado)
 
 English (US): as equivalentes em `ALEXA-CERTIFICATION.md` (`open lotties`, `tell lotties the baby fell asleep`, `ask
 lotties when was the last feed`, `tell lotties to log a bottle` + `one hundred twenty`, `ask lotties how many diapers
-today`, `ask lotties how much did she drink today`, `ask lotties when is the next nap window`, `ask lotties why is she
+today`, `tell lotties to log a bath`, `ask lotties is any medicine due`, `ask lotties how much did she drink today`, `ask lotties when is the next nap window`, `ask lotties why is she
 crying`, `tell lotties to undo the last thing`).
 
 Confira também:
@@ -177,7 +180,7 @@ Console > **Certification** > **Submission** (ou o formulário "Testing Instruct
 - Informe que o skill exige vincular a conta, que abrir o skill e a ajuda funcionam sem vincular, e que os comandos de
   escrita dizem na tela do app "Adicionado pela Alexa".
 - Informe que o skill **nunca exclui registros** (só pede, e a pessoa aprova no app) e que **não dá conselho médico,
-  dose nem diagnóstico**.
+  dose nem diagnóstico**. Os comandos de remédio só registram que foi dada uma dose de um remédio cadastrado no app, do jeito que a pessoa disse, e leem os lembretes cadastrados no app (sempre "não são recomendações do Lotties"); nunca sugerem, conferem nem dizem uma dose.
 
 ## Etapa 7. Validação e envio
 
@@ -206,7 +209,7 @@ A Amazon responde por e-mail e no console, dizendo o que falhou. Os motivos mais
 | frase de exemplo não funciona como escrita | reescrever a frase no console para a que o simulador aceita |
 | conta de demonstração não entra, ou sem dados | consertar a conta (Etapa 2) e responder com a nova senha no campo de teste |
 | política de privacidade sem a parte da Alexa, ou sem contato | completar a política (Etapa 4) e reenviar |
-| resposta de saúde percebida como conselho médico | confirmar que o texto de choro traz o aviso e os sinais de alerta; mostrar nas notas que o skill nunca dá dose ou diagnóstico |
+| resposta de saúde percebida como conselho médico | confirmar que o texto de choro traz o aviso e os sinais de alerta; mostrar nas notas que o skill nunca dá dose ou diagnóstico; os lembretes de remédio são os que a família cadastrou e dizem isso |
 | vinculação de conta falha | conferir os três redirect URLs no Keycloak e o `Client ID`/secret do console |
 
 Cada rodada recomeça a contagem de dias úteis. Guarde o texto de cada rejeição na issue do projeto (sem credenciais).

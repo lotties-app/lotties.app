@@ -7,17 +7,17 @@ using Microsoft.Extensions.Logging;
 namespace Lotties.Application.Assistants;
 
 /// <summary>
-/// The caller's voice assistant settings: <c>{defaultBabyId|null, sayBabyName, updatedAt|null}</c> (<c>updatedAt</c> null before
+/// The caller's voice assistant settings: <c>{defaultBabyId|null, sayBabyName, sayMedicineNames, updatedAt|null}</c> (<c>updatedAt</c> null before
 /// the first PUT; <c>sayBabyName</c> false until she turns it on: answers carry no baby name by default).
 /// </summary>
-public sealed record AssistantSettingsResponse(Guid? DefaultBabyId, DateTimeOffset? UpdatedAt, bool SayBabyName = false)
+public sealed record AssistantSettingsResponse(Guid? DefaultBabyId, DateTimeOffset? UpdatedAt, bool SayBabyName = false, bool SayMedicineNames = false)
 {
     public static readonly AssistantSettingsResponse Defaults = new(null, null);
 
     public static implicit operator AssistantSettingsResponse(UserAssistantSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        return new AssistantSettingsResponse(settings.DefaultBabyId, settings.UpdatedAt, settings.SayBabyName);
+        return new AssistantSettingsResponse(settings.DefaultBabyId, settings.UpdatedAt, settings.SayBabyName, settings.SayMedicineNames);
     }
 }
 
@@ -31,6 +31,9 @@ public sealed record SaveAssistantSettingsRequest
     public Guid? DefaultBabyId { get; init; }
 
     public bool? SayBabyName { get; init; }
+
+    /// <summary>Whether answers may say the names of the family's medicines; a body without it keeps the stored value.</summary>
+    public bool? SayMedicineNames { get; init; }
 }
 
 /// <summary>The current user's voice assistant settings (docs/design/32-assistants.md section 4).</summary>
@@ -68,7 +71,7 @@ internal sealed class AssistantSettingsService(
         ArgumentNullException.ThrowIfNull(request);
         var user = await currentUser.GetUserAsync(cancellationToken);
         await EnsureCanBeDefaultAsync(request.DefaultBabyId, user.Id, cancellationToken);
-        var saved = await SaveAsync(user.Id, request.DefaultBabyId, request.SayBabyName, timeProvider.GetUtcNow(), cancellationToken);
+        var saved = await SaveAsync(user.Id, request.DefaultBabyId, request.SayBabyName, request.SayMedicineNames, timeProvider.GetUtcNow(), cancellationToken);
         logger.LogInformation("Saved the assistant settings of user {UserId}", user.Id);
         return saved;
     }
@@ -87,13 +90,18 @@ internal sealed class AssistantSettingsService(
         }
     }
 
-    private async Task<UserAssistantSettings> SaveAsync(Guid userId, Guid? babyId, bool? sayBabyName, DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<UserAssistantSettings> SaveAsync(Guid userId, Guid? babyId, bool? sayBabyName, bool? sayMedicineNames, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var stored = await settings.FindAsync(userId, cancellationToken) ?? await CreateOrLoadWinnerAsync(userId, babyId, sayBabyName, now, cancellationToken);
+        var stored = await settings.FindAsync(userId, cancellationToken) ?? await CreateOrLoadWinnerAsync(userId, babyId, sayBabyName, sayMedicineNames, now, cancellationToken);
         stored.ChangeDefaultBaby(babyId, now);
         if (sayBabyName is { } say)
         {
             stored.ChangeSayBabyName(say, now);
+        }
+
+        if (sayMedicineNames is { } sayMedicines)
+        {
+            stored.ChangeSayMedicineNames(sayMedicines, now);
         }
 
         await settings.SaveChangesAsync(cancellationToken);
@@ -101,9 +109,9 @@ internal sealed class AssistantSettingsService(
     }
 
     /// <summary>Adds the first settings; when a concurrent PUT added them first, loads that row (the caller then applies its change).</summary>
-    private async Task<UserAssistantSettings> CreateOrLoadWinnerAsync(Guid userId, Guid? babyId, bool? sayBabyName, DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<UserAssistantSettings> CreateOrLoadWinnerAsync(Guid userId, Guid? babyId, bool? sayBabyName, bool? sayMedicineNames, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var created = UserAssistantSettings.Create(userId, babyId, now, sayBabyName ?? false);
+        var created = UserAssistantSettings.Create(userId, babyId, now, sayBabyName ?? false, sayMedicineNames ?? false);
         return await settings.TryAddAsync(created, cancellationToken)
             ? created
             : await settings.FindAsync(userId, cancellationToken)

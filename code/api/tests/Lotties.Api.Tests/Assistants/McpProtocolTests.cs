@@ -19,7 +19,8 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
         ["list_babies", "get_baby_profile", "get_last_feed", "get_sleep_status", "get_diapers_today", "get_next_appointment", "get_due_vaccines", "get_day_summary", "get_week_summary",
             "get_next_nap_window", "get_next_feed", "get_next_diaper", "get_diapers_average", "get_bottle_average", "get_sleep_today", "get_bottle_today", "get_feeds_today", "get_last_diaper", "get_cry_reasons"];
 
-    private static readonly string[] WriteTools = ["request_delete_last_entry", "log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper"];
+    private static readonly string[] WriteTools = ["request_delete_last_entry", "log_sleep_start", "log_sleep_end", "log_bottle", "log_nursing", "log_diaper",
+        "log_bath", "log_tummy_time", "log_belly_pain", "log_breast_pump", "log_nasal_suction", "log_belly_massage", "log_fussy", "log_nail_trim", "log_temperature", "log_spit_up", "log_teething", "log_milestone", "log_symptom", "log_outdoor", "log_skin_care"];
 
     private ApiFactory Factory => host.Factory;
 
@@ -92,6 +93,34 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
         Assert.Equal(("last_feed", "bottle"), (Code(last), Structured(last).GetProperty("feedMethod").GetString()));
         Assert.Contains("120 ml", Text(logged), StringComparison.Ordinal);
         Assert.Equal(JsonSerializer.Serialize(Structured(logged)), JsonSerializer.Serialize(JsonDocument.Parse(((TextContentBlock)logged.Content[1]).Text).RootElement));
+    }
+
+    [Fact]
+    public async Task NewLogTools_WriteWithTheMcpMarker_ValidateNumbers_AndNeverStoreOtherThanTheOptions()
+    {
+        var baby = await Factory.SeedBabyAsync();
+        await using var client = await host.ClientAsync(host.TokenFor(baby.OwnerSubject, McpApiHost.ReadWrite));
+
+        var temperature = await client.CallToolAsync("log_temperature", Args(("temperatureC", 38.5), ("method", "armpit")));
+        var tooHigh = await client.CallToolAsync("log_temperature", Args(("temperatureC", 44.9)));
+        var missingLevel = await client.CallToolAsync("log_belly_pain", Args());
+        var level = await client.CallToolAsync("log_belly_pain", Args(("level", 4)));
+        var badLevel = await client.CallToolAsync("log_belly_pain", Args(("level", 6)));
+        var freeText = await client.CallToolAsync("log_symptom", Args(("symptom", "fever")));
+        var symptom = await client.CallToolAsync("log_symptom", Args(("symptom", "cough"), ("severity", "mild")));
+        var bath = await client.CallToolAsync("log_bath", Args(("temperatureC", 37)));
+
+        Assert.Equal(["temperature_logged", "temperature_logged", "belly_pain_logged", "symptom_logged", "bath_logged"], new[] { temperature, tooHigh, level, symptom, bath }.Select(Code));
+        Assert.Equal(true, missingLevel.IsError);
+        Assert.Equal(true, badLevel.IsError);
+        Assert.Equal("invalid_arguments", Code(badLevel));
+        var cold = await client.CallToolAsync("log_temperature", Args(("temperatureC", 20)));
+        Assert.Equal((true, "invalid_value"), (cold.IsError, Code(cold)));
+        Assert.Equal(true, freeText.IsError);
+        var stored = await Factory.EventsAsync(baby.BabyId);
+        Assert.Equal(5, stored.Count);
+        Assert.All(stored, entry => Assert.Equal("mcp", AssistantTestKit.PayloadOf(entry).GetProperty("via").GetString()));
+        Assert.Contains(stored, entry => entry.TypeId == BuiltInEventTypes.TemperatureId && AssistantTestKit.PayloadOf(entry).GetProperty("value_c").GetDecimal() == 38.5m);
     }
 
     [Fact]

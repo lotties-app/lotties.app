@@ -10,6 +10,10 @@
       "label": "Say my baby's name in answers",
       "hint": "The answer is sent to Amazon (Alexa) or to your AI assistant, so a name ties your child to what you ask. Turn this on only if you want to hear the name."
     },
+    "sayMedicineNames": {
+      "label": "Say the names of my medicines in answers",
+      "hint": "The answer is sent to Amazon (Alexa) or to your AI assistant, so a medicine name tells them what your child takes. Turn this on only if you want reminders by name."
+    },
     "saved": "Saved.",
     "saveFailed": "This baby can't be used for voice commands. Choose a baby you log for.",
     "loadFailed": "Couldn't load the voice assistant settings.",

@@ -10,6 +10,10 @@
       "label": "Falar o nome do bebê nas respostas",
       "hint": "A resposta é enviada à Amazon (Alexa) ou ao seu assistente de IA, então um nome liga o seu filho ao que você pergunta. Ative só se quiser ouvir o nome."
     },
+    "sayMedicineNames": {
+      "label": "Falar o nome dos remédios nas respostas",
+      "hint": "A resposta é enviada à Amazon (Alexa) ou ao seu assistente de IA, então o nome de um remédio mostra a eles o que o seu filho toma. Ative só se quiser lembretes com o nome."
+    },
     "saved": "Salvo.",
     "saveFailed": "Este bebê não pode ser usado nos comandos de voz. Escolha um bebê para o qual você registra.",
     "loadFailed": "Não foi possível carregar as configurações dos assistentes de voz.",

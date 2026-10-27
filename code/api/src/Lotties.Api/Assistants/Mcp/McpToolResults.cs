@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lotties.Application.Assistants;
+using Lotties.Domain.Assistants;
 using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 
@@ -24,6 +25,7 @@ internal static class McpToolResults
         AssistantResultCode.ChooseBaby,
         AssistantResultCode.RateLimited,
         AssistantResultCode.InvalidAmount,
+        AssistantResultCode.InvalidValue,
         AssistantResultCode.UnknownBaby,
         AssistantResultCode.InvalidDate,
     ];
@@ -95,6 +97,26 @@ internal static class McpResultText
             AssistantResultCode.UnknownBaby => "unknown_baby: that babyId is not one of the user's babies; call list_babies.",
             AssistantResultCode.RateLimited => "rate_limited: too many requests; try again in a minute.",
             AssistantResultCode.InvalidAmount => $"invalid_amount: the amount must be from {result.Min} to {result.Max} ml{(result.Units == UnitSystem.Us ? $" (up to {Volume(result.Max, result.Units)})" : string.Empty)}.",
+            AssistantResultCode.InvalidValue => $"invalid_value: {result.Field} must be from {result.Min} to {result.Max}{(result.Field is "temperature" or "water_temperature" ? " degrees Celsius" : result.Field == "pump_amount" ? " ml" : string.Empty)}; nothing was logged.",
+            AssistantResultCode.BathLogged => $"Logged a bath for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.TummyTimeStarted => $"Tummy time started for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.BellyPainLogged => $"Logged belly pain for {baby} at {Time(result, result.At)}, level {result.Intensity}.",
+            AssistantResultCode.BreastPumpStarted => $"Breast pump session started for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.NasalSuctionLogged => $"Logged nasal suction for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.BellyMassageStarted => $"Belly massage started for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.FussyStarted => $"Fussy timer started for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.NailTrimLogged => $"Logged a nail trim for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.TemperatureLogged => $"Logged a temperature reading of {result.TemperatureC?.ToString("0.#", CultureInfo.InvariantCulture)} degrees Celsius for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.SpitUpLogged => $"Logged spit-up for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.TeethingLogged => $"Logged teething for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.MilestoneLogged => $"Logged a milestone for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.SymptomLogged => $"Logged a symptom for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.OutdoorStarted => $"Outdoor time started for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.SkinCareLogged => $"Logged skin care for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.MedicationLogged => $"Recorded that {(SpokenMedicine.NameOf(result) is { } medicine ? $"a dose of {medicine}" : "a medication dose")} was given to {baby} at {Time(result, result.At)}, as the person said. Lotties does not check or suggest doses.",
+            AssistantResultCode.NoActivePrescription => $"That medicine is not among the active prescriptions registered for {baby}; nothing was recorded.",
+            AssistantResultCode.MedicationReminder => $"{result.Count ?? 0} medicine reminders registered by the family are due now for {baby}{(SpokenMedicine.DueNamesOf(result) is { Count: > 0 } dueNames ? $" ({string.Join(", ", dueNames)})" : string.Empty)}{(result.At is null ? string.Empty : $"; the next{(SpokenMedicine.NameOf(result) is { } next ? $" ({next})" : string.Empty)} is at {Time(result, result.At)}")}. These are reminders of the medicines the family registered in Lotties, not recommendations from Lotties: check the prescription and ask the doctor or pharmacist if in doubt.",
+            AssistantResultCode.NoMedicationDue => $"No medicine reminder registered by the family is due or scheduled for {baby}. These are reminders of the medicines the family registered in Lotties, not recommendations from Lotties.",
             AssistantResultCode.InvalidDate => $"invalid_date: the date must be from {result.EarliestDate:yyyy-MM-dd} to {result.LatestDate:yyyy-MM-dd}{DaysIn(result)}.",
             AssistantResultCode.SleepStarted => $"Sleep started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.SleepAlreadyRunning => $"{subject} is already sleeping, since {Time(result, result.At)}; nothing was logged.",
@@ -111,7 +133,7 @@ internal static class McpResultText
             AssistantResultCode.Awake => $"{subject} has been awake since {Time(result, result.At)}{Minutes("; the last sleep lasted ", result.Minutes, " minutes")}.",
             AssistantResultCode.NoSleeps => $"No sleep of {baby} in the last 30 days.",
             AssistantResultCode.DiapersToday => $"{subject} has had {result.Count} diapers ({result.Wet} wet, {result.Dirty} dirty) {(result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours")}.",
-            AssistantResultCode.NextAppointment => $"{subject}'s next appointment starts at {Time(result, result.Appointment?.StartsAt)}.",
+            AssistantResultCode.NextAppointment => $"{subject}'s next appointment{(DoctorSpecialties.Find(result.Appointment?.Specialty) is { } specialty ? $" is with {specialty.English}, and it" : string.Empty)} starts at {Time(result, result.Appointment?.StartsAt)}.",
             AssistantResultCode.NoAppointment => $"{subject} has no upcoming appointment.",
             AssistantResultCode.VaccinesDue => $"{result.Count} vaccine doses are due or overdue for {baby} by the schedule ({result.Overdue} overdue).",
             AssistantResultCode.NoVaccinesDue => $"No vaccine dose is due for {baby} by the schedule.",

@@ -175,17 +175,13 @@ public static class AssistantPayloads
         return Of(payload);
     }
 
-    public static EventPayload Milestone(string? milestone, string? custom)
+    /// <summary>A milestone from the built-in list; voice never stores the "which milestone?" words (<c>custom</c>).</summary>
+    public static EventPayload Milestone(string? milestone)
     {
         var payload = new JsonObject();
         if (milestone is not null)
         {
             payload["milestone"] = milestone;
-        }
-
-        if (custom is not null)
-        {
-            payload["custom"] = custom;
         }
 
         return Of(payload);

@@ -8,6 +8,7 @@ using Lotties.Api.Tests.Support;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 using static Lotties.Api.Tests.Assistants.AssistantTestKit;
 
@@ -23,8 +24,12 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
     private const string BabyName = "Lia";
     private const string AppointmentTitle = "Dr Zyxwv Clinic";
     private const string MedicineName = "Secretmed";
+    private const string DoseAmount = "13.5";
 
-    private static readonly string[] FreeText = [AppointmentTitle, "Zyxwv", MedicineName];
+    // Everything a care provider or an appointment holds, each distinctive: none may appear in any rendering of any command.
+    private static readonly string[] DoctorData = ["Qwxyzname", "Wvutsclinic", "99999-1234", "Jkhgfstreet", "zq@qq.test", "Notehjkl", "Plmkloc", "Bnmqtitle", "Doctornm", "Crmnumber"];
+
+    private static readonly string[] FreeText = [AppointmentTitle, "Zyxwv", MedicineName, .. DoctorData];
 
     private static DateTimeOffset Now => DateTimeOffset.UtcNow;
 
@@ -60,6 +65,8 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         ("feeds_today", (a, i) => a.ReadFeedsTodayAsync(i)),
         ("cry_reasons", (a, i) => a.ReadCryReasonsAsync(i)),
         ("bath", (a, i) => a.LogBathAsync(i, 36.5m)),
+        ("temperature_invalid", (a, i) => a.LogTemperatureAsync(i, 99m, TemperatureUnit.Celsius)),
+        ("belly_pain_invalid", (a, i) => a.LogBellyPainAsync(i, 9)),
         ("tummy_time", (a, i) => a.LogTummyTimeAsync(i)),
         ("belly_pain", (a, i) => a.LogBellyPainAsync(i, 3)),
         ("breast_pump", (a, i) => a.LogBreastPumpAsync(i, null, null)),
@@ -70,12 +77,13 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         ("temperature", (a, i) => a.LogTemperatureAsync(i, 37.2m, null)),
         ("spit_up", (a, i) => a.LogSpitUpAsync(i, null, null)),
         ("teething", (a, i) => a.LogTeethingAsync(i, null, null)),
-        ("milestone", (a, i) => a.LogMilestoneAsync(i, null, null)),
+        ("milestone", (a, i) => a.LogMilestoneAsync(i, null)),
         ("symptom", (a, i) => a.LogSymptomAsync(i, null, null)),
         ("outdoor", (a, i) => a.LogOutdoorAsync(i, null)),
         ("skin_care", (a, i) => a.LogSkinCareAsync(i, null)),
-        ("medication_unknown", (a, i) => a.LogMedicationAsync(i, MedicineName)),
         ("medication_reminder", (a, i) => a.ReadMedicationReminderAsync(i)),
+        ("medication_given", (a, i) => a.LogMedicationAsync(i, MedicineName)),
+        ("medication_unknown", (a, i) => a.LogMedicationAsync(i, "Nosuchmed")),
         ("list_babies", (a, i) => a.ListBabiesAsync(i)),
         ("request_delete_last", (a, i) => a.RequestDeleteLastAsync(i)),
     ];
@@ -86,6 +94,9 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         var results = await RunAllAsync(sayBabyName: false);
 
         Assert.Equal(Commands.Length, results.Count);
+        Assert.Contains(results, pair => pair.Result.Code == AssistantResultCode.MedicationLogged);
+        Assert.Contains(results, pair => pair.Result.Code == AssistantResultCode.MedicationReminder && pair.Result.Count == 1);
+        Assert.Contains(results, pair => pair.Result.Code == AssistantResultCode.NextAppointment && pair.Result.Appointment!.Specialty == "pediatrician");
         Assert.True(results.Select(pair => pair.Result.Code).Distinct().Count() > 25, "the run should reach many different answers");
         foreach (var (name, result) in results)
         {
@@ -122,6 +133,68 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
                 AssertNoFreeText(text, $"{name} ({result.Code}) {what}");
             }
         }
+    }
+
+    [Fact]
+    public async Task EveryCommand_WithSayMedicineNames_SaysTheMedicineName_ButNeverAnAmountDoseOrOtherFreeText()
+    {
+        var results = await RunAllAsync(sayBabyName: false, sayMedicineNames: true);
+
+        var logged = results.Single(pair => pair.Name == "medication_given").Result;
+        var reminder = results.Single(pair => pair.Name == "medication_reminder").Result;
+        Assert.Equal(MedicineName, logged.Medicine);
+        Assert.Equal([MedicineName], reminder.DueMedicines);
+        foreach (var result in new[] { logged, reminder })
+        {
+            foreach (var (what, text) in EverythingSaid(result))
+            {
+                if (what != "json" && what != "mcp structured" && what != "mcp content")
+                {
+                    Assert.Contains(MedicineName, text, StringComparison.Ordinal);
+                }
+            }
+        }
+
+        Assert.Contains($"a dose of {MedicineName}", AlexaLanguages.For("en-US").Say(logged), StringComparison.Ordinal);
+        Assert.Contains($"uma dose de {MedicineName}", AlexaLanguages.For("pt-BR").Say(logged), StringComparison.Ordinal);
+        Assert.Contains("Due now: " + MedicineName, AlexaLanguages.For("en-US").Say(reminder), StringComparison.Ordinal);
+        Assert.Contains("not recommendations from Lotties", AlexaLanguages.For("en-US").Say(reminder), StringComparison.Ordinal);
+        foreach (var (name, result) in results)
+        {
+            foreach (var (what, text) in EverythingSaid(result))
+            {
+                Assert.DoesNotContain(DoseAmount, text, StringComparison.Ordinal);
+                Assert.DoesNotContain("drops", text, StringComparison.OrdinalIgnoreCase);
+                foreach (var free in FreeText.Where(free => free != MedicineName))
+                {
+                    Assert.False(text.Contains(free, StringComparison.OrdinalIgnoreCase), $"{name} ({result.Code}) {what} carries '{free}': {text}");
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public async Task MedicationAnswers_ByDefault_SayAMedicationDose_NeverTheNameOrAnAmount_AndTheReminderAlwaysHasTheNotice()
+    {
+        var results = await RunAllAsync(sayBabyName: false);
+        var medication = results.Where(pair => pair.Name.StartsWith("medication", StringComparison.Ordinal)).ToArray();
+
+        Assert.All(medication, pair =>
+        {
+            Assert.Null(pair.Result.Medicine);
+            Assert.Empty(pair.Result.DueMedicines);
+            foreach (var (what, text) in EverythingSaid(pair.Result))
+            {
+                Assert.DoesNotContain(DoseAmount, text, StringComparison.Ordinal);
+                Assert.DoesNotContain("drops", text, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain(MedicineName, text, StringComparison.OrdinalIgnoreCase);
+            }
+        });
+        var logged = medication.Single(pair => pair.Name == "medication_given").Result;
+        Assert.Contains("a medication dose was given", AlexaLanguages.For("en-US").Say(logged), StringComparison.Ordinal);
+        Assert.Contains("uma dose de medicamento foi dada", AlexaLanguages.For("pt-BR").Say(logged), StringComparison.Ordinal);
+        Assert.Contains("doesn't check or suggest doses", AlexaLanguages.For("en-US").Say(logged), StringComparison.Ordinal);
+        Assert.Contains("não confere nem sugere doses", AlexaLanguages.For("pt-BR").Say(logged), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -175,25 +248,56 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
     }
 
     [Fact]
-    public async Task NextAppointment_NeverSpeaksTheTitle_OnlyTheKindAndWhen()
+    public async Task NextAppointment_SaysOnlyTheSpecialtyWhenItIsAKnownOne_NeverTheTitleOrAnyDoctorData()
     {
         var baby = await factory.SeedBabyAsync();
-        foreach (var (type, hours) in new[] { ("consultation", 30), ("other", 52) })
+        var known = await SeedProviderAsync(baby, "Pediatria");
+        var unknown = await SeedProviderAsync(baby, "Dr Qwxyzname special care");
+        foreach (var (providerId, hours) in new[] { (known, 30), (unknown, 52) })
         {
-            var put = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/appointments/{Guid.NewGuid()}", new { title = AppointmentTitle, type, startsAt = Now.AddHours(hours) });
-            put.EnsureSuccessStatusCode();
+            await SeedAppointmentAsync(baby, providerId, Now.AddHours(hours));
         }
 
         var next = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadNextAppointmentAsync(Invocation(fallbackZone: "America/Sao_Paulo")));
-        var spoken = AlexaLanguages.For("en-US").Say(next);
+        var en = AlexaLanguages.For("en-US").Say(next);
+        var pt = AlexaLanguages.For("pt-BR").Say(next);
 
-        Assert.Equal("consultation", next.Appointment!.Type);
-        Assert.StartsWith("The baby's next appointment is a consultation, ", spoken, StringComparison.Ordinal);
-        Assert.StartsWith("O próximo compromisso do bebê é uma consulta, ", AlexaLanguages.For("pt-BR").Say(next), StringComparison.Ordinal);
-        Assert.DoesNotContain("Zyxwv", JsonSerializer.Serialize(next) + spoken + McpResultText.Of(next), StringComparison.Ordinal);
-        var other = next with { Appointment = next.Appointment with { Type = "other" } };
-        Assert.StartsWith("The baby's next appointment is ", AlexaLanguages.For("en-US").Say(other), StringComparison.Ordinal);
-        Assert.DoesNotContain("consultation", AlexaLanguages.For("en-US").Say(other), StringComparison.Ordinal);
+        Assert.Equal("pediatrician", next.Appointment!.Specialty);
+        Assert.Matches(@"^The baby's next appointment is with a pediatrician, .+ at \d{1,2}:\d{2} [AP]M\.$", en);
+        Assert.Matches(@"^A próxima consulta do bebê é com pediatra, .+ às \d{2}:\d{2}\.$", pt);
+        foreach (var (what, text) in EverythingSaid(next))
+        {
+            AssertNoFreeText(text, $"next appointment {what}");
+        }
+
+        var none = next with { Appointment = next.Appointment with { Specialty = null } };
+        Assert.Matches(@"^The baby's next appointment is .+ at \d{1,2}:\d{2} [AP]M\.$", AlexaLanguages.For("en-US").Say(none));
+        Assert.Matches(@"^A próxima consulta do bebê é .+ às \d{2}:\d{2}\.$", AlexaLanguages.For("pt-BR").Say(none));
+    }
+
+    [Fact]
+    public async Task NextAppointment_WithAnUnknownSpecialtyOrNoProvider_SaysOnlyThatThereIsOne()
+    {
+        var baby = await factory.SeedBabyAsync();
+        await SeedAppointmentAsync(baby, await SeedProviderAsync(baby, "Qwxyzname the great"), Now.AddHours(30));
+
+        var next = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadNextAppointmentAsync(Invocation(fallbackZone: "America/Sao_Paulo")));
+
+        Assert.Null(next.Appointment!.Specialty);
+        Assert.DoesNotContain("Qwxyzname", JsonSerializer.Serialize(next) + AlexaLanguages.For("en-US").Say(next) + McpResultText.Of(next), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NextAppointment_AProviderOfAnotherBabyIsNeverUsed()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var other = await factory.SeedBabyAsync();
+        var foreign = await SeedProviderAsync(other, "pediatra");
+        await SeedAppointmentAsync(baby, foreign, Now.AddHours(30));
+
+        var next = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.ReadNextAppointmentAsync(Invocation(fallbackZone: "America/Sao_Paulo")));
+
+        Assert.Null(next.Appointment!.Specialty);
     }
 
     [Theory]
@@ -273,12 +377,75 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         Assert.True(leaks.Length == 0, "Answers carry no free text or names of people: " + string.Join("; ", leaks));
     }
 
-    private async Task<List<(string Name, AssistantResult Result)>> RunAllAsync(bool sayBabyName)
+    [Fact]
+    public void Adapters_NeverReadAnAppointmentOrCareProviderMember_OnlyTheSpecialtyCode()
+    {
+        var root = SourceRoot();
+        var adapterFiles = Directory.GetFiles(Path.Combine(root, "src", "Lotties.Api", "Assistants"), "*.cs", SearchOption.AllDirectories);
+        var applicationFiles = Directory.GetFiles(Path.Combine(root, "src", "Lotties.Application", "Assistants"), "*.cs", SearchOption.AllDirectories);
+        var doctorMembers = new Regex(@"\.(Title|DoctorName|Location|ClinicName|Phone|Whatsapp|Email|Address|Website|Registration\w*|Prescriber)\b");
+
+        var adapterLeaks = adapterFiles.SelectMany(file => LinesMatching(file, doctorMembers).Concat(LinesMatching(file, new Regex(@"[Aa]ppointment\W{0,3}\.(Outcome|Notes|Title)\b")))).Where(line => !line.Text.TrimStart().StartsWith("///", StringComparison.Ordinal)).ToArray();
+        var applicationLeaks = applicationFiles
+            .SelectMany(file => LinesMatching(file, doctorMembers).Concat(LinesMatching(file, new Regex(@"\.Specialty\b"))))
+            .Where(line => !line.Text.TrimStart().StartsWith("///", StringComparison.Ordinal) && !line.Text.Contains("DoctorSpecialties.CodeOf(", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.True(adapterLeaks.Length == 0, "Adapters never read a doctor, clinic or appointment member: " + string.Join("; ", adapterLeaks));
+        Assert.True(applicationLeaks.Length == 0, "The Application reads a care provider's typed specialty only through DoctorSpecialties.CodeOf: " + string.Join("; ", applicationLeaks));
+    }
+
+    [Fact]
+    public void Adapters_ReadAMedicineNameOnlyThroughSpokenMedicine()
+    {
+        var root = SourceRoot();
+        var adapterFiles = Directory.GetFiles(Path.Combine(root, "src", "Lotties.Api", "Assistants"), "*.cs", SearchOption.AllDirectories)
+            .Where(file => Path.GetFileName(file) != "SpokenMedicine.cs");
+        var access = new Regex(@"\.(Medicine|DueMedicines)\b");
+
+        var adapterLeaks = adapterFiles.SelectMany(file => LinesMatching(file, access)).Where(line => !line.Text.TrimStart().StartsWith("///", StringComparison.Ordinal)).ToArray();
+
+        Assert.True(adapterLeaks.Length == 0, "Adapters read a medicine name only through SpokenMedicine: " + string.Join("; ", adapterLeaks));
+    }
+
+    private async Task<Guid> SeedProviderAsync(SeededBaby baby, string specialty)
+    {
+        var id = Guid.NewGuid();
+        var put = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync(
+            $"/api/v1/babies/{baby.BabyId}/care-providers/{id}",
+            new { name = "Dr Qwxyzname", specialty, registrationCouncil = "CRM", registrationNumber = "Crmnumber", clinicName = "Wvutsclinic", address = "Jkhgfstreet 5", phone = "+55 11 99999-1234", email = "zq@qq.test", notes = "Notehjkl" });
+        put.EnsureSuccessStatusCode();
+        return id;
+    }
+
+    private async Task SeedAppointmentAsync(SeededBaby baby, Guid? providerId, DateTimeOffset startsAt)
+    {
+        var put = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync(
+            $"/api/v1/babies/{baby.BabyId}/appointments/{Guid.NewGuid()}",
+            new { title = "Bnmqtitle " + AppointmentTitle, type = "consultation", startsAt, location = "Plmkloc", doctorName = "Doctornm", notes = "Notehjkl", providerId });
+        put.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>A medicine with a scheduled prescription (every 4 hours, a dose of 13.5 drops) whose last dose was 5 hours ago: one reminder is due.</summary>
+    private async Task SeedMedicineAsync(SeededBaby baby)
+    {
+        var client = factory.CreateClientFor(baby.OwnerSubject);
+        var medicationId = Guid.NewGuid();
+        (await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/medications/{medicationId}", new { name = MedicineName, isUsual = true })).EnsureSuccessStatusCode();
+        var prescriptionId = Guid.NewGuid();
+        var start = DateTime.UtcNow.AddDays(-3).ToString("yyyy-MM-dd");
+        var put = await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/prescriptions/{prescriptionId}", new { medicationId, kind = "scheduled", dose = new { amount = 13.5, unit = "drops" }, everyMinutes = 240, startDate = start });
+        Assert.True(put.IsSuccessStatusCode, await put.Content.ReadAsStringAsync());
+        var payload = $$"""{"medications":[{"medicationId":"{{medicationId}}","name":"{{MedicineName}}","prescriptionId":"{{prescriptionId}}"}]}""";
+        await factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, Lotties.Domain.EventTypes.BuiltInEventTypes.MedicationId, Now.AddHours(-5), Now.AddHours(-5), payload);
+    }
+
+    private async Task<List<(string Name, AssistantResult Result)>> RunAllAsync(bool sayBabyName, bool sayMedicineNames = false)
     {
         var baby = await factory.SeedBabyAsync();
-        var put = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/appointments/{Guid.NewGuid()}", new { title = AppointmentTitle, type = "consultation", startsAt = Now.AddDays(2) });
-        put.EnsureSuccessStatusCode();
-        await SaveSettingsAsync(baby.OwnerSubject, sayBabyName);
+        await SeedAppointmentAsync(baby, await SeedProviderAsync(baby, "pediatra"), Now.AddDays(2));
+        await SeedMedicineAsync(baby);
+        await SaveSettingsAsync(baby.OwnerSubject, sayBabyName, sayMedicineNames);
 
         var results = new List<(string, AssistantResult)>();
         foreach (var (name, run) in Commands)
@@ -289,9 +456,9 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
         return results;
     }
 
-    private async Task SaveSettingsAsync(string subject, bool sayBabyName)
+    private async Task SaveSettingsAsync(string subject, bool sayBabyName, bool sayMedicineNames = false)
     {
-        var response = await factory.CreateClientFor(subject).PutAsJsonAsync("/api/v1/me/assistant-settings", new { defaultBabyId = (Guid?)null, sayBabyName });
+        var response = await factory.CreateClientFor(subject).PutAsJsonAsync("/api/v1/me/assistant-settings", new { defaultBabyId = (Guid?)null, sayBabyName, sayMedicineNames });
         response.EnsureSuccessStatusCode();
     }
 

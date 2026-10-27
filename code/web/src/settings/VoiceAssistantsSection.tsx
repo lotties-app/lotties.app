@@ -83,6 +83,21 @@ export function VoiceAssistantsSection({
     setSaved(ok);
   };
 
+  const sayMedicineNames = settings.data.sayMedicineNames === true;
+  const toggleMedicines = async (next: boolean) => {
+    setSaved(false);
+    const ok = await action.run(async () => {
+      const result = await saveAssistantSettings(
+        api,
+        value === NONE ? null : value,
+        undefined,
+        next,
+      );
+      queryClient.setQueryData(ASSISTANT_SETTINGS_KEY, result);
+    });
+    setSaved(ok);
+  };
+
   return (
     <Stack spacing={1.5}>
       <Typography color="text.secondary">{t('assistants.intro')}</Typography>
@@ -123,6 +138,20 @@ export function VoiceAssistantsSection({
       />
       <FormHelperText id="voice-assistants-name-hint" sx={{ mt: -1 }}>
         {t('assistants.sayBabyName.hint')}
+      </FormHelperText>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={sayMedicineNames}
+            disabled={action.pending}
+            onChange={(e) => void toggleMedicines(e.target.checked)}
+            slotProps={{ input: { 'aria-describedby': 'voice-assistants-medicine-hint' } }}
+          />
+        }
+        label={t('assistants.sayMedicineNames.label')}
+      />
+      <FormHelperText id="voice-assistants-medicine-hint" sx={{ mt: -1 }}>
+        {t('assistants.sayMedicineNames.hint')}
       </FormHelperText>
       <ErrorNotice message={action.error} />
       <Typography variant="body2" role="status" aria-live="polite">
