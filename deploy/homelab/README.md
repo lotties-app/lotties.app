@@ -84,7 +84,7 @@ creates the namespace when missing; checks (or copies) `cr-homel4b`; builds and 
 Images are tagged `src-<hash>` of the files they are built from (for the web image also the `VITE_*` values, so a
 changed client id rebuilds it). A tag already in the registry is not rebuilt and its pods are not restarted. A run that
 built something is a release: the images also get `vX.Y.Z` (the next patch after the git and registry tags, or
-`VERSION`) and `latest`. `TAG`, `FORCE_BUILD=1` (also to pick up patched base images) and `SKIP_BUILD=1` are available.
+`VERSION`) and `latest`. `TAG`, `FORCE_BUILD=1` (also to pick up patched base images) and `SKIP_BUILD=1` are available. After a release the script creates the annotated git tag `vX.Y.Z` on HEAD and pushes it to `origin` (a problem is printed and never fails the deploy; `TAG_RELEASE=0` skips it, `PUSH_TAG=0` keeps it local).
 The release is chosen before the builds and stamped into the images it builds (`APP_VERSION`, `APP_COMMIT`,
 `APP_BUILD_TIME`; About and `GET /api/v1/version` show it); it is not part of the `src-<hash>` tag, so an image that
 is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").

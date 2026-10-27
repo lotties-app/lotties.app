@@ -145,7 +145,7 @@ run() { # name, env assignments... ; leaves the log in $WORK/log and the output 
   shift
   : > "$WORK/log"
   env -i PATH="$WORK/bin:$PATH" HOME="$WORK" STUB_LOG="$WORK/log" ENV_FILE="$WORK/app.env" KUBE_CONTEXT=mine \
-    REGISTRY=reg.test/lotties "$@" bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
+    REGISTRY=reg.test/lotties TAG_RELEASE=0 "$@" bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
   RUN_CODE=$?
   [ "$RUN_CODE" -eq 0 ] || [ "${EXPECT_FAIL:-0}" = 1 ] || { echo "not ok - $name: deploy.sh exited $RUN_CODE"; sed 's/^/    /' "$WORK/out" | tail -5; FAILED=1; return 1; }
 }
@@ -209,6 +209,27 @@ run "unchanged run" STUB_TAGS="$(grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "
   check "unchanged: nothing is built" log_lacks '^podman build'
   check "unchanged: no new version" log_lacks '^podman tag'
 }
+
+# Release tag: in a throw-away clone with a bare origin (a whole run never tags: run() sets TAG_RELEASE=0, REPO is this repository).
+TAGREPO="$WORK/tagrepo"; ORIGIN="$WORK/origin.git"
+git init -q --bare "$ORIGIN"
+git init -q "$TAGREPO"
+git -C "$TAGREPO" -c user.name=t -c user.email=t@example.test commit -q --allow-empty -m first
+git -C "$TAGREPO" remote add origin "$ORIGIN"
+export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.test GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.test
+tag_out=$(REPO="$TAGREPO"; tag_release 4.5.6 2>&1)
+check "release tag: an annotated tag is created on HEAD" bash -c "[ \"\$(git -C '$TAGREPO' cat-file -t v4.5.6)\" = tag ]"
+check "release tag: it is pushed to origin" bash -c "git -C '$ORIGIN' rev-parse -q --verify refs/tags/v4.5.6 >/dev/null"
+tag_again=$(REPO="$TAGREPO"; tag_release 4.5.6 2>&1)
+check "release tag: an existing tag is left alone" bash -c "[[ '$tag_again' == *'already exists'* ]]"
+printf 'x' > "$TAGREPO/dirty.txt"
+tag_dirty=$(REPO="$TAGREPO"; tag_release 4.5.7 2>&1)
+check "release tag: a dirty working tree is said out loud" bash -c "[[ '$tag_dirty' == *'uncommitted changes'* ]]"
+tag_off=$(REPO="$TAGREPO"; TAG_RELEASE=0 tag_release 4.5.8 2>&1)
+check "release tag: TAG_RELEASE=0 creates nothing" bash -c "! git -C '$TAGREPO' rev-parse -q --verify refs/tags/v4.5.8 >/dev/null"
+tag_nopush=$(REPO="$TAGREPO"; PUSH_TAG=0 tag_release 4.5.9 2>&1)
+check "release tag: PUSH_TAG=0 keeps it local" bash -c "git -C '$TAGREPO' rev-parse -q --verify refs/tags/v4.5.9 >/dev/null && ! git -C '$ORIGIN' rev-parse -q --verify refs/tags/v4.5.9 >/dev/null"
+unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
 
 EXPECT_FAIL=1 run "pull secret missing, no flag" STUB_PULL_SECRET=no
 check "pull secret: a missing one stops a non-interactive run" bash -c "[ $RUN_CODE -ne 0 ]"
