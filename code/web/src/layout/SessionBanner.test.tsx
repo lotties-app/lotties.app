@@ -7,7 +7,7 @@ import { fakeAuth } from '../test/fakeAuth';
 import { fakeApi, testDatabase } from '../test/fakeApi';
 import { renderWithDb } from '../test/renderApp';
 import type { BabyRoutineDb } from '../db/database';
-import { RENEWING_NOTICE_DELAY_MS, SessionBanner } from './SessionBanner';
+import { RENEWING_NOTICE_DELAY_MS, RENEWING_STUCK_DELAY_MS, SessionBanner } from './SessionBanner';
 import { SyncIconButton } from './SyncIconButton';
 import { syncLabel } from './syncPresentation';
 import { INITIAL_SYNC_STATUS } from '../sync/syncStatus';
@@ -41,6 +41,22 @@ describe('SessionBanner', () => {
 
     expect(screen.getByRole('status').textContent).toMatch(/^Reconnecting your account/);
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
+  });
+
+  it('offers a new sign-in when the renewal is stuck for a long time', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const auth = fakeAuth({ session: 'waiting' });
+    renderBanner(auth);
+    act(() => {
+      vi.advanceTimersByTime(RENEWING_NOTICE_DELAY_MS);
+    });
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(RENEWING_STUCK_DELAY_MS);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(auth.login).toHaveBeenCalledWith('/timeline?day=2');
   });
 
   it('stays quiet while offline (the offline state is shown elsewhere) and when active', () => {
