@@ -6,9 +6,11 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  FormControlLabel,
   FormHelperText,
   Link,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -71,6 +73,16 @@ export function VoiceAssistantsSection({
     setSaved(ok);
   };
 
+  const sayBabyName = settings.data.sayBabyName === true;
+  const toggleName = async (next: boolean) => {
+    setSaved(false);
+    const ok = await action.run(async () => {
+      const result = await saveAssistantSettings(api, value === NONE ? null : value, next);
+      queryClient.setQueryData(ASSISTANT_SETTINGS_KEY, result);
+    });
+    setSaved(ok);
+  };
+
   return (
     <Stack spacing={1.5}>
       <Typography color="text.secondary">{t('assistants.intro')}</Typography>
@@ -97,6 +109,20 @@ export function VoiceAssistantsSection({
         {loggable.length === 1
           ? t('assistants.hintOne', { name: loggable[0].name })
           : t('assistants.hintSeveral')}
+      </FormHelperText>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={sayBabyName}
+            disabled={action.pending}
+            onChange={(e) => void toggleName(e.target.checked)}
+            slotProps={{ input: { 'aria-describedby': 'voice-assistants-name-hint' } }}
+          />
+        }
+        label={t('assistants.sayBabyName.label')}
+      />
+      <FormHelperText id="voice-assistants-name-hint" sx={{ mt: -1 }}>
+        {t('assistants.sayBabyName.hint')}
       </FormHelperText>
       <ErrorNotice message={action.error} />
       <Typography variant="body2" role="status" aria-live="polite">

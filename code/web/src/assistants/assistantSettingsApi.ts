@@ -16,6 +16,8 @@ export interface AssistantSettings {
   updatedAt: string | null;
   mcpEnabled?: boolean;
   mcpUrl?: string | null;
+  /** Whether answers may say the baby's name; `false` (or absent, from an older server) by default. */
+  sayBabyName?: boolean;
 }
 
 export const ASSISTANT_SETTINGS_KEY = ['assistant-settings'] as const;
@@ -26,10 +28,18 @@ export function getAssistantSettings(api: ApiClient): Promise<AssistantSettings>
   return api.request<AssistantSettings>(settingsPath);
 }
 
-/** Saves the default baby (`null` clears it); the server accepts only a baby the user can log for. */
+/**
+ * Saves the default baby (`null` clears it; the server accepts only a baby the user can log for)
+ * and, when given, whether answers may say the baby's name. Without `sayBabyName` the stored value
+ * stays as it is.
+ */
 export function saveAssistantSettings(
   api: ApiClient,
   defaultBabyId: string | null,
+  sayBabyName?: boolean,
 ): Promise<AssistantSettings> {
-  return api.request<AssistantSettings>(settingsPath, { method: 'PUT', body: { defaultBabyId } });
+  return api.request<AssistantSettings>(settingsPath, {
+    method: 'PUT',
+    body: sayBabyName === undefined ? { defaultBabyId } : { defaultBabyId, sayBabyName },
+  });
 }
