@@ -529,7 +529,7 @@
           "name": "BellyPainIntent",
           "slots": [
             {
-              "name": "intensity",
+              "name": "painLevel",
               "type": "AMAZON.NUMBER"
             }
           ],
@@ -540,11 +540,11 @@
             "a barriga dela dói",
             "a barriga dele dói",
             "registrar dor de barriga",
-            "dor de barriga nível {intensity}",
-            "cólica nível {intensity}",
+            "dor de barriga nível {painLevel}",
+            "cólica nível {painLevel}",
             "ela está com gases",
             "ele está com gases",
-            "dor abdominal {intensity}"
+            "dor abdominal {painLevel}"
           ]
         },
         {

@@ -62,7 +62,7 @@ internal sealed class AlexaSkill(
         ["CryReasonsIntent"] = (service, invocation, _, token) => service.ReadCryReasonsAsync(invocation, token),
         ["BathIntent"] = (service, invocation, intent, token) => service.LogBathAsync(invocation, AlexaSlots.Decimal(intent, "temperature"), token),
         ["TummyTimeIntent"] = (service, invocation, _, token) => service.LogTummyTimeAsync(invocation, token),
-        ["BellyPainIntent"] = (service, invocation, intent, token) => service.LogBellyPainAsync(invocation, AlexaSlots.Number(intent, "intensity") ?? 3, token),
+        ["BellyPainIntent"] = (service, invocation, intent, token) => service.LogBellyPainAsync(invocation, AlexaSlots.Number(intent, "painLevel") ?? 3, token),
         ["BreastPumpIntent"] = (service, invocation, intent, token) => service.LogBreastPumpAsync(invocation, AlexaSlots.Number(intent, "amountLeft"), AlexaSlots.Number(intent, "amountRight"), token),
         ["NasalSuctionIntent"] = (service, invocation, _, token) => service.LogNasalSuctionAsync(invocation, null, null, token),
         ["BellyMassageIntent"] = (service, invocation, _, token) => service.LogBellyMassageAsync(invocation, null, null, token),

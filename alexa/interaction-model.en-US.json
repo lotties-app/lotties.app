@@ -566,7 +566,7 @@
           "name": "BellyPainIntent",
           "slots": [
             {
-              "name": "intensity",
+              "name": "painLevel",
               "type": "AMAZON.NUMBER"
             }
           ],
@@ -577,11 +577,11 @@
             "her tummy hurts",
             "his tummy hurts",
             "log belly pain",
-            "belly pain level {intensity}",
-            "tummy ache level {intensity}",
+            "belly pain level {painLevel}",
+            "tummy ache level {painLevel}",
             "she has gas pain",
             "he has gas pain",
-            "colic pain {intensity}"
+            "colic pain {painLevel}"
           ]
         },
         {
