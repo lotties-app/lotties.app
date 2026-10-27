@@ -3,11 +3,26 @@
     "languageModel": {
       "invocationName": "lotties",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
         {
           "name": "SleepStartIntent",
           "slots": [],
@@ -32,7 +47,25 @@
             "he's napping",
             "start a sleep",
             "log a nap",
-            "baby went down for a nap"
+            "baby went down for a nap",
+            "she's down",
+            "he's down",
+            "lights out",
+            "nap time",
+            "bedtime",
+            "she's out",
+            "he's out",
+            "knocked out",
+            "she passed out",
+            "he passed out",
+            "out like a light",
+            "she conked out",
+            "he conked out",
+            "down for the night",
+            "night night",
+            "she's out cold",
+            "he's out cold",
+            "sleep time"
           ]
         },
         {
@@ -55,15 +88,35 @@
             "he's up",
             "the baby is up now",
             "end the nap",
-            "finish nap"
+            "finish nap",
+            "good morning",
+            "nap is over",
+            "nap's done",
+            "she's awake now",
+            "he's awake now",
+            "up and at em",
+            "rise and shine"
           ]
         },
         {
           "name": "BottleIntent",
           "slots": [
-            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} {volumeUnit}"] },
-            { "name": "volumeUnit", "type": "VOLUME_UNIT" },
-            { "name": "bottleKind", "type": "BOTTLE_KIND" }
+            {
+              "name": "amount",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "{amount}",
+                "{amount} {volumeUnit}"
+              ]
+            },
+            {
+              "name": "volumeUnit",
+              "type": "VOLUME_UNIT"
+            },
+            {
+              "name": "bottleKind",
+              "type": "BOTTLE_KIND"
+            }
           ],
           "samples": [
             "log a {amount} {volumeUnit} bottle",
@@ -79,7 +132,7 @@
             "he had {amount} {volumeUnit} of {bottleKind}",
             "she drank a {bottleKind} bottle of {amount} {volumeUnit}",
             "log a bottle",
-"add a bottle",
+            "add a bottle",
             "record a bottle",
             "log a {bottleKind} bottle",
             "add a {bottleKind} bottle",
@@ -89,12 +142,28 @@
             "baby had a {amount} ml bottle",
             "fed her {amount} ml of {kind}",
             "fed him {amount} ml",
-            "{amount} ml of {kind}"
+            "{amount} ml of {kind}",
+            "she ate {amount} ml",
+            "he ate {amount} ml",
+            "finished her bottle",
+            "finished his bottle",
+            "drank {amount} ml",
+            "had {amount} ml of milk",
+            "she finished her bottle",
+            "he finished his bottle",
+            "bottle done",
+            "she's done eating",
+            "he's done eating"
           ]
         },
         {
           "name": "NursingIntent",
-          "slots": [{ "name": "side", "type": "BREAST_SIDE" }],
+          "slots": [
+            {
+              "name": "side",
+              "type": "BREAST_SIDE"
+            }
+          ],
           "samples": [
             "start nursing",
             "start breastfeeding",
@@ -111,12 +180,28 @@
             "started nursing on the {side}",
             "breastfeeding on the {side}",
             "feed on the {side} side",
-            "nurse on the {side}"
+            "nurse on the {side}",
+            "latching on",
+            "feeding time",
+            "nurse time",
+            "she's latching",
+            "he's latching",
+            "breastfeeding now"
           ]
         },
         {
           "name": "DiaperIntent",
-          "slots": [{ "name": "diaperKind", "type": "DIAPER_KIND", "samples": ["{diaperKind}", "it was {diaperKind}", "a {diaperKind} one"] }],
+          "slots": [
+            {
+              "name": "diaperKind",
+              "type": "DIAPER_KIND",
+              "samples": [
+                "{diaperKind}",
+                "it was {diaperKind}",
+                "a {diaperKind} one"
+              ]
+            }
+          ],
           "samples": [
             "log a {diaperKind} diaper",
             "a {diaperKind} diaper",
@@ -134,7 +219,22 @@
             "changed her diaper, it was {kind}",
             "changed his diaper, it was {kind}",
             "it was a {kind} diaper",
-            "diaper was {kind}"
+            "diaper was {kind}",
+            "poopy diaper",
+            "number two",
+            "she went",
+            "he went",
+            "dirty diaper",
+            "stinky diaper",
+            "she pooped",
+            "he pooped",
+            "pee diaper",
+            "number one",
+            "blowout",
+            "explosive diaper",
+            "she went number two",
+            "he went number two",
+            "mega poop"
           ]
         },
         {
@@ -269,7 +369,10 @@
             "when will she need a diaper change",
             "when is the next diaper due",
             "when will the baby need changing",
-            "when is the diaper change due"
+            "when is the diaper change due",
+            "when will she need changing next",
+            "when is the next change due",
+            "next diaper when"
           ]
         },
         {
@@ -383,7 +486,25 @@
             "delete the last thing I logged",
             "remove the last entry",
             "take back the last entry",
-            "cancel the last entry"
+            "cancel the last entry",
+            "erase the last thing",
+            "scratch the last entry",
+            "never mind the last one",
+            "forget the last log",
+            "undo the last log",
+            "undo last entry",
+            "delete what I just logged",
+            "take back the last thing",
+            "oops undo that",
+            "cancel the last log",
+            "remove what I just said",
+            "undo that",
+            "oops",
+            "never mind",
+            "take that back",
+            "scratch that",
+            "forget that",
+            "didn't mean that"
           ]
         },
         {
@@ -399,7 +520,429 @@
             "switch to another baby",
             "change active baby",
             "pick a different baby",
-            "select baby"
+            "select baby",
+            "which baby am I tracking",
+            "change tracking baby",
+            "log for a different baby"
+          ]
+        },
+        {
+          "name": "BathIntent",
+          "slots": [
+            {
+              "name": "temperature",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "log a bath",
+            "baby had a bath",
+            "she had a bath",
+            "he had a bath",
+            "bath time",
+            "just gave her a bath",
+            "just gave him a bath",
+            "log a bath at {temperature} degrees",
+            "bath was {temperature} degrees",
+            "water was {temperature} degrees",
+            "record a bath",
+            "add a bath"
+          ]
+        },
+        {
+          "name": "TummyTimeIntent",
+          "slots": [],
+          "samples": [
+            "start tummy time",
+            "tummy time started",
+            "she's doing tummy time",
+            "he's doing tummy time",
+            "baby is on her tummy",
+            "baby is on his tummy",
+            "log tummy time",
+            "begin tummy time",
+            "tummy time"
+          ]
+        },
+        {
+          "name": "BellyPainIntent",
+          "slots": [
+            {
+              "name": "intensity",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "she has belly pain",
+            "he has belly pain",
+            "baby has a tummy ache",
+            "her tummy hurts",
+            "his tummy hurts",
+            "log belly pain",
+            "belly pain level {intensity}",
+            "tummy ache {intensity} out of 5",
+            "she has gas pain",
+            "he has gas pain",
+            "colic pain {intensity}"
+          ]
+        },
+        {
+          "name": "BreastPumpIntent",
+          "slots": [
+            {
+              "name": "amountLeft",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "amountRight",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "start pumping",
+            "I'm pumping",
+            "pumping session",
+            "log breast pump",
+            "pumped {amountLeft} ml left and {amountRight} ml right",
+            "pumped {amountLeft} ml on the left",
+            "pumped {amountRight} ml on the right",
+            "expressing milk",
+            "start expressing"
+          ]
+        },
+        {
+          "name": "NasalSuctionIntent",
+          "slots": [],
+          "samples": [
+            "used the nasal aspirator",
+            "suctioned her nose",
+            "suctioned his nose",
+            "cleared her nose",
+            "cleared his nose",
+            "log nasal suction",
+            "used the nose sucker",
+            "baby's nose was cleared",
+            "nasal suction"
+          ]
+        },
+        {
+          "name": "BellyMassageIntent",
+          "slots": [],
+          "samples": [
+            "gave her a belly massage",
+            "gave him a belly massage",
+            "doing a tummy massage",
+            "log belly massage",
+            "massaging her tummy",
+            "massaging his tummy",
+            "belly rub",
+            "tummy massage started"
+          ]
+        },
+        {
+          "name": "FussyIntent",
+          "slots": [
+            {
+              "name": "intensity",
+              "type": "FUSSY_INTENSITY"
+            }
+          ],
+          "samples": [
+            "she's fussy",
+            "he's fussy",
+            "baby is fussy",
+            "she's crying a lot",
+            "he's crying a lot",
+            "log fussy",
+            "she's very fussy",
+            "he's very fussy",
+            "fussiness level {intensity}",
+            "she's being difficult",
+            "he's being difficult",
+            "baby won't settle",
+            "she won't stop crying",
+            "he won't stop crying",
+            "having a meltdown",
+            "losing it",
+            "wailing",
+            "screaming her head off",
+            "screaming his head off",
+            "inconsolable",
+            "she's losing her mind",
+            "he's losing his mind",
+            "full meltdown mode",
+            "losing it completely"
+          ]
+        },
+        {
+          "name": "NailTrimIntent",
+          "slots": [],
+          "samples": [
+            "trimmed her nails",
+            "trimmed his nails",
+            "nail trim",
+            "log nail trim",
+            "cut her nails",
+            "cut his nails",
+            "did a nail trim",
+            "clipped her nails",
+            "clipped his nails"
+          ]
+        },
+        {
+          "name": "TemperatureIntent",
+          "slots": [
+            {
+              "name": "value",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "method",
+              "type": "TEMP_METHOD"
+            }
+          ],
+          "samples": [
+            "her temperature is {value}",
+            "his temperature is {value}",
+            "baby has a fever of {value}",
+            "temperature {value} degrees",
+            "log temperature {value}",
+            "she has a temperature of {value}",
+            "he has a temperature of {value}",
+            "{value} degrees {method}",
+            "took her temperature, it's {value}",
+            "took his temperature, it's {value}",
+            "fever of {value}",
+            "running a fever",
+            "she's hot",
+            "he's hot",
+            "burning up",
+            "feels warm",
+            "temperature check",
+            "she feels hot",
+            "he feels hot",
+            "running hot",
+            "warm to the touch",
+            "she's burning up",
+            "he's burning up"
+          ]
+        },
+        {
+          "name": "SpitUpIntent",
+          "slots": [],
+          "samples": [
+            "she spit up",
+            "he spit up",
+            "baby spit up",
+            "log spit up",
+            "she threw up",
+            "he threw up",
+            "spit up",
+            "vomited",
+            "she vomited",
+            "he vomited",
+            "logged a spit up",
+            "spit up again",
+            "threw up her milk",
+            "threw up his milk",
+            "spewed",
+            "hurled",
+            "spit up a lot"
+          ]
+        },
+        {
+          "name": "TeethingIntent",
+          "slots": [],
+          "samples": [
+            "she's teething",
+            "he's teething",
+            "baby is teething",
+            "log teething",
+            "new tooth coming in",
+            "teething pain",
+            "she's cutting a tooth",
+            "he's cutting a tooth",
+            "tooth is coming through"
+          ]
+        },
+        {
+          "name": "MilestoneIntent",
+          "slots": [
+            {
+              "name": "milestone",
+              "type": "MILESTONE_TYPE"
+            }
+          ],
+          "samples": [
+            "she rolled over",
+            "he rolled over",
+            "baby smiled for the first time",
+            "log milestone",
+            "she sat up",
+            "he sat up",
+            "first smile",
+            "she crawled",
+            "he crawled",
+            "log a milestone",
+            "reached a milestone"
+          ]
+        },
+        {
+          "name": "SymptomIntent",
+          "slots": [
+            {
+              "name": "symptom",
+              "type": "SYMPTOM_TYPE"
+            },
+            {
+              "name": "severity",
+              "type": "SYMPTOM_SEVERITY"
+            }
+          ],
+          "samples": [
+            "she has a {symptom}",
+            "he has a {symptom}",
+            "baby has a {symptom}",
+            "log symptom {symptom}",
+            "she has a {severity} {symptom}",
+            "he has a {severity} {symptom}",
+            "noticing {symptom}",
+            "symptom is {symptom}",
+            "logged a {symptom}"
+          ]
+        },
+        {
+          "name": "OutdoorIntent",
+          "slots": [],
+          "samples": [
+            "went outside",
+            "outdoor time started",
+            "taking her outside",
+            "taking him outside",
+            "log outdoor time",
+            "went for a walk",
+            "outside time",
+            "in the park",
+            "stroller walk started",
+            "fresh air time"
+          ]
+        },
+        {
+          "name": "SkinCareIntent",
+          "slots": [],
+          "samples": [
+            "applied lotion",
+            "put on diaper cream",
+            "log skin care",
+            "applied sunscreen",
+            "moisturized her skin",
+            "moisturized his skin",
+            "skin care",
+            "applied cream",
+            "put on moisturizer"
+          ]
+        },
+        {
+          "name": "MedicationIntent",
+          "slots": [
+            {
+              "name": "medicationName",
+              "type": "AMAZON.FreeText"
+            }
+          ],
+          "samples": [
+            "gave her {medicationName}",
+            "gave him {medicationName}",
+            "log medication {medicationName}",
+            "administered {medicationName}",
+            "she took {medicationName}",
+            "he took {medicationName}",
+            "medicine time for {medicationName}",
+            "dosed {medicationName}",
+            "gave her medicine",
+            "gave him medicine",
+            "medicine time",
+            "med time",
+            "gave her the medicine",
+            "gave him the medicine",
+            "dosed her",
+            "dosed him"
+          ]
+        },
+        {
+          "name": "MedicationReminderIntent",
+          "slots": [],
+          "samples": [
+            "when is the next medication",
+            "is any medicine due",
+            "what medication is due",
+            "next medication dose",
+            "medication reminder",
+            "when should I give the next dose",
+            "any meds due",
+            "is it time for medicine"
+          ]
+        },
+        {
+          "name": "WeekSummaryIntent",
+          "slots": [],
+          "samples": [
+            "how was her week",
+            "how was his week",
+            "weekly summary",
+            "week overview",
+            "how did the baby do this week",
+            "summarize the week",
+            "what happened this week",
+            "give me the week summary",
+            "how many feeds this week",
+            "sleep summary for the week"
+          ]
+        },
+        {
+          "name": "ListBabiesIntent",
+          "slots": [],
+          "samples": [
+            "which babies can I log for",
+            "list my babies",
+            "show my babies",
+            "what babies do I have",
+            "my babies",
+            "which baby is active",
+            "switch baby context",
+            "who can I track"
+          ]
+        },
+        {
+          "name": "BabyProfileIntent",
+          "slots": [],
+          "samples": [
+            "how old is she",
+            "how old is he",
+            "how old is the baby",
+            "baby's age",
+            "what's her age",
+            "what's his age",
+            "how many months old",
+            "how many days old",
+            "tell me about the baby",
+            "baby profile"
+          ]
+        },
+        {
+          "name": "DaySummaryIntent",
+          "slots": [],
+          "samples": [
+            "how was her day",
+            "how was his day",
+            "daily summary",
+            "day overview",
+            "summarize today",
+            "what happened today",
+            "give me today's summary",
+            "how did the baby do today",
+            "recap today",
+            "today's log"
           ]
         }
       ],
@@ -407,30 +950,482 @@
         {
           "name": "VOLUME_UNIT",
           "values": [
-            { "id": "ML", "name": { "value": "milliliters", "synonyms": ["ml", "milliliter", "millilitre", "millilitres", "mls"] } },
-            { "id": "OZ", "name": { "value": "ounces", "synonyms": ["oz", "ounce", "fluid ounce", "fluid ounces", "fl oz"] } }
+            {
+              "id": "ML",
+              "name": {
+                "value": "milliliters",
+                "synonyms": [
+                  "ml",
+                  "milliliter",
+                  "millilitre",
+                  "millilitres",
+                  "mls"
+                ]
+              }
+            },
+            {
+              "id": "OZ",
+              "name": {
+                "value": "ounces",
+                "synonyms": [
+                  "oz",
+                  "ounce",
+                  "fluid ounce",
+                  "fluid ounces",
+                  "fl oz"
+                ]
+              }
+            }
           ]
         },
         {
           "name": "BOTTLE_KIND",
           "values": [
-            { "id": "FORMULA", "name": { "value": "formula", "synonyms": ["formula milk"] } },
-            { "id": "BREAST_MILK", "name": { "value": "breast milk", "synonyms": ["breastmilk", "pumped milk", "mommy's milk"] } }
+            {
+              "id": "FORMULA",
+              "name": {
+                "value": "formula",
+                "synonyms": [
+                  "formula milk"
+                ]
+              }
+            },
+            {
+              "id": "BREAST_MILK",
+              "name": {
+                "value": "breast milk",
+                "synonyms": [
+                  "breastmilk",
+                  "pumped milk",
+                  "mommy's milk"
+                ]
+              }
+            }
           ]
         },
         {
           "name": "DIAPER_KIND",
           "values": [
-            { "id": "WET", "name": { "value": "wet", "synonyms": ["pee", "peed", "pee pee"] } },
-            { "id": "DIRTY", "name": { "value": "dirty", "synonyms": ["poop", "poopy", "pooped", "poo"] } },
-            { "id": "BOTH", "name": { "value": "both", "synonyms": ["wet and dirty", "pee and poop"] } }
+            {
+              "id": "WET",
+              "name": {
+                "value": "wet",
+                "synonyms": [
+                  "pee",
+                  "peed",
+                  "pee pee"
+                ]
+              }
+            },
+            {
+              "id": "DIRTY",
+              "name": {
+                "value": "dirty",
+                "synonyms": [
+                  "poop",
+                  "poopy",
+                  "pooped",
+                  "poo"
+                ]
+              }
+            },
+            {
+              "id": "BOTH",
+              "name": {
+                "value": "both",
+                "synonyms": [
+                  "wet and dirty",
+                  "pee and poop"
+                ]
+              }
+            }
           ]
         },
         {
           "name": "BREAST_SIDE",
           "values": [
-            { "id": "LEFT", "name": { "value": "left" } },
-            { "id": "RIGHT", "name": { "value": "right" } }
+            {
+              "id": "LEFT",
+              "name": {
+                "value": "left"
+              }
+            },
+            {
+              "id": "RIGHT",
+              "name": {
+                "value": "right"
+              }
+            }
+          ]
+        },
+        {
+          "name": "FUSSY_INTENSITY",
+          "values": [
+            {
+              "name": {
+                "value": "mild",
+                "synonyms": [
+                  "a little",
+                  "slightly",
+                  "bit"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "moderate",
+                "synonyms": [
+                  "medium",
+                  "somewhat",
+                  "fairly"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "severe",
+                "synonyms": [
+                  "very",
+                  "extremely",
+                  "really",
+                  "badly",
+                  "intense"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TEMP_METHOD",
+          "values": [
+            {
+              "name": {
+                "value": "axillary",
+                "synonyms": [
+                  "underarm",
+                  "armpit",
+                  "under arm"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "rectal",
+                "synonyms": [
+                  "rectum",
+                  "bum",
+                  "bottom"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "forehead",
+                "synonyms": [
+                  "temporal",
+                  "temple",
+                  "fore head"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ear",
+                "synonyms": [
+                  "tympanic",
+                  "in ear"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "oral",
+                "synonyms": [
+                  "mouth",
+                  "by mouth"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MILESTONE_TYPE",
+          "values": [
+            {
+              "name": {
+                "value": "rolled_over",
+                "synonyms": [
+                  "rolled over",
+                  "roll over",
+                  "flipped over",
+                  "turned over"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "first_smile",
+                "synonyms": [
+                  "smiled",
+                  "first smile",
+                  "smiling"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "sat_up",
+                "synonyms": [
+                  "sat up",
+                  "sitting up",
+                  "sit up",
+                  "sitting"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "crawled",
+                "synonyms": [
+                  "crawling",
+                  "crawl",
+                  "creeping"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "stood_up",
+                "synonyms": [
+                  "stood up",
+                  "standing up",
+                  "stand up",
+                  "standing"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "first_steps",
+                "synonyms": [
+                  "walking",
+                  "walked",
+                  "first steps",
+                  "took steps",
+                  "taking steps"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "first_word",
+                "synonyms": [
+                  "said first word",
+                  "spoke",
+                  "first word",
+                  "talking"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "clapped",
+                "synonyms": [
+                  "clapping",
+                  "clap hands",
+                  "clapped hands"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "waved",
+                "synonyms": [
+                  "waving",
+                  "wave bye",
+                  "waved bye"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "pointed",
+                "synonyms": [
+                  "pointing",
+                  "points at things"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SYMPTOM_TYPE",
+          "values": [
+            {
+              "name": {
+                "value": "fever",
+                "synonyms": [
+                  "high temperature",
+                  "hot",
+                  "burning up",
+                  "temp"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "cough",
+                "synonyms": [
+                  "coughing",
+                  "hack"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "runny_nose",
+                "synonyms": [
+                  "stuffy nose",
+                  "congestion",
+                  "cold",
+                  "sniffles",
+                  "drippy nose"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "diarrhea",
+                "synonyms": [
+                  "loose stools",
+                  "watery poop",
+                  "runs"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "constipation",
+                "synonyms": [
+                  "hard stool",
+                  "cant poop",
+                  "backed up"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "rash",
+                "synonyms": [
+                  "spots",
+                  "hives",
+                  "red patches",
+                  "skin rash"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "vomiting",
+                "synonyms": [
+                  "throwing up",
+                  "puking",
+                  "sick"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ear_pain",
+                "synonyms": [
+                  "ear ache",
+                  "ear infection",
+                  "ears hurt"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "eye_discharge",
+                "synonyms": [
+                  "goopy eyes",
+                  "crusty eyes",
+                  "pink eye",
+                  "conjunctivitis"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "loss_of_appetite",
+                "synonyms": [
+                  "not eating",
+                  "wont eat",
+                  "refusing food",
+                  "no appetite"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "lethargy",
+                "synonyms": [
+                  "sleepy",
+                  "tired",
+                  "low energy",
+                  "listless",
+                  "unusually quiet"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "dehydration",
+                "synonyms": [
+                  "dry mouth",
+                  "no wet diapers",
+                  "sunken fontanelle"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SYMPTOM_SEVERITY",
+          "values": [
+            {
+              "name": {
+                "value": "mild",
+                "synonyms": [
+                  "slight",
+                  "little",
+                  "bit",
+                  "minor"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "moderate",
+                "synonyms": [
+                  "medium",
+                  "somewhat",
+                  "fairly"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "severe",
+                "synonyms": [
+                  "bad",
+                  "serious",
+                  "very",
+                  "extreme",
+                  "really bad"
+                ]
+              }
+            }
           ]
         }
       ]
@@ -448,7 +1443,9 @@
               "type": "AMAZON.NUMBER",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
+              "prompts": {
+                "elicitation": "Elicit.Slot.BottleIntent.amount"
+              }
             },
             {
               "name": "volumeUnit",
@@ -477,7 +1474,9 @@
               "type": "DIAPER_KIND",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.diaperKind" }
+              "prompts": {
+                "elicitation": "Elicit.Slot.DiaperIntent.diaperKind"
+              }
             }
           ]
         }
@@ -488,13 +1487,24 @@
       {
         "id": "Elicit.Slot.BottleIntent.amount",
         "variations": [
-          { "type": "PlainText", "value": "How much? For example 120 milliliters or 4 ounces." },
-          { "type": "PlainText", "value": "How much was in the bottle? For example 120 milliliters or 4 ounces." }
+          {
+            "type": "PlainText",
+            "value": "How much? For example 120 milliliters or 4 ounces."
+          },
+          {
+            "type": "PlainText",
+            "value": "How much was in the bottle? For example 120 milliliters or 4 ounces."
+          }
         ]
       },
       {
         "id": "Elicit.Slot.DiaperIntent.diaperKind",
-        "variations": [{ "type": "PlainText", "value": "Was it wet, dirty, or both?" }]
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Was it wet, dirty, or both?"
+          }
+        ]
       }
     ]
   }

@@ -77,7 +77,26 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.BabyProfile] = result => $"{Name(result)} is {Age(result.Age)}.",
         [AssistantResultCode.DaySummary] = DaySummary,
         [AssistantResultCode.WeekSummary] = WeekSummary,
-    };
+        [AssistantResultCode.BathLogged] = result => $"Logged a bath for {Name(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", water at {temp} degrees" : "")}.",
+        [AssistantResultCode.TummyTimeStarted] = result => $"Tummy time started for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.BellyPainLogged] = result => $"Logged belly pain for {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", intensity {i}" : "")}.",
+        [AssistantResultCode.BreastPumpStarted] = result => $"Breast pump session started for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NasalSuctionLogged] = result => $"Logged nasal suction for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.BellyMassageStarted] = result => $"Belly massage started for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.FussyStarted] = result => $"Fussy timer started for {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", {i}" : "")}.",
+        [AssistantResultCode.NailTrimLogged] = result => $"Logged a nail trim for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TemperatureLogged] = result => $"Logged a temperature of {result.TemperatureC} degrees for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SpitUpLogged] = result => $"Logged spit-up for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TeethingLogged] = result => $"Logged teething for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.MilestoneLogged] = result => $"Logged a milestone for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SymptomLogged] = result => $"Logged a symptom for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.OutdoorStarted] = result => $"Outdoor time started for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SkinCareLogged] = result => $"Logged skin care for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.MedicationLogged] = result => $"Logged {result.MedicationName ?? "medication"} for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NoActivePrescription] = result => $"I can't find an active prescription for {result.MedicationName ?? "that medication"} for {Name(result)}. Check the app.",
+        [AssistantResultCode.MedicationReminder] = result => $"{result.MedicationName ?? "Medication"} is due for {Name(result)}{When(result, result.At)}.",
+        [AssistantResultCode.NoMedicationDue] = result => $"No medication doses are due right now for {Name(result)}.",
+            };
 
     private static string Age(AssistantBabyAge? age) => age switch
     {

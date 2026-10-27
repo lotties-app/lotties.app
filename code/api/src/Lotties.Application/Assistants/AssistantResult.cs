@@ -225,15 +225,7 @@ public enum AssistantResultCode
     /// <summary>No medication doses are due right now.</summary>
     NoMedicationDue,
 
-    /// <summary>The last assistant log was deleted.</summary>
-    UndoSuccess,
-
-    /// <summary>The last assistant log is older than 30 minutes; nothing was deleted.</summary>
-    UndoTooOld,
-
-    /// <summary>No assistant log to undo.</summary>
-    UndoNothingToUndo,
-}
+    }
 
 /// <summary>Which days a count covers.</summary>
 [JsonConverter(typeof(SnakeCaseStringEnumConverter))]

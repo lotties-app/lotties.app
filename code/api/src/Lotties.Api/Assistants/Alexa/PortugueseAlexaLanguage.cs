@@ -77,7 +77,26 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.BabyProfile] = result => $"{Name(result)} tem {Age(result.Age)}.",
         [AssistantResultCode.DaySummary] = DaySummary,
         [AssistantResultCode.WeekSummary] = WeekSummary,
-    };
+        [AssistantResultCode.BathLogged] = result => $"Registrei um banho para {Name(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", água a {temp} graus" : "")}.",
+        [AssistantResultCode.TummyTimeStarted] = result => $"Tempo de bruços iniciado para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.BellyPainLogged] = result => $"Registrei dor de barriga para {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", intensidade {i}" : "")}.",
+        [AssistantResultCode.BreastPumpStarted] = result => $"Sessão de ordenha iniciada para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NasalSuctionLogged] = result => $"Registrei aspiração nasal para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.BellyMassageStarted] = result => $"Massagem na barriga iniciada para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.FussyStarted] = result => $"Cronômetro de irritação iniciado para {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", {i}" : "")}.",
+        [AssistantResultCode.NailTrimLogged] = result => $"Registrei corte de unhas para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TemperatureLogged] = result => $"Registrei temperatura de {result.TemperatureC} graus para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SpitUpLogged] = result => $"Registrei regurgitação para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TeethingLogged] = result => $"Registrei dentição para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.MilestoneLogged] = result => $"Registrei um marco para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SymptomLogged] = result => $"Registrei um sintoma para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.OutdoorStarted] = result => $"Passeio ao ar livre iniciado para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SkinCareLogged] = result => $"Registrei cuidados com a pele para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.MedicationLogged] = result => $"Registrei {result.MedicationName ?? "medicamento"} para {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NoActivePrescription] = result => $"Não encontrei uma prescrição ativa para {result.MedicationName ?? "esse medicamento"} de {Name(result)}. Verifique no app.",
+        [AssistantResultCode.MedicationReminder] = result => $"{result.MedicationName ?? "Medicamento"} está na hora para {Name(result)}{When(result, result.At)}.",
+        [AssistantResultCode.NoMedicationDue] = result => $"Nenhuma dose de medicamento está pendente agora para {Name(result)}.",
+            };
 
     private static string Age(AssistantBabyAge? age) => age switch
     {

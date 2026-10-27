@@ -180,6 +180,4 @@ public interface IAssistantService
     /// <summary>Reads the next due medication dose from active prescriptions.</summary>
     Task<AssistantResult> ReadMedicationReminderAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
 
-    /// <summary>Deletes the last assistant-logged event if within 30 minutes.</summary>
-    Task<AssistantResult> UndoLastLogAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
-}
+    }

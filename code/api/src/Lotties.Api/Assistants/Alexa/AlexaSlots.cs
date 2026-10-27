@@ -124,6 +124,9 @@ public static class AlexaSlots
     private static string? SynonymOf(string? spoken) =>
         spoken is not null && Synonyms.TryGetValue(spoken.Trim(), out var id) ? id : null;
 
+    /// <summary>The raw spoken value of a slot, or <c>null</c> when absent.</summary>
+    public static string? SlotValue(AlexaIntent? intent, string slot) => SlotOf(intent, slot)?.Value is { Length: > 0 } value ? value : null;
+
     private static string? Value(AlexaIntent? intent, string slot) => SlotOf(intent, slot)?.Value is { Length: > 0 } value ? value : null;
 
     private static AlexaSlot? SlotOf(AlexaIntent? intent, string slot) =>

@@ -30,7 +30,6 @@ namespace Lotties.Application.Assistants;
 /// </remarks>
 internal sealed class AssistantService(
     AssistantSubjects subjects,
-    ICurrentUser currentUser,
     IEventService eventService,
     IEventRepository events,
     IClinicalEventRepository clinicalEvents,
@@ -685,9 +684,6 @@ AssistantForecasts forecasts,
     public Task<AssistantResult> ReadMedicationReminderAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.MedicationReminder, AssistantAccess.Read, subject => ReadMedicationReminderInnerAsync(subject, cancellationToken), cancellationToken);
 
-    public Task<AssistantResult> UndoLastLogAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
-        RunAsync(invocation, AssistantCommands.UndoLastLog, AssistantAccess.Log, subject => UndoLastLogCoreAsync(subject, cancellationToken), cancellationToken);
-
     private async Task<AssistantResult> LogBathInnerAsync(AssistantInvocation invocation, AssistantSubject subject, decimal? temperatureC, CancellationToken cancellationToken)
     {
         var eventId = IdOf(invocation, AssistantCommands.Bath, subject);
@@ -901,21 +897,7 @@ var prescription = activePrescriptions.FirstOrDefault(p => !p.IsDeleted && p.Cov
         };
     }
 
-    private async Task<AssistantResult> UndoLastLogCoreAsync(AssistantSubject subject, CancellationToken cancellationToken)
-    {
-        var user = await currentUser.GetUserAsync(cancellationToken);
-        var typeKeys = BuiltInEventTypes.All.Select(t => t.Key.Value).ToArray();
-        var windowStart = subject.Now - UndoWindow;
-        var recent = await clinicalEvents.ListNewestByTypesAsync(subject.Baby.Id, typeKeys, windowStart, subject.Now, 50, cancellationToken);
-        var last = recent.FirstOrDefault(e => e.Event.CreatedBy == user.Id);
-        if (last is null)
-            return subject.Result(AssistantResultCode.UndoNothingToUndo);
-        if (subject.Now - last.Event.StartedAt > UndoWindow)
-            return subject.Result(AssistantResultCode.UndoTooOld);
-        await eventService.DeleteAsync(subject.Baby.Id, last.Event.Id, cancellationToken);
-        return subject.Result(AssistantResultCode.UndoSuccess) with { At = subject.Now };
     }
-}
 
 /// <summary>The stable names of the assistant commands (logs and event id derivation; never change them).</summary>
 internal static class AssistantCommands
@@ -962,5 +944,4 @@ public const string NextNapWindow = "next_nap_window";
     public const string SkinCare = "skin_care";
     public const string Medication = "medication";
     public const string MedicationReminder = "medication_reminder";
-    public const string UndoLastLog = "undo_last_log";
-}
+    }

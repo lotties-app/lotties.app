@@ -3,11 +3,26 @@
     "languageModel": {
       "invocationName": "lotties",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
         {
           "name": "SleepStartIntent",
           "slots": [],
@@ -29,7 +44,18 @@
             "o bebê está cochilando",
             "ela está tirando uma soneca",
             "ele foi dormir",
-            "iniciar cochilo"
+            "iniciar cochilo",
+            "ela apagou",
+            "ele apagou",
+            "hora da soneca",
+            "hora de dormir",
+            "ela dormiu pesado",
+            "ele dormiu pesado",
+            "capotou",
+            "foi dormir",
+            "deitou pra dormir",
+            "hora do soninho",
+            "dormiu pesado mesmo"
           ]
         },
         {
@@ -49,15 +75,34 @@
             "ele está acordado",
             "o bebê levantou",
             "terminar a soneca",
-            "encerrar a soneca"
+            "encerrar a soneca",
+            "ela acordou já",
+            "ele acordou já",
+            "bom dia",
+            "a soneca acabou",
+            "acordou agora",
+            "levantou"
           ]
         },
         {
           "name": "BottleIntent",
           "slots": [
-            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} {volumeUnit}"] },
-            { "name": "volumeUnit", "type": "VOLUME_UNIT" },
-            { "name": "bottleKind", "type": "BOTTLE_KIND" }
+            {
+              "name": "amount",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "{amount}",
+                "{amount} {volumeUnit}"
+              ]
+            },
+            {
+              "name": "volumeUnit",
+              "type": "VOLUME_UNIT"
+            },
+            {
+              "name": "bottleKind",
+              "type": "BOTTLE_KIND"
+            }
           ],
           "samples": [
             "registrar mamadeira de {amount} {volumeUnit}",
@@ -84,12 +129,26 @@
             "ela bebeu {amount} ml",
             "ele bebeu {amount} ml",
             "dei {amount} ml de {kind}",
-            "o bebê bebeu {amount} ml de {kind}"
+            "o bebê bebeu {amount} ml de {kind}",
+            "ela tomou {amount} ml",
+            "ele tomou {amount} ml",
+            "terminou a mamadeira",
+            "bebeu {amount} ml",
+            "tomou {amount} ml de leite",
+            "acabou a mamadeira",
+            "terminou de mamar",
+            "mamadeira vazia",
+            "tomou tudo"
           ]
         },
         {
           "name": "NursingIntent",
-          "slots": [{ "name": "side", "type": "BREAST_SIDE" }],
+          "slots": [
+            {
+              "name": "side",
+              "type": "BREAST_SIDE"
+            }
+          ],
           "samples": [
             "começar amamentação",
             "iniciar amamentação",
@@ -104,12 +163,25 @@
             "ela está amamentando",
             "começou a mamar no peito {side}",
             "amamentando no lado {side}",
-            "mamar no {side}"
+            "mamar no {side}",
+            "pegando o peito",
+            "hora de mamar",
+            "mamando agora"
           ]
         },
         {
           "name": "DiaperIntent",
-          "slots": [{ "name": "diaperKind", "type": "DIAPER_KIND", "samples": ["{diaperKind}", "foi {diaperKind}", "de {diaperKind}"] }],
+          "slots": [
+            {
+              "name": "diaperKind",
+              "type": "DIAPER_KIND",
+              "samples": [
+                "{diaperKind}",
+                "foi {diaperKind}",
+                "de {diaperKind}"
+              ]
+            }
+          ],
           "samples": [
             "registrar fralda de {diaperKind}",
             "registrar uma fralda de {diaperKind}",
@@ -127,7 +199,18 @@
             "a fralda estava de {kind}",
             "troquei a fralda, era {kind}",
             "era uma fralda de {kind}",
-            "fez {kind} na fralda"
+            "fez {kind} na fralda",
+            "fralda suja",
+            "fez cocô",
+            "fez xixi",
+            "cagou na fralda",
+            "fralda fedida",
+            "numero dois",
+            "numero um",
+            "cagada monumental",
+            "fralda explodiu",
+            "fez numero dois",
+            "fralda cheia"
           ]
         },
         {
@@ -252,7 +335,10 @@
             "quando devo trocar a próxima fralda",
             "quando ela vai precisar trocar a fralda",
             "quando o bebê vai precisar de troca",
-            "quando é a hora da próxima troca"
+            "quando é a hora da próxima troca",
+            "quando vai ser a proxima fralda",
+            "proxima troca quando",
+            "quando trocar de novo"
           ]
         },
         {
@@ -367,7 +453,24 @@
             "apagar o último item",
             "excluir o último registro",
             "cancelar o último registro",
-            "remover o último registro"
+            "remover o último registro",
+            "apaga o ultimo",
+            "cancela o que registrei",
+            "esquece o ultimo",
+            "remove o ultimo item",
+            "desfazer o último log",
+            "desfazer último registro",
+            "apagar o que acabei de registrar",
+            "voltar atrás no último",
+            "ops desfazer isso",
+            "cancelar o último log",
+            "remover o que eu disse",
+            "desfazer aquilo",
+            "ops",
+            "esquece",
+            "volta atrás",
+            "não era isso",
+            "desconsidera"
           ]
         },
         {
@@ -378,7 +481,418 @@
             "trocar de bebê",
             "mudar o bebê",
             "usar outro bebê",
-            "como escolho o bebê"
+            "como escolho o bebê",
+            "qual bebê estou acompanhando",
+            "mudar bebê ativo",
+            "registrar para outro bebê"
+          ]
+        },
+        {
+          "name": "BathIntent",
+          "slots": [
+            {
+              "name": "temperature",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "registrar banho",
+            "o bebê tomou banho",
+            "ela tomou banho",
+            "ele tomou banho",
+            "hora do banho",
+            "acabei de dar banho nela",
+            "acabei de dar banho nele",
+            "banho com água a {temperature} graus",
+            "a água estava a {temperature} graus",
+            "anotar banho",
+            "adicionar banho",
+            "dei banho agora",
+            "banho registrado"
+          ]
+        },
+        {
+          "name": "TummyTimeIntent",
+          "slots": [],
+          "samples": [
+            "iniciar tempo de bruços",
+            "começar tummy time",
+            "ela está de bruços",
+            "ele está de bruços",
+            "o bebê está de barriga para baixo",
+            "registrar tempo de bruços",
+            "tempo de bruços",
+            "tummy time começou",
+            "deitar de bruços"
+          ]
+        },
+        {
+          "name": "BellyPainIntent",
+          "slots": [
+            {
+              "name": "intensity",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "ela está com dor de barriga",
+            "ele está com dor de barriga",
+            "o bebê está com cólica",
+            "a barriga dela dói",
+            "a barriga dele dói",
+            "registrar dor de barriga",
+            "dor de barriga nível {intensity}",
+            "cólica {intensity} de 5",
+            "ela está com gases",
+            "ele está com gases",
+            "dor abdominal {intensity}"
+          ]
+        },
+        {
+          "name": "BreastPumpIntent",
+          "slots": [
+            {
+              "name": "amountLeft",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "amountRight",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "começar a ordenhar",
+            "estou ordenhando",
+            "sessão de bomba",
+            "registrar ordenha",
+            "ordenei {amountLeft} ml na esquerda e {amountRight} ml na direita",
+            "ordenei {amountLeft} ml no peito esquerdo",
+            "ordenei {amountRight} ml no peito direito",
+            "tirando leite",
+            "começar a tirar leite",
+            "bomba de leite"
+          ]
+        },
+        {
+          "name": "NasalSuctionIntent",
+          "slots": [],
+          "samples": [
+            "usei o aspirador nasal",
+            "aspirei o nariz dela",
+            "aspirei o nariz dele",
+            "limpei o nariz dela",
+            "limpei o nariz dele",
+            "registrar aspiração nasal",
+            "usei o sugador de nariz",
+            "o nariz do bebê foi limpo",
+            "aspiração nasal"
+          ]
+        },
+        {
+          "name": "BellyMassageIntent",
+          "slots": [],
+          "samples": [
+            "fiz massagem na barriga dela",
+            "fiz massagem na barriga dele",
+            "fazendo massagem abdominal",
+            "registrar massagem na barriga",
+            "massageando a barriguinha dela",
+            "massageando a barriguinha dele",
+            "massagem na barriga",
+            "comecei a massagear a barriga"
+          ]
+        },
+        {
+          "name": "FussyIntent",
+          "slots": [
+            {
+              "name": "intensity",
+              "type": "FUSSY_INTENSITY"
+            }
+          ],
+          "samples": [
+            "ela está irritada",
+            "ele está irritado",
+            "o bebê está choroso",
+            "ela está chorando muito",
+            "ele está chorando muito",
+            "registrar irritação",
+            "ela está muito agitada",
+            "ele está muito agitado",
+            "irritação nível {intensity}",
+            "ela não quer se acalmar",
+            "ele não quer se acalmar",
+            "o bebê não para de chorar",
+            "não para de chorar",
+            "tendo um chilique",
+            "berrando",
+            "gritando muito",
+            "inconsolável",
+            "não se acalma de jeito nenhum",
+            "perdendo a paciencia",
+            "chilique total",
+            "nao se acalma por nada"
+          ]
+        },
+        {
+          "name": "NailTrimIntent",
+          "slots": [],
+          "samples": [
+            "cortei as unhas dela",
+            "cortei as unhas dele",
+            "cortar unhas",
+            "registrar corte de unhas",
+            "aparei as unhas dela",
+            "aparei as unhas dele",
+            "fiz corte de unhas",
+            "unhas cortadas"
+          ]
+        },
+        {
+          "name": "TemperatureIntent",
+          "slots": [
+            {
+              "name": "value",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "method",
+              "type": "TEMP_METHOD"
+            }
+          ],
+          "samples": [
+            "a temperatura dela é {value}",
+            "a temperatura dele é {value}",
+            "o bebê está com febre de {value}",
+            "temperatura {value} graus",
+            "registrar temperatura {value}",
+            "ela está com {value} graus",
+            "ele está com {value} graus",
+            "{value} graus {method}",
+            "medi a temperatura, deu {value}",
+            "febre de {value}",
+            "termômetro marcou {value}",
+            "está com febre",
+            "está quente",
+            "queimando de febre",
+            "parece quente",
+            "medi a febre",
+            "parece queimando",
+            "esta pelando de febre",
+            "termometro deu alto"
+          ]
+        },
+        {
+          "name": "SpitUpIntent",
+          "slots": [],
+          "samples": [
+            "ela regurgitou",
+            "ele regurgitou",
+            "o bebê regurgitou",
+            "registrar regurgitação",
+            "ela vomitou",
+            "ele vomitou",
+            "regurgitação",
+            "botou pra fora",
+            "cuspiu leite",
+            "voltou o leite",
+            "regurgitou de novo",
+            "botou o leite pra fora",
+            "vomitou leite",
+            "cuspiu muito"
+          ]
+        },
+        {
+          "name": "TeethingIntent",
+          "slots": [],
+          "samples": [
+            "ela está dentando",
+            "ele está dentando",
+            "o bebê está nascendo dente",
+            "registrar dentição",
+            "dente novo nascendo",
+            "dor de dente",
+            "está saindo um dentinho",
+            "gengiva inchada",
+            "coçando a gengiva"
+          ]
+        },
+        {
+          "name": "MilestoneIntent",
+          "slots": [
+            {
+              "name": "milestone",
+              "type": "MILESTONE_TYPE"
+            }
+          ],
+          "samples": [
+            "ela virou de bruços",
+            "ele virou de bruços",
+            "o bebê sorriu pela primeira vez",
+            "registrar marco",
+            "ela sentou sozinha",
+            "ele sentou sozinho",
+            "primeiro sorriso",
+            "ela engatinhou",
+            "ele engatinhou",
+            "anotar um marco",
+            "alcançou um marco de desenvolvimento"
+          ]
+        },
+        {
+          "name": "SymptomIntent",
+          "slots": [
+            {
+              "name": "symptom",
+              "type": "SYMPTOM_TYPE"
+            },
+            {
+              "name": "severity",
+              "type": "SYMPTOM_SEVERITY"
+            }
+          ],
+          "samples": [
+            "ela está com {symptom}",
+            "ele está com {symptom}",
+            "o bebê está com {symptom}",
+            "registrar sintoma {symptom}",
+            "ela está com {symptom} {severity}",
+            "ele está com {symptom} {severity}",
+            "notando {symptom}",
+            "sintoma é {symptom}",
+            "registrado {symptom}"
+          ]
+        },
+        {
+          "name": "OutdoorIntent",
+          "slots": [],
+          "samples": [
+            "saímos para passear",
+            "tempo ao ar livre começou",
+            "levando ela para fora",
+            "levando ele para fora",
+            "registrar passeio",
+            "fomos caminhar",
+            "hora do passeio",
+            "no parque",
+            "passeio de carrinho",
+            "tomando ar fresco"
+          ]
+        },
+        {
+          "name": "SkinCareIntent",
+          "slots": [],
+          "samples": [
+            "passei hidratante",
+            "passei pomada de assadura",
+            "registrar cuidados com a pele",
+            "passei protetor solar",
+            "hidratei a pele dela",
+            "hidratei a pele dele",
+            "cuidados com a pele",
+            "passei creme",
+            "apliquei pomada"
+          ]
+        },
+        {
+          "name": "MedicationIntent",
+          "slots": [
+            {
+              "name": "medicationName",
+              "type": "AMAZON.FreeText"
+            }
+          ],
+          "samples": [
+            "dei {medicationName} para ela",
+            "dei {medicationName} para ele",
+            "registrar remédio {medicationName}",
+            "administrei {medicationName}",
+            "ela tomou {medicationName}",
+            "ele tomou {medicationName}",
+            "hora do remédio {medicationName}",
+            "medicamento {medicationName} dado",
+            "dei remédio",
+            "hora do remédio",
+            "remédio dado",
+            "dei o remedio",
+            "remedio administrado",
+            "tomou o medicamento"
+          ]
+        },
+        {
+          "name": "MedicationReminderIntent",
+          "slots": [],
+          "samples": [
+            "quando é o próximo remédio",
+            "tem algum remédio para dar",
+            "qual remédio está na hora",
+            "próxima dose de remédio",
+            "lembrete de medicamento",
+            "quando devo dar a próxima dose",
+            "algum remédio atrasado",
+            "é hora do remédio"
+          ]
+        },
+        {
+          "name": "WeekSummaryIntent",
+          "slots": [],
+          "samples": [
+            "como foi a semana dela",
+            "como foi a semana dele",
+            "resumo da semana",
+            "visão geral da semana",
+            "como o bebê foi essa semana",
+            "resumir a semana",
+            "o que aconteceu essa semana",
+            "me dê o resumo da semana",
+            "quantas mamadas essa semana",
+            "resumo de sono da semana"
+          ]
+        },
+        {
+          "name": "ListBabiesIntent",
+          "slots": [],
+          "samples": [
+            "quais bebês posso registrar",
+            "listar meus bebês",
+            "mostrar meus bebês",
+            "quais bebês eu tenho",
+            "meus bebês",
+            "qual bebê está ativo",
+            "trocar contexto de bebê",
+            "quem posso acompanhar"
+          ]
+        },
+        {
+          "name": "BabyProfileIntent",
+          "slots": [],
+          "samples": [
+            "quantos anos ela tem",
+            "quantos anos ele tem",
+            "quantos anos o bebê tem",
+            "idade do bebê",
+            "qual a idade dela",
+            "qual a idade dele",
+            "quantos meses de vida",
+            "quantos dias de vida",
+            "me fale sobre o bebê",
+            "perfil do bebê"
+          ]
+        },
+        {
+          "name": "DaySummaryIntent",
+          "slots": [],
+          "samples": [
+            "como foi o dia dela",
+            "como foi o dia dele",
+            "resumo do dia",
+            "visão geral do dia",
+            "resumir hoje",
+            "o que aconteceu hoje",
+            "me dê o resumo de hoje",
+            "como o bebê foi hoje",
+            "recapitular hoje",
+            "registro de hoje"
           ]
         }
       ],
@@ -386,30 +900,476 @@
         {
           "name": "VOLUME_UNIT",
           "values": [
-            { "id": "ML", "name": { "value": "mililitros", "synonyms": ["ml", "mililitro", "milílitros", "milílitro"] } },
-            { "id": "OZ", "name": { "value": "onças", "synonyms": ["oz", "onça", "onca", "oncas"] } }
+            {
+              "id": "ML",
+              "name": {
+                "value": "mililitros",
+                "synonyms": [
+                  "ml",
+                  "mililitro",
+                  "milílitros",
+                  "milílitro"
+                ]
+              }
+            },
+            {
+              "id": "OZ",
+              "name": {
+                "value": "onças",
+                "synonyms": [
+                  "oz",
+                  "onça",
+                  "onca",
+                  "oncas"
+                ]
+              }
+            }
           ]
         },
         {
           "name": "BOTTLE_KIND",
           "values": [
-            { "id": "FORMULA", "name": { "value": "fórmula", "synonyms": ["formula", "leite em pó"] } },
-            { "id": "BREAST_MILK", "name": { "value": "leite materno", "synonyms": ["leite do peito", "leite da mamãe"] } }
+            {
+              "id": "FORMULA",
+              "name": {
+                "value": "fórmula",
+                "synonyms": [
+                  "formula",
+                  "leite em pó"
+                ]
+              }
+            },
+            {
+              "id": "BREAST_MILK",
+              "name": {
+                "value": "leite materno",
+                "synonyms": [
+                  "leite do peito",
+                  "leite da mamãe"
+                ]
+              }
+            }
           ]
         },
         {
           "name": "DIAPER_KIND",
           "values": [
-            { "id": "WET", "name": { "value": "xixi", "synonyms": ["molhada", "xixizinho"] } },
-            { "id": "DIRTY", "name": { "value": "cocô", "synonyms": ["coco", "suja", "cocozinho"] } },
-            { "id": "BOTH", "name": { "value": "os dois", "synonyms": ["xixi e cocô", "ambos"] } }
+            {
+              "id": "WET",
+              "name": {
+                "value": "xixi",
+                "synonyms": [
+                  "molhada",
+                  "xixizinho"
+                ]
+              }
+            },
+            {
+              "id": "DIRTY",
+              "name": {
+                "value": "cocô",
+                "synonyms": [
+                  "coco",
+                  "suja",
+                  "cocozinho"
+                ]
+              }
+            },
+            {
+              "id": "BOTH",
+              "name": {
+                "value": "os dois",
+                "synonyms": [
+                  "xixi e cocô",
+                  "ambos"
+                ]
+              }
+            }
           ]
         },
         {
           "name": "BREAST_SIDE",
           "values": [
-            { "id": "LEFT", "name": { "value": "esquerdo", "synonyms": ["esquerda"] } },
-            { "id": "RIGHT", "name": { "value": "direito", "synonyms": ["direita"] } }
+            {
+              "id": "LEFT",
+              "name": {
+                "value": "esquerdo",
+                "synonyms": [
+                  "esquerda"
+                ]
+              }
+            },
+            {
+              "id": "RIGHT",
+              "name": {
+                "value": "direito",
+                "synonyms": [
+                  "direita"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "FUSSY_INTENSITY",
+          "values": [
+            {
+              "name": {
+                "value": "leve",
+                "synonyms": [
+                  "leve",
+                  "pouco",
+                  "um pouco",
+                  "levemente"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "moderado",
+                "synonyms": [
+                  "moderado",
+                  "medio",
+                  "mais ou menos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "forte",
+                "synonyms": [
+                  "forte",
+                  "muito",
+                  "bastante",
+                  "intenso",
+                  "grave"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TEMP_METHOD",
+          "values": [
+            {
+              "name": {
+                "value": "axilar",
+                "synonyms": [
+                  "axilar",
+                  "suvaque",
+                  "debaixo do braco"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "retal",
+                "synonyms": [
+                  "retal",
+                  "bumbum",
+                  "rabo"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "testa",
+                "synonyms": [
+                  "testa",
+                  "frontal",
+                  "temporal"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ouvido",
+                "synonyms": [
+                  "ouvido",
+                  "timpanico",
+                  "no ouvido"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "boca",
+                "synonyms": [
+                  "boca",
+                  "pela boca"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MILESTONE_TYPE",
+          "values": [
+            {
+              "name": {
+                "value": "virou",
+                "synonyms": [
+                  "virou",
+                  "rolou",
+                  "virou de brucos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "sorriu",
+                "synonyms": [
+                  "sorriu",
+                  "primeiro sorriso",
+                  "sorrindo"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "sentou",
+                "synonyms": [
+                  "sentou",
+                  "sentando",
+                  "ficou sentada",
+                  "ficou sentado"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "engatinhou",
+                "synonyms": [
+                  "engatinhou",
+                  "engatinhando",
+                  "engatinhar"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ficou_em_pe",
+                "synonyms": [
+                  "ficou em pe",
+                  "levantou",
+                  "em pe"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "andou",
+                "synonyms": [
+                  "andou",
+                  "andando",
+                  "primeiros passos",
+                  "deu passos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "falou",
+                "synonyms": [
+                  "falou",
+                  "primeira palavra",
+                  "disse algo"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "bateu_palma",
+                "synonyms": [
+                  "bateu palma",
+                  "palminhas",
+                  "batendo palma"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "acenou",
+                "synonyms": [
+                  "acenou",
+                  "acena",
+                  "tchau"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "apontou",
+                "synonyms": [
+                  "apontou",
+                  "aponta",
+                  "mostrou com o dedo"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SYMPTOM_TYPE",
+          "values": [
+            {
+              "name": {
+                "value": "febre",
+                "synonyms": [
+                  "febre",
+                  "quente",
+                  "temperatura alta"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "tosse",
+                "synonyms": [
+                  "tosse",
+                  "tossindo"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "nariz_escorrendo",
+                "synonyms": [
+                  "nariz escorrendo",
+                  "nariz entupido",
+                  "resfriado",
+                  "coriza"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "diarreia",
+                "synonyms": [
+                  "diarreia",
+                  "coco mole",
+                  "coco liquido"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "prisao_de_ventre",
+                "synonyms": [
+                  "prisao de ventre",
+                  "coco duro",
+                  "nao consegue fazer coco"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "manchas",
+                "synonyms": [
+                  "manchas",
+                  "vermelhidao",
+                  "brotoeja",
+                  "alergia na pele"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "vomito",
+                "synonyms": [
+                  "vomito",
+                  "vomitando",
+                  "botou pra fora"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "dor_de_ouvido",
+                "synonyms": [
+                  "dor de ouvido",
+                  "ouvido inflamado",
+                  "otite"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "olho_remelento",
+                "synonyms": [
+                  "olho remelento",
+                  "conjuntivite",
+                  "olho vermelho"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "sem_apetite",
+                "synonyms": [
+                  "nao quer comer",
+                  "sem apetite",
+                  "recusando comida"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "molinho",
+                "synonyms": [
+                  "molinho",
+                  "sonolento",
+                  "sem energia",
+                  "quieto demais"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "desidratado",
+                "synonyms": [
+                  "desidratado",
+                  "boca seca",
+                  "sem fralda molhada"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SYMPTOM_SEVERITY",
+          "values": [
+            {
+              "name": {
+                "value": "leve",
+                "synonyms": [
+                  "leve",
+                  "fraco",
+                  "pouco"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "moderado",
+                "synonyms": [
+                  "moderado",
+                  "medio",
+                  "mais ou menos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "forte",
+                "synonyms": [
+                  "forte",
+                  "grave",
+                  "muito",
+                  "intenso"
+                ]
+              }
+            }
           ]
         }
       ]
@@ -427,7 +1387,9 @@
               "type": "AMAZON.NUMBER",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
+              "prompts": {
+                "elicitation": "Elicit.Slot.BottleIntent.amount"
+              }
             },
             {
               "name": "volumeUnit",
@@ -456,7 +1418,9 @@
               "type": "DIAPER_KIND",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.diaperKind" }
+              "prompts": {
+                "elicitation": "Elicit.Slot.DiaperIntent.diaperKind"
+              }
             }
           ]
         }
@@ -467,13 +1431,24 @@
       {
         "id": "Elicit.Slot.BottleIntent.amount",
         "variations": [
-          { "type": "PlainText", "value": "Quanto? Por exemplo 120 mililitros ou 4 onças." },
-          { "type": "PlainText", "value": "Quanto tinha na mamadeira? Por exemplo 120 mililitros ou 4 onças." }
+          {
+            "type": "PlainText",
+            "value": "Quanto? Por exemplo 120 mililitros ou 4 onças."
+          },
+          {
+            "type": "PlainText",
+            "value": "Quanto tinha na mamadeira? Por exemplo 120 mililitros ou 4 onças."
+          }
         ]
       },
       {
         "id": "Elicit.Slot.DiaperIntent.diaperKind",
-        "variations": [{ "type": "PlainText", "value": "Foi xixi, cocô ou os dois?" }]
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Foi xixi, cocô ou os dois?"
+          }
+        ]
       }
     ]
   }
