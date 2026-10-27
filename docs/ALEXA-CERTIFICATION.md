@@ -96,7 +96,7 @@ Console limits change; use the character counters in the console and shorten if 
 | Question | Answer | Why |
 | --- | --- | --- |
 | Does this skill allow users to make purchases or spend money? | No | Free; no in-skill purchases |
-| Does this skill collect personal information? | **Yes** | With account linking it reads and writes the parent's baby log; spoken answers contain the baby's name and log facts (audit section 3) |
+| Does this skill collect personal information? | **Yes** | With account linking it reads and writes the parent's baby log; spoken answers carry log facts and, **by default, no child name** (the name only if the parent turns on "Say my baby's name in answers") and no free text typed by people (audit section 3) |
 | Is this skill directed to or intended for children under 13? | **No** | Used by parents and caregivers; the data is about a child but the user is the adult |
 | Does this skill contain advertising? | No | No ads |
 | Does the skill use health information? | Yes, user-entered | It reads back the family's own logs; no medical advice, no medication, no doses |
@@ -106,9 +106,9 @@ Console limits change; use the character counters in the console and shorten if 
 
 Where the policy covers Alexa: https://lotties.app/privacy, section "Who sees your data", "Companies and services that
 receive data" (anchor `#privacy-sharing-companies`). It must say, and does: Amazon records and processes the voice;
-Lotties receives only the command and its values; the text Lotties sends back for Alexa to speak can carry the baby's
-name, feed and sleep times, diaper counts, predicted times, the next appointment and due vaccines; Amazon keeps the
-account-linking token. After the new questions ship, re-read the policy text against the final answers (the worker that
+Lotties receives only the command and its values; the text Lotties sends back for Alexa to speak carries no baby name unless
+the parent turned it on, and no free text or names of people; it can carry feed and sleep times, diaper counts, predicted
+times, the date and time of the next appointment and due vaccines; Amazon keeps the account-linking token. After the new questions ship, re-read the policy text against the final answers (the worker that
 adds them updates the policy; compare before submitting).
 
 ## 4. Account linking page (console)
