@@ -96,7 +96,7 @@ export interface ThirdParty {
 export const THIRD_PARTIES: readonly ThirdParty[] = [
   // Web Push (built): Google FCM, Mozilla, Apple, Microsoft; the payload is encrypted (RFC 8291).
   { id: 'pushServices', trigger: 'optIn', abroad: true, creditIds: ['webpush'] },
-  // The Alexa skill (built, off until the owner enables it): Amazon hears the voice and speaks our answers.
+  // The Alexa skill (built, off until the owner enables it): Amazon hears the voice and speaks our answers (no baby name in them unless the parent turns on sayBabyName).
   { id: 'alexa', trigger: 'optIn', abroad: true, creditIds: [] },
   // "Find address" in the provider sheet: only the typed CEP or text, sent by our server.
   {

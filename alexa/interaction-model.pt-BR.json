@@ -125,7 +125,6 @@
             "registrar uma mamadeira de {bottleKind}",
             "ela acabou de tomar mamadeira",
             "ele acabou de tomar mamadeira",
-            "registrar mamadeira de {bottleKind}",
             "ela bebeu {amount} ml",
             "ele bebeu {amount} ml",
             "dei {amount} ml de {bottleKind}",

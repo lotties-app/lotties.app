@@ -123,7 +123,7 @@ AssistantForecasts forecasts,
         {
             Code = AssistantResultCode.Babies,
             AsOf = family.Now,
-            Babies = family.Members.Select(AccessOf).ToArray(),
+            Babies = family.Members.Select(member => AccessOf(member, family.SayBabyName)).ToArray(),
         };
         Log(invocation, AssistantCommands.ListBabies, result);
         return result;
@@ -247,8 +247,8 @@ AssistantForecasts forecasts,
         return subject.Result(AssistantResultCode.BabyProfile) with { Age = new AssistantBabyAge(days, days / WeekDays, months) };
     }
 
-    private static AssistantBabyAccess AccessOf(AssistantFamilyMember member) =>
-        new(member.Baby.Id, member.Baby.Name, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
+    private static AssistantBabyAccess AccessOf(AssistantFamilyMember member, bool sayBabyName) =>
+        new(member.Baby.Id, sayBabyName ? member.Baby.Name : null, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
 
     /// <summary>The user's local clock, or UTC days when no zone is known (summaries then report <c>UTC</c>).</summary>
     private static LocalClock ClockOf(AssistantSubject subject) =>
@@ -312,7 +312,6 @@ AssistantForecasts forecasts,
             At = stored.StartedAt,
             AmountMl = feed.AmountMl,
             BottleKind = feed.BottleKind,
-            FormulaName = feed.FormulaName,
         };
     }
 
@@ -538,7 +537,7 @@ AssistantForecasts forecasts,
             : subject.Result(AssistantResultCode.NextAppointment) with
             {
                 At = next.StartsAt,
-                Appointment = new AssistantAppointment(next.StartsAt, next.Title, next.Type.ToString().ToLowerInvariant()),
+                Appointment = new AssistantAppointment(next.StartsAt, next.Type.ToString().ToLowerInvariant()),
             };
     }
 
@@ -829,14 +828,14 @@ AssistantForecasts forecasts,
         var eventId = IdOf(invocation, AssistantCommands.Medication, subject);
         if (await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken) is { } replayed)
         {
-            return subject.Result(AssistantResultCode.MedicationLogged) with { At = replayed.StartedAt, MedicationName = medicationName };
+            return subject.Result(AssistantResultCode.MedicationLogged) with { At = replayed.StartedAt };
         }
 
         var meds = await medications.ListForBabyAsync(subject.Baby.Id, cancellationToken);
         var med = meds.FirstOrDefault(m => string.Equals(m.Name, medicationName, StringComparison.OrdinalIgnoreCase));
         if (med is null)
         {
-            return subject.Result(AssistantResultCode.NoActivePrescription) with { MedicationName = medicationName };
+            return subject.Result(AssistantResultCode.NoActivePrescription);
         }
 
         var activePrescriptions = await prescriptions.ListForMedicationAsync(subject.Baby.Id, med.Id, cancellationToken);
@@ -844,7 +843,7 @@ AssistantForecasts forecasts,
 var prescription = activePrescriptions.FirstOrDefault(p => !p.IsDeleted && p.CoversDay(today));
         if (prescription is null)
         {
-            return subject.Result(AssistantResultCode.NoActivePrescription) with { MedicationName = medicationName };
+            return subject.Result(AssistantResultCode.NoActivePrescription);
         }
 
         var payload = AssistantPayloads.Medication(med.Id, med.Name, prescription.Id, prescription.Dose.Amount, prescription.Dose.Unit);
@@ -852,7 +851,6 @@ var prescription = activePrescriptions.FirstOrDefault(p => !p.IsDeleted && p.Cov
         return subject.Result(AssistantResultCode.MedicationLogged) with
         {
             At = created.StartedAt,
-            MedicationName = med.Name,
             PrescriptionId = prescription.Id,
         };
     }
@@ -867,7 +865,6 @@ var prescription = activePrescriptions.FirstOrDefault(p => !p.IsDeleted && p.Cov
 
         var doses = await medicationDoses.ListDosesAsync(subject.Baby.Id, subject.Now.AddDays(-30), cancellationToken);
         DateTimeOffset? nextDue = null;
-        string? nextMedName = null;
 
         foreach (var prescription in activePrescriptions)
         {
@@ -880,12 +877,10 @@ var prescription = activePrescriptions.FirstOrDefault(p => !p.IsDeleted && p.Cov
             if (dueAt <= subject.Now && (nextDue is null || dueAt < nextDue))
             {
                 nextDue = dueAt;
-                var med = await medications.FindAsync(prescription.MedicationId, cancellationToken);
-                nextMedName = med?.Name;
             }
         }
 
-        if (nextDue is null || nextMedName is null)
+        if (nextDue is null)
         {
             return subject.Result(AssistantResultCode.NoMedicationDue);
         }
@@ -893,7 +888,6 @@ var prescription = activePrescriptions.FirstOrDefault(p => !p.IsDeleted && p.Cov
         return subject.Result(AssistantResultCode.MedicationReminder) with
         {
             At = nextDue,
-            MedicationName = nextMedName,
         };
     }
 

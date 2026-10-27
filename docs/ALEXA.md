@@ -169,7 +169,8 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 - **Privacy policy URL:** `https://lotties.app/privacy` (published; the Alexa part is in "Who sees your data" >
   "Companies and services that receive data", anchor `#privacy-sharing-companies`). It says that Amazon records and
   processes the voice, that Lotties receives only the command and its values, **and** that the answer Lotties sends back
-  for Alexa to speak can carry the baby's name, feed and sleep times, diaper counts, the next appointment and due
+  for Alexa to speak carries no baby name unless the parent turned on "Say my baby's name in answers" (Settings > Voice
+  assistants, off by default) and no free text or names of people; it can carry feed and sleep times, diaper counts, the date and time of the next appointment and due
   vaccines (Amazon receives that text), plus that Amazon keeps the account-linking token. Before submitting: the
   owner's values and the legal review in [docs/PRIVACY-OWNER-CHECKLIST.md](PRIVACY-OWNER-CHECKLIST.md). Terms of use
   URL: optional.
@@ -178,8 +179,8 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
   "Alexa, ask lotties when was the last feed"), small and large icons (`docs/design/icons`), category
   **Health & Fitness** or **Lifestyle**, keywords.
 - **Privacy & Compliance:** no purchases; "collects personal information": **yes**, answer honestly: with account
-  linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers contain the
-  baby's name and log facts (docs/design/33-privacy-audit.md section 3); **child-directed: No** (it is used by parents,
+  linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers carry log facts and
+  no child name by default (docs/design/33-privacy-audit.md section 3); **child-directed: No** (it is used by parents,
   not children, although the data is about a child), no advertising, export compliance. Note that the skill does not
   give medical advice.
 - **Testing instructions** for the reviewers: a test Lotties account (create one for them; never a real family's),

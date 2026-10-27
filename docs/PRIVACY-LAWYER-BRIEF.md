@@ -48,13 +48,13 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
 
 | Destinatário | O que sai | Quando |
 | --- | --- | --- |
-| Amazon (Alexa) | a voz é gravada e transcrita pela Amazon; o Lotties recebe a intenção e os valores. A **resposta falada** devolvida pelo Lotties pode conter nome do bebê, horários e quantidades de mamadas e sono, contagem de fraldas, próxima consulta, vacinas pendentes (e, nas novas perguntas, previsões e médias). A Amazon também guarda os tokens da conta vinculada | só com a skill ativada e a conta vinculada pelo usuário |
+| Amazon (Alexa) | a voz é gravada e transcrita pela Amazon; o Lotties recebe a intenção e os valores. A **resposta falada** devolvida pelo Lotties **não contém o nome do bebê por padrão** (minimização, LGPD art. 6, III e art. 46, § 2: o nome só entra se o responsável ativar "Falar o nome do bebê nas respostas") e nunca leva texto digitado por pessoas nem nomes de pessoas (sem título de consulta, fórmula, medicamento ou anotação). Pode conter horários e quantidades de mamadas e sono, contagem de fraldas, data e hora do próximo compromisso, vacinas pendentes (e previsões e médias). A Amazon também guarda os tokens da conta vinculada | só com a skill ativada e a conta vinculada pelo usuário |
 | Serviços de push do navegador (Google, Mozilla, Apple, Microsoft) | endpoint do navegador e uma mensagem cifrada que eles não leem | só com notificações ativadas |
 | BrasilAPI, ViaCEP, OpenStreetMap Nominatim | o CEP ou o texto digitado, a partir do IP do servidor; nada sobre bebê ou usuário | quando o usuário aperta "buscar endereço" |
 | Relay de e-mail do Keycloak (se houver) | o e-mail da conta e as mensagens de verificação/senha | a confirmar (C6) |
 | Cloudflare | todo o tráfego do site (proxy), ver item 2 | sempre |
 | Lojas (Apple, Google) | estatísticas e relatórios de falha agregados que as lojas já recebem | só nos apps publicados |
-| Assistentes de IA (MCP) | quando o usuário conecta um cliente (por exemplo o Claude), esse serviço recebe as respostas das ferramentas (nome do bebê, registros recentes) | só com o servidor MCP ativado e o cliente conectado pelo usuário |
+| Assistentes de IA (MCP) | quando o usuário conecta um cliente (por exemplo o Claude), esse serviço recebe as respostas das ferramentas (registros recentes, sem o nome do bebê por padrão; o nome só vai se o responsável ativar a opção, e nunca texto digitado por pessoas) | só com o servidor MCP ativado e o cliente conectado pelo usuário |
 
 ## 5. Bases legais propostas (a validar)
 

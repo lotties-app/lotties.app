@@ -136,7 +136,6 @@
             "record a bottle",
             "log a {bottleKind} bottle",
             "add a {bottleKind} bottle",
-            "log a {bottleKind} bottle",
             "she took {amount} ml",
             "he took {amount} ml",
             "baby had a {amount} ml bottle",

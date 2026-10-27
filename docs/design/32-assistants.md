@@ -110,8 +110,8 @@ with a line for every code, tested for every code in both languages.
 | `delete_requested`, `no_entry_to_delete`, `last_not_undoable` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
 | `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
-| `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
-| `baby_profile` | the baby's name and `age` (`days`, `weeks`, whole calendar `months` on the user's local date); nothing else of the profile |
+| `babies` | the user's family babies (`babies`: `id`, `name` only with `sayBabyName`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
+| `baby_profile` | the baby's `age` (and the name only with `sayBabyName`) (`days`, `weeks`, whole calendar `months` on the user's local date); nothing else of the profile |
 | `day_summary`, `week_summary` | `days`: one or seven local days, oldest first, each `date`, `complete` (false for today) and the clinical summary's day rows: `sleep` (`totalMinutes`, `nightMinutes`, `napMinutes`, `naps`, `longestMinutes`), `feeding` (`feeds`, `bottleMl`, `breast`, `bottle`, `solid`), `diapers` (`total`, `wet`, `dirty`) |
 
 The queries added with the MCP server (`ListBabies`, `ReadBabyProfile`, `ReadDaySummary(date?)`,
@@ -135,11 +135,15 @@ a Doctor gets `not_allowed`. An adapter that lets the user name the baby (the MC
 then apply as usual.
 
 The default lives in `user_assistant_settings(user_id PK/FK users ON DELETE CASCADE, default_baby_id FK babies ON DELETE
-SET NULL, updated_at)` (migration `VoiceAssistants`), set by `PUT /me/assistant-settings {defaultBabyId|null}` (only a
+SET NULL, say_baby_name bool NOT NULL default false, updated_at)` (migrations `VoiceAssistants`, `AssistantSayBabyName`), set by `PUT /me/assistant-settings {defaultBabyId|null, sayBabyName?}` (only a
 baby she can log for: Owner, Parent, Caregiver; anything else, a foreign or unknown id included, is 400
 `validation_failed` field `defaultBabyId`, so nothing tells babies apart) and read by `GET`. The web: Settings >
 Voice assistants (`code/web/src/settings/VoiceAssistantsSection.tsx`), a select of the babies she logs for, shown
 when she logs for at least one. Account deletion removes her row and clears other rows that point at an erased baby.
+
+`sayBabyName` (default false, section 7) is a per-user switch beside it: a `PUT` without the member leaves the stored value
+alone (an older client keeps working); `GET` always returns it. Settings > Voice assistants has the switch "Say my baby's
+name in answers"; it is hers, not a baby's, so a user who logs for no baby still sees it.
 
 ## 5. Rules of the commands
 
@@ -284,7 +288,28 @@ account-linking token in the body authenticate it. In order:
 - Logged: the request type, the intent name (only names the skill knows), the result code and the correlation id
   (`HttpContext.TraceIdentifier`), plus verification refusals by reason code. Never the body, slot values, tokens,
   Amazon user or device ids. The command layer logs the adapter, command, baby id and result code, as the REST routes do.
-- Answers speak the baby's name and the family's own appointment title aloud on the device; that is the point of asking.
+- **What an assistant may say (data minimisation, LGPD art. 6 III and art. 46 §2).** An answer leaves Lotties: Amazon keeps
+  it in the voice history, an AI assistant's provider receives it. So an answer is built from this list only:
+  - **No baby name by default.** The result carries the name (`AssistantBaby.Name`, `AssistantBabyAccess.Name`) only when
+    the user turned on `sayBabyName`; `AssistantSubject.Result` and `AccessOf` put it there, nowhere else. Without it Alexa
+    says "the baby" / "o bebê" (en: "The baby drank 838 ml in 7 bottles today."; pt-BR drops "para X" tails that add nothing:
+    "Registrei uma mamadeira de 118 ml às 23:28."), and the MCP text and structured JSON have no name member. The
+    `list_babies` answer then has only `id`, `role`, `canLog`, `isDefault` (Alexa says how many babies and where to choose in
+    Settings > Voice assistants), so with several babies and names off an AI assistant cannot tell them apart: the parent
+    picks a default baby in the app or turns the names on.
+  - **No free text people typed and no names of people**: never an appointment title or provider, a formula or medicine
+    name, a note, a custom milestone/symptom text. The next appointment is told as "there is an appointment" with its date
+    and time, plus its kind only when it is a built-in coded kind (`consultation`, `vaccine`, `exam`; `other` says nothing).
+    Formula bottles say "of formula", a medication dose "a medication dose" (the medicine is matched by name when the
+    parent says it, but the name is never echoed). The fussy timer echoes only its validated intensity (mild, moderate,
+    intense).
+  - **Facts from fixed vocabularies**: times, amounts, counts, durations, ages, diaper/feed kinds, built-in cry causes and
+    red flags, the vaccine names of the published schedule (not typed by the family).
+  - **Guards.** Adapters read a name only through `SpokenBaby` (`Lotties.Api/Assistants/SpokenBaby.cs`). Tests
+    (`AssistantNamePrivacyTests`) run every command through the service with the setting off and on and scan every
+    rendering (Alexa en/pt-BR, MCP sentence, content, structured JSON); a source scan fails the build when an adapter
+    reads `Baby.Name` or a listed baby's name outside `SpokenBaby`, when the application sets a name without `SayBabyName`,
+    or when an adapter reads an appointment title, a formula or medication name.
 - Account linking issues Keycloak tokens to Amazon for the Alexa client only (its own confidential client and secret,
   never in this repository). Unlinking the skill in the Alexa app, or removing the client's sessions in Keycloak,
   revokes it.

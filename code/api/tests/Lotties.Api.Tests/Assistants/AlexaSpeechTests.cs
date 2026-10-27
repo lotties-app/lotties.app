@@ -68,11 +68,11 @@ public sealed class AlexaSpeechTests
     }
 
     [Fact]
-    public void Say_Bottle_Portuguese24HourClockAndFormulaName()
+    public void Say_Bottle_Portuguese24HourClockAndNeverTheFormulaName()
     {
-        var result = Result(AssistantResultCode.BottleLogged, "America/Sao_Paulo") with { At = AsOf, AmountMl = 120, BottleKind = BottleKind.Formula, FormulaName = "Nan 1" };
+        var result = Result(AssistantResultCode.BottleLogged, "America/Sao_Paulo") with { At = AsOf, AmountMl = 120, BottleKind = BottleKind.Formula };
 
-        Assert.Equal("Registrei uma mamadeira de 120 ml de Nan 1 às 15:15 para Charlotte.", AlexaLanguages.For("pt-BR").Say(result));
+        Assert.Equal("Registrei uma mamadeira de 120 ml de fórmula às 15:15 para Charlotte.", AlexaLanguages.For("pt-BR").Say(result));
     }
 
     [Fact]
@@ -112,11 +112,11 @@ public sealed class AlexaSpeechTests
     [Fact]
     public void Say_NextAppointment_DaysAndClock()
     {
-        var tomorrow = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(1), "Pediatra", "consultation") };
-        var later = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(3), "Pediatra", "consultation") };
+        var tomorrow = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(1), "consultation") };
+        var later = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(3), "other") };
 
-        Assert.Equal("A próxima consulta de Charlotte é Pediatra, amanhã às 15:15.", AlexaLanguages.For("pt-BR").Say(tomorrow));
-        Assert.Equal("Charlotte's next appointment is Pediatra, on Monday, October 26 at 3:15 PM.", AlexaLanguages.For("en-US").Say(later));
+        Assert.Equal("O próximo compromisso de Charlotte é uma consulta, amanhã às 15:15.", AlexaLanguages.For("pt-BR").Say(tomorrow));
+        Assert.Equal("Charlotte's next appointment is on Monday, October 26 at 3:15 PM.", AlexaLanguages.For("en-US").Say(later));
     }
 
     [Fact]
@@ -254,11 +254,11 @@ public sealed class AlexaSpeechTests
         Assert.Equal("<speak>Logged for &lt;Ana &amp; &quot;Bia&quot;&gt;.</speak>", Ssml.Speak("Logged for <Ana & \"Bia\">."));
     }
 
-    private static AssistantResult Result(AssistantResultCode code, string? zone) =>
+    internal static AssistantResult Result(AssistantResultCode code, string? zone) =>
         new() { Code = code, AsOf = AsOf, Baby = new AssistantBaby(Guid.NewGuid(), "Charlotte"), TimeZone = zone };
 
     /// <summary>A result with every fact set, so every template finds what it reads.</summary>
-    private static AssistantResult Full(AssistantResultCode code, string? zone) => Result(code, zone) with
+    internal static AssistantResult Full(AssistantResultCode code, string? zone) => Result(code, zone) with
     {
         At = AsOf.AddMinutes(-45),
         EndedAt = AsOf.AddMinutes(-30),
@@ -266,7 +266,6 @@ public sealed class AlexaSpeechTests
         Running = false,
         AmountMl = 120,
         BottleKind = BottleKind.Formula,
-        FormulaName = "Nan 1",
         FeedMethod = FeedMethod.Bottle,
         Side = BreastSide.Right,
         Diaper = DiaperKind.Both,
@@ -277,7 +276,7 @@ public sealed class AlexaSpeechTests
         Min = AssistantLimits.BottleMinMl,
         Max = AssistantLimits.BottleMaxMl,
         Window = AssistantDayWindow.Today,
-        Appointment = new AssistantAppointment(AsOf.AddDays(5), "Pediatra", "consultation"),
+        Appointment = new AssistantAppointment(AsOf.AddDays(5), "consultation"),
         Vaccines = [new AssistantVaccineDose("bcg", new Dictionary<string, string> { ["en"] = "BCG", ["pt-BR"] = "BCG" }, new Dictionary<string, string>(), true, new DateOnly(2026, 10, 1))],
         Babies = [new AssistantBabyAccess(Guid.NewGuid(), "Lia", "parent", true, true), new AssistantBabyAccess(Guid.NewGuid(), "Theo", "viewer", false, false)],
         Age = new AssistantBabyAge(97, 13, 3),
@@ -298,6 +297,7 @@ public sealed class AlexaSpeechTests
         ],
         RedFlags = RedFlags,
         EntryType = "feeding",
+        TemperatureC = 37.2m,
     };
 
     private static readonly string[] RedFlags = ["fever", "inconsolable", "refusing_feeds", "unusual_sleepiness", "bulging_or_stiff_fontanelle"];

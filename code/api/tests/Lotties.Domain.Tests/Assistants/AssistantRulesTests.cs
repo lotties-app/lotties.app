@@ -112,6 +112,20 @@ public sealed class AssistantRulesTests
     }
 
     [Fact]
+    public void Settings_SayBabyName_IsOffByDefault_AndTheSameValueChangesNothing()
+    {
+        var settings = UserAssistantSettings.Create(Guid.NewGuid(), BabyA, Now);
+
+        settings.ChangeSayBabyName(false, Now.AddHours(1));
+        var unchanged = (settings.SayBabyName, settings.UpdatedAt);
+        settings.ChangeSayBabyName(true, Now.AddHours(2));
+
+        Assert.Equal((false, Now), unchanged);
+        Assert.Equal((true, Now.AddHours(2)), (settings.SayBabyName, settings.UpdatedAt));
+        Assert.True(UserAssistantSettings.Create(Guid.NewGuid(), null, Now, sayBabyName: true).SayBabyName);
+    }
+
+    [Fact]
     public void Bottle_FormulaWithCurrentFormula_NamesIt()
     {
         var formula = Formula.Create(Guid.NewGuid(), BabyA, FormulaTerms.Create("Nan 1", null, null, null, null, isCurrent: true, isArchived: false), Guid.NewGuid(), Now);

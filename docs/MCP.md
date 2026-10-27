@@ -15,7 +15,7 @@ Values used below (replace with yours): public host `https://lotties.app` (so th
 ## 1. What the parent agrees to
 
 The child's data leaves Lotties: the assistant's provider (Anthropic for Claude, or whoever runs the client) receives the
-facts the assistant asks for (the baby's name, times, amounts, appointment titles, vaccine names) and processes them under
+facts the assistant asks for (times, amounts, counts, vaccine names; the baby's name only if she turned on "Say my baby's name in answers", and never appointment titles or other text people typed) and processes them under
 its own terms. Lotties shows this twice: on the Keycloak consent screen (section 2.3 texts) and in Settings > Voice
 assistants > AI assistants (MCP). Access is read-only unless she also grants logging. Medications are never available,
 and answers are facts from the family's own log, not medical advice. She can revoke the access at any time (section 8).

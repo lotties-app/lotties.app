@@ -219,7 +219,7 @@ public enum AssistantResultCode
     /// <summary>No active prescription found for the named medication.</summary>
     NoActivePrescription,
 
-    /// <summary>The next due medication dose (<see cref="AssistantResult.MedicationName"/>, <see cref="AssistantResult.At"/>).</summary>
+    /// <summary>The next due medication dose (<see cref="AssistantResult.At"/>; the medicine's name is never told).</summary>
     MedicationReminder,
 
     /// <summary>No medication doses are due right now.</summary>
@@ -238,11 +238,18 @@ public enum AssistantDayWindow
     LastDay,
 }
 
-/// <summary>The baby a result is about (her name from the profile).</summary>
-public sealed record AssistantBaby(Guid Id, string Name);
+/// <summary>
+/// The baby a result is about. <see cref="Name"/> (from the profile) is <c>null</c> unless the user turned on "say my baby's
+/// name" (<c>UserAssistantSettings.SayBabyName</c>): the answer goes to Amazon or a third-party AI assistant and a name would
+/// tie the child to the facts. Renderers read it only through the guarded accessors (design 32, "what an assistant may say").
+/// </summary>
+public sealed record AssistantBaby(Guid Id, string? Name = null);
 
-/// <summary>An upcoming appointment as an answer tells it: when, its title (the family's own text) and its type code.</summary>
-public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Title, string Type);
+/// <summary>
+/// An upcoming appointment as an answer tells it: when and its built-in kind code (<c>consultation</c>, <c>vaccine</c>,
+/// <c>exam</c>, <c>other</c>). Never its title or the provider: both are text the family typed.
+/// </summary>
+public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Type);
 
 /// <summary>An expected time with the range it usually falls in (UTC): the prediction's earliest, expected and latest.</summary>
 public sealed record AssistantTimeWindow(DateTimeOffset Earliest, DateTimeOffset Expected, DateTimeOffset Latest);
@@ -272,10 +279,10 @@ public sealed record AssistantCryCause(
 public sealed record AssistantVaccineDose(string VaccineKey, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string> DoseLabel, bool Overdue, DateOnly DueOn);
 
 /// <summary>
-/// A baby the user may ask about: its id and name, her role (<c>owner</c>, <c>parent</c>, <c>caregiver</c>, <c>viewer</c>),
+/// A baby the user may ask about: its id and name (<c>null</c> unless she allowed it), her role (<c>owner</c>, <c>parent</c>, <c>caregiver</c>, <c>viewer</c>),
 /// whether she can log events for it, and whether it is the one commands use when no baby is named.
 /// </summary>
-public sealed record AssistantBabyAccess(Guid Id, string Name, string Role, bool CanLog, bool IsDefault);
+public sealed record AssistantBabyAccess(Guid Id, string? Name, string Role, bool CanLog, bool IsDefault);
 
 /// <summary>A baby's age on the user's local date: whole days, whole weeks and whole calendar months since birth.</summary>
 public sealed record AssistantBabyAge(int Days, int Weeks, int Months);
@@ -330,8 +337,6 @@ public sealed record AssistantResult
 
     [JsonConverter(typeof(SnakeCaseStringEnumConverter))]
     public BottleKind? BottleKind { get; init; }
-
-    public string? FormulaName { get; init; }
 
     [JsonConverter(typeof(SnakeCaseStringEnumConverter))]
     public FeedMethod? FeedMethod { get; init; }
@@ -412,11 +417,8 @@ public sealed record AssistantResult
     /// <summary>The temperature value logged (°C).</summary>
     public decimal? TemperatureC { get; init; }
 
-    /// <summary>The intensity value logged (belly pain 1-5, fussy as text).</summary>
+    /// <summary>The intensity value logged (belly pain 1-5, fussy: mild, moderate or intense; both validated choices, never free text).</summary>
     public string? Intensity { get; init; }
-
-    /// <summary>The medication name (for MedicationLogged, MedicationReminder, NoActivePrescription).</summary>
-    public string? MedicationName { get; init; }
 
     /// <summary>The prescription id (for MedicationLogged).</summary>
     public Guid? PrescriptionId { get; init; }
