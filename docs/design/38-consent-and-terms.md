@@ -1,4 +1,6 @@
-# 38. Consent, terms of use and the beta notice (design, 2026-10-27)
+# 38. Consent, terms of use and the beta notice (design and implementation, 2026-10-27)
+
+**Status: built on branch `feat/consent` (not deployed).** Section 9 records how it was built and where it differs from the design above.
 
 Owner request: a consent term for using people's data while the service is still a test (non-production) environment; the
 data is never sold, but a leak is possible. This closes gap G3 (no highlighted consent for health data of children) and
@@ -96,3 +98,79 @@ that the terms and the policy carry the same version constants as the code.
 See `docs/PRIVACY-LAWYER-BRIEF.md` (new items): the guardian declaration for authorised adults, a minimal proof of consent
 kept after deletion, how to word the limit of liability for a free service, whether the beta notice changes any duty, and
 the right wording for the leak-risk sentence.
+
+## 9. As built (2026-10-27)
+
+**Persistence.** Migration `Consent`: `user_consents` (primary key `(user_id, kind)`, kind `core|push|alexa|mcp`, `version`,
+`accepted_at`, `withdrawn_at`, `capacity`, `locale`) and the append-only `user_consent_history` (one line per grant or
+withdrawal, same facts plus the action). Both cascade from `users` and are erased by `EfAccountDataEraser`. No IP, no device.
+
+**Versions.** `code/web/src/legal/consentVersions.json` is the one list; `Lotties.Domain.Consents.ConsentVersions` mirrors it
+and `ConsentVersionTests` (Domain.Tests links the file) fails when they disagree. Each entry: consent `version`, `terms` and
+`privacyPolicy` versions, `material`, `date`, `textDigest`. `consentVersions.test.ts` fails when the privacy policy, the
+terms or the meaningful parts of the consent screen changed without a new `textDigest` (a typo fix updates the digest; a
+change of meaning adds an entry). The current entry is `2026-10-27.1` (terms 1, privacy policy 9, material).
+
+**API.** As section 4, plus: `PUT .../core` accepts an optional `locale`; accepting again with the same capacity at the same
+version records nothing; `PUT .../optional/{kind}` is 404 for `core` or an unknown kind, 400 without `granted`, and turning off
+a consent that was never on records nothing.
+
+**The gate.** One middleware (`ConsentGateMiddleware`, after authorization, before binding) reads endpoint metadata: the API
+group carries `ConsentGatedMetadata` (`RequireConsent()`), and a route opts out with `AllowWithoutConsent(reason)`.
+`ConsentGateCoverageTests` lists every exempt route with the reason and fails for a route that is neither gated nor listed,
+for a listed route that is gated, and for a baby, doctor or invite route that is exempt. Exempt: `/health`, `/version`,
+`/me` (profile, deletion preview, deletion, professional profile, assistant and unit settings, the consent routes), the
+catalog, the vaccine schedule, age norms, the address proxy, `GET /push/config`, listing and revoking push devices, the
+anonymous push action, `/alexa`, the MCP routes (and the well-known documents), and the project board (REST and MCP). Gated:
+every `/babies...` route (including export, import and restore), `/doctor/patients`, `/invites/...`, and the push routes that
+use baby data (subscribe, settings, preferences, test). Account export of the user's own data is the device export (no
+server route), so there is nothing to exempt.
+
+**Adapters and reminders.** `AssistantSubjects` answers the new `AssistantResultCode.ConsentRequired` before reading any
+baby: Alexa speaks it ("open the Lotties app and accept the terms of use", en and pt-BR), MCP returns a tool error with code
+`consent_required`. `NotificationClaimer` skips a person without a current core consent, so no reminder (which carries a
+baby's data) is sent to her.
+
+**Test host.** `ApiFactory` registers a `SaveChanges` interceptor (`TestConsentGrant`): whenever a `User` row is added (a first
+request provisioning her, or a seed) it adds a real current core consent and its history line in the same save. So the whole
+existing suite passes unchanged. `ApiFactory.GrantConsentToNewUsers = false` turns it off (the consent tests), and
+`RevokeConsentAsync` / `SetCoreVersionAsync` take a user's record away or age it.
+
+**Web.** `ConsentProvider` (above `AccountDataProvider`) asks `GET /me/consents` and exposes `status`
+(`signed-out|checking|accepted|required`) and `syncAllowed` (the sync engine does not start without it); `ConsentGate` is a
+layout route between `RequireAuth` and the shells (the app, `/invite`, `/doctor`); the project board route is outside it.
+`ConsentScreen`: the draft's section 1 copy, a capacity choice (parent or guardian / authorised adult) and the required
+declaration checkbox, Accept and Decline (Decline explains, then signs out; it warns about changes on the device that the
+sign-out loses), and a "Leave Lotties instead" panel with the existing download and account deletion. `/terms` is a public
+lazy page. The beta line is next to "Create an account" and in the landing footer. `PolicyUpdatedNotice` shows for a minor
+change in the app and the doctor's shell; dismissing stores the version seen per account.
+
+**Offline decision.** The device remembers the version the server last confirmed (per account). A remembered version that is
+still current opens the app at once, offline too (nobody is locked out of reading her own cached data), and sync runs; the
+server is asked in the background and its answer wins. The gate applies when the version is known to be stale: the server says
+`requiresAcceptance`, or the remembered version is older than the newest material entry the build carries. Accepting needs the
+server, so a stale account offline sees the consent screen with an offline note. With nothing remembered and no answer from the
+server (a first start with the server down) the local data stays readable and nothing syncs until the server answers (the
+server refuses baby data to anyone without a consent anyway).
+
+**Optional consents.** Recorded through `ConsentProvider.recordOptional`: it stores the change on the device and sends it; a
+failed call never blocks the feature, stays pending and is retried on the next start and when back online (the newest answer
+per kind wins). Push is recorded when this device's switch is turned on (after the subscription succeeds) and off; with several
+devices the last switch wins. Alexa and the MCP connection have no switch in the app, so Settings > Voice assistants gets one
+for each ("I use the Lotties skill with Alexa", "I connect an AI assistant", the latter only when the server has MCP on) with the
+draft's sentence: **these are records, not locks** (the adapters work for anyone with the core consent). The baby-name and
+medicine-name switches show their draft sentences and are not recorded as separate consents (the API has the three kinds of
+section 4). Settings > Privacy and data lists the core consent (version, date, capacity), the three optional ones (on, off,
+never) and how to withdraw.
+
+**Withdrawal.** The core consent is withdrawn by downloading the data and deleting the account: the button explains it and
+leads to the existing flow. There is no "withdrawn core" state on the server (nothing to gate once the account is gone).
+
+**Differences from the text above.** (1) The draft's clause 14 (venue) is not shown: the lawyer decides it (brief item 18);
+the clause says only "Brazilian law applies". (2) The landing page and the sign-up button carry the beta line; the Keycloak
+registration page itself is not changed (it is a separate theme package). (3) Push reminders to a person without a consent are
+skipped (not in the first design).
+
+**Not done.** The Keycloak "Terms and conditions" required action stays off; the Playwright helper `acceptConsentIfShown` is
+written but was not run here.
+

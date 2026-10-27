@@ -5,6 +5,7 @@ using Lotties.Api.Authorization;
 using Lotties.Api.Board;
 using Lotties.Api.Board.Mcp;
 using Lotties.Api.Configuration;
+using Lotties.Api.Consents;
 using Lotties.Api.Cors;
 using Lotties.Api.Errors;
 using Lotties.Api.Limits;
@@ -70,6 +71,7 @@ public static class ApiHostExtensions
         app.UseBoardRequestGuard();
         app.UseRequestRateAndTimeLimits();
         app.UseAuthorization();
+        app.UseConsentGate();
         app.UseMcpScopeGate();
         return app;
     }

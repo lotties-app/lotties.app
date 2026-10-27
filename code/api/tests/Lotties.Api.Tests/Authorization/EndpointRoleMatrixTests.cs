@@ -261,6 +261,12 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/me/unit-settings"] = Access.SignedIn,
         ["PUT /api/v1/me/unit-settings"] = Access.SignedIn,
 
+        // Consent (docs/design/38-consent-and-terms.md): the caller's own consent records; any signed-in user, Doctor included, and
+        // open to a person who has not consented yet (ConsentGateCoverageTests lists every route that is exempt from the gate).
+        ["GET /api/v1/me/consents"] = Access.SignedIn,
+        ["PUT /api/v1/me/consents/core"] = Access.SignedIn,
+        ["PUT /api/v1/me/consents/optional/{kind}"] = Access.SignedIn,
+
         // MCP server (docs/design/32-assistants.md section 9): authenticated by its own OAuth scheme (McpTokens, audience
         // lotties-mcp, scopes lotties.read / lotties.write), never the API's, so Anonymous here; the roles and the baby choice
         // are the command layer's (McpProtocolTests, McpHttpTests). Every route answers 404 while MCP is disabled (the

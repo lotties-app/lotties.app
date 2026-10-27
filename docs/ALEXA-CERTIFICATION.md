@@ -134,7 +134,7 @@ this repository):
 ```
 Lotties is a baby tracker. Commands need the Alexa account to be linked to a Lotties account; opening the skill and Help work without linking.
 
-1. Test account (a demo family with one baby named "Demo Baby"): sign in with the username and password given in the "Test account" field of this form when the app asks you to link your account (Alexa app > Skills > Your Skills > Dev > Lotties > Enable to use / Link account).
+1. Test account (a demo family with one baby named "Demo Baby"): sign in with the username and password given in the "Test account" field of this form when the app asks you to link your account (Alexa app > Skills > Your Skills > Dev > Lotties > Enable to use / Link account). The first time you open the Lotties app (https://lotties.app) with this account you will see a consent screen ("Before you start"); accept it (choose "the child's parent or legal guardian", tick the declaration and tap "Accept and continue"). The account used for the test has already accepted it, so the voice commands work; a new account that has not accepted hears "open the Lotties app and accept the terms of use" until it does.
 2. Try, after linking:
    - "Alexa, open lotties" (welcome message)
    - "Alexa, tell lotties the baby fell asleep" then "Alexa, tell lotties the baby woke up"
@@ -152,8 +152,10 @@ Lotties is a baby tracker. Commands need the Alexa account to be linked to a Lot
 ```
 
 Checklist for the owner: create the demo account with a Parent role on a fake baby ("Demo Baby", no real data), keep one
-bottle and a few diapers logged so the read commands have something to say, and put the credentials only in the
-console's test-account field.
+bottle and a few diapers logged so the read commands have something to say, **open the Lotties app with it once and
+accept the consent screen** (docs/design/38-consent-and-terms.md; without it every command answers "open the Lotties app
+and accept the terms of use", and the reviewers will see that screen), and put the credentials only in the console's
+test-account field.
 
 ## 7. Content rules to keep
 

@@ -1,4 +1,5 @@
 using Lotties.Api.Configuration;
+using Lotties.Api.Consents;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Lotties.Api.Endpoints;
@@ -44,6 +45,7 @@ internal static class VersionEndpoints
         VersionResponse response = BuildStamp.FromConfiguration(api.ServiceProvider.GetRequiredService<IConfiguration>());
         api.MapGet(Path, (HttpContext http) => GetVersion(http, response))
             .AllowAnonymous()
+            .AllowWithoutConsent("The running release: public build facts, no user data.")
             .WithName("GetVersion");
         return api;
     }

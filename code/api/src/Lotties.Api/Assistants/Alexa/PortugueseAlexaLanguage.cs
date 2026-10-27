@@ -44,6 +44,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NotAllowed] = result => result.Baby is null
             ? "Os comandos de voz são para a família do bebê. Sua conta não pode usá-los aqui."
             : $"O seu papel {Em(result)} não permite isso. Fale com quem administra o bebê no app.",
+        [AssistantResultCode.ConsentRequired] = _ => "Antes de o Lotties usar as informações do bebê, abra o app Lotties e aceite os termos de uso. Depois tente de novo.",
         [AssistantResultCode.NoBaby] = _ => "Ainda não há nenhum bebê na sua conta do Lotties. Adicione um no app primeiro.",
         [AssistantResultCode.ChooseBaby] = _ => "Você tem mais de um bebê no Lotties. Escolha o bebê dos comandos de voz no app, em Configurações, Assistentes de voz.",
         [AssistantResultCode.RateLimited] = _ => "São muitos pedidos seguidos. Tente de novo daqui a um minuto.",

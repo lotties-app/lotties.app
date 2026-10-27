@@ -102,6 +102,8 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["professional_profiles.user_id"] = Rule.Erase,
         ["push_subscriptions.user_id"] = Rule.Erase,
         ["user_assistant_settings.user_id"] = Rule.Erase,
+        ["user_consent_history.user_id"] = Rule.Erase,
+        ["user_consents.user_id"] = Rule.Erase,
         ["user_notification_settings.user_id"] = Rule.Erase,
         ["user_unit_settings.user_id"] = Rule.Erase,
         ["vaccinations.created_by"] = Rule.KeepForTheFamily,

@@ -30,6 +30,18 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"lotties-tests-{Guid.NewGuid():N}.db");
 
+    private readonly TestConsentGrant _consentGrant = new();
+
+    /// <summary>
+    /// Whether users the host creates from now on get a current core consent (on by default: that is how the whole suite passes
+    /// the consent gate unchanged, see <see cref="TestConsentGrant"/>). The consent tests turn it off.
+    /// </summary>
+    public bool GrantConsentToNewUsers
+    {
+        get => _consentGrant.Enabled;
+        set => _consentGrant.Enabled = value;
+    }
+
     private string ConnectionString => new SqliteConnectionStringBuilder
     {
         DataSource = _databasePath,
@@ -86,7 +98,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         services.AddDbContext<LottiesDbContext>(options => options
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()
-            .ReplaceService<IModelCustomizer, SqliteModelCustomizer>());
+            .ReplaceService<IModelCustomizer, SqliteModelCustomizer>()
+            .AddInterceptors(_consentGrant));
         services.AddSingleton<IUniqueViolationDetector, SqliteUniqueViolationDetector>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
         services.PostConfigure<AuthenticationOptions>(UseTestSchemeByDefault);

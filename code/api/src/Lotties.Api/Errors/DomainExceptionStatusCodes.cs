@@ -94,6 +94,8 @@ internal static class DomainExceptionStatusCodes
         [typeof(BoardTopicNotAllowedException)] = StatusCodes.Status403Forbidden,
         [typeof(BoardAdminRequiredException)] = StatusCodes.Status403Forbidden,
         [typeof(InvalidBoardCursorException)] = StatusCodes.Status400BadRequest,
+        [typeof(ConsentRequiredException)] = StatusCodes.Status403Forbidden,
+        [typeof(ConsentVersionOutdatedException)] = StatusCodes.Status409Conflict,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

@@ -40,6 +40,8 @@
     <None Include="..\..\..\web\src\now\cryReasonsVectors.json" Link="CryReasons\cryReasonsVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Measurement-units vectors shared with the web port (code/web/src/units, docs/design/37-measurement-units.md). -->
     <None Include="..\..\..\web\src\units\unitsVectors.json" Link="Units\unitsVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The consent versions the web reads (code/web/src/legal/consentVersions.json, docs/design/38-consent-and-terms.md), mirrored by ConsentVersions. -->
+    <None Include="..\..\..\web\src\legal\consentVersions.json" Link="Consents\consentVersions.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

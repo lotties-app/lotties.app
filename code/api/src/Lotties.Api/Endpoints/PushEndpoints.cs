@@ -1,4 +1,5 @@
 using Lotties.Api.Authorization;
+using Lotties.Api.Consents;
 using Lotties.Api.Limits;
 using Lotties.Application.Push;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -25,7 +26,7 @@ internal static class PushEndpoints
     {
         ArgumentNullException.ThrowIfNull(api);
         var push = api.MapGroup(PushPath);
-        push.MapGet("/config", GetConfig).WithName("GetPushConfig");
+        push.MapGet("/config", GetConfig).AllowWithoutConsent("The public VAPID key: no user data.").WithName("GetPushConfig");
         push.MapPost(SubscriptionsPath, SubscribeAsync)
             .RequireRateLimiting(RequestLimitPolicies.PushWrite)
             .WithName("SubscribePush")
@@ -33,13 +34,16 @@ internal static class PushEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
         push.MapPost(SubscriptionsPath + "/revoke", RevokeByEndpointAsync)
+            .AllowWithoutConsent("Switching a device off: a person can always stop notifications.")
             .RequireRateLimiting(RequestLimitPolicies.PushWrite)
             .WithName("RevokePushSubscriptionByEndpoint")
             .ProducesProblem(StatusCodes.Status409Conflict);
         push.MapGet(SubscriptionsPath, ListSubscriptionsAsync)
+            .AllowWithoutConsent("The person's own devices, so she can switch them off.")
             .WithName("ListPushSubscriptions")
             .ProducesProblem(StatusCodes.Status409Conflict);
         push.MapDelete(SubscriptionsPath + "/{subscriptionId:guid}", RevokeAsync)
+            .AllowWithoutConsent("Switching a device off: a person can always stop notifications.")
             .RequireRateLimiting(RequestLimitPolicies.PushWrite)
             .WithName("RevokePushSubscription")
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -60,6 +64,7 @@ internal static class PushEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict);
         push.MapPost("/deliveries/{deliveryId:guid}/actions", ApplyActionAsync)
             .AllowAnonymous()
+            .AllowWithoutConsent("Authenticated by the single-use token of the notification itself, not by a user.")
             .RequireRateLimiting(RequestLimitPolicies.PushAction)
             .WithName("ApplyNotificationAction")
             .ProducesProblem(StatusCodes.Status400BadRequest)

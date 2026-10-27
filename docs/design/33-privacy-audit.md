@@ -58,6 +58,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | 20 | Exported files | the per-baby backup (readable JSON, unencrypted, no account ids: stand-ins) and the device JSON | portability | Contract | whoever holds the file | outside our control | user | is the export |
 | 21 | Cry monitor (2026-10-24, section 12) | **on the device only**: the microphone signal while the monitor page listens, analysed in memory (AudioWorklet and a worker) and discarded at once, never recorded, stored or sent; **saved**: fussy spells with `auto_detected` (rows of category 4) and the parent's `cry_confirmed` answer; **device**: the consent (`{version, at}`) and the sensitivity | notice crying, log it, alert opted-in family members | Consent-H (specific, per device, art. 11, I and art. 14, §1) `OWNER TO CONFIRM` with the lawyer | the spells as row 4; nothing of the sound reaches anyone | spells as row 4; consent until withdrawn or sign-out | withdraw on the page; spells as row 4 | spells as row 4 |
 | 22 | Measurement unit setting (`user_unit_settings`, 2026-10-25, policy 6, docs/design/37-measurement-units.md) | one text value per user (`auto`, `metric` or `us`) and the time it changed; not sensitive, no baby data | show, say (voice) and accept amounts in ml or fl oz, kg or lb, cm or in, degrees C or F; storage of every record stays metric | Contract (the service the user asked for) | the user | until changed or account deletion | account deletion (`EfAccountDataEraser`, a rule and a fixture row in `AccountErasureTests`); never in the baby backup file | no |
+| 23 | Consent records (`user_consents`, `user_consent_history`, 2026-10-27, policy 9, docs/design/38-consent-and-terms.md) | per person and kind (`core`, `push`, `alexa`, `mcp`): internal user id, the consent version (the pair terms version + policy version), when it was given or withdrawn, the language of the text she read and, for the core consent, the capacity she declared (the child's parent or legal guardian, or an adult they authorised); an append-only history line for each grant or withdrawal. **No IP address, no device data**; not baby data | to show that a person consented to the terms and the policy before any baby data was reached, to ask again after a material change, to keep the optional choices (reminders, Alexa, AI assistants) | Legal / Contract (proof of the consent that is the basis of the health data: art. 11, I, art. 14, §1; `OWNER TO CONFIRM`) | the person herself (`GET /me/consents`, Settings > Privacy and data); the server uses the core record to gate every baby route | until the account is deleted (a minimal proof kept after deletion is a question for the lawyer, docs/PRIVACY-LAWYER-BRIEF.md) | erased by account deletion (`EfAccountDataEraser`, rules in `AccountErasureTests`) | shown in Settings > Privacy and data; a request to the contact |
 
 ## 3. Third parties and requests that leave our servers
 
@@ -127,8 +128,8 @@ explains the token choice.
   prescriptions, medications, custom event types, invites, notification actions, deliveries, preferences, members and
   the baby row; on kept babies her note reads, private notes, pending proposals, unaccepted invites, preferences and
   membership go, and what she added for the family stays under the anonymized row; then her deliveries, actions, push
-  subscriptions, notification settings, professional profile, assistant settings and unit setting, and the `created_by` of catalog
-  products she added; the user row is anonymized. Every column of the model that points at a baby or a user has a rule
+  subscriptions, notification settings, professional profile, assistant settings, unit setting, consent records and history, and the `created_by` of catalog
+  products she added; her consent records and their history, the user row is anonymized. Every column of the model that points at a baby or a user has a rule
   in `code/api/tests/Lotties.Api.Tests/Endpoints/AccountErasureTests.cs` (model-driven: a new one fails the test), and
   the test erases a fixture with a row in every such table (alone on a baby; Owner, Parent, Caregiver, Viewer and
   Doctor on a baby others keep). Keycloak removal with the admin service account (wired in the home lab kit; the owner
@@ -155,10 +156,10 @@ does not check that the person who creates a baby is its parent or guardian, and
 | --- | --- | --- | --- |
 | G1 | **Resolved** (branch commits `1fd2fe3` test, `e64abdd` fix). Confirmed real: the model-driven test `AccountErasureTests.Delete_AloneOnABabyWithARowInEveryTable_ErasesEverything` failed with `SQLite Error 19: 'FOREIGN KEY constraint failed'` (500) on `DELETE /me` for a user alone on a baby with a care provider; the eraser now deletes `care_providers` of erased babies and clears `products.created_by`. The other tables were already covered | `EfAccountDataEraser` | done; the rules table in `AccountErasureTests` keeps it complete |
 | G2 | **Resolved** (branch commit `64cb824`): `/doctor/settings` has "Account and data" (`DeleteAccountSection variant="professional"`: the same preview and confirmation; the download holds only her own data; the privacy link stays in `/doctor`) | `doctor/PatientPages.tsx` `DoctorSettingsPage`, `account/exportProfessionalData.ts` | done |
-| G3 | No consent is collected or recorded for health data (art. 11, I) or for children's data (art. 14, §1); the Keycloak "Terms and conditions" action is not enabled (docs/DEPLOY.md) | sign-up and first run | a consent step with the policy link and a stored timestamp, or enable Keycloak's terms action with the policy text; lawyer decides |
+| G3 | **Closed in the repository** (2026-10-27, docs/design/38-consent-and-terms.md): every person consents for herself on a screen before any baby data (the terms of use, the privacy policy, a declaration of being the child's parent or guardian or an adult they authorised); the record (user id, version, time, language, capacity; no IP) is kept in `user_consents` and `user_consent_history`; the API refuses every baby route with `403 consent_required` until it exists; reminders, Alexa and MCP wait for it too. **Still the lawyer's**: whether the texts and the "authorised adult" declaration are enough (docs/PRIVACY-LAWYER-BRIEF.md items 9 to 14); the Keycloak "Terms and conditions" action stays off | sign-up and first run | done; the lawyer reviews the texts |
 | G4 | No retention limits for the access log, invites, soft-deleted records, anonymized users; logs and backups undefined | DB, ops | decide periods, add purge jobs |
 | G5 | **Resolved in the repository** (branch commits `4f22b5c` API, `3ab18ca` kit, `64cb824` web): the kit passes `AUTH_ADMIN_CLIENT_ID/SECRET` from `deploy/homelab/.env` into the Secret (both or none, checked by `deploy.sh` and at API start); `DELETE /me` answers `identity` `removed`/`not_configured`/`failed` and the preview `identityRemovable`, and the app says plainly before and after whether the sign-in account stays. **Owner still to do**: create the Keycloak client and set the two values (docs/KEYCLOAK-ACCOUNT-DELETION.md); until then production keeps the sign-in account and says so | Keycloak, `deploy/homelab/.env` | owner |
-| G6 | No in-app channel to announce policy changes | web | a versioned "policy updated" notice keyed on `PRIVACY_POLICY_VERSION` |
+| G6 | **Closed in the repository** (2026-10-27): `consentVersions.json` lists every version of the terms and the policy as material or minor; a material change shows the consent screen again, a minor one a dismissible "policy updated" notice with a link (`PolicyUpdatedNotice`; dismissing stores the version seen on the device, per account) | web | done |
 | G7 | No public `/delete-account` page (Google Data safety asks for a deletion URL) | web | until it exists, the policy's "Your rights" anchor explains the in-app path and the contact |
 | G8 | The address search text can be in proxy access logs (the API itself never logs it) | Traefik | exclude `/api/v1/address/*` from access logs or drop query strings |
 | G9 | nginx access log keeps client IPs and user agents; HSTS not set | web container, Traefik | decide log format/retention; add HSTS middleware (deploy/homelab/README.md) |
@@ -176,8 +177,9 @@ does not check that the person who creates a baby is its parent or guardian, and
 2. "IP address, request line: reverse-proxy and API logs": the API logs neither; the web container's nginx log and
    possibly Traefik do.
 3. "The legal basis is your consent when you create the account ... health data is processed with your specific
-   consent": no consent step exists anywhere (G3).
-4. "We tell you in the app before a material change": no such mechanism exists (G6).
+   consent": no consent step existed anywhere (G3, closed 2026-10-27 by the consent screen).
+4. "We tell you in the app before a material change": no such mechanism existed (G6, closed 2026-10-27 by the consent
+   versions, the consent screen and the notice).
 5. "Security: ... backups [describe]": there is no backup routine, only manual `pg_dump` copies before migration
    deploys.
 6. Data inventory "processors are the owner's own server and, for push, Apple and Google": incomplete: Mozilla and
@@ -279,3 +281,23 @@ read, the people in the room (the page and the policy ask the parent to tell the
 (ordinary records, no separate period). Store labels: the audio is processed only on the device and never sent, which
 Apple's App Privacy and Google's Data safety do not count as collected (docs/design/31 section 6); the native apps do
 not offer the monitor today.
+
+## 13. Consent and the terms of use (built 2026-10-27, docs/design/38-consent-and-terms.md)
+
+- **What is recorded** (inventory row 23): user id, kind, version, time, language, declared capacity. No IP address. Kept
+  until the account is deleted.
+- **Gate**: the API group is behind one middleware (`ConsentGateMiddleware`); a route is gated unless it carries
+  `AllowWithoutConsent(reason)` and is listed in `ConsentGateCoverageTests.Exempt`. Exempt: `/me/*` (profile, deletion,
+  settings, consents), the version and health probes, reference data (catalog, vaccine schedule, age norms), the address
+  proxy, the public push key and switching a device off, the Alexa and MCP endpoints (their command layer answers a person
+  without consent), and the project board. Everything about a baby, the doctor's patients, export and import, invites,
+  push settings, reminders and sync is gated.
+- **Reminders**: `NotificationClaimer` skips a person without a current core consent (a reminder carries a baby's data).
+- **Alexa and MCP**: `AssistantSubjects` answers `consent_required` before reading anything.
+- **Withdrawal**: the core consent is withdrawn by exporting and deleting the account (Settings > Privacy and data
+  explains it and leads there); an optional one by turning the feature off, which is recorded.
+- **On the device**: the last accepted version, the notice seen and optional changes not yet sent (`consentStorage.ts`),
+  cleared with the account's other device state.
+- **Policy**: the privacy policy (version 9) has a "Your consent and the terms of use" section and a data row; the terms
+  of use are public at `/terms` (version 1).
+

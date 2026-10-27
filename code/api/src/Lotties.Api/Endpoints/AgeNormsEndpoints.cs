@@ -1,3 +1,4 @@
+using Lotties.Api.Consents;
 using Lotties.Application.AgeNorms;
 using Microsoft.Net.Http.Headers;
 
@@ -24,6 +25,7 @@ internal static class AgeNormsEndpoints
         ArgumentNullException.ThrowIfNull(api);
         _ = api.ServiceProvider.GetRequiredService<IAgeNormsProvider>();
         api.MapGet(Path, GetNorms)
+            .AllowWithoutConsent("Published age facts, the same file for everyone, no baby is involved.")
             .WithName("GetAgeNorms")
             .Produces(StatusCodes.Status200OK, contentType: "application/json")
             .Produces(StatusCodes.Status304NotModified);

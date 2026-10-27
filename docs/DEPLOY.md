@@ -124,7 +124,7 @@ The login pages of Keycloak (sign in, register, reset password, verify email, on
 3. Realm settings > Themes > **Login theme** = `lotties`, Save. Enable Realm settings > Localization > Internationalization with `English` and `Portuguese (Brazil)` (the language switcher only appears when more than one language is enabled).
 4. Keep the app client as before (public, PKCE `S256`). The theme changes no flow and no setting of the realm.
 
-Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action.
+Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action. The app has its own consent screen and terms page since 2026-10-27 (docs/design/38-consent-and-terms.md), so that Keycloak action is not needed; the migration `Consent` (tables `user_consents`, `user_consent_history`) is applied like any other (existing accounts have no record and see the consent screen at their next sign-in).
 
 ## Installing the Keycloak theme on Kubernetes (Bitnami chart)
 
