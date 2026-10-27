@@ -136,13 +136,13 @@
             "record a bottle",
             "log a {bottleKind} bottle",
             "add a {bottleKind} bottle",
-            "log a {kind} bottle",
+            "log a {bottleKind} bottle",
             "she took {amount} ml",
             "he took {amount} ml",
             "baby had a {amount} ml bottle",
-            "fed her {amount} ml of {kind}",
+            "fed her {amount} ml of {bottleKind}",
             "fed him {amount} ml",
-            "{amount} ml of {kind}",
+            "{amount} ml of {bottleKind}",
             "she ate {amount} ml",
             "he ate {amount} ml",
             "finished her bottle",
@@ -214,12 +214,10 @@
             "add a diaper",
             "record a diaper change",
             "log a diaper change",
-            "she had a {kind}",
-            "he had a {kind}",
-            "changed her diaper, it was {kind}",
-            "changed his diaper, it was {kind}",
-            "it was a {kind} diaper",
-            "diaper was {kind}",
+            "she had a {diaperKind}",
+            "he had a {diaperKind}",
+            "it was a {diaperKind} diaper",
+            "diaper was {diaperKind}",
             "poopy diaper",
             "number two",
             "she went",
@@ -784,7 +782,10 @@
             "she crawled",
             "he crawled",
             "log a milestone",
-            "reached a milestone"
+            "reached a milestone",
+            "she reached the {milestone} milestone",
+            "he did {milestone}",
+            "baby {milestone}"
           ]
         },
         {
@@ -847,7 +848,7 @@
           "slots": [
             {
               "name": "medicationName",
-              "type": "AMAZON.FreeText"
+              "type": "AMAZON.SearchQuery"
             }
           ],
           "samples": [

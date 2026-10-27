@@ -125,11 +125,11 @@
             "registrar uma mamadeira de {bottleKind}",
             "ela acabou de tomar mamadeira",
             "ele acabou de tomar mamadeira",
-            "registrar mamadeira de {kind}",
+            "registrar mamadeira de {bottleKind}",
             "ela bebeu {amount} ml",
             "ele bebeu {amount} ml",
-            "dei {amount} ml de {kind}",
-            "o bebê bebeu {amount} ml de {kind}",
+            "dei {amount} ml de {bottleKind}",
+            "o bebê bebeu {amount} ml de {bottleKind}",
             "ela tomou {amount} ml",
             "ele tomou {amount} ml",
             "terminou a mamadeira",
@@ -196,10 +196,9 @@
             "anotar uma fralda",
             "troquei a fralda",
             "registrar troca de fralda",
-            "a fralda estava de {kind}",
-            "troquei a fralda, era {kind}",
-            "era uma fralda de {kind}",
-            "fez {kind} na fralda",
+            "a fralda estava de {diaperKind}",
+            "era uma fralda de {diaperKind}",
+            "fez {diaperKind} na fralda",
             "fralda suja",
             "fez cocô",
             "fez xixi",
@@ -736,7 +735,10 @@
             "ela engatinhou",
             "ele engatinhou",
             "anotar um marco",
-            "alcançou um marco de desenvolvimento"
+            "alcançou um marco de desenvolvimento",
+            "ela alcançou o marco {milestone}",
+            "ele fez {milestone}",
+            "bebê {milestone}"
           ]
         },
         {
@@ -799,7 +801,7 @@
           "slots": [
             {
               "name": "medicationName",
-              "type": "AMAZON.FreeText"
+              "type": "AMAZON.SearchQuery"
             }
           ],
           "samples": [
