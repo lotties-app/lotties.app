@@ -1,3 +1,4 @@
+using Lotties.Application.Consents;
 using Lotties.Application.Notifications;
 using Lotties.Application.Users;
 using Lotties.Domain.Assistants;
@@ -46,6 +47,7 @@ internal sealed record AssistantFamilyLookup(IReadOnlyList<AssistantFamilyMember
 /// </summary>
 internal sealed class AssistantSubjects(
     ICurrentUser currentUser,
+    IConsentService consents,
     IBabyRepository babies,
     IUserAssistantSettingsRepository assistantSettings,
     IUserNotificationSettingsRepository notificationSettings,
@@ -57,6 +59,11 @@ internal sealed class AssistantSubjects(
         invocation.EnsureValid();
         var now = timeProvider.GetUtcNow();
         var user = await currentUser.GetUserAsync(cancellationToken);
+        if (!await consents.HasCurrentCoreAsync(user.Id, cancellationToken))
+        {
+            return Refused(AssistantResultCode.ConsentRequired, now);
+        }
+
         var userBabies = await babies.ListForUserAsync(user.Id, cancellationToken);
         var settings = await assistantSettings.FindAsync(user.Id, cancellationToken);
         var resolution = AssistantBabyChoice.Decide(MembershipsOf(userBabies, user.Id), settings?.DefaultBabyId, invocation.BabyId);
@@ -83,6 +90,11 @@ internal sealed class AssistantSubjects(
         invocation.EnsureValid();
         var now = timeProvider.GetUtcNow();
         var user = await currentUser.GetUserAsync(cancellationToken);
+        if (!await consents.HasCurrentCoreAsync(user.Id, cancellationToken))
+        {
+            return new AssistantFamilyLookup([], Refused(AssistantResultCode.ConsentRequired, now).Refusal, now);
+        }
+
         var userBabies = await babies.ListForUserAsync(user.Id, cancellationToken);
         var settings = await assistantSettings.FindAsync(user.Id, cancellationToken);
         var memberships = MembershipsOf(userBabies, user.Id);

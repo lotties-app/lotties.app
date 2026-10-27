@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useApiClient } from '../api/ApiClientContext';
 import { useAuth } from '../auth/useAuth';
+import { useConsent } from '../consent/ConsentContext';
 import { releaseThisDevice } from '../notifications/pushActions';
 import { DatabaseProvider } from '../db/DatabaseProvider';
 import { SyncProvider } from '../sync/SyncProvider';
@@ -40,6 +41,7 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
   const { t } = useTranslation();
   const { logout } = useAuth();
   const api = useApiClient();
+  const consent = useConsent();
   const [ending, setEnding] = useState(false);
   // Claimed before the first render of the children, so they never read the previous account's
   // saved selection. Idempotent, so a StrictMode double call is harmless.
@@ -73,7 +75,9 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
   return (
     <AccountSessionContext value={session}>
       <DatabaseProvider db={db}>
-        <SyncProvider options={syncOptions}>{children}</SyncProvider>
+        <SyncProvider options={syncOptions} enabled={consent.syncAllowed}>
+          {children}
+        </SyncProvider>
       </DatabaseProvider>
     </AccountSessionContext>
   );

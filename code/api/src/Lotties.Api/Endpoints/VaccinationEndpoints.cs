@@ -1,4 +1,5 @@
 using Lotties.Api.Authorization;
+using Lotties.Api.Consents;
 using Lotties.Application.Vaccinations;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Net.Http.Headers;
@@ -31,6 +32,7 @@ internal static class VaccinationEndpoints
         ArgumentNullException.ThrowIfNull(api);
         _ = api.ServiceProvider.GetRequiredService<IVaccineScheduleProvider>();
         api.MapGet(SchedulePath, GetSchedule)
+            .AllowWithoutConsent("The national vaccine schedule is the same file for everyone, no baby is involved.")
             .WithName("GetVaccineSchedule")
             .Produces(StatusCodes.Status200OK, contentType: "application/json")
             .Produces(StatusCodes.Status304NotModified);

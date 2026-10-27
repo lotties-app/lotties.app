@@ -88,6 +88,14 @@ export const privacyPtBR: PolicyDocument = {
               ],
             },
             {
+              id: 'consent',
+              cells: [
+                'Seus registros de consentimento',
+                'Quando você aceita os termos de uso e esta política: seu identificador interno de usuário, a versão que você aceitou, a data e a hora, o idioma em que você leu e se você declarou ser pai, mãe ou responsável legal da criança ou um adulto autorizado por eles. O mesmo para cada recurso opcional que você liga ou desliga (lembretes, a skill da Alexa, assistentes de IA). Sem endereço IP e sem dados do aparelho.',
+                'Para comprovar que você consentiu, para pedir de novo depois de uma mudança relevante e para guardar as escolhas opcionais que você fez. Apagados junto com a sua conta.',
+              ],
+            },
+            {
               id: 'babyProfile',
               cells: [
                 'O perfil do bebê',
@@ -240,6 +248,27 @@ export const privacyPtBR: PolicyDocument = {
         {
           kind: 'p',
           text: 'Dados de crianças são sempre tratados no melhor interesse da criança (art. 14); veja [Crianças](#privacy-children).',
+        },
+      ],
+    },
+    {
+      id: 'consent',
+      title: 'Seu consentimento e os termos de uso',
+      blocks: [
+        {
+          kind: 'p',
+          text: 'Antes de você usar o Lotties, pedimos que aceite os [Termos de Uso](/terms) e esta política, uma vez para cada versão, e que declare ser pai, mãe ou responsável legal da criança, ou um adulto autorizado por eles (familiar, cuidador ou profissional de saúde). É o seu consentimento específico e em destaque para tratar os dados de saúde de uma criança para o serviço funcionar (LGPD art. 11, I, e art. 14, §1). Cada pessoa consente por si mesma: quem é dono da família, um pai ou cuidador convidado e um médico.',
+        },
+        {
+          kind: 'list',
+          items: [
+            'O que registramos: seu identificador de usuário, a versão, a data e a hora, o idioma do texto e a condição que você declarou. Não registramos seu endereço IP. Os registros são apagados junto com a sua conta.',
+            'Enquanto você não aceitar, o servidor recusa qualquer pedido de dados de um bebê, e os lembretes, a skill da Alexa e os assistentes de IA não funcionam para você. Você sempre pode abrir os ajustes da conta, baixar seus dados e apagar sua conta.',
+            'Os recursos opcionais (lembretes, a skill da Alexa, assistentes de IA) têm consentimento próprio, desligado por padrão, registrado quando você liga ou desliga, com uma frase ao lado do botão dizendo o que sai do nosso controle.',
+            'Uma mudança relevante (novos dados coletados, um novo destinatário ou finalidade, uma mudança nos seus direitos ou em quem é o responsável) pede seu consentimento de novo antes de você continuar. Uma mudança pequena mostra um aviso com um link para esta página.',
+            'Você pode retirar o consentimento a qualquer momento. Como o Lotties não funciona sem ele, retirar significa baixar seus dados e apagar sua conta em Ajustes > Privacidade e dados. Se você recusar no início, sai do app e nada sobre uma criança é guardado.',
+            'O Lotties está em fase de teste: pode ter falhas, ficar fora do ar e perder dados, e nenhum sistema é totalmente seguro, então não dá para descartar um vazamento. Adotamos as medidas de segurança descritas abaixo e, se algo relevante acontecer, avisamos você e a ANPD, como a lei exige.',
+          ],
         },
       ],
     },

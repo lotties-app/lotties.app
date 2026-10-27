@@ -59,8 +59,14 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
 ## 5. Bases legais propostas (a validar)
 
 - Execução do serviço (art. 7, V): conta e registros.
-- Consentimento específico (art. 11, I): dados de saúde, "ao registrar a informação". **O aplicativo não pede hoje um
-  consentimento separado e destacado** (lacuna G3).
+- Consentimento específico (art. 11, I): dados de saúde. **Desde 2026-10-27 o aplicativo pede um consentimento
+  separado e destacado** (docs/design/38-consent-and-terms.md; lacunas G3 e G6 fechadas no repositório): cada pessoa
+  (dono, pai ou cuidador convidado, médico) aceita por si, antes de qualquer dado de bebê, os Termos de Uso e a Política
+  da versão em vigor e declara ser pai, mãe ou responsável legal da criança ou um adulto autorizado por eles. O
+  servidor recusa qualquer rota de bebê (403 `consent_required`), os lembretes, a Alexa e o MCP sem ele. Guarda-se: id
+  do usuário, versão, data e hora, idioma e a condição declarada (sem IP), com histórico, apagados junto com a conta.
+  Mudança relevante pede novo aceite; mudança pequena mostra um aviso. Os textos (tela, aviso de teste, consentimentos
+  opcionais, Termos de Uso) estão em `docs/CONSENT-AND-TERMS-DRAFT.md` e **precisam da sua revisão**.
 - Consentimento específico para o convite de médico e para recursos opcionais (push, Alexa, detector de choro).
 - Legítimo interesse (art. 7, IX): logs técnicos, nunca para dado sensível.
 - Obrigação legal quando aplicável.
@@ -79,10 +85,11 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
 
 ## 7. Perguntas ao advogado
 
-1. **Consentimento para dados de saúde de crianças (art. 11 e art. 14).** A base "execução de contrato + consentimento
-   implícito ao registrar" basta, ou é preciso um consentimento específico e destacado de pai/responsável, com registro
-   (por exemplo, ação obrigatória de Termos no Keycloak ou tela de primeiro uso)? O aplicativo deve exigir que quem cria
-   o bebê declare ser pai, mãe ou responsável?
+1. **Consentimento para dados de saúde de crianças (art. 11 e art. 14).** *(Atualizado: a tela de consentimento e o
+   registro existem, ver seção 5 e os itens 13 a 18; a pergunta passa a ser se bastam.)* A base "execução de contrato +
+   consentimento implícito ao registrar" basta, ou é preciso um consentimento específico e destacado de pai/responsável,
+   com registro (por exemplo, ação obrigatória de Termos no Keycloak ou tela de primeiro uso)? O aplicativo deve exigir
+   que quem cria o bebê declare ser pai, mãe ou responsável?
 2. **Controlador pessoa física ou empresa.** Qual formato publicar (nome e CPF/CNPJ), e como isso interage com Apple
    (conta individual ou organização) e Google Play (testers para conta pessoal)? Aplica-se o regime de agente de
    tratamento de pequeno porte, dado que há dado sensível de crianças? É necessário nomear **encarregado** (DPO)?
@@ -104,8 +111,22 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
 11. **Assistentes (Alexa e IA).** A resposta falada leva dado de saúde à Amazon, e as respostas do servidor MCP podem
     levar a um assistente de IA escolhido pelo usuário. Esse fluxo, sempre iniciado pelo usuário, exige consentimento
     adicional além do texto da política? Como tratar o fato de o assistente de IA poder reter o conteúdo?
-12. **Código aberto e termos.** Faltam termos de uso? A política ainda precisa de uma cláusula de limitação de
-    responsabilidade para os avisos "não é dispositivo médico" além do que já está escrito?
+12. **Código aberto e termos.** *(Atualizado: os Termos de Uso existem em `/terms`, rascunho a revisar; ver itens 13 a
+    18.)* A política ainda precisa de uma cláusula de limitação de responsabilidade para os avisos "não é dispositivo
+    médico" além do que já está escrito?
+13. **Consentimento único com declaração de "pai, responsável ou adulto autorizado".** Um consentimento principal com
+    essa declaração basta para o art. 11, I e o art. 14, §1, ou um cuidador ou médico não deve consentir pela criança
+    (vale o consentimento do pai ou responsável dado em outro lugar)? (rascunho, pergunta 1)
+14. **A frase sobre risco de vazamento.** Como redigi-la para ser honesta sem ser lida como uma renúncia que a lei não
+    permite? (rascunho, pergunta 2)
+15. **Limite de responsabilidade para um serviço gratuito em teste** (cláusula 12 dos Termos) e se o CDC se aplica.
+    (rascunho, pergunta 3)
+16. **Prova mínima do consentimento após a exclusão da conta.** Hoje o registro e o histórico são apagados com a conta.
+    Vale guardar uma prova mínima depois, e por quanto tempo? (rascunho, pergunta 4)
+17. **O aviso de "fase de teste" muda algum dever** (art. 46, art. 48) enquanto dados reais são tratados? (rascunho,
+    pergunta 5)
+18. **Foro e lei aplicável**, e se um e-mail e uma empresa ou CPF precisam aparecer nos Termos. A cláusula 14 diz hoje só
+    "lei brasileira"; o foro ficou de fora até a sua resposta. (rascunho, pergunta 6)
 
 ## 8. O que levar à reunião
 
@@ -113,4 +134,4 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
 - A política publicada, nos dois idiomas, e `docs/design/33-privacy-audit.md`.
 - Para as lojas: `docs/design/20-store-readiness.md` seção 3 (respostas de App Privacy e Data safety) e
   `docs/ALEXA-CERTIFICATION.md` seção 3.
-- A lista de lacunas abertas (G3 consentimento, G6 aviso de mudança de política, G7 URL de exclusão para o Google Play).
+- A lista de lacunas abertas (G7 URL de exclusão para o Google Play; G3 consentimento e G6 aviso de mudança de política estão fechadas no repositório e aguardam a sua revisão dos textos: `docs/CONSENT-AND-TERMS-DRAFT.md` e `docs/design/38-consent-and-terms.md`).

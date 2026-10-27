@@ -1,6 +1,6 @@
 # Consent, beta notice and terms of use: draft texts for the lawyer
 
-**Draft. Not legal advice.** Plain-language texts for the consent screen, the beta notice, the optional consents, the
+**Draft. Not legal advice.** Implemented 2026-10-27 (design 38 section 9): the consent screen, the beta line, the optional sentences, the notice and the terms page show these texts (`code/web/src/i18n/locales/*/consent.json`, `code/web/src/legal/terms.*.ts`); the lawyer's changes go there and raise the consent version. Clause 14 (venue) is not shown until the lawyer decides it. Plain-language texts for the consent screen, the beta notice, the optional consents, the
 "policy updated" notice and the terms of use of Lotties, in Brazilian Portuguese (the reference text) and English.
 Design: [design/38-consent-and-terms.md](design/38-consent-and-terms.md). Facts behind them: the privacy policy
 (`https://lotties.app/privacy`), [design/33-privacy-audit.md](design/33-privacy-audit.md) and

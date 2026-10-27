@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createApiClient } from './apiClient';
+import { CONSENT_REQUIRED_EVENT, createApiClient } from './apiClient';
 import { ApiError } from './ApiError';
 import { getHealth } from './health';
 
@@ -43,6 +43,22 @@ describe('apiClient', () => {
     expect((error as ApiError).status).toBe(400);
     expect((error as ApiError).body).toEqual({ title: 'bad' });
     expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('announces a 403 consent_required so the consent is asked again, and no other 403', async () => {
+    const heard = vi.fn();
+    window.addEventListener(CONSENT_REQUIRED_EVENT, heard);
+    try {
+      const refused = setup(jsonResponse({ status: 403, code: 'consent_required' }, 403));
+      await expect(refused.client.request('/x')).rejects.toBeInstanceOf(ApiError);
+      expect(heard).toHaveBeenCalledTimes(1);
+
+      const other = setup(jsonResponse({ status: 403, code: 'event_not_owned' }, 403));
+      await expect(other.client.request('/x')).rejects.toBeInstanceOf(ApiError);
+      expect(heard).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener(CONSENT_REQUIRED_EVENT, heard);
+    }
   });
 
   it('triggers re-login on 401', async () => {

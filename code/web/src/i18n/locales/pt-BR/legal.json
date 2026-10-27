@@ -4,6 +4,11 @@
       "title": "Política de privacidade",
       "version": "Versão {{version}}, atualizada em {{date}}.",
       "contents": "Nesta página"
+    },
+    "terms": {
+      "title": "Termos de uso",
+      "version": "Versão {{version}}, atualizada em {{date}}.",
+      "intro": "Estes são os termos para usar o Lotties. Eles andam junto com a política de privacidade, que explica como tratamos os dados pessoais."
     }
   }
 }

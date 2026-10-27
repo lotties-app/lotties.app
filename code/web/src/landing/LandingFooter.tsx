@@ -9,6 +9,7 @@ import { useThemeMode } from '../theme/ThemeModeContext';
 import type { ThemeMode } from '../theme/theme';
 import { SegmentedControl } from '../ui/form';
 import { VersionLine } from '../ui/VersionLine';
+import { BetaNotice } from './BetaNotice';
 import { PAGE_WIDTH } from './features';
 import { repoUrl } from './repoUrl';
 
@@ -103,6 +104,10 @@ export function LandingFooter() {
           <Link component={RouterLink} to="/privacy" sx={{ alignSelf: 'flex-start' }}>
             {t('footer.privacy')}
           </Link>
+          <Link component={RouterLink} to="/terms" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.terms')}
+          </Link>
+          <BetaNotice />
           <Typography variant="body2" color="text.secondary">
             {t('footer.licence')}
           </Typography>

@@ -116,6 +116,37 @@ describe('LandingPage', () => {
       .map((link) => [link.textContent, link.getAttribute('href')]);
     const credits = links.findIndex(([, href]) => href === '/credits');
     expect(links[credits + 1]).toEqual(['Privacy policy', '/privacy']);
+    expect(links[credits + 2]).toEqual(['Terms of use', '/terms']);
+  });
+
+  it('says Lotties is a beta, linking the terms, next to the sign-up button and in the footer', async () => {
+    renderLanding();
+    await screen.findByRole('heading', { level: 1 });
+    const lines = document.querySelectorAll('[data-beta-notice]');
+
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      expect(line.textContent).toBe('Lotties is in beta. Read the Terms of Use.');
+      expect(
+        within(line as HTMLElement)
+          .getByRole('link', { name: 'Terms of Use' })
+          .getAttribute('href'),
+      ).toBe('/terms');
+    }
+    expect(
+      screen.getByRole('button', { name: 'Create an account' }).parentElement?.parentElement,
+    ).toContain(lines[0]);
+  });
+
+  it('says it in Brazilian Portuguese too, and not for someone already signed in on /welcome', async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, 'pt-BR');
+    renderLanding(fakeAuth(), true);
+    await screen.findByRole('heading', { level: 1 });
+
+    const lines = document.querySelectorAll('[data-beta-notice]');
+    expect(lines).toHaveLength(1);
+    expect(lines[0].textContent).toBe('O Lotties está em fase de teste. Leia os Termos de Uso.');
+    expect(screen.getByRole('link', { name: 'Termos de uso' }).getAttribute('href')).toBe('/terms');
   });
 
   it('starts sign-in from the header and the hero, and registration from the secondary button', async () => {
@@ -153,7 +184,7 @@ describe('LandingPage', () => {
     fireEvent.click(within(language).getByRole('radio', { name: 'Português' }));
     expect(await screen.findByRole('heading', { level: 1, name: /Acompanhe o dia/ })).toBeTruthy();
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('pt-BR');
-    expect(document.documentElement.lang).toBe('pt-BR');
+    await waitFor(() => expect(document.documentElement.lang).toBe('pt-BR'));
 
     fireEvent.click(
       within(screen.getByRole('radiogroup', { name: 'Tema' })).getByRole('radio', {

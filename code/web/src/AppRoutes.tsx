@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
+import { ConsentGate } from './consent/ConsentGate';
 import { LandingGate } from './landing/LandingGate';
 import { WelcomeRoute } from './landing/WelcomeRoute';
 import { CallbackPage } from './auth/CallbackPage';
@@ -39,6 +40,7 @@ const HubCryMonitorPage = lazy(() => import('./cryMonitor/CryMonitorPage'));
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InstallPage = lazy(() => import('./install/InstallPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
+const TermsPage = lazy(() => import('./legal/TermsPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -328,51 +330,65 @@ export function AppRoutes() {
           </Suspense>
         }
       />
+      <Route
+        path="/terms"
+        element={
+          <Suspense fallback={null}>
+            <TermsPage />
+          </Suspense>
+        }
+      />
       {/* The landing page on purpose for a signed-in person; `/` keeps opening the app. */}
       <Route path="/welcome" element={<WelcomeRoute />} />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
       <Route path="/invite" element={<InviteEntry />}>
         <Route element={<RequireAuth />}>
-          <Route element={<AppShell />}>
-            <Route index element={<InvitePage />} />
+          <Route element={<ConsentGate />}>
+            <Route element={<AppShell />}>
+              <Route index element={<InvitePage />} />
+            </Route>
           </Route>
         </Route>
       </Route>
       <Route path="/invite/:token" element={<LegacyInviteEntry />} />
       <Route element={<LandingGate />}>
         <Route element={<RequireAuth />}>
-          <Route element={<AppShell />}>
-            <Route index element={<HomePage />} />
-            <Route path="day" element={<DayPage />} />
-            <Route path="insights" element={<InsightsPage />} />
-            {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
-            <Route path="timeline" element={<Navigate to="/day" replace />} />
-            <Route path="growth" element={<Navigate to="/insights" replace />} />
-            <Route path="hub" element={<HubPage />} />
-            <Route path="hub/medicines" element={<HubMedicinesPage />} />
-            <Route path="hub/formulas" element={<HubFormulasPage />} />
-            <Route path="hub/providers" element={<HubProvidersPage />} />
-            <Route path="hub/family" element={<HubFamilyPage />} />
-            <Route path="hub/import" element={<HubImportPage />} />
-            <Route path="hub/export" element={<HubExportPage />} />
-            <Route path="hub/backup" element={<HubBackupImportPage />} />
-            <Route path="hub/cry-monitor" element={<HubCryMonitorPage />} />
-            <Route path="hub/updates" element={<HubUpdatesPage />} />
-            <Route path="hub/about" element={<HubAboutPage />} />
-            <Route path="hub/credits" element={<HubCreditsPage />} />
-            <Route path="hub/install" element={<HubInstallPage />} />
-            <Route path="hub/privacy" element={<HubPrivacyPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="appointments" element={<AppointmentsPage />} />
-            <Route path="vaccines" element={<VaccinesPage />} />
-            <Route path="vaccines/card" element={<VaccinationCardPage />} />
-            <Route path="notes" element={<NotesPage />} />
-            {/* The old Patients list is the doctor's dashboard now. */}
-            <Route path="patients" element={<Navigate to="/doctor" replace />} />
-            <Route path="proposals" element={<ProposalsPage />} />
-            <Route path="from-doctor" element={<FromDoctorPage />} />
+          {/* Everything about a baby needs a current consent: the gate shows the consent screen until it is given. */}
+          <Route element={<ConsentGate />}>
+            <Route element={<AppShell />}>
+              <Route index element={<HomePage />} />
+              <Route path="day" element={<DayPage />} />
+              <Route path="insights" element={<InsightsPage />} />
+              {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
+              <Route path="timeline" element={<Navigate to="/day" replace />} />
+              <Route path="growth" element={<Navigate to="/insights" replace />} />
+              <Route path="hub" element={<HubPage />} />
+              <Route path="hub/medicines" element={<HubMedicinesPage />} />
+              <Route path="hub/formulas" element={<HubFormulasPage />} />
+              <Route path="hub/providers" element={<HubProvidersPage />} />
+              <Route path="hub/family" element={<HubFamilyPage />} />
+              <Route path="hub/import" element={<HubImportPage />} />
+              <Route path="hub/export" element={<HubExportPage />} />
+              <Route path="hub/backup" element={<HubBackupImportPage />} />
+              <Route path="hub/cry-monitor" element={<HubCryMonitorPage />} />
+              <Route path="hub/updates" element={<HubUpdatesPage />} />
+              <Route path="hub/about" element={<HubAboutPage />} />
+              <Route path="hub/credits" element={<HubCreditsPage />} />
+              <Route path="hub/install" element={<HubInstallPage />} />
+              <Route path="hub/privacy" element={<HubPrivacyPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
+              <Route path="vaccines" element={<VaccinesPage />} />
+              <Route path="vaccines/card" element={<VaccinationCardPage />} />
+              <Route path="notes" element={<NotesPage />} />
+              {/* The old Patients list is the doctor's dashboard now. */}
+              <Route path="patients" element={<Navigate to="/doctor" replace />} />
+              <Route path="proposals" element={<ProposalsPage />} />
+              <Route path="from-doctor" element={<FromDoctorPage />} />
+            </Route>
+            {doctorRoutes()}
           </Route>
-          {/* `/hub/board` and `/hub/board/<item id>` (the drawer): one route, the page stays mounted. */}
+          {/* `/hub/board` and `/hub/board/<item id>` (the drawer): one route, the page stays mounted. The project board is internal tracking, never baby data: no consent needed. */}
           <Route
             path="hub/board/:itemId?"
             element={
@@ -381,7 +397,6 @@ export function AppRoutes() {
               </Suspense>
             }
           />
-          {doctorRoutes()}
         </Route>
       </Route>
     </Routes>

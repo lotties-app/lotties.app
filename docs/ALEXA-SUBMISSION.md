@@ -61,11 +61,17 @@ de verdade.**
 3. No Keycloak (realm `lotties.app`), abra o usuário e deixe **Email verified = On** e **sem ações obrigatórias** (sem
    "Verify email", sem "Update password"), para o revisor não travar no login. Confirme que ele consegue entrar em uma
    janela anônima.
-4. No app, crie o bebê **"Demo Baby"** (nome fictício, data de nascimento fictícia, de uns 3 a 5 meses).
-5. Deixe o papel dessa conta como **Owner**.
-6. Ajuste "Unidades" (Ajustes > Unidades) para **Automático**.
-7. Preencha dados para os comandos de consulta terem o que dizer (ver "Dados mínimos" abaixo).
-8. **Não deixe um sono aberto.** Se houver um, o comando de janela de sono responde "está dormindo".
+4. **Aceite a tela de consentimento uma vez.** Na primeira vez que a conta abre o app Lotties aparece a tela "Antes de
+   começar" (docs/design/38-consent-and-terms.md): escolha "pai, mãe ou responsável legal da criança", marque a
+   declaração e toque em **Aceitar e continuar**. Sem esse aceite o servidor recusa tudo sobre o bebê (inclusive a
+   importação do backup) e a Alexa responde "abra o app Lotties e aceite os termos de uso". Os revisores **vão ver essa
+   tela** se a conta nunca tiver aceitado; deixe-a aceita antes de submeter. Depois de uma mudança relevante nos
+   textos (nova versão do consentimento) a conta precisa aceitar de novo antes de cada submissão.
+5. No app, crie o bebê **"Demo Baby"** (nome fictício, data de nascimento fictícia, de uns 3 a 5 meses).
+6. Deixe o papel dessa conta como **Owner**.
+7. Ajuste "Unidades" (Ajustes > Unidades) para **Automático**.
+8. Preencha dados para os comandos de consulta terem o que dizer (ver "Dados mínimos" abaixo).
+9. **Não deixe um sono aberto.** Se houver um, o comando de janela de sono responde "está dormindo".
 
 ### Dados mínimos da conta de demonstração
 
@@ -207,7 +213,7 @@ A Amazon responde por e-mail e no console, dizendo o que falhou. Os motivos mais
 | --- | --- |
 | nome de invocação de uma palavra sem prova de marca | trocar para `lotties baby` (Etapa 1) e reenviar |
 | frase de exemplo não funciona como escrita | reescrever a frase no console para a que o simulador aceita |
-| conta de demonstração não entra, ou sem dados | consertar a conta (Etapa 2) e responder com a nova senha no campo de teste |
+| conta de demonstração não entra, sem dados, ou a Alexa diz "abra o app Lotties e aceite os termos" | consertar a conta (Etapa 2; abrir o app com ela e aceitar a tela de consentimento) e responder com a nova senha no campo de teste |
 | política de privacidade sem a parte da Alexa, ou sem contato | completar a política (Etapa 4) e reenviar |
 | resposta de saúde percebida como conselho médico | confirmar que o texto de choro traz o aviso e os sinais de alerta; mostrar nas notas que o skill nunca dá dose ou diagnóstico; os lembretes de remédio são os que a família cadastrou e dizem isso |
 | vinculação de conta falha | conferir os três redirect URLs no Keycloak e o `Client ID`/secret do console |
@@ -229,7 +235,7 @@ Cada rodada recomeça a contagem de dias úteis. Guarde o texto de cada rejeiç�
 - [ ] Nome decidido: `lotties` ou `lotties baby`
 - [ ] Modelos atuais colados e construídos (pt-BR e en-US)
 - [ ] Endpoint com a opção de certificado de curinga
-- [ ] Conta de demonstração com dados, sem sono aberto, e-mail verificado, sem ações obrigatórias
+- [ ] Conta de demonstração com dados, sem sono aberto, e-mail verificado, sem ações obrigatórias, **com a tela de consentimento já aceita na versão atual**
 - [ ] Textos e frases de exemplo testados no simulador, nos dois idiomas
 - [ ] Ícones 108x108 e 512x512 enviados
 - [ ] Política de privacidade aberta e com responsável e contato reais

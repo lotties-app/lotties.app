@@ -1,0 +1,102 @@
+{
+  "consent": {
+    "title": "Antes de começar",
+    "intro": "O Lotties guarda a rotina de uma criança: sono, mamadas, fraldas, remédios, crescimento, vacinas, consultas e anotações. Isso é dado de saúde de uma criança, e por isso pedimos o seu consentimento de forma separada e clara.",
+    "points": {
+      "beta": {
+        "lead": "Teste.",
+        "text": "O Lotties ainda está em fase de teste. Pode ter falhas, ficar fora do ar e perder dados. Não use como única fonte de nenhuma decisão de saúde: ele não é um dispositivo médico e não dá orientação médica."
+      },
+      "data": {
+        "lead": "O que fazemos com os dados.",
+        "text": "Usamos só para o serviço funcionar: guardar, sincronizar e mostrar o que você e as pessoas que você convidar registram. Não vendemos os dados, não os usamos para anúncios e não os compartilhamos com terceiros, a não ser os serviços que você mesmo ativar (por exemplo, notificações ou a Alexa)."
+      },
+      "risk": {
+        "lead": "Risco.",
+        "text": "Cuidamos dos dados com medidas de segurança, mas nenhum sistema é totalmente seguro: pode haver vazamento. Se acontecer algo relevante, avisamos você e a autoridade de proteção de dados, como a lei exige."
+      },
+      "rights": {
+        "lead": "Seus direitos.",
+        "text": "Você pode ver, baixar, corrigir e apagar tudo, e retirar este consentimento, a qualquer momento, em Ajustes > Privacidade e dados."
+      },
+      "controller": {
+        "lead": "Quem responde pelos dados:",
+        "text": "{controller}. Contato: {contact}."
+      }
+    },
+    "calm": "Os dados sensíveis são protegidos pelas medidas descritas na política de privacidade, e você pode exportar ou apagar tudo a qualquer momento.",
+    "capacity": {
+      "legend": "Eu sou",
+      "guardian": "pai, mãe ou responsável legal da criança",
+      "authorised": "um adulto autorizado por eles (familiar, cuidador ou profissional de saúde)"
+    },
+    "declaration": "Declaro que sou pai, mãe ou responsável legal da criança, ou um adulto autorizado por eles (familiar, cuidador ou profissional de saúde), e consinto que os dados de saúde da criança sejam tratados para o funcionamento do Lotties, nos termos da [Política de Privacidade](/privacy) e dos [Termos de Uso](/terms).",
+    "needBoth": "Escolha quem você é e marque a declaração para continuar.",
+    "accept": "Aceitar e continuar",
+    "decline": "Recusar",
+    "declineNote": "Se recusar, você sai do app e nada sobre uma criança é guardado.",
+    "saving": "Salvando a sua resposta",
+    "offline": "Você está sem conexão. Conecte-se à internet para aceitar.",
+    "failed": "Não conseguimos salvar a sua resposta. Verifique a conexão e tente de novo.",
+    "outdated": "O texto mudou enquanto você lia. Recarregue a página e leia de novo.",
+    "declineDialog": {
+      "title": "Recusar e sair?",
+      "body": "Você vai sair do app e nada sobre uma criança será guardado. Você pode aceitar depois, entrando de novo.",
+      "unsynced_one": "{{count}} alteração neste aparelho ainda não foi enviada e será perdida.",
+      "unsynced_other": "{{count}} alterações neste aparelho ainda não foram enviadas e serão perdidas.",
+      "confirm": "Recusar e sair",
+      "back": "Voltar"
+    },
+    "leave": {
+      "title": "Sair do Lotties em vez disso",
+      "hint": "Baixe seus dados e apague sua conta sem aceitar."
+    },
+    "banner": {
+      "text": "Atualizamos a Política de Privacidade e os Termos de Uso em {{date}}.",
+      "see": "Ver o que mudou",
+      "dismiss": "Dispensar"
+    },
+    "settings": {
+      "title": "Privacidade e dados",
+      "intro": "O que você aceitou e o que pode mudar. Seus dados continuam sendo seus: você pode baixá-los e apagar sua conta a qualquer momento.",
+      "core": {
+        "title": "Termos de uso e política de privacidade",
+        "accepted": "Você aceitou a versão {{version}} em {{date}}, como {{capacity}}.",
+        "asGuardian": "pai, mãe ou responsável legal da criança",
+        "asAuthorised": "adulto autorizado",
+        "none": "Você ainda não aceitou a versão atual.",
+        "terms": "Ler os Termos de uso",
+        "privacy": "Ler a Política de privacidade"
+      },
+      "optional": {
+        "title": "Recursos opcionais",
+        "intro": "Cada um fica desligado até você ligar. Ligar ou desligar fica registrado aqui.",
+        "push": "Lembretes (notificações push)",
+        "alexa": "Alexa",
+        "mcp": "Assistentes de IA",
+        "on": "Ligado desde {{date}}",
+        "off": "Desligado desde {{date}}",
+        "never": "Nunca foi ligado"
+      },
+      "withdraw": {
+        "button": "Retirar meu consentimento",
+        "title": "Retirar o seu consentimento",
+        "body": "Retirar significa que o Lotties para de tratar os seus dados, e ele não funciona sem isso. Na prática, é baixar os seus dados e apagar a sua conta. Os recursos opcionais são retirados desligando-os.",
+        "export": "Baixar meus dados",
+        "delete": "Ir para apagar minha conta",
+        "close": "Fechar"
+      },
+      "loadFailed": "Não conseguimos carregar os seus registros de consentimento.",
+      "offline": "Os seus registros de consentimento precisam de conexão."
+    },
+    "optional": {
+      "push": "Ao ativar, o endereço do seu navegador ou aparelho e uma mensagem cifrada passam pelo serviço de notificações do seu navegador (Google, Apple, Mozilla ou Microsoft).",
+      "alexa": "Ao ativar, a Amazon grava e processa a sua voz e recebe a resposta que o Lotties fala (horários, quantidades e contagens do bebê, sem o nome por padrão). A Amazon guarda o token da conta vinculada.",
+      "mcp": "Ao conectar, o serviço do seu assistente de IA recebe o que as ferramentas devolvem e pode guardar. Conecte só um assistente em que você confia.",
+      "sayBabyName": "A resposta, que vai para a Amazon ou para o seu assistente de IA, passa a incluir o nome da criança.",
+      "sayMedicineNames": "A resposta passa a incluir o nome dos remédios, o que mostra a eles o que a criança toma.",
+      "switchAlexa": "Eu uso a skill do Lotties com a Alexa",
+      "switchMcp": "Eu conecto um assistente de IA"
+    }
+  }
+}

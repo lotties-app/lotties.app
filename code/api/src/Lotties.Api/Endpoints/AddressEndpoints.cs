@@ -1,3 +1,4 @@
+using Lotties.Api.Consents;
 using Lotties.Api.Limits;
 using Lotties.Application.AddressLookup;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,7 +22,9 @@ internal static class AddressEndpoints
     public static IEndpointRouteBuilder MapAddressEndpoints(this IEndpointRouteBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
-        var address = api.MapGroup(AddressPath).RequireRateLimiting(RequestLimitPolicies.AddressLookup);
+        var address = api.MapGroup(AddressPath)
+            .RequireRateLimiting(RequestLimitPolicies.AddressLookup)
+            .AllowWithoutConsent("Address lookup is not baby data: only what the person types goes to the proxy (docs/design/23-address-lookup.md).");
         address.MapGet("/lookup", LookupAsync)
             .WithName("LookupAddressByCep")
             .ProducesProblem(StatusCodes.Status400BadRequest)

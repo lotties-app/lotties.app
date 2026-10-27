@@ -21,6 +21,9 @@ public enum AssistantResultCode
     /// <summary>The caller belongs to no baby.</summary>
     NoBaby,
 
+    /// <summary>The caller has not accepted the current terms of use and privacy policy: she must open the Lotties app and accept them; nothing was read or written.</summary>
+    ConsentRequired,
+
     /// <summary>Several babies and no default: set one in the app (Settings, Voice assistants).</summary>
     ChooseBaby,
 

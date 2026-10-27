@@ -11,6 +11,7 @@ import type { PolicySectionId } from './policyTypes';
 /** The rows of the "What we collect and why" table, in order. */
 export const DATA_CATEGORY_IDS = [
   'account',
+  'consent',
   'babyProfile',
   'records',
   'health',

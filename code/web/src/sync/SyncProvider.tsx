@@ -8,15 +8,18 @@ import { SyncEngineContext } from './SyncEngineContext';
 type EngineOverrides = Omit<SyncEngineOptions, 'db' | 'api' | 'getAccessToken'>;
 
 /**
- * Owns the sync engine: started while the user is authenticated, stopped otherwise.
+ * Owns the sync engine: started while the user is authenticated (and `enabled`), stopped otherwise.
  * The api client and token getter are re-created on every render upstream, so they are handed
  * to the long-lived engine instead of rebuilding it. A renewed access token resumes sync at once.
  */
 export function SyncProvider({
   options,
+  enabled = true,
   children,
 }: {
   options?: EngineOverrides;
+  /** `false` keeps the engine stopped (no current consent: the server would refuse every baby route). */
+  enabled?: boolean;
   children: ReactNode;
 }) {
   const db = useDatabase();
@@ -30,10 +33,10 @@ export function SyncProvider({
   }, [engine, api, getAccessToken]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !enabled) return;
     engine.start();
     return () => engine.stop();
-  }, [engine, isAuthenticated]);
+  }, [engine, isAuthenticated, enabled]);
 
   useEffect(() => {
     const renewed = previousSession.current !== 'active' && session === 'active';

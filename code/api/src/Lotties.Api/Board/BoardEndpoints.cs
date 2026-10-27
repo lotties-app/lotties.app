@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Lotties.Api.Consents;
 using Lotties.Api.Endpoints;
 using Lotties.Api.Limits;
 using Lotties.Application.Board;
@@ -27,6 +28,7 @@ internal static class BoardEndpoints
             .RequireAuthorization(BoardPolicies.Read)
             .RequireRateLimiting(RequestLimitPolicies.Board)
             .WithMetadata(BoardEndpointMetadata.Instance, BoardRequestLimitsMetadata.Standard)
+            .AllowWithoutConsent("The project board is internal project tracking for the owner and the AI assistant: never baby data (docs/design/36-project-board.md).")
             .WithTags("Board");
         board.MapGet("/me", (IBoardService service) => TypedResults.Ok(service.Me()));
         board.MapGet("/topics", ListTopicsAsync);

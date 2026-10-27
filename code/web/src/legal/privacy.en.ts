@@ -84,6 +84,14 @@ export const privacyEn: PolicyDocument = {
               ],
             },
             {
+              id: 'consent',
+              cells: [
+                'Your consent records',
+                "When you accept the terms of use and this policy: your internal user id, the version you accepted, the date and time, the language you read it in and whether you declared that you are the child's parent or legal guardian or an adult they authorised. The same for each optional feature you turn on or off (reminders, the Alexa skill, AI assistants). No IP address and no device details.",
+                'To show that you consented, to ask again after a material change, and to keep the optional choices you made. Deleted with your account.',
+              ],
+            },
+            {
               id: 'babyProfile',
               cells: [
                 "Your baby's profile",
@@ -236,6 +244,27 @@ export const privacyEn: PolicyDocument = {
         {
           kind: 'p',
           text: "Data about a child is always processed in the child's best interest (art. 14); see [Children](#privacy-children).",
+        },
+      ],
+    },
+    {
+      id: 'consent',
+      title: 'Your consent and the terms of use',
+      blocks: [
+        {
+          kind: 'p',
+          text: "Before you use Lotties we ask you to accept the [Terms of use](/terms) and this policy, once for each version, and to declare that you are the child's parent or legal guardian, or an adult they authorised (a family member, caregiver or health professional). It is your specific and highlighted consent to process a child's health data to run the service (LGPD art. 11, I, and art. 14, §1). Each person consents for herself, the family's owner, an invited parent or caregiver and a doctor alike.",
+        },
+        {
+          kind: 'list',
+          items: [
+            'What we record: your user id, the version, the date and time, the language of the text and the capacity you declared. Not your IP address. The records are deleted with your account.',
+            "Until you accept, the server refuses every request for a baby's data, and reminders, the Alexa skill and AI assistants do not work for you. You can always open your account settings, download your data and delete your account.",
+            'Optional features (reminders, the Alexa skill, AI assistants) have their own consent, off by default, recorded when you turn them on or off, with a sentence next to the switch saying what leaves our control.',
+            'A material change (new data collected, a new recipient or purpose, a change in your rights or in who is responsible) asks for your consent again before you continue. A minor change shows a notice with a link to this page.',
+            'You can withdraw your consent at any time. Because Lotties cannot work without it, withdrawing means downloading your data and deleting your account in Settings > Privacy and data. If you decline at the start, you are signed out and nothing about a child is stored.',
+            'Lotties is a beta: it can have bugs, go offline and lose data, and no system is fully secure, so a leak cannot be ruled out. We take the security measures described below and, if something relevant happens, we will tell you and the ANPD as the law requires.',
+          ],
         },
       ],
     },

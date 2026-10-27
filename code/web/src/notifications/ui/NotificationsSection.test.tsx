@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import axe from 'axe-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiClientContext } from '../../api/ApiClientContext';
+import { ConsentContext, SIGNED_OUT_CONSENT } from '../../consent/ConsentContext';
 import type { Baby } from '../../db/models';
 import { I18nProvider } from '../../i18n/I18nProvider';
 import { testQueryClient } from '../../test/renderApp';
@@ -43,8 +44,11 @@ const PREFS = [
   },
 ];
 
+const recordOptional = vi.fn();
+
 afterEach(() => {
   vi.restoreAllMocks();
+  recordOptional.mockClear();
 });
 
 function setup(
@@ -60,11 +64,13 @@ function setup(
         <QueryClientProvider client={testQueryClient()}>
           <ApiClientContext value={server.api}>
             <PushDeviceContext value={device}>
-              <NotificationsSection
-                babies={[LIA, THEO]}
-                publicKey="BFakeKey"
-                {...(online === undefined ? {} : { online })}
-              />
+              <ConsentContext value={{ ...SIGNED_OUT_CONSENT, recordOptional }}>
+                <NotificationsSection
+                  babies={[LIA, THEO]}
+                  publicKey="BFakeKey"
+                  {...(online === undefined ? {} : { online })}
+                />
+              </ConsentContext>
             </PushDeviceContext>
           </ApiClientContext>
         </QueryClientProvider>
@@ -170,6 +176,44 @@ describe('NotificationsSection device switch', () => {
   it('says when iOS is too old or the browser cannot show notifications', async () => {
     setup({ support: 'ios-too-old' });
     expect(await screen.findByText('Needs iOS 16.4 or later.')).toBeTruthy();
+  });
+});
+
+describe('NotificationsSection push consent (docs/design/38-consent-and-terms.md)', () => {
+  it('says what leaves our control next to the device switch', async () => {
+    setup({ permission: 'granted' });
+    await deviceSwitch();
+    expect(
+      screen.getByText(/sends your browser or device address and an encrypted message/),
+    ).toBeTruthy();
+  });
+
+  it('records the push consent when the device switch is turned on, and off', async () => {
+    const { device } = setup({ permission: 'granted' });
+    fireEvent.click(await deviceSwitch());
+    await waitFor(() => expect(recordOptional).toHaveBeenCalledWith('push', true));
+
+    await waitFor(async () =>
+      expect((await deviceSwitch()).getAttribute('aria-checked')).toBe('true'),
+    );
+    fireEvent.click(await deviceSwitch());
+    await waitFor(() => expect(recordOptional).toHaveBeenLastCalledWith('push', false));
+    expect(device.state.subscription).toBeNull();
+  });
+
+  it('records nothing when the browser refuses the permission', async () => {
+    setup({ answer: 'denied' });
+    fireEvent.click(await deviceSwitch());
+    fireEvent.click(await screen.findByRole('button', { name: 'Turn on' }));
+    await screen.findByText('Notifications were not allowed');
+    expect(recordOptional).not.toHaveBeenCalled();
+  });
+
+  it('shows the sentence in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    setup({ permission: 'granted' });
+    await screen.findByRole('switch', { name: /Notificações neste dispositivo/ });
+    expect(screen.getByText(/passam pelo serviço de notificações do seu navegador/)).toBeTruthy();
   });
 });
 

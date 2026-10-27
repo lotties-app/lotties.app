@@ -87,7 +87,11 @@
     "licence": "Free and open source software, licensed under the AGPL-3.0.",
     "notMedical": "Not a medical device.",
     "credits": "Credits and licenses",
-    "privacy": "Privacy policy"
+    "privacy": "Privacy policy",
+    "terms": "Terms of use"
+  },
+  "beta": {
+    "notice": "Lotties is in beta. Read the [Terms of Use](/terms)."
   },
   "openSource": {
     "title": "Built on open source",

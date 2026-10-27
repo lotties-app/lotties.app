@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import { ApiError } from '../../api/ApiError';
+import { useConsent } from '../../consent/ConsentContext';
 import { describeApiError } from '../../api/errorMessages';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { SwitchRow } from '../../ui/form';
@@ -37,6 +38,7 @@ export function DeviceBlock({ publicKey, thisDevice, online, announce }: Props) 
   const device = usePushDevice();
   const context = usePushContext();
   const refresh = useRefreshPush();
+  const consent = useConsent();
   const [explainer, setExplainer] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,12 +66,14 @@ export function DeviceBlock({ publicKey, thisDevice, online, announce }: Props) 
   const subscribe = () =>
     guarded(async () => {
       await enablePush(context, publicKey);
+      consent.recordOptional('push', true);
       announce(t('notifications.announce.on'));
     }, t('notifications.announce.subscribeFailed'));
 
   const turnOff = () =>
     guarded(async () => {
       await disablePush(context);
+      consent.recordOptional('push', false);
       announce(t('notifications.announce.off'));
     }, t('errors.generic'));
 
@@ -125,6 +129,9 @@ export function DeviceBlock({ publicKey, thisDevice, online, announce }: Props) 
                 : t('notifications.device.off')
             }
           />
+          <Typography variant="body2" color="text.secondary">
+            {t('consent.optional.push')}
+          </Typography>
           {state === 'denied' && <Alert severity="info">{t('notifications.states.denied')}</Alert>}
           {on && (
             <Button

@@ -212,6 +212,7 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 | "Please link your account" after linking | the Alexa client's access token lacks the `lotties-api` audience (5.1.4), or the issuer is not `https://auth.lotties.app/realms/lotties.app` (`AUTH_AUTHORITY`); decode one token from the console's JSON Input (`context.System.user.accessToken`) at a JWT debugger you trust, offline |
 | Linking page shows "Invalid parameter: redirect_uri" | the Alexa Redirect URLs are not all in the client's Valid redirect URIs (5.1.2) |
 | Answers in English to a Brazilian device | the device's language is not Portuguese (Brasil), or the pt-BR model was not built |
+| Alexa says "open the Lotties app and accept the terms of use" | the linked person has not accepted the current terms and privacy policy (the consent screen, docs/design/38-consent-and-terms.md): she opens the Lotties app once with that account and accepts; the demo account for the reviewers must accept it too (ALEXA-SUBMISSION.md Etapa 2) |
 | "You have more than one baby" | the parent belongs to several babies: Settings > Voice assistants in the app |
 | Times said as "20 minutes ago" instead of a clock time (English) | the user has no time zone stored yet: the assistant uses the one saved with her notification settings (Settings > Notifications, saved once from a device: it stores that device's zone); Portuguese falls back to `America/Sao_Paulo` |
 | "That's a lot of requests" | more than `RequestLimits__AssistantPermitsPerMinute` (30) commands in a minute |

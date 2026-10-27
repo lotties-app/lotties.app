@@ -22,6 +22,7 @@ internal static class McpToolResults
     [
         AssistantResultCode.NotAllowed,
         AssistantResultCode.NoBaby,
+        AssistantResultCode.ConsentRequired,
         AssistantResultCode.ChooseBaby,
         AssistantResultCode.RateLimited,
         AssistantResultCode.InvalidAmount,
@@ -93,6 +94,7 @@ internal static class McpResultText
                 ? "not_allowed: this account is not a family member of any baby in Lotties (a doctor's patients are not available here)."
                 : $"not_allowed: the user's role on {baby} does not allow this.",
             AssistantResultCode.NoBaby => "no_baby: there is no baby in this Lotties account yet.",
+            AssistantResultCode.ConsentRequired => "consent_required: the user must open the Lotties app and accept the terms of use and the privacy policy before assistants can use her data.",
             AssistantResultCode.ChooseBaby => "choose_baby: the user has several babies; call list_babies and pass babyId.",
             AssistantResultCode.UnknownBaby => "unknown_baby: that babyId is not one of the user's babies; call list_babies.",
             AssistantResultCode.RateLimited => "rate_limited: too many requests; try again in a minute.",
