@@ -669,15 +669,7 @@
             "{value} graus {method}",
             "medi a temperatura de {value}",
             "febre de {value}",
-            "termômetro marcou {value}",
-            "está com febre",
-            "está quente",
-            "queimando de febre",
-            "parece quente",
-            "medi a febre",
-            "parece queimando",
-            "esta pelando de febre",
-            "termometro deu alto"
+            "termômetro marcou {value}"
           ]
         },
         {
@@ -1015,10 +1007,10 @@
           "name": "FUSSY_INTENSITY",
           "values": [
             {
+              "id": "mild",
               "name": {
                 "value": "leve",
                 "synonyms": [
-                  "leve",
                   "pouco",
                   "um pouco",
                   "levemente"
@@ -1026,20 +1018,20 @@
               }
             },
             {
+              "id": "moderate",
               "name": {
                 "value": "moderado",
                 "synonyms": [
-                  "moderado",
                   "medio",
                   "mais ou menos"
                 ]
               }
             },
             {
+              "id": "intense",
               "name": {
                 "value": "forte",
                 "synonyms": [
-                  "forte",
                   "muito",
                   "bastante",
                   "intenso",
@@ -1053,50 +1045,50 @@
           "name": "TEMP_METHOD",
           "values": [
             {
+              "id": "armpit",
               "name": {
                 "value": "axilar",
                 "synonyms": [
-                  "axilar",
-                  "suvaque",
+                  "suvaco",
+                  "sovaco",
                   "debaixo do braco"
                 ]
               }
             },
             {
-              "name": {
-                "value": "retal",
-                "synonyms": [
-                  "retal",
-                  "bumbum",
-                  "rabo"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "testa",
-                "synonyms": [
-                  "testa",
-                  "frontal",
-                  "temporal"
-                ]
-              }
-            },
-            {
+              "id": "ear",
               "name": {
                 "value": "ouvido",
                 "synonyms": [
-                  "ouvido",
                   "timpanico",
                   "no ouvido"
                 ]
               }
             },
             {
+              "id": "forehead",
+              "name": {
+                "value": "testa",
+                "synonyms": [
+                  "frontal",
+                  "temporal"
+                ]
+              }
+            },
+            {
+              "id": "rectal",
+              "name": {
+                "value": "retal",
+                "synonyms": [
+                  "bumbum"
+                ]
+              }
+            },
+            {
+              "id": "mouth",
               "name": {
                 "value": "boca",
                 "synonyms": [
-                  "boca",
                   "pela boca"
                 ]
               }
@@ -1107,30 +1099,51 @@
           "name": "MILESTONE_TYPE",
           "values": [
             {
-              "name": {
-                "value": "virou",
-                "synonyms": [
-                  "virou",
-                  "rolou",
-                  "virou de brucos"
-                ]
-              }
-            },
-            {
+              "id": "first_smile",
               "name": {
                 "value": "sorriu",
                 "synonyms": [
-                  "sorriu",
                   "primeiro sorriso",
                   "sorrindo"
                 ]
               }
             },
             {
+              "id": "laughs",
+              "name": {
+                "value": "riu",
+                "synonyms": [
+                  "gargalhou",
+                  "rindo",
+                  "primeira risada"
+                ]
+              }
+            },
+            {
+              "id": "holds_head",
+              "name": {
+                "value": "firmou a cabeca",
+                "synonyms": [
+                  "segurou a cabeca",
+                  "sustentou a cabeca"
+                ]
+              }
+            },
+            {
+              "id": "rolls_over",
+              "name": {
+                "value": "virou",
+                "synonyms": [
+                  "rolou",
+                  "virou de brucos"
+                ]
+              }
+            },
+            {
+              "id": "sits",
               "name": {
                 "value": "sentou",
                 "synonyms": [
-                  "sentou",
                   "sentando",
                   "ficou sentada",
                   "ficou sentado"
@@ -1138,30 +1151,30 @@
               }
             },
             {
+              "id": "crawls",
               "name": {
                 "value": "engatinhou",
                 "synonyms": [
-                  "engatinhou",
                   "engatinhando",
                   "engatinhar"
                 ]
               }
             },
             {
+              "id": "stands",
               "name": {
-                "value": "ficou_em_pe",
+                "value": "ficou em pe",
                 "synonyms": [
-                  "ficou em pe",
                   "levantou",
                   "em pe"
                 ]
               }
             },
             {
+              "id": "first_steps",
               "name": {
                 "value": "andou",
                 "synonyms": [
-                  "andou",
                   "andando",
                   "primeiros passos",
                   "deu passos"
@@ -1169,42 +1182,12 @@
               }
             },
             {
+              "id": "first_word",
               "name": {
                 "value": "falou",
                 "synonyms": [
-                  "falou",
                   "primeira palavra",
-                  "disse algo"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "bateu_palma",
-                "synonyms": [
-                  "bateu palma",
-                  "palminhas",
-                  "batendo palma"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "acenou",
-                "synonyms": [
-                  "acenou",
-                  "acena",
-                  "tchau"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "apontou",
-                "synonyms": [
-                  "apontou",
-                  "aponta",
-                  "mostrou com o dedo"
+                  "falando"
                 ]
               }
             }
@@ -1214,60 +1197,39 @@
           "name": "SYMPTOM_TYPE",
           "values": [
             {
-              "name": {
-                "value": "febre",
-                "synonyms": [
-                  "febre",
-                  "quente",
-                  "temperatura alta"
-                ]
-              }
-            },
-            {
+              "id": "cough",
               "name": {
                 "value": "tosse",
                 "synonyms": [
-                  "tosse",
                   "tossindo"
                 ]
               }
             },
             {
+              "id": "runny_nose",
               "name": {
-                "value": "nariz_escorrendo",
+                "value": "nariz escorrendo",
                 "synonyms": [
-                  "nariz escorrendo",
-                  "nariz entupido",
-                  "resfriado",
-                  "coriza"
+                  "coriza",
+                  "resfriado"
                 ]
               }
             },
             {
+              "id": "congestion",
               "name": {
-                "value": "diarreia",
+                "value": "nariz entupido",
                 "synonyms": [
-                  "diarreia",
-                  "coco mole",
-                  "coco liquido"
+                  "congestionado",
+                  "nariz tapado"
                 ]
               }
             },
             {
-              "name": {
-                "value": "prisao_de_ventre",
-                "synonyms": [
-                  "prisao de ventre",
-                  "coco duro",
-                  "nao consegue fazer coco"
-                ]
-              }
-            },
-            {
+              "id": "rash",
               "name": {
                 "value": "manchas",
                 "synonyms": [
-                  "manchas",
                   "vermelhidao",
                   "brotoeja",
                   "alergia na pele"
@@ -1275,63 +1237,22 @@
               }
             },
             {
+              "id": "diarrhea",
               "name": {
-                "value": "vomito",
+                "value": "diarreia",
                 "synonyms": [
-                  "vomito",
-                  "vomitando",
-                  "botou pra fora"
+                  "coco mole",
+                  "coco liquido"
                 ]
               }
             },
             {
+              "id": "constipation",
               "name": {
-                "value": "dor_de_ouvido",
+                "value": "prisao de ventre",
                 "synonyms": [
-                  "dor de ouvido",
-                  "ouvido inflamado",
-                  "otite"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "olho_remelento",
-                "synonyms": [
-                  "olho remelento",
-                  "conjuntivite",
-                  "olho vermelho"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "sem_apetite",
-                "synonyms": [
-                  "nao quer comer",
-                  "sem apetite",
-                  "recusando comida"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "molinho",
-                "synonyms": [
-                  "molinho",
-                  "sonolento",
-                  "sem energia",
-                  "quieto demais"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "desidratado",
-                "synonyms": [
-                  "desidratado",
-                  "boca seca",
-                  "sem fralda molhada"
+                  "coco duro",
+                  "nao consegue fazer coco"
                 ]
               }
             }
@@ -1341,30 +1262,30 @@
           "name": "SYMPTOM_SEVERITY",
           "values": [
             {
+              "id": "mild",
               "name": {
                 "value": "leve",
                 "synonyms": [
-                  "leve",
                   "fraco",
                   "pouco"
                 ]
               }
             },
             {
+              "id": "moderate",
               "name": {
                 "value": "moderado",
                 "synonyms": [
-                  "moderado",
                   "medio",
                   "mais ou menos"
                 ]
               }
             },
             {
+              "id": "severe",
               "name": {
                 "value": "forte",
                 "synonyms": [
-                  "forte",
                   "grave",
                   "muito",
                   "intenso"

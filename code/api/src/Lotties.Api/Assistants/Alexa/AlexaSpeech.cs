@@ -14,6 +14,9 @@ public enum AlexaPrompt
     SetBabyHelp,
     LinkAccount,
     DiaperKindMissing,
+    PainLevelMissing,
+    TemperatureMissing,
+    MedicationNameMissing,
     Error,
 }
 

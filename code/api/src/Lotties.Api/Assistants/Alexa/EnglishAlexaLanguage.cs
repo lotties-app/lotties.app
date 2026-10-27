@@ -65,7 +65,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.Awake] = result => $"{Subject(result)} has been awake{SinceClause(result)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoSleeps] = result => $"I can't find a sleep for {Name(result)} in the last 30 days.",
         [AssistantResultCode.DiapersToday] = DiapersToday,
-        [AssistantResultCode.NextAppointment] = result => $"{Subject(result)}'s next appointment is {(AppointmentKind(result.Appointment!.Type) is { Length: > 0 } kind ? kind + ", " : string.Empty)}{Day(result, result.Appointment.StartsAt)}.",
+        [AssistantResultCode.NextAppointment] = result => $"{Subject(result)}'s next appointment is {AppointmentWith(result.Appointment!)}{Day(result, result.Appointment!.StartsAt)}.",
         [AssistantResultCode.NoAppointment] = result => $"{Subject(result)} has no upcoming appointments.",
         [AssistantResultCode.VaccinesDue] = VaccinesDue,
         [AssistantResultCode.NoVaccinesDue] = result => $"By the vaccine schedule, {Name(result)} has no vaccine doses due right now.",
@@ -79,7 +79,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.BabyProfile] = result => $"{Subject(result)} is {Age(result.Age)}.",
         [AssistantResultCode.DaySummary] = DaySummary,
         [AssistantResultCode.WeekSummary] = WeekSummary,
-        [AssistantResultCode.BathLogged] = result => $"Logged a bath for {Name(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", water at {temp} degrees" : "")}.",
+        [AssistantResultCode.BathLogged] = result => $"Logged a bath for {Name(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", water at {Measures.Temperature(temp, result.Units)}" : "")}.",
         [AssistantResultCode.TummyTimeStarted] = result => $"Tummy time started for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.BellyPainLogged] = result => $"Logged belly pain for {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", intensity {i}" : "")}.",
         [AssistantResultCode.BreastPumpStarted] = result => $"Breast pump session started for {Name(result)} {When(result, result.At)}.",
@@ -87,18 +87,54 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.BellyMassageStarted] = result => $"Belly massage started for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.FussyStarted] = result => $"Fussy timer started for {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", {i}" : "")}.",
         [AssistantResultCode.NailTrimLogged] = result => $"Logged a nail trim for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.TemperatureLogged] = result => $"Logged a temperature of {result.TemperatureC} degrees for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TemperatureLogged] = result => $"Logged a temperature of {Measures.Temperature(result.TemperatureC ?? 0, result.Units)} for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.SpitUpLogged] = result => $"Logged spit-up for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.TeethingLogged] = result => $"Logged teething for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.MilestoneLogged] = result => $"Logged a milestone for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.SymptomLogged] = result => $"Logged a symptom for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.OutdoorStarted] = result => $"Outdoor time started for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.SkinCareLogged] = result => $"Logged skin care for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.MedicationLogged] = result => $"Logged a medication dose for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NoActivePrescription] = result => $"I can't find an active prescription for that medication for {Name(result)}. Check the app.",
-        [AssistantResultCode.MedicationReminder] = result => $"A medication dose is due for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NoMedicationDue] = result => $"No medication doses are due right now for {Name(result)}.",
-            };
+        [AssistantResultCode.MedicationLogged] = result => $"I recorded that {(SpokenMedicine.NameOf(result) is { } medicine ? $"a dose of {medicine}" : "a medication dose")} was given to {Name(result)} {When(result, result.At)}, as you told me. Lotties doesn't check or suggest doses.",
+        [AssistantResultCode.NoActivePrescription] = result => $"I can't find that medicine among the active prescriptions registered for {Name(result)} in Lotties, so nothing was recorded. Check the app.",
+        [AssistantResultCode.MedicationReminder] = MedicationReminder,
+        [AssistantResultCode.NoMedicationDue] = result => $"There are no medicine reminders registered in Lotties for {Name(result)} right now. {MedicationNotice}",
+        [AssistantResultCode.InvalidValue] = InvalidValue,
+    };
+
+    /// <summary>Said with every medicine reminder: they are the family's own, never advice from Lotties.</summary>
+    public const string MedicationNotice = "These are reminders of the medicines you registered in Lotties, not recommendations from Lotties. Check the prescription, and ask your doctor or pharmacist if you have doubts.";
+
+    private static string MedicationReminder(AssistantResult result)
+    {
+        var count = result.Count ?? 0;
+        var due = count switch
+        {
+            0 => $"No medicine reminder you registered in Lotties is due now for {Name(result)}.",
+            1 => $"One medicine reminder you registered in Lotties is due now for {Name(result)}.",
+            _ => $"{count} medicine reminders you registered in Lotties are due now for {Name(result)}.",
+        };
+        var names = SpokenMedicine.DueNamesOf(result) is { Count: > 0 } dueNames ? $" Due now: {Speech.List(dueNames)}." : string.Empty;
+        var nextName = SpokenMedicine.NameOf(result) is { } medicine ? $" ({medicine})" : string.Empty;
+        var next = result.At is { } at ? $" The next one{nextName} is {Day(result, at)}." : string.Empty;
+        return $"{due}{names}{next} {MedicationNotice}";
+    }
+
+    private static string InvalidValue(AssistantResult result)
+    {
+        var us = result.Units == UnitSystem.Us;
+        return result.Field switch
+        {
+            "temperature" => us
+                ? $"Please say a temperature from {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Min ?? 0))} to {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Max ?? 0))} degrees, for example: log temperature 99."
+                : $"Please say a temperature from {result.Min} to {result.Max} degrees, for example: log temperature 37.",
+            "water_temperature" => us
+                ? $"Please say a water temperature from {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Min ?? 0))} to {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Max ?? 0))} degrees."
+                : $"Please say a water temperature from {result.Min} to {result.Max} degrees.",
+            "pain_level" => $"Please say a level from {result.Min} to {result.Max}, for example: belly pain level 3.",
+            "pump_amount" => $"Please say an amount from {result.Min} to {result.Max} ml, for example: pumped 100 ml on the left.",
+            _ => "That value is out of range, so nothing was logged.",
+        };
+    }
 
     private static string Age(AssistantBabyAge? age) => age switch
     {
@@ -141,6 +177,9 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AlexaPrompt.SetBabyHelp] = new("To choose the baby voice commands are about, open the Lotties app, then Settings, Voice assistants."),
         [AlexaPrompt.LinkAccount] = new("Please link your Lotties account in the Alexa app to use this skill."),
         [AlexaPrompt.DiaperKindMissing] = new("Was the diaper wet, dirty, or both? For example, say: log a wet diaper."),
+        [AlexaPrompt.PainLevelMissing] = new("How strong is the belly pain, from 1 to 5? For example, say: belly pain level 3."),
+        [AlexaPrompt.TemperatureMissing] = new("What was the temperature? For example, say: log temperature 37."),
+        [AlexaPrompt.MedicationNameMissing] = new("Which medicine did you give? Say the name you registered in Lotties, for example: gave her, and then the name."),
         [AlexaPrompt.Error] = new("Sorry, something went wrong. Please try again."),
     };
 
@@ -238,9 +277,12 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
     /// <summary>As <see cref="Name"/> at the start of a sentence.</summary>
     private static string Subject(AssistantResult result) => SpokenBaby.NameOf(result) ?? "The baby";
 
+    /// <summary>"with a pediatrician, " when the specialty is a known one, else the kind when it says something ("a vaccination, "), else nothing.</summary>
+    private static string AppointmentWith(AssistantAppointment appointment) =>
+        DoctorSpecialties.Find(appointment.Specialty) is { } specialty ? $"with {specialty.English}, " : AppointmentKind(appointment.Type) is { Length: > 0 } kind ? kind + ", " : string.Empty;
+
     private static string AppointmentKind(string? type) => type switch
     {
-        "consultation" => "a consultation",
         "vaccine" => "a vaccination",
         "exam" => "an exam",
         _ => string.Empty,

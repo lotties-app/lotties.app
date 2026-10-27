@@ -23,6 +23,17 @@ public sealed class AssistantSettingsModelTests
     }
 
     [Fact]
+    public void SayMedicineNames_IsARequiredColumnThatDefaultsToFalse()
+    {
+        using var context = ModelTestContext.Create();
+        var property = context.Entity<UserAssistantSettings>().FindProperty(nameof(UserAssistantSettings.SayMedicineNames))!;
+
+        Assert.Equal("say_medicine_names", property.GetColumnName());
+        Assert.False(property.IsNullable);
+        Assert.Equal(false, property.GetDefaultValue());
+    }
+
+    [Fact]
     public void SayBabyName_IsARequiredColumnThatDefaultsToFalse()
     {
         using var context = ModelTestContext.Create();

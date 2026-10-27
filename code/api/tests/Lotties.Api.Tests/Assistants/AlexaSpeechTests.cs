@@ -112,11 +112,17 @@ public sealed class AlexaSpeechTests
     [Fact]
     public void Say_NextAppointment_DaysAndClock()
     {
-        var tomorrow = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(1), "consultation") };
+        var tomorrow = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(1), "consultation", "pediatrician") };
+        var plain = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(1), "consultation") };
         var later = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(3), "other") };
+        var vaccine = Result(AssistantResultCode.NextAppointment, "America/Sao_Paulo") with { Appointment = new AssistantAppointment(AsOf.AddDays(1), "vaccine") };
 
-        Assert.Equal("O próximo compromisso de Charlotte é uma consulta, amanhã às 15:15.", AlexaLanguages.For("pt-BR").Say(tomorrow));
+        Assert.Equal("A próxima consulta de Charlotte é com pediatra, amanhã às 15:15.", AlexaLanguages.For("pt-BR").Say(tomorrow));
+        Assert.Equal("Charlotte's next appointment is with a pediatrician, tomorrow at 3:15 PM.", AlexaLanguages.For("en-US").Say(tomorrow));
+        Assert.Equal("A próxima consulta de Charlotte é amanhã às 15:15.", AlexaLanguages.For("pt-BR").Say(plain));
+        Assert.Equal("Charlotte's next appointment is tomorrow at 3:15 PM.", AlexaLanguages.For("en-US").Say(plain));
         Assert.Equal("Charlotte's next appointment is on Monday, October 26 at 3:15 PM.", AlexaLanguages.For("en-US").Say(later));
+        Assert.Equal("Charlotte's next appointment is a vaccination, tomorrow at 3:15 PM.", AlexaLanguages.For("en-US").Say(vaccine));
     }
 
     [Fact]

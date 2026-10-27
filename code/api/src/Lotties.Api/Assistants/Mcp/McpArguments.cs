@@ -29,6 +29,9 @@ internal enum McpParameterKind
 
     /// <summary>A JSON number above 0 and up to <see cref="McpParameter.Max"/>, decimals allowed (an amount in ounces).</summary>
     Number,
+
+    /// <summary>A JSON <c>true</c> or <c>false</c>.</summary>
+    Boolean,
 }
 
 /// <summary>
@@ -66,6 +69,7 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         McpParameterKind.Date => new JsonObject { ["type"] = "string", ["format"] = "date", ["pattern"] = DatePattern, ["description"] = Description },
         McpParameterKind.Key => new JsonObject { ["type"] = "string", ["minLength"] = Min, ["maxLength"] = Max, ["pattern"] = KeyPattern, ["description"] = Description },
         McpParameterKind.Number => new JsonObject { ["type"] = "number", ["exclusiveMinimum"] = 0, ["maximum"] = Max, ["description"] = Description },
+        McpParameterKind.Boolean => new JsonObject { ["type"] = "boolean", ["description"] = Description },
         McpParameterKind.TimeZone => new JsonObject { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = NotificationTimeZone.MaxLength, ["description"] = Description },
         _ => throw new InvalidOperationException($"Unknown parameter kind {Kind}."),
     };
@@ -91,6 +95,9 @@ internal sealed partial record McpParameter(string Name, McpParameterKind Kind, 
         McpParameterKind.Number => element.ValueKind == JsonValueKind.Number && element.TryGetDecimal(out var amount) && amount > 0 && amount <= Max
             ? (amount, null)
             : (null, $"{Name} must be a number above 0 and up to {Max}."),
+        McpParameterKind.Boolean => element.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? (element.GetBoolean(), null)
+            : (null, $"{Name} must be true or false."),
         McpParameterKind.TimeZone => element.ValueKind == JsonValueKind.String && NotificationTimeZone.TryFrom(element.GetString(), out var zone)
             ? (zone.Value, null)
             : (null, $"{Name} must be an IANA time zone id such as America/Sao_Paulo."),
@@ -164,6 +171,8 @@ internal sealed class McpArguments
     public int? Integer(string name) => _values.TryGetValue(name, out var value) ? (int)value : null;
 
     public decimal? Decimal(string name) => _values.TryGetValue(name, out var value) ? (decimal)value : null;
+
+    public bool? Bool(string name) => _values.TryGetValue(name, out var value) ? (bool)value : null;
 
     public string? Text(string name) => _values.TryGetValue(name, out var value) ? (string)value : null;
 

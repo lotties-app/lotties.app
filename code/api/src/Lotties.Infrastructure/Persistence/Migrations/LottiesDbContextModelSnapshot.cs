@@ -185,6 +185,12 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("say_baby_name");
 
+                    b.Property<bool>("SayMedicineNames")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("say_medicine_names");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");

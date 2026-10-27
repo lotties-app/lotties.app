@@ -126,6 +126,89 @@ public sealed class AssistantRulesTests
     }
 
     [Fact]
+    public void Settings_SayMedicineNames_IsOffByDefault_AndTheSameValueChangesNothing()
+    {
+        var settings = UserAssistantSettings.Create(Guid.NewGuid(), BabyA, Now);
+
+        settings.ChangeSayMedicineNames(false, Now.AddHours(1));
+        var unchanged = (settings.SayMedicineNames, settings.UpdatedAt);
+        settings.ChangeSayMedicineNames(true, Now.AddHours(2));
+
+        Assert.Equal((false, Now), unchanged);
+        Assert.Equal((true, Now.AddHours(2)), (settings.SayMedicineNames, settings.UpdatedAt));
+        Assert.False(settings.SayBabyName);
+        Assert.True(UserAssistantSettings.Create(Guid.NewGuid(), null, Now, sayMedicineNames: true).SayMedicineNames);
+    }
+
+    [Theory]
+    [InlineData("Pediatra", "pediatrician")]
+    [InlineData("pediatria", "pediatrician")]
+    [InlineData("  PEDIATRICIAN ", "pediatrician")]
+    [InlineData("Neuro", "neurologist")]
+    [InlineData("neuropediatra", "neuropediatrician")]
+    [InlineData("Otorrino", "otolaryngologist")]
+    [InlineData("ENT", "otolaryngologist")]
+    [InlineData("Fonoaudiólogo", "speech_therapist")]
+    [InlineData("clínico geral", "general_practitioner")]
+    [InlineData("Alergista / Imunologista", "allergist_immunologist")]
+    [InlineData("Dr. Silva", null)]
+    [InlineData("pediatra da Clínica Central", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void DoctorSpecialties_TypedText_BecomesACodeOnlyWhenItNamesAKnownSpecialty(string? typed, string? expected)
+    {
+        Assert.Equal(expected, DoctorSpecialties.CodeOf(typed));
+    }
+
+    [Fact]
+    public void DoctorSpecialties_EverySpecialty_HasBothSpokenNames_AndItsOwnSynonymsResolveToIt()
+    {
+        Assert.True(DoctorSpecialties.All.Count >= 19);
+        Assert.Equal(DoctorSpecialties.All.Count, DoctorSpecialties.All.Select(specialty => specialty.Code).Distinct().Count());
+        foreach (var specialty in DoctorSpecialties.All)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(specialty.English));
+            Assert.False(string.IsNullOrWhiteSpace(specialty.Portuguese));
+            Assert.Equal(specialty.Code, DoctorSpecialties.CodeOf(specialty.Code));
+            Assert.Equal(specialty.Code, DoctorSpecialties.CodeOf(specialty.Portuguese));
+            Assert.Same(specialty, DoctorSpecialties.Find(specialty.Code));
+        }
+
+        Assert.Null(DoctorSpecialties.Find("surgeon"));
+        Assert.Null(DoctorSpecialties.Find(null));
+    }
+
+    [Fact]
+    public void AssistantChoices_AreTheBuiltInFieldOptions_NeverFreeText_AndOtherIsNotStoredForWordsFields()
+    {
+        Assert.Equal("intense", AssistantChoices.FussyIntensity("intense"));
+        Assert.Null(AssistantChoices.FussyIntensity("severe"));
+        Assert.Null(AssistantChoices.FussyIntensity("my own words"));
+        Assert.Equal("armpit", AssistantChoices.TemperatureMethod("armpit"));
+        Assert.Null(AssistantChoices.TemperatureMethod("axillary"));
+        Assert.Equal("rolls_over", AssistantChoices.Milestone("rolls_over"));
+        Assert.Null(AssistantChoices.Milestone("other"));
+        Assert.Null(AssistantChoices.Symptom("fever"));
+        Assert.Null(AssistantChoices.Symptom("other"));
+        Assert.Equal("cough", AssistantChoices.Symptom("cough"));
+        Assert.DoesNotContain("other", AssistantChoices.Milestones);
+        Assert.DoesNotContain("other", AssistantChoices.Symptoms);
+        Assert.Null(AssistantChoices.NailWhere(null));
+    }
+
+    [Fact]
+    public void AssistantLimits_MatchTheBuiltInFieldLimits()
+    {
+        decimal? Min(Lotties.Domain.EventTypes.EventType type, string key) => type.Fields.Single(field => field.Key == key).Min;
+        decimal? Max(Lotties.Domain.EventTypes.EventType type, string key) => type.Fields.Single(field => field.Key == key).Max;
+        var builtIn = Lotties.Domain.EventTypes.BuiltInEventTypes.Temperature;
+
+        Assert.Equal((AssistantLimits.TemperatureMinC, AssistantLimits.TemperatureMaxC), (Min(builtIn, "value_c"), Max(builtIn, "value_c")));
+        Assert.Equal((AssistantLimits.PainMin, AssistantLimits.PainMax), (Min(Lotties.Domain.EventTypes.BuiltInEventTypes.BellyPain, "intensity"), Max(Lotties.Domain.EventTypes.BuiltInEventTypes.BellyPain, "intensity")));
+        Assert.Equal((AssistantLimits.BathWaterMinC, AssistantLimits.BathWaterMaxC), (Min(Lotties.Domain.EventTypes.BuiltInEventTypes.Bath, "temperature_c"), Max(Lotties.Domain.EventTypes.BuiltInEventTypes.Bath, "temperature_c")));
+    }
+
+    [Fact]
     public void Bottle_FormulaWithCurrentFormula_NamesIt()
     {
         var formula = Formula.Create(Guid.NewGuid(), BabyA, FormulaTerms.Create("Nan 1", null, null, null, null, isCurrent: true, isArchived: false), Guid.NewGuid(), Now);

@@ -709,19 +709,7 @@
             "{value} degrees {method}",
             "took her temperature of {value}",
             "took his temperature of {value}",
-            "fever of {value}",
-            "running a fever",
-            "she's hot",
-            "he's hot",
-            "burning up",
-            "feels warm",
-            "temperature check",
-            "she feels hot",
-            "he feels hot",
-            "running hot",
-            "warm to the touch",
-            "she's burning up",
-            "he's burning up"
+            "fever of {value}"
           ]
         },
         {
@@ -1062,6 +1050,7 @@
           "name": "FUSSY_INTENSITY",
           "values": [
             {
+              "id": "mild",
               "name": {
                 "value": "mild",
                 "synonyms": [
@@ -1072,6 +1061,7 @@
               }
             },
             {
+              "id": "moderate",
               "name": {
                 "value": "moderate",
                 "synonyms": [
@@ -1082,14 +1072,15 @@
               }
             },
             {
+              "id": "intense",
               "name": {
-                "value": "severe",
+                "value": "intense",
                 "synonyms": [
+                  "severe",
                   "very",
                   "extremely",
                   "really",
-                  "badly",
-                  "intense"
+                  "badly"
                 ]
               }
             }
@@ -1099,26 +1090,28 @@
           "name": "TEMP_METHOD",
           "values": [
             {
+              "id": "armpit",
               "name": {
-                "value": "axillary",
+                "value": "armpit",
                 "synonyms": [
                   "underarm",
-                  "armpit",
-                  "under arm"
+                  "under arm",
+                  "axillary"
                 ]
               }
             },
             {
+              "id": "ear",
               "name": {
-                "value": "rectal",
+                "value": "ear",
                 "synonyms": [
-                  "rectum",
-                  "bum",
-                  "bottom"
+                  "tympanic",
+                  "in ear"
                 ]
               }
             },
             {
+              "id": "forehead",
               "name": {
                 "value": "forehead",
                 "synonyms": [
@@ -1129,19 +1122,22 @@
               }
             },
             {
+              "id": "rectal",
               "name": {
-                "value": "ear",
+                "value": "rectal",
                 "synonyms": [
-                  "tympanic",
-                  "in ear"
+                  "rectum",
+                  "bum",
+                  "bottom"
                 ]
               }
             },
             {
+              "id": "mouth",
               "name": {
-                "value": "oral",
+                "value": "mouth",
                 "synonyms": [
-                  "mouth",
+                  "oral",
                   "by mouth"
                 ]
               }
@@ -1152,10 +1148,42 @@
           "name": "MILESTONE_TYPE",
           "values": [
             {
+              "id": "first_smile",
               "name": {
-                "value": "rolled_over",
+                "value": "first smile",
                 "synonyms": [
-                  "rolled over",
+                  "smiled",
+                  "smiling"
+                ]
+              }
+            },
+            {
+              "id": "laughs",
+              "name": {
+                "value": "laughed",
+                "synonyms": [
+                  "laughing",
+                  "first laugh"
+                ]
+              }
+            },
+            {
+              "id": "holds_head",
+              "name": {
+                "value": "held head up",
+                "synonyms": [
+                  "holding head up",
+                  "head control",
+                  "held her head up",
+                  "held his head up"
+                ]
+              }
+            },
+            {
+              "id": "rolls_over",
+              "name": {
+                "value": "rolled over",
+                "synonyms": [
                   "roll over",
                   "flipped over",
                   "turned over"
@@ -1163,20 +1191,10 @@
               }
             },
             {
+              "id": "sits",
               "name": {
-                "value": "first_smile",
+                "value": "sat up",
                 "synonyms": [
-                  "smiled",
-                  "first smile",
-                  "smiling"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "sat_up",
-                "synonyms": [
-                  "sat up",
                   "sitting up",
                   "sit up",
                   "sitting"
@@ -1184,6 +1202,7 @@
               }
             },
             {
+              "id": "crawls",
               "name": {
                 "value": "crawled",
                 "synonyms": [
@@ -1194,10 +1213,10 @@
               }
             },
             {
+              "id": "stands",
               "name": {
-                "value": "stood_up",
+                "value": "stood up",
                 "synonyms": [
-                  "stood up",
                   "standing up",
                   "stand up",
                   "standing"
@@ -1205,54 +1224,25 @@
               }
             },
             {
+              "id": "first_steps",
               "name": {
-                "value": "first_steps",
+                "value": "first steps",
                 "synonyms": [
                   "walking",
                   "walked",
-                  "first steps",
                   "took steps",
                   "taking steps"
                 ]
               }
             },
             {
+              "id": "first_word",
               "name": {
-                "value": "first_word",
+                "value": "first word",
                 "synonyms": [
                   "said first word",
                   "spoke",
-                  "first word",
                   "talking"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "clapped",
-                "synonyms": [
-                  "clapping",
-                  "clap hands",
-                  "clapped hands"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "waved",
-                "synonyms": [
-                  "waving",
-                  "wave bye",
-                  "waved bye"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "pointed",
-                "synonyms": [
-                  "pointing",
-                  "points at things"
                 ]
               }
             }
@@ -1262,17 +1252,7 @@
           "name": "SYMPTOM_TYPE",
           "values": [
             {
-              "name": {
-                "value": "fever",
-                "synonyms": [
-                  "high temperature",
-                  "hot",
-                  "burning up",
-                  "temp"
-                ]
-              }
-            },
-            {
+              "id": "cough",
               "name": {
                 "value": "cough",
                 "synonyms": [
@@ -1282,38 +1262,28 @@
               }
             },
             {
+              "id": "runny_nose",
               "name": {
-                "value": "runny_nose",
+                "value": "runny nose",
                 "synonyms": [
-                  "stuffy nose",
-                  "congestion",
-                  "cold",
                   "sniffles",
                   "drippy nose"
                 ]
               }
             },
             {
+              "id": "congestion",
               "name": {
-                "value": "diarrhea",
+                "value": "congestion",
                 "synonyms": [
-                  "loose stools",
-                  "watery poop",
-                  "runs"
+                  "stuffy nose",
+                  "blocked nose",
+                  "stuffed up"
                 ]
               }
             },
             {
-              "name": {
-                "value": "constipation",
-                "synonyms": [
-                  "hard stool",
-                  "cant poop",
-                  "backed up"
-                ]
-              }
-            },
-            {
+              "id": "rash",
               "name": {
                 "value": "rash",
                 "synonyms": [
@@ -1325,66 +1295,23 @@
               }
             },
             {
+              "id": "diarrhea",
               "name": {
-                "value": "vomiting",
+                "value": "diarrhea",
                 "synonyms": [
-                  "throwing up",
-                  "puking",
-                  "sick"
+                  "loose stools",
+                  "watery poop"
                 ]
               }
             },
             {
+              "id": "constipation",
               "name": {
-                "value": "ear_pain",
+                "value": "constipation",
                 "synonyms": [
-                  "ear ache",
-                  "ear infection",
-                  "ears hurt"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "eye_discharge",
-                "synonyms": [
-                  "goopy eyes",
-                  "crusty eyes",
-                  "pink eye",
-                  "conjunctivitis"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "loss_of_appetite",
-                "synonyms": [
-                  "not eating",
-                  "wont eat",
-                  "refusing food",
-                  "no appetite"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "lethargy",
-                "synonyms": [
-                  "sleepy",
-                  "tired",
-                  "low energy",
-                  "listless",
-                  "unusually quiet"
-                ]
-              }
-            },
-            {
-              "name": {
-                "value": "dehydration",
-                "synonyms": [
-                  "dry mouth",
-                  "no wet diapers",
-                  "sunken fontanelle"
+                  "hard stool",
+                  "cant poop",
+                  "backed up"
                 ]
               }
             }
@@ -1394,6 +1321,7 @@
           "name": "SYMPTOM_SEVERITY",
           "values": [
             {
+              "id": "mild",
               "name": {
                 "value": "mild",
                 "synonyms": [
@@ -1405,6 +1333,7 @@
               }
             },
             {
+              "id": "moderate",
               "name": {
                 "value": "moderate",
                 "synonyms": [
@@ -1415,6 +1344,7 @@
               }
             },
             {
+              "id": "severe",
               "name": {
                 "value": "severe",
                 "synonyms": [

@@ -15,7 +15,7 @@ internal enum AssistantAccess
 }
 
 /// <summary>The baby a command acts on, the caller's role, the zone to tell local times in and the command's clock.</summary>
-internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "", bool SayBabyName = false)
+internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "", bool SayBabyName = false, bool SayMedicineNames = false)
 {
     /// <summary>A result about this subject's baby; the name is in it only when <see cref="SayBabyName"/> (the user's opt-in).</summary>
     public AssistantResult Result(AssistantResultCode code) =>
@@ -67,7 +67,7 @@ internal sealed class AssistantSubjects(
 
         var baby = userBabies.Single(candidate => candidate.Id == babyId);
         var zone = await ZoneAsync(user.Id, invocation, now, cancellationToken);
-        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter, settings?.SayBabyName ?? false);
+        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter, settings?.SayBabyName ?? false, settings?.SayMedicineNames ?? false);
         return Allows(subject.Role, access)
             ? new AssistantSubjectLookup(subject, null)
             : new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));

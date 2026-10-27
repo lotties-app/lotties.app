@@ -39,6 +39,36 @@ public sealed class AssistantSettingsEndpointTests(ApiFactory factory) : IClassF
     }
 
     [Fact]
+    public async Task SayMedicineNames_IsOffByDefault_RoundTrips_AndIsIndependentOfTheBabyName()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = factory.CreateClientFor(baby.OwnerSubject);
+
+        var before = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+        var nameOnly = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId, sayBabyName = true })).ReadAsync<JsonElement>();
+        var on = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId, sayMedicineNames = true })).ReadAsync<JsonElement>();
+        var oldClient = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId })).ReadAsync<JsonElement>();
+        var off = await (await client.PutAsJsonAsync(Path, new { defaultBabyId = baby.BabyId, sayMedicineNames = false })).ReadAsync<JsonElement>();
+        var read = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+
+        Assert.Equal([false, false, true, true, false, false], new[] { before, nameOnly, on, oldClient, off, read }.Select(json => json.GetProperty("sayMedicineNames").GetBoolean()));
+        Assert.Equal([false, true, true, true, true, true], new[] { before, nameOnly, on, oldClient, off, read }.Select(json => json.GetProperty("sayBabyName").GetBoolean()));
+    }
+
+    [Fact]
+    public async Task SayMedicineNames_FirstSaveWithTheMember_CreatesTheRowWithItOn()
+    {
+        var client = factory.CreateClientFor(TestUsers.NewSubject());
+
+        var saved = await (await client.PutAsJsonAsync(Path, new { sayMedicineNames = true })).ReadAsync<JsonElement>();
+        var replay = await (await client.PutAsJsonAsync(Path, new { sayMedicineNames = true })).ReadAsync<JsonElement>();
+
+        Assert.True(saved.GetProperty("sayMedicineNames").GetBoolean());
+        Assert.False(saved.GetProperty("sayBabyName").GetBoolean());
+        Assert.Equal(saved.GetProperty("updatedAt").GetString(), replay.GetProperty("updatedAt").GetString());
+    }
+
+    [Fact]
     public async Task SayBabyName_FirstSaveWithTheMember_CreatesTheRowWithItOn()
     {
         var client = factory.CreateClientFor(TestUsers.NewSubject());
