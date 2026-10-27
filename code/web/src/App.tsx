@@ -6,6 +6,7 @@ import { readConfig, type ConfigResult } from './config/appConfig';
 import { SetupMessage } from './config/SetupMessage';
 import { OidcAuthProvider } from './auth/OidcAuthProvider';
 import { ApiClientProvider } from './api/ApiClientProvider';
+import { ConsentProvider } from './consent/ConsentProvider';
 import { AccountDataProvider } from './session/AccountDataProvider';
 import { UnitsProvider } from './units/UnitsProvider';
 import { AppRoutes } from './AppRoutes';
@@ -21,13 +22,15 @@ export default function App({ configResult = readConfig() }: { configResult?: Co
           <BrowserRouter>
             <OidcAuthProvider config={configResult.config.oidc}>
               <ApiClientProvider baseUrl={configResult.config.apiBaseUrl}>
-                <AccountDataProvider>
-                  <UnitsProvider>
-                    <QueryClientProvider client={queryClient}>
-                      <AppRoutes />
-                    </QueryClientProvider>
-                  </UnitsProvider>
-                </AccountDataProvider>
+                <ConsentProvider>
+                  <AccountDataProvider>
+                    <UnitsProvider>
+                      <QueryClientProvider client={queryClient}>
+                        <AppRoutes />
+                      </QueryClientProvider>
+                    </UnitsProvider>
+                  </AccountDataProvider>
+                </ConsentProvider>
               </ApiClientProvider>
             </OidcAuthProvider>
           </BrowserRouter>

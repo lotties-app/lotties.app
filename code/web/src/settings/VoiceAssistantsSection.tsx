@@ -22,6 +22,7 @@ import {
 } from '../assistants/assistantSettingsApi';
 import { configuredAuthority } from '../assistants/connectedApps';
 import { canLog } from '../baby/permissions';
+import { OptionalConsentSwitch } from '../consent/OptionalConsentSwitch';
 import type { Baby } from '../db/models';
 import { ErrorNotice } from './ErrorNotice';
 import { McpConnectorPanel } from './McpConnectorPanel';
@@ -125,6 +126,7 @@ export function VoiceAssistantsSection({
           ? t('assistants.hintOne', { name: loggable[0].name })
           : t('assistants.hintSeveral')}
       </FormHelperText>
+      <OptionalConsentSwitch kind="alexa" />
       <FormControlLabel
         control={
           <Switch
@@ -137,7 +139,7 @@ export function VoiceAssistantsSection({
         label={t('assistants.sayBabyName.label')}
       />
       <FormHelperText id="voice-assistants-name-hint" sx={{ mt: -1 }}>
-        {t('assistants.sayBabyName.hint')}
+        {t('assistants.sayBabyName.hint')} {t('consent.optional.sayBabyName')}
       </FormHelperText>
       <FormControlLabel
         control={
@@ -151,7 +153,7 @@ export function VoiceAssistantsSection({
         label={t('assistants.sayMedicineNames.label')}
       />
       <FormHelperText id="voice-assistants-medicine-hint" sx={{ mt: -1 }}>
-        {t('assistants.sayMedicineNames.hint')}
+        {t('assistants.sayMedicineNames.hint')} {t('consent.optional.sayMedicineNames')}
       </FormHelperText>
       <ErrorNotice message={action.error} />
       <Typography variant="body2" role="status" aria-live="polite">
@@ -176,6 +178,7 @@ export function VoiceAssistantsSection({
       {settings.data.mcpEnabled && settings.data.mcpUrl && (
         <>
           <Divider />
+          <OptionalConsentSwitch kind="mcp" />
           <McpConnectorPanel url={settings.data.mcpUrl} authority={authority} />
         </>
       )}

@@ -9,6 +9,7 @@ import { UnitsSection } from '../settings/UnitsSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
 import { FeedingSection } from '../settings/FeedingSection';
+import { ConsentSection } from '../consent/ConsentSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { DeleteAccountSection } from '../settings/DeleteAccountSection';
@@ -149,6 +150,13 @@ export function SettingsPage() {
         defaultExpanded={wants('sync')}
       >
         <SyncSection />
+      </SettingsSection>
+      <SettingsSection
+        id="privacy"
+        title={t('consent.settings.title')}
+        defaultExpanded={wants('privacy')}
+      >
+        <ConsentSection />
       </SettingsSection>
       <SettingsSection
         id="account"

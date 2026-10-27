@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { Box, CircularProgress, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { ConsentSection } from '../consent/ConsentSection';
 import { useAllPrescriptions, useMedications } from '../db/hooks';
 import type { Prescription } from '../db/models';
 import { summaryText } from '../medications/prescriptionForm';
@@ -171,6 +172,13 @@ export function DoctorSettingsPage() {
           defaultExpanded={target === 'sync'}
         >
           <SyncSection />
+        </SettingsSection>
+        <SettingsSection
+          id="privacy"
+          title={t('consent.settings.title')}
+          defaultExpanded={target === 'privacy'}
+        >
+          <ConsentSection variant="professional" />
         </SettingsSection>
         <SettingsSection
           id="account"

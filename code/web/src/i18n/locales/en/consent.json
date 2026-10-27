@@ -1,0 +1,102 @@
+{
+  "consent": {
+    "title": "Before you start",
+    "intro": "Lotties keeps a child's routine: sleep, feeds, diapers, medicines, growth, vaccines, appointments and notes. That is health data about a child, so we ask for your consent separately and clearly.",
+    "points": {
+      "beta": {
+        "lead": "Beta.",
+        "text": "Lotties is still being tested. It can have bugs, go offline and lose data. Do not use it as the only source for any health decision: it is not a medical device and gives no medical advice."
+      },
+      "data": {
+        "lead": "What we do with the data.",
+        "text": "Only what the service needs: store, sync and show what you and the people you invite record. We do not sell the data, use it for ads, or share it with third parties, other than services you turn on yourself (for example notifications or Alexa)."
+      },
+      "risk": {
+        "lead": "Risk.",
+        "text": "We protect the data with security measures, but no system is fully secure: a leak is possible. If something relevant happens, we will tell you and the data protection authority, as the law requires."
+      },
+      "rights": {
+        "lead": "Your rights.",
+        "text": "You can see, download, correct and delete everything, and withdraw this consent, at any time in Settings > Privacy and data."
+      },
+      "controller": {
+        "lead": "Responsible for the data:",
+        "text": "{controller}. Contact: {contact}."
+      }
+    },
+    "calm": "Sensitive data is protected by the measures described in the privacy policy, and you can export or delete everything at any time.",
+    "capacity": {
+      "legend": "I am",
+      "guardian": "the child's parent or legal guardian",
+      "authorised": "an adult authorised by them (a family member, caregiver or health professional)"
+    },
+    "declaration": "I declare that I am the child's parent or legal guardian, or an adult authorised by them (a family member, caregiver or health professional), and I consent to the child's health data being processed to run Lotties, under the [Privacy Policy](/privacy) and the [Terms of Use](/terms).",
+    "needBoth": "Choose who you are and tick the declaration to continue.",
+    "accept": "Accept and continue",
+    "decline": "Decline",
+    "declineNote": "If you decline you are signed out and nothing about a child is stored.",
+    "saving": "Saving your answer",
+    "offline": "You are offline. Connect to the internet to accept.",
+    "failed": "We could not save your answer. Check your connection and try again.",
+    "outdated": "The text changed while you were reading it. Reload the page and read it again.",
+    "declineDialog": {
+      "title": "Decline and sign out?",
+      "body": "You will be signed out, and nothing about a child will be stored. You can accept later by signing in again.",
+      "unsynced_one": "{{count}} change on this device has not been uploaded and will be lost.",
+      "unsynced_other": "{{count}} changes on this device have not been uploaded and will be lost.",
+      "confirm": "Decline and sign out",
+      "back": "Go back"
+    },
+    "leave": {
+      "title": "Leave Lotties instead",
+      "hint": "Download your data and delete your account without accepting."
+    },
+    "banner": {
+      "text": "We updated the Privacy Policy and the Terms of Use on {{date}}.",
+      "see": "See what changed",
+      "dismiss": "Dismiss"
+    },
+    "settings": {
+      "title": "Privacy and data",
+      "intro": "What you agreed to, and what you can change. Your data stays yours: you can download it and delete your account at any time.",
+      "core": {
+        "title": "Terms of use and privacy policy",
+        "accepted": "You accepted version {{version}} on {{date}}, as {{capacity}}.",
+        "asGuardian": "the child's parent or legal guardian",
+        "asAuthorised": "an authorised adult",
+        "none": "You have not accepted the current version yet.",
+        "terms": "Read the Terms of use",
+        "privacy": "Read the Privacy policy"
+      },
+      "optional": {
+        "title": "Optional features",
+        "intro": "Each one is off until you turn it on. Turning it on or off is recorded here.",
+        "push": "Reminders (push notifications)",
+        "alexa": "Alexa",
+        "mcp": "AI assistants",
+        "on": "On since {{date}}",
+        "off": "Off since {{date}}",
+        "never": "Never turned on"
+      },
+      "withdraw": {
+        "button": "Withdraw my consent",
+        "title": "Withdraw your consent",
+        "body": "Withdrawing means Lotties stops processing your data, and it cannot work without it. So it comes down to downloading your data and deleting your account. Optional features are withdrawn by turning them off.",
+        "export": "Download my data",
+        "delete": "Go to delete my account",
+        "close": "Close"
+      },
+      "loadFailed": "We could not load your consent records.",
+      "offline": "Your consent records need a connection."
+    },
+    "optional": {
+      "push": "Turning this on sends your browser or device address and an encrypted message through your browser's push service (Google, Apple, Mozilla or Microsoft).",
+      "alexa": "Turning this on means Amazon records and processes your voice and receives the answer Lotties speaks (times, amounts and counts, without the baby's name by default). Amazon keeps the linked-account token.",
+      "mcp": "When you connect, your AI assistant's service receives what the tools return and may keep it. Connect only an assistant you trust.",
+      "sayBabyName": "Answers sent to Amazon or your AI assistant will include the child's name.",
+      "sayMedicineNames": "Answers will include medicine names, which tells them what the child takes.",
+      "switchAlexa": "I use the Lotties skill with Alexa",
+      "switchMcp": "I connect an AI assistant"
+    }
+  }
+}

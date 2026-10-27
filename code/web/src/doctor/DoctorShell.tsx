@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { NAV_CONTENT_PADDING } from '../layout/navMetrics';
+import { PolicyUpdatedNotice } from '../consent/PolicyUpdatedNotice';
 import { SessionBanner } from '../layout/SessionBanner';
 import { SyncIconButton } from '../layout/SyncIconButton';
 import { UserMenu } from '../layout/UserMenu';
@@ -184,6 +185,7 @@ function ShellBody() {
             <UserMenu />
           </Stack>
           <SessionBanner />
+          <PolicyUpdatedNotice />
           <Box
             component="main"
             sx={{
