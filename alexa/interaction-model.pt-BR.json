@@ -541,7 +541,7 @@
             "a barriga dele dói",
             "registrar dor de barriga",
             "dor de barriga nível {intensity}",
-            "cólica {intensity} de 5",
+            "cólica nível {intensity}",
             "ela está com gases",
             "ele está com gases",
             "dor abdominal {intensity}"
@@ -668,7 +668,7 @@
             "ela está com {value} graus",
             "ele está com {value} graus",
             "{value} graus {method}",
-            "medi a temperatura, deu {value}",
+            "medi a temperatura de {value}",
             "febre de {value}",
             "termômetro marcou {value}",
             "está com febre",
