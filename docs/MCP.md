@@ -17,7 +17,8 @@ Values used below (replace with yours): public host `https://lotties.app` (so th
 The child's data leaves Lotties: the assistant's provider (Anthropic for Claude, or whoever runs the client) receives the
 facts the assistant asks for (times, amounts, counts, vaccine names; the baby's name only if she turned on "Say my baby's name in answers", and never appointment titles or other text people typed) and processes them under
 its own terms. Lotties shows this twice: on the Keycloak consent screen (section 2.3 texts) and in Settings > Voice
-assistants > AI assistants (MCP). Access is read-only unless she also grants logging. Medications are never available,
+assistants > AI assistants (MCP). Access is read-only unless she also grants logging. Medications are never available
+(no tool reads or logs one),
 and answers are facts from the family's own log, not medical advice. She can revoke the access at any time (section 8).
 
 ## 2. Keycloak: the two client scopes
@@ -60,7 +61,7 @@ Realm settings > **Localization** > **Realm overrides**, for **English** and **P
 | Key | en | pt-BR |
 | --- | --- | --- |
 | `lottiesMcpReadConsent` | Read your baby's Lotties log (sleep, feeds, diapers, appointments, vaccines due). What it reads goes to the company that runs this AI assistant. Read-only. Revoke any time: your account page, Applications. | Ler o registro do seu bebê no Lotties (sono, alimentações, fraldas, consultas, vacinas pendentes). O que ele ler vai para a empresa que opera este assistente de IA. Só leitura. Revogue quando quiser: página da sua conta, Aplicativos. |
-| `lottiesMcpWriteConsent` | Also log sleep, feeds and diapers for your baby in Lotties, as you. Never medications. Revoke any time: your account page, Applications. | Também registrar sono, alimentações e fraldas do seu bebê no Lotties, em seu nome. Nunca medicamentos. Revogue quando quiser: página da sua conta, Aplicativos. |
+| `lottiesMcpWriteConsent` | Also log sleep, feeds, diapers and other everyday events (bath, tummy time, temperature, symptoms from a list...) for your baby in Lotties, as you. Never medications. Revoke any time: your account page, Applications. | Também registrar sono, alimentações, fraldas e outros eventos do dia a dia (banho, tempo de bruços, temperatura, sintomas de uma lista...) do seu bebê no Lotties, em seu nome. Nunca medicamentos. Revogue quando quiser: página da sua conta, Aplicativos. |
 
 The consent screen also names the client (the assistant) and its redirect host; use clear client names (section 3).
 

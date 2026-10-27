@@ -318,7 +318,9 @@ describe('VoiceAssistantsSection, medicine names switch', () => {
   it('is off by default and explains why', async () => {
     renderMedicines();
 
-    const toggle = (await screen.findByRole('switch', { name: MEDICINE_LABEL })) as HTMLInputElement;
+    const toggle = (await screen.findByRole('switch', {
+      name: MEDICINE_LABEL,
+    })) as HTMLInputElement;
 
     expect(toggle.checked).toBe(false);
     expect(screen.getByText(/a medicine name tells them what your child takes/)).toBeTruthy();
@@ -327,7 +329,9 @@ describe('VoiceAssistantsSection, medicine names switch', () => {
   it('shows the stored value', async () => {
     renderMedicines(true);
 
-    const toggle = (await screen.findByRole('switch', { name: MEDICINE_LABEL })) as HTMLInputElement;
+    const toggle = (await screen.findByRole('switch', {
+      name: MEDICINE_LABEL,
+    })) as HTMLInputElement;
 
     expect(toggle.checked).toBe(true);
   });
@@ -337,15 +341,15 @@ describe('VoiceAssistantsSection, medicine names switch', () => {
 
     fireEvent.click(await screen.findByRole('switch', { name: MEDICINE_LABEL }));
     await waitFor(() =>
-      expect((screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked).toBe(
-        true,
-      ),
+      expect(
+        (screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked,
+      ).toBe(true),
     );
     fireEvent.click(screen.getByRole('switch', { name: MEDICINE_LABEL }));
     await waitFor(() =>
-      expect((screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked).toBe(
-        false,
-      ),
+      expect(
+        (screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked,
+      ).toBe(false),
     );
 
     const puts = calls.filter((call) => call.method === 'PUT');
@@ -363,9 +367,9 @@ describe('VoiceAssistantsSection, medicine names switch', () => {
     fireEvent.click(await screen.findByRole('switch', { name: MEDICINE_LABEL }));
 
     expect(await screen.findByText(/can't be used for voice commands/)).toBeTruthy();
-    expect(
-      (screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked,
-    ).toBe(false);
+    expect((screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked).toBe(
+      false,
+    );
   });
 
   it('reads in Brazilian Portuguese', async () => {
@@ -377,6 +381,8 @@ describe('VoiceAssistantsSection, medicine names switch', () => {
     })) as HTMLInputElement;
 
     expect(toggle.checked).toBe(false);
-    expect(screen.getByText(/o nome de um remédio mostra a eles o que o seu filho toma/)).toBeTruthy();
+    expect(
+      screen.getByText(/o nome de um remédio mostra a eles o que o seu filho toma/),
+    ).toBeTruthy();
   });
 });

@@ -36,8 +36,8 @@ Halves round away from zero. C# computes with `decimal` so the vectors do not de
 ## 3. What is never converted
 
 Only volume, weight, length and temperature are converted. Never a medication dose (a dose is entered and shown in the
-unit it was prescribed in), never a count, a duration, a time, a formula's scoops or a vaccine fact. Assistants have no
-medication command at all (design 32).
+unit it was prescribed in), never a count, a duration, a time, a formula's scoops or a vaccine fact. Assistants speak no dose: the
+only medication commands record that a registered dose was given and read the family's reminders, never an amount (design 32 section 5.4).
 
 ## 4. Why storage stays metric
 
@@ -73,8 +73,10 @@ One command layer (design 32): adapters only authenticate, map and render.
   So an Alexa user in en-US with `auto` hears ounces, in pt-BR hears ml, and an explicit setting wins over the locale.
 - Spoken and rendered text with a volume uses the right unit words: en-US `4 ounces` / `1 ounce`, pt-BR `4 onças`; metric
   stays `120 ml`. `SpokenMeasures` also renders weight (`7 pounds 1 ounce`, `7 libras e 1 onça`), length (`19.7 inches`,
-  `19,7 polegadas`) and temperature (`38 degrees`, `38 graus`) for any future answer that carries them; today only volumes
-  occur (last feed, bottle average and last bottle, bottle logged, day and week totals).
+  `19,7 polegadas`) and temperature (`38 degrees`, `38 graus`) for any future answer that carries them; volumes occur in
+  the last feed, bottle average and last bottle, bottle logged, day and week totals, and temperatures in the temperature and bath
+  answers; a temperature or bath water temperature is also **said** in the user's system (`TemperatureIntent`, `BathIntent`:
+  F -> C with the shared rule, stored in Celsius, 30-45 C and 0-60 C after conversion, else `invalid_value`).
 - MCP: `structuredContent` stays canonical metric with explicit unit names (`amountMl`, `lastAmountMl`); only the
   one-line text follows the setting (`4.1 fl oz`). MCP passes no locale, so `auto` is metric for it (a client locale
   argument was left out: the stored setting already covers a US person).
