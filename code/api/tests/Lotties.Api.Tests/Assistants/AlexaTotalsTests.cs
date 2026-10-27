@@ -22,6 +22,8 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
 
     private ApiFactory Factory => host.Factory;
 
+    // The events sit a few minutes before now so they stay on today's local date whatever the hour the suite runs at
+    // (an hour back would land on yesterday for a time zone just after its midnight).
     private async Task<SeededBaby> BabyWithAFeedingDayAsync(string? unitSystem = null)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -31,9 +33,9 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
         }
 
         var feeding = BuiltInEventTypes.FeedingId;
-        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-50), Now.AddMinutes(-50), """{"method":"bottle","amount_ml":120,"amount_drunk_ml":90,"bottle_feeding_type":"formula"}""");
-        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-40), Now.AddMinutes(-40), """{"method":"bottle","amount_ml":100,"bottle_feeding_type":"breast_milk"}""");
-        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-30), Now.AddMinutes(-20), """{"method":"breast","side":"left"}""");
+        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-3), Now.AddMinutes(-3), """{"method":"bottle","amount_ml":120,"amount_drunk_ml":90,"bottle_feeding_type":"formula"}""");
+        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-2), Now.AddMinutes(-2), """{"method":"bottle","amount_ml":100,"bottle_feeding_type":"breast_milk"}""");
+        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddSeconds(-90), Now.AddSeconds(-30), """{"method":"breast","side":"left"}""");
         await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddDays(-3), Now.AddDays(-3), """{"method":"bottle","amount_ml":200}""");
         return baby;
     }
