@@ -88,6 +88,6 @@ export function useReadRecommendationsOnView(baby: Pick<Baby, 'id' | 'userId' | 
   const decides = canDecideProposals(baby);
   useEffect(() => {
     if (!decides || ids === '') return;
-    for (const id of ids.split(',')) void markNoteRead(db, baby.id, id);
+    for (const id of ids.split(',')) markNoteRead(db, baby.id, id).catch(() => undefined);
   }, [db, baby.id, decides, ids]);
 }

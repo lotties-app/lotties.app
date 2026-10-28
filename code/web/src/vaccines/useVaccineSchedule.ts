@@ -24,7 +24,8 @@ export function useVaccineSchedule(): VaccineScheduleState {
 
   useEffect(() => {
     if (!api || !online) return;
-    void refreshVaccineSchedule(db, api);
+    // Fire and forget: the store may close under it (unmount, sign-out); the next mount refreshes again.
+    refreshVaccineSchedule(db, api).catch(() => undefined);
   }, [db, api, online]);
 
   return { schedule: cached === undefined ? undefined : (cached?.schedule ?? null) };

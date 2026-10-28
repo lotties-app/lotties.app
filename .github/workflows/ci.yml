@@ -29,10 +29,11 @@ jobs:
             code/api/Directory.Build.props
       - run: dotnet build code/api/Lotties.sln
       # Every WebApplicationFactory host watches appsettings files; the runner allows 128 inotify
-      # instances, so thousands of tests exhaust it. Polling needs none.
+      # instances, so thousands of tests exhaust it. Tests never edit config: no reload, no watcher
+      # (the polling watcher instead made hosts start so slowly that 20 tests hit the 100 s timeout).
       - run: dotnet test code/api/Lotties.sln
         env:
-          DOTNET_USE_POLLING_FILE_WATCHER: 'true'
+          DOTNET_hostBuilder__reloadConfigOnChange: 'false'
 
   web:
     runs-on: ubuntu-latest
