@@ -96,10 +96,10 @@ Atalho (recomendado): o repositório gera um **backup sintético** com 14 dias d
 3. Para refazer o arquivo (por exemplo, com datas mais novas), rode no clone:
 
 ```bash
-LOTTIES_DEMO_BACKUP_OUT=docs/samples/lotties-demo-backup-lia.json dotnet test code/api/tests/Lotties.Api.Tests --filter DemoBackupGenerator
+scripts/generate-demo-backup.sh   # Windows: scripts\generate-demo-backup.ps1
 ```
 
-O arquivo termina no momento em que é gerado (duas semanas até agora). Gere-o e importe-o logo antes de enviar a skill, e de novo se a revisão demorar dias: com dados antigos o app mostra "acordada há dezenas de horas".
+O arquivo cobre um mês e termina no momento em que é gerado: tudo finalizado, com um único sono em andamento (à noite o da noite, de dia uma soneca começada há 20 minutos). Gere-o e importe-o logo antes de enviar a skill, e de novo se a revisão demorar dias: com dados antigos o app mostra "acordada há dezenas de horas".
 
    O teste também importa o arquivo no servidor de testes e falha se qualquer registro for recusado. As datas vão de 2026-10-12 a 2026-10-25; para outras datas, mude `FirstDay` e `LastDay` em `code/api/tests/Lotties.Api.Tests/Backups/DemoBackupGenerator.cs`.
 4. **Nomes:** use "Lia" (não "Alexa Baby": a resposta falada "Alexa Baby tomou…" acorda a assistente em um aparelho de verdade).

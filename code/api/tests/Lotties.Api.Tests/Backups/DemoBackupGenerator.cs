@@ -8,7 +8,7 @@ using Lotties.Domain.EventTypes;
 namespace Lotties.Api.Tests.Backups;
 
 /// <summary>
-/// Writes a synthetic demo backup (<c>lotties-backup</c>, docs/design/24-export-import.md): two weeks, up to now, of invented sleep,
+/// Writes a synthetic demo backup (<c>lotties-backup</c>, docs/design/24-export-import.md): a month, up to now, of invented sleep,
 /// bottle and diaper events for a made-up baby, for the Alexa certification reviewers' demo account (docs/ALEXA-SUBMISSION.md
 /// step 2). It does nothing unless <c>LOTTIES_DEMO_BACKUP_OUT</c> names the output file, e.g.
 /// <c>LOTTIES_DEMO_BACKUP_OUT=C:\tmp\lia.json dotnet test code/api/tests/Lotties.Api.Tests --filter DemoBackupGenerator</c>.
@@ -23,11 +23,14 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
     /// <summary>The baby's local zone (Brazil): events are scheduled by local clock, written in UTC.</summary>
     private static readonly TimeSpan LocalOffset = TimeSpan.FromHours(-3);
 
-    /// <summary>The demo ends now: the last event is a few minutes old, so "awake for" and the predictions look like a live baby.</summary>
+    /// <summary>
+    /// The demo ends now, a month after it starts: every record is finished except one running sleep (a reviewer can say "she woke up"
+    /// or "she fell asleep" and see the answer), and today's events are there up to a few minutes ago.
+    /// </summary>
     private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
 
     private static readonly DateOnly LastDay = DateOnly.FromDateTime(Now.ToOffset(LocalOffset).DateTime);
-    private static readonly DateOnly FirstDay = LastDay.AddDays(-13);
+    private static readonly DateOnly FirstDay = LastDay.AddDays(-29);
 
     [Fact]
     public async Task Writes_a_demo_backup_that_the_app_accepts_when_asked_to()
@@ -49,6 +52,7 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
         Assert.True(applied.Applied);
         Assert.Equal(0, applied.IssueCount);
         Assert.Equal(file.Events!.Count, applied.Kinds["events"].New);
+        Assert.Single(file.Events, item => item.EndedAt is null);
 
         await File.WriteAllTextAsync(output, text, new UTF8Encoding(false));
     }
@@ -116,10 +120,7 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
             // Night sleep: from this evening to tomorrow morning (the evening before the first day is part of the history).
             var nightStart = At(day, 20, 30, random.Next(-20, 21));
             var nightEnd = At(day.AddDays(1), 6, 30, random.Next(-20, 21));
-            if (day < LastDay)
-            {
-                list.Add(Sleep(babyId, author, nightStart, nightEnd, "night"));
-            }
+            list.Add(Sleep(babyId, author, nightStart, nightEnd, "night"));
 
             if (isFirstDayBefore)
             {
@@ -150,9 +151,29 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
             }
         }
 
-        // Nothing after "a few minutes ago": a sleep or a feed that has not happened yet would be a made-up future.
-        var cutoff = Now.AddMinutes(-15);
-        return [.. list.Where(item => (item.EndedAt ?? item.StartedAt) <= cutoff).OrderBy(item => item.StartedAt).ThenBy(item => item.Id)];
+        return Settle(list, babyId, author);
+    }
+
+    /// <summary>
+    /// Cuts the schedule at "a few minutes ago" (nothing made up in the future) and leaves exactly one running sleep: the one the
+    /// schedule puts at this moment, or, when the baby would be awake, a nap that started twenty minutes ago.
+    /// </summary>
+    private static List<BackupEvent> Settle(List<BackupEvent> scheduled, Guid babyId, Guid author)
+    {
+        var cutoff = Now.AddMinutes(-5);
+        var sleeps = scheduled.Where(item => item.TypeId == BuiltInEventTypes.SleepId).ToList();
+        var spanning = sleeps.FirstOrDefault(item => item.StartedAt <= Now && item.EndedAt > Now);
+        var runningStart = spanning?.StartedAt ?? Now.AddMinutes(-20);
+        var kind = spanning is null ? "nap" : "night";
+
+        var settled = scheduled
+            .Where(item => item != spanning)
+            .Where(item => (item.EndedAt ?? item.StartedAt) <= cutoff)
+            .Where(item => spanning is not null || item.TypeId != BuiltInEventTypes.SleepId || item.EndedAt <= runningStart)
+            .Where(item => spanning is not null || item.StartedAt <= runningStart)
+            .ToList();
+        settled.Add(Event(babyId, author, BuiltInEventTypes.SleepId, runningStart, null, "{\"kind\":\"" + kind + "\"}"));
+        return [.. settled.OrderBy(item => item.StartedAt).ThenBy(item => item.Id)];
     }
 
     private static DateTimeOffset At(DateOnly day, int hour, int minute, int jitterMinutes) =>
