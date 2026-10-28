@@ -74,6 +74,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(ReplaceDatabaseAndAuthentication);
     }
 
+    /// <summary>
+    /// The suite runs hundreds of in-memory hosts at once, so on a small CI runner a request can wait minutes for a CPU slice:
+    /// the default 100 s client timeout turned that into failures that say nothing about the code under test.
+    /// </summary>
+    protected override void ConfigureClient(HttpClient client) => client.Timeout = TimeSpan.FromMinutes(10);
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         var host = base.CreateHost(builder);
