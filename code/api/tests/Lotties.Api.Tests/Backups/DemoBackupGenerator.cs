@@ -157,10 +157,10 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
         Event(babyId, author, BuiltInEventTypes.SleepId, start, end, "{\"kind\":\"" + kind + "\"}");
 
     private static BackupEvent Bottle(Guid babyId, Guid author, DateTimeOffset start, int amountMl, bool breastMilk) =>
-        Event(babyId, author, BuiltInEventTypes.FeedingId, start, null, "{\"method\":\"bottle\",\"amount_ml\":" + amountMl + ",\"bottle_feeding_type\":\"" + (breastMilk ? "breast_milk" : "formula") + "\"}");
+        Event(babyId, author, BuiltInEventTypes.FeedingId, start, start, "{\"method\":\"bottle\",\"amount_ml\":" + amountMl + ",\"bottle_feeding_type\":\"" + (breastMilk ? "breast_milk" : "formula") + "\"}");
 
     private static BackupEvent Diaper(Guid babyId, Guid author, DateTimeOffset start, string content) =>
-        Event(babyId, author, BuiltInEventTypes.DiaperId, start, null, "{\"content\":\"" + content + "\"}");
+        Event(babyId, author, BuiltInEventTypes.DiaperId, start, start, "{\"content\":\"" + content + "\"}");
 
     private static BackupEvent Event(Guid babyId, Guid author, Guid typeId, DateTimeOffset start, DateTimeOffset? end, string payload)
     {
