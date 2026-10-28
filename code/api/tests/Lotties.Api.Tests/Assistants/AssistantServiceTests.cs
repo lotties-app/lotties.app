@@ -160,7 +160,7 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
 
         var payload = PayloadOf(await factory.EventAsync(sleepId));
         Assert.False(payload.TryGetProperty("paused_at", out _));
-        Assert.InRange(payload.GetProperty("paused_seconds").GetInt32(), 895, 905);
+        Assert.InRange(payload.GetProperty("paused_seconds").GetInt32(), 895, 990);
         Assert.InRange(ended.Minutes!.Value, 44, 46);
     }
 

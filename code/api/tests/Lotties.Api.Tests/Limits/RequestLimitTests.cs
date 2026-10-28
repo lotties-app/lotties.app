@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -115,7 +116,10 @@ public sealed class RequestLimitTests(ApiFactory factory) : IClassFixture<ApiFac
     [Fact]
     public void Timeouts_DefaultAndImportPoliciesComeFromOptions()
     {
-        var timeouts = factory.Services.GetRequiredService<IOptions<RequestTimeoutOptions>>().Value;
+        using var production = factory.WithWebHostBuilder(builder => builder
+            .UseSetting("RequestLimits:RequestTimeoutSeconds", Defaults.RequestTimeoutSeconds.ToString(CultureInfo.InvariantCulture))
+            .UseSetting("RequestLimits:ImportRequestTimeoutSeconds", Defaults.ImportRequestTimeoutSeconds.ToString(CultureInfo.InvariantCulture)));
+        var timeouts = production.Services.GetRequiredService<IOptions<RequestTimeoutOptions>>().Value;
 
         Assert.Equal(TimeSpan.FromSeconds(Defaults.RequestTimeoutSeconds), timeouts.DefaultPolicy?.Timeout);
         Assert.Equal(TimeSpan.FromSeconds(Defaults.ImportRequestTimeoutSeconds), timeouts.Policies[RequestLimitPolicies.Import].Timeout);
