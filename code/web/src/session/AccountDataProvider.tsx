@@ -68,7 +68,8 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
     }
     if (!syncWasOff.current) return;
     syncWasOff.current = false;
-    void requeueDeadLetters(db);
+    // Fire and forget: the store may close under it (unmount, sign-out); the next run requeues again.
+    requeueDeadLetters(db).catch(() => undefined);
   }, [consent.syncAllowed, db]);
 
   const session: AccountSession = {
