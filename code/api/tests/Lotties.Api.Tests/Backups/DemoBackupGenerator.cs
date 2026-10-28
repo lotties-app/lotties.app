@@ -8,7 +8,7 @@ using Lotties.Domain.EventTypes;
 namespace Lotties.Api.Tests.Backups;
 
 /// <summary>
-/// Writes a synthetic demo backup (<c>lotties-backup</c>, docs/design/24-export-import.md): two weeks of invented sleep,
+/// Writes a synthetic demo backup (<c>lotties-backup</c>, docs/design/24-export-import.md): two weeks, up to now, of invented sleep,
 /// bottle and diaper events for a made-up baby, for the Alexa certification reviewers' demo account (docs/ALEXA-SUBMISSION.md
 /// step 2). It does nothing unless <c>LOTTIES_DEMO_BACKUP_OUT</c> names the output file, e.g.
 /// <c>LOTTIES_DEMO_BACKUP_OUT=C:\tmp\lia.json dotnet test code/api/tests/Lotties.Api.Tests --filter DemoBackupGenerator</c>.
@@ -23,8 +23,11 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
     /// <summary>The baby's local zone (Brazil): events are scheduled by local clock, written in UTC.</summary>
     private static readonly TimeSpan LocalOffset = TimeSpan.FromHours(-3);
 
-    private static readonly DateOnly FirstDay = new(2026, 10, 12);
-    private static readonly DateOnly LastDay = new(2026, 10, 25);
+    /// <summary>The demo ends now: the last event is a few minutes old, so "awake for" and the predictions look like a live baby.</summary>
+    private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
+
+    private static readonly DateOnly LastDay = DateOnly.FromDateTime(Now.ToOffset(LocalOffset).DateTime);
+    private static readonly DateOnly FirstDay = LastDay.AddDays(-13);
 
     [Fact]
     public async Task Writes_a_demo_backup_that_the_app_accepts_when_asked_to()
@@ -69,7 +72,7 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
 
     private static BackupFile Build()
     {
-        var exportedAt = new DateTimeOffset(2026, 10, 25, 23, 30, 0, TimeSpan.Zero);
+        var exportedAt = Now;
         var babyId = StableGuid("demo-baby");
         var author = StableGuid("demo-parent");
         var events = Events(babyId, author);
@@ -84,8 +87,8 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
             {
                 Id = babyId,
                 Name = BabyName,
-                BirthDate = new DateOnly(2026, 6, 20),
-                CreatedAt = new DateTimeOffset(2026, 10, 11, 12, 0, 0, TimeSpan.Zero),
+                BirthDate = LastDay.AddDays(-130),
+                CreatedAt = At(FirstDay.AddDays(-1), 12, 0, 0),
                 VaccineProfile = "public",
             },
             EventTypes = [],
@@ -147,7 +150,9 @@ public sealed class DemoBackupGenerator(ApiFactory factory) : IClassFixture<ApiF
             }
         }
 
-        return [.. list.OrderBy(item => item.StartedAt).ThenBy(item => item.Id)];
+        // Nothing after "a few minutes ago": a sleep or a feed that has not happened yet would be a made-up future.
+        var cutoff = Now.AddMinutes(-15);
+        return [.. list.Where(item => (item.EndedAt ?? item.StartedAt) <= cutoff).OrderBy(item => item.StartedAt).ThenBy(item => item.Id)];
     }
 
     private static DateTimeOffset At(DateOnly day, int hour, int minute, int jitterMinutes) =>
