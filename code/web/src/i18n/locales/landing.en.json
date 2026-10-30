@@ -29,9 +29,10 @@
   },
   "story": {
     "title": "Why we made Lotties",
-    "one": "Lotties is a free, open source alternative to Napper. Our first baby had just arrived, and we felt we were losing track of everything. Yearly plans for baby apps are also expensive.",
-    "two": "So we built the app we wished we had for this new journey: quick to log, calm to read, and shared between the people who care for the baby.",
-    "three": "We hope you feel the same excitement we do."
+    "one": "When our first baby arrived, we kept asking each other: what time was the last feed? Has the baby slept today? Did we give the medicine? After a sleepless night, memory fails. We wanted a simple place to write it down, where both of us could see the same thing.",
+    "two": "We could not find the app we wanted, so we built our own. It was born from our routine as parents. If it helps other parents going through the same, it was worth it.",
+    "three": "One important thing: Lotties does not tell you what to do. It only looks at what you logged yourself and shows what usually happens, as likely answers. Over time, and if more families choose to take part, anonymously, those statistics could get better.",
+    "four": "Lotties is not a medical app, it is a baby routine app. It does not diagnose, does not replace your pediatrician and is not responsible for health decisions. When in doubt, talk to whoever looks after your baby's health."
   },
   "features": {
     "title": "What it does",

@@ -11,7 +11,7 @@ export const FEATURES = [
 export const STEPS = ['one', 'two', 'three'] as const;
 
 /** The paragraphs of "Why we made Lotties": keys in the `landing` catalog, `story.<key>`. */
-export const STORY = ['one', 'two', 'three'] as const;
+export const STORY = ['one', 'two', 'three', 'four'] as const;
 
 /** Content width of the landing page in px. */
 export const PAGE_WIDTH = 960;

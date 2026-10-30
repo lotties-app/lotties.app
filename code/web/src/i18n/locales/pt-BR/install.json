@@ -101,7 +101,7 @@
     "landing": {
       "title": "Instale no seu celular",
       "body": "Adicione o Lotties ao seu iPhone ou Android: ele abre em tela cheia pelo próprio ícone, e no iPhone é assim que as notificações funcionam.",
-      "soon": "Ainda estamos publicando o Lotties na App Store e no Google Play. Por enquanto, instalar pelo navegador é a forma mais fácil de usar, e funciona como um aplicativo.",
+      "soon": "Queremos publicar o Lotties na App Store e no Google Play, mas isso depende da aprovação das lojas, que está em andamento. Estamos preparando também a instalação direta no Android, sem passar pela loja. Enquanto isso, tanto no Android quanto no iPhone, o Lotties funciona instalado pelo navegador, como um PWA.",
       "guide": "Passo a passo"
     },
     "publicNav": {

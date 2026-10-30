@@ -29,9 +29,10 @@
   },
   "story": {
     "title": "Por que criamos o Lotties",
-    "one": "O Lotties é uma alternativa gratuita e de código aberto ao Napper. Nosso primeiro bebê tinha acabado de chegar e sentimos que estávamos perdendo o controle de tudo. Além disso, os planos anuais de apps para bebês são caros.",
-    "two": "Então criamos o app que gostaríamos de ter nesta nova jornada: rápido para registrar, claro para ler e compartilhado entre quem cuida do bebê.",
-    "three": "Esperamos que você sinta a mesma empolgação que a gente."
+    "one": "Quando nosso primeiro bebê chegou, a gente vivia se perguntando: que horas foi a última mamada? Ele já dormiu hoje? Já demos o remédio? Depois de uma noite mal dormida, a memória falha. A gente queria um lugar simples para anotar, onde os dois vissem a mesma coisa.",
+    "two": "Não achamos o app que queríamos, então fizemos o nosso. Ele nasceu da nossa rotina de pais. Se puder ajudar outros pais e mães que estão passando pelo mesmo, já valeu a pena.",
+    "three": "Uma coisa importante: o Lotties não diz o que você deve fazer. Ele só olha para o que você mesmo registrou e mostra o que costuma acontecer, em respostas prováveis. Com o tempo, e se mais famílias quiserem participar, de forma anônima, essas estatísticas podem ficar melhores.",
+    "four": "O Lotties não é um aplicativo médico, é um aplicativo de rotina do bebê. Ele não faz diagnósticos, não substitui o pediatra e não se responsabiliza por decisões de saúde. Quando bater a dúvida, converse com quem cuida da saúde do seu bebê."
   },
   "features": {
     "title": "O que ele faz",
