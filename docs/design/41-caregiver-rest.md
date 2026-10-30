@@ -1,6 +1,6 @@
 # 41. Caregiver rest estimate (design, 2026-10-30)
 
-Status: **design only, nothing built.** Owner request, in the owner's words: the app could estimate when the parents
+Status: **phase 1 built, not deployed.** Owner request, in the owner's words: the app could estimate when the parents
 rested, starting from what is already logged about the baby (and later from smart watches, bands and rings), because
 the family wants to see how a night with a baby is shared. Not legal advice: the privacy points below are a starting
 point for the owner and a Brazilian lawyer.

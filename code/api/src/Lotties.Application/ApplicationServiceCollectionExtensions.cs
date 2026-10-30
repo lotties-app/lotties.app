@@ -62,6 +62,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Assistants.IAssistantSettingsService, Assistants.AssistantSettingsService>();
         services.AddScoped<Units.IUnitSettingsService, Units.UnitSettingsService>();
         services.AddScoped<Rest.IRestSettingsService, Rest.RestSettingsService>();
+        services.AddScoped<Rest.IRestEstimateService, Rest.RestEstimateService>();
         services.AddScoped<Consents.IConsentService, Consents.ConsentService>();
         services.AddScoped<Units.IUnitPreferences, Units.UnitPreferences>();
         services.AddScoped<Board.IBoardService, Board.BoardService>();
