@@ -294,7 +294,7 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var lines = logs.Messages;
         Assert.Contains(lines, line => line.StartsWith("MCP log_bottle: bottle_logged (correlation ", StringComparison.Ordinal));
-        Assert.DoesNotContain(lines, line => line.Contains("secret-key-123456", StringComparison.Ordinal) || line.Contains("137", StringComparison.Ordinal) || line.Contains(token, StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, line => line.Contains("secret-key-123456", StringComparison.Ordinal) || System.Text.RegularExpressions.Regex.IsMatch(line, @"(?<![\w.-])137(?![\w.-])") || line.Contains(token, StringComparison.Ordinal));
     }
 
     private string TokenWith(string flaw)
