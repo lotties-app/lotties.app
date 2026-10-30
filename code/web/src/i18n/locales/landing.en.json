@@ -38,27 +38,28 @@
     "title": "What it does",
     "log": {
       "title": "Log in a few taps",
-      "body": "Sleep, breast and bottle feeds, diapers, medicines, baths and fussy spells. Start a timer, tap a tile, undo a slip. Works offline and syncs when you are back online."
+      "body": "Sleep, breast and bottle feeds, diapers, medicines, baths and crying. Time naps and feeds with a timer and undo a mistake right away. Works offline and syncs when you are back online."
     },
     "today": {
-      "title": "See the day and what comes next",
-      "body": "A timeline of the day, totals for sleep, feeds and diapers, and charts of the week. The home screen shows what is likely next: nap, feed or diaper change."
+      "title": "See the day at a glance",
+      "body": "A timeline of the day, totals for sleep, feeds and diapers, and charts of the week."
     },
     "share": {
       "title": "Care together",
-      "body": "Invite a partner, grandparent or nanny with a link. Choose what each person can do, see who logged what, and share selected sections with your pediatrician."
+      "body": "Invite a partner, grandparent or nanny with a link. Each person gets the access you choose, and every entry shows who made it. You can also share parts of the history with your pediatrician."
     },
     "predict": {
-      "title": "Gentle predictions",
-      "body": "See the next nap window with a plain explanation of how it was worked out. Estimates from your logged history, not medical advice."
+      "title": "What may come next",
+      "body": "Based on what you logged, Lotties estimates the next nap, feed or diaper change and shows how it got there. Estimates from your logged history, not medical advice."
     },
     "health": {
       "title": "Growth, vaccines and medicines",
-      "body": "Weight and height on growth charts, the Brazilian vaccination schedule, appointments, and medicines with safe intervals. The doctor's prescription is always the source."
+      "body": "Weight and height on growth charts, the Brazilian vaccination schedule, appointments, and reminders for the medicines you registered. The doctor's prescription is always the source."
     },
     "data": {
       "title": "Free, private, yours",
-      "body": "Free and open source (AGPL-3.0) and can be self-hosted. No ads, no tracking. Import from Napper and export a backup any time."
+      "body": "Free and open source (AGPL-3.0), and you can host your own. No ads, no tracking. Export a backup any time and import your history from Napper. Use another app? Ask us to add it.",
+      "request": "Request an import for another app"
     }
   },
   "steps": {

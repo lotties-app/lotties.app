@@ -38,27 +38,28 @@
     "title": "O que ele faz",
     "log": {
       "title": "Registre em poucos toques",
-      "body": "Sono, mamadas no peito e na mamadeira, fraldas, remédios, banhos e momentos de irritação. Use o cronômetro nas sonecas e mamadas e, se errar, desfaça na hora. Funciona sem internet e sincroniza quando voltar."
+      "body": "Sono, mamadas (no peito ou na mamadeira), fraldas, remédios, banho e choro. Use o cronômetro nas sonecas e mamadas e desfaça um erro na hora. Funciona sem internet e sincroniza quando a conexão volta."
     },
     "today": {
-      "title": "Veja o dia e o que vem a seguir",
-      "body": "Uma linha do tempo do dia, totais de sono, mamadas e fraldas e gráficos da semana. A tela inicial mostra o que provavelmente vem a seguir: soneca, mamada ou troca de fralda."
+      "title": "Veja o dia de relance",
+      "body": "Uma linha do tempo do dia, os totais de sono, mamadas e fraldas e os gráficos da semana."
     },
     "share": {
       "title": "Cuidem juntos",
-      "body": "Convide o parceiro, os avós ou a babá por um link. Escolha o que cada pessoa pode fazer, veja quem registrou o quê e compartilhe seções escolhidas com o pediatra."
+      "body": "Convide o parceiro, os avós ou a babá por um link. Cada pessoa tem o acesso que você escolher, e cada registro mostra quem o fez. Você também pode compartilhar partes do histórico com o pediatra."
     },
     "predict": {
-      "title": "Previsões gentis",
-      "body": "Veja a próxima janela de soneca com uma explicação simples de como ela foi calculada. Estimativas feitas com o seu histórico, não são orientação médica."
+      "title": "O que deve vir a seguir",
+      "body": "Com base no que você registrou, o Lotties estima a próxima soneca, mamada ou troca de fralda e mostra como chegou nessa conta. São estimativas do histórico do seu bebê, não orientação médica."
     },
     "health": {
       "title": "Crescimento, vacinas e remédios",
-      "body": "Peso e altura em curvas de crescimento, o calendário de vacinação brasileiro, consultas e remédios com intervalos seguros. A receita do médico é sempre a fonte."
+      "body": "Peso e altura em curvas de crescimento, o calendário de vacinação brasileiro, consultas e lembretes dos remédios que você cadastrou. A receita do médico é sempre a fonte."
     },
     "data": {
       "title": "Gratuito, privado, seu",
-      "body": "Gratuito e de código aberto (AGPL-3.0), pode ser hospedado por você. Sem anúncios, sem rastreamento. Importe do Napper e exporte um backup quando quiser."
+      "body": "Gratuito e de código aberto (AGPL-3.0), e você pode hospedar o seu. Sem anúncios e sem rastreamento. Você exporta um backup quando quiser e importa o histórico do Napper. Usa outro app? Peça a importação dele.",
+      "request": "Pedir importação de outro app"
     }
   },
   "steps": {

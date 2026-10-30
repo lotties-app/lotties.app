@@ -70,8 +70,8 @@ describe('LandingPage', () => {
       'Why we made Lotties',
       'Install on your phone',
       'What it does',
-      'Not a medical device',
       'How it works',
+      'Not a medical device',
       'Built on open source',
     ]);
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(9);
