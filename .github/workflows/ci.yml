@@ -30,9 +30,12 @@ jobs:
           - shard: assistants-board
             target: code/api/tests/Lotties.Api.Tests
             filter: FullyQualifiedName~Lotties.Api.Tests.Assistants.|FullyQualifiedName~Lotties.Api.Tests.Board.
+          - shard: endpoints
+            target: code/api/tests/Lotties.Api.Tests
+            filter: FullyQualifiedName~Lotties.Api.Tests.Endpoints.
           - shard: rest
             target: code/api/Lotties.sln
-            filter: (FullyQualifiedName!~Lotties.Api.Tests.Authorization.)&(FullyQualifiedName!~Lotties.Api.Tests.Assistants.)&(FullyQualifiedName!~Lotties.Api.Tests.Board.)
+            filter: (FullyQualifiedName!~Lotties.Api.Tests.Authorization.)&(FullyQualifiedName!~Lotties.Api.Tests.Assistants.)&(FullyQualifiedName!~Lotties.Api.Tests.Board.)&(FullyQualifiedName!~Lotties.Api.Tests.Endpoints.)
     steps:
       # First-party actions pinned to a major tag.
       - uses: actions/checkout@v4
