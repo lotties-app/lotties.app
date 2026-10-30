@@ -15,10 +15,38 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # The API suite boots a real host per test class and is CPU bound: three jobs, split by namespace, run side by side
+  # Decides which suites a change needs. Pushes to main always run everything. The two sides share files:
+  # the API tests read the vectors and registry under code/web/src, the web tests read code/api/data.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.diff.outputs.api }}
+      web: ${{ steps.diff.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "api=true" >> "$GITHUB_OUTPUT"; echo "web=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          files=$(git diff --name-only "$BASE" "$GITHUB_SHA")
+          echo "$files"
+          api='^(code/api/|\.github/workflows/ci\.yml$|code/web/src/.*Vectors\.json$|code/web/src/legal/consentVersions\.json$|code/web/src/events/iconRegistry\.ts$)'
+          web='^(code/web/|code/api/data/|\.github/workflows/ci\.yml$)'
+          echo "$files" | grep -qE "$api" && echo "api=true" >> "$GITHUB_OUTPUT" || echo "api=false" >> "$GITHUB_OUTPUT"
+          echo "$files" | grep -qE "$web" && echo "web=true" >> "$GITHUB_OUTPUT" || echo "web=false" >> "$GITHUB_OUTPUT"
+
+  # The API suite boots a real host per test class and is CPU bound: jobs split by namespace, run side by side
   # (the last one is "everything else", so a new namespace is never left out) and also hold the Domain and Infrastructure tests.
   api:
     name: api (${{ matrix.shard }})
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -33,9 +61,12 @@ jobs:
           - shard: endpoints
             target: code/api/tests/Lotties.Api.Tests
             filter: FullyQualifiedName~Lotties.Api.Tests.Endpoints.
-          - shard: services
+          - shard: imports-backups
             target: code/api/tests/Lotties.Api.Tests
-            filter: FullyQualifiedName~Lotties.Api.Tests.Backups.|FullyQualifiedName~Lotties.Api.Tests.Imports.|FullyQualifiedName~Lotties.Api.Tests.Notifications.|FullyQualifiedName~Lotties.Api.Tests.Persistence.|FullyQualifiedName~Lotties.Api.Tests.Consents.|FullyQualifiedName~Lotties.Api.Tests.Catalog.
+            filter: FullyQualifiedName~Lotties.Api.Tests.Imports.|FullyQualifiedName~Lotties.Api.Tests.Backups.
+          - shard: data
+            target: code/api/tests/Lotties.Api.Tests
+            filter: FullyQualifiedName~Lotties.Api.Tests.Notifications.|FullyQualifiedName~Lotties.Api.Tests.Persistence.|FullyQualifiedName~Lotties.Api.Tests.Consents.|FullyQualifiedName~Lotties.Api.Tests.Catalog.
           - shard: rest
             target: code/api/Lotties.sln
             filter: (FullyQualifiedName!~Lotties.Api.Tests.Authorization.)&(FullyQualifiedName!~Lotties.Api.Tests.Assistants.)&(FullyQualifiedName!~Lotties.Api.Tests.Board.)&(FullyQualifiedName!~Lotties.Api.Tests.Endpoints.)&(FullyQualifiedName!~Lotties.Api.Tests.Backups.)&(FullyQualifiedName!~Lotties.Api.Tests.Imports.)&(FullyQualifiedName!~Lotties.Api.Tests.Notifications.)&(FullyQualifiedName!~Lotties.Api.Tests.Persistence.)&(FullyQualifiedName!~Lotties.Api.Tests.Consents.)&(FullyQualifiedName!~Lotties.Api.Tests.Catalog.)
@@ -57,6 +88,8 @@ jobs:
           DOTNET_hostBuilder__reloadConfigOnChange: 'false'
 
   web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +113,8 @@ jobs:
   # The vitest suite (hundreds of files, one worker each) split in five shards that run side by side.
   web-test:
     name: web test (${{ matrix.shard }}/5)
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -96,3 +131,15 @@ jobs:
         working-directory: code/web
       - run: npm run test -- --run --shard=${{ matrix.shard }}/5
         working-directory: code/web
+
+  # The one check to require in branch protection: skipped suites (nothing relevant changed) pass, failed or cancelled ones do not.
+  ci-ok:
+    if: always()
+    needs: [changes, api, web, web-test]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac
