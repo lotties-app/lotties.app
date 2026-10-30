@@ -12,7 +12,6 @@
 //   icon-maskable-512.png        icon-b-maskable.svg: full bleed, glyph inside the 66% safe zone
 //   apple-touch-icon.png         180, opaque full bleed (iOS applies its own mask), larger glyph
 //   icon-monochrome-512.png      icon-b-mono.svg inside the 66% safe zone (only alpha is used)
-//   (also copies favicon.svg and favicon.png into code/keycloak-theme/src/login/art for its tab icon)
 //   favicon.png (32), favicon.ico (16, 32, 48 as PNG-in-ICO), both from favicon.svg (light)
 // Dark set (concept B dark tile; shown when the app scheme is dark or night, see manifest-dark):
 //   icon-dark-192.png, icon-dark-512.png   icon-b-dark.svg
@@ -84,12 +83,6 @@ await write(
   180,
 );
 await write('favicon-dark.png', render(faviconDark, 32), 32);
-
-// The Keycloak login theme bundles the same tab icon.
-const kcArt = join(here, '..', '..', 'keycloak-theme', 'src', 'login', 'art');
-await copyFile(join(artDir, 'favicon-b.svg'), join(kcArt, 'favicon.svg'));
-await copyFile(join(publicDir, 'favicon.png'), join(kcArt, 'favicon.png'));
-console.log('copied favicon.svg, favicon.png to code/keycloak-theme/src/login/art');
 
 // Monochrome: 66% safe zone for the launcher's themed-icon mask, so the silhouette is scaled to 0.6.
 const monoSize = Math.round(512 * 0.6);
