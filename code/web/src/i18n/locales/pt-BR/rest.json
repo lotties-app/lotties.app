@@ -1,0 +1,92 @@
+{
+  "rest": {
+    "tab": "Descanso",
+    "tabsLabel": "Seções de análises",
+    "title": "Descanso",
+    "optIn": {
+      "title": "Estimativa de descanso",
+      "switch": "Mostrar uma estimativa do meu descanso",
+      "body": "Uma estimativa feita a partir do registro do bebê, mostrada só para você. Não é uma medição."
+    },
+    "night": {
+      "last": "Noite passada",
+      "of": "Noite de {{date}}",
+      "previous": "Noite anterior",
+      "next": "Próxima noite"
+    },
+    "parts": "Descanso estimado",
+    "part": {
+      "range": "por volta das {{start}} às {{end}}",
+      "ongoing": "por volta das {{start}}, ainda em andamento",
+      "confirmed": "confirmado por você",
+      "lowConfidence": "pouca confiança"
+    },
+    "status": {
+      "notEnoughLog": "Não há registro suficiente para estimar esta noite.",
+      "disabled": "A estimativa de descanso está desligada."
+    },
+    "disclaimer": "Estimado a partir do registro do bebê, não é uma medição.",
+    "error": "Não foi possível carregar a estimativa.",
+    "offline": {
+      "last": "Mostrando a última vez que você esteve conectado. Conecte-se para atualizar.",
+      "none": "Conecte-se para ver a estimativa."
+    },
+    "morning": {
+      "title": "Você já acordou para o dia?",
+      "now": "Sim, acordei agora",
+      "since": "Sim, desde um horário",
+      "timeLabel": "Horário em que você acordou",
+      "confirm": "Salvar",
+      "notYet": "Ainda não"
+    },
+    "settings": {
+      "title": "Suas configurações de descanso",
+      "saved": "Salvo.",
+      "save": "Salvar configurações",
+      "minutes": "min",
+      "work": {
+        "title": "Horário de trabalho",
+        "hint": "O horário de trabalho nunca conta como descanso. Uma janela que termina antes de começar atravessa a noite.",
+        "window": "Janela de trabalho {{n}}",
+        "days": "Dias",
+        "start": "Início",
+        "end": "Fim",
+        "add": "Adicionar janela de trabalho",
+        "remove": "Remover janela {{n}}"
+      },
+      "night": {
+        "title": "Noite",
+        "start": "A noite começa",
+        "end": "A noite termina"
+      },
+      "fallAsleep": {
+        "label": "Minutos para pegar no sono",
+        "help": "Quanto tempo depois de o bebê ir dormir você costuma pegar no sono."
+      },
+      "wakeLead": {
+        "label": "Minutos acordado antes do registro",
+        "help": "Quanto tempo antes de um registro seu se supõe que você já estava acordado."
+      },
+      "timeZone": {
+        "label": "Fuso horário",
+        "help": "Por exemplo America/Sao_Paulo. Seu horário de trabalho e a noite seguem esse fuso."
+      },
+      "errors": {
+        "timeZone": "Informe um fuso horário válido, por exemplo America/Sao_Paulo.",
+        "tooManyWindows": "No máximo 14 janelas de trabalho.",
+        "windowDays": "Cada janela de trabalho precisa de pelo menos um dia.",
+        "windowTimes": "Preencha o início e o fim de cada janela de trabalho.",
+        "windowSame": "Uma janela de trabalho não pode começar e terminar no mesmo horário.",
+        "nightTimes": "Preencha quando a noite começa e termina.",
+        "nightSame": "A noite não pode começar e terminar no mesmo horário.",
+        "minutes": "Os minutos devem ficar entre 5 e 60."
+      },
+      "turnOff": {
+        "action": "Desligar e apagar minhas configurações de descanso",
+        "title": "Desligar a estimativa de descanso?",
+        "body": "Seu horário de trabalho, noite, fuso horário e respostas da manhã são apagados do servidor. Você pode ligar de novo depois.",
+        "confirm": "Desligar e apagar"
+      }
+    }
+  }
+}

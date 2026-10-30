@@ -1,0 +1,92 @@
+{
+  "rest": {
+    "tab": "Rest",
+    "tabsLabel": "Insights sections",
+    "title": "Rest",
+    "optIn": {
+      "title": "Rest estimate",
+      "switch": "Show an estimate of my rest",
+      "body": "An estimate made from the baby's log, shown only to you. It is not a measurement."
+    },
+    "night": {
+      "last": "Last night",
+      "of": "Night of {{date}}",
+      "previous": "Previous night",
+      "next": "Next night"
+    },
+    "parts": "Estimated rest",
+    "part": {
+      "range": "about {{start}} to {{end}}",
+      "ongoing": "about {{start}}, still going",
+      "confirmed": "confirmed by you",
+      "lowConfidence": "low confidence"
+    },
+    "status": {
+      "notEnoughLog": "Not enough in the log to estimate this night.",
+      "disabled": "The rest estimate is turned off."
+    },
+    "disclaimer": "Estimated from the baby's log, not a measurement.",
+    "error": "The estimate could not be loaded.",
+    "offline": {
+      "last": "Shown from your last connection. Connect to refresh it.",
+      "none": "Connect to see the estimate."
+    },
+    "morning": {
+      "title": "Are you up for the day?",
+      "now": "Yes, I'm up now",
+      "since": "Yes, since a time",
+      "timeLabel": "Time you got up",
+      "confirm": "Save",
+      "notYet": "Not yet"
+    },
+    "settings": {
+      "title": "Your rest settings",
+      "saved": "Saved.",
+      "save": "Save settings",
+      "minutes": "min",
+      "work": {
+        "title": "Work hours",
+        "hint": "Working hours are never counted as rest. A window that ends before it starts runs overnight.",
+        "window": "Work window {{n}}",
+        "days": "Days",
+        "start": "Start",
+        "end": "End",
+        "add": "Add work window",
+        "remove": "Remove window {{n}}"
+      },
+      "night": {
+        "title": "Night",
+        "start": "Night starts",
+        "end": "Night ends"
+      },
+      "fallAsleep": {
+        "label": "Minutes to fall asleep",
+        "help": "How long after the baby goes to bed you usually fall asleep."
+      },
+      "wakeLead": {
+        "label": "Minutes awake before you log",
+        "help": "How long before an entry you logged you are assumed to have been up."
+      },
+      "timeZone": {
+        "label": "Time zone",
+        "help": "For example America/Sao_Paulo. Your work hours and night follow it."
+      },
+      "errors": {
+        "timeZone": "Enter a valid time zone, for example America/Sao_Paulo.",
+        "tooManyWindows": "Up to 14 work windows.",
+        "windowDays": "Each work window needs at least one day.",
+        "windowTimes": "Fill in the start and end of every work window.",
+        "windowSame": "A work window cannot start and end at the same time.",
+        "nightTimes": "Fill in when the night starts and ends.",
+        "nightSame": "The night cannot start and end at the same time.",
+        "minutes": "Minutes must be between 5 and 60."
+      },
+      "turnOff": {
+        "action": "Turn off and delete my rest settings",
+        "title": "Turn off the rest estimate?",
+        "body": "Your work hours, night, time zone and morning answers are deleted from the server. You can turn it on again later.",
+        "confirm": "Turn off and delete"
+      }
+    }
+  }
+}
