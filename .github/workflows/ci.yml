@@ -33,9 +33,12 @@ jobs:
           - shard: endpoints
             target: code/api/tests/Lotties.Api.Tests
             filter: FullyQualifiedName~Lotties.Api.Tests.Endpoints.
+          - shard: services
+            target: code/api/tests/Lotties.Api.Tests
+            filter: FullyQualifiedName~Lotties.Api.Tests.Backups.|FullyQualifiedName~Lotties.Api.Tests.Imports.|FullyQualifiedName~Lotties.Api.Tests.Notifications.|FullyQualifiedName~Lotties.Api.Tests.Persistence.|FullyQualifiedName~Lotties.Api.Tests.Consents.|FullyQualifiedName~Lotties.Api.Tests.Catalog.
           - shard: rest
             target: code/api/Lotties.sln
-            filter: (FullyQualifiedName!~Lotties.Api.Tests.Authorization.)&(FullyQualifiedName!~Lotties.Api.Tests.Assistants.)&(FullyQualifiedName!~Lotties.Api.Tests.Board.)&(FullyQualifiedName!~Lotties.Api.Tests.Endpoints.)
+            filter: (FullyQualifiedName!~Lotties.Api.Tests.Authorization.)&(FullyQualifiedName!~Lotties.Api.Tests.Assistants.)&(FullyQualifiedName!~Lotties.Api.Tests.Board.)&(FullyQualifiedName!~Lotties.Api.Tests.Endpoints.)&(FullyQualifiedName!~Lotties.Api.Tests.Backups.)&(FullyQualifiedName!~Lotties.Api.Tests.Imports.)&(FullyQualifiedName!~Lotties.Api.Tests.Notifications.)&(FullyQualifiedName!~Lotties.Api.Tests.Persistence.)&(FullyQualifiedName!~Lotties.Api.Tests.Consents.)&(FullyQualifiedName!~Lotties.Api.Tests.Catalog.)
     steps:
       # First-party actions pinned to a major tag.
       - uses: actions/checkout@v4
@@ -74,14 +77,14 @@ jobs:
         working-directory: code/web
         continue-on-error: true
 
-  # The vitest suite (hundreds of files, one worker each) split in three shards that run side by side.
+  # The vitest suite (hundreds of files, one worker each) split in five shards that run side by side.
   web-test:
-    name: web test (${{ matrix.shard }}/3)
+    name: web test (${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -91,5 +94,5 @@ jobs:
           cache-dependency-path: code/web/package-lock.json
       - run: npm ci
         working-directory: code/web
-      - run: npm run test -- --run --shard=${{ matrix.shard }}/3
+      - run: npm run test -- --run --shard=${{ matrix.shard }}/5
         working-directory: code/web
