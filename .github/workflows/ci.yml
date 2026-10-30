@@ -15,8 +15,24 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # The API suite boots a real host per test class and is CPU bound: three jobs, split by namespace, run side by side
+  # (the last one is "everything else", so a new namespace is never left out) and also hold the Domain and Infrastructure tests.
   api:
+    name: api (${{ matrix.shard }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: authorization
+            target: code/api/tests/Lotties.Api.Tests
+            filter: FullyQualifiedName~Lotties.Api.Tests.Authorization.
+          - shard: assistants-board
+            target: code/api/tests/Lotties.Api.Tests
+            filter: FullyQualifiedName~Lotties.Api.Tests.Assistants.|FullyQualifiedName~Lotties.Api.Tests.Board.
+          - shard: rest
+            target: code/api/Lotties.sln
+            filter: (FullyQualifiedName!~Lotties.Api.Tests.Authorization.)&(FullyQualifiedName!~Lotties.Api.Tests.Assistants.)&(FullyQualifiedName!~Lotties.Api.Tests.Board.)
     steps:
       # First-party actions pinned to a major tag.
       - uses: actions/checkout@v4
@@ -29,9 +45,8 @@ jobs:
             code/api/Directory.Build.props
       - run: dotnet build code/api/Lotties.sln
       # Every WebApplicationFactory host watches appsettings files; the runner allows 128 inotify
-      # instances, so thousands of tests exhaust it. Tests never edit config: no reload, no watcher
-      # (the polling watcher instead made hosts start so slowly that 20 tests hit the 100 s timeout).
-      - run: dotnet test code/api/Lotties.sln
+      # instances, so thousands of tests exhaust it. Tests never edit config: no reload, no watcher.
+      - run: dotnet test ${{ matrix.target }} --no-build --filter "${{ matrix.filter }}"
         env:
           DOTNET_hostBuilder__reloadConfigOnChange: 'false'
 
@@ -48,8 +63,6 @@ jobs:
         working-directory: code/web
       - run: npm run lint
         working-directory: code/web
-      - run: npm run test -- --run
-        working-directory: code/web
       - run: npm run build
         working-directory: code/web
       # Informational: reports known vulnerabilities in production dependencies without failing the build.
@@ -57,3 +70,23 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
         working-directory: code/web
         continue-on-error: true
+
+  # The vitest suite (hundreds of files, one worker each) split in three shards that run side by side.
+  web-test:
+    name: web test (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: code/web/package-lock.json
+      - run: npm ci
+        working-directory: code/web
+      - run: npm run test -- --run --shard=${{ matrix.shard }}/3
+        working-directory: code/web
