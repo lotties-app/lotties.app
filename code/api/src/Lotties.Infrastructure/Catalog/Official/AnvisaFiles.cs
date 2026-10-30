@@ -1,4 +1,5 @@
 using Lotties.Domain.Catalog.Official;
+using Lotties.Domain.Catalog.Official.Verification;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Imports;
 
@@ -32,6 +33,30 @@ public static class AnvisaFiles
             .Take(limit ?? int.MaxValue)
             .ToArray();
         return new SourceRows<AnvisaRegistrationRow>(rows, table.ShortRecords, delimiter);
+    }
+
+    /// <summary>The registration rows with the holder and category columns (for the curated-list verifier).</summary>
+    public static SourceRows<AnvisaRegistrationDetail> ReadRegistrationDetails(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var delimiter = DelimitedText.DetectDelimiter(DelimitedText.FirstLine(text));
+        var table = Table.Read(DelimitedText.Parse(text, delimiter), [.. RegistrationColumns, "EMPRESA_DETENTORA_REGISTRO", "CATEGORIA_REGULATORIA"], "registrations");
+        var rows = table.Rows
+            .Select(record => new AnvisaRegistrationDetail(table.Value(record, 0), table.Value(record, 1), table.Value(record, 2), table.Value(record, 3), table.Value(record, 4), table.Value(record, 5)))
+            .ToArray();
+        return new SourceRows<AnvisaRegistrationDetail>(rows, table.ShortRecords, delimiter);
+    }
+
+    /// <summary>The CMED presentation rows with the substance column (for the curated-list verifier).</summary>
+    public static SourceRows<CmedPresentationDetail> ReadPresentationDetails(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var delimiter = DelimitedText.DetectDelimiter(DelimitedText.FirstLine(text));
+        var table = Table.Read(DelimitedText.Parse(text, delimiter), [.. PresentationColumns, "SUBSTANCIA"], "presentations");
+        var rows = table.Rows
+            .Select(record => new CmedPresentationDetail(table.Value(record, 0), table.Value(record, 1), table.Value(record, 2), table.Value(record, 3)))
+            .ToArray();
+        return new SourceRows<CmedPresentationDetail>(rows, table.ShortRecords, delimiter);
     }
 
     /// <summary>The CMED presentation rows.</summary>

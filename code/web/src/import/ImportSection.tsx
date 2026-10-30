@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Alert, Step, StepContent, StepLabel, Stepper, Typography } from '@mui/material';
+import { ExternalLink } from '../credits/ExternalLink';
+import { importRequestUrl } from './importRequest';
 import { canWrite } from '../baby/permissions';
 import type { Baby } from '../db/models';
 import { ErrorNotice } from '../settings/ErrorNotice';
@@ -96,6 +98,12 @@ export function ImportSection({ baby }: { baby: Baby }) {
           </Step>
         ))}
       </Stepper>
+      <ExternalLink
+        href={importRequestUrl()}
+        sx={{ mt: 2, minHeight: 44, display: 'inline-flex', alignItems: 'center' }}
+      >
+        {t('import.requestOther')}
+      </ExternalLink>
     </>
   );
 }

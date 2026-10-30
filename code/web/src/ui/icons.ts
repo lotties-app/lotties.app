@@ -7,6 +7,7 @@ import IconPencil from '@tabler/icons-react/dist/esm/icons/IconPencil.mjs';
 import IconTrash from '@tabler/icons-react/dist/esm/icons/IconTrash.mjs';
 import IconArchive from '@tabler/icons-react/dist/esm/icons/IconArchive.mjs';
 import IconShare from '@tabler/icons-react/dist/esm/icons/IconShare.mjs';
+import IconDownload from '@tabler/icons-react/dist/esm/icons/IconDownload.mjs';
 import IconCopy from '@tabler/icons-react/dist/esm/icons/IconCopy.mjs';
 import IconFileUpload from '@tabler/icons-react/dist/esm/icons/IconFileUpload.mjs';
 import IconChevronDown from '@tabler/icons-react/dist/esm/icons/IconChevronDown.mjs';
@@ -34,6 +35,7 @@ import IconInfoCircle from '@tabler/icons-react/dist/esm/icons/IconInfoCircle.mj
 import IconPlayerPlay from '@tabler/icons-react/dist/esm/icons/IconPlayerPlay.mjs';
 import IconPlayerStop from '@tabler/icons-react/dist/esm/icons/IconPlayerStop.mjs';
 import IconStopwatch from '@tabler/icons-react/dist/esm/icons/IconStopwatch.mjs';
+import IconHistory from '@tabler/icons-react/dist/esm/icons/IconHistory.mjs';
 import IconClock from '@tabler/icons-react/dist/esm/icons/IconClock.mjs';
 import IconCalendar from '@tabler/icons-react/dist/esm/icons/IconCalendar.mjs';
 import IconCalendarEvent from '@tabler/icons-react/dist/esm/icons/IconCalendarEvent.mjs';
@@ -74,6 +76,15 @@ import IconArrowsHorizontal from '@tabler/icons-react/dist/esm/icons/IconArrowsH
 import IconPlayerPause from '@tabler/icons-react/dist/esm/icons/IconPlayerPause.mjs';
 import IconClockPause from '@tabler/icons-react/dist/esm/icons/IconClockPause.mjs';
 import IconFlag from '@tabler/icons-react/dist/esm/icons/IconFlag.mjs';
+// Project board (docs/design/36-project-board.md): item types, pins and API keys.
+import IconLayoutKanban from '@tabler/icons-react/dist/esm/icons/IconLayoutKanban.mjs';
+import IconSquareCheck from '@tabler/icons-react/dist/esm/icons/IconSquareCheck.mjs';
+import IconPuzzle from '@tabler/icons-react/dist/esm/icons/IconPuzzle.mjs';
+import IconHelpCircle from '@tabler/icons-react/dist/esm/icons/IconHelpCircle.mjs';
+import IconBookmark from '@tabler/icons-react/dist/esm/icons/IconBookmark.mjs';
+import IconPin from '@tabler/icons-react/dist/esm/icons/IconPin.mjs';
+import IconKey from '@tabler/icons-react/dist/esm/icons/IconKey.mjs';
+import IconMessage from '@tabler/icons-react/dist/esm/icons/IconMessage.mjs';
 import IconCar from '@tabler/icons-react/dist/esm/icons/IconCar.mjs';
 import IconBabyCarriage from '@tabler/icons-react/dist/esm/icons/IconBabyCarriage.mjs';
 import IconUsers from '@tabler/icons-react/dist/esm/icons/IconUsers.mjs';
@@ -117,6 +128,7 @@ import IconBrandWhatsapp from '@tabler/icons-react/dist/esm/icons/IconBrandWhats
 import IconBuildingHospital from '@tabler/icons-react/dist/esm/icons/IconBuildingHospital.mjs';
 import IconStarFilled from '@tabler/icons-react/dist/esm/icons/IconStarFilled.mjs';
 import IconExternalLink from '@tabler/icons-react/dist/esm/icons/IconExternalLink.mjs';
+import IconMicrophone from '@tabler/icons-react/dist/esm/icons/IconMicrophone.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -166,6 +178,7 @@ export const ICON_COMPONENTS = {
   stop: IconPlayerStop,
   stopwatch: IconStopwatch,
   clock: IconClock,
+  history: IconHistory,
   calendar: IconCalendar,
   event: IconCalendarEvent,
   note: IconNotes,
@@ -205,6 +218,14 @@ export const ICON_COMPONENTS = {
   pause: IconPlayerPause,
   'clock-pause': IconClockPause,
   flag: IconFlag,
+  board: IconLayoutKanban,
+  'square-check': IconSquareCheck,
+  puzzle: IconPuzzle,
+  help: IconHelpCircle,
+  bookmark: IconBookmark,
+  pin: IconPin,
+  key: IconKey,
+  comment: IconMessage,
   car: IconCar,
   stroller: IconBabyCarriage,
   users: IconUsers,
@@ -248,6 +269,8 @@ export const ICON_COMPONENTS = {
   hospital: IconBuildingHospital,
   'star-filled': IconStarFilled,
   'external-link': IconExternalLink,
+  download: IconDownload,
+  microphone: IconMicrophone,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

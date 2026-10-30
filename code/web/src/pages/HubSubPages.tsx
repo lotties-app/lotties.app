@@ -4,6 +4,8 @@ import { Link as RouterLink, Navigate, useLocation } from 'react-router-dom';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
+import { CreditsContent } from '../credits/CreditsContent';
+import { InstallContent } from '../install/InstallContent';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
 import { canSeeFamilyRecords, canWrite } from '../baby/permissions';
@@ -22,6 +24,10 @@ const ImportBackupSection = lazy(() =>
 );
 const ImportSection = lazy(() =>
   import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
+);
+// The policy text (both languages) is its own chunk, loaded only when the page opens.
+const PrivacyContent = lazy(() =>
+  import('../legal/PrivacyContent').then((m) => ({ default: m.PrivacyContent })),
 );
 
 /** A page opened from the Hub: a way back, the page title as the one h1, then the content. */
@@ -163,6 +169,38 @@ export function HubAboutPage() {
   return (
     <HubSubPage title={t('hub.about.title')}>
       <AboutScreen />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Credits and licenses: the same content as the public /credits page, inside the shell. */
+export function HubCreditsPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('credits.title')}>
+      <CreditsContent />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Privacy policy: the same policy as the public /privacy page, inside the shell. */
+export function HubPrivacyPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('legal.privacy.title')}>
+      <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+        <PrivacyContent />
+      </Suspense>
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Install the app: the same guide as the public /install page, inside the shell. */
+export function HubInstallPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('install.title')}>
+      <InstallContent />
     </HubSubPage>
   );
 }

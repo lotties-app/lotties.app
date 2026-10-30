@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { Box, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { ConsentSection } from '../consent/ConsentSection';
 import { useAllPrescriptions, useMedications } from '../db/hooks';
 import type { Prescription } from '../db/models';
 import { summaryText } from '../medications/prescriptionForm';
@@ -10,12 +11,15 @@ import { Growth } from '../pages/GrowthPage';
 import { ProposalsScreen } from '../proposals/ProposalsScreen';
 import { Provenance } from '../proposals/Provenance';
 import { AppearanceSection } from '../settings/AppearanceSection';
+import { DeleteAccountSection } from '../settings/DeleteAccountSection';
 import { LanguageSection } from '../settings/LanguageSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { RADIUS } from '../theme/tokens';
 import { formatDate } from '../i18n/format';
+import { CreditsContent } from '../credits/CreditsContent';
+import { AboutScreen } from '../hub/AboutScreen';
 import { usePatientBaby } from './DoctorDashboardContext';
 import { WhenShared } from './PatientRoute';
 
@@ -125,7 +129,8 @@ export function PatientNotes() {
 
 /**
  * `/doctor/settings`: what a doctor sets on her account (her professional profile, appearance,
- * language, sync). The family's settings (members, reminders, import) are never shown here.
+ * language, sync, and Account and data: her own data's download and the account deletion, a store
+ * requirement). The family's settings (members, reminders, import) are never shown here.
  */
 export function DoctorSettingsPage() {
   const { t } = useTranslation();
@@ -168,6 +173,72 @@ export function DoctorSettingsPage() {
         >
           <SyncSection />
         </SettingsSection>
+        <SettingsSection
+          id="privacy"
+          title={t('consent.settings.title')}
+          defaultExpanded={target === 'privacy'}
+        >
+          <ConsentSection variant="professional" />
+        </SettingsSection>
+        <SettingsSection
+          id="account"
+          title={t('account.sectionTitle')}
+          defaultExpanded={target === 'account'}
+        >
+          <DeleteAccountSection variant="professional" />
+        </SettingsSection>
+      </Stack>
+    </Box>
+  );
+}
+
+/** `/doctor/credits`: the credits and licenses, inside the doctor's shell (her account menu links here). */
+export function DoctorCreditsPage() {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ maxWidth: 720 }}>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h1">
+          {t('credits.title')}
+        </Typography>
+        <CreditsContent />
+      </Stack>
+    </Box>
+  );
+}
+
+/** `/doctor/about`: what this device and the server run, inside the doctor's shell (her account menu links here). */
+export function DoctorAboutPage() {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ maxWidth: 720 }}>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h1">
+          {t('hub.about.title')}
+        </Typography>
+        <AboutScreen basePath="/doctor" />
+      </Stack>
+    </Box>
+  );
+}
+
+// The policy text (both languages) is its own chunk, loaded only when the page opens.
+const PrivacyContent = lazy(() =>
+  import('../legal/PrivacyContent').then((m) => ({ default: m.PrivacyContent })),
+);
+
+/** `/doctor/privacy`: the privacy policy, inside the doctor's shell (her account menu links here). */
+export function DoctorPrivacyPage() {
+  const { t } = useTranslation();
+  return (
+    <Box sx={{ maxWidth: 720 }}>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h1">
+          {t('legal.privacy.title')}
+        </Typography>
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <PrivacyContent />
+        </Suspense>
       </Stack>
     </Box>
   );

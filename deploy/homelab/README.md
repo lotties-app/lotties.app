@@ -12,7 +12,7 @@ workloads, and one Ingress on the external Traefik makes them public at **https:
 
 | Workload | Image | Release (one chart) | Notes |
 | --- | --- | --- | --- |
-| API (.NET 8) | `lotties-api` from `code/api/Dockerfile` | `lotties-api` | port 8080, uid 1654, probes on `/health`, config from env and the Secret `lotties-secrets` |
+| API (.NET 10) | `lotties-api` from `code/api/Dockerfile` | `lotties-api` | port 8080, uid 1654, probes on `/health`, config from env and the Secret `lotties-secrets` |
 | Web app (React SPA, nginx-unprivileged) | `lotties-web` from `code/web/Dockerfile` | `lotties-web` | port 8080, uid 101, OIDC settings baked in at build time |
 
 Both use [charts/lotties-app](charts/lotties-app) with a values file each in [values](values): non-root, read-only
@@ -84,13 +84,18 @@ creates the namespace when missing; checks (or copies) `cr-homel4b`; builds and 
 Images are tagged `src-<hash>` of the files they are built from (for the web image also the `VITE_*` values, so a
 changed client id rebuilds it). A tag already in the registry is not rebuilt and its pods are not restarted. A run that
 built something is a release: the images also get `vX.Y.Z` (the next patch after the git and registry tags, or
-`VERSION`) and `latest`. `TAG`, `FORCE_BUILD=1` (also to pick up patched base images) and `SKIP_BUILD=1` are available.
+`VERSION`) and `latest`. `TAG`, `FORCE_BUILD=1` (also to pick up patched base images) and `SKIP_BUILD=1` are available. After a release the script creates the annotated git tag `vX.Y.Z` on HEAD and pushes it to `origin` (a problem is printed and never fails the deploy; `TAG_RELEASE=0` skips it, `PUSH_TAG=0` keeps it local).
+The release is chosen before the builds and stamped into the images it builds (`APP_VERSION`, `APP_COMMIT`,
+`APP_BUILD_TIME`; About and `GET /api/v1/version` show it); it is not part of the `src-<hash>` tag, so an image that
+is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
 
 ## Secrets and rotation
 
 - `lotties-secrets` holds `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD`, and when set
-  `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off) and, only with
-  `DB_AUTO_MIGRATE=true`, `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.
+  `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
+  `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
+  Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md) and, only with `DB_AUTO_MIGRATE=true`,
+  `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.
 - Values come from `deploy/homelab/.env`; a key not set there keeps what the Secret already has, a key set to an empty
   value is removed. The script writes each value to a file in a private temporary directory and builds the Secret from
   those files (server-side apply): values never appear on a command line or in the output.

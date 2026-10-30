@@ -35,7 +35,8 @@ Android SDK on the dev machine, no developer accounts). Payments are out of scop
 ```
 
 - Build: `npm --prefix code/mobile run build:web` runs `code/web` `build:native` (type checks, then `vite build --mode
-  native`); `npm --prefix code/mobile run sync` checks that both packages pin the same `@capacitor/*` versions
+  native`) through `scripts/build-web.mjs`, which stamps `APP_VERSION` (set, else `LOTTIES_VERSION_NAME`, else
+  code/mobile/package.json) so About shows the store version; `npm --prefix code/mobile run sync` checks that both packages pin the same `@capacitor/*` versions
   (`scripts/check-plugin-versions.mjs`: the JS side is bundled from code/web, the native side compiled from
   code/mobile) and copies `dist` into `android/app/src/main/assets/public` and `ios/App/App/public` (both gitignored).
   `npm run android` / `npm run ios` build, sync and open Android Studio / Xcode (Xcode needs a Mac).
@@ -227,7 +228,7 @@ Nothing secret is in the repository (`code/mobile/.gitignore` refuses keystores,
 - APNs `.p8` key and the FCM service account (section 7) are API secrets: the Secret `lotties-secrets`, like the VAPID
   keys.
 
-## 13. CI plan
+## 13. CI plan (built as `.github/workflows/mobile-release.yml`, unrun; how to use it: docs/MOBILE-RELEASE.md)
 
 - Android (ubuntu-latest): Node 22, Temurin JDK 21, `npm ci` in code/web and code/mobile, `build:web` (client id from a
   repository variable), `npx cap sync android`, `./gradlew assembleDebug` on pull requests (artifact); on a `v*` tag

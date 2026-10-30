@@ -10,11 +10,8 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { formatNumber } from '../i18n/format';
 import { DateField } from '../ui/form/DateField';
 import { Field } from '../ui/form/Field';
-import { NumberStepper } from '../ui/form/NumberStepper';
-import { parseLocaleNumber } from '../ui/form/numbers';
 import { useServerAction } from '../settings/useServerAction';
 import type { MeasurementDto } from '../sync/contract';
 import {
@@ -22,13 +19,13 @@ import {
   formFromDto,
   MEASUREMENT_ERROR_MESSAGES,
   METRICS,
-  metricLabel,
   todayLocal,
   MIN_DATE,
   validateForm,
   type FormErrors,
   type MeasurementForm,
 } from './measurementModel';
+import { MetricField } from './MetricField';
 import { useMeasurementActions } from './useMeasurements';
 
 interface Props {
@@ -78,28 +75,13 @@ export function MeasurementDialog({ babyId, measurement, onClose }: Props) {
               />
             </Field>
             {METRICS.map((m) => (
-              <Field
+              <MetricField
                 key={m.key}
-                label={t('growth.metricLabel', { label: metricLabel(m), unit: m.unit })}
+                metric={m}
+                value={form[m.key]}
                 error={errors[m.key]}
-                help={
-                  errors[m.key]
-                    ? undefined
-                    : t('growth.range', {
-                        min: formatNumber(m.min),
-                        max: formatNumber(m.max),
-                        unit: m.unit,
-                      })
-                }
-              >
-                <NumberStepper
-                  value={parseLocaleNumber(form[m.key])}
-                  onChange={(next) => set(m.key)(next === null ? '' : String(next))}
-                  step={m.step}
-                  start={m.start}
-                  unit={m.unit}
-                />
-              </Field>
+                onChange={set(m.key)}
+              />
             ))}
             <TextField
               label={t('common.notes')}

@@ -27,7 +27,7 @@ public static class FussyPatterns
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(clock);
         var localTimes = events
-            .Where(item => item.TypeKey == TypeKey && item.StartedAt <= now)
+            .Where(item => CountsUpTo(item, now))
             .Select(item => clock.ToLocal(item.StartedAt));
         return RecurringTimeOfDayPattern.Detect(localTimes, clock.DateOf(now), options);
     }
@@ -37,10 +37,17 @@ public static class FussyPatterns
     {
         ArgumentNullException.ThrowIfNull(events);
         return events
-            .Where(item => item.TypeKey == TypeKey && item.StartedAt <= now)
+            .Where(item => CountsUpTo(item, now))
             .Select(item => (DateTimeOffset?)item.StartedAt)
             .Max();
     }
+
+    /// <summary>
+    /// A fussy spell started up to <paramref name="now"/> that counts as crying: a spell a parent marked "Not crying"
+    /// (<see cref="Events.CryDetection.IsConfirmedNotCrying"/>) neither builds the pattern nor handles a window.
+    /// </summary>
+    private static bool CountsUpTo(ObservedEvent item, DateTimeOffset now) =>
+        item.TypeKey == TypeKey && item.StartedAt <= now && !item.ConfirmedNotCrying;
 
     /// <summary>Whether a fussy spell logged at <paramref name="lastLoggedAt"/> handles the window starting at <paramref name="windowStart"/>.</summary>
     public static bool IsHandled(DateTimeOffset windowStart, DateTimeOffset? lastLoggedAt) =>

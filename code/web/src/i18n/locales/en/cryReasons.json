@@ -1,0 +1,80 @@
+{
+  "cryReasons": {
+    "entry": "Why is she crying?",
+    "title": "Why is she crying?",
+    "redFlags": {
+      "label": "When to call for help",
+      "title": "Call your pediatrician or emergency services if she has:",
+      "fever": "A fever. Babies under 3 months with a fever need a call right away.",
+      "inconsolable": "Crying that you cannot soothe",
+      "refusingFeeds": "Refusing feeds",
+      "unusualSleepiness": "Unusual sleepiness, or is hard to wake",
+      "bulgingOrStiffFontanelle": "A bulging or stiff soft spot on the head"
+    },
+    "suggests": {
+      "title": "What your log suggests",
+      "causes": {
+        "hunger": "Hunger",
+        "sleepy": "Sleepiness",
+        "diaper": "Diaper",
+        "gas": "Gas",
+        "comfort": "Comfort"
+      },
+      "levels": {
+        "likely": "Likely",
+        "possible": "Possible",
+        "unlikely": "Unlikely"
+      },
+      "facts": {
+        "sinceLastFeed": "Last fed {{since}} ago.",
+        "sinceLastFeedUsual": "Last fed {{since}} ago; she usually goes about {{usual}}.",
+        "sinceLastFeedSmaller": "Last fed {{since}} ago; that feed was smaller than usual, so she may want more sooner.",
+        "feedingNow": "A feed is running, started {{since}} ago.",
+        "awakeFor": "Awake for {{since}}.",
+        "awakeForUsual": "Awake for {{since}}; she usually stays up about {{usual}}.",
+        "nightTime": "It is night time.",
+        "sinceLastDiaper": "Last diaper {{since}} ago.",
+        "sinceLastDiaperUsual": "Last diaper {{since}} ago; she usually goes about {{usual}}.",
+        "dirtyDueAfterFeed": "A dirty diaper often comes about now after a feed.",
+        "dirtyDueGap": "A dirty diaper may come around {{time}}.",
+        "recentFeedNoBurp": "Fed {{since}} ago, with no burp logged since.",
+        "reliefAfterFeed": "Fed {{since}} ago, and a burp or massage was logged.",
+        "bellyPattern": "Belly pain often shows up around {{time}}.",
+        "eveningFussyPattern": "Fussiness often starts around {{time}}.",
+        "eveningFussy": "Evenings are a common fussy time at this age.",
+        "noLog": "Not enough logged yet.",
+        "asleep": "A sleep timer is still running, so the log may be behind."
+      },
+      "try": {
+        "hunger": "Try offering a feed.",
+        "sleepy": "Try dimming the room and starting to wind down.",
+        "diaper": "Try checking the diaper.",
+        "gas": "Try holding her upright, burping her or a gentle belly massage.",
+        "comfort": "Try holding her skin to skin, a snug swaddle or gentle rocking, with soft white noise."
+      },
+      "helped": "Helped {{helped}} of your last {{total}} times",
+      "shortcuts": {
+        "hunger": "Log a feed",
+        "diaper": "Log a diaper",
+        "gas": "Start belly massage"
+      }
+    },
+    "worked": {
+      "title": "What worked?",
+      "hint": "Optional. Choosing one logs this crying spell.",
+      "options": {
+        "fed": "Fed",
+        "changedDiaper": "Changed diaper",
+        "slept": "Slept",
+        "burped": "Burped",
+        "held": "Held",
+        "rocked": "Rocked",
+        "pacifier": "Pacifier",
+        "massage": "Massage",
+        "nothingYet": "Nothing yet"
+      }
+    },
+    "toast": "Crying spell logged, {{helped}}",
+    "footer": "This list only uses what you have logged. It is not a diagnosis or medical advice, and Lotties is not a medical device."
+  }
+}

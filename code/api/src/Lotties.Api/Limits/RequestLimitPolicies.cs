@@ -21,6 +21,9 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of the anonymous snooze/dismiss route (per remote address).</summary>
     public const string PushAction = "push-action";
 
+    /// <summary>Rate limit policy of the project board routes (per user, or per board API key).</summary>
+    public const string Board = "board";
+
     /// <summary>
     /// Gives an import endpoint the import body size limit (<see cref="RequestLimitsOptions.ImportMaxRequestBodyBytes"/>),
     /// timeout and rate limit instead of the defaults.
@@ -34,6 +37,21 @@ public static class RequestLimitPolicies
         endpoint.RequireRateLimiting(Import);
         return endpoint;
     }
+}
+
+/// <summary>
+/// Endpoint metadata: a project board route, with the board body size limit
+/// (<see cref="RequestLimitsOptions.BoardMaxRequestBodyBytes"/>, or <see cref="RequestLimitsOptions.BoardBulkMaxRequestBodyBytes"/> for the bulk import).
+/// </summary>
+public sealed class BoardRequestLimitsMetadata
+{
+    private BoardRequestLimitsMetadata(bool isBulk) => IsBulk = isBulk;
+
+    public static BoardRequestLimitsMetadata Standard { get; } = new(isBulk: false);
+
+    public static BoardRequestLimitsMetadata Bulk { get; } = new(isBulk: true);
+
+    public bool IsBulk { get; }
 }
 
 /// <summary>Endpoint metadata: the endpoint uses the import request limits.</summary>

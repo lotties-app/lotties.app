@@ -30,6 +30,18 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"lotties-tests-{Guid.NewGuid():N}.db");
 
+    private readonly TestConsentGrant _consentGrant = new();
+
+    /// <summary>
+    /// Whether users the host creates from now on get a current core consent (on by default: that is how the whole suite passes
+    /// the consent gate unchanged, see <see cref="TestConsentGrant"/>). The consent tests turn it off.
+    /// </summary>
+    public bool GrantConsentToNewUsers
+    {
+        get => _consentGrant.Enabled;
+        set => _consentGrant.Enabled = value;
+    }
+
     private string ConnectionString => new SqliteConnectionStringBuilder
     {
         DataSource = _databasePath,
@@ -54,8 +66,23 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(ApiEnvironments.Testing);
+
+        // The project board is off by default in production; on here so the endpoint matrix and the board tests reach
+        // its routes (BoardAuthorizationTests turns it off again to check the 404); its MCP endpoint too (BoardMcpHttpTests).
+        builder.UseSetting("Board:Enabled", "true");
+        builder.UseSetting("Board:Mcp:Enabled", "true");
+        // A loaded CI runner can hold a request for minutes before it runs; the production 30 s request timeout would abort
+        // it ("The application aborted the request"). RequestLimitTests checks the real defaults on a host of its own.
+        builder.UseSetting("RequestLimits:RequestTimeoutSeconds", "600");
+        builder.UseSetting("RequestLimits:ImportRequestTimeoutSeconds", "600");
         builder.ConfigureTestServices(ReplaceDatabaseAndAuthentication);
     }
+
+    /// <summary>
+    /// The suite runs hundreds of in-memory hosts at once, so on a small CI runner a request can wait minutes for a CPU slice:
+    /// the default 100 s client timeout turned that into failures that say nothing about the code under test.
+    /// </summary>
+    protected override void ConfigureClient(HttpClient client) => client.Timeout = TimeSpan.FromMinutes(10);
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -75,10 +102,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         services.RemoveAll<DbContextOptions<LottiesDbContext>>();
         services.RemoveAll<DbContextOptions>();
+        // Since EF Core 9 AddDbContext also registers its options callback (UseNpgsql) separately and every registered
+        // callback runs: without removing it, both providers would be configured.
+        services.RemoveAll<IDbContextOptionsConfiguration<LottiesDbContext>>();
         services.AddDbContext<LottiesDbContext>(options => options
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()
-            .ReplaceService<IModelCustomizer, SqliteModelCustomizer>());
+            .ReplaceService<IModelCustomizer, SqliteModelCustomizer>()
+            .AddInterceptors(_consentGrant));
         services.AddSingleton<IUniqueViolationDetector, SqliteUniqueViolationDetector>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
         services.PostConfigure<AuthenticationOptions>(UseTestSchemeByDefault);

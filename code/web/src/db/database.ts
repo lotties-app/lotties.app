@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable, type Table, type Transaction } from 'dexie';
 import type {
+  AgeNormsCache,
   Appointment,
   CareProvider,
   Baby,
@@ -111,6 +112,14 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       careProviders: 'id, babyId, [babyId+updatedAt]',
     },
   },
+  {
+    // Age norms: the published norms served by the API (docs/design/28-age-norms.md), cached for
+    // offline use like the vaccine schedule (one row, not per baby).
+    version: 10,
+    stores: {
+      ageNorms: 'key',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -129,6 +138,7 @@ export class BabyRoutineDb extends Dexie {
   declare noteReads: EntityTable<NoteRead, 'noteId'>;
   declare vaccinations: EntityTable<Vaccination, 'id'>;
   declare vaccineSchedules: EntityTable<VaccineScheduleCache, 'profile'>;
+  declare ageNorms: EntityTable<AgeNormsCache, 'key'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

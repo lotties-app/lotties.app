@@ -37,7 +37,7 @@ function renderAt(route: string, ui: ReactElement) {
 describe('Day preview (developer route)', () => {
   it.each([
     ['full', 1, /Night sleep/],
-    ['empty', 0, /Nothing logged yet/],
+    ['empty', 0, /No events this day yet/],
   ])('seeds and renders the %s scenario', async (state, offset, expected) => {
     renderAt(`/dev/day?state=${state}&offset=${offset}`, <DayPreview />);
     await waitFor(() => expect(screen.getAllByText(expected).length).toBeGreaterThan(0), {

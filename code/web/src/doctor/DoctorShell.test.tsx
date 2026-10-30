@@ -2,6 +2,8 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import type { BabyRoutineDb } from '../db/database';
 import type { Baby } from '../db/models';
 import { UserMenu } from '../layout/UserMenu';
@@ -291,6 +293,20 @@ describe('landing and the mode switch', () => {
 });
 
 describe('the doctor settings', () => {
+  it('her account menu shows the app version and opens About in her shell', async () => {
+    await renderDashboard(db, '/doctor/settings', [LIA], handler);
+    await screen.findByRole('heading', { name: 'Settings', level: 1 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'User menu' }));
+    const menu = await screen.findByRole('menu');
+    const about = within(menu).getByRole('menuitem', { name: /About/ });
+    expect(about.textContent).toContain(displayVersion(readBuildInfo().version));
+    fireEvent.click(about);
+
+    expect(await screen.findByRole('heading', { name: 'About', level: 1 })).toBeTruthy();
+    expect(screen.getByText('App (this device)')).toBeTruthy();
+  });
+
   it('show her account settings only, never a baby of the family', async () => {
     await renderDashboard(db, '/doctor/settings', [MINE, LIA], handler);
 
@@ -298,5 +314,29 @@ describe('the doctor settings', () => {
     expect(screen.getByRole('button', { name: "I'm a healthcare professional" })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Members & invites' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Medications' })).toBeNull();
+  });
+
+  it('let a doctor-only user download her own data and delete her account (store rule)', async () => {
+    const { calls } = await renderDashboard(db, '/doctor/settings#account', [LIA], (call) =>
+      call.path === '/api/v1/me/deletion-preview'
+        ? {
+            deletedBabies: [],
+            sharedBabies: [{ id: LIA.id, name: LIA.name }],
+            blockedBabies: [],
+            canDelete: true,
+            identityRemovable: false,
+          }
+        : handler(call),
+    );
+
+    expect(await screen.findByRole('button', { name: 'Account and data' })).toBeTruthy();
+    expect(screen.getByText(/Your patients' records are not included/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Privacy policy/ }).getAttribute('href')).toBe(
+      '/doctor/privacy',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+    expect(await screen.findByText(/You will leave these babies/)).toBeTruthy();
+    expect(screen.getByText(/This server does not delete your sign-in account/)).toBeTruthy();
+    expect(calls.some((call) => call.method === 'DELETE')).toBe(false);
   });
 });

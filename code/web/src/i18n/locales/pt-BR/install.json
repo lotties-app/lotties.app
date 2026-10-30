@@ -1,0 +1,113 @@
+{
+  "install": {
+    "title": "Instalar o Lotties",
+    "intro": "O Lotties é um app web: você o adiciona pelo navegador, sem loja de apps. Instalado, ele abre em tela cheia pelo próprio ícone, como qualquer outro app.",
+    "native": "Você está usando o app Lotties. Não há nada para instalar.",
+    "installed": "Você já está usando o app instalado.",
+    "storeNote": "Se a loja de apps do seu celular oferecer os apps do Lotties, eles são uma alternativa à instalação pelo navegador.",
+    "fullGuide": "Ver as instruções completas",
+    "button": {
+      "install": "Instalar app",
+      "addToHomeScreen": "Adicionar à Tela de Início",
+      "howTo": "Como instalar",
+      "accepted": "Instalando o Lotties. Abra pelo novo ícone.",
+      "dismissed": "Não instalado. Você pode instalar depois por aqui."
+    },
+    "sheet": {
+      "titleIos": "Adicionar o Lotties à Tela de Início",
+      "title": "Instalar o Lotties",
+      "iosHonest": "A Apple não permite que um site se instale sozinho no iPhone e no iPad, então são três toques no navegador.",
+      "safariTip": "Se não aparecer Adicionar à Tela de Início, abra lotties.app no Safari: é o caminho mais confiável.",
+      "close": "Fechar"
+    },
+    "guide": {
+      "iosSafari": {
+        "s1": "Toque no botão Compartilhar (um quadrado com uma seta para cima). Ele fica na barra inferior da tela; nas versões mais novas do iOS pode estar dentro do botão Mais (•••).",
+        "s1Tablet": "Toque no botão Compartilhar (um quadrado com uma seta para cima) no canto superior direito, ao lado da barra de endereço.",
+        "s2": "Role a lista para baixo e toque em Adicionar à Tela de Início.",
+        "s3": "Toque em Adicionar e abra o Lotties pelo novo ícone na Tela de Início."
+      },
+      "iosOther": {
+        "s1": "Toque no botão Compartilhar, no canto superior direito ao lado da barra de endereço ou dentro do menu do navegador."
+      },
+      "inApp": {
+        "s1": "Esta página está aberta dentro de outro app. Toque no menu desse app (muitas vezes ••• no canto superior direito).",
+        "s2": "Escolha Abrir no navegador: Safari no iPhone e no iPad, Chrome no Android.",
+        "s3": "Depois siga os passos desse navegador."
+      },
+      "androidChrome": {
+        "s1": "Toque no menu (três pontos) no canto superior direito.",
+        "s2": "Toque em Instalar app (em alguns celulares aparece Adicionar à tela inicial).",
+        "s3": "Toque em Instalar e abra o Lotties pela tela inicial ou pela lista de apps."
+      },
+      "androidSamsung": {
+        "s1": "Toque no menu (três linhas) no canto inferior direito.",
+        "s2": "Toque em Adicionar página a e depois em Tela inicial. Se aparecer um ícone de instalar na barra de endereço, você pode tocar nele.",
+        "s3": "Toque em Adicionar e abra o Lotties pela tela inicial."
+      },
+      "androidFirefox": {
+        "s1": "Toque no menu (três pontos).",
+        "s2": "Toque em Adicionar à tela inicial (pode aparecer Instalar).",
+        "s3": "Confirme e abra o Lotties pela tela inicial."
+      },
+      "desktopChromium": {
+        "s1": "Procure o ícone de instalar no fim da barra de endereço (uma tela com uma seta para baixo).",
+        "s2": "Clique nele e depois em Instalar. Não tem ícone? Abra o menu do navegador e procure Instalar Lotties (no Chrome em Transmitir, salvar e compartilhar; no Edge em Aplicativos).",
+        "s3": "O Lotties abre na própria janela. Você pode fixá-lo na barra de tarefas ou no Dock."
+      },
+      "macSafari": {
+        "s1": "Na barra de menus no alto da tela, clique em Arquivo.",
+        "s2": "Clique em Adicionar ao Dock.",
+        "s3": "Clique em Adicionar e abra o Lotties pelo Dock."
+      },
+      "unsupported": {
+        "s1": "Este navegador não instala apps a partir de um site.",
+        "s2": "Abra lotties.app no Chrome ou no Edge (ou no Safari, no Mac) e instale por lá."
+      }
+    },
+    "sections": {
+      "ios": "iPhone e iPad",
+      "android": "Android",
+      "desktop": "Computador",
+      "troubleshooting": "Problemas comuns"
+    },
+    "ios": {
+      "requirement": "As notificações precisam do iOS ou iPadOS 16.4 ou mais recente.",
+      "ipad": "No iPad, o botão Compartilhar fica no canto superior direito, ao lado da barra de endereço.",
+      "otherBrowsers": "Nas versões recentes do iOS, Chrome, Edge e Firefox também adicionam o Lotties à Tela de Início pelo menu Compartilhar. O Safari é o mais confiável.",
+      "whyTitle": "Por que instalar no iPhone e no iPad",
+      "why": "No iPhone e no iPad, as notificações só funcionam no app adicionado à Tela de Início (iOS e iPadOS 16.4 ou mais recente), nunca numa aba do navegador. O Safari também pode apagar o que um site guarda no aparelho depois de cerca de uma semana sem visitas; o app da Tela de Início mantém esses dados."
+    },
+    "android": {
+      "notifications": "Depois de instalar, permita as notificações quando o Lotties pedir, ou ative depois em Configurações.",
+      "otherBrowsers": "Outros navegadores",
+      "samsung": "Samsung Internet",
+      "firefox": "Firefox"
+    },
+    "desktop": {
+      "chromium": "Chrome e Edge",
+      "safari": "Safari no Mac"
+    },
+    "trouble": {
+      "iosMissingTitle": "Não aparece Adicionar à Tela de Início (iPhone, iPad)",
+      "iosMissing": "Use o botão Compartilhar do próprio navegador, não um botão de compartilhar dentro da página, e role a lista para baixo: a opção costuma ficar abaixo das primeiras linhas. A Navegação Privada esconde a opção, então abra uma aba normal. Continua sem aparecer? Abra lotties.app no Safari.",
+      "androidMissingTitle": "A opção de instalar não aparece (Android)",
+      "androidMissing": "Abra a página no próprio Chrome, não dentro do Instagram, do Facebook ou do navegador de outro app: use o menu desse app e escolha Abrir no Chrome. Se o Lotties já estiver instalado, a opção não aparece: procure-o na lista de apps.",
+      "updateTitle": "Como atualizar?",
+      "update": "O app instalado se atualiza sozinho quando você o abre com internet. Para verificar na hora, abra o Hub e depois Buscar atualizações.",
+      "uninstallTitle": "Como desinstalar?",
+      "uninstall": "Celular ou tablet: toque e segure o ícone do Lotties e escolha Remover App ou Desinstalar. Computador: abra o Lotties, abra o menu na barra de título e escolha Desinstalar; no Mac, arraste o Lotties para fora do Dock e apague-o da pasta Aplicativos. O que está guardado só neste aparelho vai junto; o que já sincronizou continua na sua conta."
+    },
+    "landing": {
+      "title": "Instale no seu celular",
+      "body": "Adicione o Lotties ao seu iPhone ou Android: ele abre em tela cheia pelo próprio ícone, e no iPhone é assim que as notificações funcionam.",
+      "soon": "Queremos publicar o Lotties na App Store e no Google Play, mas isso depende da aprovação das lojas, que está em andamento. Estamos preparando também a instalação direta no Android, sem passar pela loja. Enquanto isso, tanto no Android quanto no iPhone, o Lotties funciona instalado pelo navegador, como um PWA.",
+      "guide": "Passo a passo"
+    },
+    "publicNav": {
+      "back": "Voltar",
+      "home": "Início",
+      "brandHome": "Página inicial do Lotties"
+    }
+  }
+}

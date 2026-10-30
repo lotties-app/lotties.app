@@ -20,7 +20,8 @@ namespace Lotties.Application.Notifications.Dispatching;
 /// the recipients who want it, daylight saving applied per event; the diaper predictions once, elapsed time needs no
 /// zone); the upcoming appointments within a week only when one wants appointment reminders; the doctor suggestions of
 /// the last 24 hours only when an Owner or Parent wants them; the vaccine schedule, the baby's vaccine profile and its
-/// records that are not deleted only when an Owner or Parent wants vaccine reminders; names only when one has show-names on.
+/// records that are not deleted only when an Owner or Parent wants vaccine reminders; the cry monitor's spells of the last
+/// 10 minutes (and the earlier ones still going then) only when one wants cry alerts; names only when one has show-names on.
 /// </summary>
 internal sealed class NotificationPlanInputLoader(
     IAppointmentRepository appointments,
@@ -34,6 +35,7 @@ internal sealed class NotificationPlanInputLoader(
     INotificationActionRepository actions,
     IVaccinationRepository vaccinations,
     IVaccineScheduleProvider vaccineSchedule,
+    IDetectedCrySpellRepository crySpells,
     PredictionOptions predictionOptions)
 {
     public async Task<NotificationPlanInput> LoadAsync(
@@ -63,6 +65,9 @@ internal sealed class NotificationPlanInputLoader(
             ? await doctorSuggestions.ListSinceAsync(babyId, now - NotificationRules.DoctorSuggestionLifetime, cancellationToken)
             : [];
         var vaccines = plannable.Any(WantsVaccineReminders) ? await LoadVaccinesAsync(babyId, cancellationToken) : null;
+        var spells = plannable.Any(recipient => recipient.Preferences.CryDetected)
+            ? await crySpells.ListAsync(babyId, now - NotificationRules.CryDetectedStaleCutoff, now - NotificationRules.CryDetectedOverlapLookBack, cancellationToken)
+            : [];
         return new NotificationPlanInput(
             now,
             babyId,
@@ -79,7 +84,8 @@ internal sealed class NotificationPlanInputLoader(
             claims.SentHeadsUps,
             upcoming,
             suggestions,
-            vaccines);
+            vaccines,
+            spells);
     }
 
     private static bool WantsVaccineReminders(NotificationRecipient recipient) =>

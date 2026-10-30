@@ -4,8 +4,12 @@ import { Box, Paper, Typography, useTheme } from '@mui/material';
 import { formatDate, formatNumber } from '../i18n/format';
 import { CHART_WIDTH, labelSize } from './chartScale';
 import type { MeasurementDto } from '../sync/contract';
+import { useUnits } from '../units/useUnits';
 import {
+  axisValue,
   metricLabel,
+  metricText,
+  metricUnitLabel,
   seriesFor,
   valueAxis,
   type MetricInfo,
@@ -49,7 +53,8 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
   const { ref, width } = useRenderedWidth();
   const font = labelSize(width);
   const PAD = padding(font);
-  const axis = valueAxis(points);
+  // The axis runs in the person's units (decimal pounds, inches); the points keep their stored value.
+  const axis = valueAxis(points.map((p) => ({ ...p, value: axisValue(metric, p.value) })));
   const first = points[0];
   const last = points[points.length - 1];
   const t0 = dayMs(first.date);
@@ -58,7 +63,8 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
   const innerH = H - PAD.top - PAD.bottom;
   const x = (date: string) =>
     PAD.left + (t1 === t0 ? innerW / 2 : ((dayMs(date) - t0) / (t1 - t0)) * innerW);
-  const y = (v: number) => PAD.top + innerH - ((v - axis.min) / (axis.max - axis.min)) * innerH;
+  const y = (stored: number) => yAxis(axisValue(metric, stored));
+  const yAxis = (v: number) => PAD.top + innerH - ((v - axis.min) / (axis.max - axis.min)) * innerH;
   const label = t('growth.chartDescription', {
     label: metricLabel(metric),
     from: shortDate(first.date),
@@ -66,8 +72,7 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
     points: points
       .map((p) =>
         t('growth.chartPoint', {
-          value: valueText(p.value),
-          unit: metric.unit,
+          value: metricText(metric, p.value),
           date: shortDate(p.date),
         }),
       )
@@ -89,13 +94,13 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
           <line
             x1={PAD.left}
             x2={W - PAD.right}
-            y1={y(tick)}
-            y2={y(tick)}
+            y1={yAxis(tick)}
+            y2={yAxis(tick)}
             stroke={theme.palette.divider}
           />
           <text
             x={PAD.left - 6}
-            y={y(tick)}
+            y={yAxis(tick)}
             textAnchor="end"
             dominantBaseline="middle"
             fontSize={font}
@@ -137,8 +142,7 @@ function Plot({ metric, points }: { metric: MetricInfo; points: SeriesPoint[] })
           <title>
             {t('growth.pointTitle', {
               date: shortDate(p.date),
-              value: valueText(p.value),
-              unit: metric.unit,
+              value: metricText(metric, p.value),
             })}
           </title>
         </circle>
@@ -156,6 +160,8 @@ export function GrowthChart({
   measurements: MeasurementDto[];
 }) {
   const { t } = useTranslation();
+  const units = useUnits();
+  const unit = metricUnitLabel(metric, units.labels.length);
   const points = seriesFor(measurements, metric.key);
   const label = metricLabel(metric);
   const latest = points[points.length - 1];
@@ -168,11 +174,11 @@ export function GrowthChart({
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
         <Typography variant="subtitle1" component="h3">
-          {t('growth.metricLabel', { label, unit: metric.unit })}
+          {t('growth.metricLabel', { label, unit })}
         </Typography>
         {latest && (
           <Typography variant="body2" color="text.secondary">
-            {t('growth.latest', { value: valueText(latest.value), unit: metric.unit })}
+            {t('growth.latest', { value: metricText(metric, latest.value) })}
           </Typography>
         )}
       </Box>

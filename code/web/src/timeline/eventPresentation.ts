@@ -14,7 +14,7 @@ import type { CategoryName } from '../theme/tokens';
 import type { IconName } from '../ui/icons';
 import { getOwn } from '../util/ownProperty';
 import { medicationNames, payloadParts } from './payloadSummary';
-import { formatNumber, formatUnit } from '../i18n/format';
+import { formatNumber, formatMetricUnit } from '../i18n/format';
 
 /** The field whose option names the event on a Day row (`Nap`, `Bottle`, `Wet`). */
 const TITLE_FIELD: ReadonlyMap<string, string> = new Map([
@@ -44,7 +44,7 @@ function medicationDetail(event: BabyEvent, prescriptions: readonly Prescription
       return [
         m.dose ? `${formatNumber(m.dose.amount)} ${m.dose.unit}` : null,
         m.kgUsed !== undefined
-          ? t('medications.day.kgUsed', { kg: formatUnit(m.kgUsed, 'kilogram') })
+          ? t('medications.day.kgUsed', { kg: formatMetricUnit(m.kgUsed, 'kilogram') })
           : null,
         m.prescriptionId
           ? prescription?.indication

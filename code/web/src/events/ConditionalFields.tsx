@@ -20,6 +20,11 @@ interface Props {
   remembered?: Readonly<Record<string, string | number | boolean>>;
   /** Bottle amount chips for the `amount_ml` field (feeding only). */
   bottle?: BottleSuggestions;
+  /**
+   * Stopping a timed bottle: the drunk amount also offers "left in the bottle" chips, none above
+   * this level (where its open stretch started; `null`: unknown).
+   */
+  leftCeiling?: number | null;
   onChange: (key: string, value: string | boolean) => void;
 }
 
@@ -60,6 +65,7 @@ export function ConditionalFields({
   errors,
   remembered,
   bottle,
+  leftCeiling,
   onChange,
 }: Props) {
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -82,6 +88,7 @@ export function ConditionalFields({
           remembered={remembered ? getOwn(remembered, field.key) : undefined}
           {...(bottle && field.key === BOTTLE_AMOUNT_KEY ? { bottle } : {})}
           prepared={preparedOf(values)}
+          {...(leftCeiling !== undefined ? { leftCeiling } : {})}
           onChange={(value) => onChange(field.key, value)}
         />
       </Box>

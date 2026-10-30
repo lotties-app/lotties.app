@@ -28,6 +28,7 @@ const KINDS = {
   appointment_reminder: true,
   doctor_suggestion: true,
   vaccine_due: true,
+  cry_detected: true,
   test: true,
 } as const;
 export type PushKind = keyof typeof KINDS;
@@ -138,6 +139,16 @@ export interface VaccinePayload extends PayloadBase {
   token?: string;
 }
 
+/**
+ * The cry monitor heard crying (docs/design/31-cry-detector-spike.md section 8): `at` is when the
+ * spell started. Codes only: never a sound, a score or a detail of the spell.
+ */
+export interface CryDetectedPayload extends PayloadBase {
+  kind: 'cry_detected';
+  babyId: string;
+  token?: string;
+}
+
 export interface TestPayload extends PayloadBase {
   kind: 'test';
 }
@@ -152,6 +163,7 @@ export type PushPayload =
   | AppointmentPayload
   | DoctorSuggestionPayload
   | VaccinePayload
+  | CryDetectedPayload
   | TestPayload;
 
 /** The kinds about a baby that open Now and carry nothing but codes (not a dose). */
@@ -162,10 +174,16 @@ const BABY_ONLY_KINDS: ReadonlySet<string> = new Set([
   'fussy_pattern',
   'diaper_wet_headsup',
   'diaper_dirty_headsup',
+  'cry_detected',
 ]);
 
 type BabyOnlyKind = (
-  NapPayload | BellyPainPayload | OvertiredPayload | FussyPayload | DiaperPayload
+  | NapPayload
+  | BellyPainPayload
+  | OvertiredPayload
+  | FussyPayload
+  | DiaperPayload
+  | CryDetectedPayload
 )['kind'];
 
 const isBabyOnlyKind = (kind: string): kind is BabyOnlyKind => BABY_ONLY_KINDS.has(kind);

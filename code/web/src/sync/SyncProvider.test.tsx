@@ -31,13 +31,15 @@ function Probe() {
   );
 }
 
-function renderWith(isAuthenticated: boolean, children: ReactNode) {
+function renderWith(isAuthenticated: boolean, children: ReactNode, enabled = true) {
   const fake = fakeApi();
   render(
     <AuthContext value={fakeAuth({ isAuthenticated })}>
       <ApiClientContext value={fake.api}>
         <DatabaseProvider db={db}>
-          <SyncProvider options={{ locks: null, isOnline: () => true }}>{children}</SyncProvider>
+          <SyncProvider options={{ locks: null, isOnline: () => true }} enabled={enabled}>
+            {children}
+          </SyncProvider>
         </DatabaseProvider>
       </ApiClientContext>
     </AuthContext>,
@@ -55,6 +57,13 @@ describe('SyncProvider', () => {
 
   it('does not sync while signed out', async () => {
     const { calls } = renderWith(false, <Probe />);
+
+    expect(await screen.findByText('idle:0:')).toBeTruthy();
+    expect(calls).toHaveLength(0);
+  });
+
+  it('does not sync while it is disabled (no current consent: the server would refuse every baby route)', async () => {
+    const { calls } = renderWith(true, <Probe />, false);
 
     expect(await screen.findByText('idle:0:')).toBeTruthy();
     expect(calls).toHaveLength(0);

@@ -1,9 +1,10 @@
 # 20. Store readiness (Apple App Store and Google Play)
 
-Status: checklist and drafts, 2026-10-22. Not legal advice: the policy text and the licence points below must be read by
-the owner and, before the first public release, by a lawyer (the data is health-adjacent data about children, and the
-law that applies first is Brazil's LGPD, plus the store rules). Technical decisions for the apps are in
-docs/design/12-mobile-capacitor.md; push in docs/design/19-native-push.md.
+Status: checklist and drafts, 2026-10-22; privacy policy published as a page and form answers checked against the data
+flow audit on 2026-10-23 (docs/design/33-privacy-audit.md). Not legal advice: the policy text and the licence points
+below must be read by the owner and, before the first public release, by a lawyer (the data is health data about
+children, and the law that applies first is Brazil's LGPD, plus the store rules). Technical decisions for the apps are
+in docs/design/12-mobile-capacitor.md; push in docs/design/19-native-push.md.
 
 ## 1. What the stores need, and where we stand
 
@@ -11,8 +12,8 @@ docs/design/12-mobile-capacitor.md; push in docs/design/19-native-push.md.
 | --- | --- | --- | --- |
 | Developer account | Apple Developer Program (about US$99/year; an individual account is enough, an organisation needs a D-U-N-S number) | Play Console (US$25 once; a **personal** account created after Nov 2023 must run a closed test with at least 12 testers for 14 days before it can publish) | owner: none yet |
 | Account deletion in the app | 5.1.1(v) | Account deletion policy | **built** (branch `feat/account-deletion`): Settings > Account and data |
-| Account deletion link on the web | not needed | the Data safety form asks for a URL where users can request deletion | todo: a public page, see section 5 |
-| Privacy policy URL | required, in the app and in App Store Connect | required, in the listing and in the app | draft in section 4; page todo |
+| Account deletion link on the web | not needed | the Data safety form asks for a URL where users can request deletion | todo: a public page, see section 5 (until then `https://lotties.app/privacy#privacy-rights`, owner to decide) |
+| Privacy policy URL | required, in the app and in App Store Connect | required, in the listing and in the app | **built**: `https://lotties.app/privacy` (public, offline, en and pt-BR; Hub, About, Settings, landing footer); legal review and the owner's values pending (docs/PRIVACY-OWNER-CHECKLIST.md) |
 | Data disclosure | App Privacy "nutrition labels" | Data safety form | answers in section 3 |
 | Health apps | no HealthKit, no medical-device claims (1.4.1: no inaccurate data, medication reminders must not claim to dose) | Health apps declaration form (the app is not a medical device, no Health Connect) | answers in section 6 |
 | Sign-in | 4.8 Login Services applies only when the app offers a third-party/social login: it does not (own Keycloak realm) | n/a | nothing to do |
@@ -29,110 +30,110 @@ docs/design/12-mobile-capacitor.md; push in docs/design/19-native-push.md.
 babies other people keep, the user's membership, private notes, reminders, push subscriptions and doctor profile go
 and what the user added stays without a name (shown as "Former member"). The only owner of a baby others still use must
 transfer ownership first (409). The sign-in account at Keycloak is deleted too when the service account is configured
-(docs/DEPLOY.md "Account deletion (Keycloak)"). In the app: Settings > Account and data, with a preview of what is
+(docs/DEPLOY.md "Account deletion (Keycloak)"); the home lab kit does not pass `AUTH_ADMIN_CLIENT_ID/SECRET` yet, so in
+production the app says the sign-in account stays (audit gap G5). Two more gaps from the audit: saved doctors and
+clinics are not erased (and may make the deletion fail, G1), and a doctor-only account has no Account and data
+section in `/doctor/settings` (G2). In the app: Settings > Account and data, with a preview of what is
 deleted, a data download first on the web, and a permanent-action confirmation. Reviewers test this: keep the demo
 account deletable and recreatable.
 
 ## 3. Data inventory and form answers
 
-What Lotties stores, from the data model (docs/SPEC.md, docs/design/09 section 5), and what it does not:
+The complete inventory, with purposes, proposed legal bases, retention, who sees what and every recipient, is the audit:
+docs/design/33-privacy-audit.md (sections 2 to 4). Summary for the forms:
 
 | Data | Where | Purpose | Linked to the user |
 | --- | --- | --- | --- |
-| Name and email, password | Keycloak (our own identity server) | sign-in. The API never reads or stores the email; it keeps only a display name from the token | yes |
-| Baby name, birth date | API database | the product | yes |
-| Events (feeds, sleep, diapers, notes), measurements (weight, height), medications, prescriptions and doses, appointments, vaccinations, notes of doctors | API database | the product | yes |
-| Push token / Web Push endpoint, device label, language, time zone | API database | reminders | yes |
-| Access log of doctors' reads of a baby | API database | transparency to the parents | yes |
+| Name, email, password (the realm's registration fields) | Keycloak (our own identity server, home lab) | sign-in. The API never reads or stores the email; it keeps an internal id, the OIDC issuer and `sub`, and a display name | yes |
+| Baby profile: name, birth date, vaccine network, gestational age, mother's RSV vaccination | API database | the product | yes |
+| Events (feeds, sleep, diapers, crying, milestones, free-text notes), health records (medications, prescriptions and doses, temperature, symptoms, measurements, vaccinations, appointments, formulas), doctors' notes and proposals | API database | the product | yes |
+| Care providers (other people's contact details entered by the family) | API database | contact directory | yes |
+| Professional profile (self-declared name, specialty, registration number) | API database | doctor access | yes |
+| Web Push endpoint and keys, device label, language, time zone, quiet hours | API database | reminders (opt-in per device) | yes |
+| Access log of doctors' reads of a baby (no expiry today) | API database | transparency to the parents | yes |
 | Notification delivery log (ids, kind, time, status; no text) | API database, purged after 14 days | reliability | yes |
-| IP address, request line | reverse-proxy and API logs on the owner's server | operating and securing the service | not used for tracking |
+| Internal ids, action and result codes | API logs (no IP, no request line, no content) | operating and debugging | not used for tracking |
+| Client IP, path, user agent | the web container's nginx access log (and Traefik's, if enabled) | operating and securing the service | not used for tracking |
 
-Not collected: advertising identifiers, location, contacts, photos, audio, browsing history, device fingerprint,
-crash/analytics SDK data (there is no analytics, no ad or crash SDK, no third-party script in the app). Nothing is sold
-or shared with third parties; processors are the owner's own server and, for push, Apple and Google's push services
-(they see timing and the generic text, see doc 19 section 8).
+Not collected: advertising identifiers, location, contacts, photos, audio (Alexa's audio stays with Amazon; the web cry
+monitor's audio never leaves the device, see below), browsing
+history, device fingerprint, crash/analytics SDK data (there is no analytics, no ad or crash SDK, no third-party script,
+font or CDN in the app; the CSP allows only our own origin and the identity provider). Nothing is sold. Recipients
+(docs/design/33 section 3): the browser push services (Google FCM, Mozilla, Apple, Microsoft: they receive an encrypted
+payload and cannot read it), Amazon for the opt-in Alexa skill (it hears the voice and speaks our answers, which carry
+the baby's name and log facts), BrasilAPI, ViaCEP and Nominatim for the address search (only the typed CEP or text, from
+our server), and the links the user taps (Google Maps, WhatsApp). The native apps have **no push** today (APNs/FCM is
+docs/design/19-native-push.md, not built).
 
 ### Apple App Privacy
 
 - Data used to track you: **none**. No tracking domains; no App Tracking Transparency prompt.
 - Data linked to you (all "App Functionality", none for advertising or analytics):
   - Contact Info: Name, Email Address (the sign-in account).
-  - Health & Fitness: Health (medications, vaccinations, doses, notes about the baby) and Fitness: no; **Other Data**
-    covers sleep and feeding logs. Declare Health because medication and vaccination records are health data (about the
-    child, entered by the parent).
-  - User Content: Other User Content (notes), and "Photos or Videos": none.
-  - Identifiers: User ID (the account id) and Device ID (the push token) for App Functionality.
+  - Health & Fitness: Health (medications, vaccinations, doses, temperatures, symptoms, growth, notes about the baby)
+    and Fitness: no; **Other Data** covers sleep and feeding logs. Declare Health because these are health data (about
+    the child, entered by the parent).
+  - User Content: Other User Content (notes, the doctors and clinics the family saves), and "Photos or Videos": none.
+  - Identifiers: User ID (the account id). **No Device ID**: the iOS app has no push token (native push is not built;
+    add Device ID when it ships).
   - Sensitive Info: none beyond the above.
-- Data not linked to you: none. Diagnostics, usage data, location: not collected.
+- Data not linked to you: none. Diagnostics, usage data, location: not collected by the app (App Store Connect's own
+  analytics and crash reports from users who opt in are Apple's, not an SDK of ours: owner to confirm the answer).
 
 ### Google Play Data safety
 
-- Data collected and shared: **collected yes, shared no** (no third-party sharing; the push services are a service
-  provider transfer, not sharing, but state the push token as collected).
+- Data collected and shared: **collected yes, shared no** (no third-party sharing by the Android app; the server's
+  Alexa answers go to Amazon only after the user links the skill, a user-initiated transfer: owner to confirm).
 - Types collected: Personal info (Name, Email address, User IDs), Health and fitness (Health info: medications,
-  vaccinations, sleep, feeding notes), App activity (in-app content the user creates: "Other user-generated content"),
-  Device or other IDs (push token).
+  vaccinations, temperatures, symptoms, growth, sleep and feeding logs), App activity (in-app content the user creates:
+  "Other user-generated content", which covers notes and saved care providers). **No device or other IDs** (no push
+  token in the Android app today; add it with native push).
 - Purposes: App functionality, Account management. None for analytics, advertising, personalisation or fraud.
-- Security: data is encrypted in transit (HTTPS only); users can request that data is deleted (in-app deletion + the web
-  page, section 5); the app follows the Families policy: **no** (not designed for children).
-- Is all collected data required? Name and email: required to have an account. Health info: optional features.
+- Security: data is encrypted in transit (HTTPS only); users can request that data is deleted (in-app deletion; the web
+  URL, section 5); the app follows the Families policy: **no** (not designed for children).
+- Is all collected data required? Name and email: required to have an account. Health info: optional (the user decides
+  what to record).
 
-## 4. Privacy policy (draft for the owner and a lawyer)
+**Cry monitor (built, web app only; docs/design/35-cry-engine.md section 8, audit section 12).** The web app asks for
+the microphone when a family member starts the cry monitor; the audio is analysed on the device and never stored or
+sent, which is **not "collected"** for Apple's App Privacy nor Google's Data safety (on-device, ephemeral processing;
+docs/design/31-cry-detector-spike.md section 6). What it saves is an ordinary crying spell, already covered by the
+sleep and feeding logs ("Other Data" / "Health info") above. The native apps do not offer it and request no
+microphone permission today, so **none of the answers above change**. When the native shell gets it (doc 31 CD10):
+add `NSMicrophoneUsageDescription` and `RECORD_AUDIO` (plus the foreground-service declaration on Android), keep
+"Audio Data: not collected" only if the native capture also never stores or sends audio, and review Apple 2.5.14 and
+Google's prominent disclosure and monitoring policies.
 
-To be published at `https://lotties.app/privacy` (public, no sign-in, English and Portuguese, linked from the landing
-footer, the sign-in page, Settings and both store listings). Replace the bracketed items. Plain language, because the
-readers are parents.
+**Community insights (planned, not built; docs/design/34-community-insights.md section 10).** The policy describes a
+future opt-in use of babies' records in pooled statistics as "not active yet". While it is off, **none of the answers
+above change**: do not declare it. Only when it is activated, add to both forms: "Community insights: optional, off
+by default, aggregated, computed on our own servers, not shared" (Apple: purpose App Functionality for Health &
+Fitness and Other Data; Google: still not shared, purpose App functionality, users can choose).
 
-> **Privacy policy of Lotties** (version 1, [date])
->
-> **Who we are.** Lotties is a free, open-source app to keep track of a baby's day (feeds, sleep, diapers, medicines,
-> growth, vaccines and visits). The controller of your data is [name of the owner or company], [contact email]. The
-> source code is public at [repository URL].
->
-> **What we keep.** Your sign-in account (name, email, password, kept by our own sign-in server; the app itself does not
-> read your email); your babies' names and birth dates; what you or the people you invited record about them (events,
-> measurements, medicines and doses, appointments, vaccines, notes); reminders settings and the address your phone or
-> browser gives us to send reminders; a short list of who opened the baby's data when a doctor has access. We do not
-> use advertising, analytics or tracking tools, and we do not sell or share your data for marketing.
->
-> **Why.** Only to run the app: to show your records on all your devices, to share them with the people you invite and
-> to send the reminders you turn on. The legal basis is your consent when you create the account and the performance of
-> the service you ask for (LGPD art. 7, I and V); health data is processed with your specific consent (art. 11, I).
->
-> **Who sees it.** The people you invite to a baby, with the role you give them; a doctor you invite sees what that
-> role allows and every doctor's access is logged for you. Our server host [provider/location]. Reminders pass through
-> Apple's and Google's notification services (and your browser's), which see that a reminder was sent and its generic
-> text, never more; names appear only if you turn that on.
->
-> **Where.** [Country and place of the server]. [International transfer note if any.]
->
-> **How long.** Until you delete it. Entries you delete are kept hidden for syncing your other devices until the baby or
-> the account is deleted. Reminder delivery logs are deleted after 14 days. Server logs: [period].
->
-> **Your rights.** Access, correction, deletion, portability, withdrawing consent and complaint to the ANPD. Delete your
-> account and its data any time in Settings > Account and data (or at [delete-account page URL] and by writing to
-> [email]); download a copy of your data in the same place on the web. Deleting the account erases babies only you use;
-> for a baby other people keep, your access ends and what you added stays for them without your name.
->
-> **Children.** Lotties is for parents and caregivers, not for children. The data it holds is about babies and was
-> entered by their parents; we ask no one under 18 to use the app.
->
-> **Security.** Encrypted connections, per-baby access control, tokens that expire, backups [describe].
->
-> **Changes and contact.** We tell you in the app before a material change. Contact: [email]. Version history in the
-> repository.
+## 4. Privacy policy (published page)
 
-Notes for the owner: name a controller (LGPD requires an identified controller and, for a company, an encarregado/DPO
-contact); decide the server location and backup retention; confirm the health-data consent wording with a lawyer.
+The draft that was here is replaced by the real page: **`https://lotties.app/privacy`** (route `/privacy`, public, no
+sign-in, precached so it opens offline, pt-BR and English; also Hub > App > Privacy policy at `/hub/privacy`,
+`/doctor/privacy` in the doctor's account menu, and links in the landing footer, About, Settings > Account and data and
+Settings > Voice assistants). Use this URL in App Store Connect, the Play Console, the store listings and the Alexa
+console.
+
+- Text: `code/web/src/legal/privacy.pt-BR.ts` (primary) and `privacy.en.ts`, rendered by `legal/PrivacyContent.tsx`;
+  version and date in `legal/privacyPolicy.ts`. Facts behind every sentence: docs/design/33-privacy-audit.md (which
+  also lists the draft statements that were not true).
+- Controller, contact and encarregado: build values `VITE_PRIVACY_CONTROLLER_NAME`, `VITE_PRIVACY_CONTACT_EMAIL`,
+  `VITE_PRIVACY_DPO` (docs/DEPLOY.md "Privacy policy"); until set the page shows neutral defaults.
+- Before the first submission: docs/PRIVACY-OWNER-CHECKLIST.md (values to set, facts to confirm, the lawyer's review).
 
 ## 5. Public page to request deletion (Google)
 
 Google's form asks for a web URL where a user (who may not have the app installed) can request deletion. Minimal and
 honest: `https://lotties.app/delete-account`, public, explaining the in-app path (Settings > Account and data), what is
 deleted and what stays (section 2), and a contact address for people who cannot sign in. A signed-in version of the
-same flow is the Settings section. Todo (small web change, after the owner approves the text): route `/delete-account`
-and `/privacy` as public pages (the landing already has public routes), strings in a `legal.json` catalog, links in
-the landing footer.
+same flow is the Settings section. `/privacy` is built (section 4; its chrome strings are in `legal.json`); todo, after
+the owner approves the text: the route `/delete-account` as a public page beside it, with its landing footer link.
+Until it exists, the policy's "Your rights" section (`https://lotties.app/privacy#privacy-rights`) explains the in-app
+path and the contact for people who cannot sign in (owner to decide whether to give Google that URL).
 
 ## 6. Health and medication declarations
 
@@ -204,8 +205,12 @@ Owner decisions and accounts first, then the work I can do without them marked (
   (docs/DEPLOY.md); API `CORS_ALLOWED_ORIGINS` for the app origins (doc 12 section 5).
 - [x] Account deletion in the app (branch `feat/account-deletion`).
 - [x] Placeholder icons and splash replaced (branch `feat/native-assets`); [ ] check them on a device.
-- [ ] Public `/privacy` and `/delete-account` pages with the approved text (section 4, 5); links in the app.
-- [ ] Controller identity, contact email, server location, log retention filled into the policy.
+- [x] Public `/privacy` page, links in the app (section 4); [ ] the text approved by the owner and a lawyer;
+  [ ] the public `/delete-account` page (section 5).
+- [ ] Controller identity, contact email and encarregado set as build values; server location, log and backup
+  retention confirmed (docs/PRIVACY-OWNER-CHECKLIST.md sections 1 to 3).
+- [ ] The audit's gaps before review: account deletion with saved care providers (G1), deletion in the doctor's
+  settings (G2), consent capture (G3), Keycloak account removal in production (G5) (docs/design/33 section 8).
 - [ ] App Privacy and Data safety forms (section 3); age and content rating (section 7); health declaration (section 6).
 - [ ] CLA or the contribution clause decided (section 9).
 - [ ] `isNativeApp()` in the notification settings (doc 12 section 7) and native push (doc 19) before the first iOS review.

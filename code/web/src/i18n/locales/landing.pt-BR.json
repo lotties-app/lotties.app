@@ -7,7 +7,8 @@
     "text": "Levando você para a página de entrada"
   },
   "header": {
-    "signIn": "Entrar"
+    "signIn": "Entrar",
+    "backToApp": "Voltar ao app"
   },
   "notice": {
     "failedTitle": "Não foi possível entrar",
@@ -21,35 +22,44 @@
   },
   "hero": {
     "headline": "Acompanhe o dia do seu bebê, em conjunto",
-    "sub": "Sono, mamadas, fraldas e remédios em um só lugar tranquilo. Funciona sem internet e compartilha com quem cuida junto com você.",
+    "sub": "Sono, mamadas, fraldas e remédios em um só lugar, feito por pais de recém-nascido. Funciona sem internet e compartilha com quem cuida junto com você.",
     "signIn": "Entrar",
-    "register": "Criar uma conta"
+    "register": "Criar uma conta",
+    "openApp": "Abrir o app"
+  },
+  "story": {
+    "title": "Por que criamos o Lotties",
+    "one": "Quando nosso primeiro bebê chegou, a gente vivia se perguntando: que horas foi a última mamada? Ele já dormiu hoje? Já demos o remédio? Depois de uma noite mal dormida, a memória falha. A gente queria um lugar simples para anotar, onde os dois vissem a mesma coisa.",
+    "two": "Não achamos o app que queríamos, então fizemos o nosso. Ele nasceu da nossa rotina de pais. Se puder ajudar outros pais e mães que estão passando pelo mesmo, já valeu a pena.",
+    "three": "Uma coisa importante: o Lotties não diz o que você deve fazer. Ele só olha para o que você mesmo registrou e mostra o que costuma acontecer, em respostas prováveis. Com o tempo, e se mais famílias quiserem participar, de forma anônima, essas estatísticas podem ficar melhores.",
+    "four": "O Lotties não é um aplicativo médico, é um aplicativo de rotina do bebê. Ele não faz diagnósticos, não substitui o pediatra e não se responsabiliza por decisões de saúde. Quando bater a dúvida, converse com quem cuida da saúde do seu bebê."
   },
   "features": {
     "title": "O que ele faz",
     "log": {
-      "title": "Registre em dois toques",
-      "body": "Atalhos de um toque, cronômetros para sonecas e mamadas, e um desfazer para quando o dedo escorrega."
+      "title": "Registre em poucos toques",
+      "body": "Sono, mamadas (no peito ou na mamadeira), fraldas, remédios, banho e choro. Use o cronômetro nas sonecas e mamadas e desfaça um erro na hora. Funciona sem internet e sincroniza quando a conexão volta."
     },
-    "offline": {
-      "title": "Funciona sem internet",
-      "body": "Instala como um aplicativo e continua funcionando sem conexão. Tudo sincroniza quando ela voltar."
+    "today": {
+      "title": "Veja o dia de relance",
+      "body": "Uma linha do tempo do dia, os totais de sono, mamadas e fraldas e os gráficos da semana."
     },
     "share": {
-      "title": "Compartilhe com quem cuida junto",
-      "body": "Convide alguém por um link e veja quem registrou o quê, sem precisar perguntar."
+      "title": "Cuidem juntos",
+      "body": "Convide o parceiro, os avós ou a babá por um link. Cada pessoa tem o acesso que você escolher, e cada registro mostra quem o fez. Você também pode compartilhar partes do histórico com o pediatra."
     },
     "predict": {
-      "title": "Previsões gentis",
-      "body": "Veja a próxima janela de soneca com uma explicação simples de como ela foi calculada. Estimativas feitas com o seu histórico, não são orientação médica."
+      "title": "O que deve vir a seguir",
+      "body": "Com base no que você registrou, o Lotties estima a próxima soneca, mamada ou troca de fralda e mostra como chegou nessa conta. São estimativas do histórico do seu bebê, não orientação médica."
     },
-    "history": {
-      "title": "Traga o seu histórico",
-      "body": "Importe do Napper, crie seus próprios tipos de evento e acompanhe remédios com intervalos seguros. A receita do médico é sempre a fonte."
+    "health": {
+      "title": "Crescimento, vacinas e remédios",
+      "body": "Peso e altura em curvas de crescimento, o calendário de vacinação brasileiro, consultas e lembretes dos remédios que você cadastrou. A receita do médico é sempre a fonte."
     },
     "data": {
-      "title": "Seus dados, suas regras",
-      "body": "Gratuito e de código aberto (AGPL-3.0), pode ser hospedado por você. Sem anúncios, sem rastreamento."
+      "title": "Gratuito, privado, seu",
+      "body": "Gratuito e de código aberto (AGPL-3.0), e você pode hospedar o seu. Sem anúncios e sem rastreamento. Você exporta um backup quando quiser e importa o histórico do Napper. Usa outro app? Peça a importação dele.",
+      "request": "Pedir importação de outro app"
     }
   },
   "steps": {
@@ -68,6 +78,7 @@
     }
   },
   "footer": {
+    "install": "Instalar o app",
     "language": "Idioma",
     "languageSystem": "Sistema",
     "theme": "Tema",
@@ -76,7 +87,25 @@
     "themeDark": "Escuro",
     "source": "Código-fonte",
     "licence": "Software livre e de código aberto, sob a licença AGPL-3.0.",
-    "notMedical": "Não é um dispositivo médico."
+    "notMedical": "Não é um dispositivo médico.",
+    "credits": "Créditos e licenças",
+    "selfHost": "Rode por conta própria",
+    "privacy": "Política de privacidade",
+    "terms": "Termos de uso"
+  },
+  "beta": {
+    "notice": "O Lotties está em fase de teste. Leia os [Termos de Uso](/terms)."
+  },
+  "openSource": {
+    "title": "Feito sobre software livre",
+    "body": "O Lotties se apoia no trabalho da comunidade de software livre e em dados públicos de saúde. Obrigado a cada autor e mantenedor.",
+    "count_one": "{{count}} pacote de software livre",
+    "count_other": "{{count}} pacotes de software livre",
+    "including": "Incluindo {{names}} e mais.",
+    "license": "O próprio Lotties é software livre sob a AGPL-3.0.",
+    "source": "Código-fonte no GitHub",
+    "seeAll": "Ver todos os créditos e licenças",
+    "notMedical": "O Lotties não é um dispositivo médico."
   },
   "important": {
     "eyebrow": "Importante",

@@ -11,14 +11,14 @@ Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routine
 ## Stack
 
 - **code/web/**: React 19, TypeScript, MUI, Vite, PWA (vite-plugin-pwa)
-- **code/api/**: .NET 8 Web API (Domain / Application / Infrastructure / Api), EF Core + Npgsql
+- **code/api/**: .NET 10 Web API (Domain / Application / Infrastructure / Api), EF Core + Npgsql
 - **Database**: PostgreSQL 16
 - **Auth**: generic OIDC (Auth0 default; Keycloak/Authentik via config)
 - **Deploy**: docker compose (api + web behind nginx, optional local Postgres)
 
 ## Quick start
 
-Prerequisites: .NET 8 SDK, Node 22, and optionally Docker.
+Prerequisites: .NET 10 SDK, Node 22, and optionally Docker.
 
 ```bash
 # API
@@ -32,6 +32,8 @@ npm --prefix code/web run test -- --run
 npm --prefix code/web run lint
 npm --prefix code/web run build
 ```
+
+Want to run your own copy? See [Run it yourself](#run-it-yourself) below.
 
 With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker compose up --build`. Add `--profile localdb` to start a local PostgreSQL container too. Full deployment guide (identity provider setup, TLS, database roles): [docs/DEPLOY.md](docs/DEPLOY.md).
 
@@ -49,6 +51,7 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `POSTGRES_PASSWORD` | Password of the optional `localdb` container (user is `DB_APP_USER`); no default |
 | `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, `VITE_API_BASE_URL` | Web build arguments (public, compiled into the bundle); see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | `VITE_REPO_URL` | Optional web build argument: source repository link in the landing page footer (http/https only); empty (default) hides it |
+| `VITE_PRIVACY_CONTROLLER_NAME`, `VITE_PRIVACY_CONTACT_EMAIL`, `VITE_PRIVACY_DPO` | Web build arguments (public): who is responsible for the data, the privacy contact and the encarregado shown on `/privacy`; empty = neutral defaults. Set them before a store submission ([docs/PRIVACY-OWNER-CHECKLIST.md](docs/PRIVACY-OWNER-CHECKLIST.md)) |
 | `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |
 | `AUTH_AUDIENCE` | API audience that access tokens must carry (config `Auth:Audience`); required outside Development |
 | `AUTH_ADMIN_CLIENT_ID`, `AUTH_ADMIN_CLIENT_SECRET` | Optional Keycloak service account (config `Auth:AdminClientId`/`AdminClientSecret`) so account deletion also removes the sign-in account; see docs/DEPLOY.md |
@@ -56,6 +59,49 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | Optional Web Push (config `Push:Vapid:*`); all three set = push on, none = off; generate with `--generate-vapid-keys`; see [docs/DEPLOY.md](docs/DEPLOY.md) "Push notifications" |
 
 Never commit `.env`. See `.env.example` for placeholders.
+
+## Run it yourself
+
+Lotties is AGPL-3.0 software: anyone can run their own copy. `lotties.app` is only the instance the maintainers run, and the
+maintainers are responsible only for the data on that instance and for the privacy terms published there. If you run your own
+copy you are the operator: you hold the data and the backups, you choose who signs in, and you publish the privacy terms that
+fit your copy (set the controller and contact with the `VITE_PRIVACY_*` values). Nothing you store reaches the maintainers.
+
+The public page `/self-host` (<https://lotties.app/self-host>, or the same path on any copy) explains what you need and has a
+generator that writes your `.env` and `docker-compose.yml` in the browser; nothing you type or generate leaves the page. The
+full guide is [docs/DEPLOY.md](docs/DEPLOY.md).
+
+## Install on your phone
+
+Lotties is a web app you add from the browser, no app store needed. The links and steps below use the maintainers' instance,
+`lotties.app`; if you use a copy run by someone else, use that copy's address instead. Full guide with pictures:
+<https://lotties.app/install> (the same page exists at `/install` on every copy).
+
+- **iPhone or iPad** (iOS/iPadOS 16.4 or later): open lotties.app (or your copy's address) in Safari, tap Share (bottom toolbar, or under ••• on newer iOS; top right on iPad), scroll to **Add to Home Screen**, tap **Add**, then open Lotties from the Home Screen. On iPhone and iPad notifications only work in the Home Screen app. Chrome, Edge and Firefox on recent iOS can do the same from their Share menu; Safari is the most reliable.
+- **Android**: in Chrome tap **Install app** on the page, or the menu (three dots) > **Install app** (or **Add to Home screen**) > **Install**. Samsung Internet: menu > **Add page to** > **Home screen**. Then allow notifications when Lotties asks.
+- **Computer**: Chrome or Edge, the install icon at the right of the address bar; Safari on a Mac, **File > Add to Dock**.
+
+Inside Instagram, Facebook or another app's browser the option is missing: open the page in Safari or Chrome first.
+
+## Privacy
+
+What the maintainers' instance (lotties.app) collects, why, who receives it and how to download or delete your data:
+<https://lotties.app/privacy> (no sign-in needed; also Hub > App > Privacy policy). A copy run by someone else has its own
+operator and its own privacy terms. The audit behind it is
+[docs/design/33-privacy-audit.md](docs/design/33-privacy-audit.md).
+
+## Credits and open-source acknowledgements
+
+Lotties is free software and stands on the work of many people: the open-source libraries it ships, the public data it uses
+(Anvisa, the Ministry of Health vaccine calendar, OpenStreetMap) and the services it calls (BrasilAPI, ViaCEP, Nominatim),
+plus Keycloak and PostgreSQL. Thank you to every author and maintainer.
+
+- [CREDITS.md](CREDITS.md): the thanks page, with data sources, services and direct dependencies.
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): the license texts of every bundled package.
+- In the app: <https://lotties.app/credits> (no sign-in needed), and Hub > App > Credits and licenses.
+
+Both files are generated from the dependency files (`node code/web/scripts/generate-credits.mjs`, see
+[docs/design/25-credits.md](docs/design/25-credits.md)). Naming a project here credits it; it does not mean it endorses Lotties.
 
 ## License
 

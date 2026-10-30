@@ -1,0 +1,3259 @@
+{
+  "items": [
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "Set the privacy policy build values (controller name, contact email, encarregado)",
+      "body": "Set the three public build values before any store submission (checklist section 1). They are baked into the bundle, never secrets:\n\n- `VITE_PRIVACY_CONTROLLER_NAME`: the controller as published (full name, or company name and optionally CNPJ).\n- `VITE_PRIVACY_CONTACT_EMAIL`: a mailbox read for privacy requests.\n- `VITE_PRIVACY_DPO`: the encarregado (name and/or email; can be the owner).\n\nWhere: `deploy/homelab/.env` (production web image), the root `.env` (compose) and `code/web/.env.native.local` (native build). `missingPrivacySettings()` lists the ones still on defaults.\n\nRaised again in the conversation of 2026-10-24 (policy is at version 3).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "store-blocker",
+        "build-config"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 1",
+      "externalKey": "privacy-owner-checklist:build-values"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Controller: the owner as a natural person (CPF) or a company (CNPJ)",
+      "body": "The LGPD accepts both. The published name must match the developer accounts:\n\n- Apple: an individual account publishes under the personal name; an organisation needs a D-U-N-S number.\n- Google Play: a personal account created after Nov 2023 needs the closed test (12 testers, 14 days); an organisation account is exempt.\n\nAlso affects community insights (docs/design/34 O12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 2",
+      "externalKey": "privacy-owner-checklist:controller"
+    },
+    {
+      "type": "question",
+      "topic": "privacy-legal",
+      "title": "Encarregado: do the small-agent rules (Res. CD/ANPD 2/2022) apply to Lotties?",
+      "body": "Ask the lawyer whether the \"agente de tratamento de pequeno porte\" exemption applies, given sensitive data about children (possibly high-risk processing). If in doubt, name one (it can be the owner) in `VITE_PRIVACY_DPO`.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 2",
+      "externalKey": "privacy-owner-checklist:encarregado"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C1: Confirm the country and place of the home lab, and that no cloud provider stores or processes the data",
+      "body": "The policy says \"a home lab, on their own hardware, not on a cloud provider\". Affects: Who is responsible; International transfers.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C1",
+      "externalKey": "privacy-owner-checklist:C1"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C2: Confirm whether Cloudflare is DNS only or also proxies lotties.app / auth.lotties.app",
+      "body": "A proxy would see all traffic, including health data, and must be listed as a recipient abroad. Affects: Companies table; transfers. Note: docs/MCP.md \"Known issue\" also suspects a Cloudflare rule on `/.well-known/`.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C2",
+      "externalKey": "privacy-owner-checklist:C2"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C3: Confirm where PostgreSQL runs, who can reach it, and whether its disks are encrypted",
+      "body": "The security section claims nothing about encryption at rest; add it only if true. Affects: Security.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C3",
+      "externalKey": "privacy-owner-checklist:C3"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C4: Confirm who has administrator access to the cluster, the database, Keycloak and the logs",
+      "body": "The policy says access is \"limited to the maintainer\". Affects: Security.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C4",
+      "externalKey": "privacy-owner-checklist:C4"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C5: Confirm the Keycloak realm lotties.app settings (registration, email verification, password policy, brute force, OTP, isolation, login events)",
+      "body": "Registration fields, email verification, password policy, brute-force detection, OTP, isolation from other realms, login event logging (IP addresses) and its retention. Affects: What we collect; Security; Retention.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C5",
+      "externalKey": "privacy-owner-checklist:C5"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C6: Confirm whether Keycloak sends email through an SMTP relay in production",
+      "body": "A relay (Brevo or another) receives account email addresses and messages: it must then be added to `THIRD_PARTIES` and both tables (tests force the three to agree). Affects: Companies table.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C6",
+      "externalKey": "privacy-owner-checklist:C6"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C7: Confirm log retention (API stdout, nginx access log, Traefik access logs, Keycloak)",
+      "body": "The policy says \"only as long as needed\"; a number (e.g. 30 days) is better once confirmed. Also: are Traefik access logs on, with query strings? (gap G8). Affects: Retention.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C7",
+      "externalKey": "privacy-owner-checklist:C7"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C8: Confirm the backup routine: location, encryption, who deletes copies and when, any DB snapshots",
+      "body": "Besides the `pg_dump` before migration deploys. The policy says copies are deleted when no longer needed and may still hold deleted data. Affects: Retention; Security.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C8",
+      "externalKey": "privacy-owner-checklist:C8"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C9: Confirm production settings outside the repo (account deletion client, Alexa, address lookup contact, VAPID)",
+      "body": "`AUTH_ADMIN_CLIENT_ID/SECRET` (see the Keycloak account-deletion item), `Alexa__Enabled`, `AddressLookup__ContactEmail`, the three `PUSH_VAPID_*`. The `DRY_RUN=1` deploy plan prints whether deletion also deletes the Keycloak user. Affects: Your rights; Companies table.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C9",
+      "externalKey": "privacy-owner-checklist:C9"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C10: Enable GitHub private vulnerability reporting on the repository (or set the contact email)",
+      "body": "It is the default private contact of the policy; otherwise the \"private report\" link does not work: set `VITE_PRIVACY_CONTACT_EMAIL`. Same as audit gap G13.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C10",
+      "externalKey": "privacy-owner-checklist:C10"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C11: Confirm whether App Store Connect and Play Console share statistics and crash reports with the owner",
+      "body": "The policy mentions them. Affects: Companies table.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C11",
+      "externalKey": "privacy-owner-checklist:C11"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C12: Confirm the owner can answer a full access request within 15 days and erase a soft-deleted record on request",
+      "body": "LGPD art. 19; erasing a soft-deleted record is a manual database operation today. Affects: Your rights.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C12",
+      "externalKey": "privacy-owner-checklist:C12"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C13: Confirm significant policy changes will be announced before they apply",
+      "body": "There is no in-app announcement yet (gap G6). Affects: Changes.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C13",
+      "externalKey": "privacy-owner-checklist:C13"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "C14: Confirm users and the ANPD will be notified of a relevant incident (LGPD art. 48), and how",
+      "body": "The policy promises it. Affects: Security.\n\nMarked `OWNER TO CONFIRM` in the audit; bring the answer to the lawyer review.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "owner-confirm"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md C14",
+      "externalKey": "privacy-owner-checklist:C14"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "Have the privacy policy (version 3) reviewed by a Brazilian lawyer before any store submission",
+      "body": "The policy at `https://lotties.app/privacy` is a careful first version, not legal advice. Before App Store, Google Play or Alexa certification, a Brazilian lawyer or privacy specialist (LGPD; health data about children) should review it.\n\nBring: the owner checklist (C1-C14 answers), docs/design/33-privacy-audit.md, the decisions of checklist section 4, the Cry monitor microphone text (section 9) and the planned Community insights section (section 8).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:privacy-lawyer-review"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Legal bases, and whether a separate stored consent for health data is needed (gap G3)",
+      "body": "Execution of the service (art. 7, V) for the account; consent (art. 11, I) for health data; specific consent for the doctor invite; legitimate interest for logs. The app collects no separate, highlighted consent today. Decide whether that is enough or whether a consent step with a stored record is needed (Keycloak \"Terms and conditions\" required action, or an in-app first-run consent: an API change).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4",
+      "externalKey": "privacy-owner-checklist:legal-bases"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Children (LGPD art. 14): is the best-interest basis enough; must the app ask that the creator is a parent or guardian?",
+      "body": "The policy relies on the child's best interest and the parents' use; art. 14, par. 1 asks for specific, highlighted consent of a parent or guardian. ANPD Enunciado CD/ANPD 1/2023 (as read) allows art. 7 or 11 bases when the best interest prevails. Confirm.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4",
+      "externalKey": "privacy-owner-checklist:children-art14"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "International transfers (art. 33): confirm art. 33, IX and whether Res. CD/ANPD 19/2024 requires more",
+      "body": "For push services, Amazon (Alexa) and Nominatim (address lookup).",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4",
+      "externalKey": "privacy-owner-checklist:international-transfers"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Retention periods for access log, invites, soft-deleted records, anonymized users, logs, backups",
+      "body": "To replace \"kept with the baby\" and \"as long as needed\". Implementation follows in audit gap G4 (purge jobs).",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4",
+      "externalKey": "privacy-owner-checklist:retention-periods"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Minimum age of account holders",
+      "body": "The policy says the app is for adults; nothing checks it.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4",
+      "externalKey": "privacy-owner-checklist:minimum-age"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Wording for data about other people entered by users (doctors' contacts, the mother's RSV vaccination)",
+      "body": "The policy makes the user responsible; confirm the wording.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4",
+      "externalKey": "privacy-owner-checklist:other-people-data"
+    },
+    {
+      "type": "decision",
+      "topic": "doctor-access",
+      "title": "Doctor's notes after removal: may a removed doctor export or delete them? (gap G10)",
+      "body": "Today a removed doctor's notes stay with the family and she has no way to export or delete them. Decide with the lawyer (docs/design/16-doctor-access.md section 7).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "doctor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/16-doctor-access.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/16-doctor-access.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 4 / docs/design/33 G10",
+      "externalKey": "privacy-owner-checklist:doctor-notes-after-removal"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "G7: accept privacy#privacy-rights as Google Play's deletion URL until /delete-account exists?",
+      "body": "Google's Data safety form asks for a public URL to request deletion. Until a public `/delete-account` page exists, decide whether `https://lotties.app/privacy#privacy-rights` (in-app steps plus the contact) is acceptable. Building the page is a separate assistant item once the text is approved.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "store-blocker",
+        "google-play"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md G7",
+      "externalKey": "privacy-owner-checklist:G7"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "Lawyer review of the policy's \"Community insights (not active yet)\" section",
+      "body": "Both languages: whether describing a planned feature is acceptable (or better kept out until it exists), the consent wording of the future screen (design 34 section 3.5), and the honest limit of anonymisation (art. 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lawyer",
+        "community-insights"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 8",
+      "externalKey": "privacy-owner-checklist:community-lawyer-review"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "RIPD (data protection impact report) before activating community insights",
+      "body": "Sensitive data of children, consent basis (art. 11, I and art. 14, par. 1), re-identification risk in small groups. Outline in design 34 section 8: the assistant can draft, the owner and lawyer finalize. Only before activation; nothing is built.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "community-insights",
+        "ripd"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 8",
+      "externalKey": "privacy-owner-checklist:community-ripd"
+    },
+    {
+      "type": "question",
+      "topic": "privacy-legal",
+      "title": "Legal read of the Cry monitor consent text (en + pt-BR), and whether a server-side consent record is needed",
+      "body": "Specific, highlighted consent of a parent or someone they allow (art. 11, I and art. 14, par. 1). Today: two checkboxes stored per device with the text version (`CRY_MONITOR_CONSENT_VERSION`). No server-side record: decide whether one is needed (an API change). Texts: `code/web/src/i18n/locales/<lang>/cryMonitor.json` `cryMonitor.consent.*`.\n\nPolicy version 3 (2026-10-24) includes the Cry monitor microphone text.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "cry-monitor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        },
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 9",
+      "externalKey": "privacy-owner-checklist:cry-consent-legal"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Cry monitor: may a Caregiver start it, or only a parent / legal guardian?",
+      "body": "Owners, Parents and Caregivers may start it today (the roles that log). Decide whether a Caregiver's \"I am allowed to monitor this baby\" is enough.\n\nPolicy version 3 (2026-10-24) includes the Cry monitor microphone text.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "cry-monitor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        },
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 9",
+      "externalKey": "privacy-owner-checklist:cry-who-may-start"
+    },
+    {
+      "type": "question",
+      "topic": "privacy-legal",
+      "title": "ECA Digital (Lei 15.211/2025): is a parents' app that listens in a child's room in scope?",
+      "body": "Sanctions from November 2026 per secondary sources. Get a legal read on scope and requirements.\n\nPolicy version 3 (2026-10-24) includes the Cry monitor microphone text.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "cry-monitor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        },
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 9",
+      "externalKey": "privacy-owner-checklist:cry-eca-digital"
+    },
+    {
+      "type": "question",
+      "topic": "privacy-legal",
+      "title": "Cry monitor: is the \"inform people in the room\" wording enough (nanny, domestic worker, visitors)?",
+      "body": "The consent and the policy tell the parent to inform anyone who may be there. Confirm, and whether more is needed for an employee.\n\nPolicy version 3 (2026-10-24) includes the Cry monitor microphone text.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "cry-monitor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        },
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 9",
+      "externalKey": "privacy-owner-checklist:cry-people-in-room"
+    },
+    {
+      "type": "question",
+      "topic": "privacy-legal",
+      "title": "Cry monitor: confirm automatic spells need no separate retention period",
+      "body": "They are ordinary fussy records; a \"Not crying\" spell is kept and marked so false alarms can be counted.\n\nPolicy version 3 (2026-10-24) includes the Cry monitor microphone text.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "cry-monitor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        },
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 9",
+      "externalKey": "privacy-owner-checklist:cry-retention"
+    },
+    {
+      "type": "task",
+      "topic": "privacy-legal",
+      "title": "Confirm the \"not a safety device\" limits wording on the page, the consent and the policy",
+      "body": "\"not a baby monitor and not a safety device\", \"can miss crying or react to other sounds\", \"never rely on it\".\n\nPolicy version 3 (2026-10-24) includes the Cry monitor microphone text.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "lawyer",
+        "cry-monitor"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        },
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/PRIVACY-OWNER-CHECKLIST.md section 9",
+      "externalKey": "privacy-owner-checklist:cry-not-safety-device"
+    },
+    {
+      "type": "gap",
+      "topic": "privacy-legal",
+      "title": "G3: no consent is collected or recorded for health data or children's data",
+      "body": "Fix direction: a consent step with the policy link and a stored timestamp, or Keycloak's \"Terms and conditions\" required action with the policy text. Blocked on the owner/lawyer decision \"Legal bases\" (privacy-owner-checklist:legal-bases); then the assistant builds it.",
+      "status": "blocked",
+      "side": "both",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "store-blocker",
+        "consent"
+      ],
+      "links": [
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/33-privacy-audit.md G3",
+      "externalKey": "audit-33:G3"
+    },
+    {
+      "type": "gap",
+      "topic": "privacy-legal",
+      "title": "G4: no retention limits (access log, invites, soft-deleted records, anonymized users, logs, backups)",
+      "body": "Decide the periods (owner with the lawyer: privacy-owner-checklist:retention-periods), then the assistant adds purge jobs. Also covers the project board's own retention (soft-deleted items, revoked keys).",
+      "status": "blocked",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "lgpd",
+        "retention"
+      ],
+      "links": [
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/33-privacy-audit.md G4",
+      "externalKey": "audit-33:G4"
+    },
+    {
+      "type": "gap",
+      "topic": "privacy-legal",
+      "title": "G6: in-app \"policy updated\" notice keyed on PRIVACY_POLICY_VERSION",
+      "body": "No in-app channel announces policy changes. The policy promises it (C13) and community insights needs it before activation. Build a versioned notice keyed on `PRIVACY_POLICY_VERSION` (code/web/src/legal/privacyPolicy.ts); UI copy and placement need the owner's approval.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "high",
+      "labels": [
+        "privacy",
+        "web",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/33-privacy-audit.md G6",
+      "externalKey": "audit-33:G6"
+    },
+    {
+      "type": "gap",
+      "topic": "infrastructure-deploy",
+      "title": "G8: address search text may reach proxy access logs (drop query strings of /api/v1/address/*)",
+      "body": "The API never logs it, but Traefik's access log might. Exclude `/api/v1/address/*` or drop query strings. Needs the owner's answer to C7 (are Traefik access logs on?).",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "traefik",
+        "logs"
+      ],
+      "links": [
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/33-privacy-audit.md G8",
+      "externalKey": "audit-33:G8"
+    },
+    {
+      "type": "gap",
+      "topic": "infrastructure-deploy",
+      "title": "G9: nginx access log format and retention; add HSTS",
+      "body": "The web container's nginx access log keeps client IPs and user agents; HSTS is not set. Decide log format/retention (owner) and add an HSTS middleware (deploy/homelab/README.md).",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "privacy",
+        "security",
+        "nginx",
+        "traefik"
+      ],
+      "links": [
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/33-privacy-audit.md G9",
+      "externalKey": "audit-33:G9"
+    },
+    {
+      "type": "gap",
+      "topic": "process-meta",
+      "title": "G12: docs/design/09-push-notifications.md still says \"design only, nothing implemented\"",
+      "body": "Web Push is built and deployed. Fix the status line of the design doc.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "docs"
+      ],
+      "links": [
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        },
+        {
+          "label": "docs/design/09-push-notifications.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/09-push-notifications.md"
+        }
+      ],
+      "source": "docs/design/33-privacy-audit.md G12",
+      "externalKey": "audit-33:G12"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Community insights O1: k: minimum distinct babies and families per cell",
+      "body": "Proposal: 20 babies from 20 families; p3/p97 only at 50+; hysteresis 18.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O1",
+      "externalKey": "design-34:O1"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Community insights O2: Differential privacy on or off; epsilon per statistic and yearly budget",
+      "body": "Proposal: on, as defence in depth; weekly release at epsilon 0.2 per statistic (about 10 per statistic per year), or monthly at 0.5; chosen after the evaluation. If off, the policy's \"random noise\" sentence must go before activation.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O2",
+      "externalKey": "design-34:O2"
+    },
+    {
+      "type": "decision",
+      "topic": "design-ux",
+      "title": "Community insights O3: Final consent screen wording, and where it lives",
+      "body": "Proposal: design section 3.5 text; Settings > Baby; one dismissible card once. Lawyer reviews the wording.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O3",
+      "externalKey": "design-34:O3"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Community insights O4: One parent's yes, or all Owners/Parents; notice to the others",
+      "body": "Proposal: one yes plus a notice to the others; any of them may withdraw.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O4",
+      "externalKey": "design-34:O4"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Community insights O5: All-or-nothing or per-purpose consent",
+      "body": "Proposal: all-or-nothing in v1, `scopes` kept for later.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O5",
+      "externalKey": "design-34:O5"
+    },
+    {
+      "type": "decision",
+      "topic": "predictions-ml",
+      "title": "Community insights O6: Pooled growth statistics at all",
+      "body": "Proposal: not in v1; WHO curves first.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O6",
+      "externalKey": "design-34:O6"
+    },
+    {
+      "type": "decision",
+      "topic": "predictions-ml",
+      "title": "Community insights O7: Gestational age as an input (corrected age)",
+      "body": "Proposal: exclude preterm babies (before 37 weeks) from v1 bands instead.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O7",
+      "externalKey": "design-34:O7"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Community insights O8: Retention of consent records after withdrawal or erasure",
+      "body": "Lawyer decides; proposal: 5 years, baby id hashed after erasure.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O8",
+      "externalKey": "design-34:O8"
+    },
+    {
+      "type": "decision",
+      "topic": "doctor-access",
+      "title": "Community insights O9: Do doctors see the community context lines on shared sections?",
+      "body": "Proposal: no, until a separate review.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O9",
+      "externalKey": "design-34:O9"
+    },
+    {
+      "type": "decision",
+      "topic": "product",
+      "title": "Community insights O10: Statistics visible to every signed-in user or only to families that opted in",
+      "body": "Proposal: every signed-in user (no pressure to consent).\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O10",
+      "externalKey": "design-34:O10"
+    },
+    {
+      "type": "decision",
+      "topic": "mobile-stores",
+      "title": "Community insights O11: Store label purpose: App Functionality only, or also Product Personalization",
+      "body": "Proposal: App Functionality.\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O11",
+      "externalKey": "design-34:O11"
+    },
+    {
+      "type": "question",
+      "topic": "privacy-legal",
+      "title": "Community insights O12: Does the controller choice (individual or company) change anything for a pooled data set?",
+      "body": "E.g. a company is a better holder of consent records. Decide together with the controller question (privacy-owner-checklist:controller).\n\nCommunity insights is planned, opt-in only and not built; all of O1-O11 must be taken before activation (design 34 section 12).",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/34 O12",
+      "externalKey": "design-34:O12"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "Try the cry monitor on a real phone (mic permission, wake lock, iOS 18.4+) and read the consent text",
+      "body": "Hub > App > Cry monitor on a real device: microphone permission prompt and persistence, Screen Wake Lock, an iPhone on iOS 18.4 or later, behaviour on relaunch. Read the consent and intro copy (the orchestrator's draft; the owner's read is still open, CD0).\n\nNo recorded cry through a real microphone has been verified yet (CD2 ran with a synthetic stream).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "cry-monitor",
+        "device-test",
+        "web"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:cry-monitor-real-phone"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "CD0: owner read of the cry monitor copy (consent, intro, limits)",
+      "body": "CD3 shipped with the orchestrator's draft copy; the owner's read (and the legal read, privacy-owner-checklist:cry-consent-legal) is still open. Remaining CD0 scope (foreground only, zero-shot YAMNet, push default off) is decided.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "cry-monitor",
+        "copy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        }
+      ],
+      "source": "docs/design/31-cry-detector-spike.md CD0",
+      "externalKey": "design-31:CD0"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "CD2 follow-up: manual check with a recorded cry through a virtual microphone",
+      "body": "The CD2 manual check ran with a synthetic oscillator stream, not a recorded cry played through a virtual microphone on Chrome desktop. Still to do.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "cry-monitor",
+        "verification"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        }
+      ],
+      "source": "docs/design/31-cry-detector-spike.md CD2",
+      "externalKey": "design-31:CD2-recorded-cry"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "CD8: device checklist on HTTPS (old Android, iPhone iOS 18.4+): CPU, battery, heat, wake lock, call, relaunch",
+      "body": "Load, CPU, battery per hour, heat, Wake Lock, relaunch, a phone call, permission persistence; fixes. The owner holds the devices; the assistant prepares the checklist and fixes. iOS PWA microphone bugs (relaunch, audio route) are a known risk: test early.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "cry-monitor",
+        "device-test"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/design/31-cry-detector-spike.md CD8",
+      "externalKey": "design-31:CD8"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "CD9: pilot with consenting families (confirmed share, missed cries per device; tune sensitivity)",
+      "body": "Assistant: pilot design (section 10: what to measure, aggregates only, consent). Owner: recruit consenting families. Adjust the sensitivity table from the results. Blocked on CD8 and on the legal read of the consent.",
+      "status": "blocked",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "cry-monitor",
+        "pilot"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        }
+      ],
+      "source": "docs/design/31-cry-detector-spike.md CD9",
+      "externalKey": "design-31:CD9"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "CD10: native background listening (Android foreground service, iOS background audio), separate go/no-go",
+      "body": "Native capture with MediaPipe Tasks Android; iOS background audio spike. Needs store declarations: the native apps request no microphone permission today, so store labels change when this ships (checklist section 9). Blocked on CD9.",
+      "status": "blocked",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "cry-monitor",
+        "native",
+        "spike"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        },
+        {
+          "label": "docs/design/12-mobile-capacitor.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/12-mobile-capacitor.md"
+        }
+      ],
+      "source": "docs/design/31-cry-detector-spike.md CD10",
+      "externalKey": "design-31:CD10"
+    },
+    {
+      "type": "decision",
+      "topic": "predictions-ml",
+      "title": "cry_detected push: deliver inside quiet hours?",
+      "body": "As built, `cry_detected` pushes are delivered inside quiet hours (the monitor mostly runs at night, when quiet hours are on by default). An owner decision to confirm.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "cry-monitor",
+        "push"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        },
+        {
+          "label": "docs/design/09-push-notifications.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/09-push-notifications.md"
+        }
+      ],
+      "source": "docs/design/31-cry-detector-spike.md notes on CD4 and CD6",
+      "externalKey": "design-31:cry-push-quiet-hours"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "Send the SBP and SBIm permission emails (docs/SBP-PERMISSION-REQUEST.md)",
+      "body": "Review, fill in every `[...]` and send the draft. Nothing is sent by the project. Answers settle R-DOC-1 (vaccine calendars) and L1 (SBP sleep and feeding sources). Once sent, the wait is external.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "licence",
+        "sbp",
+        "sbim"
+      ],
+      "links": [
+        {
+          "label": "docs/SBP-PERMISSION-REQUEST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/SBP-PERMISSION-REQUEST.md"
+        },
+        {
+          "label": "docs/design/17-vaccine-schedule-data.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/17-vaccine-schedule-data.md"
+        },
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:sbp-sbim-emails"
+    },
+    {
+      "type": "decision",
+      "topic": "data-catalog",
+      "title": "R-DOC-1: vaccine data licences (gov.br CC BY-ND; SBP and SBIm all rights reserved)",
+      "body": "Owner decision before publishing: rely on facts-only reuse with attribution, or wait for SBP/SBIm permission (emails item). Same decision as age norms L1.",
+      "status": "waiting",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "licence",
+        "vaccines",
+        "sbp",
+        "sbim"
+      ],
+      "links": [
+        {
+          "label": "docs/design/17-vaccine-schedule-data.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/17-vaccine-schedule-data.md"
+        },
+        {
+          "label": "docs/SBP-PERMISSION-REQUEST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/SBP-PERMISSION-REQUEST.md"
+        }
+      ],
+      "source": "docs/design/17 R-DOC-1",
+      "externalKey": "design-17:R-DOC-1"
+    },
+    {
+      "type": "decision",
+      "topic": "data-catalog",
+      "title": "L1: SBP sleep and feeding sources are \"all rights reserved\"",
+      "body": "`sbp-sono-2025`, `sbp-alimentacao-2024`: no reuse licence. Rely on facts-only reuse with attribution, or ask SBP (same open decision as R-DOC-1).",
+      "status": "waiting",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "licence",
+        "age-norms",
+        "sbp"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        },
+        {
+          "label": "docs/SBP-PERMISSION-REQUEST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/SBP-PERMISSION-REQUEST.md"
+        }
+      ],
+      "source": "docs/design/28 L1",
+      "externalKey": "design-28:L1"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "L2: read the Ministry of Health feeding guide's licence line (Guia alimentar 2019)",
+      "body": "The copyright page's licence line could not be read from the PDF text. If it is a non-commercial or share-alike Creative Commons licence it governs the document; Lotties reuses facts only (meal counts). Owner to confirm from the printed or rendered page.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "licence",
+        "age-norms"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        }
+      ],
+      "source": "docs/design/28 L2",
+      "externalKey": "design-28:L2"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "L3: re-check the NSF \"may be appropriate\" sleep ranges against the journal article",
+      "body": "They were read from a reprint (the journal table answered HTTP 403); recommended ranges were confirmed on thensf.org.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "age-norms",
+        "sources"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        }
+      ],
+      "source": "docs/design/28 L3",
+      "externalKey": "design-28:L3"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "L5 / R-AN-4: read the 2023 WHO complementary feeding guideline and cite it",
+      "body": "The 2011 Q&A page was used; the 2023 guideline (usually CC BY-NC-SA 3.0 IGO) would be the better citation.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "age-norms",
+        "sources",
+        "licence"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        }
+      ],
+      "source": "docs/design/28 L5",
+      "externalKey": "design-28:L5"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "R-AN-5: re-check Ministry of Health Caderno de Atencao Basica 23 (it answered HTTP 503)",
+      "body": "It may give Brazilian feed counts and diaper signs. Also R-AN-2: confirm the guide's page numbers (pp. 117-127, 148-151) against the printed guide.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "age-norms",
+        "sources"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        }
+      ],
+      "source": "docs/design/28 R-AN-5",
+      "externalKey": "design-28:R-AN-5"
+    },
+    {
+      "type": "decision",
+      "topic": "data-catalog",
+      "title": "Bottle chips: move the cold-start ranges (months 0-3) to the published SBP/AAP union?",
+      "body": "The published Brazilian table (SBP) is consistently above the app's rows 0-3. The chips are shortcuts, never targets; the owner decides whether to move them.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "age-norms",
+        "bottle"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        },
+        {
+          "label": "docs/design/10-bottle-suggestions.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/10-bottle-suggestions.md"
+        }
+      ],
+      "source": "docs/design/28 section 8 (bottle chips)",
+      "externalKey": "design-28:bottle-chip-ranges"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "R-DOC-2: re-download the SBP vaccine calendar PDF and compare before release",
+      "body": "The PDF link carries a nonce; the file was modified on 2026-09-10, after its printed date (2026-07-28).",
+      "status": "open",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "vaccines",
+        "sources"
+      ],
+      "links": [
+        {
+          "label": "docs/design/17-vaccine-schedule-data.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/17-vaccine-schedule-data.md"
+        }
+      ],
+      "source": "docs/design/17 R-DOC-2",
+      "externalKey": "design-17:R-DOC-2"
+    },
+    {
+      "type": "risk",
+      "topic": "data-catalog",
+      "title": "R-DOC-4/5/6: PNI calendar changes to watch (PCV20 switch, revised technical calendar, IN CNV 2026)",
+      "body": "P3 (2026-01-30) predates PCV20 and the VIP 2nd booster; PCV10 at 4 months moves to PCV20 at 2, 4 and 12 months when stocks end; the Instrucao Normativa CNV 2026 was not read. Re-check and update the schedule file (yearly update procedure: docs/design/18 section 8).",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "vaccines",
+        "watch"
+      ],
+      "links": [
+        {
+          "label": "docs/design/17-vaccine-schedule-data.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/17-vaccine-schedule-data.md"
+        }
+      ],
+      "source": "docs/design/17 R-DOC-4",
+      "externalKey": "design-17:R-DOC-4"
+    },
+    {
+      "type": "gap",
+      "topic": "data-catalog",
+      "title": "R-DOC-7: SBIm adolescent (10-19 years) recommendations are absent",
+      "body": "SBIm values stop below 10 years; SBIm-only adolescent doses may be missing.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "vaccines"
+      ],
+      "links": [
+        {
+          "label": "docs/design/17-vaccine-schedule-data.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/17-vaccine-schedule-data.md"
+        }
+      ],
+      "source": "docs/design/17 R-DOC-7",
+      "externalKey": "design-17:R-DOC-7"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "Run the ANVISA CatalogImporter against production (dry run first) for curated products and strengths",
+      "body": "Applies the curated products and the structured strengths (production shows \"strength not known\" until it runs) and the Flygas -> Fly Gotas alias merge. Dry run first, then the real run. Agents never run it against the real database (CLAUDE.md).\n\nTool: `code/api/tools/Lotties.CatalogImporter` (docs/design/13-anvisa-catalog.md).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "anvisa",
+        "catalog",
+        "production"
+      ],
+      "links": [
+        {
+          "label": "docs/design/13-anvisa-catalog.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/13-anvisa-catalog.md"
+        },
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:anvisa-import-production"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "Rename the owner's own \"Flygass\" medication to Fly Gotas",
+      "body": "\"Flygass\" is the owner's own medication entry (not a catalog product). After the importer run, rename it in the app.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "catalog"
+      ],
+      "links": [
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:flygass-rename"
+    },
+    {
+      "type": "task",
+      "topic": "data-catalog",
+      "title": "Pharmacist review of the curated list (ingredients, age suitability, warnings, equivalence labels)",
+      "body": "The curated list drives \"same active ingredient\" suggestions and was never reviewed by a pharmacist. Bring docs/curated-review-checklist.md:\n\n- each entry: ingredient, age suitability, warnings, name confusability;\n- equivalence labels (\"same ingredient, different strength\" etc.) and pairs to remove;\n- who may mark an entry reviewed, and the label wording afterwards.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "catalog",
+        "pharmacist",
+        "safety"
+      ],
+      "links": [
+        {
+          "label": "docs/curated-review-checklist.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/curated-review-checklist.md"
+        },
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        },
+        {
+          "label": "docs/design/13-anvisa-catalog.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/13-anvisa-catalog.md"
+        }
+      ],
+      "source": "docs/curated-review-checklist.md",
+      "externalKey": "curated-review:pharmacist"
+    },
+    {
+      "type": "question",
+      "topic": "data-catalog",
+      "title": "Fly Gotas 150: still notified and sold under that name; is it suitable at this concentration for babies?",
+      "body": "Official data only has inactive notified records. Also: is listing it with Luftal (75 mg/mL) as \"same ingredient, different strength\" enough?",
+      "status": "open",
+      "side": "external",
+      "priority": "low",
+      "labels": [
+        "catalog",
+        "pharmacist"
+      ],
+      "links": [
+        {
+          "label": "docs/curated-review-checklist.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/curated-review-checklist.md"
+        },
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        }
+      ],
+      "source": "docs/curated-review-checklist.md fly-gotas",
+      "externalKey": "curated-review:fly-gotas"
+    },
+    {
+      "type": "question",
+      "topic": "data-catalog",
+      "title": "Luftal: registration inactive: still sold, and in which formulation (75 mg/mL)?",
+      "body": "CMED still lists presentations.",
+      "status": "open",
+      "side": "external",
+      "priority": "low",
+      "labels": [
+        "catalog",
+        "pharmacist"
+      ],
+      "links": [
+        {
+          "label": "docs/curated-review-checklist.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/curated-review-checklist.md"
+        },
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        }
+      ],
+      "source": "docs/curated-review-checklist.md luftal",
+      "externalKey": "curated-review:luftal"
+    },
+    {
+      "type": "question",
+      "topic": "data-catalog",
+      "title": "Colidis: should the app show any of the manufacturer's claims (age, colic relief)?",
+      "body": "Confirmed by packaging as a food supplement (L. reuteri DSM 17938); claims are unchecked. Is \"same ingredient\" meaningful for probiotic strains?",
+      "status": "open",
+      "side": "external",
+      "priority": "low",
+      "labels": [
+        "catalog",
+        "pharmacist"
+      ],
+      "links": [
+        {
+          "label": "docs/curated-review-checklist.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/curated-review-checklist.md"
+        },
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        }
+      ],
+      "source": "docs/curated-review-checklist.md colidis",
+      "externalKey": "curated-review:colidis"
+    },
+    {
+      "type": "question",
+      "topic": "data-catalog",
+      "title": "Sorine and Rinosoro saline entries: confirm sodium chloride and concentration from the box",
+      "body": "The notified products list no ingredient; these entries deliberately state no concentration (0.9 % vs hypertonic).",
+      "status": "open",
+      "side": "external",
+      "priority": "low",
+      "labels": [
+        "catalog",
+        "pharmacist"
+      ],
+      "links": [
+        {
+          "label": "docs/curated-review-checklist.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/curated-review-checklist.md"
+        },
+        {
+          "label": "docs/design/26-curated-verification.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/26-curated-verification.md"
+        }
+      ],
+      "source": "docs/curated-review-checklist.md saline",
+      "externalKey": "curated-review:saline"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Apple Developer Program membership approval (pending at Apple)",
+      "body": "Applied; waiting for Apple. Then: App ID `app.lotties.app`, the App Store Connect app record, the App Store Connect API key and the four iOS secrets, and the first TestFlight run (separate items).",
+      "status": "waiting",
+      "side": "external",
+      "priority": "high",
+      "labels": [
+        "ios",
+        "apple",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:apple-membership"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "iOS: register the App ID app.lotties.app and create the App Store Connect app",
+      "body": "developer.apple.com > Identifiers > App IDs: Bundle ID (explicit) `app.lotties.app`, no capabilities now (Push Notifications later, native push). appstoreconnect.apple.com > New App: iOS, name Lotties (have a fallback), bundle `app.lotties.app`, SKU `lotties-ios`. Then App Information (category, age rating, privacy URL, App Privacy answers). Blocked on the membership approval.",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "ios",
+        "apple"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md 4.2",
+      "externalKey": "mobile-release:ios-app-id"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "iOS: create the App Store Connect API key (Admin) and set ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID",
+      "body": "Users and Access > Integrations > App Store Connect API > Team Keys > Generate, access Admin (cloud signing creates certificates). The `.p8` downloads once. Secrets go only into GitHub Actions secrets, never the repo or `.env`. Blocked on the membership approval.",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "ios",
+        "apple",
+        "ci",
+        "secrets-owner"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md section 3",
+      "externalKey": "mobile-release:ios-asc-key"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "iOS: first workflow run with upload to TestFlight; fix the first-run failures",
+      "body": "Run Mobile release (ios only, `upload_testflight`). The workflow has never run: expect signing fixes (the log names the missing piece). The owner starts the run; the assistant fixes the workflow.",
+      "status": "blocked",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "ios",
+        "ci",
+        "testflight"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md 4.2 step 5",
+      "externalKey": "mobile-release:ios-testflight"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Set the repository variable LOTTIES_OIDC_CLIENT_ID (public client id) for the mobile workflow",
+      "body": "Settings > Secrets and variables > Actions > Variables. The same value as the web build's `VITE_OIDC_CLIENT_ID` (public, not a secret).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "ci",
+        "android",
+        "ios"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md section 3",
+      "externalKey": "mobile-release:repo-variable"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Android: create the upload keystore and set ANDROID_KEYSTORE_BASE64 and the three keystore secrets",
+      "body": "`keytool -genkeypair ... -alias upload` then base64 on one line; keep the file and passwords in a password manager. Secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (GitHub Actions secrets only).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "android",
+        "ci",
+        "secrets-owner"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md section 3",
+      "externalKey": "mobile-release:android-keystore"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Android: create the Play Console app and upload the first AAB by hand (internal testing)",
+      "body": "Play Console > Create app (Lotties, App, Free). Run the workflow (android only, no upload), download the AAB, Internal testing > accept Play App Signing > upload > roll out. Fill App content (privacy URL, ads none, app access with demo login, audience adults, Data safety, health declaration) and the store listing. Google requires the first AAB by hand.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "android",
+        "google-play"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md 4.1",
+      "externalKey": "mobile-release:play-console-app"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Android: closed test with 12 testers opted in for 14 days in a row (personal account rule)",
+      "body": "A personal developer account created after Nov 2023 cannot publish to production before this. Invite 12 people (each needs a Google account), keep them opted in 14 days, then apply for production access. Internal testing does not count. An organisation account is exempt (controller decision). Confirm the current rule in the console.",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "android",
+        "google-play",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md 4.1 step 7",
+      "externalKey": "mobile-release:closed-test"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Android: PLAY_SERVICE_ACCOUNT_JSON for automatic Play uploads (after the first manual AAB)",
+      "body": "Only then set the secret and use the `upload_play` input or a tag. The service account needs release permissions for this app only.",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "android",
+        "ci",
+        "secrets-owner"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md 4.1 step 6",
+      "externalKey": "mobile-release:play-service-account"
+    },
+    {
+      "type": "risk",
+      "topic": "mobile-stores",
+      "title": "The mobile release workflow has never run (expect first-run fixes)",
+      "body": "Validated only as YAML and by reading. Unverified: the auto-created `App` scheme, JDK 21 for Capacitor, Apple API key flags for archive/export on macos-26 with Xcode 26.5, the TestFlight upload through `destination=upload`.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "ci",
+        "android",
+        "ios"
+      ],
+      "links": [
+        {
+          "label": "docs/MOBILE-RELEASE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MOBILE-RELEASE.md"
+        }
+      ],
+      "source": "docs/MOBILE-RELEASE.md section 7",
+      "externalKey": "mobile-release:never-run"
+    },
+    {
+      "type": "decision",
+      "topic": "mobile-stores",
+      "title": "CLA or contribution clause in CONTRIBUTING (AGPL code in the app stores)",
+      "body": "The owner can publish their own code; outside contributions need a grant to ship through the stores. Options: CLA / DCO plus a clause, dual licence, or no outside code in the app. A draft clause is in section 9 (a legal change: owner to approve; confirm with a lawyer).",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "licence",
+        "agpl",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 9",
+      "externalKey": "store-readiness:cla"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Public /delete-account page for Google Play's deletion URL",
+      "body": "Public page explaining the in-app path (Settings > Account and data), what is deleted and what stays, and a contact for people who cannot sign in; landing footer link. Waits on the owner approving the text (and the G7 decision).",
+      "status": "blocked",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "web",
+        "google-play",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 5",
+      "externalKey": "store-readiness:delete-account-page"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Keycloak and API for the native apps: redirect URIs, web origins, CORS_ALLOWED_ORIGINS",
+      "body": "Before testers sign in from the native apps: the app redirect (`app.lotties.app://auth`) and origins `https://localhost`, `capacitor://localhost` (docs/design/12 sections 4 and 5).",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "keycloak",
+        "android",
+        "ios"
+      ],
+      "links": [
+        {
+          "label": "docs/design/12-mobile-capacitor.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/12-mobile-capacitor.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 10",
+      "externalKey": "store-readiness:keycloak-native-clients"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Store forms: App Privacy, Data safety, age/content rating, health declaration",
+      "body": "Answers are drafted in section 3 (checked against the privacy audit), 6 and 7; the owner fills the consoles and confirms the \"owner to confirm\" answers (Apple analytics, Alexa transfer).",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "ios",
+        "android",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 10",
+      "externalKey": "store-readiness:store-forms"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Store listing and review notes: descriptions, screenshots (en, pt-BR), support URL, demo accounts",
+      "body": "No medical claims; credits and privacy URLs in the description. Review notes: a dedicated demo user with synthetic events for a fake baby and a second demo user for sharing (never real credentials in the repo). The assistant drafts text and screenshots; the owner creates accounts and submits.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "ios",
+        "android",
+        "listing"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md sections 8 and 10",
+      "externalKey": "store-readiness:listing-review-notes"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Native push (APNs/FCM) and isNativeApp() in the notification settings before the first iOS review",
+      "body": "docs/design/19-native-push.md is design only; needs vendor accounts (Apple Developer Program, Firebase project). The server side can be written against fake HTTP handlers first.",
+      "status": "blocked",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "native",
+        "push",
+        "ios",
+        "android"
+      ],
+      "links": [
+        {
+          "label": "docs/design/19-native-push.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/19-native-push.md"
+        },
+        {
+          "label": "docs/design/12-mobile-capacitor.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/12-mobile-capacitor.md"
+        },
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 10",
+      "externalKey": "store-readiness:native-push"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "iOS privacy manifest (PrivacyInfo.xcprivacy) and launch screen check",
+      "body": "No tracking; required-reason API declarations for the plugins used (Capacitor ships its own).",
+      "status": "open",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "ios"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 10",
+      "externalKey": "store-readiness:ios-privacy-manifest"
+    },
+    {
+      "type": "task",
+      "topic": "mobile-stores",
+      "title": "Check the native icons and splash on a real device",
+      "body": "Placeholder icons were replaced (feat/native-assets) but never seen on a device.",
+      "status": "open",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "android",
+        "ios",
+        "device-test"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-store-readiness.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-store-readiness.md"
+        }
+      ],
+      "source": "docs/design/20-store-readiness.md section 10",
+      "externalKey": "store-readiness:icons-on-device"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "Alexa: create the skill and upload the en-US and pt-BR interaction models",
+      "body": "Alexa developer console: Create Skill (Lotties, Custom, provision your own), add Portuguese (BR), paste `alexa/interaction-model.en-US.json` / `.pt-BR.json`, Build Model. Endpoint: HTTPS `https://lotties.app/api/v1/alexa`, trusted CA certificate. Copy the Skill ID for `Alexa__SkillIds`.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "alexa"
+      ],
+      "links": [
+        {
+          "label": "docs/ALEXA.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/ALEXA.md"
+        },
+        {
+          "label": "docs/design/32-assistants.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/32-assistants.md"
+        }
+      ],
+      "source": "docs/ALEXA.md sections 2-4",
+      "externalKey": "alexa:create-skill"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "Alexa: Keycloak client lotties-alexa and account linking in the console",
+      "body": "Confidential client `lotties-alexa` (standard flow only), the three Alexa redirect URLs with the vendor id, Audience mapper `lotties-api`; secret only into the Alexa console (never the repo or a `.env`). Console Account Linking: Auth Code Grant, Keycloak auth and token URIs, HTTP Basic, scope `openid` (plus `offline_access` if chosen), domain `auth.lotties.app`.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "alexa",
+        "keycloak"
+      ],
+      "links": [
+        {
+          "label": "docs/ALEXA.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/ALEXA.md"
+        }
+      ],
+      "source": "docs/ALEXA.md section 5",
+      "externalKey": "alexa:account-linking"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "Alexa: set Alexa__Enabled and Alexa__SkillIds, deploy, and test in the console (en and pt-BR)",
+      "body": "In `deploy/homelab/values/api.yaml` under `env:` (not secrets), commit, deploy from the main clone. Check: unsigned POST answers 400 when enabled. Then the console Test tab script (section 7), including Viewer and multi-baby cases.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "alexa",
+        "deploy"
+      ],
+      "links": [
+        {
+          "label": "docs/ALEXA.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/ALEXA.md"
+        }
+      ],
+      "source": "docs/ALEXA.md sections 6-7",
+      "externalKey": "alexa:enable-and-test"
+    },
+    {
+      "type": "question",
+      "topic": "assistants-alexa-mcp",
+      "title": "Alexa invocation name \"lotties\": needs Amazon's brand approval (trademark evidence)",
+      "body": "A one-word brand invocation needs evidence of brand ownership. The models ship with `lotties` (both languages). Amazon may reject a one-word name at certification without brand evidence; then switch both models to the fallback `lotties baby` BEFORE publishing (the name cannot change after the skill is published).",
+      "status": "open",
+      "side": "external",
+      "priority": "low",
+      "labels": [
+        "alexa",
+        "trademark"
+      ],
+      "links": [
+        {
+          "label": "docs/ALEXA.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/ALEXA.md"
+        }
+      ],
+      "source": "docs/ALEXA.md section 1",
+      "externalKey": "alexa:invocation-name"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "Alexa: certification submission (privacy URL, distribution, privacy and compliance, test account)",
+      "body": "Privacy policy URL `https://lotties.app/privacy` (Alexa part under the companies section); skill preview per language; collects personal information: yes; child-directed: no; testing instructions with a dedicated test account (never a real family's); no health claims. Blocked on the build values and the lawyer review.",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "alexa",
+        "certification",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/ALEXA.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/ALEXA.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        }
+      ],
+      "source": "docs/ALEXA.md section 8",
+      "externalKey": "alexa:certification"
+    },
+    {
+      "type": "task",
+      "topic": "infrastructure-deploy",
+      "title": "Fix the /.well-known/oauth-protected-resource routing (Traefik/Cloudflare sends it to the web app) BEFORE enabling MCP",
+      "body": "The Ingress routes the path to `lotties-api`, but through Traefik and Cloudflare a request is answered by the web service (HTML, 200). `/api/...` and the API pod directly answer correctly. No other Ingress claims the path.\n\nTry: Traefik router priority for the path (a separate Ingress with `traefik.ingress.kubernetes.io/router.priority`), whether Traefik reloaded its config, any Cloudflare rule on `/.well-known/`. Check: `curl -i https://lotties.app/.well-known/oauth-protected-resource` returns JSON, not HTML. Cluster changes need the owner's go-ahead.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "high",
+      "labels": [
+        "mcp",
+        "traefik",
+        "cloudflare",
+        "ingress"
+      ],
+      "links": [
+        {
+          "label": "docs/MCP.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MCP.md"
+        }
+      ],
+      "source": "docs/MCP.md Known issue",
+      "externalKey": "mcp:well-known-routing"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "MCP: Keycloak client scopes lotties.read / lotties.write with the audience mapper and consent texts",
+      "body": "Two optional client scopes with consent texts (en, pt-BR realm overrides) and an Audience mapper `https://lotties.app/api/v1/mcp` (never `lotties-api`). Short access tokens (5 min), refresh token rotation.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "mcp",
+        "keycloak"
+      ],
+      "links": [
+        {
+          "label": "docs/MCP.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MCP.md"
+        }
+      ],
+      "source": "docs/MCP.md section 2",
+      "externalKey": "mcp:keycloak-scopes"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "MCP: Keycloak AI clients (lotties-claude, optional lotties-claude-write, optional DCR/CIMD policies)",
+      "body": "Public client `lotties-claude` with redirect `https://claude.ai/api/mcp/auth_callback`, PKCE S256, consent required, `lotties.read` default. A second client for parents who want logging. DCR only with trusted-host and scope policies.",
+      "status": "open",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "mcp",
+        "keycloak"
+      ],
+      "links": [
+        {
+          "label": "docs/MCP.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MCP.md"
+        }
+      ],
+      "source": "docs/MCP.md section 3",
+      "externalKey": "mcp:keycloak-clients"
+    },
+    {
+      "type": "task",
+      "topic": "assistants-alexa-mcp",
+      "title": "MCP: set Mcp__Enabled, Mcp__ResourceUrl, Mcp__Audience; deploy; test with Claude and the MCP Inspector",
+      "body": "Under `env:` in `deploy/homelab/values/api.yaml`. Blocked on the well-known routing fix. Check the 401 `resource_metadata` and the metadata JSON (section 4).",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "normal",
+      "labels": [
+        "mcp",
+        "deploy"
+      ],
+      "links": [
+        {
+          "label": "docs/MCP.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MCP.md"
+        }
+      ],
+      "source": "docs/MCP.md section 4",
+      "externalKey": "mcp:enable"
+    },
+    {
+      "type": "task",
+      "topic": "process-meta",
+      "title": "Enable the project board: Keycloak realm roles, Board__Enabled, Board__Mcp__Enabled, first API key",
+      "body": "1. Realm `lotties.app`: create `lotties-board-reader`, `-writer`, `-admin`; check the `realm_access.roles` mapper; assign `lotties-board-admin` to the owner (docs/KEYCLOAK-BOARD.md sections 2-4).\n2. `Board__Enabled: \"true\"` and `Board__Mcp__Enabled: \"true\"` under `env:` in `deploy/homelab/values/api.yaml`, own commit, deploy (migration `ProjectBoard` first).\n3. Create the first write API key (expiry set) for Claude Code; keep it in `LOTTIES_BOARD_KEY` on that machine.\n4. Import this seed: `node scripts/board-import.mjs --dry-run`, then without `--dry-run`.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "board",
+        "keycloak",
+        "deploy"
+      ],
+      "links": [
+        {
+          "label": "docs/KEYCLOAK-BOARD.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/KEYCLOAK-BOARD.md"
+        },
+        {
+          "label": "docs/design/36-project-board.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/36-project-board.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:enable-board"
+    },
+    {
+      "type": "task",
+      "topic": "infrastructure-deploy",
+      "title": "Keycloak account-deletion client lotties-account-deletion (manage-users) and AUTH_ADMIN_CLIENT_ID/SECRET",
+      "body": "Service-account client `lotties-account-deletion`, `realm-management` > `manage-users` only; put `AUTH_ADMIN_CLIENT_ID` / `AUTH_ADMIN_CLIENT_SECRET` in `deploy/homelab/.env` (never the repo); deploy; test with a throwaway user (docs/KEYCLOAK-ACCOUNT-DELETION.md section 4). Until then production keeps the sign-in account and says so (audit G5, checklist C9).",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "keycloak",
+        "privacy",
+        "account-deletion",
+        "store-blocker"
+      ],
+      "links": [
+        {
+          "label": "docs/KEYCLOAK-ACCOUNT-DELETION.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/KEYCLOAK-ACCOUNT-DELETION.md"
+        },
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "source": "docs/KEYCLOAK-ACCOUNT-DELETION.md / docs/design/33 G5",
+      "externalKey": "keycloak-account-deletion:client"
+    },
+    {
+      "type": "task",
+      "topic": "infrastructure-deploy",
+      "title": "Delete the pg_dump backups in the scratchpad when no longer needed (they hold a child's data)",
+      "body": "Backups taken before migration deploys are kept only until the owner says to delete them. Say when; the assistant deletes them and confirms.",
+      "status": "open",
+      "side": "owner",
+      "priority": "high",
+      "labels": [
+        "backup",
+        "privacy"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:delete-backups"
+    },
+    {
+      "type": "task",
+      "topic": "infrastructure-deploy",
+      "title": "Upgrade the API to .NET 10 LTS (net8.0 end of life 2026-11-10)",
+      "body": "PLAN backlog 19 and REVIEW #20 (also: pin/lock web versions). All projects still target `net8.0`.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "high",
+      "labels": [
+        "dotnet",
+        "upgrade",
+        "api"
+      ],
+      "dueDate": "2026-11-10",
+      "links": [
+        {
+          "label": "docs/agents/PLAN.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/agents/PLAN.md"
+        },
+        {
+          "label": "docs/agents/REVIEW.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/agents/REVIEW.md"
+        }
+      ],
+      "source": "docs/agents/PLAN.md 19 / REVIEW.md 20",
+      "externalKey": "plan:19"
+    },
+    {
+      "type": "task",
+      "topic": "infrastructure-deploy",
+      "title": "Issuer backfill clean-up for legacy user rows; Postgres-specific tests (xmin, jsonb)",
+      "body": "Via a real database or Testcontainers on Podman. API tests run on SQLite, so Postgres-only behaviour is verified only by model/snapshot tests.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "low",
+      "labels": [
+        "api",
+        "tests",
+        "postgres"
+      ],
+      "links": [
+        {
+          "label": "docs/agents/PLAN.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/agents/PLAN.md"
+        }
+      ],
+      "source": "docs/agents/PLAN.md 20",
+      "externalKey": "plan:20"
+    },
+    {
+      "type": "task",
+      "topic": "predictions-ml",
+      "title": "Bottle suggestions phase 2: opt-in pooled per-feed amounts by age (k >= 20)",
+      "body": "Now part of community insights (docs/design/34): blocked on decisions O1-O11, the lawyer review and the RIPD. Nothing pooled is collected.",
+      "status": "blocked",
+      "side": "owner",
+      "priority": "low",
+      "labels": [
+        "community-insights",
+        "bottle"
+      ],
+      "links": [
+        {
+          "label": "docs/agents/PLAN.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/agents/PLAN.md"
+        },
+        {
+          "label": "docs/design/10-bottle-suggestions.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/10-bottle-suggestions.md"
+        },
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        }
+      ],
+      "source": "docs/agents/PLAN.md 22",
+      "externalKey": "plan:22"
+    },
+    {
+      "type": "task",
+      "topic": "product",
+      "title": "Insights: \"bottles finished vs interrupted\" statistic (not built)",
+      "body": "From timed bottles (prepared vs drunk amounts, ended by sleep). Needs the owner's UI approval.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "web",
+        "bottle",
+        "insights"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-feeding-amounts.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-feeding-amounts.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:bottles-finished-stat"
+    },
+    {
+      "type": "task",
+      "topic": "product",
+      "title": "Edit sheet: show the \"fell asleep\" line for a feeding ended by sleep",
+      "body": "docs/design/20-feeding-amounts.md: a feeding still running when the baby falls asleep is over; the edit sheet does not show it yet.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "web",
+        "bottle",
+        "insights"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-feeding-amounts.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-feeding-amounts.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:fell-asleep-line"
+    },
+    {
+      "type": "task",
+      "topic": "product",
+      "title": "Follow-up prompt when a bottle was logged without a prepared amount",
+      "body": "Ask for the prepared amount later so finished/interrupted can be computed. Copy and placement need the owner's approval.",
+      "status": "open",
+      "side": "assistant",
+      "priority": "normal",
+      "labels": [
+        "web",
+        "bottle",
+        "insights"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-feeding-amounts.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-feeding-amounts.md"
+        }
+      ],
+      "source": "conversation 2026-10-24",
+      "externalKey": "conversation-2026-10-24:no-prepared-amount-prompt"
+    },
+    {
+      "type": "decision",
+      "topic": "predictions-ml",
+      "title": "Cry ranker: shorter breastfed hunger gaps reverted to band defaults from 4 weeks",
+      "body": "The cry ranker does not keep shorter hunger gaps for breastfed babies; from 4 weeks it uses the band defaults.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/27-cry-reasons.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/27-cry-reasons.md"
+        },
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        }
+      ],
+      "decisionSummary": "The cry ranker does not keep shorter hunger gaps for breastfed babies; from 4 weeks it uses the band defaults.",
+      "rationale": "Owner decision: the shorter breastfed gaps over-ranked hunger; the published band defaults are the honest baseline.",
+      "decidedAt": "2026-10-24T12:00:00Z",
+      "source": "conversation 2026-10-24",
+      "externalKey": "decision:cry-ranker-breastfed-gaps"
+    },
+    {
+      "type": "decision",
+      "topic": "product",
+      "title": "Per-account \"Time bottle feedings\" setting (default off)",
+      "body": "An account preference for all babies: on, the Bottle quick action starts a timer; off, it logs at once. Nursing always has its timer. Not part of the API.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/20-feeding-amounts.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/20-feeding-amounts.md"
+        }
+      ],
+      "decisionSummary": "An account preference for all babies: on, the Bottle quick action starts a timer; off, it logs at once. Nursing always has its timer. Not part of the API.",
+      "rationale": "A bottle does not need a timer for most families; those who want pace data opt in.",
+      "decidedAt": "2026-10-22T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:time-bottle-feedings-setting"
+    },
+    {
+      "type": "decision",
+      "topic": "predictions-ml",
+      "title": "Predictions use published norms as priors; no pooled data yet",
+      "body": "Age norms from published sources (docs/design/28) are the priors. Community insights (pooled data) is opt-in only, designed, not built.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/28-age-norms.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md"
+        },
+        {
+          "label": "docs/design/34-community-insights.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/34-community-insights.md"
+        }
+      ],
+      "decisionSummary": "Age norms from published sources (docs/design/28) are the priors. Community insights (pooled data) is opt-in only, designed, not built.",
+      "rationale": "No cross-baby data without consent, k-anonymity and a legal review.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:published-norms-priors"
+    },
+    {
+      "type": "decision",
+      "topic": "infrastructure-deploy",
+      "title": "pg_dump backup only before deploys that apply a migration",
+      "body": "Before a deploy with an EF migration: back up, verify, deploy, check the migration history. Other deploys: no backup.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        }
+      ],
+      "decisionSummary": "Before a deploy with an EF migration: back up, verify, deploy, check the migration history. Other deploys: no backup.",
+      "rationale": "Backups hold a child's data and piled up; deploys without a schema change do not risk the data.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:backup-before-migration-deploys"
+    },
+    {
+      "type": "decision",
+      "topic": "doctor-access",
+      "title": "Doctors see only the sections the Owner shares (doctor scopes)",
+      "body": "Per-doctor scopes enforced by `BabyScope:*` policies; the doctor works in `/doctor`, never the parents' shell or the full sync.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/19-doctor-dashboard.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/19-doctor-dashboard.md"
+        },
+        {
+          "label": "docs/design/16-doctor-access.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/16-doctor-access.md"
+        }
+      ],
+      "decisionSummary": "Per-doctor scopes enforced by `BabyScope:*` policies; the doctor works in `/doctor`, never the parents' shell or the full sync.",
+      "rationale": "A doctor saw the whole app; she needs only what the family shares, and a clinician-oriented dashboard.",
+      "decidedAt": "2026-10-22T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:doctor-sections-scopes"
+    },
+    {
+      "type": "decision",
+      "topic": "assistants-alexa-mcp",
+      "title": "Alexa and MCP share one command layer; no doses by voice; MCP off by default",
+      "body": "One Application layer of assistant commands with two adapters (Alexa endpoint, MCP server). Never medication doses or advice through any assistant. MCP read-only by default, writes opt-in; both off until enabled.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/32-assistants.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/32-assistants.md"
+        },
+        {
+          "label": "docs/ALEXA.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/ALEXA.md"
+        },
+        {
+          "label": "docs/MCP.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/MCP.md"
+        }
+      ],
+      "decisionSummary": "One Application layer of assistant commands with two adapters (Alexa endpoint, MCP server). Never medication doses or advice through any assistant. MCP read-only by default, writes opt-in; both off until enabled.",
+      "rationale": "One set of rules and tests for both assistants; dose errors by voice are a safety risk.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:assistants-one-command-layer"
+    },
+    {
+      "type": "decision",
+      "topic": "privacy-legal",
+      "title": "Publish a first privacy policy version before any store submission",
+      "body": "A plain-language policy written from the code and deploy kit (now version 3), with an owner checklist for facts the repo cannot prove; lawyer review before submitting.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/PRIVACY-OWNER-CHECKLIST.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PRIVACY-OWNER-CHECKLIST.md"
+        },
+        {
+          "label": "docs/design/33-privacy-audit.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/33-privacy-audit.md"
+        }
+      ],
+      "decisionSummary": "A plain-language policy written from the code and deploy kit (now version 3), with an owner checklist for facts the repo cannot prove; lawyer review before submitting.",
+      "rationale": "Both stores and Alexa require a policy URL; it must never invent facts.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:privacy-policy-before-stores"
+    },
+    {
+      "type": "decision",
+      "topic": "predictions-ml",
+      "title": "Cry detector: detection, not cause; zero-shot YAMNet; foreground monitor only",
+      "body": "Detect sustained crying on the device (YAMNet via MediaPipe, zero-shot, no training of ours) in a foreground monitor mode; nothing recorded or sent; not a safety device. Audio cause classification rejected.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/31-cry-detector-spike.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/31-cry-detector-spike.md"
+        },
+        {
+          "label": "docs/design/35-cry-engine.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/35-cry-engine.md"
+        }
+      ],
+      "decisionSummary": "Detect sustained crying on the device (YAMNet via MediaPipe, zero-shot, no training of ours) in a foreground monitor mode; nothing recorded or sent; not a safety device. Audio cause classification rejected.",
+      "rationale": "Cause classification has weak accuracy and false-reassurance risk; on-device detection keeps audio private.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:cry-detector-scope"
+    },
+    {
+      "type": "decision",
+      "topic": "process-meta",
+      "title": "Project board: Keycloak realm roles for people, hashed API keys for tools",
+      "body": "Three realm roles (reader, writer, admin) and `lbk_` API keys stored as SHA-256, created only by admins, scope read or write, never admin. Board off by default.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/36-project-board.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/36-project-board.md"
+        },
+        {
+          "label": "docs/KEYCLOAK-BOARD.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/KEYCLOAK-BOARD.md"
+        }
+      ],
+      "decisionSummary": "Three realm roles (reader, writer, admin) and `lbk_` API keys stored as SHA-256, created only by admins, scope read or write, never admin. Board off by default.",
+      "rationale": "No baby data and no third party; keys are revocable and never stored in clear.",
+      "decidedAt": "2026-10-24T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:board-auth"
+    },
+    {
+      "type": "decision",
+      "topic": "design-ux",
+      "title": "Keep Credits (open-source acknowledgements) in the Hub and before sign-in",
+      "body": "Credits are visible on the landing page, in Hub > App and in the repo (CREDITS.md); naming a source never implies endorsement.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [
+        {
+          "label": "docs/design/25-credits.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/25-credits.md"
+        }
+      ],
+      "decisionSummary": "Credits are visible on the landing page, in Hub > App and in the repo (CREDITS.md); naming a source never implies endorsement.",
+      "rationale": "Owner request: credit the libraries and data sources very explicitly.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "decision:hub-credits"
+    },
+    {
+      "type": "decision",
+      "topic": "product",
+      "title": "Appointment transcription is on hold",
+      "body": "The owner put appointment transcription on hold; options and a staged plan are kept for later.",
+      "status": "done",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "decision-log"
+      ],
+      "links": [],
+      "decisionSummary": "The owner put appointment transcription on hold; options and a staged plan are kept for later.",
+      "rationale": "Owner put it on hold in favour of the queued features; the options and staged plan are kept for when it resumes.",
+      "decidedAt": "2026-10-23T12:00:00Z",
+      "source": "conversation 2026-10-24 (decision log)",
+      "externalKey": "deferred:appointment-transcription"
+    },
+    {
+      "type": "memory",
+      "topic": "infrastructure-deploy",
+      "title": "Deploy procedure: only from the normal clone, clean tree on main, in WSL",
+      "body": "- Deploy ONLY from the main clone with a clean tree on `main` (the owner's two local `.gitignore` lines aside): `DRY_RUN=1 ./deploy/homelab/deploy.sh`, then `./deploy/homelab/deploy.sh`.\n- Never from a git worktree: WSL cannot read a Windows worktree's `.git` file (image tags collapsed once and a stale image was reused; `deploy.sh` now refuses).\n- The owner's two local `.gitignore` lines (`CLAUDE.md` and `.claude/`) must stay out of every commit.\n- Integrate and deploy one feature at a time, in the order they finish (docs/PROCESS.md).\n- Back up the database only before a deploy that applies a migration; apply migrations first.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        },
+        {
+          "label": "docs/DEPLOY.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/DEPLOY.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24 (memory)",
+      "externalKey": "memory:deploy-procedure"
+    },
+    {
+      "type": "memory",
+      "topic": "infrastructure-deploy",
+      "title": "Migrations: regen undeployed ones, pin deployed ones after each deploy",
+      "body": "- `scripts/regen-migrations.sh <Name>` re-creates a migration that was never applied to any database (it refuses deployed ones).\n- After each deploy that shipped a migration, built-in event type or notification kind, pin it: `DeployedMigrations` in `MigrationTests.cs`, `DeployedKeys` in `BuiltInEventTypesTests.cs`, codes in `NotificationValueObjectTests.cs` (a small commit on main; workers never edit these lists).\n- Code-first EF only; `dotnet ef migrations add`; never commit a SQL script.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24 (memory)",
+      "externalKey": "memory:migrations"
+    },
+    {
+      "type": "memory",
+      "topic": "process-meta",
+      "title": "Hygiene: no leftover processes; only br-* containers; flaky tests",
+      "body": "- No leftover workers, dev servers, containers or launchers after a task; check for runaway CPU processes (a stray loop once made tests flaky all night).\n- Containers: Podman in WSL. Never stop, remove or prune anything not named `br-*`; own names and high ports only; `--network host`.\n- Known flaky tests: timing-sensitive web tests under CPU load (e.g. `coldStart.test.tsx` B1, fixed by REVIEW #21). Re-run once before chasing; record new ones here.\n- Never read, print or commit the root `.env`; secrets live only there and in the owner's deploy `.env`.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        },
+        {
+          "label": "CLAUDE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/CLAUDE.md"
+        },
+        {
+          "label": "docs/agents/REVIEW.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/agents/REVIEW.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24 (memory)",
+      "externalKey": "memory:hygiene"
+    },
+    {
+      "type": "memory",
+      "topic": "process-meta",
+      "title": "Owner preferences: terse replies, own UI, one worktree per worker",
+      "body": "- Terse replies.\n- The UI must not copy Napper.\n- Deploy each worker's result as soon as it finishes, one git worktree per worker.\n- All AI-produced docs under `docs/`; agent-only files in `docs/agents/`.\n- Subagents: Opus plans/orchestrates, Sonnet medium-hard, Haiku simple, never Fable.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "CLAUDE.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/CLAUDE.md"
+        },
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24 (memory)",
+      "externalKey": "memory:owner-style"
+    },
+    {
+      "type": "memory",
+      "topic": "infrastructure-deploy",
+      "title": "Infrastructure map (no secrets)",
+      "body": "- Home lab Kubernetes, kubectl context `home-lab-main`; app namespace `lotties-app-production`.\n- Images in the owner's Harbor registry; deploy kit `deploy/homelab` (Helm releases `lotties-api`, `lotties-web`).\n- Keycloak realm `lotties.app` at `https://auth.lotties.app` (shared Keycloak, single replica: test before touching it).\n- Ingress class `traefik-external`; Cloudflare in front (DNS; proxying to be confirmed, C2). Public host `https://lotties.app` (`/api` to the API).\n- PostgreSQL outside the cluster; the API uses a role limited to DML; migrations by the migrator role.\n- Any cluster change needs the owner's explicit go-ahead; read-only kubectl is fine.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "docs/DEPLOY.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/DEPLOY.md"
+        },
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24 (memory)",
+      "externalKey": "memory:infrastructure-map"
+    },
+    {
+      "type": "memory",
+      "topic": "infrastructure-deploy",
+      "title": "Known load-flaky web tests (pass alone)",
+      "body": "When the full vitest run fails, re-run the failing files ALONE before treating it as a regression. Known load-flaky (they pass alone): EventSheet (reduced motion), SettingsPage (creates a custom type), DoctorInbox (accepting), IllustrationGallery, LandingPage, PrescriptionSheet, ProposalSheet, CreditsPage, SettingsPage.moved. Also common: `DatabaseClosedError` unhandled rejections from AppShell/NowScreen/HubScreen tests under load (they also happen on base commits). After a merge also clear `code/web/.vite-cache` if the catalog test fails oddly.",
+      "status": "open",
+      "side": "both",
+      "priority": "normal",
+      "labels": [
+        "memory"
+      ],
+      "links": [
+        {
+          "label": "docs/PROCESS.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/PROCESS.md"
+        },
+        {
+          "label": "docs/DEPLOY.md",
+          "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/DEPLOY.md"
+        }
+      ],
+      "pinned": true,
+      "source": "conversation 2026-10-24",
+      "externalKey": "memory:known-flaky-tests"
+    }
+  ]
+}

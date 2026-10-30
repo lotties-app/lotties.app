@@ -1,0 +1,80 @@
+{
+  "cryReasons": {
+    "entry": "Por que ela está chorando?",
+    "title": "Por que ela está chorando?",
+    "redFlags": {
+      "label": "Quando pedir ajuda",
+      "title": "Ligue para o pediatra ou para a emergência se ela tiver:",
+      "fever": "Febre. Bebês com menos de 3 meses com febre precisam de uma ligação na hora.",
+      "inconsolable": "Choro que você não consegue acalmar",
+      "refusingFeeds": "Recusa para mamar ou comer",
+      "unusualSleepiness": "Sonolência fora do comum, ou dificuldade para acordar",
+      "bulgingOrStiffFontanelle": "Moleira estufada ou dura"
+    },
+    "suggests": {
+      "title": "O que o seu registro sugere",
+      "causes": {
+        "hunger": "Fome",
+        "sleepy": "Sono",
+        "diaper": "Fralda",
+        "gas": "Gases",
+        "comfort": "Conforto"
+      },
+      "levels": {
+        "likely": "Provável",
+        "possible": "Possível",
+        "unlikely": "Pouco provável"
+      },
+      "facts": {
+        "sinceLastFeed": "Última mamada há {{since}}.",
+        "sinceLastFeedUsual": "Última mamada há {{since}}; ela costuma ficar cerca de {{usual}} entre mamadas.",
+        "sinceLastFeedSmaller": "Última mamada há {{since}}; foi menor que o habitual, então ela pode querer mais antes.",
+        "feedingNow": "Uma mamada está em andamento, começou há {{since}}.",
+        "awakeFor": "Acordada há {{since}}.",
+        "awakeForUsual": "Acordada há {{since}}; ela costuma ficar acordada cerca de {{usual}}.",
+        "nightTime": "É horário da noite.",
+        "sinceLastDiaper": "Última fralda há {{since}}.",
+        "sinceLastDiaperUsual": "Última fralda há {{since}}; ela costuma ficar cerca de {{usual}} entre trocas.",
+        "dirtyDueAfterFeed": "Uma fralda suja costuma vir por agora, depois da mamada.",
+        "dirtyDueGap": "Uma fralda suja pode vir por volta das {{time}}.",
+        "recentFeedNoBurp": "Mamou há {{since}}, sem arroto registrado depois.",
+        "reliefAfterFeed": "Mamou há {{since}}, e um arroto ou massagem foi registrado.",
+        "bellyPattern": "A dor de barriga costuma aparecer por volta das {{time}}.",
+        "eveningFussyPattern": "A irritação costuma começar por volta das {{time}}.",
+        "eveningFussy": "O fim do dia é um horário comum de choro nessa idade.",
+        "noLog": "Ainda não há registros suficientes.",
+        "asleep": "Um timer de sono ainda está rodando, então o registro pode estar atrasado."
+      },
+      "try": {
+        "hunger": "Tente oferecer uma mamada.",
+        "sleepy": "Tente deixar o ambiente mais escuro e começar a desacelerar para dormir.",
+        "diaper": "Tente verificar a fralda.",
+        "gas": "Tente segurá-la em pé, ajudar a arrotar ou fazer uma massagem suave na barriga.",
+        "comfort": "Tente o colo pele a pele, um cueiro bem ajustado ou embalar com calma, com um ruído branco suave."
+      },
+      "helped": "Ajudou em {{helped}} das suas últimas {{total}} vezes",
+      "shortcuts": {
+        "hunger": "Registrar mamada",
+        "diaper": "Registrar fralda",
+        "gas": "Iniciar massagem na barriga"
+      }
+    },
+    "worked": {
+      "title": "O que funcionou?",
+      "hint": "Opcional. Escolher uma opção registra este choro.",
+      "options": {
+        "fed": "Mamou",
+        "changedDiaper": "Troca de fralda",
+        "slept": "Dormiu",
+        "burped": "Arrotou",
+        "held": "Colo",
+        "rocked": "Embalar",
+        "pacifier": "Chupeta",
+        "massage": "Massagem",
+        "nothingYet": "Nada ainda"
+      }
+    },
+    "toast": "Choro registrado, {{helped}}",
+    "footer": "Esta lista usa só o que você registrou. Não é um diagnóstico nem orientação médica, e o Lotties não é um dispositivo médico."
+  }
+}

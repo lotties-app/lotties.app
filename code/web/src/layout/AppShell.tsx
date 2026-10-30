@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { canLog } from '../baby/permissions';
+import { BottleLevelPromptHost } from '../events/BottleLevelPromptHost';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { RejectedChangeSnackbar } from '../sync/RejectedChangeSnackbar';
 import { NotificationLinkProvider } from '../notifications/NotificationLinkProvider';
@@ -18,6 +19,7 @@ import { BottomNav } from './BottomNav';
 import { ErrorBoundary } from './ErrorBoundary';
 import { NAV_CONTENT_PADDING } from './navMetrics';
 import { OffTabAdd } from './OffTabAdd';
+import { PolicyUpdatedNotice } from '../consent/PolicyUpdatedNotice';
 import { SessionBanner } from './SessionBanner';
 import { NightFeedBanner } from './NightFeedBanner';
 
@@ -52,6 +54,7 @@ function ShellBody() {
         >
           <TopBar baby={baby} />
           <SessionBanner />
+          <PolicyUpdatedNotice />
           <NightFeedBanner />
           <Box
             component="main"
@@ -66,6 +69,7 @@ function ShellBody() {
         </Box>
         <BottomNav />
         <DeletedEventSnackbar />
+        <BottleLevelPromptHost />
         <RejectedChangeSnackbar />
         <UndoSnackbar />
         {writable && !OWN_ADD_FLOW.includes(pathname) && <OffTabAdd key={baby.id} baby={baby} />}

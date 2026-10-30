@@ -47,9 +47,14 @@ internal sealed class ReportPrinter(TextWriter output)
         Line("other-form fallbacks dropped (same name and ingredients have a real form)", report.DroppedFallbacks);
         Line($"products with more than {Product.OfficialMaxSubstances} ingredients (kept without links)", report.ProductsWithTooManyIngredients);
         Line("products with dosage text moved out of the name", report.NamesWithPresentation);
+        Line("CMED presentations whose strength reads as one unambiguous amount", report.PresentationStrengthsRead);
+        Line("CMED presentations with unknown strength (combination, odd unit, no amount: stored as nothing)", report.PresentationStrengthsUnknown);
+        Line("products with a structured strength key (compared by the alternatives rule)", report.ProductsWithStrengthKey);
+        Line("products with several readable strengths (shown, never compared)", report.ProductsWithSeveralStrengths);
         Line("substances", report.Substances);
         Line("  curated (English name from the map)", report.CuratedSubstances);
         Samples("Presentations mapped to \"other\" (pattern: count)", report.OtherFormSamples.Select(sample => $"{sample.Text}: {sample.Count:N0}"));
+        Samples("Presentations with unknown strength (pattern: count)", report.UnknownStrengthSamples.Select(sample => $"{sample.Text}: {sample.Count:N0}"));
         Samples("Multi-ingredient products", report.MultiIngredientSamples);
         Samples("Names with dosage moved to presentation", report.PresentationSplitSamples);
         Samples("Ambiguous names (variants)", report.AmbiguousNameSamples);
@@ -61,7 +66,7 @@ internal sealed class ReportPrinter(TextWriter output)
         output.WriteLine($"== Curated list: {curated.Products.Count} product(s), not reviewed by a pharmacist");
         foreach (var product in curated.Products)
         {
-            output.WriteLine($"  {product.ExternalRef}: {product.Name} | {OfficialCatalogPlanner.FormCode(product.Form)} | {string.Join(" + ", product.SubstanceKeys)}");
+            output.WriteLine($"  {product.ExternalRef}: {product.Name} | {OfficialCatalogPlanner.FormCode(product.Form)} | {string.Join(" + ", product.SubstanceKeys)}{(product.Presentation is null ? string.Empty : " | " + product.Presentation)}{(product.StrengthKey is null ? string.Empty : " | strength " + product.StrengthKey)}{(product.AliasOfExternalRef is null ? string.Empty : " | alias of " + product.AliasOfExternalRef)}");
         }
 
         Samples("Name collisions between sources (only the first is written)", collisions);
@@ -80,7 +85,8 @@ internal sealed class ReportPrinter(TextWriter output)
                 var ingredients = product.SubstanceKeys.Count == 0 ? "(ingredient not listed)" : string.Join(" + ", product.SubstanceKeys.Select(key => $"{substances[key].NamePtBr} ({key})"));
                 var registrations = product.RegistrationNumbers.Count == 0 ? "no registration" : $"reg. {string.Join(", ", product.RegistrationNumbers.Take(4))}{(product.RegistrationNumbers.Count > 4 ? ", ..." : string.Empty)}";
                 var ambiguous = product.AmbiguousName is null ? string.Empty : $" | AMBIGUOUS name \"{product.AmbiguousName}\"";
-                output.WriteLine($"  [{product.Source}] {product.Name} | {OfficialCatalogPlanner.FormCode(product.Form)} | {ingredients} | {registrations}{ambiguous}");
+                var strength = product.StrengthKey is null ? (product.StrengthText is null ? string.Empty : $" | strengths (not compared): {product.StrengthText}") : $" | strength {product.StrengthKey}";
+                output.WriteLine($"  [{product.Source}] {product.Name} | {OfficialCatalogPlanner.FormCode(product.Form)} | {ingredients} | {registrations}{strength}{ambiguous}");
             }
         }
     }
@@ -95,6 +101,7 @@ internal sealed class ReportPrinter(TextWriter output)
         Line("community products adopted", result.ProductsAdopted);
         Line("products unchanged", result.ProductsUnchanged);
         Line("products retired (no longer in their source)", result.ProductsRetired);
+        Line("curated aliases merged into their product", result.AliasesMerged);
         Line("products skipped", result.Skipped.Count);
         Samples("Skipped", result.Skipped.Take(20));
         output.WriteLine($"  elapsed: {elapsed.TotalSeconds:N1} s");

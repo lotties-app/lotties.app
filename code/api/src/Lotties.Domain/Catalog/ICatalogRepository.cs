@@ -3,6 +3,12 @@ namespace Lotties.Domain.Catalog;
 /// <summary>A page of products and the total number of products the list has.</summary>
 public sealed record ProductPage(IReadOnlyList<Product> Items, int Total);
 
+/// <summary>
+/// What to load first when the pool of products with the same ingredients is capped: those with this structured
+/// strength key (<see cref="Product.StrengthKey"/>, when not <c>null</c>) and, among them, this known form.
+/// </summary>
+public sealed record AlternativePreference(string? StrengthKey, ProductForm Form);
+
 /// <summary>Persistence of the shared catalog (substances and products). Products are returned with their substances.</summary>
 public interface ICatalogRepository
 {
@@ -23,9 +29,10 @@ public interface ICatalogRepository
 
     /// <summary>
     /// Up to <paramref name="take"/> non-merged, active products whose substances are exactly <paramref name="substanceIds"/>
-    /// (a non-empty set), official first, then by name; not tracked.
+    /// (a non-empty set), official first, then by name; not tracked. With <paramref name="prefer"/>, the products with that
+    /// strength key and form come first, then those with the key, so a capped pool still holds the equivalent ones.
     /// </summary>
-    Task<IReadOnlyList<Product>> FindWithSameSubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Product>> FindWithSameSubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, AlternativePreference? prefer = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Up to <paramref name="take"/> non-merged, active products sharing one of these ambiguous names

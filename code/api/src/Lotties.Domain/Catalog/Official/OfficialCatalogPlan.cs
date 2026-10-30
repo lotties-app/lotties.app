@@ -5,7 +5,9 @@ namespace Lotties.Domain.Catalog.Official;
 /// form (the same brand is often registered several times, and one registration covers several forms).
 /// <see cref="ExternalRef"/> is the stable key <c>{normalized name}:{form}</c> in <see cref="Source"/>;
 /// <see cref="AmbiguousName"/> is set when products with other ingredients share the source name (the name then
-/// carries the ingredients); <see cref="RegistrationNumbers"/> are kept for the report only (empty for notified products).
+/// carries the ingredients); <see cref="AliasOfExternalRef"/> is set for a curated alias (another name of the curated
+/// product with that external ref: the importer merges it into that product); <see cref="RegistrationNumbers"/> are kept for the report only (empty for notified products).
+/// <see cref="StrengthKey"/> (canonical, <see cref="StrengthKeys"/>) and <see cref="StrengthText"/> (display) are the structured strength, <c>null</c> when unknown.
 /// </summary>
 public sealed record CatalogProductPlan(
     string Source,
@@ -17,7 +19,10 @@ public sealed record CatalogProductPlan(
     string? Presentation,
     IReadOnlyList<string> SubstanceKeys,
     IReadOnlyList<string> RegistrationNumbers,
-    string? AmbiguousName);
+    string? AmbiguousName,
+    string? AliasOfExternalRef = null,
+    string? StrengthKey = null,
+    string? StrengthText = null);
 
 /// <summary>A text and how often it occurred (report samples).</summary>
 public sealed record SampleCount(string Text, int Count);
@@ -82,6 +87,20 @@ public sealed record OfficialCatalogReport
     public int ProductsWithTooManyIngredients { get; init; }
 
     public int NamesWithPresentation { get; init; }
+
+    /// <summary>CMED presentations whose leading strength reads as one unambiguous amount (<see cref="StrengthParser"/>).</summary>
+    public int PresentationStrengthsRead { get; init; }
+
+    /// <summary>CMED presentations whose strength is unknown (combinations, odd units, no amount): stored as nothing.</summary>
+    public int PresentationStrengthsUnknown { get; init; }
+
+    /// <summary>Products with a structured strength key (one unambiguous strength).</summary>
+    public int ProductsWithStrengthKey { get; init; }
+
+    /// <summary>Products whose presentations read but carry several strengths: displayed, never compared.</summary>
+    public int ProductsWithSeveralStrengths { get; init; }
+
+    public IReadOnlyList<SampleCount> UnknownStrengthSamples { get; init; } = [];
 
     public IReadOnlyList<SampleCount> OtherFormSamples { get; init; } = [];
 

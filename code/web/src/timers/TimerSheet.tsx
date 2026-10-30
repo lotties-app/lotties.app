@@ -29,7 +29,7 @@ import { timerKindOf } from './runningTimers';
 import { PauseAnnouncer, PauseResumeButton, PausedClock } from './TimerParts';
 import { useTimerTitle } from './useTimerTitle';
 import { LockedNote } from '../baby/LockedNote';
-import { TimerTarget } from './TimerTarget';
+import { BottleTimerTarget, TimerTarget } from './TimerTarget';
 import type { TimerCommands } from './useTimerCommands';
 
 interface Props {
@@ -276,6 +276,11 @@ export function TimerSheet({
             <TimerTarget babyId={babyId} event={event} nowMs={nowMs} />
           </Box>
         )}
+        {type?.babyId === null && type.key === 'feeding' && (
+          <Box sx={{ px: 1, '&:empty': { display: 'none' } }}>
+            <BottleTimerTarget babyId={babyId} event={event} nowMs={nowMs} />
+          </Box>
+        )}
 
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
           <PauseResumeButton
@@ -394,8 +399,8 @@ export function TimerSheet({
 
 const visuallyHidden = {
   position: 'absolute',
-  width: 1,
-  height: 1,
+  width: '1px',
+  height: '1px',
   overflow: 'hidden',
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',

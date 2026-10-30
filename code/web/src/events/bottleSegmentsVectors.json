@@ -1,0 +1,432 @@
+{
+  "_doc": "Shared vectors of the bottle segments grammar and rules: code/web/src/events/bottleSegments.ts and code/api/src/Lotties.Domain/Events/BottleSegments.cs (docs/design/20-feeding-amounts.md section 5).",
+  "parse": [
+    {
+      "text": "120>70@300;70>0@240",
+      "segments": [
+        {
+          "startMl": 120,
+          "leftMl": 70,
+          "seconds": 300
+        },
+        {
+          "startMl": 70,
+          "leftMl": 0,
+          "seconds": 240
+        }
+      ]
+    },
+    {
+      "text": "120>?@300",
+      "segments": [
+        {
+          "startMl": 120,
+          "leftMl": null,
+          "seconds": 300
+        }
+      ]
+    },
+    {
+      "text": "?>?@0",
+      "segments": [
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "text": "?>40@60;40>0@30",
+      "segments": [
+        {
+          "startMl": null,
+          "leftMl": 40,
+          "seconds": 60
+        },
+        {
+          "startMl": 40,
+          "leftMl": 0,
+          "seconds": 30
+        }
+      ]
+    },
+    {
+      "text": "2000>0@86400",
+      "segments": [
+        {
+          "startMl": 2000,
+          "leftMl": 0,
+          "seconds": 86400
+        }
+      ]
+    },
+    {
+      "text": "?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1",
+      "segments": [
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        },
+        {
+          "startMl": null,
+          "leftMl": null,
+          "seconds": 1
+        }
+      ]
+    },
+    {
+      "text": "?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1;?>?@1",
+      "segments": null
+    },
+    {
+      "text": "",
+      "segments": null
+    },
+    {
+      "text": "120>70",
+      "segments": null
+    },
+    {
+      "text": "120>70@300;",
+      "segments": null
+    },
+    {
+      "text": ";120>70@300",
+      "segments": null
+    },
+    {
+      "text": " 120>70@300",
+      "segments": null
+    },
+    {
+      "text": "120 > 70@300",
+      "segments": null
+    },
+    {
+      "text": "120>70@300\n",
+      "segments": null
+    },
+    {
+      "text": "007>0@1",
+      "segments": null
+    },
+    {
+      "text": "120>70@0300",
+      "segments": null
+    },
+    {
+      "text": "2001>0@1",
+      "segments": null
+    },
+    {
+      "text": "100>0@86401",
+      "segments": null
+    },
+    {
+      "text": "1.5>0@1",
+      "segments": null
+    },
+    {
+      "text": "-1>0@1",
+      "segments": null
+    },
+    {
+      "text": "120>70@-5",
+      "segments": null
+    },
+    {
+      "text": "１２０>0@1",
+      "segments": null
+    },
+    {
+      "text": "x>0@1",
+      "segments": null
+    },
+    {
+      "text": "120>70@300,70>0@240",
+      "segments": null
+    },
+    {
+      "text": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+      "segments": null
+    }
+  ],
+  "payloads": [
+    {
+      "note": "no segments: nothing to check",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "null segments",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": null
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "running, one stretch closed at a pause",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>70@300"
+      },
+      "ended": false,
+      "valid": true
+    },
+    {
+      "note": "ended at 70 left, total 50",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "amount_drunk_ml": 50,
+        "segments": "120>70@300"
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "ended empty, total absent = all",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>70@300;70>0@240"
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "levels say 120 drunk, total 100",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "amount_drunk_ml": 100,
+        "segments": "120>70@300;70>0@240"
+      },
+      "ended": true,
+      "valid": false
+    },
+    {
+      "note": "last level unknown: the total is the parent's",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "amount_drunk_ml": 80,
+        "segments": "120>70@300;70>?@240"
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "ends above its start",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>130@300"
+      },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "level above prepared",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "130>100@300"
+      },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "does not start where the previous ended",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>70@300;60>0@200"
+      },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "unknown end, known next start",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>?@300;60>0@200"
+      },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "a skipped pause, then a level",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>?@300;?>40@200"
+      },
+      "ended": false,
+      "valid": true
+    },
+    {
+      "note": "no prepared amount: levels only",
+      "payload": {
+        "method": "bottle",
+        "segments": "?>40@200;40>0@100"
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "levels say 60 drunk, total 30",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "amount_drunk_ml": 30,
+        "segments": "120>60@300"
+      },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "ended with 60 left but total = all",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>60@300"
+      },
+      "ended": true,
+      "valid": false
+    },
+    {
+      "note": "stopped while paused after the last drop",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "120>0@300;0>0@0"
+      },
+      "ended": true,
+      "valid": true
+    },
+    {
+      "note": "malformed",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "segments": "bad"
+      },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "stopped by sleep, unknown",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "amount_drunk_ml": 90,
+        "ended_by": "sleep",
+        "segments": "120>?@300;?>?@120"
+      },
+      "ended": true,
+      "valid": true
+    }
+  ]
+}

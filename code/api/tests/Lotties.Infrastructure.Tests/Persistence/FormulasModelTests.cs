@@ -40,7 +40,8 @@ public sealed class FormulasModelTests
         using var context = ModelTestContext.Create();
 
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
-        var section = script[script.IndexOf("_Formulas'", StringComparison.Ordinal)..];
+        var start = script.IndexOf("_Formulas'", StringComparison.Ordinal);
+        var section = script[start..script.IndexOf("_Appointments'", start, StringComparison.Ordinal)];
 
         Assert.Contains("CREATE TABLE formulas (", section, StringComparison.Ordinal);
         Assert.Contains("CREATE UNIQUE INDEX ux_formulas_one_current_per_baby ON formulas (baby_id) WHERE is_current;", section, StringComparison.Ordinal);

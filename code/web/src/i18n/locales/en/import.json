@@ -9,6 +9,7 @@
       "done": "Done"
     },
     "viewerBlocked": "Only parents and owners can import data into this baby.",
+    "requestOther": "Use another app? Request an import for it",
     "files": {
       "intro": "Choose one or both Napper export files (up to {{limit}} each). Importing the same file again is safe: records that already exist are skipped, nothing is duplicated.",
       "chooseLogs": "Choose logs CSV",

@@ -40,7 +40,7 @@ export function FilesStep({ files, onPick, onRemove, onPreview, pending }: Props
               component="label"
               variant="outlined"
               startIcon={<Icon name="upload-file" />}
-              sx={{ minHeight: 48, flexShrink: 0 }}
+              sx={{ minHeight: 48, flexShrink: 0, maxWidth: '100%' }}
             >
               {kind === 'logs'
                 ? t('import.files.chooseLogs')

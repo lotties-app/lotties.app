@@ -73,14 +73,15 @@ public sealed class BuiltInEventTypesTests
     {
         var fields = BuiltInEventTypes.Feeding.Fields;
 
-        Assert.Equal(["method", "side", "amount_ml", "amount_drunk_ml", "bottle_feeding_type", "formula_id", "formula_name", "breast_left_seconds", "breast_right_seconds", "food", "ended_by", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
+        Assert.Equal(["method", "side", "amount_ml", "amount_drunk_ml", "bottle_feeding_type", "formula_id", "formula_name", "breast_left_seconds", "breast_right_seconds", "food", "ended_by", "segments", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
         Assert.Equal(["breast", "bottle", "solid"], fields[0].Options);
         Assert.Equal(["formula", "breast_milk"], fields[4].Options);
-        Assert.Equal([true, false, false, false, false, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
+        Assert.Equal([true, false, false, false, false, false, false, false, false, false, false, false, false, false, false], fields.Select(field => field.IsRequired));
         Assert.Equal((EventFieldKind.Number, EventFieldKind.Text), (fields[2].Kind, fields[9].Kind));
         Assert.Equal((EventFieldKind.Text, true, "bottle_feeding_type"), (fields[5].Kind, fields[5].IsHidden, fields[5].VisibleWhen!.Field));
         Assert.Equal((EventFieldKind.Select, true, null), (fields[10].Kind, fields[10].IsHidden, fields[10].VisibleWhen?.Field));
         Assert.Equal(["sleep"], fields[10].Options);
+        Assert.Equal((EventFieldKind.Text, true, "method"), (fields[11].Kind, fields[11].IsHidden, fields[11].VisibleWhen!.Field));
     }
 
     [Theory]
@@ -90,6 +91,7 @@ public sealed class BuiltInEventTypesTests
     [InlineData("breast_right_seconds", "breast")]
     [InlineData("amount_ml", "bottle")]
     [InlineData("amount_drunk_ml", "bottle")]
+    [InlineData("segments", "bottle")]
     [InlineData("bottle_feeding_type", "bottle")]
     [InlineData("food", "solid")]
     public void Feeding_DetailFieldsAreVisibleOnlyForTheirMethod(string key, string? method)
@@ -159,8 +161,30 @@ public sealed class BuiltInEventTypesTests
             [("intensity", "Intensity", EventFieldKind.Select), ("what_helped", "What helped", EventFieldKind.Select)],
             visible.Select(field => (field.Key, field.Label, field.Kind)));
         Assert.Equal(["mild", "moderate", "intense"], visible[0].Options);
-        Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing"], visible[1].Options);
+        Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing", "diaper_change", "burping", "holding"], visible[1].Options);
         Assert.All(visible, field => Assert.Equal((false, (FieldVisibilityCondition?)null), (field.IsRequired, field.VisibleWhen)));
+    }
+
+    [Fact]
+    public void Fussy_KeepsTheSuggestedCauseHiddenAndOptionalAfterWhatHelped()
+    {
+        var fields = BuiltInEventTypes.Fussy.Fields;
+
+        Assert.Equal(["intensity", "what_helped", "suggested_cause", "auto_detected", "cry_confirmed", "pause_count", "paused_seconds", "paused_at"], fields.Select(field => field.Key));
+        var cause = fields[2];
+        Assert.Equal(("First suggestion", EventFieldKind.Select, false, true), (cause.Label, cause.Kind, cause.IsRequired, cause.IsHidden));
+        Assert.Equal(["hunger", "sleepy", "diaper", "gas", "comfort"], cause.Options);
+    }
+
+    [Fact]
+    public void Fussy_KeepsTheCryDetectorMarksHiddenOptionalBooleansBeforeThePauses()
+    {
+        var fields = BuiltInEventTypes.Fussy.Fields;
+
+        Assert.Equal(
+            [("auto_detected", "Detected automatically"), ("cry_confirmed", "Confirmed by parent")],
+            fields.Skip(3).Take(2).Select(field => (field.Key, field.Label)));
+        Assert.All(fields.Skip(3).Take(2), field => Assert.Equal((EventFieldKind.Bool, false, true, (FieldVisibilityCondition?)null), (field.Kind, field.IsRequired, field.IsHidden, field.VisibleWhen)));
     }
 
     [Fact]

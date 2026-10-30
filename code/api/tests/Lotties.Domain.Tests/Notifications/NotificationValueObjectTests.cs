@@ -53,6 +53,9 @@ public sealed class NotificationValueObjectTests
     [InlineData("recommendation:0f8fad5bd9cb469fa16570867728950e:s1", true)]
     [InlineData("proposal:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
     [InlineData("recommendation:not-a-guid", false)]
+    [InlineData("cry:0f8fad5bd9cb469fa16570867728950e", true)]
+    [InlineData("cry:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
+    [InlineData("cry:0F8FAD5BD9CB469FA16570867728950E", false)]
     [InlineData("", false)]
     [InlineData(null, false)]
     public void NotificationKey_TryFrom_AcceptsOnlyKnownShapes(string? value, bool expected)
@@ -149,6 +152,28 @@ public sealed class NotificationValueObjectTests
 
         Assert.Equal(ReminderPreferences.Create(true, 5, false, 10, fussyPattern: true, diaperWetHeadsUp: true, diaperDirtyHeadsUp: true), wetOn);
         Assert.Equal((true, true), (olderClient.DiaperWetHeadsUp, olderClient.DiaperDirtyHeadsUp));
+    }
+
+    [Fact]
+    public void ReminderPreferences_CryDetected_OffByDefaultAloneMakesTheBabyACandidateAndAMergeKeepsIt()
+    {
+        var on = ReminderPreferences.Create(false, 0, false, 10, appointmentReminders: false, cryDetected: true);
+
+        var olderClient = on.With(new ReminderPreferencesChange(DoseDue: true));
+        var off = on.With(new ReminderPreferencesChange(CryDetected: false));
+
+        Assert.Equal((false, false), (ReminderPreferences.Default.CryDetected, ReminderPreferences.None.CryDetected));
+        Assert.Equal((true, true, false), (on.CryDetected, on.WantsAny, on.WantsEventHistory));
+        Assert.Equal((true, true), (olderClient.CryDetected, olderClient.DoseDue));
+        Assert.Equal((false, false), (off.CryDetected, off.WantsAny));
+    }
+
+    [Fact]
+    public void NotificationKey_ForCryDetected_OnePerSpell()
+    {
+        var eventId = new Guid("0f8fad5b-d9cb-469f-a165-70867728950e");
+
+        Assert.Equal("cry:0f8fad5bd9cb469fa16570867728950e", NotificationKey.ForCryDetected(eventId).Value);
     }
 
     [Fact]

@@ -22,7 +22,10 @@
       "massage": "massage helped",
       "sleep": "sleep helped",
       "other": "something else helped",
-      "nothing": "nothing helped"
+      "nothing": "nothing helped",
+      "diaper_change": "a diaper change helped",
+      "burping": "burping helped",
+      "holding": "holding helped"
     },
     "pauses_one": "{{count}} pause",
     "pauses_other": "{{count}} pauses"
@@ -74,7 +77,7 @@
       "legendHint": "Tap a colour to show or hide it"
     },
     "empty": {
-      "title": "A quiet day. Nothing logged yet."
+      "title": "No events this day yet."
     },
     "addEvent": "Add event",
     "noMatches": "No events match this filter.",

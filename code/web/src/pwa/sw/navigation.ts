@@ -3,6 +3,6 @@ export const NAVIGATION_FALLBACK = '/index.html';
 
 /**
  * Navigations that never get the app shell: API calls and the OIDC callback go to the network.
- * No runtime caching exists, so these are never cached either.
+ * These are never cached either (the only runtime cache is the cry monitor's /models/cry/, cryAssets.ts).
  */
 export const NAVIGATION_DENYLIST: RegExp[] = [/^\/api(\/|$)/, /^\/auth\/callback/];

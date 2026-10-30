@@ -31,7 +31,8 @@ internal sealed class AccountDeletionService : IAccountDeletionService
     public async Task<AccountDeletionPreviewResponse> PreviewAsync(CancellationToken cancellationToken = default)
     {
         var user = await _currentUser.GetUserAsync(cancellationToken);
-        return AccountDeletionPreviewResponse.For(await _eraser.PlanAsync(user.Id, cancellationToken));
+        var plan = await _eraser.PlanAsync(user.Id, cancellationToken);
+        return AccountDeletionPreviewResponse.For(plan, user.Issuer.Length > 0 && _identity.CanRemove(user.Issuer));
     }
 
     public async Task<AccountDeletionResponse> DeleteAsync(CancellationToken cancellationToken = default)
@@ -40,8 +41,10 @@ internal sealed class AccountDeletionService : IAccountDeletionService
         var issuer = user.Issuer;
         var subject = user.Subject;
         await _eraser.EraseAsync(user.Id, AnonymousName, _timeProvider.GetUtcNow(), cancellationToken);
-        _logger.LogInformation("Account of user {UserId} deleted", user.Id);
-        var removed = issuer.Length > 0 && await _identity.RemoveAsync(issuer, subject, cancellationToken);
-        return new AccountDeletionResponse { IdentityRemoved = removed };
+        var identity = issuer.Length > 0
+            ? await _identity.RemoveAsync(issuer, subject, CancellationToken.None)
+            : IdentityRemoval.NotConfigured;
+        _logger.LogInformation("Account of user {UserId} deleted; sign-in account: {IdentityRemoval}", user.Id, identity);
+        return new AccountDeletionResponse { Identity = identity };
     }
 }

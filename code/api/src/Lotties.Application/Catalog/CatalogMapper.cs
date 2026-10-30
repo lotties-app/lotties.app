@@ -17,6 +17,7 @@ internal static class CatalogMapper
         CreatedAt = product.CreatedAt,
         Source = product.Source,
         Presentation = product.Presentation,
+        StrengthText = product.StrengthText,
         Inactive = !product.IsActive,
         AmbiguousName = product.AmbiguousName,
     };
@@ -30,12 +31,12 @@ internal static class CatalogMapper
         Items = products.Items.Select(product => ToResponse(product, substances)).ToArray(),
     };
 
-    public static ProductSearchResult ToSearchResult(ProductMatch match, IReadOnlyList<Product> siblings, IReadOnlyDictionary<Guid, Substance> substances) => new()
+    public static ProductSearchResult ToSearchResult(ProductMatch match, IReadOnlyList<ProductAlternative> siblings, IReadOnlyDictionary<Guid, Substance> substances) => new()
     {
         Product = ToResponse(match.Product, substances),
         MatchedBy = match.MatchedBy,
         Distance = match.Distance,
-        SameActiveIngredient = siblings.Select(sibling => (ProductSummary)sibling).ToArray(),
+        SameActiveIngredient = siblings.Select(ProductSummary.From).ToArray(),
     };
 
     private static ProductSubstanceResponse ToResponse(ProductSubstance link, IReadOnlyDictionary<Guid, Substance> substances)

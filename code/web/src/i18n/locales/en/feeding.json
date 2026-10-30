@@ -1,6 +1,6 @@
 {
   "feedingAmounts": {
-    "amountOf": "{{drunk}} of {{prepared}} ml",
+    "amountOf": "{{drunk}} of {{prepared}}",
     "drunkHint": "Optional. Leave empty if the baby drank it all.",
     "share": {
       "all": "all",
@@ -11,7 +11,7 @@
     "drunkAbovePrepared": "{{label}} can't be more than the amount prepared.",
     "endedBySleep": "Stopped when sleep started",
     "stoppedBySleep": "Feeding stopped.",
-    "toastBottle": "Bottle logged, {{drunk}} of {{prepared}} ml",
+    "toastBottle": "Bottle logged, {{drunk}} of {{prepared}}",
     "timeBottles": {
       "title": "Feeding",
       "label": "Time bottle feedings",
@@ -19,8 +19,37 @@
     },
     "tray": {
       "drunk": "How much was drunk",
-      "logDrunk": "Log {{drunk}} of {{prepared}} ml",
-      "logDrunkContent": "Log {{drunk}} of {{prepared}} ml {{content}}"
+      "logDrunk": "Log {{drunk}} of {{prepared}}",
+      "logDrunkContent": "Log {{drunk}} of {{prepared}} {{content}}"
+    },
+    "level": {
+      "title": "How much is left in the bottle?",
+      "hint": "Optional. The pause is already saved.",
+      "chips": "Left in the bottle",
+      "chip": "{{ml}} · {{share}}",
+      "share": {
+        "full": "full",
+        "threeQuarters": "3/4",
+        "half": "half",
+        "quarter": "1/4",
+        "empty": "empty"
+      },
+      "other": "Other amount",
+      "save": "Save",
+      "skip": "Skip",
+      "leftAtStop": "Left in the bottle"
+    },
+    "followUp": {
+      "title": "{{name}} fell asleep during the bottle.",
+      "question": "How much was left in it?",
+      "dismiss": "Skip"
+    },
+    "fedToSleep": {
+      "bottle": "Fell asleep during a bottle",
+      "nursing": "Fell asleep during nursing"
+    },
+    "target": {
+      "usualBottle": "A bottle usually takes about {{duration}}"
     }
   }
 }

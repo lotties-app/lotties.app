@@ -2,7 +2,7 @@
  * The notification deep link (docs/design/09-push-notifications.md sections 10 and 11), shared by
  * the service worker (builds it) and the app (reads it): `/#notify=dose&baby=..&rx=..&d=..&t=..`,
  * `/#notify=nap&baby=..&d=..`, `/#notify=belly&..`, `/#notify=overtired&..`, `/#notify=fussy&..`,
- * `/#notify=wet&..` or `/#notify=dirty&..` (each opens Now, where the matching card shows when it
+ * `/#notify=wet&..`, `/#notify=dirty&..` or `/#notify=cry&..` (each opens Now, where the matching card shows when it
  * applies), and `/appointments#notify=appt&baby=..&appt=..&d=..` (opens the appointment's detail
  * in the calendar), `/from-doctor#notify=doctor&baby=..&d=..` (the doctor's suggestions page) and
  * `/vaccines#notify=vaccine&baby=..&d=..` (the vaccine schedule of the baby).
@@ -15,7 +15,7 @@ import { getOwn } from '../../util/ownProperty';
 import { guid, type PushPayload } from './payload';
 
 /** Links that just open Now for a baby. */
-export type NowLinkKind = 'nap' | 'belly' | 'overtired' | 'fussy' | 'wet' | 'dirty';
+export type NowLinkKind = 'nap' | 'belly' | 'overtired' | 'fussy' | 'wet' | 'dirty' | 'cry';
 
 export type NotificationLink =
   | { kind: 'dose'; babyId: string; rxId: string; deliveryId: string; token?: string }
@@ -32,6 +32,7 @@ const PAYLOAD_KIND_OF_LINK: Readonly<Record<NowLinkKind, PushPayload['kind']>> =
   fussy: 'fussy_pattern',
   wet: 'diaper_wet_headsup',
   dirty: 'diaper_dirty_headsup',
+  cry: 'cry_detected',
 };
 
 const isNowLinkKind = (kind: unknown): kind is NowLinkKind =>
@@ -87,6 +88,8 @@ export function linkOfPayload(payload: PushPayload): NotificationLink | null {
       return { kind: 'wet', babyId: payload.babyId, deliveryId: payload.id };
     case 'diaper_dirty_headsup':
       return { kind: 'dirty', babyId: payload.babyId, deliveryId: payload.id };
+    case 'cry_detected':
+      return { kind: 'cry', babyId: payload.babyId, deliveryId: payload.id };
     case 'appointment_reminder':
       return {
         kind: 'appt',
@@ -222,6 +225,7 @@ const LINK_KIND_OF_MESSAGE: Readonly<Record<string, NotificationLink['kind']>> =
   appointment_reminder: 'appt',
   doctor_suggestion: 'doctor',
   vaccine_due: 'vaccine',
+  cry_detected: 'cry',
 };
 
 /** Reads a link from a worker message (re-validated: messages are untrusted input). */

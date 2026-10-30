@@ -24,6 +24,7 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"breast","side":"both","breast_left_seconds":600,"breast_right_seconds":540}""")]
     [InlineData("""{"method":"bottle","amount_ml":120,"amount_drunk_ml":80,"bottle_feeding_type":"formula"}""")]
     [InlineData("""{"method":"breast","ended_by":"sleep"}""")]
+    [InlineData("""{"method":"bottle","amount_ml":120,"segments":"120>70@300;70>0@240"}""")]
     [InlineData("""{"method":"solid","food":"Banana"}""")]
     [InlineData("""{"method":"bottle","amount_ml":null,"side":null}""")]
     [InlineData("""{"method":"bottle","amount":120,"extra":{"nested":[1,2]}}""")]
@@ -39,6 +40,7 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"breast","bottle_feeding_type":"formula"}""", "bottle_feeding_type")]
     [InlineData("""{"method":"bottle","breast_left_seconds":60}""", "breast_left_seconds")]
     [InlineData("""{"method":"bottle","food":"Banana"}""", "food")]
+    [InlineData("""{"method":"breast","segments":"?>?@60"}""", "segments")]
     public void Feeding_ValueForHiddenField_IsRejectedOnThatField(string json, string field)
     {
         var exception = Rejected(BuiltInEventTypes.Feeding, json);
@@ -63,6 +65,7 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"bottle","amount_ml":"120"}""", "amount_ml")]
     [InlineData("""{"method":"bottle","amount_drunk_ml":-1}""", "amount_drunk_ml")]
     [InlineData("""{"method":"bottle","ended_by":"timer"}""", "ended_by")]
+    [InlineData("""{"method":"bottle","segments":120}""", "segments")]
     [InlineData("""{"method":"solid","food":42}""", "food")]
     public void Feeding_WrongKindOptionOrRange_IsRejectedOnThatField(string json, string field)
     {
@@ -180,6 +183,17 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"intensity":"moderate","what_helped":"rocking"}""")]
     [InlineData("""{"intensity":"intense","what_helped":"nothing"}""")]
     [InlineData("""{"what_helped":"pacifier","pause_count":1,"paused_seconds":30}""")]
+    [InlineData("""{"what_helped":"diaper_change"}""")]
+    [InlineData("""{"what_helped":"burping","suggested_cause":"gas"}""")]
+    [InlineData("""{"what_helped":"holding","suggested_cause":"comfort"}""")]
+    [InlineData("""{"suggested_cause":"hunger"}""")]
+    [InlineData("""{"intensity":"mild","suggested_cause":"sleepy"}""")]
+    [InlineData("""{"suggested_cause":"diaper"}""")]
+    [InlineData("""{"auto_detected":true}""")]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":true}""")]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":false,"intensity":"mild"}""")]
+    [InlineData("""{"auto_detected":false}""")]
+    [InlineData("""{"auto_detected":null,"cry_confirmed":null}""")]
     public void Fussy_OptionalIntensityAndWhatHelped_AreAcceptedRunningOrEnded(string json)
     {
         Ensure(BuiltInEventTypes.Fussy, json, Ended);
@@ -191,6 +205,13 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"intensity":"MILD"}""", "intensity")]
     [InlineData("""{"what_helped":"singing"}""", "what_helped")]
     [InlineData("""{"what_helped":true}""", "what_helped")]
+    [InlineData("""{"suggested_cause":"teething"}""", "suggested_cause")]
+    [InlineData("""{"suggested_cause":"Hunger"}""", "suggested_cause")]
+    [InlineData("""{"suggested_cause":1}""", "suggested_cause")]
+    [InlineData("""{"auto_detected":"true"}""", "auto_detected")]
+    [InlineData("""{"auto_detected":1}""", "auto_detected")]
+    [InlineData("""{"cry_confirmed":"yes"}""", "cry_confirmed")]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":0}""", "cry_confirmed")]
     public void Fussy_UnknownIntensityOrWhatHelped_IsRejected(string json, string field)
     {
         Assert.Equal(field, Rejected(BuiltInEventTypes.Fussy, json).Field);

@@ -6,6 +6,8 @@ diaper, sleep start, wake-up and bed time better than the heuristic, for that ba
 
 Results: [`docs/ml/BENCHMARK.md`](../docs/ml/BENCHMARK.md). Service design: [`docs/ml/ARCHITECTURE.md`](../docs/ml/ARCHITECTURE.md).
 
+The on-device cry detection spike is a separate project with its own environment: [`cry_detector/`](cry_detector/README.md).
+
 ## Data rules
 
 - Real event exports contain a child's data. Keep them **outside the repository** and point `BR_ML_DATA` at the CSV.
@@ -49,6 +51,28 @@ Options: `--test-days 21` (length of the scored window at the end of the data; t
 window), `--resamples 2000` (day-block bootstrap draws), `--skip-cold-start`, `--sensitivity` (LightGBM variants on both
 windows). A full run takes 7-10 minutes on a laptop CPU (LightGBM single-threaded).
 
+Night-window evaluation (docs/design/28-age-norms.md section 15.4): the heuristic with the shipped 19:00-07:00
+day/night split against later and per-baby windows, on synthetic Brazilian and Swiss-like cohorts built from the
+published bed times and night lengths (no real data; under a minute):
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.night_window --out out            # synthetic cohorts (default)
+.venv/bin/python -m benchmark.night_window --out out --bedtime-feed-lead 90   # sensitivity of one unsourced choice
+.venv/bin/python -m benchmark.night_window --out out --data /path/outside/the/repo/events.csv   # the owner's export
+```
+
+Priors (`benchmark/priors.py`, docs/design/28-age-norms.md section 15.5): bed time and night length from 3 months come
+from the published Brazilian cohort; awake windows, nap lengths, feed and diaper gaps are explicit `UNSOURCED_*`
+constants. Before/after on synthetic cohorts, and the full harness on one synthetic baby (no CSV needed):
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.prior_check --out out
+.venv/bin/python -m benchmark.run --synthetic brazil --out out/after
+.venv/bin/python -m benchmark.run --synthetic brazil --legacy-priors --out out/before
+```
+
 Tests (heuristic parity with the C# unit tests, leakage checks, synthetic end-to-end backtest):
 
 ```bash
@@ -78,3 +102,6 @@ Every method outputs q10, q25, q50, q75 and q90 in minutes from the decision ins
 | `benchmark/backtest.py` | Rolling-origin evaluation with daily refits, cold-start variants, timings |
 | `benchmark/metrics.py` | MAE, pinball, coverage, day-block bootstrap |
 | `benchmark/run.py` | CLI and report |
+| `benchmark/synthetic.py` | Synthetic histories: `generate` (tests) and `cohort_baby` (Brazilian and Swiss-like cohorts from published bed times and night lengths) |
+| `benchmark/night_window.py` | Night-window evaluation CLI (`night_window.json`, `night_window.md` in `--out`) |
+| `benchmark/prior_check.py` | Before/after of the age-band priors on synthetic cohorts (`prior_check.json`, `prior_check.md`) |

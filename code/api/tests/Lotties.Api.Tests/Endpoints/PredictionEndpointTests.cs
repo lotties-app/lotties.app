@@ -200,6 +200,21 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
         Assert.Equal(45, pattern.GetProperty("rule").GetProperty("leadMinutes").GetInt32());
     }
 
+    [Theory]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":false}""", 0)]
+    [InlineData("""{"cry_confirmed":false}""", 0)]
+    [InlineData("""{"auto_detected":true,"cry_confirmed":true}""", 1)]
+    [InlineData("""{"auto_detected":true}""", 1)]
+    public async Task Get_FussySpellsMarkedNotCrying_DoNotBuildTheFussyPattern(string payload, int patterns)
+    {
+        var baby = await SeedSpellsAsync(BuiltInEventTypes.FussyId, new TimeOnly(18, 0), days: 6, payload);
+
+        var response = await factory.CreateClientFor(baby.OwnerSubject).GetAsync($"{PathFor(baby.BabyId)}?utcOffsetMinutes=-180&timeZone=America/Sao_Paulo");
+
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(patterns, body.RootElement.GetProperty("patterns").GetArrayLength());
+    }
+
     [Fact]
     public async Task Get_WetDiapersAndDirtyOnesAfterFeeds_ReturnsTheDiaperPredictions()
     {

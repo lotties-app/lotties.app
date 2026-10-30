@@ -56,6 +56,26 @@ public sealed class ConfigureJwtBearerOptionsTests
         Assert.Null(context.Result);
     }
 
+    [Theory]
+    [InlineData("Bearer lbk_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", true)]
+    [InlineData("bearer lbk_x", true)]
+    [InlineData("Bearer eyJhbGciOiJSUzI1NiJ9.e30.sig", false)]
+    [InlineData("", false)]
+    public async Task OnMessageReceived_BoardKey_IsSkippedWithoutFailing(string authorization, bool skipped)
+    {
+        var options = new JwtBearerOptions();
+        new ConfigureJwtBearerOptions(Options.Create(Settings)).Configure(options);
+        var http = new DefaultHttpContext();
+        http.Request.Headers.Authorization = authorization;
+        var scheme = new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler));
+        var context = new MessageReceivedContext(http, scheme, options);
+
+        await options.Events.MessageReceived(context);
+
+        Assert.Equal(skipped, context.Result is { None: true });
+        Assert.Null(context.Result?.Failure);
+    }
+
     private static async Task<TokenValidatedContext> ValidateTokenAsync(ClaimsPrincipal principal)
     {
         var options = new JwtBearerOptions();

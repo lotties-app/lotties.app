@@ -1,0 +1,3118 @@
+{
+  "description": "Shared vectors of the cry reasons scoring (cryReasons.ts scoreCrySignals and Lotties.Domain.CryReasons.CryReasonRanker.Rank). Each case gives the extracted signals and the ranking both ports must produce; null members count as absent. Generated from the web port; edit by hand only together with both implementations.",
+  "cases": [
+    {
+      "name": "nothing logged: every cause is a neutral possible, comfort last",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "asleep: every cause is noData asleep",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": true,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 300,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "asleep"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "asleep"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "asleep"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "asleep"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "hungry with her own gaps (median 182.5 rounds to 183)",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 240,
+          "recentGapsMinutes": [180, 170, 190, 185],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.9,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 240,
+                "usualGapMinutes": 183
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "three own gaps are too few: the server gap is used",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 200,
+          "recentGapsMinutes": [180, 170, 190],
+          "serverGapMinutes": 150,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.9,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 200,
+                "usualGapMinutes": 150
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "no own and no server gap: the published norm",
+      "signals": {
+        "band": "newborn",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 130,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": 120,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.9,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 130,
+                "usualGapMinutes": null
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "no gap at all: the band default",
+      "signals": {
+        "band": "months3to6",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 210,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.745,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 210,
+                "usualGapMinutes": null
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.1,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a feeding timer runs",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": 12,
+          "sinceLastMinutes": 12,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          },
+          {
+            "cause": "hunger",
+            "level": "unlikely",
+            "score": 0.05,
+            "facts": [
+              {
+                "kind": "feedingNow",
+                "minutes": 12
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a feed ended 5 minutes ago caps hunger",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 200,
+          "recentGapsMinutes": [100, 100, 100, 100],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": 300000
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          },
+          {
+            "cause": "hunger",
+            "level": "unlikely",
+            "score": 0.1,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 200,
+                "usualGapMinutes": 100
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a feed that ended exactly 15 minutes ago no longer caps",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 200,
+          "recentGapsMinutes": [100, 100, 100, 100],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": 900000
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.9,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 200,
+                "usualGapMinutes": 100
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a smaller last bottle shortens the usual gap",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 150,
+          "recentGapsMinutes": [180, 180, 180, 180],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": 0.2,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.817,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 150,
+                "usualGapMinutes": 180,
+                "smallerFeed": true
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "long since the last feed in a 6 month old",
+      "signals": {
+        "band": "months6plus",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 400,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.9,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 400,
+                "usualGapMinutes": null
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.1,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "hunger gap right at the ramp start (ratio 0.5)",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 90,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": 180,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          },
+          {
+            "cause": "hunger",
+            "level": "unlikely",
+            "score": 0.05,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 90,
+                "usualGapMinutes": 180
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "awake past the band default window",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": {
+            "minutes": 100,
+            "night": false
+          },
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "likely",
+            "score": 0.85,
+            "facts": [
+              {
+                "kind": "awakeFor",
+                "minutes": 100,
+                "windowMinutes": null
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "awake with her own wake window and the overtired boost",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": {
+            "minutes": 85,
+            "night": false
+          },
+          "windowMinutes": 90,
+          "overtired": true
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "likely",
+            "score": 0.839,
+            "facts": [
+              {
+                "kind": "awakeFor",
+                "minutes": 85,
+                "windowMinutes": 90
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "awake in the night lifts the score to the night floor",
+      "signals": {
+        "band": "newborn",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": {
+            "minutes": 10,
+            "night": true
+          },
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.45,
+            "facts": [
+              {
+                "kind": "awakeFor",
+                "minutes": 10,
+                "windowMinutes": null
+              },
+              {
+                "kind": "nightTime"
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "awake only a little in the day",
+      "signals": {
+        "band": "months3to6",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": {
+            "minutes": 20,
+            "night": false
+          },
+          "windowMinutes": 120,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "sleepy",
+            "level": "unlikely",
+            "score": 0.05,
+            "facts": [
+              {
+                "kind": "awakeFor",
+                "minutes": 20,
+                "windowMinutes": 120
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a diaper 10 minutes ago stays capped even with a dirty one due",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": 10,
+          "usualWetGapMinutes": null,
+          "dirtyDue": {
+            "signal": "afterFeed",
+            "expectedAt": "2026-01-10T12:00:00.000Z"
+          }
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "diaper",
+            "level": "unlikely",
+            "score": 0.05,
+            "facts": [
+              {
+                "kind": "sinceLastDiaper",
+                "minutes": 10,
+                "usualGapMinutes": null
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a diaper 20 minutes ago is not fresh any more",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": 20,
+          "usualWetGapMinutes": 120,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "diaper",
+            "level": "unlikely",
+            "score": 0.05,
+            "facts": [
+              {
+                "kind": "sinceLastDiaper",
+                "minutes": 20,
+                "usualGapMinutes": 120
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a diaper 5 hours ago with a dirty one due after a feed",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": 300,
+          "usualWetGapMinutes": null,
+          "dirtyDue": {
+            "signal": "afterFeed",
+            "expectedAt": "2026-01-10T12:00:00.000Z"
+          }
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "diaper",
+            "level": "likely",
+            "score": 1,
+            "facts": [
+              {
+                "kind": "sinceLastDiaper",
+                "minutes": 300,
+                "usualGapMinutes": null
+              },
+              {
+                "kind": "dirtyDue",
+                "signal": "afterFeed",
+                "expectedAt": "2026-01-10T12:00:00.000Z"
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a diaper 100 minutes ago, her usual wet gap 90, dirty by gap",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": 100,
+          "usualWetGapMinutes": 90,
+          "dirtyDue": {
+            "signal": "gap",
+            "expectedAt": "2026-01-10T15:30:00.000Z"
+          }
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "diaper",
+            "level": "likely",
+            "score": 0.71,
+            "facts": [
+              {
+                "kind": "sinceLastDiaper",
+                "minutes": 100,
+                "usualGapMinutes": 90
+              },
+              {
+                "kind": "dirtyDue",
+                "signal": "gap",
+                "expectedAt": "2026-01-10T15:30:00.000Z"
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "a diaper exactly 4 hours ago reaches the stale floor",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": 240,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "diaper",
+            "level": "likely",
+            "score": 0.75,
+            "facts": [
+              {
+                "kind": "sinceLastDiaper",
+                "minutes": 240,
+                "usualGapMinutes": null
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "fed 10 minutes ago, no burp logged",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": 630000,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.55,
+            "facts": [
+              {
+                "kind": "recentFeedNoBurp",
+                "minutesSinceFeed": 10
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "fed 10 minutes ago, a burp was logged",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": 600000,
+          "reliefSinceFeed": true,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.25,
+            "facts": [
+              {
+                "kind": "reliefAfterFeed",
+                "minutesSinceFeed": 10
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "fed exactly 30 minutes ago still counts",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": 1800000,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.55,
+            "facts": [
+              {
+                "kind": "recentFeedNoBurp",
+                "minutesSinceFeed": 30
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "fed 30 minutes and a millisecond ago no longer counts",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": 1800001,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "belly pain and fussy windows now, in the evening",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": "18:30",
+          "fussyPatternClock": "19:00",
+          "localHour": 18
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "gas",
+            "level": "likely",
+            "score": 0.6,
+            "facts": [
+              {
+                "kind": "bellyPattern",
+                "typicalClock": "18:30"
+              },
+              {
+                "kind": "eveningFussy",
+                "typicalClock": "19:00"
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "belly pain window with no feed ever logged",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": false,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": "17:45",
+          "fussyPatternClock": null,
+          "localHour": 10
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "gas",
+            "level": "possible",
+            "score": 0.45,
+            "facts": [
+              {
+                "kind": "bellyPattern",
+                "typicalClock": "17:45"
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "generic evening in a young baby",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 19
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.25,
+            "facts": [
+              {
+                "kind": "eveningFussy",
+                "typicalClock": null
+              }
+            ]
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "generic evening is off at 6 months",
+      "signals": {
+        "band": "months6plus",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 19
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.1,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "generic evening ends at 23:00",
+      "signals": {
+        "band": "weeks6to3m",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": null,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 23
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.15,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "gas capped at the band maximum",
+      "signals": {
+        "band": "newborn",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": false,
+          "runningMinutes": null,
+          "sinceLastMinutes": 0,
+          "recentGapsMinutes": [],
+          "serverGapMinutes": null,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": null
+        },
+        "sleepy": {
+          "stretch": null,
+          "windowMinutes": null,
+          "overtired": false
+        },
+        "diaper": {
+          "sinceLastMinutes": null,
+          "usualWetGapMinutes": null,
+          "dirtyDue": null
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": 300000,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": "18:30",
+          "fussyPatternClock": "19:00",
+          "localHour": 18
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "gas",
+            "level": "likely",
+            "score": 0.9,
+            "facts": [
+              {
+                "kind": "recentFeedNoBurp",
+                "minutesSinceFeed": 5
+              },
+              {
+                "kind": "bellyPattern",
+                "typicalClock": "18:30"
+              },
+              {
+                "kind": "eveningFussy",
+                "typicalClock": "19:00"
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "sleepy",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "possible",
+            "score": 0.4,
+            "facts": [
+              {
+                "kind": "noData",
+                "reason": "noLog"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    },
+    {
+      "name": "everything at once in a 3 month old",
+      "signals": {
+        "band": "months3to6",
+        "asleep": false,
+        "hunger": {
+          "hasFeeds": true,
+          "runningMinutes": null,
+          "sinceLastMinutes": 220,
+          "recentGapsMinutes": [200, 210, 190, 205, 215],
+          "serverGapMinutes": 200,
+          "normGapMinutes": null,
+          "topUpShare": null,
+          "sinceLastFeedEndMs": 12000000
+        },
+        "sleepy": {
+          "stretch": {
+            "minutes": 115,
+            "night": false
+          },
+          "windowMinutes": 120,
+          "overtired": true
+        },
+        "diaper": {
+          "sinceLastMinutes": 190,
+          "usualWetGapMinutes": 150,
+          "dirtyDue": {
+            "signal": "gap",
+            "expectedAt": "2026-01-10T11:45:00.000Z"
+          }
+        },
+        "gas": {
+          "hasFeeds": true,
+          "sinceMilkFeedEndMs": 12000000,
+          "reliefSinceFeed": false,
+          "bellyPatternClock": null,
+          "fussyPatternClock": null,
+          "localHour": 20
+        }
+      },
+      "expected": {
+        "causes": [
+          {
+            "cause": "sleepy",
+            "level": "likely",
+            "score": 0.867,
+            "facts": [
+              {
+                "kind": "awakeFor",
+                "minutes": 115,
+                "windowMinutes": 120
+              }
+            ]
+          },
+          {
+            "cause": "hunger",
+            "level": "likely",
+            "score": 0.859,
+            "facts": [
+              {
+                "kind": "sinceLastFeed",
+                "minutes": 220,
+                "usualGapMinutes": 205
+              }
+            ]
+          },
+          {
+            "cause": "diaper",
+            "level": "likely",
+            "score": 0.846,
+            "facts": [
+              {
+                "kind": "sinceLastDiaper",
+                "minutes": 190,
+                "usualGapMinutes": 150
+              },
+              {
+                "kind": "dirtyDue",
+                "signal": "gap",
+                "expectedAt": "2026-01-10T11:45:00.000Z"
+              }
+            ]
+          },
+          {
+            "cause": "comfort",
+            "level": "possible",
+            "score": 0.3,
+            "facts": []
+          },
+          {
+            "cause": "gas",
+            "level": "unlikely",
+            "score": 0.1,
+            "facts": []
+          }
+        ],
+        "redFlags": [
+          "fever",
+          "inconsolable",
+          "refusingFeeds",
+          "unusualSleepiness",
+          "bulgingOrStiffFontanelle"
+        ],
+        "basis": "generic"
+      }
+    }
+  ]
+}

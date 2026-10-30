@@ -1,5 +1,5 @@
 export interface BuildInfo {
-  /** `version` of code/web/package.json at build time. */
+  /** The release X.Y.Z the deploy stamped (`APP_VERSION`), or `dev` for an unstamped build. */
   version: string;
   /** ISO time the bundle was built (the deploy builds it, so this is the deploy's build). */
   builtAt: string;
@@ -8,13 +8,13 @@ export interface BuildInfo {
 }
 
 /**
- * What this bundle is: stamped by Vite's `define` (vite.config.ts) when it is built. The constants
- * are guarded so a tool that does not run through Vite (a script, a bare type check) gets a
- * placeholder instead of a ReferenceError.
+ * What this bundle is: stamped by Vite's `define` (vite.config.ts, build-info.ts) when it is built.
+ * The constants are guarded so a tool that does not run through Vite (a script, a bare type check)
+ * gets a placeholder instead of a ReferenceError.
  */
 export function readBuildInfo(): BuildInfo {
   return {
-    version: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0',
+    version: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev',
     builtAt: typeof __APP_BUILT_AT__ === 'string' ? __APP_BUILT_AT__ : '',
     commit: typeof __APP_COMMIT__ === 'string' ? __APP_COMMIT__ : '',
   };

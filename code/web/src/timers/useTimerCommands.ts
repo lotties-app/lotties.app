@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import type { BabyRoutineDb } from '../db/database';
-import { deleteEvent, editEvent, pauseTimer, resumeTimer } from '../db/eventCommands';
+import { editEvent, pauseTimer, resumeTimer } from '../db/eventCommands';
 import { EventNotFoundError } from '../db/errors';
 import type { BabyEvent, EventPayload } from '../db/models';
+import { askBottleLevel } from '../events/bottleLevelPrompt';
 import { announceEventDeleted } from '../events/deletedEvents';
+import { deleteEventWithWakeUp } from '../now/nightEndsWakeUp';
 import { switchSide } from '../now/nursing';
 import { getOwn, setOwn, withoutOwn } from '../util/ownProperty';
 import { SEGMENT_START_KEY } from './pauseMath';
@@ -17,6 +19,7 @@ import { SEGMENT_START_KEY } from './pauseMath';
  */
 
 export interface TimerCommands {
+  /** Pauses; a bottle then asks "How much is left in the bottle?" (`askBottleLevel`). */
   pause: (id: string) => Promise<BabyEvent>;
   resume: (id: string) => Promise<BabyEvent>;
   /** Soft-deletes the timer and offers Undo (the shell's "deleted" snackbar). */
@@ -50,11 +53,16 @@ export function useTimerCommands(): TimerCommands {
   const db = useDatabase();
   return useMemo(
     () => ({
-      pause: (id) => pauseTimer(db, id),
+      pause: async (id) => {
+        const paused = await pauseTimer(db, id);
+        // A bottle asks what is left in it (optional; the pause is already saved).
+        askBottleLevel(paused);
+        return paused;
+      },
       resume: (id) => resumeTimer(db, id),
       discard: async (event, name) => {
-        await deleteEvent(db, event.id);
-        announceEventDeleted(event, name);
+        const { wakeUp } = await deleteEventWithWakeUp(db, event.id);
+        announceEventDeleted(event, name, wakeUp);
       },
       adjustStart: (id, startedAt) =>
         editCurrent(db, id, (current) => {

@@ -54,7 +54,15 @@
       "asNeeded": "Quando precisar"
     },
     "guardrail": "Este app é um registro e um lembrete, não um dispositivo médico, e não dá orientação de dose. A receita do seu médico é a fonte de toda dose e todo intervalo.",
-    "sameIngredient": "Contém o mesmo princípio ativo de {{names}}: {{substances}}. Pergunte ao médico ou ao farmacêutico antes de trocar.",
+    "alternatives": {
+      "intro": "Contém o mesmo princípio ativo: {{substances}}.",
+      "equivalent": "Mesmo princípio ativo, concentração e forma",
+      "differentForm": "Mesmo princípio ativo e concentração, forma diferente ou não informada",
+      "strengthNotKnown": "Mesmo princípio ativo, concentração não informada",
+      "differentStrength": "Mesmo princípio ativo, concentração diferente",
+      "item": "{{name}} ({{details}})",
+      "footer": "Somente informação. Pergunte ao médico ou ao farmacêutico antes de trocar. A dose vem só da receita."
+    },
     "prescriptionDeleted": "Receita excluída",
     "dose": {
       "perKg": "{{dose}} por kg"

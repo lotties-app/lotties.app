@@ -1,0 +1,343 @@
+{
+  "board": {
+    "title": "Project board",
+    "retry": "Try again",
+    "offline": {
+      "title": "Needs a connection",
+      "text": "The project board is read from the server and nothing of it is kept on this device. Connect to the internet to open it."
+    },
+    "access": {
+      "checking": "Checking your access to the board",
+      "failed": "Couldn't reach the project board. Check the connection and try again.",
+      "none": "The project board is not available for your account."
+    },
+    "types": {
+      "task": "Task",
+      "gap": "Gap",
+      "decision": "Decision",
+      "question": "Question",
+      "risk": "Risk",
+      "note": "Note",
+      "memory": "Memory"
+    },
+    "statuses": {
+      "open": "Open",
+      "in_progress": "In progress",
+      "blocked": "Blocked",
+      "waiting": "Waiting",
+      "done": "Done",
+      "dropped": "Dropped"
+    },
+    "sides": {
+      "owner": "Owner",
+      "assistant": "Assistant",
+      "both": "Both",
+      "external": "External"
+    },
+    "priorities": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "sorts": {
+      "updated": "Recently updated",
+      "created": "Recently created",
+      "priority": "Priority",
+      "due": "Due date",
+      "decided": "Recently decided"
+    },
+    "fields": {
+      "type": "Type",
+      "topic": "Topic",
+      "title": "Title",
+      "body": "Details",
+      "status": "Status",
+      "side": "Who acts next",
+      "priority": "Priority",
+      "labels": "Labels",
+      "dueDate": "Due date",
+      "links": "Links",
+      "pinned": "Pinned",
+      "decisionSummary": "Decision",
+      "rationale": "Rationale",
+      "decidedAt": "Decided",
+      "source": "Source"
+    },
+    "summary": {
+      "title": "Summary",
+      "waitingOnOwner": "Waiting on you",
+      "waitingOnAssistant": "Waiting on the assistant",
+      "blocked": "Blocked",
+      "dueSoon": "Due soon"
+    },
+    "search": {
+      "label": "Search the board",
+      "placeholder": "Search titles and details",
+      "clear": "Clear search"
+    },
+    "quickAdd": {
+      "label": "Quick add",
+      "title": "New item",
+      "placeholders": {
+        "task": "Add a task, press Enter",
+        "gap": "Add a gap, press Enter",
+        "decision": "Add a decision, press Enter",
+        "question": "Add a question, press Enter",
+        "risk": "Add a risk, press Enter",
+        "note": "Add a note, press Enter",
+        "memory": "Add a memory, press Enter"
+      },
+      "topic": "Topic",
+      "add": "Add",
+      "more": "More fields",
+      "hints": {
+        "task": "Adds a task for {{side}}. Open More fields for the rest.",
+        "gap": "Adds a gap for {{side}}. Open More fields for the rest.",
+        "decision": "Adds a decision for {{side}}. Open More fields for the rest.",
+        "question": "Adds a question for {{side}}. Open More fields for the rest.",
+        "risk": "Adds a risk for {{side}}. Open More fields for the rest.",
+        "note": "Adds a note for {{side}}. Open More fields for the rest.",
+        "memory": "Adds a memory for {{side}}. Open More fields for the rest."
+      },
+      "forSide": {
+        "owner": "the owner",
+        "assistant": "the assistant",
+        "both": "both",
+        "external": "someone external"
+      },
+      "added": "Added “{{title}}”"
+    },
+    "views": {
+      "label": "Views",
+      "topics": "Topics",
+      "mine": "Mine",
+      "assistant": "Claude",
+      "decisions": "Decisions",
+      "gaps": "Gaps",
+      "notes": "Notes and memories",
+      "statusCount": "{{status}} {{count}}",
+      "noOpen": "Nothing open",
+      "topicEmpty": "No item of this topic matches.",
+      "archived": "archived",
+      "rationale": "Rationale",
+      "showTopic": "Show the topic {{topic}}"
+    },
+    "filters": {
+      "label": "Filters",
+      "toggle": "Filters",
+      "toggleCount_one": "Filters ({{count}})",
+      "toggleCount_other": "Filters ({{count}})",
+      "any": "Any",
+      "clear": "Clear filters",
+      "hideClosed": "Hide done and dropped",
+      "showDeleted": "Show deleted",
+      "labelsHelp": "Separate labels with commas",
+      "sort": "Order",
+      "sortDefault": "The view's order"
+    },
+    "list": {
+      "title": "Items: {{view}}",
+      "count_one": "{{count}} item",
+      "count_other": "{{count}} items",
+      "countMore_one": "{{count}} item shown, more to load",
+      "countMore_other": "{{count}} items shown, more to load",
+      "empty": "Nothing on the board yet.",
+      "emptyWriter": "Add the first item with the field above.",
+      "noMatch": "No items match these filters.",
+      "loadMore": "Load more",
+      "loadingMore": "Loading…"
+    },
+    "row": {
+      "due": "Due {{date}}",
+      "overdue": "Overdue since {{date}}",
+      "pinned": "Pinned",
+      "deleted": "Deleted",
+      "updated": "Updated {{when}}"
+    },
+    "drawer": {
+      "close": "Close",
+      "loading": "Loading the item",
+      "unavailableTitle": "Item unavailable",
+      "notFound": "This item is not on the board. It may have been deleted.",
+      "statusButton": "Status: {{status}}",
+      "statusChanged": "Status changed to {{status}}",
+      "edit": "Edit",
+      "editLabel": "Edit the item",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saved": "Saved",
+      "reload": "Reload",
+      "reloaded": "Reloaded the latest version",
+      "conflict": "Someone changed this item. Reload to see the latest version; your changes were not saved.",
+      "restore": "Restore",
+      "restored": "Item restored",
+      "deleted": "Deleted “{{title}}”",
+      "deletedAt": "Deleted on {{date}}. Only a board admin sees it.",
+      "undo": "Undo",
+      "confirmDeleteTitle": "Delete this item?",
+      "confirmDeleteText": "It leaves the board for everyone. Only a board admin can restore it.",
+      "created": "Created",
+      "updated": "Updated",
+      "closed": "Closed",
+      "byOn": "{{name}}, {{date}}",
+      "yes": "Yes",
+      "no": "No",
+      "decision": "Decision",
+      "decidedAt": "Decided on {{date}}",
+      "noBody": "No details yet.",
+      "history": "History",
+      "commentLabel": "Add a comment",
+      "comment": "Comment",
+      "commented": "Comment added"
+    },
+    "history": {
+      "none": "No history yet.",
+      "empty": "nothing",
+      "change": "{{field}}: {{from}} → {{to}}",
+      "keyActor": "{{name}} (API key)",
+      "kinds": {
+        "created": "{{name}} created it",
+        "updated": "{{name}} edited it",
+        "status_changed": "{{name}} changed the status",
+        "commented": "{{name}} commented",
+        "decided": "{{name}} recorded the decision",
+        "deleted": "{{name}} deleted it",
+        "restored": "{{name}} restored it"
+      }
+    },
+    "markdown": {
+      "newWindow": "(opens in a new tab)"
+    },
+    "form": {
+      "title": "Title",
+      "type": "Type",
+      "topic": "Topic",
+      "status": "Status",
+      "side": "Who acts next",
+      "priority": "Priority",
+      "dueDate": "Due date",
+      "labels": "Labels",
+      "labelsHelp": "Up to 10, separated by commas: lower case, digits and . _ : / -",
+      "pinned": "Pinned (shown first among notes and memories)",
+      "decisionSummary": "Decision",
+      "rationale": "Rationale",
+      "links": "Links",
+      "linkLabel": "Link text",
+      "linkUrl": "Address (https://…)",
+      "addLink": "Add a link",
+      "removeLink": "Remove link {{index}}",
+      "source": "Source",
+      "sourceHelp": "Where it came from, e.g. docs/design/34 O3",
+      "body": "Details (Markdown)",
+      "bodyHelp": "Headings, lists, **bold**, *italic*, `code` and http(s) links. No images or HTML.",
+      "preview": "Preview",
+      "previewLabel": "Preview of the details",
+      "previewEmpty": "Nothing to preview.",
+      "errors": {
+        "titleRequired": "Give the item a title.",
+        "tooLong": "This is too long.",
+        "topicRequired": "Choose a topic.",
+        "tooManyLabels": "Use at most 10 labels.",
+        "badLabel": "Labels use lower case letters, digits and . _ : / - (up to 40 characters).",
+        "badDate": "Use a date like 2026-12-31.",
+        "tooManyLinks": "Use at most 10 links.",
+        "badLink": "Each link needs a text and an address starting with http:// or https://.",
+        "server": "The server refused this field. Check it and try again."
+      }
+    },
+    "create": {
+      "title": "New item",
+      "save": "Add item"
+    },
+    "errors": {
+      "versionMismatch": "Someone changed this item. Reload to see the latest version.",
+      "concurrent": "Two changes crossed. Try again.",
+      "itemDeleted": "This item was deleted.",
+      "itemNotFound": "This item is not on the board.",
+      "unknownTopic": "That topic does not exist.",
+      "topicArchived": "That topic is archived: choose another one.",
+      "topicNotAllowed": "This key may not write in that topic.",
+      "adminRequired": "Only a board admin can do this.",
+      "keyNotFound": "That API key does not exist.",
+      "invalidCursor": "The list changed. Reload it.",
+      "validation": "Something in the form is not valid. Check it and try again."
+    },
+    "admin": {
+      "open": "API keys and topics",
+      "title": "Board settings",
+      "keys": "API keys",
+      "topics": "Topics"
+    },
+    "keys": {
+      "createTitle": "Create an API key",
+      "name": "Name",
+      "nameHelp": "Where it is used, e.g. Claude Code on the dev machine",
+      "nameRequired": "Give the key a name.",
+      "scope": "Access",
+      "scopes": {
+        "read": "Read",
+        "write": "Read and write"
+      },
+      "expiry": "Expires on",
+      "expiryHelp": "Optional. A key without an expiry is not recommended.",
+      "expiryPast": "Choose a date from tomorrow on.",
+      "topicsLimit": "Only these topics",
+      "create": "Create key",
+      "listTitle": "Keys",
+      "none": "No API keys yet.",
+      "states": {
+        "active": "Active",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      },
+      "topics": "Topics",
+      "allTopics": "All topics",
+      "expires": "Expires",
+      "noExpiry": "Never",
+      "lastUsed": "Last used",
+      "lastUsedValue_one": "{{when}} · used in {{count}} minute",
+      "lastUsedValue_other": "{{when}} · used in {{count}} different minutes",
+      "neverUsed": "Never",
+      "createdBy": "Created",
+      "revokedAt": "Revoked",
+      "revoke": "Revoke",
+      "revokeNamed": "Revoke {{name}}",
+      "revokeTitle": "Revoke this key?",
+      "revokeText": "“{{name}}” stops working at once. Tools that use it get an error until they have a new key.",
+      "revoked": "Revoked “{{name}}”",
+      "secretTitle": "Your new key: {{name}}",
+      "secretWarning": "Copy the key now and store it somewhere safe. You will not see it again: if it is lost, create a new key.",
+      "secretLabel": "Secret key",
+      "secretDone": "Done, I stored it",
+      "copy": "Copy",
+      "copyCommand": "Copy: {{label}}",
+      "copied": "Copied",
+      "copyFailed": "Couldn't copy. Select the text and copy it by hand.",
+      "howTitle": "How to use a key",
+      "howIntro": "Keep the secret in an environment variable such as LOTTIES_BOARD_KEY, never in a file in the repository or in a chat.",
+      "howCurl": "Read the summary with curl",
+      "howMcp": "Add the board to Claude Code (MCP, when enabled)",
+      "howDocs": "The MCP endpoint answers once it is turned on for this server. Setup and the full steps: docs/KEYCLOAK-BOARD.md."
+    },
+    "topics": {
+      "name": "Name",
+      "description": "Description",
+      "order": "Order",
+      "archived": "Archived (keeps its items, no new ones)",
+      "editLabel": "Edit the topic {{name}}",
+      "keyAndDescription": "{{key}} · {{description}}",
+      "saved": "Saved the topic {{name}}",
+      "newTitle": "Add a topic",
+      "key": "Key",
+      "keyHelp": "Lower case, digits and dashes, starting with a letter. It never changes.",
+      "keyInvalid": "Use 2 to 40 lower case letters, digits or dashes, starting with a letter.",
+      "keyTaken": "A topic with this key exists.",
+      "nameRequired": "Give the topic a name.",
+      "add": "Add topic",
+      "added": "Added the topic {{name}}",
+      "note": "Topics are never deleted: archive one to stop new items in it."
+    }
+  }
+}

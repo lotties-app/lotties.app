@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import axe from 'axe-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiClientContext } from '../../api/ApiClientContext';
+import { ConsentContext, SIGNED_OUT_CONSENT } from '../../consent/ConsentContext';
 import type { Baby } from '../../db/models';
 import { I18nProvider } from '../../i18n/I18nProvider';
 import { testQueryClient } from '../../test/renderApp';
@@ -43,8 +44,11 @@ const PREFS = [
   },
 ];
 
+const recordOptional = vi.fn();
+
 afterEach(() => {
   vi.restoreAllMocks();
+  recordOptional.mockClear();
 });
 
 function setup(
@@ -60,11 +64,13 @@ function setup(
         <QueryClientProvider client={testQueryClient()}>
           <ApiClientContext value={server.api}>
             <PushDeviceContext value={device}>
-              <NotificationsSection
-                babies={[LIA, THEO]}
-                publicKey="BFakeKey"
-                {...(online === undefined ? {} : { online })}
-              />
+              <ConsentContext value={{ ...SIGNED_OUT_CONSENT, recordOptional }}>
+                <NotificationsSection
+                  babies={[LIA, THEO]}
+                  publicKey="BFakeKey"
+                  {...(online === undefined ? {} : { online })}
+                />
+              </ConsentContext>
             </PushDeviceContext>
           </ApiClientContext>
         </QueryClientProvider>
@@ -173,6 +179,44 @@ describe('NotificationsSection device switch', () => {
   });
 });
 
+describe('NotificationsSection push consent (docs/design/38-consent-and-terms.md)', () => {
+  it('says what leaves our control next to the device switch', async () => {
+    setup({ permission: 'granted' });
+    await deviceSwitch();
+    expect(
+      screen.getByText(/sends your browser or device address and an encrypted message/),
+    ).toBeTruthy();
+  });
+
+  it('records the push consent when the device switch is turned on, and off', async () => {
+    const { device } = setup({ permission: 'granted' });
+    fireEvent.click(await deviceSwitch());
+    await waitFor(() => expect(recordOptional).toHaveBeenCalledWith('push', true));
+
+    await waitFor(async () =>
+      expect((await deviceSwitch()).getAttribute('aria-checked')).toBe('true'),
+    );
+    fireEvent.click(await deviceSwitch());
+    await waitFor(() => expect(recordOptional).toHaveBeenLastCalledWith('push', false));
+    expect(device.state.subscription).toBeNull();
+  });
+
+  it('records nothing when the browser refuses the permission', async () => {
+    setup({ answer: 'denied' });
+    fireEvent.click(await deviceSwitch());
+    fireEvent.click(await screen.findByRole('button', { name: 'Turn on' }));
+    await screen.findByText('Notifications were not allowed');
+    expect(recordOptional).not.toHaveBeenCalled();
+  });
+
+  it('shows the sentence in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    setup({ permission: 'granted' });
+    await screen.findByRole('switch', { name: /Notificações neste dispositivo/ });
+    expect(screen.getByText(/passam pelo serviço de notificações do seu navegador/)).toBeTruthy();
+  });
+});
+
 describe('NotificationsSection reminders and settings', () => {
   it('saves the full preference state per baby and shows lead times once on', async () => {
     const { server } = setup();
@@ -195,6 +239,7 @@ describe('NotificationsSection reminders and settings', () => {
           appointmentReminders: true,
           doctorSuggestions: false,
           vaccineReminders: false,
+          cryDetected: false,
         },
       }),
     );
@@ -213,6 +258,7 @@ describe('NotificationsSection reminders and settings', () => {
         appointmentReminders: true,
         doctorSuggestions: false,
         vaccineReminders: false,
+        cryDetected: false,
       }),
     );
   });
@@ -247,6 +293,7 @@ describe('NotificationsSection reminders and settings', () => {
           appointmentReminders: true,
           doctorSuggestions: false,
           vaccineReminders: false,
+          cryDetected: false,
         },
       }),
     );
@@ -297,6 +344,7 @@ describe('NotificationsSection reminders and settings', () => {
           appointmentReminders: true,
           doctorSuggestions: false,
           vaccineReminders: false,
+          cryDetected: false,
           ...kinds,
         },
       }),
@@ -618,5 +666,59 @@ describe('NotificationsSection vaccine reminders', () => {
 
     const lia = await screen.findByRole('region', { name: 'Lia' });
     expect(within(lia).getByRole('switch', { name: /Lembretes de vacinas/ })).toBeTruthy();
+  });
+});
+
+describe('NotificationsSection cry monitor alerts', () => {
+  it('offers the switch per baby, off by default, and saves it', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Cry detected by the monitor/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    // A Viewer never receives baby reminders: the row is shown disabled, like the others.
+    const theo = screen.getByRole('region', { name: 'Theo' });
+    expect(
+      within(theo)
+        .getByRole('switch', { name: /Cry detected by the monitor/ })
+        .hasAttribute('disabled'),
+    ).toBe(true);
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: expect.objectContaining({ cryDetected: true, fussyPattern: false, doseDue: false }),
+      }),
+    );
+  });
+
+  it('keeps the setting when another switch is saved', async () => {
+    const { server } = setup({}, { preferences: [{ ...PREFS[0]!, cryDetected: true }, PREFS[1]!] });
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    await waitFor(() =>
+      expect(
+        within(lia)
+          .getByRole('switch', { name: /Cry detected by the monitor/ })
+          .getAttribute('aria-checked'),
+      ).toBe('true'),
+    );
+
+    fireEvent.click(within(lia).getByRole('switch', { name: /Fussy time heads-up/ }));
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toEqual(
+        expect.objectContaining({ fussyPattern: true, cryDetected: true }),
+      ),
+    );
+  });
+
+  it('is in Portuguese for a Portuguese user', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Choro detectado pelo monitor/ })).toBeTruthy();
   });
 });

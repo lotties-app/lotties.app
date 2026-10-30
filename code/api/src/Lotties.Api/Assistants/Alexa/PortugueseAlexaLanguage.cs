@@ -1,0 +1,307 @@
+using System.Collections.Frozen;
+using System.Globalization;
+using Lotties.Application.Assistants;
+using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
+
+namespace Lotties.Api.Assistants.Alexa;
+
+/// <summary>Brazilian Portuguese (every <c>pt-*</c> locale): 24-hour clock times ("15:15"), fallback zone <c>America/Sao_Paulo</c>.</summary>
+internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
+{
+    private static readonly SpokenClock Speech = new(CultureInfo.GetCultureInfo("pt-BR"), "HH:mm", new SpokenWords("minuto", "minutos", "hora", "horas", "e", "menos de um minuto"));
+
+    private static readonly SpokenMeasures Measures = new(
+        Speech.Culture,
+        new SpokenUnitWords("ml", new("onça", "onças"), new("libra", "libras"), new("quilo", "quilos"), new("centímetro", "centímetros"), new("polegada", "polegadas"), new("grau", "graus"), "e"),
+        value => value < 2);
+
+    private readonly FrozenDictionary<AssistantResultCode, Func<AssistantResult, string>> _results;
+    private readonly FrozenDictionary<AlexaPrompt, AlexaLine> _prompts;
+
+    public PortugueseAlexaLanguage()
+    {
+        _results = Results().Concat(ForecastResults()).ToFrozenDictionary();
+        _prompts = Prompts().ToFrozenDictionary();
+    }
+
+    public string Locale => "pt-BR";
+
+    public string? FallbackTimeZone => "America/Sao_Paulo";
+
+    public bool CanHandle(string? locale) => locale?.StartsWith("pt", StringComparison.OrdinalIgnoreCase) == true;
+
+    public string Say(AssistantResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return _results[result.Code](result);
+    }
+
+    public AlexaLine Say(AlexaPrompt prompt) => _prompts[prompt];
+
+    private static Dictionary<AssistantResultCode, Func<AssistantResult, string>> Results() => new()
+    {
+        [AssistantResultCode.NotAllowed] = result => result.Baby is null
+            ? "Os comandos de voz são para a família do bebê. Sua conta não pode usá-los aqui."
+            : $"O seu papel {Em(result)} não permite isso. Fale com quem administra o bebê no app.",
+        [AssistantResultCode.ConsentRequired] = _ => "Antes de o Lotties usar as informações do bebê, abra o app Lotties e aceite os termos de uso. Depois tente de novo.",
+        [AssistantResultCode.NoBaby] = _ => "Ainda não há nenhum bebê na sua conta do Lotties. Adicione um no app primeiro.",
+        [AssistantResultCode.ChooseBaby] = _ => "Você tem mais de um bebê no Lotties. Escolha o bebê dos comandos de voz no app, em Configurações, Assistentes de voz.",
+        [AssistantResultCode.RateLimited] = _ => "São muitos pedidos seguidos. Tente de novo daqui a um minuto.",
+        [AssistantResultCode.InvalidAmount] = InvalidAmount,
+        [AssistantResultCode.SleepStarted] = result => $"Certo. {Subject(result)} dormiu {When(result, result.At)}.",
+        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Subject(result)} já está dormindo{SinceClause(result)}.",
+        [AssistantResultCode.SleepEnded] = result => result.Minutes is null
+            ? $"{Subject(result)} acordou {When(result, result.At)}."
+            : $"{Subject(result)} acordou {When(result, result.At)}, depois de dormir {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.NoRunningSleep] = result => $"{Subject(result)} não está dormindo agora, então não havia sono para encerrar.",
+        [AssistantResultCode.SeveralRunningSleeps] = result => $"{Subject(result)} tem {result.Count} cronômetros de sono ativos. Encerre-os no app.",
+        [AssistantResultCode.BottleLogged] = result => $"Registrei uma mamadeira de {Volume(result, result.AmountMl)}{BottleContent(result)} {When(result, result.At)}{Para(result)}.",
+        [AssistantResultCode.NursingStarted] = result => $"Amamentação iniciada no peito {Side(result)}{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Subject(result)} já está mamando{SinceClause(result)}.",
+        [AssistantResultCode.DiaperLogged] = result => $"Registrei uma fralda {Diaper(result)}{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.LastFeed] = LastFeed,
+        [AssistantResultCode.NoFeeds] = result => $"Não encontrei nenhuma alimentação {De(result)} nos últimos 30 dias.",
+        [AssistantResultCode.Sleeping] = result => $"{Subject(result)} está dormindo{SinceClause(result)}{(Speech.Clock(result, result.At) is null ? string.Empty : $", há {Speech.Duration(result.Minutes)}")}.",
+        [AssistantResultCode.Awake] = result => $"{Subject(result)} acordou {When(result, result.At)}. O último sono durou {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.NoSleeps] = result => $"Não encontrei nenhum sono {De(result)} nos últimos 30 dias.",
+        [AssistantResultCode.DiapersToday] = DiapersToday,
+        [AssistantResultCode.NextAppointment] = result => $"A próxima consulta {De(result)} é {AppointmentWith(result.Appointment!)}{Day(result, result.Appointment!.StartsAt)}.",
+        [AssistantResultCode.NoAppointment] = result => $"{Subject(result)} não tem consultas marcadas.",
+        [AssistantResultCode.VaccinesDue] = VaccinesDue,
+        [AssistantResultCode.NoVaccinesDue] = result => $"Pelo calendário de vacinas, {Name(result)} não tem nenhuma dose pendente agora.",
+        [AssistantResultCode.UnknownBaby] = _ => "Não encontrei esse bebê na sua conta do Lotties.",
+        [AssistantResultCode.InvalidDate] = _ => "Pergunte sobre um dia do último ano, até hoje.",
+        [AssistantResultCode.Babies] = result => result.Babies.Count == 0
+            ? "Ainda não há nenhum bebê na sua conta do Lotties."
+            : SpokenBaby.NamesOfListed(result) is { } names
+                ? $"Seus bebês no Lotties: {Speech.List(names.ToArray())}."
+                : $"Você tem {Speech.Count(result.Babies.Count, "bebê", "bebês")} no Lotties. Para escolher o bebê dos comandos de voz, abra o app, depois Configurações, Assistentes de voz.",
+        [AssistantResultCode.BabyProfile] = result => $"{Subject(result)} tem {Age(result.Age)}.",
+        [AssistantResultCode.DaySummary] = DaySummary,
+        [AssistantResultCode.WeekSummary] = WeekSummary,
+        [AssistantResultCode.BathLogged] = result => $"Registrei um banho{Para(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", água a {Measures.Temperature(temp, result.Units)}" : "")}.",
+        [AssistantResultCode.TummyTimeStarted] = result => $"Tempo de bruços iniciado{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.BellyPainLogged] = result => $"Registrei dor de barriga{Para(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", intensidade {i}" : "")}.",
+        [AssistantResultCode.BreastPumpStarted] = result => $"Sessão de ordenha iniciada{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.NasalSuctionLogged] = result => $"Registrei aspiração nasal{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.BellyMassageStarted] = result => $"Massagem na barriga iniciada{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.FussyStarted] = result => $"Cronômetro de irritação iniciado{Para(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", {i}" : "")}.",
+        [AssistantResultCode.NailTrimLogged] = result => $"Registrei corte de unhas{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TemperatureLogged] = result => $"Registrei temperatura de {Measures.Temperature(result.TemperatureC ?? 0, result.Units)}{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SpitUpLogged] = result => $"Registrei regurgitação{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TeethingLogged] = result => $"Registrei dentição{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.MilestoneLogged] = result => $"Registrei um marco{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SymptomLogged] = result => $"Registrei um sintoma{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.OutdoorStarted] = result => $"Passeio ao ar livre iniciado{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.SkinCareLogged] = result => $"Registrei cuidados com a pele{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.MedicationLogged] = result => $"Registrei que {(SpokenMedicine.NameOf(result) is { } medicine ? $"uma dose de {medicine}" : "uma dose de medicamento")} foi dada{Para(result)} {When(result, result.At)}, conforme você informou. O Lotties não confere nem sugere doses.",
+        [AssistantResultCode.NoActivePrescription] = result => $"Não encontrei esse medicamento entre as prescrições ativas {De(result)} no Lotties, então nada foi registrado. Confira no app.",
+        [AssistantResultCode.MedicationReminder] = MedicationReminder,
+        [AssistantResultCode.NoMedicationDue] = result => $"Não há lembretes de medicamentos cadastrados no Lotties{Para(result)} neste momento. {MedicationNotice}",
+        [AssistantResultCode.InvalidValue] = InvalidValue,
+    };
+
+    private static string Age(AssistantBabyAge? age) => age switch
+    {
+        null or { Days: 0 } => "menos de um dia",
+        { Months: > 0 } => Speech.Count(age.Months, "mês", "meses"),
+        { Weeks: > 0 } => Speech.Count(age.Weeks, "semana", "semanas"),
+        _ => Speech.Count(age.Days, "dia", "dias"),
+    };
+
+    /// <summary>Dito com todo lembrete de medicamento: são os lembretes da própria família, nunca uma recomendação do Lotties.</summary>
+    public const string MedicationNotice = "São lembretes dos medicamentos que você cadastrou no Lotties, não recomendações do Lotties. Confira a receita e, em caso de dúvida, fale com o médico ou o farmacêutico.";
+
+    private static string MedicationReminder(AssistantResult result)
+    {
+        var count = result.Count ?? 0;
+        var due = count switch
+        {
+            0 => $"Nenhum lembrete de medicamento que você cadastrou no Lotties está pendente agora{Para(result)}.",
+            1 => $"Um lembrete de medicamento que você cadastrou no Lotties está pendente agora{Para(result)}.",
+            _ => $"{count} lembretes de medicamento que você cadastrou no Lotties estão pendentes agora{Para(result)}.",
+        };
+        var names = SpokenMedicine.DueNamesOf(result) is { Count: > 0 } dueNames ? $" Pendentes agora: {Speech.List(dueNames)}." : string.Empty;
+        var nextName = SpokenMedicine.NameOf(result) is { } medicine ? $" ({medicine})" : string.Empty;
+        var next = result.At is { } at ? $" O próximo{nextName} é {Day(result, at)}." : string.Empty;
+        return $"{due}{names}{next} {MedicationNotice}";
+    }
+
+    private static string InvalidValue(AssistantResult result)
+    {
+        var us = result.Units == UnitSystem.Us;
+        return result.Field switch
+        {
+            "temperature" => us
+                ? $"Diga uma temperatura de {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Min ?? 0))} a {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Max ?? 0))} graus, por exemplo: registrar temperatura 99."
+                : $"Diga uma temperatura de {result.Min} a {result.Max} graus, por exemplo: registrar temperatura 37.",
+            "water_temperature" => us
+                ? $"Diga uma temperatura da água de {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Min ?? 0))} a {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Max ?? 0))} graus."
+                : $"Diga uma temperatura da água de {result.Min} a {result.Max} graus.",
+            "pain_level" => $"Diga um nível de {result.Min} a {result.Max}, por exemplo: dor de barriga nível 3.",
+            "pump_amount" => $"Diga uma quantidade de {result.Min} a {result.Max} ml, por exemplo: ordenei 100 ml no peito esquerdo.",
+            _ => "Esse valor está fora do limite, então nada foi registrado.",
+        };
+    }
+
+    private static string DaySummary(AssistantResult result)
+    {
+        var day = result.Days.FirstOrDefault();
+        var when = day switch
+        {
+            null => "Nesse dia",
+            { Complete: false } => "Até agora, hoje",
+            _ => $"Em {day.Date.ToString("d 'de' MMMM", Speech.Culture)}",
+        };
+        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
+    }
+
+    private static string WeekSummary(AssistantResult result)
+    {
+        var last = result.Days.Count == 0 ? "hoje" : result.Days[^1].Date.ToString("d 'de' MMMM", Speech.Culture);
+        return $"Nos 7 dias até {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
+    }
+
+    private static string Totals(SpokenDayTotals totals, UnitSystem units)
+    {
+        var bottles = totals.BottleMl > 0 ? $", {Measures.Volume(totals.BottleMl, units)} em mamadeiras" : string.Empty;
+        return $"dormiu {Speech.Duration(totals.SleepMinutes)} com {Speech.Count(totals.Naps, "soneca", "sonecas")}, teve {Speech.Count(totals.Feeds, "alimentação", "alimentações")}{bottles} e {Speech.Count(totals.Diapers, "fralda", "fraldas")}";
+    }
+
+    private static Dictionary<AlexaPrompt, AlexaLine> Prompts() => new()
+    {
+        [AlexaPrompt.Welcome] = new("Boas-vindas ao Lotties. Você pode dizer, por exemplo: o bebê dormiu, registrar mamadeira de 120 ml, ou quando foi a última mamada?", "O que você quer fazer?"),
+        [AlexaPrompt.Help] = new("Você pode registrar sono, mamadeiras, amamentação e fraldas, e perguntar sobre a última mamada ou fralda, o sono, as fraldas de hoje, a próxima janela de sono, mamada ou troca de fralda, a próxima consulta, as vacinas pendentes, ou por que o bebê está chorando. Por exemplo: o bebê acordou. O que você quer fazer?", "O que você quer fazer?"),
+        [AlexaPrompt.Goodbye] = new("Até logo."),
+        [AlexaPrompt.Fallback] = new("Desculpe, o Lotties não consegue ajudar com isso. Diga ajuda para saber o que dá para fazer.", "O que você quer fazer?"),
+        [AlexaPrompt.SetBabyHelp] = new("Para escolher o bebê dos comandos de voz, abra o app Lotties, depois Configurações, Assistentes de voz."),
+        [AlexaPrompt.LinkAccount] = new("Vincule a sua conta do Lotties no app Alexa para usar esta skill."),
+        [AlexaPrompt.DiaperKindMissing] = new("A fralda estava com xixi, cocô ou os dois? Diga, por exemplo: registrar fralda de xixi."),
+        [AlexaPrompt.PainLevelMissing] = new("Qual a intensidade da dor de barriga, de 1 a 5? Diga, por exemplo: dor de barriga nível 3."),
+        [AlexaPrompt.TemperatureMissing] = new("Qual foi a temperatura? Diga, por exemplo: registrar temperatura 37."),
+        [AlexaPrompt.MedicationNameMissing] = new("Qual remédio você deu? Diga o nome cadastrado no Lotties, por exemplo: dei, e depois o nome."),
+        [AlexaPrompt.Error] = new("Desculpe, algo deu errado. Tente de novo."),
+    };
+
+    private static string LastFeed(AssistantResult result)
+    {
+        var feed = FeedDescription(result);
+        return result.Running == true
+            ? $"{Subject(result)} está se alimentando agora: {feed},{SinceClause(result)}."
+            : $"A última alimentação {De(result)} foi {feed}, {AtAndAgo(result, result.At)}.";
+    }
+
+    private static string DiapersToday(AssistantResult result)
+    {
+        var window = result.Window == AssistantDayWindow.Today ? "hoje" : "nas últimas 24 horas";
+        return result.Count is null or 0
+            ? $"{Subject(result)} não teve nenhuma fralda {window}."
+            : $"{Subject(result)} teve {Speech.Count(result.Count.Value, "fralda", "fraldas")} {window}: {result.Wet} com xixi e {result.Dirty} com cocô.";
+    }
+
+    private static string VaccinesDue(AssistantResult result)
+    {
+        var overdue = result.Overdue is > 0 ? $", {Speech.Count(result.Overdue.Value, "atrasada", "atrasadas")}" : string.Empty;
+        var names = Speech.List(result.Vaccines.Select(dose => Localized(dose.Names)).Distinct(StringComparer.Ordinal).ToArray());
+        return $"Pelo calendário de vacinas, {Name(result)} tem {Speech.Count(result.Count ?? 0, "dose pendente", "doses pendentes")}{overdue}: {names}. Você pode vê-las no app.";
+    }
+
+    private static string FeedDescription(AssistantResult result) => result.FeedMethod switch
+    {
+        FeedMethod.Bottle when result.AmountMl is { } amount => $"uma mamadeira de {Volume(result, amount)}{BottleContent(result)}",
+        FeedMethod.Bottle => $"uma mamadeira{BottleContent(result)}",
+        FeedMethod.Breast when result.Side is not null => $"amamentação no peito {Side(result)}",
+        FeedMethod.Breast => "amamentação",
+        FeedMethod.Solid => "comida sólida",
+        _ => "uma alimentação",
+    };
+
+    private static string BottleContent(AssistantResult result) => result.BottleKind switch
+    {
+        BottleKind.Formula => " de fórmula",
+        BottleKind.BreastMilk => " de leite materno",
+        _ => string.Empty,
+    };
+
+    private static string Volume(AssistantResult result, int? ml) => Measures.Volume(ml ?? 0, result.Units);
+
+    private static string InvalidAmount(AssistantResult result) => result.Units == UnitSystem.Us
+        ? $"Diga uma quantidade de até {Measures.Number(UnitConversions.MlToFluidOunces(result.Max ?? 0))} onças, por exemplo: registrar mamadeira de 4 onças."
+        : $"Diga uma quantidade de {result.Min} a {result.Max} ml, por exemplo: registrar mamadeira de 120 ml.";
+
+    private static string Side(AssistantResult result) => result.Side == BreastSide.Right ? "direito" : "esquerdo";
+
+    private static string Diaper(AssistantResult result) => result.Diaper switch
+    {
+        DiaperKind.Dirty => "de cocô",
+        DiaperKind.Both => "de xixi e cocô",
+        _ => "de xixi",
+    };
+
+    /// <summary>"às 15:15" ("à 01:05"), or "agora mesmo" / "há 20 minutos" without a known zone.</summary>
+    private static string When(AssistantResult result, DateTimeOffset? instant) =>
+        Speech.Clock(result, instant) is { } clock ? $"{AtHour(clock)} {clock}" : instant is { } value && Speech.MinutesBetween(value, result.AsOf) < 1 ? "agora mesmo" : Ago(result, instant);
+
+    /// <summary>" desde 15:15", or " há 20 minutos" without a known zone (never "desde há 20 minutos").</summary>
+    private static string SinceClause(AssistantResult result) =>
+        Speech.Clock(result, result.At) is { } clock ? $" desde {clock}" : result.At is { } at ? $" há {Speech.Duration(Speech.MinutesBetween(at, result.AsOf))}" : string.Empty;
+
+    /// <summary>"às 15:15, há 20 minutos", or "há 20 minutos" without a known zone.</summary>
+    private static string AtAndAgo(AssistantResult result, DateTimeOffset? instant) =>
+        Speech.Clock(result, instant) is { } clock ? $"{AtHour(clock)} {clock}, {Ago(result, instant)}" : Ago(result, instant);
+
+    private static string Ago(AssistantResult result, DateTimeOffset? instant) =>
+        instant is { } value ? $"há {Speech.Duration(Speech.MinutesBetween(value, result.AsOf))}" : string.Empty;
+
+    /// <summary>"hoje às 15:15", "amanhã às 09:00", "na terça-feira, 28 de outubro, às 15:15", or "daqui a 3 dias" without a zone.</summary>
+    private static string Day(AssistantResult result, DateTimeOffset instant)
+    {
+        if (Speech.Local(result, instant) is not { } local || Speech.Local(result, result.AsOf) is not { } today)
+        {
+            return $"daqui a {Speech.Duration(Speech.MinutesBetween(result.AsOf, instant))}";
+        }
+
+        var clock = Speech.Clock(result, instant)!;
+        var days = (local.Date - today.Date).Days;
+        return days switch
+        {
+            0 => $"hoje {AtHour(clock)} {clock}",
+            1 => $"amanhã {AtHour(clock)} {clock}",
+            _ => $"{OnDay(local)} {local.ToString("dddd, d 'de' MMMM", Speech.Culture)}, {AtHour(clock)} {clock}",
+        };
+    }
+
+    private static string AtHour(string clock) => clock.StartsWith("01:", StringComparison.Ordinal) ? "à" : "às";
+
+    private static string OnDay(DateTime local) => local.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? "no" : "na";
+
+    private static string Localized(IReadOnlyDictionary<string, string> names) =>
+        names.TryGetValue("pt-BR", out var portuguese) ? portuguese : names.TryGetValue("en", out var english) ? english : names.Values.FirstOrDefault() ?? string.Empty;
+
+    /// <summary>The baby's name when the user allowed it, else "o bebê" (mid-sentence).</summary>
+    private static string Name(AssistantResult result) => SpokenBaby.NameOf(result) ?? "o bebê";
+
+    /// <summary>As <see cref="Name"/> at the start of a sentence.</summary>
+    private static string Subject(AssistantResult result) => SpokenBaby.NameOf(result) ?? "O bebê";
+
+    /// <summary>"de Lia", or "do bebê".</summary>
+    private static string De(AssistantResult result) => SpokenBaby.NameOf(result) is { } name ? $"de {name}" : "do bebê";
+
+    /// <summary>"em Lia", or "no bebê".</summary>
+    private static string Em(AssistantResult result) => SpokenBaby.NameOf(result) is { } name ? $"em {name}" : "no bebê";
+
+    /// <summary>" para Lia", or nothing (the tail adds nothing without the name).</summary>
+    private static string Para(AssistantResult result) => SpokenBaby.NameOf(result) is { } name ? $" para {name}" : string.Empty;
+
+    /// <summary>"com pediatra, " quando a especialidade é conhecida, senão o tipo quando diz algo ("uma vacinação, "), senão nada.</summary>
+    private static string AppointmentWith(AssistantAppointment appointment) =>
+        DoctorSpecialties.Find(appointment.Specialty) is { } specialty ? $"com {specialty.Portuguese}, " : AppointmentKind(appointment.Type) is { Length: > 0 } kind ? kind + ", " : string.Empty;
+
+    private static string AppointmentKind(string? type) => type switch
+    {
+        "vaccine" => "uma vacinação",
+        "exam" => "um exame",
+        _ => string.Empty,
+    };
+}

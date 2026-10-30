@@ -86,6 +86,36 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
 
     public DbSet<JobLease> JobLeases => Set<JobLease>();
 
+    /// <summary>Users' voice assistant settings (one per user: the default baby).</summary>
+    public DbSet<Lotties.Domain.Assistants.UserAssistantSettings> UserAssistantSettings => Set<Lotties.Domain.Assistants.UserAssistantSettings>();
+
+    /// <summary>Users' measurement unit setting (one per user; docs/design/37-measurement-units.md).</summary>
+    public DbSet<Lotties.Domain.Units.UserUnitSettings> UserUnitSettings => Set<Lotties.Domain.Units.UserUnitSettings>();
+
+    /// <summary>People's caregiver rest settings (one per user; docs/design/41-caregiver-rest.md).</summary>
+    public DbSet<Lotties.Domain.Rest.UserRestSettings> UserRestSettings => Set<Lotties.Domain.Rest.UserRestSettings>();
+
+    /// <summary>The moment a person said she was up, one per user and night (docs/design/41-caregiver-rest.md R5).</summary>
+    public DbSet<Lotties.Domain.Rest.UserRestMorning> UserRestMornings => Set<Lotties.Domain.Rest.UserRestMorning>();
+
+    /// <summary>People's current consents, one per user and kind (docs/design/38-consent-and-terms.md).</summary>
+    public DbSet<Lotties.Domain.Consents.UserConsent> UserConsents => Set<Lotties.Domain.Consents.UserConsent>();
+
+    /// <summary>The append-only history of the consents (granted, withdrawn).</summary>
+    public DbSet<Lotties.Domain.Consents.UserConsentHistoryEntry> UserConsentHistory => Set<Lotties.Domain.Consents.UserConsentHistoryEntry>();
+
+    /// <summary>The project board's topics (docs/design/36-project-board.md; internal project tracking, never baby data).</summary>
+    public DbSet<Lotties.Domain.Board.BoardTopic> BoardTopics => Set<Lotties.Domain.Board.BoardTopic>();
+
+    /// <summary>The project board's items, soft-deleted ones included.</summary>
+    public DbSet<Lotties.Domain.Board.BoardItem> BoardItems => Set<Lotties.Domain.Board.BoardItem>();
+
+    /// <summary>The immutable history of the board items.</summary>
+    public DbSet<Lotties.Domain.Board.BoardItemEvent> BoardItemEvents => Set<Lotties.Domain.Board.BoardItemEvent>();
+
+    /// <summary>The board API keys (hashes only), revoked ones included.</summary>
+    public DbSet<Lotties.Domain.Board.BoardApiKey> BoardApiKeys => Set<Lotties.Domain.Board.BoardApiKey>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);
 }

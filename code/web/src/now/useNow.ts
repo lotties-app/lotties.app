@@ -65,6 +65,11 @@ export interface NowScreenModel {
   meds: MedicationStatuses;
   /** The last 3 days plus running timers, newest first. */
   events: BabyEvent[];
+  /**
+   * The last 30 days of events (the bottle chips' window), for the "next up" amounts; `events`
+   * until it has loaded.
+   */
+  history?: readonly BabyEvent[];
   /** Viewers read; the commands are for Owners, Parents and Caregivers. */
   readOnly: boolean;
   /**
@@ -137,6 +142,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
         feed: feedTrayOptions(baby.id, types, events, now, {
           events: bottleHistory?.events ?? events,
           birthDate: baby.birthDate,
+          ageNorms: bottleHistory?.ageNorms ?? null,
         }),
         diaper: diaperTray(types),
         meds: medsTray(baby.id, types, medications, events, now, meds.statuses),
@@ -169,6 +175,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       medications,
       meds,
       events,
+      history: bottleHistory?.events ?? events,
       readOnly: !access.canLog,
       access,
       commands,
@@ -183,6 +190,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
     handover.acknowledge,
     access,
     commands,
+    bottleHistory,
   ]);
 }
 

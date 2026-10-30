@@ -227,6 +227,11 @@ describe('presentEvent', () => {
     });
     expect(view({ what_helped: 'nothing' }).detail).toBe('nothing helped');
     expect(view({ what_helped: 'other' }).detail).toBe('something else helped');
+    expect(view({ what_helped: 'diaper_change' }).detail).toBe('a diaper change helped');
+    expect(view({ what_helped: 'burping' }).detail).toBe('burping helped');
+    expect(view({ what_helped: 'holding', suggested_cause: 'comfort' }).detail).toBe(
+      'holding helped',
+    );
     expect(view({ intensity: 'intense', pause_count: 1, paused_seconds: 30 }).detail).toBe(
       'Intense',
     );

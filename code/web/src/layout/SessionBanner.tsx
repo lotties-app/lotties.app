@@ -9,6 +9,9 @@ import { useOnline } from '../sync/useOnline';
 /** A renewal that finishes this fast is not worth announcing (no flash on every cold start). */
 export const RENEWING_NOTICE_DELAY_MS = 800;
 
+/** A renewal that is still stuck after this long offers a new sign-in (the local changes stay on the device). */
+export const RENEWING_STUCK_DELAY_MS = 20_000;
+
 /** `true` once `key` stayed set for `delayMs` (`null` = inactive). */
 function useDelayed(key: string | null, delayMs: number): boolean {
   const [ready, setReady] = useState<string | null>(null);
@@ -36,6 +39,11 @@ export function SessionBanner() {
     RENEWING_NOTICE_DELAY_MS,
   );
 
+  const stuck = useDelayed(
+    online && session !== 'active' ? 'renewing' : null,
+    RENEWING_STUCK_DELAY_MS,
+  );
+
   if (authRequired) {
     return (
       <Alert
@@ -53,7 +61,18 @@ export function SessionBanner() {
   }
   if (!renewing) return null;
   return (
-    <Alert severity="info" role="status" sx={{ mx: 2, mb: 1 }}>
+    <Alert
+      severity="info"
+      role="status"
+      sx={{ mx: 2, mb: 1 }}
+      action={
+        stuck ? (
+          <Button color="inherit" size="small" onClick={() => void login(pathname + search)}>
+            {t('auth.signIn')}
+          </Button>
+        ) : undefined
+      }
+    >
       {t('auth.renewing')}
     </Alert>
   );

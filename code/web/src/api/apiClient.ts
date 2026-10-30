@@ -1,5 +1,12 @@
 import { ApiError } from './ApiError';
 
+/**
+ * Dispatched on `window` when the server answers `403 consent_required`: the consent changed under a running app (a material
+ * change deployed meanwhile), so the consent provider asks the server again and shows the consent screen if it must
+ * (docs/design/38-consent-and-terms.md).
+ */
+export const CONSENT_REQUIRED_EVENT = 'lotties:consent-required';
+
 export interface ApiClientOptions {
   baseUrl: string;
   /** Awaited before every request (it waits for a pending token renewal; its errors propagate). */
@@ -97,7 +104,11 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     // A 304 only answers a conditional request the caller made itself: "your copy is current".
     if (!response.ok && response.status !== 304) {
       if (response.status === 401 && !requestOptions.skipUnauthorizedHandler) onUnauthorized?.();
-      throw new ApiError(response.status, payload);
+      const error = new ApiError(response.status, payload);
+      if (response.status === 403 && error.code === 'consent_required') {
+        window.dispatchEvent(new Event(CONSENT_REQUIRED_EVENT));
+      }
+      throw error;
     }
     return { data: payload as T, status: response.status, headers: response.headers };
   }

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -10,10 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="coverlet.collector" Version="10.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,9 +27,21 @@
   <ItemGroup>
     <!-- Part-of-the-day vectors shared with the web port (code/web/src/medications/dayParts.test.ts). -->
     <None Include="..\..\..\web\src\medications\dayPartVectors.json" Link="Prescriptions\dayPartVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Bottle segments vectors shared with the web port (code/web/src/events/bottleSegments.test.ts). -->
+    <None Include="..\..\..\web\src\events\bottleSegmentsVectors.json" Link="Events\bottleSegmentsVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Vaccine status vectors shared with the web port (code/web/src/vaccines/vaccineStatus.test.ts) and the shipped schedule. -->
     <None Include="..\..\..\web\src\vaccines\vaccineStatusVectors.json" Link="Vaccinations\vaccineStatusVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\data\vaccine-schedule.br.json" Link="Vaccinations\vaccine-schedule.br.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Published age norms (docs/design/28-age-norms.md), validated by AgeNorms/AgeNormsDataTests (embedded in Lotties.Application),
+         and the lookup vectors shared with the web port (code/web/src/ageNorms/ageNorms.test.ts). -->
+    <None Include="..\..\data\age-norms.json" Link="AgeNorms\age-norms.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\web\src\ageNorms\ageNormsVectors.json" Link="AgeNorms\ageNormsVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Cry reasons scoring vectors shared with the web port (code/web/src/now/cryReasonsVectors.test.ts). -->
+    <None Include="..\..\..\web\src\now\cryReasonsVectors.json" Link="CryReasons\cryReasonsVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Measurement-units vectors shared with the web port (code/web/src/units, docs/design/37-measurement-units.md). -->
+    <None Include="..\..\..\web\src\units\unitsVectors.json" Link="Units\unitsVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The consent versions the web reads (code/web/src/legal/consentVersions.json, docs/design/38-consent-and-terms.md), mirrored by ConsentVersions. -->
+    <None Include="..\..\..\web\src\legal\consentVersions.json" Link="Consents\consentVersions.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

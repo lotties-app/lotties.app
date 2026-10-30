@@ -120,9 +120,9 @@
       "headline_one": "{{count, number}} mamada / dia",
       "headline_other": "{{count, number}} mamadas / dia",
       "feedsChart": "Mamadas por dia",
-      "mlChart": "Leite na mamadeira por dia (ml)",
+      "mlChart": "Leite na mamadeira por dia ({{unit}})",
       "mlSummary": "Nos dias com mamadeira, cerca de {{ml}} por dia na mamadeira.",
-      "tableMl": "ml na mamadeira"
+      "tableMl": "{{unit}} na mamadeira"
     },
     "diapers": {
       "summary_one": "Cerca de {{count}} fralda por dia.",
@@ -146,6 +146,7 @@
         "bottlesPerDay": "Mamadeiras por dia",
         "mlPerDay": "Leite na mamadeira por dia",
         "mlPerKgPerDay": "Leite na mamadeira por kg por dia",
+        "mlPerLbPerDay": "Leite na mamadeira por libra por dia",
         "bellyPainsPerDay": "Dores de barriga por dia",
         "bellyPainsAfterBottlePerDay": "Dores de barriga até 2 h depois de uma mamadeira, por dia",
         "fussyPerDay": "Episódios de choro por dia",
@@ -176,6 +177,7 @@
       "tableMeasure": "Por dia",
       "note": "Isto compara o que você registrou. Muita coisa muda com o tempo (idade, crescimento, doenças), então isto não mostra que uma fórmula causa alguma coisa. Converse com o pediatra antes de trocar a fórmula ou a quantidade.",
       "weightNote": "O leite por kg usa o peso registrado mais perto antes de cada dia, em até 14 dias (senão o mais perto depois).",
+      "weightNoteLb": "O leite por libra usa o peso registrado mais perto antes de cada dia, em até 14 dias (senão o mais perto depois).",
       "collecting": "Ainda coletando"
     }
   }

@@ -159,7 +159,7 @@ describe('the day rhythm view', () => {
     expect(readNowView()).toBe('ring');
     expect(screen.queryByTestId('ruler-now')).toBeNull();
     // A text equivalent for the picture: the state, the sleep so far and the predicted window.
-    const image = within(ring).getByRole('img');
+    const image = within(ring).getByRole('group', { name: /^Day rhythm/ });
     expect(image.getAttribute('aria-label')).toMatch(/^Day rhythm\. Awake 1h 52m\./);
     expect(image.getAttribute('aria-label')).toMatch(/Next nap window \d\d:\d\d to \d\d:\d\d\./);
     expect(within(ring).getByTestId('ring-now')).toBeTruthy();
@@ -268,6 +268,8 @@ describe('illustrations on the Now screen', () => {
     renderNow(sleepPredictions(40));
     fireEvent.click(await screen.findByRole('button', { name: /^More/ }));
     const grid = await screen.findByTestId('more-grid');
+    // The tiles show once the sheet has worked out its order (one local read).
+    await within(grid).findAllByRole('button');
     const names = Array.from(grid.querySelectorAll('svg[data-illustration]'), (svg) =>
       svg.getAttribute('data-illustration'),
     );

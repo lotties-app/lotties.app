@@ -227,7 +227,14 @@ describe('account menu', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['Ana', 'Baby profile', 'Settings', 'Appearance and language', 'Log out']);
+    ).toEqual([
+      'Ana',
+      'Baby profile',
+      'Settings',
+      'Appearance and language',
+      'Privacy and consents',
+      'Log out',
+    ]);
     expect(within(menu).getByRole('menuitemcheckbox', { name: 'Night view' })).toBeTruthy();
   });
 

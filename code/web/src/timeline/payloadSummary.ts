@@ -10,8 +10,10 @@ import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatNumber } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import { getOwn } from '../util/ownProperty';
+import { fieldValueText, volumeNumberText, volumeText } from '../units/display';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
 import { FORMULA_NAME_KEY } from '../formulas/formulaModel';
+import { ASSISTANT_KEYS } from '../events/assistantOrigin';
 import {
   DRUNK_KEY,
   ENDED_BY_KEY,
@@ -62,6 +64,8 @@ function fieldPart(
   if (field.kind === 'bool') return raw === true ? label : null;
   if (field.kind === 'number') {
     if (field.unit === 's' && typeof raw === 'number') return formatDuration(raw * 1000);
+    const measured = typeof raw === 'number' ? fieldValueText(field.unit, raw) : null;
+    if (measured !== null) return measured;
     const value = typeof raw === 'number' ? formatNumber(raw) : String(raw);
     if (field.unit) return `${value} ${field.unit === 'C' ? '°C' : field.unit}`;
     return field.max !== null
@@ -109,6 +113,9 @@ const FUSSY_HELPED: ReadonlyMap<string, () => string> = new Map([
   ['sleep', () => t('timeline.fussyHelped.sleep')],
   ['other', () => t('timeline.fussyHelped.other')],
   ['nothing', () => t('timeline.fussyHelped.nothing')],
+  ['diaper_change', () => t('timeline.fussyHelped.diaper_change')],
+  ['burping', () => t('timeline.fussyHelped.burping')],
+  ['holding', () => t('timeline.fussyHelped.holding')],
 ]);
 
 /** The detail line wording of the fussy fields (`undefined`: use the generic one). */
@@ -117,8 +124,13 @@ function fussyPart(field: EventFieldDefinition, raw: unknown): string | undefine
   return FUSSY_HELPED.get(raw)?.();
 }
 
-/** Keys of the app itself (pause keys, the open nursing segment): never shown as details. */
-const INTERNAL_KEYS: ReadonlySet<string> = new Set([...PAUSE_KEYS, SEGMENT_START_KEY]);
+/** Keys of the app itself (pause keys, the open nursing segment, assistant markers): never shown as details. */
+const INTERNAL_KEYS: ReadonlySet<string> = new Set([
+  ...PAUSE_KEYS,
+  SEGMENT_START_KEY,
+  // The assistant markers are never data: "Added by Alexa" and the delete banner present them.
+  ...ASSISTANT_KEYS,
+]);
 
 /** Simple values the type does not describe (e.g. imported or older payloads). */
 function extraPart(key: string, raw: unknown): string | null {
@@ -185,8 +197,8 @@ function withBottleAmounts<P extends { key: string; text: string | null }>(
 /** `80 of 120 ml`: what was drunk of what was prepared. */
 export function amountOfText(drunk: number, prepared: number): string {
   return t('feedingAmounts.amountOf', {
-    drunk: formatNumber(drunk),
-    prepared: formatNumber(prepared),
+    drunk: volumeNumberText(drunk),
+    prepared: volumeText(prepared),
   });
 }
 

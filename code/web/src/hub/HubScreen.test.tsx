@@ -1,6 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import type { BabyRoutineDb } from '../db/database';
 import type { Appointment, BabyRole } from '../db/models';
 import { HubPage } from '../pages/HubPage';
@@ -85,8 +87,12 @@ describe('the sections', () => {
       'import',
       'export',
       'backupImport',
+      'install',
       'updates',
+      'welcome',
       'about',
+      'credits',
+      'privacy',
     ]);
     const href = (id: string) => screen.getByTestId(`hub-row-${id}`).getAttribute('href');
     expect(href('appointments')).toBe('/appointments');
@@ -95,6 +101,8 @@ describe('the sections', () => {
     expect(href('invite')).toBe('/hub/family#invite');
     expect(href('settings')).toBe('/settings');
     expect(href('updates')).toBe('/hub/updates');
+    expect(href('install')).toBe('/hub/install');
+    expect(href('welcome')).toBe('/welcome');
   });
 
   it('hides what a Caregiver and a Viewer cannot use', async () => {
@@ -109,8 +117,12 @@ describe('the sections', () => {
       'notes',
       'members',
       'settings',
+      'install',
       'updates',
+      'welcome',
       'about',
+      'credits',
+      'privacy',
     ]);
   });
 
@@ -142,6 +154,13 @@ describe('the sections', () => {
     await renderHub('Owner', MEMBERS.slice(0, 1));
     await screen.findByTestId('hub-row-notes');
     expect(rows()).not.toContain('fromDoctor');
+  });
+
+  it('ends with the app version, a link to About', async () => {
+    await renderHub('Owner');
+    const line = screen.getByRole('link', { name: /^App version: / });
+    expect(line.textContent).toBe(`App version: ${displayVersion(readBuildInfo().version)}`);
+    expect(line.getAttribute('href')).toBe('/hub/about');
   });
 
   it('leaves out the update check inside the native app', async () => {

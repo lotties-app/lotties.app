@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Lotties.Application.Serialization;
+
 namespace Lotties.Application.Users;
 
 /// <summary>Deletes the current user's account (store requirement: Apple 5.1.1(v), Google Play account deletion).</summary>
@@ -13,9 +16,29 @@ public interface IAccountDeletionService
     Task<AccountDeletionResponse> DeleteAsync(CancellationToken cancellationToken = default);
 }
 
-/// <summary>Removes the sign-in account at the identity provider; the default does nothing (no admin credentials configured).</summary>
+/// <summary>What happened to the sign-in account at the identity provider when the Lotties account was deleted.</summary>
+[JsonConverter(typeof(SnakeCaseStringEnumConverter))]
+public enum IdentityRemoval
+{
+    /// <summary>The account is gone at the provider (or was already).</summary>
+    Removed,
+
+    /// <summary>
+    /// This server cannot remove it: no admin client is configured (<c>AUTH_ADMIN_CLIENT_ID/SECRET</c>), or the account
+    /// belongs to another issuer. The account stays until the operator removes it.
+    /// </summary>
+    NotConfigured,
+
+    /// <summary>The provider was asked and failed (down, refused): the account stays; the user may sign in and delete again, or ask the operator.</summary>
+    Failed,
+}
+
+/// <summary>Removes the sign-in account at the identity provider; without admin credentials it does nothing.</summary>
 public interface IIdentityAccountRemover
 {
-    /// <summary>Returns whether the account is gone at the provider. Never throws for a provider failure: the data is already erased.</summary>
-    Task<bool> RemoveAsync(string issuer, string subject, CancellationToken cancellationToken = default);
+    /// <summary>Whether <see cref="RemoveAsync"/> would ask the provider for an account of <paramref name="issuer"/> (shown before the deletion).</summary>
+    bool CanRemove(string issuer);
+
+    /// <summary>Removes the account. Never throws for a provider failure: the data is already erased by then.</summary>
+    Task<IdentityRemoval> RemoveAsync(string issuer, string subject, CancellationToken cancellationToken = default);
 }

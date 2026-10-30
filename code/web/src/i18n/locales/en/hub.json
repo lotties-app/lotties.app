@@ -100,6 +100,11 @@
         "hint": "Appearance, language, notifications, sync",
         "keywords": "preferences theme dark language notifications sync profile event types"
       },
+      "board": {
+        "title": "Project board",
+        "hint": "Tasks, gaps and decisions of the project",
+        "keywords": "board project tasks gaps decisions notes memories assistant claude api keys"
+      },
       "import": {
         "title": "Import",
         "hint": "Bring history from another app",
@@ -115,6 +120,21 @@
         "hint": "Restore a file exported from the app",
         "keywords": "backup restore upload file json move account"
       },
+      "cryMonitor": {
+        "title": "Cry monitor (beta)",
+        "hint": "A spare phone in the baby's room notices crying",
+        "keywords": "cry crying monitor microphone listen detect sound baby room alert"
+      },
+      "install": {
+        "title": "Install the app",
+        "hint": "On your phone or computer",
+        "keywords": "install home screen add phone iphone android pwa app shortcut"
+      },
+      "welcome": {
+        "title": "Home page",
+        "hint": "The Lotties welcome page",
+        "keywords": "home welcome landing page start website"
+      },
       "updates": {
         "title": "Check for updates",
         "hint": "Get the latest version",
@@ -124,6 +144,16 @@
         "title": "About",
         "hint": "Version and licence",
         "keywords": "version build licence license source"
+      },
+      "credits": {
+        "title": "Credits and licenses",
+        "hint": "Open-source software, data and services behind Lotties",
+        "keywords": "credits licenses licences open source thanks libraries data attribution agpl third party"
+      },
+      "privacy": {
+        "title": "Privacy policy",
+        "hint": "What we collect, why, and your rights",
+        "keywords": "privacy policy data protection lgpd personal data rights delete export consent cookies"
       }
     },
     "updates": {
@@ -144,13 +174,24 @@
     "about": {
       "title": "About",
       "tagline": "A calm baby routine tracker that works offline.",
-      "version": "Version",
-      "builtAt": "Built",
-      "commit": "Build",
+      "appVersion": "App version",
+      "appLine": "App (this device)",
+      "serverLine": "Server",
+      "commitValue": "commit {{commit}}",
+      "builtValue": "built {{date}}",
+      "serverLoading": "Checking the server…",
+      "serverUnavailable": "Server version unavailable",
+      "updateHint": "An update is available.",
+      "updatedSeparately": "The server was updated separately.",
+      "copy": "Copy version info",
+      "copied": "Version info copied.",
+      "copyFailed": "Could not copy. You can select the versions above instead.",
+      "report": "Lotties app {{app}}, server {{server}}",
       "license": "Licence",
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
-      "unknown": "Unknown"
+      "credits": "Built on open source. Credits and licenses",
+      "privacy": "Privacy policy"
     }
   }
 }

@@ -1,6 +1,11 @@
+using Lotties.Api.Assistants.Alexa;
+using Lotties.Api.Assistants.Mcp;
 using Lotties.Api.Authentication;
 using Lotties.Api.Authorization;
+using Lotties.Api.Board;
+using Lotties.Api.Board.Mcp;
 using Lotties.Api.Configuration;
+using Lotties.Api.Consents;
 using Lotties.Api.Cors;
 using Lotties.Api.Errors;
 using Lotties.Api.Limits;
@@ -19,7 +24,7 @@ namespace Lotties.Api;
 
 public static class ApiHostExtensions
 {
-    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers and JSON converters.</summary>
+    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers, the Alexa skill and the MCP server (both off by default), the project board (off by default) and JSON converters.</summary>
     public static WebApplicationBuilder AddLottiesApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -40,14 +45,18 @@ public static class ApiHostExtensions
         builder.Services.AddApiProblemDetails();
         builder.Services.AddRequestLimits(builder.Configuration);
         builder.Services.AddTrustedProxyHeaders(builder.Configuration);
+        builder.Services.AddAlexaSkill(builder.Configuration);
+        builder.Services.AddMcpAdapter(builder.Configuration);
+        builder.Services.AddProjectBoard(builder.Configuration);
+        builder.Services.AddBoardMcp(builder.Configuration);
         builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new EventPayloadJsonConverter()));
         return builder;
     }
 
     /// <summary>
     /// Adds the trusted proxy headers (client address and scheme), CORS, problem details (exception and status-code
-    /// mapping), the request body limit, authentication, the per-user rate limiter and request timeouts, and
-    /// authorization, in that order.
+    /// mapping), the request body limit, authentication, the MCP request guard (404 while disabled, origin, the MCP token's
+    /// user), the board MCP guard (404 unless the board and its MCP endpoint are on, origin), the board guard (404 while disabled, the board API key's identity), the per-user rate limiter and request timeouts, authorization, and the MCP scope gate, in that order.
     /// </summary>
     public static WebApplication UseLottiesApi(this WebApplication app)
     {
@@ -57,8 +66,13 @@ public static class ApiHostExtensions
         app.UseApiProblemDetails();
         app.UseRequestBodyLimits();
         app.UseAuthentication();
+        app.UseMcpRequestGuard();
+        app.UseBoardMcpRequestGuard();
+        app.UseBoardRequestGuard();
         app.UseRequestRateAndTimeLimits();
         app.UseAuthorization();
+        app.UseConsentGate();
+        app.UseMcpScopeGate();
         return app;
     }
 

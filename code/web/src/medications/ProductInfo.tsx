@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Box } from '@mui/material';
 import { formatList } from '../i18n/format';
 import { useLocale } from '../i18n/useLocale';
 import type { ProductDto, SiblingProductDto } from '../sync/contract';
 import { palette } from '../ui/form/styles';
-import { isCurated, isOfficial } from './catalogApi';
+import { ALTERNATIVE_LEVELS, alternativeLevel, isCurated, isOfficial } from './catalogApi';
 import { strengthText } from './productText';
 import { Icon } from '../ui/Icon';
 
@@ -28,9 +29,14 @@ export function ProductMeta({ product }: { product: ProductDto }) {
       : imported
         ? t('medications.catalog.ingredientNotListed')
         : null;
+  const shownStrength =
+    product.strengthText && !(product.presentation ?? '').includes(product.strengthText)
+      ? product.strengthText
+      : null;
   const parts = [
     t(`medications.forms.${product.form}`),
     product.presentation ?? null,
+    shownStrength,
     strengthText(product),
     ingredients,
   ].filter(Boolean);
@@ -104,8 +110,11 @@ export function OfficialAttribution() {
 }
 
 /**
- * "Contains the same active ingredient as Luftal: simethicone. Ask your doctor or pharmacist before
- * substituting." Information only: it never picks or swaps anything.
+ * The other products with the same active ingredient, in labelled groups (docs/design/13-anvisa-catalog.md
+ * section 12): "same ingredient, strength and form" first, then "same strength, other form", "strength
+ * not known" and "different strength". Only the first group says the products match; none is a
+ * substitution advice and nothing here picks or swaps a medicine. Alternatives without a level (an
+ * older server, the offline list) read as "strength not known".
  */
 export function SameIngredientNote({
   product,
@@ -117,6 +126,10 @@ export function SameIngredientNote({
   const { t } = useTranslation();
   const substances = useSubstanceNames(product);
   if (siblings.length === 0 || substances.length === 0) return null;
+  const groups = ALTERNATIVE_LEVELS.map((level) => ({
+    level,
+    items: siblings.filter((sibling) => alternativeLevel(sibling) === level),
+  })).filter((group) => group.items.length > 0);
   return (
     <Box
       role="note"
@@ -129,12 +142,25 @@ export function SameIngredientNote({
       })}
     >
       <Icon name="info" size={16} sx={{ mt: '2px', flex: 'none' }} />
-      <span>
-        {t('medications.sameIngredient', {
-          names: formatList(siblings.map((s) => s.name)),
-          substances: formatList(substances),
-        })}
-      </span>
+      <Box sx={{ display: 'grid', gap: 0.5, minWidth: 0, overflowWrap: 'anywhere' }}>
+        <p style={{ margin: 0 }}>
+          {t('medications.alternatives.intro', { substances: formatList(substances) })}
+        </p>
+        {groups.map((group) => (
+          <p key={group.level} style={{ margin: 0 }} data-level={group.level}>
+            <strong>{t(`medications.alternatives.${group.level}`)}: </strong>
+            {formatList(group.items.map((item) => alternativeItem(item, t)))}
+          </p>
+        ))}
+        <p style={{ margin: 0 }}>{t('medications.alternatives.footer')}</p>
+      </Box>
     </Box>
   );
+}
+
+function alternativeItem(sibling: SiblingProductDto, t: TFunction): string {
+  const details = [sibling.strengthText ?? null, t(`medications.forms.${sibling.form}`)].filter(
+    Boolean,
+  );
+  return t('medications.alternatives.item', { name: sibling.name, details: details.join(', ') });
 }

@@ -1,9 +1,12 @@
 import { canDecideProposals } from '../baby/permissions';
+import { cryMonitorSupported } from '../cryMonitor/support';
+import { useBoardAccess } from '../board/useBoardAccess';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { useBabies } from '../db/hooks';
 import { hasPatients } from '../doctor/appMode';
 import { useMembers } from '../now/useMembers';
 import { isNativeApp } from '../platform/nativeApp';
+import { useInstallState } from '../install/useInstallState';
 import { useDoctorInbox } from '../proposals/useProposals';
 import type { HubContext } from './hubEntries';
 
@@ -17,6 +20,9 @@ export function useHubContext(): HubContext | undefined {
   const inbox = useDoctorInbox(baby ?? NO_BABY);
   // Without a baby the members query must not run: the Doctor role switches it off.
   const members = useMembers(baby ?? { id: '', role: 'Doctor' });
+  const { installed } = useInstallState();
+  // Asked in the background: the Hub renders at once and the board entry appears when granted.
+  const { access: board } = useBoardAccess();
   if (!babies || !all) return undefined;
   const hasDoctor = members?.some((member) => member.role === 'Doctor') ?? false;
   const anything = !!inbox && (inbox.proposals.length > 0 || inbox.recommendations.length > 0);
@@ -25,5 +31,8 @@ export function useHubContext(): HubContext | undefined {
     hasPatients: hasPatients(all),
     hasDoctorContent: !!baby && canDecideProposals(baby) && (hasDoctor || anything),
     native: isNativeApp(),
+    installed,
+    cryMonitorSupported: cryMonitorSupported(),
+    board: !!board?.canRead,
   };
 }

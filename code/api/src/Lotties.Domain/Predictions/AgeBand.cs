@@ -43,7 +43,8 @@ public static class AgeBands
         _ => throw new ArgumentOutOfRangeException(nameof(band), band, "Unknown age band."),
     };
 
-    private static int CompletedMonths(DateOnly birthDate, DateOnly date)
+    /// <summary>Whole calendar months from <paramref name="birthDate"/> to <paramref name="date"/> (negative before birth).</summary>
+    public static int CompletedMonths(DateOnly birthDate, DateOnly date)
     {
         var months = ((date.Year - birthDate.Year) * MonthsPerYear) + date.Month - birthDate.Month;
         return date.Day < birthDate.Day ? months - 1 : months;

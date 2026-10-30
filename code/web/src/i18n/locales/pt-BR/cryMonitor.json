@@ -1,0 +1,144 @@
+{
+  "cryMonitor": {
+    "title": "Monitor de choro (beta)",
+    "intro": {
+      "lead": "O monitor de choro escuta pelo microfone deste aparelho. Quando ouve choro por algum tempo, ele inicia um período de choro no registro de {{name}}.",
+      "howTitle": "Como usar",
+      "how": {
+        "device": "Use um celular ou tablet extra no quarto do bebê.",
+        "power": "Deixe-o na tomada, com a tela ligada e esta página aberta.",
+        "stop": "Toque em Parar quando terminar. Sair desta página também o desliga."
+      },
+      "privacyTitle": "Sua privacidade",
+      "privacy": {
+        "onlyOpen": "O microfone só escuta enquanto esta página está aberta e escutando.",
+        "onDevice": "Os sons são analisados neste aparelho. Nunca são gravados, guardados nem enviados a lugar nenhum.",
+        "saved": "Só fica salvo o fato de que houve choro: um período de choro com início e fim."
+      },
+      "limitsTitle": "Não é uma babá eletrônica",
+      "limits": {
+        "notSafety": "Isto não é uma babá eletrônica nem um dispositivo de segurança.",
+        "miss": "Ele pode não perceber um choro, por exemplo vindo de outro cômodo ou com muito barulho. Outros sons podem acioná-lo.",
+        "beta": "Está em teste: só foi verificado com sons gravados, ainda não em casas de verdade.",
+        "rely": "Nunca dependa dele. Mantenha sempre um jeito de ouvir o seu bebê você mesmo."
+      },
+      "start": "Começar a monitorar",
+      "continue": "Continuar",
+      "consentGiven": "Você concordou neste aparelho em {{date}}.",
+      "withdraw": "Retirar o consentimento neste aparelho",
+      "notifications": "Receba uma notificação nos seus outros aparelhos quando houver choro",
+      "notificationsLink": "Ajustes > Notificações"
+    },
+    "consent": {
+      "title": "Antes de começar",
+      "lead": "Leia e confirme:",
+      "points": {
+        "microphone": "Enquanto o monitor funciona, o microfone deste aparelho escuta. Os sons são analisados aqui e descartados na hora: nada é gravado, guardado ou enviado.",
+        "saved": "Só os períodos de choro detectados ficam salvos no registro de {{name}}, com início e fim, marcados como detectados automaticamente. Os familiares que ligaram o alerta podem receber uma notificação.",
+        "others": "O microfone também ouve outras pessoas no quarto. Avise quem puder estar lá.",
+        "limits": "Ele pode não perceber um choro ou reagir a outros sons. Não substitui você ouvir o seu bebê.",
+        "stop": "Você pode desligá-lo quando quiser e retirar este consentimento nesta página."
+      },
+      "understand": "Entendo e concordo",
+      "allowed": "Tenho permissão para monitorar este bebê",
+      "agree": "Concordo",
+      "cancel": "Agora não"
+    },
+    "loading": {
+      "title": "Ligando o monitor",
+      "body": "Carregando o modelo de sons e pedindo o microfone.",
+      "cancel": "Cancelar"
+    },
+    "listening": {
+      "label": "Monitor de choro",
+      "status": "Escutando",
+      "for": "Para {{name}}",
+      "since": "Desde {{time}} ({{duration}})",
+      "crying": "Choro ouvido desde {{time}}",
+      "stop": "Parar",
+      "screenOn": "A tela fica ligada enquanto escuta.",
+      "sensitivity": "Sensibilidade",
+      "sensitivityLevels": {
+        "less": "Menos",
+        "balanced": "Equilibrada",
+        "more": "Mais"
+      },
+      "sensitivityHelp": {
+        "less": "Reage só a choro nítido. Pode não perceber um choro mais baixo.",
+        "balanced": "Recomendada: equilíbrio entre não perceber o choro e alarmes falsos.",
+        "more": "Reage também a choro mais baixo. Outros sons podem acioná-lo com mais frequência."
+      },
+      "processing": "A sensibilidade pode ser menor neste aparelho: o navegador manteve o processamento de voz ligado.",
+      "offline": "Sem conexão: o choro detectado fica salvo aqui e sincroniza depois.",
+      "wakeLock": {
+        "generic": "Este aparelho pode desligar a tela, e aí ele para de escutar. Deixe-o na tomada e aumente o tempo de tela nos ajustes dele.",
+        "ios": "Este aparelho pode desligar a tela, e aí ele para de escutar. Deixe-o na tomada e desative o Bloqueio Automático em Ajustes > Tela e Brilho. Manter a tela ligada pelo app instalado exige iOS 18.4 ou mais recente.",
+        "android": "Este aparelho pode desligar a tela, e aí ele para de escutar. Deixe-o na tomada e aumente o Tempo limite da tela em Configurações > Tela."
+      }
+    },
+    "failure": {
+      "tryAgain": "Tentar de novo",
+      "restart": "Recomeçar",
+      "denied": {
+        "title": "O acesso ao microfone está desligado",
+        "body": "O monitor de choro precisa do microfone. Permita para este site e toque em Tentar de novo.",
+        "stepsLabel": "Como permitir o microfone",
+        "steps": {
+          "chromium": {
+            "open": "Toque no ícone à esquerda da barra de endereço.",
+            "allow": "Abra Permissões ou Configurações do site e deixe o Microfone em Permitir."
+          },
+          "iosSafari": {
+            "open": "Toque no menu da página (aA) na barra de endereço e depois em Ajustes do Site.",
+            "allow": "Deixe o Microfone em Permitir. Ou abra Ajustes > Apps > Safari > Microfone."
+          },
+          "macSafari": {
+            "open": "Abra Safari > Ajustes > Sites > Microfone.",
+            "allow": "Deixe este site em Permitir."
+          },
+          "firefox": {
+            "open": "Toque no cadeado ao lado do endereço.",
+            "allow": "Remova a permissão de microfone bloqueada."
+          },
+          "retry": "Volte aqui e toque em Tentar de novo."
+        }
+      },
+      "unavailable": {
+        "title": "Nenhum microfone disponível",
+        "body": "Não foi possível abrir o microfone. Outro app pode estar usando, ou este aparelho não tem um."
+      },
+      "lost": {
+        "title": "Microfone interrompido",
+        "body": "A escuta parou às {{time}}: uma ligação ou outro app pegou o microfone, ou a permissão mudou. Nada depois disso foi ouvido."
+      },
+      "stalled": {
+        "title": "A escuta parou",
+        "body": "O microfone parou às {{time}}, provavelmente porque a tela desligou ou outro app passou para a frente. Nada depois disso foi ouvido."
+      },
+      "model": {
+        "title": "Indisponível no momento",
+        "body": "Não foi possível ligar o monitor de choro. Verifique a conexão no primeiro uso e tente de novo mais tarde."
+      },
+      "unsupported": {
+        "title": "Não funciona neste aparelho",
+        "body": "Este navegador não consegue rodar o monitor de choro. Ele precisa de um navegador recente com acesso ao microfone em uma conexão segura (https)."
+      }
+    },
+    "recent": {
+      "title": "Detecções recentes",
+      "empty": "Nenhum choro detectado hoje.",
+      "running": "{{time}} · ainda em andamento",
+      "ended": "{{time}} · {{duration}}"
+    },
+    "answer": {
+      "detected": "Detectado pelo monitor de choro. Ela estava chorando?",
+      "question": "Ela estava chorando?",
+      "yes": "Sim, chorando",
+      "no": "Não estava",
+      "group": "Ela estava chorando às {{time}}?",
+      "answeredYes": "Detectado pelo monitor de choro. Você disse: chorando.",
+      "answeredNo": "Detectado pelo monitor de choro. Você disse: não estava chorando.",
+      "readOnly": "Detectado pelo monitor de choro."
+    }
+  }
+}

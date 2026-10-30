@@ -1,0 +1,310 @@
+name: Mobile release
+
+# Builds the Android app (signed AAB and APK) and the iOS app (signed IPA) from code/mobile and, when asked,
+# uploads them to Google Play (internal track) and TestFlight. Never runs on a normal push or pull request:
+# only by hand or on a `mobile-v*` tag. Setup, secrets and the first-time checklist: docs/MOBILE-RELEASE.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Marketing version X.Y.Z (empty: the version in code/mobile/package.json)'
+        required: false
+        type: string
+      android:
+        description: 'Build Android'
+        type: boolean
+        default: true
+      ios:
+        description: 'Build iOS'
+        type: boolean
+        default: true
+      upload_play:
+        description: 'Upload the Android AAB to the Google Play internal track'
+        type: boolean
+        default: false
+      upload_testflight:
+        description: 'Upload the iOS build to TestFlight'
+        type: boolean
+        default: false
+  push:
+    tags: ['mobile-v*']
+
+# Least privilege; the one job that writes (the GitHub release) asks for more itself.
+permissions:
+  contents: read
+
+# One release at a time per ref; a started release is never cancelled half way.
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Pinned: the iOS SDK that App Store Connect accepts changes every spring. Check docs/MOBILE-RELEASE.md before bumping.
+  XCODE_PATH: /Applications/Xcode_26.5.app
+  JAVA_VERSION: '21'
+  NODE_VERSION: '22'
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.v.outputs.name }}
+      code: ${{ steps.v.outputs.code }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: code/mobile/package.json
+      - id: v
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF: ${{ github.ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" = "tag" ]; then
+            version="${REF#refs/tags/mobile-v}"
+          elif [ -n "${INPUT_VERSION:-}" ]; then
+            version="$INPUT_VERSION"
+          else
+            version="$(node -p "require('./code/mobile/package.json').version")"
+          fi
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version '$version' is not X.Y.Z"
+            exit 1
+          fi
+          # Build number: the run number, monotonic for this workflow (Play needs a higher versionCode every upload,
+          # App Store Connect a new build number per marketing version).
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Version $version (build $RUN_NUMBER)" >> "$GITHUB_STEP_SUMMARY"
+
+  android:
+    name: Android
+    needs: version
+    if: github.ref_type == 'tag' || inputs.android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      LOTTIES_VERSION_NAME: ${{ needs.version.outputs.name }}
+      LOTTIES_VERSION_CODE: ${{ needs.version.outputs.code }}
+      # Stamped into the web bundle by build:web (Hub > About shows it; docs/DEPLOY.md "Versions").
+      APP_VERSION: ${{ needs.version.outputs.name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            code/web/package-lock.json
+            code/mobile/package-lock.json
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      # Gradle caches (dependencies, wrapper); read-only outside the default branch.
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - run: npm ci
+        working-directory: code/web
+      - run: npm ci
+        working-directory: code/mobile
+      - name: Build the web app (Vite mode native) and sync it into the Android project
+        env:
+          VITE_OIDC_CLIENT_ID: ${{ vars.LOTTIES_OIDC_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$VITE_OIDC_CLIENT_ID" || { echo "::error::Repository variable LOTTIES_OIDC_CLIENT_ID is not set"; exit 1; }
+          npm run build:web
+          npm run sync -- android
+        working-directory: code/mobile
+      - name: Restore the upload keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::Secret ANDROID_KEYSTORE_BASE64 is not set"; exit 1; }
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.keystore"
+          echo "LOTTIES_KEYSTORE_FILE=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
+      - name: Build the signed AAB (Play) and APK (direct download)
+        env:
+          LOTTIES_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LOTTIES_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LOTTIES_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon bundleRelease assembleRelease
+        working-directory: code/mobile/android
+      - name: Collect the artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp app/build/outputs/bundle/release/app-release.aab "dist/lotties-${LOTTIES_VERSION_NAME}-${LOTTIES_VERSION_CODE}.aab"
+          cp app/build/outputs/apk/release/app-release.apk "dist/lotties-${LOTTIES_VERSION_NAME}-${LOTTIES_VERSION_CODE}.apk"
+        working-directory: code/mobile/android
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-${{ needs.version.outputs.name }}-${{ needs.version.outputs.code }}
+          path: code/mobile/android/dist/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload to the Google Play internal track
+        if: github.ref_type == 'tag' || inputs.upload_play
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.lotties.app
+          releaseFiles: code/mobile/android/dist/*.aab
+          track: internal
+          status: completed
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.keystore"
+
+  ios:
+    name: iOS
+    needs: version
+    if: github.ref_type == 'tag' || inputs.ios
+    # arm64 standard runner, free for public repositories; its image carries Xcode 26.x (runner-images, macos-26-arm64).
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      LOTTIES_VERSION_NAME: ${{ needs.version.outputs.name }}
+      LOTTIES_VERSION_CODE: ${{ needs.version.outputs.code }}
+      # Stamped into the web bundle by build:web (Hub > About shows it; docs/DEPLOY.md "Versions").
+      APP_VERSION: ${{ needs.version.outputs.name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            code/web/package-lock.json
+            code/mobile/package-lock.json
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          test -d "$XCODE_PATH" || { echo "::error::$XCODE_PATH is not on this runner image (see docs/MOBILE-RELEASE.md)"; ls /Applications | grep -i xcode; exit 1; }
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+      - run: npm ci
+        working-directory: code/web
+      - run: npm ci
+        working-directory: code/mobile
+      - name: Build the web app (Vite mode native) and sync it into the iOS project
+        env:
+          VITE_OIDC_CLIENT_ID: ${{ vars.LOTTIES_OIDC_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$VITE_OIDC_CLIENT_ID" || { echo "::error::Repository variable LOTTIES_OIDC_CLIENT_ID is not set"; exit 1; }
+          npm run build:web
+          npm run sync -- ios
+        working-directory: code/mobile
+      # Swift packages (Capacitor and the plugins, through CapApp-SPM) are cached by their resolved versions.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('code/mobile/ios/App/CapApp-SPM/Package.swift', 'code/mobile/package-lock.json') }}
+      - name: Store the App Store Connect API key
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          test -n "$ASC_KEY_ID" && test -n "$ASC_KEY_P8" || { echo "::error::Secrets ASC_KEY_ID and ASC_KEY_P8 are not set"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+      - name: Archive (Xcode gets the certificate and profile from Apple with the API key)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project code/mobile/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Lotties.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="$LOTTIES_VERSION_NAME" \
+            CURRENT_PROJECT_VERSION="$LOTTIES_VERSION_CODE"
+      - name: Export the IPA (and upload it to TestFlight when asked)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          UPLOAD: ${{ (github.ref_type == 'tag' || inputs.upload_testflight) && 'upload' || 'export' }}
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>${UPLOAD}</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Lotties.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          mkdir -p dist
+          if [ "$UPLOAD" = "export" ]; then cp "$RUNNER_TEMP"/export/*.ipa "dist/lotties-${LOTTIES_VERSION_NAME}-${LOTTIES_VERSION_CODE}.ipa"; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !(github.ref_type == 'tag' || inputs.upload_testflight) }}
+        with:
+          name: ios-${{ needs.version.outputs.name }}-${{ needs.version.outputs.code }}
+          path: dist/*.ipa
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove the API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"
+
+  github-release:
+    name: GitHub release (APK)
+    needs: [version, android]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: android-${{ needs.version.outputs.name }}-${{ needs.version.outputs.code }}
+          path: dist
+      - name: Create or update the release with the APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Lotties app $TAG" --notes "Android APK for direct installation. The Play and TestFlight builds are in the stores' testing tracks." --prerelease
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber dist/*.apk

@@ -1,0 +1,229 @@
+#!/usr/bin/env node
+// Generates the third-party credits from the real dependency files (docs/design/25-credits.md):
+//   code/web/src/credits/third-party.generated.json            package list (loaded by the credits page)
+//   code/web/src/credits/third-party-licenses.generated.json   license texts by id (lazy chunk)
+//   code/web/src/credits/third-party-summary.generated.json    counts and headline names (landing page)
+//   CREDITS.md and THIRD_PARTY_NOTICES.md at the repository root
+// Sources: code/web and code/mobile package.json + package-lock.json (node_modules for the license
+// files), and the NuGet restore output of code/api (run `dotnet restore code/api/Lotties.sln` first).
+// Usage: node code/web/scripts/generate-credits.mjs [--check]   (--check writes nothing, exits 1 if stale)
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  classifyLicense,
+  mergePackages,
+  nugetPackages,
+  npmPackages,
+  sha1,
+} from './credits-lib.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const webDir = resolve(here, '..');
+const root = resolve(webDir, '..', '..');
+const outDir = join(webDir, 'src', 'credits');
+const check = process.argv.includes('--check');
+
+const curated = JSON.parse(readFileSync(join(outDir, 'curated.json'), 'utf8'));
+const enText = JSON.parse(
+  readFileSync(join(webDir, 'src', 'i18n', 'locales', 'en', 'credits.json'), 'utf8'),
+).credits;
+
+/** Headline packages shown by name on the landing page and first in the direct list. */
+const FEATURED = [
+  'react',
+  '@mui/material',
+  'dexie',
+  'vite',
+  'i18next',
+  '@capacitor/core',
+  '@tabler/icons-react',
+  'workbox-precaching',
+  'Microsoft.EntityFrameworkCore',
+  'Npgsql.EntityFrameworkCore.PostgreSQL',
+  'Microsoft.AspNetCore.Authentication.JwtBearer',
+  'Lib.Net.Http.WebPush',
+];
+
+const all = mergePackages([
+  ...npmPackages({ projectDir: webDir, source: 'web' }),
+  ...npmPackages({ projectDir: join(root, 'code', 'mobile'), source: 'mobile', shippedDev: [] }),
+  ...nugetPackages({ srcDir: join(root, 'code', 'api', 'src') }),
+]);
+
+const texts = {};
+const packages = all.map((p) => {
+  let licenseId = null;
+  if (p.licenseText) {
+    licenseId = sha1(p.licenseText);
+    texts[licenseId] = p.licenseText;
+  }
+  return {
+    ecosystem: p.ecosystem,
+    name: p.name,
+    version: p.version,
+    license: p.license,
+    homepage: p.homepage ?? p.repository ?? null,
+    repository: p.repository,
+    direct: p.direct,
+    sources: p.sources,
+    licenseId,
+  };
+});
+
+const flagged = packages
+  .map((p) => ({ ...p, status: classifyLicense(p.license) }))
+  .filter((p) => p.status !== 'ok');
+const featuredRank = (name) => {
+  const i = FEATURED.indexOf(name);
+  return i === -1 ? FEATURED.length : i;
+};
+const direct = packages.filter((p) => p.direct);
+direct.sort((a, b) => featuredRank(a.name) - featuredRank(b.name) || a.name.localeCompare(b.name));
+
+const sortedTexts = Object.fromEntries(
+  Object.entries(texts).sort(([a], [b]) => a.localeCompare(b)),
+);
+const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
+const files = new Map();
+files.set(
+  join(outDir, 'third-party.generated.json'),
+  json({
+    generatedBy: 'code/web/scripts/generate-credits.mjs: do not edit by hand',
+    packages,
+  }),
+);
+files.set(join(outDir, 'third-party-licenses.generated.json'), json(sortedTexts));
+files.set(
+  join(outDir, 'third-party-summary.generated.json'),
+  json({
+    generatedBy: 'code/web/scripts/generate-credits.mjs: do not edit by hand',
+    count: packages.length,
+    directCount: direct.length,
+    featured: FEATURED.filter((name) => packages.some((p) => p.name === name)).slice(0, 8),
+  }),
+);
+
+// ---- Markdown ------------------------------------------------------------------------------
+const esc = (s) => String(s).replace(/\|/g, '\\|');
+const link = (label, url) => (url ? `[${esc(label)}](${url})` : esc(label));
+const directTable = (list) =>
+  [
+    '| Package | Version | License |',
+    '| --- | --- | --- |',
+    ...list.map((p) => `| ${link(p.name, p.homepage)} | ${esc(p.version)} | ${esc(p.license)} |`),
+  ].join('\n');
+const npmDirect = direct.filter((p) => p.ecosystem === 'npm');
+const nugetDirect = direct.filter((p) => p.ecosystem === 'nuget');
+const kinds = {
+  data: 'Data sources',
+  service: 'Services we call',
+  platform: 'Platforms and standards',
+  asset: 'Fonts, icons and artwork',
+};
+const curatedMd = Object.entries(kinds)
+  .map(([kind, title]) => {
+    const rows = curated.items
+      .filter((item) => item.kind === kind)
+      .map(
+        (item) =>
+          `| ${link(item.name, item.url)} | ${enText.curated[item.id]} | ${link(item.license, item.licenseUrl)} |`,
+      );
+    return `### ${title}\n\n| Name | Used for | License or terms |\n| --- | --- | --- |\n${rows.join('\n')}`;
+  })
+  .join('\n\n');
+const transitive = packages.filter((p) => !p.direct);
+
+const creditsMd = `# Credits
+
+<!-- Generated by code/web/scripts/generate-credits.mjs from the dependency files. Do not edit by hand. -->
+
+Lotties is free software under the [AGPL-3.0](LICENSE), and it stands on the work of many people and public institutions. Thank you to every author, maintainer and contributor listed here.
+
+The same list is in the app: <${curated.publicUrl}> (before sign-in) and Hub > App > Credits and licenses.
+
+> Naming a source, service or project here credits it. It does not mean that it endorses, reviewed or is affiliated with Lotties.
+
+## Data and services
+
+${curatedMd}
+
+## Open-source software
+
+${packages.length} open-source packages ship with Lotties (${direct.length} direct, ${transitive.length} indirect). The license text of every one is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Web and mobile app (npm)
+
+${directTable(npmDirect)}
+
+### Server (NuGet)
+
+${directTable(nugetDirect)}
+
+### Indirect dependencies
+
+${transitive.length} packages come with the ones above:
+
+${transitive.map((p) => `${p.name} ${p.version} (${p.license})`).join(', ')}.
+
+## Regenerating
+
+Run \`node code/web/scripts/generate-credits.mjs\` after changing or updating dependencies (see CONTRIBUTING.md). A test fails when this list is stale.
+`;
+
+const byText = new Map();
+for (const p of packages) {
+  if (!p.licenseId) continue;
+  byText.set(p.licenseId, [...(byText.get(p.licenseId) ?? []), p]);
+}
+const noText = packages.filter((p) => !p.licenseId);
+const noticesMd = `# Third-party notices
+
+<!-- Generated by code/web/scripts/generate-credits.mjs from the dependency files. Do not edit by hand. -->
+
+Lotties itself is released under the [AGPL-3.0](LICENSE). It includes the third-party software below, each under its own license. The license texts are reproduced as shipped by the packages; the same texts are in the app at <${curated.publicUrl}>. See [CREDITS.md](CREDITS.md) for the thanks page (data sources, services and direct dependencies).
+
+## Packages without a license file
+
+These packages do not ship a license file; their license, as declared in their package metadata, is shown (the standard text is at <https://spdx.org/licenses/>).
+
+${noText.map((p) => `- ${p.name} ${p.version}: ${p.license}${p.homepage ? ` (${p.homepage})` : ''}`).join('\n') || '- none'}
+
+## License texts
+
+${[...byText.entries()]
+  .sort(([, a], [, b]) => a[0].name.localeCompare(b[0].name))
+  .map(
+    ([id, list]) =>
+      `### ${list.map((p) => `${p.name} ${p.version}`).join(', ')}\n\nLicense: ${[...new Set(list.map((p) => p.license))].join(', ')}\n\n\`\`\`text\n${texts[id]}\n\`\`\``,
+  )
+  .join('\n\n')}
+`;
+files.set(join(root, 'CREDITS.md'), creditsMd);
+files.set(join(root, 'THIRD_PARTY_NOTICES.md'), noticesMd);
+
+// ---- Write or check --------------------------------------------------------------------------
+const stale = [];
+for (const [path, content] of files) {
+  const current = existsSync(path) ? readFileSync(path, 'utf8').replace(/\r\n/g, '\n') : null;
+  if (current !== content) stale.push(path);
+  if (!check && current !== content) writeFileSync(path, content);
+}
+if (check) {
+  if (stale.length) {
+    console.error(
+      `Stale credits files (run node code/web/scripts/generate-credits.mjs):\n${stale.join('\n')}`,
+    );
+    process.exit(1);
+  }
+  console.log('Credits are up to date.');
+} else {
+  console.log(
+    `${packages.length} packages (${direct.length} direct); ${stale.length} file(s) written.`,
+  );
+}
+if (flagged.length) {
+  console.warn(`\nLicense review needed (not in the permissive list):`);
+  for (const p of flagged)
+    console.warn(`  ${p.status}: ${p.ecosystem} ${p.name}@${p.version}: ${p.license}`);
+}

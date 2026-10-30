@@ -24,7 +24,7 @@ Non-goals
 ## 2. Context
 
 ```
-browser ──> web (nginx) ──/api/──> api (.NET 8) ──> PostgreSQL
+browser ──> web (nginx) ──/api/──> api (.NET 10) ──> PostgreSQL
                                      │   ▲
                        outbox push   │   │  GET predictions (300 ms budget)
                                      ▼   │

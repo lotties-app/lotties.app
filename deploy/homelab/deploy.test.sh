@@ -77,10 +77,20 @@ check "tag: an untracked file counts" bash -c "[ '$second' != '$first' ]"
 printf 'one!' > "$REPO/code/web/src/a.ts"
 check "tag: a changed working-tree file counts" bash -c "[ '$(source_tag "" code/web)' != '$second' ]"
 VITE_API_BASE_URL="" VITE_OIDC_AUTHORITY=https://auth.example.test/realms/r VITE_OIDC_AUDIENCE="" VITE_REPO_URL=""
+VITE_PRIVACY_CONTROLLER_NAME="" VITE_PRIVACY_CONTACT_EMAIL="" VITE_PRIVACY_DPO=""
 VITE_OIDC_CLIENT_ID=web-a; salt_a=$(web_build_salt)
 VITE_OIDC_CLIENT_ID=web-b; salt_b=$(web_build_salt)
 check "tag: a different web build argument is a different tag" bash -c "[ '$(source_tag "$salt_a" code/web)' != '$(source_tag "$salt_b" code/web)' ]"
+VITE_PRIVACY_CONTACT_EMAIL=privacy@example.test; salt_c=$(web_build_salt); VITE_PRIVACY_CONTACT_EMAIL=""
+check "tag: a different privacy contact is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_c" code/web)' ]"
 check "tag: TAG overrides the source tag" equals "$(TAG=fixed image_tag "" code/web)" fixed
+salt_v1=$(VERSION=0.1.38 APP_VERSION=0.1.38 web_build_salt); salt_v2=$(VERSION=0.1.39 APP_VERSION=0.1.39 web_build_salt)
+check "tag: the release number is not part of the web tag" equals "$(source_tag "$salt_v2" code/web)" "$(source_tag "$salt_v1" code/web)"
+check "stamp: the release, commit and build time are build arguments, without the v" \
+  equals "$(release_build_args v0.1.38 abc1234 2026-10-24T10:00:00Z | tr '\n' ' ')" \
+  '--build-arg APP_VERSION=0.1.38 --build-arg APP_COMMIT=abc1234 --build-arg APP_BUILD_TIME=2026-10-24T10:00:00Z '
+check "stamp: no release gives an empty APP_VERSION (the app shows dev)" \
+  bash -c "(source '$DEPLOY'; release_build_args '' c t) | grep -qx 'APP_VERSION='"
 
 # ── Whole runs against stand-ins ──────────────────────────────────────────────
 mkdir "$WORK/bin"
@@ -135,7 +145,7 @@ run() { # name, env assignments... ; leaves the log in $WORK/log and the output 
   shift
   : > "$WORK/log"
   env -i PATH="$WORK/bin:$PATH" HOME="$WORK" STUB_LOG="$WORK/log" ENV_FILE="$WORK/app.env" KUBE_CONTEXT=mine \
-    REGISTRY=reg.test/lotties "$@" bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
+    REGISTRY=reg.test/lotties TAG_RELEASE=0 "$@" bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
   RUN_CODE=$?
   [ "$RUN_CODE" -eq 0 ] || [ "${EXPECT_FAIL:-0}" = 1 ] || { echo "not ok - $name: deploy.sh exited $RUN_CODE"; sed 's/^/    /' "$WORK/out" | tail -5; FAILED=1; return 1; }
 }
@@ -152,9 +162,11 @@ run "dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered" STUB_NS_EXISTS=no STUB_PULL
   check "dry run: the namespace would be created" out_has 'namespace.yaml|would create'
   check "dry run: the pull Secret would be copied" out_has 'would copy cr-homel4b from namespace keycloak'
   check "dry run: the images would be built" out_has 'would build and push it: podman build .*lotties-web'
+  check "dry run: the release is chosen before the builds and stamped into them" out_has 'would build and push it: podman build .*lotties-api:src-[0-9a-f]{12} .*--build-arg APP_VERSION=[0-9]+\.[0-9]+\.[0-9]+ '
   check "dry run: the Secret keys are listed" out_has 'keys: DB_APP_PASSWORD DB_APP_USER DB_HOST DB_NAME DB_PORT'
   check "dry run: the Ingress is rendered for lotties.app" grep -q 'host: "lotties.app"' "$WORK/rendered/ingress.yaml"
   check "dry run: /api goes to the API" bash -c "grep -A4 'path: /api' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
+  check "dry run: the MCP resource metadata goes to the API" bash -c "grep -A4 'path: /.well-known/oauth-protected-resource' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
   check "dry run: the certificate comes from the issuer" grep -q 'cert-manager.io/cluster-issuer: letsencrypt-production-lotties-app-issuer' "$WORK/rendered/ingress.yaml"
   check "dry run: the namespace is labelled" grep -q 'app.kubernetes.io/part-of: lotties' "$WORK/rendered/namespace.yaml"
   check "dry run: both releases are rendered" bash -c "[ -s '$WORK/rendered/lotties-api.yaml' ] && [ -s '$WORK/rendered/lotties-web.yaml' ]"
@@ -179,12 +191,45 @@ run "real run" STUB_NS_EXISTS=no && {
   check "real: helm waits" log_has 'upgrade --install lotties-web .*--wait --timeout 10m'
   check "real: the Ingress is applied" log_has '^kubectl --context mine apply -f .*/ingress\.yaml'
   check "real: no secret value is on a command line or printed" no_password
+  release=$(sed -nE 's#^podman push -q reg\.test/lotties/lotties-api:v([0-9]+\.[0-9]+\.[0-9]+)$#\1#p' "$WORK/log" | head -n 1)
+  check "real: the API image carries the release it is tagged with" log_has "^podman build .*lotties-api:src-[0-9a-f]{12} .*--build-arg APP_VERSION=${release//./\\.} "
+  check "real: the web image carries the same release" log_has "^podman build .*lotties-web:src-[0-9a-f]{12} .*--build-arg APP_VERSION=${release//./\\.} "
+  check "real: both images carry the commit and an ISO build time" \
+    bash -c "[ \$(grep -cE -- '--build-arg APP_COMMIT=[0-9a-f]* --build-arg APP_BUILD_TIME=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z' '$WORK/log') -eq 2 ]"
+  grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "$WORK/log" | sort -u > "$WORK/tags-real"
+}
+
+run "fixed release" VERSION=v9.8.7 && {
+  check "fixed release: both images carry it" bash -c "[ \$(grep -c -- '--build-arg APP_VERSION=9\.8\.7 ' '$WORK/log') -eq 2 ]"
+  grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "$WORK/log" | sort -u > "$WORK/tags-fixed"
+  check "fixed release: the image tags do not depend on the release number" cmp -s "$WORK/tags-real" "$WORK/tags-fixed"
 }
 
 run "unchanged run" STUB_TAGS="$(grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "$WORK/log" | sed 's/.*://' | sort -u)" && {
   check "unchanged: nothing is built" log_lacks '^podman build'
   check "unchanged: no new version" log_lacks '^podman tag'
 }
+
+# Release tag: in a throw-away clone with a bare origin (a whole run never tags: run() sets TAG_RELEASE=0, REPO is this repository).
+TAGREPO="$WORK/tagrepo"; ORIGIN="$WORK/origin.git"
+git init -q --bare "$ORIGIN"
+git init -q "$TAGREPO"
+git -C "$TAGREPO" -c user.name=t -c user.email=t@example.test commit -q --allow-empty -m first
+git -C "$TAGREPO" remote add origin "$ORIGIN"
+export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.test GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.test
+tag_out=$(REPO="$TAGREPO"; tag_release 4.5.6 2>&1)
+check "release tag: an annotated tag is created on HEAD" bash -c "[ \"\$(git -C '$TAGREPO' cat-file -t v4.5.6)\" = tag ]"
+check "release tag: it is pushed to origin" bash -c "git -C '$ORIGIN' rev-parse -q --verify refs/tags/v4.5.6 >/dev/null"
+tag_again=$(REPO="$TAGREPO"; tag_release 4.5.6 2>&1)
+check "release tag: an existing tag is left alone" bash -c "[[ '$tag_again' == *'already exists'* ]]"
+printf 'x' > "$TAGREPO/dirty.txt"
+tag_dirty=$(REPO="$TAGREPO"; tag_release 4.5.7 2>&1)
+check "release tag: a dirty working tree is said out loud" bash -c "[[ '$tag_dirty' == *'uncommitted changes'* ]]"
+tag_off=$(REPO="$TAGREPO"; TAG_RELEASE=0 tag_release 4.5.8 2>&1)
+check "release tag: TAG_RELEASE=0 creates nothing" bash -c "! git -C '$TAGREPO' rev-parse -q --verify refs/tags/v4.5.8 >/dev/null"
+tag_nopush=$(REPO="$TAGREPO"; PUSH_TAG=0 tag_release 4.5.9 2>&1)
+check "release tag: PUSH_TAG=0 keeps it local" bash -c "git -C '$TAGREPO' rev-parse -q --verify refs/tags/v4.5.9 >/dev/null && ! git -C '$ORIGIN' rev-parse -q --verify refs/tags/v4.5.9 >/dev/null"
+unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
 
 EXPECT_FAIL=1 run "pull secret missing, no flag" STUB_PULL_SECRET=no
 check "pull secret: a missing one stops a non-interactive run" bash -c "[ $RUN_CODE -ne 0 ]"
@@ -210,6 +255,24 @@ check "push: one key alone is refused" out_has 'all three PUSH_VAPID_\* values o
 run "push on" PUSH_VAPID_PUBLIC_KEY=pub PUSH_VAPID_PRIVATE_KEY=priv PUSH_VAPID_SUBJECT=mailto:op@example.test SKIP_BUILD=1 && {
   check "push: the three keys go to the Secret" log_has '^secret-keys: .*PUSH_VAPID_PRIVATE_KEY PUSH_VAPID_PUBLIC_KEY PUSH_VAPID_SUBJECT'
 }
+
+run "no admin client" SKIP_BUILD=1 && {
+  check "admin client: none keeps the Keycloak user, and says so" out_has 'account deletion: keeps the Keycloak user'
+  check "admin client: no AUTH_ADMIN_* key in the Secret" log_lacks '^secret-keys: .*AUTH_ADMIN_'
+}
+
+EXPECT_FAIL=1 run "partial admin client" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion SKIP_BUILD=1
+check "admin client: the id alone is refused" out_has 'both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither'
+
+ADMIN_SECRET='Adm1n-Cl1ent-S3cret'
+run "admin client on" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion AUTH_ADMIN_CLIENT_SECRET="$ADMIN_SECRET" SKIP_BUILD=1 && {
+  check "admin client: both keys go to the Secret" log_has '^secret-keys: AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET DB_'
+  check "admin client: deletion also removes the Keycloak user" out_has 'account deletion: also deletes the Keycloak user'
+  check "admin client: the secret is never on a command line or printed" bash -c "! grep -qF -- '$ADMIN_SECRET' '$WORK/log' '$WORK/out'"
+}
+
+EXPECT_FAIL=1 run "admin client placeholder" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion AUTH_ADMIN_CLIENT_SECRET='<admin-client-secret>' SKIP_BUILD=1
+check "admin client: the .env.example placeholder is refused" out_has 'AUTH_ADMIN_CLIENT_SECRET is still the .env.example placeholder'
 
 EXPECT_FAIL=1 run "placeholder" VITE_OIDC_CLIENT_ID='<spa-client-id>' SKIP_BUILD=1
 check "placeholder: refused" out_has 'VITE_OIDC_CLIENT_ID is still the .env.example placeholder'

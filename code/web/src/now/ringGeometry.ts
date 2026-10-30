@@ -286,15 +286,32 @@ export function ringHourLabels(nowAngle: number | null): RingHourLabel[] {
   );
 }
 
-export type RingLegendKey = RingSpanKind | 'window' | 'now';
+/** The "next up" layers (now/upcoming.ts) the legend names when their markers are drawn. */
+export type RingLaneLegendKey = 'feeds' | 'diapers' | 'patterns' | 'medicine';
+
+export type RingLegendKey =
+  RingSpanKind | 'window' | 'projected' | 'wake' | 'bedtime' | 'now' | RingLaneLegendKey;
+
+/** The estimates drawn besides today's sleep and the server's window. */
+export interface RingEstimates {
+  projected?: boolean;
+  wake?: boolean;
+  bedtime?: boolean;
+}
 
 /** The keys of the legend under the ring: only what the ring draws, in a fixed order. */
-export function ringLegendKeys(ring: Pick<RingModel, 'spans' | 'windows'>): RingLegendKey[] {
+export function ringLegendKeys(
+  ring: Pick<RingModel, 'spans' | 'windows'>,
+  estimates: RingEstimates = {},
+): RingLegendKey[] {
   const kinds = new Set(ring.spans.map((span) => span.kind));
   const keys: RingLegendKey[] = (['night', 'nap', 'waking'] as const).filter((kind) =>
     kinds.has(kind),
   );
   if (ring.windows.length > 0) keys.push('window');
+  if (estimates.projected) keys.push('projected');
+  if (estimates.wake) keys.push('wake');
+  if (estimates.bedtime) keys.push('bedtime');
   keys.push('now');
   return keys;
 }

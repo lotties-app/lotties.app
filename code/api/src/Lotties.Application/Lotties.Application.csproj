@@ -5,8 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,10 +17,13 @@
     <!-- The vaccine schedule (docs/design/18-vaccines.md): one source of truth in code/api/data, shipped inside this assembly.
          WithCulture="false": ".br" in the name is the country (Brazil), not the Breton culture (no satellite assembly). -->
     <EmbeddedResource Include="..\..\data\vaccine-schedule.br.json" LogicalName="Lotties.Application.Vaccinations.vaccine-schedule.br.json" WithCulture="false" />
+    <!-- The published age norms (docs/design/28-age-norms.md): one source of truth in code/api/data, shipped inside this
+         assembly, validated at startup and served by GET /age-norms. -->
+    <EmbeddedResource Include="..\..\data\age-norms.json" LogicalName="Lotties.Application.AgeNorms.age-norms.json" WithCulture="false" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

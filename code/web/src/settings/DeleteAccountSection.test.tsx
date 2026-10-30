@@ -82,12 +82,58 @@ describe('delete account in settings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
 
     expect(await screen.findByText('Account deleted')).toBeTruthy();
-    expect(screen.getByText(/sign-in account still exists/)).toBeTruthy();
+    expect(
+      screen.getByText(/sign-in server still exists, because this server cannot delete it/),
+    ).toBeTruthy();
     expect(calls.filter((call) => call.method === 'DELETE')).toHaveLength(1);
     expect(auth.logout).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     await waitFor(() => expect(auth.logout).toHaveBeenCalled());
   });
+
+  it.each([
+    [true, /sign-in account at our sign-in server \(name, email and password\) is deleted too/],
+    [false, /This server does not delete your sign-in account/],
+    [undefined, /This server does not delete your sign-in account/],
+  ])(
+    'says before the deletion whether the sign-in account goes too (removable: %s)',
+    async (identityRemovable, text) => {
+      renderSection((path) =>
+        path === '/api/v1/me/deletion-preview' ? preview({ identityRemovable }) : undefined,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+
+      expect(await screen.findByText(text)).toBeTruthy();
+    },
+  );
+
+  it.each([
+    ['removed', null],
+    ['not_configured', /still exists, because this server cannot delete it by itself/],
+    ['failed', /deleting your sign-in account at our sign-in server failed/],
+  ])(
+    'after the deletion, says what happened to the sign-in account (%s)',
+    async (identity, text) => {
+      renderSection((path, method) =>
+        method === 'DELETE' && path === '/api/v1/me'
+          ? { identityRemoved: identity === 'removed', identity }
+          : path === '/api/v1/me/deletion-preview'
+            ? preview()
+            : undefined,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+      fireEvent.click(
+        await screen.findByRole('checkbox', { name: 'I understand that this is permanent.' }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+      expect(await screen.findByText('Account deleted')).toBeTruthy();
+      if (text) expect(screen.getByText(text)).toBeTruthy();
+      else expect(screen.queryByRole('alert')).toBeNull();
+    },
+  );
 
   it('keeps the dialog open with the error when the server refuses', async () => {
     renderSection((path, method) => {

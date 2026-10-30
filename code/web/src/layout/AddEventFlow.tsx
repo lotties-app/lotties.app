@@ -14,6 +14,7 @@ const TRAY_TYPE_KEY: Readonly<Record<TrayName, string>> = {
   meds: 'medication',
   bellyPain: 'belly_pain',
   more: '',
+  cry: '',
 };
 
 interface Props {
@@ -47,6 +48,8 @@ export function AddEventFlow({ baby, types, events, open, onClose }: Props) {
         <MoreSheet
           open
           onClose={onClose}
+          babyId={baby.id}
+          userId={baby.userId}
           types={[...types]}
           events={[...events]}
           actions={actions}

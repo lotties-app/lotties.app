@@ -5,15 +5,19 @@ import {
   ChipGroup,
   DurationField,
   Field,
-  NumberStepper,
   SegmentedControl,
   SwitchRow,
   TextInput,
 } from '../ui/form';
+import { Box, Typography } from '@mui/material';
+import { FieldContext } from '../ui/form/fieldContext';
+import { BottleLevelChips } from './BottleLevelChips';
 import { BottleSuggestionCaption } from './BottleSuggestionCaption';
 import { DRUNK_KEY, drunkChoices, type DrunkShare } from './bottleAmounts';
 import type { BottleSuggestions } from './bottleSuggestions';
 import { optionIcon } from './optionIcons';
+import { fieldQuantity } from '../units/display';
+import { QuantityStepper } from '../units/QuantityStepper';
 
 export type FieldValue = string | boolean | undefined;
 
@@ -29,6 +33,11 @@ export interface FieldControlProps {
   bottle?: BottleSuggestions;
   /** What was prepared (ml): the drunk amount's quick choices and ceiling (feeding `amount_drunk_ml`). */
   prepared?: number | null;
+  /**
+   * Stopping a timed bottle: "left in the bottle" chips under the drunk amount, none above this
+   * level (`null`: unknown, up to the prepared amount). Absent: no such chips.
+   */
+  leftCeiling?: number | null;
   onChange: (value: string | boolean) => void;
 }
 
@@ -118,13 +127,54 @@ const SHARE_KEY = {
   quarter: 'feedingAmounts.share.quarter',
 } as const satisfies Record<DrunkShare, string>;
 
-/** The drunk amount of a bottle: chips for all, 3/4, half and 1/4 of what was prepared, plus free entry. */
-function DrunkControl({ field, value, prepared, onChange }: FieldControlProps) {
+/**
+ * The drunk amount of a bottle: chips for all, 3/4, half and 1/4 of what was prepared, plus free
+ * entry; when stopping a timed bottle, also "left in the bottle" chips that fill it as prepared
+ * minus the level (so the total and the drinking stretches agree).
+ */
+function DrunkControl({ field, value, prepared, leftCeiling, onChange }: FieldControlProps) {
+  const { t } = useTranslation();
+  const max = prepared != null && prepared > 0 ? prepared : (field.max ?? undefined);
+  const drunk = toNumber(value);
+  const made = prepared != null && prepared > 0 ? prepared : null;
+  return (
+    <>
+      {leftCeiling !== undefined && made !== null && (
+        <Box sx={{ mb: 1.5 }}>
+          <Typography variant="overline" component="p" color="text.secondary">
+            {t('feedingAmounts.level.leftAtStop')}
+          </Typography>
+          {/* Its own group, named by its own heading (not by the field's label). */}
+          <FieldContext.Provider value={null}>
+            <BottleLevelChips
+              aria-label={t('feedingAmounts.level.leftAtStop')}
+              preparedMl={made}
+              ceilingMl={leftCeiling}
+              value={Math.max(0, made - (drunk ?? made))}
+              onChange={(leftMl) => onChange(String(Math.max(0, made - leftMl)))}
+            />
+          </FieldContext.Provider>
+        </Box>
+      )}
+      <DrunkStepper field={field} value={value} max={max} prepared={prepared} onChange={onChange} />
+    </>
+  );
+}
+
+function DrunkStepper({
+  field,
+  value,
+  max,
+  prepared,
+  onChange,
+}: Pick<FieldControlProps, 'field' | 'value' | 'prepared' | 'onChange'> & {
+  max: number | undefined;
+}) {
   const { t } = useTranslation();
   const choices = drunkChoices(prepared);
-  const max = prepared != null && prepared > 0 ? prepared : (field.max ?? undefined);
   return (
-    <NumberStepper
+    <QuantityStepper
+      quantity="volume"
       value={toNumber(value)}
       onChange={(next) => onChange(next === null ? '' : String(next))}
       step={stepFor(field)}
@@ -182,9 +232,11 @@ function NumberControl({
       : undefined;
   const ownStart = ownStepperStart(type, field);
   const start = bottle ? bottle.preferred : 90;
+  const quantity = fieldQuantity(field.unit);
   return (
     <>
-      <NumberStepper
+      <QuantityStepper
+        quantity={quantity}
         value={toNumber(value)}
         onChange={(next) => onChange(next === null ? '' : String(next))}
         step={bottle ? bottle.step : stepFor(field)}

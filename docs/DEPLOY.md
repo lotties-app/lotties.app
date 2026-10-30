@@ -1,9 +1,15 @@
 # Deploying Lotties
 
+This guide is for anyone running their own copy of Lotties. `lotties.app` is only the instance the maintainers run: they are
+responsible for the data on that instance and for the privacy terms published there. On your own copy you are the operator,
+responsible for your data, your backups and your privacy terms (see "Privacy policy" below). The web app has a public page,
+`/self-host`, that explains this and generates a `.env` and a `docker-compose.yml` from typed values in the browser
+(docs/design/39-self-hosting-page.md); this guide is the reference behind it.
+
 The stack is two containers behind your own reverse proxy (or exposed directly for testing):
 
 ```
-browser --> web (nginx: SPA + security headers) --/api/--> api (.NET 8, :8080, internal only) --> PostgreSQL
+browser --> web (nginx: SPA + security headers) --/api/--> api (.NET 10, :8080, internal only) --> PostgreSQL
 ```
 
 The browser only talks to the `web` container. nginx serves the SPA and proxies `/api/` to the `api` service, so the app is same origin and needs no CORS configuration.
@@ -45,15 +51,21 @@ Compose reads `.env` from the repository root.
 | `POSTGRES_PASSWORD` | localdb | with `localdb` | Superuser password of the local container (no default) |
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
-| `AUTH_ADMIN_CLIENT_ID`, `AUTH_ADMIN_CLIENT_SECRET` | api | no (both or none) | Keycloak service account that may delete users in the realm; with it, account deletion also removes the sign-in account (see "Account deletion"). Secret: keep it with the other API secrets |
+| `AUTH_ADMIN_CLIENT_ID`, `AUTH_ADMIN_CLIENT_SECRET` | api | no (both or none; one alone stops the API at start) | Keycloak service account that may delete users in the realm; with it, account deletion also removes the sign-in account (see "Account deletion", docs/KEYCLOAK-ACCOUNT-DELETION.md). Secret: keep it with the other API secrets (home lab: `deploy/homelab/.env`, Secret `lotties-secrets`) |
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
+| `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
+| `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
+| `Board__Enabled`, `Board__Mcp__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data) and its MCP endpoint for AI tools; see "Project board" and docs/KEYCLOAK-BOARD.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
 | `VITE_API_BASE_URL` | web build | no (empty) | Empty = same origin through nginx |
 | `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer (http/https only); empty hides it |
+| `VITE_PRIVACY_CONTROLLER_NAME` | web build | before a store submission | The controller (person or company) the privacy policy names; empty = "the Lotties project maintainers". See "Privacy policy" |
+| `VITE_PRIVACY_CONTACT_EMAIL` | web build | before a store submission | Contact address for privacy requests (a plain email, shown as a `mailto:` link); empty = the GitHub issue tracker and private reports |
+| `VITE_PRIVACY_DPO` | web build | before a store submission | The encarregado (DPO) contact: a name, an email or both; empty = "the contact above" |
 | `WEB_PORT` | compose | no (8080) | Host port of the web container |
 | `OIDC_ORIGIN` | web runtime | no | Overrides the CSP OIDC origin derived from `VITE_OIDC_AUTHORITY` |
 | `API_UPSTREAM` | web runtime | no (`api:8080`) | `host:port` nginx proxies `/api/` to; resolved per request, so nginx starts even when it does not exist |
@@ -81,7 +93,7 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 
 #### Account deletion (Keycloak)
 
-`DELETE /api/v1/me` erases the user's data in the database (docs/design/12-mobile-capacitor.md section 10). Removing the sign-in account at Keycloak is optional and needs a service account: Clients, create a client `lotties-api-admin` with client authentication **on**, service accounts roles **on**, standard flow off; Service account roles, assign the client role `realm-management` > `manage-users` (nothing else); copy its secret into `AUTH_ADMIN_CLIENT_ID` / `AUTH_ADMIN_CLIENT_SECRET`. Without them the data is still deleted and the app tells the user that the sign-in account stays (then remove it in the Keycloak admin console, Users). The API only deletes the user whose token issuer is `AUTH_AUTHORITY`.
+`DELETE /api/v1/me` erases the user's data in the database (docs/design/12-mobile-capacitor.md section 10). Removing the sign-in account at Keycloak needs a service account; the full steps, the test with a throwaway user and the rotation are in docs/KEYCLOAK-ACCOUNT-DELETION.md. In short: Clients, create a client `lotties-account-deletion` with client authentication **on**, only "Service accounts roles" ticked (standard flow, direct access grants off); Service account roles, assign the client role `realm-management` > `manage-users` (nothing else: Keycloak has no delete-only role); copy its secret into `AUTH_ADMIN_CLIENT_ID` / `AUTH_ADMIN_CLIENT_SECRET` (home lab: `deploy/homelab/.env`; `deploy.sh` puts both in the Secret `lotties-secrets`). The API only deletes the user whose token issuer is `AUTH_AUTHORITY`. Without them the data is still deleted, and the app says before the confirmation (`identityRemovable` in the preview) and after (`identity: not_configured`) that the sign-in account stays: remove it in the Keycloak admin console, Users. When Keycloak fails (`identity: failed`) the data is erased too, the API logs the Keycloak user id, and the user can sign in again and delete once more, or the owner deletes that user by hand.
 
 ### Authentik
 
@@ -118,7 +130,7 @@ The login pages of Keycloak (sign in, register, reset password, verify email, on
 3. Realm settings > Themes > **Login theme** = `lotties`, Save. Enable Realm settings > Localization > Internationalization with `English` and `Portuguese (Brazil)` (the language switcher only appears when more than one language is enabled).
 4. Keep the app client as before (public, PKCE `S256`). The theme changes no flow and no setting of the realm.
 
-Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action.
+Replace the placeholder terms text (message key `termsText`) in Realm settings > Localization if you enable the *Terms and conditions* required action. The app has its own consent screen and terms page since 2026-10-27 (docs/design/38-consent-and-terms.md), so that Keycloak action is not needed; the migration `Consent` (tables `user_consents`, `user_consent_history`) is applied like any other (existing accounts have no record and see the consent screen at their next sign-in).
 
 ## Installing the Keycloak theme on Kubernetes (Bitnami chart)
 
@@ -252,11 +264,73 @@ Client address: the API applies `X-Forwarded-For` and `X-Forwarded-Proto` (forwa
 
 The web image is `nginxinc/nginx-unprivileged` (uid 101, port 8080) and runs with a read-only root filesystem when `/tmp` and `/etc/nginx/conf.d` are writable (`emptyDir` or tmpfs with mode 0777). nginx resolves `API_UPSTREAM` per request through the nameservers of `/etc/resolv.conf` (`resolver`, no search domains), so a missing API host gives 502 on `/api/` instead of nginx refusing to start; use a name the DNS server answers as is (a compose service name or a cluster FQDN).
 
-The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'`, `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy`. `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`.
+The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'` plus `'wasm-unsafe-eval'` for the cry monitor's WebAssembly (no JS eval, no inline scripts), `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy` (`microphone=(self)` for the opt-in cry monitor; camera, location, payment and USB off). `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`; a missing file under `/models/` is a 404, never the app shell.
+
+Cry monitor files (docs/design/35-cry-engine.md section 4): the web image carries the MediaPipe WASM (copied from the npm package by the Vite build) and the YAMNet model `models/cry/yamnet.tflite` (4.1 MB, Apache-2.0). The model is not in the repository: the web Dockerfile downloads it from MediaPipe's model storage with `node scripts/fetch-cry-model.mjs` and checks its pinned SHA-256, so the image build needs outbound HTTPS to `storage.googleapis.com` and stops with a clear message when the download or the checksum fails (the build then runs with `CRY_MODEL_REQUIRED=1`). A local `npm run build` without the file only warns; the app works and only the cry monitor reports `model_missing`. A reverse proxy in front must pass `/models/` through like any other static path.
 
 ## Home lab (Kubernetes + Traefik)
 
 `deploy/homelab/` deploys the two images to the home lab cluster (context `home-lab-main`, namespace `lotties-app-production`, registry `cr.homel4b.dev/lotties`): one Helm chart for the API and the web releases, an Ingress on the external Traefik for `https://lotties.app` (`/api` to the API, the rest to the web app, certificate from cert-manager), the Secret `lotties-secrets` built from `deploy/homelab/.env`, and `DRY_RUN=1` to see the plan without changing anything. Prerequisites (Harbor project, pull Secret, Keycloak client settings), secrets rotation, migrations, verification and rollback: [deploy/homelab/README.md](../deploy/homelab/README.md).
+
+### Versions
+
+Every run of `deploy/homelab/deploy.sh` that builds an image is a release `vX.Y.Z` (the next patch after the git and
+registry tags, or `VERSION`). The number is chosen **before** the builds (which images need a build is known first:
+the source tag is not in the registry, or `FORCE_BUILD=1`, or a fixed `TAG`), so each image built in the run carries
+it as build arguments, the same three for both:
+
+| Build arg | Value | Web (code/web/Dockerfile -> ENV -> vite.config.ts / build-info.ts) | API (code/api/Dockerfile runtime stage -> ENV) |
+| --- | --- | --- | --- |
+| `APP_VERSION` | `X.Y.Z` (no v); empty without a release (a fixed `TAG` and no `VERSION`) | `__APP_VERSION__`, `dev` when empty | `GET /api/v1/version` `version`, `dev` when empty |
+| `APP_COMMIT` | `git rev-parse --short=12 HEAD` of the checkout | `__APP_COMMIT__` | `commit` |
+| `APP_BUILD_TIME` | UTC ISO time of the run | `__APP_BUILT_AT__` | `builtAt` |
+
+The web app shows its own and the server's version in Hub > App > About and a short `v0.1.38` line in Settings, the
+Hub, the landing footer, `/credits`, `/privacy` and the doctor's account menu. A local `npm run build` or `vite dev`
+has no `APP_VERSION` and shows `dev` (the commit still comes from git).
+
+**The version is never part of an image tag.** Tags stay `src-<hash>` of the git file list of each image's sources
+(plus the web `VITE_*` values): the release number, the commit and the build time are left out on purpose, so a new
+release does not rebuild or restart an unchanged image. The consequence: an image that is not rebuilt keeps the
+release that built it. After a release that changed only the web app, About shows for example app v0.1.39 and server
+v0.1.38; that is correct (the API did not change), and About adds only the neutral note "The server was updated
+separately". The update hint ("An update is available" with Reload) never comes from comparing versions or commits: it
+appears only when the service worker has a new app version installed and waiting (`pwa/updateStore.ts`, the same
+signal as Hub > Check for updates). The `v0.1.39` and `latest` registry tags still point at both images of the
+release. `deploy.test.sh` checks that both images get the release and that the tags do not depend on it.
+
+To have both images carry the same release (one number in About), rebuild both in the release: `FORCE_BUILD=1
+./deploy/homelab/deploy.sh`. Nothing else changes: the `src-<hash>` tags stay the same (they are pushed again with the
+new stamp) and the pods restart.
+
+Other ways to build the images (podman by hand, CI) pass the same three `--build-arg`s; without them the app and the
+API say `dev`. The iOS/Android build (`npm --prefix code/mobile run build:web`) also needs `APP_VERSION` in its
+environment to show a release instead of `dev`.
+
+## Runtime
+
+The API runs on .NET 10 (LTS) since October 2026; before, .NET 8 (end of support 2026-11-10). What changed and why:
+[docs/design/37-dotnet10-upgrade.md](design/37-dotnet10-upgrade.md).
+
+- **Images:** built on `mcr.microsoft.com/dotnet/sdk:10.0`, run on `mcr.microsoft.com/dotnet/aspnet:10.0`. That image is
+  Ubuntu 24.04 (noble) since .NET 10 (the 8.0 one was Debian 12). It still carries what the API needs: `tzdata` (plus
+  `tzdata-legacy`) for the IANA time zones of reminders and quiet hours, ICU (globalization is not invariant), `bash`,
+  `head` and `grep` for the HEALTHCHECK, and the non-root user `app` with UID 1654 (the chart's `runAsUser`). The API
+  listens on 8080 as before (`ASPNETCORE_URLS` in the Dockerfile wins over the image's `ASPNETCORE_HTTP_PORTS=8080`). No
+  `DOTNET_*` variable, ReadyToRun, trimming or self-contained publish is used. The `src-<hash>` tag of `lotties-api`
+  changes, so the next `deploy.sh` run rebuilds the API image.
+- **Database:** EF Core 10 and Npgsql 10; no new migration, and `dotnet ef migrations script --idempotent` gives the same
+  SQL as with EF Core 8 (only the `product_version` written into new `__EFMigrationsHistory` rows becomes `10.0.13`).
+  `dotnet ef` is `dotnet-ef` 10.0.13 from the tool manifest (`dotnet tool restore`; needs .NET 10 on the machine that
+  applies migrations). Since EF Core 9 `dotnet ef database update` and `DB_AUTO_MIGRATE` also take
+  `LOCK TABLE "__EFMigrationsHistory" IN ACCESS EXCLUSIVE MODE` while migrating (the migrator role owns that table, see
+  `docs/sql/grant-migrator-role.sql`) and refuse to run when the model has changes without a migration (a test keeps it
+  that way).
+- **Connections:** GSS encryption stays off in the connection string built from `DB_*` (Npgsql 10 would try it first);
+  Npgsql 9+ closes pooled connections older than an hour (`Connection Lifetime` now defaults to 3600 s; it was unlimited).
+- **Rollback:** `helm rollback lotties-api [REVISION]` (deploy/homelab/README.md "Roll back") goes back to the .NET 8
+  image, which stays in Harbor under its old `src-<hash>` tag. The schema is the same for both, so no database step is
+  needed; a migration added later with EF Core 10 records `10.0.13` as its product version, which EF Core 8 ignores.
 
 ## Push notifications
 
@@ -359,6 +433,111 @@ The provider sheet's "Find address" calls `GET /api/v1/address/lookup` (Brazilia
 
 Invalid values fail startup. Egress: the API pod must reach `brasilapi.com.br`, `viacep.com.br` and `nominatim.openstreetmap.org` over HTTPS (or your replacements); if it cannot, the feature answers 502 and the address field stays manual. Keep the log level of `System.Net.Http.HttpClient.AddressLookup` at `None` (set in `appsettings.json`: a higher level would print request URLs, i.e. the typed text). A reverse proxy's access log may record the query string of `/api/v1/address/*`; exclude that path from the log if you do not want it kept.
 
+## Alexa skill
+
+`POST /api/v1/alexa` is the backend of the Lotties Alexa custom skill (docs/design/32-assistants.md); the owner's setup
+(developer console, Keycloak account-linking client, certification) is [docs/ALEXA.md](ALEXA.md). Off by default: the
+route answers 404. It needs migration `VoiceAssistants` (table `user_assistant_settings`). No secret is configured
+here: the account-linking client secret lives only in Keycloak and the Alexa console.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Alexa__Enabled` | `false` | `true` answers Alexa requests (startup fails without a valid skill id) |
+| `Alexa__SkillIds` | empty | Skill ids (`amzn1.ask.skill.<uuid>`) whose requests are answered: one comma-separated value, or `Alexa__SkillIds__0`, `__1`, ... |
+| `Alexa__CertCacheMinutes` | `60` | How long Amazon's downloaded signing certificate chain is reused (1-1440; never past its expiry) |
+| `Alexa__CertDownloadTimeoutSeconds` | `5` | Timeout of that download (1-30) |
+| `Alexa__CertMaxBytes` | `65536` | Largest certificate chain accepted (1024-1048576) |
+| `Alexa__MaxRequestBodyBytes` | `131072` | Largest request body (1024-1048576; larger is 413) |
+| `RequestLimits__AssistantPermitsPerMinute` | `30` | Voice commands per linked user per minute (over it the skill says to try again) |
+
+Egress: the API pod must reach `https://s3.amazonaws.com` (path `/echo.api/...`, Amazon's request-signing certificate);
+nothing else of Amazon is called. Access tokens from account linking are validated with `AUTH_AUTHORITY` /
+`AUTH_AUDIENCE` like every other token, so the Keycloak client of the skill needs the same `lotties-api` audience mapper
+as the SPA client. Logs carry the intent name, the result code and the correlation id only.
+
+## MCP server
+
+`POST /api/v1/mcp` is a remote MCP server for AI assistants such as Claude (docs/design/32-assistants.md section 9); the
+owner's setup (Keycloak client scopes `lotties.read`/`lotties.write` with consent texts, the audience mapper, the AI
+clients, Claude, the MCP Inspector, revoking) is [docs/MCP.md](MCP.md). Off by default: every MCP route, the protected
+resource metadata included, answers 404. No migration and no secret: the API only validates the tokens Keycloak issues to
+the AI clients.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Mcp__Enabled` | `false` | `true` serves the MCP endpoint and its OAuth metadata (startup fails without `AUTH_AUTHORITY`) |
+| `Mcp__ResourceUrl` | empty (derived from the request) | The canonical MCP URL, e.g. `https://lotties.app/api/v1/mcp`: the metadata's `resource`, the URL Settings shows (absolute http(s), no query or fragment) |
+| `Mcp__Audience` | `lotties-mcp` | The `aud` MCP tokens must carry (Keycloak's audience mapper on the two client scopes; docs/MCP.md recommends the MCP URL). Must differ from `AUTH_AUDIENCE` (startup fails otherwise) |
+| `Mcp__AllowedOrigins` | empty | Browser origins allowed to call the endpoint (comma-separated, or `__0`, `__1`, ...); any other `Origin` is 403. Server-side clients send none; set it only for a browser-based test client |
+| `Mcp__MaxRequestBodyBytes` | `65536` | Largest request body (1024-1048576; larger is 413) |
+| `RequestLimits__AssistantPermitsPerMinute` | `30` | Tool calls (and voice commands) per user per minute; over it a tool answers `rate_limited` |
+
+The ingress sends `/.well-known/oauth-protected-resource` (RFC 9728, with the path-suffixed
+`/.well-known/oauth-protected-resource/api/v1/mcp`) to the API next to `/api` (deploy/homelab/manifests/ingress.yaml);
+another reverse proxy needs the same route. Keycloak must be reachable from the AI provider's servers (Anthropic publishes
+its egress range). Logs carry the tool name, the result code and the correlation id only; the SDK's own log categories
+(`ModelContextProtocol*`) are kept at Warning in code.
+
+## Project board
+
+`/api/v1/board` is the internal project board (docs/design/36-project-board.md): tasks, gaps, decisions, questions,
+risks, notes and memories that the owner and the AI assistant track together. It holds **no baby data**, calls no third
+party and lives in the same database (and the same `pg_dump` backups). Off by default: every route answers 404. It needs
+migration `ProjectBoard` (tables `board_topics` with ten seeded topics, `board_items`, `board_item_events`,
+`board_api_keys`). No secret is configured: people get in with Keycloak realm roles, tools with board API keys that a
+board admin creates in the app (only their SHA-256 is stored). The owner's steps (the three realm roles, the
+`realm_access.roles` mapper of the `roles` client scope, assigning roles, the first API key with `curl`, revoking) are in
+[docs/KEYCLOAK-BOARD.md](KEYCLOAK-BOARD.md).
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Board__Enabled` | `false` | `true` serves the board routes (the home lab kit does not set it: add it under `env:` in `deploy/homelab/values/api.yaml`) |
+| `Board__Mcp__Enabled` | `false` | `true` (with `Board__Enabled=true`) serves the board's MCP endpoint `POST /api/v1/board/mcp` for AI tools such as Claude Code (board API key or a Keycloak token with a board role; docs/KEYCLOAK-BOARD.md section 8). Off, or with the board off, it is 404 |
+| `Board__Mcp__AllowedOrigins` | empty | Browser origins allowed to call the board MCP endpoint (comma-separated, or `__0`, `__1`, ...); any other `Origin` is 403. Claude Code and the Inspector's proxy send none; set it only for a browser-based test client. A value that is not an absolute http(s) origin fails startup |
+| `RequestLimits__BoardPermitsPerMinute` | `120` | Board requests (REST calls and MCP messages together) per user or per API key per minute (the global 300 per user still applies) |
+| `RequestLimits__BoardMaxRequestBodyBytes` | `262144` | Largest board request body, MCP messages included (413 above) |
+| `RequestLimits__BoardBulkMaxRequestBodyBytes` | `4194304` | Largest bulk import body (`POST /board/items/bulk`, up to 100 items) |
+
+Keycloak in short: **Realm roles > Create role** `lotties-board-reader`, `lotties-board-writer`, `lotties-board-admin`;
+**Client scopes > roles > Mappers > realm roles** with Token Claim Name `realm_access.roles` and "Add to access token" on
+(Keycloak's default), the `roles` scope a Default scope of the web app's client; **Users > the person > Role mapping >
+Assign role** (Filter by realm roles). Then an admin creates a key (`POST /api/v1/board/keys`, the secret is shown once)
+and the assistant sends it as `X-Board-Key` or `Authorization: Bearer lbk_...`:
+
+```bash
+curl -s https://lotties.app/api/v1/board/summary -H "X-Board-Key: $LOTTIES_BOARD_KEY"
+```
+
+Logs carry item and key ids, the actor kind and result codes only (never a secret, a title or a body). CORS is the app's
+(no board-specific origin).
+
+## Privacy policy
+
+The public policy is the web route `/privacy` (https://lotties.app/privacy for the maintainers' instance; every copy serves its own
+at `/privacy`; also Hub > Privacy policy and `/doctor/privacy`). The shipped text describes the maintainers' instance: an operator
+of another copy is the controller of that copy and must review the policy text for it, and set the three values below. Its text is in `code/web/src/legal/privacy.en.ts` and `privacy.pt-BR.ts`, the facts behind it in
+`docs/design/33-privacy-audit.md`, and what the owner must still decide in `docs/PRIVACY-OWNER-CHECKLIST.md`. Three
+public build values name who is responsible; they are contact details the owner chooses to publish, never secrets:
+
+| Variable | Shown as | Default when empty |
+|----------|----------|--------------------|
+| `VITE_PRIVACY_CONTROLLER_NAME` | the controller ("Responsible for that data") | "the Lotties project maintainers" |
+| `VITE_PRIVACY_CONTACT_EMAIL` | the contact, as a `mailto:` link (a plain address only; anything else is ignored) | the repository's issue tracker for questions and a private GitHub report for anything personal |
+| `VITE_PRIVACY_DPO` | the encarregado (data protection contact) | "the contact above" |
+
+A value that is empty, a `<placeholder>`, longer than 200 characters or has control characters falls back to the
+default, so the page never shows a marker. They reach the bundle like `VITE_REPO_URL`: `docker-compose.yml` build
+args, the web `Dockerfile`, `deploy/homelab/deploy.sh` (from `deploy/homelab/.env`; a changed value rebuilds the web
+image) and, for the iOS/Android build, `code/web/.env.native.local`. Change them with a new web build. Keeping the
+policy honest: every change that adds a data flow or a third party updates the policy content and the audit
+(`CLAUDE.md`).
+
+Operational facts the policy relies on (check them when the setup changes): the API logs no IP addresses, request
+lines or record content; the web container's nginx keeps its stock access log (client address from
+`X-Forwarded-For`, path, user agent); a reverse proxy's access log may record the query string of
+`/api/v1/address/*` (the address search text), so exclude that path there if you do not want it kept; HSTS is not
+set yet (see "Reverse proxy and TLS").
+
 ## Token storage trade-off
 
 The OIDC library keeps the user, access token and refresh token in `localStorage`, which is required for offline use and silent renew in a pure SPA. Any script that runs on the page can read them, so the main mitigation is the CSP: no inline or eval scripts and no third-party script origins (`style-src 'unsafe-inline'` is allowed only because MUI/emotion injects styles). Further mitigations: refresh token rotation, short access token lifetimes, and a minimal dependency set (`npm audit` runs in CI). If your threat model needs more, put a backend-for-frontend with HttpOnly cookies in front instead.
@@ -402,7 +581,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
 
 **Dedicated migrator role.** A separate non-superuser role can run the migrations (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`) if it owns the tables and may create objects in the schema. `docs/sql/grant-migrator-role.sql` sets that up once, as an admin, and is idempotent: it makes the role the owner of the existing tables, gives it `CREATE` on the schema, and sets the API role's default privileges for tables the migrator creates. Never make the migrator a member of a superuser role.
 
-1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 8.0.32):
+1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 10.0.13, which needs the .NET 10 SDK or runtime):
 
    ```bash
    cd code/api
@@ -449,10 +628,11 @@ Built-in event types are rows in `event_types` (with `baby_id` null) inserted by
 The shared catalog can be filled with Brazil's registered medicines (brand names, forms and active ingredients) from ANVISA's open data, plus a small curated list (`code/api/tools/Lotties.CatalogImporter/Data/curated-products.json`, not reviewed by a pharmacist), by the admin tool `code/api/tools/Lotties.CatalogImporter` (design, licence, mapping and safety rules: [docs/design/13-anvisa-catalog.md](design/13-anvisa-catalog.md)). It is optional: the app works without it.
 
 1. Apply the migration `ProductExternalRef` (`20261022143647_ProductExternalRef`, right after `DiaperHeadsUpPrefs`) with the API version that ships it, like any other migration (see [Applying migrations](#applying-migrations)). It only adds nullable columns to `products` (`source`, `external_ref`, `presentation`, `ambiguous_name`, `inactive_since`) and the partial unique index `ix_products_source_external_ref`; no data is rewritten and no grant is needed.
-2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 8 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
+2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 10 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
 3. Dry run first (no database connection): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run --lookup "Luftal,Simeticona"`. Check the counts and the spot checks.
 4. Real run, with the same variables as the API: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` (the app role has `SELECT, INSERT, UPDATE, DELETE` on all tables, which is enough), or `--use-migrator` to connect with `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD` instead: `dotnet run --project code/api/tools/Lotties.CatalogImporter`. Set the variables in the shell (for example from a password manager), never on the command line or in a committed file; the tool prints the host and database name, never the user or password. One transaction; about 20 s for the full list (8,880 official + 7 curated products) on a local database; re-running changes only what changed in the sources. The curated list ships next to the tool (`--curated <path|none>` to change or skip it).
-5. Refresh monthly (ANVISA updates the registrations monthly, the CMED price list about monthly) with the same command plus `--refresh` to download again. Products that left the list are marked inactive (hidden from search, still readable for linked medications), never deleted. The downloads live in `--cache-dir` (default `<temp>/lotties-anvisa-cache`), never in the repository.
+5. Strengths (migration `ProductStrength`, `20261023162441_ProductStrength`, right after `AccountDeletion`): apply it with the API version that ships it (two nullable columns on `products`, `strength_key` and `strength_text`; no backfill; old pods ignore them). Until the importer runs again every strength is NULL and the "same active ingredient" list shows each alternative as "strength not known" (neutral, search unchanged). Rollout order: (a) deploy the API; (b) the owner, from the admin machine, runs the dry run and then the real run, both reading the cached files (use `--refresh` only if the cache is old): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run`, check the lines "CMED presentations whose strength reads as one unambiguous amount" and "products with a structured strength key", then `dotnet run --project code/api/tools/Lotties.CatalogImporter` with the `DB_*` variables set in the shell. The second run updates the products whose strength changed and the six curated ones; nothing else changes. The agent never runs these.
+6. Refresh monthly (ANVISA updates the registrations monthly, the CMED price list about monthly) with the same command plus `--refresh` to download again. Products that left the list are marked inactive (hidden from search, still readable for linked medications), never deleted. The downloads live in `--cache-dir` (default `<temp>/lotties-anvisa-cache`), never in the repository.
 
 ## Podman
 

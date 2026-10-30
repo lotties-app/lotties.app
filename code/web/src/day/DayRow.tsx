@@ -17,6 +17,9 @@ import {
 import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
+import type { FedToSleep } from '../now/bottleFollowUp';
+import { AssistantOriginNote } from '../events/AssistantOriginNote';
+import { DeleteRequestBanner } from '../events/DeleteRequestBanner';
 import { isInstantEvent } from './ribbonText';
 
 interface Props {
@@ -45,6 +48,13 @@ interface Props {
   author?: string | null;
   /** Briefly ringed after "Show in list" on the ribbon. */
   highlighted?: boolean;
+  /** A sleep that began while she was feeding (`fedToSleep`): a quiet line says so. */
+  fedToSleep?: FedToSleep;
+  /**
+   * Answers to an assistant's request to delete this entry; omitted when the user may not change
+   * it (the banner then only says what was asked).
+   */
+  deleteRequest?: { onDelete: () => void; onKeep: () => void };
 }
 
 /** The live clock of a running event: effective time, so a paused timer stands still. */
@@ -249,6 +259,8 @@ export function DayRow({
   viewOnly = false,
   author = null,
   highlighted = false,
+  fedToSleep = null,
+  deleteRequest,
 }: Props) {
   const { t } = useTranslation();
   const authorName = author || t('access.someoneElse');
@@ -262,7 +274,8 @@ export function DayRow({
   let range = '';
   if (running) range = t('timeline.since', { time });
   else if (!instant) range = `${time} – ${formatTime(event.endedAt!)}`;
-  const detail = view.detail || range;
+  const fed = fedToSleep ? t(`feedingAmounts.fedToSleep.${fedToSleep}`) : '';
+  const detail = [view.detail || range, fed].filter(Boolean).join(' · ');
   const length = !running && !instant ? formatDuration(effectiveDurationMs(event)) : null;
   const pausedSeconds = readPause(event.payload).pausedSeconds;
   const pausedText =
@@ -305,8 +318,11 @@ export function DayRow({
         sx={(theme) => ({
           mb: 1,
           display: 'flex',
+          // With large text on a narrow phone the running/duration pill goes under the title
+          // instead of pushing the card past the screen edge.
+          flexWrap: 'wrap',
           alignItems: 'center',
-          gap: 1,
+          columnGap: 1,
           minWidth: 0,
           borderRadius: `${RADIUS.tile}px`,
           backgroundColor: palette(theme).category[view.category].bg,
@@ -329,7 +345,8 @@ export function DayRow({
                 : t('day.editRow', { title: view.title, time })
           }
           sx={{
-            flex: '1 1 auto',
+            // Basis 0: the title only gives up its line when the pill alone fills the card.
+            flex: '1 1 0',
             minWidth: 0,
             minHeight: 56,
             display: 'block',
@@ -355,9 +372,26 @@ export function DayRow({
               {givenBy}
             </Typography>
           )}
+          <AssistantOriginNote event={event} />
         </ButtonBase>
+        <DeleteRequestBanner
+          event={event}
+          {...(deleteRequest
+            ? { onDelete: deleteRequest.onDelete, onKeep: deleteRequest.onKeep }
+            : {})}
+        />
         {(running || length) && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1.5, flexShrink: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              pr: 1.5,
+              flexShrink: 0,
+              maxWidth: '100%',
+              ml: 'auto',
+            }}
+          >
             {running ? (
               <RunningPill event={event} />
             ) : (

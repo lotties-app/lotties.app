@@ -14,7 +14,8 @@ namespace Lotties.Domain.EventTypes;
 /// <c>bed_time</c> and <c>woke_up</c> (Napper import). Feeding details depend on <c>method</c> (<see cref="FieldVisibilityCondition"/>):
 /// <c>side</c> and the breast seconds for <c>breast</c>, <c>amount_ml</c> (prepared), <c>amount_drunk_ml</c> and <c>bottle_feeding_type</c> for <c>bottle</c> (<see cref="BottleAmounts"/>),
 /// <c>food</c> for <c>solid</c>; a bottle of formula may name the baby's formula with the hidden <c>formula_id</c> and
-/// <c>formula_name</c> (<see cref="FormulaPayload"/>). Every type with a duration (and bath, which clients may time) declares the hidden pause
+/// <c>formula_name</c> (<see cref="FormulaPayload"/>), and a timed bottle its drinking stretches in the hidden
+/// <c>segments</c> (<see cref="BottleSegments"/>). Every type with a duration (and bath, which clients may time) declares the hidden pause
 /// keys of <see cref="PauseFields"/>. Sleep has optional detail fields (<see cref="SleepDetailFields"/>) for the
 /// <c>nap</c> and <c>night</c> kinds; its free-text <c>mood</c> is deprecated (replaced by <c>mood_on_wake</c>), hidden
 /// from forms and kept only so older events stay valid and readable.
@@ -60,6 +61,7 @@ public static class BuiltInEventTypes
             EventFieldDefinition.Create("breast_right_seconds", "Right breast", EventFieldKind.Number, min: 0, unit: "s", visibleWhen: WhenMethodIs("breast")),
             EventFieldDefinition.Create("food", "Food", EventFieldKind.Text, visibleWhen: WhenMethodIs("solid")),
             EventFieldDefinition.Create(BottleAmounts.EndedByMember, "Ended by", EventFieldKind.Select, options: [BottleAmounts.EndedBySleep], isHidden: true),
+            EventFieldDefinition.Create(BottleSegments.Member, "Bottle segments", EventFieldKind.Text, visibleWhen: WhenMethodIs("bottle"), isHidden: true),
             .. PauseFieldDefinitions(),
         ]);
 
@@ -181,7 +183,10 @@ public static class BuiltInEventTypes
 
     /// <summary>
     /// A fussy or crying spell (the evening "witching hour"): an optional timer like tummy time, with the optional
-    /// intensity and what helped. A log of what happened, never a diagnosis.
+    /// intensity and what helped. A log of what happened, never a diagnosis. The hidden <c>suggested_cause</c> keeps
+    /// what "Why is she crying?" ranked first (to measure whether the ranking helps; never shown as a cause). The hidden
+    /// booleans of <see cref="CryDetection"/> mark a spell the cry monitor started (<c>auto_detected</c>) and the parent's
+    /// answer to it (<c>cry_confirmed</c>; absent until answered).
     /// </summary>
     public static EventType Fussy { get; } = EventType.CreateBuiltIn(
         FussyId,
@@ -192,7 +197,10 @@ public static class BuiltInEventTypes
         hasDuration: true,
         [
             EventFieldDefinition.Create("intensity", "Intensity", EventFieldKind.Select, options: ["mild", "moderate", "intense"]),
-            EventFieldDefinition.Create("what_helped", "What helped", EventFieldKind.Select, options: ["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing"]),
+            EventFieldDefinition.Create("what_helped", "What helped", EventFieldKind.Select, options: ["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing", "diaper_change", "burping", "holding"]),
+            EventFieldDefinition.Create("suggested_cause", "First suggestion", EventFieldKind.Select, options: ["hunger", "sleepy", "diaper", "gas", "comfort"], isHidden: true),
+            EventFieldDefinition.Create(CryDetection.AutoDetectedMember, "Detected automatically", EventFieldKind.Bool, isHidden: true),
+            EventFieldDefinition.Create(CryDetection.ConfirmedMember, "Confirmed by parent", EventFieldKind.Bool, isHidden: true),
             .. PauseFieldDefinitions(),
         ]);
 

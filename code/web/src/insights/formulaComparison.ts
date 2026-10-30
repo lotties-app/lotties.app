@@ -1,6 +1,7 @@
 import type { BabyEvent, EventType, Formula } from '../db/models';
 import { formulaIdOf, FORMULA_NAME_KEY } from '../formulas/formulaModel';
 import { drunkMl } from '../events/bottleAmounts';
+import { countsAsCrying } from '../events/cryDetection';
 import { HOUR_MS, payloadString, typeIdsForKey } from '../now/eventFacts';
 import { getOwn } from '../util/ownProperty';
 import { completedDaysWithData, dayKeyOf, lastDays, mean, type LocalDay } from './days';
@@ -333,18 +334,20 @@ export function compareFormulas(input: FormulaComparisonInput): FormulaCompariso
   const events = live(input.events, input.now.toISOString(), window[0].start.toISOString());
   const bottles = bottlesOf(events, input.types).filter((b) => days.has(b.dayKey));
   const pains = events.filter((e) => typeIdsForKey(input.types, 'belly_pain').has(e.typeId));
+  // A cry monitor spell marked "Not crying" is a false alarm: never a fussy spell here.
+  const crying = events.filter(countsAsCrying);
   const counts: DayCounts = {
     bellyPains: dayCounts(pains, typeIdsForKey(input.types, 'belly_pain')),
-    fussy: dayCounts(events, typeIdsForKey(input.types, 'fussy')),
+    fussy: dayCounts(crying, typeIdsForKey(input.types, 'fussy')),
     dirty: dirtyCounts(events, input.types),
   };
-  const has = (key: string) => {
+  const has = (key: string, among: readonly BabyEvent[] = events) => {
     const ids = typeIdsForKey(input.types, key);
-    return events.some((e) => ids.has(e.typeId));
+    return among.some((e) => ids.has(e.typeId));
   };
   const logged: Logged = {
     bellyPain: pains.length > 0,
-    fussy: has('fussy'),
+    fussy: has('fussy', crying),
     diaper: has('diaper'),
   };
   const context: PeriodContext = { days, logged, formulas: input.formulas, input, todayKey };

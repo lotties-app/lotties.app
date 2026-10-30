@@ -20,7 +20,13 @@ import { Icon } from '../ui/Icon';
 import { Field, MedicationPicker, NotesRow } from '../ui/form';
 import { daysBeforeToday } from '../ui/form/timeMath';
 import { getOwn } from '../util/ownProperty';
+import { currentStartLevel } from './bottleSegments';
+import { FUSSY_KEY } from '../now/fussyPattern';
+import { AssistantOriginNote } from './AssistantOriginNote';
 import { ConditionalFields } from './ConditionalFields';
+import { DeleteRequestBanner } from './DeleteRequestBanner';
+import { useDeleteRequestResponse } from './useDeleteRequestResponse';
+import { CryAnswerRow } from './CryAnswerRow';
 import { announceEventDeleted } from './deletedEvents';
 import type { EventSheetProps } from './eventSheetTypes';
 import { isMedicationType } from './formModel';
@@ -210,10 +216,18 @@ export function EventSheet(props: EventSheetProps) {
     else onDone();
   };
 
+  const deleteRequests = useDeleteRequestResponse(() => type);
+  const keepEntry = async () => {
+    if (!event) return;
+    await deleteRequests.keep(event);
+    onDone();
+  };
+
   const remove = async () => {
-    const deleted = await state.remove();
-    if (!deleted) return;
-    announceEventDeleted(deleted, type ? names.typeName(type) : t('common.event'));
+    const removed = await state.remove();
+    if (!removed) return;
+    const { deleted, wakeUp } = removed;
+    announceEventDeleted(deleted, type ? names.typeName(type) : t('common.event'), wakeUp);
     onDone();
   };
 
@@ -302,6 +316,12 @@ export function EventSheet(props: EventSheetProps) {
               instant={state.instant}
             />
           )}
+          {!finishing && state.cryQuestion && type?.key === FUSSY_KEY && (
+            <CryAnswerRow
+              answer={state.crying}
+              onAnswer={(crying) => void state.answerCry(crying)}
+            />
+          )}
           {type && isMedicationType(type) && (
             <Box data-field-key="medications">
               <Field label={t('events.medications')} group error={state.errors.medications}>
@@ -318,6 +338,9 @@ export function EventSheet(props: EventSheetProps) {
               type={type}
               values={form.values}
               only={finish?.fields}
+              {...(finishing && event && event.endedAt === null
+                ? { leftCeiling: currentStartLevel(event.payload) }
+                : {})}
               {...(!finishing && type.key === 'sleep' && type.babyId === null
                 ? { exclude: SLEEP_DETAIL_SET }
                 : {})}
@@ -331,6 +354,14 @@ export function EventSheet(props: EventSheetProps) {
           {type && !finishing && (
             <SleepDetails type={type} values={form.values} onChange={state.setValue} />
           )}
+          {event && !finishing && (
+            <DeleteRequestBanner
+              event={event}
+              onDelete={() => void remove()}
+              onKeep={() => void keepEntry()}
+            />
+          )}
+          {event && !finishing && <AssistantOriginNote event={event} />}
           {!finishing && (
             <Box data-field-key="notes">
               <NotesRow value={form.notes} onChange={(notes) => state.edit({ notes })} />

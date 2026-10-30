@@ -97,6 +97,21 @@ describe('the day ribbon', () => {
     expect(document.querySelector('[data-testid="ribbon-now"]')).toBeNull();
   });
 
+  it('says on the nap row that she fell asleep during a bottle (derived, nothing stored on the nap)', async () => {
+    await seedDay([
+      event({
+        id: 'interrupted',
+        startedAt: at(1, 8, 40),
+        endedAt: at(1, 9),
+        payload: { method: 'bottle', amount_ml: 120, ended_by: 'sleep' },
+      }),
+    ]);
+    await openYesterday();
+    const list = screen.getByRole('list', { name: /^Yesterday, / });
+    expect(within(list).getByText(/Fell asleep during a bottle/)).toBeTruthy();
+    expect((await db.events.get('nap'))!.payload).toEqual({ kind: 'nap' });
+  });
+
   it('opens the detail of a mark and closes it with Escape, giving the focus back', async () => {
     await seedDay();
     const ribbon = await openYesterday();

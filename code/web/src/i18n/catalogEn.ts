@@ -7,10 +7,16 @@ import { mergeCatalogFiles } from './mergeCatalog';
  */
 export type Catalog = typeof import('./locales/en/account.json') &
   typeof import('./locales/en/appointments.json') &
+  typeof import('./locales/en/assistants.json') &
   typeof import('./locales/en/auth.json') &
   typeof import('./locales/en/backup.json') &
   typeof import('./locales/en/baby.json') &
+  typeof import('./locales/en/board.json') &
   typeof import('./locales/en/common.json') &
+  typeof import('./locales/en/consent.json') &
+  typeof import('./locales/en/credits.json') &
+  typeof import('./locales/en/cryMonitor.json') &
+  typeof import('./locales/en/cryReasons.json') &
   typeof import('./locales/en/day.json') &
   typeof import('./locales/en/doctor-dashboard.json') &
   typeof import('./locales/en/doctor.json') &
@@ -22,17 +28,22 @@ export type Catalog = typeof import('./locales/en/account.json') &
   typeof import('./locales/en/home.json') &
   typeof import('./locales/en/hub.json') &
   typeof import('./locales/en/import.json') &
+  typeof import('./locales/en/install.json') &
   typeof import('./locales/en/insights.json') &
+  typeof import('./locales/en/legal.json') &
   typeof import('./locales/en/medications.json') &
   typeof import('./locales/en/nav.json') &
   typeof import('./locales/en/notifications.json') &
   typeof import('./locales/en/now-layout.json') &
   typeof import('./locales/en/now.json') &
   typeof import('./locales/en/providers.json') &
+  typeof import('./locales/en/rest.json') &
+  typeof import('./locales/en/selfHost.json') &
   typeof import('./locales/en/settings.json') &
   typeof import('./locales/en/sync.json') &
   typeof import('./locales/en/timers.json') &
   typeof import('./locales/en/ui.json') &
+  typeof import('./locales/en/units.json') &
   typeof import('./locales/en/vaccines.json');
 
 /** The English catalog (source and fallback, in the main bundle): every `locales/en/*.json`, merged. */

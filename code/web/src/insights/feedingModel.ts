@@ -1,8 +1,9 @@
 import type { BabyEvent, EventType } from '../db/models';
 import { drunkMl } from '../events/bottleAmounts';
-import { HOUR_MS, payloadString, typeIdsForKey } from '../now/eventFacts';
+import { payloadString, typeIdsForKey } from '../now/eventFacts';
 import { effectiveDurationMs } from '../timers/pauseMath';
 import { completedDaysWithData, dayKeyOf, mean, type LocalDay } from './days';
+import { DEFAULT_FEED_GAP_MS, feedGapLimitAt, type FeedGapContext } from './feedGapLimit';
 
 /*
  * Feeding insights, pure: feeds per local day (by the day a feed started), the average gap between
@@ -10,8 +11,11 @@ import { completedDaysWithData, dayKeyOf, mean, type LocalDay } from './days';
  * effective (pauses excluded); running feeds have no duration yet.
  */
 
-/** A longer gap means a feed was probably not logged, so it is left out of the average. */
-export const MAX_FEED_GAP_MS = 8 * HOUR_MS;
+/**
+ * A longer gap means a feed was probably not logged, so it is left out of the average. The
+ * default: from 6 months the published norms may raise it (feedGapLimit.ts).
+ */
+export const MAX_FEED_GAP_MS = DEFAULT_FEED_GAP_MS;
 
 export interface FeedDay {
   key: string;
@@ -75,12 +79,19 @@ export function feedsByDay(
   return [...byKey.values()];
 }
 
-/** Gaps between consecutive feed starts, up to `MAX_FEED_GAP_MS`. */
-export function feedGaps(feeds: readonly BabyEvent[]): number[] {
+/**
+ * Gaps between consecutive feed starts, up to `maxGapAt(start of the gap)` (default
+ * `MAX_FEED_GAP_MS`).
+ */
+export function feedGaps(
+  feeds: readonly BabyEvent[],
+  maxGapAt: (startMs: number) => number = () => MAX_FEED_GAP_MS,
+): number[] {
   const gaps: number[] = [];
   for (let index = 1; index < feeds.length; index++) {
-    const gap = Date.parse(feeds[index].startedAt) - Date.parse(feeds[index - 1].startedAt);
-    if (gap > 0 && gap <= MAX_FEED_GAP_MS) gaps.push(gap);
+    const start = Date.parse(feeds[index - 1].startedAt);
+    const gap = Date.parse(feeds[index].startedAt) - start;
+    if (gap > 0 && gap <= maxGapAt(start)) gaps.push(gap);
   }
   return gaps;
 }
@@ -91,6 +102,8 @@ export function feedingSummary(
   days: readonly LocalDay[],
   now: Date,
   todayKey: string,
+  /** The birth date and age norms for the age-aware gap cut-off; 8 hours without them. */
+  gapContext?: FeedGapContext,
 ): FeedingSummary {
   const feeds = feedsIn(events, types, days, now);
   const byDay = feedsByDay(events, types, days, now);
@@ -104,7 +117,7 @@ export function feedingSummary(
     .filter((ms) => ms > 0);
   return {
     perDay: mean(perDay.map((d) => d.feeds)),
-    avgGapMs: mean(feedGaps(feeds)),
+    avgGapMs: mean(feedGaps(feeds, feedGapLimitAt(gapContext))),
     avgBottleMl: mean(amounts),
     avgBottleMs: mean(durations),
     mlPerDay: mean(mlDays.map((d) => d.bottleMl)),

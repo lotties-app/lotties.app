@@ -25,7 +25,20 @@ public sealed class ForwardedHeadersSettingsTests
 
         Assert.Equal(
             [(IPAddress.Parse("10.42.0.0"), 16), (IPAddress.Parse("fd00::"), 8)],
-            networks.Select(network => (network.Prefix, network.PrefixLength)));
+            networks.Select(network => (network.BaseAddress, network.PrefixLength)));
+        Assert.Empty(settings.InvalidEntries());
+    }
+
+    [Fact]
+    public void Networks_BitsAfterThePrefix_AreIgnoredAsBeforeTheNet10Upgrade()
+    {
+        var settings = new ForwardedHeadersSettings { TrustedNetworks = "10.42.0.1/16,fd00::1/8" };
+
+        var networks = settings.Networks();
+
+        Assert.Equal(
+            [(IPAddress.Parse("10.42.0.0"), 16), (IPAddress.Parse("fd00::"), 8)],
+            networks.Select(network => (network.BaseAddress, network.PrefixLength)));
         Assert.Empty(settings.InvalidEntries());
     }
 

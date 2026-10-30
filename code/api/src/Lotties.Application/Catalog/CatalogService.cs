@@ -66,7 +66,7 @@ internal sealed class CatalogService : ICatalogService
         var matches = ProductSearch.WithAmbiguousVariants(ranked, variants);
         var siblingPool = await LoadSiblingPoolAsync(matches, cancellationToken);
         _logger.LogDebug("Catalog search matched {MatchCount} products", matches.Count);
-        return matches.Select(match => CatalogMapper.ToSearchResult(match, ProductSearch.SameActiveIngredient(match.Product, siblingPool), substances)).ToArray();
+        return matches.Select(match => CatalogMapper.ToSearchResult(match, ProductSearch.Alternatives(match.Product, siblingPool), substances)).ToArray();
     }
 
     public async Task<SubstanceProductsResponse> ListProductsWithSubstanceAsync(Guid substanceId, int? offset, int? limit, CancellationToken cancellationToken = default)
@@ -133,18 +133,19 @@ internal sealed class CatalogService : ICatalogService
     /// <summary>The products with exactly the substance set of each result (one query per distinct set; sets are few).</summary>
     private async Task<IReadOnlyList<Product>> LoadSiblingPoolAsync(IReadOnlyList<ProductMatch> matches, CancellationToken cancellationToken)
     {
-        var sets = matches
-            .Select(match => match.Product.SubstanceIds)
-            .Where(set => set.Count > 0)
-            .DistinctBy(set => string.Join('|', set.Order()))
+        var requests = matches
+            .Select(match => match.Product)
+            .Where(product => product.Substances.Count > 0)
+            .Select(product => (Ids: product.SubstanceIds, Prefer: new AlternativePreference(product.StrengthKey, product.Form)))
+            .DistinctBy(request => (string.Join('|', request.Ids.Order()), request.Prefer))
             .ToArray();
         var pool = new List<Product>();
-        foreach (var set in sets)
+        foreach (var request in requests)
         {
-            pool.AddRange(await _catalog.FindWithSameSubstancesAsync(set.ToArray(), SiblingCandidates, cancellationToken));
+            pool.AddRange(await _catalog.FindWithSameSubstancesAsync(request.Ids.ToArray(), SiblingCandidates, request.Prefer, cancellationToken));
         }
 
-        return pool;
+        return pool.DistinctBy(product => product.Id).ToArray();
     }
 
     private async Task<IReadOnlyDictionary<Guid, Substance>> LoadSubstancesAsync(CancellationToken cancellationToken) =>

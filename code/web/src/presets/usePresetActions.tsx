@@ -58,10 +58,16 @@ export function usePresetActions(babyId: string, types: EventType[]): PresetActi
   };
 
   const stopTimer = async (event: BabyEvent, name?: string, endedAt?: string) => {
-    const stopped = await stopper.stop(event, endedAt);
-    if (!stopped?.endedAt || !name) return;
+    const result = await stopper.stop(event, endedAt);
+    const end = result?.stopped.endedAt;
+    if (!result || !end || !name) return;
+    // Undo reopens the timer and removes the wake-up a stopped night logged.
     setUndoable({
-      token: { babyId, createdIds: [], stopped: [{ id: stopped.id, endedAt: stopped.endedAt }] },
+      token: {
+        babyId,
+        createdIds: result.wakeUpId ? [result.wakeUpId] : [],
+        stopped: [{ id: result.stopped.id, endedAt: end }],
+      },
       message: t('presets.undo.stopped', { name }),
     });
   };

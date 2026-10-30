@@ -12,7 +12,14 @@ import { ChipGroup } from './ChipGroup';
 import { Field } from './Field';
 import { NumberStepper } from './NumberStepper';
 import { parseLocaleNumber } from './numbers';
-import { filledSurface, focusRing, optionBase, palette, selectedOption } from './styles';
+import {
+  filledSurface,
+  focusRing,
+  optionBase,
+  palette,
+  selectedOption,
+  TOUCH_FIELD_FONT,
+} from './styles';
 
 /** A checked medication with its dose, kept as text while it is edited. */
 export interface MedicationDose {
@@ -151,11 +158,14 @@ export function MedicationPicker({
           sx={(theme) => ({
             flex: 1,
             minWidth: 0,
+            // No intrinsic width (an input's `size`): the row, not the field, sets the size.
+            width: 0,
             height: 44,
             border: 0,
             outline: 0,
             background: 'none',
             font: 'inherit',
+            ...TOUCH_FIELD_FONT,
             color: palette(theme).text.primary,
             '&::placeholder': { color: palette(theme).text.secondary },
           })}

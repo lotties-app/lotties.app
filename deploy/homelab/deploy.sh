@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 8) and the web app (React SPA on
+# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 10) and the web app (React SPA on
 # nginx) in namespace lotties-app-production, public at https://lotties.app through the external Traefik.
 #
 # Run as root inside WSL, from anywhere:
@@ -20,12 +20,19 @@
 #   SKIP_BUILD=1    Build nothing; the tags must already be in the registry.
 #   VERSION         The release, vX.Y.Z (the v is optional). Left out, a run that built something takes the patch after
 #                   the highest vX.Y.Z among the git tags and the registry tags. The images also get it and latest as tags.
+#                   It is chosen before the builds: an image built in this run carries it with the short commit and the
+#                   build time (build args APP_VERSION, APP_COMMIT, APP_BUILD_TIME; Hub > About, GET /api/v1/version).
+#                   They are not part of the source tag: an image that is not rebuilt keeps the release that built it.
+#                   To have both images carry the same release (About shows one number), rebuild both: FORCE_BUILD=1
+#                   (pods restart; the src-<hash> tags stay the same, the images are pushed again under them).
+#   TAG_RELEASE=0   Do not create the annotated git tag vX.Y.Z on HEAD after a release. PUSH_TAG=0: create it but do not push it.
 #   COPY_PULL_SECRET=1  When the pull Secret cr-homel4b is missing in NS, copy it from namespace keycloak without asking.
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
-# App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_* and VITE_REPO_URL (public, baked into the
-# web image), DB_* and PUSH_VAPID_* (the Secret lotties-secrets), DB_AUTO_MIGRATE, CORS_ALLOWED_ORIGINS.
+# App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL and VITE_PRIVACY_* (public,
+# baked into the web image), DB_*, PUSH_VAPID_* and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# CORS_ALLOWED_ORIGINS.
 #
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
 # for the web image the VITE_* values). A tag already in the registry is not rebuilt and its pods are not restarted.
@@ -87,6 +94,8 @@ image_tag() { if [ -n "${TAG:-}" ]; then printf '%s' "$TAG"; else source_tag "$@
 web_build_salt() {
   printf 'VITE_API_BASE_URL=%s\nVITE_OIDC_AUTHORITY=%s\nVITE_OIDC_CLIENT_ID=%s\nVITE_OIDC_AUDIENCE=%s\nVITE_REPO_URL=%s\n' \
     "$VITE_API_BASE_URL" "$VITE_OIDC_AUTHORITY" "$VITE_OIDC_CLIENT_ID" "$VITE_OIDC_AUDIENCE" "$VITE_REPO_URL"
+  printf 'VITE_PRIVACY_CONTROLLER_NAME=%s\nVITE_PRIVACY_CONTACT_EMAIL=%s\nVITE_PRIVACY_DPO=%s\n' \
+    "$VITE_PRIVACY_CONTROLLER_NAME" "$VITE_PRIVACY_CONTACT_EMAIL" "$VITE_PRIVACY_DPO"
 }
 
 # The next release X.Y.Z (no v) after the tags on standard input; only vX.Y.Z tags count, none at all gives 1.0.0.
@@ -104,6 +113,14 @@ bump_version() { # [patch|minor|major]
     minor) echo "$major.$((minor + 1)).0" ;;
     patch) echo "$major.$minor.$((patch + 1))" ;;
   esac
+}
+
+# The build arguments that stamp the release into an image, one per line (both images get the same three): the
+# release number X.Y.Z (empty: the app shows "dev"), the short commit and the build time. They are never part of the
+# source tag: a new release number alone does not make an image different, so an unchanged image is not rebuilt and
+# keeps the number of the release that built it. FORCE_BUILD=1 rebuilds both, so both carry the new release.
+release_build_args() { # version commit built-at
+  printf -- '--build-arg\nAPP_VERSION=%s\n--build-arg\nAPP_COMMIT=%s\n--build-arg\nAPP_BUILD_TIME=%s\n' "${1#v}" "$2" "$3"
 }
 
 # true or false for true/false (any case) and 1/0, as the API reads DB_AUTO_MIGRATE; anything else fails.
@@ -154,6 +171,10 @@ configure() {
   VITE_OIDC_AUDIENCE=${VITE_OIDC_AUDIENCE:-}
   VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
   VITE_REPO_URL=${VITE_REPO_URL:-}
+  # Privacy policy contacts (public; empty = the policy's defaults, docs/PRIVACY-OWNER-CHECKLIST.md).
+  VITE_PRIVACY_CONTROLLER_NAME=${VITE_PRIVACY_CONTROLLER_NAME:-}
+  VITE_PRIVACY_CONTACT_EMAIL=${VITE_PRIVACY_CONTACT_EMAIL:-}
+  VITE_PRIVACY_DPO=${VITE_PRIVACY_DPO:-}
   FORWARDED_HEADERS_TRUSTED_NETWORKS=${FORWARDED_HEADERS_TRUSTED_NETWORKS:-}
   # Browser origins allowed to call the API. Default: the web app only. The iOS/Android app (code/mobile) adds its
   # WebView origins: https://$PUBLIC_HOST,https://localhost,capacitor://localhost (docs/design/12-mobile-capacitor.md).
@@ -219,7 +240,7 @@ put_secret() { # key value
 secret_keys() { (cd "$SECRET_DIR" && ls | tr '\n' ' '); }
 
 collect_secrets() {
-  local key value push_count=0 missing=()
+  local key value push_count=0 admin_count=0 missing=()
   step "Secret $APP_SECRET (values are not shown)"
   SECRET_DIR="$WORK/secret"
   mkdir -m 700 "$SECRET_DIR"
@@ -234,6 +255,12 @@ collect_secrets() {
     [ -z "$value" ] || push_count=$((push_count + 1))
     put_secret "$key" "$value"
   done
+  # The Keycloak service account that deletes the sign-in account with the Lotties account (docs/KEYCLOAK-ACCOUNT-DELETION.md).
+  for key in AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET; do
+    value=$(setting_or_secret "$key")
+    [ -z "$value" ] || admin_count=$((admin_count + 1))
+    put_secret "$key" "$value"
+  done
   if [ "$DB_AUTO_MIGRATE" = true ]; then
     for key in DB_MIGRATOR_USER DB_MIGRATOR_PASSWORD; do
       value=$(setting_or_secret "$key")
@@ -243,10 +270,13 @@ collect_secrets() {
   fi
   [ "${#missing[@]}" -eq 0 ] || die "missing settings: ${missing[*]} (set them in deploy/homelab/.env)"
   case "$push_count" in 0 | 3) ;; *) die "set all three PUSH_VAPID_* values or none (push is off with none)" ;; esac
+  case "$admin_count" in 0 | 2) ;; *) die "set both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither (with neither, deleting an account keeps the Keycloak user)" ;; esac
   # A pod reads its Secret only when it starts: the API pods carry this checksum, so a changed Secret restarts them.
   SECRETS_HASH=$( (cd "$SECRET_DIR" && for key in *; do printf '%s\n' "$key"; cat "$key"; printf '\n'; done) | sha256sum | cut -c1-16)
   echo "keys: $(secret_keys)"
   [ "$push_count" = 3 ] && echo "push notifications: on" || echo "push notifications: off (no PUSH_VAPID_* values)"
+  [ "$admin_count" = 2 ] && echo "account deletion: also deletes the Keycloak user" \
+    || echo "account deletion: keeps the Keycloak user (no AUTH_ADMIN_CLIENT_* values; see docs/KEYCLOAK-ACCOUNT-DELETION.md)"
   [ "$DB_AUTO_MIGRATE" = true ] && echo "DB_AUTO_MIGRATE=true: the API pod holds the migrator credentials" || true
 }
 
@@ -329,12 +359,17 @@ push() { # image: the registry sometimes answers a layer upload with 500; retry 
   return 1
 }
 
-build_push() { # name tag dockerfile context [build args...]
-  local image="$REGISTRY/$1:$2" name=$1 tag=$2 dockerfile=$3 context=$4
-  shift 4
+# Whether an image must be built. A fixed TAG is a request to rebuild under that tag; a source tag already pushed
+# means nothing changed.
+needs_build() { # name tag
+  [ -n "${TAG:-}" ] || [ "${FORCE_BUILD:-0}" = 1 ] || ! in_registry "$1" "$2"
+}
+
+build_push() { # name tag needed(0/1) dockerfile context [build args...]
+  local image="$REGISTRY/$1:$2" needed=$3 dockerfile=$4 context=$5
+  shift 5
   step "Image $image"
-  # A fixed TAG is a request to rebuild under that tag; a source tag already pushed means nothing changed.
-  if [ -z "${TAG:-}" ] && [ "${FORCE_BUILD:-0}" != 1 ] && in_registry "$name" "$tag"; then
+  if [ "$needed" != 1 ]; then
     echo "unchanged, already in the registry: not rebuilt"
     return 0
   fi
@@ -376,19 +411,28 @@ images() {
     step "Images: SKIP_BUILD=1, using $REGISTRY/lotties-api:$API_TAG and $REGISTRY/lotties-web:$WEB_TAG"
     return 0
   fi
-  build_push lotties-api "$API_TAG" "$REPO/code/api/Dockerfile" "$REPO/code/api"
+  local api_needed=0 web_needed=0 stamp
+  needs_build lotties-api "$API_TAG" && api_needed=1
+  needs_build lotties-web "$WEB_TAG" && web_needed=1
+  # A run that builds something is a new release; one that builds nothing (or was given a fixed TAG) is not. The
+  # number is chosen before the builds so the images can carry it (APP_VERSION); the tags still come from the sources.
+  if [ -z "$VERSION" ] && [ -z "${TAG:-}" ] && [ "$api_needed$web_needed" != 00 ]; then
+    VERSION=$(next_version)
+    dry && would "tag the images v$VERSION and latest" || echo "New release v$VERSION (the next after the tags in git and in the registry)"
+  fi
+  mapfile -t stamp < <(release_build_args "$VERSION" "$(cd "$REPO" && git rev-parse --short=12 HEAD 2>/dev/null || true)" \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+  build_push lotties-api "$API_TAG" "$api_needed" "$REPO/code/api/Dockerfile" "$REPO/code/api" "${stamp[@]}"
   # The VITE_* values are public (they end up in the JavaScript bundle).
-  build_push lotties-web "$WEB_TAG" "$REPO/code/web/Dockerfile" "$REPO/code/web" \
+  build_push lotties-web "$WEB_TAG" "$web_needed" "$REPO/code/web/Dockerfile" "$REPO/code/web" "${stamp[@]}" \
     --build-arg "VITE_API_BASE_URL=$VITE_API_BASE_URL" \
     --build-arg "VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY" \
     --build-arg "VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID" \
     --build-arg "VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE" \
-    --build-arg "VITE_REPO_URL=$VITE_REPO_URL"
-  # A run that built something is a new release; one that built nothing (or was given a fixed TAG) is not.
-  if [ -z "$VERSION" ] && [ -z "${TAG:-}" ] && [ "$BUILT$WOULD_BUILD" != 00 ]; then
-    VERSION=$(next_version)
-    dry && would "tag the images v$VERSION and latest" || echo "New release v$VERSION (the next after the tags in git and in the registry)"
-  fi
+    --build-arg "VITE_REPO_URL=$VITE_REPO_URL" \
+    --build-arg "VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME" \
+    --build-arg "VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL" \
+    --build-arg "VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO"
   dry && return 0
   tag_version lotties-api "$API_TAG"
   tag_version lotties-web "$WEB_TAG"
@@ -444,8 +488,33 @@ summary() {
   kube get certificate "$TLS_SECRET" 2>/dev/null || true
   echo
   echo "App  https://$PUBLIC_HOST      API  https://$PUBLIC_HOST/api/v1"
-  [ -z "$VERSION" ] || echo "Release v$VERSION (images tagged v$VERSION and latest). To mark it in git: git tag -a v$VERSION -m \"Release $VERSION\""
+  if [ -n "$VERSION" ]; then
+    echo "Release v$VERSION (images tagged v$VERSION and latest)."
+    tag_release "$VERSION"
+  fi
   echo "Roll back one release: helm ${ctx}-n $NS rollback lotties-api   (or lotties-web)"
+}
+
+# Marks the release in git: an annotated vX.Y.Z tag on HEAD, pushed to origin. Never fails the deploy (it is already live): a problem
+# is printed with the command to run by hand. A tag that exists is left alone. Uncommitted changes are built into the images
+# (the source tags count the working tree), so the tag then points at the nearest commit and the output says so.
+tag_release() {
+  local version=$1 dirty=""
+  [ "${TAG_RELEASE:-1}" = 1 ] || return 0
+  if (cd "$REPO" && git rev-parse -q --verify "refs/tags/v$version" >/dev/null 2>&1); then
+    echo "Git tag v$version already exists: left as it is."
+    return 0
+  fi
+  [ -z "$(cd "$REPO" && git status --porcelain 2>/dev/null)" ] || dirty=" (the working tree had uncommitted changes: the images may hold more than that commit)"
+  if ! (cd "$REPO" && git tag -a "v$version" -m "Release $version" 2>/dev/null); then
+    echo "Could not create the git tag. By hand: git tag -a v$version -m \"Release $version\"" >&2
+    return 0
+  fi
+  echo "Git tag v$version created on $(cd "$REPO" && git rev-parse --short=12 HEAD)$dirty."
+  [ "${PUSH_TAG:-1}" = 1 ] || return 0
+  if (cd "$REPO" && git remote get-url origin >/dev/null 2>&1); then
+    (cd "$REPO" && git push -q origin "refs/tags/v$version" 2>/dev/null)       && echo "Git tag v$version pushed to origin."       || echo "Could not push the tag. By hand: git push origin v$version" >&2
+  fi
 }
 
 cleanup() { [ -z "${WORK:-}" ] || rm -rf "$WORK"; }

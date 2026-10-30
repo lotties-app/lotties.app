@@ -225,7 +225,7 @@ describe('the rows of the day', () => {
   it('shows an illustrated, friendlier empty day', async () => {
     await seedBaby(db);
     renderWithDb(db, <DayPage />);
-    expect(await screen.findByText('A quiet day. Nothing logged yet.')).toBeTruthy();
+    expect(await screen.findByText('No events this day yet.')).toBeTruthy();
     expect(document.querySelector('svg[data-illustration="nap"]')).toBeTruthy();
   });
 });

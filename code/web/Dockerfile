@@ -2,6 +2,13 @@ FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+# The cry monitor's model (YAMNet yamnet.tflite, 4.1 MB, Apache-2.0) is not in the repository: download it from
+# MediaPipe's model storage and check its pinned SHA-256 (docs/design/35-cry-engine.md section 4). Any failure stops
+# the image build. Its own layer, before the sources: cached until the script (and so the pin) changes. The build
+# context never carries a local copy (.dockerignore), and CRY_MODEL_REQUIRED=1 makes `npm run build` refuse an image
+# without it.
+COPY scripts/fetch-cry-model.mjs scripts/fetch-cry-model.mjs
+RUN node scripts/fetch-cry-model.mjs
 COPY . .
 # Public, non-secret build-time configuration baked into the SPA bundle.
 # Exported as ENV so they also win over any code/web/.env* file copied into the build context.
@@ -11,15 +18,28 @@ ARG VITE_OIDC_CLIENT_ID=""
 ARG VITE_OIDC_AUDIENCE=""
 # Source repository link in the landing footer (AGPL source offer); empty hides the link.
 ARG VITE_REPO_URL=""
-# Short commit shown on the About screen (the image build has no git checkout); empty hides it.
+# Privacy policy contacts the owner publishes (docs/PRIVACY-OWNER-CHECKLIST.md); empty = the policy's defaults.
+ARG VITE_PRIVACY_CONTROLLER_NAME=""
+ARG VITE_PRIVACY_CONTACT_EMAIL=""
+ARG VITE_PRIVACY_DPO=""
+# The release stamped by deploy/homelab/deploy.sh, shown on the About screen (vite.config.ts, build-info.ts):
+# APP_VERSION X.Y.Z (empty: "dev"), APP_COMMIT the short commit (the image build has no git checkout; empty hides
+# it), APP_BUILD_TIME an ISO time (empty: the time of `npm run build`).
+ARG APP_VERSION=""
 ARG APP_COMMIT=""
-ENV APP_COMMIT=$APP_COMMIT \
-VITE_API_BASE_URL=$VITE_API_BASE_URL \
+ARG APP_BUILD_TIME=""
+ENV APP_VERSION=$APP_VERSION \
+    APP_COMMIT=$APP_COMMIT \
+    APP_BUILD_TIME=$APP_BUILD_TIME \
+    VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
     VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
     VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE \
-    VITE_REPO_URL=$VITE_REPO_URL
-RUN npm run build
+    VITE_REPO_URL=$VITE_REPO_URL \
+    VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME \
+    VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL \
+    VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO
+RUN CRY_MODEL_REQUIRED=1 npm run build
 
 # Non-root nginx: runs as uid 101 and listens on 8080. Works with a read-only root filesystem when /tmp (pid, temp
 # files) and /etc/nginx/conf.d (where the entrypoint renders default.conf) are writable, e.g. tmpfs or emptyDir.

@@ -18,6 +18,7 @@ const capacitor = vi.hoisted(() => {
         ) => Promise<{ remove: typeof remove }>
       >(async () => ({ remove })),
       getLaunchUrl: vi.fn(async (): Promise<{ url: string } | undefined> => undefined),
+      exitApp: vi.fn(async () => {}),
     },
     SystemBars: { setStyle: vi.fn(async () => {}) },
     Filesystem: {
@@ -118,5 +119,22 @@ describe('capacitorShell', () => {
 
     capacitor.Share.share.mockRejectedValueOnce(new Error('No activity found'));
     await expect(capacitorShell.shareFile(file)).rejects.toThrow('No activity found');
+  });
+
+  it('reports the back button with canGoBack and exits the app on demand', async () => {
+    const pressed: boolean[] = [];
+    const stop = await capacitorShell.onBackButton((canGoBack) => pressed.push(canGoBack));
+    expect(capacitor.App.addListener).toHaveBeenCalledWith('backButton', expect.any(Function));
+    const listener = capacitor.App.addListener.mock.calls[0][1] as unknown as (event: {
+      canGoBack: boolean;
+    }) => void;
+    listener({ canGoBack: true });
+    listener({ canGoBack: false });
+    expect(pressed).toEqual([true, false]);
+    stop();
+    expect(capacitor.remove).toHaveBeenCalled();
+
+    await capacitorShell.exitApp();
+    expect(capacitor.App.exitApp).toHaveBeenCalled();
   });
 });

@@ -1,0 +1,14 @@
+{
+  "legal": {
+    "privacy": {
+      "title": "Privacy policy",
+      "version": "Version {{version}}, last updated on {{date}}.",
+      "contents": "On this page"
+    },
+    "terms": {
+      "title": "Terms of use",
+      "version": "Version {{version}}, last updated on {{date}}.",
+      "intro": "These are the terms for using Lotties. They sit next to the privacy policy, which says how we handle personal data."
+    }
+  }
+}

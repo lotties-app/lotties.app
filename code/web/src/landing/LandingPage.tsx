@@ -9,10 +9,13 @@ import { useLandingCatalog } from '../i18n/useLandingCatalog';
 import { FeatureGrid } from './FeatureGrid';
 import { Hero } from './Hero';
 import { ImportantNotice } from './ImportantNotice';
+import { InstallStrip } from './InstallStrip';
 import { LandingFooter } from './LandingFooter';
 import { LandingHeader } from './LandingHeader';
+import { OpenSourceStrip } from './OpenSourceStrip';
 import { SessionNotice, type NoticeKind } from './SessionNotice';
 import { StepsStrip } from './StepsStrip';
+import { StoryStrip } from './StoryStrip';
 
 /** Visible only while it has keyboard focus. */
 const SKIP_LINK_SX = {
@@ -31,9 +34,16 @@ const SKIP_LINK_SX = {
 /**
  * The public home page (route `/` while signed out). Sign in and Create an account start the
  * identity provider redirect straight away; a failed or ended sign-in explains itself in a card
- * above the hero. Loaded as its own chunk, so the signed-in app never pays for it.
+ * above the hero. Loaded as its own chunk, so the signed-in app only loads it on /welcome, where a
+ * signed-in person opens it on purpose (`welcome`: "Back to the app" instead of sign-in).
  */
-export default function LandingPage({ unsyncedOverride }: { unsyncedOverride?: number | null }) {
+export default function LandingPage({
+  unsyncedOverride,
+  welcome = false,
+}: {
+  unsyncedOverride?: number | null;
+  welcome?: boolean;
+}) {
   const { t } = useTranslation('landing');
   const ready = useLandingCatalog();
   const { login, error, sessionEnded } = useAuth();
@@ -59,15 +69,20 @@ export default function LandingPage({ unsyncedOverride }: { unsyncedOverride?: n
     setStartFailed(false);
     login(from, register ? { register: true } : undefined).catch(() => setStartFailed(true));
   };
-  const kind: NoticeKind | null =
-    error || state?.failed || startFailed ? 'failed' : sessionEnded ? 'ended' : null;
+  const kind: NoticeKind | null = welcome
+    ? null
+    : error || state?.failed || startFailed
+      ? 'failed'
+      : sessionEnded
+        ? 'ended'
+        : null;
 
   return (
     <Box sx={{ position: 'relative', minHeight: '100dvh', bgcolor: 'background.default' }}>
       <Button component="a" href="#landing-main" sx={SKIP_LINK_SX}>
         {t('skipToContent')}
       </Button>
-      <LandingHeader onSignIn={() => start(false)} />
+      <LandingHeader onSignIn={() => start(false)} signedIn={welcome} />
       <Box component="main" id="landing-main" tabIndex={-1} sx={{ outline: 'none' }}>
         <Hero
           notice={
@@ -75,10 +90,14 @@ export default function LandingPage({ unsyncedOverride }: { unsyncedOverride?: n
           }
           onSignIn={() => start(false)}
           onRegister={() => start(true)}
+          signedIn={welcome}
         />
+        <StoryStrip />
+        <InstallStrip />
         <FeatureGrid />
-        <ImportantNotice />
         <StepsStrip />
+        <ImportantNotice />
+        <OpenSourceStrip />
       </Box>
       <LandingFooter />
     </Box>

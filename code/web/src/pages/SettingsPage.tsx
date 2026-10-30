@@ -5,18 +5,22 @@ import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { LanguageSection } from '../settings/LanguageSection';
+import { UnitsSection } from '../settings/UnitsSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
 import { FeedingSection } from '../settings/FeedingSection';
+import { ConsentSection } from '../consent/ConsentSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
 import { DeleteAccountSection } from '../settings/DeleteAccountSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
+import { VoiceAssistantsSection } from '../settings/VoiceAssistantsSection';
 import { canLog, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { hasPatients } from '../doctor/appMode';
 import { useBabies } from '../db/hooks';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
+import { VersionLine } from '../ui/VersionLine';
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -114,6 +118,15 @@ export function SettingsPage() {
           <FeedingSection />
         </SettingsSection>
       )}
+      {babies.some(canLog) && (
+        <SettingsSection
+          id="voice-assistants"
+          title={t('assistants.title')}
+          defaultExpanded={wants('voice-assistants')}
+        >
+          <VoiceAssistantsSection babies={babies} />
+        </SettingsSection>
+      )}
       <SettingsSection
         id="appearance"
         title={t('settings.sections.appearance')}
@@ -128,6 +141,9 @@ export function SettingsPage() {
       >
         <LanguageSection />
       </SettingsSection>
+      <SettingsSection id="units" title={t('units.title')} defaultExpanded={wants('units')}>
+        <UnitsSection />
+      </SettingsSection>
       <SettingsSection
         id="sync"
         title={t('settings.sections.sync')}
@@ -136,12 +152,20 @@ export function SettingsPage() {
         <SyncSection />
       </SettingsSection>
       <SettingsSection
+        id="privacy"
+        title={t('consent.settings.title')}
+        defaultExpanded={wants('privacy')}
+      >
+        <ConsentSection />
+      </SettingsSection>
+      <SettingsSection
         id="account"
         title={t('account.sectionTitle')}
         defaultExpanded={wants('account')}
       >
         <DeleteAccountSection />
       </SettingsSection>
+      <VersionLine to="/hub/about" />
     </Stack>
   );
 }

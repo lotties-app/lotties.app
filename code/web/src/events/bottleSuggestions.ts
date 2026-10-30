@@ -1,12 +1,19 @@
+import { ageInDaysAt, type AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent } from '../db/models';
 import { getOwn } from '../util/ownProperty';
-import { drunkMl } from './bottleAmounts';
-import { ageInMonths, ageRangeFor, NEUTRAL_BOTTLE_AMOUNTS, rangeChips } from './bottleAgeDefaults';
+import { knownDrunkMl } from './bottlePatterns';
+import {
+  ageInMonths,
+  ageRangeFor,
+  NEUTRAL_BOTTLE_AMOUNTS,
+  normBottleRange,
+  rangeChips,
+} from './bottleAgeDefaults';
 
 /*
  * Bottle amount chips that follow the baby (docs/design/10-bottle-suggestions.md, phase 1): from
- * the baby's own recent bottles when there are enough, else from a static age table
- * (bottleAgeDefaults.ts), else a neutral spread. Pure, offline, nothing leaves the device.
+ * the baby's own recent bottles when there are enough, else from the published formula volume for
+ * the baby's age or the static age table (bottleAgeDefaults.ts), else a neutral spread. Pure, offline, nothing leaves the device.
  */
 
 /** The stepper's step and the rounding of history amounts. */
@@ -38,6 +45,8 @@ export interface BottleSuggestions {
   source: BottleSuggestionSource;
   /** Whole months of age behind `source: 'age'`; `null` otherwise. */
   ageMonths: number | null;
+  /** The published norm behind `source: 'age'` (docs/design/28-age-norms.md); `null` for the month table. */
+  ageNormId: string | null;
   /** A neutral starting amount: the typical one, or the middle chip of the cold-start set. */
   preferred: number;
 }
@@ -49,6 +58,8 @@ export interface BottleSuggestionInput {
   feedingTypeId?: string;
   /** The baby's birth date (`yyyy-mm-dd`). */
   birthDate?: string | null;
+  /** The published age norms on the device; without them the month table is used. */
+  ageNorms?: AgeNormSet | null;
   now: Date;
   /** The amount field's bounds. */
   min?: number | null;
@@ -80,9 +91,13 @@ export function recentBottleAmounts(
     .map((e) => amountOf(e) as number);
 }
 
+/**
+ * What she drank from the bottle; a bottle a sleep stopped whose amount nobody gave is unknown and
+ * left out (docs/design/20-feeding-amounts.md section 5), rather than counted as fully drunk.
+ */
 function amountOf(event: BabyEvent): number | null {
-  const value = drunkMl(event.payload);
-  return value !== undefined && value > 0 ? value : null;
+  const value = knownDrunkMl(event);
+  return value !== null && value > 0 ? value : null;
 }
 
 /** `value` rounded to the nearest `BOTTLE_STEP_ML`. */
@@ -131,8 +146,8 @@ const middleOf = (values: readonly number[]) => values[Math.floor((values.length
 /**
  * The bottle chips for a baby. History (at least `MIN_HISTORY` bottles): the typical amount
  * (median of the newest `TYPICAL_OF`, rounded to 10 ml), the typical amount topped up (+30, +60)
- * and the most frequent amounts. Cold start: the age table's chips, or the neutral set without a
- * birth date. `include` always comes first; then candidates are kept in priority order up to
+ * and the most frequent amounts. Cold start: the chips of the published range for the age (a
+ * usable norm only), else of the age table, or the neutral set without a birth date. `include` always comes first; then candidates are kept in priority order up to
  * `MAX_CHIPS` and sorted ascending.
  */
 export function bottleSuggestions(input: BottleSuggestionInput): BottleSuggestions {
@@ -153,17 +168,22 @@ export function bottleSuggestions(input: BottleSuggestionInput): BottleSuggestio
       step: BOTTLE_STEP_ML,
       source: 'history',
       ageMonths: null,
+      ageNormId: null,
       preferred: typical,
     };
   }
 
   const months = ageInMonths(input.birthDate, now);
-  const base = months === null ? [...NEUTRAL_BOTTLE_AMOUNTS] : rangeChips(ageRangeFor(months));
+  const fromNorm =
+    months === null ? null : normBottleRange(input.ageNorms, ageInDaysAt(input.birthDate, now));
+  const base =
+    months === null ? [...NEUTRAL_BOTTLE_AMOUNTS] : rangeChips(fromNorm ?? ageRangeFor(months));
   return {
     amounts: pick([...include, ...base], min, max),
     step: BOTTLE_STEP_ML,
     source: months === null ? 'neutral' : 'age',
     ageMonths: months,
+    ageNormId: fromNorm?.normId ?? null,
     preferred: middleOf(base),
   };
 }

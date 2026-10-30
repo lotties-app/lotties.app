@@ -1,0 +1,21 @@
+{
+  "_doc": "The consent versions, oldest first (docs/design/38-consent-and-terms.md). The web reads this file (consentVersions.ts) and the API mirrors it in Lotties.Domain.Consents.ConsentVersions; ConsentVersionTests (Lotties.Domain.Tests) and consentVersions.test.ts (web) fail when they disagree. Add an entry at the end for every change of meaning of the terms, the privacy policy or the consent screen; never edit or remove one. material: everyone must accept again; false: a dismissible notice. textDigest: the digest of the texts at that version, checked only for the last entry (consentVersions.test.ts prints the new one).",
+  "versions": [
+    {
+      "version": "2026-10-27.1",
+      "terms": "1",
+      "privacyPolicy": "9",
+      "material": true,
+      "date": "2026-10-27",
+      "textDigest": "07985242fc37ac3f4517c313e4ff702f48bf98f380646dd8a6a218f012f8cbee"
+    },
+    {
+      "version": "2026-10-30.1",
+      "terms": "1",
+      "privacyPolicy": "10",
+      "material": false,
+      "date": "2026-10-30",
+      "textDigest": "c91b50834f2d15a89234d342f2198ab9952eaede1ef44de0742d1ff1a1a3f91b"
+    }
+  ]
+}

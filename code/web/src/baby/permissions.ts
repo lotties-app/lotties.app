@@ -1,4 +1,5 @@
 import type { Baby, BabyEvent } from '../db/models';
+import { SEGMENTS_KEY } from '../events/bottleSegments';
 import { PAUSE_KEYS, withPause, withResume } from '../timers/pauseMath';
 import { getOwn } from '../util/ownProperty';
 
@@ -138,8 +139,9 @@ function jsonEquivalent(left: unknown, right: unknown): boolean {
  * Whether `next` only stops, pauses or resumes the running `stored` event and fills what was empty:
  * the one change a Caregiver may make to someone else's entry (mirrors the API's
  * `RunningEventControl`). Same type, start and note; an end at or after the start and not past
- * `now` + 5 min (or still running); the pause keys may change; every other stored value that is not
- * empty (absent, `null`, `''`) stays.
+ * `now` + 5 min (or still running); the pause keys and a bottle's drinking stretches (`segments`,
+ * written at each pause and at the stop) may change; every other stored value that is not empty
+ * (absent, `null`, `''`) stays.
  */
 export function isRunningControlChange(
   stored: Pick<BabyEvent, 'typeId' | 'startedAt' | 'endedAt' | 'payload' | 'notes' | 'deletedAt'>,
@@ -157,6 +159,7 @@ export function isRunningControlChange(
   return Object.keys(stored.payload).every(
     (key) =>
       PAUSE_KEYS.includes(key) ||
+      key === SEGMENTS_KEY ||
       isEmptyValue(getOwn(stored.payload, key)) ||
       (Object.hasOwn(next.payload, key) &&
         jsonEquivalent(getOwn(stored.payload, key), getOwn(next.payload, key))),

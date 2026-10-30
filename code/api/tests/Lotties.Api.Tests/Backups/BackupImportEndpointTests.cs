@@ -128,6 +128,70 @@ public sealed partial class BackupImportEndpointTests(ApiFactory factory) : ICla
     }
 
     [Fact]
+    public async Task Restore_KeepsTheFussyOutcomeAndSuggestedCause()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var owner = factory.As(baby, BabyRole.Owner);
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FussyId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(10), payload = new { intensity = "moderate", what_helped = "burping", suggested_cause = "gas" } }).Ok();
+        var text = await owner.ExportTextAsync(baby.BabyId);
+        var restorer = factory.NewUser();
+
+        var report = await ReportAsync(await restorer.Restore(text));
+
+        Assert.Equal(0, report.IssueCount);
+        var events = (await (await restorer.GetAsync($"{BackupFixture.BabyPath(report.BabyId)}/events?limit=500").Ok()).Content.ReadFromJsonAsync<JsonArray>())!.OfType<JsonObject>();
+        var payload = events.Single(item => (Guid)item["typeId"]! == BuiltInEventTypes.FussyId)["payload"]!;
+        Assert.Equal(("moderate", "burping", "gas"), ((string?)payload["intensity"], (string?)payload["what_helped"], (string?)payload["suggested_cause"]));
+    }
+
+    [Fact]
+    public async Task Restore_KeepsTheCryDetectorMarks()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var owner = factory.As(baby, BabyRole.Owner);
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FussyId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(6), payload = new { auto_detected = true, cry_confirmed = true } }).Ok();
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FussyId, startedAt = BackupFixture.Start.AddHours(1), endedAt = BackupFixture.Start.AddHours(1).AddMinutes(4), payload = new { auto_detected = true } }).Ok();
+        var text = await owner.ExportTextAsync(baby.BabyId);
+        var restorer = factory.NewUser();
+
+        var report = await ReportAsync(await restorer.Restore(text));
+
+        Assert.Equal(0, report.IssueCount);
+        var events = (await (await restorer.GetAsync($"{BackupFixture.BabyPath(report.BabyId)}/events?limit=500").Ok()).Content.ReadFromJsonAsync<JsonArray>())!.OfType<JsonObject>();
+        var marks = events
+            .Where(item => (Guid)item["typeId"]! == BuiltInEventTypes.FussyId)
+            .OrderBy(item => (DateTimeOffset)item["startedAt"]!)
+            .Select(item => ((bool?)item["payload"]!["auto_detected"], (bool?)item["payload"]!["cry_confirmed"]))
+            .ToArray();
+        Assert.Equal([((bool?)true, (bool?)true), (true, null)], marks);
+    }
+
+    [Fact]
+    public async Task Restore_KeepsTheBottleSegments()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var owner = factory.As(baby, BabyRole.Owner);
+        await owner.PutAsJsonAsync(
+            $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
+            new { typeId = BuiltInEventTypes.FeedingId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(12), payload = new { method = "bottle", amount_ml = 120, amount_drunk_ml = 90, pause_count = 1, paused_seconds = 60, segments = "120>60@300;60>30@360" } }).Ok();
+        var text = await owner.ExportTextAsync(baby.BabyId);
+        var restorer = factory.NewUser();
+
+        var report = await ReportAsync(await restorer.Restore(text));
+
+        Assert.Equal(0, report.IssueCount);
+        var events = (await (await restorer.GetAsync($"{BackupFixture.BabyPath(report.BabyId)}/events?limit=500").Ok()).Content.ReadFromJsonAsync<JsonArray>())!.OfType<JsonObject>();
+        var payload = events.Single(item => (Guid)item["typeId"]! == BuiltInEventTypes.FeedingId && (string?)item["payload"]!["segments"] is not null)["payload"]!;
+        Assert.Equal(("120>60@300;60>30@360", 90d), ((string?)payload["segments"], (double)payload["amount_drunk_ml"]!));
+    }
+
+    [Fact]
     public async Task Restore_MakesTheImporterTheOnlyMemberAndTheAuthorOfEverything()
     {
         var rich = await factory.SeedRichBabyAsync();

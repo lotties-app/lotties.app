@@ -122,7 +122,7 @@ export interface DiaperSuggestionInput {
 
 /** The latest start (ms) of the past live diapers that pass `test`, or `undefined`. */
 function latestDiaper(
-  input: DiaperSuggestionInput,
+  input: DiaperEstimateInput,
   test: (event: BabyEvent) => boolean,
 ): number | undefined {
   const ids = typeIdsForKey(input.types, DIAPER_KEY);
@@ -165,7 +165,7 @@ function windowFrom(anchor: number, lower: number, median: number, upper: number
 
 /** The suggestion when now is from the lead before the expected time until the grace after it. */
 function dueSuggestion(
-  candidate: Omit<DiaperSuggestion, 'anchorAt'>,
+  candidate: DiaperEstimate,
   input: DiaperSuggestionInput,
 ): DiaperSuggestion | null {
   const { rule } = candidate.diaper;
@@ -178,24 +178,40 @@ function dueSuggestion(
   return { ...candidate, anchorAt };
 }
 
+/** The next diaper of a kind as estimated now, before the card's timing and "Not now". */
+export type DiaperEstimate = Omit<DiaperSuggestion, 'anchorAt'>;
+
+/** What the estimates read: the suggestion input without the dismissal. */
+export type DiaperEstimateInput = Omit<DiaperSuggestionInput, 'dismissedAnchor'>;
+
+/**
+ * The next wet diaper as estimated now (the wet gap anchored at the latest wet diaper, local or
+ * server), or `null` without a wet estimate (too few wet diapers). No timing gate: the ring's
+ * "next up" layer reads it whenever it is ahead.
+ */
+export function wetEstimate(input: DiaperEstimateInput): DiaperEstimate | null {
+  const diaper = diaperPredictionsOf(input.predictions);
+  const gap = diaper?.wet;
+  if (!diaper || !gap) return null;
+  const anchor = latestOf(parsed(gap.anchorAt), latestDiaper(input, isWetDiaper)) as number;
+  const window = windowFrom(anchor, gap.lowerGapMinutes, gap.medianGapMinutes, gap.upperGapMinutes);
+  return { kind: 'wet', signal: 'gap', window, diaper };
+}
+
 /**
  * The wet diaper card to show now, or `null`: no wet estimate (too few wet diapers), outside the
  * time (from 20 min before the expected wet diaper until 40 min after it), or "Not now" for this
  * anchor. Anchored at the latest wet diaper (local or server), so logging one hides it.
  */
 export function wetSuggestion(input: DiaperSuggestionInput): DiaperSuggestion | null {
-  const diaper = diaperPredictionsOf(input.predictions);
-  const gap = diaper?.wet;
-  if (!diaper || !gap) return null;
-  const anchor = latestOf(parsed(gap.anchorAt), latestDiaper(input, isWetDiaper)) as number;
-  const window = windowFrom(anchor, gap.lowerGapMinutes, gap.medianGapMinutes, gap.upperGapMinutes);
-  return dueSuggestion({ kind: 'wet', signal: 'gap', window, diaper }, input);
+  const estimate = wetEstimate(input);
+  return estimate ? dueSuggestion(estimate, input) : null;
 }
 
 /** The dirty diaper expected after the latest feed, when that signal applies now. */
 function afterFeedWindow(
   diaper: DiaperPredictionsDto,
-  input: DiaperSuggestionInput,
+  input: DiaperEstimateInput,
   lastDirty: number | undefined,
 ): DiaperWindow | null {
   const lag = diaper.dirty?.afterFeed;
@@ -213,23 +229,30 @@ function afterFeedWindow(
 }
 
 /**
- * The dirty diaper card to show now, or `null`. After the latest feed (when the lag after feeds
- * passed its gate on the server, the feed ended at most 3 hours ago and no dirty diaper came since)
- * the window is the usual lag after it; otherwise the gaps between dirty diapers, anchored at the
- * latest one. Same timing and "Not now" as the wet card.
+ * The next dirty diaper as estimated now, or `null`. After the latest feed (when the lag after
+ * feeds passed its gate on the server, the feed ended at most 3 hours ago and no dirty diaper came
+ * since) the window is the usual lag after it; otherwise the gaps between dirty diapers, anchored
+ * at the latest one. No timing gate (see `wetEstimate`).
  */
-export function dirtySuggestion(input: DiaperSuggestionInput): DiaperSuggestion | null {
+export function dirtyEstimate(input: DiaperEstimateInput): DiaperEstimate | null {
   const diaper = diaperPredictionsOf(input.predictions);
   const dirty = diaper?.dirty;
   if (!diaper || !dirty) return null;
   const lastDirty = latestOf(parsed(dirty.lastDirtyAt), latestDiaper(input, isDirtyDiaper));
   const afterFeed = afterFeedWindow(diaper, input, lastDirty);
-  if (afterFeed) {
-    return dueSuggestion({ kind: 'dirty', signal: 'afterFeed', window: afterFeed, diaper }, input);
-  }
+  if (afterFeed) return { kind: 'dirty', signal: 'afterFeed', window: afterFeed, diaper };
   const gap = dirty.gap;
   if (!gap) return null;
   const anchor = latestOf(parsed(gap.anchorAt), lastDirty) as number;
   const window = windowFrom(anchor, gap.lowerGapMinutes, gap.medianGapMinutes, gap.upperGapMinutes);
-  return dueSuggestion({ kind: 'dirty', signal: 'gap', window, diaper }, input);
+  return { kind: 'dirty', signal: 'gap', window, diaper };
+}
+
+/**
+ * The dirty diaper card to show now, or `null`: the dirty estimate (`dirtyEstimate`) with the same
+ * timing and "Not now" as the wet card.
+ */
+export function dirtySuggestion(input: DiaperSuggestionInput): DiaperSuggestion | null {
+  const estimate = dirtyEstimate(input);
+  return estimate ? dueSuggestion(estimate, input) : null;
 }

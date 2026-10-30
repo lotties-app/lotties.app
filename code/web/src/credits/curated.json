@@ -1,0 +1,182 @@
+{
+  "repository": "https://github.com/lotties-app/lotties.app",
+  "publicUrl": "https://lotties.app/credits",
+  "items": [
+    {
+      "id": "anvisa",
+      "kind": "data",
+      "name": "Anvisa and CMED open data",
+      "url": "https://dados.anvisa.gov.br/dados/",
+      "license": "Brazilian open data (Decree 8.777/2016): credit the source",
+      "licenseUrl": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2016/decreto/d8777.htm"
+    },
+    {
+      "id": "pni",
+      "kind": "data",
+      "name": "Calendário Nacional de Vacinação (Ministério da Saúde, PNI)",
+      "url": "https://www.gov.br/saude/pt-br/vacinacao/calendario",
+      "license": "CC BY-ND 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-nd/3.0/deed.pt_BR"
+    },
+    {
+      "id": "sbp",
+      "kind": "data",
+      "name": "Sociedade Brasileira de Pediatria (SBP)",
+      "url": "https://www.sbp.com.br/",
+      "license": "All rights reserved (only facts are used, with attribution)",
+      "licenseUrl": null
+    },
+    {
+      "id": "sbim",
+      "kind": "data",
+      "name": "Sociedade Brasileira de Imunizações (SBIm)",
+      "url": "https://sbim.org.br/",
+      "license": "All rights reserved (only facts are used, with attribution)",
+      "licenseUrl": null
+    },
+    {
+      "id": "agenormsSleep",
+      "kind": "data",
+      "name": "Infant sleep norms: National Sleep Foundation (2015), American Academy of Sleep Medicine (2016), SBP (2025), Galland et al. (2012), Iglowstein et al. (2003), Pelotas 2004 Birth Cohort (Netsi et al. 2017)",
+      "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md",
+      "license": "Pelotas cohort CC BY 4.0; the others all rights reserved (only facts are used, with attribution)",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": "agenormsFeeding",
+      "kind": "data",
+      "name": "Infant feeding norms: SBP Manual de Alimentação (2024), Ministério da Saúde Guia alimentar (2019), AAP HealthyChildren, Academy of Breastfeeding Medicine, Kent et al. (2006), MILQ Study (2025), WHO",
+      "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md",
+      "license": "MILQ Study CC BY 4.0; the others all rights reserved or site terms (only facts are used, with attribution)",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": "agenormsDiapersCrying",
+      "kind": "data",
+      "name": "Diaper and crying norms: UNICEF UK Baby Friendly checklist (via NHS), den Hertog et al. (2012), HELMi cohort (2024), Wolke et al. (2017)",
+      "url": "https://github.com/lotties-app/lotties.app/blob/main/docs/design/28-age-norms.md",
+      "license": "HELMi cohort CC BY 4.0; the others all rights reserved (only facts are used, with attribution)",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": "osm",
+      "kind": "data",
+      "name": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright",
+      "license": "ODbL 1.0",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/"
+    },
+    {
+      "id": "nominatim",
+      "kind": "service",
+      "name": "Nominatim (OpenStreetMap Foundation)",
+      "url": "https://nominatim.org/",
+      "license": "GPL-2.0 (software); results are OpenStreetMap data (ODbL)",
+      "licenseUrl": "https://operations.osmfoundation.org/policies/nominatim/"
+    },
+    {
+      "id": "brasilapi",
+      "kind": "service",
+      "name": "BrasilAPI",
+      "url": "https://brasilapi.com.br/",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/BrasilAPI/BrasilAPI/blob/main/LICENSE"
+    },
+    {
+      "id": "viacep",
+      "kind": "service",
+      "name": "ViaCEP",
+      "url": "https://viacep.com.br/",
+      "license": "Free public service",
+      "licenseUrl": null
+    },
+    {
+      "id": "keycloak",
+      "kind": "platform",
+      "name": "Keycloak",
+      "url": "https://www.keycloak.org/",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "id": "keycloakify",
+      "kind": "platform",
+      "name": "Keycloakify",
+      "url": "https://www.keycloakify.dev/",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/keycloakify/keycloakify/blob/main/LICENSE"
+    },
+    {
+      "id": "postgresql",
+      "kind": "platform",
+      "name": "PostgreSQL",
+      "url": "https://www.postgresql.org/",
+      "license": "PostgreSQL License",
+      "licenseUrl": "https://www.postgresql.org/about/licence/"
+    },
+    {
+      "id": "dotnet",
+      "kind": "platform",
+      "name": ".NET and ASP.NET Core",
+      "url": "https://dotnet.microsoft.com/",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/dotnet/aspnetcore/blob/main/LICENSE.txt"
+    },
+    {
+      "id": "buildtools",
+      "kind": "platform",
+      "name": "Vite, Vitest, TypeScript, ESLint and Prettier",
+      "url": "https://vite.dev/",
+      "license": "MIT, Apache-2.0 (TypeScript)",
+      "licenseUrl": null
+    },
+    {
+      "id": "webpush",
+      "kind": "platform",
+      "name": "Web Push and VAPID (IETF RFC 8030, 8291 and 8292)",
+      "url": "https://datatracker.ietf.org/doc/html/rfc8292",
+      "license": "Open standards",
+      "licenseUrl": null
+    },
+    {
+      "id": "fraunces",
+      "kind": "asset",
+      "name": "Fraunces (font)",
+      "url": "https://github.com/undercasetype/Fraunces",
+      "license": "OFL-1.1",
+      "licenseUrl": "https://openfontlicense.org/open-font-license-official-text/"
+    },
+    {
+      "id": "tabler",
+      "kind": "asset",
+      "name": "Tabler Icons",
+      "url": "https://tabler.io/icons",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/tabler/tabler-icons/blob/main/LICENSE"
+    },
+    {
+      "id": "yamnet",
+      "kind": "asset",
+      "name": "YAMNet sound classification model (Google), via MediaPipe Tasks Audio",
+      "url": "https://github.com/tensorflow/models/tree/master/research/audioset/yamnet",
+      "license": "Apache-2.0 (YAMNet and MediaPipe Tasks Audio)",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "id": "audioset",
+      "kind": "data",
+      "name": "AudioSet ontology (Google)",
+      "url": "https://research.google.com/audioset/ontology/index.html",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "id": "art",
+      "kind": "asset",
+      "name": "Lotties app icon and illustrations",
+      "url": "https://github.com/lotties-app/lotties.app",
+      "license": "AGPL-3.0, original work by the Lotties contributors",
+      "licenseUrl": "https://www.gnu.org/licenses/agpl-3.0.html"
+    }
+  ]
+}

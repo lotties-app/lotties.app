@@ -165,6 +165,7 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/vaccinations/${enc(vaccinationId)}`,
   vaccineProfile: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/vaccine-profile`,
   vaccineSchedule: () => `${API_PREFIX}/vaccine-schedule`,
+  ageNorms: () => `${API_PREFIX}/age-norms`,
   notes: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
   note: (babyId: string, noteId: string) =>
@@ -1468,6 +1469,12 @@ export interface ProductDto {
   source?: string | null;
   /** Additive: dosage text the official name carried (e.g. `0,9%`). */
   presentation?: string | null;
+  /**
+   * Additive: the strength as the source states it (e.g. `75 mg/mL`); `null`/absent when not known
+   * (the importer has not run since strengths were added, a combination, several strengths).
+   * Composition information, never a dose.
+   */
+  strengthText?: string | null;
   /** Additive: the official product left its registry; search no longer offers it. */
   inactive?: boolean;
   /**
@@ -1477,12 +1484,23 @@ export interface ProductDto {
   ambiguousName?: string | null;
 }
 
+/**
+ * How an alternative with the same active ingredient compares to the searched product. Only
+ * `equivalent` means the same ingredients, strength and known form.
+ */
+export type AlternativeLevel =
+  'equivalent' | 'differentForm' | 'strengthNotKnown' | 'differentStrength';
+
 export interface SiblingProductDto {
   id: string;
   name: string;
   form: ProductForm;
   country: string;
   status: string;
+  /** Additive: the strength as the source states it; `null`/absent when not known. */
+  strengthText?: string | null;
+  /** Additive: absent from older servers and offline lists, which read as `strengthNotKnown`. */
+  matchLevel?: AlternativeLevel | null;
 }
 
 export interface ProductMatchDto {

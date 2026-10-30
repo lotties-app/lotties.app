@@ -62,6 +62,7 @@ function useDoseReminderOffer(baby: Baby) {
       appointmentReminders: prefs?.appointmentReminders ?? true,
       doctorSuggestions: prefs?.doctorSuggestions ?? false,
       vaccineReminders: prefs?.vaccineReminders ?? false,
+      cryDetected: prefs?.cryDetected ?? false,
     },
   } as const;
 }

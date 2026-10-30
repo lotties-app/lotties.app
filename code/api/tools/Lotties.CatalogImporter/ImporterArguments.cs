@@ -34,6 +34,8 @@ internal sealed record ImporterArguments(
           --use-migrator             connect with DB_MIGRATOR_USER/DB_MIGRATOR_PASSWORD instead of DB_APP_USER/DB_APP_PASSWORD
           --help                     this text
 
+        Other command: "verify-curated" cross-checks the curated list against the cached ANVISA files (verify-curated --help).
+
         Database (not used by --dry-run): DB_HOST, DB_PORT, DB_NAME and DB_APP_USER/DB_APP_PASSWORD (or the migrator pair),
         the same variables as the API. Credentials are never printed.
         """;

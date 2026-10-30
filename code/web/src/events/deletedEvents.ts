@@ -13,6 +13,8 @@ export interface DeletedNotice {
   event: BabyEvent;
   /** Localized name of what was deleted ("Bottle", "Nap"). */
   name: string;
+  /** A night's automatic wake-up deleted with it (Undo restores both). */
+  wakeUp: BabyEvent | null;
 }
 
 let current: DeletedNotice | null = null;
@@ -22,9 +24,13 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((listener) => listener());
 
 /** Shows the notice for a just deleted event (replaces the previous one). */
-export function announceEventDeleted(event: BabyEvent, name: string): void {
+export function announceEventDeleted(
+  event: BabyEvent,
+  name: string,
+  wakeUp: BabyEvent | null = null,
+): void {
   counter += 1;
-  current = { id: counter, event, name };
+  current = { id: counter, event, name, wakeUp };
   emit();
 }
 

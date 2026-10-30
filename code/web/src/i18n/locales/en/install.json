@@ -1,0 +1,113 @@
+{
+  "install": {
+    "title": "Install Lotties",
+    "intro": "Lotties is a web app: you add it from the browser, no app store needed. Installed, it opens full screen from its own icon, like any other app.",
+    "native": "You are using the Lotties app. There is nothing to install.",
+    "installed": "You are already using the installed app.",
+    "storeNote": "If Lotties apps are offered in your phone's app store, they are an alternative to installing from the browser.",
+    "fullGuide": "See the full instructions",
+    "button": {
+      "install": "Install app",
+      "addToHomeScreen": "Add to Home Screen",
+      "howTo": "How to install",
+      "accepted": "Installing Lotties. Open it from its new icon.",
+      "dismissed": "Not installed. You can install it later from here."
+    },
+    "sheet": {
+      "titleIos": "Add Lotties to your Home Screen",
+      "title": "Install Lotties",
+      "iosHonest": "Apple does not let a website install itself on iPhone and iPad, so this takes three taps in the browser.",
+      "safariTip": "If you don't see Add to Home Screen, open lotties.app in Safari: it is the most reliable way.",
+      "close": "Close"
+    },
+    "guide": {
+      "iosSafari": {
+        "s1": "Tap the Share button (a square with an arrow pointing up). It is in the toolbar at the bottom of the screen; on newer iOS versions it may be under the More button (•••).",
+        "s1Tablet": "Tap the Share button (a square with an arrow pointing up) at the top right, next to the address bar.",
+        "s2": "Scroll down the list and tap Add to Home Screen.",
+        "s3": "Tap Add, then open Lotties from its new icon on your Home Screen."
+      },
+      "iosOther": {
+        "s1": "Tap the Share button, at the top right next to the address bar or inside the browser's menu."
+      },
+      "inApp": {
+        "s1": "This page is open inside another app. Tap that app's menu (often ••• at the top right).",
+        "s2": "Choose Open in browser: Safari on iPhone and iPad, Chrome on Android.",
+        "s3": "Then follow the steps for that browser."
+      },
+      "androidChrome": {
+        "s1": "Tap the menu (three dots) at the top right.",
+        "s2": "Tap Install app (on some phones it says Add to Home screen).",
+        "s3": "Tap Install, then open Lotties from your Home screen or app list."
+      },
+      "androidSamsung": {
+        "s1": "Tap the menu (three lines) at the bottom right.",
+        "s2": "Tap Add page to, then Home screen. If an install icon shows in the address bar, you can tap that instead.",
+        "s3": "Tap Add, then open Lotties from your Home screen."
+      },
+      "androidFirefox": {
+        "s1": "Tap the menu (three dots).",
+        "s2": "Tap Add to Home screen (it may say Install).",
+        "s3": "Confirm, then open Lotties from your Home screen."
+      },
+      "desktopChromium": {
+        "s1": "Look for the install icon at the right end of the address bar (a screen with a down arrow).",
+        "s2": "Click it, then click Install. No icon? Open the browser menu and look for Install Lotties (in Chrome under Cast, save and share; in Edge under Apps).",
+        "s3": "Lotties opens in its own window. You can pin it to the taskbar or the Dock."
+      },
+      "macSafari": {
+        "s1": "In the menu bar at the top of the screen, click File.",
+        "s2": "Click Add to Dock.",
+        "s3": "Click Add, then open Lotties from the Dock."
+      },
+      "unsupported": {
+        "s1": "This browser cannot install apps from a website.",
+        "s2": "Open lotties.app in Chrome or Edge (or Safari on a Mac) and install it from there."
+      }
+    },
+    "sections": {
+      "ios": "iPhone and iPad",
+      "android": "Android",
+      "desktop": "Computer",
+      "troubleshooting": "Troubleshooting"
+    },
+    "ios": {
+      "requirement": "Needs iOS or iPadOS 16.4 or later for notifications.",
+      "ipad": "On iPad, the Share button is at the top right, next to the address bar.",
+      "otherBrowsers": "On recent iOS versions, Chrome, Edge and Firefox can also add Lotties to the Home Screen from their Share menu. Safari is the most reliable.",
+      "whyTitle": "Why install on iPhone and iPad",
+      "why": "On iPhone and iPad, notifications only work in the app added to the Home Screen (iOS and iPadOS 16.4 or later), never in a browser tab. Safari can also delete what a website stores on the device after about a week without visits; the Home Screen app keeps it."
+    },
+    "android": {
+      "notifications": "After installing, allow notifications when Lotties asks, or turn them on later in Settings.",
+      "otherBrowsers": "Other browsers",
+      "samsung": "Samsung Internet",
+      "firefox": "Firefox"
+    },
+    "desktop": {
+      "chromium": "Chrome and Edge",
+      "safari": "Safari on a Mac"
+    },
+    "trouble": {
+      "iosMissingTitle": "I don't see Add to Home Screen (iPhone, iPad)",
+      "iosMissing": "Use the Share button of the browser itself, not a share button inside the page, and scroll the list down: the option is often below the first rows. Private Browsing hides it, so open a normal tab. Still missing? Open lotties.app in Safari.",
+      "androidMissingTitle": "The install option is missing (Android)",
+      "androidMissing": "Open the page in Chrome itself, not inside Instagram, Facebook or another app's browser: use that app's menu and choose Open in Chrome. If Lotties is already installed, the option does not show: look for it in your app list.",
+      "updateTitle": "How do I update?",
+      "update": "The installed app updates itself when you open it with internet. To check right away, open Hub, then Check for updates.",
+      "uninstallTitle": "How do I uninstall?",
+      "uninstall": "Phone or tablet: touch and hold the Lotties icon, then choose Remove App or Uninstall. Computer: open Lotties, open its menu in the title bar and choose Uninstall; on a Mac, drag Lotties out of the Dock and delete it from the Applications folder. What is stored only on this device goes with it; what has synced stays in your account."
+    },
+    "landing": {
+      "title": "Install on your phone",
+      "body": "Add Lotties to your iPhone or Android phone: it opens full screen from its own icon, and on iPhone that is how notifications work.",
+      "soon": "We want to publish Lotties on the App Store and Google Play, but that depends on the stores' approval, which is in progress. We are also preparing a direct install on Android, without the store. Meanwhile, on both Android and iPhone, Lotties works installed from the browser, as a PWA.",
+      "guide": "Step-by-step guide"
+    },
+    "publicNav": {
+      "back": "Back",
+      "home": "Home",
+      "brandHome": "Lotties home"
+    }
+  }
+}

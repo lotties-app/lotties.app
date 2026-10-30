@@ -1,0 +1,188 @@
+{
+  "selfHost": {
+    "title": "Rode o Lotties por conta própria",
+    "intro": "O Lotties é software livre e de código aberto (AGPL-3.0), então você pode rodar a sua própria cópia em um computador que você controla. Esta página explica o que isso exige e ajuda a escrever os dois arquivos de que você precisa.",
+    "responsibility": {
+      "title": "Sua cópia, sua responsabilidade",
+      "body": "Quem mantém o Lotties responde apenas pelos dados da instância que ele mesmo opera, o lotties.app, e pelos termos de privacidade publicados lá. Quando você roda a sua cópia, você é o operador: decide quem pode entrar, guarda os dados e os backups, responde às pessoas que a usam e publica os termos de privacidade que valem para a sua cópia. Nada do que você guardar chega aos mantenedores."
+    },
+    "notMedical": "O Lotties é um registro da rotina do bebê, não um aplicativo médico. Ele guarda o que você registra e não dá orientação médica.",
+    "need": {
+      "title": "Do que você precisa",
+      "intro": "Nada disso é exótico, mas tudo fica por sua conta:",
+      "server": "Um servidor, ou um computador que fique ligado, com Docker ou Podman e Compose.",
+      "domain": "Um nome de domínio e HTTPS na frente dele. O login e o modo offline do app só funcionam em endereço seguro.",
+      "oidc": "Um provedor de login OpenID Connect, como Keycloak, Authentik ou Auth0. O Lotties não guarda senhas; quem guarda é o provedor.",
+      "postgres": "Um banco PostgreSQL 16. O gerador abaixo pode incluir um em contêiner, ou você aponta para um banco que já mantém."
+    },
+    "steps": {
+      "title": "Como é o caminho",
+      "clone": "Baixe o código-fonte e abra a pasta dele.",
+      "client": "No seu provedor de login, crie um cliente público para aplicativo de página única, com os endereços de redirecionamento que o gerador mostra.",
+      "generate": "Preencha o formulário abaixo e coloque os dois arquivos gerados na raiz da pasta do código.",
+      "run": "Rode docker compose up --build (ou podman-compose up --build). A primeira construção leva alguns minutos.",
+      "proxy": "Coloque o seu proxy reverso com HTTPS na frente da porta web e abra o seu endereço no navegador."
+    },
+    "data": {
+      "title": "Onde ficam os dados",
+      "body": "Tudo fica no seu banco PostgreSQL: com o banco incluído, é o volume pgdata no seu servidor; com banco próprio, é onde ele estiver. O contêiner web não guarda nada. As contas de login ficam no seu provedor. Faça backup do banco e do arquivo .env; sem a senha do banco ninguém consegue ler o backup de volta."
+    },
+    "update": {
+      "title": "Atualizar",
+      "body": "Baixe o código-fonte mais novo e rode docker compose up --build de novo. Leia antes as notas da versão: algumas atualizações mudam o banco, e então é preciso aplicar as migrações (ou manter DB_AUTO_MIGRATE ligado) e fazer um backup do banco antes de começar. Os valores públicos abaixo são embutidos na construção, então mudar um deles também pede uma nova construção."
+    },
+    "more": {
+      "title": "Mais detalhes",
+      "intro": "O guia de implantação cobre o resto, no arquivo docs/DEPLOY.md do código-fonte:",
+      "deploy": "Guia de implantação",
+      "identity": "Configuração do provedor de login",
+      "proxy": "Proxy reverso e TLS",
+      "migrations": "Papéis do banco e migrações",
+      "push": "Notificações push",
+      "privacy": "Valores da política de privacidade"
+    },
+    "generator": {
+      "title": "Gerador de configuração",
+      "intro": "Digite seus valores e receba um arquivo .env e um docker-compose.yml. Tudo acontece nesta página, no seu aparelho: nada do que você digita ou gera é enviado, salvo ou registrado em lugar nenhum. Ao fechar ou recarregar a página, tudo some; por isso copie ou baixe os arquivos antes.",
+      "badge": {
+        "public": "Público",
+        "secret": "Secreto"
+      },
+      "badgeHelp": "Valores públicos são embutidos no app web e ficam visíveis para quem o abrir. Valores secretos ficam no servidor: nunca os compartilhe nem os coloque em um repositório.",
+      "groups": {
+        "site": "Seu site",
+        "signIn": "Provedor de login",
+        "database": "Banco de dados",
+        "push": "Notificações push",
+        "privacy": "Política de privacidade",
+        "other": "Outros"
+      },
+      "fields": {
+        "publicUrl": {
+          "label": "Endereço público",
+          "help": "Onde as pessoas vão abrir o app, como https://bebe.exemplo.com. Só é usado aqui, para mostrar os endereços de redirecionamento do seu provedor de login."
+        },
+        "webPort": {
+          "label": "Porta web",
+          "help": "A porta deste computador onde o app escuta (WEB_PORT). O seu proxy HTTPS encaminha para ela."
+        },
+        "oidcAuthority": {
+          "label": "Endereço do provedor de login (authority)",
+          "help": "O endereço do emissor, como https://id.exemplo.com/realms/casa no Keycloak. Precisa ser idêntico ao emissor dos tokens, com a barra final onde o seu provedor tiver."
+        },
+        "oidcClientId": {
+          "label": "Id do cliente",
+          "help": "O id do cliente público de página única que você criou no provedor."
+        },
+        "apiAudience": {
+          "label": "Audiência da API",
+          "help": "A audiência que a API exige nos tokens de acesso (AUTH_AUDIENCE). No Keycloak é o valor de um mapeador de audiência; no Auth0, o identificador da API."
+        },
+        "sendAudience": {
+          "label": "Pedir também a audiência ao entrar",
+          "description": "Ligue no Auth0, que precisa dela. Deixe desligado no Keycloak."
+        },
+        "dbMode": {
+          "label": "Banco de dados",
+          "bundled": "PostgreSQL incluído",
+          "external": "Meu próprio PostgreSQL"
+        },
+        "dbHost": {
+          "label": "Servidor do banco",
+          "help": "O nome ou endereço ao qual a API se conecta."
+        },
+        "dbPort": {
+          "label": "Porta do banco",
+          "help": "Normalmente 5432."
+        },
+        "dbName": {
+          "label": "Nome do banco",
+          "help": "Letras, dígitos e sublinhados."
+        },
+        "dbUser": {
+          "label": "Usuário do banco",
+          "help": "O papel que a API usa. Com o banco incluído, ele é criado para você."
+        },
+        "dbPassword": {
+          "label": "Senha do banco",
+          "help": "Gerada no seu navegador. Use-a para o papel acima. Você pode digitar a sua no lugar."
+        },
+        "autoMigrate": {
+          "label": "Criar e atualizar as tabelas quando a API iniciar",
+          "description": "Prático para uma cópia sua (DB_AUTO_MIGRATE). Desligue se você aplica as migrações por conta própria, com outro papel."
+        },
+        "corsOrigins": {
+          "label": "Outras origens permitidas",
+          "help": "Deixe vazio. Só é preciso se o app web for servido de um endereço diferente do da API. Separe os endereços por vírgulas."
+        },
+        "pushEnabled": {
+          "label": "Ligar as notificações push",
+          "description": "Lembretes enviados direto aos navegadores das pessoas, sem empresa de push no meio. Opcional."
+        },
+        "vapidPublicKey": {
+          "label": "Chave pública VAPID",
+          "help": "Enviada aos navegadores."
+        },
+        "vapidPrivateKey": {
+          "label": "Chave privada VAPID",
+          "help": "Assina os envios. Mantenha em segredo. Se você trocar o par, todo mundo precisa ligar as notificações de novo."
+        },
+        "vapidSubject": {
+          "label": "Contato para os serviços de push",
+          "help": "Um endereço mailto: ou https: pelo qual os serviços de push possam falar com você, como mailto:voce@exemplo.com."
+        },
+        "privacyControllerName": {
+          "label": "Quem é responsável pelos dados",
+          "help": "Uma pessoa ou empresa. Aparece na página de privacidade da sua cópia. Vazio mostra os mantenedores do projeto Lotties, o que estaria errado para a sua cópia: preencha."
+        },
+        "privacyContactEmail": {
+          "label": "Email de contato para pedidos de privacidade",
+          "help": "Aparece como link na página de privacidade da sua cópia."
+        },
+        "privacyDpo": {
+          "label": "Contato de proteção de dados (encarregado)",
+          "help": "Um nome, um email ou os dois, se as suas regras exigirem."
+        },
+        "repoUrl": {
+          "label": "Endereço do código-fonte",
+          "help": "Aparece como link no rodapé da página inicial. Vazio esconde. Se você alterar o código, a AGPL pede que você ofereça o código alterado aos seus usuários."
+        }
+      },
+      "optional": "Opcional",
+      "errors": {
+        "required": "Isto é necessário.",
+        "invalidUrl": "Digite um endereço web completo, como https://exemplo.com.",
+        "invalidHttpsUrl": "Use um endereço https://. Http simples só é aceito para localhost.",
+        "invalidPort": "Digite uma porta de 1 a 65535.",
+        "invalidHost": "Digite um nome de servidor ou um endereço IP, sem esquema nem porta.",
+        "invalidIdentifier": "Use letras, dígitos e sublinhados, começando por letra ou sublinhado.",
+        "invalidEmail": "Digite um email como nome@exemplo.com.",
+        "invalidOrigins": "Use endereços como https://exemplo.com, sem caminho, separados por vírgulas.",
+        "invalidSubject": "Use mailto:voce@exemplo.com ou um endereço https://.",
+        "tooLong": "Está longo demais (no máximo 200 caracteres).",
+        "controlCharacters": "Aqui não pode haver espaços nem quebras de linha."
+      },
+      "actions": {
+        "regenerate": "Gerar nova senha",
+        "generateKeys": "Gerar novo par de chaves",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "copyFailed": "Não foi possível copiar: selecione o texto e copie à mão.",
+        "download": "Baixar"
+      },
+      "output": {
+        "title": "Seus arquivos",
+        "incomplete": "Preencha os campos obrigatórios acima para ver seus arquivos.",
+        "envTitle": ".env",
+        "envHelp": "Vai na raiz da pasta do código. Contém segredos: mantenha privado.",
+        "composeTitle": "docker-compose.yml",
+        "composeHelp": "Vai ao lado dele. Só faz referência aos valores do .env e não guarda segredo. Até agora só foi revisado a olho, não executado: confira a primeira partida e avise se algo estiver errado.",
+        "providerTitle": "Ajustes do seu provedor de login",
+        "providerBody": "Crie um cliente público (sem segredo de cliente, código de autorização com PKCE) com:",
+        "callback": "Endereço de redirecionamento válido",
+        "logout": "Endereço de redirecionamento após sair",
+        "webOrigin": "Origem web"
+      }
+    }
+  }
+}

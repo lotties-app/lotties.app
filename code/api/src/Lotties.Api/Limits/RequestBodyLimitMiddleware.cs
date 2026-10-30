@@ -8,7 +8,7 @@ namespace Lotties.Api.Limits;
 /// <summary>
 /// Enforces the request body size limit of the matched endpoint (<see cref="RequestLimitsOptions.MaxRequestBodyBytes"/>,
 /// or <see cref="RequestLimitsOptions.ImportMaxRequestBodyBytes"/> for endpoints with
-/// <see cref="ImportRequestLimitsMetadata"/>): a declared <c>Content-Length</c> above it is rejected before the body is
+/// <see cref="ImportRequestLimitsMetadata"/>, the board limits for endpoints with <see cref="BoardRequestLimitsMetadata"/>): a declared <c>Content-Length</c> above it is rejected before the body is
 /// read, and the server limit is lowered to it so chunked bodies stop there too. Rejections are 413 problems with
 /// <c>code</c> <see cref="ErrorCode"/> and extension <see cref="MaxBytesExtension"/>.
 /// </summary>
@@ -39,9 +39,11 @@ internal sealed class RequestBodyLimitMiddleware(RequestDelegate next, IOptions<
     }
 
     private long LimitFor(Endpoint? endpoint) =>
-        endpoint?.Metadata.GetMetadata<ImportRequestLimitsMetadata>() is null
-            ? options.Value.MaxRequestBodyBytes
-            : options.Value.ImportMaxRequestBodyBytes;
+        endpoint?.Metadata.GetMetadata<BoardRequestLimitsMetadata>() is { } board
+            ? board.IsBulk ? options.Value.BoardBulkMaxRequestBodyBytes : options.Value.BoardMaxRequestBodyBytes
+            : endpoint?.Metadata.GetMetadata<ImportRequestLimitsMetadata>() is null
+                ? options.Value.MaxRequestBodyBytes
+                : options.Value.ImportMaxRequestBodyBytes;
 
     private static void ApplyServerLimit(HttpContext context, long limit)
     {

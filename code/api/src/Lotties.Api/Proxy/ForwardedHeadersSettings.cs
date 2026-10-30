@@ -1,4 +1,4 @@
-using ProxyNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
+using System.Net;
 
 namespace Lotties.Api.Proxy;
 
@@ -21,9 +21,9 @@ public sealed class ForwardedHeadersSettings
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>The entries that parse as CIDR networks.</summary>
-    public IReadOnlyList<ProxyNetwork> Networks() => Entries
+    public IReadOnlyList<IPNetwork> Networks() => Entries
         .Select(Parse)
-        .OfType<ProxyNetwork>()
+        .OfType<IPNetwork>()
         .ToArray();
 
     /// <summary>The entries that are not CIDR networks; non-empty fails startup.</summary>
@@ -31,5 +31,31 @@ public sealed class ForwardedHeadersSettings
         .Where(entry => Parse(entry) is null)
         .ToArray();
 
-    private static ProxyNetwork? Parse(string entry) => ProxyNetwork.TryParse(entry, out var network) ? network : null;
+    /// <summary>
+    /// CIDR notation read as the ASP.NET Core 8 parser (<c>Microsoft.AspNetCore.HttpOverrides.IPNetwork</c>, obsolete since
+    /// .NET 10) read it: bits set after the prefix are ignored, so <c>10.0.0.1/8</c> is <c>10.0.0.0/8</c>.
+    /// <see cref="IPNetwork.TryParse(string?, out IPNetwork)"/> rejects such an entry, which would fail a configuration that
+    /// started before the upgrade.
+    /// </summary>
+    private static IPNetwork? Parse(string entry)
+    {
+        var slash = entry.IndexOf('/');
+        if (slash < 0 || !IPAddress.TryParse(entry.AsSpan(0, slash), out var address) || !int.TryParse(entry.AsSpan(slash + 1), out var prefixLength))
+        {
+            return null;
+        }
+
+        var bytes = address.GetAddressBytes();
+        return prefixLength >= 0 && prefixLength <= bytes.Length * 8 ? new IPNetwork(new IPAddress(ClearHostBits(bytes, prefixLength)), prefixLength) : null;
+    }
+
+    private static byte[] ClearHostBits(byte[] bytes, int prefixLength)
+    {
+        for (var bit = prefixLength; bit < bytes.Length * 8; bit++)
+        {
+            bytes[bit / 8] &= (byte)~(0x80 >> (bit % 8));
+        }
+
+        return bytes;
+    }
 }

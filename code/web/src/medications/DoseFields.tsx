@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Box } from '@mui/material';
 import type { BodyWeightRow } from '../db/models';
-import { formatDate, formatNumber, formatUnit } from '../i18n/format';
+import { formatDate, formatNumber, formatMetricUnit } from '../i18n/format';
 import type { ProductForm } from '../sync/contract';
 import { ChipGroup, Field, NumberStepper, SwitchRow, TextInput } from '../ui/form';
 import { countedUnitForForm, countedUnitLabel, countedUnitOf } from './doseUnits';
@@ -88,7 +88,7 @@ export function DoseFields({ form, errors, weight, productForm = null, onChange 
           <Box sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
             {weight
               ? t('medications.editor.weightOnRecord', {
-                  weight: formatUnit(weight.kg, 'kilogram'),
+                  weight: formatMetricUnit(weight.kg, 'kilogram'),
                   date: formatDate(weight.date, 'dayMonthYear'),
                 })
               : t('medications.editor.noWeight')}
