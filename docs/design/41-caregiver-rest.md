@@ -183,3 +183,55 @@ holds them.
 4. ~~Where it goes~~ Decided: a tab in Insights, named "Rest" / "Descanso".
 5. Whether to ask the lawyer about a separate consent before phase 1 ships.
 6. ~~Whether phase 2 is wanted~~ Decided: yes, as phase 2 (watches, bands, rings); device-only or uploaded is decided then.
+
+## 11. Contract (fixed before building; workers follow it exactly)
+
+All routes are account-level under `/api/v1/me`, any signed-in person (no baby role, no scope), behind the consent gate.
+Times on the wire are UTC ISO 8601; `HH:mm` fields are local wall-clock in `timeZone` (an IANA id). Days are ISO
+numbers 1 (Monday) to 7 (Sunday). Errors: 400 `validation_failed` with the field name, as the unit settings do.
+
+**Settings** `GET` and `PUT /me/rest-settings` (PUT is the full state, idempotent; no row means the defaults below):
+
+```json
+{ "enabled": false, "timeZone": "UTC",
+  "workWindows": [ { "days": [1,2,3,4,5], "start": "08:00", "end": "17:00" } ],
+  "nightStart": "19:00", "nightEnd": "07:00",
+  "fallAsleepMinutes": 20, "wakeLeadMinutes": 20 }
+```
+
+Validation: valid IANA zone; at most 14 work windows; each has 1 to 7 distinct days and `start != end` (an `end` before
+`start` is an overnight window that belongs to the day it starts); minutes 5 to 60; `nightStart != nightEnd`.
+`DELETE /me/rest-settings` removes the settings and every morning answer (204).
+
+**Estimate** `GET /me/rest?night=YYYY-MM-DD` (`night` is the local date the night started; default: the latest night
+whose start is not in the future in the person's zone):
+
+```json
+{ "night": "2026-10-29", "status": "ok",
+  "parts": [ { "start": "2026-10-30T00:20:00Z", "end": "2026-10-30T04:50:00Z",
+               "startSource": "babyLog", "endSource": "ownEvent", "confidence": "normal" } ],
+  "askMorning": false,
+  "constants": { "fallAsleepMinutes": 20, "wakeLeadMinutes": 20 } }
+```
+
+`status`: `ok`, `notEnoughLog` (no baby sleep inside the night window: `parts` empty) or `disabled` (feature off: no
+read of any event). `end` is `null` while ongoing (`endSource: "ongoing"`). `startSource`: `babyLog` (R1/R3 from a
+baby sleep) or `workWindowEnd`. `endSource`: `ownEvent` (R2/R5), `confirmed` (the morning answer), `babyFinalWake`,
+`workWindow`, `ongoing`. `confidence`: `normal` or `low` (`babyFinalWake` is always low). `askMorning` is true when R5
+applies and the person has not answered that night.
+
+**Morning answer** `PUT /me/rest/morning` body `{ "night": "2026-10-29", "upAt": "2026-10-30T06:40:00Z" }` (204; replaces
+an earlier answer for that night). `upAt` must be after the night start minus 12 hours and not more than 5 minutes in
+the future. "Not yet" is client-only (no call).
+
+**Tables** (migration `CaregiverRest`): `user_rest_settings` (user_id PK and FK to users, enabled, time_zone,
+work_windows jsonb, night_start, night_end, fall_asleep_minutes, wake_lead_minutes, updated_at) and `user_rest_mornings`
+(user_id, night date, up_at; PK user_id + night). Both: erased with the account, never in the backup, the sync, a
+log line or an assistant answer.
+
+**Domain** (`Lotties.Domain.Rest`, pure, no I/O): `RestEstimator.Estimate(RestInput)` takes the settings, the person's
+account id, the night, the morning answer if any, and the baby events of every baby the person belongs to as plain
+records (baby id, is-baby-sleep, started, ended, created by, created at, imported); it returns the same shape as the
+estimate response. Events imported from a file, events backfilled more than 15 minutes after they started, and events
+by a person other than the one asked about do not count as that person's own events (R2, R4, R5); all baby sleep events
+count for R1 and R3 whoever logged them.
