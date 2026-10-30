@@ -105,6 +105,8 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["user_consent_history.user_id"] = Rule.Erase,
         ["user_consents.user_id"] = Rule.Erase,
         ["user_notification_settings.user_id"] = Rule.Erase,
+        ["user_rest_mornings.user_id"] = Rule.Erase,
+        ["user_rest_settings.user_id"] = Rule.Erase,
         ["user_unit_settings.user_id"] = Rule.Erase,
         ["vaccinations.created_by"] = Rule.KeepForTheFamily,
     };
@@ -444,6 +446,17 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
     private async Task SeedPersonalRecordsAsync(HttpClient client, Guid babyId, Guid userId)
     {
         await client.PutAsJsonAsync("/api/v1/me/unit-settings", new { system = "us" }).Ok();
+        await client.PutAsJsonAsync("/api/v1/me/rest-settings", new
+        {
+            enabled = true,
+            timeZone = "UTC",
+            workWindows = new[] { new { days = new[] { 1, 2 }, start = "08:00", end = "17:00" } },
+            nightStart = "19:00",
+            nightEnd = "07:00",
+            fallAsleepMinutes = 20,
+            wakeLeadMinutes = 20,
+        }).Ok();
+        await client.PutAsJsonAsync("/api/v1/me/rest/morning", new { night = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd"), upAt = DateTimeOffset.UtcNow.AddHours(-1) }).Ok();
         await client.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics" }).Ok();
         if (!(await client.PutAsJsonAsync("/api/v1/me/assistant-settings", new { defaultBabyId = babyId })).IsSuccessStatusCode)
         {
