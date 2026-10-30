@@ -18,6 +18,7 @@ export const privacyPtBR: PolicyDocument = {
           'O que você e as pessoas que você convida registram sobre o bebê, inclusive informações de saúde, como remédios e vacinas.',
           'O que o serviço precisa para funcionar: as configurações de lembretes, se você ativá-los, e registros técnicos.',
           'Se você ligar o Monitor de choro: o microfone, analisado só no seu aparelho e nunca gravado; só ficam salvos os períodos de choro detectados.',
+          'Se você ligar a estimativa de descanso, que é opcional: seus horários de trabalho e da noite e o fuso horário; a estimativa é calculada quando você pede, aparece só para você e nunca é guardada.',
         ],
       },
       {
@@ -176,6 +177,14 @@ export const privacyPtBR: PolicyDocument = {
               ],
             },
             {
+              id: 'rest',
+              cells: [
+                'Estimativa de descanso (opcional, desligada por padrão)',
+                'Só se você ligar a estimativa de descanso para você nos Ajustes: seus horários de trabalho, o horário da noite, o fuso horário e dois números de minutos que você pode mudar e, se você escolher responder "Você já levantou?", o horário em que disse que levantou naquela noite. Quando você abre a estimativa, o nosso servidor lê o registro do bebê (os sonos e os outros registros da noite) e calcula uma faixa aproximada de quando você pode ter descansado. A estimativa aparece só para você, não é guardada em lugar nenhum e não aparece para outros membros, para o dono, para médicos, para assistentes de voz, nem em exportações ou cópias. É um palpite feito a partir do registro do bebê, não uma medição do seu corpo, e nenhuma outra empresa participa.',
+                'Para mostrar a você, e só a você, uma estimativa aproximada de como a noite com o bebê pode ter sido para você.',
+              ],
+            },
+            {
               id: 'technical',
               cells: [
                 'Registros técnicos (logs)',
@@ -240,6 +249,7 @@ export const privacyPtBR: PolicyDocument = {
             'Informações de saúde do seu bebê (dados sensíveis): seu consentimento para essa finalidade (art. 11, I). Você o dá ao escolher registrar essas informações no app, para manter o histórico da criança. Você pode revogá-lo quando quiser, apagando esses registros ou a sua conta.',
             'Compartilhamento com um médico que você convida: seu consentimento específico, dado ao criar o convite e escolher as seções que o médico verá (art. 11, I). Você pode mudar as seções ou encerrar o acesso a qualquer momento.',
             'Recursos opcionais que você ativa (lembretes, a skill da Alexa, a busca de endereço): seu consentimento (art. 7º, I, e art. 11, I quando o lembrete for de um remédio ou de uma vacina). Para revogá-lo, desative o recurso ou desvincule a skill.',
+            'A estimativa de descanso: seu consentimento, dado quando você a liga para você nos Ajustes, porque ela pode revelar quando você trabalha e descansa (art. 7, I, e art. 11, I, por poder ser lida como informação de saúde). Ninguém pode ligá-la por você. Você a revoga desligando-a, e pode apagar os ajustes e as respostas ali mesmo.',
             'O Monitor de choro: seu consentimento específico, pedido em cada aparelho antes de ligar, a um membro que pode registrar para o bebê (art. 11, I, e art. 14, § 1º). Você o revoga na página do monitor; os períodos já registrados continuam como registros comuns até você apagá-los.',
             'Registros técnicos e proteção do serviço: nosso legítimo interesse em mantê-lo funcionando e seguro (art. 7º, IX), limitado ao necessário e sem usar informações de saúde.',
             'Quando a lei ou uma autoridade exigir que guardemos ou entreguemos dados: cumprimento de obrigação legal (art. 7º, II, e art. 11, II, a).',
@@ -415,7 +425,7 @@ export const privacyPtBR: PolicyDocument = {
                 'Baixar uma cópia: [Central > Exportar dados](/hub/export) baixa um arquivo completo e legível de um bebê (Titulares e Responsáveis), que outro servidor Lotties pode importar. Em [Ajustes > Conta e dados](/settings#account), Baixar meus dados salva o que este aparelho tem. Um profissional de saúde encontra a opção na área do médico, [Ajustes > Conta e dados](/doctor/settings#account): seu perfil profissional e as notas, sugestões e medidas que registrou.',
                 'Apagar registros: um registro apagado some na hora em todos os aparelhos. O servidor o mantém oculto, para que todos os aparelhos fiquem sabendo da exclusão, até o bebê ou a sua conta serem excluídos; se você precisar que ele seja eliminado antes, fale com a gente.',
                 'Parar de compartilhar: o titular remove membros e médicos em [Central > Membros e papéis](/hub/family), onde qualquer pessoa também pode sair de um bebê.',
-                'Revogar o consentimento de recursos opcionais: desative as notificações em [Ajustes](/settings#notifications), desvincule a skill no app Alexa, mude ou encerre o acesso de um médico em [Central > Acesso do médico](/hub/family#doctor-access) e retire o consentimento do Monitor de choro na página dele, [Central > Monitor de choro](/hub/cry-monitor), em cada aparelho.',
+                'Revogar o consentimento de recursos opcionais: desative as notificações em [Ajustes](/settings#notifications), desvincule a skill no app Alexa, mude ou encerre o acesso de um médico em [Central > Acesso do médico](/hub/family#doctor-access) desligue a estimativa de descanso ou apague os dados dela nos [Ajustes](/settings), e retire o consentimento do Monitor de choro na página dele, [Central > Monitor de choro](/hub/cry-monitor), em cada aparelho.',
                 'Excluir sua conta: [Ajustes > Conta e dados](/settings#account) > Excluir minha conta (na área do médico, [Ajustes > Conta e dados](/doctor/settings#account)). Bebês que só você usa são apagados com todos os registros. Em um bebê que outras pessoas mantêm, seu acesso termina; suas notas privadas, lembretes e perfil de médico são apagados; e o que você adicionou continua para elas sob o nome "Former member" (ex-membro). Se você for o único titular de um bebê que outras pessoas usam, torne outra pessoa titular antes.',
                 'Sua conta de acesso no nosso servidor de login é excluída junto com seus dados quando o nosso servidor está configurado para isso, e o app diz antes da confirmação se ela será. Quando não está configurado, ou o servidor de login não responde naquele momento, seus dados são apagados mesmo assim, o app avisa que a conta de acesso continua (ela não guarda dados de bebês), e você pode nos pedir a remoção.',
               ],
@@ -446,6 +456,7 @@ export const privacyPtBR: PolicyDocument = {
             'O que você adicionou a um bebê que outras pessoas mantêm: continua com esse bebê depois que você sai ou exclui sua conta, sem o seu nome.',
             'Sua conta de login: até você excluir sua conta.',
             'Sua escolha de unidades de medida: até você mudá-la ou excluir sua conta.',
+            'Os ajustes da estimativa de descanso e os horários de "já levantei" que você respondeu: até você mudá-los, desligar a estimativa e apagá-los ali, ou excluir sua conta. A estimativa em si nunca é guardada.',
             'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
             'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',

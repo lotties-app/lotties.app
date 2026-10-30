@@ -22,6 +22,7 @@ export const DATA_CATEGORY_IDS = [
   'notifications',
   'cryMonitor',
   'assistants',
+  'rest',
   'technical',
   'device',
   'backups',

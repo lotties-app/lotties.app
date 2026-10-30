@@ -17,6 +17,7 @@ export const privacyEn: PolicyDocument = {
           'What you and the people you invite record about your baby, including health information such as medicines and vaccines.',
           'What the service needs to work: reminder settings if you turn reminders on, and technical logs.',
           'If you start the Cry monitor: the microphone, analysed only on your device and never recorded; only the crying spells it detects are saved.',
+          'If you turn on the optional rest estimate: your work and night windows and time zone; the estimate is worked out when you ask, shown only to you and never stored.',
         ],
       },
       {
@@ -172,6 +173,14 @@ export const privacyEn: PolicyDocument = {
               ],
             },
             {
+              id: 'rest',
+              cells: [
+                'Rest estimate (optional, off by default)',
+                'Only if you turn on the rest estimate for yourself in Settings: your work windows, your night window, your time zone and two numbers of minutes you can change, and, if you choose to answer "Are you up for the day?", the time you said you got up that night. When you open the estimate, our server reads the log of the baby (the sleep entries and the other entries of the night) and works out a rough range of when you may have rested. The estimate is shown only to you, is not stored anywhere, and is not shown to other members, the owner, a doctor, voice assistants, exports or backups. It is a guess made from the baby\'s log, not a measurement of your body, and no other company takes part.',
+                'To show you, and only you, a rough estimate of how a night with the baby may have gone for you.',
+              ],
+            },
+            {
               id: 'technical',
               cells: [
                 'Technical logs',
@@ -236,6 +245,7 @@ export const privacyEn: PolicyDocument = {
             "Health information about your baby (sensitive data): your consent for this purpose (art. 11, I). You give it when you choose to record that information in the app, to keep your child's log. You can withdraw it at any time by deleting those records or your account.",
             'Sharing with a doctor you invite: your specific consent, given when you create the doctor invite and choose the sections the doctor sees (art. 11, I). You can change the sections or end the access at any time.',
             'Optional features you turn on (reminders, the Alexa skill, the address search): your consent (art. 7, I, and art. 11, I when a reminder is about a medicine or a vaccine). You withdraw it by turning the feature off or unlinking the skill.',
+            'The rest estimate: your consent, given when you turn it on for yourself in Settings, as it can reveal when you work and rest (art. 7, I, and art. 11, I as it may be read as health information). Nobody can turn it on for you. You withdraw it by turning it off, and you can delete its settings and answers there.',
             "The Cry monitor: your specific consent, asked on each device before it starts, from a member who may log for the baby (art. 11, I, and art. 14, §1). You withdraw it on the monitor's page; the spells already logged stay as ordinary records until you delete them.",
             'Technical logs and protecting the service: our legitimate interest in keeping it running and safe (art. 7, IX), limited to what that needs and never using health information.',
             'When the law or an authority requires us to keep or hand over data: compliance with a legal obligation (art. 7, II, and art. 11, II, a).',
@@ -411,7 +421,7 @@ export const privacyEn: PolicyDocument = {
                 'Download a copy: [Hub > Export data](/hub/export) downloads a complete, readable file of one baby (Owners and Parents), which another Lotties server can import. In [Settings > Account and data](/settings#account), Download my data saves what this device holds. A health professional finds it in the doctor area, [Settings > Account and data](/doctor/settings#account): her professional profile and the notes, suggestions and measurements she recorded.',
                 'Delete entries: a deleted entry disappears at once on every device. The server keeps it hidden, so that every device learns of the deletion, until the baby or your account is deleted; ask us if you need it erased sooner.',
                 'Stop sharing: the owner removes members and doctors in [Hub > Members and roles](/hub/family), where anyone can also leave a baby.',
-                "Withdraw consent for optional features: turn notifications off in [Settings](/settings#notifications), unlink the skill in the Alexa app, change or end a doctor's access in [Hub > Doctor access](/hub/family#doctor-access), and withdraw the Cry monitor's consent on its page, [Hub > Cry monitor](/hub/cry-monitor), on each device.",
+                "Withdraw consent for optional features: turn notifications off in [Settings](/settings#notifications), unlink the skill in the Alexa app, change or end a doctor's access in [Hub > Doctor access](/hub/family#doctor-access), turn the rest estimate off or delete its data in [Settings](/settings), and withdraw the Cry monitor's consent on its page, [Hub > Cry monitor](/hub/cry-monitor), on each device.",
                 'Delete your account: [Settings > Account and data](/settings#account) > Delete my account (in the doctor area, [Settings > Account and data](/doctor/settings#account)). Babies only you use are erased with all their records. On a baby other people keep, your access ends; your private notes, reminders and doctor profile are deleted; and what you added stays for them under the name "Former member". If you are the only owner of a baby others use, make someone else an owner first.',
                 'Your sign-in account at our sign-in server is deleted together with your data when our server is set up to do it, and the app says before you confirm whether it will be. When it is not set up, or the sign-in server cannot be reached at that moment, your data is still erased, the app tells you that the sign-in account remains (it holds no baby data), and you can ask us to remove it.',
               ],
@@ -442,6 +452,7 @@ export const privacyEn: PolicyDocument = {
             'What you added to a baby other people keep: stays with that baby after you leave or delete your account, without your name.',
             'Your sign-in account: until you delete your account.',
             'Your measurement unit choice: until you change it or delete your account.',
+            'Your rest estimate settings and the "I am up" times you answered: until you change them, turn the estimate off and delete them there, or delete your account. The estimate itself is never kept.',
             'Reminders: the delivery record for 14 days; snooze and dismiss choices for 7 days after the last change. A device that does not open the app for 90 days stops getting reminders, and the push address of a device that was switched off is deleted 30 days later.',
             'Doctor access log and invites: kept with the baby until it is erased.',
             'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
