@@ -1,5 +1,11 @@
 # Deploying Lotties
 
+This guide is for anyone running their own copy of Lotties. `lotties.app` is only the instance the maintainers run: they are
+responsible for the data on that instance and for the privacy terms published there. On your own copy you are the operator,
+responsible for your data, your backups and your privacy terms (see "Privacy policy" below). The web app has a public page,
+`/self-host`, that explains this and generates a `.env` and a `docker-compose.yml` from typed values in the browser
+(docs/design/39-self-hosting-page.md); this guide is the reference behind it.
+
 The stack is two containers behind your own reverse proxy (or exposed directly for testing):
 
 ```
@@ -507,8 +513,9 @@ Logs carry item and key ids, the actor kind and result codes only (never a secre
 
 ## Privacy policy
 
-The public policy is the web route `/privacy` (https://lotties.app/privacy; also Hub > Privacy policy and
-`/doctor/privacy`). Its text is in `code/web/src/legal/privacy.en.ts` and `privacy.pt-BR.ts`, the facts behind it in
+The public policy is the web route `/privacy` (https://lotties.app/privacy for the maintainers' instance; every copy serves its own
+at `/privacy`; also Hub > Privacy policy and `/doctor/privacy`). The shipped text describes the maintainers' instance: an operator
+of another copy is the controller of that copy and must review the policy text for it, and set the three values below. Its text is in `code/web/src/legal/privacy.en.ts` and `privacy.pt-BR.ts`, the facts behind it in
 `docs/design/33-privacy-audit.md`, and what the owner must still decide in `docs/PRIVACY-OWNER-CHECKLIST.md`. Three
 public build values name who is responsible; they are contact details the owner chooses to publish, never secrets:
 
