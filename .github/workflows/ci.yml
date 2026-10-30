@@ -15,10 +15,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Runner: the repository variable CI_RUNNER (Settings > Secrets and variables > Actions > Variables) names the label of a
+  # self-hosted runner; unset, every job runs on GitHub's ubuntu-latest.
   # Decides which suites a change needs. Pushes to main always run everything. The two sides share files:
   # the API tests read the vectors and registry under code/web/src, the web tests read code/api/data.
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     outputs:
       api: ${{ steps.diff.outputs.api }}
       web: ${{ steps.diff.outputs.web }}
@@ -47,7 +49,7 @@ jobs:
     name: api (${{ matrix.shard }})
     needs: changes
     if: needs.changes.outputs.api == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -90,7 +92,7 @@ jobs:
   web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -115,7 +117,7 @@ jobs:
     name: web test (${{ matrix.shard }}/5)
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -136,7 +138,7 @@ jobs:
   ci-ok:
     if: always()
     needs: [changes, api, web, web-test]
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
