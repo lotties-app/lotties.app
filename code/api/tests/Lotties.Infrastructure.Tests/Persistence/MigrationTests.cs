@@ -89,6 +89,7 @@ public sealed class MigrationTests
         "20261027013822_AssistantSayBabyName",
         "20261027022418_AssistantSayMedicineNames",
         "20261027031353_Consent",
+        "20261030104625_CaregiverRest",
     ];
 
     [Fact]
