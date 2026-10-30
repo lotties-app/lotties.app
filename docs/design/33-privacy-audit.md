@@ -59,6 +59,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | 21 | Cry monitor (2026-10-24, section 12) | **on the device only**: the microphone signal while the monitor page listens, analysed in memory (AudioWorklet and a worker) and discarded at once, never recorded, stored or sent; **saved**: fussy spells with `auto_detected` (rows of category 4) and the parent's `cry_confirmed` answer; **device**: the consent (`{version, at}`) and the sensitivity | notice crying, log it, alert opted-in family members | Consent-H (specific, per device, art. 11, I and art. 14, §1) `OWNER TO CONFIRM` with the lawyer | the spells as row 4; nothing of the sound reaches anyone | spells as row 4; consent until withdrawn or sign-out | withdraw on the page; spells as row 4 | spells as row 4 |
 | 22 | Measurement unit setting (`user_unit_settings`, 2026-10-25, policy 6, docs/design/37-measurement-units.md) | one text value per user (`auto`, `metric` or `us`) and the time it changed; not sensitive, no baby data | show, say (voice) and accept amounts in ml or fl oz, kg or lb, cm or in, degrees C or F; storage of every record stays metric | Contract (the service the user asked for) | the user | until changed or account deletion | account deletion (`EfAccountDataEraser`, a rule and a fixture row in `AccountErasureTests`); never in the baby backup file | no |
 | 23 | Consent records (`user_consents`, `user_consent_history`, 2026-10-27, policy 9, docs/design/38-consent-and-terms.md) | per person and kind (`core`, `push`, `alexa`, `mcp`): internal user id, the consent version (the pair terms version + policy version), when it was given or withdrawn, the language of the text she read and, for the core consent, the capacity she declared (the child's parent or legal guardian, or an adult they authorised); an append-only history line for each grant or withdrawal. **No IP address, no device data**; not baby data | to show that a person consented to the terms and the policy before any baby data was reached, to ask again after a material change, to keep the optional choices (reminders, Alexa, AI assistants) | Legal / Contract (proof of the consent that is the basis of the health data: art. 11, I, art. 14, §1; `OWNER TO CONFIRM`) | the person herself (`GET /me/consents`, Settings > Privacy and data); the server uses the core record to gate every baby route | until the account is deleted (a minimal proof kept after deletion is a question for the lawyer, docs/PRIVACY-LAWYER-BRIEF.md) | erased by account deletion (`EfAccountDataEraser`, rules in `AccountErasureTests`) | shown in Settings > Privacy and data; a request to the contact |
+| 24 | Caregiver rest estimate (`user_rest_settings`, `user_rest_mornings`, 2026-10-30, policy 10, docs/design/41-caregiver-rest.md; **off by default for everyone**) | per person: on/off, time zone, work windows, night window, two minute values; optionally one "I am up" time per night. The **estimate is not data held**: the server computes it on request from the baby's log (rows of categories 4 and 5), returns it only to the caller and stores it nowhere. It can say when an adult works and rested, so it may be read as health-adjacent | show the person, and only her, a rough range of when she may have rested | Consent (art. 7, I; art. 11, I if read as health data) given by the person's own toggle, `OWNER TO CONFIRM` with the lawyer whether a separate explicit consent is needed (doc 41 sections 6 and 10 item 5) | the person herself only; never another member, the Owner, a Doctor, an assistant (Alexa, MCP), the backup file, the sync or a log line; no third party, nothing leaves our infrastructure | until changed, deleted by the person, or account deletion | `DELETE /me/rest-settings` (settings and every morning answer); account deletion (`EfAccountDataEraser`, rules and fixture rows in `AccountErasureTests`); never in the baby backup | no |
 
 ## 3. Third parties and requests that leave our servers
 
@@ -128,7 +129,7 @@ explains the token choice.
   prescriptions, medications, custom event types, invites, notification actions, deliveries, preferences, members and
   the baby row; on kept babies her note reads, private notes, pending proposals, unaccepted invites, preferences and
   membership go, and what she added for the family stays under the anonymized row; then her deliveries, actions, push
-  subscriptions, notification settings, professional profile, assistant settings, unit setting, consent records and history, and the `created_by` of catalog
+  subscriptions, notification settings, professional profile, assistant settings, unit setting, rest settings and morning answers, consent records and history, and the `created_by` of catalog
   products she added; her consent records and their history, the user row is anonymized. Every column of the model that points at a baby or a user has a rule
   in `code/api/tests/Lotties.Api.Tests/Endpoints/AccountErasureTests.cs` (model-driven: a new one fails the test), and
   the test erases a fixture with a row in every such table (alone on a baby; Owner, Parent, Caregiver, Viewer and
@@ -301,3 +302,15 @@ not offer the monitor today.
 - **Policy**: the privacy policy (version 9) has a "Your consent and the terms of use" section and a data row; the terms
   of use are public at `/terms` (version 1).
 
+## 14. Caregiver rest estimate (2026-10-30, policy 10, docs/design/41-caregiver-rest.md)
+
+- **What is stored** (inventory row 24): the person's own settings (`user_rest_settings`) and optional morning answers
+  (`user_rest_mornings`). Not stored: the estimate, which is recomputed on each request from the baby's log.
+- **Who sees it**: only the person. Not another member, the Owner, a Doctor, an assistant, the sync, the export or the
+  backup file; the work windows and the estimate never appear in a log line.
+- **Default and consent**: off for everyone; each person turns it on for herself. The policy lists it as an optional
+  feature with its own legal-basis line, retention line and withdrawal path (turn it off, delete its data, or delete the
+  account). The feature stays off for everyone until the owner settles the lawyer question on a separate consent.
+- **Third parties**: none. **Consent version**: a `minor` entry (`2026-10-30.1`, policy 10): the feature is off, opt-in
+  and adds no recipient, so the policy change is a notice, not a new acceptance for everyone; the owner may promote it
+  to material after the lawyer answers (a later entry, never an edit).
