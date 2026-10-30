@@ -194,7 +194,7 @@ internal sealed class RestSettingsService(
     }
 
     /// <summary>The instant the night starts: the local date at the person's night start, in her zone.</summary>
-    private static DateTimeOffset NightStartUtc(DateOnly night, RestSettingsValues settings)
+    internal static DateTimeOffset NightStartUtc(DateOnly night, RestSettingsValues settings)
     {
         var zone = TimeZoneInfo.FindSystemTimeZoneById(settings.TimeZone);
         var local = night.ToDateTime(settings.NightStart, DateTimeKind.Unspecified);

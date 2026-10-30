@@ -266,6 +266,7 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["PUT /api/v1/me/rest-settings"] = Access.SignedIn,
         ["DELETE /api/v1/me/rest-settings"] = Access.SignedIn,
         ["PUT /api/v1/me/rest/morning"] = Access.SignedIn,
+        ["GET /api/v1/me/rest"] = Access.SignedIn, // reads baby events only of the caller own non-Doctor memberships and answers only for her
 
         // Consent (docs/design/38-consent-and-terms.md): the caller's own consent records; any signed-in user, Doctor included, and
         // open to a person who has not consented yet (ConsentGateCoverageTests lists every route that is exempt from the gate).
