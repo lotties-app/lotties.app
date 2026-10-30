@@ -76,6 +76,9 @@ jobs:
       # First-party actions pinned to a major tag.
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
+        env:
+          # The self-hosted runner is not root: the default /usr/share/dotnet cannot be created.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
         with:
           dotnet-version: 10.0.x
           cache: true
