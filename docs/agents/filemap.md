@@ -43,6 +43,7 @@
 - docs/TRIAGE.md — labels and triage flow, how public issues map to the board
 - docs/graphify/ — graphify output (gitignored)
 - code/api/src/Lotties.Domain/ — entities and rules (Babies, Events, EventTypes, Measurements, Medications, Users, Exceptions, Common)
+- code/api/src/Lotties.Domain/Rest/ — caregiver rest estimate (design 41): RestSettings (+ validation), RestEvent/RestInput/RestNight/RestPart, pure RestEstimator.Estimate (R1-R6); tests in Lotties.Domain.Tests/Rest
 - code/api/src/Lotties.Infrastructure/Persistence/ — DbContext, entity configurations, converters, design-time factory, Migrations/
 - code/api/src/Lotties.Infrastructure/Persistence/AutoMigration/ — opt-in startup migration (`DB_AUTO_MIGRATE`): DatabaseMigrationSettings (flag parsing, env alias), IDatabaseMigrator + NpgsqlDatabaseMigrator (advisory lock wait/timeout, pending/applied/duration logs), NpgsqlMigrationSession(+Factory) (unpooled migrator-role connection, pg_try_advisory_lock), StartupDatabaseMigration (skips when off or non-PostgreSQL, fails startup on error); DatabaseMigrationServiceCollectionExtensions.AddDatabaseMigration; called from ApiHostExtensions.MigrateDatabaseIfEnabledAsync in Program.cs. No SQL script is checked in (DEPLOY.md "Applying migrations")
 - code/api/tests/Lotties.Infrastructure.Tests/Persistence/{DatabaseMigrationSettings,NpgsqlDatabaseMigrator}Tests.cs, code/api/tests/Lotties.Api.Tests/Persistence/StartupDatabaseMigrationTests.cs — flag parsing, lock/ordering with fakes, skip behaviour and test-host wiring
