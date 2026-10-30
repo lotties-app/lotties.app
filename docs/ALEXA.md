@@ -12,8 +12,13 @@ realm `lotties.app` (`https://auth.lotties.app`), and the cluster deploy kit (`d
 Alexa skills are always called as "Alexa, tell/ask/open *&lt;invocation name&gt;* ...". A bare "Lotties, ..." is not
 possible: only Amazon chooses wake words.
 
-- **What the models ship with:** `lotties`, the same in en-US and pt-BR (the sample phrases stay in each language):
-  "Alexa, tell lotties the baby fell asleep", "Alexa, peça ao lotties: o bebê dormiu". A one-word name that is a brand may
+- **What the models ship with:** en-US `lotties`, pt-BR `lotes` (the sample phrases stay in each language):
+  "Alexa, tell lotties the baby fell asleep", "Alexa, peça ao lotes: o bebê dormiu". The pt-BR name is the Portuguese spelling of the brand
+  on purpose: tested on an Echo Dot (2026-10-29), speech recognition in Portuguese never heard `lotties` (it wrote "lotes",
+  "lojas", "loris") nor the made-up spellings `lóties`/`lótis`, but "abrir lotes" opened the skill (`lotes` is how Portuguese
+  speakers say it, and a word the recogniser knows). The most reliable way to use it is "Alexa, abrir lotes" and then the
+  questions without the name; the one-sentence form ("pergunte a lotes ...") is recognised less often. If certification
+  rejects a one-word name, say that `lotes` is the phonetic Portuguese spelling of the brand Lotties, or use `lotes baby`. A one-word name that is a brand may
   be rejected at certification without evidence that you own the brand (the site lotties.app, the GitHub organisation
   lotties-app, a trademark registration if any). The pt-BR name used to be `lotties bebê` (and en-US `lotties baby`): an
   owner who already built the skill must re-paste both models (section 3) and **Build** again, and change the
@@ -149,7 +154,7 @@ switches: the baby's name and the names of your medicines in answers (both off b
 
 **Test** tab, set "Skill testing is enabled in" to **Development**, then type or say, in each language:
 
-1. "open lotties" (pt: "abrir lotties"): the welcome.
+1. "open lotties" (pt: "abrir lotes"): the welcome.
 2. In the Alexa app (phone, same Amazon account): Skills > Your Skills > Dev > Lotties > **Link account**, sign in with a
    Lotties account. Without linking, a command answers "please link your account" and the app shows the link card.
 3. "tell lotties the baby fell asleep", then "tell lotties the baby woke up": a sleep appears in the app.
@@ -158,7 +163,7 @@ switches: the baby's name and the names of your medicines in answers (both off b
    "... which vaccines are due".
 6. With a Viewer account: a command answers that the role does not allow it. With an account of several babies and
    none chosen: it asks to choose one in Settings, Voice assistants.
-7. pt-BR: "peça ao lotties para registrar mamadeira de cento e vinte ml de leite materno": answer with a 24-hour time.
+7. pt-BR: "peça ao lotes para registrar mamadeira de cento e vinte ml de leite materno": answer with a 24-hour time.
 8. The questions added later (no slots, answered from the log): "ask lotties what is the next nap window", "... when
    is the next feed", "... when is the next diaper change", "... how many diapers a day does she usually use", "... how
    much should I make for the next bottle", "... how much did she sleep today", "... when was the last diaper change",
@@ -166,7 +171,7 @@ switches: the baby's name and the names of your medicines in answers (both off b
    fralda", "quantas fraldas por dia ela costuma usar", "quanto devo preparar na próxima mamadeira", "quanto ela dormiu
    hoje", "quando foi a última troca de fralda", "por que ela está chorando"). With little history they say so; the
    crying answer always ends with when to call the pediatrician.
-9. "ask lotties to undo the last entry" (pt: "peça ao lotties para desfazer o último registro") right after logging by
+9. "ask lotties to undo the last entry" (pt: "peça ao lotes para desfazer o último registro") right after logging by
    voice: it answers that it asked and that nothing was deleted; the entry shows a banner in the app (Delete or Keep).
    Alexa never deletes by itself.
 

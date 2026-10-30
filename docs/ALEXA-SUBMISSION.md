@@ -148,20 +148,20 @@ conta de demonstração vinculada. A lista cobre todas as frases do `ALEXA-CERTI
 
 Português (nome do skill sempre, com "ao" quando a frase pede):
 
-- `abrir lotties`
-- `diga ao lotties que o bebê dormiu` e `diga ao lotties que o bebê acordou`
-- `peça ao lotties para registrar uma mamadeira` e responder `cento e vinte`
-- `peça ao lotties para registrar fralda de xixi`
-- `pergunte ao lotties quando foi a última mamada`
-- `pergunte ao lotties quantas fraldas hoje`
-- `pergunte ao lotties quantos mls de mamadeira tomou hoje`
-- `pergunte ao lotties quantas mamadas hoje`
-- `pergunte ao lotties qual a próxima janela de sono`
-- `pergunte ao lotties por que ela está chorando` (tem que terminar com o aviso e os sinais de alerta)
-- `peça ao lotties para registrar banho`
-- `peça ao lotties para registrar temperatura 37` e `pergunte ao lotties quando é o próximo remédio` (a resposta de lembrete tem que terminar com: são lembretes dos medicamentos que você cadastrou, não recomendações do Lotties)
-- `pergunte ao lotties quando é a próxima consulta` (pode dizer a especialidade, como "com pediatra", nunca o nome de um médico ou clínica)
-- `peça ao lotties para desfazer o último registro` (deve dizer que nada foi apagado)
+- `abrir lotes`
+- `diga ao lotes que o bebê dormiu` e `diga ao lotes que o bebê acordou`
+- `peça ao lotes para registrar uma mamadeira` e responder `cento e vinte`
+- `peça ao lotes para registrar fralda de xixi`
+- `pergunte ao lotes quando foi a última mamada`
+- `pergunte ao lotes quantas fraldas hoje`
+- `pergunte ao lotes quantos mls de mamadeira tomou hoje`
+- `pergunte ao lotes quantas mamadas hoje`
+- `pergunte ao lotes qual a próxima janela de sono`
+- `pergunte ao lotes por que ela está chorando` (tem que terminar com o aviso e os sinais de alerta)
+- `peça ao lotes para registrar banho`
+- `peça ao lotes para registrar temperatura 37` e `pergunte ao lotes quando é o próximo remédio` (a resposta de lembrete tem que terminar com: são lembretes dos medicamentos que você cadastrou, não recomendações do Lotties)
+- `pergunte ao lotes quando é a próxima consulta` (pode dizer a especialidade, como "com pediatra", nunca o nome de um médico ou clínica)
+- `peça ao lotes para desfazer o último registro` (deve dizer que nada foi apagado)
 
 English (US): as equivalentes em `ALEXA-CERTIFICATION.md` (`open lotties`, `tell lotties the baby fell asleep`, `ask
 lotties when was the last feed`, `tell lotties to log a bottle` + `one hundred twenty`, `ask lotties how many diapers

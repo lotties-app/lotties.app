@@ -106,7 +106,7 @@ O Lotties é um acompanhamento de rotina do bebê, gratuito e de código aberto.
 
   Pergunte sobre o dia: quando foi a última mamada, há quanto tempo ela está dormindo, quantas fraldas hoje, quantas fraldas por dia em média, quanto ela dormiu hoje, quanto tomou de mamadeira hoje, quantas mamadas hoje, a idade do bebê, o resumo do dia ou da semana, a próxima consulta e quais vacinas estão pendentes.
 
-  Remédios: diga ao Lotties que você deu um remédio que cadastrou no app e peça os seus lembretes de remédios. São os lembretes que você mesmo cadastrou, não recomendações do Lotties: ele nunca sugere, confere nem diz uma dose.
+  Remédios: diga ao lotes que você deu um remédio que cadastrou no app e peça os seus lembretes de remédios. São os lembretes que você mesmo cadastrou, não recomendações do Lotties: ele nunca sugere, confere nem diz uma dose.
 
   Olhe para frente com o seu próprio histórico: quando pode ser a próxima janela de sono, a próxima mamada ou troca de fralda, e o tamanho das últimas mamadeiras. São padrões do que você registrou, não orientação.
 
@@ -123,9 +123,9 @@ Primeira versão: registre sono, mamadeiras, amamentação e fraldas por voz e p
 
 ### Example Phrases (3)
 
-1. ```abrir lotties```
-2. ```diga ao lotties que o bebê dormiu```
-3. ```pergunte ao lotties quando foi a última mamada```
+1. ```abrir lotes```
+2. ```diga ao lotes que o bebê dormiu```
+3. ```pergunte ao lotes quando foi a última mamada```
 
 ### Keywords (112)
 
@@ -194,7 +194,7 @@ Lotties is a baby tracker. Commands need the Alexa account to be linked to a Lot
    - "Alexa, tell lotties to log a bath"
    - "Alexa, ask lotties is any medicine due" (reminders you registered, not recommendations)
 3. The skill logs and reads back what the family recorded. It gives no medical advice, no doses and no diagnosis, and it never deletes records. Medicine commands only record a dose of a medicine registered in the app and read back its reminders; they never suggest or check a dose. Anything it logs is marked "Added by Alexa" in the Lotties app at https://lotties.app (same login).
-4. Portuguese (Brazil) works the same: "Alexa, abrir lotties", "Alexa, diga ao lotties que o bebê dormiu".
+4. Portuguese (Brazil) works the same: "Alexa, abrir lotes", "Alexa, diga ao lotes que o bebê dormiu".
 5. Daily totals ("how much did she drink today", "how many feeds today") depend on entries of the current day. If the answer says nothing was logged today, first say "Alexa, tell lotties to log a bottle" and answer "one hundred twenty", then ask again.
 ```
 
