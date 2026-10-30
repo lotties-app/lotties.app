@@ -3,7 +3,7 @@
 # Git Bash on Windows: junctions are made and removed through Windows PowerShell.
 
 # Packages whose node_modules a worktree links (junction) to the main clone's, when the main clone has one.
-NODE_PACKAGES=(code/web code/mobile tests/e2e code/keycloak-theme)
+NODE_PACKAGES=(code/web code/mobile tests/e2e)
 
 # EF Core migrations (repository-relative) and the test that pins the deployed ones.
 MIGRATIONS_DIR=code/api/src/Lotties.Infrastructure/Persistence/Migrations

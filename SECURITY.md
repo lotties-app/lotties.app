@@ -15,7 +15,7 @@ Lotties stores health data about children. Do not put real baby names, birth dat
 
 ## Scope
 
-In scope: the web app, the API, the mobile shells, the Keycloak theme and the deploy kit in this repository, and the hosted service at https://lotties.app.
+In scope: the web app, the API, the mobile shells and the deploy kit in this repository, and the hosted service at https://lotties.app.
 
 Out of scope: denial of service by volume, social engineering, physical attacks, findings that need a rooted or jailbroken device, and third-party services (Keycloak itself, Cloudflare, GitHub) unless our configuration is the cause.
 

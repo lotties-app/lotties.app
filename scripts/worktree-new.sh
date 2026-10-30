@@ -10,7 +10,7 @@ Creates a worktree for one feature, from any checkout of the repository:
   - branch feat/<name> from the latest <branch> (default main; fetched first; origin/<branch> when the local
     branch is behind it), checked out with LF line endings like the main clone;
   - at $WORKTREE_ROOT/<name> (default E:/w/<name>: a short root, Windows paths are limited to 260 characters);
-  - node_modules of code/web, code/mobile, tests/e2e and code/keycloak-theme linked (junctions) to the main
+  - node_modules of code/web, code/mobile and tests/e2e linked (junctions) to the main
     clone's, for each package that has one there: never run npm install or npm ci in the worktree;
   - dotnet restore of code/api/Lotties.sln (skip with --no-restore).
 Refuses a name whose branch, folder or worktree already exists. Changes nothing in the main clone's files.

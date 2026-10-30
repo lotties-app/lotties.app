@@ -17,7 +17,7 @@ about 15 minutes on Android and 20 on iOS, and runs only when started).
 | Where it lives | Next to the code and the pull requests, secrets in the repository settings, no second system | A second system (organisation, project, service connections, variable groups) |
 | Android | `ubuntu-latest`, Temurin JDK 21, Gradle cache action | Same |
 | Store upload | Play: `r0adkll/upload-google-play` (pinned by commit); TestFlight: Xcode itself uploads (`exportOptions destination=upload`), no extra tool | Microsoft's own Google Play and App Store tasks exist; they need extensions or service connections |
-| Fit with the project | CI, E2E and keycloak-theme workflows are already there | Nothing yet |
+| Fit with the project | CI and E2E workflows are already there | Nothing yet |
 
 **Recommendation: GitHub Actions.** Same place as the code, free for a public repository, no extra account, and the
 macOS image has what is needed. Azure DevOps only pays off if the owner already runs everything there.
