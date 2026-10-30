@@ -2472,6 +2472,73 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("prescription_proposals", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Rest.UserRestMorning", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateOnly>("Night")
+                        .HasColumnType("date")
+                        .HasColumnName("night");
+
+                    b.Property<DateTimeOffset>("UpAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("up_at");
+
+                    b.HasKey("UserId", "Night")
+                        .HasName("pk_user_rest_mornings");
+
+                    b.ToTable("user_rest_mornings", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Rest.UserRestSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<int>("FallAsleepMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("fall_asleep_minutes");
+
+                    b.Property<TimeOnly>("NightEnd")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("night_end");
+
+                    b.Property<TimeOnly>("NightStart")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("night_start");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("WakeLeadMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("wake_lead_minutes");
+
+                    b.Property<string>("WorkWindows")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("work_windows");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_rest_settings");
+
+                    b.ToTable("user_rest_settings", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -3314,6 +3381,26 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Schedule")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Rest.UserRestMorning", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_rest_mornings_users_user_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Rest.UserRestSettings", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.Rest.UserRestSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_rest_settings_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>
