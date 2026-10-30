@@ -107,6 +107,9 @@ export function LandingFooter() {
           <Link component={RouterLink} to="/terms" sx={{ alignSelf: 'flex-start' }}>
             {t('footer.terms')}
           </Link>
+          <Link component={RouterLink} to="/self-host" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.selfHost')}
+          </Link>
           <BetaNotice />
           <Typography variant="body2" color="text.secondary">
             {t('footer.licence')}

@@ -88,6 +88,7 @@
     "licence": "Free and open source software, licensed under the AGPL-3.0.",
     "notMedical": "Not a medical device.",
     "credits": "Credits and licenses",
+    "selfHost": "Run it yourself",
     "privacy": "Privacy policy",
     "terms": "Terms of use"
   },

@@ -1,0 +1,188 @@
+{
+  "selfHost": {
+    "title": "Run Lotties yourself",
+    "intro": "Lotties is free, open-source software (AGPL-3.0), so you can run your own copy on a computer you control. This page explains what that takes and helps you write the two files you need.",
+    "responsibility": {
+      "title": "Your copy, your responsibility",
+      "body": "The Lotties maintainers are responsible only for the data on the instance they run themselves, lotties.app, and for the privacy terms published there. When you run your own copy, you are the operator: you decide who may sign in, you hold the data and the backups, you answer to the people who use it, and you publish the privacy terms that fit your copy. Nothing you store reaches the maintainers."
+    },
+    "notMedical": "Lotties is a baby routine tracker, not a medical app. It records what you log and gives no medical advice.",
+    "need": {
+      "title": "What you need",
+      "intro": "None of this is exotic, but all of it is yours to look after:",
+      "server": "A server, or a computer that stays on, with Docker or Podman and Compose.",
+      "domain": "A domain name and HTTPS in front of it. Sign-in and the offline mode of the app only work on a secure address.",
+      "oidc": "An OpenID Connect sign-in provider, such as Keycloak, Authentik or Auth0. Lotties does not store passwords; the provider does.",
+      "postgres": "A PostgreSQL 16 database. The generator below can add one in a container, or you can point to a database you already run."
+    },
+    "steps": {
+      "title": "How it goes",
+      "clone": "Get the source code and open its folder.",
+      "client": "At your sign-in provider, create a public client for a single-page app with the redirect addresses the generator shows.",
+      "generate": "Fill in the form below and put the two files it makes in the root of the source folder.",
+      "run": "Run docker compose up --build (or podman-compose up --build). The first build takes a few minutes.",
+      "proxy": "Put your HTTPS reverse proxy in front of the web port and open your address in a browser."
+    },
+    "data": {
+      "title": "Where the data lives",
+      "body": "Everything is in your PostgreSQL database: with the bundled database that is the pgdata volume on your server, with your own database it is wherever that runs. The web container keeps nothing. The sign-in accounts live at your provider. Back up the database and the .env file; without the database password nobody can read the backup back in."
+    },
+    "update": {
+      "title": "Updating",
+      "body": "Get the newer source code, then run docker compose up --build again. Read the release notes first: some updates change the database, and then you need to apply the migrations (or keep DB_AUTO_MIGRATE on) and take a database backup before you start. The public build values below are compiled in, so a change to them also needs a new build."
+    },
+    "more": {
+      "title": "More detail",
+      "intro": "The deployment guide covers the rest, in the file docs/DEPLOY.md of the source code:",
+      "deploy": "Deployment guide",
+      "identity": "Identity provider setup",
+      "proxy": "Reverse proxy and TLS",
+      "migrations": "Database roles and migrations",
+      "push": "Push notifications",
+      "privacy": "Privacy policy values"
+    },
+    "generator": {
+      "title": "Configuration generator",
+      "intro": "Type your values and get a .env file and a docker-compose.yml. Everything happens in this page on your device: nothing you type or generate is sent anywhere, saved, or logged. When you close or reload the page it is gone, so copy or download the files first.",
+      "badge": {
+        "public": "Public",
+        "secret": "Secret"
+      },
+      "badgeHelp": "Public values are compiled into the web app and visible to anyone who opens it. Secret values stay on the server: never share them or commit them to a repository.",
+      "groups": {
+        "site": "Your site",
+        "signIn": "Sign-in provider",
+        "database": "Database",
+        "push": "Push notifications",
+        "privacy": "Privacy policy",
+        "other": "Other"
+      },
+      "fields": {
+        "publicUrl": {
+          "label": "Public address",
+          "help": "Where people will open the app, such as https://baby.example.com. Only used here, to show the redirect addresses for your sign-in provider."
+        },
+        "webPort": {
+          "label": "Web port",
+          "help": "The port of this computer where the app listens (WEB_PORT). Your HTTPS proxy forwards to it."
+        },
+        "oidcAuthority": {
+          "label": "Sign-in provider address (authority)",
+          "help": "The issuer address, such as https://id.example.com/realms/home for Keycloak. It must match the issuer in the tokens exactly, trailing slash included where your provider has one."
+        },
+        "oidcClientId": {
+          "label": "Client id",
+          "help": "The id of the public single-page client you created at the provider."
+        },
+        "apiAudience": {
+          "label": "API audience",
+          "help": "The audience the API requires in access tokens (AUTH_AUDIENCE). With Keycloak it is the value of an audience mapper; with Auth0 the API identifier."
+        },
+        "sendAudience": {
+          "label": "Also ask for the audience when signing in",
+          "description": "Turn on for Auth0, which needs it. Leave off for Keycloak."
+        },
+        "dbMode": {
+          "label": "Database",
+          "bundled": "Bundled PostgreSQL",
+          "external": "My own PostgreSQL"
+        },
+        "dbHost": {
+          "label": "Database host",
+          "help": "The name or address the API connects to."
+        },
+        "dbPort": {
+          "label": "Database port",
+          "help": "Usually 5432."
+        },
+        "dbName": {
+          "label": "Database name",
+          "help": "Letters, digits and underscores."
+        },
+        "dbUser": {
+          "label": "Database user",
+          "help": "The role the API uses. With the bundled database it is created for you."
+        },
+        "dbPassword": {
+          "label": "Database password",
+          "help": "Made in your browser. Use it for the role above. You can type your own instead."
+        },
+        "autoMigrate": {
+          "label": "Create and update the tables when the API starts",
+          "description": "Convenient for a copy of your own (DB_AUTO_MIGRATE). Turn it off if you apply migrations yourself with a separate role."
+        },
+        "corsOrigins": {
+          "label": "Other allowed origins",
+          "help": "Leave empty. Only needed if the web app is served from an address other than the API's. Separate addresses with commas."
+        },
+        "pushEnabled": {
+          "label": "Turn on push notifications",
+          "description": "Reminders sent straight to people's browsers, with no push company in between. Optional."
+        },
+        "vapidPublicKey": {
+          "label": "VAPID public key",
+          "help": "Sent to browsers."
+        },
+        "vapidPrivateKey": {
+          "label": "VAPID private key",
+          "help": "Signs the pushes. Keep it secret. If you change the pair, everyone has to turn notifications on again."
+        },
+        "vapidSubject": {
+          "label": "Contact for push services",
+          "help": "A mailto: address or an https: address push services can reach you at, such as mailto:you@example.com."
+        },
+        "privacyControllerName": {
+          "label": "Who is responsible for the data",
+          "help": "A person or company. It is shown on the privacy page of your copy. Empty shows the Lotties project maintainers, which would be wrong for your copy: fill it in."
+        },
+        "privacyContactEmail": {
+          "label": "Contact email for privacy requests",
+          "help": "Shown as a link on the privacy page of your copy."
+        },
+        "privacyDpo": {
+          "label": "Data protection contact (encarregado)",
+          "help": "A name, an email or both, if your rules require one."
+        },
+        "repoUrl": {
+          "label": "Source code address",
+          "help": "Shown as a link in the footer of the home page. Empty hides it. If you change the code, the AGPL asks you to offer the changed source to your users."
+        }
+      },
+      "optional": "Optional",
+      "errors": {
+        "required": "This is needed.",
+        "invalidUrl": "Enter a full web address, such as https://example.com.",
+        "invalidHttpsUrl": "Use an https:// address. Plain http is only accepted for localhost.",
+        "invalidPort": "Enter a port from 1 to 65535.",
+        "invalidHost": "Enter a host name or an IP address, without a scheme or a port.",
+        "invalidIdentifier": "Use letters, digits and underscores, starting with a letter or underscore.",
+        "invalidEmail": "Enter an email address such as name@example.com.",
+        "invalidOrigins": "Use addresses like https://example.com, with no path, separated by commas.",
+        "invalidSubject": "Use mailto:you@example.com or an https:// address.",
+        "tooLong": "This is too long (200 characters at most).",
+        "controlCharacters": "This cannot contain line breaks or spaces here."
+      },
+      "actions": {
+        "regenerate": "Make a new password",
+        "generateKeys": "Make a new key pair",
+        "copy": "Copy",
+        "copied": "Copied",
+        "copyFailed": "Could not copy: select the text and copy it by hand.",
+        "download": "Download"
+      },
+      "output": {
+        "title": "Your files",
+        "incomplete": "Fill in the fields marked above to see your files.",
+        "envTitle": ".env",
+        "envHelp": "Goes in the root of the source folder. Contains secrets: keep it private.",
+        "composeTitle": "docker-compose.yml",
+        "composeHelp": "Goes next to it. It only refers to the values in .env and holds no secret. Only reviewed by eye so far, not run: check the first start and tell us if something is off.",
+        "providerTitle": "Settings for your sign-in provider",
+        "providerBody": "Create a public client (no client secret, authorization code with PKCE) with:",
+        "callback": "Valid redirect address",
+        "logout": "Valid post-logout redirect address",
+        "webOrigin": "Web origin"
+      }
+    }
+  }
+}
