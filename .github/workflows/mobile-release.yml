@@ -231,9 +231,10 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -euo pipefail
-          # The project's Release configuration still says CODE_SIGN_IDENTITY = "iPhone Developer", so an automatic archive asks Apple
-          # for a development profile, which needs a registered device ("Your team has no devices"). Asking for the distribution
-          # identity makes cloud signing create the App Store profile instead; no device is involved.
+          # Automatic signing archives with a development identity and profile (the distribution one only enters at export), so
+          # Apple needs at least one registered device on the team ("Your team has no devices"): register any device once in the
+          # developer portal (docs/MOBILE-RELEASE.md 4.2). Forcing CODE_SIGN_IDENTITY="Apple Distribution" here does not work:
+          # Xcode refuses it with "conflicting provisioning settings" under automatic signing.
           xcodebuild archive \
             -project code/mobile/ios/App/App.xcodeproj \
             -scheme App \
@@ -246,7 +247,6 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             MARKETING_VERSION="$LOTTIES_VERSION_NAME" \
             CURRENT_PROJECT_VERSION="$LOTTIES_VERSION_CODE"
       - name: Export the IPA (and upload it to TestFlight when asked)

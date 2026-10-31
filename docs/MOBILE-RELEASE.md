@@ -118,6 +118,10 @@ Google requires the **first** AAB of an app to be uploaded by hand in the consol
    Internal testers (up to 100 App Store Connect users) get the build at once with no review; external testers need
    a short Beta App Review for the first build of each version.
 5. Create the API key (section 3) and set the four secrets. Run the workflow (ios only, `upload_testflight`).
+6. developer.apple.com > Certificates, Identifiers & Profiles > Devices > **+**: register **one device** (platform iOS, any
+   name, the UDID of any iPhone or iPad; Apple only checks the format). Without it the archive fails with "Your team has
+   no devices from which to generate a provisioning profile": automatic signing archives with a development profile, and
+   Apple will not create one for a team without devices. The device is never used to install anything.
 
 **Without a Mac** (the intended path): everything above is web consoles plus the workflow; Xcode on the runner creates
 the signing assets. **With the MacBook**, the same workflow works; the Mac is useful once to check things Windows
@@ -159,8 +163,7 @@ an iPhone, and read the Xcode logs when the CI archive fails. It is not needed t
   shared scheme; the Capacitor Java level (JDK 21 assumed); that the Apple API key flags work for archive and export on
   `macos-26` with Xcode 26.5; the TestFlight upload through `destination=upload`.
 - A first iOS run may fail on signing; the log names the missing piece (App ID, team id, key role).
-- First run (0.0.1, 2026-10-31): Android stopped at `./gradlew: Permission denied` (the file was committed without the execute
-  bit; now mode 100755). iOS stopped at the archive with "Your team has no devices from which to generate a provisioning
-  profile": the project's Release configuration signs with "iPhone Developer", which needs a development profile and so a
-  device. The archive now passes `CODE_SIGN_IDENTITY="Apple Distribution"`. Not yet confirmed on a runner; if Apple still asks
-  for a device, the fallback is the manual signing of section 6 (or registering any one device in the developer portal).
+- First runs (0.0.1, 2026-10-31): Android stopped at `./gradlew: Permission denied` (committed without the execute bit; now
+  mode 100755) and then built. iOS stops at the archive with "Your team has no devices from which to generate a provisioning
+  profile". Forcing `CODE_SIGN_IDENTITY="Apple Distribution"` was tried and fails ("conflicting provisioning settings"
+  under automatic signing). Fix: register one device (4.2 step 6). Fallback: the manual signing of section 6.
