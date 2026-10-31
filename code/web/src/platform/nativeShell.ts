@@ -13,6 +13,8 @@ export interface NativeShell {
   onBrowserFinished(listener: () => void): Promise<() => void>;
   /** A URL of the app's own scheme opened the running app. */
   onAppUrlOpen(listener: (url: string) => void): Promise<() => void>;
+  /** The app came back to the foreground (iOS/Android appStateChange, active). */
+  onResume(listener: () => void): Promise<() => void>;
   /** The URL that started the app (a redirect that arrived after the OS stopped it), if any. */
   launchUrl(): Promise<string | undefined>;
   /**
@@ -75,6 +77,14 @@ export const capacitorShell: NativeShell = {
   onAppUrlOpen: async (listener) => {
     const { App } = await load();
     return removing(await App.addListener('appUrlOpen', (event) => listener(event.url)));
+  },
+  onResume: async (listener) => {
+    const { App } = await load();
+    return removing(
+      await App.addListener('appStateChange', (state) => {
+        if (state.isActive) listener();
+      }),
+    );
   },
   launchUrl: async () => {
     const { App } = await load();

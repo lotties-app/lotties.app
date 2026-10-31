@@ -1,5 +1,17 @@
 import type { BabyRoutineDb } from '../db/database';
+import { isNativeApp } from '../platform/nativeApp';
 import { clearAccountDeviceState } from './deviceState';
+
+/** The widget snapshot and the Siri outbox hold the account's data in the App Group container: gone with the session. */
+async function wipeWidgetData(): Promise<void> {
+  if (!isNativeApp()) return;
+  try {
+    const { nativeWidgetBridge } = await import('../widgets/widgetBridge');
+    await nativeWidgetBridge.clearAll();
+  } catch {
+    // Best effort, like the push release: sign out anyway.
+  }
+}
 
 /**
  * Removes everything the account left on this device, then ends the OIDC session (which removes
@@ -24,5 +36,6 @@ export async function endAccountSession(
     // See above: sign out anyway.
   }
   clearAccountDeviceState();
+  await wipeWidgetData();
   await logout();
 }
