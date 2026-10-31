@@ -203,7 +203,12 @@ function OidcBridge({
     login: (returnTo, options) =>
       options?.register
         ? registerRedirect(userManager, signinArgs(returnTo, audience), redirectNavigator)
-        : oidc.signinRedirect(signinArgs(returnTo, audience)),
+        : oidc.signinRedirect({
+            ...signinArgs(returnTo, audience),
+            // The system browser keeps the identity provider's cookie, so after a sign-out (or a sign-out whose
+            // browser step never finished) it would sign the previous user straight back in. Ask every time.
+            ...(redirectNavigator ? { prompt: 'login' } : {}),
+          }),
     logout: async () => {
       try {
         await oidc.signoutRedirect();
