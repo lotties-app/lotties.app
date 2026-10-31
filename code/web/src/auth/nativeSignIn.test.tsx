@@ -90,6 +90,19 @@ describe('OidcAuthProvider in the native app', () => {
     expect(await screen.findByText('/day')).toBeTruthy();
   });
 
+  it('always asks for credentials, so a sign-out never signs the previous user back in', async () => {
+    const shell = fakeNativeShell();
+    renderNative(shell);
+    await waitFor(() => expect(api?.isLoading).toBe(false));
+
+    act(() => {
+      void api!.login('/');
+    });
+
+    await waitFor(() => expect(shell.opened).toHaveLength(1));
+    expect(new URL(shell.opened[0]).searchParams.get('prompt')).toBe('login');
+  });
+
   it('opens account creation in the system browser too', async () => {
     const shell = fakeNativeShell();
     renderNative(shell);
