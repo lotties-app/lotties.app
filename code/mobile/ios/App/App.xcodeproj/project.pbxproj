@@ -25,6 +25,7 @@
 		C0DE00000000000000000013 /* LottiesShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000001 /* LottiesShared.swift */; };
 		C0DE00000000000000000014 /* LottiesIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000002 /* LottiesIntents.swift */; };
 		C0DE00000000000000000015 /* LottiesWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000000A /* LottiesWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C0DEA55E7000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0DEA55E7000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +74,7 @@
 		C0DE00000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0DE00000000000000000009 /* LottiesWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LottiesWidgets.entitlements; sourceTree = "<group>"; };
 		C0DE0000000000000000000A /* LottiesWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LottiesWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0DEA55E7000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,6 +151,7 @@
 				C0DE00000000000000000007 /* LottiesWidgets.swift */,
 				C0DE00000000000000000008 /* Info.plist */,
 				C0DE00000000000000000009 /* LottiesWidgets.entitlements */,
+				C0DEA55E7000000000000001 /* Assets.xcassets */,
 			);
 			path = LottiesWidgets;
 			sourceTree = "<group>";
@@ -255,6 +258,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DEA55E7000000000000002 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
