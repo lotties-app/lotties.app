@@ -134,10 +134,11 @@ Google requires the **first** AAB of an app to be uploaded by hand in the consol
 No Mac needed; `openssl` ships with Git Bash. Work in a folder **outside the repository** and keep the files in a
 password manager (the private key `dist.key` cannot be recovered).
 
-1. Key and signing request (use your Apple ID e-mail):
+1. Key and signing request (use your Apple ID e-mail). `MSYS_NO_PATHCONV=1` stops Git Bash from turning the leading `/`
+   of `-subj` into a Windows path; run one command at a time:
    ```bash
    openssl genrsa -out dist.key 2048
-   openssl req -new -key dist.key -out dist.csr -subj "/emailAddress=you@example.com/CN=Lotties Distribution/C=BR"
+   MSYS_NO_PATHCONV=1 openssl req -new -key dist.key -out dist.csr -subj "/emailAddress=you@example.com/CN=Lotties Distribution/C=BR"
    ```
 2. developer.apple.com > Certificates, Identifiers & Profiles > Certificates > **+** > **Apple Distribution** > upload
    `dist.csr` > download `distribution.cer`. (Needs the Account Holder or Admin role.)
