@@ -159,3 +159,8 @@ an iPhone, and read the Xcode logs when the CI archive fails. It is not needed t
   shared scheme; the Capacitor Java level (JDK 21 assumed); that the Apple API key flags work for archive and export on
   `macos-26` with Xcode 26.5; the TestFlight upload through `destination=upload`.
 - A first iOS run may fail on signing; the log names the missing piece (App ID, team id, key role).
+- First run (0.0.1, 2026-10-31): Android stopped at `./gradlew: Permission denied` (the file was committed without the execute
+  bit; now mode 100755). iOS stopped at the archive with "Your team has no devices from which to generate a provisioning
+  profile": the project's Release configuration signs with "iPhone Developer", which needs a development profile and so a
+  device. The archive now passes `CODE_SIGN_IDENTITY="Apple Distribution"`. Not yet confirmed on a runner; if Apple still asks
+  for a device, the fallback is the manual signing of section 6 (or registering any one device in the developer portal).
