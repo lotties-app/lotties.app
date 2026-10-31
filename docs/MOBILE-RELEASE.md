@@ -37,11 +37,12 @@ Triggers: **manual** (Actions > Mobile release > Run workflow) or a **tag `mobil
    `./gradlew bundleRelease assembleRelease` (signed AAB for Play, signed APK for direct download), artifacts kept 30
    days, optional upload to the Play **internal** track. The keystore file is deleted at the end.
 3. `ios` (`macos-26`): Xcode 26.5, `npm ci`, `build:web`, `cap sync ios`, `xcodebuild archive`, `xcodebuild
-   -exportArchive` for the `app-store-connect` method. **Signing is automatic and cloud-managed**: Xcode talks to
-   Apple with the App Store Connect API key (`-allowProvisioningUpdates` plus the key flags) and creates or reuses the
-   distribution certificate and the provisioning profile. With `destination=upload` the same export step sends the
-   build to TestFlight; otherwise the `.ipa` is kept as an artifact (an App Store `.ipa` cannot be installed by hand; it
-   is for inspection).
+   -exportArchive` for the `app-store-connect` method. **Signing is manual**: the job imports a distribution
+   certificate (p12) into a temporary keychain and the App Store provisioning profile, both made once in the developer
+   portal (4.3) and kept as secrets; it archives with `CODE_SIGN_STYLE=Manual` and exports with a matching
+   `provisioningProfiles` map. With `destination=upload` the export step sends the build to TestFlight, using the App
+   Store Connect API key (only then); otherwise the `.ipa` is kept as an artifact (an App Store `.ipa` cannot be
+   installed by hand; it is for inspection). The keychain, certificate, profile and key are deleted at the end.
 4. `github-release` (tags only): attaches the APK to a pre-release of the tag, for people who install outside the
    store. Only this job has `contents: write`.
 
@@ -54,8 +55,11 @@ Why not fastlane (it is installed on the runner): `xcodebuild` alone signs, expo
 no `match` repository and no second place holding certificates. Switch to `match` only if several people or machines
 ever need the same certificates.
 
-Why not a p12 and a hand-made profile: both expire yearly, need a Mac or an openssl dance to create, and sit in the
-secrets store. Cloud signing needs three secrets and renews itself. The fallback is in section 6.
+Why manual signing and not Xcode's cloud (automatic) signing: automatic signing archives with a *development* profile
+(the distribution one only enters at export), and Apple creates that only for a team with at least one registered
+device ("Your team has no devices from which to generate a provisioning profile"). Forcing the distribution identity
+under automatic signing fails ("conflicting provisioning settings"). Manual signing needs no device and no UDID; the
+price is a certificate and a profile that expire yearly (section 6 says when to renew).
 
 ## 3. Secrets and variables (names; the owner creates them)
 
@@ -67,7 +71,9 @@ Settings > Secrets and variables > Actions. Nothing here is ever committed, prin
 | `ANDROID_KEYSTORE_BASE64` | Secret | the **upload keystore**, base64 on one line: `keytool -genkeypair -v -keystore upload.keystore -alias upload -keyalg RSA -keysize 4096 -validity 10000` then `base64 -w0 upload.keystore` (Git Bash). Keep the original file and passwords in a password manager: if lost, Google can reset the upload key, but it takes days | owner |
 | `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Secrets | the passwords and alias chosen above (`upload` if you copied the command) | owner |
 | `PLAY_SERVICE_ACCOUNT_JSON` | Secret | the whole JSON key of a Google Cloud service account that Play Console lets publish: Play Console > Setup > API access (or Users and permissions > Invite, using the service account e-mail) with release permissions for this app only. Needed only for the optional Play upload | owner |
-| `ASC_KEY_ID`, `ASC_ISSUER_ID` | Secrets | App Store Connect > Users and Access > Integrations > App Store Connect API > Team Keys > Generate. Access **Admin** (cloud signing creates certificates; App Manager is not enough). The key id and the Issuer ID are shown on that page | owner |
+| `IOS_DIST_P12_BASE64`, `IOS_DIST_P12_PASSWORD` | Secrets | the Apple Distribution certificate with its private key as a p12 (base64 on one line) and the password chosen when exporting it: made in 4.3 | owner |
+| `IOS_PROFILE_BASE64` | Secret | the App Store provisioning profile for `app.lotties.app` (the `.mobileprovision` file, base64 on one line): made in 4.3 | owner |
+| `ASC_KEY_ID`, `ASC_ISSUER_ID` | Secrets | App Store Connect > Users and Access > Integrations > App Store Connect API > Team Keys > Generate. Access **App Manager** is enough now (the key only uploads the build to TestFlight). The key id and the Issuer ID are shown on that page | owner |
 | `ASC_KEY_P8` | Secret | the contents of the downloaded `AuthKey_<id>.p8` (the whole text, including the BEGIN and END lines). Apple lets you download it **once** | owner |
 | `APPLE_TEAM_ID` | Secret | the 10-character Team ID: developer.apple.com > Account > Membership details | owner |
 
@@ -117,16 +123,46 @@ Google requires the **first** AAB of an app to be uploaded by hand in the consol
    may ask for export compliance (the Info.plist already declares `ITSAppUsesNonExemptEncryption=false`).
    Internal testers (up to 100 App Store Connect users) get the build at once with no review; external testers need
    a short Beta App Review for the first build of each version.
-5. Create the API key (section 3) and set the four secrets. Run the workflow (ios only, `upload_testflight`).
-6. developer.apple.com > Certificates, Identifiers & Profiles > Devices > **+**: register **one device** (platform iOS, any
-   name, the UDID of any iPhone or iPad; Apple only checks the format). Without it the archive fails with "Your team has
-   no devices from which to generate a provisioning profile": automatic signing archives with a development profile, and
-   Apple will not create one for a team without devices. The device is never used to install anything.
+5. Make the certificate and the profile (4.3) and the API key (section 3), set the secrets. Run the workflow (ios only,
+   first without upload to check the signing, then with `upload_testflight`).
+6. Testers: App Store Connect > TestFlight > add each person (internal testers must be App Store Connect users, for
+   example with the Marketing role; external ones need the e-mail only and a short Beta App Review of the first
+   build). They install the TestFlight app and accept the invitation. No device registration and no UDID is involved.
 
-**Without a Mac** (the intended path): everything above is web consoles plus the workflow; Xcode on the runner creates
-the signing assets. **With the MacBook**, the same workflow works; the Mac is useful once to check things Windows
-cannot: open `code/mobile/ios/App/App.xcodeproj`, choose the team under Signing & Capabilities, run on a simulator or
-an iPhone, and read the Xcode logs when the CI archive fails. It is not needed to create certificates.
+### 4.3 iOS signing assets (once a year)
+
+No Mac needed; `openssl` ships with Git Bash. Work in a folder **outside the repository** and keep the files in a
+password manager (the private key `dist.key` cannot be recovered).
+
+1. Key and signing request (use your Apple ID e-mail):
+   ```bash
+   openssl genrsa -out dist.key 2048
+   openssl req -new -key dist.key -out dist.csr -subj "/emailAddress=you@example.com/CN=Lotties Distribution/C=BR"
+   ```
+2. developer.apple.com > Certificates, Identifiers & Profiles > Certificates > **+** > **Apple Distribution** > upload
+   `dist.csr` > download `distribution.cer`. (Needs the Account Holder or Admin role.)
+3. Make the p12 (the PBE flags keep it importable by macOS `security`, which rejects OpenSSL 3's default encryption):
+   ```bash
+   openssl x509 -inform DER -in distribution.cer -out dist.pem
+   openssl pkcs12 -export -inkey dist.key -in dist.pem -out dist.p12 -name "Lotties Distribution" \
+     -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1
+   ```
+   It asks for an export password: that is `IOS_DIST_P12_PASSWORD`.
+4. Profiles > **+** > Distribution > **App Store Connect** > App ID `app.lotties.app` (4.2 step 1 first) > the
+   certificate from step 2 > name `Lotties App Store` > download the `.mobileprovision`.
+5. Set the secrets without pasting them anywhere (run in the folder with the files):
+   ```bash
+   base64 -w0 dist.p12 | gh secret set IOS_DIST_P12_BASE64 --repo lotties-app/lotties.app
+   gh secret set IOS_DIST_P12_PASSWORD --repo lotties-app/lotties.app
+   base64 -w0 Lotties_App_Store.mobileprovision | gh secret set IOS_PROFILE_BASE64 --repo lotties-app/lotties.app
+   ```
+   (the second command asks for the password on the terminal; the file name is the one Apple gave).
+6. The certificate and the profile expire after **one year**: renew both before then (repeat 1 to 5; a new
+   certificate needs a new profile). The workflow prints the profile's expiry on every run.
+
+**Without a Mac** (the intended path): everything above is web consoles plus the workflow. **With the MacBook**, the
+same workflow works; the Mac is useful once to check things Windows cannot: open `code/mobile/ios/App/App.xcodeproj`,
+run on a simulator or an iPhone, and read the Xcode logs when the CI archive fails.
 
 ## 5. Day to day
 
@@ -148,12 +184,8 @@ an iPhone, and read the Xcode logs when the CI archive fails. It is not needed t
 - **Android.** JDK 21 and Gradle 8.14 are what the Capacitor 8 project asks for; `compileSdk`/`targetSdk` are in
   `code/mobile/android/variables.gradle`; Google raises the required target every August.
 - **Action pins.** Update the SHAs deliberately (Dependabot can do it for `github-actions`).
-- **Manual signing fallback** (if cloud signing is refused): create a distribution certificate (with a Mac: Keychain
-  Access > Certificate Assistant > request from a CA; without: `openssl req -new -newkey rsa:2048 -nodes -keyout
-  dist.key -out dist.csr`), upload the CSR in the developer portal, download the `.cer`, make the p12 (`openssl pkcs12
-  -export -inkey dist.key -in dist.pem -out dist.p12`), create an App Store provisioning profile for
-  `app.lotties.app`, and store `IOS_DIST_P12_BASE64`, `IOS_DIST_P12_PASSWORD`, `IOS_PROFILE_BASE64`; then the job
-  imports them into a temporary keychain and archives with manual signing. Not wired: ask when needed.
+- **iOS certificate and profile expire yearly** (4.3): when the run says the profile is expired, or the TestFlight
+  upload says the certificate is invalid, redo 4.3. Apple also mails a reminder before.
 - **Never in the repository:** keystores, `.p8`/`.p12`, provisioning profiles, service-account JSON, `google-services.json`,
   `GoogleService-Info.plist` (`code/mobile/.gitignore` refuses them).
 
@@ -164,6 +196,8 @@ an iPhone, and read the Xcode logs when the CI archive fails. It is not needed t
   `macos-26` with Xcode 26.5; the TestFlight upload through `destination=upload`.
 - A first iOS run may fail on signing; the log names the missing piece (App ID, team id, key role).
 - First runs (0.0.1, 2026-10-31): Android stopped at `./gradlew: Permission denied` (committed without the execute bit; now
-  mode 100755) and then built. iOS stops at the archive with "Your team has no devices from which to generate a provisioning
-  profile". Forcing `CODE_SIGN_IDENTITY="Apple Distribution"` was tried and fails ("conflicting provisioning settings"
-  under automatic signing). Fix: register one device (4.2 step 6). Fallback: the manual signing of section 6.
+  mode 100755) and then built. iOS stopped at the archive with "Your team has no devices from which to generate a
+  provisioning profile" (automatic signing needs a registered device); forcing `CODE_SIGN_IDENTITY="Apple Distribution"`
+  fails too ("conflicting provisioning settings"). The workflow now signs manually (4.3); that path is **not run yet**: the
+  `PROVISIONING_PROFILE_SPECIFIER` override reaching the Swift package targets, the export `provisioningProfiles` map and
+  the keychain import on `macos-26` are the parts to watch on the next iOS run.
