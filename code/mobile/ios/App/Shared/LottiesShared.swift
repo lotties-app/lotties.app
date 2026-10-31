@@ -171,3 +171,23 @@ struct OutboxEntry: Codable, Equatable {
         var amountMl: Int?
     }
 }
+
+/// Small text helpers for the intents and the widget (the app ships English and Brazilian Portuguese only).
+enum LottiesText {
+    static var isPortuguese: Bool {
+        (Locale.current.language.languageCode?.identifier ?? "en") == "pt"
+    }
+
+    static func t(_ pt: String, _ en: String) -> String { isPortuguese ? pt : en }
+
+    /// "2 h 10 min", "35 min", "agora"/"now". Facts only.
+    static func ago(_ date: Date, now: Date = Date()) -> String {
+        let minutes = max(0, Int(now.timeIntervalSince(date) / 60))
+        if minutes < 1 { return t("agora", "just now") }
+        if minutes < 60 { return "\(minutes) min" }
+        let hours = minutes / 60
+        let rest = minutes % 60
+        if hours >= 24 { return "\(hours / 24) d \(hours % 24) h" }
+        return rest == 0 ? "\(hours) h" : "\(hours) h \(rest) min"
+    }
+}

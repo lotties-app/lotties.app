@@ -1,0 +1,77 @@
+name: iOS compile check
+
+# Builds the iOS app and its widget extension without signing and without any secret: proves that the Xcode project
+# (App.xcodeproj, edited by hand because there is no Xcode on the development machine) and the Swift code compile.
+# Runs only for pull requests that touch the iOS project (a macOS runner costs ten times a Linux one,
+# docs/MOBILE-RELEASE.md), or by hand.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'code/mobile/ios/**'
+      - '.github/workflows/ios-compile-check.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-compile-check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_PATH: /Applications/Xcode_26.5.app
+  NODE_VERSION: '22'
+
+jobs:
+  compile:
+    name: Compile iOS app and widget
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            code/web/package-lock.json
+            code/mobile/package-lock.json
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+      - run: npm ci
+        working-directory: code/web
+      - run: npm ci
+        working-directory: code/mobile
+      - name: Build the web app (Vite mode native) and sync it into the iOS project
+        env:
+          VITE_OIDC_CLIENT_ID: compile-check
+        run: |
+          set -euo pipefail
+          npm run build:web
+          npm run sync -- ios
+        working-directory: code/mobile
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('code/mobile/ios/App/CapApp-SPM/Package.swift', 'code/mobile/package-lock.json') }}
+      - name: Build (no signing)
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project code/mobile/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+      - name: The widget extension is embedded in the app
+        run: |
+          set -euo pipefail
+          app="$(find ~/Library/Developer/Xcode/DerivedData -path '*Release-iphoneos/App.app' -type d | head -1)"
+          test -d "$app/PlugIns/LottiesWidgets.appex" || { echo "::error::LottiesWidgets.appex is not embedded in $app"; ls "$app"; exit 1; }
+          echo "Embedded: $(ls "$app/PlugIns")"
