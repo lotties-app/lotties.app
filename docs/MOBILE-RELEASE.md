@@ -73,6 +73,7 @@ Settings > Secrets and variables > Actions. Nothing here is ever committed, prin
 | `PLAY_SERVICE_ACCOUNT_JSON` | Secret | the whole JSON key of a Google Cloud service account that Play Console lets publish: Play Console > Setup > API access (or Users and permissions > Invite, using the service account e-mail) with release permissions for this app only. Needed only for the optional Play upload | owner |
 | `IOS_DIST_P12_BASE64`, `IOS_DIST_P12_PASSWORD` | Secrets | the Apple Distribution certificate with its private key as a p12 (base64 on one line) and the password chosen when exporting it: made in 4.3 | owner |
 | `IOS_PROFILE_BASE64` | Secret | the App Store provisioning profile for `app.lotties.app` (the `.mobileprovision` file, base64 on one line): made in 4.3 | owner |
+| `IOS_WIDGET_PROFILE_BASE64` | Secret | the App Store provisioning profile for the widget extension `app.lotties.app.widgets`: made in 4.3 step 4b | owner |
 | `ASC_KEY_ID`, `ASC_ISSUER_ID` | Secrets | App Store Connect > Users and Access > Integrations > App Store Connect API > Team Keys > Generate. Access **App Manager** is enough now (the key only uploads the build to TestFlight). The key id and the Issuer ID are shown on that page | owner |
 | `ASC_KEY_P8` | Secret | the contents of the downloaded `AuthKey_<id>.p8` (the whole text, including the BEGIN and END lines). Apple lets you download it **once** | owner |
 | `APPLE_TEAM_ID` | Secret | the 10-character Team ID: developer.apple.com > Account > Membership details | owner |
@@ -151,13 +152,23 @@ password manager (the private key `dist.key` cannot be recovered).
    It asks for an export password: that is `IOS_DIST_P12_PASSWORD`.
 4. Profiles > **+** > Distribution > **App Store Connect** > App ID `app.lotties.app` (4.2 step 1 first) > the
    certificate from step 2 > name `Lotties App Store` > download the `.mobileprovision`.
+4b. **Widget and Siri (docs/design/37-widgets-siri.md)**, once, before the first build that contains the widget:
+   - Identifiers > **App Groups** > **+**: `group.app.lotties.app`.
+   - Identifiers > `app.lotties.app` > enable **App Groups**, select that group, Save. The profile of step 4 is
+     then stale: open it, **Edit**/regenerate, download it again.
+   - Identifiers > **+** > App IDs > App: description `Lotties Widgets`, bundle ID `app.lotties.app.widgets`, enable
+     **App Groups** with the same group.
+   - Profiles > **+** > Distribution > **App Store Connect** > App ID `app.lotties.app.widgets` > the same certificate
+     > name `Lotties Widgets App Store` > download.
+   The workflow refuses a profile whose App ID or App Group does not match.
 5. Set the secrets without pasting them anywhere (run in the folder with the files):
    ```bash
    base64 -w0 dist.p12 | gh secret set IOS_DIST_P12_BASE64 --repo lotties-app/lotties.app
    gh secret set IOS_DIST_P12_PASSWORD --repo lotties-app/lotties.app
    base64 -w0 Lotties_App_Store.mobileprovision | gh secret set IOS_PROFILE_BASE64 --repo lotties-app/lotties.app
+   base64 -w0 Lotties_Widgets_App_Store.mobileprovision | gh secret set IOS_WIDGET_PROFILE_BASE64 --repo lotties-app/lotties.app
    ```
-   (the second command asks for the password on the terminal; the file name is the one Apple gave).
+   (the second command asks for the password on the terminal; the file names are the ones Apple gave).
 6. The certificate and the profile expire after **one year**: renew both before then (repeat 1 to 5; a new
    certificate needs a new profile). The workflow prints the profile's expiry on every run.
 

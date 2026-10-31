@@ -221,6 +221,7 @@ jobs:
           IOS_DIST_P12_BASE64: ${{ secrets.IOS_DIST_P12_BASE64 }}
           IOS_DIST_P12_PASSWORD: ${{ secrets.IOS_DIST_P12_PASSWORD }}
           IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+          IOS_WIDGET_PROFILE_BASE64: ${{ secrets.IOS_WIDGET_PROFILE_BASE64 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -euo pipefail
@@ -231,6 +232,7 @@ jobs:
           echo "::add-mask::$keychain_password"
           printf '%s' "$IOS_DIST_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
           printf '%s' "$IOS_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/app.mobileprovision"
+          printf '%s' "$IOS_WIDGET_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/widget.mobileprovision"
           security create-keychain -p "$keychain_password" "$keychain"
           security set-keychain-settings -lut 21600 "$keychain"
           security unlock-keychain -p "$keychain_password" "$keychain"
@@ -238,17 +240,23 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" >/dev/null
           security list-keychains -d user -s "$keychain" $(security list-keychains -d user | sed 's/"//g')
           security find-identity -v -p codesigning "$keychain"
-          security cms -D -i "$RUNNER_TEMP/app.mobileprovision" > "$RUNNER_TEMP/profile.plist"
-          uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")"
-          name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")"
-          app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")"
-          expires="$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$RUNNER_TEMP/profile.plist")"
-          test "$app_id" = "${APPLE_TEAM_ID}.app.lotties.app" \
-            || { echo "::error::The profile is for '$app_id', expected ${APPLE_TEAM_ID}.app.lotties.app"; exit 1; }
-          echo "Profile '$name' expires $expires"
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          cp "$RUNNER_TEMP/app.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
-          echo "IOS_PROFILE_NAME=$name" >> "$GITHUB_ENV"
+          # Each bundle (the app and its widget extension) has its own App Store profile; the archive picks them per target.
+          install_profile() {
+            file="$1"; bundle_id="$2"; var="$3"
+            security cms -D -i "$file" > "$file.plist"
+            uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$file.plist")"
+            name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$file.plist")"
+            app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$file.plist")"
+            expires="$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$file.plist")"
+            test "$app_id" = "${APPLE_TEAM_ID}.${bundle_id}"               || { echo "::error::The profile is for '$app_id', expected ${APPLE_TEAM_ID}.${bundle_id}"; exit 1; }
+            /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$file.plist" | grep -q 'group.app.lotties.app'               || { echo "::error::The profile for ${bundle_id} has no App Group group.app.lotties.app (regenerate it, docs/MOBILE-RELEASE.md 4.3)"; exit 1; }
+            echo "Profile '$name' expires $expires"
+            cp "$file" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
+            echo "$var=$name" >> "$GITHUB_ENV"
+          }
+          install_profile "$RUNNER_TEMP/app.mobileprovision" app.lotties.app IOS_PROFILE_NAME
+          install_profile "$RUNNER_TEMP/widget.mobileprovision" app.lotties.app.widgets IOS_WIDGET_PROFILE_NAME
           echo "IOS_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
       - name: Archive
         env:
@@ -264,7 +272,7 @@ jobs:
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            LOTTIES_PROFILE_App="$IOS_PROFILE_NAME"             LOTTIES_PROFILE_LottiesWidgets="$IOS_WIDGET_PROFILE_NAME" \
             OTHER_CODE_SIGN_FLAGS="--keychain $IOS_KEYCHAIN" \
             MARKETING_VERSION="$LOTTIES_VERSION_NAME" \
             CURRENT_PROJECT_VERSION="$LOTTIES_VERSION_CODE"
@@ -302,6 +310,7 @@ jobs:
             <key>provisioningProfiles</key>
             <dict>
               <key>app.lotties.app</key><string>${IOS_PROFILE_NAME}</string>
+              <key>app.lotties.app.widgets</key><string>${IOS_WIDGET_PROFILE_NAME}</string>
             </dict>
             <key>uploadSymbols</key><true/>
           </dict>
@@ -329,7 +338,7 @@ jobs:
       - name: Remove the signing material and the API key
         if: always()
         run: |
-          rm -rf "$RUNNER_TEMP/asc" "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/app.mobileprovision" "$RUNNER_TEMP/profile.plist"
+          rm -rf "$RUNNER_TEMP/asc" "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/app.mobileprovision" "$RUNNER_TEMP/widget.mobileprovision" "$RUNNER_TEMP"/*.plist
           rm -f "$HOME"/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision
           if [ -n "${IOS_KEYCHAIN:-}" ]; then security delete-keychain "$IOS_KEYCHAIN" || true; fi
 
