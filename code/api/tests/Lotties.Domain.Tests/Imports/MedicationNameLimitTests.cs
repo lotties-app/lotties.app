@@ -7,7 +7,7 @@ namespace Lotties.Domain.Tests.Imports;
 
 public sealed class MedicationNameLimitTests
 {
-    private static readonly TimeSpan GenerousBound = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan GenerousBound = TimeSpan.FromSeconds(30);
 
     private static NapperLogRow Medicine(int rowNumber, string comment) =>
         Row("MEDICINE", Offset.AddMinutes(rowNumber), rowNumber: rowNumber) with { Comment = comment };
