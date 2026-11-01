@@ -69,11 +69,8 @@ enum LottiesMcp {
 
     static var isConnected: Bool { McpKeychain.load() != nil }
 
-    /// The device language as the server's speech locale ("pt-BR", "en-US").
-    private static var speechLocale: String {
-        let language = Locale.preferredLanguages.first ?? "en-US"
-        return language.lowercased().hasPrefix("pt") ? "pt-BR" : "en-US"
-    }
+    /// The app's language as the server's speech locale ("pt-BR", "en-US").
+    private static var speechLocale: String { LottiesText.isPortuguese ? "pt-BR" : "en-US" }
 
     // MARK: Tool calls
 
