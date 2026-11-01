@@ -1,3 +1,4 @@
+import { storeTimeBottles } from '../presets/timeBottlesStorage';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import type { BabyEvent, EventType, Medication } from '../db/models';
@@ -413,6 +414,24 @@ describe('runTrayChoice', () => {
     );
     expect(formulaBottle.payload).toMatchObject({ formula_id: 'f-cur', formula_name: 'Nan 2' });
     expect(milkBottle.payload).not.toHaveProperty('formula_id');
+  });
+
+  it('starts a bottle timer with the prepared amount when "Time bottle feedings" is on', async () => {
+    window.localStorage.clear();
+    storeTimeBottles(true);
+    try {
+      await runTrayChoice(
+        db,
+        { kind: 'bottle', amountMl: 120, content: 'formula', drunkMl: 60 },
+        ctx(at(14)),
+      );
+    } finally {
+      window.localStorage.clear();
+    }
+    const [bottle] = await live();
+    expect(bottle.endedAt).toBeNull();
+    expect(bottle.payload).toMatchObject({ method: 'bottle', amount_ml: 120 });
+    expect(bottle.payload).not.toHaveProperty('amount_drunk_ml');
   });
 
   it('logs a bottle of formula without a formula when none is current', async () => {
