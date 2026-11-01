@@ -23,6 +23,7 @@ function fakeBridge(entries: unknown[]): WidgetBridge & { text: string[]; remove
     readOutbox: async () => JSON.stringify(entries),
     removeOutbox: async (ids: string[]) => void bridge.removed.push(...ids),
     clearAll: async () => undefined,
+    diagnose: async () => 'test',
   };
   return bridge;
 }

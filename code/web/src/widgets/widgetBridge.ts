@@ -13,6 +13,8 @@ export interface WidgetBridge {
   removeOutbox(ids: string[]): Promise<void>;
   /** Deletes the snapshot and the outbox (sign-out, account erasure). */
   clearAll(): Promise<void>;
+  /** One line about what the plugin sees (container, file sizes), for Hub > About. */
+  diagnose(): Promise<string>;
 }
 
 interface LottiesSharedPlugin {
@@ -20,6 +22,7 @@ interface LottiesSharedPlugin {
   readOutbox(): Promise<{ json: string }>;
   removeOutbox(options: { ids: string[] }): Promise<void>;
   clearAll(): Promise<void>;
+  diagnose(): Promise<{ container: boolean; snapshotBytes: number; outboxBytes: number }>;
 }
 
 let plugin: Promise<LottiesSharedPlugin> | undefined;
@@ -31,10 +34,35 @@ function load(): Promise<LottiesSharedPlugin> {
   return plugin;
 }
 
+/** A native call that never answers (a blocked plugin queue) must become an error, not a promise that hangs. */
+async function call<T>(
+  method: string,
+  run: (plugin: LottiesSharedPlugin) => Promise<T>,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`no answer from the native plugin (${method})`)),
+      8000,
+    );
+  });
+  try {
+    return await Promise.race([load().then(run), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const size = (bytes: number) => (bytes < 0 ? 'none' : `${bytes} B`);
+
 /** The Capacitor implementation, used by the app when `isNativeApp()`. */
 export const nativeWidgetBridge: WidgetBridge = {
-  writeSnapshot: async (json) => (await load()).writeSnapshot({ json }),
-  readOutbox: async () => (await (await load()).readOutbox()).json,
-  removeOutbox: async (ids) => (await load()).removeOutbox({ ids }),
-  clearAll: async () => (await load()).clearAll(),
+  writeSnapshot: (json) => call('writeSnapshot', (p) => p.writeSnapshot({ json })),
+  readOutbox: async () => (await call('readOutbox', (p) => p.readOutbox())).json,
+  removeOutbox: (ids) => call('removeOutbox', (p) => p.removeOutbox({ ids })),
+  clearAll: () => call('clearAll', (p) => p.clearAll()),
+  diagnose: async () => {
+    const d = await call('diagnose', (p) => p.diagnose());
+    return `container ${d.container ? 'ok' : 'missing'}, snapshot ${size(d.snapshotBytes)}, outbox ${size(d.outboxBytes)}`;
+  },
 };

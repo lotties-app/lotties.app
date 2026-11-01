@@ -42,10 +42,12 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       try {
         setWidgetStatus({ state: 'working', step: 'sending' });
         await withTimeout(bridge.writeSnapshot(json), 'no answer from the native plugin');
-        setWidgetStatus({ state: 'ok', at: new Date().toISOString() });
+        const detail = await bridge.diagnose().catch(() => undefined);
+        setWidgetStatus({ state: 'ok', at: new Date().toISOString(), detail });
       } catch (error) {
         lastJson = '';
-        setWidgetStatus({ state: 'error', message: errorText(error) });
+        const ping = await bridge.diagnose().catch(() => 'no answer');
+        setWidgetStatus({ state: 'error', message: `${errorText(error)} [${ping}]` });
       }
     };
     const drain = () => drainOutbox(db, bridge).catch(() => 0);

@@ -22,6 +22,7 @@ describe('WidgetSync', () => {
         outbox = [];
       },
       clearAll: async () => undefined,
+      diagnose: async () => 'test',
     };
     const shell = fakeNativeShell();
     const view = render(

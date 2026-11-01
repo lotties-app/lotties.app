@@ -41,37 +41,38 @@ enum LottiesShared {
         return encoder
     }
 
-    // MARK: Files (two processes can touch them, so every access goes through a file coordinator)
+    // MARK: Files
+    //
+    // Two processes can touch them (the app and the widget extension). Writes are atomic (a reader sees the old or the
+    // new file, never half of one) and read-modify-write goes through a `flock`ed lock file. NSFileCoordinator was
+    // dropped: a coordinated read of a file that does not exist yet blocked Capacitor's serial plugin queue.
 
     private static func url(_ name: String) -> URL? { containerURL?.appendingPathComponent(name) }
 
+    private static func locked<T>(_ body: () -> T) -> T? {
+        guard let path = url(".lock")?.path else { return nil }
+        let descriptor = open(path, O_CREAT | O_RDWR, 0o644)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+        flock(descriptor, LOCK_EX)
+        defer { flock(descriptor, LOCK_UN) }
+        return body()
+    }
+
     static func readData(_ name: String) -> Data? {
         guard let url = url(name) else { return nil }
-        var result: Data?
-        var error: NSError?
-        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { readable in
-            result = try? Data(contentsOf: readable)
-        }
-        return result
+        return try? Data(contentsOf: url)
     }
 
     @discardableResult
     static func writeData(_ data: Data, to name: String) -> Bool {
         guard let url = url(name) else { return false }
-        var ok = false
-        var error: NSError?
-        NSFileCoordinator().coordinate(writingItemAt: url, options: .forReplacing, error: &error) { writable in
-            ok = (try? data.write(to: writable, options: .atomic)) != nil
-        }
-        return ok
+        return locked { (try? data.write(to: url, options: .atomic)) != nil } ?? false
     }
 
     static func delete(_ name: String) {
         guard let url = url(name) else { return }
-        var error: NSError?
-        NSFileCoordinator().coordinate(writingItemAt: url, options: .forDeleting, error: &error) { writable in
-            try? FileManager.default.removeItem(at: writable)
-        }
+        _ = locked { try? FileManager.default.removeItem(at: url) }
     }
 
     // MARK: Snapshot (written by the app, read by the widget and the intents)
@@ -94,17 +95,16 @@ enum LottiesShared {
         return (try? decoder.decode([OutboxEntry].self, from: data)) ?? []
     }
 
-    /// Read-modify-write under one coordinated write, so two intents never lose each other's entry.
+    /// Read-modify-write under one lock, so two intents never lose each other's entry.
     static func updateOutbox(_ change: (inout [OutboxEntry]) -> Void) {
         guard let url = url(outboxFile) else { return }
-        var error: NSError?
-        NSFileCoordinator().coordinate(writingItemAt: url, options: .forMerging, error: &error) { writable in
+        _ = locked {
             var entries: [OutboxEntry] = []
-            if let data = try? Data(contentsOf: writable) {
+            if let data = try? Data(contentsOf: url) {
                 entries = (try? decoder.decode([OutboxEntry].self, from: data)) ?? []
             }
             change(&entries)
-            if let data = try? encoder.encode(entries) { try? data.write(to: writable, options: .atomic) }
+            if let data = try? encoder.encode(entries) { try? data.write(to: url, options: .atomic) }
         }
     }
 
