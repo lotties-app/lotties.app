@@ -70,6 +70,10 @@ private final class LottiesMessageHandler: NSObject, WKScriptMessageHandlerWithR
             guard LottiesShared.writeData(data, to: LottiesShared.snapshotFile) else {
                 return (nil, "The App Group container is not available")
             }
+            if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let language = object["language"] as? String {
+                UserDefaults(suiteName: LottiesShared.groupId)?.set(language, forKey: LottiesText.languageKey)
+            }
             WidgetCenter.shared.reloadAllTimelines()
             return ("ok", nil)
         case "readOutbox":

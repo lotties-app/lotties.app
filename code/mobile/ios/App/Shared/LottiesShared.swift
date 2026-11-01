@@ -127,6 +127,8 @@ struct WidgetSnapshot: Codable, Equatable {
     var selectedBabyId: String?
     /// The lock screen is visible to others: names are left out there when this is true (the default).
     var hideNamesOnLockScreen: Bool?
+    /// The app's language ("pt-BR" or "en"), also copied to the App Group defaults (`LottiesText.languageKey`).
+    var language: String?
     var babies: [Baby]
 
     struct Baby: Codable, Equatable, Identifiable {
@@ -174,8 +176,14 @@ struct OutboxEntry: Codable, Equatable {
 
 /// Small text helpers for the intents and the widget (the app ships English and Brazilian Portuguese only).
 enum LottiesText {
+    static let languageKey = "language"
+
+    /// The language chosen in the Lotties app (written with every snapshot), else the phone's.
     static var isPortuguese: Bool {
-        (Locale.current.language.languageCode?.identifier ?? "en") == "pt"
+        if let language = UserDefaults(suiteName: LottiesShared.groupId)?.string(forKey: languageKey) {
+            return language.hasPrefix("pt")
+        }
+        return (Locale.current.language.languageCode?.identifier ?? "en") == "pt"
     }
 
     static func t(_ pt: String, _ en: String) -> String { isPortuguese ? pt : en }

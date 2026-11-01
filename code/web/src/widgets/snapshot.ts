@@ -1,4 +1,5 @@
 import type { BabyRoutineDb } from '../db/database';
+import { currentLocale } from '../i18n/i18n';
 import { allBabies, eventsStartedSince, eventTypesFor, runningEvents } from '../db/queries';
 import type { BabyEvent } from '../db/models';
 import { DAY_MS, payloadNumber, payloadString, typeForKey } from '../now/eventFacts';
@@ -24,6 +25,8 @@ export interface WidgetSnapshotDto {
   selectedBabyId: string | null;
   /** The lock screen is visible to others: the widget leaves names out there unless this is false. */
   hideNamesOnLockScreen: boolean;
+  /** The language of the app (not of the phone): the widget, the Siri intents and their spoken answers follow it. */
+  language: 'pt-BR' | 'en';
   babies: SnapshotBaby[];
 }
 
@@ -102,6 +105,7 @@ export async function buildSnapshot(
     signedIn: true,
     selectedBabyId,
     hideNamesOnLockScreen: true,
+    language: currentLocale() === 'pt-BR' ? 'pt-BR' : 'en',
     babies: await inSequence(babies, (b) => snapshotBaby(db, b, now)),
   };
 }
