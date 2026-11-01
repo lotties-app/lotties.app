@@ -24,6 +24,7 @@ function fakeBridge(entries: unknown[]): WidgetBridge & { text: string[]; remove
     removeOutbox: async (ids: string[]) => void bridge.removed.push(...ids),
     clearAll: async () => undefined,
     diagnose: async () => 'test',
+    probe: async () => 'test',
   };
   return bridge;
 }

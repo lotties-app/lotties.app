@@ -47,7 +47,8 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       } catch (error) {
         lastJson = '';
         const ping = await bridge.diagnose().catch(() => 'no answer');
-        setWidgetStatus({ state: 'error', message: `${errorText(error)} [${ping}]` });
+        const probe = await bridge.probe().catch((e) => errorText(e));
+        setWidgetStatus({ state: 'error', message: `${errorText(error)} [${ping}] [${probe}]` });
       }
     };
     const drain = () => drainOutbox(db, bridge).catch(() => 0);

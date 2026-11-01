@@ -15,6 +15,8 @@ export interface WidgetBridge {
   clearAll(): Promise<void>;
   /** One line about what the plugin sees (container, file sizes), for Hub > About. */
   diagnose(): Promise<string>;
+  /** Why the plugin may not answer: is it registered in this WebView, and does a stock plugin answer? */
+  probe(): Promise<string>;
 }
 
 interface LottiesSharedPlugin {
@@ -65,4 +67,25 @@ export const nativeWidgetBridge: WidgetBridge = {
     const d = await call('diagnose', (p) => p.diagnose());
     return `container ${d.container ? 'ok' : 'missing'}, snapshot ${size(d.snapshotBytes)}, outbox ${size(d.outboxBytes)}`;
   },
+  probe: probeNative,
 };
+
+/** Used when `LottiesShared` does not answer: separates "not registered here" from "the native queue is stuck". */
+async function probeNative(): Promise<string> {
+  const { Capacitor } = await import('@capacitor/core');
+  const headers = (Capacitor as unknown as { PluginHeaders?: { name: string }[] }).PluginHeaders;
+  const registered = headers?.some((h) => h.name === 'LottiesShared') ?? false;
+  let app = 'ok';
+  try {
+    const { App } = await import('@capacitor/app');
+    await Promise.race([
+      App.getState(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+  } catch (error) {
+    app = error instanceof Error ? error.message : 'failed';
+  }
+  return `platform ${Capacitor.getPlatform()}, registered ${registered ? 'yes' : 'no'}, available ${
+    Capacitor.isPluginAvailable('LottiesShared') ? 'yes' : 'no'
+  }, headers ${headers?.length ?? 0}, app plugin ${app}`;
+}

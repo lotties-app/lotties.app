@@ -23,6 +23,7 @@ describe('WidgetSync', () => {
       },
       clearAll: async () => undefined,
       diagnose: async () => 'test',
+      probe: async () => 'test',
     };
     const shell = fakeNativeShell();
     const view = render(
