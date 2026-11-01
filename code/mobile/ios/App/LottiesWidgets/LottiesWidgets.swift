@@ -511,7 +511,7 @@ private struct MoreSquare: View {
 
 /// The bottle or breastfeed running now: its time, and pause or resume and stop.
 private struct RunningFeedRow: View {
-    let run: WidgetSnapshot.Baby.RunningFeed
+    let run: WidgetSnapshot.RunningFeed
 
     private var title: String {
         run.kind == "bottle" ? LottiesText.t("Mamadeira", "Bottle") : LottiesText.t("Peito", "Breast")
@@ -638,7 +638,7 @@ private enum QuickItem: Hashable {
     case stop
     case more
 
-    static func items(slots: [WidgetActivity], run: WidgetSnapshot.Baby.RunningFeed?) -> [QuickItem] {
+    static func items(slots: [WidgetActivity], run: WidgetSnapshot.RunningFeed?) -> [QuickItem] {
         var items: [QuickItem] = []
         if let run {
             if run.kind == "bottle" { items.append(.pause(run.paused)) }
