@@ -888,6 +888,17 @@
           ]
         },
         {
+          "name": "PanelIntent",
+          "slots": [],
+          "samples": [
+            "open the panel",
+            "show the panel",
+            "show the night panel",
+            "night mode",
+            "open the night panel"
+          ]
+        },
+        {
           "name": "ListBabiesIntent",
           "slots": [],
           "samples": [

@@ -39,7 +39,30 @@ public interface IAlexaLanguage
     string Say(AssistantResult result);
 
     AlexaLine Say(AlexaPrompt prompt);
+
+    /// <summary>The words of the Echo Show night panel (labels and notes; the facts come from the command results).</summary>
+    AlexaPanelTexts Panel { get; }
+
+    /// <summary>A clock time in the result's time zone in this language's clock style, <c>null</c> when the zone is unknown.</summary>
+    string? ClockOf(AssistantResult result, DateTimeOffset? instant);
 }
+
+/// <summary>
+/// The fixed texts of the night panel in one language. <c>{0}</c> is a clock time or a short duration; estimates always say they
+/// are estimates from the family's own log (never advice, never "normal" or "abnormal").
+/// </summary>
+public sealed record AlexaPanelTexts(
+    string AppName,
+    string Sleep,
+    string Feed,
+    string Diaper,
+    string Nap,
+    string AsleepSince,
+    string AwakeSince,
+    string Ago,
+    string NextFeedEstimate,
+    string NapEstimate,
+    string Stale);
 
 /// <summary>The skill's languages: Brazilian Portuguese for <c>pt-*</c>, English for every other locale.</summary>
 public static class AlexaLanguages

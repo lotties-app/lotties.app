@@ -51,6 +51,7 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `DaySummaryIntent` | "how was her day" | "como foi o dia dela" | `ReadDaySummary` (today) |
 | `WeekSummaryIntent` | "how was her week" | "como foi a semana dela" | `ReadWeekSummary` (up to today) |
 | `BabyProfileIntent` | "how old is she" | "quantos anos ela tem" | `ReadBabyProfile` (the age only) |
+| `PanelIntent` | "open the panel", "night mode" | "abrir o painel", "modo noturno" | the reads of the Echo Show night panel, design 42 (read intent, no slots) |
 | `ListBabiesIntent` | "list my babies" | "listar meus bebês" | `ListBabies` |
 | `SetBabyHelpIntent` | "choose the baby" | "escolher o bebê" | (help: Settings, Voice assistants) |
 | `AMAZON.HelpIntent`, `StopIntent`, `CancelIntent`, `FallbackIntent`, `NavigateHomeIntent` | | | built-in |
