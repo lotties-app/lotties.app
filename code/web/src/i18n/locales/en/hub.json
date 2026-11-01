@@ -35,6 +35,11 @@
         "hint": "Visits and reminders",
         "keywords": "visits doctor calendar pediatrician checkup"
       },
+      "providers": {
+        "title": "Doctors and clinics",
+        "hint": "Phones, addresses and registrations",
+        "keywords": "doctor pediatrician specialist clinic hospital phone address crm contacts"
+      },
       "vaccines": {
         "title": "Vaccines",
         "hint": "Schedule and card",
@@ -100,6 +105,26 @@
         "hint": "Bring history from another app",
         "keywords": "napper export file csv history"
       },
+      "export": {
+        "title": "Export data",
+        "hint": "Download a backup of this baby",
+        "keywords": "backup download file json save copy data move"
+      },
+      "backupImport": {
+        "title": "Import backup",
+        "hint": "Restore a file exported from the app",
+        "keywords": "backup restore upload file json move account"
+      },
+      "install": {
+        "title": "Install the app",
+        "hint": "On your phone or computer",
+        "keywords": "install home screen add phone iphone android pwa app shortcut"
+      },
+      "welcome": {
+        "title": "Home page",
+        "hint": "The Lotties welcome page",
+        "keywords": "home welcome landing page start website"
+      },
       "updates": {
         "title": "Check for updates",
         "hint": "Get the latest version",
@@ -109,6 +134,16 @@
         "title": "About",
         "hint": "Version and licence",
         "keywords": "version build licence license source"
+      },
+      "credits": {
+        "title": "Credits and licenses",
+        "hint": "Open-source software, data and services behind Lotties",
+        "keywords": "credits licenses licences open source thanks libraries data attribution agpl third party"
+      },
+      "privacy": {
+        "title": "Privacy policy",
+        "hint": "What we collect, why, and your rights",
+        "keywords": "privacy policy data protection lgpd personal data rights delete export consent cookies"
       }
     },
     "updates": {
@@ -135,6 +170,8 @@
       "license": "Licence",
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
+      "credits": "Built on open source. Credits and licenses",
+      "privacy": "Privacy policy",
       "unknown": "Unknown"
     }
   }

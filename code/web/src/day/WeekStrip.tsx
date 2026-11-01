@@ -54,7 +54,7 @@ export function WeekStrip({ day, today, onChange }: Props) {
         display: 'grid',
         gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         gap: 0.5,
-        touchAction: 'pan-y',
+        touchAction: 'pan-y pinch-zoom',
       }}
     >
       {days.map((candidate) => {

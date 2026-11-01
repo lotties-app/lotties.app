@@ -36,10 +36,11 @@ function SyncIcon({ status }: { status: SyncStatus }) {
 }
 
 /**
- * Header icon button: sync state at a glance, opens Settings > Sync. Changes that need the user's
- * attention (rejected event details) add a count badge whatever the state.
+ * Header icon button: sync state at a glance, opens Settings > Sync (`to`: the doctor's dashboard
+ * has its own Settings page). Changes that need the user's attention (rejected event details) add
+ * a count badge whatever the state.
  */
-export function SyncIconButton() {
+export function SyncIconButton({ to = '/settings#sync' }: { to?: string }) {
   const { t } = useTranslation();
   const status = useSyncStatus();
   const label = syncLabel(status);
@@ -47,7 +48,7 @@ export function SyncIconButton() {
     <Tooltip title={status.lastError ?? label}>
       <IconButton
         component={Link}
-        to="/settings#sync"
+        to={to}
         color="inherit"
         aria-label={t('sync.iconLabel', { label })}
       >

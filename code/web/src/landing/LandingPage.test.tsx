@@ -11,21 +11,40 @@ import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import type { AuthApi } from '../auth/AuthContext';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
+import summary from '../credits/third-party-summary.generated.json';
 import LandingPage from './LandingPage';
 import { repoUrl } from './repoUrl';
+import { detectInstallPlatform, guideFor } from '../install/installPlatform';
+import type { InstallState } from '../install/useInstallState';
 
 const install = vi.fn();
-let installState = { canInstall: false, showIosHint: false };
-vi.mock('../pwa/useInstallPrompt', () => ({
-  useInstallPrompt: () => ({ ...installState, install }),
+const IOS = detectInstallPlatform(
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+);
+const ANDROID = detectInstallPlatform(
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+);
+const BASE: Omit<InstallState, 'install'> = {
+  native: false,
+  installed: false,
+  canPrompt: false,
+  platform: ANDROID,
+  guide: guideFor(ANDROID),
+};
+let installState: Omit<InstallState, 'install'> = BASE;
+vi.mock('../install/useInstallState', () => ({
+  useInstallState: () => ({ ...installState, install }),
 }));
 
-function renderLanding(auth: AuthApi = fakeAuth({ isAuthenticated: false, user: null })) {
+function renderLanding(
+  auth: AuthApi = fakeAuth({ isAuthenticated: false, user: null }),
+  welcome = false,
+) {
   return render(
     <I18nProvider>
       <AppThemeProvider>
         <AuthTestWrapper auth={auth}>
-          <LandingPage />
+          <LandingPage welcome={welcome} />
         </AuthTestWrapper>
       </AppThemeProvider>
     </I18nProvider>,
@@ -33,7 +52,7 @@ function renderLanding(auth: AuthApi = fakeAuth({ isAuthenticated: false, user: 
 }
 
 beforeEach(() => {
-  installState = { canInstall: false, showIosHint: false };
+  installState = BASE;
   install.mockReset();
   document.title = 'Lotties';
 });
@@ -49,6 +68,8 @@ describe('LandingPage', () => {
       'What it does',
       'Not a medical device',
       'How it works',
+      'Install on your phone',
+      'Built on open source',
     ]);
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(9);
     expect(screen.getByText(/Estimates from your logged history, not medical advice/)).toBeTruthy();
@@ -57,6 +78,41 @@ describe('LandingPage', () => {
     expect(screen.getByText(/AGPL-3\.0/, { selector: 'footer p' })).toBeTruthy();
     // The title is set by an effect that can run just after the page is in the document.
     await waitFor(() => expect(document.title).toBe("Lotties: track your baby's day, together"));
+  });
+
+  it('credits open source in a visible section and in the footer, both linking to /credits', async () => {
+    renderLanding();
+    const section = (
+      await screen.findByRole('heading', { level: 2, name: 'Built on open source' })
+    ).closest('section')!;
+    expect(within(section).getByText(`${summary.count} open-source packages`)).toBeTruthy();
+    expect(within(section).getByText(/Including React, MUI, Dexie/)).toBeTruthy();
+    expect(within(section).getByText(/AGPL-3\.0/)).toBeTruthy();
+    expect(within(section).getByText(/not a medical device/)).toBeTruthy();
+    expect(
+      within(section)
+        .getByRole('link', { name: 'See all credits and licenses' })
+        .getAttribute('href'),
+    ).toBe('/credits');
+    expect(
+      within(section)
+        .getByRole('link', { name: /Source code on GitHub/ })
+        .getAttribute('href'),
+    ).toBe('https://github.com/dev-vinicius-andrade/lotties.app');
+    const footer = screen.getByRole('contentinfo');
+    expect(
+      within(footer).getByRole('link', { name: 'Credits and licenses' }).getAttribute('href'),
+    ).toBe('/credits');
+  });
+
+  it('links the public privacy policy in the footer, next to the credits', async () => {
+    renderLanding();
+    const footer = await screen.findByRole('contentinfo');
+    const links = within(footer)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')]);
+    const credits = links.findIndex(([, href]) => href === '/credits');
+    expect(links[credits + 1]).toEqual(['Privacy policy', '/privacy']);
   });
 
   it('starts sign-in from the header and the hero, and registration from the secondary button', async () => {
@@ -112,24 +168,70 @@ describe('LandingPage', () => {
   });
 
   describe('install', () => {
-    it('offers the install button when the browser can install the app', async () => {
-      installState = { canInstall: true, showIosHint: false };
+    const section = async () =>
+      (await screen.findByRole('heading', { level: 2, name: 'Install on your phone' })).closest(
+        'section',
+      )!;
+
+    it('has a visible install section naming both phones, with the guide link', async () => {
       renderLanding();
-      fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+      const box = await section();
+      expect(within(box).getByText(/iPhone or Android/)).toBeTruthy();
+      expect(
+        within(box).getByRole('link', { name: 'Step-by-step guide' }).getAttribute('href'),
+      ).toBe('/install');
+      const footer = screen.getByRole('contentinfo');
+      expect(
+        within(footer).getByRole('link', { name: 'Install the app' }).getAttribute('href'),
+      ).toBe('/install');
+    });
+
+    it('opens the browser install prompt when the browser offers one', async () => {
+      installState = { ...BASE, canPrompt: true };
+      install.mockResolvedValue('accepted');
+      renderLanding();
+      fireEvent.click(await within(await section()).findByRole('button', { name: 'Install app' }));
       expect(install).toHaveBeenCalledOnce();
     });
 
-    it('shows the iOS hint where install is manual', async () => {
-      installState = { canInstall: false, showIosHint: true };
+    it('opens the Add to Home Screen steps on iPhone, never claiming to install by itself', async () => {
+      installState = { ...BASE, platform: IOS, guide: guideFor(IOS) };
       renderLanding();
-      expect(await screen.findByText(/Add to Home Screen/)).toBeTruthy();
+      fireEvent.click(
+        await within(await section()).findByRole('button', { name: 'Add to Home Screen' }),
+      );
+      const dialog = await screen.findByRole('dialog', { name: 'Add Lotties to your Home Screen' });
+      expect(within(dialog).getByText(/does not let a website install itself/)).toBeTruthy();
     });
 
-    it('shows neither when the app is installed or cannot be', async () => {
+    it('says so when this is already the installed app', async () => {
+      installState = { ...BASE, installed: true };
+      renderLanding();
+      expect(
+        within(await section()).getByText('You are already using the installed app.'),
+      ).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /Install app|How to install/ })).toBeNull();
+    });
+
+    it('has no install section inside the store app', async () => {
+      installState = { ...BASE, native: true };
       renderLanding();
       await screen.findByRole('heading', { level: 1 });
-      expect(screen.queryByRole('button', { name: 'Install app' })).toBeNull();
-      expect(screen.queryByText(/Add to Home Screen/)).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Install on your phone' })).toBeNull();
+      expect(screen.queryByRole('link', { name: 'Install the app' })).toBeNull();
+    });
+  });
+
+  describe('welcome (signed in, /welcome)', () => {
+    it('offers Back to the app and Open the app instead of sign-in', async () => {
+      const auth = fakeAuth({ isAuthenticated: true });
+      renderLanding(auth, true);
+      expect(
+        (await screen.findByRole('link', { name: 'Back to the app' })).getAttribute('href'),
+      ).toBe('/');
+      expect(screen.getByRole('link', { name: 'Open the app' }).getAttribute('href')).toBe('/');
+      expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Create an account' })).toBeNull();
     });
   });
 });

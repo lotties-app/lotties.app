@@ -29,12 +29,24 @@ internal static class TestUsers
     }
 
     /// <summary>Seeds a baby whose owner is a new user, plus one user per <paramref name="memberRoles"/> entry.</summary>
-    public static async Task<SeededBaby> SeedBabyAsync(this ApiFactory factory, params BabyRole[] memberRoles)
+    public static Task<SeededBaby> SeedBabyAsync(this ApiFactory factory, params BabyRole[] memberRoles) =>
+        factory.SeedBabyAsync(doctorScopes: null, memberRoles);
+
+    /// <summary>
+    /// Seeds a baby like <see cref="SeedBabyAsync(ApiFactory, BabyRole[])"/>, with every Doctor member limited to
+    /// <paramref name="doctorScopes"/> through the domain (<see cref="Baby.ChangeDoctorScopes"/>); <c>null</c> keeps the defaults.
+    /// </summary>
+    public static async Task<SeededBaby> SeedBabyAsync(this ApiFactory factory, DoctorScopeSet? doctorScopes, params BabyRole[] memberRoles)
     {
         var owner = User.Create(User.UnknownIssuer, NewSubject(), "Owner", Now);
         var members = memberRoles.Select(role => (Role: role, User: User.Create(User.UnknownIssuer, NewSubject(), role.ToString(), Now))).ToArray();
         var baby = Baby.Create("Lia", DateOnly.FromDateTime(Now.UtcDateTime), owner.Id, Now);
         Array.ForEach(members, member => baby.AddMember(member.User.Id, member.Role, Now));
+        if (doctorScopes is not null)
+        {
+            Array.ForEach(members.Where(member => member.Role == BabyRole.Doctor).ToArray(), member => baby.ChangeDoctorScopes(member.User.Id, doctorScopes));
+        }
+
         await factory.SeedAsync(context =>
         {
             context.Users.Add(owner);

@@ -14,7 +14,7 @@ Android SDK on the dev machine, no developer accounts). Payments are out of scop
 | API | `https://lotties.app` (the API is at `/api/v1`); Vite mode `native` (`code/web/.env.native`) |
 | Sign-in | System browser (`@capacitor/browser`: SFSafariViewController, Android Custom Tab), back through the URL scheme `app.lotties.app://auth/callback` and `app.lotties.app://auth/logout` (RFC 8252 private-use scheme in reverse-DNS form, PKCE S256) |
 | `allowNavigation` | **None** (the brief suggested `https://auth.lotties.app`; deliberately left out). Token and userinfo calls are fetch requests (CORS), not navigations; without the entry, any stray navigation to the identity provider opens in the system browser instead of the WebView, so a password is never typed into an embedded view. Capacitor documents `allowNavigation` as not meant for production |
-| Plugins | `@capacitor/app` (URL events), `@capacitor/browser` (sign-in), `@capacitor/keyboard` (resize), `@capacitor/splash-screen`. Status bar through the **core** `SystemBars` plugin of Capacitor 8 (the `@capacitor/status-bar` options `overlaysWebView`/`backgroundColor` no longer work on Android 15/16 edge-to-edge). Haptics and Preferences: not added (nothing uses them yet) |
+| Plugins | `@capacitor/app` (URL events), `@capacitor/browser` (sign-in), `@capacitor/keyboard` (resize), `@capacitor/splash-screen`. Status bar through the **core** `SystemBars` plugin of Capacitor 8 (the `@capacitor/status-bar` options `overlaysWebView`/`backgroundColor` no longer work on Android 15/16 edge-to-edge). `@capacitor/filesystem` + `@capacitor/share` (files leave the app through the share sheet: `platform/saveFile.ts` writes the file to the cache directory and shares it; a download link goes nowhere in the WebView; used by Export data, the account data download and the calendar `.ics`). Haptics and Preferences: not added (nothing uses them yet) |
 | iOS dependencies | Swift Package Manager (Capacitor 8 default; `ios/App/CapApp-SPM/Package.swift`). No CocoaPods, no `pod install` |
 | Service worker | Not registered inside the shell (the bundled assets are the offline copy; a store release is the update). PWA path unchanged |
 
@@ -126,11 +126,10 @@ nothing a page on the user's own machine could not already do with a token it do
   bundle, used every time the app opens. To verify on device: WebKit's documented behaviour for non-browser apps (the
   7-day cap is described for browsers and home-screen web apps).
 - First launch works offline after install (assets bundled); sign-in and sync need the network, as in the PWA.
-- Open decisions: Android `allowBackup="true"` (template default) lets Android back up WebView storage, refresh token
-  included, and restore it on a new phone: keep (convenience) or set `false` / data extraction rules (safer).
-  The nginx Content-Security-Policy does not exist in the app (no server): add a `<meta>` CSP to the native build.
+- Android backup: decided **off** (`allowBackup="false"`, `fullBackupContent="false"` and `res/xml/data_extraction_rules.xml` excluding cloud backup and device transfer). The WebView storage holds the refresh token and the unsynced outbox; a restored token on another phone is a session nobody opened, and everything else comes back from the server after sign-in.
+- Content-Security-Policy: the nginx header does not exist in the app (no server), so the native build gets the same policy as a `<meta>` tag (`code/web/native-csp.ts`, only in `vite build --mode native`): own bundle only, `connect-src` = the API and identity provider origins read from `.env.native`, no inline or remote script, `form-action 'none'`. **Untested on a device**: if the first run shows a blank screen, look for a CSP violation in the WebView console (chrome://inspect, Safari Web Inspector) before suspecting anything else.
 
-## 7. Push notifications (decision, not built)
+## 7. Push notifications (decision, not built; full design in docs/design/19-native-push.md)
 
 Inside the shell Web Push is not available (WKWebView has no Push API; Android WebView neither), and the service worker
 is not registered. Plan: native push.
@@ -190,7 +189,8 @@ app can register; PKCE already blocks code interception).
   identifiers, linked to the user, no tracking), Google Play Data safety (health info, personal info; encrypted in
   transit; deletion available). Google Play also has a Health apps declaration. Medication reminders: no medical
   advice claims (Apple 1.4.1); age rating questionnaire; not the Kids category (the users are parents).
-- **Account deletion (TODO, blocking)**: Apple 5.1.1(v) and Google Play require deleting the account from inside the
+- **Account deletion (built, branch `feat/account-deletion`; spec in docs/SPEC.md, Keycloak step in docs/DEPLOY.md)**: `GET /me/deletion-preview` + `DELETE /me`, Settings > Account and data (web and app), data download first on the web (the app has no file-share plugin yet, so it points to the web; a share/filesystem plugin needs a dependency change). The original analysis follows.
+- **Account deletion (analysis)**: Apple 5.1.1(v) and Google Play require deleting the account from inside the
   app (Google also a web link) when the app can create accounts (it can: Keycloak registration). The app has no account
   deletion today (`/api/v1/me` is read-only). API work: `DELETE /api/v1/me` that removes the user's memberships, deletes
   babies where the user is the only member (events, measurements, medications, prescriptions, invites, notification
@@ -202,9 +202,7 @@ app can register; PKCE already blocks code interception).
   native push (section 7), widgets and quick actions (section 8), no web chrome inside the app (no install prompts, no
   "open in browser"), correct icons/splash/launch screen, keyboard and safe areas handled. Push and at least one
   widget should exist before the first iOS review.
-- Placeholder assets: `android/app/src/main/res` and `ios/App/App/Assets.xcassets` still hold Capacitor's default icon
-  and splash. Generate them from the brand icons (docs/design/icons, concept B) with `@capacitor/assets` before any
-  tester build; splash colours follow the design owner (light `#f5efe4`, dark `#1b1814` are today's first-paint colours).
+- Icons and splash: generated from the brand icons (docs/design/icons, concept B) by `npm --prefix code/mobile run assets` (`code/mobile/scripts/generate-native-assets.mjs`, uses `sharp` from code/web; no new dependency). Android: legacy, round, adaptive foreground (background colour `#F5EFE4`) and monochrome (themed icons) mipmaps, pre-Android 12 `splash.png` per density, Android 12+ splash from `values/styles.xml` (`windowSplashScreenBackground` + the foreground icon; dark `#1B1814` in `values-night`). iOS: 1024 px opaque app icon, `Splash.imageset` with light and dark 2732 px images. Splash colours: light `#f5efe4`, dark `#1b1814` (the web first-paint colours). Not checked on a device: the glyph sits in the adaptive icon safe zone by construction (0.78 of the canvas, as the maskable art), look at it on a launcher first.
 
 ## 11. AGPL-3.0 and the App Store
 
@@ -229,7 +227,7 @@ Nothing secret is in the repository (`code/mobile/.gitignore` refuses keystores,
 - APNs `.p8` key and the FCM service account (section 7) are API secrets: the Secret `lotties-secrets`, like the VAPID
   keys.
 
-## 13. CI plan
+## 13. CI plan (built as `.github/workflows/mobile-release.yml`, unrun; how to use it: docs/MOBILE-RELEASE.md)
 
 - Android (ubuntu-latest): Node 22, Temurin JDK 21, `npm ci` in code/web and code/mobile, `build:web` (client id from a
   repository variable), `npx cap sync android`, `./gradlew assembleDebug` on pull requests (artifact); on a `v*` tag

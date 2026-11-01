@@ -109,6 +109,9 @@ const FUSSY_HELPED: ReadonlyMap<string, () => string> = new Map([
   ['sleep', () => t('timeline.fussyHelped.sleep')],
   ['other', () => t('timeline.fussyHelped.other')],
   ['nothing', () => t('timeline.fussyHelped.nothing')],
+  ['diaper_change', () => t('timeline.fussyHelped.diaper_change')],
+  ['burping', () => t('timeline.fussyHelped.burping')],
+  ['holding', () => t('timeline.fussyHelped.holding')],
 ]);
 
 /** The detail line wording of the fussy fields (`undefined`: use the generic one). */

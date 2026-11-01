@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { ageInDaysAt, type AgeNorm, type AgeNormSet } from '../ageNorms/ageNorms';
 import type { BabyEvent } from '../db/models';
+import { SHIPPED_AGE_NORMS } from '../test/ageNorms';
 import {
   ageInMonths,
   ageRangeFor,
   BOTTLE_AGE_RANGES,
   NEUTRAL_BOTTLE_AMOUNTS,
+  normBottleRange,
   rangeChips,
 } from './bottleAgeDefaults';
 import {
@@ -180,5 +183,84 @@ describe('cold start', () => {
     expect(suggest([], { birthDate: '2026-07-21', include: 100 }).amounts).toEqual([
       100, 120, 150, 180,
     ]);
+  });
+});
+
+describe('cold start from the published norms (docs/design/28-age-norms.md section 15.2)', () => {
+  const withNorms = (birthDate: string, more: Partial<Parameters<typeof suggest>[1]> = {}) =>
+    suggest([], { birthDate, ageNorms: SHIPPED_AGE_NORMS, ...more });
+
+  // Golden vectors: birth date (NOW is 2026-10-21), age in days, whole months, the norm used
+  // (null: the month table, as before) and the chips.
+  it.each([
+    ['2026-10-21', 0, 0, null, [30, 60, 90]],
+    ['2026-10-15', 6, 0, null, [30, 60, 90]],
+    ['2026-10-14', 7, 0, 'feed_volume_ml_per_feed.formula.7-30', [60, 90, 120]],
+    ['2026-09-22', 29, 0, 'feed_volume_ml_per_feed.formula.7-30', [60, 90, 120]],
+    ['2026-09-21', 30, 1, 'feed_volume_ml_per_feed.formula.30-61', [90, 120, 150]],
+    ['2026-08-22', 60, 1, 'feed_volume_ml_per_feed.formula.30-61', [90, 120, 150]],
+    ['2026-08-21', 61, 2, 'feed_volume_ml_per_feed.formula.61-91', [150, 180]],
+    ['2026-07-22', 91, 2, 'feed_volume_ml_per_feed.formula.91-122', [180, 200]],
+    ['2026-06-21', 122, 4, 'feed_volume_ml_per_feed.formula.122-183', [180, 200]],
+    ['2026-04-21', 183, 6, 'feed_volume_ml_per_feed.formula.183-365', [180, 210, 240]],
+    ['2025-10-22', 364, 11, 'feed_volume_ml_per_feed.formula.183-365', [180, 210, 240]],
+    ['2025-10-21', 365, 12, null, [180, 210, 240]],
+  ])(
+    'born %s (%i days, %i months): norm %s, chips %j',
+    (birthDate, days, months, normId, chips) => {
+      expect(ageInDaysAt(birthDate, NOW)).toBe(days);
+      const s = withNorms(birthDate);
+      expect(s).toMatchObject({ source: 'age', ageMonths: months, ageNormId: normId });
+      expect(s.amounts).toEqual(chips);
+      expect(s.amounts).toContain(s.preferred);
+    },
+  );
+
+  it('the first week needs review: the month table stays (old value)', () => {
+    expect(normBottleRange(SHIPPED_AGE_NORMS, 3)).toBeNull();
+    expect(withNorms('2026-10-18').amounts).toEqual(
+      suggest([], { birthDate: '2026-10-18' }).amounts,
+    );
+  });
+
+  it('a low-confidence or flagged band is never used: the month table stays', () => {
+    const flag = (change: Partial<AgeNorm>) =>
+      ({
+        ...SHIPPED_AGE_NORMS,
+        norms: SHIPPED_AGE_NORMS.norms.map((norm) =>
+          norm.id === 'feed_volume_ml_per_feed.formula.30-61' ? { ...norm, ...change } : norm,
+        ),
+      }) as AgeNormSet;
+
+    for (const norms of [flag({ confidence: 'low' }), flag({ needsReview: true })]) {
+      const s = withNorms('2026-09-21', { ageNorms: norms });
+      expect(s).toMatchObject({ source: 'age', ageMonths: 1, ageNormId: null });
+      expect(s.amounts).toEqual([90, 120]);
+    }
+  });
+
+  it('without norms on the device the month table is used (unchanged behaviour)', () => {
+    for (const ageNorms of [null, undefined]) {
+      const s = withNorms('2026-08-21', { ageNorms });
+      expect(s).toMatchObject({ ageMonths: 2, ageNormId: null });
+      expect(s.amounts).toEqual([120, 150]);
+    }
+  });
+
+  it('own history wins over the norms; no birth date stays neutral', () => {
+    const own = suggest(history(120, 120, 120), {
+      birthDate: '2026-08-21',
+      ageNorms: SHIPPED_AGE_NORMS,
+    });
+    expect(own).toMatchObject({ source: 'history', ageNormId: null, preferred: 120 });
+    expect(suggest([], { ageNorms: SHIPPED_AGE_NORMS })).toMatchObject({
+      source: 'neutral',
+      ageNormId: null,
+    });
+  });
+
+  it('keeps the included amount and the field bounds', () => {
+    expect(withNorms('2026-08-21', { include: 100 }).amounts).toEqual([100, 150, 180]);
+    expect(withNorms('2026-04-21', { max: 200 }).amounts).toEqual([180]);
   });
 });

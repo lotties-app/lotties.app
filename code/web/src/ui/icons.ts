@@ -7,6 +7,7 @@ import IconPencil from '@tabler/icons-react/dist/esm/icons/IconPencil.mjs';
 import IconTrash from '@tabler/icons-react/dist/esm/icons/IconTrash.mjs';
 import IconArchive from '@tabler/icons-react/dist/esm/icons/IconArchive.mjs';
 import IconShare from '@tabler/icons-react/dist/esm/icons/IconShare.mjs';
+import IconDownload from '@tabler/icons-react/dist/esm/icons/IconDownload.mjs';
 import IconCopy from '@tabler/icons-react/dist/esm/icons/IconCopy.mjs';
 import IconFileUpload from '@tabler/icons-react/dist/esm/icons/IconFileUpload.mjs';
 import IconChevronDown from '@tabler/icons-react/dist/esm/icons/IconChevronDown.mjs';
@@ -34,6 +35,7 @@ import IconInfoCircle from '@tabler/icons-react/dist/esm/icons/IconInfoCircle.mj
 import IconPlayerPlay from '@tabler/icons-react/dist/esm/icons/IconPlayerPlay.mjs';
 import IconPlayerStop from '@tabler/icons-react/dist/esm/icons/IconPlayerStop.mjs';
 import IconStopwatch from '@tabler/icons-react/dist/esm/icons/IconStopwatch.mjs';
+import IconHistory from '@tabler/icons-react/dist/esm/icons/IconHistory.mjs';
 import IconClock from '@tabler/icons-react/dist/esm/icons/IconClock.mjs';
 import IconCalendar from '@tabler/icons-react/dist/esm/icons/IconCalendar.mjs';
 import IconCalendarEvent from '@tabler/icons-react/dist/esm/icons/IconCalendarEvent.mjs';
@@ -110,6 +112,13 @@ import IconLayoutGrid from '@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mj
 import IconRefresh from '@tabler/icons-react/dist/esm/icons/IconRefresh.mjs';
 import IconUserPlus from '@tabler/icons-react/dist/esm/icons/IconUserPlus.mjs';
 import IconPalette from '@tabler/icons-react/dist/esm/icons/IconPalette.mjs';
+import IconPhone from '@tabler/icons-react/dist/esm/icons/IconPhone.mjs';
+import IconMail from '@tabler/icons-react/dist/esm/icons/IconMail.mjs';
+import IconWorld from '@tabler/icons-react/dist/esm/icons/IconWorld.mjs';
+import IconBrandWhatsapp from '@tabler/icons-react/dist/esm/icons/IconBrandWhatsapp.mjs';
+import IconBuildingHospital from '@tabler/icons-react/dist/esm/icons/IconBuildingHospital.mjs';
+import IconStarFilled from '@tabler/icons-react/dist/esm/icons/IconStarFilled.mjs';
+import IconExternalLink from '@tabler/icons-react/dist/esm/icons/IconExternalLink.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -159,6 +168,7 @@ export const ICON_COMPONENTS = {
   stop: IconPlayerStop,
   stopwatch: IconStopwatch,
   clock: IconClock,
+  history: IconHistory,
   calendar: IconCalendar,
   event: IconCalendarEvent,
   note: IconNotes,
@@ -234,6 +244,14 @@ export const ICON_COMPONENTS = {
   refresh: IconRefresh,
   'user-plus': IconUserPlus,
   palette: IconPalette,
+  phone: IconPhone,
+  mail: IconMail,
+  world: IconWorld,
+  whatsapp: IconBrandWhatsapp,
+  hospital: IconBuildingHospital,
+  'star-filled': IconStarFilled,
+  'external-link': IconExternalLink,
+  download: IconDownload,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

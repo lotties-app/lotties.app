@@ -199,8 +199,8 @@ function Pill({ timers, readOnly, isLocked, onOpen, onToggle, onStop }: PillProp
           component="span"
           sx={{
             position: 'absolute',
-            width: 1,
-            height: 1,
+            width: '1px',
+            height: '1px',
             overflow: 'hidden',
             clip: 'rect(0 0 0 0)',
           }}

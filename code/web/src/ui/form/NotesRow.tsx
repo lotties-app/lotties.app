@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, TextareaAutosize, type Theme } from '@mui/material';
 import { Icon } from '../Icon';
 import { useControlAttributes } from './fieldContext';
-import { filledSurface, focusRing, palette } from './styles';
+import { filledSurface, focusRing, palette, TOUCH_FIELD_FONT } from './styles';
 
 /** Same limit as the API (`Event.Notes`). */
 export const NOTES_MAX_LENGTH = 2000;
@@ -94,6 +94,7 @@ export function NotesRow({
           p: 1.75,
           border: 0,
           font: 'inherit',
+          ...TOUCH_FIELD_FONT,
           lineHeight: 1.5,
           resize: 'none',
           '&:focus-visible': { outline: focusRing(theme), outlineOffset: 0 },

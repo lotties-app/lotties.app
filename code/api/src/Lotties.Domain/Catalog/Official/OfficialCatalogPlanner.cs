@@ -90,15 +90,15 @@ public static partial class OfficialCatalogPlanner
         }
 
         return forms.TryGetValue(registration.Number, out var presentationForms)
-            ? presentationForms.Select(form => form.Form).Distinct().Select(form => new Entry(registration, name, nameKey, form, FromPresentation: true))
-            : [new Entry(registration, name, nameKey, ProductForm.Other, FromPresentation: false)];
+            ? presentationForms.GroupBy(form => form.Form).Select(form => new Entry(registration, name, nameKey, form.Key, FromPresentation: true, form.Select(item => item.Presentation).ToArray()))
+            : [new Entry(registration, name, nameKey, ProductForm.Other, FromPresentation: false, [])];
     }
 
     private static IEnumerable<Entry> NotifiedEntries(SourceRecord record)
     {
         var name = OfficialNames.Split(record.RawName);
         var nameKey = ProductNames.Key(name.DisplayName);
-        return nameKey.Length < ProductNames.MinKeyLength ? [] : [new Entry(record, name, nameKey, ProductForm.Other, FromPresentation: false)];
+        return nameKey.Length < ProductNames.MinKeyLength ? [] : [new Entry(record, name, nameKey, ProductForm.Other, FromPresentation: false, [])];
     }
 
     private static IReadOnlyList<Group> Groups(IReadOnlyList<Entry> entries)
@@ -173,6 +173,11 @@ public static partial class OfficialCatalogPlanner
         ProductsWithoutIngredients = input.Products.Count(product => product.SubstanceKeys.Count == 0),
         ProductsWithTooManyIngredients = input.Groups.Count(group => group.HasTooManyIngredients),
         NamesWithPresentation = input.Products.Count(product => product.Presentation is not null),
+        PresentationStrengthsRead = input.Presentations.Count(row => StrengthParser.Read(row.Presentation).IsKnown),
+        PresentationStrengthsUnknown = input.Presentations.Count(row => !StrengthParser.Read(row.Presentation).IsKnown),
+        ProductsWithStrengthKey = input.Products.Count(product => product.StrengthKey is not null),
+        ProductsWithSeveralStrengths = input.Products.Count(product => product.StrengthKey is null && product.StrengthText is not null),
+        UnknownStrengthSamples = UnknownStrengthSamples(input.Presentations),
         OtherFormSamples = OtherFormSamples(input.Forms.Values.SelectMany(forms => forms)),
         MultiIngredientSamples = input.Groups.Where(group => group.Ingredients.Count > 1).Take(SampleSize).Select(group => group.Describe()).ToArray(),
         PresentationSplitSamples = input.Groups.Where(group => group.Plan.Presentation is not null).Take(SampleSize).Select(group => $"{group.RawName} -> {group.Plan.Name} | {group.Plan.Presentation}").ToArray(),
@@ -186,6 +191,23 @@ public static partial class OfficialCatalogPlanner
             .Take(SampleSize)
             .Select(group => $"{group.Key}: {string.Join(" | ", group.Select(product => $"{product.Name} ({FormCode(product.Form)})"))}")
             .ToArray();
+
+    private static IReadOnlyList<SampleCount> UnknownStrengthSamples(IReadOnlyList<CmedPresentationRow> presentations) =>
+        presentations
+            .Where(row => !StrengthParser.Read(row.Presentation).IsKnown)
+            .GroupBy(row => UnknownShape(row.Presentation), StringComparer.Ordinal)
+            .Select(group => new SampleCount(group.Key, group.Count()))
+            .OrderByDescending(sample => sample.Count)
+            .ThenBy(sample => sample.Text, StringComparer.Ordinal)
+            .Take(SampleSize * 2)
+            .ToArray();
+
+    /// <summary>The first words of a presentation with digits replaced by <c>N</c> (report only).</summary>
+    private static string UnknownShape(string presentation) =>
+        string.Join(' ', Digits().Replace(presentation ?? string.Empty, "N").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(6));
+
+    [GeneratedRegex(@"\d+(?:[.,]\d+)?", RegexOptions.CultureInvariant)]
+    private static partial Regex Digits();
 
     private static int PresentationsWithoutRegistration(ReportInput input)
     {
@@ -242,7 +264,7 @@ public static partial class OfficialCatalogPlanner
             rows.Select(row => row.ActiveIngredients).FirstOrDefault(field => ActiveIngredientNames.Split(field).Count > 0);
     }
 
-    private sealed record Entry(SourceRecord Record, OfficialName Name, string NameKey, ProductForm Form, bool FromPresentation);
+    private sealed record Entry(SourceRecord Record, OfficialName Name, string NameKey, ProductForm Form, bool FromPresentation, IReadOnlyList<string> Presentations);
 
     private sealed record Group(
         string NameKey,
@@ -257,6 +279,7 @@ public static partial class OfficialCatalogPlanner
         IReadOnlyList<string> IngredientNames,
         IReadOnlyList<string> RegistrationNumbers,
         bool HasTooManyIngredients,
+        ProductStrengthInfo Strength,
         CatalogProductPlan Plan)
     {
         public static Group From(IReadOnlyList<Entry> entries)
@@ -280,6 +303,7 @@ public static partial class OfficialCatalogPlanner
                 first.Record.IngredientNames,
                 numbers,
                 tooMany,
+                ProductStrengthInfo.Of(ingredients, ordered.SelectMany(entry => entry.Presentations).ToArray()),
                 placeholder);
         }
 
@@ -296,6 +320,8 @@ public static partial class OfficialCatalogPlanner
                 Presentation = Presentation,
                 SubstanceKeys = Ingredients.Select(ingredient => ingredient.Key).ToArray(),
                 AmbiguousName = ambiguous ? Fit(baseName, Product.AmbiguousNameMaxLength) : null,
+                StrengthKey = Strength.Key,
+                StrengthText = Strength.Text,
             };
             return this with { Plan = plan };
         }
@@ -314,6 +340,34 @@ public static partial class OfficialCatalogPlanner
             var parts = ordered.Select(entry => entry.Name.Presentation).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var joined = string.Join(PresentationSeparator, parts);
             return joined.Length == 0 ? null : Fit(joined, Product.PresentationMaxLength);
+        }
+    }
+
+    /// <summary>
+    /// The structured strength of a product from the CMED presentations of its group. Only a single-ingredient product
+    /// whose every presentation reads as one unambiguous amount gets a text; it gets a key only when all presentations
+    /// agree on that one strength (several strengths, a combination, or any unreadable presentation: no key).
+    /// </summary>
+    private sealed record ProductStrengthInfo(string? Key, string? Text)
+    {
+        public static ProductStrengthInfo None { get; } = new(null, null);
+
+        public static ProductStrengthInfo Of(IReadOnlyList<SubstanceDefinition> ingredients, IReadOnlyList<string> presentations)
+        {
+            if (ingredients.Count != 1 || presentations.Count == 0)
+            {
+                return None;
+            }
+
+            var readings = presentations.Select(StrengthParser.Read).ToArray();
+            if (readings.Any(reading => !reading.IsKnown))
+            {
+                return None;
+            }
+
+            var distinct = readings.DistinctBy(reading => reading.Amount!.Token, StringComparer.Ordinal).ToArray();
+            var text = Fit(string.Join(PresentationSeparator, distinct.Select(reading => reading.Display).Distinct(StringComparer.Ordinal)), Product.StrengthTextMaxLength);
+            return new ProductStrengthInfo(distinct.Length == 1 ? StrengthKeys.Single(ingredients[0].Key, distinct[0].Amount!) : null, text);
         }
     }
 

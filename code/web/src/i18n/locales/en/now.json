@@ -42,6 +42,8 @@
       "shiftGroup": "When it happened"
     },
     "catchUp": {
+      "button_one": "What changed since your last look, {{count}} new",
+      "button_other": "What changed since your last look, {{count}} new",
       "someone": "Someone",
       "title": "Since you last looked",
       "logged_one": "{{name}} logged {{count}} thing since {{time}}",
@@ -103,7 +105,8 @@
     },
     "ruler": {
       "withWindow": "Awake since {{since}}, now {{now}}. Nap window {{from}} to {{to}}.",
-      "noWindow": "Awake since {{since}}, now {{now}}."
+      "noWindow": "Awake since {{since}}, now {{now}}.",
+      "legendLabel": "What the ruler shows"
     },
     "learning": {
       "title": "Learning {{name}}'s rhythm",
@@ -240,7 +243,14 @@
       "severe": "Severe"
     },
     "more": {
-      "title": "More"
+      "title": "More",
+      "search": {
+        "label": "Search",
+        "clear": "Clear the search",
+        "none": "No results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results"
+      }
     },
     "today": {
       "title": "Today",
@@ -297,7 +307,45 @@
       "legendNap": "Nap",
       "legendWaking": "Night waking",
       "legendWindow": "Nap window",
+      "legendProjected": "Next naps (estimate)",
+      "legendWake": "Likely wake-up (estimate)",
+      "legendBedtime": "Bedtime window",
       "legendNow": "Now"
+    },
+    "rhythm": {
+      "night": "Night sleep {{from}} to {{to}}, {{duration}}",
+      "nap": "Nap {{from}} to {{to}}, {{duration}}",
+      "waking": "Night waking {{time}}, {{duration}}",
+      "nightRunning": "Night sleep since {{time}}, running {{duration}}",
+      "napRunning": "Nap since {{time}}, running {{duration}}",
+      "wakingRunning": "Night waking since {{time}}, running {{duration}}",
+      "window": "Nap window opens {{from}}, closes {{to}}",
+      "windowAhead": "Opens in {{duration}}",
+      "windowOpen": "Open now, closes in {{duration}}",
+      "windowPast": "Window closed at {{time}}",
+      "basisAwake": "Based on the usual awake time of about {{duration}}",
+      "basisInterval": "Based on naps usually starting about every {{duration}}",
+      "face": "Now, {{time}}, {{state}}",
+      "faceAwake": "awake",
+      "faceDrowsy": "awake, nap window open",
+      "faceAsleep": "asleep",
+      "faceTired": "awake, near the usual longest awake time",
+      "awakeFor": "Awake for {{duration}}",
+      "asleepFor": "Asleep for {{duration}}",
+      "wakingFor": "Night waking for {{duration}}",
+      "nextWindow": "Next: nap window opens {{time}}",
+      "nextWindowCloses": "Next: nap window closes {{time}}",
+      "nextBedtime": "Next: bedtime window {{from}} to {{to}}",
+      "nextWindowEstimate": "Next: nap window about {{time}} (estimate)",
+      "nextWake": "Next: likely to wake about {{time}} (estimate)",
+      "projectedNext": "Next nap window about {{from}} to {{to}} (estimate)",
+      "projectedLater": "Later nap window about {{from}} to {{to}} (estimate)",
+      "projectedBasisAwake": "Based on the usual awake time of about {{gap}} and naps of about {{nap}}",
+      "projectedBasisInterval": "Based on naps usually starting about every {{gap}} and lasting about {{nap}}",
+      "wake": "Likely to wake about {{time}} (estimate)",
+      "wakeBasis": "Based on naps of about {{duration}}",
+      "bedtime": "Bedtime window about {{from}} to {{to}}",
+      "clear": "Clear the selection"
     }
   }
 }

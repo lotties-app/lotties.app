@@ -45,12 +45,20 @@ public sealed class Baby
     /// <summary>What the vaccine schedule needs to know about the baby besides the birth date.</summary>
     public VaccineProfile VaccineProfile => VaccineProfile.Create(VaccineCoverage, GestationalAgeWeeks, RsvMaternalVaccination);
 
-    public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
+    public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt) =>
+        Create(Guid.NewGuid(), name, birthDate, ownerUserId, createdAt);
+
+    /// <summary>
+    /// Creates a baby with a chosen id: the backup restore derives the id from the importer and the source baby, so
+    /// restoring the same file twice finds the baby restored the first time instead of creating a second one.
+    /// </summary>
+    public static Baby Create(Guid id, string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
     {
+        Ids.Required(id, nameof(id));
         Ids.Required(ownerUserId, nameof(ownerUserId));
         var normalizedCreatedAt = UtcTime.Normalize(createdAt);
         var baby = new Baby(
-            Guid.NewGuid(),
+            id,
             Text.Required(name, nameof(Name), NameMaxLength),
             EnsureBirthDateNotInFuture(birthDate, normalizedCreatedAt),
             normalizedCreatedAt);
@@ -76,11 +84,17 @@ public sealed class Baby
 
     public BabyMember? FindMember(Guid userId) => _members.Find(member => member.UserId == userId);
 
-    public BabyMember AddMember(Guid userId, BabyRole role, DateTimeOffset joinedAt)
+    /// <summary>
+    /// Adds a member. <paramref name="doctorScopes"/> limit a Doctor to some sections (<c>null</c> = the defaults, every
+    /// section); for another role they are a <see cref="DomainValidationException"/> (field <c>doctorScopes</c>).
+    /// </summary>
+    public BabyMember AddMember(Guid userId, BabyRole role, DateTimeOffset joinedAt, DoctorScopeSet? doctorScopes = null)
     {
         Ids.Required(userId, nameof(userId));
         EnsureNotMember(userId);
-        var member = new BabyMember(Id, userId, BabyRoleRules.EnsureDefined(role), UtcTime.Normalize(joinedAt));
+        var validatedRole = BabyRoleRules.EnsureDefined(role);
+        EnsureScopesFitRole(validatedRole, doctorScopes);
+        var member = new BabyMember(Id, userId, validatedRole, UtcTime.Normalize(joinedAt), doctorScopes);
         _members.Add(member);
         return member;
     }
@@ -96,6 +110,19 @@ public sealed class Baby
         EnsureProfessionalWhenRequired(newRole, userId, isDeclaredProfessional);
         EnsureOwnerRemains(member, newRole == BabyRole.Owner);
         member.ChangeRole(newRole);
+        return member;
+    }
+
+    /// <summary>
+    /// Limits a Doctor member to <paramref name="scopes"/>. Throws <see cref="MemberNotFoundException"/> for a user who is
+    /// not a member, and <see cref="DomainValidationException"/> (field <c>doctorScopes</c>) when the member is not a Doctor.
+    /// </summary>
+    public BabyMember ChangeDoctorScopes(Guid userId, DoctorScopeSet scopes)
+    {
+        ArgumentNullException.ThrowIfNull(scopes);
+        var member = GetMember(userId);
+        EnsureScopesFitRole(member.Role, scopes);
+        member.ChangeDoctorScopes(scopes);
         return member;
     }
 
@@ -119,7 +146,7 @@ public sealed class Baby
         EnsureNotMember(userId);
         EnsureProfessionalWhenRequired(invite.Role, userId, isDeclaredProfessional);
         invite.Accept(userId, now);
-        return AddMember(userId, invite.Role, now);
+        return AddMember(userId, invite.Role, now, invite.DoctorScopes);
     }
 
     private BabyMember GetMember(Guid userId) => FindMember(userId) ?? throw new MemberNotFoundException(Id, userId);
@@ -130,6 +157,14 @@ public sealed class Baby
         if (isLastOwner && !remainsOwner)
         {
             throw new LastOwnerException(Id, member.UserId);
+        }
+    }
+
+    private static void EnsureScopesFitRole(BabyRole role, DoctorScopeSet? scopes)
+    {
+        if (scopes is not null && !role.IsDoctor())
+        {
+            throw new DomainValidationException(DoctorScopeSet.Field, "doctorScopes apply to the Doctor role only.");
         }
     }
 

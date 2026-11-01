@@ -4,9 +4,11 @@ import {
   normalizeReminders,
 } from '../appointments/appointmentModel';
 import { isProposalStatus } from '../proposals/proposalModel';
+import { parseScopes, type DoctorScope } from '../doctor/scopes';
 import {
   editTimeOf,
   type Appointment,
+  type CareProvider,
   type Note,
   type NoteRead,
   type PrescriptionContent,
@@ -91,6 +93,12 @@ import type { VaccineNetwork } from '../vaccines/vaccineSchedule';
  * - Doctor access: GET/PUT /me/professional-profile (404 `professional_profile_not_found` before
  *          one is declared; a Doctor invite needs one: 422 `professional_profile_required`), GET
  *          /babies/{id}/access-log (Owner).
+ * - Care providers (docs/SPEC.md "Care providers"): GET /babies/{id}/care-providers?since= (deleted
+ *          included, no DELETE), PUT /babies/{id}/care-providers/{id} (Owner/Parent). Family roles only.
+ * - Address lookup (docs/design/23-address-lookup.md): GET /address/lookup?cep= (a Brazilian CEP:
+ *          street, neighborhood, city, state; 404 `address_not_found`) and GET /address/search?q=&lang=
+ *          (OpenStreetMap places). Any signed-in user, online only, user-triggered, rate limited;
+ *          502 `address_lookup_unavailable` / 503 `address_lookup_disabled` leave the manual field.
  * - Appointments (docs/SPEC.md "Appointments"): GET /babies/{id}/appointments?since= (cancelled and
  *          done included, no delete), PUT /babies/{id}/appointments/{id} (Owner/Parent). `done` is
  *          refused (422 `appointment_not_started`) while the start is in the future.
@@ -145,12 +153,19 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/appointments` + query({ since }),
   appointment: (babyId: string, appointmentId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/appointments/${enc(appointmentId)}`,
+  careProviders: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/care-providers` + query({ since }),
+  careProvider: (babyId: string, providerId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/care-providers/${enc(providerId)}`,
+  addressLookup: (cep: string) => `${API_PREFIX}/address/lookup` + query({ cep }),
+  addressSearch: (q: string, lang?: string) => `${API_PREFIX}/address/search` + query({ q, lang }),
   vaccinations: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/vaccinations` + query({ since }),
   vaccination: (babyId: string, vaccinationId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/vaccinations/${enc(vaccinationId)}`,
   vaccineProfile: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/vaccine-profile`,
   vaccineSchedule: () => `${API_PREFIX}/vaccine-schedule`,
+  ageNorms: () => `${API_PREFIX}/age-norms`,
   notes: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
   note: (babyId: string, noteId: string) =>
@@ -168,6 +183,22 @@ export const apiPaths = {
   noteReads: (babyId: string, since?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/note-reads` + query({ since }),
   accessLog: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/access-log`,
+  /** The doctor's patients with their card data (docs/design/19-doctor-dashboard.md). */
+  doctorPatients: (timeZone: string | undefined, utcOffsetMinutes: number) =>
+    `${API_PREFIX}/doctor/patients` +
+    query({ timeZone, utcOffsetMinutes: String(utcOffsetMinutes) }),
+  /** Server-side aggregates over local dates `from`..`to` (inclusive, `yyyy-mm-dd`). */
+  clinicalSummary: (
+    babyId: string,
+    range: { from: string; to: string },
+    timeZone: string | undefined,
+    utcOffsetMinutes: number,
+  ) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/clinical-summary` +
+    query({ ...range, timeZone, utcOffsetMinutes: String(utcOffsetMinutes) }),
+  /** Non-deleted events overlapping `[from, to)` (UTC instants, at most 8 days). */
+  timeline: (babyId: string, from: string, to: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/timeline` + query({ from, to }),
   professionalProfile: () => `${API_PREFIX}/me/professional-profile`,
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
@@ -179,6 +210,14 @@ export const apiPaths = {
   importNapper: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/napper`,
   importNapperPreview: (babyId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/import/napper/preview`,
+  /** Export and import of a baby's data (docs/design/24-export-import.md). */
+  backupExport: (babyId: string, compress: boolean) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/export?compress=${compress}`,
+  backupMergePreview: (babyId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/import/backup/preview`,
+  backupMerge: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/backup`,
+  backupRestorePreview: () => `${API_PREFIX}/babies/import/preview`,
+  backupRestore: () => `${API_PREFIX}/babies/import`,
   /** `timeZone` (IANA) places the recurring patterns in local time, daylight saving included. */
   predictions: (babyId: string, utcOffsetMinutes: number, timeZone?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}` +
@@ -220,12 +259,17 @@ export interface BabyDto {
   role?: string;
   /** The caller's own user id (additive; absent from older servers). */
   userId?: string;
-  /** Vaccine profile (additive): `public` or `public+private`. */
-  vaccineProfile?: string;
+  /**
+   * Vaccine profile (additive): `public` or `public+private`; `null`, like the two fields below, for a Doctor the
+   * vaccines section is not shared with.
+   */
+  vaccineProfile?: string | null;
   /** Weeks at birth, 20-44 (additive); `null` = not told. */
   gestationalAgeWeeks?: number | null;
   /** `unknown`, `yes` or `no` (additive); `null` = not answered. */
   rsvMaternalVaccination?: string | null;
+  /** The sections shared with the caller when her role is Doctor (additive); `null` otherwise. */
+  doctorScopes?: string[] | null;
 }
 
 export interface FieldVisibilityDto {
@@ -337,6 +381,8 @@ export interface MemberDto {
   joinedAt: string;
   /** A Doctor member's professional details (additive; absent or `null` for other roles). */
   professional?: ProfessionalSummaryDto | null;
+  /** The sections shared with a Doctor member (additive; `null` for other roles). */
+  doctorScopes?: string[] | null;
 }
 
 export interface InviteDto {
@@ -346,6 +392,8 @@ export interface InviteDto {
   createdBy: string | null;
   createdAt: string;
   expiresAt: string;
+  /** The sections a Doctor invite shares (additive; `null` for other roles). */
+  doctorScopes?: string[] | null;
 }
 
 /** Returned once by `POST /invites`: the only time the plain token is available. */
@@ -356,6 +404,14 @@ export interface CreatedInviteDto extends InviteDto {
 export interface CreateInviteRequest {
   role: BabyRole;
   expiresInDays?: number;
+  /** Only for a Doctor invite: the sections she will see (absent = all six). */
+  doctorScopes?: DoctorScope[];
+}
+
+/** Body of `PATCH /babies/{id}/members/{userId}`: a new role, a Doctor's sections, or both. */
+export interface ChangeMemberRequest {
+  role?: BabyRole;
+  doctorScopes?: DoctorScope[];
 }
 
 export interface EventFieldRequest {
@@ -623,7 +679,7 @@ const RSV_ANSWERS: readonly RsvMaternalAnswer[] = ['unknown', 'yes', 'no'];
 export function vaccineProfileFromDto(
   dto: Pick<BabyDto, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'>,
 ): Pick<Baby, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'> {
-  const profile = matchEnum(VACCINE_PROFILES, dto.vaccineProfile);
+  const profile = matchEnum(VACCINE_PROFILES, dto.vaccineProfile ?? undefined);
   const rsv = matchEnum(RSV_ANSWERS, dto.rsvMaternalVaccination ?? undefined);
   const weeks = dto.gestationalAgeWeeks;
   return {
@@ -645,6 +701,7 @@ export function fromBabyDto(dto: BabyDto): Baby {
     role: role ?? 'Viewer',
     ...(typeof dto.userId === 'string' && dto.userId !== '' ? { userId: dto.userId } : {}),
     ...vaccineProfileFromDto(dto),
+    ...(role === 'Doctor' ? { doctorScopes: parseScopes(dto.doctorScopes) } : {}),
   };
 }
 
@@ -1113,6 +1170,7 @@ export interface AppointmentDto {
   outcome?: string | null;
   status?: string;
   reminderOffsetsMinutes?: number[] | null;
+  providerId?: string | null;
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1131,6 +1189,7 @@ export interface AppointmentUpsertRequest {
   outcome: string | null;
   status: AppointmentStatus;
   reminderOffsetsMinutes: ReminderOffset[];
+  providerId: string | null;
   updatedAt?: string;
 }
 
@@ -1146,6 +1205,7 @@ export function toAppointmentUpsertRequest(a: Appointment): AppointmentUpsertReq
     outcome: a.outcome,
     status: a.status,
     reminderOffsetsMinutes: a.reminderOffsetsMinutes,
+    providerId: a.providerId ?? null,
     updatedAt: a.clientUpdatedAt ?? a.updatedAt,
   };
 }
@@ -1170,6 +1230,101 @@ export function fromAppointmentDto(dto: AppointmentDto): Appointment {
     outcome: dto.outcome ?? null,
     status: isAppointmentStatus(dto.status) ? dto.status : 'upcoming',
     reminderOffsetsMinutes: normalizeReminders(dto.reminderOffsetsMinutes ?? []),
+    providerId: dto.providerId ?? null,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
+/* Care providers (docs/design/22-care-providers.md) */
+
+export interface CareProviderDto {
+  id: string;
+  babyId: string;
+  name: string;
+  specialty?: string | null;
+  registrationCouncil?: string | null;
+  registrationNumber?: string | null;
+  registrationRegion?: string | null;
+  clinicName?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  website?: string | null;
+  notes?: string | null;
+  isFavorite?: boolean;
+  isDeleted?: boolean;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full editable state of a provider plus the client edit time (`PUT` replaces it). */
+export interface CareProviderUpsertRequest {
+  name: string;
+  specialty: string | null;
+  registrationCouncil: string | null;
+  registrationNumber: string | null;
+  registrationRegion: string | null;
+  clinicName: string | null;
+  address: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  notes: string | null;
+  isFavorite: boolean;
+  isDeleted: boolean;
+  updatedAt?: string;
+}
+
+export function toCareProviderUpsertRequest(p: CareProvider): CareProviderUpsertRequest {
+  return {
+    name: p.name,
+    specialty: p.specialty,
+    registrationCouncil: p.registrationCouncil,
+    registrationNumber: p.registrationNumber,
+    registrationRegion: p.registrationRegion,
+    clinicName: p.clinicName,
+    address: p.address,
+    phone: p.phone,
+    whatsapp: p.whatsapp,
+    email: p.email,
+    website: p.website,
+    notes: p.notes,
+    isFavorite: p.favorite,
+    isDeleted: p.deleted,
+    updatedAt: p.clientUpdatedAt ?? p.updatedAt,
+  };
+}
+
+export function isCareProviderDtoFor(value: unknown, id: string): value is CareProviderDto {
+  const dto = value as Partial<CareProviderDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromCareProviderDto(dto: CareProviderDto): CareProvider {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    name: dto.name,
+    specialty: dto.specialty ?? null,
+    registrationCouncil: dto.registrationCouncil ?? null,
+    registrationNumber: dto.registrationNumber ?? null,
+    registrationRegion: dto.registrationRegion ?? null,
+    clinicName: dto.clinicName ?? null,
+    address: dto.address ?? null,
+    phone: dto.phone ?? null,
+    whatsapp: dto.whatsapp ?? null,
+    email: dto.email ?? null,
+    website: dto.website ?? null,
+    notes: dto.notes ?? null,
+    favorite: dto.isFavorite === true,
+    deleted: dto.isDeleted === true,
     createdBy: dto.createdBy ?? null,
     createdAt: toUtcIso(dto.createdAt),
     updatedAt: toUtcIso(dto.updatedAt),
@@ -1314,6 +1469,12 @@ export interface ProductDto {
   source?: string | null;
   /** Additive: dosage text the official name carried (e.g. `0,9%`). */
   presentation?: string | null;
+  /**
+   * Additive: the strength as the source states it (e.g. `75 mg/mL`); `null`/absent when not known
+   * (the importer has not run since strengths were added, a combination, several strengths).
+   * Composition information, never a dose.
+   */
+  strengthText?: string | null;
   /** Additive: the official product left its registry; search no longer offers it. */
   inactive?: boolean;
   /**
@@ -1323,12 +1484,23 @@ export interface ProductDto {
   ambiguousName?: string | null;
 }
 
+/**
+ * How an alternative with the same active ingredient compares to the searched product. Only
+ * `equivalent` means the same ingredients, strength and known form.
+ */
+export type AlternativeLevel =
+  'equivalent' | 'differentForm' | 'strengthNotKnown' | 'differentStrength';
+
 export interface SiblingProductDto {
   id: string;
   name: string;
   form: ProductForm;
   country: string;
   status: string;
+  /** Additive: the strength as the source states it; `null`/absent when not known. */
+  strengthText?: string | null;
+  /** Additive: absent from older servers and offline lists, which read as `strengthNotKnown`. */
+  matchLevel?: AlternativeLevel | null;
 }
 
 export interface ProductMatchDto {

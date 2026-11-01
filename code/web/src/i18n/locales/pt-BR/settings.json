@@ -192,6 +192,7 @@
         "prescription": "receita",
         "formula": "fórmula",
         "appointment": "consulta",
+        "careProvider": "médico ou clínica",
         "vaccination": "registro de vacina",
         "note": "nota",
         "proposal": "proposta",

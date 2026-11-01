@@ -107,7 +107,7 @@ describe('Settings > I am a healthcare professional', () => {
 });
 
 describe('accepting a Doctor invite', () => {
-  it('asks for the profile inline, then joins and lands on Patients', async () => {
+  it('asks for the profile inline, then joins and says what the family shared', async () => {
     stashPendingInvite('tok-123');
     let declared = false;
     const lia = {
@@ -116,6 +116,7 @@ describe('accepting a Doctor invite', () => {
       birthDate: '2026-08-01',
       role: 'Doctor',
       userId: 'doctor-1',
+      doctorScopes: ['daily_log', 'growth', 'notes'],
     };
     const fake = fakeApi((call) => {
       if (call.path === '/api/v1/babies') return [lia];
@@ -133,7 +134,7 @@ describe('accepting a Doctor invite', () => {
       db,
       <Routes>
         <Route path="/invite" element={<InvitePage />} />
-        <Route path="/patients" element={<p>Patients page</p>} />
+        <Route path="/doctor/*" element={<p>Dashboard page</p>} />
       </Routes>,
       { api: fake.api, route: '/invite' },
     );
@@ -144,7 +145,14 @@ describe('accepting a Doctor invite', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save and join' }));
 
-    expect(await screen.findByText('Patients page')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'You now follow Lia' })).toBeTruthy();
+    expect(screen.getByText('Shared with you: daily log, growth, and notes.')).toBeTruthy();
+    expect(screen.getByText('You see only what the family shared.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Open Lia' }).getAttribute('href')).toBe(
+      `/doctor/${BABY_ID}`,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Go to my patients' }));
+    expect(await screen.findByText('Dashboard page')).toBeTruthy();
     const accepts = fake.calls.filter((c) => c.path === '/api/v1/invites/accept');
     expect(accepts.map((c) => c.body)).toEqual([{ token: 'tok-123' }, { token: 'tok-123' }]);
     expect((await db.babies.get(BABY_ID))?.role).toBe('Doctor');

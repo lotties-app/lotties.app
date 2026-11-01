@@ -71,6 +71,7 @@ describe('the sections', () => {
     await waitFor(() => expect(rows()).toContain('fromDoctor'));
     expect(rows()).toEqual([
       'appointments',
+      'providers',
       'vaccines',
       'growth',
       'medicines',
@@ -82,8 +83,14 @@ describe('the sections', () => {
       'doctorAccess',
       'settings',
       'import',
+      'export',
+      'backupImport',
+      'install',
       'updates',
+      'welcome',
       'about',
+      'credits',
+      'privacy',
     ]);
     const href = (id: string) => screen.getByTestId(`hub-row-${id}`).getAttribute('href');
     expect(href('appointments')).toBe('/appointments');
@@ -92,12 +99,15 @@ describe('the sections', () => {
     expect(href('invite')).toBe('/hub/family#invite');
     expect(href('settings')).toBe('/settings');
     expect(href('updates')).toBe('/hub/updates');
+    expect(href('install')).toBe('/hub/install');
+    expect(href('welcome')).toBe('/welcome');
   });
 
   it('hides what a Caregiver and a Viewer cannot use', async () => {
     await renderHub('Caregiver', MEMBERS.slice(0, 1));
     expect(rows()).toEqual([
       'appointments',
+      'providers',
       'vaccines',
       'growth',
       'medicines',
@@ -105,19 +115,37 @@ describe('the sections', () => {
       'notes',
       'members',
       'settings',
+      'install',
       'updates',
+      'welcome',
       'about',
+      'credits',
+      'privacy',
     ]);
   });
 
-  it('gives the Doctor her proposals and patients view, never the family records', async () => {
+  it('gives a Doctor her patients (her dashboard), never the family records', async () => {
     await renderHub('Doctor', []);
+    await screen.findByTestId('hub-row-patients');
     const list = rows();
-    expect(list).toContain('myProposals');
-    expect(list).toContain('notes');
-    for (const hidden of ['appointments', 'fromDoctor', 'invite', 'doctorAccess', 'import']) {
+    expect(list).toContain('patients');
+    // A patient's proposals and notes are in the doctor's dashboard, not in the parents' Hub.
+    for (const hidden of [
+      'appointments',
+      'providers',
+      'fromDoctor',
+      'invite',
+      'doctorAccess',
+      'import',
+      'export',
+      'backupImport',
+      'myProposals',
+      'notes',
+      'members',
+    ]) {
       expect(list).not.toContain(hidden);
     }
+    expect(screen.getByTestId('hub-row-patients').getAttribute('href')).toBe('/doctor');
   });
 
   it('shows "From your doctor" only when the baby has a doctor or something from one', async () => {

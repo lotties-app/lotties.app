@@ -21,7 +21,7 @@ internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, ILogger<B
             return;
         }
 
-        if (context.Resource is not HttpContext httpContext || ReadBabyId(httpContext) is not { } babyId)
+        if (context.Resource is not HttpContext httpContext || BabyRouteValues.ReadBabyId(httpContext) is not { } babyId)
         {
             logger.LogWarning("Baby access requirement evaluated on a route without a valid {RouteParameter}", BabyRoutes.BabyIdParameter);
             context.Fail(new AuthorizationFailureReason(this, MissingBabyIdMessage));
@@ -54,8 +54,4 @@ internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, ILogger<B
 
         context.Fail(new AuthorizationFailureReason(this, $"Baby access denied: {decision}."));
     }
-
-    /// <summary>The <c>{babyId}</c> route value, or <c>null</c> when the route has none (or it is not a GUID).</summary>
-    internal static Guid? ReadBabyId(HttpContext httpContext) =>
-        Guid.TryParse(httpContext.GetRouteValue(BabyRoutes.BabyIdParameter)?.ToString(), out var babyId) ? babyId : null;
 }

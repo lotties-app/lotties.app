@@ -34,9 +34,11 @@ describe('schema', () => {
     expect(db.verno).toBe(SCHEMA_VERSIONS.at(-1)!.version);
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       [
+        'ageNorms',
         'appointments',
         'babies',
         'bodyWeights',
+        'careProviders',
         'catalogProducts',
         'eventTypes',
         'events',

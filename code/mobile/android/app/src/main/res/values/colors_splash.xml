@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warm paper (light first-paint colour of the web app, code/web/src/theme/tokens.ts). -->
+    <color name="splash_background">#F5EFE4</color>
+</resources>

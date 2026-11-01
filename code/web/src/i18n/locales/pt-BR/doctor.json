@@ -27,7 +27,7 @@
       "loadFailed": "Não foi possível carregar seu perfil profissional. Verifique sua conexão."
     },
     "invite": {
-      "consent": "O(a) médico(a) que aceitar vai ver tudo o que for registrado de {{name}} e poderá adicionar notas e medidas. Você pode remover o acesso a qualquer momento."
+      "consent": "O(a) médico(a) que aceitar vai ver as seções que você escolher de {{name}} e poderá adicionar notas e medidas. Você pode mudar o que compartilha ou remover o acesso a qualquer momento."
     },
     "inviteAccept": {
       "title": "Entrar como médico(a) do bebê",

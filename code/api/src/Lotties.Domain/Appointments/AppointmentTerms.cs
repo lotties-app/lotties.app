@@ -7,7 +7,7 @@ namespace Lotties.Domain.Appointments;
 /// The full editable state of a baby's appointment: title (required, 1-80 characters), type, start (a UTC instant,
 /// 2000-01-01 to 2100-12-31; it may be in the past, to log a visit after the fact), optional duration (5-480 minutes),
 /// location (200), doctor's name (80), notes (2000), outcome (2000, usually filled after the visit), status and the
-/// reminder offsets. Text is trimmed, blank optional text is absent, NUL is rejected. The rule that needs the clock
+/// reminder offsets, and an optional link to a care provider of the directory. Text is trimmed, blank optional text is absent, NUL is rejected. The rule that needs the clock
 /// (<c>done</c> only once started) lives in <see cref="Appointment"/>. Compared by value, so an idempotent replay
 /// changes nothing.
 /// </summary>
@@ -36,7 +36,8 @@ public sealed record AppointmentTerms
         string? notes,
         string? outcome,
         AppointmentStatus status,
-        AppointmentReminders reminders)
+        AppointmentReminders reminders,
+        Guid? providerId)
     {
         Title = title;
         Type = type;
@@ -48,6 +49,7 @@ public sealed record AppointmentTerms
         Outcome = outcome;
         Status = status;
         Reminders = reminders;
+        ProviderId = providerId;
     }
 
     public string Title { get; }
@@ -70,6 +72,9 @@ public sealed record AppointmentTerms
 
     public AppointmentReminders Reminders { get; }
 
+    /// <summary>The care provider picked from the baby's directory, if any (a plain link: the text fields hold the copied details).</summary>
+    public Guid? ProviderId { get; }
+
     /// <summary>Validates every rule; throws <see cref="DomainValidationException"/> naming the field.</summary>
     public static AppointmentTerms Create(
         string? title,
@@ -81,7 +86,8 @@ public sealed record AppointmentTerms
         string? notes,
         string? outcome,
         AppointmentStatus status,
-        AppointmentReminders reminders)
+        AppointmentReminders reminders,
+        Guid? providerId = null)
     {
         ArgumentNullException.ThrowIfNull(reminders);
         return new AppointmentTerms(
@@ -94,7 +100,8 @@ public sealed record AppointmentTerms
             Text.Optional(notes, "notes", NotesMaxLength),
             Text.Optional(outcome, "outcome", OutcomeMaxLength),
             Defined(status, "status"),
-            reminders);
+            reminders,
+            providerId == Guid.Empty ? null : providerId);
     }
 
     private static TEnum Defined<TEnum>(TEnum value, string field)

@@ -1,0 +1,101 @@
+{
+  "providers": {
+    "search": "Search doctors and clinics",
+    "list": "Doctors and clinics",
+    "noMatch": "No doctor or clinic matches \"{{query}}\".",
+    "add": "Add doctor or clinic",
+    "viewOnly": "You can see the doctors and clinics but not change them.",
+    "favoriteMark": "Favorite",
+    "empty": {
+      "title": "Your baby's doctors, in one place",
+      "body": "Save the pediatrician, specialists and clinics once, with phone, address and registration. When you schedule an appointment, pick one and the doctor and place fill in on their own.",
+      "bodyReadOnly": "Nothing saved yet. A parent can add the baby's doctors and clinics here."
+    },
+    "contact": {
+      "call": "Call",
+      "whatsapp": "Message on WhatsApp",
+      "email": "Send an e-mail",
+      "website": "Open the website",
+      "maps": "Open in maps"
+    },
+    "specialties": {
+      "pediatrician": "Pediatrician",
+      "dermatologist": "Dermatologist",
+      "ent": "ENT",
+      "cardiologist": "Cardiologist",
+      "allergist": "Allergist",
+      "gastro": "Gastroenterologist",
+      "ophthalmologist": "Ophthalmologist",
+      "orthopedist": "Orthopedist",
+      "dentist": "Dentist",
+      "other": "Other"
+    },
+    "address": {
+      "label": "Find the address",
+      "help": "Type a postal code (CEP) or a street or place name, then press Find address. Only what you type is sent, never anything about your baby.",
+      "placeholder": "e.g. 01001-000 or Rua Augusta, São Paulo",
+      "find": "Find address",
+      "finding": "Searching...",
+      "tooShort": "Type a CEP or at least 3 characters to search.",
+      "offline": "You are offline, so the address can't be looked up. Type it below.",
+      "manual": "You can type the address below.",
+      "empty": "No address found.",
+      "filled": "Address filled in below. Add the number and complement, and check it.",
+      "results": "Addresses found",
+      "number": "Number",
+      "complement": "Complement",
+      "complementPlaceholder": "e.g. Suite 12",
+      "attribution": "Data © OpenStreetMap contributors"
+    },
+    "sheet": {
+      "newTitle": "New doctor or clinic",
+      "editTitle": "Edit doctor or clinic",
+      "name": "Name",
+      "namePlaceholder": "e.g. Dr. Ana Lima",
+      "nameRequired": "Enter a name of up to 80 characters.",
+      "specialty": "Specialty",
+      "specialtySuggestions": "Common specialties",
+      "registrationCouncil": "Council",
+      "registrationCouncilPlaceholder": "e.g. CRM",
+      "registrationRegion": "State",
+      "registrationRegionPlaceholder": "e.g. SP",
+      "registrationNumber": "Registration number",
+      "clinicName": "Clinic or hospital",
+      "address": "Address",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "whatsappHelp": "With the country code, e.g. +55 11 91234-5678.",
+      "email": "E-mail",
+      "website": "Website",
+      "websitePlaceholder": "https://example.com",
+      "notes": "Notes",
+      "notesHelp": "Contact details only. The baby's health information goes in the baby's own records.",
+      "favorite": "Favorite",
+      "favoriteHelp": "Favorites are listed first.",
+      "saveFailed": "Couldn't save. Try again."
+    },
+    "detail": {
+      "registration": "Professional registration",
+      "clinic": "Clinic or hospital",
+      "notes": "Notes",
+      "edit": "Edit",
+      "favorite": "Mark as favorite",
+      "unfavorite": "Remove from favorites",
+      "delete": "Delete",
+      "deletedNotice": "{{name}} deleted. Appointments keep what they copied."
+    },
+    "picker": {
+      "label": "Doctor or clinic",
+      "help": "Pick a saved one to fill in the doctor and the place. You can still edit them below.",
+      "search": "Search saved doctors",
+      "results": "Saved doctors and clinics",
+      "noMatch": "No saved doctor matches.",
+      "more_one": "{{count}} more: keep typing to narrow down.",
+      "more_other": "{{count}} more: keep typing to narrow down.",
+      "addNew": "Add new provider",
+      "remove": "Remove",
+      "removeNamed": "Remove the link to {{name}}",
+      "removed": "A saved doctor that is no longer on the list"
+    }
+  }
+}

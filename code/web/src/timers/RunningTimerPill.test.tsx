@@ -253,18 +253,23 @@ describe('the running-timer pill in the header', () => {
     expect(within(view).getByRole('region', { name: 'Running timers' })).toBeTruthy();
   });
 
-  it.each<BabyRole>(['Viewer', 'Doctor'])(
-    'lets a %s see the timer but gives no controls',
-    async (role) => {
-      await seed(role);
-      await start(SLEEP_TYPE, { kind: 'nap' }, 9);
-      renderShell('/day');
-      const bar = await openPopover();
-      expect(within(bar).getByText('Nap')).toBeTruthy();
-      expect(within(bar).queryByRole('button', { name: 'Pause Nap' })).toBeNull();
-      expect(within(bar).queryByRole('button', { name: 'Stop Nap' })).toBeNull();
-    },
-  );
+  it('lets a Viewer see the timer but gives no controls', async () => {
+    await seed('Viewer');
+    await start(SLEEP_TYPE, { kind: 'nap' }, 9);
+    renderShell('/day');
+    const bar = await openPopover();
+    expect(within(bar).getByText('Nap')).toBeTruthy();
+    expect(within(bar).queryByRole('button', { name: 'Pause Nap' })).toBeNull();
+    expect(within(bar).queryByRole('button', { name: 'Stop Nap' })).toBeNull();
+  });
+
+  it("never shows a Doctor her patient's timer in the parents' shell (her dashboard is /doctor)", async () => {
+    await seed('Doctor');
+    await start(SLEEP_TYPE, { kind: 'nap' }, 9);
+    renderShell('/day');
+    await screen.findByText(/No baby yet/);
+    expect(screen.queryByTestId('timer-pill')).toBeNull();
+  });
 
   it('lets a caregiver pause and stop someone else’s timer, and nothing else about it', async () => {
     await db.babies.put({

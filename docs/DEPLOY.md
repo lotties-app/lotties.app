@@ -45,14 +45,20 @@ Compose reads `.env` from the repository root.
 | `POSTGRES_PASSWORD` | localdb | with `localdb` | Superuser password of the local container (no default) |
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
+| `AUTH_ADMIN_CLIENT_ID`, `AUTH_ADMIN_CLIENT_SECRET` | api | no (both or none; one alone stops the API at start) | Keycloak service account that may delete users in the realm; with it, account deletion also removes the sign-in account (see "Account deletion", docs/KEYCLOAK-ACCOUNT-DELETION.md). Secret: keep it with the other API secrets (home lab: `deploy/homelab/.env`, Secret `lotties-secrets`) |
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
+| `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
+| `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
 | `VITE_API_BASE_URL` | web build | no (empty) | Empty = same origin through nginx |
 | `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer (http/https only); empty hides it |
+| `VITE_PRIVACY_CONTROLLER_NAME` | web build | before a store submission | The controller (person or company) the privacy policy names; empty = "the Lotties project maintainers". See "Privacy policy" |
+| `VITE_PRIVACY_CONTACT_EMAIL` | web build | before a store submission | Contact address for privacy requests (a plain email, shown as a `mailto:` link); empty = the GitHub issue tracker and private reports |
+| `VITE_PRIVACY_DPO` | web build | before a store submission | The encarregado (DPO) contact: a name, an email or both; empty = "the contact above" |
 | `WEB_PORT` | compose | no (8080) | Host port of the web container |
 | `OIDC_ORIGIN` | web runtime | no | Overrides the CSP OIDC origin derived from `VITE_OIDC_AUTHORITY` |
 | `API_UPSTREAM` | web runtime | no (`api:8080`) | `host:port` nginx proxies `/api/` to; resolved per request, so nginx starts even when it does not exist |
@@ -77,6 +83,10 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 2. Valid redirect URIs `${origin}/auth/callback`, valid post logout redirect URIs `${origin}/login`, web origins `${origin}`.
 3. Audience: add an Audience mapper (client scope) that puts the API id in `aud`; use that value as `AUTH_AUDIENCE` and `VITE_OIDC_AUDIENCE` can stay empty. Refresh tokens are issued with the `offline_access` scope (assign it as an optional or default client scope); enable "Revoke refresh token" for rotation.
 4. Authority: `https://HOST/realms/REALM`.
+
+#### Account deletion (Keycloak)
+
+`DELETE /api/v1/me` erases the user's data in the database (docs/design/12-mobile-capacitor.md section 10). Removing the sign-in account at Keycloak needs a service account; the full steps, the test with a throwaway user and the rotation are in docs/KEYCLOAK-ACCOUNT-DELETION.md. In short: Clients, create a client `lotties-account-deletion` with client authentication **on**, only "Service accounts roles" ticked (standard flow, direct access grants off); Service account roles, assign the client role `realm-management` > `manage-users` (nothing else: Keycloak has no delete-only role); copy its secret into `AUTH_ADMIN_CLIENT_ID` / `AUTH_ADMIN_CLIENT_SECRET` (home lab: `deploy/homelab/.env`; `deploy.sh` puts both in the Secret `lotties-secrets`). The API only deletes the user whose token issuer is `AUTH_AUTHORITY`. Without them the data is still deleted, and the app says before the confirmation (`identityRemovable` in the preview) and after (`identity: not_configured`) that the sign-in account stays: remove it in the Keycloak admin console, Users. When Keycloak fails (`identity: failed`) the data is erased too, the API logs the Keycloak user id, and the user can sign in again and delete once more, or the owner deletes that user by hand.
 
 ### Authentik
 
@@ -337,6 +347,93 @@ Apply the `PushNotifications` migration (`20261021182304_PushNotifications`) as 
 - Database errors on push routes (permission denied): the app role lacks grants on the new tables, see Database above.
 - No reminders but test works: the user has no time zone saved (open Settings once), quiet hours, per-baby reminders off, or the scheduler disabled on every instance.
 
+## Address lookup
+
+The provider sheet's "Find address" calls `GET /api/v1/address/lookup` (Brazilian CEP: BrasilAPI, then ViaCEP) and `GET /api/v1/address/search` (OpenStreetMap Nominatim). The API is the proxy, so the browser calls no third party and the CSP is unchanged. No keys or accounts. Only the CEP digits or the search text the user typed leave the server (plus an identifying `User-Agent`); the typed text is never logged. Design: docs/design/23-address-lookup.md.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `AddressLookup__Enabled` | `true` | `false` turns the feature off: the routes answer 503 `address_lookup_disabled` and nothing is called |
+| `AddressLookup__ContactEmail` | empty | Operator e-mail added to the `User-Agent` (`Lotties-baby-tracker/1.0 (+repo; you@example.com)`), as the Nominatim policy asks; set it |
+| `AddressLookup__BrasilApiBaseUrl`, `__ViaCepBaseUrl`, `__NominatimBaseUrl` | `https://brasilapi.com.br`, `https://viacep.com.br`, `https://nominatim.openstreetmap.org` | Upstream bases (absolute http(s), no query). Point `NominatimBaseUrl` at your own instance for more than light use: the public one allows 1 request per second and may block abuse |
+| `AddressLookup__TimeoutSeconds` | `5` | Timeout of each upstream call (also how long a search waits for its Nominatim slot) |
+| `AddressLookup__CepCacheMinutes`, `__SearchCacheMinutes` | `1440`, `60` | In-memory cache lifetime of CEP answers (not found included) and search answers |
+| `AddressLookup__CacheMaxEntries` | `1000` | Cached answers per kind; emptied when full |
+| `AddressLookup__NominatimMinIntervalMilliseconds` | `1100` | Least time between two Nominatim requests of this server (0 only for a private instance) |
+| `RequestLimits__AddressLookupPermitsPerMinute` | `20` | Lookups per user per minute (both routes; 429 `rate_limited`) |
+
+Invalid values fail startup. Egress: the API pod must reach `brasilapi.com.br`, `viacep.com.br` and `nominatim.openstreetmap.org` over HTTPS (or your replacements); if it cannot, the feature answers 502 and the address field stays manual. Keep the log level of `System.Net.Http.HttpClient.AddressLookup` at `None` (set in `appsettings.json`: a higher level would print request URLs, i.e. the typed text). A reverse proxy's access log may record the query string of `/api/v1/address/*`; exclude that path from the log if you do not want it kept.
+
+## Alexa skill
+
+`POST /api/v1/alexa` is the backend of the Lotties Alexa custom skill (docs/design/32-assistants.md); the owner's setup
+(developer console, Keycloak account-linking client, certification) is [docs/ALEXA.md](ALEXA.md). Off by default: the
+route answers 404. It needs migration `VoiceAssistants` (table `user_assistant_settings`). No secret is configured
+here: the account-linking client secret lives only in Keycloak and the Alexa console.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Alexa__Enabled` | `false` | `true` answers Alexa requests (startup fails without a valid skill id) |
+| `Alexa__SkillIds` | empty | Skill ids (`amzn1.ask.skill.<uuid>`) whose requests are answered: one comma-separated value, or `Alexa__SkillIds__0`, `__1`, ... |
+| `Alexa__CertCacheMinutes` | `60` | How long Amazon's downloaded signing certificate chain is reused (1-1440; never past its expiry) |
+| `Alexa__CertDownloadTimeoutSeconds` | `5` | Timeout of that download (1-30) |
+| `Alexa__CertMaxBytes` | `65536` | Largest certificate chain accepted (1024-1048576) |
+| `Alexa__MaxRequestBodyBytes` | `131072` | Largest request body (1024-1048576; larger is 413) |
+| `RequestLimits__AssistantPermitsPerMinute` | `30` | Voice commands per linked user per minute (over it the skill says to try again) |
+
+Egress: the API pod must reach `https://s3.amazonaws.com` (path `/echo.api/...`, Amazon's request-signing certificate);
+nothing else of Amazon is called. Access tokens from account linking are validated with `AUTH_AUTHORITY` /
+`AUTH_AUDIENCE` like every other token, so the Keycloak client of the skill needs the same `lotties-api` audience mapper
+as the SPA client. Logs carry the intent name, the result code and the correlation id only.
+
+## MCP server
+
+`POST /api/v1/mcp` is a remote MCP server for AI assistants such as Claude (docs/design/32-assistants.md section 9); the
+owner's setup (Keycloak client scopes `lotties.read`/`lotties.write` with consent texts, the audience mapper, the AI
+clients, Claude, the MCP Inspector, revoking) is [docs/MCP.md](MCP.md). Off by default: every MCP route, the protected
+resource metadata included, answers 404. No migration and no secret: the API only validates the tokens Keycloak issues to
+the AI clients.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Mcp__Enabled` | `false` | `true` serves the MCP endpoint and its OAuth metadata (startup fails without `AUTH_AUTHORITY`) |
+| `Mcp__ResourceUrl` | empty (derived from the request) | The canonical MCP URL, e.g. `https://lotties.app/api/v1/mcp`: the metadata's `resource`, the URL Settings shows (absolute http(s), no query or fragment) |
+| `Mcp__Audience` | `lotties-mcp` | The `aud` MCP tokens must carry (Keycloak's audience mapper on the two client scopes; docs/MCP.md recommends the MCP URL). Must differ from `AUTH_AUDIENCE` (startup fails otherwise) |
+| `Mcp__AllowedOrigins` | empty | Browser origins allowed to call the endpoint (comma-separated, or `__0`, `__1`, ...); any other `Origin` is 403. Server-side clients send none; set it only for a browser-based test client |
+| `Mcp__MaxRequestBodyBytes` | `65536` | Largest request body (1024-1048576; larger is 413) |
+| `RequestLimits__AssistantPermitsPerMinute` | `30` | Tool calls (and voice commands) per user per minute; over it a tool answers `rate_limited` |
+
+The ingress sends `/.well-known/oauth-protected-resource` (RFC 9728, with the path-suffixed
+`/.well-known/oauth-protected-resource/api/v1/mcp`) to the API next to `/api` (deploy/homelab/manifests/ingress.yaml);
+another reverse proxy needs the same route. Keycloak must be reachable from the AI provider's servers (Anthropic publishes
+its egress range). Logs carry the tool name, the result code and the correlation id only; the SDK's own log categories
+(`ModelContextProtocol*`) are kept at Warning in code.
+## Privacy policy
+
+The public policy is the web route `/privacy` (https://lotties.app/privacy; also Hub > Privacy policy and
+`/doctor/privacy`). Its text is in `code/web/src/legal/privacy.en.ts` and `privacy.pt-BR.ts`, the facts behind it in
+`docs/design/33-privacy-audit.md`, and what the owner must still decide in `docs/PRIVACY-OWNER-CHECKLIST.md`. Three
+public build values name who is responsible; they are contact details the owner chooses to publish, never secrets:
+
+| Variable | Shown as | Default when empty |
+|----------|----------|--------------------|
+| `VITE_PRIVACY_CONTROLLER_NAME` | the controller ("Responsible for that data") | "the Lotties project maintainers" |
+| `VITE_PRIVACY_CONTACT_EMAIL` | the contact, as a `mailto:` link (a plain address only; anything else is ignored) | the repository's issue tracker for questions and a private GitHub report for anything personal |
+| `VITE_PRIVACY_DPO` | the encarregado (data protection contact) | "the contact above" |
+
+A value that is empty, a `<placeholder>`, longer than 200 characters or has control characters falls back to the
+default, so the page never shows a marker. They reach the bundle like `VITE_REPO_URL`: `docker-compose.yml` build
+args, the web `Dockerfile`, `deploy/homelab/deploy.sh` (from `deploy/homelab/.env`; a changed value rebuilds the web
+image) and, for the iOS/Android build, `code/web/.env.native.local`. Change them with a new web build. Keeping the
+policy honest: every change that adds a data flow or a third party updates the policy content and the audit
+(`CLAUDE.md`).
+
+Operational facts the policy relies on (check them when the setup changes): the API logs no IP addresses, request
+lines or record content; the web container's nginx keeps its stock access log (client address from
+`X-Forwarded-For`, path, user agent); a reverse proxy's access log may record the query string of
+`/api/v1/address/*` (the address search text), so exclude that path there if you do not want it kept; HSTS is not
+set yet (see "Reverse proxy and TLS").
+
 ## Token storage trade-off
 
 The OIDC library keeps the user, access token and refresh token in `localStorage`, which is required for offline use and silent renew in a pure SPA. Any script that runs on the page can read them, so the main mitigation is the CSP: no inline or eval scripts and no third-party script origins (`style-src 'unsafe-inline'` is allowed only because MUI/emotion injects styles). Further mitigations: refresh token rotation, short access token lifetimes, and a minimal dependency set (`npm audit` runs in CI). If your threat model needs more, put a backend-for-frontend with HttpOnly cookies in front instead.
@@ -430,7 +527,8 @@ The shared catalog can be filled with Brazil's registered medicines (brand names
 2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 8 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
 3. Dry run first (no database connection): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run --lookup "Luftal,Simeticona"`. Check the counts and the spot checks.
 4. Real run, with the same variables as the API: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` (the app role has `SELECT, INSERT, UPDATE, DELETE` on all tables, which is enough), or `--use-migrator` to connect with `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD` instead: `dotnet run --project code/api/tools/Lotties.CatalogImporter`. Set the variables in the shell (for example from a password manager), never on the command line or in a committed file; the tool prints the host and database name, never the user or password. One transaction; about 20 s for the full list (8,880 official + 7 curated products) on a local database; re-running changes only what changed in the sources. The curated list ships next to the tool (`--curated <path|none>` to change or skip it).
-5. Refresh monthly (ANVISA updates the registrations monthly, the CMED price list about monthly) with the same command plus `--refresh` to download again. Products that left the list are marked inactive (hidden from search, still readable for linked medications), never deleted. The downloads live in `--cache-dir` (default `<temp>/lotties-anvisa-cache`), never in the repository.
+5. Strengths (migration `ProductStrength`, `20261023162441_ProductStrength`, right after `AccountDeletion`): apply it with the API version that ships it (two nullable columns on `products`, `strength_key` and `strength_text`; no backfill; old pods ignore them). Until the importer runs again every strength is NULL and the "same active ingredient" list shows each alternative as "strength not known" (neutral, search unchanged). Rollout order: (a) deploy the API; (b) the owner, from the admin machine, runs the dry run and then the real run, both reading the cached files (use `--refresh` only if the cache is old): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run`, check the lines "CMED presentations whose strength reads as one unambiguous amount" and "products with a structured strength key", then `dotnet run --project code/api/tools/Lotties.CatalogImporter` with the `DB_*` variables set in the shell. The second run updates the products whose strength changed and the six curated ones; nothing else changes. The agent never runs these.
+6. Refresh monthly (ANVISA updates the registrations monthly, the CMED price list about monthly) with the same command plus `--refresh` to download again. Products that left the list are marked inactive (hidden from search, still readable for linked medications), never deleted. The downloads live in `--cache-dir` (default `<temp>/lotties-anvisa-cache`), never in the repository.
 
 ## Podman
 

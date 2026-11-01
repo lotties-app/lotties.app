@@ -77,9 +77,12 @@ check "tag: an untracked file counts" bash -c "[ '$second' != '$first' ]"
 printf 'one!' > "$REPO/code/web/src/a.ts"
 check "tag: a changed working-tree file counts" bash -c "[ '$(source_tag "" code/web)' != '$second' ]"
 VITE_API_BASE_URL="" VITE_OIDC_AUTHORITY=https://auth.example.test/realms/r VITE_OIDC_AUDIENCE="" VITE_REPO_URL=""
+VITE_PRIVACY_CONTROLLER_NAME="" VITE_PRIVACY_CONTACT_EMAIL="" VITE_PRIVACY_DPO=""
 VITE_OIDC_CLIENT_ID=web-a; salt_a=$(web_build_salt)
 VITE_OIDC_CLIENT_ID=web-b; salt_b=$(web_build_salt)
 check "tag: a different web build argument is a different tag" bash -c "[ '$(source_tag "$salt_a" code/web)' != '$(source_tag "$salt_b" code/web)' ]"
+VITE_PRIVACY_CONTACT_EMAIL=privacy@example.test; salt_c=$(web_build_salt); VITE_PRIVACY_CONTACT_EMAIL=""
+check "tag: a different privacy contact is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_c" code/web)' ]"
 check "tag: TAG overrides the source tag" equals "$(TAG=fixed image_tag "" code/web)" fixed
 
 # ── Whole runs against stand-ins ──────────────────────────────────────────────
@@ -155,6 +158,7 @@ run "dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered" STUB_NS_EXISTS=no STUB_PULL
   check "dry run: the Secret keys are listed" out_has 'keys: DB_APP_PASSWORD DB_APP_USER DB_HOST DB_NAME DB_PORT'
   check "dry run: the Ingress is rendered for lotties.app" grep -q 'host: "lotties.app"' "$WORK/rendered/ingress.yaml"
   check "dry run: /api goes to the API" bash -c "grep -A4 'path: /api' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
+  check "dry run: the MCP resource metadata goes to the API" bash -c "grep -A4 'path: /.well-known/oauth-protected-resource' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
   check "dry run: the certificate comes from the issuer" grep -q 'cert-manager.io/cluster-issuer: letsencrypt-production-lotties-app-issuer' "$WORK/rendered/ingress.yaml"
   check "dry run: the namespace is labelled" grep -q 'app.kubernetes.io/part-of: lotties' "$WORK/rendered/namespace.yaml"
   check "dry run: both releases are rendered" bash -c "[ -s '$WORK/rendered/lotties-api.yaml' ] && [ -s '$WORK/rendered/lotties-web.yaml' ]"
@@ -210,6 +214,24 @@ check "push: one key alone is refused" out_has 'all three PUSH_VAPID_\* values o
 run "push on" PUSH_VAPID_PUBLIC_KEY=pub PUSH_VAPID_PRIVATE_KEY=priv PUSH_VAPID_SUBJECT=mailto:op@example.test SKIP_BUILD=1 && {
   check "push: the three keys go to the Secret" log_has '^secret-keys: .*PUSH_VAPID_PRIVATE_KEY PUSH_VAPID_PUBLIC_KEY PUSH_VAPID_SUBJECT'
 }
+
+run "no admin client" SKIP_BUILD=1 && {
+  check "admin client: none keeps the Keycloak user, and says so" out_has 'account deletion: keeps the Keycloak user'
+  check "admin client: no AUTH_ADMIN_* key in the Secret" log_lacks '^secret-keys: .*AUTH_ADMIN_'
+}
+
+EXPECT_FAIL=1 run "partial admin client" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion SKIP_BUILD=1
+check "admin client: the id alone is refused" out_has 'both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither'
+
+ADMIN_SECRET='Adm1n-Cl1ent-S3cret'
+run "admin client on" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion AUTH_ADMIN_CLIENT_SECRET="$ADMIN_SECRET" SKIP_BUILD=1 && {
+  check "admin client: both keys go to the Secret" log_has '^secret-keys: AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET DB_'
+  check "admin client: deletion also removes the Keycloak user" out_has 'account deletion: also deletes the Keycloak user'
+  check "admin client: the secret is never on a command line or printed" bash -c "! grep -qF -- '$ADMIN_SECRET' '$WORK/log' '$WORK/out'"
+}
+
+EXPECT_FAIL=1 run "admin client placeholder" AUTH_ADMIN_CLIENT_ID=lotties-account-deletion AUTH_ADMIN_CLIENT_SECRET='<admin-client-secret>' SKIP_BUILD=1
+check "admin client: the .env.example placeholder is refused" out_has 'AUTH_ADMIN_CLIENT_SECRET is still the .env.example placeholder'
 
 EXPECT_FAIL=1 run "placeholder" VITE_OIDC_CLIENT_ID='<spa-client-id>' SKIP_BUILD=1
 check "placeholder: refused" out_has 'VITE_OIDC_CLIENT_ID is still the .env.example placeholder'

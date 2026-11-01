@@ -233,7 +233,18 @@ export default function VaccinesPreview() {
     <DatabaseProvider db={db}>
       <ApiClientContext value={previewApi}>
         <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-          <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: 12, display: 'grid', gap: 2 }}>
+          <Box
+            sx={{
+              maxWidth: 480,
+              mx: 'auto',
+              px: 2,
+              pt: 1,
+              pb: 12,
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: 'minmax(0, 1fr)',
+            }}
+          >
             <Typography variant="h5" component="p" sx={{ py: 1 }}>
               Lia
             </Typography>

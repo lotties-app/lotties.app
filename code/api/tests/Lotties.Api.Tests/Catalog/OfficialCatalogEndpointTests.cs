@@ -49,14 +49,15 @@ public sealed class OfficialCatalogEndpointTests : IClassFixture<ApiFactory>
         results.EnumerateArray().Where(result => result.GetProperty("matchedBy").GetString() == matchedBy).Select(result => result.GetProperty("product").GetProperty("name").GetString()!);
 
     [Fact]
-    public async Task Search_Brand_ReturnsTheCuratedProductWithSiblingsOfficialFirst()
+    public async Task Search_Brand_ReturnsTheCuratedProductWithSiblingsInTheSameFormFirstThenOfficialFirst()
     {
         var results = await SearchAsync("luftal");
 
         var luftal = Assert.Single(results.EnumerateArray()).GetProperty("product");
         Assert.Equal(("Luftal", "curated", "curated", false), (luftal.GetProperty("name").GetString(), luftal.GetProperty("status").GetString(), luftal.GetProperty("source").GetString(), luftal.GetProperty("inactive").GetBoolean()));
         var siblings = results[0].GetProperty("sameActiveIngredient").EnumerateArray().Select(sibling => (sibling.GetProperty("name").GetString(), sibling.GetProperty("status").GetString())).ToArray();
-        Assert.Equal([("Mylicon", "official"), ("Simeticona", "official"), ("Flygas", "curated"), ("Aerogasol Comunitario", "community")], siblings);
+        // Same form (drops) first, official before curated before community; "Simeticona" has no known form (other), so it comes after.
+        Assert.Equal([("Mylicon", "official"), ("Flygas", "curated"), ("Aerogasol Comunitario", "community"), ("Simeticona", "official")], siblings);
     }
 
     [Fact]

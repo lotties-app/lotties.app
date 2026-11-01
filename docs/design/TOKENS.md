@@ -28,7 +28,7 @@ Mode (Settings > Appearance): System / Light / Dark (`baby-routine.theme`). Nigh
 | success / warning / error / info     | feeding / diaper / health fg, ink2 | same                  | warm tones only       |
 | themeColor (meta, manifest)          | `#f5efe4`                          | `#1b1814`             | `#0d0906`             |
 
-Category pairs `category.<name>.{bg,fg}` (sleep, feeding, diaper, health, care, activity, nightWaking, custom) and chart colours `chart.{night,nap,feed,diaper,medication,neutral}` are in `tokens.ts` (night: every category `#231910/#c98f52`). Status chips and alerts use the category pair of their status (success=feeding, warning=diaper, error=health, info=sleep). Also tokens: `cardShadow`, `fabShadow`, `scrim`, `grainOpacity`.
+Category pairs `category.<name>.{bg,fg}` (sleep, feeding, diaper, health, care, activity, nightWaking, custom) and chart colours `chart.{night,nap,feed,diaper,medication,neutral}` are in `tokens.ts` (night: every category `#231910/#c98f52`). Status chips and alerts use the category pair of their status (success=feeding, warning=diaper, error=health, info=sleep). Also tokens: `cardShadow`, `fabShadow`, `scrim`, `grainOpacity`, and the scrollbar thumb `scrollThumb` (`textMuted` at 32/34/30 % in light/dark/night) and `scrollThumbHover` (`accent` at 55/60/45 %), derived in `tokens.ts` (docs/DESIGN.md section 22).
 
 Deviation: chart `nap` light is `#9084ec` (the review's `#9a8ef0` is 2.7:1 on the surface, below the 3:1 floor).
 

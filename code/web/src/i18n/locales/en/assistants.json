@@ -1,0 +1,28 @@
+{
+  "assistants": {
+    "title": "Voice assistants",
+    "intro": "Log and ask by voice, for example: “Alexa, tell Lotties baby the baby fell asleep”. Link your Lotties account in the Alexa app first.",
+    "babyLabel": "Baby for voice commands",
+    "noneChosen": "Not chosen",
+    "hintOne": "You log for one baby, so voice commands use {{name}}.",
+    "hintSeveral": "You log for more than one baby: choose the one voice commands log and answer for.",
+    "saved": "Saved.",
+    "saveFailed": "This baby can't be used for voice commands. Choose a baby you log for.",
+    "loadFailed": "Couldn't load the voice assistant settings.",
+    "privacy": "Amazon processes what you say to Alexa. Lotties receives only the command and its values, and sends back the answer Alexa speaks, which can include your baby's name and recent entries.",
+    "privacyLink": "How voice commands use your data (privacy policy)",
+    "mcp": {
+      "title": "AI assistants (MCP)",
+      "intro": "Connect an AI assistant you choose, such as Claude, to Lotties over MCP. It can then answer questions from your baby's log and, only if you allow it, log sleep, feeds and diapers for you. With several babies it asks which one, or uses the baby chosen above.",
+      "urlLabel": "MCP server URL",
+      "urlHint": "Paste this URL in your assistant's connector settings (in Claude: Settings, Connectors, Add custom connector). You then sign in to Lotties and approve what the assistant may do.",
+      "copy": "Copy URL",
+      "copied": "URL copied.",
+      "copyFailed": "Couldn't copy. Select the URL and copy it.",
+      "manage": "Manage connected apps",
+      "newWindow": "(opens in a new window)",
+      "privacy": "What you share: the company behind the assistant receives the facts it asks for from your baby's log (the baby's name, times, amounts) and handles them under its own terms. Access is read-only unless you also approve logging. Medications are never shared, and answers are facts from your log, not medical advice.",
+      "revoke": "To disconnect an assistant, open Manage connected apps, then Applications, and remove its access."
+    }
+  }
+}

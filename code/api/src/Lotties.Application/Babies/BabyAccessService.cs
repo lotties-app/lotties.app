@@ -35,10 +35,23 @@ internal sealed class BabyAccessService : IBabyAccessService
         return decision;
     }
 
+    public async Task<BabyAccessDecision> CheckScopeAsync(Guid babyId, DoctorScope? scope, CancellationToken cancellationToken = default)
+    {
+        var member = await FindMembershipAsync(babyId, cancellationToken);
+        var decision = BabyAccess.DecideScope(member, scope);
+        _logger.LogDebug(
+            "Scope access to baby {BabyId} for user {UserId} requiring {Scope}: {Decision}",
+            babyId,
+            member?.UserId,
+            scope,
+            decision);
+        return decision;
+    }
+
     public async Task<BabyRole?> FindRoleAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         (await FindMembershipAsync(babyId, cancellationToken))?.Role;
 
-    private async Task<BabyMember?> FindMembershipAsync(Guid babyId, CancellationToken cancellationToken)
+    public async Task<BabyMember?> FindMembershipAsync(Guid babyId, CancellationToken cancellationToken = default)
     {
         if (_membershipByBaby.TryGetValue(babyId, out var known))
         {

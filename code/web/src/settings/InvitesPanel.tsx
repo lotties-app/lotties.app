@@ -23,6 +23,9 @@ import { InviteLinkDialog } from './InviteLinkDialog';
 import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
+import { DoctorScopeFields } from '../doctor/DoctorScopeFields';
+import { seesText } from '../doctor/scopeText';
+import { DEFAULT_DOCTOR_SCOPES, parseScopes, type DoctorScope } from '../doctor/scopes';
 
 const ROLES: BabyRole[] = ['Parent', 'Caregiver', 'Viewer', 'Owner', 'Doctor'];
 const DEFAULT_DAYS = 7;
@@ -46,7 +49,11 @@ function PendingInvite({ invite, onRevoke }: { invite: InviteDto; onRevoke: () =
     >
       <ListItemText
         primary={<Chip size="small" label={t(`baby.roles.${role}`)} />}
-        secondary={t('settings.invites.expires', { date: formatDate(invite.expiresAt) })}
+        secondary={
+          role === 'Doctor'
+            ? `${t('settings.invites.expires', { date: formatDate(invite.expiresAt) })} · ${seesText(parseScopes(invite.doctorScopes), t)}`
+            : t('settings.invites.expires', { date: formatDate(invite.expiresAt) })
+        }
       />
     </ListItem>
   );
@@ -59,6 +66,7 @@ export function InvitesPanel({ baby }: { baby: Baby }) {
   const queryClient = useQueryClient();
   const { run, pending, error, online } = useServerAction();
   const [role, setRole] = useState<BabyRole>('Parent');
+  const [scopes, setScopes] = useState<DoctorScope[]>([...DEFAULT_DOCTOR_SCOPES]);
   const [days, setDays] = useState(String(DEFAULT_DAYS));
   const [token, setToken] = useState<string | null>(null);
   const invites = useQuery({
@@ -72,7 +80,11 @@ export function InvitesPanel({ baby }: { baby: Baby }) {
 
   const create = () =>
     run(async () => {
-      const created = await createInvite(api, baby.id, { role, expiresInDays: daysNumber });
+      const created = await createInvite(api, baby.id, {
+        role,
+        expiresInDays: daysNumber,
+        ...(role === 'Doctor' ? { doctorScopes: scopes } : {}),
+      });
       setToken(created.token);
       await refresh();
     });
@@ -113,7 +125,10 @@ export function InvitesPanel({ baby }: { baby: Baby }) {
         />
       </Stack>
       {role === 'Doctor' && (
-        <Alert severity="info">{t('doctor.invite.consent', { name: baby.name })}</Alert>
+        <>
+          <Alert severity="info">{t('doctor.invite.consent', { name: baby.name })}</Alert>
+          <DoctorScopeFields value={scopes} onChange={setScopes} disabled={pending} />
+        </>
       )}
       <Button
         variant="contained"

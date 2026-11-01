@@ -41,6 +41,12 @@ public interface IAccessLogService
     /// </summary>
     Task RecordViewAsync(Guid babyId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The same for a caller whose role on <paramref name="babyId"/> is already known (the doctor's patient list records one
+    /// view per patient without looking each membership up again).
+    /// </summary>
+    Task RecordViewAsync(Guid babyId, BabyRole role, CancellationToken cancellationToken = default);
+
     /// <summary>The newest entries, newest first (at most <see cref="AccessLogThrottle.ListLimit"/>).</summary>
     Task<IReadOnlyList<AccessLogEntryResponse>> ListAsync(Guid babyId, CancellationToken cancellationToken = default);
 }
@@ -72,8 +78,15 @@ internal sealed class AccessLogService : IAccessLogService
 
     public async Task RecordViewAsync(Guid babyId, CancellationToken cancellationToken = default)
     {
-        var role = await _access.FindRoleAsync(babyId, cancellationToken);
-        if (role is not { } recorded || !AccessLogThrottle.IsRecorded(recorded))
+        if (await _access.FindRoleAsync(babyId, cancellationToken) is { } role)
+        {
+            await RecordViewAsync(babyId, role, cancellationToken);
+        }
+    }
+
+    public async Task RecordViewAsync(Guid babyId, BabyRole role, CancellationToken cancellationToken = default)
+    {
+        if (!AccessLogThrottle.IsRecorded(role))
         {
             return;
         }
@@ -86,8 +99,8 @@ internal sealed class AccessLogService : IAccessLogService
             return;
         }
 
-        var added = await _entries.TryAddAsync(AccessLogEntry.View(babyId, user.Id, recorded, now, latest), cancellationToken);
-        _logger.LogInformation("Access of user {UserId} ({Role}) to baby {BabyId} recorded: {Added}", user.Id, recorded, babyId, added);
+        var added = await _entries.TryAddAsync(AccessLogEntry.View(babyId, user.Id, role, now, latest), cancellationToken);
+        _logger.LogInformation("Access of user {UserId} ({Role}) to baby {BabyId} recorded: {Added}", user.Id, role, babyId, added);
     }
 
     public async Task<IReadOnlyList<AccessLogEntryResponse>> ListAsync(Guid babyId, CancellationToken cancellationToken = default)

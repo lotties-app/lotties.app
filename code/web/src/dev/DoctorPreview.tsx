@@ -8,17 +8,15 @@ import { AuthContext, type AuthApi } from '../auth/AuthContext';
 import { SelectedBabyProvider } from '../baby/SelectedBabyProvider';
 import { createDatabase, type BabyRoutineDb } from '../db/database';
 import { DatabaseProvider } from '../db/DatabaseProvider';
-import type { Baby, BabyEvent, Note, PersonSummary } from '../db/models';
+import type { Baby, Note, PersonSummary } from '../db/models';
 import { NoteComposer } from '../notes/NoteComposer';
 import { NotesScreen } from '../notes/NotesScreen';
 import { GrowthPage } from '../pages/GrowthPage';
-import { DeclareToJoin } from '../pages/InvitePage';
-import { PatientsScreen } from '../patients/PatientsScreen';
+import { DeclareToJoin, JoinedAsDoctor } from '../pages/InvitePage';
 import { MembersSection } from '../settings/MembersSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
 import { SyncEngine } from '../sync/SyncEngine';
 import { SyncEngineContext } from '../sync/SyncEngineContext';
-import { PREVIEW_TYPES } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
 
 /*
@@ -26,20 +24,20 @@ import { PreviewToolbar } from './PreviewToolbar';
  * (docs/design/16-doctor-access.md) over a throw-away local database and an in-memory API, no
  * sign-in. `?state=profile` (Settings > I'm a healthcare professional), `accept` (a Doctor invite
  * asking for the profile), `members` (the Owner's members with the doctor, the invite picker and the
- * access log), `patients` (the doctor's Patients), `notes` (the doctor's notes), `composer` (a new
- * note), `family` (the parents reading the shared notes, one by a doctor no longer with access) and
- * `growth` (a consultation measurement, "Recorded by Dr.").
+ * access log), `notes` (the doctor's notes), `composer` (a new note), `family` (the parents reading the shared notes, one by a doctor no longer with access) and
+ * `growth` (a consultation measurement, "Recorded by Dr.") and `joined` (what a doctor sees right
+ * after accepting: the sections the family shared).
  */
 
 const SCENARIOS = [
   'profile',
   'accept',
   'members',
-  'patients',
   'notes',
   'composer',
   'family',
   'growth',
+  'joined',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 
@@ -113,6 +111,7 @@ const MEMBERS = [
     role: 'Doctor',
     joinedAt: '2026-10-01T10:00:00Z',
     professional: PROFILE,
+    doctorScopes: ['daily_log', 'growth', 'medications', 'notes'],
   },
 ];
 
@@ -206,36 +205,10 @@ const AUTH: AuthApi = {
 const roleOf = (scenario: Scenario): Baby['role'] =>
   scenario === 'family' || scenario === 'growth' || scenario === 'members' ? 'Owner' : 'Doctor';
 
-function events(babyId: string, hours: number): BabyEvent[] {
-  const startedAt = hoursAgo(hours);
-  return [
-    {
-      id: `dev-doctor-ev-${babyId}`,
-      babyId,
-      typeId: PREVIEW_TYPES[0].id,
-      startedAt,
-      endedAt: startedAt,
-      payload: {},
-      notes: null,
-      createdBy: 'dev-mom',
-      createdAt: startedAt,
-      updatedAt: startedAt,
-      deletedAt: null,
-    },
-  ];
-}
-
 async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<void> {
   await Promise.all([db.babies.clear(), db.events.clear(), db.notes.clear(), db.outbox.clear()]);
   const role = roleOf(scenario);
   await db.babies.put(baby(LIA, 'Lia', '2026-08-20', role));
-  if (scenario === 'patients') {
-    await db.babies.bulkPut([
-      baby('dev-doctor-theo', 'Theo', '2026-04-11', 'Doctor'),
-      baby('dev-doctor-maya', 'Maya', '2025-12-02', 'Doctor'),
-    ]);
-    await db.events.bulkPut([...events(LIA, 0.5), ...events('dev-doctor-theo', 5)]);
-  }
   const visible = role === 'Doctor' ? NOTES : NOTES.filter((n) => n.visibility === 'shared');
   await db.notes.bulkPut(visible);
 }
@@ -246,12 +219,16 @@ function Body({ scenario }: { scenario: Scenario }) {
   switch (scenario) {
     case 'profile':
       return <ProfessionalSection />;
+    case 'joined':
+      return (
+        <JoinedAsDoctor
+          baby={{ ...lia, doctorScopes: ['daily_log', 'growth', 'medications', 'notes'] }}
+        />
+      );
     case 'accept':
       return <DeclareToJoin onDeclared={() => {}} />;
     case 'members':
       return <MembersSection baby={lia} />;
-    case 'patients':
-      return <PatientsScreen />;
     case 'growth':
       return <GrowthPage />;
     case 'composer':
@@ -314,6 +291,7 @@ export default function DoctorPreview() {
                       pb: 12,
                       display: 'grid',
                       gap: 2,
+                      gridTemplateColumns: 'minmax(0, 1fr)',
                     }}
                   >
                     {(scenario === 'profile' || scenario === 'members') && (

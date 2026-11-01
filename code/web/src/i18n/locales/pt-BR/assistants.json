@@ -1,0 +1,28 @@
+{
+  "assistants": {
+    "title": "Assistentes de voz",
+    "intro": "Registre e pergunte por voz, por exemplo: “Alexa, peça para lotties bebê: o bebê dormiu”. Antes, vincule a sua conta do Lotties no app Alexa.",
+    "babyLabel": "Bebê dos comandos de voz",
+    "noneChosen": "Nenhum escolhido",
+    "hintOne": "Você registra para um bebê só, então os comandos de voz usam {{name}}.",
+    "hintSeveral": "Você registra para mais de um bebê: escolha o bebê dos registros e respostas por voz.",
+    "saved": "Salvo.",
+    "saveFailed": "Este bebê não pode ser usado nos comandos de voz. Escolha um bebê para o qual você registra.",
+    "loadFailed": "Não foi possível carregar as configurações dos assistentes de voz.",
+    "privacy": "A Amazon processa o que você fala com a Alexa. O Lotties recebe só o comando e seus valores e devolve a resposta que a Alexa fala, que pode incluir o nome do bebê e registros recentes.",
+    "privacyLink": "Como os comandos de voz usam seus dados (política de privacidade)",
+    "mcp": {
+      "title": "Assistentes de IA (MCP)",
+      "intro": "Conecte ao Lotties, por MCP, um assistente de IA da sua escolha, como o Claude. Ele passa a responder perguntas a partir do registro do seu bebê e, só se você permitir, a registrar sono, alimentações e fraldas por você. Com mais de um bebê, ele pergunta qual, ou usa o bebê escolhido acima.",
+      "urlLabel": "URL do servidor MCP",
+      "urlHint": "Cole esta URL nas configurações de conectores do assistente (no Claude: Configurações, Conectores, Adicionar conector personalizado). Depois você entra no Lotties e aprova o que o assistente pode fazer.",
+      "copy": "Copiar URL",
+      "copied": "URL copiada.",
+      "copyFailed": "Não foi possível copiar. Selecione a URL e copie.",
+      "manage": "Gerenciar apps conectados",
+      "newWindow": "(abre em uma nova janela)",
+      "privacy": "O que você compartilha: a empresa por trás do assistente recebe os fatos que ele pedir do registro do seu bebê (o nome do bebê, horários, quantidades) e os trata pelos próprios termos. O acesso é só de leitura, a menos que você também aprove os registros. Medicamentos nunca são compartilhados, e as respostas são fatos do seu registro, não orientação médica.",
+      "revoke": "Para desconectar um assistente, abra Gerenciar apps conectados, depois Aplicativos, e remova o acesso dele."
+    }
+  }
+}

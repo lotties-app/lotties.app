@@ -158,7 +158,18 @@ export default function InsightsPreview() {
     <DatabaseProvider db={db}>
       <AddSheetProvider enabled={false}>
         <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-          <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: 14, display: 'grid', gap: 3 }}>
+          <Box
+            sx={{
+              maxWidth: 480,
+              mx: 'auto',
+              px: 2,
+              pt: 1,
+              pb: 14,
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: 'minmax(0, 1fr)',
+            }}
+          >
             <Typography variant="h4" component="h1" sx={{ pt: 1 }}>
               {t('nav.insights')}
             </Typography>

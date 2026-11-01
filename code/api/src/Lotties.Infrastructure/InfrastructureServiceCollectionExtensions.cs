@@ -27,6 +27,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IUniqueViolationDetector, NpgsqlUniqueViolationDetector>();
         services.AddSingleton<UniqueViolations>();
         services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IAccountDataEraser, EfAccountDataEraser>();
         services.AddScoped<IBabyMembershipRepository, EfBabyMembershipRepository>();
         services.AddScoped<IBabyRepository, EfBabyRepository>();
         services.AddScoped<IInviteRepository, EfInviteRepository>();
@@ -37,6 +38,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Lotties.Domain.Prescriptions.IMedicationDoseHistoryRepository, EfMedicationDoseHistoryRepository>();
         services.AddScoped<Lotties.Domain.Formulas.IFormulaRepository, EfFormulaRepository>();
         services.AddScoped<Lotties.Domain.Appointments.IAppointmentRepository, EfAppointmentRepository>();
+        services.AddScoped<Lotties.Domain.CareProviders.ICareProviderRepository, EfCareProviderRepository>();
         services.AddScoped<Lotties.Domain.Vaccinations.IVaccinationRepository, EfVaccinationRepository>();
         services.AddScoped<Lotties.Domain.Professionals.IProfessionalProfileRepository, EfProfessionalProfileRepository>();
         services.AddScoped<Lotties.Domain.Notes.INoteRepository, EfNoteRepository>();
@@ -46,7 +48,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IEventRepository, EfEventRepository>();
         services.AddScoped<IEventTypeRepository, EfEventTypeRepository>();
         services.AddScoped<Lotties.Domain.Imports.IImportRepository, EfImportRepository>();
+        services.AddScoped<Lotties.Domain.Backups.IBackupSession, EfBackupSession>();
         services.AddScoped<Lotties.Domain.Predictions.IPredictionHistoryRepository, EfPredictionHistoryRepository>();
+        services.AddScoped<Lotties.Domain.Clinical.IClinicalEventRepository, EfClinicalEventRepository>();
+        services.AddScoped<Lotties.Domain.Assistants.IUserAssistantSettingsRepository, EfUserAssistantSettingsRepository>();
         return services;
     }
 }

@@ -29,6 +29,7 @@ internal static class UserRateLimits
         rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => PerUser(context, limits.PermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.Import, context => PerUser(context, limits.ImportPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.CatalogWrite, context => PerUser(context, limits.CatalogWritePermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.AddressLookup, context => PerUser(context, limits.AddressLookupPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.PushWrite, context => PerUser(context, limits.PushWritePermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.PushTest, context => PerUser(context, limits.PushTestPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.PushAction, context => PerAddress(context, limits.PushActionPermitsPerMinute));

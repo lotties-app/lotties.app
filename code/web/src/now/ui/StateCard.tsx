@@ -3,7 +3,12 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, ButtonBase, Card, Chip, LinearProgress, Typography } from '@mui/material';
 import { formatDuration, formatTime } from '../../i18n/format';
-import type { BedTimeDto, PredictionConfidence, PredictionDto } from '../../sync/contract';
+import type {
+  BedTimeDto,
+  PredictionConfidence,
+  PredictionDto,
+  PredictionsDto,
+} from '../../sync/contract';
 import { RADIUS, type CategoryName } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
@@ -21,6 +26,10 @@ import {
 } from '../sleepToggle';
 import type { NowScreenModel } from '../useNow';
 import { napWindowKey, readSkippedNap, writeSkippedNap } from '../napGuidance';
+import { overtiredDismissal } from '../dismissalStore';
+import { projectNaps, type NapProjection } from '../napProjection';
+import { overtiredSuggestion, wakeWindowOf } from '../overtired';
+import type { RhythmNow } from '../rhythmDetails';
 import { readNowView, writeNowView, type NowView } from '../ringPrefs';
 import { DayRing } from './DayRing';
 import { DayRuler } from './DayRuler';
@@ -58,6 +67,14 @@ export interface StateCardProps {
   prediction?: PredictionDto;
   /** The next night's start (heuristic v1.1), when the server sent one. */
   bedTime?: BedTimeDto | null;
+  /** The predictions response: the overtired heads-up gives the "now" face its tired look. */
+  predictions?: PredictionsDto;
+}
+
+/** What the ring and the ruler need to describe "now" beyond the window. */
+interface RhythmFacts {
+  overtired: boolean;
+  bedTime: { earliest: string; latest: string } | null;
 }
 
 /** Tinted pill with the state ("Awake", "Asleep · Nap"). */
@@ -219,6 +236,8 @@ function RhythmView({
   view,
   onView,
   ring,
+  facts,
+  projection,
 }: {
   state: AwakeState;
   window: NapWindow;
@@ -226,6 +245,8 @@ function RhythmView({
   view: NowView;
   onView: (view: NowView) => void;
   ring: ReactNode;
+  facts: RhythmFacts;
+  projection: NapProjection | null;
 }) {
   return (
     <>
@@ -235,7 +256,11 @@ function RhythmView({
         <DayRuler
           since={state.since}
           now={now}
-          window={{ earliest: window.earliest, latest: window.latest }}
+          window={{ earliest: window.earliest, latest: window.latest, basis: window.basis }}
+          minutes={state.awakeMinutes}
+          overtired={facts.overtired}
+          bedTime={facts.bedTime}
+          projection={projection}
         />
       )}
       <RhythmToggle view={view} onChange={onView} />
@@ -438,6 +463,17 @@ function asleepLabel(state: AsleepState, t: TFunction): string {
 
 const asleepMinutes = (state: AsleepState) => state.nightWaking?.minutes ?? state.minutes;
 
+/** "Now" for the ring and the ruler: a running night waking is awake time in the night. */
+function rhythmNow(state: AwakeState | AsleepState): RhythmNow {
+  if (state.kind === 'awake') {
+    return { kind: 'awake', since: state.since, minutes: state.awakeMinutes };
+  }
+  if (state.nightWaking) {
+    return { kind: 'waking', since: state.nightWaking.since, minutes: state.nightWaking.minutes };
+  }
+  return { kind: 'asleep', since: state.since, minutes: state.minutes };
+}
+
 /**
  * The state card (docs/design/mockups/01-now.html, compact since the "Running now" layout): awake
  * or asleep with a live duration, the nap window as one line (or what the app is still learning),
@@ -451,6 +487,7 @@ export function StateCard({
   action,
   prediction,
   bedTime,
+  predictions,
 }: StateCardProps) {
   const { t } = useTranslation();
   const [whyOpen, setWhyOpen] = useState(false);
@@ -477,18 +514,73 @@ export function StateCard({
       model.commands.sleep(kind, state.kind === 'asleep' ? undefined : state.sleepKindHint),
     );
 
+  const facts: RhythmFacts = {
+    // The heads-up as its card shows it (the same "Not now" for this awake stretch).
+    overtired:
+      overtiredSuggestion({
+        predictions,
+        state,
+        events: model.events,
+        types: model.types,
+        now,
+        dismissedSince: overtiredDismissal.read(babyId),
+      }) !== null,
+    bedTime: bedTime
+      ? { earliest: bedTime.nextStart.earliest, latest: bedTime.nextStart.latest }
+      : null,
+  };
+
+  /**
+   * The naps still likely today: after the shown nap window while awake (none once it is
+   * skipped), after the running nap while asleep (none in the night or a night waking).
+   */
+  const projectionFor = (current: AwakeState | AsleepState, window?: NapWindow) => {
+    const shared = {
+      events: model.events,
+      types: model.types,
+      now,
+      wakeWindowMinutes: wakeWindowOf(predictions)?.limitMinutes ?? null,
+      bedTime: facts.bedTime,
+    };
+    if (current.kind === 'awake') {
+      if (!window) return null;
+      return projectNaps({
+        ...shared,
+        state: { kind: 'awake', since: current.since },
+        prediction: {
+          nextStart: window,
+          basis: window.basis,
+          expectedDuration: prediction?.expectedDuration ?? null,
+        },
+      });
+    }
+    if (current.nightWaking || !prediction) return null;
+    return projectNaps({
+      ...shared,
+      state: { kind: 'asleep', since: current.since, sleepKind: current.sleepKind },
+      prediction,
+    });
+  };
+
   const ringFor = (
+    current: AwakeState | AsleepState,
     stateLabel: string,
     duration: string,
-    window?: { earliest: string; latest: string },
+    window?: NapWindow,
   ) => (
     <DayRing
       events={model.events}
       types={model.types}
       now={now}
-      {...(window ? { window } : {})}
+      {...(window
+        ? { window: { earliest: window.earliest, latest: window.latest, basis: window.basis } }
+        : {})}
       stateLabel={stateLabel}
       duration={duration}
+      state={rhythmNow(current)}
+      overtired={facts.overtired}
+      bedTime={facts.bedTime}
+      projection={projectionFor(current, window)}
     />
   );
 
@@ -515,7 +607,7 @@ export function StateCard({
         <AsleepBlock state={state} />
         {sleepButtons}
         <RhythmCollapse>
-          {ringFor(asleepLabel(state, t), formatDuration(asleepMinutes(state) * MINUTE_MS))}
+          {ringFor(state, asleepLabel(state, t), formatDuration(asleepMinutes(state) * MINUTE_MS))}
         </RhythmCollapse>
       </Card>
     );
@@ -604,10 +696,12 @@ export function StateCard({
             now={now}
             view={view}
             onView={setView}
-            ring={ringFor(t('now.state.awake'), awakeDuration, window)}
+            ring={ringFor(state, t('now.state.awake'), awakeDuration, window)}
+            facts={facts}
+            projection={projectionFor(state, window)}
           />
         ) : (
-          ringFor(t('now.state.awake'), awakeDuration)
+          ringFor(state, t('now.state.awake'), awakeDuration)
         )}
       </RhythmCollapse>
     </Card>

@@ -113,6 +113,7 @@ describe('appointment commands', () => {
       outcome: null,
       status: 'upcoming',
       reminderOffsetsMinutes: [1440, 120],
+      providerId: null,
       updatedAt: '2026-10-20T10:00:00.000Z',
     });
   });

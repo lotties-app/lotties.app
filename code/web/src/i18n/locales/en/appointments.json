@@ -80,6 +80,7 @@
       "when": "When",
       "location": "Place",
       "doctor": "Doctor",
+      "savedDoctor": "Saved doctor",
       "reminders": "Reminders",
       "remindersBefore": "{{list}} before",
       "noReminders": "No reminders",

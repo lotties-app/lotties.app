@@ -1,0 +1,216 @@
+{
+  "description": "Shared vectors of the age norms lookup, run against the shipped file code/api/data/age-norms.json: read by code/web/src/ageNorms/ageNorms.test.ts and by code/api/tests/Lotties.Domain.Tests/AgeNorms/AgeNormsVectorTests.cs (linked file). A lookup finds the band of `metric` that holds `ageDays` (completed days since birth) for `population`, else for 'all'; `expected` is null when no band holds the age. `prior` says whether the norm may replace a default (not low confidence, not needsReview). `feedGapLimits`: the longest feed gap (hours) that counts in the feeding averages at `ageDays` (null: no birth date), with the shipped norms or without any (`withNorms` false): web feedGapLimit.ts and API FeedGapLimit.",
+  "feedGapLimits": [
+    {
+      "name": "no norms on the device: 8 h at any age",
+      "withNorms": false,
+      "ageDays": 400,
+      "expectedHours": 8
+    },
+    { "name": "no birth date: 8 h", "withNorms": true, "ageDays": null, "expectedHours": 8 },
+    { "name": "birth day: 8 h", "withNorms": true, "ageDays": 0, "expectedHours": 8 },
+    {
+      "name": "100 days: under 6 months stays 8 h although a usable night norm exists",
+      "withNorms": true,
+      "ageDays": 100,
+      "expectedHours": 8
+    },
+    {
+      "name": "182 days: the last day under 6 months, 8 h",
+      "withNorms": true,
+      "ageDays": 182,
+      "expectedHours": 8
+    },
+    {
+      "name": "183 days: only norms that need review or are low confidence, 8 h",
+      "withNorms": true,
+      "ageDays": 183,
+      "expectedHours": 8
+    },
+    {
+      "name": "300 days: only norms that need review or are low confidence, 8 h",
+      "withNorms": true,
+      "ageDays": 300,
+      "expectedHours": 8
+    },
+    {
+      "name": "365 days: the Pelotas and Swiss night sleep high end, 13.6 h",
+      "withNorms": true,
+      "ageDays": 365,
+      "expectedHours": 13.6
+    },
+    {
+      "name": "547 days: still the 12-18 month night band, 13.6 h",
+      "withNorms": true,
+      "ageDays": 547,
+      "expectedHours": 13.6
+    },
+    {
+      "name": "548 days: the 18-24 month night band is low confidence, 8 h",
+      "withNorms": true,
+      "ageDays": 548,
+      "expectedHours": 8
+    },
+    {
+      "name": "731 days: the 24-36 month night band, 13.4 h",
+      "withNorms": true,
+      "ageDays": 731,
+      "expectedHours": 13.4
+    },
+    { "name": "1096 days: no band, 8 h", "withNorms": true, "ageDays": 1096, "expectedHours": 8 }
+  ],
+  "lookups": [
+    {
+      "name": "total sleep at 100 days: the 3-month band, a usable prior",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "ageDays": 100,
+      "expected": {
+        "id": "total_sleep_hours_24h.all.91-122",
+        "low": 8.35,
+        "typical": 13,
+        "high": 19.5,
+        "confidence": "high",
+        "needsReview": false
+      },
+      "prior": true
+    },
+    {
+      "name": "formula volume on day 0: the first-week band needs review, never a prior",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "ageDays": 0,
+      "expected": {
+        "id": "feed_volume_ml_per_feed.formula.0-7",
+        "low": 30,
+        "typical": null,
+        "high": 120,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "prior": false
+    },
+    {
+      "name": "formula volume on day 6: the last day of the first-week band",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "ageDays": 6,
+      "expected": {
+        "id": "feed_volume_ml_per_feed.formula.0-7",
+        "low": 30,
+        "typical": null,
+        "high": 120,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "prior": false
+    },
+    {
+      "name": "formula volume on day 7: the next band starts (fromDays inclusive)",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "ageDays": 7,
+      "expected": {
+        "id": "feed_volume_ml_per_feed.formula.7-30",
+        "low": 60,
+        "typical": null,
+        "high": 120,
+        "confidence": "high",
+        "needsReview": false
+      },
+      "prior": true
+    },
+    {
+      "name": "formula volume on day 30: the 30-day to 2-month band, medium confidence is usable",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "formula",
+      "ageDays": 30,
+      "expected": {
+        "id": "feed_volume_ml_per_feed.formula.30-61",
+        "low": 90,
+        "typical": null,
+        "high": 150,
+        "confidence": "medium",
+        "needsReview": false
+      },
+      "prior": true
+    },
+    {
+      "name": "night sleep at 200 days: only a low-confidence norm, never a prior",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "ageDays": 200,
+      "expected": {
+        "id": "night_sleep_hours.all.122-244",
+        "low": 8.8,
+        "typical": 11,
+        "high": 13.2,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "prior": false
+    },
+    {
+      "name": "stools of a formula-fed baby at 20 days: no formula band, the 'all' band answers",
+      "metric": "dirty_diapers_per_24h",
+      "population": "formula",
+      "ageDays": 20,
+      "expected": {
+        "id": "dirty_diapers_per_24h.all.14-28",
+        "low": 2.9,
+        "typical": 4,
+        "high": 5,
+        "confidence": "high",
+        "needsReview": false
+      },
+      "prior": true
+    },
+    {
+      "name": "breastfeeds per day on day 28: the 1-to-6-month band starts",
+      "metric": "feeds_per_24h",
+      "population": "breastfed",
+      "ageDays": 28,
+      "expected": {
+        "id": "feeds_per_24h.breastfed.28-183",
+        "low": 6,
+        "typical": 11,
+        "high": 18,
+        "confidence": "medium",
+        "needsReview": false
+      },
+      "prior": true
+    },
+    {
+      "name": "night sleep at 50 days: no published band",
+      "metric": "night_sleep_hours",
+      "population": "all",
+      "ageDays": 50,
+      "expected": null,
+      "prior": false
+    },
+    {
+      "name": "breastfed volume per feed at 10 days: no breastfed band, no 'all' band",
+      "metric": "feed_volume_ml_per_feed",
+      "population": "breastfed",
+      "ageDays": 10,
+      "expected": null,
+      "prior": false
+    },
+    {
+      "name": "a negative age finds nothing",
+      "metric": "total_sleep_hours_24h",
+      "population": "all",
+      "ageDays": -1,
+      "expected": null,
+      "prior": false
+    },
+    {
+      "name": "an unknown metric finds nothing",
+      "metric": "wake_window_minutes",
+      "population": "all",
+      "ageDays": 100,
+      "expected": null,
+      "prior": false
+    }
+  ]
+}

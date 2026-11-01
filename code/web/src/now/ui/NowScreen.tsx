@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Stack, Typography } from '@mui/material';
-import { canPropose, canSeeAppointments, canWrite, isOwner } from '../../baby/permissions';
+import { useAgeNorms } from '../../ageNorms/useAgeNorms';
+import { canLog, canPropose, canSeeAppointments, canWrite, isOwner } from '../../baby/permissions';
 import { NextAppointment } from '../../appointments/NextAppointmentCard';
 import { VaccinesDue } from '../../vaccines/VaccinesDueCard';
 import { useOldestEventStart } from '../../db/hooks';
@@ -21,8 +22,13 @@ import { useAddRequests } from '../../layout/addSheetContext';
 import { usePresetActions } from '../../presets/usePresetActions';
 import { usePredictions } from '../../predictions/usePredictions';
 import { useNightFeed } from '../../theme/NightFeedContext';
+import { presetsForBaby } from '../../presets/resolve';
+import { BELLY_MASSAGE_KEY } from '../bellyPattern';
+import { useOfferCatchUp } from '../catchUpSlot';
+import type { CryCause } from '../cryReasons';
 import { typeForKey } from '../eventFacts';
-import { formatTileStatus } from '../nowText';
+import { formatTileStatus, sleepActionLabel } from '../nowText';
+import { changesRunningSleep, runningSleepLock, type SleepActionKind } from '../sleepToggle';
 import type { MedicationEntry, TileId, TrayChoice } from '../quickLog';
 import { QuickLogToastProvider } from '../QuickLogToastProvider';
 import { tileDetailText } from '../tileText';
@@ -30,7 +36,12 @@ import { todayStats } from '../todayStats';
 import { useNowScreen, type NowScreenModel } from '../useNow';
 import { BellyPainSuggestion } from './BellyPainCard';
 import { BellyPainTraySheet } from './BellyPainTraySheet';
-import { CatchUpCard } from './CatchUpCard';
+import {
+  CryReasonsButton,
+  CryReasonsSheet,
+  type CryAnswerChoice,
+  type CryShortcut,
+} from './CryReasonsSheet';
 import { DiaperSuggestions } from './DiaperCard';
 import { DiaperTraySheet } from './DiaperTraySheet';
 import { FeedTraySheet } from './FeedTraySheet';
@@ -136,6 +147,7 @@ function NowContent({
   const actions = usePresetActions(baby.id, model.types);
   const snooze = useSnooze(model.now);
   const predictions = usePredictions(baby.id).query.data;
+  const ageNorms = useAgeNorms();
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
   const [addingPrescription, setAddingPrescription] = useState(false);
@@ -144,6 +156,22 @@ function NowContent({
   const [offeringReminders, setOfferingReminders] = useState(false);
   const reminderLink = useReminderLink(baby.id, !!model.trays.meds, () => setTray('meds'));
   useRefreshPredictions(baby.id, model);
+  // "Since you last looked" lives behind the header button (CatchUpButton), offered on the day
+  // view only, as the inline card was.
+  const catchUpOffer = useMemo(
+    () =>
+      !night && hasEvents && model.catchUp
+        ? {
+            babyId: baby.id,
+            babyName: baby.name,
+            catchUp: model.catchUp,
+            types: model.types,
+            acknowledge: model.acknowledgeCatchUp,
+          }
+        : null,
+    [night, hasEvents, baby.id, baby.name, model.catchUp, model.types, model.acknowledgeCatchUp],
+  );
+  useOfferCatchUp(catchUpOffer);
   // The "+" of the bottom navigation opens the More sheet here (viewers have no "+").
   useAddRequests(() => {
     if (!model.readOnly) setTray('more');
@@ -176,6 +204,71 @@ function NowContent({
   const choose = (choice: TrayChoice) => {
     close();
     void action.run(() => model.commands.tray(choice));
+  };
+  const runSleep = (kind: SleepActionKind) =>
+    void action.run(() =>
+      model.commands.sleep(
+        kind,
+        model.state.kind === 'asleep' ? undefined : model.state.sleepKindHint,
+      ),
+    );
+  /** "Why is she crying?" is for those who log (never Viewers nor the Doctor). */
+  const cryOpen = canLog(baby) ? () => setTray('cry') : null;
+  const cryEntry = cryOpen && <CryReasonsButton onClick={cryOpen} />;
+  const cryShortcuts = (): Partial<Record<CryCause, CryShortcut>> => {
+    const shortcuts: Partial<Record<CryCause, CryShortcut>> = {};
+    if (model.trays.feed) {
+      shortcuts.hunger = {
+        label: t('cryReasons.suggests.shortcuts.hunger'),
+        run: () => setTray('feed'),
+      };
+    }
+    if (model.trays.diaper) {
+      shortcuts.diaper = {
+        label: t('cryReasons.suggests.shortcuts.diaper'),
+        run: () => setTray('diaper'),
+      };
+    }
+    const sleepLock = runningSleepLock(
+      model.running,
+      typeForKey(model.types, 'sleep')?.id,
+      model.access.controlLockedBy,
+    );
+    const sleep = model.sleepActions.find(
+      (a) =>
+        (a.kind === 'fell_asleep' || a.kind === 'back_asleep') &&
+        !(sleepLock !== null && changesRunningSleep(a.kind)),
+    );
+    if (sleep) {
+      shortcuts.sleepy = {
+        label: sleepActionLabel(sleep.kind),
+        run: () => {
+          close();
+          runSleep(sleep.kind);
+        },
+      };
+    }
+    const massage = presetsForBaby(model.types).find((preset) => preset.id === BELLY_MASSAGE_KEY);
+    if (massage && !model.running.some((e) => e.typeId === massage.typeId)) {
+      shortcuts.gas = {
+        label: t('cryReasons.suggests.shortcuts.gas'),
+        run: () => {
+          close();
+          void actions.run(massage);
+        },
+      };
+    }
+    return shortcuts;
+  };
+  const answerCry = (answer: CryAnswerChoice) => {
+    close();
+    void action.run(() =>
+      model.commands.crySpell({
+        ...answer,
+        canChange: model.access.canChange,
+        canControl: (event) => model.access.controlLockedBy(event) === null,
+      }),
+    );
   };
   const openTile = (id: TileId) => setTray(id);
   const openDiaperTray = () => setTray('diaper');
@@ -231,6 +324,7 @@ function NowContent({
           running={running(true)}
           onOpenFeed={() => setTray('feed')}
           onOpenDiaper={() => setTray('diaper')}
+          cryEntry={cryEntry}
         />
       ) : !hasEvents ? (
         <>
@@ -241,14 +335,7 @@ function NowContent({
             canImport={canWrite(baby)}
             canInvite={isOwner(baby)}
             disabled={disabled}
-            onFellAsleep={() =>
-              void action.run(() =>
-                model.commands.sleep(
-                  'fell_asleep',
-                  model.state.kind === 'asleep' ? undefined : model.state.sleepKindHint,
-                ),
-              )
-            }
+            onFellAsleep={() => runSleep('fell_asleep')}
             onFeed={() => setTray('feed')}
           />
         </>
@@ -264,6 +351,7 @@ function NowContent({
             viewable={proposing && model.trays.meds ? ['meds'] : []}
             onOpen={openTile}
           />
+          {cryEntry}
           <StateCard
             model={model}
             babyId={baby.id}
@@ -271,15 +359,8 @@ function NowContent({
             action={action}
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
             bedTime={predictions?.bedTime ?? null}
+            {...(predictions ? { predictions } : {})}
           />
-          {model.catchUp && (
-            <CatchUpCard
-              catchUp={model.catchUp}
-              babyName={baby.name}
-              types={model.types}
-              onDone={model.acknowledgeCatchUp}
-            />
-          )}
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
@@ -376,12 +457,29 @@ function NowContent({
         <MoreSheet
           open
           onClose={close}
+          babyId={baby.id}
+          userId={baby.userId}
           types={model.types}
           events={model.events}
           actions={actions}
           readOnly={model.readOnly}
           onOpenTray={setTray}
           onStartNursing={() => void action.run(() => model.commands.startNursing())}
+          {...(cryOpen ? { onCryReasons: cryOpen } : {})}
+        />
+      )}
+      {tray === 'cry' && cryOpen && (
+        <CryReasonsSheet
+          open
+          onClose={close}
+          babyId={baby.id}
+          birthDate={baby.birthDate}
+          events={model.events}
+          types={model.types}
+          predictions={predictions}
+          ageNorms={ageNorms ?? null}
+          shortcuts={cryShortcuts()}
+          onAnswer={answerCry}
         />
       )}
       {solid && !model.readOnly && (

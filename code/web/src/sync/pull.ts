@@ -38,7 +38,9 @@ import {
   type VaccinationDto,
   NEXT_CURSOR_HEADER,
 } from './contract';
+import { pullDoctorPatient } from '../doctor/doctorSync';
 import { pullNotes } from '../notes/noteSync';
+import { syncCareProviders } from './careProviderSync';
 import { pullNoteReads, pullProposals } from '../proposals/proposalSync';
 import { classifyFailure, describeFailure } from './failures';
 import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
@@ -428,7 +430,8 @@ export async function pullSuggestions(ctx: SyncContext, babyId: string): Promise
 }
 
 /**
- * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure or a paging
+ * Refreshes babies, then each baby's catalogs and events; a baby the user follows as its Doctor
+ * gets the lean pull instead (`pullDoctorPatient`). A permanent (4xx) failure or a paging
  * loop for one baby is collected and the others continue; network/401/transient failures are
  * rethrown.
  */
@@ -436,11 +439,18 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
   const errors: string[] = [];
   for (const babyId of await refreshBabies(ctx)) {
     try {
+      const baby = await ctx.db.babies.get(babyId);
+      if (baby?.role === 'Doctor') {
+        // A doctor's patient: the lean, scope-filtered pull (docs/design/19-doctor-dashboard.md).
+        await pullDoctorPatient(ctx, baby, { pullPrescriptions, refreshLatestWeight });
+        continue;
+      }
       await refreshCatalogs(ctx, babyId);
       await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
       await pullFormulas(ctx, babyId);
       await syncAppointments(ctx, babyId);
+      await syncCareProviders(ctx, babyId);
       await pullVaccinations(ctx, babyId);
       await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);

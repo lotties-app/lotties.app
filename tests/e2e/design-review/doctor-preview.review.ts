@@ -18,7 +18,7 @@ fs.mkdirSync(SHOTS, { recursive: true });
 
 const SCHEMES = ['light', 'dark'] as const;
 const LOCALES = ['en', 'pt-BR'] as const;
-const PAGES = ['profile', 'accept', 'members', 'patients', 'notes', 'family', 'growth'] as const;
+const PAGES = ['profile', 'accept', 'members', 'notes', 'family', 'growth'] as const;
 
 const pick = <T extends string>(env: string | undefined, all: readonly T[]): T[] =>
   env ? all.filter((value) => env.split(',').includes(value)) : [...all];

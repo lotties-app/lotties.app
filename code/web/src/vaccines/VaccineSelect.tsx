@@ -1,7 +1,7 @@
 import { Box, type Theme } from '@mui/material';
 import { Icon } from '../ui/Icon';
 import { useControlAttributes } from '../ui/form/fieldContext';
-import { filledSurface, focusRing } from '../ui/form/styles';
+import { filledSurface, focusRing, TOUCH_FIELD_FONT } from '../ui/form/styles';
 
 export interface SelectOption {
   value: string;
@@ -45,6 +45,7 @@ export function VaccineSelect({ value, onChange, options, placeholder, disabled 
           paddingInlineEnd: '44px',
           border: 0,
           font: 'inherit',
+          ...TOUCH_FIELD_FONT,
           textOverflow: 'ellipsis',
           '&:focus-visible': { outline: focusRing(theme), outlineOffset: 0 },
           '&:disabled': { opacity: 0.5 },

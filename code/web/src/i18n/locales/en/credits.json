@@ -1,0 +1,81 @@
+{
+  "credits": {
+    "title": "Credits and licenses",
+    "back": "Back",
+    "intro": "Lotties is free software, and it stands on the work of many people and public institutions. Thank you to every author, maintainer and contributor listed here.",
+    "noEndorsement": "Naming a source, service or project here credits it. It does not mean that it endorses, reviewed or is affiliated with Lotties.",
+    "sections": {
+      "license": "Our license and source",
+      "data": "Data and services",
+      "direct": "Open-source software we build on",
+      "all": "All packages and license texts"
+    },
+    "license": {
+      "body": "Lotties is free software under the GNU Affero General Public License v3.0 (AGPL-3.0). You may use, study, change and share it under that license, and the source code of every version we run is public.",
+      "source": "Source code on GitHub",
+      "text": "Read the AGPL-3.0",
+      "notMedical": "Lotties is not a medical device. It keeps a log and shows estimates; it never replaces your pediatrician."
+    },
+    "kinds": {
+      "data": "Data sources",
+      "service": "Services we call",
+      "platform": "Platforms and standards",
+      "asset": "Fonts, icons and artwork"
+    },
+    "curated": {
+      "anvisa": "The official medicine list (names, forms and active ingredients), from Anvisa open data and the CMED price list. Not reviewed by a pharmacist.",
+      "pni": "The Brazilian National Immunization Program schedule. Lotties shows facts (which vaccine, at what age, how many doses), reorganized in our own words, not the original document. Content published by the Ministry of Health under CC BY-ND 3.0.",
+      "sbp": "A reference for the vaccine schedule recommended by pediatricians. Only scheduling facts are used, with attribution. No endorsement or affiliation is claimed.",
+      "sbim": "A reference for the vaccine schedule of the immunization society. Only scheduling facts are used, with attribution. No endorsement or affiliation is claimed.",
+      "agenormsSleep": "Published sleep durations, night wakings and bed and wake times by age. Only the numbers are used, as starting points for predictions before a baby has enough logs of her own. No endorsement or affiliation is claimed.",
+      "agenormsFeeding": "Published feeds a day, gaps and milk amounts by age. Only the numbers are used, for example for the first bottle amount chips; never as a target. No endorsement or affiliation is claimed.",
+      "agenormsDiapersCrying": "Published diaper counts, stools and crying time by age. Only the numbers are recorded, as context for the design of the predictions; never as an alert.",
+      "osm": "Map and address data behind the address search for doctors and clinics. Data © OpenStreetMap contributors.",
+      "nominatim": "The place search used when you look up a clinic or address by text. Our server asks it, so your device and account are not sent.",
+      "brasilapi": "Looks up an address from a Brazilian postal code (CEP).",
+      "viacep": "The fallback for postal code (CEP) lookups.",
+      "keycloak": "Sign-in and accounts (OpenID Connect identity provider).",
+      "keycloakify": "The sign-in pages are themed with Keycloakify.",
+      "postgresql": "The database that stores the family's synced data.",
+      "dotnet": "The runtime and web framework of the Lotties server.",
+      "buildtools": "The tools that build and test the app. They are used while building and are not part of what runs on your phone.",
+      "webpush": "Reminders reach your phone through the open Web Push standard with VAPID keys, sent by our own server (no third-party push service SDK).",
+      "fraunces": "The display font of headings, self-hosted through Fontsource.",
+      "tabler": "The line icons used across the app.",
+      "art": "The app icon and the illustrations are original work by the Lotties contributors, released with the project under the AGPL-3.0."
+    },
+    "externalLink": "Open {{name}}",
+    "externalSuffix": "(opens in a new window)",
+    "licenseLabel": "License",
+    "version": "Version",
+    "direct": {
+      "intro": "The libraries that define the app. Each keeps its own license and notice.",
+      "npm": "Web and mobile app",
+      "nuget": "Server",
+      "shippedDev": "bundled in the service worker",
+      "bundled": "{{count}} more packages come with them; see the full list below."
+    },
+    "all": {
+      "intro": "{{count}} open-source packages ship with Lotties, direct and indirect, each with its license. The list is generated from the real dependency files, so it follows every update.",
+      "searchLabel": "Search packages and licenses",
+      "searchPlaceholder": "Search by name or license",
+      "clear": "Clear search",
+      "results_one": "{{count}} package",
+      "results_other": "{{count}} packages",
+      "none": "No package matches “{{query}}”.",
+      "toggle": "Show all {{count}} packages",
+      "toggleHide": "Hide the list of packages",
+      "showText": "License text of {{name}}",
+      "noText": "This package does not ship a license file. Its license is {{license}}; the standard text is at spdx.org.",
+      "spdx": "License text on spdx.org",
+      "loading": "Loading the license texts",
+      "loadFailed": "The license texts could not be loaded. Check your connection and try again.",
+      "retry": "Try again",
+      "homepage": "Homepage",
+      "ecosystem": {
+        "npm": "npm",
+        "nuget": "NuGet"
+      }
+    }
+  }
+}

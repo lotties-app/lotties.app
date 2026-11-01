@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Lotties.Domain.Events;
 using Lotties.Domain.Exceptions;
 
@@ -33,6 +34,22 @@ public static class FormulaPayload
         return ReadId(root);
     }
 
+    /// <summary>
+    /// <paramref name="payload"/> without <c>formula_id</c> and <c>formula_name</c> (the other members unchanged); the
+    /// same payload when it names no formula.
+    /// </summary>
+    public static EventPayload WithoutFormula(EventPayload payload)
+    {
+        if (JsonNode.Parse(payload.Value) is not JsonObject root || !NamesFormula(root))
+        {
+            return payload;
+        }
+
+        root.Remove(FormulaIdMember);
+        root.Remove(FormulaNameMember);
+        return EventPayload.Rehydrate(root.ToJsonString());
+    }
+
     /// <summary>The referenced formula must exist and belong to <paramref name="babyId"/>; else <see cref="DomainValidationException"/>.</summary>
     public static void EnsureReferenceValid(Guid babyId, Guid formulaId, Formula? found)
     {
@@ -41,6 +58,8 @@ public static class FormulaPayload
             throw new DomainValidationException(FormulaIdMember, $"{FormulaIdMember} must be a formula of this baby.");
         }
     }
+
+    private static bool NamesFormula(JsonObject root) => root.ContainsKey(FormulaIdMember) || root.ContainsKey(FormulaNameMember);
 
     private static Guid? ReadId(JsonElement root)
     {

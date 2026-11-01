@@ -1,19 +1,33 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink, Navigate, useLocation } from 'react-router-dom';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
+import { CreditsContent } from '../credits/CreditsContent';
+import { InstallContent } from '../install/InstallContent';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
+import { canSeeFamilyRecords, canWrite } from '../baby/permissions';
+import { ProvidersScreen } from '../providers/ProvidersScreen';
 import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
 import { Icon } from '../ui/Icon';
 
-// The importer is only needed when its page is opened, so it loads on demand.
+// The importers are only needed when their page is opened, so they load on demand.
+const ExportSection = lazy(() =>
+  import('../backup/ExportSection').then((m) => ({ default: m.ExportSection })),
+);
+const ImportBackupSection = lazy(() =>
+  import('../backup/ImportBackupSection').then((m) => ({ default: m.ImportBackupSection })),
+);
 const ImportSection = lazy(() =>
   import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
+);
+// The policy text (both languages) is its own chunk, loaded only when the page opens.
+const PrivacyContent = lazy(() =>
+  import('../legal/PrivacyContent').then((m) => ({ default: m.PrivacyContent })),
 );
 
 /** A page opened from the Hub: a way back, the page title as the one h1, then the content. */
@@ -58,6 +72,18 @@ export function HubMedicinesPage() {
   );
 }
 
+/** "Doctors and clinics": the baby's directory of care providers. A Doctor never sees it. */
+export function HubProvidersPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  if (babies && baby && !canSeeFamilyRecords(baby)) return <Navigate to="/patients" replace />;
+  return (
+    <BabyPage title={t('hub.entries.providers.title')}>
+      {(current) => <ProvidersScreen key={current.id} baby={current} />}
+    </BabyPage>
+  );
+}
+
 export function HubFormulasPage() {
   const { t } = useTranslation();
   return (
@@ -96,6 +122,39 @@ export function HubImportPage() {
   );
 }
 
+/** "Export data": the baby's backup file. Owners and Parents only. */
+export function HubExportPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  if (babies && baby && !canWrite(baby)) return <Navigate to="/hub" replace />;
+  return (
+    <BabyPage title={t('hub.entries.export.title')}>
+      {(current) => (
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <ExportSection key={current.id} baby={current} />
+        </Suspense>
+      )}
+    </BabyPage>
+  );
+}
+
+/** "Import backup": a file this app exported, into a new baby or the selected one. */
+export function HubBackupImportPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  return (
+    <HubSubPage title={t('hub.entries.backupImport.title')}>
+      {babies ? (
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <ImportBackupSection key={baby?.id} baby={baby} />
+        </Suspense>
+      ) : (
+        <CircularProgress aria-label={t('common.loading')} />
+      )}
+    </HubSubPage>
+  );
+}
+
 export function HubUpdatesPage() {
   const { t } = useTranslation();
   return (
@@ -110,6 +169,38 @@ export function HubAboutPage() {
   return (
     <HubSubPage title={t('hub.about.title')}>
       <AboutScreen />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Credits and licenses: the same content as the public /credits page, inside the shell. */
+export function HubCreditsPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('credits.title')}>
+      <CreditsContent />
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Privacy policy: the same policy as the public /privacy page, inside the shell. */
+export function HubPrivacyPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('legal.privacy.title')}>
+      <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+        <PrivacyContent />
+      </Suspense>
+    </HubSubPage>
+  );
+}
+
+/** Hub > App > Install the app: the same guide as the public /install page, inside the shell. */
+export function HubInstallPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('install.title')}>
+      <InstallContent />
     </HubSubPage>
   );
 }

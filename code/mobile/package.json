@@ -14,6 +14,7 @@
     "sync": "npm run check:versions && cap sync",
     "android": "npm run build:web && npm run sync -- android && cap open android",
     "ios": "npm run build:web && npm run sync -- ios && cap open ios",
+    "assets": "node scripts/generate-native-assets.mjs",
     "doctor": "cap doctor"
   },
   "dependencies": {
@@ -21,8 +22,10 @@
     "@capacitor/app": "8.1.2",
     "@capacitor/browser": "8.0.5",
     "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.5",
     "@capacitor/ios": "8.5.3",
     "@capacitor/keyboard": "8.0.6",
+    "@capacitor/share": "8.0.3",
     "@capacitor/splash-screen": "8.0.2"
   },
   "devDependencies": {

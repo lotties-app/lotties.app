@@ -3,11 +3,14 @@ import type { Theme } from '@mui/material';
 import type { ChartColors } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 
-/** Read by screen readers, not shown. */
+/**
+ * Read by screen readers, not shown. In pixels: `sx` reads `width: 1` as 100 %, and a hidden text a
+ * full line wide pushed the page sideways (docs/design/30-mobile-overflow-audit.md).
+ */
 export const visuallyHidden = {
   position: 'absolute',
-  width: 1,
-  height: 1,
+  width: '1px',
+  height: '1px',
   overflow: 'hidden',
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',

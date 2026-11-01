@@ -16,6 +16,19 @@ public sealed class UserTests
         Assert.Equal(TestClock.Now, user.CreatedAt);
     }
 
+    [Fact]
+    public void Anonymize_ErasesIdentityAndName_KeepsTheId()
+    {
+        var user = User.Create("https://auth.example.test/", "auth0|abc", "Ana", TestClock.Now);
+        var id = user.Id;
+
+        user.Anonymize("Former member", TestClock.Now.AddDays(1));
+
+        Assert.Equal((id, User.DeletedIssuer, id.ToString("N"), "Former member"), (user.Id, user.Issuer, user.Subject, user.DisplayName));
+        Assert.True(user.IsDeleted);
+        Assert.Equal(TestClock.Now.AddDays(1), user.DeletedAt);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

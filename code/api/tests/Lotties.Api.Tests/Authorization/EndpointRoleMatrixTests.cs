@@ -15,6 +15,9 @@ namespace Lotties.Api.Tests.Authorization;
 /// without a decision (or a decision is left for a route that no longer exists), so a new endpoint cannot ship
 /// without one. A denied call must be exactly 401 (anonymous) or 403; an allowed call must get past authorization
 /// (any status but 401/403/5xx: the requests carry an empty JSON body, so validation may answer 400).
+/// On top of the role decision, <see cref="Scopes"/> holds the doctor scope each route needs from a Doctor
+/// (docs/design/16-doctor-access.md "scopes"): <see cref="Scopes_EveryRouteADoctorMayCallHasAScopeDecision"/> fails when a
+/// route a Doctor may call has neither a scope nor an entry in <see cref="OpenToEveryDoctor"/>.
 /// </summary>
 public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
@@ -72,6 +75,8 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
     {
         ["GET /health"] = Access.Anonymous,
         ["GET /api/v1/me"] = Access.SignedIn,
+        ["GET /api/v1/me/deletion-preview"] = Access.SignedIn,
+        ["DELETE /api/v1/me"] = Access.SignedIn,
         // The caller's own professional profile: any signed-in user may declare one (needed to accept a Doctor invite).
         ["GET /api/v1/me/professional-profile"] = Access.SignedIn,
         ["PUT /api/v1/me/professional-profile"] = Access.SignedIn,
@@ -133,12 +138,28 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.ReadFamily,
         ["PUT /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Write,
 
+        // Care providers ("My doctors", docs/design/22-care-providers.md): every family member reads the directory (list
+        // with its delta); only Owners and Parents create, edit or soft delete (no delete route). Caregivers and Viewers
+        // read only. The Doctor gets 403 on every route.
+        ["GET /api/v1/babies/{babyId:guid}/care-providers"] = Access.ReadFamily,
+        ["PUT /api/v1/babies/{babyId:guid}/care-providers/{providerId:guid}"] = Access.Write,
+
+        // Address lookup proxy (docs/design/23-address-lookup.md): instance-wide, no baby involved and nothing about a baby is
+        // sent upstream, so any signed-in user (the web only offers it in the provider sheet, i.e. to Owners and Parents).
+        // Rate limited per user.
+        ["GET /api/v1/address/lookup"] = Access.SignedIn,
+        ["GET /api/v1/address/search"] = Access.SignedIn,
+
         // Vaccines: the schedule is the same for everyone (any signed-in user); every member reads a baby's records,
         // a Doctor included; only Owners and Parents record, edit or delete. Caregivers, Viewers and the Doctor read only.
         ["GET /api/v1/vaccine-schedule"] = Access.SignedIn,
         ["GET /api/v1/babies/{babyId:guid}/vaccinations"] = Access.Read,
         ["PUT /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
         ["DELETE /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
+
+        // Age norms (docs/design/28-age-norms.md): published facts, the same file for everyone, no baby involved: any
+        // signed-in user.
+        ["GET /api/v1/age-norms"] = Access.SignedIn,
 
         ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
         ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,
@@ -148,6 +169,13 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["DELETE /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
 
         ["GET /api/v1/babies/{babyId:guid}/predictions"] = Access.Read,
+
+        // The doctor's lean views (docs/design/16-doctor-access.md): her dashboard lists only the babies she is a Doctor of (any
+        // signed-in user may call it: a parent gets an empty list); the clinical summary is open to every member and filters
+        // its own sections by the caller's scopes; the timeline is the daily log (the daily_log scope for a Doctor).
+        ["GET /api/v1/doctor/patients"] = Access.SignedIn,
+        ["GET /api/v1/babies/{babyId:guid}/clinical-summary"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/timeline"] = Access.Read,
 
         // Notes (docs/design/16-doctor-access.md): every member reads the shared ones (a private note only its author,
         // filtered by the use case); only the Doctor writes, and only her own (403 note_not_owned).
@@ -174,6 +202,13 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["POST /api/v1/babies/{babyId:guid}/import/napper/preview"] = Access.Write,
         ["POST /api/v1/babies/{babyId:guid}/import/napper"] = Access.Write,
 
+        // Export and import of a baby's data (docs/design/24-export-import.md): Owner and Parent export and merge; anyone signed in restores into a new baby of their own.
+        ["GET /api/v1/babies/{babyId:guid}/export"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/import/backup/preview"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/import/backup"] = Access.Write,
+        ["POST /api/v1/babies/import/preview"] = Access.SignedIn,
+        ["POST /api/v1/babies/import"] = Access.SignedIn,
+
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions/revoke"] = Access.SignedIn,
@@ -185,6 +220,115 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["POST /api/v1/push/test"] = Access.SignedIn,
         ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = Access.Anonymous,
         ["PUT /api/v1/babies/{babyId:guid}/notification-preferences"] = Access.Log,
+
+        // Voice assistants (docs/design/32-assistants.md): the caller's own default baby (any signed-in user; the PUT accepts
+        // only a baby she can log for). The Alexa skill route is anonymous at the ASP.NET level: Amazon's request signature
+        // and the account-linking token in the body authenticate it (like the push action route's token); it answers 404
+        // while Alexa is disabled (the default, as in this host).
+        ["GET /api/v1/me/assistant-settings"] = Access.SignedIn,
+        ["PUT /api/v1/me/assistant-settings"] = Access.SignedIn,
+        ["POST /api/v1/alexa"] = Access.Anonymous,
+
+        // MCP server (docs/design/32-assistants.md section 9): authenticated by its own OAuth scheme (McpTokens, audience
+        // lotties-mcp, scopes lotties.read / lotties.write), never the API's, so Anonymous here; the roles and the baby choice
+        // are the command layer's (McpProtocolTests, McpHttpTests). Every route answers 404 while MCP is disabled (the
+        // default, as in this host). GET and DELETE answer 405 (stateless Streamable HTTP); the metadata is public.
+        ["POST /api/v1/mcp"] = Access.Anonymous,
+        ["GET /api/v1/mcp"] = Access.Anonymous,
+        ["DELETE /api/v1/mcp"] = Access.Anonymous,
+        ["GET /.well-known/oauth-protected-resource"] = Access.Anonymous,
+        ["GET /.well-known/oauth-protected-resource/api/v1/mcp"] = Access.Anonymous,
+    };
+
+    /// <summary>
+    /// The doctor scope (<c>BabyScope:*</c> policy) each route of a baby needs from a Doctor, on top of the role decision in
+    /// <see cref="Matrix"/>. Every other member is unaffected by scopes. The refused-by-role routes (writes, invites, ...)
+    /// are not listed: they stay closed to a Doctor whatever her scopes.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, DoctorScope> Scopes = new Dictionary<string, DoctorScope>(StringComparer.Ordinal)
+    {
+        ["GET /api/v1/babies/{babyId:guid}/event-types"] = DoctorScope.DailyLog,
+        ["GET /api/v1/babies/{babyId:guid}/events"] = DoctorScope.DailyLog,
+        ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = DoctorScope.DailyLog,
+        ["GET /api/v1/babies/{babyId:guid}/predictions"] = DoctorScope.DailyLog,
+        ["GET /api/v1/babies/{babyId:guid}/timeline"] = DoctorScope.DailyLog,
+
+        ["GET /api/v1/babies/{babyId:guid}/measurements"] = DoctorScope.Growth,
+        ["PUT /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = DoctorScope.Growth,
+        ["DELETE /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = DoctorScope.Growth,
+
+        ["GET /api/v1/babies/{babyId:guid}/medications"] = DoctorScope.Medications,
+        ["GET /api/v1/babies/{babyId:guid}/prescriptions"] = DoctorScope.Medications,
+        ["GET /api/v1/babies/{babyId:guid}/medications/status"] = DoctorScope.Medications,
+        ["GET /api/v1/babies/{babyId:guid}/prescription-proposals"] = DoctorScope.Medications,
+        ["GET /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = DoctorScope.Medications,
+        ["PUT /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = DoctorScope.Medications,
+        ["DELETE /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = DoctorScope.Medications,
+
+        ["GET /api/v1/babies/{babyId:guid}/formulas"] = DoctorScope.Formulas,
+        ["GET /api/v1/babies/{babyId:guid}/vaccinations"] = DoctorScope.Vaccines,
+
+        ["GET /api/v1/babies/{babyId:guid}/notes"] = DoctorScope.Notes,
+        ["GET /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = DoctorScope.Notes,
+        ["PUT /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = DoctorScope.Notes,
+        ["DELETE /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = DoctorScope.Notes,
+        ["PUT /api/v1/babies/{babyId:guid}/notes/{noteId:guid}/read"] = DoctorScope.Notes,
+        ["GET /api/v1/babies/{babyId:guid}/note-reads"] = DoctorScope.Notes,
+    };
+
+    /// <summary>
+    /// The routes a Doctor may call that need no scope ("open to every doctor"), each with the reason. A route a Doctor can
+    /// call per <see cref="Matrix"/> must be here or in <see cref="Scopes"/>, so a new route cannot ship without a scope decision.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> OpenToEveryDoctor = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["GET /api/v1/babies/{babyId:guid}"] = "The baby's name and birth date: the minimum a doctor needs to know whom she treats.",
+        ["DELETE /api/v1/babies/{babyId:guid}/members/me"] = "Leaving: a doctor can always end her own access.",
+        ["GET /api/v1/babies/{babyId:guid}/clinical-summary"] = "Filters its own sections by the caller's scopes, so it never leaks a section she lacks.",
+    };
+
+    public static TheoryData<string, DoctorScope> ScopedRoutes()
+    {
+        var cases = new TheoryData<string, DoctorScope>();
+        foreach (var (route, scope) in Scopes)
+        {
+            cases.Add(route, scope);
+        }
+
+        return cases;
+    }
+
+    /// <summary>The scoped routes that members other than the Doctor can call too (not the Doctor-only notes and proposals writes).</summary>
+    public static TheoryData<string, DoctorScope> ScopedRoutesOfOtherMembers()
+    {
+        var cases = new TheoryData<string, DoctorScope>();
+        foreach (var (route, scope) in Scopes.Where(entry => RolesThatCan(Matrix[entry.Key]).Any()))
+        {
+            cases.Add(route, scope);
+        }
+
+        return cases;
+    }
+
+    /// <summary>The family's routes (members, appointments, invites, the access log, reminders, imports) that a Doctor never reaches.</summary>
+    public static TheoryData<string> FamilyOnlyRoutes() => new()
+    {
+        "GET /api/v1/babies/{babyId:guid}/members",
+        "GET /api/v1/babies/{babyId:guid}/appointments",
+        "GET /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}",
+        "PUT /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}",
+        "PATCH /api/v1/babies/{babyId:guid}/members/{userId:guid}",
+        "DELETE /api/v1/babies/{babyId:guid}/members/{userId:guid}",
+        "POST /api/v1/babies/{babyId:guid}/invites",
+        "GET /api/v1/babies/{babyId:guid}/invites",
+        "DELETE /api/v1/babies/{babyId:guid}/invites/{inviteId:guid}",
+        "GET /api/v1/babies/{babyId:guid}/access-log",
+        "PUT /api/v1/babies/{babyId:guid}/notification-preferences",
+        "POST /api/v1/babies/{babyId:guid}/import/napper/preview",
+        "POST /api/v1/babies/{babyId:guid}/import/napper",
+        "GET /api/v1/babies/{babyId:guid}/export",
+        "POST /api/v1/babies/{babyId:guid}/import/backup/preview",
+        "POST /api/v1/babies/{babyId:guid}/import/backup",
     };
 
     public static TheoryData<string, Caller> Cases()
@@ -220,6 +364,109 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
 
         AssertOutcome(Expected(Matrix[route], caller), response, $"{route} as {caller}");
     }
+
+    [Fact]
+    public void Scopes_EveryRouteADoctorMayCallHasAScopeDecision()
+    {
+        var doctorRoutes = Matrix.Where(entry => Expected(entry.Value, Caller.Doctor) is null && entry.Value is not (Access.Anonymous or Access.SignedIn)).Select(entry => entry.Key);
+
+        var undecided = doctorRoutes.Where(route => !Scopes.ContainsKey(route) && !OpenToEveryDoctor.ContainsKey(route)).Order().ToArray();
+
+        Assert.True(undecided.Length == 0, $"Routes a Doctor may call without a scope decision (add them to {nameof(Scopes)} or {nameof(OpenToEveryDoctor)}): {string.Join(", ", undecided)}");
+    }
+
+    [Fact]
+    public void Scopes_DecisionsAreForRoutesThatExistAndAreNotBothScopedAndOpen()
+    {
+        var unknown = Scopes.Keys.Concat(OpenToEveryDoctor.Keys).Except(Matrix.Keys).Order().ToArray();
+        var both = Scopes.Keys.Intersect(OpenToEveryDoctor.Keys).Order().ToArray();
+
+        Assert.True(unknown.Length == 0, $"Scope decisions for routes that are not in the matrix: {string.Join(", ", unknown)}");
+        Assert.True(both.Length == 0, $"Routes both scoped and open to every doctor: {string.Join(", ", both)}");
+    }
+
+    [Fact]
+    public void Scopes_EveryScopeGuardsAtLeastOneRoute()
+    {
+        var unused = Enum.GetValues<DoctorScope>().Except(Scopes.Values).ToArray();
+
+        Assert.Empty(unused);
+    }
+
+    [Theory]
+    [MemberData(nameof(ScopedRoutes))]
+    public async Task ScopedRoute_DoctorWithoutTheScope_Is403(string route, DoctorScope scope)
+    {
+        var withoutIt = DoctorScopeSet.Create(Enum.GetValues<DoctorScope>().Where(other => other != scope));
+        var baby = await factory.SeedBabyAsync(withoutIt, BabyRole.Doctor);
+
+        var response = await SendAsync(factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor)), route, baby.BabyId);
+
+        Assert.True(response.StatusCode == HttpStatusCode.Forbidden, $"{route} without {scope}: expected 403, got {(int)response.StatusCode}");
+    }
+
+    [Theory]
+    [MemberData(nameof(ScopedRoutes))]
+    public async Task ScopedRoute_DoctorWithOnlyTheScope_PassesAuthorization(string route, DoctorScope scope)
+    {
+        var baby = await factory.SeedBabyAsync(DoctorScopeSet.Create([scope]), BabyRole.Doctor);
+
+        var response = await SendAsync(factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor)), route, baby.BabyId);
+
+        AssertOutcome(expectedDenial: null, response, $"{route} with only {scope}");
+    }
+
+    [Theory]
+    [MemberData(nameof(ScopedRoutes))]
+    public async Task ScopedRoute_DoctorWithNoScopeAtAll_Is403(string route, DoctorScope scope)
+    {
+        var baby = await factory.SeedBabyAsync(DoctorScopeSet.None, BabyRole.Doctor);
+
+        var response = await SendAsync(factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor)), route, baby.BabyId);
+
+        Assert.True(response.StatusCode == HttpStatusCode.Forbidden, $"{route} ({scope}) without any scope: expected 403, got {(int)response.StatusCode}");
+    }
+
+    [Theory]
+    [MemberData(nameof(ScopedRoutesOfOtherMembers))]
+    public async Task ScopedRoute_MembersOtherThanTheDoctor_AreNotAffectedByScopes(string route, DoctorScope scope)
+    {
+        var baby = await factory.SeedBabyAsync(DoctorScopeSet.None, BabyRole.Doctor);
+        var role = RolesThatCan(Matrix[route]).First();
+
+        var response = await SendAsync(factory.CreateClientFor(baby.SubjectOf(role)), route, baby.BabyId);
+
+        AssertOutcome(expectedDenial: null, response, $"{route} ({scope}) as {role}");
+    }
+
+    [Theory]
+    [MemberData(nameof(FamilyOnlyRoutes))]
+    public async Task FamilyRoute_DoctorWithEveryScope_Is403(string route)
+    {
+        var baby = await factory.SeedBabyAsync(DoctorScopeSet.All, BabyRole.Doctor);
+
+        var response = await SendAsync(factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor)), route, baby.BabyId);
+
+        Assert.True(response.StatusCode == HttpStatusCode.Forbidden, $"{route} as a Doctor with every scope: expected 403, got {(int)response.StatusCode}");
+    }
+
+    [Fact]
+    public async Task OpenRoutes_DoctorWithNoScopeAtAll_StillReadsTheBabyAndLeaves()
+    {
+        var baby = await factory.SeedBabyAsync(DoctorScopeSet.None, BabyRole.Doctor);
+        var doctor = factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor));
+
+        var details = await SendAsync(doctor, "GET /api/v1/babies/{babyId:guid}", baby.BabyId);
+        var patients = await SendAsync(doctor, "GET /api/v1/doctor/patients", baby.BabyId);
+        var leave = await SendAsync(doctor, "DELETE /api/v1/babies/{babyId:guid}/members/me", baby.BabyId);
+
+        Assert.Equal((HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.NoContent), (details.StatusCode, patients.StatusCode, leave.StatusCode));
+    }
+
+    /// <summary>The roles whose seeded member passes the role policy of <paramref name="access"/> (the Doctor excluded: its scopes are the subject).</summary>
+    private static IEnumerable<BabyRole> RolesThatCan(Access access) =>
+        new[] { BabyRole.Owner, BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer }
+            .Where(role => Expected(access, Enum.Parse<Caller>(role.ToString())) is null);
 
     private static void AssertOutcome(HttpStatusCode? expectedDenial, HttpResponseMessage response, string what)
     {

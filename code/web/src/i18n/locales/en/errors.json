@@ -56,6 +56,17 @@
     "note_baby_mismatch": "This note belongs to another baby.",
     "note_already_shared": "This note is already shared with the parents and cannot be made private. Delete it instead.",
     "measurement_not_owned": "You can change only the measurements you recorded.",
-    "vaccination_baby_mismatch": "This vaccine record belongs to another baby."
+    "vaccination_baby_mismatch": "This vaccine record belongs to another baby.",
+    "account_deletion_blocked": "You are the only owner of a baby that other people use. Make another member an owner first.",
+    "address_not_found": "No address was found for that postal code. Check it or type the address by hand.",
+    "address_lookup_unavailable": "The address lookup is unavailable right now.",
+    "address_lookup_disabled": "The address lookup is turned off on this server.",
+    "backup_invalid_file": "This is not a backup file from this app, or it is damaged. Export it again and try once more.",
+    "backup_unsupported_version": "This backup was made by a newer version of the app (file version {{schemaVersion}}, this server reads up to {{maxSupported}}). Update the app and try again.",
+    "backup_checksum_mismatch": "The file was changed or damaged after it was exported, so it was not imported. Export it again.",
+    "backup_too_large": "This backup is too large to import.",
+    "backup_rejected": "Some records of the backup are not valid, so nothing was imported.",
+    "backup_baby_unavailable": "This backup was already restored into a baby you no longer have access to. Add it to one of your babies instead.",
+    "backup_not_allowed": "Only owners and parents can export or import a baby's data."
   }
 }

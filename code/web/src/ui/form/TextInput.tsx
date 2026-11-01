@@ -1,6 +1,6 @@
 import { Box, type Theme } from '@mui/material';
 import { useControlAttributes } from './fieldContext';
-import { filledSurface, focusRing } from './styles';
+import { filledSurface, focusRing, TOUCH_FIELD_FONT } from './styles';
 
 export interface TextInputProps {
   value: string;
@@ -45,6 +45,7 @@ export function TextInput({
         px: 1.75,
         border: 0,
         font: 'inherit',
+        ...TOUCH_FIELD_FONT,
         '&:focus-visible': { outline: focusRing(theme), outlineOffset: 0 },
         '&:disabled': { opacity: 0.5 },
       })}

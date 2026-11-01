@@ -31,6 +31,13 @@ internal sealed class EfFormulaRepository(LottiesDbContext context, UniqueViolat
     public async Task InTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(work);
+        if (context.Database.CurrentTransaction is not null)
+        {
+            // A backup import runs every write inside one transaction of its own; it commits or rolls back all of them.
+            await work(cancellationToken);
+            return;
+        }
+
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         try
         {

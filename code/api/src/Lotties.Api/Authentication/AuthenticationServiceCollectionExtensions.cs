@@ -7,8 +7,9 @@ namespace Lotties.Api.Authentication;
 internal static class AuthenticationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers JWT bearer authentication against the configured OIDC authority, validated at startup,
-    /// and <see cref="ICurrentUser"/> for the request's user.
+    /// Registers JWT bearer authentication against the configured OIDC authority, validated at startup, the
+    /// account-linking scheme with the same validation (<see cref="AccountLinkTokens"/>), and <see cref="ICurrentUser"/> for
+    /// the request's user.
     /// </summary>
     public static IServiceCollection AddOidcAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
@@ -17,9 +18,11 @@ internal static class AuthenticationServiceCollectionExtensions
         services.AddOptions<AuthOptions>().Bind(configuration.GetSection(AuthOptions.SectionName)).ValidateOnStart();
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer().AddJwtBearer(AccountLinkTokens.SchemeName);
+        services.AddSingleton<IAccountLinkTokenValidator, AccountLinkTokenValidator>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
+        services.AddHttpClient<IIdentityAccountRemover, KeycloakAccountRemover>(client => client.Timeout = TimeSpan.FromSeconds(10));
         return services;
     }
 }

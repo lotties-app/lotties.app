@@ -158,7 +158,7 @@ hotspot_rule() { # repository-relative path
     */EndpointRoleMatrixTests.cs)
       echo "endpoint-role matrix: keep both sides' rows (each feature has its own commented block)" ;;
     docs/* | *.md)
-      echo "docs (SPEC, PLAN, filemap, ...): keep both sides, main's text first" ;;
+      echo "docs (SPEC, agents/PLAN, agents/filemap, ...): keep both sides, main's text first" ;;
     *)
       echo "no known hot-spot rule: resolve by hand in the worktree" ;;
   esac

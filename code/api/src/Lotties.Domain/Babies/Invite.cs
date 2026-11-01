@@ -10,12 +10,13 @@ public sealed class Invite
     {
     }
 
-    private Invite(Guid id, Guid babyId, InviteToken token, BabyRole role, Guid createdBy, DateTimeOffset createdAt, DateTimeOffset expiresAt)
+    private Invite(Guid id, Guid babyId, InviteToken token, BabyRole role, DoctorScopeSet? doctorScopes, Guid createdBy, DateTimeOffset createdAt, DateTimeOffset expiresAt)
     {
         Id = id;
         BabyId = babyId;
         Token = token;
         Role = role;
+        DoctorScopes = doctorScopes;
         CreatedBy = createdBy;
         CreatedAt = createdAt;
         ExpiresAt = expiresAt;
@@ -29,6 +30,12 @@ public sealed class Invite
     public InviteToken Token { get; private set; }
 
     public BabyRole Role { get; private set; }
+
+    /// <summary>The sections a Doctor invite limits her to, or <c>null</c> for the defaults (every section); always <c>null</c> for another role.</summary>
+    public DoctorScopeSet? DoctorScopes { get; private set; }
+
+    /// <summary><see cref="DoctorScopes"/>, or every section when none were chosen.</summary>
+    public DoctorScopeSet EffectiveDoctorScopes => DoctorScopes ?? DoctorScopeSet.All;
 
     public Guid CreatedBy { get; private set; }
 
@@ -45,19 +52,24 @@ public sealed class Invite
     /// <summary>
     /// Issues an invite with a new random token. The invite keeps only the token's hash (<see cref="InviteToken.Hash"/>);
     /// the plain token is returned in <see cref="IssuedInvite.Token"/> and cannot be recovered later.
+    /// <paramref name="doctorScopes"/> limit a Doctor invite to some sections (<c>null</c> = the defaults, every section);
+    /// for another role they are a <see cref="DomainValidationException"/> (field <c>doctorScopes</c>).
     /// </summary>
-    public static IssuedInvite Issue(Guid babyId, BabyRole role, Guid createdBy, DateTimeOffset createdAt, TimeSpan lifetime)
+    public static IssuedInvite Issue(Guid babyId, BabyRole role, Guid createdBy, DateTimeOffset createdAt, TimeSpan lifetime, DoctorScopeSet? doctorScopes = null)
     {
         Ids.Required(babyId, nameof(babyId));
         Ids.Required(createdBy, nameof(createdBy));
         EnsurePositive(lifetime);
+        var validatedRole = BabyRoleRules.EnsureDefined(role);
+        EnsureScopesFitRole(validatedRole, doctorScopes);
         var normalizedCreatedAt = UtcTime.Normalize(createdAt);
         var plainToken = InviteToken.Generate();
         var invite = new Invite(
             Guid.NewGuid(),
             babyId,
             plainToken.Hash(),
-            BabyRoleRules.EnsureDefined(role),
+            validatedRole,
+            doctorScopes,
             createdBy,
             normalizedCreatedAt,
             UtcTime.Normalize(normalizedCreatedAt + lifetime));
@@ -92,6 +104,14 @@ public sealed class Invite
         if (IsExpired(now))
         {
             throw new InviteExpiredException(Id, ExpiresAt);
+        }
+    }
+
+    private static void EnsureScopesFitRole(BabyRole role, DoctorScopeSet? doctorScopes)
+    {
+        if (doctorScopes is not null && !role.IsDoctor())
+        {
+            throw new DomainValidationException(DoctorScopeSet.Field, "doctorScopes apply to Doctor invites only.");
         }
     }
 

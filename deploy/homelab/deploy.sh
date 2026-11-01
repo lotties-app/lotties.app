@@ -24,8 +24,9 @@
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
-# App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_* and VITE_REPO_URL (public, baked into the
-# web image), DB_* and PUSH_VAPID_* (the Secret lotties-secrets), DB_AUTO_MIGRATE, CORS_ALLOWED_ORIGINS.
+# App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL and VITE_PRIVACY_* (public,
+# baked into the web image), DB_*, PUSH_VAPID_* and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# CORS_ALLOWED_ORIGINS.
 #
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
 # for the web image the VITE_* values). A tag already in the registry is not rebuilt and its pods are not restarted.
@@ -87,6 +88,8 @@ image_tag() { if [ -n "${TAG:-}" ]; then printf '%s' "$TAG"; else source_tag "$@
 web_build_salt() {
   printf 'VITE_API_BASE_URL=%s\nVITE_OIDC_AUTHORITY=%s\nVITE_OIDC_CLIENT_ID=%s\nVITE_OIDC_AUDIENCE=%s\nVITE_REPO_URL=%s\n' \
     "$VITE_API_BASE_URL" "$VITE_OIDC_AUTHORITY" "$VITE_OIDC_CLIENT_ID" "$VITE_OIDC_AUDIENCE" "$VITE_REPO_URL"
+  printf 'VITE_PRIVACY_CONTROLLER_NAME=%s\nVITE_PRIVACY_CONTACT_EMAIL=%s\nVITE_PRIVACY_DPO=%s\n' \
+    "$VITE_PRIVACY_CONTROLLER_NAME" "$VITE_PRIVACY_CONTACT_EMAIL" "$VITE_PRIVACY_DPO"
 }
 
 # The next release X.Y.Z (no v) after the tags on standard input; only vX.Y.Z tags count, none at all gives 1.0.0.
@@ -154,6 +157,10 @@ configure() {
   VITE_OIDC_AUDIENCE=${VITE_OIDC_AUDIENCE:-}
   VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
   VITE_REPO_URL=${VITE_REPO_URL:-}
+  # Privacy policy contacts (public; empty = the policy's defaults, docs/PRIVACY-OWNER-CHECKLIST.md).
+  VITE_PRIVACY_CONTROLLER_NAME=${VITE_PRIVACY_CONTROLLER_NAME:-}
+  VITE_PRIVACY_CONTACT_EMAIL=${VITE_PRIVACY_CONTACT_EMAIL:-}
+  VITE_PRIVACY_DPO=${VITE_PRIVACY_DPO:-}
   FORWARDED_HEADERS_TRUSTED_NETWORKS=${FORWARDED_HEADERS_TRUSTED_NETWORKS:-}
   # Browser origins allowed to call the API. Default: the web app only. The iOS/Android app (code/mobile) adds its
   # WebView origins: https://$PUBLIC_HOST,https://localhost,capacitor://localhost (docs/design/12-mobile-capacitor.md).
@@ -219,7 +226,7 @@ put_secret() { # key value
 secret_keys() { (cd "$SECRET_DIR" && ls | tr '\n' ' '); }
 
 collect_secrets() {
-  local key value push_count=0 missing=()
+  local key value push_count=0 admin_count=0 missing=()
   step "Secret $APP_SECRET (values are not shown)"
   SECRET_DIR="$WORK/secret"
   mkdir -m 700 "$SECRET_DIR"
@@ -234,6 +241,12 @@ collect_secrets() {
     [ -z "$value" ] || push_count=$((push_count + 1))
     put_secret "$key" "$value"
   done
+  # The Keycloak service account that deletes the sign-in account with the Lotties account (docs/KEYCLOAK-ACCOUNT-DELETION.md).
+  for key in AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET; do
+    value=$(setting_or_secret "$key")
+    [ -z "$value" ] || admin_count=$((admin_count + 1))
+    put_secret "$key" "$value"
+  done
   if [ "$DB_AUTO_MIGRATE" = true ]; then
     for key in DB_MIGRATOR_USER DB_MIGRATOR_PASSWORD; do
       value=$(setting_or_secret "$key")
@@ -243,10 +256,13 @@ collect_secrets() {
   fi
   [ "${#missing[@]}" -eq 0 ] || die "missing settings: ${missing[*]} (set them in deploy/homelab/.env)"
   case "$push_count" in 0 | 3) ;; *) die "set all three PUSH_VAPID_* values or none (push is off with none)" ;; esac
+  case "$admin_count" in 0 | 2) ;; *) die "set both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither (with neither, deleting an account keeps the Keycloak user)" ;; esac
   # A pod reads its Secret only when it starts: the API pods carry this checksum, so a changed Secret restarts them.
   SECRETS_HASH=$( (cd "$SECRET_DIR" && for key in *; do printf '%s\n' "$key"; cat "$key"; printf '\n'; done) | sha256sum | cut -c1-16)
   echo "keys: $(secret_keys)"
   [ "$push_count" = 3 ] && echo "push notifications: on" || echo "push notifications: off (no PUSH_VAPID_* values)"
+  [ "$admin_count" = 2 ] && echo "account deletion: also deletes the Keycloak user" \
+    || echo "account deletion: keeps the Keycloak user (no AUTH_ADMIN_CLIENT_* values; see docs/KEYCLOAK-ACCOUNT-DELETION.md)"
   [ "$DB_AUTO_MIGRATE" = true ] && echo "DB_AUTO_MIGRATE=true: the API pod holds the migrator credentials" || true
 }
 
@@ -383,7 +399,10 @@ images() {
     --build-arg "VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY" \
     --build-arg "VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID" \
     --build-arg "VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE" \
-    --build-arg "VITE_REPO_URL=$VITE_REPO_URL"
+    --build-arg "VITE_REPO_URL=$VITE_REPO_URL" \
+    --build-arg "VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME" \
+    --build-arg "VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL" \
+    --build-arg "VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO"
   # A run that built something is a new release; one that built nothing (or was given a fixed TAG) is not.
   if [ -z "$VERSION" ] && [ -z "${TAG:-}" ] && [ "$BUILT$WOULD_BUILD" != 00 ]; then
     VERSION=$(next_version)

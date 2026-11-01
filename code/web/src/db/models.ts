@@ -4,8 +4,10 @@
  * (`Date#toISOString()`, e.g. `2026-10-20T08:15:00.000Z`) so string order equals time order.
  */
 
+import type { DoctorScope } from '../doctor/scopes';
 import type { ProductDto } from '../sync/contract';
 import type { VaccineNetwork, VaccineSchedule } from '../vaccines/vaccineSchedule';
+import type { AgeNormSet } from '../ageNorms/ageNorms';
 
 /**
  * Owner > Parent > Caregiver > Viewer (docs/SPEC.md "Roles and permissions"); `Doctor` is outside that
@@ -38,6 +40,11 @@ export interface Baby {
    * `null`/absent until a babies refresh from a server that sends it.
    */
   userId?: string | null;
+  /**
+   * The sections the family shared with the user when her role is `Doctor` (from `GET /babies`,
+   * docs/design/19-doctor-dashboard.md); absent for every other role and on older rows (= all).
+   */
+  doctorScopes?: DoctorScope[];
 }
 
 export type EventFieldKind = 'text' | 'number' | 'select' | 'bool';
@@ -255,6 +262,46 @@ export interface Appointment {
   status: AppointmentStatus;
   /** Minutes before the start, largest first; `[]` = no reminders. */
   reminderOffsetsMinutes: ReminderOffset[];
+  /**
+   * The care provider picked from the baby's directory (docs/design/22-care-providers.md), or
+   * absent/`null`. Only a link: `location` and `doctorName` hold the copied text, so editing or
+   * deleting the provider never rewrites the appointment.
+   */
+  providerId?: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
+  updatedAt: string;
+  clientUpdatedAt?: string;
+}
+
+/**
+ * One entry of the baby's directory of care providers, "My doctors" (docs/design/22-care-providers.md):
+ * contact details only, shared by the family members who may see appointments. Synced like
+ * formulas; `deleted` is the soft delete (kept so the delete reaches the other devices).
+ */
+export interface CareProvider {
+  id: string;
+  babyId: string;
+  /** 1-80 characters. */
+  name: string;
+  /** Free text; the form suggests common specialties. */
+  specialty: string | null;
+  /** Council, number and region as free text (e.g. CRM, 123456, SP). */
+  registrationCouncil: string | null;
+  registrationNumber: string | null;
+  registrationRegion: string | null;
+  /** Clinic or hospital. */
+  clinicName: string | null;
+  /** One multi-line text. */
+  address: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  notes: string | null;
+  favorite: boolean;
+  deleted: boolean;
   createdBy: string | null;
   createdAt: string;
   /** Local edit time until pushed; afterwards the server receive time (the delta cursor). */
@@ -301,6 +348,19 @@ export interface VaccineScheduleCache {
   /** The `ETag` the server sent with it (sent back as `If-None-Match`); `null` when it sent none. */
   etag: string | null;
   schedule: VaccineSchedule;
+  /** UTC ISO instant the content last changed on this device. */
+  fetchedAt: string;
+  /** UTC ISO instant the server was last asked (and agreed it is current). */
+  checkedAt: string;
+}
+
+/** The published age norms served by the API (docs/design/28-age-norms.md), one row. */
+export interface AgeNormsCache {
+  /** Always `current`: the API serves one file for everybody. */
+  key: string;
+  /** The `ETag` the server sent with it (sent back as `If-None-Match`); `null` when it sent none. */
+  etag: string | null;
+  norms: AgeNormSet;
   /** UTC ISO instant the content last changed on this device. */
   fetchedAt: string;
   /** UTC ISO instant the server was last asked (and agreed it is current). */
@@ -490,6 +550,7 @@ export type MutationEntityType =
   | 'prescription'
   | 'formula'
   | 'appointment'
+  | 'careProvider'
   | 'vaccination'
   | 'note'
   | 'proposal'
@@ -540,6 +601,7 @@ export type SyncEntity =
   | 'prescriptions'
   | 'formulas'
   | 'appointments'
+  | 'careProviders'
   | 'vaccinations'
   | 'notes'
   | 'proposals'

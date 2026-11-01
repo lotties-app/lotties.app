@@ -255,8 +255,22 @@ describe('pt-BR texts outside components', () => {
 
   it('translates the fussy type, its fields and options, the Day detail and its preset', () => {
     const type = FUSSY_TYPE;
-    const [intensity, helped] = type.fields;
+    const [intensity, helped, cause] = type.fields;
     expect(eventTypeText.typeName(type)).toBe('Choro / irritação');
+    expect(eventTypeText.fieldLabel(type, cause)).toBe('Primeira sugestão');
+    expect(
+      ['hunger', 'sleepy', 'diaper', 'gas', 'comfort'].map((o) =>
+        eventTypeText.optionLabel(type, cause, o),
+      ),
+    ).toEqual(['Fome', 'Sono', 'Fralda', 'Gases', 'Conforto']);
+    expect(
+      ['diaper_change', 'burping', 'holding'].map((o) =>
+        eventTypeText.optionLabel(type, helped, o),
+      ),
+    ).toEqual(['Troca de fralda', 'Arroto', 'Colo / pele a pele']);
+    expect(payloadSummary({ what_helped: 'burping', suggested_cause: 'gas' }, type)).toBe(
+      'arrotar ajudou',
+    );
     expect(eventTypeText.fieldLabel(type, intensity)).toBe('Intensidade');
     expect(eventTypeText.fieldLabel(type, helped)).toBe('O que ajudou');
     expect(

@@ -7,7 +7,8 @@
     "text": "Taking you to sign in"
   },
   "header": {
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "backToApp": "Back to the app"
   },
   "notice": {
     "failedTitle": "Sign-in did not work",
@@ -23,7 +24,8 @@
     "headline": "Track your baby's day, together",
     "sub": "Sleep, feeds, diapers and medicines in one calm place. Works offline, shares with your co-parent.",
     "signIn": "Sign in",
-    "register": "Create an account"
+    "register": "Create an account",
+    "openApp": "Open the app"
   },
   "features": {
     "title": "What it does",
@@ -68,6 +70,7 @@
     }
   },
   "footer": {
+    "install": "Install the app",
     "language": "Language",
     "languageSystem": "System",
     "theme": "Theme",
@@ -76,7 +79,20 @@
     "themeDark": "Dark",
     "source": "Source code",
     "licence": "Free and open source software, licensed under the AGPL-3.0.",
-    "notMedical": "Not a medical device."
+    "notMedical": "Not a medical device.",
+    "credits": "Credits and licenses",
+    "privacy": "Privacy policy"
+  },
+  "openSource": {
+    "title": "Built on open source",
+    "body": "Lotties stands on the work of the open-source community and on public health data. Thank you to every author and maintainer.",
+    "count_one": "{{count}} open-source package",
+    "count_other": "{{count}} open-source packages",
+    "including": "Including {{names}} and more.",
+    "license": "Lotties itself is free software under the AGPL-3.0.",
+    "source": "Source code on GitHub",
+    "seeAll": "See all credits and licenses",
+    "notMedical": "Lotties is not a medical device."
   },
   "important": {
     "eyebrow": "Important",

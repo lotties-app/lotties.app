@@ -1,6 +1,8 @@
 import Dexie, { type EntityTable, type Table, type Transaction } from 'dexie';
 import type {
+  AgeNormsCache,
   Appointment,
+  CareProvider,
   Baby,
   BabyEvent,
   EventType,
@@ -103,6 +105,21 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       vaccineSchedules: 'profile',
     },
   },
+  {
+    // Care providers: the baby's directory "My doctors" (synced like formulas, soft deleted).
+    version: 9,
+    stores: {
+      careProviders: 'id, babyId, [babyId+updatedAt]',
+    },
+  },
+  {
+    // Age norms: the published norms served by the API (docs/design/28-age-norms.md), cached for
+    // offline use like the vaccine schedule (one row, not per baby).
+    version: 10,
+    stores: {
+      ageNorms: 'key',
+    },
+  },
 ];
 
 export class BabyRoutineDb extends Dexie {
@@ -115,11 +132,13 @@ export class BabyRoutineDb extends Dexie {
   declare bodyWeights: EntityTable<BodyWeightRow, 'babyId'>;
   declare formulas: EntityTable<Formula, 'id'>;
   declare appointments: EntityTable<Appointment, 'id'>;
+  declare careProviders: EntityTable<CareProvider, 'id'>;
   declare notes: EntityTable<Note, 'id'>;
   declare proposals: EntityTable<Proposal, 'id'>;
   declare noteReads: EntityTable<NoteRead, 'noteId'>;
   declare vaccinations: EntityTable<Vaccination, 'id'>;
   declare vaccineSchedules: EntityTable<VaccineScheduleCache, 'profile'>;
+  declare ageNorms: EntityTable<AgeNormsCache, 'key'>;
   declare outbox: EntityTable<OutboxMutation, 'id'>;
   declare syncState: Table<SyncCursor, [string, SyncEntity]>;
 

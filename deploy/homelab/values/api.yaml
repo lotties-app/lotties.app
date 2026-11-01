@@ -56,6 +56,16 @@ secretEnv:
     secretName: lotties-secrets
     key: PUSH_VAPID_SUBJECT
     optional: true
+  # Keycloak service account for account deletion: both or none (none = the Keycloak user stays when a user deletes
+  # her account, and the app says so). Setup: docs/KEYCLOAK-ACCOUNT-DELETION.md.
+  AUTH_ADMIN_CLIENT_ID:
+    secretName: lotties-secrets
+    key: AUTH_ADMIN_CLIENT_ID
+    optional: true
+  AUTH_ADMIN_CLIENT_SECRET:
+    secretName: lotties-secrets
+    key: AUTH_ADMIN_CLIENT_SECRET
+    optional: true
   # Only in the Secret when DB_AUTO_MIGRATE=true: the pod then holds the migrator role's credentials.
   DB_MIGRATOR_USER:
     secretName: lotties-secrets

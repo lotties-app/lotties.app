@@ -1,0 +1,136 @@
+namespace Lotties.Domain.Clinical;
+
+/// <summary>
+/// A logged feed as the clinical summary reads it: its start, the payload <c>method</c> (<c>breast</c>, <c>bottle</c>,
+/// <c>solid</c>), the bottle's drunk amount (<see cref="Events.BottleAmounts.DrunkMl"/>: <c>amount_drunk_ml</c>, else the
+/// prepared <c>amount_ml</c>, as the web's Insights count it) and <c>bottle_feeding_type</c> and the formula members
+/// (<c>formula_id</c>, <c>formula_name</c>). Callers pass only events that are not soft deleted.
+/// </summary>
+public sealed record FeedObservation(
+    DateTimeOffset StartedAt,
+    string? Method,
+    double? AmountMl = null,
+    string? BottleFeedingType = null,
+    Guid? FormulaId = null,
+    string? FormulaName = null)
+{
+    public const string BreastMethod = "breast";
+    public const string BottleMethod = "bottle";
+    public const string SolidMethod = "solid";
+    public const string FormulaFeedingType = "formula";
+
+    public bool IsBottle => Method == BottleMethod;
+
+    /// <summary>What the baby drank from a bottle feed (ml), or <c>null</c> (no amount, or not a bottle).</summary>
+    public double? BottleMl => IsBottle && AmountMl is > 0 ? AmountMl : null;
+
+    /// <summary>Whether it is a bottle of formula: the bottle content says so, or a formula was named.</summary>
+    public bool IsFormulaBottle =>
+        IsBottle && (BottleFeedingType == FormulaFeedingType || FormulaId is not null || !string.IsNullOrWhiteSpace(FormulaName));
+}
+
+/// <summary>Feeding of one local day: the feeds that started that day, the bottle ml logged and the feeds by method.</summary>
+public sealed record FeedingDaySummary(DateOnly Date, int Feeds, double BottleMl, int Breast, int Bottle, int Solid);
+
+/// <summary>A formula the bottles were made with: how many bottles and the ml logged for them.</summary>
+public sealed record FormulaUsage(Guid? FormulaId, string Name, int Feeds, double Ml);
+
+/// <summary>
+/// The feeding of a range, as the parents' Insights compute it (<c>feedingModel.ts</c>): feeds per local day (by the day a
+/// feed started), the mean gap between consecutive feeds (gaps up to the age-aware <see cref="FeedGapLimit"/>, 8 hours
+/// by default), the averages over the completed days with data, and the counts by method and by formula.
+/// </summary>
+public sealed record FeedingSummary(
+    IReadOnlyList<FeedingDaySummary> Days,
+    double? FeedsPerDay,
+    double? AverageIntervalMs,
+    double? BottleMlPerDay,
+    int BreastCount,
+    int BottleCount,
+    int SolidCount,
+    IReadOnlyList<FormulaUsage> Formulas);
+
+/// <summary>Computes the <see cref="FeedingSummary"/>; pure, no I/O.</summary>
+public static class FeedingSummaries
+{
+    /// <summary>A longer gap means a feed was probably not logged, so it is left out of the average (without age norms).</summary>
+    public static readonly TimeSpan MaxFeedGap = FeedGapLimit.Default;
+
+    /// <param name="observed">The baby's non-deleted feeds.</param>
+    /// <param name="window">The local days to cover; only feeds that started inside them and not after now count.</param>
+    /// <param name="gapLimit">The longest gap that counts, by the local date it starts; <see cref="FeedGapLimit.Fixed"/> (8 hours) when omitted.</param>
+    public static FeedingSummary Summarize(IReadOnlyList<FeedObservation> observed, ClinicalWindow window, FeedGapLimit? gapLimit = null)
+    {
+        ArgumentNullException.ThrowIfNull(observed);
+        ArgumentNullException.ThrowIfNull(window);
+        var limit = gapLimit ?? FeedGapLimit.Fixed;
+        var feeds = observed
+            .Where(item => item.StartedAt >= window.Start && item.StartedAt < window.End && item.StartedAt <= window.Now)
+            .OrderBy(item => item.StartedAt)
+            .ToArray();
+        var days = window.Days.Select(day => SummarizeDay(day, feeds)).ToArray();
+        var withFeeds = ClinicalStatistics.CompletedDaysWithData(days, day => day.Feeds > 0, day => day.Date, window.Today);
+        var withMl = ClinicalStatistics.CompletedDaysWithData(days, day => day.BottleMl > 0, day => day.Date, window.Today);
+        return new FeedingSummary(
+            days,
+            ClinicalStatistics.Mean(withFeeds.Select(day => (double)day.Feeds).ToArray()),
+            ClinicalStatistics.Mean(Gaps(feeds, window, limit)),
+            ClinicalStatistics.Mean(withMl.Select(day => day.BottleMl).ToArray()),
+            feeds.Count(item => item.Method == FeedObservation.BreastMethod),
+            feeds.Count(item => item.IsBottle),
+            feeds.Count(item => item.Method == FeedObservation.SolidMethod),
+            Formulas(feeds));
+    }
+
+    private static FeedingDaySummary SummarizeDay(ClinicalDay day, IReadOnlyList<FeedObservation> feeds)
+    {
+        var started = feeds.Where(item => day.Contains(item.StartedAt)).ToArray();
+        return new FeedingDaySummary(
+            day.Date,
+            started.Length,
+            started.Sum(item => item.BottleMl ?? 0),
+            started.Count(item => item.Method == FeedObservation.BreastMethod),
+            started.Count(item => item.IsBottle),
+            started.Count(item => item.Method == FeedObservation.SolidMethod));
+    }
+
+    /// <summary>
+    /// Gaps in milliseconds between consecutive feed starts, longer than zero and up to the limit of the local date the gap
+    /// starts on.
+    /// </summary>
+    private static double[] Gaps(IReadOnlyList<FeedObservation> feeds, ClinicalWindow window, FeedGapLimit limit) =>
+        feeds.Zip(feeds.Skip(1), (previous, next) => (Gap: (next.StartedAt - previous.StartedAt).TotalMilliseconds, Max: limit.On(window.Clock.DateOf(previous.StartedAt)).TotalMilliseconds))
+            .Where(pair => pair.Gap > 0 && pair.Gap <= pair.Max)
+            .Select(pair => pair.Gap)
+            .ToArray();
+
+    /// <summary>
+    /// The bottles of formula grouped by the formula id (else by the name, ignoring case): feeds, ml logged, and the name
+    /// as the latest bottle of the group wrote it (empty when none named the formula). Most used first.
+    /// </summary>
+    private static IReadOnlyList<FormulaUsage> Formulas(IReadOnlyList<FeedObservation> feeds) =>
+        feeds
+            .Where(item => item.IsFormulaBottle)
+            .GroupBy(FormulaKey)
+            .Select(ToUsage)
+            .OrderByDescending(usage => usage.Feeds)
+            .ThenByDescending(usage => usage.Ml)
+            .ThenBy(usage => usage.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static string FormulaKey(FeedObservation feed) => feed switch
+    {
+        { FormulaId: { } id } => id.ToString("N"),
+        _ => "name:" + (feed.FormulaName ?? string.Empty).Trim().ToUpperInvariant(),
+    };
+
+    private static FormulaUsage ToUsage(IGrouping<string, FeedObservation> group)
+    {
+        var latestNamed = group.LastOrDefault(item => !string.IsNullOrWhiteSpace(item.FormulaName));
+        return new FormulaUsage(
+            group.Select(item => item.FormulaId).FirstOrDefault(id => id is not null),
+            latestNamed?.FormulaName?.Trim() ?? string.Empty,
+            group.Count(),
+            group.Sum(item => item.BottleMl ?? 0));
+    }
+}

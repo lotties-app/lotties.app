@@ -20,6 +20,8 @@ import numpy as np
 from .backtest import FAST_METHODS, METHODS, SENSITIVITY, Run, combine, data_days, evaluate, local_days, prepare, subset, timings
 from .data import load_events, local_midnight
 from .metrics import bootstrap_improvement, scores
+from .priors import use_legacy_priors
+from .synthetic import COHORTS, cohort_baby
 
 PRIMARY = ("feed", "diaper", "sleep_start", "nap_duration", "night_duration", "bedtime")
 CORE = (
@@ -162,10 +164,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resamples", type=int, default=2000)
     parser.add_argument("--skip-cold-start", action="store_true")
     parser.add_argument("--sensitivity", action="store_true", help="also run LightGBM variants on both windows")
+    parser.add_argument("--synthetic", choices=sorted(COHORTS), help="run on one synthetic baby of this cohort instead of --data")
+    parser.add_argument("--synthetic-seed", type=int, default=0)
+    parser.add_argument("--synthetic-days", type=int, default=70)
+    parser.add_argument("--legacy-priors", action="store_true", help="the age-band priors before 2026-10-23 (before/after runs)")
     args = parser.parse_args(argv)
 
     started = time.perf_counter()
-    dataset = load_events(args.data)
+    use_legacy_priors(args.legacy_priors)
+    dataset = (
+        cohort_baby(COHORTS[args.synthetic], args.synthetic_seed, args.synthetic_days)
+        if args.synthetic
+        else load_events(args.data)
+    )
     prepared = prepare(dataset)
     first, last = data_days(dataset)
     test_first = last - timedelta(days=args.test_days - 1)

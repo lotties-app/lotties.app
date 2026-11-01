@@ -35,6 +35,11 @@
         "hint": "Visitas e lembretes",
         "keywords": "visitas médico calendário pediatra retorno agenda"
       },
+      "providers": {
+        "title": "Médicos e clínicas",
+        "hint": "Telefones, endereços e registros",
+        "keywords": "médico pediatra especialista clínica hospital telefone endereço crm contatos"
+      },
       "vaccines": {
         "title": "Vacinas",
         "hint": "Calendário e carteirinha",
@@ -100,6 +105,26 @@
         "hint": "Traga o histórico de outro app",
         "keywords": "napper exportação arquivo csv histórico"
       },
+      "export": {
+        "title": "Exportar dados",
+        "hint": "Baixe uma cópia deste bebê",
+        "keywords": "backup baixar arquivo json salvar cópia dados mudar"
+      },
+      "backupImport": {
+        "title": "Importar backup",
+        "hint": "Restaure um arquivo exportado do app",
+        "keywords": "backup restaurar enviar arquivo json mudar conta"
+      },
+      "install": {
+        "title": "Instalar o app",
+        "hint": "No celular ou no computador",
+        "keywords": "instalar tela inicio adicionar celular iphone android pwa app atalho"
+      },
+      "welcome": {
+        "title": "Página inicial",
+        "hint": "A página de boas-vindas do Lotties",
+        "keywords": "inicio boas vindas pagina inicial site comecar"
+      },
       "updates": {
         "title": "Buscar atualizações",
         "hint": "Receba a versão mais recente",
@@ -109,6 +134,16 @@
         "title": "Sobre",
         "hint": "Versão e licença",
         "keywords": "versão build licença código"
+      },
+      "credits": {
+        "title": "Créditos e licenças",
+        "hint": "Software livre, dados e serviços por trás do Lotties",
+        "keywords": "créditos licenças licencas software livre open source agradecimentos bibliotecas dados atribuição agpl terceiros"
+      },
+      "privacy": {
+        "title": "Política de privacidade",
+        "hint": "O que coletamos, por quê e seus direitos",
+        "keywords": "política de privacidade proteção de dados lgpd dados pessoais direitos excluir exportar consentimento cookies"
       }
     },
     "updates": {
@@ -135,6 +170,8 @@
       "license": "Licença",
       "licenseValue": "Software livre, AGPL-3.0",
       "source": "Código-fonte",
+      "credits": "Feito sobre software livre. Créditos e licenças",
+      "privacy": "Política de privacidade",
       "unknown": "Desconhecido"
     }
   }

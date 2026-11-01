@@ -57,9 +57,11 @@ internal sealed class FakeMembershipRepository(params BabyMember[] members) : IB
         Task.FromResult(members.FirstOrDefault(member => member.BabyId == babyId && member.UserId == userId));
 }
 
-internal sealed class FakeBabyAccessService(BabyAccessDecision decision) : IBabyAccessService
+internal sealed class FakeBabyAccessService(BabyAccessDecision decision, BabyMember? member = null) : IBabyAccessService
 {
     public List<(Guid BabyId, BabyRole RequiredRole)> Calls { get; } = [];
+
+    public List<(Guid BabyId, DoctorScope? Scope)> ScopeCalls { get; } = [];
 
     public Task<BabyAccessDecision> CheckAsync(Guid babyId, BabyRole requiredRole, CancellationToken cancellationToken = default)
     {
@@ -67,8 +69,17 @@ internal sealed class FakeBabyAccessService(BabyAccessDecision decision) : IBaby
         return Task.FromResult(decision);
     }
 
+    public Task<BabyAccessDecision> CheckScopeAsync(Guid babyId, DoctorScope? scope, CancellationToken cancellationToken = default)
+    {
+        ScopeCalls.Add((babyId, scope));
+        return Task.FromResult(decision);
+    }
+
     public Task<BabyRole?> FindRoleAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         Task.FromResult<BabyRole?>(decision == BabyAccessDecision.NotMember ? null : BabyRole.Viewer);
+
+    public Task<BabyMember?> FindMembershipAsync(Guid babyId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(member);
 }
 
 internal sealed class FakeUserProvisioningService : IUserProvisioningService

@@ -137,6 +137,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
         feed: feedTrayOptions(baby.id, types, events, now, {
           events: bottleHistory?.events ?? events,
           birthDate: baby.birthDate,
+          ageNorms: bottleHistory?.ageNorms ?? null,
         }),
         diaper: diaperTray(types),
         meds: medsTray(baby.id, types, medications, events, now, meds.statuses),

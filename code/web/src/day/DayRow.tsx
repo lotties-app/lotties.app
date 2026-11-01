@@ -305,8 +305,11 @@ export function DayRow({
         sx={(theme) => ({
           mb: 1,
           display: 'flex',
+          // With large text on a narrow phone the running/duration pill goes under the title
+          // instead of pushing the card past the screen edge.
+          flexWrap: 'wrap',
           alignItems: 'center',
-          gap: 1,
+          columnGap: 1,
           minWidth: 0,
           borderRadius: `${RADIUS.tile}px`,
           backgroundColor: palette(theme).category[view.category].bg,
@@ -329,7 +332,8 @@ export function DayRow({
                 : t('day.editRow', { title: view.title, time })
           }
           sx={{
-            flex: '1 1 auto',
+            // Basis 0: the title only gives up its line when the pill alone fills the card.
+            flex: '1 1 0',
             minWidth: 0,
             minHeight: 56,
             display: 'block',
@@ -357,7 +361,17 @@ export function DayRow({
           )}
         </ButtonBase>
         {(running || length) && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1.5, flexShrink: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              pr: 1.5,
+              flexShrink: 0,
+              maxWidth: '100%',
+              ml: 'auto',
+            }}
+          >
             {running ? (
               <RunningPill event={event} />
             ) : (

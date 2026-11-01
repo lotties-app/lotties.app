@@ -14,5 +14,14 @@ public sealed class AuthOptions
     /// <summary>Whether the discovery document must be served over HTTPS. Turn off only for a local http provider.</summary>
     public bool RequireHttpsMetadata { get; set; } = true;
 
+    /// <summary>Client id of the service account that may delete users in the realm (account deletion); optional.</summary>
+    public string? AdminClientId { get; set; }
+
+    /// <summary>Secret of <see cref="AdminClientId"/>; a deployment secret, never committed.</summary>
+    public string? AdminClientSecret { get; set; }
+
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Authority) && !string.IsNullOrWhiteSpace(Audience);
+
+    /// <summary>Whether deleting an account also removes it at the identity provider (needs both admin settings).</summary>
+    public bool CanRemoveAccounts => !string.IsNullOrWhiteSpace(Authority) && !string.IsNullOrWhiteSpace(AdminClientId) && !string.IsNullOrWhiteSpace(AdminClientSecret);
 }

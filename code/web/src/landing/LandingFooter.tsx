@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link as RouterLink } from 'react-router-dom';
 import { Box, Link, Stack, Typography } from '@mui/material';
 import { isLocalePreference, LOCALES, type LocalePreference } from '../i18n/config';
 import { useLocale } from '../i18n/useLocale';
-import { InstallAppButton } from '../pwa/InstallAppButton';
+import { useInstallState } from '../install/useInstallState';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import type { ThemeMode } from '../theme/theme';
 import { SegmentedControl } from '../ui/form';
@@ -27,9 +28,13 @@ function Setting({ id, label, children }: { id: string; label: string; children:
   );
 }
 
-/** Language and theme switches, the source link, the licence line, install and the medical note. */
+/**
+ * Language and theme switches, the source link, the install guide, credits and privacy policy links,
+ * the licence line and the medical note.
+ */
 export function LandingFooter() {
   const { t } = useTranslation('landing');
+  const { native } = useInstallState();
   const { preference, setPreference } = useLocale();
   const { mode, setMode } = useThemeMode();
   const source = repoUrl();
@@ -67,7 +72,6 @@ export function LandingFooter() {
             />
           </Setting>
         </Box>
-        <InstallAppButton />
         <Stack spacing={1}>
           {source && (
             <Link
@@ -79,6 +83,17 @@ export function LandingFooter() {
               {t('footer.source')}
             </Link>
           )}
+          {!native && (
+            <Link component={RouterLink} to="/install" sx={{ alignSelf: 'flex-start' }}>
+              {t('footer.install')}
+            </Link>
+          )}
+          <Link component={RouterLink} to="/credits" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.credits')}
+          </Link>
+          <Link component={RouterLink} to="/privacy" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.privacy')}
+          </Link>
           <Typography variant="body2" color="text.secondary">
             {t('footer.licence')}
           </Typography>

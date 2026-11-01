@@ -18,13 +18,25 @@ const capacitor = vi.hoisted(() => {
         ) => Promise<{ remove: typeof remove }>
       >(async () => ({ remove })),
       getLaunchUrl: vi.fn(async (): Promise<{ url: string } | undefined> => undefined),
+      exitApp: vi.fn(async () => {}),
     },
     SystemBars: { setStyle: vi.fn(async () => {}) },
+    Filesystem: {
+      writeFile: vi.fn<(options: unknown) => Promise<{ uri: string }>>(async () => ({
+        uri: 'file:///cache/backup.json',
+      })),
+    },
+    Share: { share: vi.fn<(options: unknown) => Promise<unknown>>(async () => ({})) },
   };
 });
 
 vi.mock('@capacitor/browser', () => ({ Browser: capacitor.Browser }));
 vi.mock('@capacitor/app', () => ({ App: capacitor.App }));
+vi.mock('@capacitor/filesystem', () => ({
+  Filesystem: capacitor.Filesystem,
+  Directory: { Cache: 'CACHE' },
+}));
+vi.mock('@capacitor/share', () => ({ Share: capacitor.Share }));
 vi.mock('@capacitor/core', () => ({
   SystemBars: capacitor.SystemBars,
   SystemBarsStyle: { Dark: 'DARK', Light: 'LIGHT', Default: 'DEFAULT' },
@@ -79,5 +91,50 @@ describe('capacitorShell', () => {
       [{ style: 'LIGHT' }],
       [{ style: 'DARK' }],
     ]);
+  });
+
+  it('writes a shared file to the cache directory and opens the share sheet on it', async () => {
+    await capacitorShell.shareFile({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      base64: 'e30=',
+    });
+
+    expect(capacitor.Filesystem.writeFile).toHaveBeenCalledWith({
+      path: 'backup.json',
+      data: 'e30=',
+      directory: 'CACHE',
+    });
+    expect(capacitor.Share.share).toHaveBeenCalledWith({
+      title: 'backup.json',
+      dialogTitle: 'backup.json',
+      url: 'file:///cache/backup.json',
+    });
+  });
+
+  it('treats a cancelled share sheet as done and rethrows other failures', async () => {
+    const file = { name: 'a.json', mimeType: 'application/json', base64: 'e30=' };
+    capacitor.Share.share.mockRejectedValueOnce(new Error('Share canceled'));
+    await expect(capacitorShell.shareFile(file)).resolves.toBeUndefined();
+
+    capacitor.Share.share.mockRejectedValueOnce(new Error('No activity found'));
+    await expect(capacitorShell.shareFile(file)).rejects.toThrow('No activity found');
+  });
+
+  it('reports the back button with canGoBack and exits the app on demand', async () => {
+    const pressed: boolean[] = [];
+    const stop = await capacitorShell.onBackButton((canGoBack) => pressed.push(canGoBack));
+    expect(capacitor.App.addListener).toHaveBeenCalledWith('backButton', expect.any(Function));
+    const listener = capacitor.App.addListener.mock.calls[0][1] as unknown as (event: {
+      canGoBack: boolean;
+    }) => void;
+    listener({ canGoBack: true });
+    listener({ canGoBack: false });
+    expect(pressed).toEqual([true, false]);
+    stop();
+    expect(capacitor.remove).toHaveBeenCalled();
+
+    await capacitorShell.exitApp();
+    expect(capacitor.App.exitApp).toHaveBeenCalled();
   });
 });

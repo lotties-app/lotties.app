@@ -4,7 +4,7 @@ Owner request: record what the doctor prescribed (e.g. "2 drops of X every morni
 
 ## 0. Guardrails (apply to every feature below)
 - The app is a log and reminder tool, not a medical device and never gives dosing advice. The doctor's prescription, entered by the parent, is the only source for a dose or interval used in calculations. UI copy says so where doses or intervals appear.
-- "Same active ingredient" is shown as information only ("Contains the same active ingredient as Luftal: simethicone. Ask your doctor or pharmacist before substituting.") and never auto-substitutes.
+- "Same active ingredient" is shown as information only ("Contains the same active ingredient: simethicone. Same ingredient, strength not known: Luftal. Ask your doctor or pharmacist before substituting.", in labelled groups by strength and form, docs/design/13-anvisa-catalog.md section 12) and never auto-substitutes.
 - Dose-per-kg is a calculator over the doctor's rule and the baby's latest weight: it shows its inputs (rule, weight, date of the weight, rounding) and always requires the parent to confirm; a stale weight (> 30 days) shows a warning.
 - Logging earlier than the allowed time is never blocked: the app asks "Too early: next allowed at 18:00. Log anyway?" and records that it was overridden.
 - Community statistics (M3) are opt-in, k-anonymous, aggregated, never per-baby, never phrased as a recommendation, and need an explicit review by the owner before shipping; default OFF.

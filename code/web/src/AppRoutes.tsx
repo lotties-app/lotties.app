@@ -1,11 +1,13 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { LandingGate } from './landing/LandingGate';
+import { WelcomeRoute } from './landing/WelcomeRoute';
 import { CallbackPage } from './auth/CallbackPage';
 import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { InviteEntry, LegacyInviteEntry } from './invite/InviteEntry';
+import { doctorRoutes } from './doctor/doctorRoutes';
 
 // Everything except Now is split into route chunks so the first load stays small.
 const DayPage = lazy(() => import('./pages/DayPage').then((m) => ({ default: m.DayPage })));
@@ -21,10 +23,20 @@ const hubSubPage = (name: HubSubPageName) =>
   lazy(() => import('./pages/HubSubPages').then((m) => ({ default: m[name] })));
 const HubMedicinesPage = hubSubPage('HubMedicinesPage');
 const HubFormulasPage = hubSubPage('HubFormulasPage');
+const HubProvidersPage = hubSubPage('HubProvidersPage');
 const HubFamilyPage = hubSubPage('HubFamilyPage');
 const HubImportPage = hubSubPage('HubImportPage');
+const HubExportPage = hubSubPage('HubExportPage');
+const HubBackupImportPage = hubSubPage('HubBackupImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
+const HubCreditsPage = hubSubPage('HubCreditsPage');
+const HubInstallPage = hubSubPage('HubInstallPage');
+const HubPrivacyPage = hubSubPage('HubPrivacyPage');
+// The public credits, install and privacy pages: outside the auth gate, so they open without signing in.
+const CreditsPage = lazy(() => import('./credits/CreditsPage'));
+const InstallPage = lazy(() => import('./install/InstallPage'));
+const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -38,9 +50,6 @@ const VaccinationCardPage = lazy(() =>
   import('./pages/VaccinationCardPage').then((m) => ({ default: m.VaccinationCardPage })),
 );
 const NotesPage = lazy(() => import('./pages/NotesPage').then((m) => ({ default: m.NotesPage })));
-const PatientsPage = lazy(() =>
-  import('./pages/PatientsPage').then((m) => ({ default: m.PatientsPage })),
-);
 const ProposalsPage = lazy(() =>
   import('./pages/ProposalsPage').then((m) => ({ default: m.ProposalsPage })),
 );
@@ -69,6 +78,9 @@ const DevAppointmentsPreview = import.meta.env.DEV
   : null;
 const DevVaccinesPreview = import.meta.env.DEV ? lazy(() => import('./dev/VaccinesPreview')) : null;
 const DevDoctorPreview = import.meta.env.DEV ? lazy(() => import('./dev/DoctorPreview')) : null;
+const DevDoctorDashboardPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/DoctorDashboardPreview'))
+  : null;
 const DevProposalsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/ProposalsPreview'))
   : null;
@@ -79,6 +91,16 @@ const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPrevie
 const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
 
 export function AppRoutes() {
+  const { pathname } = useLocation();
+  // The dashboard preview mounts the real `/doctor` route tree at a fixed location, which a nested
+  // <Routes> cannot do: it is rendered instead of the app's routes.
+  if (DevDoctorDashboardPreview && pathname === '/dev/doctor-dashboard') {
+    return (
+      <Suspense fallback={null}>
+        <DevDoctorDashboardPreview />
+      </Suspense>
+    );
+  }
   return (
     <Routes>
       {DevUiGallery && (
@@ -254,6 +276,32 @@ export function AppRoutes() {
       {/* The sign-in page is gone (the landing page and the identity provider replace it). */}
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/auth/callback" element={<CallbackPage />} />
+      <Route
+        path="/credits"
+        element={
+          <Suspense fallback={null}>
+            <CreditsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/install"
+        element={
+          <Suspense fallback={null}>
+            <InstallPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/privacy"
+        element={
+          <Suspense fallback={null}>
+            <PrivacyPage />
+          </Suspense>
+        }
+      />
+      {/* The landing page on purpose for a signed-in person; `/` keeps opening the app. */}
+      <Route path="/welcome" element={<WelcomeRoute />} />
       {/* Invite entry sits outside RequireAuth: the token is parked before any sign-in redirect. */}
       <Route path="/invite" element={<InviteEntry />}>
         <Route element={<RequireAuth />}>
@@ -275,19 +323,27 @@ export function AppRoutes() {
             <Route path="hub" element={<HubPage />} />
             <Route path="hub/medicines" element={<HubMedicinesPage />} />
             <Route path="hub/formulas" element={<HubFormulasPage />} />
+            <Route path="hub/providers" element={<HubProvidersPage />} />
             <Route path="hub/family" element={<HubFamilyPage />} />
             <Route path="hub/import" element={<HubImportPage />} />
+            <Route path="hub/export" element={<HubExportPage />} />
+            <Route path="hub/backup" element={<HubBackupImportPage />} />
             <Route path="hub/updates" element={<HubUpdatesPage />} />
             <Route path="hub/about" element={<HubAboutPage />} />
+            <Route path="hub/credits" element={<HubCreditsPage />} />
+            <Route path="hub/install" element={<HubInstallPage />} />
+            <Route path="hub/privacy" element={<HubPrivacyPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="vaccines" element={<VaccinesPage />} />
             <Route path="vaccines/card" element={<VaccinationCardPage />} />
             <Route path="notes" element={<NotesPage />} />
-            <Route path="patients" element={<PatientsPage />} />
+            {/* The old Patients list is the doctor's dashboard now. */}
+            <Route path="patients" element={<Navigate to="/doctor" replace />} />
             <Route path="proposals" element={<ProposalsPage />} />
             <Route path="from-doctor" element={<FromDoctorPage />} />
           </Route>
+          {doctorRoutes()}
         </Route>
       </Route>
     </Routes>

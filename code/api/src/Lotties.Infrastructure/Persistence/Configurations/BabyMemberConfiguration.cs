@@ -1,5 +1,6 @@
 using Lotties.Domain.Babies;
 using Lotties.Domain.Users;
+using Lotties.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +17,9 @@ internal sealed class BabyMemberConfiguration : IEntityTypeConfiguration<BabyMem
         builder.Property(member => member.Id).ValueGeneratedNever();
         builder.Property(member => member.Role).HasConversion<string>().HasMaxLength(RoleMaxLength).IsRequired();
         builder.Property(member => member.JoinedAt).IsRequired();
+        builder.Property(member => member.DoctorScopes)
+            .HasConversion(ValueObjectConverters.DoctorScopes)
+            .HasMaxLength(DoctorScopeSet.StorageMaxLength);
         builder.HasIndex(member => new { member.BabyId, member.UserId }).IsUnique();
         builder.HasIndex(member => member.UserId);
         builder.HasOne<User>().WithMany().HasForeignKey(member => member.UserId).OnDelete(DeleteBehavior.Restrict);

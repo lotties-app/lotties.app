@@ -84,6 +84,7 @@ In order, the layer answers: what happened, what's typical now, what changed (on
 - **Window first.** "14:40–15:10" large, then "likely in about 45m · awake since 12:48". Edges round outward to 5 min. The window is at least 20 min wide, or 60 min while learning.
 - **Confidence in words and width.** "Based on 30 naps · last 14 days" or "Early estimate · 3 naps so far" with a progress bar replaces the Low/Medium/High chips.
 - **A strip instead of the 0-100 % ring.** One strip shows awake time so far, the likely window and now. The ring read as a deadline; if it stays, draw the window on it as a band.
+  - Built (2026-10-23, docs/DESIGN.md "Now: rhythm details"): both the ruler and the ring answer on demand. Hover or tap any mark for its exact times ("Nap window opens 15:50, closes 16:39 · Opens in 1h 20m · Based on the usual awake time of about 2h 15m"), "now" is a small baby face (awake, drowsy in the window, asleep, tired in the overtired heads-up), and the rest of the day's likely naps, the likely wake-up of a running nap and the bedtime window are drawn as dashed estimates that fade further out. Facts and the server's numbers only; "(estimate)" in every name.
 - **Why sheet.** Built from `basis`: last wake-up, the awake-time IQR of n naps, daytime only, the age band, and recent days weighing more. A collapsed, hideable "What's often quoted at 4 months" shows ranges with sources.
 - **States:**
   - Awake.

@@ -1,0 +1,81 @@
+{
+  "backup": {
+    "privacy": "The file holds your child's health data: name, birth date, measurements, medicines, vaccines, notes and every event you logged. It is not encrypted. Keep it somewhere safe, do not send it by email or chat, and delete copies you no longer need.",
+    "kinds": {
+      "baby": "Baby",
+      "eventTypes": "Custom event types",
+      "medications": "Medications",
+      "prescriptions": "Prescriptions",
+      "formulas": "Formulas",
+      "careProviders": "Doctors and clinics",
+      "appointments": "Appointments",
+      "vaccinations": "Vaccines given",
+      "measurements": "Growth measurements",
+      "notes": "Notes",
+      "events": "Events"
+    },
+    "export": {
+      "blocked": "Only owners and parents can export a baby's data.",
+      "intro": "Download everything the app stores about {{name}} as one file: a backup you can keep, or use to move to another account or server.",
+      "includes": "Included: the profile, every event (deleted ones too), custom event types, medications and prescriptions, formulas, appointments, doctors and clinics, vaccines, growth measurements and the notes you can see.",
+      "excludes": "Not included: other members, invites, a doctor's access, reminders and notification settings, other people's private notes, and anything that identifies a login.",
+      "compress": "Compress the file (.json.gz, much smaller)",
+      "button": "Export data",
+      "sending": "Sending the changes made on this device first...",
+      "working": "Preparing the file...",
+      "unsent": "Not everything on this device could be sent first ({{changes}}), so those changes are not in the file.",
+      "exportAnyway": "Export anyway",
+      "saved": "Saved {{name}} ({{size}}). Check your downloads."
+    },
+    "import": {
+      "intro": "Choose a backup file exported from this app. You will see what it would add before anything is saved. Importing the same file again changes nothing.",
+      "modeLabel": "Where should it go?",
+      "modeRestore": "A new baby",
+      "modeMerge": "Add to {{name}}",
+      "restoreHint": "Creates a new baby with everything in the file, and you become its owner. Best for moving to another account or server.",
+      "mergeHint": "Adds what {{name}} is missing. Nothing is deleted, and where both have the same entry the most recent edit wins.",
+      "choose": "Choose backup file",
+      "hint": ".json or .json.gz, up to {{limit}}",
+      "readFailed": "Could not read {{name}}.",
+      "busy": {
+        "reading": "Reading the file...",
+        "previewing": "Checking the file...",
+        "importing": "Importing..."
+      },
+      "previewNotice": "This is a preview: nothing has been saved yet.",
+      "cannotImport": "Some records in this file are not valid, so it cannot be imported.",
+      "alreadyRestored": "You already restored this file into a baby of yours. Importing it adds anything missing to that baby.",
+      "nothingToDo": "There is nothing to import: everything in this file is already there.",
+      "confirmRestore": "Import into a new baby",
+      "confirmMerge": "Add to {{name}}",
+      "doneRestore": "Done. The baby was created and the data will appear in a moment.",
+      "doneMerge": "Done. The missing data was added and will appear in a moment.",
+      "open": "Open the app"
+    },
+    "report": {
+      "source": "Backup of {{name}}, exported on {{date}}.",
+      "empty": "The file has no records.",
+      "listLabel": "What the file holds",
+      "issuesLabel": "Records that are not valid",
+      "new": "{{count}} new",
+      "unchanged": "{{count}} already there",
+      "updated": "{{count}} updated",
+      "kept": "{{count}} kept as they are",
+      "invalid": "{{count}} not valid",
+      "invalidTitle_one": "{{count}} record is not valid:",
+      "invalidTitle_other": "{{count}} records are not valid:",
+      "issue": "{{kind}}: {{reason}}",
+      "moreIssues_one": "And {{count}} more.",
+      "moreIssues_other": "And {{count}} more."
+    },
+    "notices": {
+      "authors_remapped": "Entries written by other people ({{count}}) will show as logged by you.",
+      "doctor_provenance_dropped": "Prescriptions that came from a doctor's proposal ({{count}}) become your own entries.",
+      "doctor_measurements_flattened": "Consultation measurements ({{count}}) lose their \"recorded by\" mark.",
+      "product_links_dropped": "Medications linked to a catalog product this server does not know ({{count}}) are kept without the link."
+    },
+    "errors": {
+      "tooLarge": "This file is too large to upload (up to {{limit}}). Export a compressed .json.gz file and try again."
+    }
+  }
+}

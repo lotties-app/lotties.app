@@ -29,7 +29,11 @@ public sealed record OfficialImportResult(
     int ProductsAdopted,
     int ProductsUnchanged,
     int ProductsRetired,
-    IReadOnlyList<string> Skipped);
+    IReadOnlyList<string> Skipped)
+{
+    /// <summary>Curated aliases merged into their product in this run (searching the alias finds the product).</summary>
+    public int AliasesMerged { get; init; }
+}
 
 /// <summary>
 /// Writes a plan (official ANVISA products, plus the curated list) to the catalog in one transaction, idempotently:
@@ -65,6 +69,7 @@ public sealed class OfficialCatalogImporter(LottiesDbContext context, TimeProvid
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         var substances = await EnsureSubstancesAsync(plan.Substances, now, cancellationToken);
         var products = await UpsertProductsAsync(plan.Products, substances.Ids, now, cancellationToken);
+        var merged = await MergeAliasesAsync(plan.Products, cancellationToken);
         var retired = await RetireMissingAsync(plan.Products, options.RetireMissingFrom, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         logger.LogInformation(
@@ -74,7 +79,7 @@ public sealed class OfficialCatalogImporter(LottiesDbContext context, TimeProvid
             products.Updated,
             retired,
             products.Skipped.Count);
-        return new OfficialImportResult(substances.Added, products.Added, products.Updated, products.Adopted, products.Unchanged, retired, products.Skipped);
+        return new OfficialImportResult(substances.Added, products.Added, products.Updated, products.Adopted, products.Unchanged, retired, products.Skipped) { AliasesMerged = merged };
     }
 
     /// <summary>The deterministic id of an imported product.</summary>
@@ -143,7 +148,7 @@ public sealed class OfficialCatalogImporter(LottiesDbContext context, TimeProvid
 
         try
         {
-            var data = new SourcedProductData(plan.Name, plan.Form, plan.Presentation, plan.Status, plan.Source, plan.ExternalRef, plan.SubstanceKeys.Select(key => substanceIds[key]).ToArray(), plan.AmbiguousName);
+            var data = new SourcedProductData(plan.Name, plan.Form, plan.Presentation, plan.Status, plan.Source, plan.ExternalRef, plan.SubstanceKeys.Select(key => substanceIds[key]).ToArray(), plan.AmbiguousName, plan.StrengthKey, plan.StrengthText);
             return existing is not null ? Update(existing, data) : Add(plan, data, index, now);
         }
         catch (DomainValidationException exception)
@@ -162,9 +167,48 @@ public sealed class OfficialCatalogImporter(LottiesDbContext context, TimeProvid
 
     private static UpsertOutcome Update(Product existing, SourcedProductData data)
     {
+        if (existing.IsMerged)
+        {
+            return UpsertOutcome.Of(UpsertKind.Unchanged);
+        }
+
         var adopted = existing.Source is null;
         var changed = existing.ApplySource(data);
         return UpsertOutcome.Of(adopted ? UpsertKind.Adopted : changed ? UpsertKind.Updated : UpsertKind.Unchanged);
+    }
+
+    /// <summary>
+    /// Merges every planned alias (a curated entry that is another name of a curated product) into its target, once: the
+    /// alias keeps its id and links (a medication that already uses it keeps working), and a search for its name finds the
+    /// target as an alias match. An alias or target that is missing, or a target that is itself merged, is left alone.
+    /// </summary>
+    private async Task<int> MergeAliasesAsync(IReadOnlyList<CatalogProductPlan> planned, CancellationToken cancellationToken)
+    {
+        var aliases = planned.Where(plan => plan.AliasOfExternalRef is not null).ToArray();
+        if (aliases.Length == 0)
+        {
+            return 0;
+        }
+
+        var refs = aliases.SelectMany(plan => new[] { plan.ExternalRef, plan.AliasOfExternalRef! }).Distinct(StringComparer.Ordinal).ToList();
+        var stored = await context.Products.Where(product => product.Source != null && product.ExternalRef != null && refs.Contains(product.ExternalRef)).ToListAsync(cancellationToken);
+        var merged = 0;
+        foreach (var plan in aliases)
+        {
+            var alias = stored.FirstOrDefault(product => product.Source == plan.Source && product.ExternalRef == plan.ExternalRef);
+            var target = stored.FirstOrDefault(product => product.Source == plan.Source && product.ExternalRef == plan.AliasOfExternalRef);
+            if (alias is null || target is null || alias.IsMerged || target.IsMerged)
+            {
+                continue;
+            }
+
+            alias.MergeInto(target);
+            merged++;
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+        context.ChangeTracker.Clear();
+        return merged;
     }
 
     private async Task<int> RetireMissingAsync(IReadOnlyList<CatalogProductPlan> planned, IReadOnlyCollection<string> sources, DateTimeOffset now, CancellationToken cancellationToken)

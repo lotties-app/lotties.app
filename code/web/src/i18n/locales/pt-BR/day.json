@@ -22,7 +22,10 @@
       "massage": "a massagem ajudou",
       "sleep": "dormir ajudou",
       "other": "outra coisa ajudou",
-      "nothing": "nada ajudou"
+      "nothing": "nada ajudou",
+      "diaper_change": "a troca de fralda ajudou",
+      "burping": "arrotar ajudou",
+      "holding": "o colo ajudou"
     },
     "pauses_one": "{{count}} pausa",
     "pauses_other": "{{count}} pausas"

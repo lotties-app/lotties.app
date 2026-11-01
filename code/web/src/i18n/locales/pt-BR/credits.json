@@ -1,0 +1,81 @@
+{
+  "credits": {
+    "title": "Créditos e licenças",
+    "back": "Voltar",
+    "intro": "O Lotties é software livre e se apoia no trabalho de muitas pessoas e instituições públicas. Obrigado a cada autor, mantenedor e colaborador listado aqui.",
+    "noEndorsement": "Citar uma fonte, serviço ou projeto aqui é dar o crédito. Não significa que ele apoie, tenha revisado ou tenha qualquer vínculo com o Lotties.",
+    "sections": {
+      "license": "Nossa licença e o código-fonte",
+      "data": "Dados e serviços",
+      "direct": "Software livre em que nos apoiamos",
+      "all": "Todos os pacotes e textos de licença"
+    },
+    "license": {
+      "body": "O Lotties é software livre sob a GNU Affero General Public License v3.0 (AGPL-3.0). Você pode usar, estudar, alterar e compartilhar sob essa licença, e o código-fonte de cada versão que executamos é público.",
+      "source": "Código-fonte no GitHub",
+      "text": "Ler a AGPL-3.0",
+      "notMedical": "O Lotties não é um dispositivo médico. Ele guarda um registro e mostra estimativas; nunca substitui o seu pediatra."
+    },
+    "kinds": {
+      "data": "Fontes de dados",
+      "service": "Serviços que consultamos",
+      "platform": "Plataformas e padrões",
+      "asset": "Fontes, ícones e arte"
+    },
+    "curated": {
+      "anvisa": "A lista oficial de medicamentos (nomes, formas e princípios ativos), dos dados abertos da Anvisa e da lista de preços da CMED. Não revisada por farmacêutico.",
+      "pni": "O calendário do Programa Nacional de Imunizações. O Lotties mostra fatos (qual vacina, em que idade, quantas doses), reorganizados com nossas palavras, não o documento original. Conteúdo publicado pelo Ministério da Saúde sob CC BY-ND 3.0.",
+      "sbp": "Uma referência para o calendário de vacinas recomendado pelos pediatras. Usamos só fatos de calendário, com atribuição. Não afirmamos apoio nem vínculo.",
+      "sbim": "Uma referência para o calendário de vacinas da sociedade de imunizações. Usamos só fatos de calendário, com atribuição. Não afirmamos apoio nem vínculo.",
+      "agenormsSleep": "Durações de sono, despertares noturnos e horários de dormir e acordar publicados por idade. Usamos só os números, como ponto de partida das previsões enquanto o bebê ainda tem poucos registros. Não afirmamos apoio nem vínculo.",
+      "agenormsFeeding": "Mamadas por dia, intervalos e volumes de leite publicados por idade. Usamos só os números, por exemplo nas primeiras sugestões de volume da mamadeira; nunca como meta. Não afirmamos apoio nem vínculo.",
+      "agenormsDiapersCrying": "Contagens de fraldas, evacuações e tempo de choro publicados por idade. Só registramos os números, como contexto para o desenho das previsões; nunca como alerta.",
+      "osm": "Dados de mapa e endereço por trás da busca de endereço de médicos e clínicas. Dados © colaboradores do OpenStreetMap.",
+      "nominatim": "A busca de lugares usada quando você procura uma clínica ou endereço por texto. Nosso servidor faz a consulta, então seu aparelho e sua conta não são enviados.",
+      "brasilapi": "Busca um endereço a partir do CEP.",
+      "viacep": "A alternativa para a busca por CEP.",
+      "keycloak": "Entrada e contas (provedor de identidade OpenID Connect).",
+      "keycloakify": "As telas de entrada usam o tema feito com Keycloakify.",
+      "postgresql": "O banco de dados que guarda os dados sincronizados da família.",
+      "dotnet": "O ambiente de execução e o framework web do servidor do Lotties.",
+      "buildtools": "As ferramentas que compilam e testam o app. São usadas na construção e não fazem parte do que roda no seu celular.",
+      "webpush": "Os lembretes chegam ao seu celular pelo padrão aberto Web Push com chaves VAPID, enviados pelo nosso próprio servidor (sem SDK de serviço de push de terceiros).",
+      "fraunces": "A fonte de destaque dos títulos, hospedada por nós via Fontsource.",
+      "tabler": "Os ícones de traço usados em todo o app.",
+      "art": "O ícone do app e as ilustrações são obra original dos colaboradores do Lotties, publicadas com o projeto sob a AGPL-3.0."
+    },
+    "externalLink": "Abrir {{name}}",
+    "externalSuffix": "(abre em uma nova janela)",
+    "licenseLabel": "Licença",
+    "version": "Versão",
+    "direct": {
+      "intro": "As bibliotecas que definem o app. Cada uma mantém a própria licença e aviso.",
+      "npm": "App web e mobile",
+      "nuget": "Servidor",
+      "shippedDev": "embutido no service worker",
+      "bundled": "Mais {{count}} pacotes vêm com elas; veja a lista completa abaixo."
+    },
+    "all": {
+      "intro": "{{count}} pacotes de software livre acompanham o Lotties, diretos e indiretos, cada um com a sua licença. A lista é gerada dos arquivos reais de dependências, então acompanha cada atualização.",
+      "searchLabel": "Buscar pacotes e licenças",
+      "searchPlaceholder": "Buscar por nome ou licença",
+      "clear": "Limpar busca",
+      "results_one": "{{count}} pacote",
+      "results_other": "{{count}} pacotes",
+      "none": "Nenhum pacote corresponde a “{{query}}”.",
+      "toggle": "Mostrar todos os {{count}} pacotes",
+      "toggleHide": "Ocultar a lista de pacotes",
+      "showText": "Texto da licença de {{name}}",
+      "noText": "Este pacote não traz arquivo de licença. A licença é {{license}}; o texto padrão está em spdx.org.",
+      "spdx": "Texto da licença em spdx.org",
+      "loading": "Carregando os textos das licenças",
+      "loadFailed": "Não foi possível carregar os textos das licenças. Verifique a conexão e tente de novo.",
+      "retry": "Tentar de novo",
+      "homepage": "Página do projeto",
+      "ecosystem": {
+        "npm": "npm",
+        "nuget": "NuGet"
+      }
+    }
+  }
+}

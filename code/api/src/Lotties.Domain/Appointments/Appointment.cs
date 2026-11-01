@@ -55,6 +55,8 @@ public sealed class Appointment
 
     public AppointmentReminders Reminders { get; private set; } = AppointmentReminders.Default;
 
+    public Guid? ProviderId { get; private set; }
+
     public Guid CreatedBy { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
@@ -64,7 +66,7 @@ public sealed class Appointment
     public DateTimeOffset ClientUpdatedAt { get; private set; }
 
     public AppointmentTerms Terms =>
-        AppointmentTerms.Create(Title, Type, StartsAt, DurationMinutes, Location, DoctorName, Notes, Outcome, Status, Reminders);
+        AppointmentTerms.Create(Title, Type, StartsAt, DurationMinutes, Location, DoctorName, Notes, Outcome, Status, Reminders, ProviderId);
 
     /// <summary>Whether reminders may still go: upcoming and not started at <paramref name="now"/>.</summary>
     public bool IsRemindableAt(DateTimeOffset now) => Status == AppointmentStatus.Upcoming && StartsAt > now;
@@ -140,6 +142,7 @@ public sealed class Appointment
         Outcome = terms.Outcome;
         Status = terms.Status;
         Reminders = terms.Reminders;
+        ProviderId = terms.ProviderId;
     }
 }
 

@@ -80,6 +80,7 @@
       "when": "Quando",
       "location": "Local",
       "doctor": "Médico(a)",
+      "savedDoctor": "Médico salvo",
       "reminders": "Lembretes",
       "remindersBefore": "{{list}} antes",
       "noReminders": "Sem lembretes",

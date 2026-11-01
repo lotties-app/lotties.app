@@ -19,8 +19,15 @@ import { useLocale } from '../i18n/useLocale';
 import { NowScreen } from '../now/ui/NowScreen';
 import { writeLastSeenAt } from '../now/lastSeen';
 import type { PredictionsDto } from '../sync/contract';
-import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE, TUMMY_TIME_TYPE } from '../test/builtInTypes';
+import {
+  DIAPER_TYPE,
+  FEEDING_TYPE,
+  FUSSY_TYPE,
+  SLEEP_TYPE,
+  TUMMY_TIME_TYPE,
+} from '../test/builtInTypes';
 import { RunningTimerPill } from '../timers/RunningTimerPill';
+import { CatchUpButton } from '../now/ui/CatchUpButton';
 import { useNightFeed } from '../theme/NightFeedContext';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import { SegmentedControl } from '../ui/form';
@@ -54,6 +61,7 @@ const SCENARIOS = [
   'bottle',
   'stack',
   'caregiver',
+  'cry',
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 type Scheme = 'light' | 'dark' | 'night';
@@ -101,13 +109,7 @@ const TYPES: EventType[] = [
   extraType('bath', 'Bath', 'bathtub'),
   TUMMY_TIME_TYPE,
   extraType('belly_massage', 'Belly massage', 'massage', true),
-  extraType('fussy', 'Fussy / crying', 'sentiment_very_dissatisfied', true, [
-    field('intensity', { kind: 'select', options: ['mild', 'moderate', 'intense'] }),
-    field('what_helped', {
-      kind: 'select',
-      options: ['feeding', 'rocking', 'pacifier', 'massage', 'sleep', 'other', 'nothing'],
-    }),
-  ]),
+  FUSSY_TYPE,
 ];
 const typeId = (key: string) => TYPES.find((t) => t.key === key)?.id ?? key;
 
@@ -720,9 +722,34 @@ function seedFor(scenario: Scenario, now: number): Seeded {
         events: [...morning(now, 112), eventAt(now, 'feeding', 6, null, RUNNING_BOTTLE)],
         predictions: prediction(now),
       };
+    case 'cry':
+      return { baby, events: cryLog(now), predictions: empty };
     case 'awake':
       return { baby, events: morning(now, 112), predictions: prediction(now) };
   }
+}
+
+/** What helped in the answered fussy spells of the `cry` scenario (newest first). */
+const CRY_ANSWERS = ['holding', 'feeding', 'rocking', 'feeding', 'burping'];
+
+/**
+ * "Why is she crying?" (`cry`): feeds every 2h 30m (the last 2h 40m ago, so hunger leads), a nap
+ * that ended 30 min ago, a diaper an hour ago and five answered fussy spells for the hint.
+ */
+function cryLog(now: number): BabyEvent[] {
+  const feeds = [160, 310, 460, 610, 760].map((ago) =>
+    eventAt(now, 'feeding', ago, ago - 15, { method: 'breast', side: 'left' }),
+  );
+  const spells = CRY_ANSWERS.map((helped, index) => {
+    const ago = (index + 1) * DAY_MIN - 90;
+    return eventAt(now, 'fussy', ago, ago - 25, { intensity: 'moderate', what_helped: helped });
+  });
+  return [
+    ...feeds,
+    eventAt(now, 'sleep', 110, 30, { kind: 'nap' }),
+    eventAt(now, 'diaper', 60, 60, { content: 'WET' }),
+    ...spells,
+  ];
 }
 
 /** A bottle being given: what the "Running now" card shows as "Bottle · 120 ml". */
@@ -855,6 +882,7 @@ export default function NowPreview() {
           {ready?.scenario === scenario && (
             <Box sx={{ position: 'fixed', top: 8, right: 8, zIndex: 1100, display: 'flex' }}>
               <RunningTimerPill key={scenario} baby={ready.baby} />
+              <CatchUpButton babyId={ready.baby.id} />
             </Box>
           )}
           <BottomNav />

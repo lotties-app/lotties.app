@@ -30,6 +30,10 @@
     <!-- Vaccine status vectors shared with the web port (code/web/src/vaccines/vaccineStatus.test.ts) and the shipped schedule. -->
     <None Include="..\..\..\web\src\vaccines\vaccineStatusVectors.json" Link="Vaccinations\vaccineStatusVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\data\vaccine-schedule.br.json" Link="Vaccinations\vaccine-schedule.br.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Published age norms (docs/design/28-age-norms.md), validated by AgeNorms/AgeNormsDataTests (embedded in Lotties.Application),
+         and the lookup vectors shared with the web port (code/web/src/ageNorms/ageNorms.test.ts). -->
+    <None Include="..\..\data\age-norms.json" Link="AgeNorms\age-norms.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\web\src\ageNorms\ageNormsVectors.json" Link="AgeNorms\ageNormsVectors.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

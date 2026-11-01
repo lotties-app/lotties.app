@@ -1,5 +1,6 @@
 # The one public entry, rendered by deploy.sh with envsubst: https://${PUBLIC_HOST}/api goes to the API (path kept,
-# the routes start with /api/v1), everything else to the web app. Served by the external Traefik (${INGRESS_CLASS});
+# the routes start with /api/v1), and so does /.well-known/oauth-protected-resource (the MCP server's OAuth protected
+# resource metadata, RFC 9728; 404 while Mcp__Enabled is false); everything else to the web app. Served by the external Traefik (${INGRESS_CLASS});
 # cert-manager issues the certificate into the Secret ${TLS_SECRET} (the annotation line is dropped when
 # CLUSTER_ISSUER is empty). Plain HTTP is redirected to HTTPS by Traefik's web entry point for every host.
 apiVersion: networking.k8s.io/v1
@@ -24,6 +25,13 @@ spec:
       http:
         paths:
           - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: lotties-api
+                port:
+                  name: http
+          - path: /.well-known/oauth-protected-resource
             pathType: Prefix
             backend:
               service:

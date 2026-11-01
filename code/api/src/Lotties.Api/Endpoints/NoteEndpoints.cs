@@ -8,7 +8,8 @@ namespace Lotties.Api.Endpoints;
 /// The notes of one baby (offline sync: idempotent upsert by client GUID, delta pull, soft delete;
 /// docs/design/16-doctor-access.md). Reads need <see cref="BabyPolicies.Read"/> (from the baby group) and return only
 /// the notes visible to the caller (shared ones, and her own private ones); writes need <see cref="BabyPolicies.Note"/>
-/// (the Doctor), and only the author changes a note.
+/// (the Doctor), and only the author changes a note. A Doctor needs the notes scope (<see cref="BabyPolicies.ScopeNotes"/>)
+/// for every notes route.
 /// </summary>
 internal static class NoteEndpoints
 {
@@ -25,10 +26,15 @@ internal static class NoteEndpoints
     public static RouteGroupBuilder MapNoteEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
-        baby.MapGet(NotesPath, ListChangesAsync).WithName("ListNoteChanges");
-        baby.MapGet(NotePath, GetAsync).WithName("GetNote").ProducesProblem(StatusCodes.Status404NotFound);
+        baby.MapGet(NotesPath, ListChangesAsync)
+            .RequireAuthorization(BabyPolicies.ScopeNotes)
+            .WithName("ListNoteChanges");
+        baby.MapGet(NotePath, GetAsync)
+            .RequireAuthorization(BabyPolicies.ScopeNotes)
+            .WithName("GetNote")
+            .ProducesProblem(StatusCodes.Status404NotFound);
         baby.MapPut(NotePath, UpsertAsync)
-            .RequireAuthorization(BabyPolicies.Note)
+            .RequireAuthorization(BabyPolicies.Note, BabyPolicies.ScopeNotes)
             .WithName("UpsertNote")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -36,11 +42,16 @@ internal static class NoteEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
         baby.MapDelete(NotePath, DeleteAsync)
-            .RequireAuthorization(BabyPolicies.Note)
+            .RequireAuthorization(BabyPolicies.Note, BabyPolicies.ScopeNotes)
             .WithName("DeleteNote")
             .ProducesProblem(StatusCodes.Status403Forbidden);
-        baby.MapPut(NotePath + "/read", MarkReadAsync).WithName("MarkNoteRead").ProducesProblem(StatusCodes.Status404NotFound);
-        baby.MapGet(NoteReadsPath, ListReadsAsync).WithName("ListNoteReads");
+        baby.MapPut(NotePath + "/read", MarkReadAsync)
+            .RequireAuthorization(BabyPolicies.ScopeNotes)
+            .WithName("MarkNoteRead")
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        baby.MapGet(NoteReadsPath, ListReadsAsync)
+            .RequireAuthorization(BabyPolicies.ScopeNotes)
+            .WithName("ListNoteReads");
         return baby;
     }
 
