@@ -1,0 +1,101 @@
+using BabyRoutine.Domain.Common;
+using BabyRoutine.Domain.Exceptions;
+
+namespace BabyRoutine.Domain.Users;
+
+/// <summary>An application user, identified by the external OIDC issuer and subject.</summary>
+public sealed class User
+{
+    public const int IssuerMaxLength = 255;
+    public const int SubjectMaxLength = 255;
+    public const int DisplayNameMaxLength = 100;
+
+    /// <summary>
+    /// The issuer of users created before issuers were stored (migration <c>Wave2Hardening</c>) and of identities
+    /// without an <c>iss</c> claim. A user with this issuer is claimed by the first sign-in with the same subject
+    /// (<see cref="ClaimIssuer"/>).
+    /// </summary>
+    public const string UnknownIssuer = "";
+
+    private User()
+    {
+    }
+
+    private User(Guid id, string issuer, string subject, string displayName, DateTimeOffset createdAt)
+    {
+        Id = id;
+        Issuer = issuer;
+        Subject = subject;
+        DisplayName = displayName;
+        CreatedAt = createdAt;
+    }
+
+    public Guid Id { get; private set; }
+
+    /// <summary>The OIDC <c>iss</c> claim, stored verbatim; <see cref="UnknownIssuer"/> when not known.</summary>
+    public string Issuer { get; private set; } = UnknownIssuer;
+
+    /// <summary>The OIDC <c>sub</c> claim; opaque and stored verbatim. Unique together with <see cref="Issuer"/>.</summary>
+    public string Subject { get; private set; } = string.Empty;
+
+    public string DisplayName { get; private set; } = string.Empty;
+
+    public DateTimeOffset CreatedAt { get; private set; }
+
+    /// <summary>Whether the issuer is <see cref="UnknownIssuer"/> (a user from before issuers were stored).</summary>
+    public bool HasUnknownIssuer => Issuer.Length == 0;
+
+    public static User Create(string issuer, string subject, string displayName, DateTimeOffset createdAt) => new(
+        Guid.NewGuid(),
+        ValidateIssuer(issuer),
+        ValidateSubject(subject),
+        Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength),
+        UtcTime.Normalize(createdAt));
+
+    /// <summary>Creates the user for a first sign-in, taking the display name from the provider's profile claims.</summary>
+    public static User Register(ExternalIdentity identity, DateTimeOffset createdAt)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        return Create(identity.Issuer, identity.Subject, identity.DisplayName, createdAt);
+    }
+
+    public void Rename(string displayName) =>
+        DisplayName = Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength);
+
+    /// <summary>Records the issuer of a user whose issuer is unknown; a known issuer never changes.</summary>
+    public void ClaimIssuer(string issuer)
+    {
+        if (!HasUnknownIssuer)
+        {
+            throw new DomainValidationException(nameof(Issuer), "The issuer of this user is already known.");
+        }
+
+        Issuer = ValidateIssuer(issuer);
+    }
+
+    private static string ValidateIssuer(string? issuer)
+    {
+        ArgumentNullException.ThrowIfNull(issuer);
+        if (issuer.Length > IssuerMaxLength)
+        {
+            throw new DomainValidationException(nameof(Issuer), $"Issuer must be at most {IssuerMaxLength} characters.");
+        }
+
+        return Text.EnsureNoNul(issuer, nameof(Issuer));
+    }
+
+    private static string ValidateSubject(string? subject)
+    {
+        if (string.IsNullOrWhiteSpace(subject))
+        {
+            throw new DomainValidationException(nameof(Subject), "Subject is required.");
+        }
+
+        if (subject.Length > SubjectMaxLength)
+        {
+            throw new DomainValidationException(nameof(Subject), $"Subject must be at most {SubjectMaxLength} characters.");
+        }
+
+        return subject;
+    }
+}

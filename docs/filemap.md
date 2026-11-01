@@ -1,0 +1,76 @@
+# filemap
+
+- CLAUDE.md — agent instructions
+- docs/filemap.md — this index
+- docs/SPEC.md — product + architecture spec
+- docs/PLAN.md — task list and status
+- .gitignore — ignores
+- .editorconfig — editor and C# style defaults
+- api/ — .NET solution (`BabyRoutine.sln`): `src/` Domain, Application, Infrastructure, Api; `tests/` xUnit projects
+- api/Directory.Build.props — shared C# build settings (nullable, implicit usings, warnings as errors)
+- api/Dockerfile — API container image (multi-stage, .NET 8)
+- web/ — Vite React 19 + TS + MUI PWA app (Vitest, ESLint, Prettier)
+- web/Dockerfile — web container image (Vite build served by nginx)
+- web/nginx.conf — nginx config with SPA fallback
+- docker-compose.yml — api + web, optional `localdb` postgres profile
+- .env.example — env var template (placeholders only; real `.env` is gitignored)
+- .github/workflows/ci.yml — CI: dotnet build/test, web lint/test/build
+- LICENSE — AGPL-3.0
+- README.md — overview, quick start, env vars
+- CONTRIBUTING.md — contribution guide
+- docs/graphify/ — graphify output (gitignored)
+- api/src/BabyRoutine.Domain/ — entities and rules (Babies, Events, EventTypes, Measurements, Medications, Users, Exceptions, Common)
+- api/src/BabyRoutine.Infrastructure/Persistence/ — DbContext, entity configurations, converters, design-time factory, Migrations/
+- api/migrations/all.sql — idempotent SQL script of the whole migration history (regenerate with `dotnet ef migrations script --idempotent`)
+- api/tests/BabyRoutine.Infrastructure.Tests/ — model-level EF tests (no database needed)
+- api/dotnet-tools.json — local dotnet-ef tool
+- api/src/BabyRoutine.Application/ — use cases: current user provisioning, baby access checks (interfaces for repositories live in Domain)
+- api/src/BabyRoutine.Api/ — Program/ApiHostExtensions, Authentication/, Authorization/ (baby role policies), Cors/, Endpoints/ (health, me, baby-scoped group)
+- api/tests/BabyRoutine.Api.Tests/ — WebApplicationFactory integration tests (SQLite file DB, header-driven test auth; no Docker)
+- web/src/db/ — Dexie schema, local event commands (write + outbox in one transaction), live-query hooks
+- web/src/sync/ — sync engine (outbox push, delta pull, backoff, status); API contract assumptions isolated in contract.ts
+- web/src/auth, config, api, layout, theme, pages — OIDC, runtime config, API client, app shell, theming, placeholder screens
+- web/src/baby/ — selected-baby context/provider (localStorage-backed); layout/BabySwitcher.tsx is the TopBar switcher
+- web/src/events/ — add/edit sheet (EventSheet, EventForm, TypeFields, MedicationChecklist), form model/validation, time helpers, icon map
+- web/src/home/ — home screen parts: QuickActions grid, RunningTimers, BabyHome
+- web/src/db/medicationCommands.ts — local medication catalog create + outbox entry
+- api/src/BabyRoutine.Domain/Events/ — Event (upsert decision on ClientUpdatedAt, soft delete), ClientEditTime (client clock bound), EventPayload (+ JSON equivalence, StorableJson jsonb checks), EventSyncCursor/EventSyncPageSize (delta paging), IEventRepository
+- api/src/BabyRoutine.Domain/EventTypes/EventTypeIcons.cs — allowed event type icon names (mirror of web/src/events/iconRegistry.ts)
+- api/src/BabyRoutine.Infrastructure/Persistence/Errors/ — IUniqueViolationDetector (Npgsql detector) + UniqueViolations: repositories tell lost insert races from other DB errors; ConcurrencyConflicts: lost xmin races -> invite_already_accepted / invite_not_found / concurrent_modification
+- api/src/BabyRoutine.Infrastructure/Persistence/Configurations/RowVersions.cs — shadow `xmin` row version (optimistic concurrency) used by invites and babies
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_EventClientUpdatedAt.cs — adds events.client_updated_at, backfilled from updated_at
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_Wave2Hardening.cs — users.issuer ('' for existing rows) + unique (issuer, subject), email-like display names -> 'Parent'; xmin row versions need no DDL
+- api/src/BabyRoutine.Api/Limits/ — RequestLimitsOptions (section RequestLimits) + validator, body size middleware (413), per-user rate limits (429), request timeouts, WithImportLimits
+- api/tests/BabyRoutine.Api.Tests/Support/SqliteUniqueViolationDetector.cs — test-only SQLite unique/PK violation detector
+- api/tests/BabyRoutine.Api.Tests/Limits/, Endpoints/StorageLimitEndpointTests.cs — request limit and DB-limit (NUL, dose) endpoint tests
+- api/src/BabyRoutine.Application/Events/ — events use cases (idempotent upsert, soft delete, get, paged delta) and record DTOs
+- api/src/BabyRoutine.Api/Endpoints/EventEndpoints.cs — `/babies/{babyId}/events` routes (contract in docs/SPEC.md "Events sync contract")
+- api/src/BabyRoutine.Api/Errors/ — central DomainException -> RFC 7807 ProblemDetails mapping (status codes in DomainExceptionStatusCodes)
+- api/src/BabyRoutine.Api/Serialization/ — EventPayload JSON converter (payload on the wire as a JSON object)
+- api/tests/BabyRoutine.Api.Tests/Support/SqliteModelCustomizer.cs — test-only: timestamps as UTC ticks so SQLite can order/compare them; xmin row versions as a plain integer concurrency token
+- api/tests/BabyRoutine.Api.Tests/Support/ConcurrentWrites.cs — test-only: client whose baby-repository save first loses a race to a competing write (row version bump)
+- api/src/BabyRoutine.Domain/Predictions/ — pure prediction engine (median intervals/durations, age bands, day/night), options record, SleepSessions/SleepKinds (sleep sessions from payload kind)
+- api/src/BabyRoutine.Application/Predictions/, Api/Endpoints/PredictionEndpoints.cs — prediction service and `GET /predictions` (takes `utcOffsetMinutes`)
+- api/src/BabyRoutine.Application/{Babies,EventTypes,Measurements,Medications}/ — baby/member/invite, event type, growth measurement and medication use cases and DTOs; Application/Serialization/ — enum JSON converters for DTOs
+- api/src/BabyRoutine.Api/Endpoints/{Baby,Member,Invite,EventType,Medication,Measurement}Endpoints.cs — routes for tasks 4-5 and 16 (contract in docs/SPEC.md "Babies, members, invites, event types, medications" and "Measurements")
+- api/src/BabyRoutine.Infrastructure/Persistence/Repositories/Ef{Baby,Invite,Medication,Measurement,EventType}Repository.cs — EF repositories for those features
+- api/tests/BabyRoutine.Api.Tests/Endpoints/{Baby,Member,Invite,EventType,Medication}EndpointTests.cs, Support/HttpAssertions.cs — integration tests
+- api/src/BabyRoutine.Domain/Imports/ — Napper import rules: parsed row records, category mappers (CanHandle strategies) + NapperEventMapper, event/measurement planners, MedicationTokenizer/MedicationNameMatcher (split, normalize, bounded typo distance), MedicationNameLimits (per-file caps), SimilarNameIndex/MedicationCatalogIndex (length-bucketed matching), MedicationResolver (user mappings), NapperImportPlan, ImportIds (UUID v5), IImportRepository
+- api/src/BabyRoutine.Domain/Common/DeterministicGuid.cs — RFC 4122 v5 name-based UUIDs
+- api/src/BabyRoutine.Application/Imports/ — NapperImportService (preview/import share one plan), DTOs, report mapper, NapperCsvParser; Csv/ — RFC 4180 reader, header table, typed cell reader
+- api/src/BabyRoutine.Infrastructure/Persistence/Repositories/EfImportRepository.cs — chunked id lookups, one-transaction chunked bulk insert
+- api/src/BabyRoutine.Api/Endpoints/ImportEndpoints.cs — `/babies/{babyId}/import/napper[/preview]` (contract in docs/SPEC.md "Napper import API")
+- api/src/BabyRoutine.Infrastructure/Persistence/Migrations/*_SleepKindBedWake.cs — adds bed_time/woke_up to the built-in sleep kind options
+- api/tests/BabyRoutine.Api.Tests/Imports/ — CSV/parser unit tests, import endpoint and repository tests; Fixtures/ — small synthetic Napper CSVs (never real exports)
+- api/tests/BabyRoutine.Domain.Tests/Imports/ — mapping, medication matching/resolution, planner and id tests
+- web/src/timeline/ — day-grouped timeline, filters, row, payload summaries
+- web/src/predictions/ — predictions query/cache, model, cards and section on Home
+- web/src/layout/SyncStatusIndicator.tsx, web/src/sync/useOnline.ts — sync status chip, online hook
+- web/src/settings/ — settings sections (baby, event types, medications, members, invites, appearance, sync); web/src/baby/ — baby form, create card, role permissions
+- web/src/api/managementApi.ts, errorMessages.ts — online management calls and friendly error messages; web/src/pages/InvitePage.tsx — invite accept
+- web/src/measurements/, pages/GrowthPage.tsx — growth: measurement list/dialog, dependency-free SVG chart (online-only)
+- web/src/import/ — Napper import wizard (files, preview, medication mapping, confirm, result); api/measurementsApi.ts — measurements and import calls
+- web/src/db/purge.ts — purges a baby's local data when leaving or when a refresh drops it
+- web/src/pwa/ — reload prompt and install-app hook/button; web/scripts/generate-icons.mjs — regenerates PWA icons from web/public/icon.svg
+- web/src/session/ — per-account database naming, logout/leave cleanup, unsynced-changes dialog; web/src/util/ownProperty.ts — safe own-key lookups for server-provided keys
+- web/src/invite/ — invite link hand-off (token in URL fragment, parked in sessionStorage across login)

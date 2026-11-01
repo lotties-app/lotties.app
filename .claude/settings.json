@@ -1,0 +1,3 @@
+{
+  "env": { "GRAPHIFY_OUT": "docs/graphify" }
+}

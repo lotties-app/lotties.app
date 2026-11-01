@@ -1,0 +1,87 @@
+using BabyRoutine.Application.Predictions;
+using BabyRoutine.Domain.EventTypes;
+using BabyRoutine.Domain.Predictions;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace BabyRoutine.Api.Tests.Application;
+
+public sealed class PredictionServiceTests
+{
+    private static readonly Guid BabyId = Guid.NewGuid();
+    private static readonly DateTimeOffset Now = new(2026, 1, 10, 9, 0, 0, TimeSpan.FromHours(-3));
+    private static readonly EventTypeKey TummyTime = BuiltInEventTypes.TummyTime.Key;
+
+    [Fact]
+    public async Task GetAsync_UnknownBaby_ReturnsNull()
+    {
+        var service = CreateService(new FakePredictionHistoryRepository(null));
+
+        Assert.Null(await service.GetAsync(BabyId, Now));
+    }
+
+    [Fact]
+    public async Task GetAsync_LoadsLookBackWindowForBaby()
+    {
+        var repository = new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), []));
+
+        await CreateService(repository).GetAsync(BabyId, Now);
+
+        Assert.Equal((BabyId, Now - PredictionOptions.Default.LookBack), Assert.Single(repository.Calls));
+    }
+
+    [Fact]
+    public async Task GetAsync_RegularEvents_MapsPredictionToResponse()
+    {
+        var events = Enumerable.Range(1, 12)
+            .Select(index => Now.AddHours(-3 * index))
+            .Select(start => new ObservedEvent(TummyTime, start, start.AddMinutes(20)))
+            .ToArray();
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), events)));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.Equal(BabyId, response!.BabyId);
+        Assert.Equal(TimeSpan.Zero, response.GeneratedAt.Offset);
+        var prediction = Assert.Single(response.Predictions);
+        Assert.Equal("tummy_time", prediction.TypeKey);
+        Assert.Equal(Now, prediction.NextStart.Expected);
+        Assert.Equal(TimeSpan.Zero, prediction.NextStart.Expected.Offset);
+        Assert.Equal(20, prediction.ExpectedDuration!.Minutes);
+        Assert.Equal("Medium", prediction.Confidence);
+        Assert.Equal(11, prediction.SampleCount);
+        Assert.Equal("StartInterval", prediction.Basis.Kind);
+        Assert.Equal(180, prediction.Basis.MedianGapMinutes);
+        Assert.Equal(14, prediction.Basis.LookBackDays);
+        Assert.StartsWith("Median every 3h over the last 14 days", prediction.Reason);
+        Assert.Empty(response.InsufficientData);
+    }
+
+    [Fact]
+    public async Task GetAsync_TooFewEvents_ListsInsufficientData()
+    {
+        var events = new[] { new ObservedEvent(TummyTime, Now.AddHours(-1), Now.AddMinutes(-40)) };
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), events)));
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.Empty(response!.Predictions);
+        var missing = Assert.Single(response.InsufficientData);
+        Assert.Equal("tummy_time", missing.TypeKey);
+        Assert.Equal(0, missing.SampleCount);
+        Assert.Equal(3, missing.RequiredSamples);
+    }
+
+    private static PredictionService CreateService(IPredictionHistoryRepository repository) =>
+        new(repository, PredictionOptions.Default, NullLogger<PredictionService>.Instance);
+
+    private sealed class FakePredictionHistoryRepository(PredictionHistory? history) : IPredictionHistoryRepository
+    {
+        public List<(Guid BabyId, DateTimeOffset Since)> Calls { get; } = [];
+
+        public Task<PredictionHistory?> LoadAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken = default)
+        {
+            Calls.Add((babyId, since));
+            return Task.FromResult(history);
+        }
+    }
+}

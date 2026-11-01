@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege for GITHUB_TOKEN; no job needs more than read access.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same pull request; runs on main always finish.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      # First-party actions pinned to a major tag.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: |
+            api/**/*.csproj
+            api/Directory.Build.props
+      - run: dotnet build api/BabyRoutine.sln
+      - run: dotnet test api/BabyRoutine.sln
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run lint
+        working-directory: web
+      - run: npm run test -- --run
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      # Informational: reports known vulnerabilities in production dependencies without failing the build.
+      - name: npm audit (informational)
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: web
+        continue-on-error: true
