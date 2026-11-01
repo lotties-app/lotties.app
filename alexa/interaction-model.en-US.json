@@ -548,7 +548,12 @@
         },
         {
           "name": "TummyTimeIntent",
-          "slots": [],
+          "slots": [
+            {
+              "name": "tummyMinutes",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "start tummy time",
             "tummy time started",
@@ -558,7 +563,11 @@
             "baby is on his tummy",
             "log tummy time",
             "begin tummy time",
-            "tummy time"
+            "tummy time",
+            "log {tummyMinutes} minutes of tummy time",
+            "she did {tummyMinutes} minutes of tummy time",
+            "he did {tummyMinutes} minutes of tummy time",
+            "tummy time for {tummyMinutes} minutes"
           ]
         },
         {
@@ -593,6 +602,10 @@
             {
               "name": "amountRight",
               "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "pumpMinutes",
+              "type": "AMAZON.NUMBER"
             }
           ],
           "samples": [
@@ -604,7 +617,9 @@
             "pumped {amountLeft} ml on the left",
             "pumped {amountRight} ml on the right",
             "expressing milk",
-            "start expressing"
+            "start expressing",
+            "log {pumpMinutes} minutes of pumping",
+            "I pumped for {pumpMinutes} minutes"
           ]
         },
         {
@@ -624,7 +639,12 @@
         },
         {
           "name": "BellyMassageIntent",
-          "slots": [],
+          "slots": [
+            {
+              "name": "massageMinutes",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "gave her a belly massage",
             "gave him a belly massage",
@@ -633,7 +653,9 @@
             "massaging her tummy",
             "massaging his tummy",
             "belly rub",
-            "tummy massage started"
+            "tummy massage started",
+            "log {massageMinutes} minutes of belly massage",
+            "belly massage for {massageMinutes} minutes"
           ]
         },
         {
@@ -642,6 +664,10 @@
             {
               "name": "intensity",
               "type": "FUSSY_INTENSITY"
+            },
+            {
+              "name": "fussyMinutes",
+              "type": "AMAZON.NUMBER"
             }
           ],
           "samples": [
@@ -668,7 +694,10 @@
             "she's losing her mind",
             "he's losing his mind",
             "full meltdown mode",
-            "losing it completely"
+            "losing it completely",
+            "log {fussyMinutes} minutes of fussy time",
+            "she was fussy for {fussyMinutes} minutes",
+            "he was fussy for {fussyMinutes} minutes"
           ]
         },
         {
@@ -801,7 +830,12 @@
         },
         {
           "name": "OutdoorIntent",
-          "slots": [],
+          "slots": [
+            {
+              "name": "outdoorMinutes",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "went outside",
             "outdoor time started",
@@ -812,7 +846,10 @@
             "outside time",
             "in the park",
             "stroller walk started",
-            "fresh air time"
+            "fresh air time",
+            "log {outdoorMinutes} minutes of outdoor time",
+            "we went outside for {outdoorMinutes} minutes",
+            "a walk of {outdoorMinutes} minutes"
           ]
         },
         {

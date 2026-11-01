@@ -520,7 +520,12 @@
         },
         {
           "name": "TummyTimeIntent",
-          "slots": [],
+          "slots": [
+            {
+              "name": "tummyMinutes",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "iniciar tempo de bruços",
             "começar tummy time",
@@ -530,7 +535,12 @@
             "registrar tempo de bruços",
             "tempo de bruços",
             "tummy time começou",
-            "deitar de bruços"
+            "deitar de bruços",
+            "registre {tummyMinutes} minutos de tummy time",
+            "registrar {tummyMinutes} minutos de tempo de bruços",
+            "ela ficou {tummyMinutes} minutos de bruços",
+            "ele ficou {tummyMinutes} minutos de bruços",
+            "tempo de bruços por {tummyMinutes} minutos"
           ]
         },
         {
@@ -565,6 +575,10 @@
             {
               "name": "amountRight",
               "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "pumpMinutes",
+              "type": "AMAZON.NUMBER"
             }
           ],
           "samples": [
@@ -577,7 +591,9 @@
             "ordenei {amountRight} ml no peito direito",
             "tirando leite",
             "começar a tirar leite",
-            "bomba de leite"
+            "bomba de leite",
+            "registre {pumpMinutes} minutos de ordenha",
+            "ordenhei por {pumpMinutes} minutos"
           ]
         },
         {
@@ -597,7 +613,12 @@
         },
         {
           "name": "BellyMassageIntent",
-          "slots": [],
+          "slots": [
+            {
+              "name": "massageMinutes",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "fiz massagem na barriga dela",
             "fiz massagem na barriga dele",
@@ -606,7 +627,9 @@
             "massageando a barriguinha dela",
             "massageando a barriguinha dele",
             "massagem na barriga",
-            "comecei a massagear a barriga"
+            "comecei a massagear a barriga",
+            "registre {massageMinutes} minutos de massagem na barriga",
+            "massagem na barriga por {massageMinutes} minutos"
           ]
         },
         {
@@ -615,6 +638,10 @@
             {
               "name": "intensity",
               "type": "FUSSY_INTENSITY"
+            },
+            {
+              "name": "fussyMinutes",
+              "type": "AMAZON.NUMBER"
             }
           ],
           "samples": [
@@ -638,7 +665,10 @@
             "não se acalma de jeito nenhum",
             "perdendo a paciencia",
             "chilique total",
-            "nao se acalma por nada"
+            "nao se acalma por nada",
+            "registre {fussyMinutes} minutos de irritação",
+            "ela ficou irritada por {fussyMinutes} minutos",
+            "ele ficou irritado por {fussyMinutes} minutos"
           ]
         },
         {
@@ -767,7 +797,12 @@
         },
         {
           "name": "OutdoorIntent",
-          "slots": [],
+          "slots": [
+            {
+              "name": "outdoorMinutes",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "saímos para passear",
             "tempo ao ar livre começou",
@@ -778,7 +813,10 @@
             "hora do passeio",
             "no parque",
             "passeio de carrinho",
-            "tomando ar fresco"
+            "tomando ar fresco",
+            "registre {outdoorMinutes} minutos de passeio",
+            "passeamos por {outdoorMinutes} minutos",
+            "um passeio de {outdoorMinutes} minutos"
           ]
         },
         {

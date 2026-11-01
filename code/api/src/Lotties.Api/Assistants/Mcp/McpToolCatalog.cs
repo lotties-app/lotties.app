@@ -98,6 +98,7 @@ internal static class McpToolCatalog
     private static McpParameter Choice(string name, string description, IReadOnlyList<string> values, bool required = false) =>
         new(name, McpParameterKind.Choice, description, required, Values: values);
 
+    private static readonly McpParameter ActivityMinutes = new("minutes", McpParameterKind.Integer, "How many minutes it lasted, if the person said it (1 to 720). With it ONE finished entry is logged (it ended now); without it a timer starts now.", Min: AssistantLimits.ActivityMinMinutes, Max: AssistantLimits.ActivityMaxMinutes);
     private static readonly McpParameter BathWater = new("temperatureC", McpParameterKind.Number, "The water temperature in degrees Celsius (above 0 up to 60). Optional.", Max: AssistantLimits.BathWaterMaxC);
     private static readonly McpParameter PainLevel = new("level", McpParameterKind.Integer, "The belly pain level the person gave, 1 to 5. Required: never guess it.", Required: true, Min: AssistantLimits.PainMin, Max: AssistantLimits.PainMax);
     private static readonly McpParameter PumpLeft = new("amountLeftMl", McpParameterKind.Integer, "Milliliters from the left side, if the person said so.", Min: AssistantLimits.PumpMinMl, Max: AssistantLimits.PumpMaxMl);
@@ -285,9 +286,9 @@ internal static class McpToolCatalog
         Write(
             "log_tummy_time",
             "Log tummy time",
-            "Starts a tummy time timer now (stop it in the app).",
-            [],
-            (assistant, invocation, _, token) => assistant.LogTummyTimeAsync(invocation, token)),
+            "Starts a tummy time timer now (stop it in the app); with minutes, logs one finished tummy time of that length that ended now.",
+            [ActivityMinutes],
+            (assistant, invocation, arguments, token) => assistant.LogTummyTimeAsync(invocation, arguments.Integer(ActivityMinutes.Name), token)),
         Write(
             "log_belly_pain",
             "Log belly pain",
@@ -297,9 +298,9 @@ internal static class McpToolCatalog
         Write(
             "log_breast_pump",
             "Log breast pump",
-            "Starts a breast pump timer now, with the amounts of each side when the person said them (stop it in the app).",
-            [PumpLeft, PumpRight],
-            (assistant, invocation, arguments, token) => assistant.LogBreastPumpAsync(invocation, arguments.Integer(PumpLeft.Name), arguments.Integer(PumpRight.Name), token)),
+            "Starts a breast pump timer now, with the amounts of each side when the person said them (stop it in the app); with minutes, logs one finished session of that length that ended now.",
+            [PumpLeft, PumpRight, ActivityMinutes],
+            (assistant, invocation, arguments, token) => assistant.LogBreastPumpAsync(invocation, arguments.Integer(PumpLeft.Name), arguments.Integer(PumpRight.Name), arguments.Integer(ActivityMinutes.Name), token)),
         Write(
             "log_nasal_suction",
             "Log nasal suction",
@@ -309,15 +310,15 @@ internal static class McpToolCatalog
         Write(
             "log_belly_massage",
             "Log belly massage",
-            "Starts a belly massage timer now (stop it in the app).",
-            [MassageReasonChoice, MassageHelpedChoice],
-            (assistant, invocation, arguments, token) => assistant.LogBellyMassageAsync(invocation, arguments.Text(MassageReasonChoice.Name), arguments.Text(MassageHelpedChoice.Name), token)),
+            "Starts a belly massage timer now (stop it in the app); with minutes, logs one finished massage of that length that ended now.",
+            [MassageReasonChoice, MassageHelpedChoice, ActivityMinutes],
+            (assistant, invocation, arguments, token) => assistant.LogBellyMassageAsync(invocation, arguments.Text(MassageReasonChoice.Name), arguments.Text(MassageHelpedChoice.Name), arguments.Integer(ActivityMinutes.Name), token)),
         Write(
             "log_fussy",
             "Log fussy spell",
-            "Starts a fussy or crying timer now (stop it in the app). A log of what happened, never a diagnosis.",
-            [FussyIntensityChoice, FussyHelpedChoice],
-            (assistant, invocation, arguments, token) => assistant.LogFussyAsync(invocation, arguments.Text(FussyIntensityChoice.Name), arguments.Text(FussyHelpedChoice.Name), token)),
+            "Starts a fussy or crying timer now (stop it in the app). With minutes, logs one finished spell of that length that ended now. A log of what happened, never a diagnosis.",
+            [FussyIntensityChoice, FussyHelpedChoice, ActivityMinutes],
+            (assistant, invocation, arguments, token) => assistant.LogFussyAsync(invocation, arguments.Text(FussyIntensityChoice.Name), arguments.Text(FussyHelpedChoice.Name), arguments.Integer(ActivityMinutes.Name), token)),
         Write(
             "log_nail_trim",
             "Log nail trim",
@@ -357,9 +358,9 @@ internal static class McpToolCatalog
         Write(
             "log_outdoor",
             "Log outdoor time",
-            "Starts an outdoor time timer now (stop it in the app).",
-            [OutdoorKindChoice],
-            (assistant, invocation, arguments, token) => assistant.LogOutdoorAsync(invocation, arguments.Text(OutdoorKindChoice.Name), token)),
+            "Starts an outdoor time timer now (stop it in the app); with minutes, logs one finished outdoor time of that length that ended now.",
+            [OutdoorKindChoice, ActivityMinutes],
+            (assistant, invocation, arguments, token) => assistant.LogOutdoorAsync(invocation, arguments.Text(OutdoorKindChoice.Name), arguments.Integer(ActivityMinutes.Name), token)),
         Write(
             "log_skin_care",
             "Log skin care",

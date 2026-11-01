@@ -194,6 +194,43 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         Assert.Equal("breast_milk", JsonDocument.Parse(bottle.Payload.Value).RootElement.GetProperty("bottle_feeding_type").GetString());
     }
 
+    [Theory]
+    [InlineData("en-US", "15", @"^Logged 15 minutes of tummy time for the baby\.$")]
+    [InlineData("pt-BR", "75", @"^Registrei 1 hora e 15 minutos de tempo de bruços\.$")]
+    public async Task Post_TummyTimeWithMinutes_LogsOneFinishedEntry(string locale, string minutes, string expectedPattern)
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("TummyTimeIntent", host.TokenFor(baby.OwnerSubject), locale, new { tummyMinutes = Slot("tummyMinutes", minutes) }, NewRequestId()), SignedHeaders));
+
+        var stored = Assert.Single(await Factory.EventsAsync(baby.BabyId));
+        Assert.Matches(expectedPattern, AlexaApiHost.Speech(json));
+        Assert.Equal(TimeSpan.FromMinutes(int.Parse(minutes)), stored.EndedAt - stored.StartedAt);
+    }
+
+    [Theory]
+    [InlineData("TummyTimeIntent", "tummyMinutes", "?")]
+    [InlineData("OutdoorIntent", "outdoorMinutes", "")]
+    public async Task Post_ActivityWithoutUsableMinutes_StartsATimer(string intentName, string slotName, string minutes)
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        await host.PostAsync(Intent(intentName, host.TokenFor(baby.OwnerSubject), slots: new Dictionary<string, object> { [slotName] = Slot(slotName, minutes) }, requestId: NewRequestId()), SignedHeaders);
+
+        Assert.Null(Assert.Single(await Factory.EventsAsync(baby.BabyId)).EndedAt);
+    }
+
+    [Fact]
+    public async Task Post_TummyTimeWithTooManyMinutes_AsksForTheRangeAndLogsNothing()
+    {
+        var baby = await Factory.SeedBabyAsync();
+
+        var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("TummyTimeIntent", host.TokenFor(baby.OwnerSubject), slots: new { tummyMinutes = Slot("tummyMinutes", "900") }, requestId: NewRequestId()), SignedHeaders));
+
+        Assert.Equal("Please say a number of minutes from 1 to 720, for example: log 15 minutes of tummy time.", AlexaApiHost.Speech(json));
+        Assert.Empty(await Factory.EventsAsync(baby.BabyId));
+    }
+
     [Fact]
     public async Task Post_BottleWithoutAmount_AsksForTheAmountRange()
     {

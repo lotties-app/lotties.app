@@ -70,6 +70,13 @@ public static class AssistantLimits
 
     public const int PumpMaxMl = 500;
 
+    /// <summary>The shortest and longest activity a voice command logs after the fact ("15 minutes of tummy time"), in minutes (12 hours).</summary>
+    public const int ActivityMinMinutes = 1;
+
+    public const int ActivityMaxMinutes = 720;
+
+    public static bool IsActivityMinutes(int minutes) => minutes is >= ActivityMinMinutes and <= ActivityMaxMinutes;
+
     public static bool IsPain(int? level) => level is >= PainMin and <= PainMax;
 
     public static bool IsTemperatureC(decimal celsius) => celsius is >= TemperatureMinC and <= TemperatureMaxC;

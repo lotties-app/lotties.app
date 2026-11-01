@@ -222,6 +222,10 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
     [InlineData("log_bottle", """{"amountMl":120,"kind":"juice"}""", "kind")]
     [InlineData("log_bottle", """{"amountMl":120,"dose":"5 ml"}""", "dose")]
     [InlineData("log_diaper", """{"kind":"WET"}""", "kind")]
+    [InlineData("log_tummy_time", """{"minutes":0}""", "minutes")]
+    [InlineData("log_tummy_time", """{"minutes":721}""", "minutes")]
+    [InlineData("log_outdoor", """{"minutes":"15"}""", "minutes")]
+    [InlineData("log_breast_pump", """{"minutes":15.5}""", "minutes")]
     [InlineData("log_diaper", """{"kind":"wet","note":"rash"}""", "note")]
     [InlineData("log_diaper", """{"kind":"wet","babyId":"not-a-uuid"}""", "babyId")]
     [InlineData("log_diaper", """{"kind":"wet","idempotencyKey":"short"}""", "idempotencyKey")]
@@ -241,6 +245,28 @@ public sealed class McpProtocolTests(McpApiHost host) : IClassFixture<McpApiHost
         Assert.True(result.IsError);
         Assert.Equal(("invalid_arguments", field), (Code(result), Structured(result).GetProperty("field").GetString()));
         Assert.Empty(await Factory.EventsAsync(baby.BabyId));
+    }
+
+    [Theory]
+    [InlineData("log_tummy_time", "tummy_time_logged")]
+    [InlineData("log_breast_pump", "breast_pump_logged")]
+    [InlineData("log_belly_massage", "belly_massage_logged")]
+    [InlineData("log_fussy", "fussy_logged")]
+    [InlineData("log_outdoor", "outdoor_logged")]
+    public async Task ActivityTools_WithMinutes_LogOneFinishedEntry_AndShowMinutesInTheSchema(string tool, string code)
+    {
+        var baby = await Factory.SeedBabyAsync();
+        await using var client = await host.ClientAsync(host.TokenFor(baby.OwnerSubject, McpApiHost.ReadWrite));
+
+        var listed = (await client.ListToolsAsync()).Single(candidate => candidate.Name == tool).ProtocolTool;
+        var result = await client.CallToolAsync(tool, Args(("minutes", 15)));
+
+        var minutes = listed.InputSchema.GetProperty("properties").GetProperty("minutes");
+        Assert.Equal(("integer", 1, 720), (minutes.GetProperty("type").GetString(), minutes.GetProperty("minimum").GetInt32(), minutes.GetProperty("maximum").GetInt32()));
+        Assert.Equal((code, 15), (Code(result), Structured(result).GetProperty("minutes").GetInt32()));
+        var stored = Assert.Single(await Factory.EventsAsync(baby.BabyId));
+        Assert.Equal(TimeSpan.FromMinutes(15), stored.EndedAt - stored.StartedAt);
+        Assert.Equal("mcp", AssistantTestKit.PayloadOf(stored).GetProperty("via").GetString());
     }
 
     [Fact]

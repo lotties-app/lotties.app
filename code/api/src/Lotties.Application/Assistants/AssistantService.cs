@@ -656,23 +656,23 @@ AssistantForecasts forecasts,
     public Task<AssistantResult> LogBathAsync(AssistantInvocation invocation, decimal? temperature, TemperatureUnit? unit = null, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.Bath, AssistantAccess.Log, subject => LogBathInnerAsync(invocation, subject, temperature, unit, cancellationToken), cancellationToken);
 
-    public Task<AssistantResult> LogTummyTimeAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
-        RunAsync(invocation, AssistantCommands.TummyTime, AssistantAccess.Log, subject => LogTummyTimeInnerAsync(invocation, subject, cancellationToken), cancellationToken);
+    public Task<AssistantResult> LogTummyTimeAsync(AssistantInvocation invocation, int? minutes = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.TummyTime, AssistantAccess.Log, subject => LogTummyTimeInnerAsync(invocation, subject, minutes, cancellationToken), cancellationToken);
 
     public Task<AssistantResult> LogBellyPainAsync(AssistantInvocation invocation, int? intensity, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.BellyPain, AssistantAccess.Log, subject => LogBellyPainInnerAsync(invocation, subject, intensity, cancellationToken), cancellationToken);
 
-    public Task<AssistantResult> LogBreastPumpAsync(AssistantInvocation invocation, int? amountLeftMl, int? amountRightMl, CancellationToken cancellationToken = default) =>
-        RunAsync(invocation, AssistantCommands.BreastPump, AssistantAccess.Log, subject => LogBreastPumpInnerAsync(invocation, subject, amountLeftMl, amountRightMl, cancellationToken), cancellationToken);
+    public Task<AssistantResult> LogBreastPumpAsync(AssistantInvocation invocation, int? amountLeftMl, int? amountRightMl, int? minutes = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BreastPump, AssistantAccess.Log, subject => LogBreastPumpInnerAsync(invocation, subject, amountLeftMl, amountRightMl, minutes, cancellationToken), cancellationToken);
 
     public Task<AssistantResult> LogNasalSuctionAsync(AssistantInvocation invocation, string? tool, bool? saline, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.NasalSuction, AssistantAccess.Log, subject => LogNasalSuctionInnerAsync(invocation, subject, tool, saline, cancellationToken), cancellationToken);
 
-    public Task<AssistantResult> LogBellyMassageAsync(AssistantInvocation invocation, string? reason, string? helped, CancellationToken cancellationToken = default) =>
-        RunAsync(invocation, AssistantCommands.BellyMassage, AssistantAccess.Log, subject => LogBellyMassageInnerAsync(invocation, subject, reason, helped, cancellationToken), cancellationToken);
+    public Task<AssistantResult> LogBellyMassageAsync(AssistantInvocation invocation, string? reason, string? helped, int? minutes = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BellyMassage, AssistantAccess.Log, subject => LogBellyMassageInnerAsync(invocation, subject, reason, helped, minutes, cancellationToken), cancellationToken);
 
-    public Task<AssistantResult> LogFussyAsync(AssistantInvocation invocation, string? intensity, string? whatHelped, CancellationToken cancellationToken = default) =>
-        RunAsync(invocation, AssistantCommands.Fussy, AssistantAccess.Log, subject => LogFussyInnerAsync(invocation, subject, intensity, whatHelped, cancellationToken), cancellationToken);
+    public Task<AssistantResult> LogFussyAsync(AssistantInvocation invocation, string? intensity, string? whatHelped, int? minutes = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Fussy, AssistantAccess.Log, subject => LogFussyInnerAsync(invocation, subject, intensity, whatHelped, minutes, cancellationToken), cancellationToken);
 
     public Task<AssistantResult> LogNailTrimAsync(AssistantInvocation invocation, string? where, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.NailTrim, AssistantAccess.Log, subject => LogNailTrimInnerAsync(invocation, subject, where, cancellationToken), cancellationToken);
@@ -692,8 +692,8 @@ AssistantForecasts forecasts,
     public Task<AssistantResult> LogSymptomAsync(AssistantInvocation invocation, string? symptom, string? severity, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.Symptom, AssistantAccess.Log, subject => LogSymptomInnerAsync(invocation, subject, symptom, severity, cancellationToken), cancellationToken);
 
-    public Task<AssistantResult> LogOutdoorAsync(AssistantInvocation invocation, string? kind, CancellationToken cancellationToken = default) =>
-        RunAsync(invocation, AssistantCommands.Outdoor, AssistantAccess.Log, subject => LogOutdoorInnerAsync(invocation, subject, kind, cancellationToken), cancellationToken);
+    public Task<AssistantResult> LogOutdoorAsync(AssistantInvocation invocation, string? kind, int? minutes = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Outdoor, AssistantAccess.Log, subject => LogOutdoorInnerAsync(invocation, subject, kind, minutes, cancellationToken), cancellationToken);
 
     public Task<AssistantResult> LogSkinCareAsync(AssistantInvocation invocation, string? product, CancellationToken cancellationToken = default) =>
         RunAsync(invocation, AssistantCommands.SkinCare, AssistantAccess.Log, subject => LogSkinCareInnerAsync(invocation, subject, product, cancellationToken), cancellationToken);
@@ -718,6 +718,39 @@ AssistantForecasts forecasts,
         var eventId = IdOf(invocation, command, subject);
         return await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken)
             ?? await CreateAsync(subject, eventId, typeId, subject.Now, endedAt: null, payload, cancellationToken);
+    }
+
+    /// <summary>
+    /// A timed activity: a running timer from now when no <paramref name="minutes"/> were said, else ONE finished entry (started
+    /// minutes ago, ended now, as the web stores a stopped timer). The id comes from the request id either way, so a retry returns
+    /// the stored entry.
+    /// </summary>
+    private async Task<AssistantResult> TimedAsync(
+        AssistantInvocation invocation,
+        AssistantSubject subject,
+        string command,
+        Guid typeId,
+        EventPayload payload,
+        int? minutes,
+        AssistantResultCode startedCode,
+        AssistantResultCode loggedCode,
+        CancellationToken cancellationToken)
+    {
+        if (minutes is not { } said)
+        {
+            var started = await TimerAsync(invocation, subject, command, typeId, payload, cancellationToken);
+            return subject.Result(startedCode) with { At = started.StartedAt };
+        }
+
+        if (!AssistantLimits.IsActivityMinutes(said))
+        {
+            return Invalid(subject, "minutes", AssistantLimits.ActivityMinMinutes, AssistantLimits.ActivityMaxMinutes);
+        }
+
+        var eventId = IdOf(invocation, command, subject);
+        var stored = await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken)
+            ?? await CreateAsync(subject, eventId, typeId, subject.Now.AddMinutes(-said), subject.Now, payload, cancellationToken);
+        return subject.Result(loggedCode) with { At = stored.StartedAt, Minutes = said };
     }
 
     private static AssistantResult Invalid(AssistantSubject subject, string field, int min, int max) =>
@@ -751,11 +784,8 @@ AssistantForecasts forecasts,
         return subject.Result(AssistantResultCode.BathLogged) with { At = stored.StartedAt, TemperatureC = water };
     }
 
-    private async Task<AssistantResult> LogTummyTimeInnerAsync(AssistantInvocation invocation, AssistantSubject subject, CancellationToken cancellationToken)
-    {
-        var started = await TimerAsync(invocation, subject, AssistantCommands.TummyTime, BuiltInEventTypes.TummyTimeId, AssistantPayloads.TummyTime(), cancellationToken);
-        return subject.Result(AssistantResultCode.TummyTimeStarted) with { At = started.StartedAt };
-    }
+    private Task<AssistantResult> LogTummyTimeInnerAsync(AssistantInvocation invocation, AssistantSubject subject, int? minutes, CancellationToken cancellationToken) =>
+        TimedAsync(invocation, subject, AssistantCommands.TummyTime, BuiltInEventTypes.TummyTimeId, AssistantPayloads.TummyTime(), minutes, AssistantResultCode.TummyTimeStarted, AssistantResultCode.TummyTimeLogged, cancellationToken);
 
     private async Task<AssistantResult> LogBellyPainInnerAsync(AssistantInvocation invocation, AssistantSubject subject, int? intensity, CancellationToken cancellationToken)
     {
@@ -768,15 +798,14 @@ AssistantForecasts forecasts,
         return subject.Result(AssistantResultCode.BellyPainLogged) with { At = stored.StartedAt, Intensity = intensity.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) };
     }
 
-    private async Task<AssistantResult> LogBreastPumpInnerAsync(AssistantInvocation invocation, AssistantSubject subject, int? amountLeftMl, int? amountRightMl, CancellationToken cancellationToken)
+    private async Task<AssistantResult> LogBreastPumpInnerAsync(AssistantInvocation invocation, AssistantSubject subject, int? amountLeftMl, int? amountRightMl, int? minutes, CancellationToken cancellationToken)
     {
         if ((amountLeftMl is not null && !AssistantLimits.IsPumpAmount(amountLeftMl)) || (amountRightMl is not null && !AssistantLimits.IsPumpAmount(amountRightMl)))
         {
             return Invalid(subject, "pump_amount", AssistantLimits.PumpMinMl, AssistantLimits.PumpMaxMl);
         }
 
-        var started = await TimerAsync(invocation, subject, AssistantCommands.BreastPump, BuiltInEventTypes.BreastPumpId, AssistantPayloads.BreastPump(amountLeftMl, amountRightMl), cancellationToken);
-        return subject.Result(AssistantResultCode.BreastPumpStarted) with { At = started.StartedAt };
+        return await TimedAsync(invocation, subject, AssistantCommands.BreastPump, BuiltInEventTypes.BreastPumpId, AssistantPayloads.BreastPump(amountLeftMl, amountRightMl), minutes, AssistantResultCode.BreastPumpStarted, AssistantResultCode.BreastPumpLogged, cancellationToken);
     }
 
     private async Task<AssistantResult> LogNasalSuctionInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? tool, bool? saline, CancellationToken cancellationToken)
@@ -785,18 +814,17 @@ AssistantForecasts forecasts,
         return subject.Result(AssistantResultCode.NasalSuctionLogged) with { At = stored.StartedAt };
     }
 
-    private async Task<AssistantResult> LogBellyMassageInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? reason, string? helped, CancellationToken cancellationToken)
+    private async Task<AssistantResult> LogBellyMassageInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? reason, string? helped, int? minutes, CancellationToken cancellationToken)
     {
         var payload = AssistantPayloads.BellyMassage(AssistantChoices.MassageReason(reason), AssistantChoices.MassageHelped(helped));
-        var started = await TimerAsync(invocation, subject, AssistantCommands.BellyMassage, BuiltInEventTypes.BellyMassageId, payload, cancellationToken);
-        return subject.Result(AssistantResultCode.BellyMassageStarted) with { At = started.StartedAt };
+        return await TimedAsync(invocation, subject, AssistantCommands.BellyMassage, BuiltInEventTypes.BellyMassageId, payload, minutes, AssistantResultCode.BellyMassageStarted, AssistantResultCode.BellyMassageLogged, cancellationToken);
     }
 
-    private async Task<AssistantResult> LogFussyInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? intensity, string? whatHelped, CancellationToken cancellationToken)
+    private async Task<AssistantResult> LogFussyInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? intensity, string? whatHelped, int? minutes, CancellationToken cancellationToken)
     {
         var chosen = AssistantChoices.FussyIntensity(intensity);
-        var started = await TimerAsync(invocation, subject, AssistantCommands.Fussy, BuiltInEventTypes.FussyId, AssistantPayloads.Fussy(chosen, AssistantChoices.FussyWhatHelped(whatHelped)), cancellationToken);
-        return subject.Result(AssistantResultCode.FussyStarted) with { At = started.StartedAt, Intensity = chosen };
+        var result = await TimedAsync(invocation, subject, AssistantCommands.Fussy, BuiltInEventTypes.FussyId, AssistantPayloads.Fussy(chosen, AssistantChoices.FussyWhatHelped(whatHelped)), minutes, AssistantResultCode.FussyStarted, AssistantResultCode.FussyLogged, cancellationToken);
+        return result.Code is AssistantResultCode.FussyStarted or AssistantResultCode.FussyLogged ? result with { Intensity = chosen } : result;
     }
 
     private async Task<AssistantResult> LogNailTrimInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? where, CancellationToken cancellationToken)
@@ -845,11 +873,8 @@ AssistantForecasts forecasts,
         return subject.Result(AssistantResultCode.SymptomLogged) with { At = stored.StartedAt };
     }
 
-    private async Task<AssistantResult> LogOutdoorInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? kind, CancellationToken cancellationToken)
-    {
-        var started = await TimerAsync(invocation, subject, AssistantCommands.Outdoor, BuiltInEventTypes.OutdoorId, AssistantPayloads.Outdoor(AssistantChoices.OutdoorKind(kind)), cancellationToken);
-        return subject.Result(AssistantResultCode.OutdoorStarted) with { At = started.StartedAt };
-    }
+    private Task<AssistantResult> LogOutdoorInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? kind, int? minutes, CancellationToken cancellationToken) =>
+        TimedAsync(invocation, subject, AssistantCommands.Outdoor, BuiltInEventTypes.OutdoorId, AssistantPayloads.Outdoor(AssistantChoices.OutdoorKind(kind)), minutes, AssistantResultCode.OutdoorStarted, AssistantResultCode.OutdoorLogged, cancellationToken);
 
     private async Task<AssistantResult> LogSkinCareInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? product, CancellationToken cancellationToken)
     {

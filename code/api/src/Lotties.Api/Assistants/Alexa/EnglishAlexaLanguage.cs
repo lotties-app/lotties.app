@@ -83,6 +83,11 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.WeekSummary] = WeekSummary,
         [AssistantResultCode.BathLogged] = result => $"Logged a bath for {Name(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", water at {Measures.Temperature(temp, result.Units)}" : "")}.",
         [AssistantResultCode.TummyTimeStarted] = result => $"Tummy time started for {Name(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TummyTimeLogged] = result => $"Logged {Speech.Duration(result.Minutes)} of tummy time for {Name(result)}.",
+        [AssistantResultCode.BreastPumpLogged] = result => $"Logged {Speech.Duration(result.Minutes)} of breast pump for {Name(result)}.",
+        [AssistantResultCode.BellyMassageLogged] = result => $"Logged {Speech.Duration(result.Minutes)} of belly massage for {Name(result)}.",
+        [AssistantResultCode.FussyLogged] = result => $"Logged {Speech.Duration(result.Minutes)} of fussy time for {Name(result)}{(result.Intensity is { } i ? $", {i}" : "")}.",
+        [AssistantResultCode.OutdoorLogged] = result => $"Logged {Speech.Duration(result.Minutes)} of outdoor time for {Name(result)}.",
         [AssistantResultCode.BellyPainLogged] = result => $"Logged belly pain for {Name(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", intensity {i}" : "")}.",
         [AssistantResultCode.BreastPumpStarted] = result => $"Breast pump session started for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.NasalSuctionLogged] = result => $"Logged nasal suction for {Name(result)} {When(result, result.At)}.",
@@ -132,6 +137,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
             "water_temperature" => us
                 ? $"Please say a water temperature from {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Min ?? 0))} to {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Max ?? 0))} degrees."
                 : $"Please say a water temperature from {result.Min} to {result.Max} degrees.",
+            "minutes" => $"Please say a number of minutes from {result.Min} to {result.Max}, for example: log 15 minutes of tummy time.",
             "pain_level" => $"Please say a level from {result.Min} to {result.Max}, for example: belly pain level 3.",
             "pump_amount" => $"Please say an amount from {result.Min} to {result.Max} ml, for example: pumped 100 ml on the left.",
             _ => "That value is out of range, so nothing was logged.",

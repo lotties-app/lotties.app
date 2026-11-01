@@ -83,6 +83,11 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.WeekSummary] = WeekSummary,
         [AssistantResultCode.BathLogged] = result => $"Registrei um banho{Para(result)} {When(result, result.At)}{(result.TemperatureC is { } temp ? $", água a {Measures.Temperature(temp, result.Units)}" : "")}.",
         [AssistantResultCode.TummyTimeStarted] = result => $"Tempo de bruços iniciado{Para(result)} {When(result, result.At)}.",
+        [AssistantResultCode.TummyTimeLogged] = result => $"Registrei {Speech.Duration(result.Minutes)} de tempo de bruços{Para(result)}.",
+        [AssistantResultCode.BreastPumpLogged] = result => $"Registrei {Speech.Duration(result.Minutes)} de ordenha{Para(result)}.",
+        [AssistantResultCode.BellyMassageLogged] = result => $"Registrei {Speech.Duration(result.Minutes)} de massagem na barriga{Para(result)}.",
+        [AssistantResultCode.FussyLogged] = result => $"Registrei {Speech.Duration(result.Minutes)} de irritação{Para(result)}{(result.Intensity is { } i ? $", {i}" : "")}.",
+        [AssistantResultCode.OutdoorLogged] = result => $"Registrei {Speech.Duration(result.Minutes)} de passeio ao ar livre{Para(result)}.",
         [AssistantResultCode.BellyPainLogged] = result => $"Registrei dor de barriga{Para(result)} {When(result, result.At)}{(result.Intensity is { } i ? $", intensidade {i}" : "")}.",
         [AssistantResultCode.BreastPumpStarted] = result => $"Sessão de ordenha iniciada{Para(result)} {When(result, result.At)}.",
         [AssistantResultCode.NasalSuctionLogged] = result => $"Registrei aspiração nasal{Para(result)} {When(result, result.At)}.",
@@ -140,6 +145,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
             "water_temperature" => us
                 ? $"Diga uma temperatura da água de {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Min ?? 0))} a {Measures.Number(UnitConversions.CelsiusToFahrenheit(result.Max ?? 0))} graus."
                 : $"Diga uma temperatura da água de {result.Min} a {result.Max} graus.",
+            "minutes" => $"Diga um número de minutos de {result.Min} a {result.Max}, por exemplo: registrar 15 minutos de tempo de bruços.",
             "pain_level" => $"Diga um nível de {result.Min} a {result.Max}, por exemplo: dor de barriga nível 3.",
             "pump_amount" => $"Diga uma quantidade de {result.Min} a {result.Max} ml, por exemplo: ordenei 100 ml no peito esquerdo.",
             _ => "Esse valor está fora do limite, então nada foi registrado.",
