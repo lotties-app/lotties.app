@@ -1,0 +1,13 @@
+/* Siri phrases (pt-BR); the key is the English phrase of LottiesShortcuts.swift */
+
+"Log a diaper in ${applicationName}" = "Registrar fralda no ${applicationName}";
+"Diaper change in ${applicationName}" = "Troca de fralda no ${applicationName}";
+"Log a bottle in ${applicationName}" = "Registrar mamadeira no ${applicationName}";
+"Start a breastfeed in ${applicationName}" = "Iniciar mamada no ${applicationName}";
+"Baby fell asleep in ${applicationName}" = "O bebê dormiu no ${applicationName}";
+"Baby woke up in ${applicationName}" = "O bebê acordou no ${applicationName}";
+"When was the last feed in ${applicationName}" = "Quando foi a última mamada no ${applicationName}";
+"Next nap in ${applicationName}" = "Próxima soneca no ${applicationName}";
+"Diapers today in ${applicationName}" = "Fraldas de hoje no ${applicationName}";
+"Bottles today in ${applicationName}" = "Mamadeiras de hoje no ${applicationName}";
+"Today's summary in ${applicationName}" = "Resumo de hoje no ${applicationName}";

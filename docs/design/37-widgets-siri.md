@@ -145,7 +145,7 @@ The owner asked for Siri to mirror the Alexa intents, answered by the same serve
 
 - `App/LottiesSiriIntents.swift`: 40 App Intents (the Alexa model's reads and logs that the MCP server has a tool for;
   medication has none by design), each one `tools/call` of the matching tool, speaking the answer. Ten of them have spoken
-  phrases (`App/LottiesShortcuts.swift`, the iOS limit); all are in Shortcuts and Spotlight. English phrases only for now.
+  phrases (`App/LottiesShortcuts.swift`, the iOS limit); all are in Shortcuts and Spotlight. Phrases and titles are localized: `App/en.lproj` and `App/pt-BR.lproj` `AppShortcuts.strings` (key = the English phrase with `${applicationName}`) and `pt-BR.lproj/Localizable.strings` (intent titles, descriptions, parameters). Pt-BR phrases name the app as "no Lotties" ("Registrar fralda no Lotties").
 - `App/LottiesMcp.swift`: the sign-in (`ASWebAuthenticationSession`, PKCE, public client `lotties-ios`, scopes
   `lotties.read lotties.write offline_access`, redirect `app.lotties.app://siri/callback`), tokens in the Keychain (never in the
   App Group files the widget reads), refresh, and the JSON-RPC call (`Authorization: Bearer`, protocol 2025-11-25, one POST,
