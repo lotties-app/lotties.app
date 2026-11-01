@@ -247,11 +247,18 @@ private struct SleepFacts {
 
 /// How long ago (live), or "Nada hoje" when the event is not from today.
 private struct AgoText: View {
+    @Environment(\.lottiesNow) private var now
     let date: Date?
+    /// "2 h 39 min" as of the entry's date (short, for the rows) instead of the live "2 hrs, 39 min".
+    var compact = false
 
     var body: some View {
         if let date, Calendar.current.isDateInToday(date) {
-            Text(date, style: .relative).monospacedDigit()
+            if compact {
+                Text(LottiesText.ago(date, now: now))
+            } else {
+                Text(date, style: .relative).monospacedDigit()
+            }
         } else {
             Text(LottiesText.t("Nada hoje", "Nothing today"))
         }
@@ -363,20 +370,21 @@ private struct RowTile<I: AppIntent>: View {
     var body: some View {
         Act(intent) {
             HStack(spacing: 8) {
-                Icon(name: icon, size: 20)
+                Icon(name: icon, size: 18)
                     .foregroundStyle(category.tone)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 30, height: 30)
                     .background(category.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                // One fact per line, no truncation: the title, how long ago, and the estimate when there is one.
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text).lineLimit(1)
-                    HStack(spacing: 3) {
-                        AgoText(date: date)
-                        NextText(label: "· " + LottiesText.t("próx.", "next"), date: next, showPast: due)
-                    }
-                    .font(.caption2).foregroundStyle(Ink.muted).lineLimit(1).minimumScaleFactor(0.7)
+                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Ink.text)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    AgoText(date: date, compact: true)
+                        .font(.system(size: 11)).foregroundStyle(Ink.muted).lineLimit(1).minimumScaleFactor(0.8)
+                    NextText(label: LottiesText.t("próx.", "next"), date: next, showPast: due)
+                        .font(.system(size: 11)).foregroundStyle(due ? category.tone : Ink.muted)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: 0)
-                Icon(name: "plus", size: 14).foregroundStyle(Ink.muted)
             }
             .padding(.horizontal, 8)
             .frame(maxHeight: .infinity)
