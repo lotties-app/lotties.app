@@ -1,0 +1,123 @@
+{
+  "type": "APL",
+  "version": "1.9",
+  "theme": "dark",
+  "settings": {
+    "idleTimeout": 1800000
+  },
+  "onMount": {
+    "type": "Sequential",
+    "repeatCount": 600,
+    "commands": [
+      {
+        "type": "SendEvent",
+        "delay": 60000,
+        "arguments": ["panelRefresh"]
+      }
+    ]
+  },
+  "mainTemplate": {
+    "parameters": ["payload"],
+    "item": {
+      "type": "Container",
+      "width": "100vw",
+      "height": "100vh",
+      "direction": "column",
+      "backgroundColor": "#050505",
+      "paddingLeft": "3vw",
+      "paddingRight": "3vw",
+      "paddingTop": "2vh",
+      "paddingBottom": "2vh",
+      "items": [
+        {
+          "type": "Container",
+          "width": "100%",
+          "height": "10vh",
+          "direction": "row",
+          "justifyContent": "spaceBetween",
+          "alignItems": "center",
+          "items": [
+            {
+              "type": "Text",
+              "text": "${payload.panelData.properties.header}",
+              "fontSize": "4.5vh",
+              "color": "#5a5a5a",
+              "maxLines": 1
+            },
+            {
+              "type": "Container",
+              "direction": "row",
+              "alignItems": "center",
+              "items": [
+                {
+                  "type": "Text",
+                  "id": "stale",
+                  "text": "${payload.panelData.properties.stale}",
+                  "fontSize": "3.8vh",
+                  "color": "#8a5a14",
+                  "paddingRight": "3vw",
+                  "maxLines": 1
+                },
+                {
+                  "type": "Text",
+                  "text": "${payload.panelData.properties.clock}",
+                  "fontSize": "4.5vh",
+                  "color": "#5a5a5a",
+                  "maxLines": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "width": "100%",
+          "height": "86vh",
+          "direction": "row",
+          "wrap": "wrap",
+          "data": "${payload.panelData.properties.tiles}",
+          "items": [
+            {
+              "type": "Container",
+              "width": "50%",
+              "height": "50%",
+              "direction": "column",
+              "paddingTop": "1vh",
+              "paddingBottom": "1vh",
+              "items": [
+                {
+                  "type": "Text",
+                  "text": "${data.label}",
+                  "fontSize": "4.2vh",
+                  "color": "#6a6a6a",
+                  "maxLines": 1
+                },
+                {
+                  "type": "Text",
+                  "text": "${data.value}",
+                  "fontSize": "11vh",
+                  "color": "#b8791f",
+                  "maxLines": 1
+                },
+                {
+                  "type": "Text",
+                  "text": "${data.detail}",
+                  "fontSize": "4.2vh",
+                  "color": "#6a6a6a",
+                  "maxLines": 1
+                },
+                {
+                  "type": "Text",
+                  "text": "${data.note}",
+                  "fontSize": "3.6vh",
+                  "color": "#4f4f4f",
+                  "maxLines": 2
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

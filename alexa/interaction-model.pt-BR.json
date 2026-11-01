@@ -852,6 +852,17 @@
           ]
         },
         {
+          "name": "PanelIntent",
+          "slots": [],
+          "samples": [
+            "abrir o painel",
+            "mostrar o painel",
+            "abrir o painel noturno",
+            "modo noturno",
+            "mostrar o painel noturno"
+          ]
+        },
+        {
           "name": "ListBabiesIntent",
           "slots": [],
           "samples": [

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Lotties.Api.Assistants.Alexa;
@@ -32,6 +33,12 @@ public sealed record AlexaRequestEnvelope(string? Version, AlexaSession? Session
     public string? AccessToken =>
         NonBlank(Context?.System?.User?.AccessToken) ?? NonBlank(Session?.User?.AccessToken);
 
+    /// <summary>Whether the device that sent the request can show an APL document (<c>supportedInterfaces</c> has <c>Alexa.Presentation.APL</c>).</summary>
+    [JsonIgnore]
+    public bool SupportsApl => Context?.System?.Device?.SupportedInterfaces?.ContainsKey(AplInterface) == true;
+
+    public const string AplInterface = "Alexa.Presentation.APL";
+
     private static string? NonBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 }
 
@@ -39,13 +46,21 @@ public sealed record AlexaSession(bool? New, string? SessionId, AlexaApplication
 
 public sealed record AlexaContext([property: JsonPropertyName("System")] AlexaSystem? System);
 
-public sealed record AlexaSystem(AlexaApplication? Application, AlexaUser? User);
+public sealed record AlexaSystem(AlexaApplication? Application, AlexaUser? User, AlexaDevice? Device = null);
+
+/// <summary>Only the names of the interfaces the device supports are read (their settings are ignored).</summary>
+public sealed record AlexaDevice(IReadOnlyDictionary<string, JsonElement>? SupportedInterfaces);
 
 public sealed record AlexaApplication(string? ApplicationId);
 
 public sealed record AlexaUser(string? UserId, string? AccessToken);
 
-public sealed record AlexaRequest(string? Type, string? RequestId, string? Timestamp, string? Locale, AlexaIntent? Intent);
+public sealed record AlexaRequest(string? Type, string? RequestId, string? Timestamp, string? Locale, AlexaIntent? Intent, IReadOnlyList<JsonElement>? Arguments = null)
+{
+    /// <summary>The first argument of an APL <c>SendEvent</c> (<c>Alexa.Presentation.APL.UserEvent</c>), when it is a string.</summary>
+    [JsonIgnore]
+    public string? FirstArgument => Arguments is { Count: > 0 } && Arguments[0].ValueKind == JsonValueKind.String ? Arguments[0].GetString() : null;
+}
 
 public sealed record AlexaIntent(string? Name, IReadOnlyDictionary<string, AlexaSlot>? Slots);
 
@@ -64,7 +79,13 @@ public sealed record AlexaResolutionValue(string? Name, string? Id);
 /// <summary>The response body (version 1.0): speech, an optional reprompt and card, whether the session ends.</summary>
 public sealed record AlexaResponseEnvelope(string Version, AlexaResponseBody Response);
 
-public sealed record AlexaResponseBody(AlexaOutputSpeech? OutputSpeech, AlexaCard? Card, AlexaReprompt? Reprompt, bool? ShouldEndSession);
+public sealed record AlexaResponseBody(AlexaOutputSpeech? OutputSpeech, AlexaCard? Card, AlexaReprompt? Reprompt, bool? ShouldEndSession, IReadOnlyList<AlexaDirective>? Directives = null);
+
+/// <summary>
+/// An APL directive: <c>Alexa.Presentation.APL.RenderDocument</c> (document and datasources) or
+/// <c>Alexa.Presentation.APL.ExecuteCommands</c> (commands), both addressed by the document <see cref="Token"/>.
+/// </summary>
+public sealed record AlexaDirective(string Type, string Token, JsonNode? Document = null, JsonNode? Datasources = null, JsonNode? Commands = null);
 
 public sealed record AlexaOutputSpeech(string Type, string Ssml);
 

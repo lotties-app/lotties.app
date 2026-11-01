@@ -64,6 +64,15 @@ For each language (switch with the language dropdown at the top):
    ("ela acabou de tomar mamadeira") so a question cannot match the logging intent. Until the models are rebuilt those
    questions still land in `BottleIntent`.
 
+6. **Echo Show night panel (2026-11-01, design 42): enable the screen interface, re-paste both models and build again.**
+   New intent `PanelIntent` ("open the panel", "night mode"; "abrir o painel", "modo noturno"). For the panel to show on an
+   Echo Show: **Build** > **Interfaces** (or **Tools** > **Interfaces**) > turn on **Alexa Presentation Language**, keep the
+   landscape small-hub viewport (Echo Show 5) ticked, **Save Interfaces**, then rebuild the model. A device without a screen
+   gets a short spoken summary instead. The sample APL document the skill sends is kept in `alexa/apl-night-panel.json`
+   (the API embeds its own copy; a test keeps the two equal); paste it in the console's APL authoring tool to preview it.
+   Say "Alexa, open lotties" and then "open the panel", or "Alexa, ask lotties to open the panel". Not yet verified on a
+   device: the checklist is in docs/design/42-echo-show-panel.md section 9.
+
 ## 4. Endpoint
 
 **Build** > **Endpoint**:

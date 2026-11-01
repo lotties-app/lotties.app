@@ -21,7 +21,8 @@ internal sealed record AlexaAnswer(AlexaResponseEnvelope Response, string Outcom
 /// <c>SetBabyHelpIntent</c> answer without an account; a command intent needs the account-linking token
 /// (<see cref="IAccountLinkTokenValidator"/>; none or invalid = the LinkAccount card), then the user's assistant limit
 /// (<see cref="AssistantRateLimiter"/>), then runs as that user through <see cref="IAssistantService"/> and is spoken in the
-/// request's language (<see cref="AlexaLanguages"/>). Logs: request type, known intent name, outcome code and the
+/// request's language (<see cref="AlexaLanguages"/>). <c>PanelIntent</c> and the APL <c>UserEvent</c> refresh of the Echo Show
+/// night panel (docs/design/42-echo-show-panel.md) take the same path and answer an APL directive (<see cref="AlexaPanel"/>). Logs: request type, known intent name, outcome code and the
 /// correlation id; never the body, slots, tokens or user ids.
 /// </summary>
 internal sealed class AlexaSkill(
@@ -111,8 +112,13 @@ internal sealed class AlexaSkill(
         "TeethingIntent", "MilestoneIntent", "SymptomIntent", "OutdoorIntent", "SkinCareIntent", "MedicationIntent",
     }.ToFrozenSet(StringComparer.Ordinal);
 
+    /// <summary>The Echo Show night panel intent (a read intent: it runs several read commands and lays them out, see <see cref="AlexaPanel"/>).</summary>
+    public const string PanelIntent = "PanelIntent";
+
+    private const string UserEventRequest = "Alexa.Presentation.APL.UserEvent";
+
     /// <summary>The intent names this skill knows (the only ones that may appear in a log line).</summary>
-    public static IReadOnlyCollection<string> KnownIntents { get; } = Commands.Keys.Concat(Prompts.Keys).ToArray();
+    public static IReadOnlyCollection<string> KnownIntents { get; } = Commands.Keys.Concat(Prompts.Keys).Append(PanelIntent).ToArray();
 
     public async Task<IResult> HandleAsync(HttpContext context, CancellationToken cancellationToken)
     {
@@ -163,6 +169,7 @@ internal sealed class AlexaSkill(
         {
             "LaunchRequest" => Ask(language, AlexaPrompt.Welcome),
             "IntentRequest" => await IntentAsync(context, envelope, language, cancellationToken),
+            UserEventRequest when request.FirstArgument == AlexaPanel.RefreshArgument => await PanelAsync(context, envelope, language, refresh: true, cancellationToken),
             _ => new AlexaAnswer(new AlexaResponseEnvelope(Version, new AlexaResponseBody(null, null, null, null)), request.Type ?? "unknown"),
         };
     }
@@ -176,6 +183,11 @@ internal sealed class AlexaSkill(
             return Ask(language, prompt);
         }
 
+        if (name == PanelIntent)
+        {
+            return await PanelAsync(context, envelope, language, refresh: false, cancellationToken);
+        }
+
         return Commands.TryGetValue(name, out var command)
             ? await CommandAsync(context, envelope, intent, command, language, cancellationToken)
             : Ask(language, AlexaPrompt.Fallback);
@@ -183,16 +195,14 @@ internal sealed class AlexaSkill(
 
     private async Task<AlexaAnswer> CommandAsync(HttpContext context, AlexaRequestEnvelope envelope, AlexaIntent intent, Command command, IAlexaLanguage language, CancellationToken cancellationToken)
     {
-        var principal = envelope.AccessToken is { } token ? await tokens.ValidateAsync(context, token) : null;
-        if (principal?.FindFirst(OidcClaims.Subject)?.Value is not { Length: > 0 } subject)
+        if (await AuthenticateAsync(context, envelope) is not { } subject)
         {
             return LinkAccount(language);
         }
 
-        context.User = principal;
         if (!rateLimiter.TryAcquire(subject))
         {
-            return Speak(language.Say(new AssistantResult { Code = AssistantResultCode.RateLimited, AsOf = timeProvider.GetUtcNow() }), AssistantResult.CodeName(AssistantResultCode.RateLimited));
+            return RateLimited(language);
         }
 
         if (RequiredSlots.TryGetValue(intent.Name!, out var required) && required(intent) is { } missing)
@@ -200,7 +210,84 @@ internal sealed class AlexaSkill(
             return Ask(language, missing);
         }
 
-        return await RunAsync(command, new AssistantInvocation(AdapterName, envelope.Request!.RequestId!, language.FallbackTimeZone, Locale: envelope.Request.Locale), intent, language, cancellationToken);
+        return await RunAsync(command, InvocationOf(envelope, language), intent, language, cancellationToken);
+    }
+
+    /// <summary>The user's <c>sub</c> from the account-linking token (and the request's user set to her), or <c>null</c> when the account is not linked.</summary>
+    private async Task<string?> AuthenticateAsync(HttpContext context, AlexaRequestEnvelope envelope)
+    {
+        var principal = envelope.AccessToken is { } token ? await tokens.ValidateAsync(context, token) : null;
+        if (principal?.FindFirst(OidcClaims.Subject)?.Value is not { Length: > 0 } subject)
+        {
+            return null;
+        }
+
+        context.User = principal;
+        return subject;
+    }
+
+    private static AssistantInvocation InvocationOf(AlexaRequestEnvelope envelope, IAlexaLanguage language) =>
+        new(AdapterName, envelope.Request!.RequestId!, language.FallbackTimeZone, Locale: envelope.Request.Locale);
+
+    private AlexaAnswer RateLimited(IAlexaLanguage language) =>
+        Speak(language.Say(new AssistantResult { Code = AssistantResultCode.RateLimited, AsOf = timeProvider.GetUtcNow() }), AssistantResult.CodeName(AssistantResultCode.RateLimited));
+
+    /// <summary>
+    /// The night panel (design 42): the same account-linking and per-user limit as any command, then the existing read commands
+    /// laid out by <see cref="AlexaPanel"/>. On a screen it answers a RenderDocument and keeps the session open without speaking
+    /// (it is night); the document asks for a refresh every minute (<c>panelRefresh</c>), which comes back here. A refresh that
+    /// the limit refuses keeps the screen as it is and only marks it "not updated". Without a screen it speaks the usual answers.
+    /// </summary>
+    private async Task<AlexaAnswer> PanelAsync(HttpContext context, AlexaRequestEnvelope envelope, IAlexaLanguage language, bool refresh, CancellationToken cancellationToken)
+    {
+        if (await AuthenticateAsync(context, envelope) is not { } subject)
+        {
+            return LinkAccount(language);
+        }
+
+        if (!rateLimiter.TryAcquire(subject))
+        {
+            return refresh ? Directive(AlexaPanel.MarkStale(language), "panel:stale") : RateLimited(language);
+        }
+
+        var invocation = InvocationOf(envelope, language);
+        var reads = await ReadPanelAsync(invocation, envelope.SupportsApl, cancellationToken);
+        if (!envelope.SupportsApl)
+        {
+            return Speak(AlexaPanel.Summary(reads, language), "panel:speech");
+        }
+
+        var (directive, shown) = AlexaPanel.Render(reads, language);
+        return Directive(directive, $"panel:{shown}/4");
+    }
+
+    /// <summary>Runs the read commands the panel shows, one after the other (one database context); a refused one is a missing tile, never an error screen.</summary>
+    private async Task<PanelReads> ReadPanelAsync(AssistantInvocation invocation, bool screen, CancellationToken cancellationToken)
+    {
+        var sleep = await ReadAsync(assistant.ReadSleepStatusAsync, invocation, cancellationToken);
+        var lastFeed = await ReadAsync(assistant.ReadLastFeedAsync, invocation, cancellationToken);
+        var lastDiaper = await ReadAsync(assistant.ReadLastDiaperAsync, invocation, cancellationToken);
+        if (!screen)
+        {
+            return new PanelReads(sleep, lastFeed, null, lastDiaper, null);
+        }
+
+        var nextFeed = await ReadAsync(assistant.ReadNextFeedAsync, invocation, cancellationToken);
+        var nextNap = await ReadAsync(assistant.ReadNextNapWindowAsync, invocation, cancellationToken);
+        return new PanelReads(sleep, lastFeed, nextFeed, lastDiaper, nextNap);
+    }
+
+    private async Task<AssistantResult?> ReadAsync(Func<AssistantInvocation, CancellationToken, Task<AssistantResult>> read, AssistantInvocation invocation, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await read(invocation, cancellationToken);
+        }
+        catch (DomainException exception)
+        {
+            logger.LogWarning("Alexa panel read refused by the domain: {Code}", exception.Code);
+            return null;
+        }
     }
 
     private async Task<AlexaAnswer> RunAsync(Command command, AssistantInvocation invocation, AlexaIntent intent, IAlexaLanguage language, CancellationToken cancellationToken)
@@ -230,6 +317,9 @@ internal sealed class AlexaSkill(
 
     private static AlexaAnswer Speak(string text, string outcome) =>
         new(new AlexaResponseEnvelope(Version, new AlexaResponseBody(Ssml.Of(text), null, null, true)), outcome);
+
+    private static AlexaAnswer Directive(AlexaDirective directive, string outcome) =>
+        new(new AlexaResponseEnvelope(Version, new AlexaResponseBody(null, null, null, false, [directive])), outcome);
 
     private static AlexaAnswer Ask(IAlexaLanguage language, AlexaPrompt prompt)
     {
