@@ -1,0 +1,13 @@
+# Local Android build image (JDK 21 + Android SDK) for machines without Android Studio. Not used by CI.
+# Build: scripts/android-build.sh image   Use: scripts/android-build.sh <gradle args>
+FROM docker.io/library/eclipse-temurin:21-jdk-jammy
+ENV ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates git \
+ && rm -rf /var/lib/apt/lists/*
+# Command-line tools 13114758 (pinned); packages match code/mobile/android/variables.gradle (compileSdk 36).
+RUN mkdir -p $ANDROID_HOME/cmdline-tools && cd /tmp \
+ && curl -fsSL -o cl.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+ && unzip -q cl.zip -d $ANDROID_HOME/cmdline-tools && mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest && rm cl.zip
+ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+RUN yes | sdkmanager --licenses >/dev/null && sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+WORKDIR /work
