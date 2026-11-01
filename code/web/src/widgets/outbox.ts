@@ -1,7 +1,10 @@
 import type { BabyRoutineDb } from '../db/database';
+import { createEvent, type CommandOptions } from '../db/eventCommands';
 import { eventTypesFor } from '../db/queries';
+import { typeForKey } from '../now/eventFacts';
 import { runTrayChoice, type TrayChoice } from '../now/quickLog';
 import { runSleepAction } from '../now/sleepToggle';
+import { WIDGET_ACTIVITY_KEYS } from './activities';
 import type { WidgetBridge } from './widgetBridge';
 
 /*
@@ -9,7 +12,7 @@ import type { WidgetBridge } from './widgetBridge';
  * app was closed. Each entry becomes a normal local event through the same write path as the UI and is then removed.
  */
 
-export type OutboxType = 'feed' | 'diaper' | 'sleep_start' | 'sleep_end';
+export type OutboxType = 'feed' | 'diaper' | 'sleep_start' | 'sleep_end' | 'activity';
 
 export interface OutboxEntry {
   id: string;
@@ -20,7 +23,7 @@ export interface OutboxEntry {
   source: string;
 }
 
-const TYPES: readonly string[] = ['feed', 'diaper', 'sleep_start', 'sleep_end'];
+const TYPES: readonly string[] = ['feed', 'diaper', 'sleep_start', 'sleep_end', 'activity'];
 const DIAPER_CONTENTS: readonly string[] = ['WET', 'DIRTY', 'MIXED'];
 const DRAINED_KEY = 'baby-routine.widget-drained';
 const DRAINED_KEPT = 200;
@@ -83,6 +86,33 @@ function trayChoice(entry: OutboxEntry): TrayChoice | null {
   return null;
 }
 
+/**
+ * A button of the activity widget: an instant event, or a running one when the type has a duration (stop it in the
+ * app). An unknown key, or a type this baby does not have, is dropped.
+ */
+async function applyActivity(
+  db: BabyRoutineDb,
+  entry: OutboxEntry,
+  types: Awaited<ReturnType<typeof eventTypesFor>>,
+  options: CommandOptions,
+): Promise<boolean> {
+  const key = entry.payload.kind ?? '';
+  if (!WIDGET_ACTIVITY_KEYS.includes(key)) return false;
+  const type = typeForKey(types, key);
+  if (!type) return false;
+  await createEvent(
+    db,
+    {
+      babyId: entry.babyId,
+      typeId: type.id,
+      startedAt: entry.occurredAt,
+      endedAt: type.hasDuration ? null : entry.occurredAt,
+    },
+    options,
+  );
+  return true;
+}
+
 /** Writes one entry as a local event. Returns false when the entry makes no sense (it is dropped). */
 async function apply(db: BabyRoutineDb, entry: OutboxEntry): Promise<boolean> {
   if (!(await db.babies.get(entry.babyId))) return false;
@@ -96,6 +126,7 @@ async function apply(db: BabyRoutineDb, entry: OutboxEntry): Promise<boolean> {
     await runSleepAction(db, 'woke_up', { babyId: entry.babyId, types, options });
     return true;
   }
+  if (entry.type === 'activity') return applyActivity(db, entry, types, options);
   const choice = trayChoice(entry);
   if (!choice) return false;
   await runTrayChoice(db, choice, { babyId: entry.babyId, types, options });

@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
-import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import {
+  DIAPER_TYPE,
+  FEEDING_TYPE,
+  NAIL_TRIM_TYPE,
+  SLEEP_TYPE,
+  TUMMY_TIME_TYPE,
+} from '../test/builtInTypes';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import { drainOutbox, parseOutbox, type OutboxEntry } from './outbox';
 import { buildSnapshot } from './snapshot';
@@ -165,6 +171,24 @@ describe('drainOutbox', () => {
       fakeBridge([entry({ type: 'sleep_end', occurredAt: '2026-10-31T11:00:00.000Z' })]),
     );
     expect((await buildSnapshot(db, null, NOW)).babies[0].sleep?.state).toBe('awake');
+  });
+  it('writes an instant activity and a running one, and drops an unknown key', async () => {
+    const db = await seeded();
+    await db.eventTypes.bulkPut([NAIL_TRIM_TYPE, TUMMY_TIME_TYPE]);
+    const nails = entry({ type: 'activity', payload: { kind: 'nail_trim' } });
+    const tummy = entry({ type: 'activity', payload: { kind: 'tummy_time' } });
+    const bogus = entry({ type: 'activity', payload: { kind: 'drop_table' } });
+    const bridge = fakeBridge([nails, tummy, bogus]);
+    expect(await drainOutbox(db, bridge)).toBe(2);
+    const events = await db.events.toArray();
+    expect(events.find((e) => e.id === nails.id)?.endedAt).toBe(nails.occurredAt);
+    expect(events.find((e) => e.id === tummy.id)?.endedAt).toBeNull();
+    expect(bridge.removed).toHaveLength(3);
+    const snapshot = await buildSnapshot(db, null, NOW);
+    expect(snapshot.babies[0].lastActivity).toEqual({
+      nail_trim: nails.occurredAt,
+      tummy_time: tummy.occurredAt,
+    });
   });
 });
 

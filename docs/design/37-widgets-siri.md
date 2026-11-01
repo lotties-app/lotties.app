@@ -169,13 +169,27 @@ network. Estimates only, never advice.
 
 - Shown as "Próxima soneca 14:20", "próx. 15:10" (only while still ahead).
 - **Coming up** (`WidgetSnapshot.Baby.due(at:)`): from 20 minutes before an estimate until 30 minutes after it (owner choice).
-  That action's tile gets the category colour on its border and a tinted fill, and its icon becomes the bell
-  (`tabler-bell-ringing`); the sleep button turns into a filled "Soneca 14:20" while the nap estimate is coming up and the baby
+  That action's tile gets the category colour on its border and a tinted fill (the icon stays: a bell hid which action
+  it was, owner feedback 2026-11-01); the sleep button turns into a filled "Soneca 14:20" while the nap estimate is coming up and the baby
   is awake. The wording stays a time, not an order ("estimates, not alarms").
 - The widget timeline has an entry at each moment a highlight starts or stops (`dueChanges`), so it changes without the app
   opening; views read the entry's date from the environment (`lottiesNow`), never `Date()`.
 - Logging from a widget button or Siri clears the matching estimate at once; the app republishes real ones when it opens.
 - Staleness: the estimates are as old as the last time the Now screen fetched predictions online.
+
+## 10. Choosing the buttons, and the Activities widget (2026-11-01)
+
+- The Summary and Quick-actions widgets are configurable (iOS 17, `AppIntentConfiguration`, `LottiesButtonsIntent`):
+  "Edit widget" picks what each of three buttons logs, from `WidgetActivity` (bottle, breast, diaper, bath, belly massage,
+  tummy time, nasal suction, nail trim, skin care, outdoor, fussy). The sleep button stays. The widget extension's
+  deployment target is 17.0 (the app stays 16.0; widget buttons already needed 17).
+- The fixed **Activities** widget (medium) has a button for each of the eight non-everyday activities.
+- One intent logs them all (`LogActivityIntent`, hidden from Shortcuts). Bottle and diaper keep their behaviour. The other
+  activities go to the outbox as `type: "activity"` with `payload.kind` = the event type key; the app creates an instant
+  event, or a running one when the type has a duration (stop it in the app), through `createEvent`. A key outside
+  `widgets/activities.ts` or a type the baby lacks is dropped.
+- The snapshot carries `lastActivity` (type key to last start, 3 days back) so rows can say "há 3 h".
+- Picker names in "Edit widget" follow the phone language (English literals; the tiles follow the app language).
 
 ## 7. Unverified
 
