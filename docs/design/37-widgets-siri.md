@@ -191,6 +191,19 @@ network. Estimates only, never advice.
 - The snapshot carries `lastActivity` (type key to last start, 3 days back) so rows can say "há 3 h".
 - Picker names in "Edit widget" follow the phone language (English literals; the tiles follow the app language).
 
+## 11. Choices inside the widget, More, and the running feed (2026-11-01)
+
+- A tap on Diaper, Bottle or Breast no longer logs a guess: the widget swaps its buttons for the choices (Wet, Dirty, Both;
+  the last bottle's ml plus 60, 90, 120, 150; Left, Right) and the tap on one logs it. The open choice lives in the App Group
+  defaults (`LottiesPicker`, 25 seconds); the timeline has an entry at its end, so the buttons come back by themselves, and
+  a close button (x) puts them back at once. No app, no network.
+- **More** (the dots button; the fourth tile of the quick and large widgets) opens the list of every activity.
+- A bottle or breastfeed running now is in the snapshot (`runningFeed`: kind, effective start, paused, elapsed). The widgets
+  show it with its timer and, for the bottle, pause or resume, plus stop. The buttons write `feed_pause`, `feed_resume`,
+  `feed_stop` to the outbox; the app applies them to the running feeding event (`pauseTimer`, `resumeTimer`, `stopEvent`;
+  `stopNursing` for the breast). Pausing from the widget does not ask how much is left in the bottle.
+- The breast choice carries the side (`payload.side`) to `startNursing`.
+
 ## 7. Unverified
 
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive

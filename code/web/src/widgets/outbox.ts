@@ -1,7 +1,14 @@
 import type { BabyRoutineDb } from '../db/database';
-import { createEvent, type CommandOptions } from '../db/eventCommands';
-import { eventTypesFor } from '../db/queries';
-import { typeForKey } from '../now/eventFacts';
+import {
+  createEvent,
+  pauseTimer,
+  resumeTimer,
+  stopEvent,
+  type CommandOptions,
+} from '../db/eventCommands';
+import { eventTypesFor, runningEvents } from '../db/queries';
+import { payloadString, typeForKey } from '../now/eventFacts';
+import { stopNursing } from '../now/nursing';
 import { runTrayChoice, type TrayChoice } from '../now/quickLog';
 import { runSleepAction } from '../now/sleepToggle';
 import { WIDGET_ACTIVITY_KEYS } from './activities';
@@ -12,18 +19,35 @@ import type { WidgetBridge } from './widgetBridge';
  * app was closed. Each entry becomes a normal local event through the same write path as the UI and is then removed.
  */
 
-export type OutboxType = 'feed' | 'diaper' | 'sleep_start' | 'sleep_end' | 'activity';
+export type OutboxType =
+  | 'feed'
+  | 'diaper'
+  | 'sleep_start'
+  | 'sleep_end'
+  | 'activity'
+  | 'feed_pause'
+  | 'feed_resume'
+  | 'feed_stop';
 
 export interface OutboxEntry {
   id: string;
   babyId: string;
   type: OutboxType;
   occurredAt: string;
-  payload: { kind?: string | null; amountMl?: number | null };
+  payload: { kind?: string | null; amountMl?: number | null; side?: string | null };
   source: string;
 }
 
-const TYPES: readonly string[] = ['feed', 'diaper', 'sleep_start', 'sleep_end', 'activity'];
+const TYPES: readonly string[] = [
+  'feed',
+  'diaper',
+  'sleep_start',
+  'sleep_end',
+  'activity',
+  'feed_pause',
+  'feed_resume',
+  'feed_stop',
+];
 const DIAPER_CONTENTS: readonly string[] = ['WET', 'DIRTY', 'MIXED'];
 const DRAINED_KEY = 'baby-routine.widget-drained';
 const DRAINED_KEPT = 200;
@@ -77,7 +101,8 @@ function trayChoice(entry: OutboxEntry): TrayChoice | null {
     if (entry.payload.kind === 'bottle' && typeof amount === 'number' && amount > 0) {
       return { kind: 'bottle', amountMl: amount };
     }
-    return { kind: 'breast' };
+    const side = entry.payload.side;
+    return side === 'left' || side === 'right' ? { kind: 'breast', side } : { kind: 'breast' };
   }
   if (entry.type === 'diaper') {
     const content = (entry.payload.kind ?? 'wet').toUpperCase();
@@ -113,6 +138,30 @@ async function applyActivity(
   return true;
 }
 
+/** Pause, resume or stop of the bottle or breastfeed running now (the widget's play/pause). Nothing running: dropped. */
+async function applyFeedTimer(
+  db: BabyRoutineDb,
+  entry: OutboxEntry,
+  types: Awaited<ReturnType<typeof eventTypesFor>>,
+  options: CommandOptions,
+): Promise<boolean> {
+  const feedTypeId = typeForKey(types, 'feeding')?.id;
+  const running = (await runningEvents(db, entry.babyId)).find(
+    (e) => e.typeId === feedTypeId && e.deletedAt === null && e.endedAt === null,
+  );
+  if (!running) return false;
+  const isBreast = payloadString(running, 'method') === 'breast';
+  if (entry.type === 'feed_stop') {
+    if (isBreast) await stopNursing(db, running.id, options);
+    else await stopEvent(db, running.id, undefined, options);
+    return true;
+  }
+  if (isBreast) return false;
+  if (entry.type === 'feed_pause') await pauseTimer(db, running.id, options);
+  else await resumeTimer(db, running.id, options);
+  return true;
+}
+
 /** Writes one entry as a local event. Returns false when the entry makes no sense (it is dropped). */
 async function apply(db: BabyRoutineDb, entry: OutboxEntry): Promise<boolean> {
   if (!(await db.babies.get(entry.babyId))) return false;
@@ -127,6 +176,7 @@ async function apply(db: BabyRoutineDb, entry: OutboxEntry): Promise<boolean> {
     return true;
   }
   if (entry.type === 'activity') return applyActivity(db, entry, types, options);
+  if (entry.type.startsWith('feed_')) return applyFeedTimer(db, entry, types, options);
   const choice = trayChoice(entry);
   if (!choice) return false;
   await runTrayChoice(db, choice, { babyId: entry.babyId, types, options });
