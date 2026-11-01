@@ -204,12 +204,13 @@ network. Estimates only, never advice.
   `stopNursing` for the breast). Pausing from the widget does not ask how much is left in the bottle.
 - The breast choice carries the side (`payload.side`) to `startNursing`.
 
-## 12. Legible rows (2026-11-01)
+## 12. Clean rows (2026-11-01)
 
-The medium widget's rows were cut ("2 hrs,... · próx....") because the live relative text is long and the plus icon took
-space. A row now has one fact per line (title; "2 h 39 min" as of the entry's date; "próx. 11:30" when there is an estimate),
-no plus icon, a 30 pt icon. The "how long ago" in rows is computed per timeline entry (at most 15 minutes old) instead of
-ticking live; the lock screen and the single-purpose widgets keep the live text.
+The medium widget's rows were cut ("2 hrs,... · próx....") and busy (borders, a plus icon). Now: a narrow left column (name, sleep state, the
+time, the sleep button) and a borderless list on the right. Each row is icon, name, and on the right how long ago the last one
+was, said outright ("há 1 h 5", "1 h 5 ago"); the estimate ("próx. 11:30") sits under the name when there is one, and only the
+row that is coming up gets a tinted fill. The last row is "Mais" (the list of every activity). The "ago" is computed per timeline
+entry (at most 15 minutes old) instead of ticking live; the lock screen and the single-purpose widgets keep the live text.
 
 ## 7. Unverified
 
