@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Capacitor
 import WebKit
 import WidgetKit
@@ -22,11 +23,43 @@ private final class LottiesMessageHandler: NSObject, WKScriptMessageHandlerWithR
     ) {
         let body = message.body as? [String: Any] ?? [:]
         let method = body["method"] as? String ?? ""
+        if method.hasPrefix("siri") {
+            Task { @MainActor in
+                let result = await Self.siri(method, body)
+                replyHandler(result.0, result.1)
+            }
+            return
+        }
         let json = body["json"] as? String
         let ids = body["ids"] as? [String] ?? []
         DispatchQueue.global(qos: .userInitiated).async {
             let result: (Any?, String?) = Self.run(method, json: json, ids: ids)
             DispatchQueue.main.async { replyHandler(result.0, result.1) }
+        }
+    }
+
+    /// The Siri connection (LottiesMcp.swift): `siriStatus`, `siriConnect {authority, clientId, mcpUrl}`, `siriDisconnect`.
+    @MainActor
+    private static func siri(_ method: String, _ body: [String: Any]) async -> (Any?, String?) {
+        switch method {
+        case "siriStatus":
+            return (LottiesMcp.isConnected, nil)
+        case "siriConnect":
+            guard let authority = body["authority"] as? String, let clientId = body["clientId"] as? String,
+                  let mcpUrl = body["mcpUrl"] as? String else { return (nil, "authority, clientId and mcpUrl are required") }
+            do {
+                try await LottiesMcp.connect(authority: authority, clientId: clientId, mcpUrl: mcpUrl)
+                return (true, nil)
+            } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+                return (false, nil)
+            } catch {
+                return (nil, "Siri sign-in failed (\(error))")
+            }
+        case "siriDisconnect":
+            LottiesMcp.disconnect()
+            return (false, nil)
+        default:
+            return (nil, "unknown method \(method)")
         }
     }
 
@@ -47,6 +80,7 @@ private final class LottiesMessageHandler: NSObject, WKScriptMessageHandlerWithR
             return ("ok", nil)
         case "clearAll":
             LottiesShared.clearAll()
+            LottiesMcp.disconnect()
             WidgetCenter.shared.reloadAllTimelines()
             return ("ok", nil)
         case "diagnose":

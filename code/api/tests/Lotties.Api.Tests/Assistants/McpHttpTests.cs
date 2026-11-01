@@ -109,6 +109,19 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
     }
 
     [Fact]
+    public async Task SpeechLocaleHeader_AddsTheSentenceTheAlexaSkillWouldSay_AndWithoutItNothingExtra()
+    {
+        var baby = await host.Factory.SeedBabyAsync();
+        var token = host.TokenFor(baby.OwnerSubject);
+
+        var plain = await (await host.PostAsync(token, McpMessages.Call("get_diapers_today"))).Content.ReadAsStringAsync();
+        var spoken = await (await host.PostAsync(token, McpMessages.Call("get_diapers_today"), (McpToolRunner.SpeechLocaleHeader, "pt-BR"))).Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("speech", plain, StringComparison.Ordinal);
+        Assert.Contains("speech", spoken, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ReadToken_ToolsCallOfAReadTool_Passes()
     {
         var baby = await host.Factory.SeedBabyAsync();

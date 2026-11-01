@@ -44,13 +44,18 @@ internal static class McpToolResults
     public static bool IsRefusal(AssistantResultCode code) => Refusals.Contains(code);
 
     /// <summary>The tool result of a command's <paramref name="result"/>.</summary>
-    public static CallToolResult From(AssistantResult result)
+    public static CallToolResult From(AssistantResult result, string? speech = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         var structured = JsonSerializer.SerializeToNode(result, Json)!.AsObject();
         foreach (var empty in structured.Where(member => member.Value is JsonArray { Count: 0 }).Select(member => member.Key).ToArray())
         {
             structured.Remove(empty);
+        }
+
+        if (speech is not null)
+        {
+            structured["speech"] = speech;
         }
 
         return Build(McpResultText.Of(result), structured, IsRefusal(result.Code));

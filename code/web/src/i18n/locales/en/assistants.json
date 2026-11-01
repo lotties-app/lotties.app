@@ -43,6 +43,17 @@
       "assistant": "An AI assistant asked to delete this entry",
       "delete": "Delete",
       "keep": "Keep"
+    },
+    "siri": {
+      "title": "Siri and Shortcuts",
+      "intro": "Ask Siri, or use the Shortcuts app, to log and ask about your baby with your voice, with the same questions and answers as the Alexa skill (for example \"Log a diaper in Lotties\", \"When was the last feed in Lotties\"). Siri signs in to Lotties once, here, and then works like the AI assistants below: it can read your baby's log and, only if you allow it, log events.",
+      "connect": "Connect Siri",
+      "disconnect": "Disconnect Siri",
+      "connected": "Siri is connected on this iPhone.",
+      "notConnected": "Siri is not connected yet.",
+      "failed": "Could not connect Siri. Try again.",
+      "needsInternet": "Siri needs an internet connection: nothing is logged while offline. The widget buttons work offline.",
+      "revoke": "Disconnecting removes the sign-in from this iPhone. You can also revoke it for every device in your account's connected apps."
     }
   }
 }

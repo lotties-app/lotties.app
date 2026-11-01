@@ -43,6 +43,17 @@
       "assistant": "Um assistente de IA pediu para apagar este registro",
       "delete": "Apagar",
       "keep": "Manter"
+    },
+    "siri": {
+      "title": "Siri e Atalhos",
+      "intro": "Peça à Siri, ou use o app Atalhos, para registrar e perguntar sobre o bebê por voz, com as mesmas perguntas e respostas da skill da Alexa (por exemplo \"Registrar fralda no Lotties\", \"Quando foi a última mamada no Lotties\"). A Siri entra no Lotties uma vez, aqui, e funciona como os assistentes de IA abaixo: lê o registro do bebê e, só se você permitir, registra eventos.",
+      "connect": "Conectar a Siri",
+      "disconnect": "Desconectar a Siri",
+      "connected": "A Siri está conectada neste iPhone.",
+      "notConnected": "A Siri ainda não está conectada.",
+      "failed": "Não foi possível conectar a Siri. Tente de novo.",
+      "needsInternet": "A Siri precisa de internet: nada é registrado sem conexão. Os botões do widget funcionam offline.",
+      "revoke": "Desconectar remove o acesso deste iPhone. Você também pode revogar em todos os aparelhos nos apps conectados da sua conta."
     }
   }
 }

@@ -61,27 +61,28 @@ const size = (bytes: number) => (bytes < 0 ? 'none' : `${bytes} B`);
  * The app's own WebKit message handler (`LottiesBridgeViewController.swift`): a promise-returning channel that does not
  * depend on Capacitor's plugin dispatch, which never answered `LottiesShared` calls on device.
  */
-interface WebKitHandler {
+export interface WebKitHandler {
   postMessage(message: object): Promise<unknown>;
 }
 
-function webkitHandler(): WebKitHandler | undefined {
+export function webkitHandler(): WebKitHandler | undefined {
   const handlers = (
     window as unknown as { webkit?: { messageHandlers?: Record<string, WebKitHandler> } }
   ).webkit?.messageHandlers;
   return handlers?.lotties;
 }
 
-async function viaWebKit(
+export async function viaWebKit(
   handler: WebKitHandler,
   method: string,
   body: object = {},
+  timeoutMs = 8000,
 ): Promise<unknown> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
       () => reject(new Error(`no answer from the native handler (${method})`)),
-      8000,
+      timeoutMs,
     );
   });
   try {

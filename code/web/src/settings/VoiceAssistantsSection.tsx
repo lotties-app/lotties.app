@@ -25,7 +25,9 @@ import { canLog } from '../baby/permissions';
 import { OptionalConsentSwitch } from '../consent/OptionalConsentSwitch';
 import type { Baby } from '../db/models';
 import { ErrorNotice } from './ErrorNotice';
+import { isNativeApp } from '../platform/nativeApp';
 import { McpConnectorPanel } from './McpConnectorPanel';
+import { SiriConnectPanel } from './SiriConnectPanel';
 import { useServerAction } from './useServerAction';
 
 const NONE = '';
@@ -179,6 +181,9 @@ export function VoiceAssistantsSection({
         <>
           <Divider />
           <OptionalConsentSwitch kind="mcp" />
+          {isNativeApp() && authority && (
+            <SiriConnectPanel url={settings.data.mcpUrl} authority={authority} />
+          )}
           <McpConnectorPanel url={settings.data.mcpUrl} authority={authority} />
         </>
       )}
