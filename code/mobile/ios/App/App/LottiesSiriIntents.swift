@@ -73,7 +73,9 @@ struct SiriLogBottleIntent: AppIntent {
     var content: SiriBottleKind
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let ml = try await amountMl ?? $amountMl.requestValue(SiriSay.text("Quantos ml?", "How many ml?"))
+        var amount = amountMl
+        if amount == nil { amount = try await $amountMl.requestValue(SiriSay.text("Quantos ml?", "How many ml?")) }
+        guard let ml = amount, ml > 0 else { return .result(dialog: SiriSay.text("Nada registrado.", "Nothing logged.")) }
         return .result(dialog: await SiriSay.tool("log_bottle", ["amountMl": ml, "kind": content.rawValue], write: true))
     }
 }
