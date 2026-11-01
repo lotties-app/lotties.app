@@ -11,7 +11,7 @@ import { applyUpdate, useUpdateSnapshot } from '../pwa/updateStore';
 import { RADIUS } from '../theme/tokens';
 import { isNativeApp } from '../platform/nativeApp';
 import { copyText } from '../util/copyText';
-import { useWidgetStatus } from '../widgets/widgetStatus';
+import { refreshWidgetNow, useWidgetStatus } from '../widgets/widgetStatus';
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -35,8 +35,17 @@ function WidgetFact() {
       ? t('hub.about.widgetOk', { date: formatDateTime(status.at) })
       : status.state === 'error'
         ? t('hub.about.widgetError', { message: status.message })
-        : t('hub.about.widgetWaiting');
-  return <Fact label={t('hub.about.widgetLine')} value={value} />;
+        : status.state === 'working'
+          ? t(status.step === 'reading' ? 'hub.about.widgetReading' : 'hub.about.widgetSending')
+          : t('hub.about.widgetWaiting');
+  return (
+    <div>
+      <Fact label={t('hub.about.widgetLine')} value={value} />
+      <Button size="small" onClick={() => void refreshWidgetNow()} sx={{ minHeight: 44 }}>
+        {t('hub.about.widgetRefresh')}
+      </Button>
+    </div>
+  );
 }
 
 /** "v0.1.38 · commit abc1234 · built 24 Oct 2026, 10:00": the parts that are known. */

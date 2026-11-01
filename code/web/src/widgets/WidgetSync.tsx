@@ -6,7 +6,16 @@ import { capacitorShell, type NativeShell } from '../platform/nativeShell';
 import { drainOutbox } from './outbox';
 import { buildSnapshot } from './snapshot';
 import { nativeWidgetBridge, type WidgetBridge } from './widgetBridge';
-import { errorText, setWidgetStatus } from './widgetStatus';
+import { errorText, setWidgetRefresher, setWidgetStatus } from './widgetStatus';
+
+/** A native call that never answers must show up as an error, not as "waiting" forever. */
+function withTimeout<T>(promise: Promise<T>, message: string, ms = 8000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 interface Props {
   bridge?: WidgetBridge;
@@ -31,7 +40,8 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       if (stable === lastJson) return;
       lastJson = stable;
       try {
-        await bridge.writeSnapshot(json);
+        setWidgetStatus({ state: 'working', step: 'sending' });
+        await withTimeout(bridge.writeSnapshot(json), 'no answer from the native plugin');
         setWidgetStatus({ state: 'ok', at: new Date().toISOString() });
       } catch (error) {
         lastJson = '';
@@ -51,6 +61,7 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       try {
         do {
           again = false;
+          setWidgetStatus({ state: 'working', step: 'reading' });
           await publish(JSON.stringify(await buildSnapshot(db, readSelectedBabyId())));
         } while (again && !stopped);
       } catch (error) {
@@ -60,7 +71,12 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       }
     };
 
-    void drain();
+    void drain().then(refresh);
+    // Hub > About: rebuild and send now, even when nothing changed.
+    setWidgetRefresher(async () => {
+      lastJson = '';
+      await refresh();
+    });
     // The live query only says "something changed" (counts, no cursors); the snapshot is built outside of it.
     const subscription = liveQuery(() =>
       Promise.all([db.events.count(), db.babies.count(), db.eventTypes.count(), db.outbox.count()]),
@@ -77,6 +93,7 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
 
     return () => {
       stopped = true;
+      setWidgetRefresher(undefined);
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', onHidden);
       void stopResume.then((stop) => stop());
