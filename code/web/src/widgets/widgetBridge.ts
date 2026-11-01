@@ -57,16 +57,92 @@ async function call<T>(
 
 const size = (bytes: number) => (bytes < 0 ? 'none' : `${bytes} B`);
 
+/**
+ * The app's own WebKit message handler (`LottiesBridgeViewController.swift`): a promise-returning channel that does not
+ * depend on Capacitor's plugin dispatch, which never answered `LottiesShared` calls on device.
+ */
+interface WebKitHandler {
+  postMessage(message: object): Promise<unknown>;
+}
+
+function webkitHandler(): WebKitHandler | undefined {
+  const handlers = (
+    window as unknown as { webkit?: { messageHandlers?: Record<string, WebKitHandler> } }
+  ).webkit?.messageHandlers;
+  return handlers?.lotties;
+}
+
+async function viaWebKit(
+  handler: WebKitHandler,
+  method: string,
+  body: object = {},
+): Promise<unknown> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`no answer from the native handler (${method})`)),
+      8000,
+    );
+  });
+  try {
+    return await Promise.race([handler.postMessage({ method, ...body }), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** The WebKit handler when the shell has one, else the Capacitor plugin. */
+async function native<T>(
+  method: string,
+  body: object,
+  plugin: (p: LottiesSharedPlugin) => Promise<T>,
+  fromHandler: (reply: unknown) => T,
+): Promise<T> {
+  const handler = webkitHandler();
+  if (handler) return fromHandler(await viaWebKit(handler, method, body));
+  return call(method, plugin);
+}
+
 /** The Capacitor implementation, used by the app when `isNativeApp()`. */
 export const nativeWidgetBridge: WidgetBridge = {
-  writeSnapshot: (json) => call('writeSnapshot', (p) => p.writeSnapshot({ json })),
-  readOutbox: async () => (await call('readOutbox', (p) => p.readOutbox())).json,
-  removeOutbox: (ids) => call('removeOutbox', (p) => p.removeOutbox({ ids })),
-  clearAll: () => call('clearAll', (p) => p.clearAll()),
-  diagnose: async () => {
-    const d = await call('diagnose', (p) => p.diagnose());
-    return `container ${d.container ? 'ok' : 'missing'}, snapshot ${size(d.snapshotBytes)}, outbox ${size(d.outboxBytes)}`;
-  },
+  writeSnapshot: (json) =>
+    native(
+      'writeSnapshot',
+      { json },
+      (p) => p.writeSnapshot({ json }),
+      () => undefined,
+    ),
+  readOutbox: () =>
+    native(
+      'readOutbox',
+      {},
+      async (p) => (await p.readOutbox()).json,
+      (reply) => String(reply),
+    ),
+  removeOutbox: (ids) =>
+    native(
+      'removeOutbox',
+      { ids },
+      (p) => p.removeOutbox({ ids }),
+      () => undefined,
+    ),
+  clearAll: () =>
+    native(
+      'clearAll',
+      {},
+      (p) => p.clearAll(),
+      () => undefined,
+    ),
+  diagnose: () =>
+    native(
+      'diagnose',
+      {},
+      async (p) => {
+        const d = await p.diagnose();
+        return `container ${d.container ? 'ok' : 'missing'}, snapshot ${size(d.snapshotBytes)}, outbox ${size(d.outboxBytes)}`;
+      },
+      (reply) => String(reply),
+    ),
   probe: probeNative,
 };
 
@@ -85,7 +161,7 @@ async function probeNative(): Promise<string> {
   } catch (error) {
     app = error instanceof Error ? error.message : 'failed';
   }
-  return `platform ${Capacitor.getPlatform()}, registered ${registered ? 'yes' : 'no'}, available ${
+  return `platform ${Capacitor.getPlatform()}, webkit handler ${webkitHandler() ? 'yes' : 'no'}, registered ${registered ? 'yes' : 'no'}, available ${
     Capacitor.isPluginAvailable('LottiesShared') ? 'yes' : 'no'
   }, headers ${headers?.length ?? 0}, app plugin ${app}`;
 }
