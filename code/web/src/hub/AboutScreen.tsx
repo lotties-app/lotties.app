@@ -9,7 +9,9 @@ import { formatDateTime } from '../i18n/format';
 import { repoUrl } from '../landing/repoUrl';
 import { applyUpdate, useUpdateSnapshot } from '../pwa/updateStore';
 import { RADIUS } from '../theme/tokens';
+import { isNativeApp } from '../platform/nativeApp';
 import { copyText } from '../util/copyText';
+import { refreshWidgetNow, useWidgetStatus } from '../widgets/widgetStatus';
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -20,6 +22,29 @@ function Fact({ label, value }: { label: string; value: string }) {
       <Typography component="dd" sx={{ m: 0, fontWeight: 500, overflowWrap: 'anywhere' }}>
         {value}
       </Typography>
+    </div>
+  );
+}
+
+/** Native app only: whether the home-screen widget got its data (docs/design/37-widgets-siri.md). */
+function WidgetFact() {
+  const { t } = useTranslation();
+  const status = useWidgetStatus();
+  const value =
+    status.state === 'ok'
+      ? t('hub.about.widgetOk', { date: formatDateTime(status.at) }) +
+        (status.detail ? ` · ${status.detail}` : '')
+      : status.state === 'error'
+        ? t('hub.about.widgetError', { message: status.message })
+        : status.state === 'working'
+          ? t(status.step === 'reading' ? 'hub.about.widgetReading' : 'hub.about.widgetSending')
+          : t('hub.about.widgetWaiting');
+  return (
+    <div>
+      <Fact label={t('hub.about.widgetLine')} value={value} />
+      <Button size="small" onClick={() => void refreshWidgetNow()} sx={{ minHeight: 44 }}>
+        {t('hub.about.widgetRefresh')}
+      </Button>
     </div>
   );
 }
@@ -95,6 +120,7 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
         <Stack component="dl" spacing={1.5} sx={{ m: 0 }}>
           <Fact label={t('hub.about.appLine')} value={stampText(app)} />
           <Fact label={t('hub.about.serverLine')} value={serverValue} />
+          {isNativeApp() && <WidgetFact />}
           <Fact label={t('hub.about.license')} value={t('hub.about.licenseValue')} />
         </Stack>
         {updateReady && <UpdateReady />}

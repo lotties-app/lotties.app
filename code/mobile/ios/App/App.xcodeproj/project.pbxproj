@@ -16,7 +16,45 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
+		C0DE0000000000000000000D /* LottiesSharedPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000003 /* LottiesSharedPlugin.swift */; };
+		C0DE0000000000000000000E /* LottiesBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000004 /* LottiesBridgeViewController.swift */; };
+		C0DE0000000000000000000F /* LottiesShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000005 /* LottiesShortcuts.swift */; };
+		C0DE00000000000000000010 /* LottiesShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000001 /* LottiesShared.swift */; };
+		C0DE00000000000000000011 /* LottiesIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000002 /* LottiesIntents.swift */; };
+		C0DE00000000000000000012 /* LottiesWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000007 /* LottiesWidgets.swift */; };
+		C0DE00000000000000000013 /* LottiesShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000001 /* LottiesShared.swift */; };
+		C0DE00000000000000000014 /* LottiesIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000002 /* LottiesIntents.swift */; };
+		C0DE00000000000000000015 /* LottiesWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000000A /* LottiesWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C0DEA55E7000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0DEA55E7000000000000001 /* Assets.xcassets */; };
+		C0DE00000000000000000102 /* LottiesMcp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000101 /* LottiesMcp.swift */; };
+		C0DE00000000000000000104 /* LottiesSiriIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000103 /* LottiesSiriIntents.swift */; };
+		C0DE00000000000000000202 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000201 /* Localizable.strings */; };
+		C0DE00000000000000000205 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000204 /* AppShortcuts.strings */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C0DE0000000000000000001B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0DE00000000000000000016;
+			remoteInfo = LottiesWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C0DE0000000000000000001A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C0DE00000000000000000015 /* LottiesWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -30,6 +68,22 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		C0DE00000000000000000001 /* LottiesShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesShared.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000002 /* LottiesIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesIntents.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000003 /* LottiesSharedPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesSharedPlugin.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000004 /* LottiesBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesBridgeViewController.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000005 /* LottiesShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesShortcuts.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000006 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		C0DE00000000000000000007 /* LottiesWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesWidgets.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C0DE00000000000000000009 /* LottiesWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LottiesWidgets.entitlements; sourceTree = "<group>"; };
+		C0DE0000000000000000000A /* LottiesWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LottiesWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0DEA55E7000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C0DE00000000000000000101 /* LottiesMcp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesMcp.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000103 /* LottiesSiriIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesSiriIntents.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000203 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C0DE00000000000000000207 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		C0DE00000000000000000206 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/AppShortcuts.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +95,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0DE00000000000000000018 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -49,6 +110,8 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				C0DE0000000000000000000B /* Shared */,
+				C0DE0000000000000000000C /* LottiesWidgets */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -57,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				C0DE0000000000000000000A /* LottiesWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -65,6 +129,14 @@
 			isa = PBXGroup;
 			children = (
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
+				C0DE00000000000000000003 /* LottiesSharedPlugin.swift */,
+				C0DE00000000000000000004 /* LottiesBridgeViewController.swift */,
+				C0DE00000000000000000005 /* LottiesShortcuts.swift */,
+				C0DE00000000000000000201 /* Localizable.strings */,
+				C0DE00000000000000000204 /* AppShortcuts.strings */,
+				C0DE00000000000000000103 /* LottiesSiriIntents.swift */,
+				C0DE00000000000000000101 /* LottiesMcp.swift */,
+				C0DE00000000000000000006 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -77,6 +149,26 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		C0DE0000000000000000000B /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE00000000000000000001 /* LottiesShared.swift */,
+				C0DE00000000000000000002 /* LottiesIntents.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		C0DE0000000000000000000C /* LottiesWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE00000000000000000007 /* LottiesWidgets.swift */,
+				C0DE00000000000000000008 /* Info.plist */,
+				C0DE00000000000000000009 /* LottiesWidgets.entitlements */,
+				C0DEA55E7000000000000001 /* Assets.xcassets */,
+			);
+			path = LottiesWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -87,10 +179,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				C0DE0000000000000000001A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C0DE0000000000000000001C /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -99,6 +193,23 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C0DE00000000000000000016 /* LottiesWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0DE0000000000000000001D /* Build configuration list for PBXNativeTarget "LottiesWidgets" */;
+			buildPhases = (
+				C0DE00000000000000000017 /* Sources */,
+				C0DE00000000000000000018 /* Frameworks */,
+				C0DE00000000000000000019 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LottiesWidgets;
+			productName = LottiesWidgets;
+			productReference = C0DE0000000000000000000A /* LottiesWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -114,6 +225,10 @@
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
 					};
+					C0DE00000000000000000016 = {
+						CreatedOnToolsVersion = 14.0;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */;
@@ -123,6 +238,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"pt-BR",
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
@@ -133,6 +249,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				C0DE00000000000000000016 /* LottiesWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -148,6 +265,16 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				C0DE00000000000000000202 /* Localizable.strings in Resources */,
+				C0DE00000000000000000205 /* AppShortcuts.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0DE00000000000000000019 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0DEA55E7000000000000002 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -160,10 +287,35 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
+				C0DE0000000000000000000D /* LottiesSharedPlugin.swift in Sources */,
+				C0DE0000000000000000000E /* LottiesBridgeViewController.swift in Sources */,
+				C0DE0000000000000000000F /* LottiesShortcuts.swift in Sources */,
+				C0DE00000000000000000104 /* LottiesSiriIntents.swift in Sources */,
+				C0DE00000000000000000102 /* LottiesMcp.swift in Sources */,
+				C0DE00000000000000000010 /* LottiesShared.swift in Sources */,
+				C0DE00000000000000000011 /* LottiesIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0DE00000000000000000017 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0DE00000000000000000012 /* LottiesWidgets.swift in Sources */,
+				C0DE00000000000000000013 /* LottiesShared.swift in Sources */,
+				C0DE00000000000000000014 /* LottiesIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0DE0000000000000000001C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0DE00000000000000000016 /* LottiesWidgets */;
+			targetProxy = C0DE0000000000000000001B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -180,6 +332,23 @@
 				504EC3111FED79650016851F /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		C0DE00000000000000000201 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C0DE00000000000000000203 /* pt-BR */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		C0DE00000000000000000204 /* AppShortcuts.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C0DE00000000000000000207 /* en */,
+				C0DE00000000000000000206 /* pt-BR */,
+			);
+			name = AppShortcuts.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -234,7 +403,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -285,7 +454,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -299,10 +468,11 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -321,10 +491,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -332,7 +503,54 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.lotties.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LOTTIES_PROFILE_$(TARGET_NAME))";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C0DE0000000000000000001E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LottiesWidgets/LottiesWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = LottiesWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.lotties.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C0DE0000000000000000001F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LottiesWidgets/LottiesWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = LottiesWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.lotties.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LOTTIES_PROFILE_$(TARGET_NAME))";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -355,6 +573,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0DE0000000000000000001D /* Build configuration list for PBXNativeTarget "LottiesWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0DE0000000000000000001E /* Debug */,
+				C0DE0000000000000000001F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

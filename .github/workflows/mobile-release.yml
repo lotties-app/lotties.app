@@ -213,7 +213,72 @@ jobs:
         with:
           path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
           key: spm-${{ runner.os }}-${{ hashFiles('code/mobile/ios/App/CapApp-SPM/Package.swift', 'code/mobile/package-lock.json') }}
+      # Manual signing: a distribution certificate (p12) and an App Store provisioning profile made once in the developer
+      # portal (docs/MOBILE-RELEASE.md 4.3). Automatic signing is not used: it archives with a development profile, which
+      # Apple only creates for a team that has a registered device.
+      - name: Install the signing certificate and the provisioning profile
+        env:
+          IOS_DIST_P12_BASE64: ${{ secrets.IOS_DIST_P12_BASE64 }}
+          IOS_DIST_P12_PASSWORD: ${{ secrets.IOS_DIST_P12_PASSWORD }}
+          IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+          IOS_WIDGET_PROFILE_BASE64: ${{ secrets.IOS_WIDGET_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$IOS_DIST_P12_BASE64" && test -n "$IOS_DIST_P12_PASSWORD" && test -n "$IOS_PROFILE_BASE64" \
+            || { echo "::error::Secrets IOS_DIST_P12_BASE64, IOS_DIST_P12_PASSWORD and IOS_PROFILE_BASE64 are not all set (docs/MOBILE-RELEASE.md 4.3)"; exit 1; }
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          echo "::add-mask::$keychain_password"
+          printf '%s' "$IOS_DIST_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          printf '%s' "$IOS_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/app.mobileprovision"
+          printf '%s' "$IOS_WIDGET_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/widget.mobileprovision"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/dist.p12" -P "$IOS_DIST_P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | sed 's/"//g')
+          security find-identity -v -p codesigning "$keychain"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          # Each bundle (the app and its widget extension) has its own App Store profile; the archive picks them per target.
+          install_profile() {
+            file="$1"; bundle_id="$2"; var="$3"
+            security cms -D -i "$file" > "$file.plist"
+            uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$file.plist")"
+            name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$file.plist")"
+            app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$file.plist")"
+            expires="$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$file.plist")"
+            test "$app_id" = "${APPLE_TEAM_ID}.${bundle_id}"               || { echo "::error::The profile is for '$app_id', expected ${APPLE_TEAM_ID}.${bundle_id}"; exit 1; }
+            /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$file.plist" | grep -q 'group.app.lotties.app'               || { echo "::error::The profile for ${bundle_id} has no App Group group.app.lotties.app (regenerate it, docs/MOBILE-RELEASE.md 4.3)"; exit 1; }
+            echo "Profile '$name' expires $expires"
+            cp "$file" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
+            echo "$var=$name" >> "$GITHUB_ENV"
+          }
+          install_profile "$RUNNER_TEMP/app.mobileprovision" app.lotties.app IOS_PROFILE_NAME
+          install_profile "$RUNNER_TEMP/widget.mobileprovision" app.lotties.app.widgets IOS_WIDGET_PROFILE_NAME
+          echo "IOS_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+      - name: Archive
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project code/mobile/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Lotties.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            LOTTIES_PROFILE_App="$IOS_PROFILE_NAME"             LOTTIES_PROFILE_LottiesWidgets="$IOS_WIDGET_PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $IOS_KEYCHAIN" \
+            MARKETING_VERSION="$LOTTIES_VERSION_NAME" \
+            CURRENT_PROJECT_VERSION="$LOTTIES_VERSION_CODE"
+      # The App Store Connect API key is only for the TestFlight upload (signing no longer needs it).
       - name: Store the App Store Connect API key
+        if: github.ref_type == 'tag' || inputs.upload_testflight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -224,31 +289,6 @@ jobs:
           printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
           chmod 600 "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
           echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
-      - name: Archive (Xcode gets the certificate and profile from Apple with the API key)
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          # The project's Release configuration still says CODE_SIGN_IDENTITY = "iPhone Developer", so an automatic archive asks Apple
-          # for a development profile, which needs a registered device ("Your team has no devices"). Asking for the distribution
-          # identity makes cloud signing create the App Store profile instead; no device is involved.
-          xcodebuild archive \
-            -project code/mobile/ios/App/App.xcodeproj \
-            -scheme App \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/Lotties.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            MARKETING_VERSION="$LOTTIES_VERSION_NAME" \
-            CURRENT_PROJECT_VERSION="$LOTTIES_VERSION_CODE"
       - name: Export the IPA (and upload it to TestFlight when asked)
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -265,19 +305,27 @@ jobs:
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>${UPLOAD}</string>
             <key>teamID</key><string>${APPLE_TEAM_ID}</string>
-            <key>signingStyle</key><string>automatic</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>app.lotties.app</key><string>${IOS_PROFILE_NAME}</string>
+              <key>app.lotties.app.widgets</key><string>${IOS_WIDGET_PROFILE_NAME}</string>
+            </dict>
             <key>uploadSymbols</key><true/>
           </dict>
           </plist>
           PLIST
+          # Only the upload talks to Apple, so only then the API key flags are passed (empty array safe on bash 3.2).
+          auth=()
+          if [ "$UPLOAD" = "upload" ]; then
+            auth=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          fi
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/Lotties.xcarchive" \
             -exportPath "$RUNNER_TEMP/export" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            ${auth[@]+"${auth[@]}"}
           mkdir -p dist
           if [ "$UPLOAD" = "export" ]; then cp "$RUNNER_TEMP"/export/*.ipa "dist/lotties-${LOTTIES_VERSION_NAME}-${LOTTIES_VERSION_CODE}.ipa"; fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -287,9 +335,12 @@ jobs:
           path: dist/*.ipa
           if-no-files-found: error
           retention-days: 30
-      - name: Remove the API key
+      - name: Remove the signing material and the API key
         if: always()
-        run: rm -rf "$RUNNER_TEMP/asc"
+        run: |
+          rm -rf "$RUNNER_TEMP/asc" "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/app.mobileprovision" "$RUNNER_TEMP/widget.mobileprovision" "$RUNNER_TEMP"/*.plist
+          rm -f "$HOME"/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision
+          if [ -n "${IOS_KEYCHAIN:-}" ]; then security delete-keychain "$IOS_KEYCHAIN" || true; fi
 
   github-release:
     name: GitHub release (APK)

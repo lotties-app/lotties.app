@@ -125,6 +125,25 @@ authorization server metadata advertises `client_id_metadata_document_supported:
 `token_endpoint_auth_methods_supported`; otherwise it falls back to DCR. Check your Keycloak version's release notes:
 this feature is new and may change.
 
+### 3.4 Siri on iOS (the Lotties app)
+
+The iPhone app's Siri and Shortcuts intents (docs/design/37-widgets-siri.md section 8) are MCP clients of their own: the
+Settings > Voice assistants > Siri and Shortcuts button opens a system sign-in sheet (PKCE) and keeps the tokens in the
+Keychain. Create the client once:
+
+1. Clients > **Create client**: Client ID `lotties-ios`, Name `Lotties on iPhone (Siri)`, Client authentication **Off**,
+   Standard flow **On**, Direct access grants / Implicit / Service accounts / Device grant **Off**.
+2. Valid redirect URIs: `app.lotties.app://siri/callback`. Web origins: none. Advanced > PKCE method `S256`.
+3. Login settings: **Consent required** On (the parent sees the texts of 2.3), **Display client on screen** On.
+4. Client scopes tab: add `lotties.read` and `lotties.write` as **Optional** (the app asks for both, plus `offline_access`),
+   and `offline_access` as Optional. The audience mapper of 2.1 on both scopes puts the MCP audience in the token.
+5. Token lifetimes: access token 5 minutes (2.2); **Offline Session Idle** 30 days or more, so Siri keeps working
+   without opening the app (a longer idle time means fewer reconnects).
+
+The build reads the client id from `VITE_SIRI_CLIENT_ID` (`code/web/.env.native`, default `lotties-ios`). The parent can
+revoke Siri like any app in the account console (section 8); Disconnect in the app removes it from that iPhone only.
+Medication is not available to Siri either (no MCP tool, by design).
+
 ## 4. Turn the API on
 
 In the cluster (deploy kit `deploy/homelab`), add to `deploy/homelab/values/api.yaml` under `env:`; none is a secret:

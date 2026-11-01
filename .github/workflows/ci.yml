@@ -1,9 +1,23 @@
 name: CI
 
+# Changes that cannot affect the API or web suites do not start it: docs, the mobile shell (checked by
+# ios-compile-check.yml and mobile-release.yml) and those two workflows.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'code/mobile/**'
+      - '.github/workflows/ios-compile-check.yml'
+      - '.github/workflows/mobile-release.yml'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'code/mobile/**'
+      - '.github/workflows/ios-compile-check.yml'
+      - '.github/workflows/mobile-release.yml'
 
 # Least privilege for GITHUB_TOKEN; no job needs more than read access.
 permissions:

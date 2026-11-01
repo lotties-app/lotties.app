@@ -8,7 +8,9 @@ import { useConsent } from '../consent/ConsentContext';
 import { releaseThisDevice } from '../notifications/pushActions';
 import { DatabaseProvider } from '../db/DatabaseProvider';
 import { requeueDeadLetters } from '../db/outbox';
+import { isNativeApp } from '../platform/nativeApp';
 import { SyncProvider } from '../sync/SyncProvider';
+import { WidgetSync } from '../widgets/WidgetSync';
 import type { SyncEngineOptions } from '../sync/SyncEngine';
 import { deleteLegacyDatabase, openAccountDatabase } from './accountDatabase';
 import { AccountSessionContext, type AccountSession } from './AccountSessionContext';
@@ -91,6 +93,7 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
     <AccountSessionContext value={session}>
       <DatabaseProvider db={db}>
         <SyncProvider options={syncOptions} enabled={consent.syncAllowed}>
+          {isNativeApp() && <WidgetSync />}
           {children}
         </SyncProvider>
       </DatabaseProvider>
