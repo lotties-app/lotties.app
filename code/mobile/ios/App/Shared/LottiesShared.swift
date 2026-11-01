@@ -137,6 +137,8 @@ struct WidgetSnapshot: Codable, Equatable {
         var sleep: Sleep?
         var lastFeed: Feed?
         var lastDiaper: Diaper?
+        /// The last start of each activity the widget can log, by event type key ("bath", "tummy_time"...).
+        var lastActivity: [String: Date]?
         /// Estimates from the app's own predictions (the Now screen's "next up"); absent when it has none.
         var nextNap: NapWindow?
         var nextFeed: NextFeed?

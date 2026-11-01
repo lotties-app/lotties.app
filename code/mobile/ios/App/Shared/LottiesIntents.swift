@@ -42,6 +42,12 @@ enum LottiesLogger {
                 snapshot.babies[index].nextNap = nil
             case "sleep_end":
                 snapshot.babies[index].sleep = .init(state: "awake", startedAt: now)
+            case "activity":
+                if let kind {
+                    var last = snapshot.babies[index].lastActivity ?? [:]
+                    last[kind] = now
+                    snapshot.babies[index].lastActivity = last
+                }
             default:
                 break
             }
@@ -170,5 +176,131 @@ struct LastFeedIntent: AppIntent {
         return .result(dialog: IntentDialog(stringLiteral: LottiesText.t(
             "A última mamada de \(baby.name) foi há \(ago)\(detail).",
             "\(baby.name)'s last feed was \(ago) ago\(detail).")))
+    }
+}
+
+/// What a widget button can log: the three everyday ones and the activities of the "Activities" widget
+/// (docs/design/37-widgets-siri.md section 10). The chosen one is a parameter of the widget's configuration.
+enum WidgetActivity: String, AppEnum, CaseIterable {
+    case bottle, breast, diaper, bath, bellyMassage, tummyTime, nasalSuction, nailTrim, skinCare, outdoor, fussy
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Activity"
+    static var caseDisplayRepresentations: [WidgetActivity: DisplayRepresentation] = [
+        .bottle: "Bottle",
+        .breast: "Breastfeed",
+        .diaper: "Diaper",
+        .bath: "Bath",
+        .bellyMassage: "Belly massage",
+        .tummyTime: "Tummy time",
+        .nasalSuction: "Nasal suction",
+        .nailTrim: "Nail trim",
+        .skinCare: "Skin care",
+        .outdoor: "Outdoor time",
+        .fussy: "Fussy spell",
+    ]
+
+    /// The activities of the "Activities" widget, in its order.
+    static let panel: [WidgetActivity] = [
+        .bath, .bellyMassage, .tummyTime, .nasalSuction, .nailTrim, .skinCare, .outdoor, .fussy,
+    ]
+
+    /// The key of the built-in event type (the outbox `payload.kind`); nil for the ones with their own entries.
+    var eventKey: String? {
+        switch self {
+        case .bottle, .breast, .diaper: return nil
+        case .bath: return "bath"
+        case .bellyMassage: return "belly_massage"
+        case .tummyTime: return "tummy_time"
+        case .nasalSuction: return "nasal_suction"
+        case .nailTrim: return "nail_trim"
+        case .skinCare: return "skin_care"
+        case .outdoor: return "outdoor"
+        case .fussy: return "fussy"
+        }
+    }
+
+    /// Name of the Tabler icon in the widget's asset catalog (`tabler-<name>`).
+    var icon: String {
+        switch self {
+        case .bottle: return "bottle"
+        case .breast: return "heart"
+        case .diaper: return "diaper"
+        case .bath: return "bath"
+        case .bellyMassage: return "massage"
+        case .tummyTime: return "baby-carriage"
+        case .nasalSuction: return "wind"
+        case .nailTrim: return "scissors"
+        case .skinCare: return "droplet-half-2"
+        case .outdoor: return "trees"
+        case .fussy: return "mood-cry"
+        }
+    }
+
+    var titlePt: String {
+        switch self {
+        case .bottle: return "Mamadeira"
+        case .breast: return "Peito"
+        case .diaper: return "Fralda"
+        case .bath: return "Banho"
+        case .bellyMassage: return "Massagem"
+        case .tummyTime: return "Bruços"
+        case .nasalSuction: return "Aspiração"
+        case .nailTrim: return "Unhas"
+        case .skinCare: return "Pele"
+        case .outdoor: return "Ar livre"
+        case .fussy: return "Choro"
+        }
+    }
+
+    var titleEn: String {
+        switch self {
+        case .bottle: return "Bottle"
+        case .breast: return "Breast"
+        case .diaper: return "Diaper"
+        case .bath: return "Bath"
+        case .bellyMassage: return "Massage"
+        case .tummyTime: return "Tummy"
+        case .nasalSuction: return "Suction"
+        case .nailTrim: return "Nails"
+        case .skinCare: return "Skin"
+        case .outdoor: return "Outdoors"
+        case .fussy: return "Fussy"
+        }
+    }
+
+    var title: String { LottiesText.t(titlePt, titleEn) }
+}
+
+/// One tap on a widget button: logs `activity` for the selected baby now. Bottle repeats the last bottle's amount;
+/// diaper logs a wet one; the others are instant events, or running ones when the type has a duration (stop in the app).
+struct LogActivityIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
+    static var title: LocalizedStringResource = "Log an activity"
+    static var description = IntentDescription("Logs the chosen activity for the selected baby, now.")
+
+    @Parameter(title: "Activity", default: .bottle)
+    var activity: WidgetActivity
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        switch activity {
+        case .bottle:
+            guard let last = LottiesShared.readSnapshot()?.selectedBaby?.lastFeed, last.kind == "bottle",
+                let ml = last.amountMl, ml > 0
+            else {
+                return .result(dialog: IntentDialog(stringLiteral: LottiesText.t("Nada registrado.", "Nothing logged.")))
+            }
+            let outcome = LottiesLogger.log(type: "feed", kind: "bottle", amountMl: ml, source: "widget")
+            return .result(dialog: LottiesLogger.dialog(outcome, done: "Mamadeira registrada", doneEn: "Bottle logged"))
+        case .breast:
+            let outcome = LottiesLogger.log(type: "feed", kind: "breast", source: "widget")
+            return .result(dialog: LottiesLogger.dialog(outcome, done: "Mamada iniciada", doneEn: "Breastfeed started"))
+        case .diaper:
+            let outcome = LottiesLogger.log(type: "diaper", kind: "wet", source: "widget")
+            return .result(dialog: LottiesLogger.dialog(outcome, done: "Fralda registrada", doneEn: "Diaper logged"))
+        default:
+            let outcome = LottiesLogger.log(type: "activity", kind: activity.eventKey, source: "widget")
+            return .result(dialog: LottiesLogger.dialog(
+                outcome, done: "Registrado: \(activity.titlePt)", doneEn: "Logged: \(activity.titleEn)"))
+        }
     }
 }

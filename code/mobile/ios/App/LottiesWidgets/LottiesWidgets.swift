@@ -17,6 +17,12 @@ import WidgetKit
 struct LottiesEntry: TimelineEntry {
     let date: Date
     let snapshot: WidgetSnapshot?
+    /// What the three configurable buttons log (the widget's configuration); the defaults when it has none.
+    var slots: [WidgetActivity] = WidgetActivity.defaultSlots
+}
+
+extension WidgetActivity {
+    static let defaultSlots: [WidgetActivity] = [.bottle, .diaper, .breast]
 }
 
 private struct LottiesNowKey: EnvironmentKey {
@@ -59,14 +65,51 @@ struct LottiesProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<LottiesEntry>) -> Void) {
-        let now = Date()
-        let snapshot = LottiesShared.readSnapshot()
-        // One entry now and one at each moment an action starts or stops being "coming up" (the highlight changes without
-        // the app opening); the timeline is rebuilt every 15 minutes anyway.
-        var dates = [now]
-        if let baby = snapshot?.selectedBaby { dates += baby.dueChanges(after: now).prefix(8) }
-        let next = Calendar.current.date(byAdding: .minute, value: 15, to: now) ?? now
-        completion(Timeline(entries: dates.map { LottiesEntry(date: $0, snapshot: snapshot) }, policy: .after(next)))
+        completion(lottiesTimeline(slots: WidgetActivity.defaultSlots))
+    }
+}
+
+/// One entry now and one at each moment an action starts or stops being "coming up" (the highlight changes without
+/// the app opening); the timeline is rebuilt every 15 minutes anyway.
+private func lottiesTimeline(slots: [WidgetActivity]) -> Timeline<LottiesEntry> {
+    let now = Date()
+    let snapshot = LottiesShared.readSnapshot()
+    var dates = [now]
+    if let baby = snapshot?.selectedBaby { dates += baby.dueChanges(after: now).prefix(8) }
+    let next = Calendar.current.date(byAdding: .minute, value: 15, to: now) ?? now
+    return Timeline(
+        entries: dates.map { LottiesEntry(date: $0, snapshot: snapshot, slots: slots) }, policy: .after(next))
+}
+
+/// "Edit widget": what each of the three buttons logs. Anything the app can log with one tap is on the list.
+struct LottiesButtonsIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Buttons"
+    static var description = IntentDescription("Choose what each button of the widget logs.")
+
+    @Parameter(title: "Button 1", default: .bottle)
+    var first: WidgetActivity
+
+    @Parameter(title: "Button 2", default: .diaper)
+    var second: WidgetActivity
+
+    @Parameter(title: "Button 3", default: .breast)
+    var third: WidgetActivity
+
+    var slots: [WidgetActivity] { [first, second, third] }
+}
+
+struct LottiesConfigProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> LottiesEntry {
+        LottiesEntry(date: Date(), snapshot: sampleSnapshot())
+    }
+
+    func snapshot(for configuration: LottiesButtonsIntent, in context: Context) async -> LottiesEntry {
+        let snapshot = context.isPreview ? sampleSnapshot() : LottiesShared.readSnapshot()
+        return LottiesEntry(date: Date(), snapshot: snapshot, slots: configuration.slots)
+    }
+
+    func timeline(for configuration: LottiesButtonsIntent, in context: Context) async -> Timeline<LottiesEntry> {
+        lottiesTimeline(slots: configuration.slots)
     }
 }
 
@@ -96,13 +139,14 @@ private enum Ink {
 
 /// The category tints of the app (tokens.ts `category`): the tint behind an icon and the stronger tone of the icon.
 private enum Category {
-    case sleep, feeding, diaper
+    case sleep, feeding, diaper, care
 
     var tint: Color {
         switch self {
         case .sleep: return Color(0xe2e7f0, 0x26303f)
         case .feeding: return Color(0xe1eadb, 0x263425)
         case .diaper: return Color(0xf2e5c6, 0x3a3120)
+        case .care: return Color(0xdcebe8, 0x1f3330)
         }
     }
 
@@ -111,6 +155,7 @@ private enum Category {
         case .sleep: return Color(0x2c4870, 0xa9c1e3)
         case .feeding: return Color(0x375f39, 0xa9cf9f)
         case .diaper: return Color(0x6e4e0e, 0xe8c47a)
+        case .care: return Color(0x2f6b60, 0x9fd3c7)
         }
     }
 }
@@ -144,6 +189,22 @@ private struct Act<I: AppIntent, Content: View>: View {
             Button(intent: intent) { content }.buttonStyle(.plain)
         } else {
             content
+        }
+    }
+}
+
+private func activityIntent(_ activity: WidgetActivity) -> LogActivityIntent {
+    var intent = LogActivityIntent()
+    intent.activity = activity
+    return intent
+}
+
+private extension WidgetActivity {
+    var category: Category {
+        switch self {
+        case .bottle, .breast: return .feeding
+        case .diaper: return .diaper
+        default: return .care
         }
     }
 }
@@ -247,12 +308,12 @@ private struct SleepBlock: View {
 
 private struct SleepButton: View {
     let facts: SleepFacts
-    /// The nap window is coming up: the bell and "Soneca 14:20" replace "Fell asleep", filled in the accent colour.
+    /// The nap window is coming up: "Soneca 14:20" replaces "Fell asleep", filled in the accent colour.
     var napDue: Date?
 
     private var label: some View {
         HStack(spacing: 6) {
-            Icon(name: napDue != nil ? "bell-ringing" : facts.asleep ? "sun" : "moon-stars", size: 16)
+            Icon(name: facts.asleep ? "sun" : "moon-stars", size: 16)
             if let napDue {
                 (Text("\(LottiesText.t("Soneca", "Nap")) ") + Text(napDue, style: .time))
                     .font(.subheadline.weight(.semibold)).monospacedDigit()
@@ -286,13 +347,13 @@ private struct RowTile<I: AppIntent>: View {
     let category: Category
     let intent: I
     var next: Date?
-    /// Coming up now: bell icon, the category colour on the border and a tinted fill.
+    /// Coming up now: the category colour on the border and a tinted fill.
     var due = false
 
     var body: some View {
         Act(intent) {
             HStack(spacing: 8) {
-                Icon(name: due ? "bell-ringing" : icon, size: 20)
+                Icon(name: icon, size: 20)
                     .foregroundStyle(category.tone)
                     .frame(width: 32, height: 32)
                     .background(category.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -327,7 +388,7 @@ private struct SquareTile<I: AppIntent>: View {
     var body: some View {
         Act(intent) {
             VStack(spacing: 4) {
-                Icon(name: due ? "bell-ringing" : icon, size: 24)
+                Icon(name: icon, size: 24)
                 Text(title).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
             }
             .foregroundStyle(category.tone)
@@ -336,6 +397,64 @@ private struct SquareTile<I: AppIntent>: View {
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(category.tone, lineWidth: due ? 2.5 : 0))
         }
+    }
+}
+
+/// A row of the medium widget for one activity: when it last happened, and the estimate when the app has one.
+private struct ActivityRow: View {
+    let activity: WidgetActivity
+    let baby: WidgetSnapshot.Baby
+    let due: WidgetSnapshot.Baby.Due
+
+    private var last: Date? {
+        switch activity {
+        case .bottle: return baby.lastFeed?.kind == "bottle" ? baby.lastFeed?.at : nil
+        case .breast: return baby.lastFeed?.kind == "bottle" ? nil : baby.lastFeed?.at
+        case .diaper: return baby.lastDiaper?.at
+        default: return activity.eventKey.flatMap { baby.lastActivity?[$0] }
+        }
+    }
+
+    private var next: Date? {
+        switch activity {
+        case .bottle: return baby.nextFeed?.at
+        case .diaper: return baby.nextDiaper?.at
+        default: return nil
+        }
+    }
+
+    private var isDue: Bool {
+        switch activity {
+        case .bottle: return due.feed
+        case .diaper: return due.diaperKind != nil
+        default: return false
+        }
+    }
+
+    var body: some View {
+        RowTile(
+            icon: activity.icon, title: activity.title, date: last, category: activity.category,
+            intent: activityIntent(activity), next: next, due: isDue)
+    }
+}
+
+/// A square button for one activity (large and quick-actions widgets, activities panel).
+private struct ActivitySquare: View {
+    let activity: WidgetActivity
+    let due: WidgetSnapshot.Baby.Due
+
+    private var isDue: Bool {
+        switch activity {
+        case .bottle, .breast: return due.feed
+        case .diaper: return due.diaperKind != nil
+        default: return false
+        }
+    }
+
+    var body: some View {
+        SquareTile(
+            icon: activity.icon, title: activity.title, category: activity.category,
+            intent: activityIntent(activity), due: isDue)
     }
 }
 
@@ -438,7 +557,7 @@ struct LottiesSummaryWidget: Widget {
     let kind = "LottiesWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: LottiesProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: LottiesButtonsIntent.self, provider: LottiesConfigProvider()) { entry in
             Host(entry: entry) { snapshot, baby, family in
                 let facts = SleepFacts(baby)
                 let due = baby.due(at: entry.date)
@@ -454,15 +573,9 @@ struct LottiesSummaryWidget: Widget {
                         }
                         .frame(maxWidth: .infinity)
                         VStack(spacing: 6) {
-                            RowTile(icon: "bottle", title: LottiesText.t("Mamadeira", "Bottle"),
-                                    date: baby.lastFeed?.kind == "bottle" ? baby.lastFeed?.at : nil,
-                                    category: .feeding, intent: LogBottleIntent(), next: baby.nextFeed?.at, due: due.feed)
-                            RowTile(icon: "diaper", title: LottiesText.t("Fralda", "Diaper"),
-                                    date: baby.lastDiaper?.at, category: .diaper, intent: LogDiaperIntent(),
-                                    next: baby.nextDiaper?.at, due: due.diaperKind != nil)
-                            RowTile(icon: "heart", title: LottiesText.t("Peito", "Breast"),
-                                    date: baby.lastFeed?.kind == "bottle" ? nil : baby.lastFeed?.at,
-                                    category: .feeding, intent: LogBreastFeedIntent())
+                            ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
+                                ActivityRow(activity: activity, baby: baby, due: due)
+                            }
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -471,12 +584,9 @@ struct LottiesSummaryWidget: Widget {
                         SleepBlock(facts: facts, name: baby.name, big: 40, nextNap: baby.nextNap?.expected)
                         SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
                         HStack(spacing: 8) {
-                            SquareTile(icon: "bottle", title: LottiesText.t("Mamadeira", "Bottle"),
-                                       category: .feeding, intent: LogBottleIntent(), due: due.feed)
-                            SquareTile(icon: "heart", title: LottiesText.t("Peito", "Breast"),
-                                       category: .feeding, intent: LogBreastFeedIntent(), due: due.feed)
-                            SquareTile(icon: "diaper", title: LottiesText.t("Fralda", "Diaper"),
-                                       category: .diaper, intent: LogDiaperIntent(), due: due.diaperKind != nil)
+                            ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
+                                ActivitySquare(activity: activity, due: due)
+                            }
                         }
                         .frame(maxHeight: .infinity)
                         Text(feedDetail(baby.lastFeed) ?? "")
@@ -498,7 +608,9 @@ struct LottiesSummaryWidget: Widget {
             }
         }
         .configurationDisplayName(LottiesText.t("Resumo", "Summary"))
-        .description(LottiesText.t("Sono, mamada e fralda do bebê escolhido.", "Sleep, feed and diaper of the chosen baby."))
+        .description(LottiesText.t(
+            "Sono e três botões à sua escolha (toque e segure para editar).",
+            "Sleep and three buttons of your choice (touch and hold to edit)."))
         .supportedFamilies([
             .systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline,
         ])
@@ -640,19 +752,16 @@ struct LottiesQuickWidget: Widget {
     let kind = "LottiesQuickWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: LottiesProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: LottiesButtonsIntent.self, provider: LottiesConfigProvider()) { entry in
             Host(entry: entry) { _, baby, _ in
                 let facts = SleepFacts(baby)
                 let due = baby.due(at: entry.date)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(baby.name).font(.caption).foregroundStyle(Ink.muted).lineLimit(1)
                     HStack(spacing: 8) {
-                        SquareTile(icon: "bottle", title: LottiesText.t("Mamadeira", "Bottle"),
-                                   category: .feeding, intent: LogBottleIntent(), due: due.feed)
-                        SquareTile(icon: "heart", title: LottiesText.t("Peito", "Breast"),
-                                   category: .feeding, intent: LogBreastFeedIntent(), due: due.feed)
-                        SquareTile(icon: "diaper", title: LottiesText.t("Fralda", "Diaper"),
-                                   category: .diaper, intent: LogDiaperIntent(), due: due.diaperKind != nil)
+                        ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
+                            ActivitySquare(activity: activity, due: due)
+                        }
                         if facts.asleep {
                             SquareTile(icon: "sun", title: LottiesText.t("Acordou", "Woke up"),
                                        category: .sleep, intent: BabyWokeUpIntent())
@@ -665,7 +774,35 @@ struct LottiesQuickWidget: Widget {
             }
         }
         .configurationDisplayName(LottiesText.t("Ações rápidas", "Quick actions"))
-        .description(LottiesText.t("Quatro botões para registrar sem abrir o app.", "Four buttons to log without opening the app."))
+        .description(LottiesText.t(
+            "Três botões à sua escolha e o de sono, para registrar sem abrir o app.",
+            "Three buttons of your choice and the sleep one, to log without opening the app."))
+        .supportedFamilies([.systemMedium])
+    }
+}
+
+// MARK: Widget 6: activities
+
+struct LottiesActivitiesWidget: Widget {
+    let kind = "LottiesActivitiesWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: LottiesProvider()) { entry in
+            Host(entry: entry) { _, baby, _ in
+                let due = baby.due(at: entry.date)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(baby.name).font(.caption).foregroundStyle(Ink.muted).lineLimit(1)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                        ForEach(WidgetActivity.panel, id: \.self) { activity in
+                            ActivitySquare(activity: activity, due: due).frame(height: 54)
+                        }
+                    }
+                }
+            }
+        }
+        .configurationDisplayName(LottiesText.t("Atividades", "Activities"))
+        .description(LottiesText.t(
+            "Banho, massagem, bruços e outros: um toque registra.", "Bath, massage, tummy time and more: one tap logs."))
         .supportedFamilies([.systemMedium])
     }
 }
@@ -678,5 +815,6 @@ struct LottiesWidgetsBundle: WidgetBundle {
         LottiesFeedWidget()
         LottiesDiaperWidget()
         LottiesQuickWidget()
+        LottiesActivitiesWidget()
     }
 }
