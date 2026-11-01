@@ -65,5 +65,11 @@ export function useRhythmSelection(keys: readonly string[]) {
     onClick: () => toggle(key),
   });
 
-  return { selected, onKeyDown, markProps, clear };
+  /** Selects `key` from outside the chart (a "Next up" row), or clears it when it is selected. */
+  const select = (key: string) => {
+    if (!keys.includes(key)) return;
+    setSelectedKey((current) => (current === key ? null : key));
+  };
+
+  return { selected, onKeyDown, markProps, clear, select };
 }

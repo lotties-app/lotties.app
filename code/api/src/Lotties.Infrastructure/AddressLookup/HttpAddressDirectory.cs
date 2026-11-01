@@ -18,7 +18,7 @@ namespace Lotties.Infrastructure.AddressLookup;
 internal sealed class HttpAddressDirectory : IAddressDirectory
 {
     private const int MaxResponseBytes = 256 * 1024;
-    private const string ProjectUrl = "https://github.com/dev-vinicius-andrade/baby-routine";
+    private const string ProjectUrl = "https://github.com/lotties-app/lotties.app";
 
     private enum CepOutcome
     {

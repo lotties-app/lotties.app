@@ -33,6 +33,8 @@ const HubAboutPage = hubSubPage('HubAboutPage');
 const HubCreditsPage = hubSubPage('HubCreditsPage');
 const HubInstallPage = hubSubPage('HubInstallPage');
 const HubPrivacyPage = hubSubPage('HubPrivacyPage');
+// The cry monitor's page is its own chunk; the engine loads only when monitoring starts.
+const HubCryMonitorPage = lazy(() => import('./cryMonitor/CryMonitorPage'));
 // The public credits, install and privacy pages: outside the auth gate, so they open without signing in.
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InstallPage = lazy(() => import('./install/InstallPage'));
@@ -56,6 +58,8 @@ const ProposalsPage = lazy(() =>
 const FromDoctorPage = lazy(() =>
   import('./pages/FromDoctorPage').then((m) => ({ default: m.FromDoctorPage })),
 );
+// The project board: its own frame outside the parents' shell (no baby data near it), online only.
+const BoardPage = lazy(() => import('./board/BoardPage'));
 
 /**
  * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
@@ -89,6 +93,10 @@ const DevIllustrationGallery = import.meta.env.DEV
   : null;
 const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPreview')) : null;
 const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
+const DevCryMonitorPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/CryMonitorPreview'))
+  : null;
+const DevBoardPreview = import.meta.env.DEV ? lazy(() => import('./dev/BoardPreview')) : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -263,6 +271,26 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevCryMonitorPreview && (
+        <Route
+          path="/dev/cry-monitor"
+          element={
+            <Suspense fallback={null}>
+              <DevCryMonitorPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevBoardPreview && (
+        <Route
+          path="/dev/board/:itemId?"
+          element={
+            <Suspense fallback={null}>
+              <DevBoardPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevRingPreview && (
         <Route
           path="/dev/ring"
@@ -328,6 +356,7 @@ export function AppRoutes() {
             <Route path="hub/import" element={<HubImportPage />} />
             <Route path="hub/export" element={<HubExportPage />} />
             <Route path="hub/backup" element={<HubBackupImportPage />} />
+            <Route path="hub/cry-monitor" element={<HubCryMonitorPage />} />
             <Route path="hub/updates" element={<HubUpdatesPage />} />
             <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="hub/credits" element={<HubCreditsPage />} />
@@ -343,6 +372,15 @@ export function AppRoutes() {
             <Route path="proposals" element={<ProposalsPage />} />
             <Route path="from-doctor" element={<FromDoctorPage />} />
           </Route>
+          {/* `/hub/board` and `/hub/board/<item id>` (the drawer): one route, the page stays mounted. */}
+          <Route
+            path="hub/board/:itemId?"
+            element={
+              <Suspense fallback={null}>
+                <BoardPage />
+              </Suspense>
+            }
+          />
           {doctorRoutes()}
         </Route>
       </Route>

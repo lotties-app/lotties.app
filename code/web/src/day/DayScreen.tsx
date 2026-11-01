@@ -20,6 +20,8 @@ import { EventSheet } from '../events/EventSheet';
 import type { FormPrefill } from '../events/formModel';
 import { useNow } from '../events/time';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
+import { fedToSleep } from '../now/bottleFollowUp';
+import { typeIdsForKey } from '../now/eventFacts';
 import { AddEventFlow } from '../layout/AddEventFlow';
 import { useAddRequests } from '../layout/addSheetContext';
 import { usePresetActions } from '../presets/usePresetActions';
@@ -213,6 +215,10 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const categories = categoriesOf(types);
   const typeOf = (event: BabyEvent): EventType | undefined =>
     types.find((candidate) => candidate.id === event.typeId);
+  const feedingIds = typeIdsForKey(types, 'feeding');
+  const feedings = events.filter((event) => feedingIds.has(event.typeId));
+  const fedBefore = (event: BabyEvent) =>
+    typeOf(event)?.key === 'sleep' ? fedToSleep(event, feedings) : null;
 
   const dayKey = dayKeyOf(day.getTime());
   // A Doctor never sees the family's appointments (docs/design/16-doctor-access.md, "Doctor read audit").
@@ -306,6 +312,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
                   readOnly={!writable}
                   author={access.authorOf(item.event)}
                   viewOnly={writable && !access.canChange(item.event)}
+                  fedToSleep={fedBefore(item.event)}
                 />
               </ErrorBoundary>
             ),
@@ -333,6 +340,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
           medications={medications}
           {...(prescriptions ? { prescriptions } : {})}
           author={access.authorOf(viewing) ?? ''}
+          fedToSleep={fedBefore(viewing)}
           onClose={() => setViewing(null)}
         />
       )}

@@ -30,7 +30,8 @@ Triggers: **manual** (Actions > Mobile release > Run workflow) or a **tag `mobil
    (`0.1.0`). The **build number** is the workflow run number (monotonic: Play needs a higher `versionCode` on every
    upload, App Store Connect a new build number per version). Android reads them as `LOTTIES_VERSION_NAME` and
    `LOTTIES_VERSION_CODE` (app/build.gradle); iOS passes `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` to
-   `xcodebuild`. Nothing to hand-edit.
+   `xcodebuild`. The same version reaches the web bundle as `APP_VERSION` (job env, read by `build:web`,
+   `code/mobile/scripts/build-web.mjs`), so Hub > About shows `v1.2.3` instead of `dev`. Nothing to hand-edit.
 2. `android` (ubuntu): Node 22, JDK 21, `npm ci` in `code/web` and `code/mobile`, `build:web` (Vite mode `native`, with
    the repository variable `LOTTIES_OIDC_CLIENT_ID`), `cap sync android`, the upload keystore decoded from a secret,
    `./gradlew bundleRelease assembleRelease` (signed AAB for Play, signed APK for direct download), artifacts kept 30

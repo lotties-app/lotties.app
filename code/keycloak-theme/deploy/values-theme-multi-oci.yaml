@@ -9,7 +9,7 @@
 initContainers:
   - name: br-themes-init
     # CHANGE: ghcr.io/<owner>/lotties-keycloak-themes:<version> or your own registry. Bump the tag per change.
-    image: ghcr.io/dev-vinicius-andrade/lotties-keycloak-themes:0.1.0
+    image: ghcr.io/lotties-app/lotties-keycloak-themes:0.1.0
     imagePullPolicy: IfNotPresent
     command: ["sh", "-c", "cp -R /themes/. /target/ && echo themes copied"]
     securityContext:

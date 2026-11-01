@@ -100,6 +100,11 @@
         "hint": "Aparência, idioma, notificações, sincronização",
         "keywords": "preferências tema escuro idioma notificações sincronização perfil tipos de evento"
       },
+      "board": {
+        "title": "Quadro do projeto",
+        "hint": "Tarefas, lacunas e decisões do projeto",
+        "keywords": "quadro projeto tarefas lacunas decisões notas memórias assistente claude chaves api"
+      },
       "import": {
         "title": "Importar",
         "hint": "Traga o histórico de outro app",
@@ -114,6 +119,11 @@
         "title": "Importar backup",
         "hint": "Restaure um arquivo exportado do app",
         "keywords": "backup restaurar enviar arquivo json mudar conta"
+      },
+      "cryMonitor": {
+        "title": "Monitor de choro (beta)",
+        "hint": "Um celular extra no quarto do bebê percebe o choro",
+        "keywords": "choro chorar monitor microfone ouvir detectar som quarto bebê alerta"
       },
       "install": {
         "title": "Instalar o app",
@@ -164,15 +174,24 @@
     "about": {
       "title": "Sobre",
       "tagline": "Um registro calmo da rotina do bebê que funciona offline.",
-      "version": "Versão",
-      "builtAt": "Compilado em",
-      "commit": "Build",
+      "appVersion": "Versão do app",
+      "appLine": "App (este aparelho)",
+      "serverLine": "Servidor",
+      "commitValue": "commit {{commit}}",
+      "builtValue": "compilado em {{date}}",
+      "serverLoading": "Consultando o servidor…",
+      "serverUnavailable": "Versão do servidor indisponível",
+      "updateHint": "Há uma atualização disponível.",
+      "updatedSeparately": "O servidor foi atualizado separadamente.",
+      "copy": "Copiar dados da versão",
+      "copied": "Dados da versão copiados.",
+      "copyFailed": "Não foi possível copiar. Você pode selecionar as versões acima.",
+      "report": "Lotties app {{app}}, servidor {{server}}",
       "license": "Licença",
       "licenseValue": "Software livre, AGPL-3.0",
       "source": "Código-fonte",
       "credits": "Feito sobre software livre. Créditos e licenças",
-      "privacy": "Política de privacidade",
-      "unknown": "Desconhecido"
+      "privacy": "Política de privacidade"
     }
   }
 }

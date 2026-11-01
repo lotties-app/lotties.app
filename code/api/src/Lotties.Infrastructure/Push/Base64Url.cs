@@ -1,6 +1,9 @@
 namespace Lotties.Infrastructure.Push;
 
-/// <summary>Unpadded base64url (RFC 4648 section 5); .NET 8 has no built-in Base64Url type.</summary>
+/// <summary>
+/// Unpadded base64url (RFC 4648 section 5). Written on .NET 8, which had no built-in type; .NET 9+ has
+/// <c>System.Buffers.Text.Base64Url</c>, not adopted by the .NET 10 upgrade (no behaviour change).
+/// </summary>
 internal static class Base64Url
 {
     public static string Encode(ReadOnlySpan<byte> bytes) =>

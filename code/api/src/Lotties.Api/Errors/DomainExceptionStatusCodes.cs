@@ -85,6 +85,15 @@ internal static class DomainExceptionStatusCodes
         [typeof(AddressNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(AddressLookupUnavailableException)] = StatusCodes.Status502BadGateway,
         [typeof(AddressLookupDisabledException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(BoardItemNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(BoardApiKeyNotFoundException)] = StatusCodes.Status404NotFound,
+        [typeof(BoardItemDeletedException)] = StatusCodes.Status409Conflict,
+        [typeof(BoardVersionMismatchException)] = StatusCodes.Status412PreconditionFailed,
+        [typeof(BoardUnknownTopicException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(BoardTopicArchivedException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(BoardTopicNotAllowedException)] = StatusCodes.Status403Forbidden,
+        [typeof(BoardAdminRequiredException)] = StatusCodes.Status403Forbidden,
+        [typeof(InvalidBoardCursorException)] = StatusCodes.Status400BadRequest,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

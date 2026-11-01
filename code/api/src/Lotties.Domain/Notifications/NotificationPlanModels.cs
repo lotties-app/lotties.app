@@ -68,6 +68,19 @@ public sealed record DeliveredNotification(Guid UserId, NotificationKey DedupeKe
 /// </summary>
 public sealed record SentHeadsUp(Guid UserId, Guid BabyId, NotificationKind Kind, NotificationKey DedupeKey, DateTimeOffset At);
 
+/// <summary>
+/// A fussy spell the cry monitor started (<c>auto_detected</c>, not marked "Not crying", not deleted): the event, when it
+/// started and when it ended (<c>null</c> while running).
+/// </summary>
+public sealed record DetectedCrySpell(Guid EventId, DateTimeOffset StartedAt, DateTimeOffset? EndedAt)
+{
+    /// <summary>Whether this spell began before <paramref name="later"/> and was still going when it started (one crying episode).</summary>
+    public bool Covers(DetectedCrySpell later) =>
+        later.EventId != EventId
+        && (StartedAt < later.StartedAt || (StartedAt == later.StartedAt && EventId.CompareTo(later.EventId) < 0))
+        && (EndedAt is not { } ended || ended >= later.StartedAt);
+}
+
 /// <summary>Where a doctor suggestion comes from.</summary>
 public enum DoctorSuggestionSource
 {
@@ -104,6 +117,7 @@ public sealed record DoctorSuggestion(Guid Id, DoctorSuggestionSource Source, Gu
 /// <param name="Appointments">The baby's upcoming appointments within the reminder horizon (loaded only when a recipient wants appointment reminders).</param>
 /// <param name="DoctorSuggestions">The baby's doctor suggestions of the last 24 hours (loaded only when a recipient wants them).</param>
 /// <param name="Vaccines">The baby's schedule, profile and records (loaded only when an Owner or Parent wants vaccine reminders).</param>
+/// <param name="CrySpells">The baby's cry monitor spells that started within the stale cutoff or were still running then (loaded only when a recipient wants cry alerts).</param>
 public sealed record NotificationPlanInput(
     DateTimeOffset Now,
     Guid BabyId,
@@ -120,7 +134,8 @@ public sealed record NotificationPlanInput(
     IReadOnlyCollection<SentHeadsUp>? SentHeadsUps = null,
     IReadOnlyList<Appointment>? Appointments = null,
     IReadOnlyList<DoctorSuggestion>? DoctorSuggestions = null,
-    VaccinePlanState? Vaccines = null);
+    VaccinePlanState? Vaccines = null,
+    IReadOnlyList<DetectedCrySpell>? CrySpells = null);
 
 /// <summary>
 /// What the vaccine reminders need about one baby: the schedule, the baby's vaccine profile and birth date, and the

@@ -4,11 +4,13 @@ import type { Locale } from '../i18n/config';
 import {
   CURATED_CREDIT_PRIVACY,
   DATA_CATEGORY_IDS,
+  ON_DEVICE_FLOWS,
   PLANNED_FLOWS,
   THIRD_PARTIES,
   THIRD_PARTY_IDS,
 } from './dataFlows';
 import { POLICY_DOCUMENTS } from './policyDocuments';
+import { PRIVACY_POLICY_LAST_UPDATED, PRIVACY_POLICY_VERSION } from './privacyPolicy';
 
 /*
  * The status wording of a planned flow (docs/design/34-community-insights.md). It must stay in the text
@@ -33,6 +35,43 @@ const NOT_COLLECTED: Readonly<Record<Locale, RegExp>> = {
  * languages. A new third party anywhere is therefore a conscious policy update
  * (docs/design/33-privacy-audit.md section 10).
  */
+
+/* The words the policy must use for an on-device sensor flow (the cry monitor), per language. */
+const SENSOR_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
+  en: {
+    name: /Cry monitor/,
+    sensor: /microphone/,
+    onDevice: /analysed on that device/,
+    never: /never recorded, stored or sent/,
+    saved: /crying spell/,
+    alert: /Crying detected/,
+    neverAsks: /does not ask for[^.]*microphone/,
+  },
+  'pt-BR': {
+    name: /Monitor de choro/,
+    sensor: /microfone/,
+    onDevice: /analisado nesse aparelho/,
+    never: /nunca é gravado, guardado ou enviado/,
+    saved: /período de choro/,
+    alert: /Choro detectado/,
+    neverAsks: /não pede[^.]*microfone/,
+  },
+};
+
+const sectionOf = (locale: Locale, id: string) =>
+  POLICY_DOCUMENTS[locale].sections.find((section) => section.id === id);
+
+const tableRows = (locale: Locale, tableId: 'data' | 'recipients') => {
+  const blocks = POLICY_DOCUMENTS[locale].sections.flatMap((section) => [
+    ...section.blocks,
+    ...(section.subsections ?? []).flatMap((sub) => sub.blocks),
+  ]);
+  const table = blocks.find((block) => block.kind === 'table' && block.id === tableId);
+  return table?.kind === 'table' ? table.rows : [];
+};
+const dataRow = (locale: Locale, id: string) => tableRows(locale, 'data').find((r) => r.id === id);
+const recipientRow = (locale: Locale, id: string) =>
+  tableRows(locale, 'recipients').find((r) => r.id === id);
 
 const recipientRows = (locale: keyof typeof POLICY_DOCUMENTS) => {
   const sharing = POLICY_DOCUMENTS[locale].sections.find((section) => section.id === 'sharing');
@@ -143,6 +182,57 @@ describe('the data flows behind the privacy policy', () => {
         ).toBe(false);
       }
     }
+  });
+
+  describe.each(ON_DEVICE_FLOWS.map((flow) => [flow.id, flow] as const))(
+    'the on-device flow %s (docs/design/33 section 12)',
+    (_, flow) => {
+      it('is opt-in, off by default, keeps the raw signal on the device and uses our own server', () => {
+        expect(flow.trigger).toBe('optIn');
+        expect(flow.defaultOn).toBe(false);
+        expect(flow.rawSignal).toEqual({ stored: false, sent: false });
+        expect(flow.modelFrom).toBe('ownServer');
+        expect(flow.consentBy).toEqual(['Owner', 'Parent', 'Caregiver']);
+        expect(DATA_CATEGORY_IDS as readonly string[]).toContain(flow.dataCategory);
+        for (const recipient of flow.recipients) expect(THIRD_PARTY_IDS).toContain(recipient);
+      });
+
+      it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+        'is described in the %s policy: the sensor, on the device, never recorded, and what is saved',
+        (locale) => {
+          const document = POLICY_DOCUMENTS[locale];
+          const text = JSON.stringify(document);
+          const words = SENSOR_WORDS[locale];
+          // Its own row of "What we collect".
+          const row = JSON.stringify(dataRow(locale, flow.dataCategory));
+          expect(row).toMatch(words.sensor);
+          expect(row).toMatch(words.onDevice);
+          expect(row).toMatch(words.never);
+          expect(row).toMatch(words.saved);
+          // No sentence may still say the app never asks for the microphone.
+          expect(text).not.toMatch(words.neverAsks);
+          // The alert to the family goes through the push services, as the other notifications.
+          const push = JSON.stringify(recipientRow(locale, 'pushServices'));
+          expect(push).toMatch(words.alert);
+          // Its legal basis, its retention, its device storage and its limits are stated.
+          for (const id of [
+            'legal-bases',
+            'retention',
+            'device-storage',
+            'not-medical',
+            'security',
+          ] as const) {
+            expect(JSON.stringify(sectionOf(locale, id)), id).toMatch(words.name);
+          }
+          expect(JSON.stringify(sectionOf(locale, 'legal-bases'))).toMatch(/art\. 14, § ?1/);
+        },
+      );
+    },
+  );
+
+  it('raised the policy version with the cry monitor (version 3 of 2026-10-24 or later)', () => {
+    expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(3);
+    expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-10-24').toBe(true);
   });
 
   it('name the countries question for every recipient abroad in the transfers section', () => {

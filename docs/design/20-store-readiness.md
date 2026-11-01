@@ -55,7 +55,8 @@ docs/design/33-privacy-audit.md (sections 2 to 4). Summary for the forms:
 | Internal ids, action and result codes | API logs (no IP, no request line, no content) | operating and debugging | not used for tracking |
 | Client IP, path, user agent | the web container's nginx access log (and Traefik's, if enabled) | operating and securing the service | not used for tracking |
 
-Not collected: advertising identifiers, location, contacts, photos, audio (Alexa's audio stays with Amazon), browsing
+Not collected: advertising identifiers, location, contacts, photos, audio (Alexa's audio stays with Amazon; the web cry
+monitor's audio never leaves the device, see below), browsing
 history, device fingerprint, crash/analytics SDK data (there is no analytics, no ad or crash SDK, no third-party script,
 font or CDN in the app; the CSP allows only our own origin and the identity provider). Nothing is sold. Recipients
 (docs/design/33 section 3): the browser push services (Google FCM, Mozilla, Apple, Microsoft: they receive an encrypted
@@ -92,6 +93,16 @@ docs/design/19-native-push.md, not built).
   URL, section 5); the app follows the Families policy: **no** (not designed for children).
 - Is all collected data required? Name and email: required to have an account. Health info: optional (the user decides
   what to record).
+
+**Cry monitor (built, web app only; docs/design/35-cry-engine.md section 8, audit section 12).** The web app asks for
+the microphone when a family member starts the cry monitor; the audio is analysed on the device and never stored or
+sent, which is **not "collected"** for Apple's App Privacy nor Google's Data safety (on-device, ephemeral processing;
+docs/design/31-cry-detector-spike.md section 6). What it saves is an ordinary crying spell, already covered by the
+sleep and feeding logs ("Other Data" / "Health info") above. The native apps do not offer it and request no
+microphone permission today, so **none of the answers above change**. When the native shell gets it (doc 31 CD10):
+add `NSMicrophoneUsageDescription` and `RECORD_AUDIO` (plus the foreground-service declaration on Android), keep
+"Audio Data: not collected" only if the native capture also never stores or sends audio, and review Apple 2.5.14 and
+Google's prominent disclosure and monitoring policies.
 
 **Community insights (planned, not built; docs/design/34-community-insights.md section 10).** The policy describes a
 future opt-in use of babies' records in pooled statistics as "not active yet". While it is off, **none of the answers

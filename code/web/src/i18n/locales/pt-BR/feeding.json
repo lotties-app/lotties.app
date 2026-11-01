@@ -21,6 +21,35 @@
       "drunk": "Quanto foi bebido",
       "logDrunk": "Registrar {{drunk}} de {{prepared}} ml",
       "logDrunkContent": "Registrar {{drunk}} de {{prepared}} ml {{content}}"
+    },
+    "level": {
+      "title": "Quanto sobrou na mamadeira?",
+      "hint": "Opcional. A pausa já foi salva.",
+      "chips": "Sobrou na mamadeira",
+      "chip": "{{ml}} ml · {{share}}",
+      "share": {
+        "full": "cheia",
+        "threeQuarters": "3/4",
+        "half": "metade",
+        "quarter": "1/4",
+        "empty": "vazia"
+      },
+      "other": "Outra quantidade",
+      "save": "Salvar",
+      "skip": "Pular",
+      "leftAtStop": "Sobrou na mamadeira"
+    },
+    "followUp": {
+      "title": "{{name}} dormiu durante a mamadeira.",
+      "question": "Quanto sobrou nela?",
+      "dismiss": "Pular"
+    },
+    "fedToSleep": {
+      "bottle": "Dormiu durante a mamadeira",
+      "nursing": "Dormiu durante a amamentação"
+    },
+    "target": {
+      "usualBottle": "Uma mamadeira costuma levar cerca de {{duration}}"
     }
   }
 }

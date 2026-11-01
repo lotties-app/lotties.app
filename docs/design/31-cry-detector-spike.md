@@ -352,7 +352,8 @@ Caregiver); hidden for Viewers and the Doctor (docs/design/16).
 audio), the time since start, and one large **Stop** button (one tap, no confirmation); the browser's own microphone
 indicator stays visible. Stopping, leaving the page, locking the screen or a revoked permission all end listening and
 say so. Sensitivity in the monitor's settings: Low / Standard / High, mapped to the three thresholds of section 4
-(same N, M, smoothing).
+(same N, M, smoothing). As built (CD1): Less / Balanced / More = 0.03 / 0.02 / 0.01, kept inside the safe band
+(docs/design/35-cry-engine.md section 3).
 
 **Event flow**: when the trigger fires, the device writes a `fussy` event through the normal local commands (client
 GUID, Dexie + outbox) with `started_at` = the start of the first active window of the sustained run, running; it sets
@@ -463,16 +464,44 @@ layout, copy) belong to the orchestrator and the owner, not to the workers.
 | # | Task | Tier | Deps | Verify |
 |---|---|---|---|---|
 | CD0 | Owner decisions: scope (foreground monitor mode only), licence flags C1 (YAMNet weights) and C2 (head or zero-shot), consent text and legal read (LGPD art. 14, ECA Digital), push kind default off | Owner | this report | written answers |
-| CD1 | Trigger in TypeScript (`code/web/src/cry/trigger.ts`), a port of `trigger.py`, with shared vectors (`cryTriggerVectors.json`, like the vaccine status vectors) written by a small new harness command from `trigger.py`, and the sensitivity table | Careful | CD0 | Vitest vectors equal Python |
-| CD2 | Capture and inference: `getUserMedia` with processing off (read back `getSettings()`), AudioWorklet ring buffer, a dedicated worker running `AudioClassifier` (self-hosted `yamnet.tflite` and WASM under `/models/`, loaded only when the monitor opens, runtime-cached for offline use, never in the main bundle), score per 0.975 s, no sample ever leaves the worker or is stored; behind a feature flag | Careful | CD1; orchestrator adds `@mediapipe/tasks-audio` 1.1.1 in the main clone | Vitest with a fake worker; a manual check on Chrome desktop with a recorded test file played through a virtual microphone |
-| CD3 | Monitor page: consent, listening state, one-tap stop, sensitivity, Wake Lock, visibility and permission handling, failure states, i18n en + pt-BR (`locales/<lang>/cryMonitor.json`), axe, dev preview `/dev/cry-monitor?state=` | Medium | CD2 + owner-approved copy | Vitest, axe light/dark/night, screenshots 320-430 px |
-| CD4 | API seed migration `CryDetector`: hidden optional `auto_detected` and `cry_confirmed` booleans on the built-in `fussy` type, export/import round trip | Careful | CD0 | model + endpoint tests, migration tests |
-| CD5 | Web event flow: start the running `fussy` spell on trigger (Now commands, outbox), close after quiet, merge overlapping auto spells of one baby, "Yes, crying" / "Not crying" in the event detail (sets `cry_confirmed`; "Not crying" soft-deletes) | Medium | CD3, CD4 | Vitest incl. offline outbox |
-| CD6 | Push kind `cry_detected` (docs/design/09): planner input "auto fussy events since the last tick", stale cutoff 10 min, dedupe by event id, off by default, generic text, service-worker catalog en + pt-BR | Careful | CD4 | planner and dispatch tests, `NotificationCodes` appended |
-| CD7 | Credits: curated YAMNet entry and NOTICE, regenerate the generated credits after the dependency (orchestrator) | Light | CD2 | `generate-credits.mjs --check`, credits test |
+| CD1 | Trigger in TypeScript (`code/web/src/cry/trigger.ts`), a port of `trigger.py`, with shared vectors (`cryTriggerVectors.json`, like the vaccine status vectors) written by a small new harness command from `trigger.py`, and the sensitivity table. **Done** (commit e3dc055; `python -m cry_detector.make_vectors`; sensitivity Less / Balanced / More = 0.03 / 0.02 / 0.01, all inside the safe band 0.005-0.03: docs/design/35-cry-engine.md section 3) | Careful | CD0 | Vitest vectors equal Python |
+| CD2 | Capture and inference: `getUserMedia` with processing off (read back `getSettings()`), AudioWorklet ring buffer, a dedicated worker running `AudioClassifier` (self-hosted `yamnet.tflite` and WASM under `/models/`, loaded only when the monitor opens, runtime-cached for offline use, never in the main bundle), score per 0.975 s, no sample ever leaves the worker or is stored; behind a feature flag | Careful | CD1; orchestrator adds `@mediapipe/tasks-audio` 1.1.1 in the main clone | Vitest with a fake worker; a manual check on Chrome desktop with a recorded test file played through a virtual microphone. **Done** (commits c842306, 753c32c; docs/design/35-cry-engine.md): engine, worker, worklet, self-hosted files and runtime cache; not wired to a page yet (the "feature flag" is that no route uses it). The manual check ran with a synthetic oscillator stream, not a recorded cry through a virtual microphone: still to do with CD3 |
+| CD3 | Monitor page: consent, listening state, one-tap stop, sensitivity, Wake Lock, visibility and permission handling, failure states, i18n en + pt-BR (`locales/<lang>/cryMonitor.json`), axe, dev preview `/dev/cry-monitor?state=` | Medium | CD2 + owner-approved copy | Vitest, axe light/dark/night, screenshots 320-430 px. **Done** (2026-10-24, docs/design/35-cry-engine.md section 8): Hub > App entry, `/hub/cry-monitor`, per-device consent, night listening view, sensitivity while listening (`CryEngine.setSensitivity`), Wake Lock, failure cards, privacy policy v3. The copy is the orchestrator's draft: the owner's read and the legal read are still open (CD0) |
+| CD4 | **Done** (2026-10-24, commit d7ec253 + web labels): API seed migration `CryDetector`: hidden optional `auto_detected` and `cry_confirmed` booleans on the built-in `fussy` type, export/import round trip | Careful | CD0 | model + endpoint tests, migration tests |
+| CD5 | Web event flow: start the running `fussy` spell on trigger (Now commands, outbox), close after quiet, merge overlapping auto spells of one baby, "Yes, crying" / "Not crying" in the event detail (sets `cry_confirmed`; "Not crying" soft-deletes) | Medium | CD3, CD4 | Vitest incl. offline outbox. **Done** (2026-10-24, docs/design/35 section 8) with one change decided by the orchestrator: "Not crying" keeps the entry (deletable as usual) and the readers (fussy pattern card, cry outcomes, formula comparison, heads-up clean-up) leave it out; a running auto spell is kept instead of a second one, and none is created over a spell started by hand |
+| CD6 | **Done** (2026-10-24, commits d7ec253 API and 50d1265 web; docs/design/09 section 2.12): Push kind `cry_detected` (docs/design/09): planner input "auto fussy events since the last tick", stale cutoff 10 min, dedupe by event id, off by default, generic text, service-worker catalog en + pt-BR | Careful | CD4 | planner and dispatch tests, `NotificationCodes` appended |
+| CD7 | Credits: curated YAMNet entry and NOTICE, regenerate the generated credits after the dependency (orchestrator) | Light | CD2 | `generate-credits.mjs --check`, credits test. **Done** (2026-10-24, with CD3): curated `yamnet` (YAMNet via MediaPipe Tasks Audio, Apache-2.0) and `audioset` (AudioSet ontology class names, CC BY-SA 4.0), CREDITS.md regenerated; the npm package's notice is in the generated list |
 | CD8 | Device checklist on HTTPS staging: an old Android and an iPhone on iOS 18.4+ (load, CPU, battery per hour, heat, Wake Lock, relaunch, a phone call, permission persistence), fixes | Medium | CD5 | checklist in the PR |
 | CD9 | Pilot with consenting families (section 10): confirmed share and parent-reported misses per device; adjust the sensitivity table | Owner + Medium | CD8 | pilot summary (aggregates only) |
 | CD10 | Native shell, separate go/no-go: Android microphone foreground service with native capture and MediaPipe Tasks Android; iOS background audio spike with native capture | Heavy | CD9 | device tests, store declarations |
+
+Notes on CD4 and CD6 as built (migration `CryDetector` carries both: the fussy seed and the `cry_detected` preference
+column with the widened candidate index):
+
+- The planner reads the monitor's spells as "fussy spells, not deleted, `auto_detected` true, not marked Not crying,
+  started in the last 10 minutes or still running then" rather than "since the last tick": the dedupe key
+  `cry:{eventId}` makes every tick idempotent, so no tick bookkeeping is needed. A spell that starts while an earlier
+  monitor spell of the baby is still going is the same episode and sends nothing (two monitors, merged spells).
+- Recipients follow `dose_due` and the diaper heads-ups: Owners, Parents and Caregivers who turned the switch on, on
+  every opted-in device; never a Viewer or the Doctor. Delivered inside quiet hours (an owner decision to confirm: the
+  monitor mostly runs at night, when quiet hours are on by default).
+- The device that runs the monitor is not known to the server and the service worker always shows a push, so that
+  device gets the alert too when its member opted in on it; the monitor page closes it by tag `cry:{babyId}`
+  (docs/design/09 section 2.12; every 10 s while listening and on each detected cry, CD3).
+
+Notes on CD3 and CD5 as built (docs/design/35-cry-engine.md section 8):
+
+- Section 8's proposal had "Not crying" soft-delete the spell; as built it keeps the entry and marks it, and every
+  local reader of crying (patterns, outcomes, statistics) ignores it, so the false-alarm rate can still be counted
+  from events alone. The server does the same (2026-10-24): one Domain predicate,
+  `CryDetection.IsConfirmedNotCrying(payload)` (`cry_confirmed` is `false`; true, absent, not a boolean or an
+  unanswered automatic spell all count, like the web's `countsAsCrying`), read by the prediction history
+  (`ObservedEvent.ConfirmedNotCrying`), so `FussyPatterns.Detect` (the predictions `patterns` entry and the
+  `fussy_pattern` push) and `FussyPatterns.LastLoggedAt` (a spell that handles today's window) skip it. No other
+  server reader counts fussy spells or crying minutes (the clinical summary, doctor dashboard and assistants do not
+  read fussy; the raw timeline, events list and backup keep the record as is).
+- Sensitivity changes while listening move the threshold without restarting capture (no split spell).
+- Two monitors in one home: the second keeps the first one's running spell and ends it at its own cry end.
 
 ## 14. Reproduce
 

@@ -1,0 +1,343 @@
+{
+  "board": {
+    "title": "Quadro do projeto",
+    "retry": "Tentar de novo",
+    "offline": {
+      "title": "Precisa de conexão",
+      "text": "O quadro do projeto é lido do servidor e nada dele fica guardado neste aparelho. Conecte-se à internet para abri-lo."
+    },
+    "access": {
+      "checking": "Verificando seu acesso ao quadro",
+      "failed": "Não foi possível acessar o quadro do projeto. Verifique a conexão e tente de novo.",
+      "none": "O quadro do projeto não está disponível para a sua conta."
+    },
+    "types": {
+      "task": "Tarefa",
+      "gap": "Lacuna",
+      "decision": "Decisão",
+      "question": "Pergunta",
+      "risk": "Risco",
+      "note": "Nota",
+      "memory": "Memória"
+    },
+    "statuses": {
+      "open": "Aberto",
+      "in_progress": "Em andamento",
+      "blocked": "Bloqueado",
+      "waiting": "Aguardando",
+      "done": "Concluído",
+      "dropped": "Descartado"
+    },
+    "sides": {
+      "owner": "Titular",
+      "assistant": "Assistente",
+      "both": "Ambos",
+      "external": "Externo"
+    },
+    "priorities": {
+      "low": "Baixa",
+      "normal": "Normal",
+      "high": "Alta",
+      "urgent": "Urgente"
+    },
+    "sorts": {
+      "updated": "Atualizados recentemente",
+      "created": "Criados recentemente",
+      "priority": "Prioridade",
+      "due": "Prazo",
+      "decided": "Decididos recentemente"
+    },
+    "fields": {
+      "type": "Tipo",
+      "topic": "Tema",
+      "title": "Título",
+      "body": "Detalhes",
+      "status": "Situação",
+      "side": "Quem age em seguida",
+      "priority": "Prioridade",
+      "labels": "Etiquetas",
+      "dueDate": "Prazo",
+      "links": "Links",
+      "pinned": "Fixado",
+      "decisionSummary": "Decisão",
+      "rationale": "Justificativa",
+      "decidedAt": "Decidido",
+      "source": "Origem"
+    },
+    "summary": {
+      "title": "Resumo",
+      "waitingOnOwner": "Aguardando você",
+      "waitingOnAssistant": "Aguardando o assistente",
+      "blocked": "Bloqueados",
+      "dueSoon": "Vencem em breve"
+    },
+    "search": {
+      "label": "Buscar no quadro",
+      "placeholder": "Buscar em títulos e detalhes",
+      "clear": "Limpar busca"
+    },
+    "quickAdd": {
+      "label": "Adição rápida",
+      "title": "Novo item",
+      "placeholders": {
+        "task": "Adicione uma tarefa e tecle Enter",
+        "gap": "Adicione uma lacuna e tecle Enter",
+        "decision": "Adicione uma decisão e tecle Enter",
+        "question": "Adicione uma pergunta e tecle Enter",
+        "risk": "Adicione um risco e tecle Enter",
+        "note": "Adicione uma nota e tecle Enter",
+        "memory": "Adicione uma memória e tecle Enter"
+      },
+      "topic": "Tema",
+      "add": "Adicionar",
+      "more": "Mais campos",
+      "hints": {
+        "task": "Adiciona uma tarefa para {{side}}. Abra Mais campos para o resto.",
+        "gap": "Adiciona uma lacuna para {{side}}. Abra Mais campos para o resto.",
+        "decision": "Adiciona uma decisão para {{side}}. Abra Mais campos para o resto.",
+        "question": "Adiciona uma pergunta para {{side}}. Abra Mais campos para o resto.",
+        "risk": "Adiciona um risco para {{side}}. Abra Mais campos para o resto.",
+        "note": "Adiciona uma nota para {{side}}. Abra Mais campos para o resto.",
+        "memory": "Adiciona uma memória para {{side}}. Abra Mais campos para o resto."
+      },
+      "forSide": {
+        "owner": "o titular",
+        "assistant": "o assistente",
+        "both": "ambos",
+        "external": "alguém de fora"
+      },
+      "added": "Adicionado: “{{title}}”"
+    },
+    "views": {
+      "label": "Visões",
+      "topics": "Temas",
+      "mine": "Meus",
+      "assistant": "Claude",
+      "decisions": "Decisões",
+      "gaps": "Lacunas",
+      "notes": "Notas e memórias",
+      "statusCount": "{{status}} {{count}}",
+      "noOpen": "Nada em aberto",
+      "topicEmpty": "Nenhum item deste tema corresponde.",
+      "archived": "arquivado",
+      "rationale": "Justificativa",
+      "showTopic": "Mostrar o tema {{topic}}"
+    },
+    "filters": {
+      "label": "Filtros",
+      "toggle": "Filtros",
+      "toggleCount_one": "Filtros ({{count}})",
+      "toggleCount_other": "Filtros ({{count}})",
+      "any": "Qualquer",
+      "clear": "Limpar filtros",
+      "hideClosed": "Ocultar concluídos e descartados",
+      "showDeleted": "Mostrar excluídos",
+      "labelsHelp": "Separe as etiquetas com vírgulas",
+      "sort": "Ordem",
+      "sortDefault": "A ordem da visão"
+    },
+    "list": {
+      "title": "Itens: {{view}}",
+      "count_one": "{{count}} item",
+      "count_other": "{{count}} itens",
+      "countMore_one": "{{count}} item mostrado, há mais para carregar",
+      "countMore_other": "{{count}} itens mostrados, há mais para carregar",
+      "empty": "Nada no quadro ainda.",
+      "emptyWriter": "Adicione o primeiro item no campo acima.",
+      "noMatch": "Nenhum item corresponde a esses filtros.",
+      "loadMore": "Carregar mais",
+      "loadingMore": "Carregando…"
+    },
+    "row": {
+      "due": "Prazo {{date}}",
+      "overdue": "Atrasado desde {{date}}",
+      "pinned": "Fixado",
+      "deleted": "Excluído",
+      "updated": "Atualizado {{when}}"
+    },
+    "drawer": {
+      "close": "Fechar",
+      "loading": "Carregando o item",
+      "unavailableTitle": "Item indisponível",
+      "notFound": "Este item não está no quadro. Talvez tenha sido excluído.",
+      "statusButton": "Situação: {{status}}",
+      "statusChanged": "Situação alterada para {{status}}",
+      "edit": "Editar",
+      "editLabel": "Editar o item",
+      "delete": "Excluir",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "saved": "Salvo",
+      "reload": "Recarregar",
+      "reloaded": "Versão mais recente carregada",
+      "conflict": "Alguém alterou este item. Recarregue para ver a versão mais recente; suas alterações não foram salvas.",
+      "restore": "Restaurar",
+      "restored": "Item restaurado",
+      "deleted": "Excluído: “{{title}}”",
+      "deletedAt": "Excluído em {{date}}. Só quem administra o quadro o vê.",
+      "undo": "Desfazer",
+      "confirmDeleteTitle": "Excluir este item?",
+      "confirmDeleteText": "Ele sai do quadro para todos. Só quem administra o quadro pode restaurá-lo.",
+      "created": "Criado",
+      "updated": "Atualizado",
+      "closed": "Encerrado",
+      "byOn": "{{name}}, {{date}}",
+      "yes": "Sim",
+      "no": "Não",
+      "decision": "Decisão",
+      "decidedAt": "Decidido em {{date}}",
+      "noBody": "Ainda sem detalhes.",
+      "history": "Histórico",
+      "commentLabel": "Adicionar um comentário",
+      "comment": "Comentar",
+      "commented": "Comentário adicionado"
+    },
+    "history": {
+      "none": "Ainda sem histórico.",
+      "empty": "nada",
+      "change": "{{field}}: {{from}} → {{to}}",
+      "keyActor": "{{name}} (chave de API)",
+      "kinds": {
+        "created": "{{name}} criou",
+        "updated": "{{name}} editou",
+        "status_changed": "{{name}} mudou a situação",
+        "commented": "{{name}} comentou",
+        "decided": "{{name}} registrou a decisão",
+        "deleted": "{{name}} excluiu",
+        "restored": "{{name}} restaurou"
+      }
+    },
+    "markdown": {
+      "newWindow": "(abre em uma nova aba)"
+    },
+    "form": {
+      "title": "Título",
+      "type": "Tipo",
+      "topic": "Tema",
+      "status": "Situação",
+      "side": "Quem age em seguida",
+      "priority": "Prioridade",
+      "dueDate": "Prazo",
+      "labels": "Etiquetas",
+      "labelsHelp": "Até 10, separadas por vírgulas: minúsculas, dígitos e . _ : / -",
+      "pinned": "Fixado (aparece primeiro entre notas e memórias)",
+      "decisionSummary": "Decisão",
+      "rationale": "Justificativa",
+      "links": "Links",
+      "linkLabel": "Texto do link",
+      "linkUrl": "Endereço (https://…)",
+      "addLink": "Adicionar um link",
+      "removeLink": "Remover o link {{index}}",
+      "source": "Origem",
+      "sourceHelp": "De onde veio, por exemplo docs/design/34 O3",
+      "body": "Detalhes (Markdown)",
+      "bodyHelp": "Títulos, listas, **negrito**, *itálico*, `código` e links http(s). Sem imagens nem HTML.",
+      "preview": "Pré-visualizar",
+      "previewLabel": "Pré-visualização dos detalhes",
+      "previewEmpty": "Nada para pré-visualizar.",
+      "errors": {
+        "titleRequired": "Dê um título ao item.",
+        "tooLong": "Este texto é longo demais.",
+        "topicRequired": "Escolha um tema.",
+        "tooManyLabels": "Use no máximo 10 etiquetas.",
+        "badLabel": "Etiquetas usam letras minúsculas, dígitos e . _ : / - (até 40 caracteres).",
+        "badDate": "Use uma data como 2026-12-31.",
+        "tooManyLinks": "Use no máximo 10 links.",
+        "badLink": "Cada link precisa de um texto e de um endereço que comece com http:// ou https://.",
+        "server": "O servidor recusou este campo. Confira e tente de novo."
+      }
+    },
+    "create": {
+      "title": "Novo item",
+      "save": "Adicionar item"
+    },
+    "errors": {
+      "versionMismatch": "Alguém alterou este item. Recarregue para ver a versão mais recente.",
+      "concurrent": "Duas alterações se cruzaram. Tente de novo.",
+      "itemDeleted": "Este item foi excluído.",
+      "itemNotFound": "Este item não está no quadro.",
+      "unknownTopic": "Esse tema não existe.",
+      "topicArchived": "Esse tema está arquivado: escolha outro.",
+      "topicNotAllowed": "Esta chave não pode escrever nesse tema.",
+      "adminRequired": "Só quem administra o quadro pode fazer isso.",
+      "keyNotFound": "Essa chave de API não existe.",
+      "invalidCursor": "A lista mudou. Recarregue.",
+      "validation": "Algo no formulário não é válido. Confira e tente de novo."
+    },
+    "admin": {
+      "open": "Chaves de API e temas",
+      "title": "Ajustes do quadro",
+      "keys": "Chaves de API",
+      "topics": "Temas"
+    },
+    "keys": {
+      "createTitle": "Criar uma chave de API",
+      "name": "Nome",
+      "nameHelp": "Onde ela é usada, por exemplo Claude Code na máquina de desenvolvimento",
+      "nameRequired": "Dê um nome à chave.",
+      "scope": "Acesso",
+      "scopes": {
+        "read": "Leitura",
+        "write": "Leitura e escrita"
+      },
+      "expiry": "Expira em",
+      "expiryHelp": "Opcional. Uma chave sem validade não é recomendada.",
+      "expiryPast": "Escolha uma data a partir de amanhã.",
+      "topicsLimit": "Só estes temas",
+      "create": "Criar chave",
+      "listTitle": "Chaves",
+      "none": "Ainda não há chaves de API.",
+      "states": {
+        "active": "Ativa",
+        "revoked": "Revogada",
+        "expired": "Expirada"
+      },
+      "topics": "Temas",
+      "allTopics": "Todos os temas",
+      "expires": "Expira",
+      "noExpiry": "Nunca",
+      "lastUsed": "Último uso",
+      "lastUsedValue_one": "{{when}} · usada em {{count}} minuto",
+      "lastUsedValue_other": "{{when}} · usada em {{count}} minutos diferentes",
+      "neverUsed": "Nunca",
+      "createdBy": "Criada",
+      "revokedAt": "Revogada",
+      "revoke": "Revogar",
+      "revokeNamed": "Revogar {{name}}",
+      "revokeTitle": "Revogar esta chave?",
+      "revokeText": "“{{name}}” para de funcionar na hora. As ferramentas que a usam recebem um erro até ganharem uma chave nova.",
+      "revoked": "Revogada: “{{name}}”",
+      "secretTitle": "Sua nova chave: {{name}}",
+      "secretWarning": "Copie a chave agora e guarde em um lugar seguro. Você não vai vê-la de novo: se ela se perder, crie uma chave nova.",
+      "secretLabel": "Chave secreta",
+      "secretDone": "Pronto, guardei",
+      "copy": "Copiar",
+      "copyCommand": "Copiar: {{label}}",
+      "copied": "Copiado",
+      "copyFailed": "Não foi possível copiar. Selecione o texto e copie manualmente.",
+      "howTitle": "Como usar uma chave",
+      "howIntro": "Guarde o segredo em uma variável de ambiente como LOTTIES_BOARD_KEY, nunca em um arquivo do repositório nem em um chat.",
+      "howCurl": "Ler o resumo com curl",
+      "howMcp": "Adicionar o quadro ao Claude Code (MCP, quando ativado)",
+      "howDocs": "O endpoint MCP responde quando estiver ativado neste servidor. Configuração e passo a passo: docs/KEYCLOAK-BOARD.md."
+    },
+    "topics": {
+      "name": "Nome",
+      "description": "Descrição",
+      "order": "Ordem",
+      "archived": "Arquivado (mantém os itens, sem novos)",
+      "editLabel": "Editar o tema {{name}}",
+      "keyAndDescription": "{{key}} · {{description}}",
+      "saved": "Tema {{name}} salvo",
+      "newTitle": "Adicionar um tema",
+      "key": "Chave",
+      "keyHelp": "Minúsculas, dígitos e hífens, começando com uma letra. Ela nunca muda.",
+      "keyInvalid": "Use de 2 a 40 letras minúsculas, dígitos ou hífens, começando com uma letra.",
+      "keyTaken": "Já existe um tema com esta chave.",
+      "nameRequired": "Dê um nome ao tema.",
+      "add": "Adicionar tema",
+      "added": "Tema {{name}} adicionado",
+      "note": "Temas nunca são excluídos: arquive um para impedir novos itens nele."
+    }
+  }
+}

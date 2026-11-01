@@ -100,6 +100,11 @@
         "hint": "Appearance, language, notifications, sync",
         "keywords": "preferences theme dark language notifications sync profile event types"
       },
+      "board": {
+        "title": "Project board",
+        "hint": "Tasks, gaps and decisions of the project",
+        "keywords": "board project tasks gaps decisions notes memories assistant claude api keys"
+      },
       "import": {
         "title": "Import",
         "hint": "Bring history from another app",
@@ -114,6 +119,11 @@
         "title": "Import backup",
         "hint": "Restore a file exported from the app",
         "keywords": "backup restore upload file json move account"
+      },
+      "cryMonitor": {
+        "title": "Cry monitor (beta)",
+        "hint": "A spare phone in the baby's room notices crying",
+        "keywords": "cry crying monitor microphone listen detect sound baby room alert"
       },
       "install": {
         "title": "Install the app",
@@ -164,15 +174,24 @@
     "about": {
       "title": "About",
       "tagline": "A calm baby routine tracker that works offline.",
-      "version": "Version",
-      "builtAt": "Built",
-      "commit": "Build",
+      "appVersion": "App version",
+      "appLine": "App (this device)",
+      "serverLine": "Server",
+      "commitValue": "commit {{commit}}",
+      "builtValue": "built {{date}}",
+      "serverLoading": "Checking the server…",
+      "serverUnavailable": "Server version unavailable",
+      "updateHint": "An update is available.",
+      "updatedSeparately": "The server was updated separately.",
+      "copy": "Copy version info",
+      "copied": "Version info copied.",
+      "copyFailed": "Could not copy. You can select the versions above instead.",
+      "report": "Lotties app {{app}}, server {{server}}",
       "license": "Licence",
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
       "credits": "Built on open source. Credits and licenses",
-      "privacy": "Privacy policy",
-      "unknown": "Unknown"
+      "privacy": "Privacy policy"
     }
   }
 }

@@ -11,7 +11,8 @@ namespace Lotties.Domain.Notifications;
 /// <c>wet:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>, <c>dirty:{babyId:N}:{anchor utc yyyyMMddHHmm}</c>,
 /// <c>appt:{appointmentId:N}:{start utc yyyyMMddHHmm}:{offset minutes}</c>, <c>proposal:{proposalId:N}</c>,
 /// <c>recommendation:{noteId:N}</c> (the doctor suggestions), <c>vaccine:{babyId:N}:{doseId}:{n}</c> (the n-th reminder of a
-/// scheduled dose; a yearly dose adds its due date: <c>vaccine:{babyId:N}:{doseId}@{yyyyMMdd}:{n}</c>) or <c>test:{deliveryId:N}</c>.
+/// scheduled dose; a yearly dose adds its due date: <c>vaccine:{babyId:N}:{doseId}@{yyyyMMdd}:{n}</c>), <c>cry:{eventId:N}</c> (the
+/// cry monitor's fussy spell: one alert per spell) or <c>test:{deliveryId:N}</c>.
 /// A snooze re-send uses the dedupe key
 /// <c>{base}:s{n}</c> (<see cref="Snoozed"/>). The device notification tag is always the base key.
 /// </summary>
@@ -148,6 +149,9 @@ public readonly partial record struct NotificationKey
 
     public static NotificationKey ForTest(Guid deliveryId) => new($"test:{deliveryId:N}");
 
+    /// <summary>The cry monitor alert for the fussy spell <paramref name="eventId"/>: one per spell, whatever happens to it later.</summary>
+    public static NotificationKey ForCryDetected(Guid eventId) => new($"cry:{eventId:N}");
+
     /// <summary>The belly pain pattern reminder of <paramref name="babyId"/> for the window starting on the local date <paramref name="windowDate"/> (one per day).</summary>
     public static NotificationKey ForBellyPain(Guid babyId, DateOnly windowDate) =>
         new(string.Create(CultureInfo.InvariantCulture, $"belly:{babyId:N}:{windowDate:yyyyMMdd}"));
@@ -190,7 +194,7 @@ public readonly partial record struct NotificationKey
 
     private static string Instant(DateTimeOffset value) => value.UtcDateTime.ToString(InstantFormat, CultureInfo.InvariantCulture);
 
-    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|(?:proposal|recommendation|test):[0-9a-f]{32}|vaccine:[0-9a-f]{32}:[a-z0-9]+(?:-[a-z0-9]+)*(?:@[0-9]{8})?:[12])(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:(?:dose|nap|overtired|wet|dirty):[0-9a-f]{32}:[0-9]{12}|appt:[0-9a-f]{32}:[0-9]{12}:[1-9][0-9]{0,4}|(?:belly|fussy):[0-9a-f]{32}:[0-9]{8}|(?:proposal|recommendation|test|cry):[0-9a-f]{32}|vaccine:[0-9a-f]{32}:[a-z0-9]+(?:-[a-z0-9]+)*(?:@[0-9]{8})?:[12])(?::s[1-9])?\z", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 
     [GeneratedRegex(@":s[1-9]\z", RegexOptions.CultureInvariant)]

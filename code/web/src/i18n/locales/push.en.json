@@ -71,5 +71,10 @@
     "body": "Open Lotties to see the vaccine schedule.",
     "bodyNamed": "{{baby}}: {{vaccine}} may be due according to the schedule.",
     "bodyBaby": "{{baby}}: a vaccine may be due according to the schedule."
+  },
+  "cry_detected": {
+    "title": "Crying detected",
+    "body": "The monitor heard crying at {{time}}. Open Lotties.",
+    "bodyNamed": "{{baby}}: the monitor heard crying at {{time}}. Open Lotties."
   }
 }

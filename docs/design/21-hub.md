@@ -20,6 +20,7 @@ Owner-approved redesign of 2026-10-22. Screens and tokens are in `docs/DESIGN.md
 - Shortcuts: counted per device in `localStorage` (`lotties.hub.v1`, a UI preference like the theme, guarded and tolerant of damaged values). Default order before any use: vaccines, appointments, growth, medicines. A manual pick wins and is kept to what the person can still see. App entries (Settings, Import, Updates, About) are never shortcuts.
 - Attention (`hub/useHubAttention.ts`): local data only. Vaccines due or overdue (same engine as the Now card), appointments starting within 3 days, the doctor inbox (proposals plus unread recommendations) for Owners and Parents, unread recommendations on Notes. The dot on the Hub tab sums vaccines, appointments and the inbox (Notes repeats the inbox, so it is not added).
 - Search matches word starts in the localized title, hint and keywords, ignoring case and accents.
+- App > "Cry monitor (beta)" (`cryMonitor`, microphone icon, `/hub/cry-monitor`, 2026-10-24, docs/design/35-cry-engine.md section 8): after Import backup, for Owners, Parents and Caregivers of the selected baby (`canLog`), hidden for a Viewer, the Doctor, in the native app (`native`) and in a browser without the microphone API, AudioWorklet, WebAssembly or workers (`HubContext.cryMonitorSupported`, detected once by `cryMonitor/support.ts`). Like every App entry it is never a shortcut.
 
 ## 4. Running-timer pill
 
@@ -35,7 +36,18 @@ Owner-approved redesign of 2026-10-22. Screens and tokens are in `docs/DESIGN.md
 ## 5. Check for updates and About
 
 - `ReloadPrompt` still registers the service worker (`registerType: 'prompt'`); it now also publishes the registration, the "new version waiting" flag and the reload function to `pwa/updateStore.ts`. The Updates screen calls `registration.update()` and waits for an installing worker to finish; states: checking, up to date, ready (reload on demand), error, unsupported (native app or no service worker).
-- About reads `__APP_VERSION__` (package.json `version`), `__APP_BUILT_AT__` (build time) and `__APP_COMMIT__` (`APP_COMMIT` env, else `git rev-parse --short HEAD`) defined in `vite.config.ts`, so every deploy stamps its own build. The Dockerfile accepts `ARG APP_COMMIT`.
+- About reads `__APP_VERSION__` (the release `APP_VERSION` stamped by deploy/homelab/deploy.sh, else `dev`; package.json `version` is no longer used), `__APP_BUILT_AT__` (`APP_BUILD_TIME`, else the build time) and `__APP_COMMIT__` (`APP_COMMIT`, else `git rev-parse --short HEAD`) defined in `vite.config.ts` through `build-info.ts`, so every deploy stamps its own build. The Dockerfile accepts `ARG APP_VERSION`, `APP_COMMIT`, `APP_BUILD_TIME` (docs/DEPLOY.md "Versions").
+- Running version (2026-10-24, owner: "would be nice to have the current running version of the site somewhere"). About shows two facts: "App (this device)" `v0.1.38 · commit abc1234 · built <date>` and "Server" the same from the public `GET /api/v1/version` (fetched after the screen renders, 4 s timeout, no token; "Checking the server…", then the stamp or "Server version unavailable"; it never blocks the screen). The update hint is driven only by the service worker update state from `pwa/updateStore.ts` (a new app version installed and waiting, the same signal as Check for updates): an info alert "An update is available." with the reload note and Reload to update. It never compares versions or commits: the deploy rebuilds only the image that changed (an API-only release makes the server newer while the app is current, and the build commit differs between images even when the web source did not change), so comparing would raise false alarms. When the two versions differ and no update is waiting, About adds only a neutral caption, "The server was updated separately." (orchestrator review 2026-10-24). "Copy version info" copies `Lotties app v0.1.38 (commit abc1234), server v0.1.38 (commit def5678)` (Clipboard API, else a hidden textarea and `execCommand('copy')`; the result is announced). No "Report a problem" link exists in the app today, so no issue body is prefilled.
+- The quiet version line (`ui/VersionLine.tsx`, real text, caption size, a visually hidden "App version:" prefix): `v0.1.38` at the bottom of Settings and of the Hub (a link to `/hub/about`, 44 px tall), `Lotties v0.1.38` in the landing footer (before "Source code", `·` between) and in a footer under `/credits` and `/privacy`. The doctor's account menu has an About entry (info icon, the version right-aligned in caption) that opens `/doctor/about`, the same About inside her shell (its credits and privacy links stay in `/doctor`).
+
+## 5b. Project board entry
+
+- Hub > App > **Project board** (`board`, after Settings, `/hub/board`; docs/design/36-project-board.md section 10).
+  Shown only when `GET /board/me` grants read (a board realm role): `HubContext.board`, filled by `useBoardAccess`
+  in the background, so the Hub renders at once and the entry appears when the answer arrives (asked once per session
+  and account, memory only, no login redirect on a 401). Hidden when the board is disabled (404), without a board role
+  (403), in the native app (not asked) and for a Doctor with no family of her own; the doctor shell has no entry. Never
+  a shortcut (App section). Tests: `board/BoardHubEntry.test.tsx`.
 
 ## 6. Checks
 

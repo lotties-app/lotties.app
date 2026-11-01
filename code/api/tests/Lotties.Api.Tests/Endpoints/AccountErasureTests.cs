@@ -4,8 +4,10 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using Lotties.Api.Tests.Backups;
+using Lotties.Api.Tests.Board;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Board;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
 using Lotties.Domain.Users;
@@ -77,6 +79,12 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["baby_members.user_id"] = Rule.Erase,
         ["baby_notes.author_user_id"] = Rule.Partial,
         ["baby_notification_preferences.user_id"] = Rule.Erase,
+
+        // The project board is the project's (docs/design/36 section 8): items, history and keys stay, unlinked from her,
+        // with "Former member" instead of her name snapshot.
+        ["board_api_keys.created_by_user_id"] = Rule.Clear,
+        ["board_item_events.actor_user_id"] = Rule.Clear,
+        ["board_items.created_by_user_id"] = Rule.Clear,
         ["care_providers.created_by"] = Rule.KeepForTheFamily,
         ["events.created_by"] = Rule.KeepForTheFamily,
         ["formulas.created_by"] = Rule.KeepForTheFamily,
@@ -201,6 +209,30 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         var owner = factory.CreateClientFor(baby.OwnerSubject);
         var shared = await (await owner.GetAsync($"/api/v1/babies/{baby.BabyId}/notes")).ReadAsync<JsonElement>();
         Assert.Equal("Former member", Assert.Single(shared.EnumerateArray()).GetProperty("author").GetProperty("displayName").GetString());
+    }
+
+    [Fact]
+    public async Task Delete_KeepsHerProjectBoardRowsUnderTheStandIn()
+    {
+        var subject = TestUsers.NewSubject();
+        var author = factory.BoardUser(BoardTestKit.Admin, subject, "Board Author");
+        var item = await author.CreateAsync(BoardTestKit.Item("Her task"));
+        await author.PostAsJsonAsync($"{BoardTestKit.Path}/items/{item.IdOf()}/comments", new { comment = "Noted" }).Ok();
+        var key = (await (await author.PostAsJsonAsync($"{BoardTestKit.Path}/keys", new { name = "Her key", scope = "read" })).ReadAsync<JsonElement>()).GetProperty("key").GetProperty("id").GetGuid();
+        var userId = await factory.UserIdAsync(subject);
+
+        await factory.CreateClientFor(subject).DeleteAsync(MePath).Ok();
+
+        var admin = factory.BoardUser(BoardTestKit.Admin);
+        var detail = await (await admin.GetAsync($"{BoardTestKit.Path}/items/{item.IdOf()}")).ReadAsync<JsonElement>();
+        var keys = await (await admin.GetAsync($"{BoardTestKit.Path}/keys")).ReadAsync<JsonElement>();
+        Assert.Equal("Former member", detail.GetProperty("item").GetProperty("createdBy").GetProperty("name").GetString());
+        Assert.All(detail.GetProperty("history").EnumerateArray(), entry => Assert.Equal("Former member", entry.GetProperty("actor").GetProperty("name").GetString()));
+        Assert.Equal("Former member", keys.EnumerateArray().Single(row => row.GetProperty("id").GetGuid() == key).GetProperty("createdBy").GetString());
+        Assert.False(await factory.QueryAsync(context => context.BoardItems.AnyAsync(row => row.CreatedByUserId == userId)));
+        Assert.False(await factory.QueryAsync(context => context.BoardItemEvents.AnyAsync(row => row.ActorUserId == userId)));
+        Assert.False(await factory.QueryAsync(context => context.BoardApiKeys.AnyAsync(row => row.CreatedByUserId == userId)));
+        Assert.False(await factory.QueryAsync(context => context.BoardItems.AnyAsync(row => row.CreatedByName == "Board Author")));
     }
 
     private static IReadOnlyList<Reference> ReferencesIn(IModel model) =>
@@ -416,8 +448,19 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         }
 
         var subscription = PushSubscription.Create(userId, PushEndpoint.From(PushTestData.NewEndpoint()), PushTestData.Keys, NotificationLocale.English, "Chrome on Android", null, Start);
+        var actor = BoardActor.ForUser(userId, "Her board name");
+        var (boardItem, boardCreated) = BoardItem.Create(
+            Guid.NewGuid(),
+            BoardItemContent.Create(BoardItemType.Task, "process-meta", "Her board task", null, BoardItemStatus.Open, BoardSide.Owner, BoardPriority.Normal, null, null, null, false, null, null, null, null),
+            null,
+            actor,
+            Start);
+        var (boardKey, _) = BoardApiKey.Create("Her key", BoardKeyScope.Read, null, null, actor, Start);
         await factory.SeedAsync(context =>
         {
+            context.BoardItems.Add(boardItem);
+            context.BoardItemEvents.Add(boardCreated);
+            context.BoardApiKeys.Add(boardKey);
             context.PushSubscriptions.Add(subscription);
             context.NotificationDeliveries.Add(NotificationDelivery.Claim(Guid.NewGuid(), subscription.Id, PushEndpointTests.DosePlan(userId, babyId, Start), Start).Delivery);
             context.NotificationActions.Add(NotificationAction.Snooze(userId, babyId, NotificationKey.ForNap(babyId, Start), Start));

@@ -28,6 +28,7 @@
       "facts": {
         "sinceLastFeed": "Última mamada há {{since}}.",
         "sinceLastFeedUsual": "Última mamada há {{since}}; ela costuma ficar cerca de {{usual}} entre mamadas.",
+        "sinceLastFeedSmaller": "Última mamada há {{since}}; foi menor que o habitual, então ela pode querer mais antes.",
         "feedingNow": "Uma mamada está em andamento, começou há {{since}}.",
         "awakeFor": "Acordada há {{since}}.",
         "awakeForUsual": "Acordada há {{since}}; ela costuma ficar acordada cerca de {{usual}}.",

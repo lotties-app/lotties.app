@@ -42,6 +42,8 @@
       "webpush": "Os lembretes chegam ao seu celular pelo padrão aberto Web Push com chaves VAPID, enviados pelo nosso próprio servidor (sem SDK de serviço de push de terceiros).",
       "fraunces": "A fonte de destaque dos títulos, hospedada por nós via Fontsource.",
       "tabler": "Os ícones de traço usados em todo o app.",
+      "yamnet": "Classificação de sons do Monitor de choro: YAMNet (Apache-2.0) via MediaPipe Tasks Audio (Apache-2.0). Roda no seu aparelho, carregado do nosso próprio servidor; nenhum som é enviado a lugar nenhum.",
+      "audioset": "Os nomes das classes de áudio dentro do modelo YAMNet vêm da ontologia AudioSet (CC BY-SA 4.0); o Monitor de choro lê a classe \"Baby cry, infant cry\" (choro de bebê).",
       "art": "O ícone do app e as ilustrações são obra original dos colaboradores do Lotties, publicadas com o projeto sob a AGPL-3.0."
     },
     "externalLink": "Abrir {{name}}",

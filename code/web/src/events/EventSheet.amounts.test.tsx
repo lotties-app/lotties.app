@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent } from '../db/eventCommands';
@@ -152,6 +152,56 @@ describe('the drunk amount', () => {
       (await screen.findAllByText(/can't be more than the amount prepared/)).length,
     ).toBeGreaterThan(0);
     expect(onDone).not.toHaveBeenCalled();
+  });
+});
+
+describe('stopping a timed bottle: what is left in it', () => {
+  async function pausedBottle() {
+    const start = new Date(Date.now() - 20 * 60_000);
+    return createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      startedAt: start.toISOString(),
+      payload: {
+        method: 'bottle',
+        amount_ml: 120,
+        pause_count: 1,
+        paused_seconds: 60,
+        segments: '120>70@300',
+      },
+    });
+  }
+
+  it('offers left-in-bottle chips (none above the last level) that fill the drunk total', async () => {
+    const stored = await pausedBottle();
+    const onDone = renderSheet({
+      event: stored,
+      finish: { fields: ['amount_ml', 'amount_drunk_ml'], initialValues: {} },
+    });
+
+    const chips = screen.getByRole('radiogroup', { name: 'Left in the bottle' });
+    expect(
+      within(chips)
+        .getAllByRole('radio')
+        .map((r) => r.textContent),
+    ).toEqual(['60 ml · half', '30 ml · 1/4', '0 ml · empty']);
+    fireEvent.click(within(chips).getByRole('radio', { name: '30 ml · 1/4' }));
+    expect(
+      (screen.getByRole('spinbutton', { name: /Amount drunk/ }) as HTMLInputElement).value,
+    ).toBe('90');
+    fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const saved = (await db.events.get(stored.id))!;
+    expect(saved.endedAt).not.toBeNull();
+    expect(saved.payload).toMatchObject({ amount_drunk_ml: 90 });
+    expect(saved.payload.segments).toMatch(/^120>70@300;70>30@\d+$/);
+  });
+
+  it('is not offered when editing a bottle outside the stop', async () => {
+    const stored = await pausedBottle();
+    renderSheet({ event: stored });
+    expect(screen.queryByRole('radiogroup', { name: 'Left in the bottle' })).toBeNull();
   });
 });
 

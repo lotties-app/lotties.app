@@ -1,5 +1,6 @@
 import {
   canDecideProposals,
+  canLog,
   canPropose,
   canSeeAppointments,
   canSeeFamilyRecords,
@@ -33,9 +34,11 @@ export const HUB_ENTRY_IDS = [
   'invite',
   'doctorAccess',
   'settings',
+  'board',
   'import',
   'export',
   'backupImport',
+  'cryMonitor',
   'install',
   'updates',
   'welcome',
@@ -68,9 +71,12 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'invite', section: 'family', icon: 'user-plus', to: '/hub/family#invite' },
   { id: 'doctorAccess', section: 'family', icon: 'stethoscope', to: '/hub/family#doctor-access' },
   { id: 'settings', section: 'app', icon: 'settings', to: '/settings' },
+  // The project board (docs/design/36-project-board.md): internal, no baby data, board roles only.
+  { id: 'board', section: 'app', icon: 'board', to: '/hub/board' },
   { id: 'import', section: 'app', icon: 'upload-file', to: '/hub/import' },
   { id: 'export', section: 'app', icon: 'archive', to: '/hub/export' },
   { id: 'backupImport', section: 'app', icon: 'cloud-upload', to: '/hub/backup' },
+  { id: 'cryMonitor', section: 'app', icon: 'microphone', to: '/hub/cry-monitor' },
   { id: 'install', section: 'app', icon: 'download', to: '/hub/install' },
   { id: 'updates', section: 'app', icon: 'refresh', to: '/hub/updates' },
   { id: 'welcome', section: 'app', icon: 'home', to: '/welcome' },
@@ -90,6 +96,10 @@ export interface HubContext {
   native: boolean;
   /** Running as the installed web app (standalone): nothing left to install. */
   installed: boolean;
+  /** This browser has what the cry monitor needs (microphone, AudioWorklet, WebAssembly, workers). */
+  cryMonitorSupported: boolean;
+  /** `GET /board/me` granted read access to the project board (unknown or none: false). */
+  board?: boolean;
 }
 
 /** Whether the person sees the entry (role-aware: the server enforces the same rules). */
@@ -106,6 +116,9 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
       return !ctx.native && !ctx.installed;
     case 'updates':
       return !ctx.native;
+    case 'board':
+      // Online only, never in the native app nor for a Doctor with no family of her own.
+      return !!ctx.board && !ctx.native && !(ctx.hasPatients && !baby);
     case 'patients':
       return ctx.hasPatients;
     case 'appointments':
@@ -126,6 +139,9 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
     case 'backupImport':
       // A backup restores into a new baby of anyone's; into the selected one only for who may write to it.
       return baby ? canWrite(baby) : !ctx.hasPatients;
+    case 'cryMonitor':
+      // It logs fussy spells: the roles that log. Web only for now (docs/design/35 section 8).
+      return !!baby && canLog(baby) && !ctx.native && ctx.cryMonitorSupported;
     case 'vaccines':
     case 'growth':
     case 'medicines':

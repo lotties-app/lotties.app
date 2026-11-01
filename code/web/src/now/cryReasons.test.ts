@@ -289,6 +289,31 @@ describe('rankCryReasons: hunger', () => {
     expect(generic.level).toBe('unlikely');
   });
 
+  it('expects a top-up sooner after a bottle she drank well under her usual amount', () => {
+    const history = [600, 480, 360, 240].map((m) => feed(m, m - 15, { amount_ml: 120 }));
+    // Full bottle 90 min ago: 90 of her usual 120 min.
+    const full = causeOf(rank([...history, feed(90, 80, { amount_ml: 120 })]), 'hunger');
+    expect(full).toMatchObject({
+      level: 'possible',
+      facts: [{ kind: 'sinceLastFeed', minutes: 90, usualGapMinutes: 120 }],
+    });
+    // 40 of 120 ml: the gap the ramp uses is 30% shorter (the cap), so hunger is likely.
+    const partial = causeOf(
+      rank([...history, feed(90, 80, { amount_ml: 120, amount_drunk_ml: 40 })]),
+      'hunger',
+    );
+    expect(partial).toMatchObject({
+      level: 'likely',
+      facts: [{ kind: 'sinceLastFeed', minutes: 90, usualGapMinutes: 120, smallerFeed: true }],
+    });
+    // A sleep stopped it and nobody said how much: unknown, so nothing changes.
+    const unknown = causeOf(
+      rank([...history, feed(90, 80, { amount_ml: 120, ended_by: 'sleep' })]),
+      'hunger',
+    );
+    expect(unknown).toEqual(full);
+  });
+
   it('merges feeds closer than 30 min into one (a side switch is not a new feed)', () => {
     const history = [600, 590, 480, 360, 240, 230, 120].map((m) => feed(m, m - 5));
     expect(causeOf(rank(history), 'hunger').facts[0]).toMatchObject({ usualGapMinutes: 120 });
@@ -898,6 +923,27 @@ describe('cryOutcomeHistory', () => {
     expect(history.byCause.comfort).toEqual({ helped: 1, total: 1 });
     expect(history.byCause.diaper).toEqual({ helped: 1, total: 1 });
     expect(history.byCause.hunger).toEqual({ helped: 0, total: 1 });
+  });
+
+  it('leaves out cry monitor spells a parent marked "Not crying", keeps the confirmed ones', () => {
+    const events = [
+      ev(FUSSY_TYPE, ago(60), ago(50), {
+        what_helped: 'feeding',
+        auto_detected: true,
+        cry_confirmed: false,
+      }),
+      ev(FUSSY_TYPE, ago(120), ago(110), {
+        what_helped: 'rocking',
+        auto_detected: true,
+        cry_confirmed: true,
+      }),
+      ev(FUSSY_TYPE, ago(180), ago(170), { what_helped: 'sleep', auto_detected: true }),
+    ];
+    const history = cryOutcomeHistory(events, TYPES, NOON, 10);
+    expect(history.spells).toBe(2);
+    expect(history.byCause.hunger.helped).toBe(0);
+    expect(history.byCause.comfort.helped).toBe(1);
+    expect(history.byCause.sleepy.helped).toBe(1);
   });
 
   it('is empty without fussy spells or with a zero limit', () => {

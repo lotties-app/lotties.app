@@ -19,12 +19,58 @@ export const DATA_CATEGORY_IDS = [
   'sharing',
   'accessLog',
   'notifications',
+  'cryMonitor',
   'assistants',
   'technical',
   'device',
   'backups',
 ] as const;
 export type DataCategoryId = (typeof DATA_CATEGORY_IDS)[number];
+
+/*
+ * Flows that use a device sensor and keep the raw signal on the device (docs/design/33-privacy-audit.md
+ * section 12): what the policy must say about each, held by dataFlows.test.ts. A new sensor (camera,
+ * location) or a change of what leaves the device is a policy change: add or update it here, in both
+ * privacy.<lang>.ts files, the audit and the policy version.
+ */
+export interface OnDeviceFlow {
+  id: 'cryMonitor';
+  /** `active`: built and offered (web app only), behind its own consent. */
+  status: 'active';
+  /** The browser permission it asks for, only when the person starts it. */
+  permission: 'microphone';
+  /** Off until someone starts it on a device, after a separate consent on that device. */
+  trigger: 'optIn';
+  defaultOn: false;
+  /** Who may start it (the roles that log for the baby). */
+  consentBy: readonly ('Owner' | 'Parent' | 'Caregiver')[];
+  /** The raw signal: analysed on the device only, never recorded, stored or sent (not even to us). */
+  rawSignal: { stored: false; sent: false };
+  /** The row of "What we collect" that describes what it saves (an ordinary fussy record). */
+  dataCategory: DataCategoryId;
+  /** Where its model and runtime come from: our own server, no third party at run time. */
+  modelFrom: 'ownServer';
+  /** Companies that receive something because of it: the encrypted alert to opted-in family members. */
+  recipients: readonly ThirdPartyId[];
+  /** The platforms that offer it (not the native apps yet, docs/design/31 CD10). */
+  platforms: readonly 'web'[];
+}
+
+export const ON_DEVICE_FLOWS: readonly OnDeviceFlow[] = [
+  {
+    id: 'cryMonitor',
+    status: 'active',
+    permission: 'microphone',
+    trigger: 'optIn',
+    defaultOn: false,
+    consentBy: ['Owner', 'Parent', 'Caregiver'],
+    rawSignal: { stored: false, sent: false },
+    dataCategory: 'cryMonitor',
+    modelFrom: 'ownServer',
+    recipients: ['pushServices'],
+    platforms: ['web'],
+  },
+];
 
 /** The rows of the "Companies and services that receive data" table, in order. */
 export const THIRD_PARTY_IDS = [
@@ -152,5 +198,8 @@ export const CURATED_CREDIT_PRIVACY: Readonly<Record<CuratedId, CreditPrivacy>> 
   webpush: { kind: 'recipient', thirdParty: 'pushServices' },
   fraunces: { kind: 'noPersonalData' },
   tabler: { kind: 'noPersonalData' },
+  // The Cry monitor's model runs on the device, served by our own server: nothing goes to its authors.
+  yamnet: { kind: 'noPersonalData' },
+  audioset: { kind: 'noPersonalData' },
   art: { kind: 'noPersonalData' },
 };

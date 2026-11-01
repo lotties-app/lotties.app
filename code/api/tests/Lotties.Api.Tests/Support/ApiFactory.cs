@@ -54,6 +54,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(ApiEnvironments.Testing);
+
+        // The project board is off by default in production; on here so the endpoint matrix and the board tests reach
+        // its routes (BoardAuthorizationTests turns it off again to check the 404); its MCP endpoint too (BoardMcpHttpTests).
+        builder.UseSetting("Board:Enabled", "true");
+        builder.UseSetting("Board:Mcp:Enabled", "true");
         builder.ConfigureTestServices(ReplaceDatabaseAndAuthentication);
     }
 
@@ -75,6 +80,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         services.RemoveAll<DbContextOptions<LottiesDbContext>>();
         services.RemoveAll<DbContextOptions>();
+        // Since EF Core 9 AddDbContext also registers its options callback (UseNpgsql) separately and every registered
+        // callback runs: without removing it, both providers would be configured.
+        services.RemoveAll<IDbContextOptionsConfiguration<LottiesDbContext>>();
         services.AddDbContext<LottiesDbContext>(options => options
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()

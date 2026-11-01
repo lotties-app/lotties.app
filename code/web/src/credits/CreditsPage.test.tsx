@@ -8,6 +8,8 @@ import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import { CURATED_CREDITS } from './curatedCredits';
 import { PackageRow } from './PackageList';
 import summary from './third-party-summary.generated.json';
@@ -46,6 +48,14 @@ describe('the public /credits route', () => {
     await waitFor(() => expect(document.title).toBe('Credits and licenses · Lotties'));
   });
 
+  it('ends with the running version', async () => {
+    renderCredits();
+    await screen.findByRole('heading', { level: 1, name: 'Credits and licenses' });
+    expect(screen.getByTestId('version-line').textContent).toBe(
+      `App version: Lotties ${displayVersion(readBuildInfo().version)}`,
+    );
+  });
+
   it('has the sections, the license, the source and the honest wording', async () => {
     renderCredits();
     await screen.findByRole('heading', { level: 1 });
@@ -58,7 +68,7 @@ describe('the public /credits route', () => {
     ]);
     expect(screen.getByText(/GNU Affero General Public License v3\.0/)).toBeTruthy();
     const source = screen.getByRole('link', { name: /Source code on GitHub/ });
-    expect(source.getAttribute('href')).toBe('https://github.com/dev-vinicius-andrade/lotties.app');
+    expect(source.getAttribute('href')).toBe('https://github.com/lotties-app/lotties.app');
     expect(source.getAttribute('rel')).toContain('noopener');
     expect(screen.getByText(/does not mean that it endorses/)).toBeTruthy();
     expect(screen.getByText(/not a medical device/i)).toBeTruthy();
@@ -167,9 +177,7 @@ describe('the public /credits route', () => {
       const link = await screen.findByRole('link', { name: /Source code on GitHub/ });
       fireEvent.click(link);
       await waitFor(() =>
-        expect(openBrowser).toHaveBeenCalledWith(
-          'https://github.com/dev-vinicius-andrade/lotties.app',
-        ),
+        expect(openBrowser).toHaveBeenCalledWith('https://github.com/lotties-app/lotties.app'),
       );
     } finally {
       vi.unstubAllGlobals();

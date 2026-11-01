@@ -9,17 +9,26 @@ import {
   rhythmDetails,
   rhythmDetailText,
   rhythmLabel,
+  sortDetails,
+  upcomingText,
   type BedtimeDetail,
   type ProjectedDetail,
   type RhythmText,
   type RhythmWindowInput,
 } from '../rhythmDetails';
 import { rulerGeometry, type RulerInput } from '../rulerGeometry';
+import { LAYER_OF, type UpcomingItem } from '../upcoming';
+import { laneMarks, type LaneMark } from '../upcomingLane';
 import { BabyFace } from './BabyFace';
+import { LayerChips } from './LayerChips';
+import { useRingLayers } from './useRingLayers';
 import { projectedLook, ringSwatchColors, type RingLook } from './ringSwatch';
 import { RhythmDetailStrip } from './RhythmDetailStrip';
 import { RingLegend } from './RingLegend';
 import { rhythmMarkSx } from './rhythmMarks';
+import { UpcomingList } from './UpcomingList';
+import { LaneStamp } from './LaneStamp';
+import { CONFIDENCE_STRENGTH, upcomingVisual } from './upcomingVisual';
 import { useRhythmSelection } from './useRhythmSelection';
 
 const MINUTE_MS = 60_000;
@@ -30,6 +39,10 @@ const NOW_HIT = 32;
 const WINDOW_HIT_MIN = 24;
 /** The key of the "now" mark (rhythmDetails). */
 const NOW_KEY = 'now';
+/** The "next up" lane under the bar: 28 px targets around 22 px stamps, at least 11 % apart. */
+const LANE = 28;
+const LANE_STAMP = 22;
+const LANE_MIN_GAP = 11;
 
 export interface DayRulerProps extends RulerInput {
   /** The predicted nap window and its basis, when there is one. */
@@ -42,6 +55,8 @@ export interface DayRulerProps extends RulerInput {
   bedTime?: { earliest: string; latest: string } | null;
   /** The naps still likely today (`projectNaps`), drawn as faint dashed bands. */
   projection?: NapProjection | null;
+  /** What is likely still to come today (`upcomingToday`): the lane under the bar and its list. */
+  upcoming?: readonly UpcomingItem[];
 }
 
 /**
@@ -131,10 +146,21 @@ export function DayRuler(props: DayRulerProps) {
   const theme = useTheme();
   const swatch = ringSwatchColors(theme);
   const accent = palette(theme).primary.main;
-  const { since, now, window, overtired = false, bedTime = null, projection = null } = props;
+  const {
+    since,
+    now,
+    window,
+    overtired = false,
+    bedTime = null,
+    projection = null,
+    upcoming,
+  } = props;
+  const layers = useRingLayers();
+  const withLayers = upcoming !== undefined;
+  const showSleep = !withLayers || layers.has('sleep');
   const minutes =
     props.minutes ?? Math.max(0, Math.floor((now.getTime() - Date.parse(since)) / MINUTE_MS));
-  const details = useMemo(
+  const sleepDetails = useMemo(
     () =>
       rhythmDetails({
         events: [],
@@ -148,12 +174,26 @@ export function DayRuler(props: DayRulerProps) {
       }),
     [now, window, since, minutes, overtired, bedTime, projection],
   );
-  const estimates = details.filter(
+  const shownSleep = sleepDetails.filter((detail) => showSleep || detail.kind === 'now');
+  const estimates = shownSleep.filter(
     (detail): detail is ProjectedDetail | BedtimeDetail =>
       detail.kind === 'projected' || detail.kind === 'bedtime',
   );
-  const until = Math.max(0, ...estimates.map((detail) => detail.end));
-  const geometry = rulerGeometry({ since, now, ...(window ? { window } : {}), until });
+  const visible = (upcoming ?? []).filter((item) => layers.has(LAYER_OF[item.kind]));
+  // The bar reaches the last estimate and the last "next up" item, so every marker is on it.
+  const until = Math.max(
+    0,
+    ...estimates.map((detail) => detail.end),
+    ...visible.map((item) => (item.windowEnd ?? item.at).getTime()),
+  );
+  const geometry = rulerGeometry({
+    since,
+    now,
+    ...(window && showSleep ? { window } : {}),
+    until,
+  });
+  const lane = laneMarks(visible, (item) => geometry.at(item.at.getTime()), LANE_MIN_GAP, [0, 100]);
+  const details = sortDetails([...shownSleep, ...lane.marks.map((mark) => mark.detail)]);
   const texts = new Map<string, RhythmText>(
     details.map((detail) => [detail.key, rhythmDetailText(detail, t)]),
   );
@@ -175,6 +215,15 @@ export function DayRuler(props: DayRulerProps) {
   const tip = (key: string) => (selection.selected === key ? '' : nameOf(key));
   const selectedText = selection.selected ? (texts.get(selection.selected) ?? null) : null;
   const band = geometry.band;
+  const rows = visible.map((item) => ({
+    item,
+    text: upcomingText(item, t),
+    markKey: lane.markOf.get(item.key) ?? `up-${item.key}`,
+  }));
+  const laneLegend = (['feeds', 'diapers', 'patterns', 'medicine'] as const).filter((layer) =>
+    visible.some((item) => LAYER_OF[item.kind] === layer),
+  );
+  const anyLane = layers.layers.some((layer) => layer !== 'sleep');
 
   const nowMark = (
     <Tooltip key="now" title={tip(NOW_KEY)} placement="top" disableInteractive disableTouchListener>
@@ -286,6 +335,23 @@ export function DayRuler(props: DayRulerProps) {
             return null;
           })}
         </Box>
+        {lane.marks.length > 0 && (
+          <Box
+            data-testid="ruler-lane"
+            sx={{ position: 'relative', height: LANE, mb: 0.5, ...rhythmMarkSx }}
+          >
+            {lane.marks.map((mark) => (
+              <RulerLaneMark
+                key={mark.detail.key}
+                mark={mark}
+                left={(ms) => geometry.at(ms)}
+                nowMs={now.getTime()}
+                tip={tip(mark.detail.key)}
+                markProps={selection.markProps(mark.detail.key, nameOf(mark.detail.key))}
+              />
+            ))}
+          </Box>
+        )}
         <Box aria-hidden sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Typography variant="caption" color="text.secondary">
             {formatTime(geometry.start)}
@@ -296,21 +362,112 @@ export function DayRuler(props: DayRulerProps) {
         </Box>
       </Box>
       <RhythmDetailStrip text={selectedText} onClear={() => selection.clear(true)} />
-      {estimates.length > 0 && (
+      {withLayers && (
+        <Box sx={{ mt: 1 }}>
+          <LayerChips layers={layers.layers} onToggle={layers.toggle} />
+        </Box>
+      )}
+      {(estimates.length > 0 || laneLegend.length > 0) && (
         // Only with estimates on it: the bands need their names (the plain ruler has none).
         <Box sx={{ mt: 1 }}>
           <RingLegend
             label={t('now.ruler.legendLabel')}
             keys={[
-              ...(band ? (['window'] as const) : []),
+              ...(band && showSleep ? (['window'] as const) : []),
               ...(estimates.some((d) => d.kind === 'projected') ? (['projected'] as const) : []),
               ...(estimates.some((d) => d.kind === 'bedtime') ? (['bedtime'] as const) : []),
+              ...laneLegend,
               'now',
             ]}
             face={face}
           />
         </Box>
       )}
+      {withLayers && (rows.length > 0 || anyLane) && (
+        <Box sx={{ mt: 1 }}>
+          <UpcomingList rows={rows} selected={selection.selected} onSelect={selection.select} />
+        </Box>
+      )}
     </Box>
+  );
+}
+
+/**
+ * One marker of the ruler's "next up" lane: a 28 px button at its time with the item's stamp (or
+ * a cluster's count) and, for a window, a thin dashed line across it in the item's colour.
+ */
+function RulerLaneMark({
+  mark,
+  left,
+  nowMs,
+  tip,
+  markProps,
+}: {
+  mark: LaneMark;
+  left: (ms: number) => number;
+  nowMs: number;
+  tip: string;
+  markProps: ReturnType<ReturnType<typeof useRhythmSelection>['markProps']>;
+}) {
+  const single = mark.items.length === 1 ? mark.items[0] : null;
+  const visual = single ? upcomingVisual(single) : undefined;
+  const span =
+    single?.windowStart && single.windowEnd
+      ? {
+          from: left(Math.max(single.windowStart.getTime(), nowMs)),
+          to: left(single.windowEnd.getTime()),
+        }
+      : null;
+  return (
+    <>
+      {span && visual && span.to > span.from && (
+        <Box
+          aria-hidden
+          data-testid="ruler-upcoming-window"
+          sx={(theme) => ({
+            position: 'absolute',
+            top: LANE / 2 - 1.5,
+            height: 3,
+            left: `${span.from}%`,
+            width: `${span.to - span.from}%`,
+            borderTop: `3px dashed ${palette(theme).category[visual.category].fg}`,
+            opacity: 0.55 * CONFIDENCE_STRENGTH[single?.confidence ?? 'high'],
+            pointerEvents: 'none',
+          })}
+        />
+      )}
+      <Tooltip title={tip} placement="top" disableInteractive disableTouchListener>
+        <ButtonBase
+          className="rhythm-mark"
+          disableRipple
+          data-testid={single ? `ruler-upcoming-${single.kind}` : 'ruler-upcoming-cluster'}
+          {...markProps}
+          sx={{
+            position: 'absolute',
+            top: 0,
+            width: LANE,
+            height: LANE,
+            borderRadius: '50%',
+            left: `clamp(0px, calc(${mark.pos}% - ${LANE / 2}px), calc(100% - ${LANE}px))`,
+            zIndex: 1,
+          }}
+        >
+          {single ? (
+            <LaneStamp visual={visual} confidence={single.confidence} size={LANE_STAMP} />
+          ) : (
+            <LaneStamp count={mark.items.length} size={LANE_STAMP} />
+          )}
+          <Box
+            className="rhythm-ring"
+            sx={(theme) => ({
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              border: `2px solid ${palette(theme).primary.main}`,
+            })}
+          />
+        </ButtonBase>
+      </Tooltip>
+    </>
   );
 }

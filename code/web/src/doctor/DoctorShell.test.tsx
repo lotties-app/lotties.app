@@ -2,6 +2,8 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import type { BabyRoutineDb } from '../db/database';
 import type { Baby } from '../db/models';
 import { UserMenu } from '../layout/UserMenu';
@@ -291,6 +293,20 @@ describe('landing and the mode switch', () => {
 });
 
 describe('the doctor settings', () => {
+  it('her account menu shows the app version and opens About in her shell', async () => {
+    await renderDashboard(db, '/doctor/settings', [LIA], handler);
+    await screen.findByRole('heading', { name: 'Settings', level: 1 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'User menu' }));
+    const menu = await screen.findByRole('menu');
+    const about = within(menu).getByRole('menuitem', { name: /About/ });
+    expect(about.textContent).toContain(displayVersion(readBuildInfo().version));
+    fireEvent.click(about);
+
+    expect(await screen.findByRole('heading', { name: 'About', level: 1 })).toBeTruthy();
+    expect(screen.getByText('App (this device)')).toBeTruthy();
+  });
+
   it('show her account settings only, never a baby of the family', async () => {
     await renderDashboard(db, '/doctor/settings', [MINE, LIA], handler);
 

@@ -8,7 +8,7 @@ Lotties itself is released under the [AGPL-3.0](LICENSE). It includes the third-
 
 These packages do not ship a license file; their license, as declared in their package metadata, is shown (the standard text is at <https://spdx.org/licenses/>).
 
-- none
+- @mediapipe/tasks-audio 1.1.1: Apache-2.0 (http://mediapipe.dev)
 
 ## License texts
 
@@ -1020,7 +1020,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### EFCore.NamingConventions 8.0.3
+### EFCore.NamingConventions 10.0.1
 
 License: Apache-2.0
 
@@ -1493,7 +1493,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-### Microsoft.AspNetCore.Authentication.JwtBearer 8.0.11, Microsoft.EntityFrameworkCore 8.0.11, Microsoft.EntityFrameworkCore.Abstractions 8.0.11, Microsoft.EntityFrameworkCore.Analyzers 8.0.11, Microsoft.EntityFrameworkCore.Relational 8.0.11, Microsoft.Extensions.AI.Abstractions 10.11.0, Microsoft.Extensions.Caching.Abstractions 10.0.13, Microsoft.Extensions.Configuration.Abstractions 10.0.13, Microsoft.Extensions.DependencyInjection.Abstractions 10.0.13, Microsoft.Extensions.Diagnostics.Abstractions 10.0.13, Microsoft.Extensions.FileProviders.Abstractions 10.0.13, Microsoft.Extensions.Hosting.Abstractions 10.0.13, Microsoft.Extensions.Logging.Abstractions 10.0.13, Microsoft.Extensions.Options 10.0.13, Microsoft.Extensions.Primitives 10.0.13, Microsoft.IdentityModel.Abstractions 7.1.2, Microsoft.IdentityModel.JsonWebTokens 7.1.2, Microsoft.IdentityModel.Logging 7.1.2, Microsoft.IdentityModel.Protocols 7.1.2, Microsoft.IdentityModel.Protocols.OpenIdConnect 7.1.2, Microsoft.IdentityModel.Tokens 7.1.2, System.Diagnostics.DiagnosticSource 10.0.13, System.IdentityModel.Tokens.Jwt 7.1.2, System.IO.Pipelines 10.0.13, System.Net.ServerSentEvents 10.0.13, System.Text.Encodings.Web 10.0.13, System.Text.Json 10.0.13
+### Microsoft.AspNetCore.Authentication.JwtBearer 10.0.13, Microsoft.Bcl.Cryptography 10.0.2, Microsoft.EntityFrameworkCore 10.0.13, Microsoft.EntityFrameworkCore.Abstractions 10.0.13, Microsoft.EntityFrameworkCore.Analyzers 10.0.13, Microsoft.EntityFrameworkCore.Relational 10.0.13, Microsoft.Extensions.AI.Abstractions 10.11.0, Microsoft.Extensions.Caching.Abstractions 10.0.13, Microsoft.Extensions.Caching.Memory 10.0.13, Microsoft.Extensions.Configuration 10.0.13, Microsoft.Extensions.Configuration.Abstractions 10.0.13, Microsoft.Extensions.Configuration.Binder 10.0.13, Microsoft.Extensions.DependencyInjection 10.0.13, Microsoft.Extensions.DependencyInjection.Abstractions 10.0.13, Microsoft.Extensions.Diagnostics 10.0.13, Microsoft.Extensions.Diagnostics.Abstractions 10.0.13, Microsoft.Extensions.FileProviders.Abstractions 10.0.13, Microsoft.Extensions.Hosting.Abstractions 10.0.13, Microsoft.Extensions.Http 10.0.13, Microsoft.Extensions.Logging 10.0.13, Microsoft.Extensions.Logging.Abstractions 10.0.13, Microsoft.Extensions.Options 10.0.13, Microsoft.Extensions.Options.ConfigurationExtensions 10.0.13, Microsoft.Extensions.Primitives 10.0.13, Microsoft.IdentityModel.Abstractions 8.19.2, Microsoft.IdentityModel.JsonWebTokens 8.19.2, Microsoft.IdentityModel.Logging 8.19.2, Microsoft.IdentityModel.Protocols 8.19.2, Microsoft.IdentityModel.Protocols.OpenIdConnect 8.19.2, Microsoft.IdentityModel.Tokens 8.19.2, System.IdentityModel.Tokens.Jwt 8.19.2
 
 License: MIT
 
@@ -1505,36 +1505,6 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-### Microsoft.Extensions.Caching.Abstractions 8.0.0, Microsoft.Extensions.Caching.Memory 8.0.1, Microsoft.Extensions.Configuration 8.0.0, Microsoft.Extensions.Configuration.Abstractions 8.0.0, Microsoft.Extensions.Configuration.Binder 8.0.0, Microsoft.Extensions.DependencyInjection 8.0.1, Microsoft.Extensions.DependencyInjection.Abstractions 8.0.2, Microsoft.Extensions.Diagnostics 8.0.1, Microsoft.Extensions.Diagnostics.Abstractions 8.0.1, Microsoft.Extensions.FileProviders.Abstractions 8.0.0, Microsoft.Extensions.Hosting.Abstractions 8.0.1, Microsoft.Extensions.Http 8.0.1, Microsoft.Extensions.Logging 8.0.1, Microsoft.Extensions.Logging.Abstractions 8.0.2, Microsoft.Extensions.Options 8.0.2, Microsoft.Extensions.Options.ConfigurationExtensions 8.0.0, Microsoft.Extensions.Primitives 8.0.0
-
-License: MIT
-
-```text
-The MIT License (MIT)
-
-Copyright (c) .NET Foundation and Contributors
-
-All rights reserved.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 ```
 
 ### ModelContextProtocol 2.3.0, ModelContextProtocol.AspNetCore 2.3.0, ModelContextProtocol.Core 2.3.0
@@ -1579,26 +1549,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### Npgsql 8.0.6
+### Npgsql 10.0.3, Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3
 
 License: PostgreSQL
 
 ```text
-Copyright 2023 © The Npgsql Development Team
-
-Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
-
-IN NO EVENT SHALL THE AUTHORS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-THE AUTHORS SPECIFICALLY DISCLAIM ANY WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE AUTHORS HAVE NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-```
-
-### Npgsql.EntityFrameworkCore.PostgreSQL 8.0.11
-
-License: PostgreSQL
-
-```text
-Copyright 2024 © The Npgsql Development Team
+Copyright 2025 © The Npgsql Development Team
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
 

@@ -1,4 +1,5 @@
 import type { BabyEvent, EventType } from '../db/models';
+import { countsAsCrying } from '../events/cryDetection';
 import type { TimeOfDayPatternDto, PredictionsDto } from '../sync/contract';
 import {
   patternOfType,
@@ -25,7 +26,10 @@ export function fussyPattern(
   return patternOfType(predictions, FUSSY_KEY);
 }
 
-/** A fussy spell (running or not) started from the suggestion time on, or one still running. */
+/**
+ * A fussy spell (running or not) started from the suggestion time on, or one still running. A cry
+ * monitor spell a parent marked "Not crying" does not count (docs/design/35-cry-engine.md section 8).
+ */
 export function isFussyHandled(
   window: PatternWindow,
   events: readonly BabyEvent[],
@@ -35,7 +39,10 @@ export function isFussyHandled(
   const ids = typeIdsForKey(types, FUSSY_KEY);
   const from = window.showFrom.getTime();
   return pastLiveEvents(events, now).some(
-    (event) => ids.has(event.typeId) && (Date.parse(event.startedAt) >= from || !event.endedAt),
+    (event) =>
+      ids.has(event.typeId) &&
+      countsAsCrying(event) &&
+      (Date.parse(event.startedAt) >= from || !event.endedAt),
   );
 }
 

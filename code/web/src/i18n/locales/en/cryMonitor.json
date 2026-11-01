@@ -1,0 +1,144 @@
+{
+  "cryMonitor": {
+    "title": "Cry monitor (beta)",
+    "intro": {
+      "lead": "Cry monitor listens through this device's microphone. When it hears crying for a while, it starts a crying spell in {{name}}'s log.",
+      "howTitle": "How to use it",
+      "how": {
+        "device": "Use a spare phone or tablet in the baby's room.",
+        "power": "Keep it plugged in, with the screen on and this page open.",
+        "stop": "Press Stop when you are done. Leaving this page also stops it."
+      },
+      "privacyTitle": "Your privacy",
+      "privacy": {
+        "onlyOpen": "The microphone listens only while this page is open and listening.",
+        "onDevice": "Sounds are analysed on this device. They are never recorded, stored or sent anywhere.",
+        "saved": "Only the fact that crying was heard is saved: a crying spell with its start and end times."
+      },
+      "limitsTitle": "Not a baby monitor",
+      "limits": {
+        "notSafety": "This is not a baby monitor and not a safety device.",
+        "miss": "It can miss crying, for example from another room or over loud noise. Other sounds can set it off.",
+        "beta": "It is in testing: it was only checked with recorded sounds, not yet in real homes.",
+        "rely": "Never rely on it. Always keep a way to hear your baby yourself."
+      },
+      "start": "Start monitoring",
+      "continue": "Continue",
+      "consentGiven": "You agreed on this device on {{date}}.",
+      "withdraw": "Withdraw consent on this device",
+      "notifications": "Get a notification on your other devices when crying is detected",
+      "notificationsLink": "Settings > Notifications"
+    },
+    "consent": {
+      "title": "Before you start",
+      "lead": "Please read and confirm:",
+      "points": {
+        "microphone": "While the monitor runs, the microphone of this device listens. Sounds are analysed here and discarded at once: nothing is recorded, stored or sent.",
+        "saved": "Only the crying spells it detects are saved to {{name}}'s log, with their start and end times, marked as detected automatically. Family members who turned on the alert may get a notification.",
+        "others": "The microphone also hears other people in the room. Tell anyone who may be there.",
+        "limits": "It can miss crying or react to other sounds. It does not replace hearing your baby yourself.",
+        "stop": "You can stop it at any time, and withdraw this consent on this page."
+      },
+      "understand": "I understand and agree",
+      "allowed": "I am allowed to monitor this baby",
+      "agree": "Agree",
+      "cancel": "Not now"
+    },
+    "loading": {
+      "title": "Starting the monitor",
+      "body": "Loading the sound model and asking for the microphone.",
+      "cancel": "Cancel"
+    },
+    "listening": {
+      "label": "Cry monitor",
+      "status": "Listening",
+      "for": "For {{name}}",
+      "since": "Since {{time}} ({{duration}})",
+      "crying": "Crying heard since {{time}}",
+      "stop": "Stop",
+      "screenOn": "The screen stays on while listening.",
+      "sensitivity": "Sensitivity",
+      "sensitivityLevels": {
+        "less": "Less",
+        "balanced": "Balanced",
+        "more": "More"
+      },
+      "sensitivityHelp": {
+        "less": "Reacts only to clear crying. It may miss quieter crying.",
+        "balanced": "Recommended: a balance between missing crying and false alarms.",
+        "more": "Also reacts to quieter crying. Other sounds may set it off more often."
+      },
+      "processing": "Sensitivity may be lower on this device: the browser kept its voice processing on.",
+      "offline": "Offline: detected crying is saved here and syncs later.",
+      "wakeLock": {
+        "generic": "This device may turn the screen off, which stops listening. Keep it plugged in and set a longer screen timeout in its settings.",
+        "ios": "This device may turn the screen off, which stops listening. Keep it plugged in and turn off Auto-Lock in Settings > Display & Brightness. Keeping the screen on from the installed app needs iOS 18.4 or later.",
+        "android": "This device may turn the screen off, which stops listening. Keep it plugged in and set a longer Screen timeout in Settings > Display."
+      }
+    },
+    "failure": {
+      "tryAgain": "Try again",
+      "restart": "Restart",
+      "denied": {
+        "title": "Microphone access is off",
+        "body": "Cry monitor needs the microphone. Allow it for this site, then press Try again.",
+        "stepsLabel": "How to allow the microphone",
+        "steps": {
+          "chromium": {
+            "open": "Tap the icon at the left of the address bar.",
+            "allow": "Open Permissions or Site settings and set Microphone to Allow."
+          },
+          "iosSafari": {
+            "open": "Tap the page menu (aA) in the address bar, then Website Settings.",
+            "allow": "Set Microphone to Allow. Or open Settings > Apps > Safari > Microphone."
+          },
+          "macSafari": {
+            "open": "Open Safari > Settings > Websites > Microphone.",
+            "allow": "Set this site to Allow."
+          },
+          "firefox": {
+            "open": "Tap the lock icon next to the address.",
+            "allow": "Clear the blocked microphone permission."
+          },
+          "retry": "Come back here and press Try again."
+        }
+      },
+      "unavailable": {
+        "title": "No microphone available",
+        "body": "The microphone could not be opened. Another app may be using it, or this device has none."
+      },
+      "lost": {
+        "title": "Microphone interrupted",
+        "body": "Listening stopped at {{time}}: a call or another app took the microphone, or its permission changed. Nothing after that was heard."
+      },
+      "stalled": {
+        "title": "Listening stopped",
+        "body": "The microphone stopped at {{time}}, probably because the screen turned off or another app came to the front. Nothing after that was heard."
+      },
+      "model": {
+        "title": "Not available right now",
+        "body": "The cry monitor could not start. Check the connection the first time you use it, then try again later."
+      },
+      "unsupported": {
+        "title": "Not supported on this device",
+        "body": "This browser cannot run the cry monitor. It needs a recent browser with microphone access on a secure (https) connection."
+      }
+    },
+    "recent": {
+      "title": "Recent detections",
+      "empty": "No crying detected today.",
+      "running": "{{time}} · still going",
+      "ended": "{{time}} · {{duration}}"
+    },
+    "answer": {
+      "detected": "Detected by the cry monitor. Was she crying?",
+      "question": "Was she crying?",
+      "yes": "Yes, crying",
+      "no": "Not crying",
+      "group": "Was she crying at {{time}}?",
+      "answeredYes": "Detected by the cry monitor. You said: crying.",
+      "answeredNo": "Detected by the cry monitor. You said: not crying.",
+      "readOnly": "Detected by the cry monitor."
+    }
+  }
+}

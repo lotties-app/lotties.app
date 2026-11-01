@@ -25,6 +25,16 @@ public sealed class MigrationTests
     }
 
     [Fact]
+    public void Migrations_HaveNoPendingModelChangesForTheRuntimeCheck()
+    {
+        using var context = ModelTestContext.Create();
+
+        // Since EF Core 9, Migrate() (DB_AUTO_MIGRATE) and dotnet ef database update throw (PendingModelChangesWarning)
+        // when this is true. Unlike the design-time tools it reads the snapshot as written, without upgrading an older one.
+        Assert.False(context.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
     public void Migrations_ContainInitialCreate()
     {
         using var context = ModelTestContext.Create();
@@ -72,6 +82,9 @@ public sealed class MigrationTests
         "20261023162441_ProductStrength",
         "20261023172942_FussyOutcomes",
         "20261023213337_VoiceAssistants",
+        "20261024120542_BottleSegments",
+        "20261024133642_CryDetector",
+        "20261024142612_ProjectBoard",
     ];
 
     [Fact]
@@ -132,8 +145,33 @@ public sealed class MigrationTests
 
     private static IModel Initialize(LottiesDbContext context, IModel model)
     {
-        var finalized = model is IMutableModel mutable ? mutable.FinalizeModel() : model;
+        var finalized = model is IMutableModel mutable ? WrittenBeforeEfCore10(mutable).FinalizeModel() : model;
         return context.GetService<IModelRuntimeInitializer>().Initialize(finalized);
+    }
+
+    /// <summary>
+    /// EF Core 10 reads a complex property written without <c>IsRequired()</c> as optional, and EF Core 8 and 9 never wrote
+    /// it (their complex properties were always required). EF's design-time tools make those required again when they
+    /// read a model of these versions (SnapshotModelProcessor); this does the same for the Designers generated before the
+    /// .NET 10 upgrade, which are never regenerated (the snapshot itself is in EF Core 10 form).
+    /// </summary>
+    private static IMutableModel WrittenBeforeEfCore10(IMutableModel model)
+    {
+        if (model.GetProductVersion() is { } version && (version.StartsWith("8.", StringComparison.Ordinal) || version.StartsWith("9.", StringComparison.Ordinal)))
+        {
+            MakeComplexPropertiesRequired(model.GetEntityTypes());
+        }
+
+        return model;
+    }
+
+    private static void MakeComplexPropertiesRequired(IEnumerable<IMutableTypeBase> types)
+    {
+        foreach (var complexProperty in types.SelectMany(type => type.GetComplexProperties()).ToArray())
+        {
+            complexProperty.IsNullable = false;
+            MakeComplexPropertiesRequired([complexProperty.ComplexType]);
+        }
     }
 
     [Fact]
@@ -374,6 +412,34 @@ public sealed class MigrationTests
 
         Assert.True(dropped >= 0 && dropped < added && added < indexed, $"drop {dropped}, add {added}, index {indexed}");
         Assert.Contains("UPDATE users SET display_name = 'Parent' WHERE display_name LIKE '%@%';", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IdempotentScript_ProjectBoardCreatesItsFourTablesAndSeedsTheTenTopicsWithoutTouchingOtherTables()
+    {
+        using var context = ModelTestContext.Create();
+
+        var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
+        var start = script.IndexOf("_ProjectBoard'", StringComparison.Ordinal);
+        var section = script[start..script.LastIndexOf("_ProjectBoard'", StringComparison.Ordinal)];
+
+        foreach (var table in new[] { "board_topics", "board_items", "board_item_events", "board_api_keys" })
+        {
+            Assert.Contains($"CREATE TABLE {table} (", section, StringComparison.Ordinal);
+        }
+
+        foreach (var topic in new[] { "product", "doctor-access", "assistants-alexa-mcp", "privacy-legal", "mobile-stores", "infrastructure-deploy", "data-catalog", "predictions-ml", "design-ux", "process-meta" })
+        {
+            Assert.Contains($"('{topic}', FALSE", section, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("CREATE UNIQUE INDEX ix_board_items_external_key ON board_items (external_key) WHERE external_key IS NOT NULL;", section, StringComparison.Ordinal);
+        Assert.Contains("CREATE UNIQUE INDEX ix_board_api_keys_key_hash ON board_api_keys (key_hash);", section, StringComparison.Ordinal);
+        Assert.Contains("links jsonb NOT NULL", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("babies", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("DROP ", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPDATE ", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("ALTER TABLE users", section, StringComparison.Ordinal);
     }
 
     [Fact]

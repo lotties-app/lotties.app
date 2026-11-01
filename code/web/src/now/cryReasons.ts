@@ -7,6 +7,8 @@ import {
 } from '../ageNorms/ageNorms';
 import type { BabyEvent, EventType } from '../db/models';
 import { ageInMonths } from '../events/bottleAgeDefaults';
+import { countsAsCrying } from '../events/cryDetection';
+import { adjustedFeedGap, topUpAdjustment } from '../events/bottlePatterns';
 import type { PredictionsDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
 import { bellyPainPattern, windowAround, BELLY_MASSAGE_KEY } from './bellyPattern';
@@ -62,8 +64,12 @@ export const DEFAULT_CRY_AGE_BAND: CryAgeBand = 'weeks6to3m';
 
 /** One structured reason behind a cause; the UI writes the sentence. Minutes are whole minutes. */
 export type CryFact =
-  /** Since the start of the latest feed; `usualGapMinutes` is her own usual gap, `null` without one. */
-  | { kind: 'sinceLastFeed'; minutes: number; usualGapMinutes: number | null }
+  /**
+   * Since the start of the latest feed; `usualGapMinutes` is her own usual gap, `null` without one.
+   * `smallerFeed`: that feed was a bottle she drank well under her usual amount of (an interrupted
+   * or partly drunk bottle), so the gap the ramp uses is shortened (`topUpAdjustment`).
+   */
+  | { kind: 'sinceLastFeed'; minutes: number; usualGapMinutes: number | null; smallerFeed?: true }
   /** A feeding timer runs (started `minutes` ago). */
   | { kind: 'feedingNow'; minutes: number }
   /** Current awake stretch; `windowMinutes` is her usual limit (server wake window) or `null`. */
@@ -415,7 +421,8 @@ function ramp(ratio: number, r: CryRamp): number {
   return r.floor + (r.max - r.floor) * t;
 }
 
-function median(values: readonly number[]): number {
+/** The median of a non-empty list. */
+export function median(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
@@ -442,11 +449,24 @@ const noData = (w: CryWeights, reason: 'noLog' | 'asleep'): Scored => ({
   facts: [{ kind: 'noData', reason }],
 });
 
-/** Her usual feed gap: the local median of recent start-to-start gaps, else the server's. */
-function usualFeedGap(ctx: Context): number | null {
-  const { w, nowMs } = ctx;
+/** One gap between two feed sessions: when the first one started (ms) and the gap (minutes). */
+export interface FeedSessionGap {
+  from: number;
+  minutes: number;
+}
+
+/**
+ * Her recent feed gaps, as the cry ranker reads them: the feed starts of the last
+ * `feedHistoryHours` up to `nowMs`, merged into sessions when closer than `feedMergeMinutes`, and
+ * the start-to-start gaps up to `feedGapMaxMinutes` (longer ones are a missed log, not a gap).
+ */
+export function feedSessionGaps(
+  feeds: readonly BabyEvent[],
+  nowMs: number,
+  w: Pick<CryWeights, 'feedHistoryHours' | 'feedMergeMinutes' | 'feedGapMaxMinutes'> = CRY_WEIGHTS,
+): FeedSessionGap[] {
   const from = nowMs - w.feedHistoryHours * HOUR_MS;
-  const starts = ctx.feeds
+  const starts = feeds
     .map((e) => Date.parse(e.startedAt))
     .filter((t) => t >= from)
     .sort((a, b) => a - b);
@@ -455,16 +475,28 @@ function usualFeedGap(ctx: Context): number | null {
     const last = sessions[sessions.length - 1];
     if (last === undefined || start - last >= w.feedMergeMinutes * MINUTE_MS) sessions.push(start);
   }
-  const gaps = sessions
+  return sessions
     .slice(1)
-    .map((start, i) => (start - sessions[i]) / MINUTE_MS)
-    .filter((gap) => gap <= w.feedGapMaxMinutes);
-  if (gaps.length >= w.minimumFeedGaps) return Math.round(median(gaps));
-  const basis = ctx.input.predictions?.predictions?.find((p) => p.typeKey === FEEDING_KEY)?.basis;
+    .map((start, i) => ({ from: sessions[i], minutes: (start - sessions[i]) / MINUTE_MS }))
+    .filter((gap) => gap.minutes <= w.feedGapMaxMinutes);
+}
+
+/** The usual gap (minutes) of the server's feeding prediction `basis`, when plausible (30 min to 12 h). */
+export function serverFeedGapMinutes(
+  predictions: PredictionsDto | null | undefined,
+): number | null {
+  const basis = predictions?.predictions?.find((p) => p.typeKey === FEEDING_KEY)?.basis;
   const server = basis && typeof basis === 'object' ? getOwn(basis, 'medianGapMinutes') : undefined;
   return typeof server === 'number' && Number.isFinite(server) && server >= 30 && server <= 720
     ? Math.round(server)
     : null;
+}
+
+/** Her usual feed gap: the local median of recent start-to-start gaps, else the server's. */
+function usualFeedGap(ctx: Context): number | null {
+  const gaps = feedSessionGaps(ctx.feeds, ctx.nowMs, ctx.w).map((gap) => gap.minutes);
+  if (gaps.length >= ctx.w.minimumFeedGaps) return Math.round(median(gaps));
+  return serverFeedGapMinutes(ctx.input.predictions);
 }
 
 function hungerOf(ctx: Context): Scored {
@@ -482,12 +514,25 @@ function hungerOf(ctx: Context): Scored {
   const lastStart = ctx.feeds.reduce((max, e) => (e.startedAt > max ? e.startedAt : max), '');
   const minutes = minutesBetween(lastStart, input.now);
   const own = usualFeedGap(ctx);
-  let score = ramp(minutes / (own ?? ctx.defaultFeedGapMinutes), band.hunger);
+  // A smaller feed than usual (an interrupted bottle) brings the next one forward, bounded.
+  const topUp = topUpAdjustment(ctx.feeds, new Date(ctx.nowMs));
+  const gap = adjustedFeedGap(own ?? ctx.defaultFeedGapMinutes, topUp);
+  let score = ramp(minutes / gap, band.hunger);
   const lastEnd = latestFeedEnd(input.events, input.types, input.now);
   if (lastEnd !== undefined && ctx.nowMs - lastEnd < w.freshFeedMinutes * MINUTE_MS) {
     score = Math.min(score, w.freshCap);
   }
-  return { score, facts: [{ kind: 'sinceLastFeed', minutes, usualGapMinutes: own }] };
+  return {
+    score,
+    facts: [
+      {
+        kind: 'sinceLastFeed',
+        minutes,
+        usualGapMinutes: own,
+        ...(topUp ? { smallerFeed: true as const } : {}),
+      },
+    ],
+  };
 }
 
 /** The awake stretch to judge, or `null` when the state is unknown (no sleep logged). */
@@ -738,6 +783,7 @@ function whatHelped(event: BabyEvent): string[] {
 /**
  * What helped in the last `limit` answered fussy spells (live, started by `now`), per cause. A
  * spell without a `what_helped` answer is skipped; one whose answer is unknown counts as `none`.
+ * A cry monitor spell marked "Not crying" is never counted (a false alarm, not a crying spell).
  */
 export function cryOutcomeHistory(
   events: readonly BabyEvent[],
@@ -748,7 +794,7 @@ export function cryOutcomeHistory(
   const ids = typeIdsForKey(types, FUSSY_KEY);
   const max = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : Number.MAX_SAFE_INTEGER;
   const answered = pastLiveEvents(events, now)
-    .filter((e) => ids.has(e.typeId))
+    .filter((e) => ids.has(e.typeId) && countsAsCrying(e))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt) || a.id.localeCompare(b.id))
     .map(whatHelped)
     .filter((answers) => answers.length > 0)

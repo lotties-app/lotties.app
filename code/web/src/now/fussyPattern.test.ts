@@ -104,6 +104,17 @@ describe('fussySuggestion', () => {
     expect(suggest(at(17, 0), [event(PAIN.id, at(16, 50))])).not.toBeNull();
   });
 
+  it('is not handled by a cry monitor spell marked "Not crying"; a confirmed one handles it', () => {
+    const auto = (cry_confirmed?: boolean) => ({
+      ...event(FUSSY.id, at(16, 50)),
+      payload: { auto_detected: true, ...(cry_confirmed === undefined ? {} : { cry_confirmed }) },
+    });
+    expect(suggest(at(17, 0), [auto(false)])).not.toBeNull();
+    expect(suggest(at(17, 0), [{ ...auto(false), endedAt: null }])).not.toBeNull();
+    expect(suggest(at(17, 0), [auto(true)])).toBeNull();
+    expect(suggest(at(17, 0), [auto()])).toBeNull();
+  });
+
   it('is hidden for the window "Not today" was chosen for, and back the next day', () => {
     expect(suggest(at(17, 0), [], '2026-10-21')).toBeNull();
     expect(suggest(at(17, 0, 22), [], '2026-10-21')).not.toBeNull();

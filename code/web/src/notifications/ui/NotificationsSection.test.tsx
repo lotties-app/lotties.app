@@ -195,6 +195,7 @@ describe('NotificationsSection reminders and settings', () => {
           appointmentReminders: true,
           doctorSuggestions: false,
           vaccineReminders: false,
+          cryDetected: false,
         },
       }),
     );
@@ -213,6 +214,7 @@ describe('NotificationsSection reminders and settings', () => {
         appointmentReminders: true,
         doctorSuggestions: false,
         vaccineReminders: false,
+        cryDetected: false,
       }),
     );
   });
@@ -247,6 +249,7 @@ describe('NotificationsSection reminders and settings', () => {
           appointmentReminders: true,
           doctorSuggestions: false,
           vaccineReminders: false,
+          cryDetected: false,
         },
       }),
     );
@@ -297,6 +300,7 @@ describe('NotificationsSection reminders and settings', () => {
           appointmentReminders: true,
           doctorSuggestions: false,
           vaccineReminders: false,
+          cryDetected: false,
           ...kinds,
         },
       }),
@@ -618,5 +622,59 @@ describe('NotificationsSection vaccine reminders', () => {
 
     const lia = await screen.findByRole('region', { name: 'Lia' });
     expect(within(lia).getByRole('switch', { name: /Lembretes de vacinas/ })).toBeTruthy();
+  });
+});
+
+describe('NotificationsSection cry monitor alerts', () => {
+  it('offers the switch per baby, off by default, and saves it', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Cry detected by the monitor/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    // A Viewer never receives baby reminders: the row is shown disabled, like the others.
+    const theo = screen.getByRole('region', { name: 'Theo' });
+    expect(
+      within(theo)
+        .getByRole('switch', { name: /Cry detected by the monitor/ })
+        .hasAttribute('disabled'),
+    ).toBe(true);
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: expect.objectContaining({ cryDetected: true, fussyPattern: false, doseDue: false }),
+      }),
+    );
+  });
+
+  it('keeps the setting when another switch is saved', async () => {
+    const { server } = setup({}, { preferences: [{ ...PREFS[0]!, cryDetected: true }, PREFS[1]!] });
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    await waitFor(() =>
+      expect(
+        within(lia)
+          .getByRole('switch', { name: /Cry detected by the monitor/ })
+          .getAttribute('aria-checked'),
+      ).toBe('true'),
+    );
+
+    fireEvent.click(within(lia).getByRole('switch', { name: /Fussy time heads-up/ }));
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toEqual(
+        expect.objectContaining({ fussyPattern: true, cryDetected: true }),
+      ),
+    );
+  });
+
+  it('is in Portuguese for a Portuguese user', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Choro detectado pelo monitor/ })).toBeTruthy();
   });
 });

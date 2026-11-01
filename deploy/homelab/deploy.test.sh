@@ -84,6 +84,13 @@ check "tag: a different web build argument is a different tag" bash -c "[ '$(sou
 VITE_PRIVACY_CONTACT_EMAIL=privacy@example.test; salt_c=$(web_build_salt); VITE_PRIVACY_CONTACT_EMAIL=""
 check "tag: a different privacy contact is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_c" code/web)' ]"
 check "tag: TAG overrides the source tag" equals "$(TAG=fixed image_tag "" code/web)" fixed
+salt_v1=$(VERSION=0.1.38 APP_VERSION=0.1.38 web_build_salt); salt_v2=$(VERSION=0.1.39 APP_VERSION=0.1.39 web_build_salt)
+check "tag: the release number is not part of the web tag" equals "$(source_tag "$salt_v2" code/web)" "$(source_tag "$salt_v1" code/web)"
+check "stamp: the release, commit and build time are build arguments, without the v" \
+  equals "$(release_build_args v0.1.38 abc1234 2026-10-24T10:00:00Z | tr '\n' ' ')" \
+  '--build-arg APP_VERSION=0.1.38 --build-arg APP_COMMIT=abc1234 --build-arg APP_BUILD_TIME=2026-10-24T10:00:00Z '
+check "stamp: no release gives an empty APP_VERSION (the app shows dev)" \
+  bash -c "(source '$DEPLOY'; release_build_args '' c t) | grep -qx 'APP_VERSION='"
 
 # ── Whole runs against stand-ins ──────────────────────────────────────────────
 mkdir "$WORK/bin"
@@ -155,6 +162,7 @@ run "dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered" STUB_NS_EXISTS=no STUB_PULL
   check "dry run: the namespace would be created" out_has 'namespace.yaml|would create'
   check "dry run: the pull Secret would be copied" out_has 'would copy cr-homel4b from namespace keycloak'
   check "dry run: the images would be built" out_has 'would build and push it: podman build .*lotties-web'
+  check "dry run: the release is chosen before the builds and stamped into them" out_has 'would build and push it: podman build .*lotties-api:src-[0-9a-f]{12} .*--build-arg APP_VERSION=[0-9]+\.[0-9]+\.[0-9]+ '
   check "dry run: the Secret keys are listed" out_has 'keys: DB_APP_PASSWORD DB_APP_USER DB_HOST DB_NAME DB_PORT'
   check "dry run: the Ingress is rendered for lotties.app" grep -q 'host: "lotties.app"' "$WORK/rendered/ingress.yaml"
   check "dry run: /api goes to the API" bash -c "grep -A4 'path: /api' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
@@ -183,6 +191,18 @@ run "real run" STUB_NS_EXISTS=no && {
   check "real: helm waits" log_has 'upgrade --install lotties-web .*--wait --timeout 10m'
   check "real: the Ingress is applied" log_has '^kubectl --context mine apply -f .*/ingress\.yaml'
   check "real: no secret value is on a command line or printed" no_password
+  release=$(sed -nE 's#^podman push -q reg\.test/lotties/lotties-api:v([0-9]+\.[0-9]+\.[0-9]+)$#\1#p' "$WORK/log" | head -n 1)
+  check "real: the API image carries the release it is tagged with" log_has "^podman build .*lotties-api:src-[0-9a-f]{12} .*--build-arg APP_VERSION=${release//./\\.} "
+  check "real: the web image carries the same release" log_has "^podman build .*lotties-web:src-[0-9a-f]{12} .*--build-arg APP_VERSION=${release//./\\.} "
+  check "real: both images carry the commit and an ISO build time" \
+    bash -c "[ \$(grep -cE -- '--build-arg APP_COMMIT=[0-9a-f]* --build-arg APP_BUILD_TIME=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z' '$WORK/log') -eq 2 ]"
+  grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "$WORK/log" | sort -u > "$WORK/tags-real"
+}
+
+run "fixed release" VERSION=v9.8.7 && {
+  check "fixed release: both images carry it" bash -c "[ \$(grep -c -- '--build-arg APP_VERSION=9\.8\.7 ' '$WORK/log') -eq 2 ]"
+  grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "$WORK/log" | sort -u > "$WORK/tags-fixed"
+  check "fixed release: the image tags do not depend on the release number" cmp -s "$WORK/tags-real" "$WORK/tags-fixed"
 }
 
 run "unchanged run" STUB_TAGS="$(grep -oE 'lotties-(api|web):src-[0-9a-f]{12}' "$WORK/log" | sed 's/.*://' | sort -u)" && {

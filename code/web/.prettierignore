@@ -4,3 +4,4 @@ package-lock.json
 .vite-cache
 
 src/credits/*.generated.json
+src/cry/cryTriggerVectors.json

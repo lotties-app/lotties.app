@@ -334,10 +334,13 @@ export function buildPayload(
   const payload: EventPayload = {};
   // Members no field declares (imports) and the values of hidden fields (pause keys) are kept.
   const editable = new Set(type.fields.filter((f) => isFormField(type, f)).map((f) => f.key));
-  for (const [key, value] of Object.entries(base)) {
-    if (!editable.has(key)) setOwn(payload, key, value);
-  }
   const visible = visibleFields(type.fields, formValue(form.values));
+  // A kept value of a field the new choices hide (a bottle's stretches after switching to nursing) goes.
+  const shown = new Set(visible.map((f) => f.key));
+  const declared = new Set(type.fields.map((f) => f.key));
+  for (const [key, value] of Object.entries(base)) {
+    if (!editable.has(key) && (!declared.has(key) || shown.has(key))) setOwn(payload, key, value);
+  }
   for (const field of visible.filter((f) => isFormField(type, f))) {
     const raw = getOwn(form.values, field.key);
     if (raw === undefined || raw === '') continue;

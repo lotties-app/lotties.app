@@ -58,6 +58,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Assistants.AssistantSubjects>();
         services.AddScoped<Assistants.IAssistantService, Assistants.AssistantService>();
         services.AddScoped<Assistants.IAssistantSettingsService, Assistants.AssistantSettingsService>();
+        services.AddScoped<Board.IBoardService, Board.BoardService>();
+        services.AddScoped<Board.IBoardApiKeyService, Board.BoardApiKeyService>();
         return services;
     }
 }

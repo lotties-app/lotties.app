@@ -1,7 +1,7 @@
 {
   "generatedBy": "code/web/scripts/generate-credits.mjs: do not edit by hand",
-  "count": 173,
-  "directCount": 42,
+  "count": 161,
+  "directCount": 41,
   "featured": [
     "react",
     "@mui/material",

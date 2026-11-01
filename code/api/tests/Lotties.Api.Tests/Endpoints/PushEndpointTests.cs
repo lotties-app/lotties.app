@@ -362,6 +362,24 @@ public sealed class PushEndpointTests(PushApiHost host) : IClassFixture<PushApiH
     }
 
     [Fact]
+    public async Task PutPreferences_CryDetected_IsOffByDefaultAndAMergeThatLeavesItOutKeepsIt()
+    {
+        var baby = await Factory.SeedBabyAsync(BabyRole.Caregiver);
+        var client = host.ClientFor(baby.SubjectOf(BabyRole.Caregiver));
+        var before = Assert.Single(await (await client.GetAsync(PreferencesPath)).ReadAsync<List<BabyNotificationPreferencesResponse>>(), item => item.BabyId == baby.BabyId);
+
+        var on = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { cryDetected = true })).ReadAsync<BabyNotificationPreferencesResponse>();
+        var olderClient = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), PreferencesBody(napWindow: true))).ReadAsync<BabyNotificationPreferencesResponse>();
+        var off = await (await client.PutAsJsonAsync(BabyPreferencesPath(baby.BabyId), new { cryDetected = false })).ReadAsync<BabyNotificationPreferencesResponse>();
+
+        Assert.Equal((true, false), (before.CanReceive, before.CryDetected));
+        Assert.Equal((true, true), (on.CryDetected, on.AppointmentReminders));
+        Assert.Equal((true, true), (olderClient.CryDetected, olderClient.NapWindow));
+        Assert.Equal((false, true), (off.CryDetected, off.NapWindow));
+        Assert.True(await Factory.QueryAsync(context => context.BabyNotificationPreferences.AnyAsync(row => row.BabyId == baby.BabyId && !row.CryDetected && row.NapWindow)));
+    }
+
+    [Fact]
     public async Task PutPreferences_AppointmentReminders_AreOnByDefaultTurnOffAndStayAcrossOlderClients()
     {
         var baby = await Factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Viewer);

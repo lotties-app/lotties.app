@@ -542,6 +542,19 @@
     },
     {
       "ecosystem": "npm",
+      "name": "@mediapipe/tasks-audio",
+      "version": "1.1.1",
+      "license": "Apache-2.0",
+      "homepage": "http://mediapipe.dev",
+      "repository": null,
+      "direct": true,
+      "sources": [
+        "web"
+      ],
+      "licenseId": null
+    },
+    {
+      "ecosystem": "npm",
       "name": "@mui/core-downloads-tracker",
       "version": "9.5.0",
       "license": "MIT",
@@ -1584,7 +1597,7 @@
     {
       "ecosystem": "nuget",
       "name": "EFCore.NamingConventions",
-      "version": "8.0.3",
+      "version": "10.0.1",
       "license": "Apache-2.0",
       "homepage": "https://github.com/efcore/EFCore.NamingConventions",
       "repository": "https://github.com/efcore/EFCore.NamingConventions",
@@ -1623,10 +1636,10 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.AspNetCore.Authentication.JwtBearer",
-      "version": "8.0.11",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://asp.net/",
-      "repository": "https://github.com/dotnet/aspnetcore",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": true,
       "sources": [
         "api"
@@ -1635,11 +1648,24 @@
     },
     {
       "ecosystem": "nuget",
+      "name": "Microsoft.Bcl.Cryptography",
+      "version": "10.0.2",
+      "license": "MIT",
+      "homepage": "https://dot.net/",
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": false,
+      "sources": [
+        "api"
+      ],
+      "licenseId": "e2003280273f"
+    },
+    {
+      "ecosystem": "nuget",
       "name": "Microsoft.EntityFrameworkCore",
-      "version": "8.0.11",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://docs.microsoft.com/ef/core/",
-      "repository": "https://github.com/dotnet/efcore",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": true,
       "sources": [
         "api"
@@ -1649,10 +1675,10 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.EntityFrameworkCore.Abstractions",
-      "version": "8.0.11",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://docs.microsoft.com/ef/core/",
-      "repository": "https://github.com/dotnet/efcore",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
@@ -1662,10 +1688,10 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.EntityFrameworkCore.Analyzers",
-      "version": "8.0.11",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://docs.microsoft.com/ef/core/",
-      "repository": "https://github.com/dotnet/efcore",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
@@ -1675,11 +1701,11 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.EntityFrameworkCore.Relational",
-      "version": "8.0.11",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://docs.microsoft.com/ef/core/",
-      "repository": "https://github.com/dotnet/efcore",
-      "direct": false,
+      "repository": "https://github.com/dotnet/dotnet",
+      "direct": true,
       "sources": [
         "api"
       ],
@@ -1713,46 +1739,20 @@
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Caching.Abstractions",
-      "version": "8.0.0",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
-    },
-    {
-      "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Caching.Memory",
-      "version": "8.0.1",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Configuration",
-      "version": "8.0.0",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Configuration.Abstractions",
       "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
@@ -1766,41 +1766,41 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Configuration.Abstractions",
-      "version": "8.0.0",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Configuration.Binder",
-      "version": "8.0.0",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.DependencyInjection",
-      "version": "8.0.1",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1814,36 +1814,10 @@
         "api"
       ],
       "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
-      "version": "8.0.2",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": true,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Diagnostics",
-      "version": "8.0.1",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Diagnostics.Abstractions",
       "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
@@ -1857,15 +1831,15 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Diagnostics.Abstractions",
-      "version": "8.0.1",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1882,19 +1856,6 @@
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.FileProviders.Abstractions",
-      "version": "8.0.0",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
-    },
-    {
-      "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Hosting.Abstractions",
       "version": "10.0.13",
       "license": "MIT",
@@ -1905,45 +1866,32 @@
         "api"
       ],
       "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Hosting.Abstractions",
-      "version": "8.0.1",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": true,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Http",
-      "version": "8.0.1",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": true,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Logging",
-      "version": "8.0.1",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -1960,19 +1908,6 @@
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Logging.Abstractions",
-      "version": "8.0.2",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": true,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
-    },
-    {
-      "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Options",
       "version": "10.0.13",
       "license": "MIT",
@@ -1983,32 +1918,19 @@
         "api"
       ],
       "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Options",
-      "version": "8.0.2",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
     },
     {
       "ecosystem": "nuget",
       "name": "Microsoft.Extensions.Options.ConfigurationExtensions",
-      "version": "8.0.0",
+      "version": "10.0.13",
       "license": "MIT",
       "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
+      "repository": "https://github.com/dotnet/dotnet",
       "direct": true,
       "sources": [
         "api"
       ],
-      "licenseId": "8f33ccd8a40f"
+      "licenseId": "e2003280273f"
     },
     {
       "ecosystem": "nuget",
@@ -2025,21 +1947,8 @@
     },
     {
       "ecosystem": "nuget",
-      "name": "Microsoft.Extensions.Primitives",
-      "version": "8.0.0",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/runtime",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "8f33ccd8a40f"
-    },
-    {
-      "ecosystem": "nuget",
       "name": "Microsoft.IdentityModel.Abstractions",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
@@ -2052,7 +1961,7 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.IdentityModel.JsonWebTokens",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
@@ -2065,7 +1974,7 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.IdentityModel.Logging",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
@@ -2078,7 +1987,7 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.IdentityModel.Protocols",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
@@ -2091,7 +2000,7 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.IdentityModel.Protocols.OpenIdConnect",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
@@ -2104,7 +2013,7 @@
     {
       "ecosystem": "nuget",
       "name": "Microsoft.IdentityModel.Tokens",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
@@ -2156,7 +2065,7 @@
     {
       "ecosystem": "nuget",
       "name": "Npgsql",
-      "version": "8.0.6",
+      "version": "10.0.3",
       "license": "PostgreSQL",
       "homepage": "https://github.com/npgsql/npgsql",
       "repository": "https://github.com/npgsql/npgsql",
@@ -2164,12 +2073,12 @@
       "sources": [
         "api"
       ],
-      "licenseId": "512535989cab"
+      "licenseId": "8b4c6089c83b"
     },
     {
       "ecosystem": "nuget",
       "name": "Npgsql.EntityFrameworkCore.PostgreSQL",
-      "version": "8.0.11",
+      "version": "10.0.3",
       "license": "PostgreSQL",
       "homepage": "https://github.com/npgsql/efcore.pg",
       "repository": "https://github.com/npgsql/efcore.pg",
@@ -2177,80 +2086,15 @@
       "sources": [
         "api"
       ],
-      "licenseId": "4eb324912f27"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "System.Diagnostics.DiagnosticSource",
-      "version": "10.0.13",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/dotnet",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "e2003280273f"
+      "licenseId": "8b4c6089c83b"
     },
     {
       "ecosystem": "nuget",
       "name": "System.IdentityModel.Tokens.Jwt",
-      "version": "7.1.2",
+      "version": "8.19.2",
       "license": "MIT",
       "homepage": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
       "repository": "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "System.IO.Pipelines",
-      "version": "10.0.13",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/dotnet",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "System.Net.ServerSentEvents",
-      "version": "10.0.13",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/dotnet",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "System.Text.Encodings.Web",
-      "version": "10.0.13",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/dotnet",
-      "direct": false,
-      "sources": [
-        "api"
-      ],
-      "licenseId": "e2003280273f"
-    },
-    {
-      "ecosystem": "nuget",
-      "name": "System.Text.Json",
-      "version": "10.0.13",
-      "license": "MIT",
-      "homepage": "https://dot.net/",
-      "repository": "https://github.com/dotnet/dotnet",
       "direct": false,
       "sources": [
         "api"

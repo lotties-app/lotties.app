@@ -3,7 +3,7 @@
 The stack is two containers behind your own reverse proxy (or exposed directly for testing):
 
 ```
-browser --> web (nginx: SPA + security headers) --/api/--> api (.NET 8, :8080, internal only) --> PostgreSQL
+browser --> web (nginx: SPA + security headers) --/api/--> api (.NET 10, :8080, internal only) --> PostgreSQL
 ```
 
 The browser only talks to the `web` container. nginx serves the SPA and proxies `/api/` to the `api` service, so the app is same origin and needs no CORS configuration.
@@ -51,6 +51,7 @@ Compose reads `.env` from the repository root.
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
+| `Board__Enabled`, `Board__Mcp__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data) and its MCP endpoint for AI tools; see "Project board" and docs/KEYCLOAK-BOARD.md |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
 | `VITE_OIDC_CLIENT_ID` | web build | yes | Public SPA client id |
 | `VITE_OIDC_AUDIENCE` | web build | no | Sent as the `audience` authorize parameter (Auth0) |
@@ -257,11 +258,73 @@ Client address: the API applies `X-Forwarded-For` and `X-Forwarded-Proto` (forwa
 
 The web image is `nginxinc/nginx-unprivileged` (uid 101, port 8080) and runs with a read-only root filesystem when `/tmp` and `/etc/nginx/conf.d` are writable (`emptyDir` or tmpfs with mode 0777). nginx resolves `API_UPSTREAM` per request through the nameservers of `/etc/resolv.conf` (`resolver`, no search domains), so a missing API host gives 502 on `/api/` instead of nginx refusing to start; use a name the DNS server answers as is (a compose service name or a cluster FQDN).
 
-The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'`, `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy`. `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`.
+The response headers set by the web container are a Content-Security-Policy (`default-src 'self'`, strict `script-src 'self'` plus `'wasm-unsafe-eval'` for the cry monitor's WebAssembly (no JS eval, no inline scripts), `connect-src 'self'` plus the OIDC origin, `frame-ancestors 'none'`), `X-Content-Type-Options`, `Referrer-Policy: no-referrer` and a minimal `Permissions-Policy` (`microphone=(self)` for the opt-in cry monitor; camera, location, payment and USB off). `sw.js`, `manifest.webmanifest`, `manifest-dark.webmanifest` and `index.html` are served `no-cache` so updates are picked up; `/assets/*` is hashed and `immutable`; a missing file under `/models/` is a 404, never the app shell.
+
+Cry monitor files (docs/design/35-cry-engine.md section 4): the web image carries the MediaPipe WASM (copied from the npm package by the Vite build) and the YAMNet model `models/cry/yamnet.tflite` (4.1 MB, Apache-2.0). The model is not in the repository: the web Dockerfile downloads it from MediaPipe's model storage with `node scripts/fetch-cry-model.mjs` and checks its pinned SHA-256, so the image build needs outbound HTTPS to `storage.googleapis.com` and stops with a clear message when the download or the checksum fails (the build then runs with `CRY_MODEL_REQUIRED=1`). A local `npm run build` without the file only warns; the app works and only the cry monitor reports `model_missing`. A reverse proxy in front must pass `/models/` through like any other static path.
 
 ## Home lab (Kubernetes + Traefik)
 
 `deploy/homelab/` deploys the two images to the home lab cluster (context `home-lab-main`, namespace `lotties-app-production`, registry `cr.homel4b.dev/lotties`): one Helm chart for the API and the web releases, an Ingress on the external Traefik for `https://lotties.app` (`/api` to the API, the rest to the web app, certificate from cert-manager), the Secret `lotties-secrets` built from `deploy/homelab/.env`, and `DRY_RUN=1` to see the plan without changing anything. Prerequisites (Harbor project, pull Secret, Keycloak client settings), secrets rotation, migrations, verification and rollback: [deploy/homelab/README.md](../deploy/homelab/README.md).
+
+### Versions
+
+Every run of `deploy/homelab/deploy.sh` that builds an image is a release `vX.Y.Z` (the next patch after the git and
+registry tags, or `VERSION`). The number is chosen **before** the builds (which images need a build is known first:
+the source tag is not in the registry, or `FORCE_BUILD=1`, or a fixed `TAG`), so each image built in the run carries
+it as build arguments, the same three for both:
+
+| Build arg | Value | Web (code/web/Dockerfile -> ENV -> vite.config.ts / build-info.ts) | API (code/api/Dockerfile runtime stage -> ENV) |
+| --- | --- | --- | --- |
+| `APP_VERSION` | `X.Y.Z` (no v); empty without a release (a fixed `TAG` and no `VERSION`) | `__APP_VERSION__`, `dev` when empty | `GET /api/v1/version` `version`, `dev` when empty |
+| `APP_COMMIT` | `git rev-parse --short=12 HEAD` of the checkout | `__APP_COMMIT__` | `commit` |
+| `APP_BUILD_TIME` | UTC ISO time of the run | `__APP_BUILT_AT__` | `builtAt` |
+
+The web app shows its own and the server's version in Hub > App > About and a short `v0.1.38` line in Settings, the
+Hub, the landing footer, `/credits`, `/privacy` and the doctor's account menu. A local `npm run build` or `vite dev`
+has no `APP_VERSION` and shows `dev` (the commit still comes from git).
+
+**The version is never part of an image tag.** Tags stay `src-<hash>` of the git file list of each image's sources
+(plus the web `VITE_*` values): the release number, the commit and the build time are left out on purpose, so a new
+release does not rebuild or restart an unchanged image. The consequence: an image that is not rebuilt keeps the
+release that built it. After a release that changed only the web app, About shows for example app v0.1.39 and server
+v0.1.38; that is correct (the API did not change), and About adds only the neutral note "The server was updated
+separately". The update hint ("An update is available" with Reload) never comes from comparing versions or commits: it
+appears only when the service worker has a new app version installed and waiting (`pwa/updateStore.ts`, the same
+signal as Hub > Check for updates). The `v0.1.39` and `latest` registry tags still point at both images of the
+release. `deploy.test.sh` checks that both images get the release and that the tags do not depend on it.
+
+To have both images carry the same release (one number in About), rebuild both in the release: `FORCE_BUILD=1
+./deploy/homelab/deploy.sh`. Nothing else changes: the `src-<hash>` tags stay the same (they are pushed again with the
+new stamp) and the pods restart.
+
+Other ways to build the images (podman by hand, CI) pass the same three `--build-arg`s; without them the app and the
+API say `dev`. The iOS/Android build (`npm --prefix code/mobile run build:web`) also needs `APP_VERSION` in its
+environment to show a release instead of `dev`.
+
+## Runtime
+
+The API runs on .NET 10 (LTS) since October 2026; before, .NET 8 (end of support 2026-11-10). What changed and why:
+[docs/design/37-dotnet10-upgrade.md](design/37-dotnet10-upgrade.md).
+
+- **Images:** built on `mcr.microsoft.com/dotnet/sdk:10.0`, run on `mcr.microsoft.com/dotnet/aspnet:10.0`. That image is
+  Ubuntu 24.04 (noble) since .NET 10 (the 8.0 one was Debian 12). It still carries what the API needs: `tzdata` (plus
+  `tzdata-legacy`) for the IANA time zones of reminders and quiet hours, ICU (globalization is not invariant), `bash`,
+  `head` and `grep` for the HEALTHCHECK, and the non-root user `app` with UID 1654 (the chart's `runAsUser`). The API
+  listens on 8080 as before (`ASPNETCORE_URLS` in the Dockerfile wins over the image's `ASPNETCORE_HTTP_PORTS=8080`). No
+  `DOTNET_*` variable, ReadyToRun, trimming or self-contained publish is used. The `src-<hash>` tag of `lotties-api`
+  changes, so the next `deploy.sh` run rebuilds the API image.
+- **Database:** EF Core 10 and Npgsql 10; no new migration, and `dotnet ef migrations script --idempotent` gives the same
+  SQL as with EF Core 8 (only the `product_version` written into new `__EFMigrationsHistory` rows becomes `10.0.13`).
+  `dotnet ef` is `dotnet-ef` 10.0.13 from the tool manifest (`dotnet tool restore`; needs .NET 10 on the machine that
+  applies migrations). Since EF Core 9 `dotnet ef database update` and `DB_AUTO_MIGRATE` also take
+  `LOCK TABLE "__EFMigrationsHistory" IN ACCESS EXCLUSIVE MODE` while migrating (the migrator role owns that table, see
+  `docs/sql/grant-migrator-role.sql`) and refuse to run when the model has changes without a migration (a test keeps it
+  that way).
+- **Connections:** GSS encryption stays off in the connection string built from `DB_*` (Npgsql 10 would try it first);
+  Npgsql 9+ closes pooled connections older than an hour (`Connection Lifetime` now defaults to 3600 s; it was unlimited).
+- **Rollback:** `helm rollback lotties-api [REVISION]` (deploy/homelab/README.md "Roll back") goes back to the .NET 8
+  image, which stays in Harbor under its old `src-<hash>` tag. The schema is the same for both, so no database step is
+  needed; a migration added later with EF Core 10 records `10.0.13` as its product version, which EF Core 8 ignores.
 
 ## Push notifications
 
@@ -408,6 +471,40 @@ The ingress sends `/.well-known/oauth-protected-resource` (RFC 9728, with the pa
 another reverse proxy needs the same route. Keycloak must be reachable from the AI provider's servers (Anthropic publishes
 its egress range). Logs carry the tool name, the result code and the correlation id only; the SDK's own log categories
 (`ModelContextProtocol*`) are kept at Warning in code.
+
+## Project board
+
+`/api/v1/board` is the internal project board (docs/design/36-project-board.md): tasks, gaps, decisions, questions,
+risks, notes and memories that the owner and the AI assistant track together. It holds **no baby data**, calls no third
+party and lives in the same database (and the same `pg_dump` backups). Off by default: every route answers 404. It needs
+migration `ProjectBoard` (tables `board_topics` with ten seeded topics, `board_items`, `board_item_events`,
+`board_api_keys`). No secret is configured: people get in with Keycloak realm roles, tools with board API keys that a
+board admin creates in the app (only their SHA-256 is stored). The owner's steps (the three realm roles, the
+`realm_access.roles` mapper of the `roles` client scope, assigning roles, the first API key with `curl`, revoking) are in
+[docs/KEYCLOAK-BOARD.md](KEYCLOAK-BOARD.md).
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `Board__Enabled` | `false` | `true` serves the board routes (the home lab kit does not set it: add it under `env:` in `deploy/homelab/values/api.yaml`) |
+| `Board__Mcp__Enabled` | `false` | `true` (with `Board__Enabled=true`) serves the board's MCP endpoint `POST /api/v1/board/mcp` for AI tools such as Claude Code (board API key or a Keycloak token with a board role; docs/KEYCLOAK-BOARD.md section 8). Off, or with the board off, it is 404 |
+| `Board__Mcp__AllowedOrigins` | empty | Browser origins allowed to call the board MCP endpoint (comma-separated, or `__0`, `__1`, ...); any other `Origin` is 403. Claude Code and the Inspector's proxy send none; set it only for a browser-based test client. A value that is not an absolute http(s) origin fails startup |
+| `RequestLimits__BoardPermitsPerMinute` | `120` | Board requests (REST calls and MCP messages together) per user or per API key per minute (the global 300 per user still applies) |
+| `RequestLimits__BoardMaxRequestBodyBytes` | `262144` | Largest board request body, MCP messages included (413 above) |
+| `RequestLimits__BoardBulkMaxRequestBodyBytes` | `4194304` | Largest bulk import body (`POST /board/items/bulk`, up to 100 items) |
+
+Keycloak in short: **Realm roles > Create role** `lotties-board-reader`, `lotties-board-writer`, `lotties-board-admin`;
+**Client scopes > roles > Mappers > realm roles** with Token Claim Name `realm_access.roles` and "Add to access token" on
+(Keycloak's default), the `roles` scope a Default scope of the web app's client; **Users > the person > Role mapping >
+Assign role** (Filter by realm roles). Then an admin creates a key (`POST /api/v1/board/keys`, the secret is shown once)
+and the assistant sends it as `X-Board-Key` or `Authorization: Bearer lbk_...`:
+
+```bash
+curl -s https://lotties.app/api/v1/board/summary -H "X-Board-Key: $LOTTIES_BOARD_KEY"
+```
+
+Logs carry item and key ids, the actor kind and result codes only (never a secret, a title or a body). CORS is the app's
+(no board-specific origin).
+
 ## Privacy policy
 
 The public policy is the web route `/privacy` (https://lotties.app/privacy; also Hub > Privacy policy and
@@ -477,7 +574,7 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
 
 **Dedicated migrator role.** A separate non-superuser role can run the migrations (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`) if it owns the tables and may create objects in the schema. `docs/sql/grant-migrator-role.sql` sets that up once, as an admin, and is idempotent: it makes the role the owner of the existing tables, gives it `CREATE` on the schema, and sets the API role's default privileges for tables the migrator creates. Never make the migrator a member of a superuser role.
 
-1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 8.0.32):
+1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 10.0.13, which needs the .NET 10 SDK or runtime):
 
    ```bash
    cd code/api
@@ -524,7 +621,7 @@ Built-in event types are rows in `event_types` (with `baby_id` null) inserted by
 The shared catalog can be filled with Brazil's registered medicines (brand names, forms and active ingredients) from ANVISA's open data, plus a small curated list (`code/api/tools/Lotties.CatalogImporter/Data/curated-products.json`, not reviewed by a pharmacist), by the admin tool `code/api/tools/Lotties.CatalogImporter` (design, licence, mapping and safety rules: [docs/design/13-anvisa-catalog.md](design/13-anvisa-catalog.md)). It is optional: the app works without it.
 
 1. Apply the migration `ProductExternalRef` (`20261022143647_ProductExternalRef`, right after `DiaperHeadsUpPrefs`) with the API version that ships it, like any other migration (see [Applying migrations](#applying-migrations)). It only adds nullable columns to `products` (`source`, `external_ref`, `presentation`, `ambiguous_name`, `inactive_since`) and the partial unique index `ix_products_source_external_ref`; no data is rewritten and no grant is needed.
-2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 8 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
+2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 10 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
 3. Dry run first (no database connection): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run --lookup "Luftal,Simeticona"`. Check the counts and the spot checks.
 4. Real run, with the same variables as the API: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` (the app role has `SELECT, INSERT, UPDATE, DELETE` on all tables, which is enough), or `--use-migrator` to connect with `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD` instead: `dotnet run --project code/api/tools/Lotties.CatalogImporter`. Set the variables in the shell (for example from a password manager), never on the command line or in a committed file; the tool prints the host and database name, never the user or password. One transaction; about 20 s for the full list (8,880 official + 7 curated products) on a local database; re-running changes only what changed in the sources. The curated list ships next to the tool (`--curated <path|none>` to change or skip it).
 5. Strengths (migration `ProductStrength`, `20261023162441_ProductStrength`, right after `AccountDeletion`): apply it with the API version that ships it (two nullable columns on `products`, `strength_key` and `strength_text`; no backfill; old pods ignore them). Until the importer runs again every strength is NULL and the "same active ingredient" list shows each alternative as "strength not known" (neutral, search unchanged). Rollout order: (a) deploy the API; (b) the owner, from the admin machine, runs the dry run and then the real run, both reading the cached files (use `--refresh` only if the cache is old): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run`, check the lines "CMED presentations whose strength reads as one unambiguous amount" and "products with a structured strength key", then `dotnet run --project code/api/tools/Lotties.CatalogImporter` with the `DB_*` variables set in the shell. The second run updates the products whose strength changed and the six curated ones; nothing else changes. The agent never runs these.

@@ -93,6 +93,7 @@ export const FEEDING_DTO: EventTypeDto = {
     }),
     field('food', 'Food', 'text', whenMethodIs('solid')),
     field('ended_by', 'Ended by', 'select', { options: ['sleep'], hidden: true }),
+    field('segments', 'Bottle segments', 'text', { hidden: true, ...whenMethodIs('bottle') }),
     ...PAUSE_FIELD_DTOS,
   ],
 };
@@ -232,6 +233,8 @@ export const FUSSY_DTO: EventTypeDto = {
       options: ['hunger', 'sleepy', 'diaper', 'gas', 'comfort'],
       hidden: true,
     }),
+    field('auto_detected', 'Detected automatically', 'bool', { hidden: true }),
+    field('cry_confirmed', 'Confirmed by parent', 'bool', { hidden: true }),
     ...PAUSE_FIELD_DTOS,
   ],
 };

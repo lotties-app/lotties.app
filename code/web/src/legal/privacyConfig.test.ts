@@ -63,9 +63,9 @@ describe('privacy contacts from the build', () => {
   });
 
   it('defaults the contact to the repository on GitHub', () => {
-    expect(ISSUES_URL).toBe('https://github.com/dev-vinicius-andrade/lotties.app/issues');
+    expect(ISSUES_URL).toBe('https://github.com/lotties-app/lotties.app/issues');
     expect(PRIVATE_REPORT_URL).toBe(
-      'https://github.com/dev-vinicius-andrade/lotties.app/security/advisories/new',
+      'https://github.com/lotties-app/lotties.app/security/advisories/new',
     );
   });
 });

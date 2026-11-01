@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 8) and the web app (React SPA on
+# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 10) and the web app (React SPA on
 # nginx) in namespace lotties-app-production, public at https://lotties.app through the external Traefik.
 #
 # Run as root inside WSL, from anywhere:
@@ -20,6 +20,11 @@
 #   SKIP_BUILD=1    Build nothing; the tags must already be in the registry.
 #   VERSION         The release, vX.Y.Z (the v is optional). Left out, a run that built something takes the patch after
 #                   the highest vX.Y.Z among the git tags and the registry tags. The images also get it and latest as tags.
+#                   It is chosen before the builds: an image built in this run carries it with the short commit and the
+#                   build time (build args APP_VERSION, APP_COMMIT, APP_BUILD_TIME; Hub > About, GET /api/v1/version).
+#                   They are not part of the source tag: an image that is not rebuilt keeps the release that built it.
+#                   To have both images carry the same release (About shows one number), rebuild both: FORCE_BUILD=1
+#                   (pods restart; the src-<hash> tags stay the same, the images are pushed again under them).
 #   COPY_PULL_SECRET=1  When the pull Secret cr-homel4b is missing in NS, copy it from namespace keycloak without asking.
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
@@ -107,6 +112,14 @@ bump_version() { # [patch|minor|major]
     minor) echo "$major.$((minor + 1)).0" ;;
     patch) echo "$major.$minor.$((patch + 1))" ;;
   esac
+}
+
+# The build arguments that stamp the release into an image, one per line (both images get the same three): the
+# release number X.Y.Z (empty: the app shows "dev"), the short commit and the build time. They are never part of the
+# source tag: a new release number alone does not make an image different, so an unchanged image is not rebuilt and
+# keeps the number of the release that built it. FORCE_BUILD=1 rebuilds both, so both carry the new release.
+release_build_args() { # version commit built-at
+  printf -- '--build-arg\nAPP_VERSION=%s\n--build-arg\nAPP_COMMIT=%s\n--build-arg\nAPP_BUILD_TIME=%s\n' "${1#v}" "$2" "$3"
 }
 
 # true or false for true/false (any case) and 1/0, as the API reads DB_AUTO_MIGRATE; anything else fails.
@@ -345,12 +358,17 @@ push() { # image: the registry sometimes answers a layer upload with 500; retry 
   return 1
 }
 
-build_push() { # name tag dockerfile context [build args...]
-  local image="$REGISTRY/$1:$2" name=$1 tag=$2 dockerfile=$3 context=$4
-  shift 4
+# Whether an image must be built. A fixed TAG is a request to rebuild under that tag; a source tag already pushed
+# means nothing changed.
+needs_build() { # name tag
+  [ -n "${TAG:-}" ] || [ "${FORCE_BUILD:-0}" = 1 ] || ! in_registry "$1" "$2"
+}
+
+build_push() { # name tag needed(0/1) dockerfile context [build args...]
+  local image="$REGISTRY/$1:$2" needed=$3 dockerfile=$4 context=$5
+  shift 5
   step "Image $image"
-  # A fixed TAG is a request to rebuild under that tag; a source tag already pushed means nothing changed.
-  if [ -z "${TAG:-}" ] && [ "${FORCE_BUILD:-0}" != 1 ] && in_registry "$name" "$tag"; then
+  if [ "$needed" != 1 ]; then
     echo "unchanged, already in the registry: not rebuilt"
     return 0
   fi
@@ -392,9 +410,20 @@ images() {
     step "Images: SKIP_BUILD=1, using $REGISTRY/lotties-api:$API_TAG and $REGISTRY/lotties-web:$WEB_TAG"
     return 0
   fi
-  build_push lotties-api "$API_TAG" "$REPO/code/api/Dockerfile" "$REPO/code/api"
+  local api_needed=0 web_needed=0 stamp
+  needs_build lotties-api "$API_TAG" && api_needed=1
+  needs_build lotties-web "$WEB_TAG" && web_needed=1
+  # A run that builds something is a new release; one that builds nothing (or was given a fixed TAG) is not. The
+  # number is chosen before the builds so the images can carry it (APP_VERSION); the tags still come from the sources.
+  if [ -z "$VERSION" ] && [ -z "${TAG:-}" ] && [ "$api_needed$web_needed" != 00 ]; then
+    VERSION=$(next_version)
+    dry && would "tag the images v$VERSION and latest" || echo "New release v$VERSION (the next after the tags in git and in the registry)"
+  fi
+  mapfile -t stamp < <(release_build_args "$VERSION" "$(cd "$REPO" && git rev-parse --short=12 HEAD 2>/dev/null || true)" \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+  build_push lotties-api "$API_TAG" "$api_needed" "$REPO/code/api/Dockerfile" "$REPO/code/api" "${stamp[@]}"
   # The VITE_* values are public (they end up in the JavaScript bundle).
-  build_push lotties-web "$WEB_TAG" "$REPO/code/web/Dockerfile" "$REPO/code/web" \
+  build_push lotties-web "$WEB_TAG" "$web_needed" "$REPO/code/web/Dockerfile" "$REPO/code/web" "${stamp[@]}" \
     --build-arg "VITE_API_BASE_URL=$VITE_API_BASE_URL" \
     --build-arg "VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY" \
     --build-arg "VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID" \
@@ -403,11 +432,6 @@ images() {
     --build-arg "VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME" \
     --build-arg "VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL" \
     --build-arg "VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO"
-  # A run that built something is a new release; one that built nothing (or was given a fixed TAG) is not.
-  if [ -z "$VERSION" ] && [ -z "${TAG:-}" ] && [ "$BUILT$WOULD_BUILD" != 00 ]; then
-    VERSION=$(next_version)
-    dry && would "tag the images v$VERSION and latest" || echo "New release v$VERSION (the next after the tags in git and in the registry)"
-  fi
   dry && return 0
   tag_version lotties-api "$API_TAG"
   tag_version lotties-web "$WEB_TAG"

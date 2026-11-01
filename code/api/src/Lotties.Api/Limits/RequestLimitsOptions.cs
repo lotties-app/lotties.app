@@ -44,6 +44,15 @@ public sealed class RequestLimitsOptions
     /// <summary>Voice assistant commands per linked user per fixed one-minute window (default 30; over it the assistant answers "try again in a minute").</summary>
     public int AssistantPermitsPerMinute { get; set; } = 30;
 
+    /// <summary>Project board requests per user or per board API key per fixed one-minute window (default 120).</summary>
+    public int BoardPermitsPerMinute { get; set; } = 120;
+
+    /// <summary>Largest project board request body in bytes (default 256 KiB).</summary>
+    public long BoardMaxRequestBodyBytes { get; set; } = 256 * 1024;
+
+    /// <summary>Largest project board bulk import body in bytes (default 4 MiB: 100 items with long bodies).</summary>
+    public long BoardBulkMaxRequestBodyBytes { get; set; } = 4 * 1024 * 1024;
+
     /// <summary>Names of the settings that are not positive; empty when the options are valid.</summary>
     public IReadOnlyList<string> NonPositiveSettings() =>
         new (string Name, long Value)[]
@@ -60,6 +69,9 @@ public sealed class RequestLimitsOptions
             (nameof(PushTestPermitsPerMinute), PushTestPermitsPerMinute),
             (nameof(PushActionPermitsPerMinute), PushActionPermitsPerMinute),
             (nameof(AssistantPermitsPerMinute), AssistantPermitsPerMinute),
+            (nameof(BoardPermitsPerMinute), BoardPermitsPerMinute),
+            (nameof(BoardMaxRequestBodyBytes), BoardMaxRequestBodyBytes),
+            (nameof(BoardBulkMaxRequestBodyBytes), BoardBulkMaxRequestBodyBytes),
         }
         .Where(setting => setting.Value <= 0)
         .Select(setting => $"{SectionName}:{setting.Name}")

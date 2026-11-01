@@ -16,7 +16,7 @@ outside the repository: `OWNER TO CONFIRM`).
 | Place | What | Facts |
 | --- | --- | --- |
 | Web app container (`lotties-web`, nginx) | the SPA files | no personal data stored; its stock access log (the image's default `main` format, `nginx.conf` sets no `access_log`) writes the client address from `X-Forwarded-For`, time, request line, status, size and user agent of each static/page request to stdout |
-| API container (`lotties-api`, .NET 8) | no local storage | logs to stdout (below); keeps rate-limit counters and the address-lookup answer cache in memory only; Napper and backup uploads are read in memory, never written to disk (no `File.*` or temp-file use in `code/api/src`) |
+| API container (`lotties-api`, .NET 10) | no local storage | logs to stdout (below); keeps rate-limit counters and the address-lookup answer cache in memory only; Napper and backup uploads are read in memory, never written to disk (no `File.*` or temp-file use in `code/api/src`) |
 | PostgreSQL (external to the cluster) | every server-side record | location `OWNER TO CONFIRM`; encryption at rest `OWNER TO CONFIRM` (nothing in the repo); the API connects with a role limited to `SELECT, INSERT, UPDATE, DELETE` (docs/DEPLOY.md "Database roles") |
 | Keycloak (realm `lotties.app`, `https://auth.lotties.app`) | sign-in accounts | runs in the same home lab cluster (namespace `keycloak`, deploy/homelab/README.md), shared with the owner's other apps (docs/DEPLOY.md "Multi-theme"); realm isolation, registration fields, email verification, OTP, brute-force protection and event logging: `OWNER TO CONFIRM` |
 | Traefik (external ingress) and cert-manager | TLS termination, routing | `https://lotties.app` routes `/api` to the API and the rest to the web app; HTTP redirected to HTTPS; certificate from Let's Encrypt via DNS-01 at Cloudflare; Traefik access logs on/off and retention `OWNER TO CONFIRM`; whether Cloudflare only serves DNS or also proxies traffic `OWNER TO CONFIRM` (a proxy would see all traffic in clear text) |
@@ -56,6 +56,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | 18 | Web server and proxy logs | nginx: client IP (forwarded), time, path, status, user agent (static and page requests only: the Ingress sends `/api` to the API directly). Traefik: whatever its access log is set to, possibly the `/api` request lines with query strings (address search text) | operate, security | LI | the owner | `OWNER TO CONFIRM` | no | no |
 | 19 | Backups | full `pg_dump` (everything above), taken before migration deploys | recovery | LI (copies follow the bases of their data) | the owner | until the owner deletes them; deleted data may persist in them | owner | no |
 | 20 | Exported files | the per-baby backup (readable JSON, unencrypted, no account ids: stand-ins) and the device JSON | portability | Contract | whoever holds the file | outside our control | user | is the export |
+| 21 | Cry monitor (2026-10-24, section 12) | **on the device only**: the microphone signal while the monitor page listens, analysed in memory (AudioWorklet and a worker) and discarded at once, never recorded, stored or sent; **saved**: fussy spells with `auto_detected` (rows of category 4) and the parent's `cry_confirmed` answer; **device**: the consent (`{version, at}`) and the sensitivity | notice crying, log it, alert opted-in family members | Consent-H (specific, per device, art. 11, I and art. 14, §1) `OWNER TO CONFIRM` with the lawyer | the spells as row 4; nothing of the sound reaches anyone | spells as row 4; consent until withdrawn or sign-out | withdraw on the page; spells as row 4 | spells as row 4 |
 
 ## 3. Third parties and requests that leave our servers
 
@@ -83,14 +84,17 @@ img-src 'self' data:; connect-src 'self' <OIDC origin>`, and the native build ha
 (`@fontsource-variable/fraunces`); the Keycloak theme loads only its own files (no external URL in
 `code/keycloak-theme/src`). Native apps request only `android.permission.INTERNET`; the iOS `Info.plist` has no usage
 description (no camera, photos, location, contacts, microphone). No photo or file of the baby is collected anywhere.
+The web app asks for the microphone only for the cry monitor (section 12), when a person starts it; its model and WASM
+are served by our own web container (`/models/cry/`), so no third party is contacted at run time.
 
 ## 4. On the device (web, installed PWA, native WebView)
 
 | Storage | Keys / content | Cleared by |
 | --- | --- | --- |
 | IndexedDB (Dexie), one database per account (name from issuer + `sub`) | babies, event types, medications, events, prescriptions, catalog products used, latest weights, formulas, appointments, notes, proposals, note reads, vaccinations, vaccine schedules, care providers, age norms, the outbox of unsent changes, sync cursors | sign-out and account deletion (after the unsynced-changes warning, `session/endSession.ts`), leaving a baby purges it |
-| `localStorage` (per account entries) | the OIDC user (`oidc-client-ts`: id, access and refresh tokens, profile claims incl. name and email), selected baby, cached predictions per baby, last used values (amounts, medication ids), pinned presets, dismissed cards, nap guidance, last seen, push opt-in record, reminder prompt time, Hub usage counts, doctor dashboard ids (recents, last section) | sign-out (`session/deviceState.ts`) |
-| `localStorage` (device preferences) | language, theme, night view, ring view | stay until site data is cleared |
+| `localStorage` (per account entries) | the OIDC user (`oidc-client-ts`: id, access and refresh tokens, profile claims incl. name and email), selected baby, cached predictions per baby, last used values (amounts, medication ids), pinned presets, dismissed cards, nap guidance, last seen, push opt-in record, reminder prompt time, Hub usage counts, doctor dashboard ids (recents, last section), the cry monitor consent (`lotties.cry-monitor.consent`: version and time) | sign-out (`session/deviceState.ts`); the consent also by "Withdraw consent on this device" |
+| `localStorage` (device preferences) | language, theme, night view, ring view, cry monitor sensitivity (`lotties.cry-monitor.sensitivity`) | stay until site data is cleared |
+| Service worker runtime cache `lotties-cry-assets-*` | the cry monitor's model and WASM (our own files, no personal data) | a new model or MediaPipe version, site data clearing |
 | `sessionStorage` | the pending invite token during a sign-in round trip (removed on use), the doctor landing flag | tab close |
 | Service worker caches | the app's own files (precache) only; no API response is cached (`pwa/sw/sw.ts`: navigation route only, `/api` denied) | updates, site data clearing |
 | Cookies | the app sets none; Keycloak sets its session cookies on its own origin (in the system browser for the native apps) | Keycloak logout, cookie clearing |
@@ -192,6 +196,25 @@ does not check that the person who creates a baby is its parent or guardian, and
 (`code/web/src/credits/curated.json`) has no privacy classification, when a classified recipient has no row in the
 policy's sharing table, or when the two languages' tables differ.
 
+## 10a. Internal project board (built 2026-10-24, off by default)
+
+`/api/v1/board` (docs/design/36-project-board.md) is the owner's and the AI assistant's project tracker, not a feature
+for families, so it is not in the public policy: it collects nothing from app users.
+
+- **No baby data**: no table or route references a baby, a family or a record of the app; it is never shown in the app's
+  shell, sync, exports or assistants. Items are project text (tasks, gaps, decisions, notes) written by the operator and
+  the assistant.
+- **Personal data**: only the author's `users` row id (which holds the Keycloak `sub`) and display name snapshot on
+  items, history entries and API keys. No email, no IP address (API keys keep a last-use time and a counter only), no
+  third party, no new outbound request.
+- **Who sees it**: Keycloak users with one of the realm roles `lotties-board-reader`/`-writer`/`-admin` (assigned by the
+  owner by hand, never by default) and holders of a board API key an admin created (only its SHA-256 is stored). The
+  owner as operator, like every table.
+- **Retention**: until the owner decides (soft-deleted items and revoked keys stay; no purge job; covered by G4). Lives
+  in the same database and `pg_dump` backups; `GET /board/export` is a JSON copy without key material.
+- **Deletion**: account deletion keeps the rows (they are the project's), clears the user links and replaces the name
+  snapshots with "Former member" (`EfAccountDataEraser`; `AccountErasureTests.Rules` rule `Clear` for the three columns).
+
 ## 11. Planned flow: community insights (not built, 2026-10-23)
 
 Status: **planned, not built, off everywhere.** No code collects, reads or publishes anything for it: there is no
@@ -228,3 +251,28 @@ What the text promises for the future, all to be true before activation (design:
 Activation is a policy change of its own (docs/design/34 task T9): the section is rewritten from "not active yet" to
 the final text, the flow gets status `active` and a data category row, `PRIVACY_POLICY_VERSION` is raised, this
 section and docs/design/20 section 3 are updated, and the tests are changed on purpose.
+
+## 12. On-device flow: the cry monitor (built, web only, 2026-10-24)
+
+Status: **built, opt-in, web app only** (docs/design/35-cry-engine.md section 8). Policy version 3 of 2026-10-24
+describes it; `dataFlows.ts` `ON_DEVICE_FLOWS` pins it (opt-in, off by default, Owner/Parent/Caregiver, raw signal
+`{stored: false, sent: false}`, model from our own server, recipient `pushServices`, data row `cryMonitor`, web only)
+and `dataFlows.test.ts` fails when either language stops saying it or still says the app never asks for the
+microphone.
+
+| Fact | Where in the code |
+| --- | --- |
+| The microphone is asked only when a person presses "Start monitoring" on `/hub/cry-monitor`, after a separate per-device consent (two checkboxes, versioned, stored as `{version, at}` in localStorage, cleared at sign-out, withdrawable on the page) | `cryMonitor/useCryMonitor.ts`, `cryMonitor/monitorStorage.ts`, `session/deviceState.ts` |
+| Roles: Owner, Parent, Caregiver of the selected baby; never Viewer or Doctor; not in the native shell | `hub/hubEntries.ts`, `cryMonitor/CryMonitorPage.tsx` |
+| Processing off (`echoCancellation`, `noiseSuppression`, `autoGainControl` false), mono, resampled to 16 kHz in an AudioWorklet; 0.975 s frames go to a worker and come back for reuse; only a score and a time reach the page; nothing is written to storage or the network | `cry/capture.ts`, `cry/captureWorklet.ts`, `cry/classifier.worker.ts`, `cry/engine.ts` |
+| Model and WASM are same-origin (`/models/cry/`), runtime-cached by the service worker; no CDN, no third party at run time; CSP `script-src 'self' 'wasm-unsafe-eval'`, `Permissions-Policy: microphone=(self)` | `cry/modelAssets.ts`, `pwa/sw/cryAssets.ts`, `code/web/nginx.conf` |
+| Saved: a running `fussy` event with `auto_detected: true` from the cry's start to its end, through the normal outbox (server author = the signed-in member); the parent's `cry_confirmed` answer | `cryMonitor/autoSpells.ts` |
+| Leaving the page, `pagehide`, Stop, a stall or a lost microphone stop capture and the worker | `cryMonitor/useCryMonitor.ts`, `cry/engine.ts` |
+| The alert to the family is the existing `cry_detected` Web Push (encrypted codes only, docs/design/09 section 2.12); the monitor device closes its own copy by tag | `cryMonitor/monitorNotifications.ts` |
+
+Points for the owner and the lawyer (docs/PRIVACY-OWNER-CHECKLIST.md): the consent text and its legal basis (art. 11,
+I and art. 14, §1, LGPD; a child's sound is processed even though never stored), the ECA Digital (Lei 15.211/2025)
+read, the people in the room (the page and the policy ask the parent to tell them), and the retention of auto spells
+(ordinary records, no separate period). Store labels: the audio is processed only on the device and never sent, which
+Apple's App Privacy and Google's Data safety do not count as collected (docs/design/31 section 6); the native apps do
+not offer the monitor today.

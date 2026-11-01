@@ -16,6 +16,7 @@ export const privacyEn: PolicyDocument = {
           'Your sign-in account: name, email and password, kept by our own sign-in server.',
           'What you and the people you invite record about your baby, including health information such as medicines and vaccines.',
           'What the service needs to work: reminder settings if you turn reminders on, and technical logs.',
+          'If you start the Cry monitor: the microphone, analysed only on your device and never recorded; only the crying spells it detects are saved.',
         ],
       },
       {
@@ -143,6 +144,14 @@ export const privacyEn: PolicyDocument = {
               ],
             },
             {
+              id: 'cryMonitor',
+              cells: [
+                'Cry monitor (optional, web app)',
+                'Only if you start the Cry monitor on a device: the microphone of that device listens while the monitor page is open. The sound is analysed on that device, about one second at a time, and discarded at once: it is never recorded, stored or sent, not even to us. What is saved is a crying spell in the log (when it started and ended, marked as detected automatically) and, if you answer, whether the baby was really crying. The sound model and its program come from our own server; no other company takes part. On the device: that you agreed, when and to which version of the text, and the sensitivity you chose.',
+                'To notice crying and log it for you, and to alert the family members who turned on that notification. Your answers keep false alarms out of patterns and statistics.',
+              ],
+            },
+            {
               id: 'assistants',
               cells: [
                 'Voice assistant (Alexa)',
@@ -178,7 +187,7 @@ export const privacyEn: PolicyDocument = {
         },
         {
           kind: 'note',
-          text: 'Lotties does not ask for your location, contacts, camera, photos or microphone. The app contains no advertising, analytics or crash-reporting tools.',
+          text: 'Lotties does not ask for your location, contacts, camera or photos. It asks for the microphone only when you start the Cry monitor on a device, in the web app, and uses it only while that page is open; the sound never leaves the device. The app contains no advertising, analytics or crash-reporting tools.',
         },
       ],
     },
@@ -193,6 +202,10 @@ export const privacyEn: PolicyDocument = {
         {
           kind: 'p',
           text: "The Doctors and clinics list is for contact details; health information belongs in your baby's own records.",
+        },
+        {
+          kind: 'p',
+          text: "The Cry monitor's microphone also hears anyone else in the room, such as a nanny or visitors. Nothing is recorded or kept, but tell them when it is on.",
         },
       ],
     },
@@ -211,6 +224,7 @@ export const privacyEn: PolicyDocument = {
             "Health information about your baby (sensitive data): your consent for this purpose (art. 11, I). You give it when you choose to record that information in the app, to keep your child's log. You can withdraw it at any time by deleting those records or your account.",
             'Sharing with a doctor you invite: your specific consent, given when you create the doctor invite and choose the sections the doctor sees (art. 11, I). You can change the sections or end the access at any time.',
             'Optional features you turn on (reminders, the Alexa skill, the address search): your consent (art. 7, I, and art. 11, I when a reminder is about a medicine or a vaccine). You withdraw it by turning the feature off or unlinking the skill.',
+            "The Cry monitor: your specific consent, asked on each device before it starts, from a member who may log for the baby (art. 11, I, and art. 14, §1). You withdraw it on the monitor's page; the spells already logged stay as ordinary records until you delete them.",
             'Technical logs and protecting the service: our legitimate interest in keeping it running and safe (art. 7, IX), limited to what that needs and never using health information.',
             'When the law or an authority requires us to keep or hand over data: compliance with a legal obligation (art. 7, II, and art. 11, II, a).',
           ],
@@ -267,7 +281,7 @@ export const privacyEn: PolicyDocument = {
                   id: 'pushServices',
                   cells: [
                     'Browser push services: Google (Chrome and most Android browsers), Mozilla (Firefox), Apple (Safari) and Microsoft (Edge)',
-                    "Your device's push address, and the time and size of each reminder. The content is encrypted so that only your device can read it; your device writes the text you see.",
+                    'Your device\'s push address, and the time and size of each reminder or alert (such as the Cry monitor\'s "Crying detected"). The content is encrypted so that only your device can read it; your device writes the text you see. No sound is ever sent.',
                     'Only if you turn on notifications on a device.',
                   ],
                 },
@@ -337,6 +351,10 @@ export const privacyEn: PolicyDocument = {
           kind: 'p',
           text: "Add a baby only if you are the baby's parent or legal guardian, or have their permission. A parent or legal guardian can ask us to see, correct or delete the child's data (see [Your rights](#privacy-rights)).",
         },
+        {
+          kind: 'p',
+          text: "The Cry monitor listens in the baby's room only on a device where a family member who may log for the baby started it and agreed to its terms. The sound is analysed on that device and never kept; only the crying spells are logged.",
+        },
       ],
     },
     {
@@ -360,7 +378,7 @@ export const privacyEn: PolicyDocument = {
                 'Download a copy: [Hub > Export data](/hub/export) downloads a complete, readable file of one baby (Owners and Parents), which another Lotties server can import. In [Settings > Account and data](/settings#account), Download my data saves what this device holds. A health professional finds it in the doctor area, [Settings > Account and data](/doctor/settings#account): her professional profile and the notes, suggestions and measurements she recorded.',
                 'Delete entries: a deleted entry disappears at once on every device. The server keeps it hidden, so that every device learns of the deletion, until the baby or your account is deleted; ask us if you need it erased sooner.',
                 'Stop sharing: the owner removes members and doctors in [Hub > Members and roles](/hub/family), where anyone can also leave a baby.',
-                "Withdraw consent for optional features: turn notifications off in [Settings](/settings#notifications), unlink the skill in the Alexa app, and change or end a doctor's access in [Hub > Doctor access](/hub/family#doctor-access).",
+                "Withdraw consent for optional features: turn notifications off in [Settings](/settings#notifications), unlink the skill in the Alexa app, change or end a doctor's access in [Hub > Doctor access](/hub/family#doctor-access), and withdraw the Cry monitor's consent on its page, [Hub > Cry monitor](/hub/cry-monitor), on each device.",
                 'Delete your account: [Settings > Account and data](/settings#account) > Delete my account (in the doctor area, [Settings > Account and data](/doctor/settings#account)). Babies only you use are erased with all their records. On a baby other people keep, your access ends; your private notes, reminders and doctor profile are deleted; and what you added stays for them under the name "Former member". If you are the only owner of a baby others use, make someone else an owner first.',
                 'Your sign-in account at our sign-in server is deleted together with your data when our server is set up to do it, and the app says before you confirm whether it will be. When it is not set up, or the sign-in server cannot be reached at that moment, your data is still erased, the app tells you that the sign-in account remains (it holds no baby data), and you can ask us to remove it.',
               ],
@@ -392,6 +410,7 @@ export const privacyEn: PolicyDocument = {
             'Your sign-in account: until you delete your account.',
             'Reminders: the delivery record for 14 days; snooze and dismiss choices for 7 days after the last change. A device that does not open the app for 90 days stops getting reminders, and the push address of a device that was switched off is deleted 30 days later.',
             'Doctor access log and invites: kept with the baby until it is erased.',
+            'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
             'Technical logs: only as long as needed to run and protect the service.',
             'Database copies made before updates: deleted when no longer needed. Until then they still contain data deleted in the meantime.',
             'On your device: until you sign out (the app then deletes its copy) or clear the app data.',
@@ -411,7 +430,8 @@ export const privacyEn: PolicyDocument = {
             'Sign-in happens on our own sign-in server (Keycloak); the app never sees your password. Access uses tokens that expire, which the server checks on every request.',
             'On every request the server checks your role on that baby and, for a doctor, the sections shared. Private notes are filtered out in the database itself for everyone but their author.',
             'Invite links and the codes inside reminders are stored only as one-way fingerprints (hashes).',
-            'The app runs only its own code: no third-party scripts, fonts or trackers, enforced by a strict Content Security Policy.',
+            "The app runs only its own code: no third-party scripts, fonts or trackers, enforced by a strict Content Security Policy. The Cry monitor's sound model also comes from our own server.",
+            "Only Lotties' own pages may use the microphone (a Permissions Policy), and only after you start the Cry monitor; your browser shows when it is in use.",
             "Limits on the number and size of requests; the Alexa connection checks Amazon's signature on every request.",
             "The server uses a database account with limited rights and keeps passwords and keys out of the source code. The app's own logs leave out what you write.",
             'Administrator access to the servers is limited to the maintainer. We look at stored data only when needed to run the service, solve a problem you reported or comply with the law.',
@@ -434,7 +454,7 @@ export const privacyEn: PolicyDocument = {
         {
           kind: 'list',
           items: [
-            "Notifications: the push services of Google, Mozilla, Apple and Microsoft, which operate worldwide, including in the United States. They cannot read the reminders' content.",
+            'Notifications: the push services of Google, Mozilla, Apple and Microsoft, which operate worldwide, including in the United States. They cannot read the content of reminders or alerts.',
             'Alexa: Amazon, which processes voice requests in its own data centers, including in the United States.',
             "Address search: OpenStreetMap's Nominatim is run by the OpenStreetMap Foundation, based in the United Kingdom. BrasilAPI and ViaCEP may also use servers outside Brazil.",
             'The Apple and Google app stores and GitHub, when you use them, under their own terms.',
@@ -461,12 +481,13 @@ export const privacyEn: PolicyDocument = {
             "A copy of your babies' records and of the changes not yet sent, in the browser's database (one per account).",
             'Preferences and shortcuts: language, theme, the selected baby, pinned buttons, dismissed cards, recent values and estimates, and how often you open each place in the Hub (to order your shortcuts).',
             'An invite link while you sign in, for a moment (session storage).',
+            'If you use the Cry monitor: that you agreed on this device (when, and to which version of the text) and the sensitivity you chose. Never any sound.',
             "The app's own files, so that it opens offline. No records are kept in that cache.",
           ],
         },
         {
           kind: 'p',
-          text: "Signing out deletes this account's records and preferences from the device; the app warns you first if some changes were not sent yet. Language and theme stay. The iOS and Android apps keep the same data in the app's own storage; uninstalling removes it.",
+          text: "Signing out deletes this account's records and preferences from the device; the app warns you first if some changes were not sent yet. Language, theme and the Cry monitor's sensitivity stay. The iOS and Android apps keep the same data in the app's own storage; uninstalling removes it.",
         },
       ],
     },
@@ -481,6 +502,10 @@ export const privacyEn: PolicyDocument = {
         {
           kind: 'p',
           text: "Medicine doses and schedules come only from what you or a doctor entered; always follow your doctor's guidance. Reminders can be late or missing (no connection, phone settings), so do not rely on them alone. In an emergency, contact a doctor or emergency services.",
+        },
+        {
+          kind: 'p',
+          text: 'The Cry monitor is not a baby monitor and not a safety device. It can miss crying and it can react to other sounds; it works only while its page is open and the screen is on. Always keep a way to hear your baby yourself.',
         },
       ],
     },

@@ -25,15 +25,24 @@ import {
   rhythmDetails,
   rhythmDetailText,
   rhythmLabel,
+  sortDetails,
+  upcomingText,
   type RhythmDetail,
   type RhythmNow,
   type RhythmWindowInput,
 } from '../rhythmDetails';
+import { LAYER_OF, type UpcomingItem } from '../upcoming';
+import { laneMarks, type LaneMark } from '../upcomingLane';
 import { BabyFace, FACE_HEAD_SHARE, FACE_HEAD_Y } from './BabyFace';
+import { LayerChips } from './LayerChips';
+import { useRingLayers } from './useRingLayers';
 import { RhythmDetailStrip } from './RhythmDetailStrip';
 import { RingLegend } from './RingLegend';
 import { projectedLook, ringSwatchColors } from './ringSwatch';
 import { rhythmMarkSx, virtualAnchor } from './rhythmMarks';
+import { UpcomingList } from './UpcomingList';
+import { Pictogram } from './LaneStamp';
+import { CONFIDENCE_STRENGTH, ESTIMATE_DASH, upcomingVisual } from './upcomingVisual';
 import { useRhythmSelection } from './useRhythmSelection';
 
 /*
@@ -62,6 +71,17 @@ const HIT_IN = TRACK_IN - 8;
 const HIT_OUT = TRACK_OUT + 8;
 const HIT_MIN_DEGREES = 16;
 const FACE_HIT = 16;
+/*
+ * The "next up" lane: an inner circle inside the hour ticks and clear of the middle text, with
+ * small stamps (18 units, about 16 px on a 320 px phone) 20 degrees apart at least (22 units):
+ * their 27 unit touch targets (24 px) may touch, and every marker is also a row of the "Next up"
+ * list (the equivalent control of WCAG 2.5.8).
+ */
+const LANE_R = 63;
+const STAMP_R = 9;
+const STAMP_ICON = 12;
+const LANE_HIT = 13.5;
+const LANE_MIN_GAP = 20;
 
 export interface DayRingProps {
   events: readonly BabyEvent[];
@@ -80,6 +100,11 @@ export interface DayRingProps {
   bedTime?: { earliest: string; latest: string } | null;
   /** The naps still likely today (`projectNaps`): faint dashed bands, the likely wake-up. */
   projection?: NapProjection | null;
+  /**
+   * What is likely still to come today (`upcomingToday`): small markers on the inner lane, the
+   * layer chips and the "Next up" list. Without it the ring is the sleep ring alone.
+   */
+  upcoming?: readonly UpcomingItem[];
 }
 
 /** Paint order: sleep under the estimates, the server's window over them, "now" on top. */
@@ -89,6 +114,8 @@ const Z_ORDER: Record<RhythmDetail['kind'], number> = {
   projected: 1,
   window: 2,
   wake: 3,
+  upcoming: 3,
+  upcomingCluster: 3,
   now: 4,
 };
 
@@ -152,6 +179,7 @@ export function DayRing({
   overtired = false,
   bedTime = null,
   projection = null,
+  upcoming,
 }: DayRingProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -162,7 +190,10 @@ export function DayRing({
     () => buildRing({ events, types, now, ...(window ? { windows: [window] } : {}) }),
     [events, types, now, window],
   );
-  const details = useMemo(
+  const layers = useRingLayers();
+  const withLayers = upcoming !== undefined;
+  const showSleep = !withLayers || layers.has('sleep');
+  const sleepDetails = useMemo(
     () =>
       rhythmDetails({
         events,
@@ -176,17 +207,28 @@ export function DayRing({
       }),
     [events, types, now, window, state, overtired, bedTime, projection],
   );
+  const visible = (upcoming ?? []).filter((item) => layers.has(LAYER_OF[item.kind]));
+  const lane = laneMarks(visible, (item) => angleOf(item.at.getTime(), ring.frame), LANE_MIN_GAP, [
+    ring.nowAngle,
+    360,
+  ]);
+  const laneByKey = new Map<string, LaneMark>(lane.marks.map((mark) => [mark.detail.key, mark]));
+  const details = sortDetails([
+    ...sleepDetails.filter((detail) => showSleep || detail.kind === 'now'),
+    ...lane.marks.map((mark) => mark.detail),
+  ]);
   const label = ringDescription(ring, t, now, stateLabel, duration);
   // Without the server's window ahead (she is asleep), the line names the first projected nap.
   const firstProjected = details.find((d) => d.kind === 'projected' && d.first);
-  const windowLine =
-    ringWindowLine(ring, t, now) ??
-    (firstProjected && firstProjected.kind === 'projected'
-      ? t('now.ring.nextWindow', {
-          from: formatTime(firstProjected.start),
-          to: formatTime(firstProjected.end),
-        })
-      : null);
+  const windowLine = !showSleep
+    ? null
+    : (ringWindowLine(ring, t, now) ??
+      (firstProjected && firstProjected.kind === 'projected'
+        ? t('now.ring.nextWindow', {
+            from: formatTime(firstProjected.start),
+            to: formatTime(firstProjected.end),
+          })
+        : null));
   const hours = ringHourLabels(ring.nowAngle);
   const nowIn = polar(C, C, NOW_IN, ring.nowAngle);
   const faceAt = polar(C, C, FACE_R, ring.nowAngle);
@@ -294,6 +336,27 @@ export function DayRing({
           />
         ),
       });
+    } else if (detail.kind === 'upcoming' || detail.kind === 'upcomingCluster') {
+      const placed = laneByKey.get(detail.key);
+      if (!placed) continue;
+      const point = polar(C, C, LANE_R, placed.pos);
+      marks.push({
+        detail,
+        anchor: { x: point.x, y: point.y - STAMP_R },
+        visual: <LaneMarker mark={placed} point={point} frame={ring.frame} nowMs={now.getTime()} />,
+        hit: <circle cx={point.x} cy={point.y} r={LANE_HIT} fill="transparent" />,
+        ring: (
+          <circle
+            className="rhythm-ring"
+            cx={point.x}
+            cy={point.y}
+            r={STAMP_R + 3}
+            fill="none"
+            stroke={colors.primary.main}
+            strokeWidth={2}
+          />
+        ),
+      });
     } else if (detail.kind === 'wake') {
       const at = angleOf(detail.start, ring.frame);
       const point = polar(C, C, R, at);
@@ -375,6 +438,22 @@ export function DayRing({
   const keys = marks.map((mark) => mark.detail.key);
   const selection = useRhythmSelection(keys);
   const selectedText = selection.selected ? (texts.get(selection.selected) ?? null) : null;
+  const laneLegend = (['feeds', 'diapers', 'patterns', 'medicine'] as const).filter((layer) =>
+    visible.some((item) => LAYER_OF[item.kind] === layer),
+  );
+  const sleepLegend = showSleep
+    ? ringLegendKeys(ring, {
+        projected: marks.some((mark) => mark.detail.kind === 'projected'),
+        wake: marks.some((mark) => mark.detail.kind === 'wake'),
+        bedtime: marks.some((mark) => mark.detail.kind === 'bedtime'),
+      }).filter((key) => key !== 'now')
+    : [];
+  const rows = visible.map((item) => ({
+    item,
+    text: upcomingText(item, t),
+    markKey: lane.markOf.get(item.key) ?? `up-${item.key}`,
+  }));
+  const anyLane = layers.layers.some((layer) => layer !== 'sleep');
 
   return (
     <Box data-testid="day-ring" sx={{ display: 'grid', justifyItems: 'center', gap: 1 }}>
@@ -522,14 +601,101 @@ export function DayRing({
           {windowLine}
         </Typography>
       )}
-      <RingLegend
-        keys={ringLegendKeys(ring, {
-          projected: marks.some((mark) => mark.detail.kind === 'projected'),
-          wake: marks.some((mark) => mark.detail.kind === 'wake'),
-          bedtime: marks.some((mark) => mark.detail.kind === 'bedtime'),
-        })}
-        face={face}
-      />
+      {withLayers && <LayerChips layers={layers.layers} onToggle={layers.toggle} />}
+      <RingLegend keys={[...sleepLegend, ...laneLegend, 'now']} face={face} />
+      {withLayers && (rows.length > 0 || anyLane) && (
+        <UpcomingList rows={rows} selected={selection.selected} onSelect={selection.select} />
+      )}
     </Box>
+  );
+}
+
+/**
+ * One marker of the "next up" lane: the item's stamp (its category tint, a dashed edge, the
+ * pictogram) with a short dashed arc for its window, fainter with lower confidence; a cluster is a
+ * neutral stamp with its count.
+ */
+function LaneMarker({
+  mark,
+  point,
+  frame,
+  nowMs,
+}: {
+  mark: LaneMark;
+  point: Point;
+  frame: { start: number; end: number };
+  nowMs: number;
+}) {
+  const theme = useTheme();
+  const colors = palette(theme);
+  if (mark.items.length > 1) {
+    return (
+      <g data-testid="ring-upcoming-cluster" data-count={mark.items.length}>
+        <circle
+          cx={point.x}
+          cy={point.y}
+          r={STAMP_R}
+          fill={colors.background.paper}
+          stroke={colors.text.secondary}
+          strokeWidth={1.2}
+          strokeDasharray={ESTIMATE_DASH}
+        />
+        <text
+          x={point.x}
+          y={point.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={10}
+          fontWeight={700}
+          fill={colors.text.primary}
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {mark.items.length}
+        </text>
+      </g>
+    );
+  }
+  const [item] = mark.items;
+  const visual = upcomingVisual(item);
+  const pair = colors.category[visual.category];
+  const arc =
+    item.windowStart && item.windowEnd
+      ? spanAngles(Math.max(item.windowStart.getTime(), nowMs), item.windowEnd.getTime(), frame)[0]
+      : undefined;
+  return (
+    <g
+      data-testid={`ring-upcoming-${item.kind}`}
+      data-confidence={item.confidence}
+      opacity={CONFIDENCE_STRENGTH[item.confidence]}
+    >
+      {arc && (
+        <path
+          data-testid="ring-upcoming-window"
+          d={arcPath(C, C, LANE_R, arc.from, arc.to)}
+          fill="none"
+          stroke={pair.fg}
+          strokeOpacity={0.55}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeDasharray={ESTIMATE_DASH}
+        />
+      )}
+      <circle
+        cx={point.x}
+        cy={point.y}
+        r={STAMP_R}
+        fill={pair.bg}
+        stroke={pair.fg}
+        strokeWidth={1.2}
+        strokeDasharray={ESTIMATE_DASH}
+      />
+      <Pictogram
+        name={visual.icon}
+        size={STAMP_ICON}
+        x={point.x - STAMP_ICON / 2}
+        y={point.y - STAMP_ICON / 2}
+        color={pair.fg}
+      />
+    </g>
   );
 }

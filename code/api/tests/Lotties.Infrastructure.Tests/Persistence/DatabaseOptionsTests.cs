@@ -1,4 +1,5 @@
 using Lotties.Infrastructure.Persistence;
+using Npgsql;
 
 namespace Lotties.Infrastructure.Tests.Persistence;
 
@@ -68,6 +69,14 @@ public sealed class DatabaseOptionsTests
 
         Assert.Contains("Database=lotties", connectionString, StringComparison.Ordinal);
         Assert.Contains("Username=app_user", connectionString, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ToConnectionString_KeepsGssEncryptionOffAsBeforeNpgsql10()
+    {
+        var connectionString = DatabaseOptions.FromVariables(Reader(BaseVariables)).ToConnectionString();
+
+        Assert.Equal(GssEncryptionMode.Disable, new NpgsqlConnectionStringBuilder(connectionString).GssEncryptionMode);
     }
 
     private static Func<string, string?> Reader(IReadOnlyDictionary<string, string?> variables) =>

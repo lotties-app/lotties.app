@@ -12,7 +12,7 @@ workloads, and one Ingress on the external Traefik makes them public at **https:
 
 | Workload | Image | Release (one chart) | Notes |
 | --- | --- | --- | --- |
-| API (.NET 8) | `lotties-api` from `code/api/Dockerfile` | `lotties-api` | port 8080, uid 1654, probes on `/health`, config from env and the Secret `lotties-secrets` |
+| API (.NET 10) | `lotties-api` from `code/api/Dockerfile` | `lotties-api` | port 8080, uid 1654, probes on `/health`, config from env and the Secret `lotties-secrets` |
 | Web app (React SPA, nginx-unprivileged) | `lotties-web` from `code/web/Dockerfile` | `lotties-web` | port 8080, uid 101, OIDC settings baked in at build time |
 
 Both use [charts/lotties-app](charts/lotties-app) with a values file each in [values](values): non-root, read-only
@@ -85,6 +85,9 @@ Images are tagged `src-<hash>` of the files they are built from (for the web ima
 changed client id rebuilds it). A tag already in the registry is not rebuilt and its pods are not restarted. A run that
 built something is a release: the images also get `vX.Y.Z` (the next patch after the git and registry tags, or
 `VERSION`) and `latest`. `TAG`, `FORCE_BUILD=1` (also to pick up patched base images) and `SKIP_BUILD=1` are available.
+The release is chosen before the builds and stamped into the images it builds (`APP_VERSION`, `APP_COMMIT`,
+`APP_BUILD_TIME`; About and `GET /api/v1/version` show it); it is not part of the `src-<hash>` tag, so an image that
+is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
 
 ## Secrets and rotation
 

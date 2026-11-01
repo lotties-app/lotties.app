@@ -1,12 +1,15 @@
 import type { TFunction } from 'i18next';
 import type { BabyEvent, EventType } from '../db/models';
-import { formatDuration, formatTime } from '../i18n/format';
+import { roundToStep } from '../events/bottleSuggestions';
+import { formatDuration, formatList, formatNumber, formatTime } from '../i18n/format';
+import { dayPartPhrase } from '../medications/dayPartText';
 import { readBasis } from '../predictions/predictionModel';
 import { effectiveDurationMs } from '../timers/pauseMath';
 import { MINUTE_MS, isSleepKind, sleepSessionKind, typeIdsForKey } from './eventFacts';
 import { napGuidance } from './napGuidance';
 import type { NapProjection } from './napProjection';
 import { dayFrame } from './ringGeometry';
+import type { FeedBasis, UpcomingItem } from './upcoming';
 
 /*
  * The details behind the marks of the day ring and the ruler (docs/DESIGN.md "Now: rhythm
@@ -120,8 +123,31 @@ export interface NowDetail {
   next: NextUp | null;
 }
 
+/** One "next up" marker (now/upcoming.ts): a feed, a diaper, a pattern window or a dose. */
+export interface UpcomingDetail {
+  kind: 'upcoming';
+  key: string;
+  start: number;
+  item: UpcomingItem;
+}
+
+/** Several "next up" markers too close to draw apart, as one marker. */
+export interface UpcomingClusterDetail {
+  kind: 'upcomingCluster';
+  key: string;
+  start: number;
+  items: UpcomingItem[];
+}
+
 export type RhythmDetail =
-  SleepDetail | WindowDetail | NowDetail | ProjectedDetail | WakeDetail | BedtimeDetail;
+  | SleepDetail
+  | WindowDetail
+  | NowDetail
+  | ProjectedDetail
+  | WakeDetail
+  | BedtimeDetail
+  | UpcomingDetail
+  | UpcomingClusterDetail;
 
 /** Order of marks that start at the same instant: sleep, the windows, now, the estimates. */
 const RANK: Record<RhythmDetail['kind'], number> = {
@@ -131,7 +157,32 @@ const RANK: Record<RhythmDetail['kind'], number> = {
   wake: 3,
   projected: 4,
   bedtime: 5,
+  upcoming: 6,
+  upcomingCluster: 6,
 };
+
+/** The mark of one upcoming item. */
+export function upcomingDetail(item: UpcomingItem): UpcomingDetail {
+  return { kind: 'upcoming', key: `up-${item.key}`, start: item.at.getTime(), item };
+}
+
+/** One mark for several upcoming items (the earliest first), keyed by its first item. */
+export function upcomingClusterDetail(items: readonly UpcomingItem[]): UpcomingClusterDetail {
+  const sorted = [...items].sort((a, b) => a.at.getTime() - b.at.getTime());
+  return {
+    kind: 'upcomingCluster',
+    key: `up-cluster-${sorted[0].key}`,
+    start: sorted[0].at.getTime(),
+    items: sorted,
+  };
+}
+
+/** Marks in time order (the order of the arrow keys), ties in the fixed kind order. */
+export function sortDetails<T extends RhythmDetail>(details: readonly T[]): T[] {
+  return [...details].sort(
+    (a, b) => a.start - b.start || RANK[a.kind] - RANK[b.kind] || a.key.localeCompare(b.key),
+  );
+}
 
 /** Ahead, open or past, from the nap sheet's guidance (wind-down and soon are both ahead). */
 export function windowPhase(window: { earliest: string; latest: string }, now: Date): WindowPhase {
@@ -283,9 +334,7 @@ export function rhythmDetails(input: RhythmInput): RhythmDetail[] {
       next: nextUp(input, phase),
     },
   ];
-  return details.sort(
-    (a, b) => a.start - b.start || RANK[a.kind] - RANK[b.kind] || a.key.localeCompare(b.key),
-  );
+  return sortDetails(details);
 }
 
 /** The details of the "now" marker alone (the face and its name). */
@@ -408,9 +457,183 @@ function projectedText(detail: ProjectedDetail, t: TFunction): RhythmText {
   };
 }
 
+const ml = (value: number) => formatNumber(value);
+const range = (from: Date, to: Date) => ({ from: formatTime(from), to: formatTime(to) });
+
+/** The sentences about the expected amount of a feed (never a number without its basis). */
+function amountLines(item: UpcomingItem, basis: FeedBasis, t: TFunction): string[] {
+  const amount = item.amountMl;
+  const source = basis.amount;
+  if (basis.method === 'breast') return [t('now.upcoming.mostlyNursing')];
+  if (!amount || !source) return [];
+  if (source.kind === 'ageNorm') {
+    return [t('now.upcoming.amountNorm', { low: ml(amount.low), high: ml(amount.high) })];
+  }
+  const typical = ml(amount.typical ?? amount.low);
+  const spread = amount.low !== amount.high;
+  const lines: string[] = [];
+  if (source.kind === 'dayPart') {
+    const part = dayPartPhrase(source.dayPart);
+    lines.push(
+      spread
+        ? t('now.upcoming.amountPart', {
+            ml: typical,
+            part,
+            low: ml(amount.low),
+            high: ml(amount.high),
+          })
+        : t('now.upcoming.amountPartExact', { ml: typical, part }),
+    );
+  } else {
+    lines.push(
+      spread
+        ? t('now.upcoming.amountAll', { ml: typical, low: ml(amount.low), high: ml(amount.high) })
+        : t('now.upcoming.amountAllExact', { ml: typical }),
+    );
+  }
+  const others = source.byPart.filter((p) => p.dayPart !== source.dayPart);
+  if (others.length > 0) {
+    lines.push(
+      t('now.upcoming.amountOthers', {
+        list: formatList(
+          others.map((p) =>
+            t('now.upcoming.amountOther', { ml: ml(p.typicalMl), part: dayPartPhrase(p.dayPart) }),
+          ),
+        ),
+      }),
+    );
+  }
+  lines.push(t('now.upcoming.amountBasis', { count: source.samples, days: source.days }));
+  return lines;
+}
+
+function feedTimeLine(basis: FeedBasis, t: TFunction): string {
+  const time = basis.time;
+  switch (time.kind) {
+    case 'prediction':
+      return t('now.upcoming.feedPredicted', { count: time.samples });
+    case 'ownGap':
+      return time.dayPart
+        ? t('now.upcoming.feedGapPart', {
+            part: dayPartPhrase(time.dayPart),
+            duration: formatDuration(time.gapMinutes * MINUTE_MS),
+          })
+        : t('now.upcoming.feedGap', { duration: formatDuration(time.gapMinutes * MINUTE_MS) });
+    case 'serverGap':
+      return t('now.upcoming.feedGap', { duration: formatDuration(time.gapMinutes * MINUTE_MS) });
+    case 'ageNorm':
+      return t('now.upcoming.feedGapNorm', {
+        duration: formatDuration(time.gapMinutes * MINUTE_MS),
+      });
+  }
+}
+
+/** The sentences of one upcoming item (the strip, the marker's name and the "Next up" row). */
+export function upcomingText(item: UpcomingItem, t: TFunction): RhythmText {
+  const time = formatTime(item.at);
+  const window =
+    item.windowStart && item.windowEnd ? range(item.windowStart, item.windowEnd) : null;
+  const low = item.confidence === 'low' ? [t('now.upcoming.lowConfidence')] : [];
+  const basis = item.basis;
+  switch (basis.kind) {
+    case 'feed': {
+      const bottle = basis.method === 'bottle';
+      const title = basis.due
+        ? t(bottle ? 'now.upcoming.bottleDue' : 'now.upcoming.feedDue')
+        : t(bottle ? 'now.upcoming.bottle' : 'now.upcoming.feed', { time });
+      return {
+        title,
+        lines: [
+          ...(window ? [t('now.upcoming.window', window)] : []),
+          ...amountLines(item, basis, t),
+          ...(basis.partialFeed
+            ? [
+                t('now.upcoming.feedPartial', {
+                  drunk: ml(Math.round(basis.partialFeed.drunkMl)),
+                  usual: ml(roundToStep(basis.partialFeed.usualMl)),
+                }),
+              ]
+            : []),
+          feedTimeLine(basis, t),
+          ...low,
+        ],
+      };
+    }
+    case 'diaper': {
+      const duration = formatDuration(basis.medianMinutes * MINUTE_MS);
+      if (item.kind === 'diaperDirty' && window) {
+        const usual =
+          basis.signal === 'afterFeed'
+            ? t('now.upcoming.dirtyAfterFeed', { duration })
+            : basis.daily
+              ? t('now.upcoming.dirtyDaily')
+              : t('now.upcoming.dirtyGap', { duration });
+        return { title: t('now.upcoming.dirty', window), lines: [usual, ...low] };
+      }
+      return {
+        title: basis.due ? t('now.upcoming.wetDue') : t('now.upcoming.wet', { time }),
+        lines: [
+          ...(window ? [t('now.upcoming.window', window)] : []),
+          t('now.upcoming.wetBasis', { duration }),
+          ...low,
+        ],
+      };
+    }
+    case 'pattern': {
+      const belly = item.kind === 'bellyPain';
+      const to = item.windowEnd ? formatTime(item.windowEnd) : time;
+      const title = basis.due
+        ? t(belly ? 'now.upcoming.bellyNow' : 'now.upcoming.fussyNow', { to })
+        : t(belly ? 'now.upcoming.belly' : 'now.upcoming.fussy', { time });
+      return {
+        title,
+        lines: [...(window ? [t('now.upcoming.patternBasis', window)] : []), ...low],
+      };
+    }
+    case 'medicine': {
+      const name = basis.name.trim() || t('now.upcoming.medicineFallback');
+      const lines: string[] = [];
+      let title: string;
+      if (basis.schedule === 'dayPart' && basis.dayPart) {
+        title = t('now.upcoming.medicinePart', { name, part: dayPartPhrase(basis.dayPart) });
+        if (window) lines.push(t('now.upcoming.medicineWindow', window));
+        if (basis.reminderAt) {
+          lines.push(t('now.upcoming.medicineReminder', { time: formatTime(basis.reminderAt) }));
+        }
+      } else {
+        title = t('now.upcoming.medicineAt', { name, time });
+        if (basis.schedule === 'interval' && basis.everyMinutes) {
+          lines.push(
+            t('now.upcoming.medicineEvery', {
+              duration: formatDuration(basis.everyMinutes * MINUTE_MS),
+            }),
+          );
+        }
+      }
+      lines.push(t('now.upcoming.fromPrescription'));
+      return { title, lines };
+    }
+  }
+}
+
+/** The sentences of a cluster: how many, from when, then each item's first sentence. */
+function clusterText(detail: UpcomingClusterDetail, t: TFunction): RhythmText {
+  return {
+    title: t('now.upcoming.cluster', {
+      count: detail.items.length,
+      time: formatTime(detail.start),
+    }),
+    lines: detail.items.map((item) => upcomingText(item, t).title),
+  };
+}
+
 /** The sentences of one mark in the active language. */
 export function rhythmDetailText(detail: RhythmDetail, t: TFunction): RhythmText {
   switch (detail.kind) {
+    case 'upcoming':
+      return upcomingText(detail.item, t);
+    case 'upcomingCluster':
+      return clusterText(detail, t);
     case 'sleep':
       return sleepText(detail, t);
     case 'window':

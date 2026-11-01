@@ -54,6 +54,7 @@ import { NightNow } from './NightNow';
 import { NightStars } from './NightStars';
 import { NowSkeleton } from './NowSkeleton';
 import { OvertiredSuggestionCard } from './OvertiredCard';
+import { BottleFollowUpRow } from './BottleFollowUpRow';
 import { RunningNow } from './RunningNow';
 import { StateCard } from './StateCard';
 import { ToastHost } from './ToastHost';
@@ -184,17 +185,23 @@ function NowContent({
     [model.events, model.types, model.now],
   );
   const disabled = model.readOnly;
-  /** "Running now": every running timer, first on the page (large targets at night). */
+  /**
+   * "Running now": every running timer, first on the page (large targets at night), then the
+   * follow-up of a bottle a sleep stopped.
+   */
   const running = (large: boolean) => (
-    <RunningNow
-      babyId={baby.id}
-      model={model}
-      actions={actions}
-      action={action}
-      isSnoozed={snooze.isSnoozed}
-      onKeepRunning={snooze.keep}
-      large={large}
-    />
+    <>
+      <RunningNow
+        babyId={baby.id}
+        model={model}
+        actions={actions}
+        action={action}
+        isSnoozed={snooze.isSnoozed}
+        onKeepRunning={snooze.keep}
+        large={large}
+      />
+      <BottleFollowUpRow babyId={baby.id} babyName={baby.name} model={model} />
+    </>
   );
 
   const close = () => {
@@ -360,6 +367,8 @@ function NowContent({
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
             bedTime={predictions?.bedTime ?? null}
             {...(predictions ? { predictions } : {})}
+            birthDate={baby.birthDate}
+            ageNorms={ageNorms ?? null}
           />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
