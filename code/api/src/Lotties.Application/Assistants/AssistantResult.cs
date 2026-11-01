@@ -183,11 +183,17 @@ public enum AssistantResultCode
     /// <summary>A tummy time timer started.</summary>
     TummyTimeStarted,
 
+    /// <summary>A finished tummy time of <see cref="AssistantResult.Minutes"/> minutes (started at <see cref="AssistantResult.At"/>) was logged.</summary>
+    TummyTimeLogged,
+
     /// <summary>Belly pain was logged.</summary>
     BellyPainLogged,
 
     /// <summary>A breast pump timer started.</summary>
     BreastPumpStarted,
+
+    /// <summary>A finished breast pump session of <see cref="AssistantResult.Minutes"/> minutes (started at <see cref="AssistantResult.At"/>) was logged.</summary>
+    BreastPumpLogged,
 
     /// <summary>Nasal suction was logged.</summary>
     NasalSuctionLogged,
@@ -195,8 +201,14 @@ public enum AssistantResultCode
     /// <summary>A belly massage timer started.</summary>
     BellyMassageStarted,
 
+    /// <summary>A finished belly massage of <see cref="AssistantResult.Minutes"/> minutes (started at <see cref="AssistantResult.At"/>) was logged.</summary>
+    BellyMassageLogged,
+
     /// <summary>A fussy/crying timer started.</summary>
     FussyStarted,
+
+    /// <summary>A finished fussy/crying spell of <see cref="AssistantResult.Minutes"/> minutes (started at <see cref="AssistantResult.At"/>) was logged.</summary>
+    FussyLogged,
 
     /// <summary>A nail trim was logged.</summary>
     NailTrimLogged,
@@ -219,6 +231,9 @@ public enum AssistantResultCode
     /// <summary>An outdoor time timer started.</summary>
     OutdoorStarted,
 
+    /// <summary>A finished outdoor time of <see cref="AssistantResult.Minutes"/> minutes (started at <see cref="AssistantResult.At"/>) was logged.</summary>
+    OutdoorLogged,
+
     /// <summary>Skin care was logged.</summary>
     SkinCareLogged,
 
@@ -239,7 +254,7 @@ public enum AssistantResultCode
 
     /// <summary>
     /// A number the command needs is missing or outside its limits (<see cref="AssistantResult.Field"/>: <c>temperature</c>,
-    /// <c>water_temperature</c>, <c>pain_level</c>, <c>pump_amount</c>; <see cref="AssistantResult.Min"/>..<see cref="AssistantResult.Max"/>,
+    /// <c>water_temperature</c>, <c>pain_level</c>, <c>pump_amount</c>, <c>minutes</c>; <see cref="AssistantResult.Min"/>..<see cref="AssistantResult.Max"/>,
     /// degrees Celsius or ml or the level); nothing was logged.
     /// </summary>
     InvalidValue,

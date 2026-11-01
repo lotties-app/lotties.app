@@ -135,23 +135,23 @@ public interface IAssistantService
     /// </summary>
     Task<AssistantResult> LogBathAsync(AssistantInvocation invocation, decimal? temperature, TemperatureUnit? unit = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Starts a tummy time timer now.</summary>
-    Task<AssistantResult> LogTummyTimeAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+    /// <summary>Starts a tummy time timer now; with <paramref name="minutes"/> (1-720, else <see cref="AssistantResultCode.InvalidValue"/>) logs one finished entry that ended now instead.</summary>
+    Task<AssistantResult> LogTummyTimeAsync(AssistantInvocation invocation, int? minutes = null, CancellationToken cancellationToken = default);
 
     /// <summary>Logs belly pain with the required level (1-5; anything else, or none, is <see cref="AssistantResultCode.InvalidValue"/>). A record of what was said, never a judgement.</summary>
     Task<AssistantResult> LogBellyPainAsync(AssistantInvocation invocation, int? intensity, CancellationToken cancellationToken = default);
 
-    /// <summary>Starts a breast pump timer now with the optional left and right amounts in ml (1-500 each, else <see cref="AssistantResultCode.InvalidValue"/>).</summary>
-    Task<AssistantResult> LogBreastPumpAsync(AssistantInvocation invocation, int? amountLeftMl, int? amountRightMl, CancellationToken cancellationToken = default);
+    /// <summary>Starts a breast pump timer now (or, with the optional <c>minutes</c> 1-720, logs one finished entry that ended now) with the optional left and right amounts in ml (1-500 each, else <see cref="AssistantResultCode.InvalidValue"/>).</summary>
+    Task<AssistantResult> LogBreastPumpAsync(AssistantInvocation invocation, int? amountLeftMl, int? amountRightMl, int? minutes = null, CancellationToken cancellationToken = default);
 
     /// <summary>Logs nasal suction now with the optional tool (<c>bulb</c>, <c>electric</c>, <c>mouth</c>) and saline flag.</summary>
     Task<AssistantResult> LogNasalSuctionAsync(AssistantInvocation invocation, string? tool, bool? saline, CancellationToken cancellationToken = default);
 
-    /// <summary>Starts a belly massage timer now with the optional reason and whether it helped (built-in choices; anything else is left out).</summary>
-    Task<AssistantResult> LogBellyMassageAsync(AssistantInvocation invocation, string? reason, string? helped, CancellationToken cancellationToken = default);
+    /// <summary>Starts a belly massage timer now (or, with the optional <c>minutes</c> 1-720, logs one finished entry that ended now) with the optional reason and whether it helped (built-in choices; anything else is left out).</summary>
+    Task<AssistantResult> LogBellyMassageAsync(AssistantInvocation invocation, string? reason, string? helped, int? minutes = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Starts a fussy/crying timer now with the optional intensity (<c>mild</c>, <c>moderate</c>, <c>intense</c>) and what helped (built-in choices).</summary>
-    Task<AssistantResult> LogFussyAsync(AssistantInvocation invocation, string? intensity, string? whatHelped, CancellationToken cancellationToken = default);
+    /// <summary>Starts a fussy/crying timer now (or, with the optional <c>minutes</c> 1-720, logs one finished entry that ended now) with the optional intensity (<c>mild</c>, <c>moderate</c>, <c>intense</c>) and what helped (built-in choices).</summary>
+    Task<AssistantResult> LogFussyAsync(AssistantInvocation invocation, string? intensity, string? whatHelped, int? minutes = null, CancellationToken cancellationToken = default);
 
     /// <summary>Logs a nail trim now with the optional place (<c>hands</c>, <c>feet</c>, <c>both</c>).</summary>
     Task<AssistantResult> LogNailTrimAsync(AssistantInvocation invocation, string? where, CancellationToken cancellationToken = default);
@@ -175,8 +175,8 @@ public interface IAssistantService
     /// <summary>Logs a symptom from the built-in list with its optional severity (<c>mild</c>, <c>moderate</c>, <c>severe</c>): a record, never a diagnosis.</summary>
     Task<AssistantResult> LogSymptomAsync(AssistantInvocation invocation, string? symptom, string? severity, CancellationToken cancellationToken = default);
 
-    /// <summary>Starts an outdoor time timer now with the optional kind (built-in choices).</summary>
-    Task<AssistantResult> LogOutdoorAsync(AssistantInvocation invocation, string? kind, CancellationToken cancellationToken = default);
+    /// <summary>Starts an outdoor time timer now (or, with the optional <c>minutes</c> 1-720, logs one finished entry that ended now) with the optional kind (built-in choices).</summary>
+    Task<AssistantResult> LogOutdoorAsync(AssistantInvocation invocation, string? kind, int? minutes = null, CancellationToken cancellationToken = default);
 
     /// <summary>Logs skin care now with the optional product (built-in choices).</summary>
     Task<AssistantResult> LogSkinCareAsync(AssistantInvocation invocation, string? product, CancellationToken cancellationToken = default);

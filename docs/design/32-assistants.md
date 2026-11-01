@@ -32,19 +32,19 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `CryReasonsIntent` | "why is she crying", "why is the baby fussy", "what could be making her cry" | "por que ela está chorando", "por que ela está irritada", "por que ela não para de chorar" | `ReadCryReasons` |
 | `RequestDeleteLastIntent` | "undo the last thing I logged", "delete the last entry", "undo the last entry", "cancel the last entry" | "desfazer o último registro", "apagar o último registro", "excluir o último registro" | `RequestDeleteLast` (asks only, section 5.3) |
 | `BathIntent` (`temperature` AMAZON.NUMBER, optional, in the user's unit system) | "log a bath", "water was thirty seven degrees" | "registrar banho" | `LogBath` |
-| `TummyTimeIntent` | "start tummy time" | "iniciar tempo de bruços" | `LogTummyTime` (timer, stopped in the app) |
+| `TummyTimeIntent` (`tummyMinutes` AMAZON.NUMBER, 1-720, optional) | "start tummy time", "log fifteen minutes of tummy time" | "iniciar tempo de bruços", "registre quinze minutos de tummy time" | `LogTummyTime` (timer, stopped in the app; with minutes one finished entry, section 5.5) |
 | `BellyPainIntent` (`painLevel` AMAZON.NUMBER, 1-5, asked for when missing) | "belly pain level three" | "dor de barriga nível 3" | `LogBellyPain` |
-| `BreastPumpIntent` (`amountLeft`, `amountRight` in ml, optional) | "start pumping" | "começar a ordenhar" | `LogBreastPump` (timer) |
+| `BreastPumpIntent` (`amountLeft`, `amountRight` in ml, optional; `pumpMinutes` 1-720, optional) | "start pumping" | "começar a ordenhar" | `LogBreastPump` (timer, or a finished entry with minutes) |
 | `NasalSuctionIntent` | "suctioned her nose" | "aspirei o nariz dela" | `LogNasalSuction` |
-| `BellyMassageIntent` | "gave her a belly massage" | "fiz massagem na barriga dela" | `LogBellyMassage` (timer) |
-| `FussyIntent` (`intensity` FUSSY_INTENSITY, optional) | "she's fussy" | "ela está irritada" | `LogFussy` (timer) |
+| `BellyMassageIntent` (`massageMinutes` AMAZON.NUMBER, optional) | "gave her a belly massage" | "fiz massagem na barriga dela" | `LogBellyMassage` (timer, or a finished entry with minutes) |
+| `FussyIntent` (`intensity` FUSSY_INTENSITY, optional; `fussyMinutes` AMAZON.NUMBER, optional) | "she's fussy" | "ela está irritada" | `LogFussy` (timer, or a finished entry with minutes) |
 | `NailTrimIntent` | "trimmed her nails" | "cortei as unhas dela" | `LogNailTrim` |
 | `TemperatureIntent` (`value` AMAZON.NUMBER, required, in the user's unit system; `method` TEMP_METHOD, optional) | "log temperature thirty seven" | "registrar temperatura 37" | `LogTemperature` (a record only) |
 | `SpitUpIntent` | "she spit up" | "ela regurgitou" | `LogSpitUp` |
 | `TeethingIntent` | "she's teething" | "ela está dentando" | `LogTeething` |
 | `MilestoneIntent` (`milestone` MILESTONE_TYPE, optional) | "she rolled over" | "ela virou de bruços" | `LogMilestone` |
 | `SymptomIntent` (`symptom` SYMPTOM_TYPE, `severity` SYMPTOM_SEVERITY, optional) | "she has a cough" | "ela está com tosse" | `LogSymptom` (a record only) |
-| `OutdoorIntent` | "went for a walk" | "saímos para passear" | `LogOutdoor` (timer) |
+| `OutdoorIntent` (`outdoorMinutes` AMAZON.NUMBER, optional) | "went for a walk" | "saímos para passear" | `LogOutdoor` (timer, or a finished entry with minutes) |
 | `SkinCareIntent` | "applied lotion" | "passei hidratante" | `LogSkinCare` |
 | `MedicationIntent` (`medicationName` AMAZON.SearchQuery, required) | "gave her" + the registered medicine name | "dei" + the registered medicine name | `LogMedication` (section 5.4) |
 | `MedicationReminderIntent` | "is any medicine due" | "tem algum remédio para dar" | `ReadMedicationReminder` (section 5.4) |
@@ -134,7 +134,8 @@ with a line for every code, tested for every code in both languages.
 | `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags` (each cause carries its ranking score internally; the spoken Alexa answer leads with the top cause and its first fact, and adds the second only when its score is within 0.1 of the first, while the safety sentence and the full red-flag list are never shortened; MCP keeps every cause); `running` = a sleep timer runs so the log may be behind |
 | `delete_requested`, `no_entry_to_delete`, `last_not_undoable` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
 | `bath_logged`, `tummy_time_started`, `belly_pain_logged`, `breast_pump_started`, `nasal_suction_logged`, `belly_massage_started`, `fussy_started`, `nail_trim_logged`, `temperature_logged`, `spit_up_logged`, `teething_logged`, `milestone_logged`, `symptom_logged`, `outdoor_started`, `skin_care_logged` | the entry was written (`at`); `temperature_c` (as said, converted to Celsius), `intensity` (belly pain level, or the fussy choice) only where the person gave them; timers are running until stopped in the app |
-| `invalid_value` | a number is missing or out of range (`field`: `temperature` 30-45 C, `water_temperature` 0-60 C, `pain_level` 1-5, `pump_amount` 1-500 ml; `min`, `max` in C, ml or the level); nothing was written |
+| `tummy_time_logged`, `breast_pump_logged`, `belly_massage_logged`, `fussy_logged`, `outdoor_logged` | the same activity said WITH `minutes` (section 5.5): one finished entry was written, `at` = its start, `minutes` = what was said (the sentence says the length, not a clock time; `intensity` for fussy) |
+| `invalid_value` | a number is missing or out of range (`field`: `temperature` 30-45 C, `water_temperature` 0-60 C, `pain_level` 1-5, `pump_amount` 1-500 ml, `minutes` 1-720; `min`, `max` in C, ml, the level or minutes); nothing was written |
 | `medication_logged`, `no_active_prescription` | it was recorded that a dose of a registered medicine was given (`at`; `medicine` only with `sayMedicineNames`); the medicine name matches none with an active prescription today (nothing written) |
 | `medication_reminder`, `no_medication_due` | the family's own reminders: `count` due now (may be 0), `at` the next scheduled time, `dueMedicines`/`medicine` only with `sayMedicineNames`; none registered or scheduled |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
@@ -320,6 +321,17 @@ banner read-only. Strings: `assistants.deleteRequest.*`.
   (an AI assistant writes the arguments, and a medicine is the case where a wrong guess matters most): this is the owner's call to
   revisit.
 
+## 5.5 Activities said with their length
+
+The activities that have a duration (`hasDuration` event types with a logger: tummy time, breast pump, belly massage, fussy, outdoor)
+take an optional `minutes` ("log 15 minutes of tummy time"; Alexa slot `AMAZON.NUMBER`, one per intent so slot names stay unique;
+MCP integer `minutes`). Without it the timer starts as before. With it the command writes ONE finished entry: started = now - minutes,
+ended = now, same payload, same `via`, same idempotent id from the request id (a replay returns the stored entry). `minutes` must be 1-720
+(`AssistantLimits.ActivityMinMinutes/MaxMinutes`); outside it the answer is `invalid_value` with `field` `minutes` (MCP rejects it earlier
+as `invalid_arguments`), nothing is written. The result is `<activity>_logged` with `minutes` and `at` (the start); the spoken sentence
+says the length ("Logged 15 minutes of tummy time"), never a computed clock time. Bath, nasal suction, nail trim and skin care are instant
+events (`hasDuration: false`) and do not take `minutes`.
+
 ## 6. The Alexa adapter (`POST /api/v1/alexa`)
 
 Anonymous for ASP.NET (no `Authorization` header), like `POST /push/deliveries/.../actions`: Amazon's signature and the
@@ -501,10 +513,10 @@ the server knows, else `invalid_arguments`; it wins over the stored zone, sectio
 | `log_nursing` | write | `babyId?`, `side?` (`left`, `right`), `idempotencyKey?` | `LogNursing` |
 | `log_diaper` | write | `babyId?`, `kind` (`wet`, `dirty`, `both`), `idempotencyKey?` | `LogDiaper` |
 | `log_bath` | write | `babyId?`, `temperatureC?` (above 0 up to 60), `idempotencyKey?` | `LogBath` |
-| `log_tummy_time`, `log_nasal_suction` (`tool?`, `saline?`), `log_belly_massage` (`reason?`, `helped?`), `log_nail_trim` (`where?`), `log_spit_up` (`kind?`, `amount?`), `log_teething` (`stage?`, `tooth?`), `log_outdoor` (`kind?`), `log_skin_care` (`product?`) | write | `babyId?`, the listed choices (the event field's options), `idempotencyKey?` | `LogTummyTime`, `LogNasalSuction`, ... |
+| `log_tummy_time` (`minutes?`), `log_nasal_suction` (`tool?`, `saline?`), `log_belly_massage` (`reason?`, `helped?`, `minutes?`), `log_nail_trim` (`where?`), `log_spit_up` (`kind?`, `amount?`), `log_teething` (`stage?`, `tooth?`), `log_outdoor` (`kind?`, `minutes?`), `log_skin_care` (`product?`) | write | `babyId?`, the listed choices (the event field's options), `idempotencyKey?` | `LogTummyTime`, `LogNasalSuction`, ... |
 | `log_belly_pain` | write | `babyId?`, `level` (1-5, required), `idempotencyKey?` | `LogBellyPain` |
-| `log_breast_pump` | write | `babyId?`, `amountLeftMl?`, `amountRightMl?` (1-500), `idempotencyKey?` | `LogBreastPump` |
-| `log_fussy` | write | `babyId?`, `intensity?`, `whatHelped?`, `idempotencyKey?` | `LogFussy` |
+| `log_breast_pump` | write | `babyId?`, `amountLeftMl?`, `amountRightMl?` (1-500), `minutes?` (1-720), `idempotencyKey?` | `LogBreastPump` |
+| `log_fussy` | write | `babyId?`, `intensity?`, `whatHelped?`, `minutes?` (1-720), `idempotencyKey?` | `LogFussy` |
 | `log_temperature` | write | `babyId?`, `temperatureC` (30-45, required), `method?`, `idempotencyKey?` | `LogTemperature` (Celsius, a record only) |
 | `log_milestone` | write | `babyId?`, `milestone?`, `idempotencyKey?` | `LogMilestone` |
 | `log_symptom` | write | `babyId?`, `symptom?`, `severity?`, `idempotencyKey?` | `LogSymptom` (a record only) |
