@@ -122,6 +122,22 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
     }
 
     [Fact]
+    public async Task ClientHeaderSiri_MarksTheEntryAsSiris_AndAnyOtherValueStaysMcp()
+    {
+        var baby = await host.Factory.SeedBabyAsync();
+        var token = host.TokenFor(baby.OwnerSubject, McpApiHost.ReadWrite);
+
+        await host.PostAsync(token, McpMessages.Call("log_bath"), (McpToolRunner.ClientHeader, "siri"));
+        await host.PostAsync(token, McpMessages.Call("log_bath"), (McpToolRunner.ClientHeader, "something-else"));
+
+        var vias = (await host.Factory.EventsAsync(baby.BabyId))
+            .Select(entry => AssistantTestKit.PayloadOf(entry).GetProperty("via").GetString())
+            .Order()
+            .ToArray();
+        Assert.Equal(["mcp", "siri"], vias);
+    }
+
+    [Fact]
     public async Task ReadToken_ToolsCallOfAReadTool_Passes()
     {
         var baby = await host.Factory.SeedBabyAsync();

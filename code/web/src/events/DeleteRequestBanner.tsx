@@ -20,9 +20,12 @@ export function DeleteRequestBanner({
   const { t } = useTranslation();
   const asked = deleteRequestedVia(event);
   if (!asked) return null;
-  const text = t(
-    asked === 'alexa' ? 'assistants.deleteRequest.alexa' : 'assistants.deleteRequest.assistant',
-  );
+  const text =
+    asked === 'alexa'
+      ? t('assistants.deleteRequest.alexa')
+      : asked === 'siri'
+        ? t('assistants.deleteRequest.siri')
+        : t('assistants.deleteRequest.assistant');
   return (
     <Box
       role="group"

@@ -94,6 +94,7 @@ enum LottiesMcp {
         request.setValue("application/json, text/event-stream", forHTTPHeaderField: "Accept")
         request.setValue(protocolVersion, forHTTPHeaderField: "MCP-Protocol-Version")
         request.setValue(speechLocale, forHTTPHeaderField: "Lotties-Speech-Locale")
+        request.setValue("siri", forHTTPHeaderField: "Lotties-Client")  // marks what Siri logs as Siri's, not an AI assistant's
         let body: [String: Any] = [
             "jsonrpc": "2.0", "id": 1, "method": "tools/call",
             "params": ["name": tool, "arguments": arguments],
