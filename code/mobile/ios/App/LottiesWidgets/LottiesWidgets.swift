@@ -247,11 +247,23 @@ private struct SleepFacts {
 
 /// How long ago (live), or "Nada hoje" when the event is not from today.
 private struct AgoText: View {
+    @Environment(\.lottiesNow) private var now
     let date: Date?
+    /// "há 2 h 30+" / "2 h 30+ ago" (rounded down to the half hour) as of the entry's date (short, for the rows) instead of the live "2 hrs, 39 min".
+    var compact = false
 
     var body: some View {
         if let date, Calendar.current.isDateInToday(date) {
-            Text(date, style: .relative).monospacedDigit()
+            if compact {
+                let text = LottiesText.agoRounded(date, now: now)
+                if text == LottiesText.t("agora", "just now") {
+                    Text(text)
+                } else {
+                    Text(LottiesText.t("há \(text)", "\(text) ago"))
+                }
+            } else {
+                Text(date, style: .relative).monospacedDigit()
+            }
         } else {
             Text(LottiesText.t("Nada hoje", "Nothing today"))
         }
@@ -349,7 +361,8 @@ private struct SleepButton: View {
     }
 }
 
-/// A wide row: tinted icon, title, how long ago, plus (medium widget).
+/// A row of the medium widget: icon, name (and the estimate under it when there is one), and on the right how long ago the
+/// last one was ("há 1 h 5"). No borders; only the row that is coming up gets the category tint.
 private struct RowTile<I: AppIntent>: View {
     let icon: String
     let title: String
@@ -357,7 +370,7 @@ private struct RowTile<I: AppIntent>: View {
     let category: Category
     let intent: I
     var next: Date?
-    /// Coming up now: the category colour on the border and a tinted fill.
+    /// Coming up now: a tinted fill in the category colour and the estimate kept on screen.
     var due = false
 
     var body: some View {
@@ -365,24 +378,22 @@ private struct RowTile<I: AppIntent>: View {
             HStack(spacing: 8) {
                 Icon(name: icon, size: 20)
                     .foregroundStyle(category.tone)
-                    .frame(width: 32, height: 32)
-                    .background(category.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .frame(width: 24)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text).lineLimit(1)
-                    HStack(spacing: 3) {
-                        AgoText(date: date)
-                        NextText(label: "· " + LottiesText.t("próx.", "next"), date: next, showPast: due)
-                    }
-                    .font(.caption2).foregroundStyle(Ink.muted).lineLimit(1).minimumScaleFactor(0.7)
+                    Text(title).font(.system(size: 14)).foregroundStyle(Ink.text)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    NextText(label: LottiesText.t("próx.", "next"), date: next, showPast: due)
+                        .font(.system(size: 11)).foregroundStyle(category.tone)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
-                Spacer(minLength: 0)
-                Icon(name: "plus", size: 14).foregroundStyle(Ink.muted)
+                Spacer(minLength: 4)
+                AgoText(date: date, compact: true)
+                    .font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.text)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             .padding(.horizontal, 8)
             .frame(maxHeight: .infinity)
-            .background(due ? category.tint : Color.clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(due ? category.tone : Ink.hairline, lineWidth: due ? 2 : 1))
+            .background(due ? category.tint : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 }
@@ -506,6 +517,21 @@ private struct MoreSquare: View {
     var body: some View {
         SquareTile(
             icon: "dots", title: LottiesText.t("Mais", "More"), category: .care, intent: pickerIntent(.more))
+    }
+}
+
+/// "More": the last row of the medium widget; opens the list of every activity.
+private struct MoreRow: View {
+    var body: some View {
+        Act(pickerIntent(.more)) {
+            HStack(spacing: 8) {
+                Icon(name: "dots", size: 20).foregroundStyle(Ink.muted).frame(width: 24)
+                Text(LottiesText.t("Mais", "More")).font(.system(size: 14)).foregroundStyle(Ink.muted)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .frame(maxHeight: .infinity)
+        }
     }
 }
 
@@ -765,18 +791,10 @@ struct LottiesSummaryWidget: Widget {
                             VStack(alignment: .leading, spacing: 6) {
                                 SleepBlock(facts: facts, name: baby.name, nextNap: baby.nextNap?.expected)
                                 Spacer(minLength: 0)
-                                HStack(spacing: 6) {
-                                    SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
-                                    Act(pickerIntent(.more)) {
-                                        Icon(name: "dots", size: 18)
-                                            .foregroundStyle(Ink.muted)
-                                            .frame(width: 36, height: 36)
-                                            .overlay(Circle().stroke(Ink.hairline, lineWidth: 1))
-                                    }
-                                }
+                                SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
                             }
-                            .frame(maxWidth: .infinity)
-                            VStack(spacing: 6) {
+                            .frame(width: 124)
+                            VStack(spacing: 2) {
                                 if let run = baby.runningFeed {
                                     RunningFeedRow(run: run)
                                     ForEach(Array(entry.slots.filter { !$0.isFeed }.prefix(2).enumerated()), id: \.offset) { _, activity in
@@ -787,6 +805,7 @@ struct LottiesSummaryWidget: Widget {
                                         ActivityRow(activity: activity, baby: baby, due: due)
                                     }
                                 }
+                                MoreRow()
                             }
                             .frame(maxWidth: .infinity)
                         }

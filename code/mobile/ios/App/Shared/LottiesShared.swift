@@ -253,6 +253,15 @@ enum LottiesText {
 
     static func t(_ pt: String, _ en: String) -> String { isPortuguese ? pt : en }
 
+    /// The widget rows' "ago": minutes under an hour ("35 min"), then rounded down to the half hour with a plus ("2 h+",
+    /// "2 h 30+"); a day or more as in `ago`. "agora"/"just now" under a minute. Facts only.
+    static func agoRounded(_ date: Date, now: Date = Date()) -> String {
+        let minutes = max(0, Int(now.timeIntervalSince(date) / 60))
+        if minutes < 60 || minutes >= 24 * 60 { return ago(date, now: now) }
+        let hours = minutes / 60
+        return minutes % 60 >= 30 ? "\(hours) h 30+" : "\(hours) h+"
+    }
+
     /// "2 h 10 min", "35 min", "agora"/"now". Facts only.
     static func ago(_ date: Date, now: Date = Date()) -> String {
         let minutes = max(0, Int(now.timeIntervalSince(date) / 60))

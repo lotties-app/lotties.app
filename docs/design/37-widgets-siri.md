@@ -204,6 +204,14 @@ network. Estimates only, never advice.
   `stopNursing` for the breast). Pausing from the widget does not ask how much is left in the bottle.
 - The breast choice carries the side (`payload.side`) to `startNursing`.
 
+## 12. Clean rows (2026-11-01)
+
+The medium widget's rows were cut ("2 hrs,... · próx....") and busy (borders, a plus icon). Now: a narrow left column (name, sleep state, the
+time, the sleep button) and a borderless list on the right. Each row is icon, name, and on the right how long ago the last one
+was, said outright ("há 35 min", "há 2 h+", "há 2 h 30+": minutes under an hour, then rounded down to the half hour with a plus; `LottiesText.agoRounded`); the estimate ("próx. 11:30") sits under the name when there is one, and only the
+row that is coming up gets a tinted fill. The last row is "Mais" (the list of every activity). The "ago" is computed per timeline
+entry (at most 15 minutes old) instead of ticking live; the lock screen and the single-purpose widgets keep the live text.
+
 ## 7. Unverified
 
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive
