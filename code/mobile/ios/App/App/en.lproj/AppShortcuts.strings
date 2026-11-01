@@ -2,12 +2,12 @@
 
 "Log a diaper in ${applicationName}" = "Log a diaper in ${applicationName}";
 "Diaper change in ${applicationName}" = "Diaper change in ${applicationName}";
+"Log a ${content} diaper in ${applicationName}" = "Log a ${content} diaper in ${applicationName}";
 "Log a bottle in ${applicationName}" = "Log a bottle in ${applicationName}";
 "Start a breastfeed in ${applicationName}" = "Start a breastfeed in ${applicationName}";
-"Baby fell asleep in ${applicationName}" = "Baby fell asleep in ${applicationName}";
-"Baby woke up in ${applicationName}" = "Baby woke up in ${applicationName}";
-"When was the last feed in ${applicationName}" = "When was the last feed in ${applicationName}";
-"Next nap in ${applicationName}" = "Next nap in ${applicationName}";
-"Diapers today in ${applicationName}" = "Diapers today in ${applicationName}";
-"Bottles today in ${applicationName}" = "Bottles today in ${applicationName}";
-"Today's summary in ${applicationName}" = "Today's summary in ${applicationName}";
+"Baby ${change} in ${applicationName}" = "Baby ${change} in ${applicationName}";
+"Log ${activity} in ${applicationName}" = "Log ${activity} in ${applicationName}";
+"Start ${activity} in ${applicationName}" = "Start ${activity} in ${applicationName}";
+"Log ${health} in ${applicationName}" = "Log ${health} in ${applicationName}";
+"Ask ${topic} in ${applicationName}" = "Ask ${topic} in ${applicationName}";
+"Undo the last entry in ${applicationName}" = "Undo the last entry in ${applicationName}";

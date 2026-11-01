@@ -143,9 +143,28 @@ capabilities in the UI, commit the resulting project), then the assistant contin
 The owner asked for Siri to mirror the Alexa intents, answered by the same server. So the Siri and Shortcuts intents are
 **MCP clients** (supersedes the "log at once, offline" decision of section 1 for Siri; the **widget buttons keep it**):
 
-- `App/LottiesSiriIntents.swift`: 40 App Intents (the Alexa model's reads and logs that the MCP server has a tool for;
-  medication has none by design), each one `tools/call` of the matching tool, speaking the answer. Ten of them have spoken
-  phrases (`App/LottiesShortcuts.swift`, the iOS limit); all are in Shortcuts and Spotlight. Phrases and titles are localized: `App/en.lproj` and `App/pt-BR.lproj` `AppShortcuts.strings` (key = the English phrase with `${applicationName}`) and `pt-BR.lproj/Localizable.strings` (intent titles, descriptions, parameters). Pt-BR phrases name the app as "no Lotties" ("Registrar fralda no Lotties").
+- `App/LottiesSiriIntents.swift`: about 45 App Intents (the Alexa model's reads and logs that the MCP server has a tool for;
+  medication has none by design), each one `tools/call` of the matching tool, speaking the answer. All are in Shortcuts and
+  Spotlight; only some have spoken phrases (`App/LottiesShortcuts.swift`), because iOS allows **ten** App Shortcuts per app.
+  The spoken ones are redesigned (2026-11-01) as 8 shortcuts (2 left spare), four of them generic: an `AppEnum` parameter
+  sits inside the phrase, so one slot covers many things. Siri matches the enum case's display title, which is localized.
+  1. Diaper: "Log a diaper", "Diaper change", "Log a {wet|dirty|both} diaper" (`SiriLogDiaperIntent`, default wet when not said).
+  2. Bottle: "Log a bottle". 3. Breastfeed: "Start a breastfeed".
+  4. Sleep: "Baby {fell asleep|woke up}" (`SiriSleepChangeIntent`, `log_sleep_start`/`log_sleep_end`). The old separate phrases are gone.
+  5. Activity: "Log {activity}", "Start {activity}" (`SiriLogActivityIntent`; bath, tummy time, belly massage, nasal suction,
+     nail trim, skin care, outdoor time, fussy, spit-up, teething, breast pump). Optional `minutes` (1..720) is sent as the MCP
+     argument `minutes` only for the activities whose tool takes a duration (the first seven); fussy, spit-up, teething and
+     breast pump never get it. For the duration ones Siri asks "How many minutes?" when it was not given; "zero" sends nothing
+     and the server starts a timer.
+  6. Health: "Log {temperature|symptom|belly pain}" (`SiriLogHealthIntent`); temperature and level are asked after. The symptom
+     is logged without a choice, as before (the tool accepts none; no free text).
+  7. Ask: "Ask {topic}" (`SiriAskIntent`): last feed, next nap window, next feed, next diaper change, last diaper, diapers
+     today, bottles today, feeds today, sleep today, day summary, week summary, next appointment, vaccines due. "When was the
+     last feed" is dropped as a phrase (it stays an intent in Shortcuts).
+  8. Undo: "Undo the last entry" (asks to delete; the app confirms).
+  What cannot be done: a number cannot be inside a phrase (only `AppEnum`/`AppEntity` can), so "15 minutes of tummy time" in one
+  sentence is not possible, Siri asks for the minutes next; there is no timer shortcut (the server has no pause/stop tool);
+  no medication shortcut (no MCP medication tool by design). Phrases and titles are localized: Phrases and titles are localized: `App/en.lproj` and `App/pt-BR.lproj` `AppShortcuts.strings` (key = the English phrase with `${applicationName}`) and `pt-BR.lproj/Localizable.strings` (intent titles, descriptions, parameters). Pt-BR phrases name the app as "no Lotties" ("Registrar fralda no Lotties").
 - `App/LottiesMcp.swift`: the sign-in (`ASWebAuthenticationSession`, PKCE, public client `lotties-ios`, scopes
   `lotties.read lotties.write offline_access`, redirect `app.lotties.app://siri/callback`), tokens in the Keychain (never in the
   App Group files the widget reads), refresh, and the JSON-RPC call (`Authorization: Bearer`, protocol 2025-11-25, one POST,

@@ -427,3 +427,154 @@ struct SiriLogRequestDeleteLastIntent: AppIntent {
         .result(dialog: await SiriSay.tool("request_delete_last_entry", write: true))
     }
 }
+
+// MARK: Generic shortcuts (one spoken shortcut, an enum inside the phrase; docs/design/37-widgets-siri.md section 8)
+
+enum SiriSleepChange: String, AppEnum {
+    case fellAsleep = "log_sleep_start"
+    case wokeUp = "log_sleep_end"
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Sleep change"
+    static var caseDisplayRepresentations: [SiriSleepChange: DisplayRepresentation] = [
+        .fellAsleep: "Fell asleep", .wokeUp: "Woke up",
+    ]
+}
+
+struct SiriSleepChangeIntent: AppIntent {
+    static var title: LocalizedStringResource = "Baby fell asleep or woke up"
+    static var description = IntentDescription("Starts a sleep now, or ends the running sleep.")
+
+    @Parameter(title: "Change")
+    var change: SiriSleepChange
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        .result(dialog: await SiriSay.tool(change.rawValue, write: true))
+    }
+}
+
+/// The value is the MCP tool. Only the ones in `takesMinutes` accept the `minutes` argument.
+enum SiriActivity: String, AppEnum {
+    case bath = "log_bath"
+    case tummyTime = "log_tummy_time"
+    case bellyMassage = "log_belly_massage"
+    case nasalSuction = "log_nasal_suction"
+    case nailTrim = "log_nail_trim"
+    case skinCare = "log_skin_care"
+    case outdoor = "log_outdoor"
+    case fussy = "log_fussy"
+    case spitUp = "log_spit_up"
+    case teething = "log_teething"
+    case breastPump = "log_breast_pump"
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Activity"
+    static var caseDisplayRepresentations: [SiriActivity: DisplayRepresentation] = [
+        .bath: "Bath", .tummyTime: "Tummy time", .bellyMassage: "Belly massage", .nasalSuction: "Nasal suction",
+        .nailTrim: "Nail trim", .skinCare: "Skin care", .outdoor: "Outdoor time", .fussy: "Fussy",
+        .spitUp: "Spit-up", .teething: "Teething", .breastPump: "Breast pump",
+    ]
+
+    var takesMinutes: Bool {
+        switch self {
+        case .bath, .tummyTime, .bellyMassage, .nasalSuction, .nailTrim, .skinCare, .outdoor: return true
+        case .fussy, .spitUp, .teething, .breastPump: return false
+        }
+    }
+}
+
+struct SiriLogActivityIntent: AppIntent {
+    static var title: LocalizedStringResource = "Log an activity"
+    static var description = IntentDescription("Logs or starts an activity such as a bath or tummy time, with its length if you give one.")
+
+    @Parameter(title: "Activity")
+    var activity: SiriActivity
+
+    @Parameter(title: "Minutes")
+    var minutes: Int?
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        var length = minutes
+        if activity.takesMinutes && length == nil {
+            length = try await $minutes.requestValue(SiriSay.text("Quantos minutos? Diga zero para iniciar um cronômetro.", "How many minutes? Say zero to start a timer."))
+        }
+        var arguments: [String: Any] = [:]
+        if activity.takesMinutes, let value = length, value >= 1, value <= 720 { arguments["minutes"] = value }
+        return .result(dialog: await SiriSay.tool(activity.rawValue, arguments, write: true))
+    }
+}
+
+enum SiriHealthItem: String, AppEnum {
+    case temperature, symptom, bellyPain
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Health item"
+    static var caseDisplayRepresentations: [SiriHealthItem: DisplayRepresentation] = [
+        .temperature: "Temperature", .symptom: "Symptom", .bellyPain: "Belly pain",
+    ]
+}
+
+struct SiriLogHealthIntent: AppIntent {
+    static var title: LocalizedStringResource = "Log a health item"
+    static var description = IntentDescription("Logs a temperature, a symptom or belly pain; a record only, never advice.")
+
+    @Parameter(title: "Health item")
+    var health: SiriHealthItem
+
+    @Parameter(title: "Temperature (°C)")
+    var celsius: Double?
+
+    @Parameter(title: "Level (1-5)")
+    var level: Int?
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        switch health {
+        case .temperature:
+            var reading = celsius
+            if reading == nil { reading = try await $celsius.requestValue(SiriSay.text("Qual a temperatura, em graus Celsius?", "What is the temperature, in degrees Celsius?")) }
+            guard let value = reading else { return .result(dialog: SiriSay.text("Nada registrado.", "Nothing logged.")) }
+            return .result(dialog: await SiriSay.tool("log_temperature", ["temperatureC": value], write: true))
+        case .bellyPain:
+            var pain = level
+            if pain == nil { pain = try await $level.requestValue(SiriSay.text("Qual o nível, de 1 a 5?", "What level, from 1 to 5?")) }
+            guard let value = pain, value >= 1, value <= 5 else { return .result(dialog: SiriSay.text("Nada registrado.", "Nothing logged.")) }
+            return .result(dialog: await SiriSay.tool("log_belly_pain", ["level": value], write: true))
+        case .symptom:
+            return .result(dialog: await SiriSay.tool("log_symptom", write: true))
+        }
+    }
+}
+
+/// The value is the MCP read tool.
+enum SiriAskTopic: String, AppEnum {
+    case lastFeed = "get_last_feed"
+    case nextNapWindow = "get_next_nap_window"
+    case nextFeed = "get_next_feed"
+    case nextDiaper = "get_next_diaper"
+    case lastDiaper = "get_last_diaper"
+    case diapersToday = "get_diapers_today"
+    case bottlesToday = "get_bottle_today"
+    case feedsToday = "get_feeds_today"
+    case sleepToday = "get_sleep_today"
+    case daySummary = "get_day_summary"
+    case weekSummary = "get_week_summary"
+    case nextAppointment = "get_next_appointment"
+    case dueVaccines = "get_due_vaccines"
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Topic"
+    static var caseDisplayRepresentations: [SiriAskTopic: DisplayRepresentation] = [
+        .lastFeed: "Last feed", .nextNapWindow: "Next nap window", .nextFeed: "Next feed", .nextDiaper: "Next diaper change",
+        .lastDiaper: "Last diaper", .diapersToday: "Diapers today", .bottlesToday: "Bottles today", .feedsToday: "Feeds today",
+        .sleepToday: "Sleep today", .daySummary: "Day summary", .weekSummary: "Week summary",
+        .nextAppointment: "Next appointment", .dueVaccines: "Vaccines due",
+    ]
+}
+
+struct SiriAskIntent: AppIntent {
+    static var title: LocalizedStringResource = "Ask about the baby"
+    static var description = IntentDescription("Says the answer to a question about the log, such as the last feed or today's diapers.")
+
+    @Parameter(title: "Topic")
+    var topic: SiriAskTopic
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        .result(dialog: await SiriSay.tool(topic.rawValue))
+    }
+}
