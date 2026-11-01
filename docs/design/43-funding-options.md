@@ -74,7 +74,7 @@ a prompt after logging something.
   to do. Not part of the first plan.
 - Managed hosting for families, a doctor-side subscription, a printed baby book: only if people ask for them. Doctor and
   hosting work would make the owner the data operator for other people and would reopen the "no pro tiers" rule.
-- **Selling aggregated data: rejected.** It breaks the project's principles. docs/design/34 stays an opt-in design only.
+- **Selling aggregated data: not now (owner decision 2026-11-01, revisit later).** Reasons: (1) legal: truly anonymized data is outside LGPD, but this is a baby's health data and re-identification is easy in small groups; it needs explicit opt-in, k-anonymity (docs/design/34), a lawyer's review, and a new privacy policy, `dataFlows.ts`, audit 33 and consent version; the lawyer question is still open. (2) Trust: privacy is the project's main promise, one headline would cost more than the income. (3) Money: buyers (formula makers, pharma, research institutes) pay only for thousands of active babies; at this size it would not cover the running costs. Alternatives: give aggregated insights back to parents for free (design 34), or a non-commercial research partnership with a university or hospital, opt-in only, which may also bring grants. Revisit with scale, a lawyer and a ready consent flow.
 - Dual licence: AGPL already allows companies to use the code; no buyer today.
 
 ## 6. If a supporter flag is ever added
