@@ -160,6 +160,23 @@ The owner asked for Siri to mirror the Alexa intents, answered by the same serve
 - The old offline intents (`LogDiaperIntent`, ...) stay for the widget buttons and are hidden from Shortcuts
   (`isDiscoverable = false`).
 
+## 9. Next-up estimates and the "coming up" highlight (2026-11-01)
+
+The snapshot carries the Now screen's estimates per baby: `nextNap {earliest, expected, latest}`, `nextFeed {at, amountMl?}`,
+`nextDiaper {at, kind}`, built by `widgets/snapshot.ts` from the last predictions the app fetched (localStorage cache),
+the cached age norms and the local events (`deriveNowState` and `upcomingToday`, the same code as the Now screen); no
+network. Estimates only, never advice.
+
+- Shown as "Próxima soneca 14:20", "próx. 15:10" (only while still ahead).
+- **Coming up** (`WidgetSnapshot.Baby.due(at:)`): from 20 minutes before an estimate until 30 minutes after it (owner choice).
+  That action's tile gets the category colour on its border and a tinted fill, and its icon becomes the bell
+  (`tabler-bell-ringing`); the sleep button turns into a filled "Soneca 14:20" while the nap estimate is coming up and the baby
+  is awake. The wording stays a time, not an order ("estimates, not alarms").
+- The widget timeline has an entry at each moment a highlight starts or stops (`dueChanges`), so it changes without the app
+  opening; views read the entry's date from the environment (`lottiesNow`), never `Date()`.
+- Logging from a widget button or Siri clears the matching estimate at once; the app republishes real ones when it opens.
+- Staleness: the estimates are as old as the last time the Now screen fetched predictions online.
+
 ## 7. Unverified
 
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive

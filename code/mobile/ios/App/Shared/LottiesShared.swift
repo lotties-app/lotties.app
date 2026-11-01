@@ -137,6 +137,23 @@ struct WidgetSnapshot: Codable, Equatable {
         var sleep: Sleep?
         var lastFeed: Feed?
         var lastDiaper: Diaper?
+        /// Estimates from the app's own predictions (the Now screen's "next up"); absent when it has none.
+        var nextNap: NapWindow?
+        var nextFeed: NextFeed?
+        var nextDiaper: NextDiaper?
+    }
+    struct NapWindow: Codable, Equatable {
+        var earliest: Date
+        var expected: Date
+        var latest: Date
+    }
+    struct NextFeed: Codable, Equatable {
+        var at: Date
+        var amountMl: Int?
+    }
+    struct NextDiaper: Codable, Equatable {
+        var at: Date
+        var kind: String
     }
     struct Sleep: Codable, Equatable {
         var state: String  // "asleep" | "awake"
@@ -155,6 +172,42 @@ struct WidgetSnapshot: Codable, Equatable {
 
     var selectedBaby: Baby? {
         babies.first { $0.id == selectedBabyId } ?? babies.first
+    }
+}
+
+extension WidgetSnapshot.Baby {
+    /// What is coming up at a moment: from 20 minutes before an estimate until 30 minutes after it. Estimates only, never
+    /// advice; the widgets use it to highlight the action (docs/design/37-widgets-siri.md section 9).
+    struct Due: Equatable {
+        var nap = false
+        var feed = false
+        /// "wet" or "dirty": the diaper the estimate is about.
+        var diaperKind: String?
+
+        var any: Bool { nap || feed || diaperKind != nil }
+    }
+
+    static let dueLead: TimeInterval = 20 * 60
+    static let dueGrace: TimeInterval = 30 * 60
+
+    func due(at now: Date) -> Due {
+        func inside(_ time: Date) -> Bool {
+            now >= time.addingTimeInterval(-Self.dueLead) && now <= time.addingTimeInterval(Self.dueGrace)
+        }
+        var result = Due()
+        if sleep?.state != "asleep", let nap = nextNap { result.nap = inside(nap.expected) }
+        if let feed = nextFeed { result.feed = inside(feed.at) }
+        if let diaper = nextDiaper, inside(diaper.at) { result.diaperKind = diaper.kind }
+        return result
+    }
+
+    /// The moments after `now` at which `due` changes (for the widget timeline), soonest first.
+    func dueChanges(after now: Date) -> [Date] {
+        var times: [Date] = []
+        for estimate in [nextNap?.expected, nextFeed?.at, nextDiaper?.at].compactMap({ $0 }) {
+            times += [estimate.addingTimeInterval(-Self.dueLead), estimate.addingTimeInterval(Self.dueGrace)]
+        }
+        return times.filter { $0 > now && $0 < now.addingTimeInterval(24 * 3600) }.sorted()
     }
 }
 
