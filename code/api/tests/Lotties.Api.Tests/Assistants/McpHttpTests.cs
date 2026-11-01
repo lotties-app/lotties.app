@@ -94,6 +94,8 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
     [Theory]
     [InlineData("log_diaper", """{"kind":"wet"}""", McpScopes.Read, McpScopes.Write)]
     [InlineData("log_bottle", """{"amountMl":100}""", McpScopes.Read, McpScopes.Write)]
+    [InlineData("request_delete_last_entry", "{}", McpScopes.Read, McpScopes.Write)]
+    [InlineData("get_cry_reasons", "{}", McpScopes.Write, McpScopes.Read)]
     [InlineData("get_last_feed", "{}", McpScopes.Write, McpScopes.Read)]
     public async Task CallingAToolOutsideTheTokensScopes_Is403NamingTheMissingScope_AndRunsNothing(string tool, string arguments, string granted, string missing)
     {

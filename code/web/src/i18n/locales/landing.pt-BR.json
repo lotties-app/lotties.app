@@ -22,36 +22,42 @@
   },
   "hero": {
     "headline": "Acompanhe o dia do seu bebê, em conjunto",
-    "sub": "Sono, mamadas, fraldas e remédios em um só lugar tranquilo. Funciona sem internet e compartilha com quem cuida junto com você.",
+    "sub": "Sono, mamadas, fraldas e remédios em um só lugar, feito por pais de recém-nascido. Funciona sem internet e compartilha com quem cuida junto com você.",
     "signIn": "Entrar",
     "register": "Criar uma conta",
     "openApp": "Abrir o app"
   },
+  "story": {
+    "title": "Por que criamos o Lotties",
+    "one": "O Lotties é uma alternativa gratuita e de código aberto ao Napper. Nosso primeiro bebê tinha acabado de chegar e sentimos que estávamos perdendo o controle de tudo. Além disso, os planos anuais de apps para bebês são caros.",
+    "two": "Então criamos o app que gostaríamos de ter nesta nova jornada: rápido para registrar, claro para ler e compartilhado entre quem cuida do bebê.",
+    "three": "Esperamos que você sinta a mesma empolgação que a gente."
+  },
   "features": {
     "title": "O que ele faz",
     "log": {
-      "title": "Registre em dois toques",
-      "body": "Atalhos de um toque, cronômetros para sonecas e mamadas, e um desfazer para quando o dedo escorrega."
+      "title": "Registre em poucos toques",
+      "body": "Sono, mamadas no peito e na mamadeira, fraldas, remédios, banhos e momentos de irritação. Use o cronômetro nas sonecas e mamadas e, se errar, desfaça na hora. Funciona sem internet e sincroniza quando voltar."
     },
-    "offline": {
-      "title": "Funciona sem internet",
-      "body": "Instala como um aplicativo e continua funcionando sem conexão. Tudo sincroniza quando ela voltar."
+    "today": {
+      "title": "Veja o dia e o que vem a seguir",
+      "body": "Uma linha do tempo do dia, totais de sono, mamadas e fraldas e gráficos da semana. A tela inicial mostra o que provavelmente vem a seguir: soneca, mamada ou troca de fralda."
     },
     "share": {
-      "title": "Compartilhe com quem cuida junto",
-      "body": "Convide alguém por um link e veja quem registrou o quê, sem precisar perguntar."
+      "title": "Cuidem juntos",
+      "body": "Convide o parceiro, os avós ou a babá por um link. Escolha o que cada pessoa pode fazer, veja quem registrou o quê e compartilhe seções escolhidas com o pediatra."
     },
     "predict": {
       "title": "Previsões gentis",
       "body": "Veja a próxima janela de soneca com uma explicação simples de como ela foi calculada. Estimativas feitas com o seu histórico, não são orientação médica."
     },
-    "history": {
-      "title": "Traga o seu histórico",
-      "body": "Importe do Napper, crie seus próprios tipos de evento e acompanhe remédios com intervalos seguros. A receita do médico é sempre a fonte."
+    "health": {
+      "title": "Crescimento, vacinas e remédios",
+      "body": "Peso e altura em curvas de crescimento, o calendário de vacinação brasileiro, consultas e remédios com intervalos seguros. A receita do médico é sempre a fonte."
     },
     "data": {
-      "title": "Seus dados, suas regras",
-      "body": "Gratuito e de código aberto (AGPL-3.0), pode ser hospedado por você. Sem anúncios, sem rastreamento."
+      "title": "Gratuito, privado, seu",
+      "body": "Gratuito e de código aberto (AGPL-3.0), pode ser hospedado por você. Sem anúncios, sem rastreamento. Importe do Napper e exporte um backup quando quiser."
     }
   },
   "steps": {

@@ -2474,7 +2474,7 @@
       "type": "question",
       "topic": "assistants-alexa-mcp",
       "title": "Alexa invocation name \"lotties\": needs Amazon's brand approval (trademark evidence)",
-      "body": "A one-word brand invocation needs evidence of brand ownership. The models ship with `lotties baby` / `lotties bebê` (no approval needed). Switch in a later version after approval.",
+      "body": "A one-word brand invocation needs evidence of brand ownership. The models ship with `lotties` (both languages). Amazon may reject a one-word name at certification without brand evidence; then switch both models to the fallback `lotties baby` BEFORE publishing (the name cannot change after the skill is published).",
       "status": "open",
       "side": "external",
       "priority": "low",

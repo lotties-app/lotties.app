@@ -15,6 +15,7 @@ import { LandingHeader } from './LandingHeader';
 import { OpenSourceStrip } from './OpenSourceStrip';
 import { SessionNotice, type NoticeKind } from './SessionNotice';
 import { StepsStrip } from './StepsStrip';
+import { StoryStrip } from './StoryStrip';
 
 /** Visible only while it has keyboard focus. */
 const SKIP_LINK_SX = {
@@ -91,10 +92,11 @@ export default function LandingPage({
           onRegister={() => start(true)}
           signedIn={welcome}
         />
+        <StoryStrip />
+        <InstallStrip />
         <FeatureGrid />
         <ImportantNotice />
         <StepsStrip />
-        <InstallStrip />
         <OpenSourceStrip />
       </Box>
       <LandingFooter />

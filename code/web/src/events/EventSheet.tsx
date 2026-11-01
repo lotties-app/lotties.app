@@ -22,7 +22,10 @@ import { daysBeforeToday } from '../ui/form/timeMath';
 import { getOwn } from '../util/ownProperty';
 import { currentStartLevel } from './bottleSegments';
 import { FUSSY_KEY } from '../now/fussyPattern';
+import { AssistantOriginNote } from './AssistantOriginNote';
 import { ConditionalFields } from './ConditionalFields';
+import { DeleteRequestBanner } from './DeleteRequestBanner';
+import { useDeleteRequestResponse } from './useDeleteRequestResponse';
 import { CryAnswerRow } from './CryAnswerRow';
 import { announceEventDeleted } from './deletedEvents';
 import type { EventSheetProps } from './eventSheetTypes';
@@ -213,6 +216,13 @@ export function EventSheet(props: EventSheetProps) {
     else onDone();
   };
 
+  const deleteRequests = useDeleteRequestResponse(() => type);
+  const keepEntry = async () => {
+    if (!event) return;
+    await deleteRequests.keep(event);
+    onDone();
+  };
+
   const remove = async () => {
     const removed = await state.remove();
     if (!removed) return;
@@ -344,6 +354,14 @@ export function EventSheet(props: EventSheetProps) {
           {type && !finishing && (
             <SleepDetails type={type} values={form.values} onChange={state.setValue} />
           )}
+          {event && !finishing && (
+            <DeleteRequestBanner
+              event={event}
+              onDelete={() => void remove()}
+              onKeep={() => void keepEntry()}
+            />
+          )}
+          {event && !finishing && <AssistantOriginNote event={event} />}
           {!finishing && (
             <Box data-field-key="notes">
               <NotesRow value={form.notes} onChange={(notes) => state.edit({ notes })} />

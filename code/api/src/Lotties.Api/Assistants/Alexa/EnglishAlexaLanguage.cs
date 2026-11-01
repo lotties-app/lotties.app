@@ -2,20 +2,26 @@ using System.Collections.Frozen;
 using System.Globalization;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 
 namespace Lotties.Api.Assistants.Alexa;
 
 /// <summary>English (every locale that is not Portuguese): 12-hour clock times ("3:15 PM"), no fallback time zone.</summary>
-internal sealed class EnglishAlexaLanguage : IAlexaLanguage
+internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
 {
     private static readonly SpokenClock Speech = new(CultureInfo.GetCultureInfo("en-US"), "h:mm tt", new SpokenWords("minute", "minutes", "hour", "hours", "and", "less than a minute"));
+
+    private static readonly SpokenMeasures Measures = new(
+        Speech.Culture,
+        new SpokenUnitWords("ml", new("ounce", "ounces"), new("pound", "pounds"), new("kilogram", "kilograms"), new("centimeter", "centimeters"), new("inch", "inches"), new("degree", "degrees"), string.Empty),
+        value => value == 1);
 
     private readonly FrozenDictionary<AssistantResultCode, Func<AssistantResult, string>> _results;
     private readonly FrozenDictionary<AlexaPrompt, AlexaLine> _prompts;
 
     public EnglishAlexaLanguage()
     {
-        _results = Results().ToFrozenDictionary();
+        _results = Results().Concat(ForecastResults()).ToFrozenDictionary();
         _prompts = Prompts().ToFrozenDictionary();
     }
 
@@ -41,22 +47,22 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoBaby] = _ => "There's no baby in your Lotties account yet. Add one in the app first.",
         [AssistantResultCode.ChooseBaby] = _ => "You have more than one baby in Lotties. Choose the one for voice commands in the app, in Settings, Voice assistants.",
         [AssistantResultCode.RateLimited] = _ => "That's a lot of requests. Please try again in a minute.",
-        [AssistantResultCode.InvalidAmount] = result => $"Please say an amount from {result.Min} to {result.Max} ml, for example: log a 120 ml bottle.",
+        [AssistantResultCode.InvalidAmount] = InvalidAmount,
         [AssistantResultCode.SleepStarted] = result => $"Got it. {Name(result)} fell asleep {When(result, result.At)}.",
-        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} is already sleeping, since {Since(result, result.At)}.",
+        [AssistantResultCode.SleepAlreadyRunning] = result => $"{Name(result)} is already sleeping{SinceClause(result)}.",
         [AssistantResultCode.SleepEnded] = result => result.Minutes is null
             ? $"{Name(result)} woke up {When(result, result.At)}."
             : $"{Name(result)} woke up {When(result, result.At)}, after sleeping {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoRunningSleep] = result => $"{Name(result)} isn't sleeping right now, so there was nothing to stop.",
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Name(result)} has {result.Count} sleep timers running. Please stop them in the app.",
-        [AssistantResultCode.BottleLogged] = result => $"Logged a {result.AmountMl} ml bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
+        [AssistantResultCode.BottleLogged] = result => $"Logged a {VolumeModifier(result, result.AmountMl)} bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Nursing started on the {Side(result)} side for {Name(result)} {When(result, result.At)}.",
-        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} is already nursing, since {Since(result, result.At)}.",
+        [AssistantResultCode.NursingAlreadyRunning] = result => $"{Name(result)} is already nursing{SinceClause(result)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Logged a {Diaper(result)} diaper for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.LastFeed] = LastFeed,
         [AssistantResultCode.NoFeeds] = result => $"I can't find a feed for {Name(result)} in the last 30 days.",
-        [AssistantResultCode.Sleeping] = result => $"{Name(result)} has been sleeping since {Since(result, result.At)}, for {Speech.Duration(result.Minutes)}.",
-        [AssistantResultCode.Awake] = result => $"{Name(result)} has been awake since {Since(result, result.At)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
+        [AssistantResultCode.Sleeping] = result => $"{Name(result)} has been sleeping{SinceClause(result)}{(Speech.Clock(result, result.At) is null ? string.Empty : $", for {Speech.Duration(result.Minutes)}")}.",
+        [AssistantResultCode.Awake] = result => $"{Name(result)} has been awake{SinceClause(result)}. The last sleep lasted {Speech.Duration(result.Minutes)}.",
         [AssistantResultCode.NoSleeps] = result => $"I can't find a sleep for {Name(result)} in the last 30 days.",
         [AssistantResultCode.DiapersToday] = DiapersToday,
         [AssistantResultCode.NextAppointment] = result => $"{Name(result)}'s next appointment is {result.Appointment!.Title}, {Day(result, result.Appointment.StartsAt)}.",
@@ -90,25 +96,25 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
             { Complete: false } => "So far today",
             _ => $"On {day.Date.ToString("MMMM d", Speech.Culture)}",
         };
-        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+        return $"{when}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
     }
 
     private static string WeekSummary(AssistantResult result)
     {
         var last = result.Days.Count == 0 ? "today" : result.Days[^1].Date.ToString("MMMM d", Speech.Culture);
-        return $"In the 7 days up to {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days))}.";
+        return $"In the 7 days up to {last}, {Name(result)} {Totals(SpokenDayTotals.Of(result.Days), result.Units)}.";
     }
 
-    private static string Totals(SpokenDayTotals totals)
+    private static string Totals(SpokenDayTotals totals, UnitSystem units)
     {
-        var bottles = totals.BottleMl > 0 ? $" with {totals.BottleMl} ml in bottles" : string.Empty;
+        var bottles = totals.BottleMl > 0 ? $" with {Measures.Volume(totals.BottleMl, units)} in bottles" : string.Empty;
         return $"slept {Speech.Duration(totals.SleepMinutes)} with {Speech.Count(totals.Naps, "nap", "naps")}, had {Speech.Count(totals.Feeds, "feed", "feeds")}{bottles}, and {Speech.Count(totals.Diapers, "diaper", "diapers")}";
     }
 
     private static Dictionary<AlexaPrompt, AlexaLine> Prompts() => new()
     {
         [AlexaPrompt.Welcome] = new("Welcome to Lotties. You can say things like: the baby fell asleep, log a 120 ml bottle, or when was the last feed?", "What would you like to do?"),
-        [AlexaPrompt.Help] = new("You can log sleep, bottles, nursing and diapers, and ask about the last feed, sleep, today's diapers, the next appointment or vaccines due. For example: the baby woke up. What would you like to do?", "What would you like to do?"),
+        [AlexaPrompt.Help] = new("You can log sleep, bottles, nursing and diapers, and ask about the last feed or diaper, sleep, today's diapers, the next nap, feed or diaper change, the next appointment, vaccines due, or why the baby is crying. For example: the baby woke up. What would you like to do?", "What would you like to do?"),
         [AlexaPrompt.Goodbye] = new("Goodbye."),
         [AlexaPrompt.Fallback] = new("Sorry, Lotties can't help with that. Say help to hear what you can do.", "What would you like to do?"),
         [AlexaPrompt.SetBabyHelp] = new("To choose the baby voice commands are about, open the Lotties app, then Settings, Voice assistants."),
@@ -142,7 +148,7 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
 
     private static string FeedDescription(AssistantResult result) => result.FeedMethod switch
     {
-        FeedMethod.Bottle when result.AmountMl is { } amount => $"a {amount} ml bottle{BottleContent(result)}",
+        FeedMethod.Bottle when result.AmountMl is { } amount => $"a {VolumeModifier(result, amount)} bottle{BottleContent(result)}",
         FeedMethod.Bottle => $"a bottle{BottleContent(result)}",
         FeedMethod.Breast when result.Side is not null => $"nursing on the {Side(result)} side",
         FeedMethod.Breast => "nursing",
@@ -158,6 +164,14 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
         _ => string.Empty,
     };
 
+    private static string Volume(AssistantResult result, int? ml) => Measures.Volume(ml ?? 0, result.Units);
+
+    private static string VolumeModifier(AssistantResult result, int? ml) => Measures.VolumeModifier(ml ?? 0, result.Units);
+
+    private static string InvalidAmount(AssistantResult result) => result.Units == UnitSystem.Us
+        ? $"Please say an amount up to {Measures.Number(UnitConversions.MlToFluidOunces(result.Max ?? 0))} ounces, for example: log a 4 ounce bottle."
+        : $"Please say an amount from {result.Min} to {result.Max} ml, for example: log a 120 ml bottle.";
+
     private static string Side(AssistantResult result) => result.Side == BreastSide.Right ? "right" : "left";
 
     private static string Diaper(AssistantResult result) => result.Diaper switch
@@ -171,8 +185,9 @@ internal sealed class EnglishAlexaLanguage : IAlexaLanguage
     private static string When(AssistantResult result, DateTimeOffset? instant) =>
         Speech.Clock(result, instant) is { } clock ? $"at {clock}" : instant is { } value && Speech.MinutesBetween(value, result.AsOf) < 1 ? "just now" : Ago(result, instant);
 
-    /// <summary>"3:15 PM", or "20 minutes ago" without a known zone.</summary>
-    private static string Since(AssistantResult result, DateTimeOffset? instant) => Speech.Clock(result, instant) ?? Ago(result, instant);
+    /// <summary>" since 3:15 PM", or " for 20 minutes" without a known zone (never "since 20 minutes ago").</summary>
+    private static string SinceClause(AssistantResult result) =>
+        Speech.Clock(result, result.At) is { } clock ? $" since {clock}" : result.At is { } at ? $" for {Speech.Duration(Speech.MinutesBetween(at, result.AsOf))}" : string.Empty;
 
     /// <summary>"at 3:15 PM, 20 minutes ago", or "20 minutes ago" without a known zone.</summary>
     private static string AtAndAgo(AssistantResult result, DateTimeOffset? instant) =>

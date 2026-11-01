@@ -46,6 +46,20 @@ describe('payloadSummary', () => {
     );
   });
 
+  it('never shows the assistant marker members as details', () => {
+    const marked = {
+      method: 'bottle',
+      amount_ml: 120,
+      via: 'alexa',
+      updated_via: 'alexa',
+      delete_requested_via: 'alexa',
+      delete_requested_at: '2026-10-25T21:43:22.160Z',
+    };
+    expect(payloadSummary(marked, bottleType)).toBe('Bottle · 120 ml');
+    expect(payloadSummary({ via: 'mcp' }, type(DIAPER))).toBe('');
+    expect(payloadSummary({ kind: 'woke_up', via: 'alexa' }, undefined)).toBe('woke_up');
+  });
+
   it('shows the feeding keys of the API contract and keeps legacy payloads readable', () => {
     const breast = {
       ...bottleType,

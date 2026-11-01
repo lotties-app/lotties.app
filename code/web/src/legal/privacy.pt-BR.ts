@@ -79,7 +79,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'account',
               cells: [
                 'Sua conta de acesso',
-                'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno e o seu nome de exibição; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login.',
+                'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno e o seu nome de exibição; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login. Guardamos também a sua escolha de unidades de medida (automática, métrica ou americana), que só muda como as quantidades aparecem para você; os registros continuam em unidades métricas.',
                 'Para você entrar nos seus aparelhos e para mostrar seu nome às pessoas com quem você compartilha um bebê.',
               ],
             },
@@ -293,7 +293,7 @@ export const privacyPtBR: PolicyDocument = {
                   id: 'alexa',
                   cells: [
                     'Amazon (Alexa)',
-                    'A Amazon grava e processa o que você fala com a Alexa, segundo os termos de privacidade da própria Amazon. O Lotties recebe só o comando e seus valores e devolve uma resposta curta que a Alexa fala, que pode incluir o nome do bebê, horários de mamadas e de sono, a quantidade de fraldas, a próxima consulta e as vacinas pendentes. A Amazon também guarda o token de acesso que liga a skill à sua conta.',
+                    'A Amazon grava e processa o que você fala com a Alexa, segundo os termos de privacidade da própria Amazon. O Lotties recebe só o comando e seus valores e devolve uma resposta curta que a Alexa fala, que pode incluir o nome do bebê, horários de mamadas e de sono, a quantidade de fraldas, a próxima consulta e as vacinas pendentes, e estimativas e resumos calculados a partir do seu registro: a próxima soneca, mamada ou troca de fralda esperada, a média de fraldas por dia, as quantidades das últimas mamadeiras, o sono de hoje até agora e, se você perguntar por que o bebê está chorando, as causas mais prováveis do dia a dia com os fatos registrados por trás delas. Os registros feitos por voz ficam marcados no app como feitos pela Alexa; a marca guarda só a palavra “alexa” e, num pedido de exclusão, o horário. A Amazon também guarda o token de acesso que liga a skill à sua conta.',
                     'Só se você ativar a skill do Lotties e vincular sua conta. Para parar, desvincule no app Alexa.',
                   ],
                 },
@@ -412,6 +412,7 @@ export const privacyPtBR: PolicyDocument = {
             'Registros apagados: ficam ocultos até o bebê ou a sua conta serem excluídos (veja [Seus direitos](#privacy-rights)).',
             'O que você adicionou a um bebê que outras pessoas mantêm: continua com esse bebê depois que você sai ou exclui sua conta, sem o seu nome.',
             'Sua conta de login: até você excluir sua conta.',
+            'Sua escolha de unidades de medida: até você mudá-la ou excluir sua conta.',
             'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
             'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',
@@ -444,6 +445,10 @@ export const privacyPtBR: PolicyDocument = {
         {
           kind: 'p',
           text: 'Nenhum sistema é totalmente seguro. Os dados no seu aparelho e os arquivos que você exporta não são criptografados pelo app: proteja seu aparelho, saia da conta em aparelhos compartilhados e guarde bem os arquivos exportados. Se um incidente de segurança puder trazer risco ou dano relevante a você, avisaremos você e a ANPD (LGPD, art. 48).',
+        },
+        {
+          kind: 'p',
+          text: 'O Lotties roda em servidores de um home lab, não em um data center comercial. O servidor é protegido por um nobreak contra quedas de energia e possui backups automáticos criptografados fora do local, mas não podemos garantir que nenhum dado será perdido. Para os registros mais importantes, mantenha sua própria cópia usando [Central > Exportar dados](/hub/export).',
         },
       ],
     },

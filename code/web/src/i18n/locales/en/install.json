@@ -101,6 +101,7 @@
     "landing": {
       "title": "Install on your phone",
       "body": "Add Lotties to your iPhone or Android phone: it opens full screen from its own icon, and on iPhone that is how notifications work.",
+      "soon": "We are still getting Lotties into the App Store and Google Play. For now, installing it from the browser is the easiest way to use it, and it works just like an app.",
       "guide": "Step-by-step guide"
     },
     "publicNav": {

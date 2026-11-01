@@ -1,0 +1,33 @@
+{
+  "units": {
+    "title": "Units",
+    "hint": "Choose how amounts, weights, lengths and temperatures are shown and typed. What is saved never changes: only what you see.",
+    "groupLabel": "Measurement units",
+    "system": {
+      "metric": "metric",
+      "us": "US customary"
+    },
+    "auto": {
+      "label": "Automatic",
+      "hint": "Follows this device's region. Now: {{system}}.",
+      "example": "e.g. 120 ml, 3.5 kg, 50 cm, 37 °C or 4.1 fl oz, 7 lb 11 oz, 19.7 in, 98.6 °F"
+    },
+    "metric": {
+      "label": "Metric",
+      "hint": "Milliliters, kilograms, centimeters, degrees Celsius.",
+      "example": "e.g. 120 ml, 3.5 kg, 50 cm, 37 °C"
+    },
+    "us": {
+      "label": "US customary",
+      "hint": "Fluid ounces, pounds and ounces, inches, degrees Fahrenheit.",
+      "example": "e.g. 4.1 fl oz, 7 lb 11 oz, 19.7 in, 98.6 °F"
+    },
+    "pending": "Saved on this device. It will sync with your account when you are online.",
+    "field": {
+      "pounds": "{{label}} (lb)",
+      "ounces": "{{label}} (oz)"
+    },
+    "range": "{{min}} to {{max}}",
+    "outOfRange": "{{label}} must be between {{min}} and {{max}}."
+  }
+}

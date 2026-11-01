@@ -8,7 +8,7 @@ import {
 import type { BabyEvent, EventType } from '../db/models';
 import { ageInMonths } from '../events/bottleAgeDefaults';
 import { countsAsCrying } from '../events/cryDetection';
-import { adjustedFeedGap, topUpAdjustment } from '../events/bottlePatterns';
+import { topUpAdjustment } from '../events/bottlePatterns';
 import type { PredictionsDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
 import { bellyPainPattern, windowAround, BELLY_MASSAGE_KEY } from './bellyPattern';
@@ -436,12 +436,9 @@ interface Scored {
 interface Context {
   input: CryReasonInput;
   w: CryWeights;
-  band: CryBandWeights;
   nowMs: number;
   past: BabyEvent[];
   feeds: BabyEvent[];
-  /** Her feed gap when she has none of her own: the published one, else the band's. */
-  defaultFeedGapMinutes: number;
 }
 
 const noData = (w: CryWeights, reason: 'noLog' | 'asleep'): Scored => ({
@@ -492,34 +489,102 @@ export function serverFeedGapMinutes(
     : null;
 }
 
-/** Her usual feed gap: the local median of recent start-to-start gaps, else the server's. */
-function usualFeedGap(ctx: Context): number | null {
-  const gaps = feedSessionGaps(ctx.feeds, ctx.nowMs, ctx.w).map((gap) => gap.minutes);
-  if (gaps.length >= ctx.w.minimumFeedGaps) return Math.round(median(gaps));
-  return serverFeedGapMinutes(ctx.input.predictions);
+/*
+ * The ranking has two halves. `cryReasonSignals` reads the baby's events and the cached server
+ * numbers into a small set of plain facts (`CrySignals`); `scoreCrySignals` turns those facts into
+ * the ordered causes and is pure arithmetic. The scoring half is ported to C#
+ * (`Lotties.Domain.CryReasons.CryReasonRanker`, used by the voice assistants) and both run the
+ * shared vectors in `cryReasonsVectors.json`, so the two stay identical.
+ */
+
+export interface CryHungerSignal {
+  /** Any feed was logged. */
+  hasFeeds: boolean;
+  /** Minutes a feeding timer has run; `null` when none runs. */
+  runningMinutes: number | null;
+  /** Whole minutes since the start of the latest feed. */
+  sinceLastMinutes: number;
+  /** Her recent start-to-start feed gaps (`feedSessionGaps`). */
+  recentGapsMinutes: number[];
+  /** The usual gap of the server's feeding prediction; `null` when missing or implausible. */
+  serverGapMinutes: number | null;
+  /** The published usual gap for her age and milk; `null`: the band's default is used. */
+  normGapMinutes: number | null;
+  /** The share of her usual gap the next feed comes earlier after a smaller bottle; `null`: none. */
+  topUpShare: number | null;
+  /** Milliseconds since the latest feed ended; `null` without a finished one. */
+  sinceLastFeedEndMs: number | null;
 }
 
-function hungerOf(ctx: Context): Scored {
-  const { w, band, input } = ctx;
-  if (ctx.feeds.length === 0) return noData(w, 'noLog');
-  const running = ctx.feeds
-    .filter((e) => e.endedAt === null)
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
-  if (running) {
+export interface CrySleepySignal {
+  /** The awake stretch to judge; `null` when the state is unknown (no sleep logged). */
+  stretch: { minutes: number; night: boolean } | null;
+  /** Her usual limit (server wake window), or `null`. */
+  windowMinutes: number | null;
+  /** The overtired heads-up is showing. */
+  overtired: boolean;
+}
+
+export interface CryDiaperSignal {
+  /** Minutes since the latest diaper of any content; `null` without one. */
+  sinceLastMinutes: number | null;
+  /** Her usual wet gap, or `null`. */
+  usualWetGapMinutes: number | null;
+  /** The server's dirty-diaper estimate, when due now. */
+  dirtyDue: { signal: 'afterFeed' | 'gap'; expectedAt: string } | null;
+}
+
+export interface CryGasSignal {
+  hasFeeds: boolean;
+  /** Milliseconds since the latest finished milk feed ended; `null` without one. */
+  sinceMilkFeedEndMs: number | null;
+  /** A burp or belly massage was logged since that feed started (or one is running). */
+  reliefSinceFeed: boolean;
+  /** Now is inside her usual belly pain window and no relief was logged since it opened: its usual clock. */
+  bellyPatternClock: string | null;
+  /** Now is inside her usual fussy window: its usual clock. */
+  fussyPatternClock: string | null;
+  /** The local hour of now (0..23). */
+  localHour: number;
+}
+
+/** What the ranking reads, extracted from the log; see `cryReasonSignals`. */
+export interface CrySignals {
+  band: CryAgeBand;
+  /** A sleep timer runs (and no night waking runs inside it). */
+  asleep: boolean;
+  hunger: CryHungerSignal;
+  sleepy: CrySleepySignal;
+  diaper: CryDiaperSignal;
+  gas: CryGasSignal;
+}
+
+/** Her usual feed gap: the local median of recent start-to-start gaps, else the server's. */
+function usualFeedGap(hunger: CryHungerSignal, w: CryWeights): number | null {
+  if (hunger.recentGapsMinutes.length >= w.minimumFeedGaps) {
+    return Math.round(median(hunger.recentGapsMinutes));
+  }
+  return hunger.serverGapMinutes;
+}
+
+function hungerOf(signal: CryHungerSignal, w: CryWeights, band: CryBandWeights): Scored {
+  if (!signal.hasFeeds) return noData(w, 'noLog');
+  if (signal.runningMinutes !== null) {
     return {
       score: w.runningFeedScore,
-      facts: [{ kind: 'feedingNow', minutes: minutesBetween(running.startedAt, input.now) }],
+      facts: [{ kind: 'feedingNow', minutes: signal.runningMinutes }],
     };
   }
-  const lastStart = ctx.feeds.reduce((max, e) => (e.startedAt > max ? e.startedAt : max), '');
-  const minutes = minutesBetween(lastStart, input.now);
-  const own = usualFeedGap(ctx);
+  const minutes = signal.sinceLastMinutes;
+  const own = usualFeedGap(signal, w);
+  const usual = own ?? signal.normGapMinutes ?? band.feedGapMinutes;
   // A smaller feed than usual (an interrupted bottle) brings the next one forward, bounded.
-  const topUp = topUpAdjustment(ctx.feeds, new Date(ctx.nowMs));
-  const gap = adjustedFeedGap(own ?? ctx.defaultFeedGapMinutes, topUp);
+  const gap = signal.topUpShare === null ? usual : Math.round(usual * (1 - signal.topUpShare));
   let score = ramp(minutes / gap, band.hunger);
-  const lastEnd = latestFeedEnd(input.events, input.types, input.now);
-  if (lastEnd !== undefined && ctx.nowMs - lastEnd < w.freshFeedMinutes * MINUTE_MS) {
+  if (
+    signal.sinceLastFeedEndMs !== null &&
+    signal.sinceLastFeedEndMs < w.freshFeedMinutes * MINUTE_MS
+  ) {
     score = Math.min(score, w.freshCap);
   }
   return {
@@ -529,9 +594,153 @@ function hungerOf(ctx: Context): Scored {
         kind: 'sinceLastFeed',
         minutes,
         usualGapMinutes: own,
-        ...(topUp ? { smallerFeed: true as const } : {}),
+        ...(signal.topUpShare === null ? {} : { smallerFeed: true as const }),
       },
     ],
+  };
+}
+
+function sleepyOf(signal: CrySleepySignal, w: CryWeights, band: CryBandWeights): Scored {
+  const { stretch } = signal;
+  if (!stretch) return noData(w, 'noLog');
+  let score = ramp(stretch.minutes / (signal.windowMinutes ?? band.wakeWindowMinutes), band.sleepy);
+  if (signal.overtired) score += band.sleepy.overtiredBoost;
+  const facts: CryFact[] = [
+    { kind: 'awakeFor', minutes: stretch.minutes, windowMinutes: signal.windowMinutes },
+  ];
+  if (stretch.night) {
+    score = Math.max(score, band.sleepy.nightFloor);
+    facts.push({ kind: 'nightTime' });
+  }
+  return { score, facts };
+}
+
+function diaperOf(signal: CryDiaperSignal, w: CryWeights, band: CryBandWeights): Scored {
+  const minutes = signal.sinceLastMinutes;
+  if (minutes === null) return noData(w, 'noLog');
+  const own = signal.usualWetGapMinutes;
+  let score = ramp(minutes / (own ?? band.diaperGapMinutes), band.diaper);
+  const facts: CryFact[] = [{ kind: 'sinceLastDiaper', minutes, usualGapMinutes: own }];
+  if (minutes < w.freshDiaperMinutes) return { score: Math.min(score, w.freshCap), facts };
+  if (signal.dirtyDue) {
+    score += band.diaper.dirtyDueBoost;
+    facts.push({
+      kind: 'dirtyDue',
+      signal: signal.dirtyDue.signal,
+      expectedAt: signal.dirtyDue.expectedAt,
+    });
+  }
+  if (minutes >= w.staleDiaperHours * 60) score = Math.max(score, band.diaper.staleFloor);
+  return { score, facts };
+}
+
+function postFeedGas(signal: CryGasSignal, w: CryWeights, band: CryBandWeights): Scored | null {
+  if (signal.sinceMilkFeedEndMs === null) return null;
+  const sinceMs = signal.sinceMilkFeedEndMs;
+  if (sinceMs > w.postFeedMinutes * MINUTE_MS) return null;
+  const minutesSinceFeed = Math.floor(sinceMs / MINUTE_MS);
+  return signal.reliefSinceFeed
+    ? { score: band.gas.postFeedRelieved, facts: [{ kind: 'reliefAfterFeed', minutesSinceFeed }] }
+    : { score: band.gas.postFeed, facts: [{ kind: 'recentFeedNoBurp', minutesSinceFeed }] };
+}
+
+function patternGas(signal: CryGasSignal, w: CryWeights, band: CryBandWeights): Scored[] {
+  const parts: Scored[] = [];
+  if (signal.bellyPatternClock !== null) {
+    parts.push({
+      score: band.gas.bellyPattern,
+      facts: [{ kind: 'bellyPattern', typicalClock: signal.bellyPatternClock }],
+    });
+  }
+  if (signal.fussyPatternClock !== null) {
+    parts.push({
+      score: band.gas.eveningPattern,
+      facts: [{ kind: 'eveningFussy', typicalClock: signal.fussyPatternClock }],
+    });
+    return parts;
+  }
+  const hour = signal.localHour;
+  if (band.gas.eveningGeneric > 0 && hour >= w.eveningFromHour && hour < w.eveningUntilHour) {
+    parts.push({
+      score: band.gas.eveningGeneric,
+      facts: [{ kind: 'eveningFussy', typicalClock: null }],
+    });
+  }
+  return parts;
+}
+
+function gasOf(signal: CryGasSignal, w: CryWeights, band: CryBandWeights): Scored {
+  const parts = [postFeedGas(signal, w, band), ...patternGas(signal, w, band)].filter(
+    (p): p is Scored => p !== null,
+  );
+  const hasPattern = parts.some((p) => p.facts.some((f) => f.kind === 'bellyPattern'));
+  if (!signal.hasFeeds && !hasPattern) return noData(w, 'noLog');
+  const score = parts.reduce((sum, p) => sum + p.score, band.gas.base);
+  return { score: Math.min(score, band.gas.max), facts: parts.flatMap((p) => p.facts) };
+}
+
+function levelOf(score: number, w: CryWeights): CryLevel {
+  if (score >= w.likelyFrom) return 'likely';
+  return score >= w.possibleFrom ? 'possible' : 'unlikely';
+}
+
+const round3 = (value: number) => Math.round(clamp01(value) * 1000) / 1000;
+
+/**
+ * Orders the causes for a crying spell now from the extracted signals (pure arithmetic; the C#
+ * port is `CryReasonRanker.Rank`). While a sleep timer runs every cause is a neutral `possible`
+ * with a `noData` fact: crying while logged asleep says the log is out of date, not why she cries.
+ */
+export function scoreCrySignals(
+  signals: CrySignals,
+  weights: CryWeights = CRY_WEIGHTS,
+): CryReasonResult {
+  const w = weights;
+  const band = w.bands[signals.band];
+  const scored: Record<Exclude<CryCause, 'comfort'>, Scored> = signals.asleep
+    ? {
+        hunger: noData(w, 'asleep'),
+        sleepy: noData(w, 'asleep'),
+        diaper: noData(w, 'asleep'),
+        gas: noData(w, 'asleep'),
+      }
+    : {
+        hunger: hungerOf(signals.hunger, w, band),
+        sleepy: sleepyOf(signals.sleepy, w, band),
+        diaper: diaperOf(signals.diaper, w, band),
+        gas: gasOf(signals.gas, w, band),
+      };
+  // The fallback never outranks a strongly supported cause nor a cause with nothing logged.
+  const comfortScore = Math.min(band.comfort, w.likelyFrom - 0.05, w.noDataScore - 0.05);
+  const causes: CryCauseRank[] = CRY_CAUSES.map((cause) => {
+    if (cause === 'comfort') {
+      return { cause, level: 'possible', score: round3(comfortScore), facts: [] };
+    }
+    const { score, facts } = scored[cause];
+    const rounded = round3(score);
+    return { cause, level: levelOf(rounded, w), score: rounded, facts };
+  });
+  const order = (cause: CryCause) => CRY_CAUSES.indexOf(cause);
+  causes.sort((a, b) => b.score - a.score || order(a.cause) - order(b.cause));
+  return { causes, redFlags: [...CRY_RED_FLAGS], basis: 'generic' };
+}
+
+function hungerSignal(ctx: Context): CryHungerSignal {
+  const { w, input, nowMs, feeds } = ctx;
+  const running = feeds
+    .filter((e) => e.endedAt === null)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+  const lastStart = feeds.reduce((max, e) => (e.startedAt > max ? e.startedAt : max), '');
+  const lastEnd = latestFeedEnd(input.events, input.types, input.now);
+  return {
+    hasFeeds: feeds.length > 0,
+    runningMinutes: running ? minutesBetween(running.startedAt, input.now) : null,
+    sinceLastMinutes: lastStart ? minutesBetween(lastStart, input.now) : 0,
+    recentGapsMinutes: feedSessionGaps(feeds, nowMs, w).map((gap) => gap.minutes),
+    serverGapMinutes: serverFeedGapMinutes(input.predictions),
+    normGapMinutes: normFeedGapMinutes(input.ageNorms, input.birthDate, input.now, feeds),
+    topUpShare: topUpAdjustment(feeds, new Date(nowMs))?.share ?? null,
+    sinceLastFeedEndMs: lastEnd === undefined ? null : nowMs - lastEnd,
   };
 }
 
@@ -548,58 +757,47 @@ function awakeStretch(ctx: Context, state: ReturnType<typeof deriveNowState>) {
   return { minutes: state.awakeMinutes, night };
 }
 
-function sleepyOf(ctx: Context, state: ReturnType<typeof deriveNowState>): Scored {
-  const { w, band, input } = ctx;
+function sleepySignal(ctx: Context, state: ReturnType<typeof deriveNowState>): CrySleepySignal {
+  const { input } = ctx;
   const stretch = awakeStretch(ctx, state);
-  if (!stretch) return noData(w, 'noLog');
-  const windowMinutes = wakeWindowOf(input.predictions)?.limitMinutes ?? null;
-  let score = ramp(stretch.minutes / (windowMinutes ?? band.wakeWindowMinutes), band.sleepy);
-  const overtired = overtiredSuggestion({
-    predictions: input.predictions,
-    state,
-    events: input.events,
-    types: input.types,
-    now: input.now,
-    dismissedSince: null,
-  });
-  if (overtired) score += band.sleepy.overtiredBoost;
-  const facts: CryFact[] = [{ kind: 'awakeFor', minutes: stretch.minutes, windowMinutes }];
-  if (stretch.night) {
-    score = Math.max(score, band.sleepy.nightFloor);
-    facts.push({ kind: 'nightTime' });
-  }
-  return { score, facts };
+  return {
+    stretch,
+    windowMinutes: wakeWindowOf(input.predictions)?.limitMinutes ?? null,
+    overtired:
+      stretch !== null &&
+      overtiredSuggestion({
+        predictions: input.predictions,
+        state,
+        events: input.events,
+        types: input.types,
+        now: input.now,
+        dismissedSince: null,
+      }) !== null,
+  };
 }
 
-function diaperOf(ctx: Context): Scored {
-  const { w, band, input } = ctx;
+function diaperSignal(ctx: Context): CryDiaperSignal {
+  const { input } = ctx;
   const ids = typeIdsForKey(input.types, DIAPER_KEY);
   const latest = ctx.past
     .filter((e) => ids.has(e.typeId))
     .reduce((max, e) => (e.startedAt > max ? e.startedAt : max), '');
-  if (!latest) return noData(w, 'noLog');
-  const minutes = minutesBetween(latest, input.now);
-  const own = diaperPredictionsOf(input.predictions)?.wet?.medianGapMinutes ?? null;
-  let score = ramp(minutes / (own ?? band.diaperGapMinutes), band.diaper);
-  const facts: CryFact[] = [{ kind: 'sinceLastDiaper', minutes, usualGapMinutes: own }];
-  if (minutes < w.freshDiaperMinutes) return { score: Math.min(score, w.freshCap), facts };
-  const dirty = dirtySuggestion({
-    predictions: input.predictions,
-    events: input.events,
-    types: input.types,
-    now: input.now,
-    dismissedAnchor: null,
-  });
-  if (dirty) {
-    score += band.diaper.dirtyDueBoost;
-    facts.push({
-      kind: 'dirtyDue',
-      signal: dirty.signal,
-      expectedAt: dirty.window.expected.toISOString(),
-    });
-  }
-  if (minutes >= w.staleDiaperHours * 60) score = Math.max(score, band.diaper.staleFloor);
-  return { score, facts };
+  const dirty = latest
+    ? dirtySuggestion({
+        predictions: input.predictions,
+        events: input.events,
+        types: input.types,
+        now: input.now,
+        dismissedAnchor: null,
+      })
+    : null;
+  return {
+    sinceLastMinutes: latest ? minutesBetween(latest, input.now) : null,
+    usualWetGapMinutes: diaperPredictionsOf(input.predictions)?.wet?.medianGapMinutes ?? null,
+    dirtyDue: dirty
+      ? { signal: dirty.signal, expectedAt: dirty.window.expected.toISOString() }
+      : null,
+  };
 }
 
 /** A burp or belly massage that started at or after `fromMs`, or one still running. */
@@ -622,83 +820,36 @@ function latestMilkFeed(ctx: Context): BabyEvent | undefined {
     .sort((a, b) => (b.endedAt as string).localeCompare(a.endedAt as string))[0];
 }
 
-function postFeedGas(ctx: Context): Scored | null {
-  const { w, band } = ctx;
+function gasSignal(ctx: Context): CryGasSignal {
+  const { input } = ctx;
   const feed = latestMilkFeed(ctx);
-  if (!feed) return null;
-  const sinceMs = ctx.nowMs - Date.parse(feed.endedAt as string);
-  if (sinceMs > w.postFeedMinutes * MINUTE_MS) return null;
-  const minutesSinceFeed = Math.floor(sinceMs / MINUTE_MS);
-  return reliefSince(ctx, Date.parse(feed.startedAt))
-    ? { score: band.gas.postFeedRelieved, facts: [{ kind: 'reliefAfterFeed', minutesSinceFeed }] }
-    : { score: band.gas.postFeed, facts: [{ kind: 'recentFeedNoBurp', minutesSinceFeed }] };
-}
-
-function patternGas(ctx: Context): Scored[] {
-  const { w, band, input } = ctx;
-  const parts: Scored[] = [];
   const belly = bellyPainPattern(input.predictions);
   const bellyWindow = belly && windowAround(belly, input.now);
-  if (belly && bellyWindow && !reliefSince(ctx, bellyWindow.showFrom.getTime())) {
-    parts.push({
-      score: band.gas.bellyPattern,
-      facts: [{ kind: 'bellyPattern', typicalClock: belly.typicalClock }],
-    });
-  }
   const fussy = fussyPattern(input.predictions);
-  if (fussy && windowAround(fussy, input.now)) {
-    parts.push({
-      score: band.gas.eveningPattern,
-      facts: [{ kind: 'eveningFussy', typicalClock: fussy.typicalClock }],
-    });
-    return parts;
-  }
-  const hour = input.now.getHours();
-  if (band.gas.eveningGeneric > 0 && hour >= w.eveningFromHour && hour < w.eveningUntilHour) {
-    parts.push({
-      score: band.gas.eveningGeneric,
-      facts: [{ kind: 'eveningFussy', typicalClock: null }],
-    });
-  }
-  return parts;
+  return {
+    hasFeeds: ctx.feeds.length > 0,
+    sinceMilkFeedEndMs: feed ? ctx.nowMs - Date.parse(feed.endedAt as string) : null,
+    reliefSinceFeed: feed ? reliefSince(ctx, Date.parse(feed.startedAt)) : false,
+    bellyPatternClock:
+      belly && bellyWindow && !reliefSince(ctx, bellyWindow.showFrom.getTime())
+        ? belly.typicalClock
+        : null,
+    fussyPatternClock: fussy && windowAround(fussy, input.now) ? fussy.typicalClock : null,
+    localHour: input.now.getHours(),
+  };
 }
 
-function gasOf(ctx: Context): Scored {
-  const { w, band } = ctx;
-  const parts = [postFeedGas(ctx), ...patternGas(ctx)].filter((p): p is Scored => p !== null);
-  const hasPattern = parts.some((p) => p.facts.some((f) => f.kind === 'bellyPattern'));
-  if (ctx.feeds.length === 0 && !hasPattern) return noData(w, 'noLog');
-  const score = parts.reduce((sum, p) => sum + p.score, band.gas.base);
-  return { score: Math.min(score, band.gas.max), facts: parts.flatMap((p) => p.facts) };
-}
-
-function levelOf(score: number, w: CryWeights): CryLevel {
-  if (score >= w.likelyFrom) return 'likely';
-  return score >= w.possibleFrom ? 'possible' : 'unlikely';
-}
-
-const round3 = (value: number) => Math.round(clamp01(value) * 1000) / 1000;
-
-/**
- * Ranks the causes for a crying spell now, from what the log suggests. While a sleep timer runs
- * (and no night waking runs inside it) every cause is a neutral `possible` with a `noData` fact:
- * crying while logged asleep says the log is out of date, not why she cries.
- */
-export function rankCryReasons(input: CryReasonInput): CryReasonResult {
+/** Reads the log and the cached server numbers into the signals the ranking scores. */
+export function cryReasonSignals(input: CryReasonInput): CrySignals {
   const w = input.weights ?? CRY_WEIGHTS;
-  const band = w.bands[cryAgeBand(input.birthDate, input.now) ?? DEFAULT_CRY_AGE_BAND];
   const past = pastLiveEvents(input.events, input.now);
   const feedIds = typeIdsForKey(input.types, FEEDING_KEY);
-  const feeds = past.filter((e) => feedIds.has(e.typeId));
   const ctx: Context = {
     input,
     w,
-    band,
     nowMs: input.now.getTime(),
     past,
-    feeds,
-    defaultFeedGapMinutes:
-      normFeedGapMinutes(input.ageNorms, input.birthDate, input.now, feeds) ?? band.feedGapMinutes,
+    feeds: past.filter((e) => feedIds.has(e.typeId)),
   };
   const state = deriveNowState(
     input.events,
@@ -706,33 +857,23 @@ export function rankCryReasons(input: CryReasonInput): CryReasonResult {
     input.predictions ?? undefined,
     input.now,
   );
-  const asleep = state.kind === 'asleep' && !state.nightWaking;
-  const scored: Record<Exclude<CryCause, 'comfort'>, Scored> = asleep
-    ? {
-        hunger: noData(w, 'asleep'),
-        sleepy: noData(w, 'asleep'),
-        diaper: noData(w, 'asleep'),
-        gas: noData(w, 'asleep'),
-      }
-    : {
-        hunger: hungerOf(ctx),
-        sleepy: sleepyOf(ctx, state),
-        diaper: diaperOf(ctx),
-        gas: gasOf(ctx),
-      };
-  // The fallback never outranks a strongly supported cause nor a cause with nothing logged.
-  const comfortScore = Math.min(band.comfort, w.likelyFrom - 0.05, w.noDataScore - 0.05);
-  const causes: CryCauseRank[] = CRY_CAUSES.map((cause) => {
-    if (cause === 'comfort') {
-      return { cause, level: 'possible', score: round3(comfortScore), facts: [] };
-    }
-    const { score, facts } = scored[cause];
-    const rounded = round3(score);
-    return { cause, level: levelOf(rounded, w), score: rounded, facts };
-  });
-  const order = (cause: CryCause) => CRY_CAUSES.indexOf(cause);
-  causes.sort((a, b) => b.score - a.score || order(a.cause) - order(b.cause));
-  return { causes, redFlags: [...CRY_RED_FLAGS], basis: 'generic' };
+  return {
+    band: cryAgeBand(input.birthDate, input.now) ?? DEFAULT_CRY_AGE_BAND,
+    asleep: state.kind === 'asleep' && !state.nightWaking,
+    hunger: hungerSignal(ctx),
+    sleepy: sleepySignal(ctx, state),
+    diaper: diaperSignal(ctx),
+    gas: gasSignal(ctx),
+  };
+}
+
+/**
+ * Ranks the causes for a crying spell now, from what the log suggests (`cryReasonSignals`, then
+ * `scoreCrySignals`). While a sleep timer runs (and no night waking runs inside it) every cause
+ * is a neutral `possible` with a `noData` fact.
+ */
+export function rankCryReasons(input: CryReasonInput): CryReasonResult {
+  return scoreCrySignals(cryReasonSignals(input), input.weights ?? CRY_WEIGHTS);
 }
 
 /* ---- Outcome history: what helped in past fussy spells (shown as a hint; not used to rank) ---- */

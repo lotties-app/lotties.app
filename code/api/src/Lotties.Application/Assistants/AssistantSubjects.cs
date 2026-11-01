@@ -3,6 +3,7 @@ using Lotties.Application.Users;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Notifications;
+using Lotties.Domain.Patterns;
 
 namespace Lotties.Application.Assistants;
 
@@ -14,11 +15,17 @@ internal enum AssistantAccess
 }
 
 /// <summary>The baby a command acts on, the caller's role, the zone to tell local times in and the command's clock.</summary>
-internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc)
+internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "")
 {
     /// <summary>A result about this subject's baby.</summary>
     public AssistantResult Result(AssistantResultCode code) =>
         new() { Code = code, AsOf = Now, Baby = new AssistantBaby(Baby.Id, Baby.Name), TimeZone = ZoneId };
+
+    /// <summary>The user's local clock, or UTC days when no zone is known.</summary>
+    public LocalClock Clock => Zone is { } zone ? LocalClock.InZone(zone) : LocalClock.WithOffset(TimeSpan.Zero);
+
+    /// <summary>Now with the offset in force in the user's zone (UTC without one): the instant the predictions tell day from night by.</summary>
+    public DateTimeOffset LocalNow => Zone is { } zone ? TimeZoneInfo.ConvertTime(Now, zone) : Now.ToUniversalTime();
 }
 
 /// <summary>Either the subject, or the result that refuses the command.</summary>
@@ -60,7 +67,7 @@ internal sealed class AssistantSubjects(
 
         var baby = userBabies.Single(candidate => candidate.Id == babyId);
         var zone = await ZoneAsync(user.Id, invocation, now, cancellationToken);
-        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source);
+        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter);
         return Allows(subject.Role, access)
             ? new AssistantSubjectLookup(subject, null)
             : new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));

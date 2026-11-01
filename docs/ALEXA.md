@@ -12,12 +12,16 @@ realm `lotties.app` (`https://auth.lotties.app`), and the cluster deploy kit (`d
 Alexa skills are always called as "Alexa, tell/ask/open *&lt;invocation name&gt;* ...". A bare "Lotties, ..." is not
 possible: only Amazon chooses wake words.
 
-- **Wanted:** `lotties`. A one-word invocation name that is a brand needs Amazon's approval: certification asks for
-  evidence that you own the brand (a trademark registration or equivalent). Without it, certification fails.
-- **Fallback (what the models ship with):** en-US `lotties baby`, pt-BR `lotties bebê`. Two words, no approval needed:
-  "Alexa, tell lotties baby the baby fell asleep", "Alexa, pede pro lotties bebê: o bebê dormiu".
-- To switch later: change `invocationName` in both `alexa/interaction-model.*.json` (and in the console), rebuild, and
-  update the examples in the app (`code/web/src/i18n/locales/*/assistants.json`, key `assistants.intro`).
+- **What the models ship with:** `lotties`, the same in en-US and pt-BR (the sample phrases stay in each language):
+  "Alexa, tell lotties the baby fell asleep", "Alexa, peça ao lotties: o bebê dormiu". A one-word name that is a brand may
+  be rejected at certification without evidence that you own the brand (the site lotties.app, the GitHub organisation
+  lotties-app, a trademark registration if any). The pt-BR name used to be `lotties bebê` (and en-US `lotties baby`): an
+  owner who already built the skill must re-paste both models (section 3) and **Build** again, and change the
+  invocation name in the console.
+- **Fallback:** `lotties baby` (two words, no approval needed). If certification rejects `lotties`, switch BOTH models
+  to it **before publishing**: the invocation name cannot be changed after the skill is certified and published. It is a
+  find/replace: `invocationName` in both `alexa/interaction-model.*.json` (and in the console), the example phrases in this
+  guide, and the app's examples (`code/web/src/i18n/locales/*/assistants.json`, key `assistants.intro`).
 
 ## 2. Create the skill
 
@@ -37,8 +41,23 @@ For each language (switch with the language dropdown at the top):
    for Portuguese (BR). **Save Model**, then **Build Model**. Fix any warning the console shows (they validate the
    utterances: e.g. a sample that collides with another intent).
 3. The models define the intents of the design doc section 1, the custom slot types `BOTTLE_KIND`, `DIAPER_KIND`,
-   `BREAST_SIDE` (the API reads their value ids `FORMULA`, `BREAST_MILK`, `WET`, `DIRTY`, `BOTH`, `LEFT`, `RIGHT`, and
-   falls back to the spoken words), and dialog delegation that asks for a missing bottle amount or diaper kind.
+   `BREAST_SIDE`, `VOLUME_UNIT` (the API reads their value ids `FORMULA`, `BREAST_MILK`, `WET`, `DIRTY`, `BOTH`, `LEFT`,
+   `RIGHT`, `ML`, `OZ`, and falls back to the spoken words), and dialog delegation that asks for a missing bottle amount or
+   diaper kind.
+4. **Measurement units (2026-10-25): re-paste both models and press Build again.** `BottleIntent` gained the optional slot
+   `volumeUnit` (type `VOLUME_UNIT`: milliliters or ounces) and its sample phrases now take `{amount} {volumeUnit}`
+   ("log a 4 ounce bottle", "registrar mamadeira de 4 onças"); the amount prompt is neutral ("How much? For example 120
+   milliliters or 4 ounces."). Until the models are rebuilt a spoken unit is not captured and the amount is read in the
+   person's unit system. If the console rejects `{volumeUnit}` in the `amount` slot's own samples, delete that one sample
+   (`"{amount} {volumeUnit}"`) from the `amount` slot in both files and build again. A person who has not chosen units
+   (Settings > Units, `auto`) hears ounces in en-US and milliliters in pt-BR; see docs/design/37-measurement-units.md.
+
+5. **Totals questions (2026-10-25): re-paste both models and press Build again.** Two new intents, `BottleTodayIntent`
+   ("how much did she drink today", "quanto ela tomou de mamadeira hoje", "quantas mamadeiras hoje") and
+   `FeedsTodayIntent` ("how many feeds today", "quantas mamadas hoje"), answer questions that used to fall into
+   `BottleIntent` ("Quanto? Por exemplo 120 mililitros..."); a few `BottleIntent` samples were reworded
+   ("ela acabou de tomar mamadeira") so a question cannot match the logging intent. Until the models are rebuilt those
+   questions still land in `BottleIntent`.
 
 ## 4. Endpoint
 
@@ -46,8 +65,11 @@ For each language (switch with the language dropdown at the top):
 
 - Service endpoint type: **HTTPS**.
 - Default Region: `https://lotties.app/api/v1/alexa`.
-- SSL certificate type: **My development endpoint has a certificate from a trusted certificate authority** (the public
-  certificate of `lotties.app` served by Traefik). Do not choose the self-signed or wildcard options.
+- SSL certificate type: **My development endpoint is a sub-domain of a domain that has a wildcard certificate from a
+  trusted certificate authority**. Production reaches the app through Cloudflare, whose Universal certificate lists
+  `*.lotties.app` and `lotties.app`; with the plain "certificate from a trusted certificate authority" option Alexa
+  answers "I am unable to reach the requested skill" and no request ever reaches the cluster (confirmed 2026-10-25).
+  Do not choose the self-signed option.
 - Save. The API verifies Amazon's signature on every request (signature, certificate chain from `s3.amazonaws.com/echo.api/`,
   timestamp within 150 seconds, the skill id). The pod must reach `https://s3.amazonaws.com` over HTTPS to download
   Amazon's signing certificate (cached for an hour); if egress is blocked, every request is refused with 400.
@@ -118,16 +140,26 @@ disabled.
 
 **Test** tab, set "Skill testing is enabled in" to **Development**, then type or say, in each language:
 
-1. "open lotties baby" (pt: "abrir lotties bebê"): the welcome.
+1. "open lotties" (pt: "abrir lotties"): the welcome.
 2. In the Alexa app (phone, same Amazon account): Skills > Your Skills > Dev > Lotties > **Link account**, sign in with a
    Lotties account. Without linking, a command answers "please link your account" and the app shows the link card.
-3. "tell lotties baby the baby fell asleep", then "tell lotties baby the baby woke up": a sleep appears in the app.
-4. "tell lotties baby log a bottle", answer "one hundred twenty": the bottle appears (dialog delegation asks the amount).
-5. "ask lotties baby when was the last feed", "... how many diapers today", "... when is the next appointment",
+3. "tell lotties the baby fell asleep", then "tell lotties the baby woke up": a sleep appears in the app.
+4. "tell lotties log a bottle", answer "one hundred twenty milliliters" (or "four ounces"): the bottle appears (dialog delegation asks the amount). Without a unit the amount is read in the user's unit system (Settings > Units; `auto` follows the request language: en-US is ounces, pt-BR is ml). Also try "tell lotties log a 4 ounce bottle" and "... a 120 ml bottle".
+5. "ask lotties when was the last feed", "... how many diapers today", "... when is the next appointment",
    "... which vaccines are due".
 6. With a Viewer account: a command answers that the role does not allow it. With an account of several babies and
    none chosen: it asks to choose one in Settings, Voice assistants.
-7. pt-BR: "pede pro lotties bebê registrar mamadeira de cento e vinte ml de leite materno": answer with a 24-hour time.
+7. pt-BR: "peça ao lotties para registrar mamadeira de cento e vinte ml de leite materno": answer with a 24-hour time.
+8. The questions added later (no slots, answered from the log): "ask lotties what is the next nap window", "... when
+   is the next feed", "... when is the next diaper change", "... how many diapers a day does she usually use", "... how
+   much should I make for the next bottle", "... how much did she sleep today", "... when was the last diaper change",
+   "... why is she crying" (pt: "qual a próxima janela de sono", "quando é a próxima mamada", "quando é a próxima troca de
+   fralda", "quantas fraldas por dia ela costuma usar", "quanto devo preparar na próxima mamadeira", "quanto ela dormiu
+   hoje", "quando foi a última troca de fralda", "por que ela está chorando"). With little history they say so; the
+   crying answer always ends with when to call the pediatrician.
+9. "ask lotties to undo the last entry" (pt: "peça ao lotties para desfazer o último registro") right after logging by
+   voice: it answers that it asked and that nothing was deleted; the entry shows a banner in the app (Delete or Keep).
+   Alexa never deletes by itself.
 
 The JSON Input/Output panes show the request and response; the API logs only the intent, the result code and the
 correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
@@ -142,8 +174,8 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
   owner's values and the legal review in [docs/PRIVACY-OWNER-CHECKLIST.md](PRIVACY-OWNER-CHECKLIST.md). Terms of use
   URL: optional.
 - **Distribution** > Skill preview, per language: name `Lotties`, one-sentence and full description, three example
-  phrases (they must work exactly: e.g. "Alexa, open lotties baby", "Alexa, tell lotties baby the baby fell asleep",
-  "Alexa, ask lotties baby when was the last feed"), small and large icons (`docs/design/icons`), category
+  phrases (they must work exactly: e.g. "Alexa, open lotties", "Alexa, tell lotties the baby fell asleep",
+  "Alexa, ask lotties when was the last feed"), small and large icons (`docs/design/icons`), category
   **Health & Fitness** or **Lifestyle**, keywords.
 - **Privacy & Compliance:** no purchases; "collects personal information": **yes**, answer honestly: with account
   linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers contain the
@@ -162,6 +194,7 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 | Symptom | Likely cause |
 | --- | --- |
 | Console: "The remote endpoint could not be called, or the response it returned was invalid" with HTTP 404 | `Alexa__Enabled` is not `true` on the running pod |
+| "I am unable to reach the requested skill" and nothing in the nginx or API logs | the Endpoint's SSL certificate type does not match what the host serves: use the wildcard option (section 4) |
 | HTTP 400 for every request | wrong `Alexa__SkillIds`; the pod cannot reach `s3.amazonaws.com` (log line "Alexa request refused: CertificateUnavailable"); the pod's clock is off by more than 150 s (`stale_timestamp`) |
 | "Please link your account" after linking | the Alexa client's access token lacks the `lotties-api` audience (5.1.4), or the issuer is not `https://auth.lotties.app/realms/lotties.app` (`AUTH_AUTHORITY`); decode one token from the console's JSON Input (`context.System.user.accessToken`) at a JWT debugger you trust, offline |
 | Linking page shows "Invalid parameter: redirect_uri" | the Alexa Redirect URLs are not all in the client's Valid redirect URIs (5.1.2) |

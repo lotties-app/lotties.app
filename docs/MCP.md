@@ -157,7 +157,7 @@ The parent, in Claude (web, desktop or mobile): **Settings** > **Connectors** > 
    secret empty (public client).
 3. **Connect**: Claude opens the Lotties sign-in, then the consent screen with the texts of 2.3. Approve.
 4. In a chat, enable the connector and ask, for example, "when did the baby last eat?", "summarise yesterday",
-   "log a 120 ml bottle". Claude asks before each tool call according to her Claude settings.
+   "log a 120 ml bottle" (or "log a 4 oz bottle": `log_bottle` takes `amountMl`, or `amount` with `unit` `ml` or `oz`). Claude asks before each tool call according to her Claude settings. The tools' structured values stay metric (`amountMl`); the one-line text follows the person's unit setting (Settings > Units, docs/design/37-measurement-units.md).
 
 A Claude Team or Enterprise organization may require an Owner to add custom connectors; the steps are the same.
 
@@ -175,7 +175,7 @@ On a developer machine (never against production data you do not own):
    `lotties.read` (add `lotties.write` to test logging).
 3. Connect via the Inspector's proxy (no browser `Origin` reaches the API). For a direct browser connection set
    `Mcp__AllowedOrigins=http://localhost:6274` on a test API only.
-4. Check: `tools/list` shows 9 read tools (14 with `lotties.write`); `list_babies`; `get_day_summary` without arguments;
+4. Check: `tools/list` shows 19 read tools (25 with `lotties.write`, the extra ones log and `request_delete_last_entry`, which only asks: the person approves in the app); `list_babies`; `get_day_summary` without arguments;
    `log_diaper {"kind":"wet","idempotencyKey":"test-0001"}` twice logs one diaper; with a read-only token, calling a log
    tool answers HTTP 403 `insufficient_scope`.
 

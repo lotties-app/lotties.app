@@ -1,6 +1,6 @@
 # 32. Voice and AI assistants (Alexa, MCP server)
 
-Parents with full hands log and ask by voice: "Alexa, tell Lotties baby the baby fell asleep", "Alexa, ask Lotties baby
+Parents with full hands log and ask by voice: "Alexa, tell Lotties the baby fell asleep", "Alexa, ask Lotties
 when was the last feed". Two layers: an adapter-neutral **assistant command layer** in Application, and one **adapter**
 per platform in Api: Alexa (section 6) and a remote MCP server for AI assistants such as Claude (section 9), both over the
 same command layer. The owner's step-by-step guides: [docs/ALEXA.md](../ALEXA.md) (Alexa developer console and Keycloak)
@@ -20,13 +20,26 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `DiapersTodayIntent` | "how many diapers today" | "quantas fraldas hoje" | `ReadDiapersToday` |
 | `NextAppointmentIntent` | "when is the next appointment" | "quando é a próxima consulta" | `ReadNextAppointment` |
 | `DueVaccinesIntent` | "which vaccines are due" | "quais vacinas estão pendentes" | `ReadDueVaccines` |
+| `NextNapWindowIntent` | "what is the next nap window", "when will she be sleepy", "when is the next nap", "when does she need a nap", "when should she nap next", "when is nap time" | "qual a próxima janela de sono", "quando ela vai ficar com sono", "quando é a próxima soneca", "quando ela precisa dormir" | `ReadNextNapWindow` |
+| `NextFeedIntent` | "when is the next feed", "when will she be hungry", "when is the next bottle", "when should she eat next", "when is the next meal" | "quando é a próxima mamada", "quando ela vai ter fome", "quando é a próxima mamadeira", "quando ela vai mamar de novo" | `ReadNextFeed` |
+| `NextDiaperIntent` | "when is the next diaper change", "when is the next diaper", "when will she need a diaper change", "when should I change the next diaper" | "quando é a próxima troca de fralda", "quando é a próxima fralda", "quando devo trocar a próxima fralda" | `ReadNextDiaper` |
+| `DiapersAverageIntent` | "how many diapers a day does she usually use", "how many diapers per day on average", "average diapers per day" | "quantas fraldas por dia ela costuma usar", "qual a média de fraldas por dia", "fraldas por dia" | `ReadDiapersAverage` |
+| `BottleAverageIntent` | "how much should I make for the next bottle", "how big was the last bottle", "how much does she usually drink" | "quanto devo preparar na próxima mamadeira", "qual foi o tamanho da última mamadeira", "quanto ela costuma tomar de mamadeira" | `ReadBottleAverage` |
+| `BottleTodayIntent` | "how much did she drink today", "how many ml of milk today", "how many bottles today" | "quanto ela tomou de mamadeira hoje", "quantos mls de mamadeira tomou hoje", "quantas mamadeiras hoje" | `ReadBottleToday` |
+| `FeedsTodayIntent` | "how many feeds today", "how many times did she eat today" | "quantas mamadas hoje", "quantas vezes ela mamou hoje", "quantas vezes ela comeu hoje" | `ReadFeedsToday` |
+| `SleepTodayIntent` | "how much did she sleep today", "how many naps today", "total sleep today" | "quanto ela dormiu hoje", "quantas sonecas ela fez hoje", "total de sono hoje" | `ReadSleepToday` |
+| `LastDiaperIntent` | "when was the last diaper change", "when did I last change her diaper", "last diaper" | "quando foi a última troca de fralda", "quando troquei a fralda dela", "última fralda" | `ReadLastDiaper` |
+| `CryReasonsIntent` | "why is she crying", "why is the baby fussy", "what could be making her cry" | "por que ela está chorando", "por que ela está irritada", "por que ela não para de chorar" | `ReadCryReasons` |
+| `RequestDeleteLastIntent` | "undo the last thing I logged", "delete the last entry", "undo the last entry", "cancel the last entry" | "desfazer o último registro", "apagar o último registro", "excluir o último registro" | `RequestDeleteLast` (asks only, section 5.3) |
 | `SetBabyHelpIntent` | "choose the baby" | "escolher o bebê" | (help: Settings, Voice assistants) |
 | `AMAZON.HelpIntent`, `StopIntent`, `CancelIntent`, `FallbackIntent`, `NavigateHomeIntent` | | | built-in |
 
 Alexa custom skills are always reached through the wake word and the invocation name: "Alexa, tell/ask/open
-**lotties baby** ...". A bare "Lotties, ..." is not possible on Alexa (only Amazon chooses wake words). The one-word
-invocation "lotties" is a brand name and needs Amazon's approval with trademark evidence; the models ship with the
-fallback **"lotties baby"** (pt-BR **"lotties bebê"**) and docs/ALEXA.md says how to switch once approved.
+**lotties** ...". A bare "Lotties, ..." is not possible on Alexa (only Amazon chooses wake words). The models ship with
+the one-word invocation **"lotties"**, the same in en-US and pt-BR (the sample phrases stay in each language). A one-word
+brand name may need evidence of brand ownership at certification (site lotties.app, GitHub organisation lotties-app); if
+Amazon rejects it, switch both models to the documented fallback **"lotties baby"** BEFORE publishing: the invocation
+name cannot be changed after the skill is certified and published (docs/ALEXA.md section 1).
 
 Not offered, on purpose: medications (no intent exists; an assistant never logs, reads or advises a dose), free-text
 notes (nothing the parent says is stored as text), health advice of any kind (answers are facts from the parents' own
@@ -84,6 +97,17 @@ with a line for every code, tested for every code in both languages.
 | `diapers_today` | `count`, `wet`, `dirty`, `window` (`today` in the user's zone, else `last_day`) |
 | `next_appointment`, `no_appointment` | the next upcoming appointment within a year: `appointment` (start, the family's title, type) |
 | `vaccines_due`, `no_vaccines_due` | `count` due or overdue, `overdue`, up to five doses with their names in `en` and `pt-BR` (the vaccine status engine, facts only) |
+| `next_nap_window`, `nap_window_asleep`, `no_nap_prediction` | the sleep prediction's window (`estimate`: earliest, expected, latest, UTC) while awake, by the Now screen's rules (stale after 2 h past the window or no sleep in 24 h = none); asleep: `at` and, when the prediction measures the running sleep to its expected end, `endedAt` = the expected wake-up |
+| `next_feed`, `no_next_feed` | the feeding prediction's window (`estimate`) |
+| `next_diaper`, `no_next_diaper` | the next wet and dirty diaper (`wetEstimate`, `dirtyEstimate`, each only when its Domain gate passed: `DiaperPrediction.WetExpectation`, `DirtyExpectation`) |
+| `diapers_average`, `no_diapers_average` | `perDay`, `wetPerDay`, `dirtyPerDay` (one decimal) over the complete local days with diapers among the last seven (today left out), `count` = those days, at least 3 |
+| `bottle_average`, `no_bottle_data` | `count` (up to 5), `amountMl` = their average, `lastAmountMl`, `at` = the last one; at least 3 bottles with an amount in 14 days; facts, never a recommendation |
+| `sleep_today` | `minutes` since local midnight (a running sleep until now) and `count` naps: the day summary's sleep math |
+| `bottle_today` | `count` bottles since local midnight (`window`: `today` in the user's zone, else `last_day`), `amountMl` = the ml drunk (zero bottles is still this code, `count` 0), `formulaBottles` and `breastMilkBottles` (`bottles`, `ml`, those that said what they held). The ml is **the drunk-amount rule every server total uses**, `BottleAmounts.DrunkMl` through `FeedObservation.BottleMl` (the drunk amount, else the prepared amount; a bottle without an amount counts as a bottle only), summed by `AssistantFeedTotals`; spoken in the user's unit system |
+| `feeds_today` | `count` feeds since local midnight (same `window` rule), `bottleFeeds`, `breastFeeds`, `solidFeeds`; zero feeds is still this code |
+| `last_diaper`, `no_diapers` | the newest diaper of 30 days: `at`, `diaper` |
+| `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags` (each cause carries its ranking score internally; the spoken Alexa answer leads with the top cause and its first fact, and adds the second only when its score is within 0.1 of the first, while the safety sentence and the full red-flag list are never shortened; MCP keeps every cause); `running` = a sleep timer runs so the log may be behind |
+| `delete_requested`, `no_entry_to_delete`, `last_not_undoable` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
 | `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
 | `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
@@ -148,6 +172,74 @@ when she logs for at least one. Account deletion removes her row and clears othe
   active push subscription, the only language the server keeps), else none. With none, answers say "20 minutes ago",
   diapers today count the last 24 hours (`window: last_day`), and the day summaries use UTC days and say so
   (`timeZone: "UTC"`, `timeZoneSource: "utc"`): never silently.
+
+## 5.1 Predictions and "why is she crying"
+
+Eight read-only questions reuse pure Domain functions; the adapters only render:
+
+- **Next nap window, feed, diaper change** (`AssistantForecasts`): `PredictionEngine.Predict` and `DiaperPredictions.Predict`
+  over `IPredictionHistoryRepository` (the same history window as `GET /predictions`), with the user's zone offset in
+  force now as the prediction instant. The nap window follows the Now screen's `napPrediction`: only while awake
+  (`AssistantSleepState`, the port of `deriveNowState`), not stale. Nothing is guessed: no prediction = "not enough history".
+- **Diapers per day / sleep today** reuse the clinical summary's readers and math (`DiaperSummaries`, `SleepSummaries`).
+- **Last bottles** (`bottle_average`): the average and the last of her last 5 bottles with an amount (what she drank, as
+  `last_feed` tells), from at least 3 in 14 days. The web suggests amounts in TypeScript only (`bottleSuggestions.ts`);
+  the server has no such code, so this is the simple average, phrased "her last N bottles averaged X ml, the last was Y ml",
+  never a recommendation.
+- **Why is she crying** (`AssistantCryReasons`, `Domain/CryReasons`): the scoring half of `code/web/src/now/cryReasons.ts`
+  is a pure C# function (`CryReasonRanker.Rank` over `CrySignals`), identical to the web's `scoreCrySignals`; both run the
+  shared vectors `code/web/src/now/cryReasonsVectors.json` (`cryReasonsVectors.test.ts`, `CryReasonVectorTests`). The
+  web extracts the signals from its local Dexie log (`cryReasonSignals`), the server from the stored log
+  (the awake stretch and night rule, her feed gaps, the prediction's feed gap, the published norm in the first four
+  weeks, a smaller last bottle (`CryTopUp`), the wake window and overtired heads-up, the diaper gaps, belly pain and
+  fussy windows). The two extractions read the same facts but are separate code (the server has no cached predictions
+  DTO and no lone-marker bed-time pairing beyond `AssistantSleepState`), so only the scoring is vector-tested. The answer
+  tells the top three non-comfort causes that are likely or possible and have a logged fact, then **always** the safety
+  sentence: not a diagnosis or medical advice, call the pediatrician or emergency services for a fever (babies under 3
+  months need a call right away), crying that cannot be soothed, refusing feeds, unusual sleepiness or being hard to wake,
+  a bulging or stiff soft spot (the web's "When to call for help" wording). No soothing steps, no doses, no medication.
+
+## 5.2 Origin marker
+
+Every event an assistant command **creates** carries the payload member `via` = the adapter's lowercase name (`alexa`,
+`mcp`; `AssistantOrigin`, from the `AssistantInvocation` adapter name; nothing else is ever written: no text, id, token or
+utterance). When a command **changes** an event that another origin created (stopping a sleep timer or nursing session
+the app, or another adapter, started; night wakings stopped by a wake-up), the original `via` stays and
+`updated_via` = the adapter is added; an adapter stopping its own timer changes nothing but the usual folding. A replayed
+request id finds the stored event and writes nothing, so the marker never changes. Like the cry monitor's marks it is a
+plain payload member: no table, no migration, no declared field (members no field declares are not checked); the generic
+upsert, sync, backup export/import and the doctor's view carry it as payload. The web editor keeps it
+(`useEventSheetForm.editBase` keeps `via`, `updated_via` and the delete-request members through an edit) and shows a quiet
+line wherever the entry is shown (day list row, event sheet, read-only sheet): "Added by Alexa" / "Added by an AI
+assistant", "Finished by Alexa" (`assistants.origin.*`).
+
+## 5.3 Assistants never delete
+
+An assistant can never delete, overwrite or edit away a record. There is no delete command, no delete in the Alexa intents
+or the MCP tools, and the assistant code reaches no `IEventService.DeleteAsync`, repository removal, `deleted` flag or payload
+overwrite: the only changes an existing event gets are the timer stop (the folded pause, `updated_via`) and the request
+below. `AssistantNeverDeletesTests` fails when that stops being true: a scan of the assistant sources (Domain, Application,
+Api) for delete and remove calls, a reflection test on `IAssistantService` (the only method named like a delete is
+`RequestDeleteLastAsync`), the MCP tool list (the only such tool is `request_delete_last_entry`) and a behavioural test
+that no command lowers the event count or soft-deletes. A write only touches events its own adapter created
+(`via` = that adapter) or stops an open timer; it never touches another origin's entry.
+
+What it can do is **ask**: `RequestDeleteLast` ("undo the last thing I logged", "delete the last entry"; pt-BR "desfazer o
+último registro", "apagar o último registro"; MCP `request_delete_last_entry`, scope `lotties.write`) finds the newest
+non-deleted entry that the calling adapter created (`via`) in the last 30 minutes, of any kind, and adds two payload members: `delete_requested_via` = the adapter name and `delete_requested_at` = the server clock
+(ISO instant). It answers `delete_requested` (neutral: it asked, nothing was deleted, the person approves in the app) or
+`no_entry_to_delete`. If that newest entry is the `woke_up` marker (which voice may not mark) the request stops there: it answers
+`last_not_undoable` (the last thing logged was a wake-up, it cannot be undone by voice, correct it in the app), changes nothing
+and never falls back to an older entry. It is the same upsert as an edit (client time never older than the stored one), idempotent: an entry
+that already carries the request is left as it is, so asking twice, or replaying the request id, changes nothing. No new
+table, no migration, no new route (the markers are undeclared payload members like `via`, carried by sync, backup and the
+doctor's view). The Viewer role cannot ask (it is a write); a role that logs can.
+
+The web shows, in the day list row and in the event sheet (not on Now), a banner "Alexa asked to delete this entry" /
+"An AI assistant asked to delete this entry" with **Delete** (the normal soft delete, then the usual Undo notice) and
+**Keep** (a normal edit that removes the two members and keeps `via`; a normal client `updatedAt` conflict rule applies). Only
+roles that may already edit the entry see the buttons; a Viewer, or a Caregiver looking at someone else's entry, sees the
+banner read-only. Strings: `assistants.deleteRequest.*`.
 
 ## 6. The Alexa adapter (`POST /api/v1/alexa`)
 
@@ -275,6 +367,17 @@ the server knows, else `invalid_arguments`; it wins over the stored zone, sectio
 | `get_due_vaccines` | read | `babyId?` | `ReadDueVaccines` |
 | `get_day_summary` | read | `babyId?`, `date?` (YYYY-MM-DD) | `ReadDaySummary` |
 | `get_week_summary` | read | `babyId?`, `endDate?` (YYYY-MM-DD) | `ReadWeekSummary` |
+| `get_next_nap_window` | read | `babyId?` | `ReadNextNapWindow` |
+| `get_next_feed` | read | `babyId?` | `ReadNextFeed` |
+| `get_next_diaper` | read | `babyId?` | `ReadNextDiaper` |
+| `get_diapers_average` | read | `babyId?` | `ReadDiapersAverage` |
+| `get_bottle_average` | read | `babyId?` | `ReadBottleAverage` |
+| `get_sleep_today` | read | `babyId?` | `ReadSleepToday` |
+| `get_bottle_today` | read | `babyId?` | `ReadBottleToday` |
+| `get_feeds_today` | read | `babyId?` | `ReadFeedsToday` |
+| `get_last_diaper` | read | `babyId?` | `ReadLastDiaper` |
+| `get_cry_reasons` | read | `babyId?` | `ReadCryReasons` |
+| `request_delete_last_entry` | write | `babyId?`, `idempotencyKey?` | `RequestDeleteLast` (asks only, section 5.3) |
 | `log_sleep_start` | write | `babyId?`, `idempotencyKey?` | `LogSleepStart` |
 | `log_sleep_end` | write | `babyId?`, `idempotencyKey?` | `LogSleepEnd` |
 | `log_bottle` | write | `babyId?`, `amountMl` (1-500), `kind?` (`formula`, `breast_milk`), `idempotencyKey?` | `LogBottle` |
@@ -333,3 +436,7 @@ pre-registered client, the consent screen texts, PKCE, the `resource` parameter,
 `scope` claim in real tokens, Claude's connector UI and the scopes it asks for, a client's step-up after a 403, the ingress
 route for the metadata path. The tests cover the server with tokens signed by a test key and the official SDK's client in
 both protocol eras; docs/MCP.md lists the manual checks (MCP Inspector, Claude).
+
+## Units (2026-10-25)
+
+Answers are told, and bottle amounts are understood, in the user's unit system (stored setting, else the request locale, else metric); structured values stay metric. Contract, rounding, the `volumeUnit` slot and the MCP `amount` + `unit` parameters: docs/design/37-measurement-units.md section 6.

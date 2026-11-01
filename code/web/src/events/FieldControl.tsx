@@ -5,7 +5,6 @@ import {
   ChipGroup,
   DurationField,
   Field,
-  NumberStepper,
   SegmentedControl,
   SwitchRow,
   TextInput,
@@ -17,6 +16,8 @@ import { BottleSuggestionCaption } from './BottleSuggestionCaption';
 import { DRUNK_KEY, drunkChoices, type DrunkShare } from './bottleAmounts';
 import type { BottleSuggestions } from './bottleSuggestions';
 import { optionIcon } from './optionIcons';
+import { fieldQuantity } from '../units/display';
+import { QuantityStepper } from '../units/QuantityStepper';
 
 export type FieldValue = string | boolean | undefined;
 
@@ -172,7 +173,8 @@ function DrunkStepper({
   const { t } = useTranslation();
   const choices = drunkChoices(prepared);
   return (
-    <NumberStepper
+    <QuantityStepper
+      quantity="volume"
       value={toNumber(value)}
       onChange={(next) => onChange(next === null ? '' : String(next))}
       step={stepFor(field)}
@@ -230,9 +232,11 @@ function NumberControl({
       : undefined;
   const ownStart = ownStepperStart(type, field);
   const start = bottle ? bottle.preferred : 90;
+  const quantity = fieldQuantity(field.unit);
   return (
     <>
-      <NumberStepper
+      <QuantityStepper
+        quantity={quantity}
         value={toNumber(value)}
         onChange={(next) => onChange(next === null ? '' : String(next))}
         step={bottle ? bottle.step : stepFor(field)}

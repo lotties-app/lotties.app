@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lotties.Application.Assistants;
+using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 
 namespace Lotties.Api.Assistants.Mcp;
@@ -91,14 +92,14 @@ internal static class McpResultText
             AssistantResultCode.ChooseBaby => "choose_baby: the user has several babies; call list_babies and pass babyId.",
             AssistantResultCode.UnknownBaby => "unknown_baby: that babyId is not one of the user's babies; call list_babies.",
             AssistantResultCode.RateLimited => "rate_limited: too many requests; try again in a minute.",
-            AssistantResultCode.InvalidAmount => $"invalid_amount: the amount must be from {result.Min} to {result.Max} ml.",
+            AssistantResultCode.InvalidAmount => $"invalid_amount: the amount must be from {result.Min} to {result.Max} ml{(result.Units == UnitSystem.Us ? $" (up to {Volume(result.Max, result.Units)})" : string.Empty)}.",
             AssistantResultCode.InvalidDate => $"invalid_date: the date must be from {result.EarliestDate:yyyy-MM-dd} to {result.LatestDate:yyyy-MM-dd}{DaysIn(result)}.",
             AssistantResultCode.SleepStarted => $"Sleep started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.SleepAlreadyRunning => $"{baby} is already sleeping, since {Time(result, result.At)}; nothing was logged.",
             AssistantResultCode.SleepEnded => $"{baby} woke up at {Time(result, result.At)}{Minutes(", after ", result.Minutes, " minutes of sleep")}.",
             AssistantResultCode.NoRunningSleep => $"{baby} is not sleeping; nothing was changed.",
             AssistantResultCode.SeveralRunningSleeps => $"{baby} has {result.Count} sleep timers running; nothing was changed (stop them in the app).",
-            AssistantResultCode.BottleLogged => $"Logged a {result.AmountMl} ml bottle for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.BottleLogged => $"Logged a {Volume(result.AmountMl, result.Units)} bottle for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.NursingStarted => $"Nursing started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.NursingAlreadyRunning => $"{baby} is already nursing, since {Time(result, result.At)}; nothing was logged.",
             AssistantResultCode.DiaperLogged => $"Logged a diaper for {baby} at {Time(result, result.At)}.",
@@ -116,9 +117,46 @@ internal static class McpResultText
             AssistantResultCode.BabyProfile => $"{baby} is {result.Age?.Days} days old.",
             AssistantResultCode.DaySummary => $"Summary of {baby}'s day {result.Days.FirstOrDefault()?.Date:yyyy-MM-dd}{DaysIn(result)}.",
             AssistantResultCode.WeekSummary => $"Summary of {baby}'s 7 days up to {result.Days.LastOrDefault()?.Date:yyyy-MM-dd}{DaysIn(result)}.",
+            AssistantResultCode.NextNapWindow => $"{baby}'s next nap window is expected between {Time(result, result.Estimate?.Earliest)} and {Time(result, result.Estimate?.Latest)}.",
+            AssistantResultCode.NapWindowAsleep => $"{baby} is asleep since {Time(result, result.At)}{(result.EndedAt is null ? string.Empty : $"; expected wake-up around {Time(result, result.EndedAt)}")}.",
+            AssistantResultCode.NoNapPrediction => $"No nap window for {baby}: not enough sleep history or a stale prediction.",
+            AssistantResultCode.NextFeed => $"{baby}'s next feed is expected around {Time(result, result.Estimate?.Expected)}.",
+            AssistantResultCode.NoNextFeed => $"No next feed estimate for {baby}: not enough feed history.",
+            AssistantResultCode.NextDiaper => $"Next diaper for {baby}: wet around {Time(result, result.WetEstimate?.Expected)}, dirty around {Time(result, result.DirtyEstimate?.Expected)}.",
+            AssistantResultCode.NoNextDiaper => $"No next diaper estimate for {baby}: not enough diaper history.",
+            AssistantResultCode.DiapersAverage => $"{baby} used about {result.PerDay?.ToString("0.#", CultureInfo.InvariantCulture)} diapers a day over {result.Count} days ({result.WetPerDay?.ToString("0.#", CultureInfo.InvariantCulture)} wet, {result.DirtyPerDay?.ToString("0.#", CultureInfo.InvariantCulture)} dirty).",
+            AssistantResultCode.NoDiapersAverage => $"Not enough complete days with diapers for {baby} in the last week ({result.Count} of 3 needed).",
+            AssistantResultCode.BottleAverage => $"{baby}'s last {result.Count} bottles averaged {Volume(result.AmountMl, result.Units)}; the last was {Volume(result.LastAmountMl, result.Units)}.",
+            AssistantResultCode.NoBottleData => $"Not enough bottles with an amount in the last 14 days for {baby} ({result.Count} of 3 needed).",
+            AssistantResultCode.SleepToday => $"{baby} has slept {result.Minutes} minutes today, with {result.Count} naps.",
+            AssistantResultCode.BottleToday => BottleToday(result, baby),
+            AssistantResultCode.FeedsToday => $"{baby} has had {result.Count} feeds {(result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours")}: {result.BottleFeeds} bottle, {result.BreastFeeds} breast, {result.SolidFeeds} solid.",
+            AssistantResultCode.LastDiaper => $"{baby}'s last diaper was at {Time(result, result.At)}.",
+            AssistantResultCode.NoDiapers => $"No diaper of {baby} in the last 30 days.",
+            AssistantResultCode.CryReasons => $"What {baby}'s log suggests: {string.Join(", ", result.CryCauses.Select(cause => cause.Cause.ToString().ToLowerInvariant()))}. Not a diagnosis or medical advice: call the pediatrician or emergency services for a fever, crying that cannot be soothed, refusing feeds, unusual sleepiness, or a bulging or stiff soft spot.",
+            AssistantResultCode.DeleteRequested => $"Asked to delete {baby}'s last {result.EntryType} entry from {Time(result, result.At)}. Nothing was deleted: the person approves or keeps it in the Lotties app.",
+            AssistantResultCode.LastNotUndoable => $"The last entry this assistant made for {baby} was a wake-up at {Time(result, result.At)}. It cannot be undone by voice or assistant; nothing was changed. It can be corrected in the Lotties app.",
+            AssistantResultCode.NoEntryToDelete => $"No entry made by this assistant in the last 30 minutes for {baby}; nothing was changed.",
+            AssistantResultCode.CryNoData => $"Nothing in {baby}'s log points at a cause. Not a diagnosis or medical advice: call the pediatrician or emergency services for a fever, crying that cannot be soothed, refusing feeds, unusual sleepiness, or a bulging or stiff soft spot.",
             _ => AssistantResult.CodeName(result.Code),
         };
     }
+
+    private static string BottleToday(AssistantResult result, string baby)
+    {
+        var window = result.Window == AssistantDayWindow.Today ? "today" : "in the last 24 hours";
+        var split = result.FormulaBottles is { Bottles: > 0 } formula && result.BreastMilkBottles is { Bottles: > 0 } milk
+            ? $" (formula {formula.Bottles} bottles, {Volume(formula.Ml, result.Units)}; breast milk {milk.Bottles} bottles, {Volume(milk.Ml, result.Units)})"
+            : string.Empty;
+        return result.Count is null or 0
+            ? $"{baby} has had no bottles {window}."
+            : $"{baby} has had {result.Count} bottles {window}, {Volume(result.AmountMl, result.Units)} drunk{split}.";
+    }
+
+    /// <summary>A volume told in the user's system: <c>120 ml</c>, or <c>4.1 fl oz</c> (the structured values stay in ml).</summary>
+    private static string Volume(int? ml, UnitSystem units) => units == UnitSystem.Us
+        ? $"{UnitConversions.Text(UnitConversions.MlToFluidOunces(ml ?? 0))} fl oz"
+        : $"{ml} ml";
 
     /// <summary>The local time in the family's zone, else UTC (<c>2026-10-23 14:05 America/Sao_Paulo</c>).</summary>
     private static string Time(AssistantResult result, DateTimeOffset? instant)

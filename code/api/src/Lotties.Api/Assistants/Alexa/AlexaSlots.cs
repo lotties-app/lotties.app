@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Globalization;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 
 namespace Lotties.Api.Assistants.Alexa;
 
@@ -12,7 +13,9 @@ namespace Lotties.Api.Assistants.Alexa;
 public static class AlexaSlots
 {
     public const string AmountSlot = "amount";
-    public const string KindSlot = "kind";
+    public const string BottleKindSlot = "bottleKind";
+    public const string VolumeUnitSlot = "volumeUnit";
+    public const string DiaperKindSlot = "diaperKind";
     public const string SideSlot = "side";
 
     private const int MaxAmount = 100_000;
@@ -44,6 +47,20 @@ public static class AlexaSlots
         ["cocô"] = "DIRTY",
         ["coco"] = "DIRTY",
         ["suja"] = "DIRTY",
+        ["ml"] = "ML",
+        ["milliliter"] = "ML",
+        ["milliliters"] = "ML",
+        ["millilitre"] = "ML",
+        ["millilitres"] = "ML",
+        ["mililitro"] = "ML",
+        ["mililitros"] = "ML",
+        ["oz"] = "OZ",
+        ["ounce"] = "OZ",
+        ["ounces"] = "OZ",
+        ["onça"] = "OZ",
+        ["onças"] = "OZ",
+        ["onca"] = "OZ",
+        ["oncas"] = "OZ",
         ["both"] = "BOTH",
         ["wet and dirty"] = "BOTH",
         ["os dois"] = "BOTH",
@@ -55,7 +72,27 @@ public static class AlexaSlots
     public static int? Number(AlexaIntent? intent, string slot) =>
         Value(intent, slot) is { } text && int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number <= MaxAmount ? number : null;
 
-    public static BottleKind BottleKind(AlexaIntent? intent) => Id(intent, KindSlot) switch
+    /// <summary>
+    /// A decimal number slot (<c>AMAZON.NUMBER</c> says <c>4.5</c> for "four and a half"), or <c>null</c> when absent, not
+    /// understood (<c>?</c>), not positive or above the limit.
+    /// </summary>
+    public static decimal? Decimal(AlexaIntent? intent, string slot) =>
+        Value(intent, slot) is { } text
+        && decimal.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number)
+        && number > 0
+        && number <= MaxAmount
+            ? number
+            : null;
+
+    /// <summary>The unit said with a volume (<c>volumeUnit</c>), or <c>null</c> when none was: the amount is then read in the user's system.</summary>
+    public static VolumeUnit? Volume(AlexaIntent? intent) => Id(intent, VolumeUnitSlot) switch
+    {
+        "ML" => VolumeUnit.Milliliters,
+        "OZ" => VolumeUnit.FluidOunces,
+        _ => null,
+    };
+
+    public static BottleKind BottleKind(AlexaIntent? intent) => Id(intent, BottleKindSlot) switch
     {
         "FORMULA" => Domain.Assistants.BottleKind.Formula,
         "BREAST_MILK" => Domain.Assistants.BottleKind.BreastMilk,
@@ -69,7 +106,7 @@ public static class AlexaSlots
         _ => null,
     };
 
-    public static DiaperKind? Diaper(AlexaIntent? intent) => Id(intent, KindSlot) switch
+    public static DiaperKind? Diaper(AlexaIntent? intent) => Id(intent, DiaperKindSlot) switch
     {
         "WET" => DiaperKind.Wet,
         "DIRTY" => DiaperKind.Dirty,

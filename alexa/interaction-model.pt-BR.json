@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "lotties bebê",
+      "invocationName": "lotties",
       "intents": [
         { "name": "AMAZON.CancelIntent", "samples": [] },
         { "name": "AMAZON.HelpIntent", "samples": [] },
@@ -46,23 +46,31 @@
         {
           "name": "BottleIntent",
           "slots": [
-            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} ml", "{amount} mililitros"] },
-            { "name": "kind", "type": "BOTTLE_KIND" }
+            { "name": "amount", "type": "AMAZON.NUMBER", "samples": ["{amount}", "{amount} {volumeUnit}"] },
+            { "name": "volumeUnit", "type": "VOLUME_UNIT" },
+            { "name": "bottleKind", "type": "BOTTLE_KIND" }
           ],
           "samples": [
-            "registrar mamadeira de {amount} ml",
-            "registrar mamadeira de {amount} mililitros",
-            "registrar uma mamadeira de {amount} ml",
-            "registrar mamadeira de {amount} ml de {kind}",
-            "mamadeira de {amount} ml",
-            "mamadeira de {kind} de {amount} ml",
-            "ela tomou {amount} ml",
-            "ele tomou {amount} ml",
-            "o bebê tomou {amount} ml",
-            "ela tomou {amount} ml de {kind}",
-            "ele tomou {amount} ml de {kind}",
+            "registrar mamadeira de {amount} {volumeUnit}",
+            "registrar uma mamadeira de {amount} {volumeUnit}",
+            "registrar mamadeira de {amount}",
+            "registrar mamadeira de {amount} {volumeUnit} de {bottleKind}",
+            "mamadeira de {amount} {volumeUnit}",
+            "mamadeira de {bottleKind} de {amount} {volumeUnit}",
+            "ela tomou {amount} {volumeUnit}",
+            "ele tomou {amount} {volumeUnit}",
+            "o bebê tomou {amount} {volumeUnit}",
+            "ela tomou {amount} {volumeUnit} de {bottleKind}",
+            "ele tomou {amount} {volumeUnit} de {bottleKind}",
             "registrar mamadeira",
-            "registrar mamadeira de {kind}"
+            "registrar uma mamadeira",
+            "anotar mamadeira",
+            "anotar uma mamadeira",
+            "adicionar mamadeira",
+            "registrar mamadeira de {bottleKind}",
+            "registrar uma mamadeira de {bottleKind}",
+            "ela acabou de tomar mamadeira",
+            "ele acabou de tomar mamadeira"
           ]
         },
         {
@@ -83,16 +91,20 @@
         },
         {
           "name": "DiaperIntent",
-          "slots": [{ "name": "kind", "type": "DIAPER_KIND", "samples": ["{kind}", "foi {kind}", "de {kind}"] }],
+          "slots": [{ "name": "diaperKind", "type": "DIAPER_KIND", "samples": ["{diaperKind}", "foi {diaperKind}", "de {diaperKind}"] }],
           "samples": [
-            "registrar fralda de {kind}",
-            "registrar uma fralda de {kind}",
-            "fralda de {kind}",
-            "troquei uma fralda de {kind}",
-            "troquei a fralda de {kind}",
-            "ela fez {kind}",
-            "ele fez {kind}",
+            "registrar fralda de {diaperKind}",
+            "registrar uma fralda de {diaperKind}",
+            "fralda de {diaperKind}",
+            "troquei uma fralda de {diaperKind}",
+            "troquei a fralda de {diaperKind}",
+            "ela fez {diaperKind}",
+            "ele fez {diaperKind}",
             "registrar fralda",
+            "registrar uma fralda",
+            "anotar fralda",
+            "anotar uma fralda",
+            "troquei a fralda",
             "registrar troca de fralda"
           ]
         },
@@ -162,6 +174,163 @@
           ]
         },
         {
+          "name": "NextNapWindowIntent",
+          "slots": [],
+          "samples": [
+            "qual a próxima janela de sono",
+            "qual é a próxima janela de sono",
+            "quando é a próxima soneca",
+            "quando ela vai dormir de novo",
+            "quando ela vai ficar com sono",
+            "quando o bebê vai ficar com sono",
+            "quando é a próxima janela de soneca",
+            "quando ela precisa dormir",
+            "quando é a hora da próxima soneca",
+            "quando vai ser o próximo sono"
+          ]
+        },
+        {
+          "name": "NextFeedIntent",
+          "slots": [],
+          "samples": [
+            "quando é a próxima mamada",
+            "quando é a próxima mamadeira",
+            "quando ela vai ter fome",
+            "quando o bebê vai ter fome",
+            "quando ela vai mamar de novo",
+            "quando é a próxima alimentação",
+            "quando devo dar a próxima mamada",
+            "quando ela vai querer mamar"
+          ]
+        },
+        {
+          "name": "NextDiaperIntent",
+          "slots": [],
+          "samples": [
+            "quando é a próxima troca de fralda",
+            "quando é a próxima fralda",
+            "quando devo trocar a próxima fralda",
+            "quando ela vai precisar trocar a fralda",
+            "quando o bebê vai precisar de troca",
+            "quando é a hora da próxima troca"
+          ]
+        },
+        {
+          "name": "DiapersAverageIntent",
+          "slots": [],
+          "samples": [
+            "quantas fraldas por dia ela costuma usar",
+            "quantas fraldas por dia o bebê costuma usar",
+            "quantas fraldas ela usa por dia",
+            "quantas fraldas por dia em média",
+            "qual a média de fraldas por dia",
+            "quantas fraldas ele costuma usar por dia",
+            "média de fraldas por dia",
+            "fraldas por dia"
+          ]
+        },
+        {
+          "name": "BottleAverageIntent",
+          "slots": [],
+          "samples": [
+            "quanto devo preparar na próxima mamadeira",
+            "quanto devo fazer na próxima mamadeira",
+            "quanto preparar para a próxima mamadeira",
+            "qual foi o tamanho da última mamadeira",
+            "quanto ela costuma tomar de mamadeira",
+            "quanto ela tomou na última mamadeira",
+            "quantos ml ela costuma tomar",
+            "qual o tamanho das mamadeiras dela"
+          ]
+        },
+        {
+          "name": "SleepTodayIntent",
+          "slots": [],
+          "samples": [
+            "quanto ela dormiu hoje",
+            "quanto o bebê dormiu hoje",
+            "quanto tempo ela dormiu hoje",
+            "quantas horas ela dormiu hoje",
+            "quantas sonecas ela fez hoje",
+            "quanto sono ela teve hoje",
+            "total de sono hoje",
+            "quanto ele dormiu hoje"
+          ]
+        },
+        {
+          "name": "BottleTodayIntent",
+          "slots": [],
+          "samples": [
+            "quanto ela tomou de mamadeira hoje",
+            "quanto de mamadeira ela tomou hoje",
+            "quanto o bebê tomou de mamadeira hoje",
+            "quantos ml de mamadeira hoje",
+            "quantos mls de mamadeira tomou hoje",
+            "quantos ml ela tomou hoje",
+            "quantas onças ela tomou hoje",
+            "quantas mamadeiras hoje",
+            "quantas mamadeiras ela tomou hoje",
+            "quanto leite ela tomou hoje"
+          ]
+        },
+        {
+          "name": "FeedsTodayIntent",
+          "slots": [],
+          "samples": [
+            "quantas mamadas hoje",
+            "quantas mamadas ela teve hoje",
+            "quantas vezes ela mamou hoje",
+            "quantas vezes ele mamou hoje",
+            "quantas vezes o bebê mamou hoje",
+            "quantas vezes ela comeu hoje",
+            "quantas vezes ele comeu hoje",
+            "quantas alimentações hoje",
+            "quantas refeições ela fez hoje"
+          ]
+        },
+        {
+          "name": "LastDiaperIntent",
+          "slots": [],
+          "samples": [
+            "quando foi a última troca de fralda",
+            "quando foi a última fralda",
+            "quando troquei a fralda dela",
+            "quando foi a última vez que trocei a fralda",
+            "última fralda",
+            "última troca de fralda",
+            "quando ela foi trocada pela última vez",
+            "qual foi a última fralda"
+          ]
+        },
+        {
+          "name": "CryReasonsIntent",
+          "slots": [],
+          "samples": [
+            "por que ela está chorando",
+            "por que o bebê está chorando",
+            "por que ele está chorando",
+            "por que ela está irritada",
+            "por que o bebê está irritado",
+            "por que ela não para de chorar",
+            "por que ela está agitada",
+            "o que está fazendo o bebê chorar",
+            "por que será que ela chora"
+          ]
+        },
+        {
+          "name": "RequestDeleteLastIntent",
+          "slots": [],
+          "samples": [
+            "desfazer o último registro",
+            "desfazer a última coisa que registrei",
+            "apagar o último registro",
+            "apagar o último item",
+            "excluir o último registro",
+            "cancelar o último registro",
+            "remover o último registro"
+          ]
+        },
+        {
           "name": "SetBabyHelpIntent",
           "slots": [],
           "samples": [
@@ -174,6 +343,13 @@
         }
       ],
       "types": [
+        {
+          "name": "VOLUME_UNIT",
+          "values": [
+            { "id": "ML", "name": { "value": "mililitros", "synonyms": ["ml", "mililitro", "milílitros", "milílitro"] } },
+            { "id": "OZ", "name": { "value": "onças", "synonyms": ["oz", "onça", "onca", "oncas"] } }
+          ]
+        },
         {
           "name": "BOTTLE_KIND",
           "values": [
@@ -214,7 +390,14 @@
               "prompts": { "elicitation": "Elicit.Slot.BottleIntent.amount" }
             },
             {
-              "name": "kind",
+              "name": "volumeUnit",
+              "type": "VOLUME_UNIT",
+              "elicitationRequired": false,
+              "confirmationRequired": false,
+              "prompts": {}
+            },
+            {
+              "name": "bottleKind",
               "type": "BOTTLE_KIND",
               "elicitationRequired": false,
               "confirmationRequired": false,
@@ -229,11 +412,11 @@
           "prompts": {},
           "slots": [
             {
-              "name": "kind",
+              "name": "diaperKind",
               "type": "DIAPER_KIND",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.kind" }
+              "prompts": { "elicitation": "Elicit.Slot.DiaperIntent.diaperKind" }
             }
           ]
         }
@@ -244,12 +427,12 @@
       {
         "id": "Elicit.Slot.BottleIntent.amount",
         "variations": [
-          { "type": "PlainText", "value": "Quantos mililitros?" },
-          { "type": "PlainText", "value": "Quanto tinha na mamadeira, em mililitros?" }
+          { "type": "PlainText", "value": "Quanto? Por exemplo 120 mililitros ou 4 onças." },
+          { "type": "PlainText", "value": "Quanto tinha na mamadeira? Por exemplo 120 mililitros ou 4 onças." }
         ]
       },
       {
-        "id": "Elicit.Slot.DiaperIntent.kind",
+        "id": "Elicit.Slot.DiaperIntent.diaperKind",
         "variations": [{ "type": "PlainText", "value": "Foi xixi, cocô ou os dois?" }]
       }
     ]

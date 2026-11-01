@@ -1,4 +1,5 @@
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 
 namespace Lotties.Application.Assistants;
 
@@ -21,6 +22,14 @@ public interface IAssistantService
 
     /// <summary>Logs a bottle given now (an instant, all of it drunk), of <paramref name="amountMl"/> ml.</summary>
     Task<AssistantResult> LogBottleAsync(AssistantInvocation invocation, int? amountMl, BottleKind kind, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Logs a bottle given now from an amount in <paramref name="unit"/> (decimals allowed: "four and a half ounces"). Without a
+    /// unit the amount is read in the user's unit system (<see cref="Units.IUnitPreferences"/>). It is converted to whole ml with
+    /// the shared rule (<see cref="UnitConversions"/>) and then limited like <see cref="LogBottleAsync"/> (1-500 ml);
+    /// storage is ml whatever was said.
+    /// </summary>
+    Task<AssistantResult> LogBottleVolumeAsync(AssistantInvocation invocation, decimal? amount, VolumeUnit? unit, BottleKind kind, CancellationToken cancellationToken = default);
 
     /// <summary>Starts a nursing timer on <paramref name="side"/>, else on the suggested side; refused when one already runs.</summary>
     Task<AssistantResult> LogNursingAsync(AssistantInvocation invocation, BreastSide? side, CancellationToken cancellationToken = default);
@@ -62,4 +71,61 @@ public interface IAssistantService
 
     /// <summary>The seven local days ending with <paramref name="endDate"/> (else today), oldest first, as <see cref="ReadDaySummaryAsync"/> computes each.</summary>
     Task<AssistantResult> ReadWeekSummaryAsync(AssistantInvocation invocation, DateOnly? endDate, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The next nap window the sleep prediction expects, by the Now screen's rules (<see cref="AssistantResultCode.NextNapWindow"/>),
+    /// that the baby sleeps (<see cref="AssistantResultCode.NapWindowAsleep"/>, with the expected wake-up when the prediction has one),
+    /// or that there is not enough history (<see cref="AssistantResultCode.NoNapPrediction"/>).
+    /// </summary>
+    Task<AssistantResult> ReadNextNapWindowAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>The next feed the feeding prediction expects (<see cref="AssistantResultCode.NextFeed"/>), or <see cref="AssistantResultCode.NoNextFeed"/>.</summary>
+    Task<AssistantResult> ReadNextFeedAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>The next wet and dirty diaper the diaper predictions expect (<see cref="AssistantResultCode.NextDiaper"/>), or <see cref="AssistantResultCode.NoNextDiaper"/>.</summary>
+    Task<AssistantResult> ReadNextDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Diapers per day: the average of the complete local days of the last seven (today left out) that have diapers, to one
+    /// decimal, with the wet and dirty split; at least three such days, else <see cref="AssistantResultCode.NoDiapersAverage"/>.
+    /// </summary>
+    Task<AssistantResult> ReadDiapersAverageAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Facts about her own bottles, never a recommendation: the average and the last of her last five bottles with an amount
+    /// (ml), when there are at least three in the last 14 days (<see cref="AssistantResultCode.BottleAverage"/>), else
+    /// <see cref="AssistantResultCode.NoBottleData"/>.
+    /// </summary>
+    Task<AssistantResult> ReadBottleAverageAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>Sleep since local midnight, naps and night together with a running sleep counted until now, and the number of naps (<see cref="AssistantResultCode.SleepToday"/>).</summary>
+    Task<AssistantResult> ReadSleepTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The bottles since local midnight (the last 24 hours without a known zone): how many, and the ml drunk by the shared
+    /// drunk-amount rule (<see cref="Lotties.Domain.Events.BottleAmounts.DrunkMl"/>), with the formula and breast milk split
+    /// (<see cref="AssistantResultCode.BottleToday"/>). Facts only.
+    /// </summary>
+    Task<AssistantResult> ReadBottleTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>The feeds since local midnight (the last 24 hours without a known zone): the total and the bottle, breast and solid split (<see cref="AssistantResultCode.FeedsToday"/>).</summary>
+    Task<AssistantResult> ReadFeedsTodayAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>The newest diaper of the last 30 days: when and what (<see cref="AssistantResultCode.LastDiaper"/>), or <see cref="AssistantResultCode.NoDiapers"/>.</summary>
+    Task<AssistantResult> ReadLastDiaperAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// "Undo the last thing I logged": asks for the newest entry this adapter created in the last 30 minutes to be deleted
+    /// (<see cref="AssistantResultCode.DeleteRequested"/>) by marking it (<c>delete_requested_via</c>, <c>delete_requested_at</c>).
+    /// Nothing is deleted: the person approves or keeps it in the Lotties app. Asking twice changes nothing; none made by this
+    /// adapter in that time is <see cref="AssistantResultCode.NoEntryToDelete"/>. Needs a role that logs events.
+    /// </summary>
+    Task<AssistantResult> RequestDeleteLastAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// "Why is she crying?": the top likely causes the baby's own log suggests, each with the logged fact behind it
+    /// (<see cref="AssistantResultCode.CryReasons"/>), or that nothing in the log points at one (<see cref="AssistantResultCode.CryNoData"/>);
+    /// always with the red flags to call the pediatrician for. Not a diagnosis, never a remedy or a dose.
+    /// </summary>
+    Task<AssistantResult> ReadCryReasonsAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default);
 }

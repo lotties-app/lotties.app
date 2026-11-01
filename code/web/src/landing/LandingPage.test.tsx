@@ -67,10 +67,11 @@ describe('LandingPage', () => {
       '#landing-main',
     );
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Why we made Lotties',
+      'Install on your phone',
       'What it does',
       'Not a medical device',
       'How it works',
-      'Install on your phone',
       'Built on open source',
     ]);
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(9);

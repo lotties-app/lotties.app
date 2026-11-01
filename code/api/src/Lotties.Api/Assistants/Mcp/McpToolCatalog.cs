@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 
 namespace Lotties.Api.Assistants.Mcp;
@@ -17,7 +18,8 @@ internal sealed record McpTool(
     string Description,
     string Scope,
     IReadOnlyList<McpParameter> Parameters,
-    Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> Run)
+    Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> Run,
+    Func<McpArguments, McpArgumentError?>? Check = null)
 {
     public bool Writes => Scope == McpScopes.Write;
 
@@ -69,10 +71,21 @@ internal static class McpToolCatalog
     private static readonly McpParameter Amount = new(
         "amountMl",
         McpParameterKind.Integer,
-        "The bottle's amount in ml (all of it drunk).",
-        Required: true,
+        "The bottle's amount in ml (all of it drunk). Give this, or amount with unit, not both.",
         Min: AssistantLimits.BottleMinMl,
         Max: AssistantLimits.BottleMaxMl);
+
+    private static readonly McpParameter AmountIn = new(
+        "amount",
+        McpParameterKind.Number,
+        "The bottle's amount in the given unit (decimals allowed, e.g. 4.5 with unit oz); it is converted to whole ml (1 to 500 ml after conversion). Instead of amountMl.",
+        Max: 100_000);
+
+    private static readonly McpParameter AmountUnit = new(
+        "unit",
+        McpParameterKind.Choice,
+        "The unit of amount: ml (milliliters) or oz (US fluid ounces). Default ml. Only with amount.",
+        Values: ["ml", "oz"]);
 
     private static readonly McpParameter BottleContent = new("kind", McpParameterKind.Choice, "What the bottle held: formula or breast_milk. Omit when unknown.", Values: ["formula", "breast_milk"]);
     private static readonly McpParameter NursingSide = new("side", McpParameterKind.Choice, "The breast: left or right. Omit to use the side opposite to where the last feed ended.", Values: ["left", "right"]);
@@ -136,6 +149,72 @@ internal static class McpToolCatalog
             "The seven local days ending on endDate, oldest first, each as get_day_summary returns it.",
             [McpParameter.BabyId, EndDay],
             (assistant, invocation, arguments, token) => assistant.ReadWeekSummaryAsync(invocation, arguments.Date(EndDay.Name), token)),
+        Read(
+            "get_next_nap_window",
+            "Next nap window",
+            "When the sleep prediction expects the next nap: the window (earliest, expected, latest, UTC) when the baby is awake and there is enough sleep history (the Now screen's rules, stale predictions left out); when the baby sleeps, since when and the expected wake-up if the prediction has one; otherwise no_nap_prediction.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadNextNapWindowAsync(invocation, token)),
+        Read(
+            "get_next_feed",
+            "Next feed",
+            "When the feeding prediction expects the next feed (earliest, expected, latest, UTC), or no_next_feed when there is not enough feed history.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadNextFeedAsync(invocation, token)),
+        Read(
+            "get_next_diaper",
+            "Next diaper change",
+            "When the diaper predictions expect the next wet diaper and the next dirty diaper (wetEstimate, dirtyEstimate: earliest, expected, latest, UTC), each only when there is enough history; no_next_diaper when neither.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadNextDiaperAsync(invocation, token)),
+        Read(
+            "get_diapers_average",
+            "Diapers per day",
+            "The average diapers per day over the complete local days of the last seven (today left out) that have diapers, to one decimal, with the wet and dirty split (a mixed diaper counts in both); at least three such days, else no_diapers_average.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadDiapersAverageAsync(invocation, token)),
+        Read(
+            "get_bottle_average",
+            "Recent bottle sizes",
+            "Facts from the baby's own log, not a recommendation: the average and the last of her last five bottles with an amount (ml), when there are at least three in the last 14 days; otherwise no_bottle_data.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadBottleAverageAsync(invocation, token)),
+        Read(
+            "get_sleep_today",
+            "Sleep today",
+            "Total sleep since local midnight (naps and night, a running sleep counted until now) in minutes, and the number of naps.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadSleepTodayAsync(invocation, token)),
+        Read(
+            "get_bottle_today",
+            "Bottles today",
+            "The bottles since local midnight (the last 24 hours when the family's time zone is unknown): the number of bottles, the total ml drunk (the drunk amount, else the prepared amount, as the app counts it) and, when the log says what the bottles held, the formula and breast milk bottles with their ml.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadBottleTodayAsync(invocation, token)),
+        Read(
+            "get_feeds_today",
+            "Feeds today",
+            "The feeds since local midnight (the last 24 hours when the family's time zone is unknown): the total and how many were bottles, breast (nursing) and solid food.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadFeedsTodayAsync(invocation, token)),
+        Read(
+            "get_last_diaper",
+            "Last diaper",
+            "The newest diaper of the last 30 days: when (UTC) and its content (wet, dirty, both), or no_diapers.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadLastDiaperAsync(invocation, token)),
+        Read(
+            "get_cry_reasons",
+            "Why is she crying",
+            "What the baby's own log suggests about a crying spell: up to three likely causes (hunger, sleepy, diaper, gas), each with its level and the logged facts behind it, ranked by the same rules as the app's \"Why is she crying?\" sheet, plus the red flags (fever, inconsolable crying, refusing feeds, unusual sleepiness, a bulging or stiff soft spot) for which the parents should call the pediatrician or emergency services. It is not a diagnosis or medical advice: always tell the user the red flags, and give no remedies, soothing steps or doses.",
+            [McpParameter.BabyId],
+            (assistant, invocation, _, token) => assistant.ReadCryReasonsAsync(invocation, token)),
+        Write(
+            "request_delete_last_entry",
+            "Ask to delete the last entry",
+            "Asks for the last entry this assistant logged in the last 30 minutes to be deleted: it only marks the entry (nothing is deleted); the person approves the deletion or keeps the entry in the Lotties app. Assistants can never delete. Answers delete_requested, last_not_undoable when the newest entry it made is the wake-up marker (nothing changes, no older entry is chosen), or no_entry_to_delete when it made no entry in that time.",
+            [],
+            (assistant, invocation, _, token) => assistant.RequestDeleteLastAsync(invocation, token)),
         Write(
             "log_sleep_start",
             "Log sleep start",
@@ -152,8 +231,11 @@ internal static class McpToolCatalog
             "log_bottle",
             "Log bottle",
             "Logs a bottle given now. A formula bottle names the baby's current formula when one is set in the app.",
-            [Amount, BottleContent],
-            (assistant, invocation, arguments, token) => assistant.LogBottleAsync(invocation, arguments.Integer(Amount.Name), BottleKindOf(arguments.Text(BottleContent.Name)), token)),
+            [Amount, AmountIn, AmountUnit, BottleContent],
+            (assistant, invocation, arguments, token) => arguments.Decimal(AmountIn.Name) is { } amount
+                ? assistant.LogBottleVolumeAsync(invocation, amount, arguments.Text(AmountUnit.Name) == "oz" ? VolumeUnit.FluidOunces : VolumeUnit.Milliliters, BottleKindOf(arguments.Text(BottleContent.Name)), token)
+                : assistant.LogBottleAsync(invocation, arguments.Integer(Amount.Name), BottleKindOf(arguments.Text(BottleContent.Name)), token),
+            BottleAmountCheck),
         Write(
             "log_nursing",
             "Log nursing",
@@ -178,8 +260,23 @@ internal static class McpToolCatalog
     private static McpTool Read(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run) =>
         new(name, title, description + Facts, McpScopes.Read, parameters.Length == 0 ? parameters : [.. parameters, McpParameter.TimeZone], run);
 
-    private static McpTool Write(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run) =>
-        new(name, title, description + Retry + Facts, McpScopes.Write, [McpParameter.BabyId, .. parameters, McpParameter.IdempotencyKey, McpParameter.TimeZone], run);
+    private static McpTool Write(string name, string title, string description, McpParameter[] parameters, Func<IAssistantService, AssistantInvocation, McpArguments, CancellationToken, Task<AssistantResult>> run, Func<McpArguments, McpArgumentError?>? check = null) =>
+        new(name, title, description + Retry + Facts, McpScopes.Write, [McpParameter.BabyId, .. parameters, McpParameter.IdempotencyKey, McpParameter.TimeZone], run, check);
+
+    /// <summary>Exactly one of <c>amountMl</c> and <c>amount</c>; <c>unit</c> only with <c>amount</c>.</summary>
+    private static McpArgumentError? BottleAmountCheck(McpArguments arguments)
+    {
+        var hasMl = arguments.Integer(Amount.Name) is not null;
+        var hasAmount = arguments.Decimal(AmountIn.Name) is not null;
+        if (hasMl == hasAmount)
+        {
+            return new McpArgumentError(Amount.Name, hasMl ? "Give amountMl or amount, not both." : "amountMl is required (or amount with an optional unit).");
+        }
+
+        return arguments.Text(AmountUnit.Name) is not null && !hasAmount
+            ? new McpArgumentError(AmountUnit.Name, "unit goes with amount; amountMl is always in ml.")
+            : null;
+    }
 
     private static BottleKind BottleKindOf(string? kind) => kind switch
     {

@@ -41,7 +41,7 @@ internal sealed class AlexaSkill(
     {
         ["SleepStartIntent"] = (service, invocation, _, token) => service.LogSleepStartAsync(invocation, token),
         ["SleepEndIntent"] = (service, invocation, _, token) => service.LogSleepEndAsync(invocation, token),
-        ["BottleIntent"] = (service, invocation, intent, token) => service.LogBottleAsync(invocation, AlexaSlots.Number(intent, AlexaSlots.AmountSlot), AlexaSlots.BottleKind(intent), token),
+        ["BottleIntent"] = (service, invocation, intent, token) => service.LogBottleVolumeAsync(invocation, AlexaSlots.Decimal(intent, AlexaSlots.AmountSlot), AlexaSlots.Volume(intent), AlexaSlots.BottleKind(intent), token),
         ["NursingIntent"] = (service, invocation, intent, token) => service.LogNursingAsync(invocation, AlexaSlots.Side(intent), token),
         ["DiaperIntent"] = (service, invocation, intent, token) => service.LogDiaperAsync(invocation, AlexaSlots.Diaper(intent)!.Value, token),
         ["LastFeedIntent"] = (service, invocation, _, token) => service.ReadLastFeedAsync(invocation, token),
@@ -49,6 +49,17 @@ internal sealed class AlexaSkill(
         ["DiapersTodayIntent"] = (service, invocation, _, token) => service.ReadDiapersTodayAsync(invocation, token),
         ["NextAppointmentIntent"] = (service, invocation, _, token) => service.ReadNextAppointmentAsync(invocation, token),
         ["DueVaccinesIntent"] = (service, invocation, _, token) => service.ReadDueVaccinesAsync(invocation, token),
+        ["NextNapWindowIntent"] = (service, invocation, _, token) => service.ReadNextNapWindowAsync(invocation, token),
+        ["NextFeedIntent"] = (service, invocation, _, token) => service.ReadNextFeedAsync(invocation, token),
+        ["NextDiaperIntent"] = (service, invocation, _, token) => service.ReadNextDiaperAsync(invocation, token),
+        ["DiapersAverageIntent"] = (service, invocation, _, token) => service.ReadDiapersAverageAsync(invocation, token),
+        ["BottleAverageIntent"] = (service, invocation, _, token) => service.ReadBottleAverageAsync(invocation, token),
+        ["SleepTodayIntent"] = (service, invocation, _, token) => service.ReadSleepTodayAsync(invocation, token),
+        ["BottleTodayIntent"] = (service, invocation, _, token) => service.ReadBottleTodayAsync(invocation, token),
+        ["FeedsTodayIntent"] = (service, invocation, _, token) => service.ReadFeedsTodayAsync(invocation, token),
+        ["LastDiaperIntent"] = (service, invocation, _, token) => service.ReadLastDiaperAsync(invocation, token),
+        ["RequestDeleteLastIntent"] = (service, invocation, _, token) => service.RequestDeleteLastAsync(invocation, token),
+        ["CryReasonsIntent"] = (service, invocation, _, token) => service.ReadCryReasonsAsync(invocation, token),
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
     private static readonly FrozenDictionary<string, AlexaPrompt> Prompts = new Dictionary<string, AlexaPrompt>(StringComparer.Ordinal)
@@ -156,7 +167,7 @@ internal sealed class AlexaSkill(
             return Ask(language, missing);
         }
 
-        return await RunAsync(command, new AssistantInvocation(AdapterName, envelope.Request!.RequestId!, language.FallbackTimeZone), intent, language, cancellationToken);
+        return await RunAsync(command, new AssistantInvocation(AdapterName, envelope.Request!.RequestId!, language.FallbackTimeZone, Locale: envelope.Request.Locale), intent, language, cancellationToken);
     }
 
     private async Task<AlexaAnswer> RunAsync(Command command, AssistantInvocation invocation, AlexaIntent intent, IAlexaLanguage language, CancellationToken cancellationToken)
