@@ -74,10 +74,13 @@ A bottle has two amounts in the generic feeding payload (no new table):
   would need a server-side per-user preferences store.
 - **Off (default):** the Bottle quick action (the Bottle preset: Track sheet, More sheet, pinned tile) does not start
   a timer. It opens the event sheet for a new bottle as a moment (start = end = now, no "Still running"), which asks
-  the prepared and drunk amounts. The Feed tray already logged a bottle at once and keeps doing so, now with the
-  drunk row. In the event sheet a **new** bottle is a moment too; editing a stored bottle keeps its times.
+  the prepared and drunk amounts. The Feed tray logs a bottle at once, with the drunk row. In the event sheet a **new** bottle is a moment too; editing a stored bottle keeps its times.
 - **On:** current behaviour: the Bottle preset starts a timer, the stop sheet asks the amounts, the sheet's new
   bottle is "Still running".
+  The Feed tray follows it too (2026-11-01, owner feedback): its bottle chip starts the timer with the prepared amount
+  (the drunk row is not asked, it is known at stop), so nothing has to be marked "Still running" by hand. The widget's
+  bottle choices go through the same path. The Day row of a bottle that paused says how many times and the level at each
+  pause ("2 pauses · 80 → 30 ml left", `events/bottlePauses.ts`).
 - **Nursing always keeps its timer**, in both settings.
 
 ## 4. A night that ends logs the wake-up

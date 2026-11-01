@@ -90,6 +90,9 @@
     "chooseMonth": "{{month}}. Escolher uma data. Mostrando {{date}}",
     "sessionEnded": "Sessão de sono encerrada, {{duration}}",
     "pausedFor": "pausa de {{duration}}",
+    "bottlePauses_one": "{{count}} pausa",
+    "bottlePauses_other": "{{count}} pausas",
+    "bottleLeft": "sobrou {{levels}} ml",
     "viewRow": "{{title}}, {{time}}, registrado por {{name}} (somente visualização)"
   }
 }

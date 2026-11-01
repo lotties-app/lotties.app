@@ -21,6 +21,7 @@ import { bottleSuggestions, type BottleSuggestions } from '../events/bottleSugge
 import { validatePayload } from '../events/payloadRules';
 import { PresetNotRunnableError, type SheetPrefill, type UndoToken } from '../presets/actions';
 import { presetStatus, type PresetStatus } from '../presets/status';
+import { loadTimeBottles } from '../presets/timeBottlesStorage';
 import { effectiveDurationMs } from '../timers/pauseMath';
 import type { MedicationStatus } from '../medications/statusCalculator';
 import { getOwn } from '../util/ownProperty';
@@ -496,7 +497,7 @@ async function trayFormulaMembers(
 
 /**
  * Logs a tray choice as one instant event (the tray's bottle is a quick after-the-fact log with
- * no duration; a timed bottle starts from the Bottle preset or the event sheet) at the tap moment minus
+ * no duration, unless "Time bottle feedings" is on: then it starts a bottle timer) at the tap moment minus
  * `minutesAgo`, checked with the server's payload rules first, and remembers the values. Breast
  * starts a nursing session instead. Returns the token `undoPreset` reverts; its `at` is the tap
  * moment and `shiftMinutes` the "When" chip, so the toast's chips continue from it.
@@ -521,11 +522,14 @@ export async function runTrayChoice(
 
   const type = typeForKey(ctx.types, TYPE_KEY[choice.kind]);
   if (!type) throw new PresetNotRunnableError(choice.kind);
+  // "Time bottle feedings": a bottle from the tray starts running with its prepared amount (what was drunk is known
+  // when it stops), instead of being logged at once.
+  const timed = choice.kind === 'bottle' && loadTimeBottles();
   const payload = {
-    ...payloadOf(choice),
+    ...payloadOf(timed && choice.kind === 'bottle' ? { ...choice, drunkMl: undefined } : choice),
     ...(await trayFormulaMembers(db, ctx.babyId, type, choice)),
   };
-  const problems = validatePayload(type, payload, true).map((p) => p.field);
+  const problems = validatePayload(type, payload, !timed).map((p) => p.field);
   if (problems.length > 0) throw new TrayChoiceInvalidError(problems);
   if (choice.kind === 'medication' && choice.medications.length === 0) {
     throw new TrayChoiceInvalidError([]);
@@ -534,7 +538,7 @@ export async function runTrayChoice(
   const iso = when.toISOString();
   const created = await createEvent(
     db,
-    { babyId: ctx.babyId, typeId: type.id, startedAt: iso, endedAt: iso, payload },
+    { babyId: ctx.babyId, typeId: type.id, startedAt: iso, endedAt: timed ? null : iso, payload },
     options,
   );
   recordLastUsed(ctx.babyId, type, payload);

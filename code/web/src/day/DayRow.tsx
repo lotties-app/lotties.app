@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { BabyEvent, EventType, Medication, Prescription } from '../db/models';
 import type { EntitySyncState } from '../db/queries';
+import { bottlePauseSummary } from '../events/bottlePauses';
 import { isMedicationType } from '../events/formModel';
 import { formatElapsed, useNow } from '../events/time';
 import { useEventTypeText } from '../i18n/eventTypeText';
@@ -275,7 +276,18 @@ export function DayRow({
   if (running) range = t('timeline.since', { time });
   else if (!instant) range = `${time} – ${formatTime(event.endedAt!)}`;
   const fed = fedToSleep ? t(`feedingAmounts.fedToSleep.${fedToSleep}`) : '';
-  const detail = [view.detail || range, fed].filter(Boolean).join(' · ');
+  const bottlePauses = bottlePauseSummary(event);
+  const pauseText = bottlePauses
+    ? [
+        t('day.bottlePauses', { count: bottlePauses.count }),
+        bottlePauses.leftMl.length > 0
+          ? t('day.bottleLeft', { levels: bottlePauses.leftMl.join(' → ') })
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
+  const detail = [view.detail || range, fed, pauseText].filter(Boolean).join(' · ');
   const length = !running && !instant ? formatDuration(effectiveDurationMs(event)) : null;
   const pausedSeconds = readPause(event.payload).pausedSeconds;
   const pausedText =
