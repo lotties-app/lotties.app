@@ -37,6 +37,9 @@ internal sealed class McpToolRunner(
 
     public const string SiriAdapterName = "siri";
 
+    /// <summary>The Android app's voice shortcuts send <c>Lotties-Client: android</c>; same rule as Siri.</summary>
+    public const string AndroidAdapterName = "android";
+
     /// <summary>
     /// A client that speaks the answer itself (the iOS Siri intents) sends its locale here and gets the same sentence the
     /// Alexa skill would say in <c>structuredContent.speech</c>; other clients never send it and get nothing extra.
@@ -105,10 +108,12 @@ internal sealed class McpToolRunner(
         }
     }
 
-    private string AdapterNameOfRequest() =>
-        string.Equals(httpContextAccessor.HttpContext?.Request.Headers[ClientHeader].ToString(), SiriAdapterName, StringComparison.OrdinalIgnoreCase)
-            ? SiriAdapterName
-            : AdapterName;
+    private string AdapterNameOfRequest()
+    {
+        var client = httpContextAccessor.HttpContext?.Request.Headers[ClientHeader].ToString();
+        if (string.Equals(client, SiriAdapterName, StringComparison.OrdinalIgnoreCase)) return SiriAdapterName;
+        return string.Equals(client, AndroidAdapterName, StringComparison.OrdinalIgnoreCase) ? AndroidAdapterName : AdapterName;
+    }
 
     private (string Code, CallToolResult Result) Rendered(AssistantResult result)
     {

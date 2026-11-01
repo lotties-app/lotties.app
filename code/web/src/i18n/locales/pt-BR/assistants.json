@@ -35,14 +35,17 @@
     "origin": {
       "addedByAlexa": "Adicionado pela Alexa",
       "addedBySiri": "Adicionado pela Siri",
+      "addedByAndroid": "Adicionado pela voz do Android",
       "addedByAssistant": "Adicionado por um assistente de IA",
       "finishedByAlexa": "Finalizado pela Alexa",
       "finishedBySiri": "Finalizado pela Siri",
+      "finishedByAndroid": "Finalizado pela voz do Android",
       "finishedByAssistant": "Finalizado por um assistente de IA"
     },
     "deleteRequest": {
       "alexa": "A Alexa pediu para apagar este registro",
       "siri": "A Siri pediu para apagar este registro",
+      "android": "A voz do Android pediu para apagar este registro",
       "assistant": "Um assistente de IA pediu para apagar este registro",
       "delete": "Apagar",
       "keep": "Manter"
