@@ -240,7 +240,7 @@ Eight read-only questions reuse pure Domain functions; the adapters only render:
 ## 5.2 Origin marker
 
 Every event an assistant command **creates** carries the payload member `via` = the adapter's lowercase name (`alexa`,
-`mcp`; `AssistantOrigin`, from the `AssistantInvocation` adapter name; nothing else is ever written: no text, id, token or
+`siri`, `mcp`; `AssistantOrigin`, from the `AssistantInvocation` adapter name; nothing else is ever written: no text, id, token or
 utterance). When a command **changes** an event that another origin created (stopping a sleep timer or nursing session
 the app, or another adapter, started; night wakings stopped by a wake-up), the original `via` stays and
 `updated_via` = the adapter is added; an adapter stopping its own timer changes nothing but the usual folding. A replayed
@@ -248,8 +248,12 @@ request id finds the stored event and writes nothing, so the marker never change
 plain payload member: no table, no migration, no declared field (members no field declares are not checked); the generic
 upsert, sync, backup export/import and the doctor's view carry it as payload. The web editor keeps it
 (`useEventSheetForm.editBase` keeps `via`, `updated_via` and the delete-request members through an edit) and shows a quiet
-line wherever the entry is shown (day list row, event sheet, read-only sheet): "Added by Alexa" / "Added by an AI
+line wherever the entry is shown (day list row, event sheet, read-only sheet): "Added by Alexa" / "Added by Siri" / "Added by an AI
 assistant", "Finished by Alexa" (`assistants.origin.*`).
+
+Siri is an MCP client, so it would be `mcp`; its requests send the header `Lotties-Client: siri` and the MCP adapter then uses the
+adapter name `siri` (any other header value is ignored). That keeps Siri's entries apart from an AI assistant's, and a
+delete request (section 5.3) only ever matches entries of the adapter that asks, so Siri could only ever ask about its own.
 
 ## 5.3 Assistants never delete
 

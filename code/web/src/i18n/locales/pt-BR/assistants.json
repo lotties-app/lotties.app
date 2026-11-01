@@ -34,12 +34,15 @@
     },
     "origin": {
       "addedByAlexa": "Adicionado pela Alexa",
+      "addedBySiri": "Adicionado pela Siri",
       "addedByAssistant": "Adicionado por um assistente de IA",
       "finishedByAlexa": "Finalizado pela Alexa",
+      "finishedBySiri": "Finalizado pela Siri",
       "finishedByAssistant": "Finalizado por um assistente de IA"
     },
     "deleteRequest": {
       "alexa": "A Alexa pediu para apagar este registro",
+      "siri": "A Siri pediu para apagar este registro",
       "assistant": "Um assistente de IA pediu para apagar este registro",
       "delete": "Apagar",
       "keep": "Manter"

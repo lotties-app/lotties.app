@@ -3,8 +3,20 @@ import { Typography } from '@mui/material';
 import type { BabyEvent } from '../db/models';
 import { createdVia, updatedVia } from './assistantOrigin';
 
+const ADDED_BY = {
+  alexa: 'assistants.origin.addedByAlexa',
+  siri: 'assistants.origin.addedBySiri',
+  assistant: 'assistants.origin.addedByAssistant',
+} as const;
+
+const FINISHED_BY = {
+  alexa: 'assistants.origin.finishedByAlexa',
+  siri: 'assistants.origin.finishedBySiri',
+  assistant: 'assistants.origin.finishedByAssistant',
+} as const;
+
 /**
- * A quiet line when an assistant made or finished the entry ("Added by Alexa", "Finished by an AI
+ * A quiet line when an assistant made or finished the entry ("Added by Alexa", "Added by Siri", "Finished by an AI
  * assistant"); nothing for an entry made in the app. The command still ran as the linked parent.
  */
 export function AssistantOriginNote({ event }: { event: Pick<BabyEvent, 'payload'> }) {
@@ -12,17 +24,9 @@ export function AssistantOriginNote({ event }: { event: Pick<BabyEvent, 'payload
   const created = createdVia(event);
   const updated = updatedVia(event);
   const text = created
-    ? t(
-        created === 'alexa'
-          ? 'assistants.origin.addedByAlexa'
-          : 'assistants.origin.addedByAssistant',
-      )
+    ? t(ADDED_BY[created])
     : updated
-      ? t(
-          updated === 'alexa'
-            ? 'assistants.origin.finishedByAlexa'
-            : 'assistants.origin.finishedByAssistant',
-        )
+      ? t(FINISHED_BY[updated])
       : null;
   if (!text) return null;
   return (

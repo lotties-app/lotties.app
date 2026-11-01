@@ -29,6 +29,15 @@ internal sealed class McpToolRunner(
     public const string AdapterName = "mcp";
 
     /// <summary>
+    /// The Siri intents send <c>Lotties-Client: siri</c> so what they log is marked as Siri's, not as a generic AI assistant's
+    /// (docs/design/32-assistants.md "Origin marker"). Any other value is ignored; the marker also scopes what a Siri
+    /// delete request may touch: only entries Siri itself made.
+    /// </summary>
+    public const string ClientHeader = "Lotties-Client";
+
+    public const string SiriAdapterName = "siri";
+
+    /// <summary>
     /// A client that speaks the answer itself (the iOS Siri intents) sends its locale here and gets the same sentence the
     /// Alexa skill would say in <c>structuredContent.speech</c>; other clients never send it and get nothing extra.
     /// </summary>
@@ -80,7 +89,7 @@ internal sealed class McpToolRunner(
             return (McpToolResults.InvalidArguments, McpToolResults.Error(McpToolResults.InvalidArguments, rejected.Message, rejected.Field));
         }
 
-        var invocation = new AssistantInvocation(AdapterName, RequestIdOf(tool, user, arguments!), FallbackTimeZone: null, arguments!.BabyId, arguments.TimeZone);
+        var invocation = new AssistantInvocation(AdapterNameOfRequest(), RequestIdOf(tool, user, arguments!), FallbackTimeZone: null, arguments!.BabyId, arguments.TimeZone);
         try
         {
             return Rendered(await tool.Run(assistant, invocation, arguments, cancellationToken));
@@ -95,6 +104,11 @@ internal sealed class McpToolRunner(
             return (McpToolResults.InternalError, McpToolResults.Error(McpToolResults.InternalError, "Something went wrong. Try again later."));
         }
     }
+
+    private string AdapterNameOfRequest() =>
+        string.Equals(httpContextAccessor.HttpContext?.Request.Headers[ClientHeader].ToString(), SiriAdapterName, StringComparison.OrdinalIgnoreCase)
+            ? SiriAdapterName
+            : AdapterName;
 
     private (string Code, CallToolResult Result) Rendered(AssistantResult result)
     {
