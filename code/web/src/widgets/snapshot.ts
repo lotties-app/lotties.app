@@ -80,6 +80,16 @@ async function snapshotBaby(
   return result;
 }
 
+/**
+ * One baby at a time, one query at a time: WebKit's IndexedDB throws "Attempt to iterate a cursor that doesn't
+ * exist" when several cursors run side by side (seen on the iPhone with a Promise.all over the babies).
+ */
+async function inSequence<T, R>(items: readonly T[], run: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  for (const item of items) results.push(await run(item));
+  return results;
+}
+
 export async function buildSnapshot(
   db: BabyRoutineDb,
   selectedBabyId: string | null,
@@ -92,6 +102,6 @@ export async function buildSnapshot(
     signedIn: true,
     selectedBabyId,
     hideNamesOnLockScreen: true,
-    babies: await Promise.all(babies.map((b) => snapshotBaby(db, b, now))),
+    babies: await inSequence(babies, (b) => snapshotBaby(db, b, now)),
   };
 }

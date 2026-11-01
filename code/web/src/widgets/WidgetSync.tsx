@@ -39,25 +39,41 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       }
     };
     const drain = () => drainOutbox(db, bridge).catch(() => 0);
+    // One build at a time; a change that arrives meanwhile asks for one more.
+    let running = false;
+    let again = false;
     const refresh = async () => {
-      await publish(JSON.stringify(await buildSnapshot(db, readSelectedBabyId())));
+      if (running) {
+        again = true;
+        return;
+      }
+      running = true;
+      try {
+        do {
+          again = false;
+          await publish(JSON.stringify(await buildSnapshot(db, readSelectedBabyId())));
+        } while (again && !stopped);
+      } catch (error) {
+        setWidgetStatus({ state: 'error', message: errorText(error) });
+      } finally {
+        running = false;
+      }
     };
 
     void drain();
-    const subscription = liveQuery(() => buildSnapshot(db, readSelectedBabyId())).subscribe({
-      next: (snapshot) => void publish(JSON.stringify(snapshot)),
+    // The live query only says "something changed" (counts, no cursors); the snapshot is built outside of it.
+    const subscription = liveQuery(() =>
+      Promise.all([db.events.count(), db.babies.count(), db.eventTypes.count(), db.outbox.count()]),
+    ).subscribe({
+      next: () => void refresh(),
       error: (error) => setWidgetStatus({ state: 'error', message: errorText(error) }),
     });
     // The selected baby is not in the database: re-read it when the app is left, where the widget takes over.
     const onHidden = () => {
-      if (document.visibilityState === 'hidden') {
-        void refresh().catch((error) =>
-          setWidgetStatus({ state: 'error', message: errorText(error) }),
-        );
-      }
+      if (document.visibilityState === 'hidden') void refresh();
     };
     document.addEventListener('visibilitychange', onHidden);
-    const stopResume = shell.onResume(() => void drain());
+    const stopResume = shell.onResume(() => void drain().then(refresh));
 
     return () => {
       stopped = true;
