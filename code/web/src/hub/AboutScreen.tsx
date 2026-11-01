@@ -9,7 +9,9 @@ import { formatDateTime } from '../i18n/format';
 import { repoUrl } from '../landing/repoUrl';
 import { applyUpdate, useUpdateSnapshot } from '../pwa/updateStore';
 import { RADIUS } from '../theme/tokens';
+import { isNativeApp } from '../platform/nativeApp';
 import { copyText } from '../util/copyText';
+import { useWidgetStatus } from '../widgets/widgetStatus';
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -22,6 +24,19 @@ function Fact({ label, value }: { label: string; value: string }) {
       </Typography>
     </div>
   );
+}
+
+/** Native app only: whether the home-screen widget got its data (docs/design/37-widgets-siri.md). */
+function WidgetFact() {
+  const { t } = useTranslation();
+  const status = useWidgetStatus();
+  const value =
+    status.state === 'ok'
+      ? t('hub.about.widgetOk', { date: formatDateTime(status.at) })
+      : status.state === 'error'
+        ? t('hub.about.widgetError', { message: status.message })
+        : t('hub.about.widgetWaiting');
+  return <Fact label={t('hub.about.widgetLine')} value={value} />;
 }
 
 /** "v0.1.38 · commit abc1234 · built 24 Oct 2026, 10:00": the parts that are known. */
@@ -95,6 +110,7 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
         <Stack component="dl" spacing={1.5} sx={{ m: 0 }}>
           <Fact label={t('hub.about.appLine')} value={stampText(app)} />
           <Fact label={t('hub.about.serverLine')} value={serverValue} />
+          {isNativeApp() && <WidgetFact />}
           <Fact label={t('hub.about.license')} value={t('hub.about.licenseValue')} />
         </Stack>
         {updateReady && <UpdateReady />}

@@ -6,6 +6,7 @@ import { capacitorShell, type NativeShell } from '../platform/nativeShell';
 import { drainOutbox } from './outbox';
 import { buildSnapshot } from './snapshot';
 import { nativeWidgetBridge, type WidgetBridge } from './widgetBridge';
+import { errorText, setWidgetStatus } from './widgetStatus';
 
 interface Props {
   bridge?: WidgetBridge;
@@ -29,7 +30,13 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
       const stable = JSON.stringify({ ...JSON.parse(json), updatedAt: '' });
       if (stable === lastJson) return;
       lastJson = stable;
-      await bridge.writeSnapshot(json);
+      try {
+        await bridge.writeSnapshot(json);
+        setWidgetStatus({ state: 'ok', at: new Date().toISOString() });
+      } catch (error) {
+        lastJson = '';
+        setWidgetStatus({ state: 'error', message: errorText(error) });
+      }
     };
     const drain = () => drainOutbox(db, bridge).catch(() => 0);
     const refresh = async () => {
@@ -38,12 +45,16 @@ export function WidgetSync({ bridge = nativeWidgetBridge, shell = capacitorShell
 
     void drain();
     const subscription = liveQuery(() => buildSnapshot(db, readSelectedBabyId())).subscribe({
-      next: (snapshot) => void publish(JSON.stringify(snapshot)).catch(() => undefined),
-      error: () => undefined,
+      next: (snapshot) => void publish(JSON.stringify(snapshot)),
+      error: (error) => setWidgetStatus({ state: 'error', message: errorText(error) }),
     });
     // The selected baby is not in the database: re-read it when the app is left, where the widget takes over.
     const onHidden = () => {
-      if (document.visibilityState === 'hidden') void refresh().catch(() => undefined);
+      if (document.visibilityState === 'hidden') {
+        void refresh().catch((error) =>
+          setWidgetStatus({ state: 'error', message: errorText(error) }),
+        );
+      }
     };
     document.addEventListener('visibilitychange', onHidden);
     const stopResume = shell.onResume(() => void drain());
