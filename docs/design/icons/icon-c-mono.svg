@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Lotties app icon, concept C "br monogram" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<clipPath id="cm-clip">
+<path d="M0 0H1024V1024H0Z"/>
+</clipPath>
+<mask id="cm-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M364 566a104 136 0 1 0 208 0a104 136 0 1 0 -208 0Z" fill="#000000"/>
+</mask>
+<mask id="cm-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M886 334C899.2 386.8 899.2 386.8 952 400C899.2 413.2 899.2 413.2 886 466C872.8 413.2 872.8 413.2 820 400C872.8 386.8 872.8 386.8 886 334Z" fill="#000000" stroke="#000000" stroke-width="28" stroke-linejoin="round"/>
+</mask>
+</defs>
+<g clip-path="url(#cm-clip)">
+<g transform="translate(512 512) scale(1.26) translate(-586 -473)">
+<g mask="url(#cm-k2)">
+<path d="M346 196V735H262V276Q262 262 249 262H232Q218 262 220 249Q222 238 236 234L326 200Q346 192 346 214Z" fill="#000000"/>
+<g mask="url(#cm-h1)">
+<path d="M272 566a180 184 0 1 0 360 0a180 184 0 1 0 -360 0Z" fill="#000000"/>
+</g>
+<path d="M744 404V735H660V476Q660 462 647 462H632Q618 462 620 449Q622 438 636 434L724 400Q744 392 744 414Z" fill="#000000"/>
+<path d="M742 478C762 426 796 400 838 396L842 446C802 448 772 472 744 548Z" fill="#000000"/>
+</g>
+<path d="M886 334C899.2 386.8 899.2 386.8 952 400C899.2 413.2 899.2 413.2 886 466C872.8 413.2 872.8 413.2 820 400C872.8 386.8 872.8 386.8 886 334Z" fill="#000000"/>
+</g>
+</g>
+</svg>

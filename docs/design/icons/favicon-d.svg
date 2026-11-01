@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Lotties app icon, concept D "Moon bassinet" (favicon, simplified for 16 px). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<mask id="fd-k" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+<rect width="32" height="32" fill="#fff"/>
+<path d="M4.5 17H27.5A11.5 8.5 0 0 1 4.5 17Z" fill="#000" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/>
+</mask>
+</defs>
+<path d="M7 0H25A7 7 0 0 1 32 7V25A7 7 0 0 1 25 32H7A7 7 0 0 1 0 25V7A7 7 0 0 1 7 0Z" fill="#f5efe4"/>
+<g mask="url(#fd-k)">
+<path d="M17.6 13A7.6 7.6 0 1 0 11.4 24.6A6.6 6.6 0 1 1 17.6 13Z" fill="#b04c29"/>
+<path d="M12 15.4a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0Z" fill="#b07e22"/>
+</g>
+<path d="M4.5 17H27.5A11.5 8.5 0 0 1 4.5 17Z" fill="#35558a"/>
+<path d="M27.9 27.3A43 43 0 0 1 4.1 27.3A1 1 0 0 1 4.7 25.4A41 41 0 0 0 27.3 25.4A1 1 0 0 1 27.9 27.3Z" fill="#2a251f"/>
+</svg>

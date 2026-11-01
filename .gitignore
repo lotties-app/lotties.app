@@ -12,3 +12,30 @@ coverage/
 .idea/
 docs/graphify/
 docs/samples/
+docs/design/screenshots/
+# ml benchmark: venv, caches, local outputs; real data always stays outside the repository
+ml/.venv/
+ml/data/
+ml/out/
+ml/**/__pycache__/
+ml/.pytest_cache/
+ml/*.egg-info/
+
+# keycloak-theme: build outputs and the throwaway local Keycloak runtime (generated passwords)
+code/keycloak-theme/node_modules/
+code/keycloak-theme/dist/
+code/keycloak-theme/dist_keycloak/
+code/keycloak-theme/build_keycloak/
+code/keycloak-theme/dev/.runtime/
+
+#CLAUDE.md
+#.claude/
+
+# Migration scripts generated on demand (dotnet ef migrations script); never committed
+code/api/out.sql
+
+
+
+# Home lab deploy settings (secrets); see deploy/homelab/.env.example
+deploy/homelab/.env
+

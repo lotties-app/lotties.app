@@ -1,0 +1,24 @@
+{
+  "dose_due": {
+    "title": "Lembrete de remédio",
+    "body": "Uma dose agendada para {{time}} ainda não foi registrada.",
+    "bodyNamed": "{{baby}}: {{medication}} agendado para {{time}}, ainda não registrado."
+  },
+  "nap_window": {
+    "title": "Janela de soneca",
+    "body": "A janela estimada de soneca abre por volta de {{time}}.",
+    "bodyNamed": "{{baby}}: a janela estimada de soneca abre por volta de {{time}}."
+  },
+  "test": {
+    "title": "Notificações ativadas",
+    "body": "Este é um teste do Lotties."
+  },
+  "generic": {
+    "title": "Lotties",
+    "body": "Abra o app para ver os detalhes."
+  },
+  "action": {
+    "snooze": "Adiar 30 min",
+    "open": "Abrir"
+  }
+}

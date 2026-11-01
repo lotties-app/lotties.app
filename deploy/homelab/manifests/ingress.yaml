@@ -1,0 +1,39 @@
+# The one public entry, rendered by deploy.sh with envsubst: https://${PUBLIC_HOST}/api goes to the API (path kept,
+# the routes start with /api/v1), everything else to the web app. Served by the external Traefik (${INGRESS_CLASS});
+# cert-manager issues the certificate into the Secret ${TLS_SECRET} (the annotation line is dropped when
+# CLUSTER_ISSUER is empty). Plain HTTP is redirected to HTTPS by Traefik's web entry point for every host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lotties
+  namespace: ${NS}
+  labels:
+    app.kubernetes.io/part-of: lotties
+  annotations:
+    cert-manager.io/cluster-issuer: ${CLUSTER_ISSUER}
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: ${INGRESS_CLASS}
+  tls:
+    - hosts:
+        - "${PUBLIC_HOST}"
+      secretName: ${TLS_SECRET}
+  rules:
+    - host: "${PUBLIC_HOST}"
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: lotties-api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lotties-web
+                port:
+                  name: http

@@ -1,0 +1,7 @@
+# Rendered by deploy.sh with envsubst (${NS}) and applied only when the namespace does not exist yet.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NS}
+  labels:
+    app.kubernetes.io/part-of: lotties

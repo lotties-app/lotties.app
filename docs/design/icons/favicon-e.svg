@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Lotties app icon, concept E "Mobile" (favicon, simplified for 16 px). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<path d="M7 0H25A7 7 0 0 1 32 7V25A7 7 0 0 1 25 32H7A7 7 0 0 1 0 25V7A7 7 0 0 1 7 0Z" fill="#f5efe4"/>
+<path d="M15 0H17V9H15Z" fill="#2a251f"/>
+<path d="M6 8H26A1 1 0 0 1 27 9V9A1 1 0 0 1 26 10H6A1 1 0 0 1 5 9V9A1 1 0 0 1 6 8Z" fill="#2a251f"/>
+<path d="M7 9H9V15.5H7Z" fill="#2a251f"/>
+<path d="M23 9H25V14.5H23Z" fill="#2a251f"/>
+<path d="M13.6 9a2.4 2.4 0 1 0 4.8 0a2.4 2.4 0 1 0 -4.8 0Z" fill="#b04c29"/>
+<path d="M2.8 20a5.2 5.2 0 1 0 10.4 0a5.2 5.2 0 1 0 -10.4 0Z" fill="#b04c29"/>
+<path d="M29.4 17.5A5.6 5.6 0 1 0 22.9 24.5A4.8 4.8 0 0 1 29.4 17.5Z" fill="#35558a"/>
+</svg>

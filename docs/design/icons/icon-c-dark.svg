@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Lotties app icon, concept C "br monogram" (dark). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<linearGradient id="cda-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#332e27"/>
+<stop offset="0.55" stop-color="#24201b"/>
+<stop offset="1" stop-color="#1b1814"/>
+</linearGradient>
+<clipPath id="cda-clip">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z"/>
+</clipPath>
+<linearGradient id="cda-ink" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#faf7f1"/>
+<stop offset="0.5" stop-color="#f2eadc"/>
+<stop offset="1" stop-color="#cac0b0"/>
+</linearGradient>
+<radialGradient id="cda-ink-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#cac0b0" stop-opacity="0"/>
+<stop offset="1" stop-color="#cac0b0" stop-opacity="0.5"/>
+</radialGradient>
+<mask id="cda-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M364 566a104 136 0 1 0 208 0a104 136 0 1 0 -208 0Z" fill="#000000"/>
+</mask>
+<mask id="cda-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M886 334C899.2 386.8 899.2 386.8 952 400C899.2 413.2 899.2 413.2 886 466C872.8 413.2 872.8 413.2 820 400C872.8 386.8 872.8 386.8 886 334Z" fill="#000000" stroke="#000000" stroke-width="28" stroke-linejoin="round"/>
+</mask>
+<linearGradient id="cda-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#f3cdbb"/>
+<stop offset="0.5" stop-color="#e58f68"/>
+<stop offset="1" stop-color="#c76c49"/>
+</linearGradient>
+<radialGradient id="cda-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#c76c49" stop-opacity="0"/>
+<stop offset="1" stop-color="#c76c49" stop-opacity="0.5"/>
+</radialGradient>
+</defs>
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z" fill="url(#cda-tile)"/>
+<g clip-path="url(#cda-clip)">
+<g transform="translate(-42 26)">
+<g mask="url(#cda-k2)">
+<path d="M346 196V735H262V276Q262 262 249 262H232Q218 262 220 249Q222 238 236 234L326 200Q346 192 346 214Z" fill="url(#cda-ink)"/>
+<g mask="url(#cda-h1)">
+<path d="M272 566a180 184 0 1 0 360 0a180 184 0 1 0 -360 0Z" fill="url(#cda-ink)"/>
+</g>
+<path d="M744 404V735H660V476Q660 462 647 462H632Q618 462 620 449Q622 438 636 434L724 400Q744 392 744 414Z" fill="url(#cda-ink)"/>
+<path d="M742 478C762 426 796 400 838 396L842 446C802 448 772 472 744 548Z" fill="url(#cda-ink)"/>
+</g>
+<path d="M886 334C899.2 386.8 899.2 386.8 952 400C899.2 413.2 899.2 413.2 886 466C872.8 413.2 872.8 413.2 820 400C872.8 386.8 872.8 386.8 886 334Z" fill="url(#cda-accent)"/>
+<path d="M886 334C899.2 386.8 899.2 386.8 952 400C899.2 413.2 899.2 413.2 886 466C872.8 413.2 872.8 413.2 820 400C872.8 386.8 872.8 386.8 886 334Z" fill="url(#cda-accent-v)"/>
+</g>
+</g>
+</svg>

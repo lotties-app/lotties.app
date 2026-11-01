@@ -1,0 +1,2 @@
+# The scripts run in WSL bash: keep LF line endings even in a Windows checkout (core.autocrlf=true).
+*.sh text eol=lf

@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Command bar prototype</title>
+<meta name="description" content="Interaction prototype 03-B: Track sheet with suggestions, repeat-last and a natural-language quick-entry bar (en + pt-BR) with a live parse preview.">
+<style>
+:root{
+  --page:#0b0a1a;--bg:#15132e;--surface:#1f1c3f;--raised:#2a2468;--toast:#332c7a;--hair:#2a2652;
+  --text:#eceaff;--muted:#a9a5d4;--accent:#7c6cf0;--accent-soft:#c4baff;
+  --sleep-bg:#3a2f7a;--sleep-fg:#c4baff;--feeding-bg:#16423f;--feeding-fg:#7ee0b8;--diaper-bg:#4a3322;--diaper-fg:#ffc58a;
+  --health-bg:#4b2a33;--health-fg:#ff9fb2;--care-bg:#183f55;--care-fg:#8fd8ff;--activity-bg:#4a3d1a;--activity-fg:#ffd77a;
+  --nightWaking-bg:#4a2f55;--nightWaking-fg:#f0b6ff;--warn-bg:#4a3518;--warn-fg:#ffcf8a;--ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent-soft);outline-offset:2px}
+.tnum{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.stage{display:flex;gap:32px;justify-content:center;align-items:flex-start;padding:24px}
+.phone{width:390px;height:844px;border-radius:44px;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 10px #000,0 30px 80px rgba(0,0,0,.6);flex:none}
+@media (max-width:480px){.stage{padding:0;display:block}.phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}.notes{padding:20px}}
+svg{flex:none}
+.top{display:flex;align-items:center;gap:12px;padding:20px 16px 8px 20px}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:600;color:#fff;background:#7c6cf0}
+.name{font-size:20px;font-weight:500}.age{font-size:12px;color:var(--muted)}
+main{flex:1;overflow:auto;padding:8px 20px 90px}
+.card{background:var(--surface);border-radius:20px;padding:16px 18px}
+.big{font-size:28px;font-weight:500}
+.muted{color:var(--muted);font-size:13px}
+.sect{display:flex;align-items:center;gap:8px;margin:22px 0 8px;font-size:15px;font-weight:500}
+.rowi{display:grid;grid-template-columns:62px 36px 1fr;align-items:center;gap:10px;min-height:56px;border-radius:14px;transition:background .6s}
+.rowi.fresh{background:rgba(124,108,240,.2)}
+.rowi .time{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.rowi .t1{font-weight:500}.rowi .t2{font-size:13px;color:var(--muted)}
+.circ{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
+.circ.s{width:34px;height:34px}
+.nav{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;height:64px;border-top:1px solid var(--hair);background:var(--bg)}
+.nav span{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--muted);gap:2px}
+.fab{position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(124,108,240,.18)}
+/* sheet */
+.overlay{position:absolute;inset:0;z-index:10}
+.overlay[hidden]{display:none}
+.scrim{position:absolute;inset:0;background:rgba(5,4,15,.6)}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:92%;display:flex;flex-direction:column;background:var(--surface);border-radius:24px 24px 0 0;animation:up .2s var(--ease)}
+.handle{display:flex;justify-content:center;padding:10px 0 4px}.handle i{width:36px;height:4px;border-radius:2px;background:#4a4580}
+.sh-head{display:flex;align-items:center;gap:8px;padding:0 12px 0 8px}
+.sh-head h2{flex:1;margin:0;font-size:20px;font-weight:500}
+.iconbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.body{flex:1;overflow-y:auto;padding:4px 20px 12px;scrollbar-width:none}
+.flabel{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--muted);margin:16px 0 8px}
+.sugs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sug{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:104px;padding:10px;border-radius:16px;background:var(--raised);text-align:left}
+.sug b{font-weight:500;font-size:14px;line-height:1.2}
+.sug span{font-size:12px;color:var(--muted);line-height:1.2}
+.rep{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:6px 8px 6px 4px;border-radius:14px;text-align:left}
+.rep .tx{flex:1;min-width:0}.rep .tx b{display:block;font-weight:500;font-size:14px}.rep .tx span{font-size:12px;color:var(--muted)}
+.rep .go{display:flex;align-items:center;gap:4px;color:var(--accent-soft);font-size:13px;font-weight:500;min-height:40px;padding:0 10px;border-radius:999px;background:rgba(196,186,255,.1)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:84px;padding:8px 2px;border-radius:16px;background:var(--bg);font-size:12.5px;font-weight:500;text-align:center;line-height:1.15}
+/* command dock */
+.cmd{padding:8px 12px 14px;border-top:1px solid var(--hair);background:var(--surface)}
+.preview{background:var(--bg);border-radius:18px;padding:12px;margin-bottom:8px}
+.preview[hidden]{display:none}
+.pv-title{display:flex;align-items:center;gap:10px}
+.pv-title .tx{flex:1;min-width:0}.pv-title b{display:block;font-weight:500}.pv-title span{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;background:rgba(196,186,255,.12);font-size:13px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+.chip.unk{background:none;border:1.5px dashed #6b66a8;color:var(--muted)}
+.chip.need{background:none;border:1.5px solid var(--warn-fg);color:var(--warn-fg)}
+.chip .x{margin-right:-6px;opacity:.7}
+.fieldrow{display:flex;align-items:center;gap:8px}
+.field{flex:1;display:flex;align-items:center;gap:8px;min-height:52px;padding:0 6px 0 14px;border-radius:999px;background:var(--raised)}
+.field input{flex:1;min-width:0;background:none;border:0;outline:none;font-size:16px;height:48px}
+.field input::placeholder{color:var(--muted)}
+.send{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center}
+.send:disabled{background:#3a3570;color:#8f8ac0;cursor:default}
+.mic.on{background:var(--health-fg);color:#3b0d18;animation:pulse 1s infinite}
+.ac{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+.ac button{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:12px;text-align:left;font-size:14px}
+.ac button:hover,.ac button:focus-visible{background:rgba(255,255,255,.06)}
+.ac small{color:var(--muted);margin-left:auto;font-size:12px}
+.toast{position:absolute;left:12px;right:12px;bottom:76px;z-index:20;background:var(--toast);border-radius:20px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.5);transition:opacity .18s,transform .18s;opacity:0;transform:translateY(8px);pointer-events:none}
+.toast.show{opacity:1;transform:none;pointer-events:auto}
+.toast .tx{flex:1;min-width:0}.toast b{display:block;font-weight:500}.toast span{font-size:13px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 16px;border-radius:999px;font-weight:500}
+.btn.primary{background:var(--accent);color:#fff}.btn.tonal{background:rgba(196,186,255,.16)}.btn.ghost{color:var(--accent-soft)}
+.btn.block{width:100%}
+.modal{position:absolute;inset:0;z-index:30;display:grid;place-items:end center}
+.modal[hidden]{display:none}
+.modal .box{position:relative;width:100%;background:#25215a;border-radius:24px 24px 0 0;padding:20px 20px 24px}
+.modal h3{margin:8px 0 8px;font-size:18px;font-weight:500}
+.modal p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.listening{display:flex;align-items:center;gap:10px;color:var(--health-fg);font-size:13px;margin-bottom:8px}
+.listening[hidden]{display:none}
+.dots i{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:currentColor;animation:bounce 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+.notes{max-width:380px;font-size:14px;color:var(--muted)}
+.notes h1{font-size:18px;color:var(--text);margin:4px 0 8px}
+.notes h2{font-size:14px;color:var(--text);margin:18px 0 6px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ctl button{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;background:#1d1b38;font-size:13px}
+.ctl button[aria-pressed="true"]{background:var(--accent)}
+.ex button{background:#1d1b38;border-radius:10px;padding:6px 10px;margin:3px 2px;font-size:13px;color:var(--text);text-align:left}
+code{background:#1d1b38;padding:1px 5px;border-radius:5px}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(255,159,178,.15)}}
+@keyframes bounce{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (forced-colors:active){.chip,.tile,.sug,.btn,.field{border:1px solid CanvasText}}
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="phone" id="phone">
+  <header class="top"><span class="avatar" id="av">A</span><div><div class="name" id="bname">Alice</div><div class="age" id="age"></div></div></header>
+  <main id="main"></main>
+  <nav class="nav" id="nav"></nav>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="overlay" id="overlay">
+    <div class="scrim" id="scrim"></div>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="trackTitle">
+      <div class="handle" aria-hidden="true"><i></i></div>
+      <div class="sh-head"><button class="iconbtn" id="close" aria-label="Close"></button><h2 id="trackTitle"></h2><button class="btn ghost" id="pins"></button></div>
+      <div class="body" id="body"></div>
+      <div class="cmd">
+        <div class="ac" id="ac"></div>
+        <div class="preview" id="preview" hidden></div>
+        <div class="listening" id="listening" hidden><span class="dots"><i></i><i></i><i></i></span><span id="listenTxt"></span></div>
+        <form class="fieldrow" id="form" autocomplete="off">
+          <label class="field"><span id="spark" aria-hidden="true"></span><span class="sr" id="fieldLabel"></span><input id="q" enterkeyhint="done" autocapitalize="off" spellcheck="false" aria-describedby="preview"><button type="button" class="iconbtn mic" id="mic"></button></label>
+          <button class="send" id="send" disabled></button>
+        </form>
+      </div>
+    </section>
+  </div>
+  <div class="modal" id="voice" hidden><div class="scrim"></div><div class="box" role="dialog" aria-modal="true" aria-labelledby="vTitle"><h3 id="vTitle"></h3><p id="vBody1"></p><p id="vBody2"></p><p id="vBody3"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn tonal" id="vNo" style="flex:1"></button><button class="btn primary" id="vYes" style="flex:1"></button></div></div></div>
+  <div class="sr" id="live" aria-live="polite"></div>
+</div>
+<aside class="notes" id="notes"></aside>
+</div>
+<script>
+'use strict';
+const IC={
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+ cloud:'<path d="M7 18.5h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 18.5z"/>',
+ zzz:'<path d="M4 7h5l-5 6h5M13 4h4l-4 5h4M14 14h6l-6 6h6"/>',
+ eye:'<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/>',
+ bottle:'<path d="M9 10h6v9a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2zM10 10V8h4v2M11 8V5.2a1 1 0 0 1 2 0V8M9 14h2.5M9 17h2.5"/>',
+ heart:'<path d="M12 20s-7-4.3-7-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7 2.4C19 15.7 12 20 12 20z"/>',
+ diaper:'<path d="M3.5 7h17v2.5a8.5 8.5 0 0 1-17 0zM8 7v3.5M16 7v3.5M9.5 15.5h5"/>',
+ drop:'<path d="M12 3.5s6 6.4 6 10.6a6 6 0 0 1-12 0c0-4.2 6-10.6 6-10.6z"/>',
+ pill:'<path d="M4.9 12.1l7.2-7.2a4.6 4.6 0 0 1 6.5 6.5l-7.2 7.2a4.6 4.6 0 0 1-6.5-6.5zM8.5 8.5l7 7"/>',
+ face:'<circle cx="12" cy="12" r="8.5"/><path d="M9 9.5v.5M15 9.5v.5M8.5 15.5c1.2-1.2 2.3-1.2 3.5 0s2.3 1.2 3.5 0"/>',
+ bath:'<path d="M3 12h18v1.5A5.5 5.5 0 0 1 15.5 19h-7A5.5 5.5 0 0 1 3 13.5zM6 12V6.5a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/>',
+ activity:'<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+ undo:'<path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',mic:'<path d="M12 3.5a3 3 0 0 1 3 3V12a3 3 0 0 1-6 0V6.5a3 3 0 0 1 3-3zM5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/>',
+ spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',send:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',repeat:'<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/>',
+ timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M10 2.5h4"/>',baby:'<circle cx="12" cy="9" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+ note:'<path d="M5 4h14v16H5zM8.5 9h7M8.5 13h7M8.5 17h4"/>',home:'<path d="M4 11l8-6.5 8 6.5V20h-5v-5H9v5H4z"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+ help:'<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4M12 17h.01"/>'
+};
+const ic=(n,s=22,w=1.8)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`;
+const circ=(cat,icon,cls='',s=20)=>`<span class="circ ${cls}" style="background:var(--${cat}-bg);color:var(--${cat}-fg)">${ic(icon,s)}</span>`;
+const $=s=>document.querySelector(s);const MIN=60000,H=3600000;const uid=()=>Math.random().toString(36).slice(2,10);
+
+const T={
+en:{age:'2 months, 3 weeks',track:'Track',pins:'Edit pins',suggested:'Likely now',repeat:'Repeat',all:'All',again:'Again',placeholder:'Type or say “bottle 90”',fieldLabel:'Quick entry',log:'Log',
+ n:{wake_up:'Woke up',nap:'Nap',night:'Night sleep',bedtime:'Bedtime',fell_asleep:'Fell asleep',night_waking:'Night waking',bottle:'Bottle',nursing:'Nursing',diaper:'Diaper',medication:'Medication',belly_pain:'Belly pain',bath:'Bath',tummy_time:'Tummy time'},
+ wet:'Wet',dirty:'Dirty',mixed:'Mixed',formula:'Formula',breast_milk:'Breast milk',left:'Left',right:'Right',both:'Both',
+ now:'Now',minAgo:'{n} min ago',hAgo:'{n} h ago',today:'Today {t}',yesterday:'Yesterday {t}',lasted:'{d}',
+ startsTimer:'Starts a timer · {when}',logs:'Logged · {when}',endedRange:'{a} – {b}',stopsSleep:'Also ends the running nap',
+ whatIsIt:'What is it?',pickContent:'Pick one',pickIntensity:'Intensity 1–5',pickMed:'Which medication?',unknown:'“{w}” → note',noteChip:'Note: {w}',
+ awakeFor:'awake 1h 25m, nap window',lastFeed:'last feed 3h ago',lastDiaper:'last 1h ago',ago:'{d} ago',
+ toastLogged:'{what}',undo:'Undo',undone:'Undone',latest:'Latest',awake:'Awake 1h 25m',nextNap:'Next nap around {t}',
+ vTitle:'Use voice to log?',vBody1:'Your browser turns speech into text. In Chrome and Safari this can send the audio to Google or Apple to be transcribed; we never record or keep it, and only the text reaches this app.',vBody2:'Turn it off any time in Settings. Nothing is listened to until you tap the microphone.',vBody3:'Tip: the microphone on your keyboard works in this field too.',vNo:'Not now',vYes:'Use voice',
+ listening:'Listening… (simulated in this prototype)',home:'Home',timeline:'Timeline',growth:'Growth',settings:'Settings',
+ doses:{drops:'drops',ml:'ml',mg:'mg'},by:'for {b}'},
+pt:{age:'2 meses e 3 semanas',track:'Registrar',pins:'Editar atalhos',suggested:'Provável agora',repeat:'Repetir',all:'Todos',again:'De novo',placeholder:'Digite ou fale “mamadeira 90”',fieldLabel:'Registro rápido',log:'Registrar',
+ n:{wake_up:'Acordou',nap:'Soneca',night:'Sono da noite',bedtime:'Hora de dormir',fell_asleep:'Adormeceu',night_waking:'Despertar noturno',bottle:'Mamadeira',nursing:'Amamentação',diaper:'Fralda',medication:'Remédio',belly_pain:'Dor de barriga',bath:'Banho',tummy_time:'Tempo de bruços'},
+ wet:'Xixi',dirty:'Cocô',mixed:'Misto',formula:'Fórmula',breast_milk:'Leite materno',left:'Esquerdo',right:'Direito',both:'Ambos',
+ now:'Agora',minAgo:'há {n} min',hAgo:'há {n} h',today:'Hoje {t}',yesterday:'Ontem {t}',lasted:'{d}',
+ startsTimer:'Inicia um cronômetro · {when}',logs:'Registrado · {when}',endedRange:'{a} – {b}',stopsSleep:'Também encerra a soneca em andamento',
+ whatIsIt:'O que é?',pickContent:'Escolha um',pickIntensity:'Intensidade 1–5',pickMed:'Qual remédio?',unknown:'“{w}” → observação',noteChip:'Obs.: {w}',
+ awakeFor:'acordado há 1h 25, hora da soneca',lastFeed:'última mamada há 3 h',lastDiaper:'última há 1 h',ago:'há {d}',
+ toastLogged:'{what}',undo:'Desfazer',undone:'Desfeito',latest:'Últimos registros',awake:'Tempo acordado: 1 h 25 min',nextNap:'Próxima soneca por volta de {t}',
+ vTitle:'Usar a voz para registrar?',vBody1:'O navegador transforma a fala em texto. No Chrome e no Safari o áudio pode ir para o Google ou a Apple para ser transcrito; nós nunca gravamos nem guardamos o áudio, só o texto chega ao app.',vBody2:'Desative quando quiser em Ajustes. Nada é ouvido até você tocar no microfone.',vBody3:'Dica: o microfone do teclado também funciona neste campo.',vNo:'Agora não',vYes:'Usar voz',
+ listening:'Ouvindo… (simulado neste protótipo)',home:'Início',timeline:'Linha do tempo',growth:'Crescimento',settings:'Ajustes',
+ doses:{drops:'gotas',ml:'ml',mg:'mg'},by:'para {b}'}
+};
+const S={lang:'en',twins:false,baby:'alice',voiceOk:false,events:[],last:null};
+const t=(k,v={})=>{let s=k.split('.').reduce((o,p)=>o&&o[p],T[S.lang]);if(s==null)s=k;return String(s).replace(/\{(\w+)\}/g,(_,x)=>v[x]??'');};
+const nm=k=>T[S.lang].n[k]||k;
+const loc=()=>S.lang==='pt'?'pt-BR':'en-US';
+const fmtT=ms=>new Intl.DateTimeFormat(loc(),{hour:'numeric',minute:'2-digit',hourCycle:S.lang==='pt'?'h23':undefined}).format(ms);
+const fmtDur=ms=>{const m=Math.max(1,Math.round(ms/60000));const h=Math.floor(m/60),r=m%60;if(S.lang==='pt')return h?`${h} h${r?` ${r} min`:''}`:`${m} min`;return h?`${h}h${r?` ${r}m`:''}`:`${m} min`;};
+const BABIES={alice:'Alice',bia:'Bia'};
+const MEDS=[{id:'m1',name:'Colidis',dose:5,unit:'drops'},{id:'m2',name:'Puravit',dose:1,unit:'ml'},{id:'m3',name:'Paracetamol',dose:2.5,unit:'ml'}];
+const P={wake_up:['sleep','sun','instant'],nap:['sleep','cloud','timer'],night:['sleep','moon','timer'],bedtime:['sleep','moon','instant'],fell_asleep:['sleep','zzz','instant'],night_waking:['nightWaking','eye','timer'],
+ bottle:['feeding','bottle','instant'],nursing:['feeding','heart','timer'],diaper:['diaper','diaper','instant'],medication:['health','pill','instant'],belly_pain:['health','face','instant'],bath:['care','bath','instant'],tummy_time:['activity','activity','timer']};
+
+/* ---------- the parser: deterministic, local, en + pt-BR at the same time ---------- */
+const strip=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const PHRASES=[ // longest first; [pattern, effect]
+ ['dor de barriga','type:belly_pain'],['belly pain','type:belly_pain'],['tummy ache','type:belly_pain'],
+ ['despertar noturno','type:night_waking'],['night waking','type:night_waking'],['acordou de madrugada','type:night_waking'],['woke at night','type:night_waking'],
+ ['fell asleep','type:fell_asleep'],['pegou no sono','type:fell_asleep'],
+ ['hora de dormir','type:bedtime'],['foi dormir','type:bedtime'],['went to bed','type:bedtime'],
+ ['tummy time','type:tummy_time'],['de brucos','type:tummy_time'],['tempo de brucos','type:tummy_time'],
+ ['sono da noite','type:night'],['night sleep','type:night'],
+ ['woke up','type:wake_up'],['wake up','type:wake_up'],
+ ['leite materno','content:breast_milk'],['breast milk','content:breast_milk'],['breastmilk','content:breast_milk'],
+ ['xixi e coco','diaper:mixed'],['coco e xixi','diaper:mixed'],['pee and poop','diaper:mixed'],['wet and dirty','diaper:mixed'],
+ ['both babies','babies:both'],['as duas','babies:both'],['os dois','babies:both'],['as gemeas','babies:both']
+];
+const WORDS={
+ bottle:'type:bottle',mamadeira:'type:bottle',mamadera:'type:bottle',mama:'type:bottle',formula:'content:formula',formulas:'content:formula',fml:'content:formula',lm:'content:breast_milk',
+ nursing:'type:nursing',nurse:'type:nursing',nursed:'type:nursing',breast:'type:nursing',breastfeed:'type:nursing',breastfeeding:'type:nursing',feed:'type:nursing?',peito:'type:nursing',mamou:'type:nursing',amamentacao:'type:nursing',amamentou:'type:nursing',seio:'type:nursing',mamada:'type:nursing?',
+ diaper:'type:diaper',diapers:'type:diaper',nappy:'type:diaper',fralda:'type:diaper',troca:'type:diaper',trocou:'type:diaper',change:'type:diaper',
+ wet:'diaper:wet',pee:'diaper:wet',xixi:'diaper:wet',molhada:'diaper:wet',urina:'diaper:wet',dirty:'diaper:dirty',poop:'diaper:dirty',poo:'diaper:dirty',coco:'diaper:dirty',suja:'diaper:dirty',fezes:'diaper:dirty',mixed:'diaper:mixed',misto:'diaper:mixed',mista:'diaper:mixed',
+ nap:'type:nap',soneca:'type:nap',cochilo:'type:nap',cochilou:'type:nap',sleep:'type:sleep?',slept:'type:sleep?',asleep:'type:sleep?',dormiu:'type:sleep?',dormindo:'type:sleep?',sono:'type:sleep?',
+ night:'type:night',noite:'type:night',
+ woke:'type:wake_up',awake:'type:wake_up',acordou:'type:wake_up',despertou:'type:wake_up',acordada:'type:wake_up',acordado:'type:wake_up',
+ bedtime:'type:bedtime',bed:'type:bedtime',deitou:'type:bedtime',adormeceu:'type:fell_asleep',
+ med:'type:medication',meds:'type:medication',medicine:'type:medication',medication:'type:medication',remedio:'type:medication',remedios:'type:medication',
+ colic:'type:belly_pain',colica:'type:belly_pain',bath:'type:bath',banho:'type:bath',tummy:'type:tummy_time',brucos:'type:tummy_time',
+ left:'side:left',esquerdo:'side:left',esquerda:'side:left',esq:'side:left',right:'side:right',direito:'side:right',direita:'side:right',dir:'side:right',both:'both',ambos:'both',ambas:'both',
+ now:'now',agora:'now',yesterday:'yesterday',ontem:'yesterday',alice:'baby:alice',bia:'baby:bia'
+};
+const STOP=new Set(['a','an','the','of','and','e','de','do','da','o','um','uma','with','com','to','at','as','for','por','in','no','na','ml','min','minutes','minutos','just','so','foi','teve','fez','was','had','gave','deu','tomou','took','baby','bebe']);
+function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
+
+function parse(raw,now=Date.now()){
+  const r={type:null,typeGuess:null,content:null,diaper:null,side:null,sides:{},amount:null,doseNum:null,doseUnit:null,meds:[],intensity:null,
+    offset:null,clock:null,range:null,dur:null,dayShift:0,babies:null,both:false,notes:[],unknown:[],chips:[]};
+  let s=raw;
+  s=s.replace(/["“]([^"”]+)["”]/g,(_,n)=>{r.notes.push(n.trim());return ' ';});
+  s=s.replace(/\b(?:note|nota|obs\.?)\s*:\s*(.+)$/i,(_,n)=>{r.notes.push(n.trim());return ' ';});
+  s=' '+strip(s).replace(/(\d)(ml|mg|min|oz|gts)\b/g,'$1 $2').replace(/[,;!?]/g,' ').replace(/\s+/g,' ')+' ';
+  const eat=(re,fn)=>{s=s.replace(re,(...m)=>{fn(...m);return ' ';});};
+  const unitMin=(n,u)=>/^h/.test(u)?n*60:n;
+  // time ranges 13:00-14:10 / das 13h as 14h
+  eat(/\b(?:from|das|de)?\s*(\d{1,2})(?::|h)(\d{2})?\s*(?:-|–|to|until|ate|as|a)\s*(\d{1,2})(?::|h)(\d{2})?\b/,(_,h1,m1,h2,m2)=>{r.range=[[+h1,+(m1||0)],[+h2,+(m2||0)]];});
+  // relative: 10 min ago / ha 10 min / faz 2 h / half an hour ago
+  eat(/\b(?:half an hour ago|meia hora atras|ha meia hora|faz meia hora)\b/,()=>{r.offset=30;});
+  eat(/\b(?:an hour ago|uma hora atras|ha uma hora|faz uma hora)\b/,()=>{r.offset=60;});
+  eat(/\b(\d+)\s*(min|mins|minutes?|minutos?|m|h|hrs?|hours?|horas?)\s+(?:ago|atras)\b/,(_,n,u)=>{r.offset=unitMin(+n,u);});
+  eat(/\b(?:ha|faz)\s+(\d+)\s*(min|mins|minutos?|m|h|horas?)\b/,(_,n,u)=>{r.offset=unitMin(+n,u);});
+  // durations: for 20 min / por 40 min / durante 1h
+  eat(/\b(?:for|por|durante)\s+(\d+)\s*(min|mins|minutes?|minutos?|m|h|hours?|horas?)\b/,(_,n,u)=>{r.dur=unitMin(+n,u);});
+  // clock: at 14:30 / as 14h30 / 2:30pm / 3pm
+  const setClock=(h,m,ap)=>{let hh=+h;if(ap==='pm'&&hh<12)hh+=12;if(ap==='am'&&hh===12)hh=0;r.clock=[hh,+(m||0)];};
+  eat(/\b(?:at|as|a|@)?\s*(\d{1,2}):(\d{2})\s*(am|pm)?\b/,(_,h,m,ap)=>setClock(h,m,ap));
+  eat(/\b(\d{1,2})h(\d{2})\b/,(_,h,m)=>setClock(h,m));
+  eat(/\b(?:at|as|a)\s+(\d{1,2})h\b/,(_,h)=>setClock(h,0));
+  eat(/\b(?:at\s+)?(\d{1,2})\s*(am|pm)\b/,(_,h,ap)=>{let hh=+h%12;if(ap==='pm')hh+=12;r.clock=[hh,0];});
+  // nursing sides with minutes: left 8 right 6 / e 8 d 6 / l8 r6
+  eat(/\b(left|esquerdo|esquerda|esq|l|e)\s*(\d+)\s*(?:min|m)?\b/,(_,w,n)=>{r.sides.left=+n;});
+  eat(/\b(right|direito|direita|dir|r|d)\s*(\d+)\s*(?:min|m)?\b/,(_,w,n)=>{r.sides.right=+n;});
+  // doses with units
+  eat(/\b(\d+(?:[.,]\d+)?)\s*(gotas|gota|drops?|gts|mg)\b/,(_,n,u)=>{r.doseNum=+n.replace(',','.');r.doseUnit=/^g|^d/.test(u)?'drops':'mg';});
+  // amounts
+  eat(/\b(\d+(?:[.,]\d+)?)\s*(ml|oz)\b/,(_,n,u)=>{r.amount=Math.round(+n.replace(',','.')*(u==='oz'?30:1));r.amountUnit=true;});
+  // bare minutes (duration for timers)
+  eat(/\b(\d+)\s*(min|mins|minutes?|minutos?|h|horas?|hours?)\b/,(_,n,u)=>{r.durBare=unitMin(+n,u);});
+  // phrases, then words
+  for(const [p,eff] of PHRASES){const re=new RegExp('\\b'+p+'\\b');if(re.test(s)){s=s.replace(re,' ');apply(r,eff);}}
+  const left=[];
+  for(const w of s.trim().split(' ').filter(Boolean)){
+    if(/^\d+(?:[.,]\d+)?$/.test(w)){left.push(+w.replace(',','.'));continue;}
+    if(WORDS[w]){apply(r,WORDS[w]);continue;}
+    const med=MEDS.find(m=>{const n=strip(m.name);return n===w||(w.length>=5&&lev(n,w)<=(n.length>7?2:1));});
+    if(med){r.meds.push(med.id);continue;}
+    if(STOP.has(w))continue;
+    r.unknown.push(w);
+  }
+  r.numbers=left;
+  return resolve(r,now);
+}
+function apply(r,eff){
+  const [k,v]=eff.split(':');
+  if(k==='type'){if(v.endsWith('?'))r.typeGuess=r.typeGuess||v.slice(0,-1);else if(!r.type||r.type==='nap'&&v==='night')r.type=v;}
+  else if(k==='content'){r.content=v;}
+  else if(k==='diaper'){r.diaper=v;}
+  else if(k==='side'){r.side=v;}
+  else if(k==='both'){r.both=true;}
+  else if(k==='now'){r.offset=0;}
+  else if(k==='yesterday'){r.dayShift=-1;}
+  else if(k==='baby'){r.babies=[...(r.babies||[]),v];}
+  else if(k==='babies'){r.babies=Object.keys(BABIES);}
+}
+function atClock([h,m],now,dayShift){const d=new Date(now);d.setHours(h,m,0,0);let ms=d.getTime()+dayShift*24*H;if(!dayShift&&ms>now+5*MIN)ms-=24*H;return ms;}
+function inferKind(ms){const h=new Date(ms).getHours();return h>=19||h<5?'night':'nap';}
+function resolve(r,now){
+  let type=r.type;
+  if(!type&&r.diaper)type='diaper';
+  if(!type&&r.meds.length)type='medication';
+  if(!type&&(r.sides.left!=null||r.sides.right!=null))type='nursing';
+  if(!type&&(r.content||r.amountUnit))type='bottle';
+  if(!type&&r.typeGuess==='sleep')type='sleep';
+  if(!type&&r.typeGuess)type=r.typeGuess;
+  if(type==='nap'&&r.typeGuess==='sleep'){}
+  if(type==='diaper'&&r.both&&!r.diaper)r.diaper='mixed';
+  if(type==='nursing'&&r.both&&!r.side)r.side='both';
+  if(r.both&&!['diaper','nursing'].includes(type)&&S.twins)r.babies=Object.keys(BABIES);
+  const out={type,payload:{},needs:[],chips:[],unknown:r.unknown,notes:r.notes,babies:r.babies||[S.baby],start:null,end:null,running:false};
+  // when
+  let at=now;
+  if(r.clock)at=atClock(r.clock,now,r.dayShift);else if(r.offset!=null)at=now-r.offset*MIN;else if(r.dayShift)at=now+r.dayShift*24*H;
+  const dur=r.dur??r.durBare??null;
+  if(!type){out.needs.push('type');return out;}
+  let kind=null;
+  if(type==='sleep'){kind=inferKind(r.range?atClock(r.range[0],now,r.dayShift):at);type=kind;out.kindAmbiguous=true;}
+  out.type=type;
+  const [,,mode]=P[type];
+  if(r.range){out.start=atClock(r.range[0],now,r.dayShift);out.end=atClock(r.range[1],now,r.dayShift);if(out.end<out.start)out.end+=24*H;}
+  else if(mode==='timer'||type==='nursing'){
+    const sideMin=(r.sides.left||0)+(r.sides.right||0);
+    const total=type==='nursing'&&sideMin?sideMin:dur;
+    // a stated time is the start; without one, a finished session ends now
+    if(total&&(r.clock||r.offset!=null)){out.start=at;out.end=Math.min(now,at+total*MIN);}
+    else if(total){out.end=at;out.start=at-total*MIN;}
+    else{out.start=at;out.running=true;}
+  }else{out.start=at;out.end=at;}
+  if(['nap','night','night_waking'].includes(type))out.payload.kind=type==='nap'?'nap':type;
+  if(type==='bottle'){
+    const amt=r.amount??r.numbers.find(n=>n>=10&&n<=400)??null;
+    const last=lastOf('bottle');
+    out.payload.amount=amt??(last?last.payload.amount:null);out.amountFromLast=amt==null&&!!last;
+    out.payload.content=r.content??(last?last.payload.content:'formula');out.contentFromLast=!r.content;
+    if(out.payload.amount==null)out.needs.push('amount');
+  }
+  if(type==='nursing'){
+    if(r.sides.left!=null||r.sides.right!=null){out.payload.left=(r.sides.left||0)*60;out.payload.right=(r.sides.right||0)*60;out.payload.side=r.sides.left&&r.sides.right?'both':(r.sides.left?'left':'right');}
+    else out.payload.side=r.side||'left';
+  }
+  if(type==='diaper'){if(r.diaper)out.payload.content=r.diaper;else out.needs.push('content');}
+  if(type==='belly_pain'){const n=r.intensity??r.numbers.find(n=>n>=1&&n<=5);if(n)out.payload.intensity=n;else out.needs.push('intensity');}
+  if(type==='medication'){
+    let ids=r.meds;if(!ids.length){const last=lastOf('medication');if(last){ids=last.payload.medications.map(m=>m.id);out.medsFromLast=true;}}
+    if(!ids.length)out.needs.push('med');
+    const dn=r.doseNum??(r.amount??(r.meds.length?r.numbers[0]:undefined));const du=r.doseUnit??(r.amount!=null?'ml':null);
+    out.payload.medications=ids.map((id,i)=>{const m=MEDS.find(x=>x.id===id);const custom=i===ids.length-1&&dn!=null;return {id,dose:custom?dn:m.dose,unit:custom&&du?du:m.unit};});
+  }
+  if(type==='wake_up')out.stopsSleep=true;
+  return out;
+}
+function lastOf(id){return S.events.filter(e=>e.baby===S.baby&&e.preset===id).sort((a,b)=>b.start-a.start)[0];}
+
+/* ---------- presentation of a parse ---------- */
+function whenText(p){
+  const n=Date.now();const s=p.start;const d=n-s;
+  const rel=d<MIN?t('now'):d<H?t('minAgo',{n:Math.round(d/MIN)}):new Date(s).toDateString()===new Date(n).toDateString()?t('today',{t:fmtT(s)}):t('yesterday',{t:fmtT(s)});
+  if(p.running)return rel+(d>=MIN&&d<H?` · ${fmtT(s)}`:'');
+  if(p.end!==p.start)return `${fmtT(p.start)} – ${fmtT(p.end)} · ${fmtDur(p.end-p.start)}`;
+  return rel+(d>=MIN&&d<H?` · ${fmtT(s)}`:'');
+}
+function detailOf(type,pl){
+  if(type==='bottle')return [pl.amount!=null?`${pl.amount} ml`:null,pl.content?t(pl.content):null].filter(Boolean).join(' · ');
+  if(type==='diaper')return pl.content?t(pl.content):'';
+  if(type==='nursing')return pl.left!=null?`${t('left')} ${Math.round(pl.left/60)} min · ${t('right')} ${Math.round(pl.right/60)} min`:t(pl.side);
+  if(type==='medication')return (pl.medications||[]).map(m=>`${MEDS.find(x=>x.id===m.id).name} ${m.dose} ${T[S.lang].doses[m.unit]||m.unit}`).join(', ');
+  if(type==='belly_pain')return pl.intensity?`${pl.intensity}/5`:'';
+  return '';
+}
+let current=null;
+function renderPreview(){
+  const q=$('#q').value.trim();const pv=$('#preview');
+  if(!q){pv.hidden=true;current=null;$('#send').disabled=true;renderAC('');return;}
+  const p=parse(q);current=p;renderAC(q);
+  const chips=[];
+  if(!p.type){
+    pv.hidden=false;$('#send').disabled=true;
+    pv.innerHTML=`<div class="pv-title"><span class="circ s" style="background:#3a3570">${ic('help',18)}</span><div class="tx"><b>${t('whatIsIt')}</b><span>${q}</span></div></div>
+     <div class="chips">${['bottle','diaper','nap','nursing','medication'].map(k=>`<button class="chip" data-settype="${k}">${ic(P[k][1],16)}${nm(k)}</button>`).join('')}</div>`;return;}
+  const [cat,icon,mode]=P[p.type];const det=detailOf(p.type,p.payload);
+  if(p.kindAmbiguous||['nap','night'].includes(p.type))chips.push(...['nap','night'].map(k=>`<button class="chip" data-kind="${k}" aria-pressed="${p.type===k}">${ic(P[k][1],16)}${nm(k)}</button>`));
+  if(p.type==='bottle'&&p.payload.amount!=null)chips.push(`<span class="chip tnum">${ic('bottle',16)}${p.payload.amount} ml${p.amountFromLast?` <small style="opacity:.7">· ${S.lang==='pt'?'última':'last'}</small>`:''}</span>`);
+  if(p.type==='bottle')chips.push(...['formula','breast_milk'].map(k=>`<button class="chip" data-content="${k}" aria-pressed="${p.payload.content===k}">${t(k)}</button>`));
+  if(p.needs.includes('content'))chips.push(`<span class="chip need">${t('pickContent')}</span>`,...['wet','dirty','mixed'].map(k=>`<button class="chip" data-diaper="${k}">${t(k)}</button>`));
+  else if(p.type==='diaper')chips.push(`<span class="chip">${ic('drop',16)}${t(p.payload.content)}</span>`);
+  if(p.needs.includes('intensity'))chips.push(`<span class="chip need">${t('pickIntensity')}</span>`,...[1,2,3,4,5].map(k=>`<button class="chip tnum" data-intensity="${k}">${k}</button>`));
+  if(p.needs.includes('amount'))chips.push(...[60,90,120,150].map(a=>`<button class="chip tnum" data-amount="${a}">${a} ml</button>`));
+  if(p.needs.includes('med'))chips.push(`<span class="chip need">${t('pickMed')}</span>`,...MEDS.map(m=>`<button class="chip" data-med="${m.name}">${m.name}</button>`));
+  if(p.type==='medication'&&p.payload.medications)chips.push(...p.payload.medications.map(m=>`<span class="chip">${ic('pill',16)}${MEDS.find(x=>x.id===m.id).name} ${m.dose} ${T[S.lang].doses[m.unit]||m.unit}</span>`));
+  if(p.type==='nursing'&&p.payload.left==null)chips.push(...['left','right'].map(k=>`<button class="chip" data-side="${k}" aria-pressed="${p.payload.side===k}">${t(k)}</button>`));
+  chips.push(`<span class="chip tnum">${ic(p.running?'timer':'clock',16)}${whenText(p)}</span>`);
+  if(S.twins)chips.push(`<span class="chip">${ic('baby',16)}${p.babies.map(b=>BABIES[b]).join(' + ')}</span>`);
+  for(const n of p.notes)chips.push(`<span class="chip">${ic('note',16)}${t('noteChip',{w:n})}</span>`);
+  for(const w of p.unknown)chips.push(`<button class="chip unk" data-dropword="${w}" aria-label="${t('unknown',{w})}. Remove">${t('unknown',{w})}<span class="x">${ic('x',14)}</span></button>`);
+  const sub=p.running?t('startsTimer',{when:whenText(p)}):t('logs',{when:whenText(p)});
+  pv.hidden=false;
+  pv.innerHTML=`<div class="pv-title">${circ(cat,icon,'s',18)}<div class="tx"><b>${nm(p.type)}${det?' · '+det:''}</b><span>${sub}${p.stopsSleep&&hasRunningSleep()?' · '+t('stopsSleep'):''}</span></div></div><div class="chips">${chips.join('')}</div>`;
+  $('#send').disabled=p.needs.length>0;
+}
+const hasRunningSleep=()=>S.events.some(e=>e.baby===S.baby&&e.end===null&&['nap','night'].includes(e.preset));
+// fixing a parse by tapping a chip rewrites the text, so the field stays the single source of truth
+$('#preview').addEventListener('click',ev=>{
+  const b=ev.target.closest('button');if(!b)return;const q=$('#q');const pt=S.lang==='pt';
+  const add=w=>{q.value=(q.value.trim()+' '+w).trim();};
+  if(b.dataset.settype){q.value=(nm(b.dataset.settype).toLowerCase()+' '+q.value).trim();}
+  if(b.dataset.diaper)add(t(b.dataset.diaper).toLowerCase());
+  if(b.dataset.intensity)add(b.dataset.intensity);
+  if(b.dataset.amount)add(b.dataset.amount+' ml');
+  if(b.dataset.med)add(b.dataset.med.toLowerCase());
+  if(b.dataset.side){q.value=q.value.replace(/\b(left|right|esquerdo|direito|esquerda|direita)\b/gi,'').trim();add(t(b.dataset.side).toLowerCase());}
+  if(b.dataset.content){q.value=q.value.replace(/\b(formula|fórmula|breast milk|leite materno)\b/gi,'').trim();add(b.dataset.content==='formula'?(pt?'fórmula':'formula'):(pt?'leite materno':'breast milk'));}
+  if(b.dataset.kind){q.value=q.value.replace(/\b(nap|soneca|night sleep|sono da noite|night|noite|sleep|sono|dormiu|slept)\b/gi,'').trim();q.value=(nm(b.dataset.kind).toLowerCase()+' '+q.value).trim();}
+  if(b.dataset.dropword){q.value=q.value.replace(new RegExp('\\b'+b.dataset.dropword+'\\b','i'),'').replace(/\s+/g,' ').trim();}
+  renderPreview();q.focus();
+});
+/* autocomplete: presets and recent combinations that match what is typed */
+function renderAC(q){
+  const ac=$('#ac');if(!q||q.length<2||/\d/.test(q)){ac.innerHTML='';return;}
+  const s=strip(q);const items=[];
+  for(const e of recentCombos()){const label=`${nm(e.preset)} ${detailOf(e.preset,e.payload)}`;if(strip(label).includes(s)||strip(nm(e.preset)).startsWith(s))items.push({label,fill:e.fill,sub:t('ago',{d:fmtDur(Date.now()-e.start)}),icon:P[e.preset][1]});}
+  for(const k of Object.keys(P)){if(strip(nm(k)).startsWith(s)&&!items.some(i=>strip(i.label).startsWith(strip(nm(k)))))items.push({label:nm(k),fill:nm(k).toLowerCase()+' ',sub:'',icon:P[k][1]});}
+  ac.innerHTML=items.slice(0,3).map(i=>`<button type="button" data-fill="${i.fill}">${ic(i.icon,18)}${i.label}<small>${i.sub}</small></button>`).join('');
+}
+$('#ac').addEventListener('click',ev=>{const b=ev.target.closest('[data-fill]');if(!b)return;$('#q').value=b.dataset.fill;renderPreview();$('#q').focus();});
+function recentCombos(){
+  const seen=new Set();const out=[];
+  for(const e of [...S.events].filter(e=>e.baby===S.baby&&e.end!==null).sort((a,b)=>b.start-a.start)){
+    const sig=e.preset+JSON.stringify(e.payload);if(seen.has(sig))continue;seen.add(sig);
+    out.push({...e,fill:fillFor(e)});if(out.length>=3)break;}
+  return out;
+}
+function fillFor(e){const pt=S.lang==='pt';const n=nm(e.preset).toLowerCase();
+  if(e.preset==='bottle')return `${n} ${e.payload.amount} ${t(e.payload.content).toLowerCase()}`;
+  if(e.preset==='diaper')return `${n} ${t(e.payload.content).toLowerCase()}`;
+  if(e.preset==='medication')return e.payload.medications.map(m=>`${MEDS.find(x=>x.id===m.id).name.toLowerCase()}`).join(pt?' e ':' and ');
+  return n;}
+
+/* ---------- committing ---------- */
+let toastT=null,undoIds=null,undoStopped=null;
+function commit(p){
+  if(!p||!p.type||p.needs.length)return;
+  const ids=[];undoStopped=[];
+  for(const b of p.babies){
+    if(p.stopsSleep){for(const e of S.events.filter(e=>e.baby===b&&e.end===null&&['nap','night'].includes(e.preset))){undoStopped.push(e.id);e.end=p.start;}}
+    const ev={id:uid(),baby:b,preset:p.type,start:p.start,end:p.running?null:p.end,payload:structuredClone(p.payload),notes:p.notes.concat(p.unknown).join(' ')||null};
+    S.events.push(ev);ids.push(ev.id);}
+  undoIds=ids;
+  const det=detailOf(p.type,p.payload);const what=`${nm(p.type)}${det?' · '+det:''}`;
+  $('#toast').innerHTML=`${circ(P[p.type][0],P[p.type][1],'s',18)}<div class="tx"><b>${what}</b><span>${p.running?t('startsTimer',{when:whenText(p)}):t('logs',{when:whenText(p)})}${S.twins?' · '+p.babies.map(b=>BABIES[b]).join(' + '):''}</span></div><button class="btn tonal" id="undo">${ic('undo',18)}${t('undo')}</button>`;
+  $('#toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('show'),6000);
+  $('#live').textContent=what;
+  if(navigator.vibrate)try{navigator.vibrate(10)}catch(e){}
+  $('#q').value='';renderPreview();closeSheet();renderMain(ids);
+}
+$('#toast').addEventListener('click',ev=>{if(!ev.target.closest('#undo'))return;S.events=S.events.filter(e=>!undoIds.includes(e.id));for(const id of undoStopped){const e=S.events.find(x=>x.id===id);if(e)e.end=null;}$('#toast').classList.remove('show');$('#live').textContent=t('undone');renderMain();});
+$('#toast').addEventListener('pointerenter',()=>clearTimeout(toastT));
+$('#toast').addEventListener('pointerleave',()=>{toastT=setTimeout(()=>$('#toast').classList.remove('show'),3000);});
+$('#form').addEventListener('submit',ev=>{ev.preventDefault();commit(current);});
+$('#q').addEventListener('input',renderPreview);
+
+/* ---------- sheet body: suggestions, repeat, all presets ---------- */
+function renderBody(){
+  const lb=lastOf('bottle');
+  const sugs=[
+    {k:'nap',sub:t('awakeFor'),fill:null},
+    {k:'bottle',sub:t('lastFeed'),fill:lb?fillFor(lb):null,label:lb?`${nm('bottle')} ${lb.payload.amount} ml`:nm('bottle')},
+    {k:'diaper',sub:t('lastDiaper'),fill:nm('diaper').toLowerCase()+' '}
+  ];
+  $('#body').innerHTML=`<div class="flabel">${ic('spark',14)}${t('suggested')}</div><div class="sugs">${sugs.map(s=>`<button class="sug" data-sug="${s.k}" data-fill="${s.fill||''}">${circ(P[s.k][0],P[s.k][1],'s',18)}<b>${s.label||nm(s.k)}</b><span>${s.sub}</span></button>`).join('')}</div>
+  <div class="flabel">${ic('repeat',14)}${t('repeat')}</div>${recentCombos().map(e=>`<button class="rep" data-repeat="${e.id}">${circ(P[e.preset][0],P[e.preset][1],'s',18)}<span class="tx"><b>${nm(e.preset)}${detailOf(e.preset,e.payload)?' · '+detailOf(e.preset,e.payload):''}</b><span>${t('ago',{d:fmtDur(Date.now()-e.start)})}</span></span><span class="go">${ic('repeat',16)}${t('again')}</span></button>`).join('')}
+  <div class="flabel">${t('all')}</div><div class="grid">${['wake_up','nap','bedtime','fell_asleep','night_waking','bottle','nursing','diaper','medication','belly_pain','bath','tummy_time'].map(k=>`<button class="tile" data-tile="${k}">${circ(P[k][0],P[k][1],'s',18)}${nm(k)}</button>`).join('')}</div>`;
+}
+$('#body').addEventListener('click',ev=>{
+  const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.sug){if(b.dataset.sug==='nap'){commit(parse(nm('nap')));return;}if(b.dataset.sug==='bottle'&&b.dataset.fill){commit(parse(b.dataset.fill));return;}$('#q').value=b.dataset.fill||nm(b.dataset.sug).toLowerCase()+' ';renderPreview();$('#q').focus();return;}
+  if(b.dataset.repeat){const e=S.events.find(x=>x.id===b.dataset.repeat);const timer=P[e.preset][2]==='timer';const n=Date.now();const pl=structuredClone(e.payload);if(e.preset==='nursing'){delete pl.left;delete pl.right;pl.side='left';}
+    commit({type:e.preset,payload:pl,needs:[],notes:[],unknown:[],babies:[S.baby],start:n,end:timer?null:n,running:timer});return;}
+  if(b.dataset.tile){const k=b.dataset.tile;$('#q').value=nm(k).toLowerCase()+' ';renderPreview();$('#q').focus();}
+});
+
+/* ---------- voice (simulated; see the privacy copy) ---------- */
+const SAMPLES={en:['bottle 120 breast milk 10 min ago','wet diaper','nap 15 min ago','colidis 5 drops','woke up 5 min ago','nursing left 8 right 6'],pt:['mamadeira 120 leite materno há 10 min','fralda xixi','soneca há 15 min','colidis 5 gotas','acordou há 5 min','mamou esquerdo 8 direito 6']};
+let listening=false;
+$('#mic').addEventListener('click',()=>{if(!S.voiceOk){openVoice();return;}listen();});
+function openVoice(){const v=$('#voice');v.hidden=false;['vTitle','vBody1','vBody2','vBody3','vNo','vYes'].forEach(id=>$('#'+id).textContent=t(id));$('#vYes').focus();}
+$('#vNo').addEventListener('click',()=>{$('#voice').hidden=true;$('#q').focus();});
+$('#vYes').addEventListener('click',()=>{S.voiceOk=true;$('#voice').hidden=true;listen();});
+function listen(){
+  if(listening)return;listening=true;$('#mic').classList.add('on');$('#listening').hidden=false;$('#listenTxt').textContent=t('listening');
+  const phrase=SAMPLES[S.lang][Math.floor(Math.random()*SAMPLES[S.lang].length)];let i=0;$('#q').value='';
+  const iv=setInterval(()=>{const words=phrase.split(' ');$('#q').value=words.slice(0,++i).join(' ');renderPreview();if(i>=words.length){clearInterval(iv);listening=false;$('#mic').classList.remove('on');$('#listening').hidden=true;$('#q').focus();}},280);
+}
+
+/* ---------- home background ---------- */
+function renderMain(fresh=[]){
+  const evs=[...S.events].filter(e=>S.twins||e.baby===S.baby).sort((a,b)=>b.start-a.start).slice(0,8);
+  $('#main').innerHTML=`<div class="card"><div class="big tnum">${t('awake')}</div><div class="muted">${t('nextNap',{t:fmtT(Date.now()+20*MIN)})}</div></div>
+  <div class="sect">${ic('clock',18)}${t('latest')}</div>${evs.map(e=>`<div class="rowi${fresh.includes(e.id)?' fresh':''}"><span class="time tnum">${fmtT(e.start)}</span>${circ(P[e.preset][0],P[e.preset][1],'s',18)}<div><div class="t1">${nm(e.preset)}${S.twins?` · ${BABIES[e.baby]}`:''}</div><div class="t2">${e.end===null?(S.lang==='pt'?'Em andamento':'Running'):[detailOf(e.preset,e.payload),e.end!==e.start?fmtDur(e.end-e.start):''].filter(Boolean).join(' · ')}</div></div></div>`).join('')}`;
+  $('#nav').innerHTML=`<span>${ic('home')}${t('home')}</span><span>${ic('list')}${t('timeline')}</span><span style="position:relative"><button class="fab" id="fab" aria-label="${t('track')}">${ic('plus',28,2.2)}</button></span><span>${ic('chart')}${t('growth')}</span><span>${ic('gear')}${t('settings')}</span>`;
+  $('#fab').onclick=openSheet;
+}
+// The field is one tap away at the bottom; it is not auto-focused, so the keyboard never hides the suggestions.
+function openSheet(){$('#overlay').hidden=false;renderBody();setTimeout(()=>{const f=$('#body .sug');f&&f.focus({preventScroll:true});},50);}
+function closeSheet(){$('#overlay').hidden=true;}
+$('#scrim').addEventListener('click',closeSheet);
+$('#close').addEventListener('click',closeSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#voice').hidden)$('#voice').hidden=true;else closeSheet();}});
+
+function renderChrome(){
+  document.documentElement.lang=S.lang==='pt'?'pt-BR':'en';
+  $('#age').textContent=t('age');$('#trackTitle').textContent=t('track');$('#pins').textContent=t('pins');
+  $('#close').innerHTML=ic('x');$('#spark').innerHTML=ic('spark',20);$('#mic').innerHTML=ic('mic');$('#mic').setAttribute('aria-label',S.lang==='pt'?'Falar':'Speak');
+  $('#send').innerHTML=ic('send',24,2.2);$('#send').setAttribute('aria-label',t('log'));
+  $('#q').placeholder=t('placeholder');$('#fieldLabel').textContent=t('fieldLabel');$('#q').setAttribute('aria-label',t('fieldLabel'));
+  renderBody();renderPreview();renderMain();renderNotes();
+}
+function seed(){const n=Date.now(),a=m=>n-m*MIN;
+  S.events=[
+   {id:uid(),baby:'alice',preset:'medication',start:a(400),end:a(400),payload:{medications:[{id:'m1',dose:5,unit:'drops'},{id:'m2',dose:1,unit:'ml'}]}},
+   {id:uid(),baby:'alice',preset:'nursing',start:a(318),end:a(300),payload:{left:480,right:360,side:'both'}},
+   {id:uid(),baby:'alice',preset:'bottle',start:a(190),end:a(190),payload:{amount:90,content:'formula'}},
+   {id:uid(),baby:'alice',preset:'nap',start:a(165),end:a(85),payload:{kind:'nap'}},
+   {id:uid(),baby:'alice',preset:'diaper',start:a(70),end:a(70),payload:{content:'wet'}},
+   {id:uid(),baby:'bia',preset:'bottle',start:a(150),end:a(150),payload:{amount:120,content:'formula'}}];}
+function renderNotes(){
+  const en=S.lang==='en';const ex=SAMPLES[S.lang].concat(en?['poop','sleep','bath at 18:30','belly pain 3','nap 13:10-14:05','meds','bottle 4 oz','bottle 90 "spat up a bit"','bia bottle 90','sleep for 40 min yesterday 14:00']:['cocô','dormiu','banho às 18h30','cólica 3','soneca das 13h10 às 14h05','remédios','mamadeira 90 "golfou um pouco"','bia mamadeira 90','xixi e cocô','dormiu por 40 min ontem 14:00']);
+  $('#notes').innerHTML=`<h1>03-B Command bar</h1><p>${en?'The <b>+</b> sheet opens with the field focused. Typing builds a live preview from a local, deterministic parser (English and Portuguese are both understood regardless of the UI language). Nothing is logged until you press Log or Enter, and every log can be undone.':'A folha <b>+</b> abre com o campo em foco. Ao digitar, um analisador local e determinístico monta a prévia (entende inglês e português ao mesmo tempo). Nada é registrado antes de Registrar/Enter, e tudo pode ser desfeito.'}</p>
+  <div class="ctl"><button aria-pressed="${S.lang==='en'}" data-lang="en">EN</button><button aria-pressed="${S.lang==='pt'}" data-lang="pt">PT-BR</button><button aria-pressed="${S.twins}" data-twins>Twins</button><button data-open>${en?'Open + sheet':'Abrir folha +'}</button></div>
+  <h2>${en?'Tap an example to type it':'Toque num exemplo para digitar'}</h2><div class="ex">${ex.map(x=>`<button data-ex="${x.replace(/"/g,'&quot;')}">${x}</button>`).join('')}</div>
+  <h2>${en?'Rules shown here':'Regras mostradas'}</h2><ul>
+  <li>${en?'Missing required values never get silent defaults: the preview asks with chips (diaper content, intensity, which medication).':'Valores obrigatórios nunca ganham padrão silencioso: a prévia pergunta com chips.'}</li>
+  <li>${en?'Optional values come from the last log (bottle content, amount) and are labelled “last”.':'Valores opcionais vêm do último registro e aparecem como “última”.'}</li>
+  <li>${en?'“10 min ago” moves the start; “for 40 min” or a bare “40 min” on a timer type makes a finished session; a range sets both ends; “sleep” infers nap or night from the hour and offers a toggle.':'“há 10 min” move o início; “por 40 min” cria sessão encerrada; intervalos definem início e fim; “dormiu” infere soneca ou noite.'}</li>
+  <li>${en?'Unknown words are shown as dashed chips and saved as a note unless removed.':'Palavras desconhecidas aparecem tracejadas e viram observação, a menos que removidas.'}</li>
+  <li>${en?'Voice is simulated here. The real one is opt-in with the privacy notice shown on first use.':'A voz é simulada aqui; a real exige consentimento com o aviso de privacidade.'}</li></ul>`;
+}
+$('#notes').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.lang){S.lang=b.dataset.lang;renderChrome();return;}
+  if(b.hasAttribute('data-twins')){S.twins=!S.twins;renderChrome();return;}
+  if(b.hasAttribute('data-open')){openSheet();return;}
+  if(b.dataset.ex!=null){openSheet();$('#q').value=b.dataset.ex;renderPreview();}
+});
+seed();renderChrome();openSheet();
+</script>
+</body>
+</html>

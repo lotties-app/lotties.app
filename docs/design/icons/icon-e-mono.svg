@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Lotties app icon, concept E "Mobile" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<clipPath id="em-clip">
+<path d="M0 0H1024V1024H0Z"/>
+</clipPath>
+</defs>
+<g clip-path="url(#em-clip)">
+<g transform="translate(512 512) scale(1.358) translate(-515.5 -473)">
+<path d="M497.6 220L497.6 340A14.4 14.4 0 0 0 526.4 340L526.4 220A14.4 14.4 0 0 0 497.6 220Z" fill="#000000"/>
+<path d="M271.6 368.8L271.6 528A14.4 14.4 0 0 0 300.4 528L300.4 368.8A14.4 14.4 0 0 0 271.6 368.8Z" fill="#000000"/>
+<path d="M721.6 368.4L721.6 452A14.4 14.4 0 0 0 750.4 452L750.4 368.4A14.4 14.4 0 0 0 721.6 368.4Z" fill="#000000"/>
+<path d="M497.6 350L497.6 508A14.4 14.4 0 0 0 526.4 508L526.4 350A14.4 14.4 0 0 0 497.6 350Z" fill="#000000"/>
+<path d="M218.5 348.7A1078 1078 0 0 1 805.5 348.7A36 36 0 0 1 785.9 418A1006 1006 0 0 0 238.1 418A36 36 0 0 1 218.5 348.7Z" fill="#000000"/>
+<path d="M482 346a30 30 0 1 0 60 0a30 30 0 1 0 -60 0Z" fill="#000000"/>
+<path d="M176 630a110 110 0 1 0 220 0a110 110 0 1 0 -220 0Z" fill="#000000"/>
+<path d="M855 533.3A124 124 0 1 0 717.1 690.6A105 105 0 0 1 855 533.3Z" fill="#000000"/>
+<path d="M512 500C525.2 552.8 525.2 552.8 578 566C525.2 579.2 525.2 579.2 512 632C498.8 579.2 498.8 579.2 446 566C498.8 552.8 498.8 552.8 512 500Z" fill="#000000"/>
+</g>
+</g>
+</svg>

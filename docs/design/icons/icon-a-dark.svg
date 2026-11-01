@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Lotties app icon, concept A "Cloud cradle" (dark). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<linearGradient id="ada-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#332e27"/>
+<stop offset="0.55" stop-color="#24201b"/>
+<stop offset="1" stop-color="#1b1814"/>
+</linearGradient>
+<clipPath id="ada-clip">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z"/>
+</clipPath>
+<linearGradient id="ada-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#f3cdbb"/>
+<stop offset="0.5" stop-color="#e58f68"/>
+<stop offset="1" stop-color="#c76c49"/>
+</linearGradient>
+<radialGradient id="ada-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#c76c49" stop-opacity="0"/>
+<stop offset="1" stop-color="#c76c49" stop-opacity="0.5"/>
+</radialGradient>
+<mask id="ada-k1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="#000000" stroke="#000000" stroke-width="36" stroke-linejoin="round"/>
+</mask>
+<linearGradient id="ada-sleep" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#d8e3f2"/>
+<stop offset="0.5" stop-color="#a9c1e3"/>
+<stop offset="1" stop-color="#6b85aa"/>
+</linearGradient>
+<radialGradient id="ada-sleep-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#6b85aa" stop-opacity="0"/>
+<stop offset="1" stop-color="#6b85aa" stop-opacity="0.5"/>
+</radialGradient>
+<linearGradient id="ada-gold" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#f5e4c3"/>
+<stop offset="0.5" stop-color="#e8c47a"/>
+<stop offset="1" stop-color="#ab8944"/>
+</linearGradient>
+<radialGradient id="ada-gold-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.36"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#ab8944" stop-opacity="0"/>
+<stop offset="1" stop-color="#ab8944" stop-opacity="0.5"/>
+</radialGradient>
+</defs>
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z" fill="url(#ada-tile)"/>
+<g clip-path="url(#ada-clip)">
+<g transform="translate(0 -24)">
+<g mask="url(#ada-k1)">
+<path d="M495.3 304.9A158 158 0 1 0 658.2 522A136 136 0 0 1 495.3 304.9Z" fill="url(#ada-accent)"/>
+<path d="M495.3 304.9A158 158 0 1 0 658.2 522A136 136 0 0 1 495.3 304.9Z" fill="url(#ada-accent-v)"/>
+<path d="M405.9 483.2L411.9 435.2A10 10 0 0 0 392.1 432.8L386.1 480.8A10 10 0 0 0 405.9 483.2Z" fill="#ffffff" opacity="0.36"/>
+</g>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="url(#ada-sleep)"/>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="url(#ada-sleep-v)"/>
+<path d="M292 288C301.6 326.4 301.6 326.4 340 336C301.6 345.6 301.6 345.6 292 384C282.4 345.6 282.4 345.6 244 336C282.4 326.4 282.4 326.4 292 288Z" fill="url(#ada-gold)"/>
+<path d="M292 288C301.6 326.4 301.6 326.4 340 336C301.6 345.6 301.6 345.6 292 384C282.4 345.6 282.4 345.6 244 336C282.4 326.4 282.4 326.4 292 288Z" fill="url(#ada-gold-v)"/>
+</g>
+</g>
+</svg>

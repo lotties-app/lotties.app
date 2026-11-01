@@ -1,0 +1,67 @@
+# The API (.NET 8, image lotties-api built from code/api/Dockerfile). The Ingress sends https://<PUBLIC_HOST>/api/...
+# here unchanged: the routes already start with /api/v1. Only /api is public; /health is for the probes.
+# Set by deploy.sh: image, AUTH_AUTHORITY, AUTH_AUDIENCE, CORS_ALLOWED_ORIGINS, DB_AUTO_MIGRATE,
+# FORWARDED_HEADERS_TRUSTED_NETWORKS (when set in .env) and podAnnotations.checksum/secrets.
+imagePullSecrets:
+  - name: cr-homel4b
+
+# "app" in the .NET 8 images.
+runAsUser: 1654
+containerPort: 8080
+
+probe:
+  path: /health
+  periodSeconds: 10
+  # 36 x 10 s = 6 min: with DB_AUTO_MIGRATE on, a starting pod may wait up to 5 min for another pod's migration lock.
+  startupFailureThreshold: 36
+
+resources:
+  cpuRequests: "50m"
+  memoryRequests: "192Mi"
+  memoryLimit: "512Mi"
+
+env:
+  ASPNETCORE_URLS: "http://+:8080"
+  ASPNETCORE_ENVIRONMENT: "Production"
+  # Traefik reaches the pod from the pod network (10.42.0.0/16 on k3s), inside the API's default trusted ranges
+  # (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), so X-Forwarded-For/-Proto from it are applied.
+
+# The Secret lotties-secrets is made by deploy.sh from deploy/homelab/.env (or keeps what it already has).
+secretEnv:
+  DB_HOST:
+    secretName: lotties-secrets
+    key: DB_HOST
+  DB_PORT:
+    secretName: lotties-secrets
+    key: DB_PORT
+  DB_NAME:
+    secretName: lotties-secrets
+    key: DB_NAME
+  DB_APP_USER:
+    secretName: lotties-secrets
+    key: DB_APP_USER
+  DB_APP_PASSWORD:
+    secretName: lotties-secrets
+    key: DB_APP_PASSWORD
+  # Web Push: all three or none (none = push off; the app hides it).
+  PUSH_VAPID_PUBLIC_KEY:
+    secretName: lotties-secrets
+    key: PUSH_VAPID_PUBLIC_KEY
+    optional: true
+  PUSH_VAPID_PRIVATE_KEY:
+    secretName: lotties-secrets
+    key: PUSH_VAPID_PRIVATE_KEY
+    optional: true
+  PUSH_VAPID_SUBJECT:
+    secretName: lotties-secrets
+    key: PUSH_VAPID_SUBJECT
+    optional: true
+  # Only in the Secret when DB_AUTO_MIGRATE=true: the pod then holds the migrator role's credentials.
+  DB_MIGRATOR_USER:
+    secretName: lotties-secrets
+    key: DB_MIGRATOR_USER
+    optional: true
+  DB_MIGRATOR_PASSWORD:
+    secretName: lotties-secrets
+    key: DB_MIGRATOR_PASSWORD
+    optional: true

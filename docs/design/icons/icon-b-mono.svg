@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Lotties app icon, concept B "Day disc" (monochrome silhouette, transparent, cropped tight for badges; only alpha is meaningful; pad to the 66% safe zone for the manifest monochrome icon). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<clipPath id="bm-clip">
+<path d="M0 0H1024V1024H0Z"/>
+</clipPath>
+<mask id="bm-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M668 327C677.9 362.1 677.9 362.1 713 372C677.9 381.9 677.9 381.9 668 417C658.1 381.9 658.1 381.9 623 372C658.1 362.1 658.1 362.1 668 327Z" fill="#000000"/>
+</mask>
+<mask id="bm-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M458.9 671.8A230 230 0 1 0 458.9 224.2A236 236 0 0 1 458.9 671.8Z" fill="#000000" stroke="#000000" stroke-width="68" stroke-linejoin="round"/>
+</mask>
+<mask id="bm-k3" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M604 714L604 788A16 16 0 0 0 636 788L636 714A16 16 0 0 0 604 714Z" fill="#000000" stroke="#000000" stroke-width="32" stroke-linejoin="round"/>
+</mask>
+</defs>
+<g clip-path="url(#bm-clip)">
+<g transform="translate(512 512) scale(1.321) translate(-507 -511)">
+<g mask="url(#bm-k2)">
+<path d="M282 448a230 230 0 1 0 460 0a230 230 0 1 0 -460 0Z" fill="#000000"/>
+</g>
+<g mask="url(#bm-h1)">
+<path d="M458.9 671.8A230 230 0 1 0 458.9 224.2A236 236 0 0 1 458.9 671.8Z" fill="#000000"/>
+</g>
+<g mask="url(#bm-k3)">
+<path d="M176 780L620 780A22 22 0 0 0 620 736L176 736A22 22 0 0 0 176 780Z" fill="#000000"/>
+<path d="M620 770L848 770A12 12 0 0 0 848 746L620 746A12 12 0 0 0 620 770Z" fill="#000000"/>
+</g>
+<path d="M604 714L604 788A16 16 0 0 0 636 788L636 714A16 16 0 0 0 604 714Z" fill="#000000"/>
+</g>
+</g>
+</svg>

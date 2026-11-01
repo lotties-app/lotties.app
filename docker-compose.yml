@@ -2,17 +2,28 @@
 # Add `--profile localdb` to also start a local PostgreSQL. See docs/DEPLOY.md.
 services:
   api:
-    build: ./api
+    build: ./code/api
     environment:
       ASPNETCORE_URLS: http://+:8080
       DB_HOST: ${DB_HOST:?set DB_HOST in .env}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-babyroutine}
+      DB_NAME: ${DB_NAME:-lotties}
       DB_APP_USER: ${DB_APP_USER:?set DB_APP_USER in .env}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
+      # Opt-in: apply pending migrations at startup (docs/DEPLOY.md "Applying migrations"). The migrator
+      # credentials fall back to DB_APP_*; they are only used when DB_AUTO_MIGRATE is true.
+      DB_AUTO_MIGRATE: ${DB_AUTO_MIGRATE:-false}
+      DB_MIGRATOR_USER: ${DB_MIGRATOR_USER:-}
+      DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:-}
       AUTH_AUTHORITY: ${AUTH_AUTHORITY:?set AUTH_AUTHORITY in .env}
       AUTH_AUDIENCE: ${AUTH_AUDIENCE:?set AUTH_AUDIENCE in .env}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      # Proxies whose X-Forwarded-For/-Proto the api trusts (CIDR list); empty = the private ranges, which cover
+      # the web container (docs/DEPLOY.md "Reverse proxy and TLS").
+      FORWARDED_HEADERS_TRUSTED_NETWORKS: ${FORWARDED_HEADERS_TRUSTED_NETWORKS:-}
+      PUSH_VAPID_PUBLIC_KEY: ${PUSH_VAPID_PUBLIC_KEY:-}
+      PUSH_VAPID_PRIVATE_KEY: ${PUSH_VAPID_PRIVATE_KEY:-}
+      PUSH_VAPID_SUBJECT: ${PUSH_VAPID_SUBJECT:-}
     # Not published to the host: the browser reaches the API through the web container (/api/).
     expose:
       - "8080"
@@ -20,19 +31,29 @@ services:
       postgres:
         condition: service_healthy
         required: false # only present with --profile localdb
+    # Repeated here because podman builds OCI images by default, which drop the Dockerfile HEALTHCHECK.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     restart: unless-stopped
 
   web:
     build:
-      context: ./web
+      context: ./code/web
       args:
         # Empty = same origin (nginx proxies /api/ to the api service).
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
         VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:?set VITE_OIDC_AUTHORITY in .env}
         VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:?set VITE_OIDC_CLIENT_ID in .env}
         VITE_OIDC_AUDIENCE: ${VITE_OIDC_AUDIENCE:-}
+        # Optional source repository link in the landing footer; empty hides it.
+        VITE_REPO_URL: ${VITE_REPO_URL:-}
+    # The web image is nginx-unprivileged (uid 101), listening on 8080 inside the container.
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-8080}:8080"
     depends_on:
       - api
     restart: unless-stopped
@@ -45,8 +66,8 @@ services:
     image: postgres:16
     profiles: ["localdb"]
     environment:
-      POSTGRES_DB: ${DB_NAME:-babyroutine}
-      POSTGRES_USER: ${DB_APP_USER:-baby_app}
+      POSTGRES_DB: ${DB_NAME:-lotties}
+      POSTGRES_USER: ${DB_APP_USER:-lotties_app}
       # No default on purpose: the postgres image refuses to initialise with an empty password.
       # (`:?` would break `docker compose up` for users who do not use this profile.)
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}

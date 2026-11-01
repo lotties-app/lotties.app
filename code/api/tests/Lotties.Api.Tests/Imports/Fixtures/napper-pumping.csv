@@ -1,0 +1,6 @@
+start,end,category,overallHappiness,babyMoodOnWakeUp,babyMoodOnSleep,diaperWeight,diaperContent,breastLeftSeconds,breastRightSeconds,amountPumpedLeft,amountPumpedRight,feedingAmount,temperature,bottleFeedingType,comment,numberOfPauses,pausedMinutes,units,howBabySlept,howBabyWoke,timeToFallAsleep,createdAt,updatedAt
+2025-09-03T07:00:00.000-03:00,2025-09-03T07:15:00.000-03:00,PUMPING,,,,,,,,40,35.5,,,,Morning session,,,,,,,2025-09-03T07:15:00.000-03:00,2025-09-03T07:15:00.000-03:00
+2025-09-03T13:00:00.000-03:00,2025-09-03T13:00:00.000-03:00,BREAST_PUMP,,,,,,,,20,,,,,,,,,,,,2025-09-03T13:00:00.000-03:00,2025-09-03T13:00:00.000-03:00
+2025-09-03T15:00:00.000-03:00,2025-09-03T15:10:00.000-03:00,PUMPING,,,,,,,,-5,,,,,,,,,,,,2025-09-03T15:10:00.000-03:00,2025-09-03T15:10:00.000-03:00
+2025-09-03T16:00:00.000-03:00,2025-09-03T16:00:00.000-03:00,BOTTLE,,,,,,,,,,90,,FORMULA,,,,,,,,2025-09-03T16:00:00.000-03:00,2025-09-03T16:00:00.000-03:00
+2025-09-03T17:00:00.000-03:00,2025-09-03T17:00:00.000-03:00,UNKNOWN_ACTIVITY,,,,,,,,,,,,,,,,,,,,2025-09-03T17:00:00.000-03:00,2025-09-03T17:00:00.000-03:00

@@ -1,0 +1,44 @@
+using Lotties.Domain.Babies;
+using Lotties.Domain.Events;
+using Lotties.Domain.EventTypes;
+using Lotties.Domain.Measurements;
+using Lotties.Domain.Medications;
+using Lotties.Domain.Users;
+using Lotties.Infrastructure.Persistence;
+using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Lotties.Infrastructure;
+
+public static class InfrastructureServiceCollectionExtensions
+{
+    /// <summary>
+    /// Registers <paramref name="databaseOptions"/>, a scoped <see cref="LottiesDbContext"/>, the PostgreSQL
+    /// <see cref="IUniqueViolationDetector"/> (another provider, e.g. a test database, adds its own) and the repositories.
+    /// </summary>
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, DatabaseOptions databaseOptions)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(databaseOptions);
+        services.AddSingleton(databaseOptions);
+        services.AddDbContext<LottiesDbContext>(options => options.UseLottiesDatabase(databaseOptions.ToConnectionString()));
+        services.AddSingleton<IUniqueViolationDetector, NpgsqlUniqueViolationDetector>();
+        services.AddSingleton<UniqueViolations>();
+        services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IBabyMembershipRepository, EfBabyMembershipRepository>();
+        services.AddScoped<IBabyRepository, EfBabyRepository>();
+        services.AddScoped<IInviteRepository, EfInviteRepository>();
+        services.AddScoped<IMedicationRepository, EfMedicationRepository>();
+        services.AddScoped<IMeasurementRepository, EfMeasurementRepository>();
+        services.AddScoped<Lotties.Domain.Catalog.ICatalogRepository, EfCatalogRepository>();
+        services.AddScoped<Lotties.Domain.Prescriptions.IPrescriptionRepository, EfPrescriptionRepository>();
+        services.AddScoped<Lotties.Domain.Prescriptions.IMedicationDoseHistoryRepository, EfMedicationDoseHistoryRepository>();
+        services.AddScoped<IEventRepository, EfEventRepository>();
+        services.AddScoped<IEventTypeRepository, EfEventTypeRepository>();
+        services.AddScoped<Lotties.Domain.Imports.IImportRepository, EfImportRepository>();
+        services.AddScoped<Lotties.Domain.Predictions.IPredictionHistoryRepository, EfPredictionHistoryRepository>();
+        return services;
+    }
+}

@@ -1,0 +1,30 @@
+# The web app (React SPA served by nginx-unprivileged, image lotties-web built from code/web/Dockerfile). The OIDC
+# settings are baked in at build time (VITE_* build arguments). The Ingress sends everything but /api here.
+# Set by deploy.sh: image, API_UPSTREAM.
+imagePullSecrets:
+  - name: cr-homel4b
+
+# nginx-unprivileged runs as 101 and listens on 8080.
+runAsUser: 101
+containerPort: 8080
+
+probe:
+  path: /
+  periodSeconds: 10
+  startupFailureThreshold: 12
+
+# The entrypoint renders /etc/nginx/conf.d/default.conf from the template at start; /tmp holds the pid and temp files.
+extraEmptyDirs:
+  - name: nginx-conf
+    mountPath: /etc/nginx/conf.d
+
+resources:
+  cpuRequests: "20m"
+  memoryRequests: "32Mi"
+  memoryLimit: "128Mi"
+
+env:
+  # Where nginx would proxy /api/ (set by deploy.sh to the API Service's cluster name). In the cluster the Ingress
+  # sends /api to the API directly, so this only matters when the web Service is reached on its own
+  # (kubectl port-forward svc/lotties-web 8080:8080 then serves the whole app).
+  API_UPSTREAM: ""

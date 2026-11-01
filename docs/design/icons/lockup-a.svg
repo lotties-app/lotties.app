@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 300" width="1220" height="300">
+<!-- Lotties app icon, concept A "Cloud cradle" (wordmark lockup, light; the name is live text in Fraunces (SIL OFL 1.1): final art converts it to outlines). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<linearGradient id="alk-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#fffcf6"/>
+<stop offset="0.55" stop-color="#f5efe4"/>
+<stop offset="1" stop-color="#ebe2d0"/>
+</linearGradient>
+<clipPath id="alk-clip">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z"/>
+</clipPath>
+<linearGradient id="alk-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#dc7c55"/>
+<stop offset="0.5" stop-color="#ca552d"/>
+<stop offset="1" stop-color="#bc502c"/>
+</linearGradient>
+<radialGradient id="alk-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#a8482a" stop-opacity="0"/>
+<stop offset="1" stop-color="#a8482a" stop-opacity="0.36"/>
+</radialGradient>
+<mask id="alk-k1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="#000000" stroke="#000000" stroke-width="36" stroke-linejoin="round"/>
+</mask>
+<linearGradient id="alk-sleep" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#8ba5cc"/>
+<stop offset="0.5" stop-color="#4a6a9b"/>
+<stop offset="1" stop-color="#3e5c8a"/>
+</linearGradient>
+<radialGradient id="alk-sleep-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#2c4870" stop-opacity="0"/>
+<stop offset="1" stop-color="#2c4870" stop-opacity="0.36"/>
+</radialGradient>
+<linearGradient id="alk-gold" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#d1ab5e"/>
+<stop offset="0.5" stop-color="#a07521"/>
+<stop offset="1" stop-color="#8c6519"/>
+</linearGradient>
+<radialGradient id="alk-gold-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#6e4e0e" stop-opacity="0"/>
+<stop offset="1" stop-color="#6e4e0e" stop-opacity="0.36"/>
+</radialGradient>
+</defs>
+<g transform="translate(20 20) scale(0.25390625)">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z" fill="url(#alk-tile)"/>
+<g clip-path="url(#alk-clip)">
+<g transform="translate(0 -24)">
+<g mask="url(#alk-k1)">
+<path d="M495.3 304.9A158 158 0 1 0 658.2 522A136 136 0 0 1 495.3 304.9Z" fill="url(#alk-accent)"/>
+<path d="M495.3 304.9A158 158 0 1 0 658.2 522A136 136 0 0 1 495.3 304.9Z" fill="url(#alk-accent-v)"/>
+<path d="M405.9 483.2L411.9 435.2A10 10 0 0 0 392.1 432.8L386.1 480.8A10 10 0 0 0 405.9 483.2Z" fill="#ffffff" opacity="0.42"/>
+</g>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="url(#alk-sleep)"/>
+<path d="M240 482A407.7 407.7 0 0 0 784 482A78 78 0 1 1 762 634.8A98 98 0 0 1 608.4 716.7A108 108 0 0 1 415.6 716.7A98 98 0 0 1 262 634.8A78 78 0 1 1 240 482Z" fill="url(#alk-sleep-v)"/>
+<path d="M292 288C301.6 326.4 301.6 326.4 340 336C301.6 345.6 301.6 345.6 292 384C282.4 345.6 282.4 345.6 244 336C282.4 326.4 282.4 326.4 292 288Z" fill="url(#alk-gold)"/>
+<path d="M292 288C301.6 326.4 301.6 326.4 340 336C301.6 345.6 301.6 345.6 292 384C282.4 345.6 282.4 345.6 244 336C282.4 326.4 282.4 326.4 292 288Z" fill="url(#alk-gold-v)"/>
+</g>
+</g>
+</g>
+<text x="324" y="194" font-family="Fraunces, Georgia, serif" font-size="128" font-weight="600" letter-spacing="-1.5" fill="#2a251f">Lotties</text>
+</svg>

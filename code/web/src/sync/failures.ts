@@ -1,0 +1,78 @@
+import { ApiError } from '../api/ApiError';
+import { describeApiError } from '../api/errorMessages';
+import { catalogText } from '../i18n/catalog';
+import { t } from '../i18n/i18n';
+
+/**
+ * - `network`: no response (offline, DNS, CORS, abort/timeout) -> stop, resume when online.
+ * - `waitingForToken`: the expired access token is being renewed (or cannot be yet) -> pause and
+ *   retry with backoff; never counts against a mutation.
+ * - `unauthorized`: 401, or the session ended -> pause sync until re-authentication.
+ * - `transient`: 408, 429, 5xx, other non-4xx and unexpected errors -> retry with backoff.
+ * - `permanent`: any other 4xx -> dead-letter the mutation, continue with the next one.
+ */
+export type FailureKind =
+  'network' | 'waitingForToken' | 'unauthorized' | 'transient' | 'permanent';
+
+const RETRYABLE_4XX = new Set([408, 429]);
+const NETWORK_ERROR_NAMES = new Set(['TypeError', 'AbortError', 'TimeoutError', 'NetworkError']);
+
+/** Matches by `name` because `DOMException` is not an `Error` subclass in every runtime. */
+function nameOf(error: unknown): string | undefined {
+  const name = (error as { name?: unknown } | null)?.name;
+  return typeof name === 'string' ? name : undefined;
+}
+
+export function classifyFailure(error: unknown): FailureKind {
+  if (!(error instanceof ApiError)) {
+    const name = nameOf(error);
+    if (name === 'TokenRenewalPendingError') return 'waitingForToken';
+    if (name === 'SessionEndedError') return 'unauthorized';
+    return name && NETWORK_ERROR_NAMES.has(name) ? 'network' : 'transient';
+  }
+  if (error.status === 401) return 'unauthorized';
+  if (RETRYABLE_4XX.has(error.status)) return 'transient';
+  if (error.status >= 400 && error.status < 500) return 'permanent';
+  return 'transient';
+}
+
+/** "Server not reachable right now" answers from gateways and overloaded servers. */
+const UNAVAILABLE_STATUSES = new Set([408, 429, 502, 503, 504]);
+
+/**
+ * Whether a transient failure counts toward dead-lettering the mutation: errors the server keeps
+ * raising for this request (HTTP 500 and other 5xx, unexpected errors) do; offline errors and
+ * "unavailable right now" statuses (408, 429, 502-504: proxy up, API down or busy) do not, so an
+ * outage never discards the queue.
+ */
+export function countsTowardGiveUp(error: unknown): boolean {
+  if (classifyFailure(error) !== 'transient') return false;
+  return !(error instanceof ApiError && UNAVAILABLE_STATUSES.has(error.status));
+}
+
+/** Whether the server rejected an event's payload (fields missing, hidden or out of range). */
+export function isPayloadRejection(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 400 && error.code === 'validation_failed';
+}
+
+/**
+ * A localized, user-facing sentence for a sync failure (shown in Settings > Sync and the header
+ * tooltip). Server `detail` text and raw HTTP statuses are never shown.
+ */
+export function describeFailure(error: unknown): string {
+  if (error instanceof ApiError) {
+    const known = error.code !== null && catalogText('errors', error.code) !== undefined;
+    const rejected = classifyFailure(error) === 'permanent' && error.status !== 403;
+    return rejected && !known ? t('sync.rejected') : describeApiError(error);
+  }
+  switch (classifyFailure(error)) {
+    case 'network':
+      return t('sync.networkError');
+    case 'waitingForToken':
+      return t('sync.waitingForToken');
+    case 'unauthorized':
+      return t('sync.unauthorized');
+    default:
+      return t('errors.generic');
+  }
+}

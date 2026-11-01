@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 300" width="1220" height="300">
+<!-- Lotties app icon, concept D "Moon bassinet" (wordmark lockup, light; the name is live text in Fraunces (SIL OFL 1.1): final art converts it to outlines). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<linearGradient id="dlk-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#fffcf6"/>
+<stop offset="0.55" stop-color="#f5efe4"/>
+<stop offset="1" stop-color="#ebe2d0"/>
+</linearGradient>
+<clipPath id="dlk-clip">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z"/>
+</clipPath>
+<linearGradient id="dlk-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#dc7c55"/>
+<stop offset="0.5" stop-color="#ca552d"/>
+<stop offset="1" stop-color="#bc502c"/>
+</linearGradient>
+<radialGradient id="dlk-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#a8482a" stop-opacity="0"/>
+<stop offset="1" stop-color="#a8482a" stop-opacity="0.36"/>
+</radialGradient>
+<mask id="dlk-h1" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M0 542H1024V1024H0Z" fill="#000000"/>
+</mask>
+<linearGradient id="dlk-gold" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#d1ab5e"/>
+<stop offset="0.5" stop-color="#a07521"/>
+<stop offset="1" stop-color="#8c6519"/>
+</linearGradient>
+<radialGradient id="dlk-gold-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#6e4e0e" stop-opacity="0"/>
+<stop offset="1" stop-color="#6e4e0e" stop-opacity="0.36"/>
+</radialGradient>
+<mask id="dlk-k2" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1424">
+<rect x="-200" y="-200" width="1424" height="1424" fill="#ffffff"/>
+<path d="M250 540H774Q794 540 792 560A280 220 0 0 1 232 560Q230 540 250 540Z" fill="#000000" stroke="#000000" stroke-width="32" stroke-linejoin="round"/>
+</mask>
+<linearGradient id="dlk-sleep" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#8ba5cc"/>
+<stop offset="0.5" stop-color="#4a6a9b"/>
+<stop offset="1" stop-color="#3e5c8a"/>
+</linearGradient>
+<radialGradient id="dlk-sleep-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#2c4870" stop-opacity="0"/>
+<stop offset="1" stop-color="#2c4870" stop-opacity="0.36"/>
+</radialGradient>
+</defs>
+<g transform="translate(20 20) scale(0.25390625)">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z" fill="url(#dlk-tile)"/>
+<g clip-path="url(#dlk-clip)">
+<g transform="translate(0 -20)">
+<g mask="url(#dlk-k2)">
+<g mask="url(#dlk-h1)">
+<path d="M567.6 420.8A196 196 0 1 0 433 734.9A172 172 0 1 1 567.6 420.8Z" fill="url(#dlk-accent)"/>
+<path d="M567.6 420.8A196 196 0 1 0 433 734.9A172 172 0 1 1 567.6 420.8Z" fill="url(#dlk-accent-v)"/>
+</g>
+<path d="M432 500a54 54 0 1 0 108 0a54 54 0 1 0 -108 0Z" fill="url(#dlk-gold)"/>
+<path d="M432 500a54 54 0 1 0 108 0a54 54 0 1 0 -108 0Z" fill="url(#dlk-gold-v)"/>
+</g>
+<path d="M250 540H774Q794 540 792 560A280 220 0 0 1 232 560Q230 540 250 540Z" fill="url(#dlk-sleep)"/>
+<path d="M250 540H774Q794 540 792 560A280 220 0 0 1 232 560Q230 540 250 540Z" fill="url(#dlk-sleep-v)"/>
+<path d="M373 740L373 800A11 11 0 0 0 395 800L395 740A11 11 0 0 0 373 740Z" fill="#2a251f"/>
+<path d="M629 740L629 800A11 11 0 0 0 651 800L651 740A11 11 0 0 0 629 740Z" fill="#2a251f"/>
+<path d="M849.8 809.5A1093 1093 0 0 1 174.2 809.5A13 13 0 0 1 182.3 784.8A1067 1067 0 0 0 841.7 784.8A13 13 0 0 1 849.8 809.5Z" fill="#2a251f"/>
+<path d="M712 274C722 314 722 314 762 324C722 334 722 334 712 374C702 334 702 334 662 324C702 314 702 314 712 274Z" fill="url(#dlk-gold)"/>
+<path d="M712 274C722 314 722 314 762 324C722 334 722 334 712 374C702 334 702 334 662 324C702 314 702 314 712 274Z" fill="url(#dlk-gold-v)"/>
+</g>
+</g>
+</g>
+<text x="324" y="194" font-family="Fraunces, Georgia, serif" font-size="128" font-weight="600" letter-spacing="-1.5" fill="#2a251f">Lotties</text>
+</svg>

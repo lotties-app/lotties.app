@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<!-- Lotties app icon, concept E "Mobile" (light). Original work by the Lotties contributors, AGPL-3.0-or-later. Hand-built SVG; see docs/design/07-app-icon.md. -->
+<title>Lotties</title>
+<defs>
+<linearGradient id="ela-tile" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#fffcf6"/>
+<stop offset="0.55" stop-color="#f5efe4"/>
+<stop offset="1" stop-color="#ebe2d0"/>
+</linearGradient>
+<clipPath id="ela-clip">
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z"/>
+</clipPath>
+<linearGradient id="ela-accent" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#dc7c55"/>
+<stop offset="0.5" stop-color="#ca552d"/>
+<stop offset="1" stop-color="#bc502c"/>
+</linearGradient>
+<radialGradient id="ela-accent-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#a8482a" stop-opacity="0"/>
+<stop offset="1" stop-color="#a8482a" stop-opacity="0.36"/>
+</radialGradient>
+<linearGradient id="ela-sleep" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#8ba5cc"/>
+<stop offset="0.5" stop-color="#4a6a9b"/>
+<stop offset="1" stop-color="#3e5c8a"/>
+</linearGradient>
+<radialGradient id="ela-sleep-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#2c4870" stop-opacity="0"/>
+<stop offset="1" stop-color="#2c4870" stop-opacity="0.36"/>
+</radialGradient>
+<linearGradient id="ela-gold" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0" stop-color="#d1ab5e"/>
+<stop offset="0.5" stop-color="#a07521"/>
+<stop offset="1" stop-color="#8c6519"/>
+</linearGradient>
+<radialGradient id="ela-gold-v" cx="0.3" cy="0.24" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+<stop offset="0.38" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.7" stop-color="#6e4e0e" stop-opacity="0"/>
+<stop offset="1" stop-color="#6e4e0e" stop-opacity="0.36"/>
+</radialGradient>
+</defs>
+<path d="M230 0H794A230 230 0 0 1 1024 230V794A230 230 0 0 1 794 1024H230A230 230 0 0 1 0 794V230A230 230 0 0 1 230 0Z" fill="url(#ela-tile)"/>
+<g clip-path="url(#ela-clip)">
+<g transform="translate(0 0)">
+<path d="M504 -60L504 340A8 8 0 0 0 520 340L520 -60A8 8 0 0 0 504 -60Z" fill="#2a251f"/>
+<path d="M278 368.8L278 528A8 8 0 0 0 294 528L294 368.8A8 8 0 0 0 278 368.8Z" fill="#2a251f"/>
+<path d="M728 368.4L728 452A8 8 0 0 0 744 452L744 368.4A8 8 0 0 0 728 368.4Z" fill="#2a251f"/>
+<path d="M504 350L504 508A8 8 0 0 0 520 508L520 350A8 8 0 0 0 504 350Z" fill="#2a251f"/>
+<path d="M224.2 368.9A1057 1057 0 0 1 799.8 368.9A15 15 0 0 1 791.6 397.8A1027 1027 0 0 0 232.4 397.8A15 15 0 0 1 224.2 368.9Z" fill="#2a251f"/>
+<path d="M482 346a30 30 0 1 0 60 0a30 30 0 1 0 -60 0Z" fill="url(#ela-accent)"/>
+<path d="M482 346a30 30 0 1 0 60 0a30 30 0 1 0 -60 0Z" fill="url(#ela-accent-v)"/>
+<path d="M176 630a110 110 0 1 0 220 0a110 110 0 1 0 -220 0Z" fill="url(#ela-accent)"/>
+<path d="M176 630a110 110 0 1 0 220 0a110 110 0 1 0 -220 0Z" fill="url(#ela-accent-v)"/>
+<path d="M241.4 611.3L253.4 577.3A10 10 0 0 0 234.6 570.7L222.6 604.7A10 10 0 0 0 241.4 611.3Z" fill="#ffffff" opacity="0.42"/>
+<path d="M855 533.3A124 124 0 1 0 717.1 690.6A105 105 0 0 1 855 533.3Z" fill="url(#ela-sleep)"/>
+<path d="M855 533.3A124 124 0 1 0 717.1 690.6A105 105 0 0 1 855 533.3Z" fill="url(#ela-sleep-v)"/>
+<path d="M512 500C525.2 552.8 525.2 552.8 578 566C525.2 579.2 525.2 579.2 512 632C498.8 579.2 498.8 579.2 446 566C498.8 552.8 498.8 552.8 512 500Z" fill="url(#ela-gold)"/>
+<path d="M512 500C525.2 552.8 525.2 552.8 578 566C525.2 579.2 525.2 579.2 512 632C498.8 579.2 498.8 579.2 446 566C498.8 552.8 498.8 552.8 512 500Z" fill="url(#ela-gold-v)"/>
+</g>
+</g>
+</svg>

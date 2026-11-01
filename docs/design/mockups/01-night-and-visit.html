@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night and visit wireframes</title>
+<style>
+  :root {
+    --bg: #15132e; --surface: #1f1c3f; --raised: #2a2468; --hair: #2a2652;
+    --text: #eceaff; --muted: #9d99c8; --accent: #7c6cf0; --accent-soft: #c4baff;
+    --sleep-bg: #3a2f7a; --sleep-fg: #c4baff; --feed-bg: #16423f; --feed-fg: #7ee0b8;
+    --diaper-bg: #4a3322; --diaper-fg: #ffc58a; --health-bg: #4b2a33; --health-fg: #ff9fb2;
+    --care-bg: #183f55; --care-fg: #8fd8ff; --wake-bg: #4a2f55; --wake-fg: #f0b6ff;
+    /* night view: placeholder values, final dimmed palette is a visual-design decision */
+    --n-bg: #0b0a18; --n-surface: #17142c; --n-text: #d9d4f5; --n-muted: #8f8ab8; --n-accent: #4b3fb0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 48px; background: #0e0c22; color: var(--text);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-feature-settings: "tnum"; }
+  .intro { max-width: 1680px; margin: 0 auto 20px; }
+  .intro h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+  .intro p { margin: 0; color: var(--muted); font-size: 13px; max-width: 760px; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+  figure { margin: 0; }
+  figcaption { font-size: 13px; color: var(--muted); margin: 0 0 8px 4px; max-width: 390px; }
+  figcaption b { color: var(--text); font-weight: 500; }
+  .phone { width: 390px; max-width: 100%; height: 844px; background: var(--bg); border-radius: 36px; position: relative; overflow: hidden;
+    box-shadow: 0 0 0 1px #2a2652, 0 20px 60px rgba(0,0,0,.45); display: flex; flex-direction: column; }
+  .status { height: 44px; padding: 14px 28px 0; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; flex: none; }
+  .scroll { flex: 1; overflow: auto; padding: 4px 20px 0; scrollbar-width: none; }
+  svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  svg.i.s { width: 18px; height: 18px; } svg.i.l { width: 32px; height: 32px; }
+  .caption { font-size: 12px; color: var(--muted); }
+  .feed { background: var(--feed-bg); color: var(--feed-fg); } .diaper { background: var(--diaper-bg); color: var(--diaper-fg); }
+  .health { background: var(--health-bg); color: var(--health-fg); } .sleepc { background: var(--sleep-bg); color: var(--sleep-fg); }
+  .carec { background: var(--care-bg); color: var(--care-fg); } .wake { background: var(--wake-bg); color: var(--wake-fg); }
+  .primary { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 56px; border: 0; border-radius: 999px;
+    background: var(--accent); color: #fff; font: 500 17px system-ui, sans-serif; }
+  .btn2 { flex: 1; height: 48px; border-radius: 999px; border: 1px solid #3b3672; background: transparent; color: var(--text);
+    font: 500 15px system-ui, sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .nav { height: 76px; padding-bottom: 12px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--hair); background: var(--bg); flex: none; }
+  .nav div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--muted); }
+  .nav div.on { color: var(--text); } .nav div.on span.ind { background: var(--raised); color: var(--accent-soft); }
+  .nav span.ind { width: 56px; height: 30px; border-radius: 999px; display: grid; place-items: center; }
+  .hdr { display: flex; align-items: center; gap: 12px; padding: 4px 0 12px; }
+  .ava { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; background: var(--sleep-bg); color: var(--sleep-fg); flex: none; }
+  .hdr .name { font-size: 20px; font-weight: 500; line-height: 1.1; }
+  .card { background: var(--surface); border-radius: 20px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.04); margin-bottom: 12px; }
+  .card h3 { margin: 0 0 4px; font-size: 15px; font-weight: 500; }
+
+  /* night console */
+  .phone.night { background: var(--n-bg); color: var(--n-text); }
+  .night .status { color: var(--n-muted); }
+  .ntop { display: flex; align-items: center; gap: 10px; padding: 4px 0 18px; font-size: 14px; color: var(--n-muted); }
+  .ntop .chip { border: 1px solid #2a2547; border-radius: 999px; padding: 3px 10px; font-size: 12px; }
+  .ntop .sp { flex: 1; }
+  .nstate { text-align: center; margin-bottom: 20px; }
+  .nstate .k { display: inline-flex; gap: 6px; align-items: center; font-size: 15px; color: #e3b3f0; }
+  .nstate .v { font-size: 44px; font-weight: 500; margin: 2px 0; }
+  .nstate .caption { color: var(--n-muted); }
+  .giant { display: flex; align-items: center; gap: 18px; background: var(--n-surface); border-radius: 24px; padding: 20px; height: 132px; margin-bottom: 14px; }
+  .giant .ic { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; flex: none; opacity: .85; }
+  .giant .t { font-size: 24px; font-weight: 500; }
+  .giant .s { font-size: 13px; color: var(--n-muted); margin-top: 2px; }
+  .giant.main { background: var(--n-accent); }
+  .giant.main .s { color: #d6d0ff; }
+  .giant.main .ic { background: rgba(255,255,255,.12); color: #fff; }
+  .nfoot { text-align: center; font-size: 12px; color: var(--n-muted); margin-top: 6px; }
+
+  /* nursing */
+  .nhead { display: flex; align-items: center; gap: 12px; padding: 4px 0 8px; }
+  .nhead .t { font-size: 20px; font-weight: 500; }
+  .total { text-align: center; margin: 12px 0 26px; }
+  .total .v { font-size: 52px; font-weight: 500; letter-spacing: -1px; }
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .side { aspect-ratio: 1; border-radius: 50%; background: var(--n-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #2a2547; }
+  .side .L { font-size: 40px; font-weight: 500; line-height: 1; }
+  .side .tm { font-size: 22px; font-weight: 500; margin-top: 6px; }
+  .side .st { font-size: 12px; color: var(--n-muted); margin-top: 2px; }
+  .side.on { border-color: #8a7cf5; box-shadow: 0 0 0 6px rgba(124,108,240,.18); }
+  .hint { text-align: center; font-size: 13px; color: var(--n-muted); margin: 22px 8px; }
+  .nbtns { display: flex; gap: 10px; }
+  .nbtns .btn2 { border-color: #2a2547; color: var(--n-text); height: 56px; }
+  .nbtns .done { flex: 1.4; height: 56px; border-radius: 999px; background: var(--n-accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 17px; }
+
+  /* visit summary */
+  .back { display: flex; align-items: center; gap: 6px; color: var(--accent-soft); font-size: 14px; padding: 2px 0 6px; }
+  .title { font-size: 20px; font-weight: 500; margin: 0 0 8px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip2 { height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #3b3672; display: flex; align-items: center; font-size: 13px; }
+  .chip2.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .vrow { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid var(--hair); }
+  .vrow:first-child { border-top: 0; }
+  .vrow .ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .vrow .ic svg { width: 20px; height: 20px; }
+  .vrow .b { flex: 1; min-width: 0; }
+  .vrow .t { font-size: 14px; font-weight: 500; }
+  .vrow .v { font-size: 14px; font-weight: 500; text-align: right; white-space: nowrap; }
+  .q { font-size: 14px; padding: 6px 0 6px 14px; position: relative; }
+  .q::before { content: ""; position: absolute; left: 0; top: 14px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-soft); }
+  .add { color: var(--accent-soft); font-size: 14px; display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+
+  /* first run */
+  .ask { text-align: center; padding: 20px 16px; }
+  .ask h2 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .two div { height: 104px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 500; }
+  .prog { height: 6px; border-radius: 99px; background: var(--hair); margin: 10px 0 6px; overflow: hidden; }
+  .prog span { display: block; height: 100%; width: 8%; background: var(--accent); border-radius: 99px; }
+  .inline { display: flex; align-items: center; gap: 12px; }
+  .inline .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .inline .b { flex: 1; }
+  .small { height: 36px; padding: 0 14px; border-radius: 999px; background: var(--raised); color: var(--accent-soft); display: flex; align-items: center; font-size: 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="bottle" viewBox="0 0 24 24"><path d="M10 2h4v3l2 3v12a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V8l2-3z"/><path d="M8 12h8"/></symbol>
+  <symbol id="drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></symbol>
+  <symbol id="diaper" viewBox="0 0 24 24"><path d="M3 7h18v3a9 9 0 0 1-18 0z"/><path d="M8 7v2M16 7v2"/></symbol>
+  <symbol id="pill" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-35 12 12)"/><path d="M9.5 8.5l5 7"/></symbol>
+  <symbol id="belly" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8.5 13.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 9.5h.01M15 9.5h.01"/></symbol>
+  <symbol id="scale" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 9a5 5 0 0 1 8 0l-3 3"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="share" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/></symbol>
+  <symbol id="print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="now" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></symbol>
+  <symbol id="day" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+  <symbol id="ins" viewBox="0 0 24 24"><path d="M5 20V12M12 20V5M19 20v-9"/></symbol>
+  <symbol id="import" viewBox="0 0 24 24"><path d="M12 4v11M8 11l4 4 4-4"/><path d="M5 20h14"/></symbol>
+  <symbol id="people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5M15 14.5c3 0 5.5 1.3 5.5 4.5"/></symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/></symbol>
+</svg>
+
+<div class="intro">
+  <h1>01 · Night, nursing, visit summary, first run (wireframes)</h1>
+  <p>Structure and hierarchy only. The night-view colours are placeholders: choosing the final dimmed palette is a visual-design decision. Same story as 01-now.html: Lia, 2 months 3 weeks; Vini and Ana share her. See docs/design/01-ux-strategy.md.</p>
+</div>
+
+<div class="row">
+
+<!-- Frame 1: night console -->
+<figure>
+  <figcaption><b>5. Night view (03:10).</b> It turns on by itself from 20:00 to 06:00, or while she is in night sleep. Three giant targets, dim, no navigation. "Woke up" at night became a night waking, so the main action is Back asleep.</figcaption>
+  <div class="phone night">
+    <div class="status"><span>03:10</span><span>●●●</span></div>
+    <div class="scroll">
+      <div class="ntop"><span>Lia</span><span class="chip">Night view</span><span class="sp"></span><span>Full app ›</span></div>
+      <div class="nstate">
+        <div class="k"><svg class="i s"><use href="#eye"/></svg>Night waking</div>
+        <div class="v">4 min</div>
+        <div class="caption">since 03:06 · night sleep since 19:40</div>
+      </div>
+      <div class="giant">
+        <div class="ic feed"><svg class="i l"><use href="#drop"/></svg></div>
+        <div><div class="t">Feed</div><div class="s">Start right · left last time (23:50)</div></div>
+      </div>
+      <div class="giant">
+        <div class="ic diaper"><svg class="i l"><use href="#diaper"/></svg></div>
+        <div><div class="t">Diaper</div><div class="s">Last 23:50 · wet</div></div>
+      </div>
+      <div class="giant main">
+        <div class="ic"><svg class="i l"><use href="#moon"/></svg></div>
+        <div><div class="t">Back asleep</div><div class="s">Ends the waking · night continues</div></div>
+      </div>
+      <div class="nfoot">Screen stays on while this view is open</div>
+    </div>
+  </div>
+</figure>
+
+<!-- Frame 2: nursing live -->
+<figure>
+  <figcaption><b>6. Nursing, live (tap Feed, then Right).</b> One timer per side: tap the other side to switch, tap the running side to pause. Left and right seconds are saved for you, so nothing is typed at 3 a.m.</figcaption>
+  <div class="phone night">
+    <div class="status"><span>03:22</span><span>●●●</span></div>
+    <div class="scroll">
+      <div class="nhead">
+        <svg class="i"><use href="#close"/></svg>
+        <div><div class="t">Nursing</div><div class="caption" style="color:var(--n-muted)">started 03:11</div></div>
+      </div>
+      <div class="total"><div class="v">10:15</div><div class="caption" style="color:var(--n-muted)">total</div></div>
+      <div class="sides">
+        <div class="side"><div class="L">L</div><div class="tm">6:12</div><div class="st">done</div></div>
+        <div class="side on"><div class="L">R</div><div class="tm">4:03</div><div class="st" style="color:#c4baff">running</div></div>
+      </div>
+      <div class="hint">Tap a side to switch. Tap the running side to pause.</div>
+      <div class="nbtns">
+        <div class="btn2">Pause</div>
+        <div class="done">Done</div>
+      </div>
+      <div class="nfoot" style="margin-top:18px">Saved as one feed: left 6 min, right 4 min.<br>Next time Feed shows which side was last.</div>
+    </div>
+  </div>
+</figure>
+
+<!-- Frame 3: visit summary -->
+<figure>
+  <figcaption><b>7. Insights › Visit summary.</b> The doctor's view of her day: totals beside <i>her</i> usual range, medicines with who gave them, symptoms with times, the latest weight, and the questions saved earlier. Share it or print it.</figcaption>
+  <div class="phone">
+    <div class="status"><span>15:02</span><span>●●● 5G</span></div>
+    <div class="scroll">
+      <div class="back"><svg class="i s"><use href="#chev"/></svg>Insights</div>
+      <h1 class="title">Visit summary</h1>
+      <div class="chips"><span class="chip2 on">24 h</span><span class="chip2">7 days</span><span class="chip2">Since Oct 2 visit</span></div>
+      <div class="caption" style="margin:6px 0 8px">Oct 20, 15:00 – Oct 21, 15:00 · compared with her last 14 days</div>
+      <div class="card" style="padding:6px 14px">
+        <div class="vrow"><div class="ic sleepc"><svg class="i"><use href="#moon"/></svg></div><div class="b"><div class="t">Sleep</div><div class="caption">usual 13 h 10 – 14 h 30</div></div><div class="v">13 h 40 min</div></div>
+        <div class="vrow"><div class="ic feed"><svg class="i"><use href="#bottle"/></svg></div><div class="b"><div class="t">Feeds</div><div class="caption">usual 6–8 · 700–820 ml</div></div><div class="v">7 · 790 ml</div></div>
+        <div class="vrow"><div class="ic diaper"><svg class="i"><use href="#diaper"/></svg></div><div class="b"><div class="t">Diapers</div><div class="caption">6 wet, 2 dirty · usual 7–9</div></div><div class="v">8</div></div>
+        <div class="vrow"><div class="ic health"><svg class="i"><use href="#pill"/></svg></div><div class="b"><div class="t">Paracetamol 2.5 ml</div><div class="caption">11:40 Vini · 19:50 Ana</div></div><div class="v">2×</div></div>
+        <div class="vrow"><div class="ic health"><svg class="i"><use href="#belly"/></svg></div><div class="b"><div class="t">Belly pain</div><div class="caption">18:10 (3 of 5) · 21:30 (2 of 5)</div></div><div class="v">2×</div></div>
+        <div class="vrow"><div class="ic carec"><svg class="i"><use href="#scale"/></svg></div><div class="b"><div class="t">Weight</div><div class="caption">measured Oct 15</div></div><div class="v">5.42 kg</div></div>
+      </div>
+      <div class="card">
+        <h3>Questions for the doctor (2)</h3>
+        <div class="q">Belly pain is worse in the evening. Anything we can try?</div>
+        <div class="q">Is 2 dirty diapers a day enough now?</div>
+        <div class="add"><svg class="i s"><use href="#plus"/></svg>Add a question</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="btn2"><svg class="i s"><use href="#share"/></svg>Share</div>
+        <div class="btn2"><svg class="i s"><use href="#print"/></svg>Print</div>
+      </div>
+      <div class="caption" style="text-align:center;margin:8px 0 6px">A summary of what you logged. Not medical advice.</div>
+    </div>
+    <div class="nav">
+      <div><span class="ind"><svg class="i"><use href="#now"/></svg></span>Now</div>
+      <div><span class="ind"><svg class="i"><use href="#day"/></svg></span>Day</div>
+      <div class="on"><span class="ind"><svg class="i"><use href="#ins"/></svg></span>Insights</div>
+    </div>
+  </div>
+</figure>
+
+<!-- Frame 4: first run -->
+<figure>
+  <figcaption><b>8. First run (right after creating Lia).</b> The first event is one honest question. Predictions show their learning progress instead of an empty card. Import and Invite are offered here, not buried in Settings.</figcaption>
+  <div class="phone">
+    <div class="status"><span>10:05</span><span>●●● 5G</span></div>
+    <div class="scroll">
+      <div class="hdr">
+        <div class="ava">L</div>
+        <div><div class="name">Lia</div><div class="caption">11 days</div></div>
+      </div>
+      <div class="card ask">
+        <h2>What is Lia doing now?</h2>
+        <div class="caption">This starts her day. You can change it anytime.</div>
+        <div class="two">
+          <div class="sleepc"><svg class="i l"><use href="#moon"/></svg>Sleeping</div>
+          <div class="carec"><svg class="i l"><use href="#sun"/></svg>Awake</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="inline"><div class="ic sleepc"><svg class="i"><use href="#spark"/></svg></div>
+          <div class="b"><h3>Learning Lia's rhythm</h3><div class="caption">Day 1 of about 3</div></div></div>
+        <div class="prog"><span></span></div>
+        <div class="caption">Nap and feed windows appear after about 3 days of logging. Importing history skips the wait.</div>
+      </div>
+      <div class="card">
+        <div class="inline"><div class="ic feed"><svg class="i"><use href="#import"/></svg></div>
+          <div class="b"><h3>Coming from Napper?</h3><div class="caption">Bring her history in about 2 minutes</div></div>
+          <div class="small">Import</div></div>
+      </div>
+      <div class="card">
+        <div class="inline"><div class="ic health"><svg class="i"><use href="#people"/></svg></div>
+          <div class="b"><h3>Share Lia with someone</h3><div class="caption">You'll both see the same day</div></div>
+          <div class="small">Invite</div></div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="on"><span class="ind"><svg class="i"><use href="#now"/></svg></span>Now</div>
+      <div><span class="ind"><svg class="i"><use href="#day"/></svg></span>Day</div>
+      <div><span class="ind"><svg class="i"><use href="#ins"/></svg></span>Insights</div>
+    </div>
+  </div>
+</figure>
+
+</div>
+</body>
+</html>

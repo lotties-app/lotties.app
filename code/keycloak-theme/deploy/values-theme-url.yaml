@@ -1,0 +1,68 @@
+# Bitnami keycloak chart 24.0.5: install the lotties login theme WITHOUT any registry (route C).
+# An init container downloads lotties-theme.tar.gz (for example a GitHub release asset), verifies its
+# sha256 and unpacks it into a shared emptyDir that Keycloak mounts at .../themes/lotties.
+#   helm upgrade keycloak oci://registry-1.docker.io/bitnamicharts/keycloak --version 24.0.5 \
+#     -n keycloak --reuse-values -f values-theme-url.yaml
+# Helm replaces lists instead of merging them: merge by hand if your values.yaml sets initContainers,
+# extraVolumes or extraVolumeMounts (it does not today).
+#
+# CHANGE the two env values below. The checksum is in deploy/out/lotties-theme.tar.gz.sha256
+# (first column) and is also attached to the release as lotties-theme.tar.gz.sha256.
+# The pod fails to start (init container error, Keycloak stays down) if the checksum does not match: that is
+# intended. The URL must be reachable from the cluster; for a private repo use a registry instead.
+
+initContainers:
+  - name: br-theme-fetch
+    image: docker.io/curlimages/curl:8.11.1
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: THEME_URL
+        value: "https://github.com/dev-vinicius-andrade/baby-routine/releases/download/keycloak-theme-v0.1.0/lotties-theme.tar.gz"
+      - name: THEME_SHA256
+        value: "REPLACE_WITH_64_HEX_SHA256_OF_THE_TARBALL"
+    command:
+      - sh
+      - -ec
+      - |
+        curl -fsSL --retry 3 --retry-delay 2 --max-time 120 -o /dl/theme.tar.gz "$THEME_URL"
+        echo "$THEME_SHA256  /dl/theme.tar.gz" | sha256sum -c -
+        # The tarball has one top-level folder (lotties/): strip it, the volume IS the theme folder.
+        tar -xzf /dl/theme.tar.gz -C /target --strip-components=1
+        test -f /target/login/theme.properties
+        echo "lotties theme installed"
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 200m
+        memory: 64Mi
+    volumeMounts:
+      - name: br-theme
+        mountPath: /target
+      - name: br-theme-dl
+        mountPath: /dl
+
+extraVolumes:
+  - name: br-theme
+    emptyDir:
+      sizeLimit: 32Mi
+  # Scratch space for the download (the container root filesystem is read-only).
+  - name: br-theme-dl
+    emptyDir:
+      sizeLimit: 32Mi
+
+extraVolumeMounts:
+  - name: br-theme
+    mountPath: /opt/bitnami/keycloak/themes/lotties
+    readOnly: true
