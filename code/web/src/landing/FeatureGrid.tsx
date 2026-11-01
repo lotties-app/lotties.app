@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Card, Typography } from '@mui/material';
+import { ExternalLink } from '../credits/ExternalLink';
+import { importRequestUrl } from '../import/importRequest';
 import { Illustration } from '../ui/illustrations';
 import { FEATURES, PAGE_WIDTH } from './features';
 
@@ -45,10 +47,19 @@ export function FeatureGrid() {
               >
                 <Illustration name={illustration} size={56} />
               </Box>
-              <Typography variant="h5" component="h3">
+              {/* Two lines reserved side by side, so a one-line title does not lift its text above the others. */}
+              <Typography variant="h5" component="h3" sx={{ minHeight: { sm: '2lh' } }}>
                 {t(`features.${key}.title`)}
               </Typography>
               <Typography color="text.secondary">{t(`features.${key}.body`)}</Typography>
+              {key === 'data' && (
+                <ExternalLink
+                  href={importRequestUrl()}
+                  sx={{ minHeight: 44, display: 'inline-flex', alignItems: 'center' }}
+                >
+                  {t('features.data.request')}
+                </ExternalLink>
+              )}
             </Card>
           </Box>
         ))}

@@ -33,12 +33,6 @@ ml/cry_detector/*.egg-info/
 # cry monitor model (code/web/scripts/fetch-cry-model.mjs downloads and verifies it; never committed)
 code/web/public/models/cry/
 
-# keycloak-theme: build outputs and the throwaway local Keycloak runtime (generated passwords)
-code/keycloak-theme/node_modules/
-code/keycloak-theme/dist/
-code/keycloak-theme/dist_keycloak/
-code/keycloak-theme/build_keycloak/
-code/keycloak-theme/dev/.runtime/
 
 #CLAUDE.md
 #.claude/

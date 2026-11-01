@@ -40,6 +40,7 @@ const HubCryMonitorPage = lazy(() => import('./cryMonitor/CryMonitorPage'));
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InstallPage = lazy(() => import('./install/InstallPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
+const SelfHostPage = lazy(() => import('./selfHost/SelfHostPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
@@ -319,6 +320,14 @@ export function AppRoutes() {
         element={
           <Suspense fallback={null}>
             <InstallPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/self-host"
+        element={
+          <Suspense fallback={null}>
+            <SelfHostPage />
           </Suspense>
         }
       />

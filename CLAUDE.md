@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Baby event-tracking PWA (React + .NET 10 + Postgres), open source AGPL-3.0. Spec: `docs/SPEC.md`. Plan/status: `docs/agents/PLAN.md`. Open review findings: `docs/agents/REVIEW.md`. Deploy: `docs/DEPLOY.md`. Navigation: `docs/agents/filemap.md` (update when adding/moving files).
 
 ## Stack
-- Layout: application code under `code/` (`api`, `web`, `keycloak-theme`), the Playwright suite in `tests/e2e/`, the Python benchmark in `ml/`; docs, workflows, `docker-compose.yml` and the root `.env` stay at the root.
+- Layout: application code under `code/` (`api`, `web`, `mobile`), the Playwright suite in `tests/e2e/`, the Python benchmark in `ml/`; docs, workflows, `docker-compose.yml` and the root `.env` stay at the root.
 - `code/web/`: React 19 + TS + MUI, Vite SPA (no SSR), Dexie offline store.
 - `code/api/`: .NET 10, layers Domain / Application / Infrastructure / Api; EF Core + Npgsql.
 - `code/mobile/`: Capacitor 8 iOS/Android shell bundling `code/web/dist` (Vite mode `native`, `code/web/.env.native`); `npm --prefix code/mobile run build:web|sync|android|ios`; `@capacitor/*` pinned identically in web and mobile; web code reaches native only behind `isNativeApp()` (`code/web/src/platform`, lazy imports); see `docs/design/12-mobile-capacitor.md`.

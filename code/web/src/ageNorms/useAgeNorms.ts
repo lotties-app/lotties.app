@@ -19,7 +19,8 @@ export function useAgeNorms(): AgeNormSet | null | undefined {
 
   useEffect(() => {
     if (!api || !online) return;
-    void refreshAgeNorms(db, api);
+    // Fire and forget: the store may close under it (unmount, sign-out); the next mount refreshes again.
+    refreshAgeNorms(db, api).catch(() => undefined);
   }, [db, api, online]);
 
   return cached === undefined ? undefined : (cached?.norms ?? null);

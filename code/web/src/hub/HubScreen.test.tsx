@@ -297,10 +297,11 @@ describe('attention badges', () => {
 
     const badge = (id: string) =>
       within(screen.getByTestId(`hub-row-${id}`)).queryByTestId('hub-badge');
+    // Each count comes from its own async read, so none is ready just because another one is.
     await waitFor(() => expect(badge('vaccines')?.textContent).toBe('5'));
-    expect(badge('appointments')?.textContent).toBe('1');
-    expect(badge('fromDoctor')?.textContent).toBe('2');
-    expect(badge('notes')?.textContent).toBe('1');
+    await waitFor(() => expect(badge('appointments')?.textContent).toBe('1'));
+    await waitFor(() => expect(badge('fromDoctor')?.textContent).toBe('2'));
+    await waitFor(() => expect(badge('notes')?.textContent).toBe('1'));
     expect(badge('formulas')).toBeNull();
     // Read aloud as a sentence, and shown on the matching shortcut tile too.
     expect(screen.getByTestId('hub-row-vaccines').textContent).toContain('5 need attention');

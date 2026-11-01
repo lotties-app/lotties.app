@@ -74,7 +74,7 @@ Console limits change; use the character counters in the console and shorten if 
 
   Pergunte sobre o dia: quando foi a última mamada, há quanto tempo ela está dormindo, quantas fraldas hoje, quantas fraldas por dia em média, quanto ela dormiu hoje, quanto tomou de mamadeira hoje, quantas mamadas hoje, a idade do bebê, o resumo do dia ou da semana, a próxima consulta e quais vacinas estão pendentes.
 
-  Remédios: diga ao Lotties que você deu um remédio que cadastrou no app e peça os seus lembretes de remédios. São os lembretes que você mesmo cadastrou, não recomendações do Lotties: ele nunca sugere, confere nem diz uma dose.
+  Remédios: diga ao lotes que você deu um remédio que cadastrou no app e peça os seus lembretes de remédios. São os lembretes que você mesmo cadastrou, não recomendações do Lotties: ele nunca sugere, confere nem diz uma dose.
 
   Olhe para frente com o seu próprio histórico: quando pode ser a próxima janela de sono, a próxima mamada ou troca de fralda, e o tamanho das últimas mamadeiras. São padrões do que você registrou, não orientação.
 
@@ -84,12 +84,12 @@ Console limits change; use the character counters in the console and shorten if 
   ```
 
 - **Frases de exemplo (3):**
-  1. `Alexa, abrir lotties`
-  2. `Alexa, diga ao lotties que o bebê dormiu`
-  3. `Alexa, pergunte ao lotties quando foi a última mamada`
+  1. `Alexa, abrir lotes`
+  2. `Alexa, diga ao lotes que o bebê dormiu`
+  3. `Alexa, pergunte ao lotes quando foi a última mamada`
 
-  Outras, para a ajuda do app (fora da lista do console): `Alexa, pergunte ao lotties quantas fraldas hoje`,
-  `Alexa, peça ao lotties para registrar uma mamadeira`, `Alexa, pergunte ao lotties qual a próxima janela de sono`.
+  Outras, para a ajuda do app (fora da lista do console): `Alexa, pergunte ao lotes quantas fraldas hoje`,
+  `Alexa, peça ao lotes para registrar uma mamadeira`, `Alexa, pergunte ao lotes qual a próxima janela de sono`.
 - **Palavras-chave:** bebê, recém-nascido, maternidade, paternidade, sono do bebê, mamadas, fraldas, diário do bebê, soneca, mamadeira
 - **Categoria:** Estilo de vida (ou Saúde e fitness, se a primeira não existir)
 - **URL da política de privacidade:** https://lotties.app/privacy (a página abre em português quando o idioma do navegador é pt-BR)
@@ -148,7 +148,7 @@ Lotties is a baby tracker. Commands need the Alexa account to be linked to a Lot
    - "Alexa, tell lotties to log a bath"
    - "Alexa, ask lotties is any medicine due" (reminders you registered, not recommendations)
 3. The skill logs and reads back what the family recorded. It gives no medical advice, no doses and no diagnosis, and it never deletes records. Medicine commands only record a dose of a medicine registered in the app and read back its reminders; they never suggest or check a dose. Anything it logs is marked "Added by Alexa" in the Lotties app at https://lotties.app (same login).
-4. Portuguese (Brazil) works the same: "Alexa, abrir lotties", "Alexa, diga ao lotties que o bebê dormiu".
+4. Portuguese (Brazil) works the same: "Alexa, abrir lotes", "Alexa, diga ao lotes que o bebê dormiu".
 ```
 
 Checklist for the owner: create the demo account with a Parent role on a fake baby ("Demo Baby", no real data), keep one

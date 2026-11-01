@@ -38,6 +38,13 @@ export interface SharedFile {
   base64: string;
 }
 
+/** A file for `NativeShell.shareFile`: the bytes as base64 (no data-URL prefix). */
+export interface SharedFile {
+  name: string;
+  mimeType: string;
+  base64: string;
+}
+
 /** `LIGHT`: dark content for a light background; `DARK`: light content for a dark one. */
 export type SystemBarsStyle = 'LIGHT' | 'DARK' | 'DEFAULT';
 

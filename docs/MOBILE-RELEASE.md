@@ -17,7 +17,7 @@ about 15 minutes on Android and 20 on iOS, and runs only when started).
 | Where it lives | Next to the code and the pull requests, secrets in the repository settings, no second system | A second system (organisation, project, service connections, variable groups) |
 | Android | `ubuntu-latest`, Temurin JDK 21, Gradle cache action | Same |
 | Store upload | Play: `r0adkll/upload-google-play` (pinned by commit); TestFlight: Xcode itself uploads (`exportOptions destination=upload`), no extra tool | Microsoft's own Google Play and App Store tasks exist; they need extensions or service connections |
-| Fit with the project | CI, E2E and keycloak-theme workflows are already there | Nothing yet |
+| Fit with the project | CI and E2E workflows are already there | Nothing yet |
 
 **Recommendation: GitHub Actions.** Same place as the code, free for a public repository, no extra account, and the
 macOS image has what is needed. Azure DevOps only pays off if the owner already runs everything there.
@@ -159,3 +159,8 @@ an iPhone, and read the Xcode logs when the CI archive fails. It is not needed t
   shared scheme; the Capacitor Java level (JDK 21 assumed); that the Apple API key flags work for archive and export on
   `macos-26` with Xcode 26.5; the TestFlight upload through `destination=upload`.
 - A first iOS run may fail on signing; the log names the missing piece (App ID, team id, key role).
+- First run (0.0.1, 2026-10-31): Android stopped at `./gradlew: Permission denied` (the file was committed without the execute
+  bit; now mode 100755). iOS stopped at the archive with "Your team has no devices from which to generate a provisioning
+  profile": the project's Release configuration signs with "iPhone Developer", which needs a development profile and so a
+  device. The archive now passes `CODE_SIGN_IDENTITY="Apple Distribution"`. Not yet confirmed on a runner; if Apple still asks
+  for a device, the fallback is the manual signing of section 6 (or registering any one device in the developer portal).

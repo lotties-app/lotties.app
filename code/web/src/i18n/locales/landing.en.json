@@ -29,35 +29,37 @@
   },
   "story": {
     "title": "Why we made Lotties",
-    "one": "Lotties is a free, open source alternative to Napper. Our first baby had just arrived, and we felt we were losing track of everything. Yearly plans for baby apps are also expensive.",
-    "two": "So we built the app we wished we had for this new journey: quick to log, calm to read, and shared between the people who care for the baby.",
-    "three": "We hope you feel the same excitement we do."
+    "one": "When our first baby arrived, we kept asking each other: what time was the last feed? Has the baby slept today? Did we give the medicine? After a sleepless night, memory fails. We wanted a simple place to write it down, where both of us could see the same thing.",
+    "two": "We could not find the app we wanted, so we built our own. It was born from our routine as parents. If it helps other parents going through the same, it was worth it.",
+    "three": "One important thing: Lotties does not tell you what to do. It only looks at what you logged yourself and shows what usually happens, as likely answers. Over time, and if more families choose to take part, anonymously, those statistics could get better.",
+    "four": "Lotties is not a medical app, it is a baby routine app. It does not diagnose, does not replace your pediatrician and is not responsible for health decisions. When in doubt, talk to whoever looks after your baby's health."
   },
   "features": {
     "title": "What it does",
     "log": {
       "title": "Log in a few taps",
-      "body": "Sleep, breast and bottle feeds, diapers, medicines, baths and fussy spells. Start a timer, tap a tile, undo a slip. Works offline and syncs when you are back online."
+      "body": "Sleep, breast and bottle feeds, diapers, medicines, baths and crying. Time naps and feeds with a timer and undo a mistake right away. Works offline and syncs when you are back online."
     },
     "today": {
-      "title": "See the day and what comes next",
-      "body": "A timeline of the day, totals for sleep, feeds and diapers, and charts of the week. The home screen shows what is likely next: nap, feed or diaper change."
+      "title": "See the day at a glance",
+      "body": "A timeline of the day, totals for sleep, feeds and diapers, and charts of the week."
     },
     "share": {
       "title": "Care together",
-      "body": "Invite a partner, grandparent or nanny with a link. Choose what each person can do, see who logged what, and share selected sections with your pediatrician."
+      "body": "Invite a partner, grandparent or nanny with a link. Each person gets the access you choose, and every entry shows who made it. You can also share parts of the history with your pediatrician."
     },
     "predict": {
-      "title": "Gentle predictions",
-      "body": "See the next nap window with a plain explanation of how it was worked out. Estimates from your logged history, not medical advice."
+      "title": "What may come next",
+      "body": "Based on what you logged, Lotties estimates the next nap, feed or diaper change and shows how it got there. Estimates from your logged history, not medical advice."
     },
     "health": {
       "title": "Growth, vaccines and medicines",
-      "body": "Weight and height on growth charts, the Brazilian vaccination schedule, appointments, and medicines with safe intervals. The doctor's prescription is always the source."
+      "body": "Weight and height on growth charts, the Brazilian vaccination schedule, appointments, and reminders for the medicines you registered. The doctor's prescription is always the source."
     },
     "data": {
       "title": "Free, private, yours",
-      "body": "Free and open source (AGPL-3.0) and can be self-hosted. No ads, no tracking. Import from Napper and export a backup any time."
+      "body": "Free and open source (AGPL-3.0), and you can host your own. No ads, no tracking. Export a backup any time and import your history from Napper. Use another app? Ask us to add it.",
+      "request": "Request an import for another app"
     }
   },
   "steps": {
@@ -87,6 +89,7 @@
     "licence": "Free and open source software, licensed under the AGPL-3.0.",
     "notMedical": "Not a medical device.",
     "credits": "Credits and licenses",
+    "selfHost": "Run it yourself",
     "privacy": "Privacy policy",
     "terms": "Terms of use"
   },

@@ -264,7 +264,7 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
 
         Assert.Equal("pediatrician", next.Appointment!.Specialty);
         Assert.Matches(@"^The baby's next appointment is with a pediatrician, .+ at \d{1,2}:\d{2} [AP]M\.$", en);
-        Assert.Matches(@"^A próxima consulta do bebê é com pediatra, .+ às \d{2}:\d{2}\.$", pt);
+        Assert.Matches(@"^A próxima consulta do bebê é com pediatra, .+ (?:às|à) \d{2}:\d{2}\.$", pt);
         foreach (var (what, text) in EverythingSaid(next))
         {
             AssertNoFreeText(text, $"next appointment {what}");
@@ -272,7 +272,7 @@ public sealed partial class AssistantNamePrivacyTests(ApiFactory factory) : ICla
 
         var none = next with { Appointment = next.Appointment with { Specialty = null } };
         Assert.Matches(@"^The baby's next appointment is .+ at \d{1,2}:\d{2} [AP]M\.$", AlexaLanguages.For("en-US").Say(none));
-        Assert.Matches(@"^A próxima consulta do bebê é .+ às \d{2}:\d{2}\.$", AlexaLanguages.For("pt-BR").Say(none));
+        Assert.Matches(@"^A próxima consulta do bebê é .+ (?:às|à) \d{2}:\d{2}\.$", AlexaLanguages.For("pt-BR").Say(none));
     }
 
     [Fact]

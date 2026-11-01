@@ -95,8 +95,8 @@ export default function LandingPage({
         <StoryStrip />
         <InstallStrip />
         <FeatureGrid />
-        <ImportantNotice />
         <StepsStrip />
+        <ImportantNotice />
         <OpenSourceStrip />
       </Box>
       <LandingFooter />

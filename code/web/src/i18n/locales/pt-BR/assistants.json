@@ -1,7 +1,7 @@
 {
   "assistants": {
     "title": "Assistentes de voz",
-    "intro": "Registre e pergunte por voz, por exemplo: “Alexa, peça ao Lotties: o bebê dormiu”. Antes, vincule a sua conta do Lotties no app Alexa.",
+    "intro": "Registre e pergunte por voz, por exemplo: “Alexa, peça ao lotes: o bebê dormiu”. Antes, vincule a sua conta do Lotties no app Alexa.",
     "babyLabel": "Bebê dos comandos de voz",
     "noneChosen": "Nenhum escolhido",
     "hintOne": "Você registra para um bebê só, então os comandos de voz usam {{name}}.",

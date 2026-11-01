@@ -25,7 +25,7 @@ export function RecommendationSheet({
   const { t } = useTranslation();
   const db = useDatabase();
   useEffect(() => {
-    void markNoteRead(db, baby.id, note.id);
+    markNoteRead(db, baby.id, note.id).catch(() => undefined);
   }, [db, baby.id, note.id]);
 
   return (

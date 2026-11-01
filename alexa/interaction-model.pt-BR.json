@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "lotties",
+      "invocationName": "lotes",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
@@ -321,7 +321,13 @@
             "quando ela vai mamar de novo",
             "quando é a próxima alimentação",
             "quando devo dar a próxima mamada",
-            "quando ela vai querer mamar"
+            "quando ela vai querer mamar",
+            "qual a próxima mamada",
+            "qual é a próxima mamada",
+            "qual a próxima mamadeira",
+            "qual é a próxima mamadeira",
+            "qual o horário da próxima mamada",
+            "qual a hora da próxima mamada"
           ]
         },
         {
@@ -336,7 +342,10 @@
             "quando é a hora da próxima troca",
             "quando vai ser a proxima fralda",
             "proxima troca quando",
-            "quando trocar de novo"
+            "quando trocar de novo",
+            "qual a próxima troca de fralda",
+            "qual é a próxima troca de fralda",
+            "qual a hora da próxima troca"
           ]
         },
         {

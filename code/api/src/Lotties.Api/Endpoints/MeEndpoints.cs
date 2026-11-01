@@ -3,6 +3,7 @@ using Lotties.Api.Assistants.Mcp;
 using Lotties.Api.Consents;
 using Lotties.Application.Assistants;
 using Lotties.Application.Professionals;
+using Lotties.Application.Rest;
 using Lotties.Application.Units;
 using Lotties.Application.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -15,6 +16,7 @@ internal static class MeEndpoints
     private const string ProfessionalProfilePath = "/me/professional-profile";
     private const string AssistantSettingsPath = "/me/assistant-settings";
     private const string UnitSettingsPath = "/me/unit-settings";
+    private const string RestSettingsPath = "/me/rest-settings";
 
     private const string MeReason = "The person's own account, profile and settings: no baby data, and she must always be able to see, export and delete what is hers (docs/design/38-consent-and-terms.md).";
 
@@ -62,6 +64,19 @@ internal static class MeEndpoints
             .AllowWithoutConsent(MeReason)
             .WithName("SaveUnitSettings")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapGet(RestSettingsPath, GetRestSettingsAsync)
+            .WithName("GetRestSettings");
+        api.MapPut(RestSettingsPath, SaveRestSettingsAsync)
+            .WithName("SaveRestSettings")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapDelete(RestSettingsPath, DeleteRestSettingsAsync)
+            .WithName("DeleteRestSettings");
+        api.MapGet("/me/rest", GetRestEstimateAsync)
+            .WithName("GetRestEstimate")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapPut("/me/rest/morning", SaveRestMorningAsync)
+            .WithName("SaveRestMorning")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         api.MapConsentEndpoints();
         return api;
     }
@@ -86,6 +101,27 @@ internal static class MeEndpoints
 
     private static async Task<Ok<UnitSettingsResponse>> SaveUnitSettingsAsync(SaveUnitSettingsRequest request, IUnitSettingsService settings, CancellationToken cancellationToken) =>
         TypedResults.Ok(await settings.SaveMineAsync(request, cancellationToken));
+
+    private static async Task<Ok<RestSettingsResponse>> GetRestSettingsAsync(IRestSettingsService rest, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await rest.GetMineAsync(cancellationToken));
+
+    private static async Task<Ok<RestSettingsResponse>> SaveRestSettingsAsync(SaveRestSettingsRequest request, IRestSettingsService rest, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await rest.SaveMineAsync(request, cancellationToken));
+
+    private static async Task<NoContent> DeleteRestSettingsAsync(IRestSettingsService rest, CancellationToken cancellationToken)
+    {
+        await rest.DeleteMineAsync(cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<RestEstimateResponse>> GetRestEstimateAsync(string? night, IRestEstimateService estimate, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await estimate.GetMineAsync(night, cancellationToken));
+
+    private static async Task<NoContent> SaveRestMorningAsync(SaveRestMorningRequest request, IRestSettingsService rest, CancellationToken cancellationToken)
+    {
+        await rest.SaveMorningAsync(request, cancellationToken);
+        return TypedResults.NoContent();
+    }
 
     private static async Task<Ok<AccountDeletionPreviewResponse>> PreviewDeletionAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
         TypedResults.Ok(await deletion.PreviewAsync(cancellationToken));

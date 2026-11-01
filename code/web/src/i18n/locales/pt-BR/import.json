@@ -9,6 +9,7 @@
       "done": "Concluído"
     },
     "viewerBlocked": "Só responsáveis e titulares podem importar dados para este bebê.",
+    "requestOther": "Usa outro app? Peça a importação dele",
     "files": {
       "intro": "Escolha um ou os dois arquivos de exportação do Napper (até {{limit}} cada). Importar o mesmo arquivo de novo é seguro: o que já existe é ignorado e nada é duplicado.",
       "chooseLogs": "Escolher CSV de registros",

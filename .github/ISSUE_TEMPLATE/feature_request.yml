@@ -18,7 +18,7 @@ body:
     id: area
     attributes:
       label: Area
-      options: [Web app, API, Mobile app, Keycloak theme, Deploy, Docs, Not sure]
+      options: [Web app, API, Mobile app, Deploy, Docs, Not sure]
     validations:
       required: true
   - type: markdown

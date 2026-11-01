@@ -71,8 +71,18 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         // its routes (BoardAuthorizationTests turns it off again to check the 404); its MCP endpoint too (BoardMcpHttpTests).
         builder.UseSetting("Board:Enabled", "true");
         builder.UseSetting("Board:Mcp:Enabled", "true");
+        // A loaded CI runner can hold a request for minutes before it runs; the production 30 s request timeout would abort
+        // it ("The application aborted the request"). RequestLimitTests checks the real defaults on a host of its own.
+        builder.UseSetting("RequestLimits:RequestTimeoutSeconds", "600");
+        builder.UseSetting("RequestLimits:ImportRequestTimeoutSeconds", "600");
         builder.ConfigureTestServices(ReplaceDatabaseAndAuthentication);
     }
+
+    /// <summary>
+    /// The suite runs hundreds of in-memory hosts at once, so on a small CI runner a request can wait minutes for a CPU slice:
+    /// the default 100 s client timeout turned that into failures that say nothing about the code under test.
+    /// </summary>
+    protected override void ConfigureClient(HttpClient client) => client.Timeout = TimeSpan.FromMinutes(10);
 
     protected override IHost CreateHost(IHostBuilder builder)
     {

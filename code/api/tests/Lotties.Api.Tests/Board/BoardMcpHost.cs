@@ -132,6 +132,7 @@ public sealed class BoardMcpHost : IDisposable
             ClientInfo = new() { Name = "lotties-board-tests", Version = "1.0" },
             ProtocolVersion = protocolVersion,
             DiscoverProbeTimeout = Timeout.InfiniteTimeSpan,
+            InitializationTimeout = TimeSpan.FromMinutes(5),
         };
         return await McpClient.CreateAsync(transport, options, NullLoggerFactory.Instance);
     }

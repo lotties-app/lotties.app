@@ -19,7 +19,7 @@ Windows; each has `--help`).
 | --- | --- |
 | Branch | `feat/<name>` (lower-case, digits, dashes; e.g. `feat/growth-charts`), from the latest `main` |
 | Path | `E:/w/<name>` (`WORKTREE_ROOT` changes the root). Short on purpose: Windows paths stop at 260 characters and `node_modules`, `bin/obj` and Playwright outputs are deep |
-| node_modules | junctions to the main clone's (`code/web`, `code/mobile`, `tests/e2e`, `code/keycloak-theme`): no install, a few seconds to create |
+| node_modules | junctions to the main clone's (`code/web`, `code/mobile`, `tests/e2e`): no install, a few seconds to create |
 | Caches | Vite and Vitest caches in `code/web/.vite-cache` per checkout (`cacheDir`, `test.fsModuleCachePath`), never in the shared `node_modules` |
 | .NET | `dotnet restore` done at creation; `bin/` and `obj/` are the worktree's own |
 | Line endings | checked out with LF, like the main clone (`prettier --check` expects LF) |

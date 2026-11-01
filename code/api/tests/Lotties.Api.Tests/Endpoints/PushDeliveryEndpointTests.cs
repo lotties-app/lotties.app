@@ -250,12 +250,15 @@ public sealed class PushRateLimitTests
         var client = host.AnonymousClient();
         var path = $"/api/v1/push/deliveries/{Guid.NewGuid()}/actions";
 
-        var accepted = new[] { await client.PostAsJsonAsync(path, new { action = "snooze" }), await client.PostAsJsonAsync(path, new { action = "snooze" }) };
-        var rejected = await client.PostAsJsonAsync(path, new { action = "snooze" });
+        // Sent together: the limit is a one-minute window, and one after another on a loaded runner they can straddle it.
+        var responses = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => client.PostAsJsonAsync(path, new { action = "snooze" })));
 
-        Assert.All(accepted, response => Assert.Equal(HttpStatusCode.NotFound, response.StatusCode));
-        await rejected.AssertProblemAsync(HttpStatusCode.TooManyRequests, "rate_limited");
-        Assert.NotNull(rejected.Headers.RetryAfter);
+        var accepted = responses.Where(response => response.StatusCode == HttpStatusCode.NotFound).ToList();
+        var rejected = responses.Where(response => response.StatusCode == HttpStatusCode.TooManyRequests).ToList();
+        Assert.Equal(2, accepted.Count);
+        Assert.Equal(4, rejected.Count);
+        await rejected[0].AssertProblemAsync(HttpStatusCode.TooManyRequests, "rate_limited");
+        Assert.NotNull(rejected[0].Headers.RetryAfter);
     }
 
     [Fact]
