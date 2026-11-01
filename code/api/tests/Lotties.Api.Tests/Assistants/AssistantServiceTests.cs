@@ -251,6 +251,53 @@ public sealed class AssistantServiceTests(ApiFactory factory) : IClassFixture<Ap
     }
 
     [Fact]
+    public async Task LogBottle_WithTimeBottleFeedingsOn_StartsARunningBottleWithThePreparedAmountOnly()
+    {
+        var baby = await factory.SeedBabyAsync();
+        (await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync("/api/v1/me/feeding-settings", new { timeBottleFeedings = true })).EnsureSuccessStatusCode();
+
+        var result = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogBottleAsync(Invocation(), 90, BottleKind.BreastMilk));
+
+        var bottle = Assert.Single(await factory.EventsAsync(baby.BabyId));
+        var payload = PayloadOf(bottle);
+        Assert.Equal((AssistantResultCode.BottleStarted, 90, BottleKind.BreastMilk), (result.Code, result.AmountMl, result.BottleKind));
+        Assert.True(bottle.IsRunning);
+        Assert.Null(bottle.EndedAt);
+        Assert.Equal("bottle", payload.GetProperty("method").GetString());
+        Assert.Equal(90, payload.GetProperty("amount_ml").GetInt32());
+        Assert.False(payload.TryGetProperty("amount_drunk_ml", out _));
+    }
+
+    [Fact]
+    public async Task LogBottle_WithTimeBottleFeedingsOn_ReplayStartsOnceAndAnswersStarted()
+    {
+        var baby = await factory.SeedBabyAsync();
+        (await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync("/api/v1/me/feeding-settings", new { timeBottleFeedings = true })).EnsureSuccessStatusCode();
+        var invocation = Invocation();
+
+        await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogBottleAsync(invocation, 60, BottleKind.Unspecified));
+        var replay = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogBottleAsync(invocation, 60, BottleKind.Unspecified));
+
+        Assert.Single(await factory.EventsAsync(baby.BabyId));
+        Assert.Equal((AssistantResultCode.BottleStarted, 60), (replay.Code, replay.AmountMl));
+    }
+
+    [Fact]
+    public async Task LogBottle_WithTimeBottleFeedingsTurnedBackOff_LogsAtOnce()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = factory.CreateClientFor(baby.OwnerSubject);
+        (await client.PutAsJsonAsync("/api/v1/me/feeding-settings", new { timeBottleFeedings = true })).EnsureSuccessStatusCode();
+        (await client.PutAsJsonAsync("/api/v1/me/feeding-settings", new { timeBottleFeedings = false })).EnsureSuccessStatusCode();
+
+        var result = await factory.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogBottleAsync(Invocation(), 120, BottleKind.Unspecified));
+
+        var bottle = Assert.Single(await factory.EventsAsync(baby.BabyId));
+        Assert.Equal(AssistantResultCode.BottleLogged, result.Code);
+        Assert.Equal(bottle.StartedAt, bottle.EndedAt);
+    }
+
+    [Fact]
     public async Task LogBottle_Replay_LogsOnce()
     {
         var baby = await factory.SeedBabyAsync();

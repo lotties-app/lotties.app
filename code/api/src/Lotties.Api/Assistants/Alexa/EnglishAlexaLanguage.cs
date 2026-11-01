@@ -57,6 +57,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoRunningSleep] = result => $"{Subject(result)} isn't sleeping right now, so there was nothing to stop.",
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Subject(result)} has {result.Count} sleep timers running. Please stop them in the app.",
         [AssistantResultCode.BottleLogged] = result => $"Logged a {VolumeModifier(result, result.AmountMl)} bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
+        [AssistantResultCode.BottleStarted] = result => $"Started timing a {VolumeModifier(result, result.AmountMl)} bottle{BottleContent(result)} {When(result, result.At)} for {Name(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Nursing started on the {Side(result)} side for {Name(result)} {When(result, result.At)}.",
         [AssistantResultCode.NursingAlreadyRunning] = result => $"{Subject(result)} is already nursing{SinceClause(result)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Logged a {Diaper(result)} diaper for {Name(result)} {When(result, result.At)}.",

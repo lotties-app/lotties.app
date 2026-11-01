@@ -57,6 +57,7 @@ internal sealed partial class PortugueseAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoRunningSleep] = result => $"{Subject(result)} não está dormindo agora, então não havia sono para encerrar.",
         [AssistantResultCode.SeveralRunningSleeps] = result => $"{Subject(result)} tem {result.Count} cronômetros de sono ativos. Encerre-os no app.",
         [AssistantResultCode.BottleLogged] = result => $"Registrei uma mamadeira de {Volume(result, result.AmountMl)}{BottleContent(result)} {When(result, result.At)}{Para(result)}.",
+        [AssistantResultCode.BottleStarted] = result => $"Comecei a cronometrar uma mamadeira de {Volume(result, result.AmountMl)}{BottleContent(result)} {When(result, result.At)}{Para(result)}.",
         [AssistantResultCode.NursingStarted] = result => $"Amamentação iniciada no peito {Side(result)}{Para(result)} {When(result, result.At)}.",
         [AssistantResultCode.NursingAlreadyRunning] = result => $"{Subject(result)} já está mamando{SinceClause(result)}.",
         [AssistantResultCode.DiaperLogged] = result => $"Registrei uma fralda {Diaper(result)}{Para(result)} {When(result, result.At)}.",

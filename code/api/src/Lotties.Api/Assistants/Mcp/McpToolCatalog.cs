@@ -258,7 +258,7 @@ internal static class McpToolCatalog
         Write(
             "log_bottle",
             "Log bottle",
-            "Logs a bottle given now. A formula bottle names the baby's current formula when one is set in the app.",
+            "Logs a bottle given now. A formula bottle names the baby's current formula when one is set in the app. When the person turned on \"Time bottle feedings\" in the app, it starts a bottle timer instead (answer bottle_started; stop it in the app to say how much was drunk).",
             [Amount, AmountIn, AmountUnit, BottleContent],
             (assistant, invocation, arguments, token) => arguments.Decimal(AmountIn.Name) is { } amount
                 ? assistant.LogBottleVolumeAsync(invocation, amount, arguments.Text(AmountUnit.Name) == "oz" ? VolumeUnit.FluidOunces : VolumeUnit.Milliliters, BottleKindOf(arguments.Text(BottleContent.Name)), token)

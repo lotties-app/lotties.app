@@ -260,6 +260,9 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         // Measurement units (docs/design/37-measurement-units.md): the caller's own display setting; any signed-in user, Doctor included.
         ["GET /api/v1/me/unit-settings"] = Access.SignedIn,
         ["PUT /api/v1/me/unit-settings"] = Access.SignedIn,
+        // Feeding settings (time bottle feedings): the caller's own preference; any signed-in user, Doctor included.
+        ["GET /api/v1/me/feeding-settings"] = Access.SignedIn,
+        ["PUT /api/v1/me/feeding-settings"] = Access.SignedIn,
 
         // Caregiver rest (docs/design/41-caregiver-rest.md): the caller's own settings and morning answers; any signed-in user, nobody else reads them.
         ["GET /api/v1/me/rest-settings"] = Access.SignedIn,

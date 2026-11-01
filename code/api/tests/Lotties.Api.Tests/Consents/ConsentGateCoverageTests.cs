@@ -33,6 +33,8 @@ public sealed class ConsentGateCoverageTests(ApiFactory factory) : IClassFixture
         ["PUT /api/v1/me/assistant-settings"] = MeReason,
         ["GET /api/v1/me/unit-settings"] = MeReason,
         ["PUT /api/v1/me/unit-settings"] = MeReason,
+        ["GET /api/v1/me/feeding-settings"] = MeReason,
+        ["PUT /api/v1/me/feeding-settings"] = MeReason,
         ["GET /api/v1/me/consents"] = MeReason,
         ["PUT /api/v1/me/consents/core"] = MeReason,
         ["PUT /api/v1/me/consents/optional/{kind}"] = MeReason,

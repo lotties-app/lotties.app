@@ -51,6 +51,12 @@ public enum AssistantResultCode
     /// <summary>A bottle was logged (<see cref="AssistantResult.AmountMl"/>, <see cref="AssistantResult.BottleKind"/>).</summary>
     BottleLogged,
 
+    /// <summary>
+    /// A bottle timer started at <see cref="AssistantResult.At"/> with <see cref="AssistantResult.AmountMl"/> prepared, because the
+    /// account's "Time bottle feedings" setting is on; what was drunk is told when it stops, in the app.
+    /// </summary>
+    BottleStarted,
+
     /// <summary>A nursing timer started on <see cref="AssistantResult.Side"/>.</summary>
     NursingStarted,
 

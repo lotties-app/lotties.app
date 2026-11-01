@@ -68,6 +68,16 @@ public sealed class AlexaSpeechTests
     }
 
     [Fact]
+    public void Say_BottleStarted_SaysATimerStartedNotAnAmountDrunk()
+    {
+        var english = Result(AssistantResultCode.BottleStarted, "America/New_York") with { At = AsOf, AmountMl = 120, BottleKind = BottleKind.Unspecified };
+        var portuguese = Result(AssistantResultCode.BottleStarted, "America/Sao_Paulo") with { At = AsOf, AmountMl = 120, BottleKind = BottleKind.Unspecified };
+
+        Assert.Equal("Started timing a 120 ml bottle at 2:15 PM for Charlotte.", AlexaLanguages.For("en-US").Say(english));
+        Assert.Equal("Comecei a cronometrar uma mamadeira de 120 ml às 15:15 para Charlotte.", AlexaLanguages.For("pt-BR").Say(portuguese));
+    }
+
+    [Fact]
     public void Say_Bottle_Portuguese24HourClockAndNeverTheFormulaName()
     {
         var result = Result(AssistantResultCode.BottleLogged, "America/Sao_Paulo") with { At = AsOf, AmountMl = 120, BottleKind = BottleKind.Formula };

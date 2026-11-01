@@ -114,6 +114,7 @@ with a line for every code, tested for every code in both languages.
 | `sleep_started`, `sleep_already_running` | a sleep timer started; one already runs (`at` = its start) |
 | `sleep_ended`, `no_running_sleep`, `several_running_sleeps` | woke up (`at`, `minutes`); none running; `count` running (nothing changed) |
 | `bottle_logged` | `amountMl`, `bottleKind`, `formulaName` |
+| `bottle_started` | same fields; the bottle runs as a timer (account setting "Time bottle feedings" on), stopped in the app |
 | `nursing_started`, `nursing_already_running` | `side`; one already runs |
 | `diaper_logged` | `diaper` |
 | `last_feed`, `no_feeds` | the newest feeding of 30 days: `at`, `endedAt`, `running`, `minutes`, `feedMethod`, `amountMl`, `side`, `bottleKind` |
@@ -198,8 +199,15 @@ text, and is in the structured JSON (`medicine`, `dueMedicines`) only then. Neve
 - **Ended by sleep is not applied by voice.** The web stops a running feeding when a sleep starts
   (`web/src/now/sleepStopsFeeding.ts`, docs/design/20-feeding-amounts.md section 2); the server has no domain function for
   it and the rule is not duplicated here: a feeding left running stays running until stopped in the app.
-- **Bottle** is an instant (start = end = now), all of it drunk (no `amount_drunk_ml`), `bottle_feeding_type` from the
-  kind; a formula bottle names the baby's current formula when there is one (the Feed tray rule), else only its kind.
+- **Bottle** follows the account's "Time bottle feedings" setting (`user_feeding_settings`, `GET/PUT /me/feeding-settings`,
+  docs/design/20-feeding-amounts.md section 3; absent means off). Off (default): an instant (start = end = now), all of it
+  drunk (no `amount_drunk_ml`). On: it **starts running** (`ended_at` null) with the prepared amount `amount_ml` and no
+  `amount_drunk_ml`, exactly the Feed tray's shape, and the person stops it in the app, where the drunk amount and pauses
+  are told; the answer is `bottle_started` instead of `bottle_logged` (a timer started, not "N ml drunk"; Alexa: "Started
+  timing a 120 ml bottle ..."; pt-BR "Comecei a cronometrar uma mamadeira de ..."). `bottle_feeding_type` comes from the
+  kind either way; a formula bottle names the baby's current formula when there is one (the Feed tray rule), else only its
+  kind. The id is still the UUID v5 of the request, so a retry finds the same event and answers `bottle_started` when it is
+  running (or was stopped later), else `bottle_logged`. Several bottles may run at once, as in the web.
 - **Nursing** starts a timer (`method: breast`, `side`, `side_since`, as the web's `startNursing`) on the side said,
   else opposite to where the last finished feed ended. It is stopped in the app.
 - **Reads** use the clinical event reads (no deleted events), the appointment repository (upcoming only) and the vaccine
