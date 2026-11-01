@@ -153,8 +153,8 @@ The owner asked for Siri to mirror the Alexa intents, answered by the same serve
   4. Sleep: "Baby {fell asleep|woke up}" (`SiriSleepChangeIntent`, `log_sleep_start`/`log_sleep_end`). The old separate phrases are gone.
   5. Activity: "Log {activity}", "Start {activity}" (`SiriLogActivityIntent`; bath, tummy time, belly massage, nasal suction,
      nail trim, skin care, outdoor time, fussy, spit-up, teething, breast pump). Optional `minutes` (1..720) is sent as the MCP
-     argument `minutes` only for the activities whose tool takes a duration (the first seven); fussy, spit-up, teething and
-     breast pump never get it. For the duration ones Siri asks "How many minutes?" when it was not given; "zero" sends nothing
+     argument `minutes` only for the activities whose tool takes a duration (tummy time, breast pump, belly massage, fussy, outdoor);
+     bath, nasal suction, nail trim, skin care, spit-up and teething never ask and never get it. For the duration ones Siri asks "How many minutes?" when it was not given; "zero" sends nothing
      and the server starts a timer.
   6. Health: "Log {temperature|symptom|belly pain}" (`SiriLogHealthIntent`); temperature and level are asked after. The symptom
      is logged without a choice, as before (the tool takes an optional choice from a list, not wired yet; no free text).

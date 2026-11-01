@@ -475,8 +475,8 @@ enum SiriActivity: String, AppEnum {
 
     var takesMinutes: Bool {
         switch self {
-        case .bath, .tummyTime, .bellyMassage, .nasalSuction, .nailTrim, .skinCare, .outdoor: return true
-        case .fussy, .spitUp, .teething, .breastPump: return false
+        case .tummyTime, .breastPump, .bellyMassage, .fussy, .outdoor: return true
+        case .bath, .nasalSuction, .nailTrim, .skinCare, .spitUp, .teething: return false
         }
     }
 }
