@@ -249,13 +249,13 @@ private struct SleepFacts {
 private struct AgoText: View {
     @Environment(\.lottiesNow) private var now
     let date: Date?
-    /// "há 2 h 39 min" / "2 h 39 min ago" as of the entry's date (short, for the rows) instead of the live "2 hrs, 39 min".
+    /// "há 2 h 30+" / "2 h 30+ ago" (rounded down to the half hour) as of the entry's date (short, for the rows) instead of the live "2 hrs, 39 min".
     var compact = false
 
     var body: some View {
         if let date, Calendar.current.isDateInToday(date) {
             if compact {
-                let text = LottiesText.ago(date, now: now)
+                let text = LottiesText.agoRounded(date, now: now)
                 if text == LottiesText.t("agora", "just now") {
                     Text(text)
                 } else {
