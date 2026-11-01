@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Lotties.Api.Assistants.Alexa;
 using Lotties.Api.Authentication;
 using Lotties.Api.Limits;
 using Lotties.Application.Assistants;
@@ -26,6 +27,12 @@ internal sealed class McpToolRunner(
 {
     /// <summary>The adapter's stable name: part of the event ids it writes (never change it).</summary>
     public const string AdapterName = "mcp";
+
+    /// <summary>
+    /// A client that speaks the answer itself (the iOS Siri intents) sends its locale here and gets the same sentence the
+    /// Alexa skill would say in <c>structuredContent.speech</c>; other clients never send it and get nothing extra.
+    /// </summary>
+    public const string SpeechLocaleHeader = "Lotties-Speech-Locale";
 
     public static ValueTask<ListToolsResult> ListToolsAsync(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken)
     {
@@ -89,8 +96,12 @@ internal sealed class McpToolRunner(
         }
     }
 
-    private static (string Code, CallToolResult Result) Rendered(AssistantResult result) =>
-        (AssistantResult.CodeName(result.Code), McpToolResults.From(result));
+    private (string Code, CallToolResult Result) Rendered(AssistantResult result)
+    {
+        var locale = httpContextAccessor.HttpContext?.Request.Headers[SpeechLocaleHeader].ToString();
+        var speech = string.IsNullOrWhiteSpace(locale) ? null : AlexaLanguages.For(locale).Say(result);
+        return (AssistantResult.CodeName(result.Code), McpToolResults.From(result, speech));
+    }
 
     /// <summary>
     /// The request id the written event's id derives from (<see cref="Domain.Assistants.AssistantEventIds"/>): for a write with

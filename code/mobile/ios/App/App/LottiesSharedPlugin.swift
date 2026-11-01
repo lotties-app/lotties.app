@@ -12,6 +12,7 @@ public class LottiesSharedPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "readOutbox", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "removeOutbox", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearAll", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "diagnose", returnType: CAPPluginReturnPromise),
     ]
 
     @objc func writeSnapshot(_ call: CAPPluginCall) {
@@ -43,5 +44,14 @@ public class LottiesSharedPlugin: CAPPlugin, CAPBridgedPlugin {
         LottiesShared.clearAll()
         WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
+    }
+
+    /// What the plugin sees: whether the App Group container exists and how big the two files are (-1: missing).
+    @objc func diagnose(_ call: CAPPluginCall) {
+        call.resolve([
+            "container": LottiesShared.containerURL != nil,
+            "snapshotBytes": LottiesShared.readData(LottiesShared.snapshotFile)?.count ?? -1,
+            "outboxBytes": LottiesShared.readData(LottiesShared.outboxFile)?.count ?? -1,
+        ])
     }
 }

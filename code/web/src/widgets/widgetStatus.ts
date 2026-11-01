@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 export type WidgetStatus =
   | { state: 'waiting' }
   | { state: 'working'; step: 'reading' | 'sending' }
-  | { state: 'ok'; at: string }
+  | { state: 'ok'; at: string; detail?: string }
   | { state: 'error'; message: string };
 
 let current: WidgetStatus = { state: 'waiting' };

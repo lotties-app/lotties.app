@@ -32,7 +32,8 @@ function WidgetFact() {
   const status = useWidgetStatus();
   const value =
     status.state === 'ok'
-      ? t('hub.about.widgetOk', { date: formatDateTime(status.at) })
+      ? t('hub.about.widgetOk', { date: formatDateTime(status.at) }) +
+        (status.detail ? ` · ${status.detail}` : '')
       : status.state === 'error'
         ? t('hub.about.widgetError', { message: status.message })
         : status.state === 'working'

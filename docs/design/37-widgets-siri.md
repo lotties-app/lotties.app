@@ -138,6 +138,28 @@ capabilities in the UI, commit the resulting project), then the assistant contin
 - If the outbox holds entries for an account other than the signed-in one (a sign-out and another sign-in in between),
   they are dropped, not applied: entries carry no account id, so the outbox is cleared on sign-out.
 
+## 8. Siri through the MCP server (decided 2026-10-31, after the widget shipped)
+
+The owner asked for Siri to mirror the Alexa intents, answered by the same server. So the Siri and Shortcuts intents are
+**MCP clients** (supersedes the "log at once, offline" decision of section 1 for Siri; the **widget buttons keep it**):
+
+- `App/LottiesSiriIntents.swift`: 40 App Intents (the Alexa model's reads and logs that the MCP server has a tool for;
+  medication has none by design), each one `tools/call` of the matching tool, speaking the answer. Ten of them have spoken
+  phrases (`App/LottiesShortcuts.swift`, the iOS limit); all are in Shortcuts and Spotlight. English phrases only for now.
+- `App/LottiesMcp.swift`: the sign-in (`ASWebAuthenticationSession`, PKCE, public client `lotties-ios`, scopes
+  `lotties.read lotties.write offline_access`, redirect `app.lotties.app://siri/callback`), tokens in the Keychain (never in the
+  App Group files the widget reads), refresh, and the JSON-RPC call (`Authorization: Bearer`, protocol 2025-11-25, one POST,
+  no initialize). Keycloak setup: docs/MCP.md 3.4.
+- Spoken sentence: the server renders it with the Alexa language classes when the request has the header
+  `Lotties-Speech-Locale: pt-BR|en-US` (`structuredContent.speech`), so Siri says what Alexa says, in the phone's language.
+- The web app starts the sign-in: Settings > Voice assistants > Siri and Shortcuts (`SiriConnectPanel`), through the WebKit
+  message handler `lotties` (`siriStatus`, `siriConnect`, `siriDisconnect`; also used by the widget bridge). Logout and
+  account erasure call `clearAll`, which also drops the Siri tokens.
+- Offline: a Siri request needs the network (it says nothing was logged). No outbox fallback, to avoid double events when
+  an answer is lost; idempotency keys make a retry safe. The widget buttons still work offline.
+- The old offline intents (`LogDiaperIntent`, ...) stay for the widget buttons and are hidden from Shortcuts
+  (`isDiscoverable = false`).
+
 ## 7. Unverified
 
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive

@@ -26,6 +26,8 @@
 		C0DE00000000000000000014 /* LottiesIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000002 /* LottiesIntents.swift */; };
 		C0DE00000000000000000015 /* LottiesWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0DE0000000000000000000A /* LottiesWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C0DEA55E7000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0DEA55E7000000000000001 /* Assets.xcassets */; };
+		C0DE00000000000000000102 /* LottiesMcp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000101 /* LottiesMcp.swift */; };
+		C0DE00000000000000000104 /* LottiesSiriIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000103 /* LottiesSiriIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +77,8 @@
 		C0DE00000000000000000009 /* LottiesWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LottiesWidgets.entitlements; sourceTree = "<group>"; };
 		C0DE0000000000000000000A /* LottiesWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LottiesWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0DEA55E7000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C0DE00000000000000000101 /* LottiesMcp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesMcp.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000103 /* LottiesSiriIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesSiriIntents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +127,8 @@
 				C0DE00000000000000000003 /* LottiesSharedPlugin.swift */,
 				C0DE00000000000000000004 /* LottiesBridgeViewController.swift */,
 				C0DE00000000000000000005 /* LottiesShortcuts.swift */,
+				C0DE00000000000000000103 /* LottiesSiriIntents.swift */,
+				C0DE00000000000000000101 /* LottiesMcp.swift */,
 				C0DE00000000000000000006 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -274,6 +280,8 @@
 				C0DE0000000000000000000D /* LottiesSharedPlugin.swift in Sources */,
 				C0DE0000000000000000000E /* LottiesBridgeViewController.swift in Sources */,
 				C0DE0000000000000000000F /* LottiesShortcuts.swift in Sources */,
+				C0DE00000000000000000104 /* LottiesSiriIntents.swift in Sources */,
+				C0DE00000000000000000102 /* LottiesMcp.swift in Sources */,
 				C0DE00000000000000000010 /* LottiesShared.swift in Sources */,
 				C0DE00000000000000000011 /* LottiesIntents.swift in Sources */,
 			);

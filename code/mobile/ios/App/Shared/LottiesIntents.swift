@@ -3,7 +3,7 @@ import Foundation
 import WidgetKit
 
 /*
- * Siri / Shortcuts / widget-button actions (docs/design/37-widgets-siri.md). Each one only appends to the outbox in the
+ * Widget-button actions (docs/design/37-widgets-siri.md); hidden from Shortcuts, Siri uses LottiesSiriIntents.swift. Each one only appends to the outbox in the
  * App Group container (and updates the snapshot so the widget shows it at once); the app, signed in as the account,
  * turns the entry into a real event when it opens or resumes. No network, no token. Compiled into the app and into the
  * widget extension (interactive buttons run the intent in the extension process).
@@ -75,6 +75,7 @@ enum DiaperContent: String, AppEnum {
 }
 
 struct LogDiaperIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
     static var title: LocalizedStringResource = "Log a diaper"
     static var description = IntentDescription("Logs a diaper change for the selected baby, now.")
 
@@ -88,6 +89,7 @@ struct LogDiaperIntent: AppIntent {
 }
 
 struct LogBottleIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
     static var title: LocalizedStringResource = "Log a bottle"
     static var description = IntentDescription("Logs a bottle feed now. Without an amount, the last bottle's amount is used.")
 
@@ -112,6 +114,7 @@ struct LogBottleIntent: AppIntent {
 }
 
 struct LogBreastFeedIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
     static var title: LocalizedStringResource = "Start a breastfeed"
     static var description = IntentDescription("Starts a breastfeeding session now; stop it in the app.")
 
@@ -122,6 +125,7 @@ struct LogBreastFeedIntent: AppIntent {
 }
 
 struct BabyFellAsleepIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
     static var title: LocalizedStringResource = "Baby fell asleep"
     static var description = IntentDescription("Starts a sleep for the selected baby, now.")
 
@@ -132,6 +136,7 @@ struct BabyFellAsleepIntent: AppIntent {
 }
 
 struct BabyWokeUpIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
     static var title: LocalizedStringResource = "Baby woke up"
     static var description = IntentDescription("Ends the selected baby's sleep, now.")
 
@@ -143,6 +148,7 @@ struct BabyWokeUpIntent: AppIntent {
 
 /// Facts from the snapshot only, never advice.
 struct LastFeedIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
     static var title: LocalizedStringResource = "When was the last feed?"
     static var description = IntentDescription("Says when the selected baby last fed, from what the app saved.")
 
