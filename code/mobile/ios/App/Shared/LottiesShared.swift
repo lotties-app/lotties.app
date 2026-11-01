@@ -139,10 +139,19 @@ struct WidgetSnapshot: Codable, Equatable {
         var lastDiaper: Diaper?
         /// The last start of each activity the widget can log, by event type key ("bath", "tummy_time"...).
         var lastActivity: [String: Date]?
+        /// A bottle or a breastfeed running now (the widget shows pause, resume and stop for it).
+        var runningFeed: RunningFeed?
         /// Estimates from the app's own predictions (the Now screen's "next up"); absent when it has none.
         var nextNap: NapWindow?
         var nextFeed: NextFeed?
         var nextDiaper: NextDiaper?
+    }
+    struct RunningFeed: Codable, Equatable {
+        var kind: String  // "bottle" | "breast"
+        /// The start with the pauses taken out: `Text(since, style: .timer)` counts the effective time.
+        var since: Date
+        var paused: Bool
+        var elapsedSeconds: Int
     }
     struct NapWindow: Codable, Equatable {
         var earliest: Date
@@ -218,7 +227,7 @@ extension WidgetSnapshot.Baby {
 struct OutboxEntry: Codable, Equatable {
     var id: String
     var babyId: String
-    var type: String  // "feed" | "diaper" | "sleep_start" | "sleep_end"
+    var type: String  // "feed" | "diaper" | "sleep_start" | "sleep_end" | "activity" | "feed_pause" | "feed_resume" | "feed_stop"
     var occurredAt: Date
     var payload: Payload
     var source: String  // "siri" | "widget"
@@ -226,6 +235,7 @@ struct OutboxEntry: Codable, Equatable {
     struct Payload: Codable, Equatable {
         var kind: String?
         var amountMl: Int?
+        var side: String?
     }
 }
 

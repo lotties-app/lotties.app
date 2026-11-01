@@ -19,6 +19,8 @@ struct LottiesEntry: TimelineEntry {
     let snapshot: WidgetSnapshot?
     /// What the three configurable buttons log (the widget's configuration); the defaults when it has none.
     var slots: [WidgetActivity] = WidgetActivity.defaultSlots
+    /// The choices the widget shows instead of its buttons (a tap on Diaper, Bottle, Breast or More), if one is open.
+    var picker: PickerTarget?
 }
 
 extension WidgetActivity {
@@ -74,6 +76,14 @@ struct LottiesProvider: TimelineProvider {
 private func lottiesTimeline(slots: [WidgetActivity]) -> Timeline<LottiesEntry> {
     let now = Date()
     let snapshot = LottiesShared.readSnapshot()
+    if let open = LottiesPicker.current(at: now) {
+        // The choices stay for a few seconds, then the buttons come back by themselves.
+        return Timeline(
+            entries: [
+                LottiesEntry(date: now, snapshot: snapshot, slots: slots, picker: open.target),
+                LottiesEntry(date: open.until, snapshot: snapshot, slots: slots),
+            ], policy: .after(open.until))
+    }
     var dates = [now]
     if let baby = snapshot?.selectedBaby { dates += baby.dueChanges(after: now).prefix(8) }
     let next = Calendar.current.date(byAdding: .minute, value: 15, to: now) ?? now
@@ -431,10 +441,17 @@ private struct ActivityRow: View {
         }
     }
 
+    @ViewBuilder
     var body: some View {
-        RowTile(
-            icon: activity.icon, title: activity.title, date: last, category: activity.category,
-            intent: activityIntent(activity), next: next, due: isDue)
+        if let target = activity.pickerTarget {
+            RowTile(
+                icon: activity.icon, title: activity.title, date: last, category: activity.category,
+                intent: pickerIntent(target), next: next, due: isDue)
+        } else {
+            RowTile(
+                icon: activity.icon, title: activity.title, date: last, category: activity.category,
+                intent: activityIntent(activity), next: next, due: isDue)
+        }
     }
 }
 
@@ -451,10 +468,186 @@ private struct ActivitySquare: View {
         }
     }
 
+    @ViewBuilder
+    var body: some View {
+        if let target = activity.pickerTarget {
+            SquareTile(
+                icon: activity.icon, title: activity.title, category: activity.category,
+                intent: pickerIntent(target), due: isDue)
+        } else {
+            SquareTile(
+                icon: activity.icon, title: activity.title, category: activity.category,
+                intent: activityIntent(activity), due: isDue)
+        }
+    }
+}
+
+private func pickerIntent(_ target: PickerTarget) -> OpenPickerIntent {
+    var intent = OpenPickerIntent()
+    intent.target = target
+    return intent
+}
+
+private func choiceIntent(_ activity: WidgetActivity, _ option: String) -> LogChoiceIntent {
+    var intent = LogChoiceIntent()
+    intent.activity = activity
+    intent.option = option
+    return intent
+}
+
+private func feedTimerIntent(_ action: FeedTimerAction) -> FeedTimerIntent {
+    var intent = FeedTimerIntent()
+    intent.action = action
+    return intent
+}
+
+/// "More": the small button that opens the list of every activity.
+private struct MoreSquare: View {
     var body: some View {
         SquareTile(
-            icon: activity.icon, title: activity.title, category: activity.category,
-            intent: activityIntent(activity), due: isDue)
+            icon: "dots", title: LottiesText.t("Mais", "More"), category: .care, intent: pickerIntent(.more))
+    }
+}
+
+/// The bottle or breastfeed running now: its time, and pause or resume and stop.
+private struct RunningFeedRow: View {
+    let run: WidgetSnapshot.Baby.RunningFeed
+
+    private var title: String {
+        run.kind == "bottle" ? LottiesText.t("Mamadeira", "Bottle") : LottiesText.t("Peito", "Breast")
+    }
+
+    private func circle(_ icon: String) -> some View {
+        Icon(name: icon, size: 15)
+            .foregroundStyle(Category.feeding.tone)
+            .frame(width: 30, height: 30)
+            .background(Ink.background.opacity(0.6), in: Circle())
+            .overlay(Circle().stroke(Category.feeding.tone, lineWidth: 1))
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Icon(name: run.kind == "bottle" ? "bottle" : "heart", size: 18).foregroundStyle(Category.feeding.tone)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text).lineLimit(1)
+                Group {
+                    if run.paused {
+                        Text("\(run.elapsedSeconds / 60) min · \(LottiesText.t("pausada", "paused"))")
+                    } else {
+                        Text(run.since, style: .timer)
+                    }
+                }
+                .font(.caption2).monospacedDigit().foregroundStyle(Ink.muted).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            if run.kind == "bottle" {
+                Act(feedTimerIntent(run.paused ? .resume : .pause)) { circle(run.paused ? "player-play" : "player-pause") }
+            }
+            Act(feedTimerIntent(.stop)) { circle("player-stop") }
+        }
+        .padding(.horizontal, 8)
+        .frame(maxHeight: .infinity)
+        .background(Category.feeding.tint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Category.feeding.tone, lineWidth: 1.5))
+    }
+}
+
+/// A choice button of the open picker: a word or a number, tinted like its category.
+private struct ChoiceChip<I: AppIntent>: View {
+    let title: String
+    let category: Category
+    let intent: I
+
+    var body: some View {
+        Act(intent) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+                .foregroundStyle(category.tone)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(category.tint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+}
+
+/// What a tap on Diaper, Bottle, Breast or More opens inside the widget (works offline, no app).
+private struct PickerPanel: View {
+    let target: PickerTarget
+    let baby: WidgetSnapshot.Baby
+    let due: WidgetSnapshot.Baby.Due
+
+    private var title: String {
+        switch target {
+        case .diaper: return LottiesText.t("Fralda: o que foi?", "Diaper: what was it?")
+        case .bottle: return LottiesText.t("Mamadeira: quantos ml?", "Bottle: how many ml?")
+        case .breast: return LottiesText.t("Peito: qual lado?", "Breast: which side?")
+        case .more: return LottiesText.t("Mais atividades", "More activities")
+        }
+    }
+
+    private var amounts: [Int] {
+        var list: [Int] = []
+        if let last = baby.lastFeed, last.kind == "bottle", let ml = last.amountMl, ml > 0 { list.append(ml) }
+        for ml in [60, 90, 120, 150] where !list.contains(ml) { list.append(ml) }
+        return Array(list.prefix(4))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text).lineLimit(1)
+                Spacer(minLength: 0)
+                Act(ClosePickerIntent()) {
+                    Icon(name: "x", size: 16).foregroundStyle(Ink.muted).padding(4)
+                }
+            }
+            switch target {
+            case .diaper:
+                HStack(spacing: 8) {
+                    ChoiceChip(title: LottiesText.t("Xixi", "Wet"), category: .diaper, intent: choiceIntent(.diaper, "wet"))
+                    ChoiceChip(title: LottiesText.t("Cocô", "Dirty"), category: .diaper, intent: choiceIntent(.diaper, "dirty"))
+                    ChoiceChip(title: LottiesText.t("Os dois", "Both"), category: .diaper, intent: choiceIntent(.diaper, "mixed"))
+                }
+            case .bottle:
+                HStack(spacing: 8) {
+                    ForEach(amounts, id: \.self) { ml in
+                        ChoiceChip(title: "\(ml) ml", category: .feeding, intent: choiceIntent(.bottle, String(ml)))
+                    }
+                }
+            case .breast:
+                HStack(spacing: 8) {
+                    ChoiceChip(title: LottiesText.t("Esquerdo", "Left"), category: .feeding, intent: choiceIntent(.breast, "left"))
+                    ChoiceChip(title: LottiesText.t("Direito", "Right"), category: .feeding, intent: choiceIntent(.breast, "right"))
+                }
+            case .more:
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                    ForEach(WidgetActivity.panel, id: \.self) { activity in
+                        ActivitySquare(activity: activity, due: due).frame(height: 44)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The tiles of the quick-actions widget: the three chosen buttons (or pause and stop while a feed runs) and More.
+private enum QuickItem: Hashable {
+    case activity(WidgetActivity)
+    case pause(Bool)
+    case stop
+    case more
+
+    static func items(slots: [WidgetActivity], run: WidgetSnapshot.Baby.RunningFeed?) -> [QuickItem] {
+        var items: [QuickItem] = []
+        if let run {
+            if run.kind == "bottle" { items.append(.pause(run.paused)) }
+            items.append(.stop)
+            items += slots.filter { !$0.isFeed }.map { QuickItem.activity($0) }
+        } else {
+            items = slots.map { QuickItem.activity($0) }
+        }
+        return Array(items.prefix(3)) + [.more]
     }
 }
 
@@ -565,27 +758,54 @@ struct LottiesSummaryWidget: Widget {
                 case .accessoryCircular, .accessoryInline, .accessoryRectangular:
                     lockScreen(family, snapshot, baby, icon: facts.icon, date: facts.since)
                 case .systemMedium:
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            SleepBlock(facts: facts, name: baby.name, nextNap: baby.nextNap?.expected)
-                            Spacer(minLength: 0)
-                            SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
-                        }
-                        .frame(maxWidth: .infinity)
-                        VStack(spacing: 6) {
-                            ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
-                                ActivityRow(activity: activity, baby: baby, due: due)
+                    if let picker = entry.picker {
+                        PickerPanel(target: picker, baby: baby, due: due)
+                    } else {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                SleepBlock(facts: facts, name: baby.name, nextNap: baby.nextNap?.expected)
+                                Spacer(minLength: 0)
+                                HStack(spacing: 6) {
+                                    SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
+                                    Act(pickerIntent(.more)) {
+                                        Icon(name: "dots", size: 18)
+                                            .foregroundStyle(Ink.muted)
+                                            .frame(width: 36, height: 36)
+                                            .overlay(Circle().stroke(Ink.hairline, lineWidth: 1))
+                                    }
+                                }
                             }
+                            .frame(maxWidth: .infinity)
+                            VStack(spacing: 6) {
+                                if let run = baby.runningFeed {
+                                    RunningFeedRow(run: run)
+                                    ForEach(Array(entry.slots.filter { !$0.isFeed }.prefix(2).enumerated()), id: \.offset) { _, activity in
+                                        ActivityRow(activity: activity, baby: baby, due: due)
+                                    }
+                                } else {
+                                    ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
+                                        ActivityRow(activity: activity, baby: baby, due: due)
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
                 case .systemLarge, .systemExtraLarge:
                     VStack(alignment: .leading, spacing: 10) {
                         SleepBlock(facts: facts, name: baby.name, big: 40, nextNap: baby.nextNap?.expected)
                         SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
-                        HStack(spacing: 8) {
-                            ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
-                                ActivitySquare(activity: activity, due: due)
+                        if let run = baby.runningFeed { RunningFeedRow(run: run).frame(height: 54) }
+                        Group {
+                            if let picker = entry.picker {
+                                PickerPanel(target: picker, baby: baby, due: due)
+                            } else {
+                                HStack(spacing: 8) {
+                                    ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
+                                        ActivitySquare(activity: activity, due: due)
+                                    }
+                                    MoreSquare()
+                                }
                             }
                         }
                         .frame(maxHeight: .infinity)
@@ -756,11 +976,28 @@ struct LottiesQuickWidget: Widget {
             Host(entry: entry) { _, baby, _ in
                 let facts = SleepFacts(baby)
                 let due = baby.due(at: entry.date)
+                if let picker = entry.picker {
+                    PickerPanel(target: picker, baby: baby, due: due)
+                } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(baby.name).font(.caption).foregroundStyle(Ink.muted).lineLimit(1)
                     HStack(spacing: 8) {
-                        ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
-                            ActivitySquare(activity: activity, due: due)
+                        ForEach(QuickItem.items(slots: entry.slots, run: baby.runningFeed), id: \.self) { item in
+                            switch item {
+                            case .activity(let activity):
+                                ActivitySquare(activity: activity, due: due)
+                            case .pause(let paused):
+                                SquareTile(
+                                    icon: paused ? "player-play" : "player-pause",
+                                    title: paused ? LottiesText.t("Retomar", "Resume") : LottiesText.t("Pausar", "Pause"),
+                                    category: .feeding, intent: feedTimerIntent(paused ? .resume : .pause))
+                            case .stop:
+                                SquareTile(
+                                    icon: "player-stop", title: LottiesText.t("Parar", "Stop"),
+                                    category: .feeding, intent: feedTimerIntent(.stop))
+                            case .more:
+                                MoreSquare()
+                            }
                         }
                         if facts.asleep {
                             SquareTile(icon: "sun", title: LottiesText.t("Acordou", "Woke up"),
@@ -770,6 +1007,7 @@ struct LottiesQuickWidget: Widget {
                                        category: .sleep, intent: BabyFellAsleepIntent(), due: due.nap)
                         }
                     }
+                }
                 }
             }
         }

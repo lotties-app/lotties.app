@@ -16,7 +16,7 @@ enum LottiesLogger {
         case noBaby
     }
 
-    static func log(type: String, kind: String? = nil, amountMl: Int? = nil, source: String) -> Outcome {
+    static func log(type: String, kind: String? = nil, amountMl: Int? = nil, side: String? = nil, source: String) -> Outcome {
         guard var snapshot = LottiesShared.readSnapshot(), snapshot.signedIn else { return .notSignedIn }
         guard let baby = snapshot.selectedBaby else { return .noBaby }
         let now = Date()
@@ -25,15 +25,32 @@ enum LottiesLogger {
             babyId: baby.id,
             type: type,
             occurredAt: now,
-            payload: .init(kind: kind, amountMl: amountMl),
+            payload: .init(kind: kind, amountMl: amountMl, side: side),
             source: source)
         LottiesShared.updateOutbox { $0.append(entry) }
 
         if let index = snapshot.babies.firstIndex(where: { $0.id == baby.id }) {
             switch type {
             case "feed":
-                snapshot.babies[index].lastFeed = .init(at: now, kind: kind ?? "breast", amountMl: amountMl, side: nil)
+                snapshot.babies[index].lastFeed = .init(at: now, kind: kind ?? "breast", amountMl: amountMl, side: side)
                 snapshot.babies[index].nextFeed = nil  // the estimate was for the feed that just happened
+                if (kind ?? "breast") == "breast" {
+                    snapshot.babies[index].runningFeed = .init(kind: "breast", since: now, paused: false, elapsedSeconds: 0)
+                }
+            case "feed_pause":
+                if var run = snapshot.babies[index].runningFeed {
+                    run.paused = true
+                    run.elapsedSeconds = max(0, Int(now.timeIntervalSince(run.since)))
+                    snapshot.babies[index].runningFeed = run
+                }
+            case "feed_resume":
+                if var run = snapshot.babies[index].runningFeed {
+                    run.paused = false
+                    run.since = now.addingTimeInterval(-Double(run.elapsedSeconds))
+                    snapshot.babies[index].runningFeed = run
+                }
+            case "feed_stop":
+                snapshot.babies[index].runningFeed = nil
             case "diaper":
                 snapshot.babies[index].lastDiaper = .init(at: now, kind: kind ?? "wet")
                 snapshot.babies[index].nextDiaper = nil
@@ -282,6 +299,7 @@ struct LogActivityIntent: AppIntent {
     var activity: WidgetActivity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        LottiesPicker.close()
         switch activity {
         case .bottle:
             guard let last = LottiesShared.readSnapshot()?.selectedBaby?.lastFeed, last.kind == "bottle",
@@ -301,6 +319,146 @@ struct LogActivityIntent: AppIntent {
             let outcome = LottiesLogger.log(type: "activity", kind: activity.eventKey, source: "widget")
             return .result(dialog: LottiesLogger.dialog(
                 outcome, done: "Registrado: \(activity.titlePt)", doneEn: "Logged: \(activity.titleEn)"))
+        }
+    }
+}
+
+// MARK: Choices inside the widget (no app, works offline)
+
+/// Which choices the widget shows in place of its buttons.
+enum PickerTarget: String, AppEnum {
+    case diaper, bottle, breast, more
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Choice"
+    static var caseDisplayRepresentations: [PickerTarget: DisplayRepresentation] = [
+        .diaper: "Diaper", .bottle: "Bottle", .breast: "Breast", .more: "More",
+    ]
+}
+
+extension WidgetActivity {
+    /// The choices a tap on this activity opens; nil for the ones that log at once.
+    var pickerTarget: PickerTarget? {
+        switch self {
+        case .bottle: return .bottle
+        case .breast: return .breast
+        case .diaper: return .diaper
+        default: return nil
+        }
+    }
+
+    var isFeed: Bool { self == .bottle || self == .breast }
+}
+
+/// The open choice, kept in the App Group defaults for a short time: the widget shows the choices, then goes back to its
+/// buttons by itself (a timeline entry at `until`).
+enum LottiesPicker {
+    static let lifetime: TimeInterval = 25
+    private static let targetKey = "picker.target"
+    private static let untilKey = "picker.until"
+    private static var defaults: UserDefaults? { UserDefaults(suiteName: LottiesShared.groupId) }
+
+    static func open(_ target: PickerTarget, now: Date = Date()) {
+        defaults?.set(target.rawValue, forKey: targetKey)
+        defaults?.set(now.addingTimeInterval(lifetime), forKey: untilKey)
+    }
+
+    static func close() {
+        defaults?.removeObject(forKey: targetKey)
+        defaults?.removeObject(forKey: untilKey)
+    }
+
+    static func current(at now: Date = Date()) -> (target: PickerTarget, until: Date)? {
+        guard let raw = defaults?.string(forKey: targetKey), let until = defaults?.object(forKey: untilKey) as? Date,
+            until > now, let target = PickerTarget(rawValue: raw)
+        else { return nil }
+        return (target, until)
+    }
+}
+
+struct OpenPickerIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
+    static var title: LocalizedStringResource = "Show choices"
+
+    @Parameter(title: "Choice", default: .more)
+    var target: PickerTarget
+
+    func perform() async throws -> some IntentResult {
+        LottiesPicker.open(target)
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
+struct ClosePickerIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
+    static var title: LocalizedStringResource = "Close choices"
+
+    func perform() async throws -> some IntentResult {
+        LottiesPicker.close()
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
+/// A choice made inside the widget: wet, dirty or both for a diaper; a number of ml for a bottle; a side for the breast.
+struct LogChoiceIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
+    static var title: LocalizedStringResource = "Log a choice"
+
+    @Parameter(title: "Activity", default: .diaper)
+    var activity: WidgetActivity
+
+    @Parameter(title: "Option", default: "")
+    var option: String
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        LottiesPicker.close()
+        switch activity {
+        case .bottle:
+            guard let ml = Int(option), ml > 0 else {
+                return .result(dialog: IntentDialog(stringLiteral: LottiesText.t("Nada registrado.", "Nothing logged.")))
+            }
+            let outcome = LottiesLogger.log(type: "feed", kind: "bottle", amountMl: ml, source: "widget")
+            return .result(dialog: LottiesLogger.dialog(outcome, done: "Mamadeira registrada", doneEn: "Bottle logged"))
+        case .breast:
+            let side = option == "left" || option == "right" ? option : nil
+            let outcome = LottiesLogger.log(type: "feed", kind: "breast", side: side, source: "widget")
+            return .result(dialog: LottiesLogger.dialog(outcome, done: "Mamada iniciada", doneEn: "Breastfeed started"))
+        case .diaper:
+            let kind = ["wet", "dirty", "mixed"].contains(option) ? option : "wet"
+            let outcome = LottiesLogger.log(type: "diaper", kind: kind, source: "widget")
+            return .result(dialog: LottiesLogger.dialog(outcome, done: "Fralda registrada", doneEn: "Diaper logged"))
+        default:
+            let outcome = LottiesLogger.log(type: "activity", kind: activity.eventKey, source: "widget")
+            return .result(dialog: LottiesLogger.dialog(
+                outcome, done: "Registrado: \(activity.titlePt)", doneEn: "Logged: \(activity.titleEn)"))
+        }
+    }
+}
+
+enum FeedTimerAction: String, AppEnum {
+    case pause, resume, stop
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Timer action"
+    static var caseDisplayRepresentations: [FeedTimerAction: DisplayRepresentation] = [
+        .pause: "Pause", .resume: "Resume", .stop: "Stop",
+    ]
+}
+
+/// Pause, resume or stop of the bottle or breastfeed that is running; the app applies it when it opens.
+struct FeedTimerIntent: AppIntent {
+    static var isDiscoverable: Bool { false }
+    static var title: LocalizedStringResource = "Pause, resume or stop the feed"
+
+    @Parameter(title: "Action", default: .pause)
+    var action: FeedTimerAction
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let outcome = LottiesLogger.log(type: "feed_\(action.rawValue)", source: "widget")
+        switch action {
+        case .pause: return .result(dialog: LottiesLogger.dialog(outcome, done: "Pausado", doneEn: "Paused"))
+        case .resume: return .result(dialog: LottiesLogger.dialog(outcome, done: "Retomado", doneEn: "Resumed"))
+        case .stop: return .result(dialog: LottiesLogger.dialog(outcome, done: "Mamada encerrada", doneEn: "Feed stopped"))
         }
     }
 }

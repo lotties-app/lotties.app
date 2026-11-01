@@ -190,6 +190,37 @@ describe('drainOutbox', () => {
       tummy_time: tummy.occurredAt,
     });
   });
+  it('pauses, resumes and stops the bottle that is running, and shows it in the snapshot', async () => {
+    const db = await seeded();
+    await db.events.put(
+      ev('bottle-1', FEEDING_TYPE.id, '2026-10-31T11:40:00.000Z', { method: 'bottle', amount_ml: 90 }, null),
+    );
+    const snapshot = await buildSnapshot(db, null, NOW);
+    expect(snapshot.babies[0].runningFeed).toMatchObject({
+      kind: 'bottle',
+      paused: false,
+      elapsedSeconds: 1200,
+    });
+    const at = (time: string, type: OutboxEntry['type']) =>
+      entry({ type, occurredAt: `2026-10-31T${time}.000Z`, payload: {} });
+    await drainOutbox(db, fakeBridge([at('11:50:00', 'feed_pause')]));
+    expect((await db.events.get('bottle-1'))?.payload).toHaveProperty('paused_at');
+    await drainOutbox(db, fakeBridge([at('11:55:00', 'feed_resume')]));
+    expect((await db.events.get('bottle-1'))?.payload).not.toHaveProperty('paused_at');
+    await drainOutbox(db, fakeBridge([at('11:58:00', 'feed_stop')]));
+    expect((await db.events.get('bottle-1'))?.endedAt).toBe('2026-10-31T11:58:00.000Z');
+  });
+
+  it('starts a breastfeed on the chosen side', async () => {
+    const db = await seeded();
+    await drainOutbox(
+      db,
+      fakeBridge([entry({ type: 'feed', payload: { kind: 'breast', side: 'right' } })]),
+    );
+    const [event] = await db.events.toArray();
+    expect(event.endedAt).toBeNull();
+    expect(JSON.stringify(event.payload)).toContain('right');
+  });
 });
 
 function ev(

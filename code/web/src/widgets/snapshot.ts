@@ -8,6 +8,7 @@ import type { PredictionsDto } from '../sync/contract';
 import { DAY_MS, payloadNumber, payloadString, typeForKey } from '../now/eventFacts';
 import { deriveNowState } from '../now/nowState';
 import { upcomingToday } from '../now/upcoming';
+import { effectiveElapsedSeconds, isPaused } from '../timers/pauseMath';
 import { readCachedPredictions } from '../predictions/predictionsCache';
 import { WIDGET_ACTIVITY_KEYS } from './activities';
 
@@ -22,6 +23,8 @@ export interface SnapshotBaby {
   sleep?: { state: 'asleep' | 'awake'; startedAt: string };
   lastFeed?: { at: string; kind: string; amountMl?: number; side?: string };
   lastDiaper?: { at: string; kind: string };
+  /** A bottle or a breastfeed running now; the widget shows pause, resume and stop for it. */
+  runningFeed?: { kind: 'bottle' | 'breast'; since: string; paused: boolean; elapsedSeconds: number };
   /** The last start of each activity the widget can log (bath, tummy time...), by event type key. */
   lastActivity?: Record<string, string>;
   /** The estimates the Now screen shows ("next up"), from the last predictions the app fetched; estimates only. */
@@ -93,6 +96,22 @@ async function snapshotBaby(
       at: diaper.startedAt,
       kind: (payloadString(diaper, 'content') ?? 'other').toLowerCase(),
     };
+  }
+  const feedTypeId = typeForKey(types, 'feeding')?.id;
+  const runningFeed = running.find(
+    (e) => e.typeId === feedTypeId && e.deletedAt === null && e.endedAt === null,
+  );
+  if (runningFeed) {
+    const method = payloadString(runningFeed, 'method');
+    if (method === 'bottle' || method === 'breast') {
+      const elapsedSeconds = Math.round(effectiveElapsedSeconds(runningFeed, now.getTime()));
+      result.runningFeed = {
+        kind: method,
+        since: new Date(now.getTime() - elapsedSeconds * 1000).toISOString(),
+        paused: isPaused(runningFeed),
+        elapsedSeconds,
+      };
+    }
   }
   const lastActivity: Record<string, string> = {};
   for (const key of WIDGET_ACTIVITY_KEYS) {
