@@ -55,6 +55,50 @@ describe('buildSnapshot', () => {
     db = await seeded();
   });
 
+  it('carries the next nap window from the last predictions the app fetched', async () => {
+    const { writeCachedPredictions } = await import('../predictions/predictionsCache');
+    await db.events.put(
+      ev(
+        's1',
+        SLEEP_TYPE.id,
+        '2026-10-31T09:30:00.000Z',
+        { kind: 'nap' },
+        '2026-10-31T10:40:00.000Z',
+      ),
+    );
+    writeCachedPredictions(BABY_ID, {
+      fetchedAt: NOW.getTime(),
+      data: {
+        babyId: BABY_ID,
+        generatedAt: NOW.toISOString(),
+        insufficientData: [],
+        predictions: [
+          {
+            typeKey: 'sleep',
+            nextStart: {
+              earliest: '2026-10-31T12:30:00.000Z',
+              expected: '2026-10-31T12:45:00.000Z',
+              latest: '2026-10-31T13:00:00.000Z',
+            },
+            expectedDuration: { minutes: 70, sampleCount: 12 },
+            confidence: 'Medium',
+            sampleCount: 12,
+            reason: 'Median gap',
+            basis: { kind: 'AwakeWindow', medianGapMinutes: 110, lookBackDays: 7 },
+          },
+        ],
+      },
+    });
+
+    const snapshot = await buildSnapshot(db, BABY_ID, NOW);
+
+    expect(snapshot.babies[0].nextNap).toEqual({
+      earliest: '2026-10-31T12:30:00.000Z',
+      expected: '2026-10-31T12:45:00.000Z',
+      latest: '2026-10-31T13:00:00.000Z',
+    });
+  });
+
   it('lists each baby with the last feed and diaper as facts', async () => {
     await db.events.bulkPut([
       ev('f1', FEEDING_TYPE.id, '2026-10-31T09:00:00.000Z', { method: 'bottle', amount_ml: 120 }),

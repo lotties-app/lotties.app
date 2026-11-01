@@ -25,7 +25,12 @@ private func sampleSnapshot(now: Date = Date()) -> WidgetSnapshot {
         id: "sample", name: "Lia",
         sleep: .init(state: "awake", startedAt: now.addingTimeInterval(-70 * 60)),
         lastFeed: .init(at: now.addingTimeInterval(-95 * 60), kind: "bottle", amountMl: 120, side: nil),
-        lastDiaper: .init(at: now.addingTimeInterval(-40 * 60), kind: "wet"))
+        lastDiaper: .init(at: now.addingTimeInterval(-40 * 60), kind: "wet"),
+        nextNap: .init(
+            earliest: now.addingTimeInterval(25 * 60), expected: now.addingTimeInterval(40 * 60),
+            latest: now.addingTimeInterval(55 * 60)),
+        nextFeed: .init(at: now.addingTimeInterval(80 * 60), amountMl: 120),
+        nextDiaper: .init(at: now.addingTimeInterval(50 * 60), kind: "wet"))
     return WidgetSnapshot(
         version: 1, updatedAt: now, signedIn: true, selectedBabyId: "sample",
         hideNamesOnLockScreen: false, babies: [baby])
@@ -165,6 +170,18 @@ private struct AgoText: View {
     }
 }
 
+/// An estimate still ahead of now ("Próx. 15:10"); nothing for a time already past.
+private struct NextText: View {
+    let label: String
+    let date: Date?
+
+    var body: some View {
+        if let date, date > Date() {
+            (Text("\(label) ") + Text(date, style: .time)).monospacedDigit()
+        }
+    }
+}
+
 private func feedDetail(_ feed: WidgetSnapshot.Feed?) -> String? {
     guard let feed else { return nil }
     if feed.kind == "bottle" {
@@ -180,6 +197,7 @@ private struct SleepBlock: View {
     let facts: SleepFacts
     let name: String
     var big: CGFloat = 28
+    var nextNap: Date?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -198,6 +216,10 @@ private struct SleepBlock: View {
                     .foregroundStyle(Ink.text)
             } else {
                 Text("—").font(.system(size: big, weight: .semibold, design: .serif)).foregroundStyle(Ink.text)
+            }
+            if !facts.asleep {
+                NextText(label: LottiesText.t("Próxima soneca", "Next nap"), date: nextNap)
+                    .font(.caption).foregroundStyle(Category.sleep.tone).lineLimit(1).minimumScaleFactor(0.7)
             }
         }
     }
@@ -236,6 +258,7 @@ private struct RowTile<I: AppIntent>: View {
     let date: Date?
     let category: Category
     let intent: I
+    var next: Date?
 
     var body: some View {
         Act(intent) {
@@ -246,7 +269,11 @@ private struct RowTile<I: AppIntent>: View {
                     .background(category.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 VStack(alignment: .leading, spacing: 0) {
                     Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text).lineLimit(1)
-                    AgoText(date: date).font(.caption2).foregroundStyle(Ink.muted).lineLimit(1)
+                    HStack(spacing: 3) {
+                        AgoText(date: date)
+                        NextText(label: "· " + LottiesText.t("próx.", "next"), date: next)
+                    }
+                    .font(.caption2).foregroundStyle(Ink.muted).lineLimit(1).minimumScaleFactor(0.7)
                 }
                 Spacer(minLength: 0)
                 Icon(name: "plus", size: 14).foregroundStyle(Ink.muted)
@@ -385,7 +412,7 @@ struct LottiesSummaryWidget: Widget {
                 case .systemMedium:
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 6) {
-                            SleepBlock(facts: facts, name: baby.name)
+                            SleepBlock(facts: facts, name: baby.name, nextNap: baby.nextNap?.expected)
                             Spacer(minLength: 0)
                             SleepButton(facts: facts)
                         }
@@ -393,9 +420,10 @@ struct LottiesSummaryWidget: Widget {
                         VStack(spacing: 6) {
                             RowTile(icon: "bottle", title: LottiesText.t("Mamadeira", "Bottle"),
                                     date: baby.lastFeed?.kind == "bottle" ? baby.lastFeed?.at : nil,
-                                    category: .feeding, intent: LogBottleIntent())
+                                    category: .feeding, intent: LogBottleIntent(), next: baby.nextFeed?.at)
                             RowTile(icon: "diaper", title: LottiesText.t("Fralda", "Diaper"),
-                                    date: baby.lastDiaper?.at, category: .diaper, intent: LogDiaperIntent())
+                                    date: baby.lastDiaper?.at, category: .diaper, intent: LogDiaperIntent(),
+                                    next: baby.nextDiaper?.at)
                             RowTile(icon: "heart", title: LottiesText.t("Peito", "Breast"),
                                     date: baby.lastFeed?.kind == "bottle" ? nil : baby.lastFeed?.at,
                                     category: .feeding, intent: LogBreastFeedIntent())
@@ -404,7 +432,7 @@ struct LottiesSummaryWidget: Widget {
                     }
                 case .systemLarge, .systemExtraLarge:
                     VStack(alignment: .leading, spacing: 10) {
-                        SleepBlock(facts: facts, name: baby.name, big: 40)
+                        SleepBlock(facts: facts, name: baby.name, big: 40, nextNap: baby.nextNap?.expected)
                         SleepButton(facts: facts)
                         HStack(spacing: 8) {
                             SquareTile(icon: "bottle", title: LottiesText.t("Mamadeira", "Bottle"),
@@ -417,10 +445,16 @@ struct LottiesSummaryWidget: Widget {
                         .frame(maxHeight: .infinity)
                         Text(feedDetail(baby.lastFeed) ?? "")
                             .font(.caption).foregroundStyle(Ink.muted).lineLimit(1)
+                        HStack(spacing: 10) {
+                            NextText(label: LottiesText.t("Soneca", "Nap"), date: baby.nextNap?.expected)
+                            NextText(label: LottiesText.t("Mamada", "Feed"), date: baby.nextFeed?.at)
+                            NextText(label: LottiesText.t("Fralda", "Diaper"), date: baby.nextDiaper?.at)
+                        }
+                        .font(.caption).foregroundStyle(Ink.muted).lineLimit(1).minimumScaleFactor(0.7)
                     }
                 default:
                     VStack(alignment: .leading, spacing: 6) {
-                        SleepBlock(facts: facts, name: baby.name, big: 24)
+                        SleepBlock(facts: facts, name: baby.name, big: 24, nextNap: baby.nextNap?.expected)
                         Spacer(minLength: 0)
                         SleepButton(facts: facts)
                     }
@@ -448,7 +482,7 @@ struct LottiesSleepWidget: Widget {
                     lockScreen(family, snapshot, baby, icon: facts.icon, date: facts.since)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
-                        SleepBlock(facts: facts, name: baby.name, big: 26)
+                        SleepBlock(facts: facts, name: baby.name, big: 26, nextNap: baby.nextNap?.expected)
                         Spacer(minLength: 0)
                         SleepButton(facts: facts)
                     }
@@ -492,6 +526,8 @@ struct LottiesFeedWidget: Widget {
                         .lineLimit(2)
                         .foregroundStyle(Ink.text)
                         Text(feedDetail(baby.lastFeed) ?? "").font(.caption2).foregroundStyle(Ink.muted).lineLimit(1)
+                        NextText(label: LottiesText.t("Próxima", "Next"), date: baby.nextFeed?.at)
+                            .font(.caption2).foregroundStyle(Category.feeding.tone).lineLimit(1)
                         Spacer(minLength: 0)
                         HStack(spacing: 6) {
                             SquareTile(icon: "bottle", title: LottiesText.t("Mamadeira", "Bottle"),
@@ -539,6 +575,8 @@ struct LottiesDiaperWidget: Widget {
                         .minimumScaleFactor(0.5)
                         .lineLimit(2)
                         .foregroundStyle(Ink.text)
+                        NextText(label: LottiesText.t("Próxima", "Next"), date: baby.nextDiaper?.at)
+                            .font(.caption2).foregroundStyle(Category.diaper.tone).lineLimit(1)
                         Spacer(minLength: 0)
                         HStack(spacing: 6) {
                             SquareTile(icon: "droplet", title: LottiesText.t("Xixi", "Wet"),

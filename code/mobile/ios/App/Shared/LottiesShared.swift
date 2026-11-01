@@ -137,6 +137,23 @@ struct WidgetSnapshot: Codable, Equatable {
         var sleep: Sleep?
         var lastFeed: Feed?
         var lastDiaper: Diaper?
+        /// Estimates from the app's own predictions (the Now screen's "next up"); absent when it has none.
+        var nextNap: NapWindow?
+        var nextFeed: NextFeed?
+        var nextDiaper: NextDiaper?
+    }
+    struct NapWindow: Codable, Equatable {
+        var earliest: Date
+        var expected: Date
+        var latest: Date
+    }
+    struct NextFeed: Codable, Equatable {
+        var at: Date
+        var amountMl: Int?
+    }
+    struct NextDiaper: Codable, Equatable {
+        var at: Date
+        var kind: String
     }
     struct Sleep: Codable, Equatable {
         var state: String  // "asleep" | "awake"

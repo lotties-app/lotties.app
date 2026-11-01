@@ -1,9 +1,14 @@
+import { readCachedAgeNorms } from '../ageNorms/ageNormsCache';
 import type { BabyRoutineDb } from '../db/database';
 import { currentLocale } from '../i18n/i18n';
 import { allBabies, eventsStartedSince, eventTypesFor, runningEvents } from '../db/queries';
-import type { BabyEvent } from '../db/models';
+import type { BabyEvent, EventType } from '../db/models';
+import type { AgeNormSet } from '../ageNorms/ageNorms';
+import type { PredictionsDto } from '../sync/contract';
 import { DAY_MS, payloadNumber, payloadString, typeForKey } from '../now/eventFacts';
 import { deriveNowState } from '../now/nowState';
+import { upcomingToday } from '../now/upcoming';
+import { readCachedPredictions } from '../predictions/predictionsCache';
 
 /*
  * `widget-snapshot.json` (docs/design/37-widgets-siri.md 2.1): what the widget shows, facts only.
@@ -16,6 +21,10 @@ export interface SnapshotBaby {
   sleep?: { state: 'asleep' | 'awake'; startedAt: string };
   lastFeed?: { at: string; kind: string; amountMl?: number; side?: string };
   lastDiaper?: { at: string; kind: string };
+  /** The estimates the Now screen shows ("next up"), from the last predictions the app fetched; estimates only. */
+  nextNap?: { earliest: string; expected: string; latest: string };
+  nextFeed?: { at: string; amountMl?: number };
+  nextDiaper?: { at: string; kind: 'wet' | 'dirty' };
 }
 
 export interface WidgetSnapshotDto {
@@ -47,7 +56,8 @@ function newestOf(
 
 async function snapshotBaby(
   db: BabyRoutineDb,
-  baby: { id: string; name: string },
+  baby: { id: string; name: string; birthDate?: string | null },
+  ageNorms: AgeNormSet | null,
   now: Date,
 ): Promise<SnapshotBaby> {
   const types = await eventTypesFor(db, baby.id);
@@ -58,7 +68,8 @@ async function snapshotBaby(
 
   const result: SnapshotBaby = { id: baby.id, name: baby.name };
 
-  const state = deriveNowState(events, types, undefined, now);
+  const predictions = readCachedPredictions(baby.id)?.data;
+  const state = deriveNowState(events, types, predictions, now);
   if (state.kind === 'asleep') result.sleep = { state: 'asleep', startedAt: state.since };
   else if (state.kind === 'awake') result.sleep = { state: 'awake', startedAt: state.since };
 
@@ -80,7 +91,47 @@ async function snapshotBaby(
       kind: (payloadString(diaper, 'content') ?? 'other').toLowerCase(),
     };
   }
+  addNextUp(result, baby, state, events, types, predictions, ageNorms, now);
   return result;
+}
+
+/** The nap window while awake, and the next feed and diaper (the Now screen's "next up" estimates). */
+function addNextUp(
+  result: SnapshotBaby,
+  baby: { birthDate?: string | null },
+  state: ReturnType<typeof deriveNowState>,
+  events: readonly BabyEvent[],
+  types: readonly EventType[],
+  predictions: PredictionsDto | undefined,
+  ageNorms: AgeNormSet | null,
+  now: Date,
+): void {
+  if (state.kind === 'awake' && state.window && state.window.latest > now.toISOString()) {
+    const { earliest, expected, latest } = state.window;
+    result.nextNap = { earliest, expected, latest };
+  }
+  const items = upcomingToday({
+    events,
+    types,
+    now,
+    birthDate: baby.birthDate ?? null,
+    predictions: predictions ?? null,
+    ageNorms,
+  });
+  const feed = items.find((item) => item.kind === 'feed');
+  if (feed) {
+    const ml = feed.amountMl?.typical;
+    result.nextFeed = { at: feed.at.toISOString(), ...(ml ? { amountMl: Math.round(ml) } : {}) };
+  }
+  const diaper = items
+    .filter((item) => item.kind === 'diaperWet' || item.kind === 'diaperDirty')
+    .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
+  if (diaper) {
+    result.nextDiaper = {
+      at: diaper.at.toISOString(),
+      kind: diaper.kind === 'diaperDirty' ? 'dirty' : 'wet',
+    };
+  }
 }
 
 /**
@@ -99,6 +150,7 @@ export async function buildSnapshot(
   now: Date = new Date(),
 ): Promise<WidgetSnapshotDto> {
   const babies = await allBabies(db);
+  const ageNorms = (await readCachedAgeNorms(db))?.norms ?? null;
   return {
     version: 1,
     updatedAt: now.toISOString(),
@@ -106,6 +158,6 @@ export async function buildSnapshot(
     selectedBabyId,
     hideNamesOnLockScreen: true,
     language: currentLocale() === 'pt-BR' ? 'pt-BR' : 'en',
-    babies: await inSequence(babies, (b) => snapshotBaby(db, b, now)),
+    babies: await inSequence(babies, (b) => snapshotBaby(db, b, ageNorms, now)),
   };
 }

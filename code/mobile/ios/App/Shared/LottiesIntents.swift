@@ -33,10 +33,13 @@ enum LottiesLogger {
             switch type {
             case "feed":
                 snapshot.babies[index].lastFeed = .init(at: now, kind: kind ?? "breast", amountMl: amountMl, side: nil)
+                snapshot.babies[index].nextFeed = nil  // the estimate was for the feed that just happened
             case "diaper":
                 snapshot.babies[index].lastDiaper = .init(at: now, kind: kind ?? "wet")
+                snapshot.babies[index].nextDiaper = nil
             case "sleep_start":
                 snapshot.babies[index].sleep = .init(state: "asleep", startedAt: now)
+                snapshot.babies[index].nextNap = nil
             case "sleep_end":
                 snapshot.babies[index].sleep = .init(state: "awake", startedAt: now)
             default:
