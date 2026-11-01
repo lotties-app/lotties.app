@@ -175,6 +175,42 @@ struct WidgetSnapshot: Codable, Equatable {
     }
 }
 
+extension WidgetSnapshot.Baby {
+    /// What is coming up at a moment: from 20 minutes before an estimate until 30 minutes after it. Estimates only, never
+    /// advice; the widgets use it to highlight the action (docs/design/37-widgets-siri.md section 9).
+    struct Due: Equatable {
+        var nap = false
+        var feed = false
+        /// "wet" or "dirty": the diaper the estimate is about.
+        var diaperKind: String?
+
+        var any: Bool { nap || feed || diaperKind != nil }
+    }
+
+    static let dueLead: TimeInterval = 20 * 60
+    static let dueGrace: TimeInterval = 30 * 60
+
+    func due(at now: Date) -> Due {
+        func inside(_ time: Date) -> Bool {
+            now >= time.addingTimeInterval(-Self.dueLead) && now <= time.addingTimeInterval(Self.dueGrace)
+        }
+        var result = Due()
+        if sleep?.state != "asleep", let nap = nextNap { result.nap = inside(nap.expected) }
+        if let feed = nextFeed { result.feed = inside(feed.at) }
+        if let diaper = nextDiaper, inside(diaper.at) { result.diaperKind = diaper.kind }
+        return result
+    }
+
+    /// The moments after `now` at which `due` changes (for the widget timeline), soonest first.
+    func dueChanges(after now: Date) -> [Date] {
+        var times: [Date] = []
+        for estimate in [nextNap?.expected, nextFeed?.at, nextDiaper?.at].compactMap({ $0 }) {
+            times += [estimate.addingTimeInterval(-Self.dueLead), estimate.addingTimeInterval(Self.dueGrace)]
+        }
+        return times.filter { $0 > now && $0 < now.addingTimeInterval(24 * 3600) }.sorted()
+    }
+}
+
 /// One entry of `widget-outbox.json`: an event the user asked for by voice or from the widget while the app was closed.
 /// `id` is the event GUID the app will use, so draining is an idempotent upsert (docs/design/37-widgets-siri.md 2.2).
 struct OutboxEntry: Codable, Equatable {
