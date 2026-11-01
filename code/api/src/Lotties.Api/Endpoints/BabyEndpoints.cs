@@ -6,7 +6,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// Babies of the current user. The collection routes need only a signed-in user; the single-baby routes need
-/// <see cref="BabyPolicies.Read"/> (from the baby group), and renaming needs <see cref="BabyPolicies.ManageMembers"/> (owner).
+/// <see cref="BabyPolicies.Read"/> (from the baby group), renaming needs <see cref="BabyPolicies.ManageMembers"/> (owner)
+/// and the vaccine profile needs <see cref="BabyPolicies.Write"/> (Owner, Parent).
 /// Deleting a baby is not supported in the MVP (no route, so 405).
 /// </summary>
 internal static class BabyEndpoints
@@ -24,7 +25,7 @@ internal static class BabyEndpoints
         return api;
     }
 
-    /// <summary>Maps <c>GET</c> and <c>PUT /babies/{babyId}</c> under the baby-scoped group.</summary>
+    /// <summary>Maps <c>GET</c> and <c>PUT /babies/{babyId}</c> and <c>PUT /babies/{babyId}/vaccine-profile</c> under the baby-scoped group.</summary>
     public static RouteGroupBuilder MapBabyEndpoints(this RouteGroupBuilder baby)
     {
         ArgumentNullException.ThrowIfNull(baby);
@@ -33,6 +34,11 @@ internal static class BabyEndpoints
             .RequireAuthorization(BabyPolicies.ManageMembers)
             .WithName("UpdateBaby")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        baby.MapPut("/vaccine-profile", UpdateVaccineProfileAsync)
+            .RequireAuthorization(BabyPolicies.Write)
+            .WithName("UpdateBabyVaccineProfile")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         return baby;
     }
 
@@ -47,6 +53,9 @@ internal static class BabyEndpoints
 
     private static async Task<Ok<BabyResponse>> GetAsync(Guid babyId, IBabyService babies, CancellationToken cancellationToken) =>
         TypedResults.Ok(await babies.GetAsync(babyId, cancellationToken));
+
+    private static async Task<Ok<BabyResponse>> UpdateVaccineProfileAsync(Guid babyId, UpdateVaccineProfileRequest request, IBabyService babies, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await babies.UpdateVaccineProfileAsync(babyId, request, cancellationToken));
 
     private static async Task<Ok<BabyResponse>> UpdateAsync(Guid babyId, SaveBabyRequest request, IBabyService babies, CancellationToken cancellationToken) =>
         TypedResults.Ok(await babies.UpdateAsync(babyId, request, cancellationToken));

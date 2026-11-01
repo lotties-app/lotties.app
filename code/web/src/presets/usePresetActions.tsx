@@ -10,6 +10,7 @@ import type { FormPrefill } from '../events/formModel';
 import { quickStartPayload, readLastUsed } from '../events/lastUsedValues';
 import { useStopTimer } from '../events/useStopTimer';
 import { runPreset, sheetPrefill, undoPreset, type UndoToken } from './actions';
+import { loadTimeBottles } from './timeBottlesStorage';
 import { presetLabel } from './presetLabel';
 import type { Preset } from './types';
 
@@ -93,6 +94,17 @@ export function usePresetActions(babyId: string, types: EventType[]): PresetActi
         return;
       }
       if (running) return stopTimer(running, presetLabel(preset));
+      // Without "Time bottle feedings" the bottle is logged at once: the sheet asks the amounts.
+      if (preset.id === 'bottle' && preset.typeId && !loadTimeBottles()) {
+        const startedAt = new Date().toISOString();
+        setPrefill({
+          typeId: preset.typeId,
+          startedAt,
+          endedAt: startedAt,
+          payload: { ...preset.payloadDefaults },
+        });
+        return;
+      }
       await start(preset);
     });
 

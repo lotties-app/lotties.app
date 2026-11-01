@@ -1,5 +1,6 @@
 using Lotties.Domain.Common;
 using Lotties.Domain.Exceptions;
+using Lotties.Domain.Patterns;
 
 namespace Lotties.Domain.Notifications;
 
@@ -35,6 +36,9 @@ public readonly record struct NotificationTimeZone
 
     /// <summary>The zone's UTC offset at <paramref name="instant"/> (daylight saving time included).</summary>
     public TimeSpan OffsetAt(DateTimeOffset instant) => TimeZoneInfo.FindSystemTimeZoneById(Value).GetUtcOffset(instant);
+
+    /// <summary>The zone's local wall clock (daylight saving time applied per instant).</summary>
+    public LocalClock Clock() => LocalClock.InZone(TimeZoneInfo.FindSystemTimeZoneById(Value));
 
     public override string ToString() => Value;
 }

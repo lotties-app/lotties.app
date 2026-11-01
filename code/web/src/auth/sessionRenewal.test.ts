@@ -124,6 +124,26 @@ describe('SessionRenewal', () => {
     expect(onEnded).not.toHaveBeenCalled();
   });
 
+  it('an attempt still in flight when stopped arms no retry: a stopped renewal stays quiet', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    const manager = mockUserManager();
+    let fail!: () => void;
+    manager.signinSilent.mockImplementationOnce(
+      () => new Promise((_, reject) => (fail = () => reject(new TypeError('Failed to fetch')))),
+    );
+    const { renewal, onEnded } = setup(manager);
+    const attempt = renewal.renew();
+    expect(manager.signinSilent).toHaveBeenCalledOnce();
+
+    renewal.stop();
+    fail();
+    await expect(attempt).rejects.toBeInstanceOf(TokenRenewalPendingError);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+    expect(manager.signinSilent).toHaveBeenCalledOnce();
+    expect(onEnded).not.toHaveBeenCalled();
+  });
+
   it('a transient OAuth error (server_error) is retried, not treated as the end', async () => {
     const manager = mockUserManager();
     manager.signinSilent.mockRejectedValueOnce(oauthError('server_error'));

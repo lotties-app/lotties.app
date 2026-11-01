@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from '../AppRoutes';
 import type { BabyRoutineDb } from '../db/database';
 import { fakeApi, testDatabase } from '../test/fakeApi';
@@ -9,6 +9,7 @@ import { seedBaby } from '../test/seed';
 import { nightPeriodKey } from '../theme/nightFeed';
 import { NIGHT_FEED_STATE_STORAGE_KEY } from '../theme/nightFeedStorage';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
+import { useTestLocale } from '../test/locale';
 
 let db: BabyRoutineDb;
 
@@ -17,6 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.useRealTimers();
   await settleSync();
   await db.delete();
 });
@@ -26,6 +28,9 @@ const renderShell = (route = '/', api = fakeApi().api) =>
 
 describe('header', () => {
   it('shows the baby avatar initial, name and age line', async () => {
+    // Lia's age is a count of days, weeks or months only while she is under a year old: pin the date.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 14, 0));
     await seedBaby(db);
     renderShell();
     const header = await screen.findByRole('banner');
@@ -74,9 +79,9 @@ describe('night view quick toggle', () => {
 });
 
 describe('bottom navigation', () => {
-  const tabs = ['Now', 'Day', 'Insights'];
+  const tabs = ['Now', 'Day', 'Insights', 'Hub'];
 
-  it('has Now, Day and Insights links and the round Add event button', async () => {
+  it('has Now, Day, Insights and Hub links, and the round Add event button apart from the dock', async () => {
     await seedBaby(db);
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
@@ -90,14 +95,11 @@ describe('bottom navigation', () => {
     expect(within(nav).getByRole('link', { name: 'Insights' }).getAttribute('href')).toBe(
       '/insights',
     );
-    // The round "+" sits in the pill between Day and Insights, not among the links.
-    const add = await within(nav).findByRole('button', { name: 'Add event' });
-    expect(add.compareDocumentPosition(within(nav).getByRole('link', { name: 'Day' }))).toBe(
-      Node.DOCUMENT_POSITION_PRECEDING,
-    );
-    expect(add.compareDocumentPosition(within(nav).getByRole('link', { name: 'Insights' }))).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    expect(within(nav).getByRole('link', { name: 'Hub' }).getAttribute('href')).toBe('/hub');
+    // The "+" is a separate round button after the dock, not inside the navigation landmark.
+    const add = await screen.findByTestId('quick-add');
+    expect(nav.contains(add)).toBe(false);
+    expect(nav.compareDocumentPosition(add)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it.each([
@@ -109,14 +111,14 @@ describe('bottom navigation', () => {
     renderShell(route);
     // The screen listens once it has loaded.
     await screen.findByRole('heading', { name: tab, level: 1 });
-    const nav = await screen.findByRole('navigation', { name: 'Main' });
-    fireEvent.click(await within(nav).findByRole('button', { name: 'Add event' }));
+    await screen.findByRole('navigation', { name: 'Main' });
+    fireEvent.click(await screen.findByTestId('quick-add'));
     const sheet = await screen.findByRole('dialog', { name: 'More' });
     expect(within(sheet).getByTestId('more-grid')).toBeTruthy();
     fireEvent.keyDown(sheet, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'More' })).toBeNull());
     // And again: a second press opens it a second time.
-    fireEvent.click(within(nav).getByRole('button', { name: 'Add event' }));
+    fireEvent.click(screen.getByTestId('quick-add'));
     expect(await screen.findByRole('dialog', { name: 'More' })).toBeTruthy();
   });
 
@@ -124,6 +126,11 @@ describe('bottom navigation', () => {
     ['/', 'Now'],
     ['/day', 'Day'],
     ['/insights', 'Insights'],
+    ['/hub', 'Hub'],
+    ['/settings', 'Hub'],
+    ['/settings#sync', 'Hub'],
+    ['/vaccines', 'Hub'],
+    ['/notes', 'Hub'],
   ])(
     'marks the current tab on %s (%s) and puts the pill behind its icon',
     async (route, current) => {
@@ -150,7 +157,7 @@ describe('bottom navigation', () => {
 
     renderShell('/growth');
     expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Growth', level: 2 })).toBeTruthy();
   });
 
@@ -162,25 +169,46 @@ describe('bottom navigation', () => {
     expect(await screen.findByRole('heading', { name: 'Day' })).toBeTruthy();
     fireEvent.click(within(nav).getByRole('link', { name: 'Insights' }));
     expect(await screen.findByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
+    fireEvent.click(within(nav).getByRole('link', { name: 'Hub' }));
+    expect(await screen.findByRole('heading', { name: 'Hub', level: 1 })).toBeTruthy();
+    expect(within(nav).getByRole('link', { name: 'Hub' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
     fireEvent.click(within(nav).getByRole('link', { name: 'Now' }));
     expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
+  });
+
+  it('labels the tabs in Portuguese (the Hub is "Central")', async () => {
+    await useTestLocale('pt-BR');
+    await seedBaby(db);
+    renderShell('/');
+    const nav = await screen.findByRole('navigation', { name: 'Principal' });
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Agora', 'Dia', 'Insights', 'Central']);
+    expect(await screen.findByTestId('quick-add')).toBeTruthy();
   });
 
   it('stays visible for viewers (write actions are disabled on the screens, not hidden here)', async () => {
     await seedBaby(db, { role: 'Viewer' });
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav).getAllByRole('link')).toHaveLength(4);
     // Viewers cannot log, so there is no "+".
-    expect(within(nav).queryByRole('button', { name: 'Add event' })).toBeNull();
+    expect(screen.queryByTestId('quick-add')).toBeNull();
     expect(await screen.findByText(/view-only access/)).toBeTruthy();
   });
 
   it('is visible with no baby too, and sits above the home indicator', async () => {
     renderShell('/');
     const nav = await screen.findByRole('navigation', { name: 'Main' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(3);
-    expect(within(nav).queryByRole('button', { name: 'Add event' })).toBeNull();
+    expect(within(nav).getAllByRole('link')).toHaveLength(4);
+    expect(screen.queryByTestId('quick-add')).toBeNull();
+    // The Hub works before the first baby too, like the other tabs.
+    fireEvent.click(within(nav).getByRole('link', { name: 'Hub' }));
+    expect(await screen.findByRole('heading', { name: 'Hub', level: 1 })).toBeTruthy();
     const styles = Array.from(document.querySelectorAll('style'), (node) => node.textContent).join(
       '',
     );
@@ -275,6 +303,17 @@ describe('accessibility (axe)', () => {
       expect(await violations()).toEqual([]);
     },
   );
+
+  it('has no violations on the Hub tab', async () => {
+    await seedBaby(db);
+    renderShell('/hub');
+    await screen.findByRole('heading', { name: 'Hub', level: 1 });
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getByRole('link', { name: 'Hub' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(await violations()).toEqual([]);
+  });
 
   it('has no violations with the account menu open', async () => {
     await seedBaby(db);

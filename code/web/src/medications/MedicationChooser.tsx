@@ -5,7 +5,8 @@ import { useMedicationCommands, useMedications } from '../db/hooks';
 import type { Medication } from '../db/models';
 import { productKey } from '../db/catalogCache';
 import { Icon } from '../ui/Icon';
-import { filledSurface, focusRing, optionBase, palette, selectedOption } from '../ui/form/styles';
+import { filledSurface, optionBase, palette, selectedOption } from '../ui/form/styles';
+import { ChooserSearch } from './ChooserSearch';
 import { CatalogResults } from './CatalogResults';
 import { LinkedProduct } from './LinkedProduct';
 import { useAddFromProduct } from './useAddFromProduct';
@@ -84,43 +85,14 @@ export function MedicationChooser({ babyId, value, onChange, disabled = false }:
 
   return (
     <Box sx={{ display: 'grid', gap: 1.25 }}>
-      <Box
-        sx={(theme) => ({
-          ...filledSurface(theme),
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.25,
-          px: 1.5,
-          '&:focus-within': { outline: focusRing(theme), outlineOffset: 0 },
-        })}
-      >
-        <Icon name="search" size={20} sx={{ color: 'text.secondary' }} />
-        <Box
-          component="input"
-          type="search"
-          enterKeyHint="search"
-          autoComplete="off"
-          aria-label={t('ui.medication.find')}
-          placeholder={t('ui.medication.find')}
-          value={query}
-          disabled={disabled}
-          onChange={(e: { target: { value: string } }) => {
-            setQuery(e.target.value);
-            setFailed(false);
-          }}
-          sx={(theme) => ({
-            flex: 1,
-            minWidth: 0,
-            height: 44,
-            border: 0,
-            outline: 0,
-            background: 'none',
-            font: 'inherit',
-            color: palette(theme).text.primary,
-            '&::placeholder': { color: palette(theme).text.secondary },
-          })}
-        />
-      </Box>
+      <ChooserSearch
+        value={query}
+        disabled={disabled}
+        onChange={(value) => {
+          setQuery(value);
+          setFailed(false);
+        }}
+      />
       <Box
         role="group"
         aria-label={t('medications.editor.yourMedications')}

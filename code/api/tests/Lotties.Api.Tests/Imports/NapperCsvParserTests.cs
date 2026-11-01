@@ -36,6 +36,17 @@ public sealed class NapperCsvParserTests
     }
 
     [Fact]
+    public void ParseLogs_TemperatureAndUnits_AreReadAndAnUnreadableTemperatureKeepsTheRow()
+    {
+        var parsed = Logs("start,end,category,temperature,units\n2025-09-01T09:00:00Z,2025-09-01T09:00:00Z,TEMPERATURE,\"37,8\",CELSIUS\n2025-09-01T10:00:00Z,2025-09-01T10:00:00Z,BOTTLE,warm,\n");
+
+        Assert.Empty(parsed.Unreadable);
+        Assert.Equal((37.8m, "CELSIUS"), (parsed.Rows[0].Temperature!.Value, parsed.Rows[0].Units));
+        Assert.Null(parsed.Rows[1].Temperature);
+        Assert.Equal(new Dictionary<string, string> { ["temperature"] = "warm" }, parsed.Rows[1].InvalidCells);
+    }
+
+    [Fact]
     public void ParseLogs_ReadablePauseCells_HaveNoInvalidCells()
     {
         var row = Assert.Single(Logs("start,end,category,numberOfPauses,pausedMinutes\n2025-09-01T09:00:00Z,2025-09-01T10:00:00Z,NAP,2,5.5\n").Rows);

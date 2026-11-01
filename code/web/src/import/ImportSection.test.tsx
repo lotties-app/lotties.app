@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { BabyRoutineDb } from '../db/database';
 import type { BabyRole } from '../db/models';
-import { SettingsPage } from '../pages/SettingsPage';
+import { HubImportPage } from '../pages/HubSubPages';
 import type {
   NapperImportRequest,
   NapperImportResultDto,
@@ -419,11 +419,10 @@ describe('Napper import', () => {
   });
 });
 
-describe('Settings page import section', () => {
+describe('Hub import page', () => {
   it('appears for parents and hides the controls from viewers', async () => {
     await seedBaby(db, { role: 'Viewer' });
-    renderWithDb(db, <SettingsPage />, { api: fakeApi().api });
-    fireEvent.click(await screen.findByRole('button', { name: 'Import' }));
+    renderWithDb(db, <HubImportPage />, { api: fakeApi().api });
     expect(
       await screen.findByText('Only parents and owners can import data into this baby.'),
     ).toBeTruthy();

@@ -1,0 +1,2735 @@
+{
+  "schemaVersion": 2,
+  "profile": "BR",
+  "generatedOn": "2026-10-22",
+  "sources": [
+    {
+      "id": "pni",
+      "name": "Ministério da Saúde, Programa Nacional de Imunizações: Calendário Nacional de Vacinação 2026 (criança; adolescente e jovem)",
+      "edition": "2026 (public calendars revised 2026-10-13)",
+      "url": "https://www.gov.br/saude/pt-br/vacinacao/calendario",
+      "retrievedOn": "2026-10-22",
+      "network": "public",
+      "licenceNote": "gov.br footer: site content under Creative Commons BY-ND 3.0 Unported, next to '© Ministério da Saúde, todos os direitos reservados'. Only scheduling facts (vaccines, ages, doses, intervals, age limits) are reused, in our own structure, with attribution and links; no text, table layout or artwork is copied. Owner to confirm that this factual reuse fits the no-derivatives clause."
+    },
+    {
+      "id": "sbp",
+      "name": "Sociedade Brasileira de Pediatria, Departamento Científico de Imunizações: Calendário de Vacinação da SBP (Documento Científico nº 56, 2026-07-28)",
+      "edition": "2026-27",
+      "url": "https://www.sbp.com.br/?p=63971",
+      "retrievedOn": "2026-10-22",
+      "network": "private-recommendation",
+      "licenceNote": "Site footer: 'Copyright © 2026 Sociedade Brasileira de Pediatria. Todos os direitos reservados.' No reuse licence found. Only scheduling facts are recorded, in our own words and structure, with attribution and a link; owner to decide whether to ask SBP for permission before publishing."
+    },
+    {
+      "id": "sbim",
+      "name": "Sociedade Brasileira de Imunizações: Calendário de vacinação SBIm Criança (0 a menos de 10 anos)",
+      "edition": "2026-27 (updated 2026-06-17)",
+      "url": "https://sbim.org.br/images/crianca-Calend-SBIm-2026-27-260619.pdf_2026-06-19.pdf",
+      "retrievedOn": "2026-10-22",
+      "network": "private-recommendation",
+      "licenceNote": "Site footer: '©2024 - Sociedade Brasileira de Imunizações | Todos os direitos reservados'; the PDF carries no licence. Only scheduling facts are recorded, in our own words and structure, with attribution and a link; owner to decide whether to ask SBIm for permission before publishing."
+    }
+  ],
+  "vaccines": [
+    {
+      "key": "bcg",
+      "names": {
+        "pt-BR": "BCG",
+        "en": "BCG"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "formas graves de tuberculose (miliar e meníngea)"
+        ],
+        "en": [
+          "severe forms of tuberculosis (miliary and meningeal)"
+        ]
+      },
+      "network": "public"
+    },
+    {
+      "key": "hepatite-b",
+      "names": {
+        "pt-BR": "Hepatite B",
+        "en": "Hepatitis B"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "hepatite B",
+          "hepatite D"
+        ],
+        "en": [
+          "hepatitis B",
+          "hepatitis D"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "vsr-nirsevimabe",
+      "names": {
+        "pt-BR": "Anticorpo monoclonal contra VSR (nirsevimabe)",
+        "en": "RSV monoclonal antibody (nirsevimab)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "infecções respiratórias pelo vírus sincicial respiratório (VSR)"
+        ],
+        "en": [
+          "respiratory syncytial virus (RSV) infections"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "penta",
+      "names": {
+        "pt-BR": "Pentavalente (DTP + Hib + hepatite B, células inteiras)",
+        "en": "Pentavalent (whole-cell DTP + Hib + hepatitis B)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche",
+          "hepatite B",
+          "infecções por Haemophilus influenzae tipo b"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)",
+          "hepatitis B",
+          "Haemophilus influenzae type b infections"
+        ]
+      },
+      "network": "public"
+    },
+    {
+      "key": "hexavalente",
+      "names": {
+        "pt-BR": "Hexavalente acelular (DTPa + hepatite B + VIP + Hib)",
+        "en": "Hexavalent, acellular (DTaP + hepatitis B + IPV + Hib)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche",
+          "hepatite B",
+          "poliomielite",
+          "infecções por Haemophilus influenzae tipo b"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)",
+          "hepatitis B",
+          "polio",
+          "Haemophilus influenzae type b infections"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "vip",
+      "names": {
+        "pt-BR": "Poliomielite inativada (VIP)",
+        "en": "Inactivated polio (IPV)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "poliomielite (paralisia infantil)"
+        ],
+        "en": [
+          "polio"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "vop",
+      "names": {
+        "pt-BR": "Poliomielite oral (VOP)",
+        "en": "Oral polio (OPV)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "poliomielite (paralisia infantil)"
+        ],
+        "en": [
+          "polio"
+        ]
+      },
+      "network": "public"
+    },
+    {
+      "key": "rotavirus",
+      "names": {
+        "pt-BR": "Rotavírus",
+        "en": "Rotavirus"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "gastroenterite por rotavírus (diarreia e vômitos)"
+        ],
+        "en": [
+          "rotavirus gastroenteritis (diarrhoea and vomiting)"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "pneumo-conjugada",
+      "names": {
+        "pt-BR": "Pneumocócica conjugada (VPC10, VPC15, VPC20)",
+        "en": "Pneumococcal conjugate (PCV10, PCV15, PCV20)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "doenças pneumocócicas (pneumonia, meningite, otite, sinusite, septicemia)"
+        ],
+        "en": [
+          "pneumococcal disease (pneumonia, meningitis, ear infection, sinusitis, sepsis)"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "meningo-c",
+      "names": {
+        "pt-BR": "Meningocócica C conjugada",
+        "en": "Meningococcal C conjugate"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "doença meningocócica do sorogrupo C (meningite, meningococcemia)"
+        ],
+        "en": [
+          "serogroup C meningococcal disease (meningitis, meningococcaemia)"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "meningo-acwy",
+      "names": {
+        "pt-BR": "Meningocócica ACWY conjugada",
+        "en": "Meningococcal ACWY conjugate"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "doença meningocócica dos sorogrupos A, C, W e Y"
+        ],
+        "en": [
+          "meningococcal disease, serogroups A, C, W and Y"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "meningo-b",
+      "names": {
+        "pt-BR": "Meningocócica B recombinante",
+        "en": "Meningococcal B (recombinant)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "doença meningocócica do sorogrupo B"
+        ],
+        "en": [
+          "serogroup B meningococcal disease"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "influenza",
+      "names": {
+        "pt-BR": "Influenza (gripe)",
+        "en": "Influenza (flu)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "influenza (gripe) e suas complicações"
+        ],
+        "en": [
+          "influenza (flu) and its complications"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "covid-19",
+      "names": {
+        "pt-BR": "Covid-19",
+        "en": "COVID-19"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "formas graves de covid-19"
+        ],
+        "en": [
+          "severe COVID-19"
+        ]
+      },
+      "network": "public"
+    },
+    {
+      "key": "febre-amarela",
+      "names": {
+        "pt-BR": "Febre amarela",
+        "en": "Yellow fever"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "febre amarela"
+        ],
+        "en": [
+          "yellow fever"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "triplice-viral",
+      "names": {
+        "pt-BR": "Tríplice viral (SCR)",
+        "en": "MMR (measles, mumps, rubella)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "sarampo",
+          "caxumba",
+          "rubéola"
+        ],
+        "en": [
+          "measles",
+          "mumps",
+          "rubella"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "tetraviral",
+      "names": {
+        "pt-BR": "Tetraviral (SCRV)",
+        "en": "MMRV"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "sarampo",
+          "caxumba",
+          "rubéola",
+          "varicela (catapora)"
+        ],
+        "en": [
+          "measles",
+          "mumps",
+          "rubella",
+          "chickenpox (varicella)"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "varicela",
+      "names": {
+        "pt-BR": "Varicela",
+        "en": "Varicella (chickenpox)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "varicela (catapora)"
+        ],
+        "en": [
+          "chickenpox (varicella)"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "hepatite-a",
+      "names": {
+        "pt-BR": "Hepatite A",
+        "en": "Hepatitis A"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "hepatite A"
+        ],
+        "en": [
+          "hepatitis A"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "dtp",
+      "names": {
+        "pt-BR": "DTP (tríplice bacteriana de células inteiras)",
+        "en": "Whole-cell DTP (DTwP)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)"
+        ]
+      },
+      "network": "public"
+    },
+    {
+      "key": "dtpa",
+      "names": {
+        "pt-BR": "DTPa (tríplice bacteriana acelular infantil)",
+        "en": "DTaP (infant acellular DTP)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "hib",
+      "names": {
+        "pt-BR": "Haemophilus influenzae tipo b (Hib)",
+        "en": "Haemophilus influenzae type b (Hib)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "infecções por Haemophilus influenzae tipo b"
+        ],
+        "en": [
+          "Haemophilus influenzae type b infections"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "penta-acelular",
+      "names": {
+        "pt-BR": "Pentavalente acelular (DTPa + VIP + Hib)",
+        "en": "Pentavalent, acellular (DTaP + IPV + Hib)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche",
+          "poliomielite",
+          "infecções por Haemophilus influenzae tipo b"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)",
+          "polio",
+          "Haemophilus influenzae type b infections"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "dtpa-vip",
+      "names": {
+        "pt-BR": "DTPa-VIP ou dTpa-VIP (tríplice bacteriana acelular + VIP)",
+        "en": "DTaP-IPV or Tdap-IPV (acellular DTP + IPV)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche",
+          "poliomielite"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)",
+          "polio"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "dt-adulto",
+      "names": {
+        "pt-BR": "Dupla adulto (dT)",
+        "en": "Td (adult-type tetanus and diphtheria)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "dtpa-adulto",
+      "names": {
+        "pt-BR": "Tríplice bacteriana acelular do tipo adulto (dTpa)",
+        "en": "Tdap (adult-type acellular DTP)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "difteria",
+          "tétano",
+          "coqueluche"
+        ],
+        "en": [
+          "diphtheria",
+          "tetanus",
+          "whooping cough (pertussis)"
+        ]
+      },
+      "network": "private"
+    },
+    {
+      "key": "hpv",
+      "names": {
+        "pt-BR": "HPV (HPV4 ou HPV9)",
+        "en": "HPV (HPV4 or HPV9)"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "infecções pelo papilomavírus humano e cânceres associados"
+        ],
+        "en": [
+          "human papillomavirus infections and related cancers"
+        ]
+      },
+      "network": "both"
+    },
+    {
+      "key": "dengue",
+      "names": {
+        "pt-BR": "Dengue",
+        "en": "Dengue"
+      },
+      "protectsAgainst": {
+        "pt-BR": [
+          "dengue (sorotipos 1, 2, 3 e 4)"
+        ],
+        "en": [
+          "dengue (serotypes 1, 2, 3 and 4)"
+        ]
+      },
+      "network": "both"
+    }
+  ],
+  "doses": [
+    {
+      "vaccineKey": "bcg",
+      "doseId": "bcg-1",
+      "label": {
+        "pt-BR": "Dose única",
+        "en": "Single dose"
+      },
+      "recommendedAgeDays": 0,
+      "earliestAgeDays": 0,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Ao nascer, na maternidade ou na primeira visita ao serviço de saúde (PNI: até 30 dias de vida). Adiar se o peso for menor que 2 kg. O SUS aplica até 4 anos, 11 meses e 29 dias.",
+        "en": "At birth, in the maternity ward or at the first health-service visit (PNI: within 30 days of life). Postpone if the baby weighs under 2 kg. The SUS gives it up to 4 years, 11 months and 29 days."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hepatite-b",
+      "doseId": "hepatite-b-1",
+      "label": {
+        "pt-BR": "Dose ao nascer",
+        "en": "Birth dose"
+      },
+      "recommendedAgeDays": 0,
+      "earliestAgeDays": 0,
+      "latestAgeDays": 30,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Idealmente nas primeiras 12 horas (SBP, SBIm); o PNI aceita até 30 dias. Sem esta dose até 30 dias, o SUS começa a hepatite B com a penta aos 2 meses. Mãe HBsAg positivo: vacina e imunoglobulina ao nascer.",
+        "en": "Ideally within the first 12 hours (SBP, SBIm); the PNI accepts up to 30 days. Without this dose by day 30, the SUS starts hepatitis B with penta at 2 months. Mother HBsAg-positive: vaccine plus immunoglobulin at birth."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hepatite-b",
+      "doseId": "hepatite-b-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 30,
+      "earliestAgeDays": 30,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Só no esquema com vacina hepatite B isolada (SBIm: 0, 1 e 6 meses; SBP: 2ª dose com 1 ou 2 meses). Não é necessária quando a criança recebe vacina combinada com hepatite B aos 2, 4 e 6 meses (penta ou hexa).",
+        "en": "Only in a stand-alone hepatitis B schedule (SBIm: 0, 1 and 6 months; SBP: 2nd dose at 1 or 2 months). Not needed when the baby gets a hepatitis B-containing combined vaccine at 2, 4 and 6 months (penta or hexa)."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Satisfied by combined vaccines (penta, hexavalente), which schema v1 cannot express; SBIm says 1 month, SBP says 1 or 2 months (2 months in its private 0-2-6 scheme).",
+      "previousDoseIds": [
+        "hepatite-b-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hepatite-b",
+      "doseId": "hepatite-b-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 183,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Só no esquema com vacina hepatite B isolada, aos 6 meses. Não é necessária quando a criança recebe penta ou hexa aos 2, 4 e 6 meses.",
+        "en": "Only in a stand-alone hepatitis B schedule, at 6 months. Not needed when the baby gets penta or hexa at 2, 4 and 6 months."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Satisfied by combined vaccines, which schema v1 cannot express; the sources give no minimum interval for the infant 2nd-to-3rd dose (the PNI adolescent table gives 2 months between doses 2 and 3 and 4 months between doses 1 and 3).",
+      "previousDoseIds": [
+        "hepatite-b-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "vsr-nirsevimabe",
+      "doseId": "vsr-nirsevimabe-1",
+      "label": {
+        "pt-BR": "Dose única",
+        "en": "Single dose"
+      },
+      "recommendedAgeDays": 0,
+      "earliestAgeDays": 0,
+      "latestAgeDays": 364,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Anticorpo, não vacina. SBP e SBIm: dose única no 1º ano, de preferência na maternidade, se a mãe não tomou a vacina contra VSR na gestação (e em outras situações). SUS: só prematuros com menos de 37 semanas até 6 meses e crianças com comorbidades até 2 anos.",
+        "en": "An antibody, not a vaccine. SBP and SBIm: single dose in the first year, preferably in the maternity ward, when the mother did not get the RSV vaccine in pregnancy (and in other situations). SUS: only babies born before 37 weeks, under 6 months, and children with eligible conditions under 2 years."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Depends on the mother's RSV vaccination in pregnancy, prematurity and comorbidities, which schema v1 cannot express; SBP and SBIm do not recommend both the maternal vaccine and the antibody for healthy term babies. Clesrovimab is an alternative product (SBP).",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": "rsv-maternal-vaccination-unknown-or-no",
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "penta",
+      "doseId": "penta-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 61,
+      "earliestAgeDays": 42,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Difteria, tétano, coqueluche (células inteiras), Hib e hepatite B. Idade mínima de 6 semanas; o SUS aplica até 6 anos, 11 meses e 29 dias.",
+        "en": "Diphtheria, tetanus, whole-cell pertussis, Hib and hepatitis B. Minimum age 6 weeks; the SUS gives it up to 6 years, 11 months and 29 days."
+      },
+      "alternativeGroup": "dtp-primaria-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "hepatite-b-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "penta",
+      "doseId": "penta-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 122,
+      "earliestAgeDays": 72,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Intervalo recomendado de 60 dias, mínimo de 30 dias.",
+        "en": "Recommended interval 60 days, minimum 30 days."
+      },
+      "alternativeGroup": "dtp-primaria-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "penta-1",
+        "hexavalente-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "penta",
+      "doseId": "penta-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 102,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Intervalo recomendado de 60 dias, mínimo de 30. Sem dose de hepatite B nos primeiros 30 dias de vida: pelo menos 4 meses entre a 1ª e a 3ª dose.",
+        "en": "Recommended interval 60 days, minimum 30. Without a hepatitis B dose in the first 30 days of life: at least 4 months between the 1st and the 3rd dose."
+      },
+      "alternativeGroup": "dtp-primaria-3",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "penta-2",
+        "hexavalente-2"
+      ],
+      "covers": [
+        "hepatite-b-3"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hexavalente",
+      "doseId": "hexavalente-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 61,
+      "earliestAgeDays": 61,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada: DTPa, Hib, hepatite B e VIP numa só aplicação; as sociedades preferem a coqueluche acelular. Cobre também a VIP da mesma idade.",
+        "en": "Private clinics: DTaP, Hib, hepatitis B and IPV in one shot; the societies prefer acellular pertussis. Also covers the IPV dose of the same age."
+      },
+      "alternativeGroup": "dtp-primaria-1",
+      "needsReview": true,
+      "needsReviewReason": "SBP and SBIm recommend the antigens (DTP/DTPa, Hib, VIP, hepatitis B) at 2, 4 and 6 months, not a product; hexavalente is the acellular combination they list for private clinics (SBIm availability column, SBP note 05). Coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; the sources state no minimum age or age limit.",
+      "previousDoseIds": [],
+      "covers": [
+        "vip-1",
+        "hepatite-b-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hexavalente",
+      "doseId": "hexavalente-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 122,
+      "earliestAgeDays": 122,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada, aos 4 meses. Cobre também a VIP da mesma idade.",
+        "en": "Private clinics, at 4 months. Also covers the IPV dose of the same age."
+      },
+      "alternativeGroup": "dtp-primaria-2",
+      "needsReview": true,
+      "needsReviewReason": "Product chosen from the societies' antigen recommendation (see hexavalente-1); coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; no minimum interval stated in the sources.",
+      "previousDoseIds": [
+        "hexavalente-1",
+        "penta-1"
+      ],
+      "covers": [
+        "vip-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hexavalente",
+      "doseId": "hexavalente-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 183,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada, aos 6 meses. Cobre também a VIP e a hepatite B da mesma idade.",
+        "en": "Private clinics, at 6 months. Also covers the IPV and hepatitis B doses of the same age."
+      },
+      "alternativeGroup": "dtp-primaria-3",
+      "needsReview": true,
+      "needsReviewReason": "Product chosen from the societies' antigen recommendation (see hexavalente-1); coverage of the VIP and hepatitis B slots cannot be expressed in schema v1; no minimum interval stated in the sources.",
+      "previousDoseIds": [
+        "hexavalente-2",
+        "penta-2"
+      ],
+      "covers": [
+        "vip-3",
+        "hepatite-b-3"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "vip",
+      "doseId": "vip-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 61,
+      "earliestAgeDays": 61,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "O SUS aplica a VIP de 2 meses até 4 anos, 11 meses e 29 dias. Na rede privada ela vem nas vacinas combinadas (hexa, penta acelular).",
+        "en": "The SUS gives IPV from 2 months up to 4 years, 11 months and 29 days. In private clinics it comes inside combined vaccines (hexa, acellular penta)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "vip",
+      "doseId": "vip-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 122,
+      "earliestAgeDays": 91,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Intervalo recomendado de 60 dias, mínimo de 30 dias.",
+        "en": "Recommended interval 60 days, minimum 30 days."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "vip-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "vip",
+      "doseId": "vip-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 121,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Intervalo recomendado de 60 dias, mínimo de 30 dias.",
+        "en": "Recommended interval 60 days, minimum 30 days."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "vip-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "vip",
+      "doseId": "vip-reforco-1",
+      "label": {
+        "pt-BR": "1º reforço",
+        "en": "1st booster"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 365,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 183,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Aos 15 meses, pelo menos 6 meses após a 3ª dose (PNI).",
+        "en": "At 15 months, at least 6 months after the 3rd dose (PNI)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "vip-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "vip",
+      "doseId": "vip-reforco-2",
+      "label": {
+        "pt-BR": "2º reforço",
+        "en": "2nd booster"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 1461,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 183,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "De volta ao SUS desde 3/8/2026 (Nota Técnica 64/2026): dos 4 anos até 4 anos, 11 meses e 29 dias, pelo menos 6 meses após o 1º reforço. SBP e SBIm: entre 4 e 6 anos.",
+        "en": "Back in the SUS since 2026-08-03 (Technical Note 64/2026): from 4 years up to 4 years, 11 months and 29 days, at least 6 months after the 1st booster. SBP and SBIm: between 4 and 6 years."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Recent PNI change: the technical child calendar on gov.br (2026-01-30) and the SBIm calendar (2026-06-17) still describe a single booster; the 4-to-under-5-years SUS window comes from NT 64/2026 table 1. The societies accept up to 6 years (SBP: catch-up at any age in private clinics).",
+      "previousDoseIds": [
+        "vip-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "rotavirus",
+      "doseId": "rotavirus-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 61,
+      "earliestAgeDays": 45,
+      "latestAgeDays": 364,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Prazo rígido: 1ª dose até 11 meses e 29 dias; depois disso a criança não toma mais a vacina (PNI). PNI: a partir de 1 mês e 15 dias; SBIm: a partir de 6 semanas.",
+        "en": "Hard deadline: 1st dose by 11 months and 29 days; after that the vaccine is no longer given (PNI). PNI: from 1 month and 15 days; SBIm: from 6 weeks."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "rotavirus",
+      "doseId": "rotavirus-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 122,
+      "earliestAgeDays": 106,
+      "latestAgeDays": 730,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "A partir de 3 meses e 15 dias (PNI) e até 23 meses e 29 dias. Intervalo recomendado de 60 dias, mínimo de 30 (SBP: 4 semanas). Na vacina monovalente (SUS) é a última dose.",
+        "en": "From 3 months and 15 days (PNI) up to 23 months and 29 days. Recommended interval 60 days, minimum 30 (SBP: 4 weeks). With the monovalent vaccine (SUS) this is the last dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "rotavirus-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "rotavirus",
+      "doseId": "rotavirus-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 183,
+      "latestAgeDays": 730,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Só com a vacina pentavalente (RV5, rede privada): 3 doses aos 2, 4 e 6 meses. Se alguma dose foi RV5 ou é desconhecida, fazer 3 doses. Última dose até 23 meses e 29 dias.",
+        "en": "Only with the pentavalent vaccine (RV5, private clinics): 3 doses at 2, 4 and 6 months. If any dose was RV5 or is unknown, give 3 doses. Last dose by 23 months and 29 days."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Exists only with the RV5 product, which schema v1 cannot express; the sources state no minimum age for this dose (earliest set to the recommended age); SBP minimum interval is 4 weeks, SBIm 30 days.",
+      "previousDoseIds": [
+        "rotavirus-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "pneumo-conjugada",
+      "doseId": "pneumo-conjugada-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 61,
+      "earliestAgeDays": 61,
+      "latestAgeDays": 364,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: VPC20 desde junho de 2026. SBP e SBIm preferem VPC20 ou VPC15. A partir de 12 meses sem nenhuma dose, o SUS aplica dose única (ver reforço).",
+        "en": "SUS: PCV20 since June 2026. SBP and SBIm prefer PCV20 or PCV15. From 12 months with no dose at all, the SUS gives a single dose (see booster)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "pneumo-conjugada",
+      "doseId": "pneumo-conjugada-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 122,
+      "earliestAgeDays": 122,
+      "latestAgeDays": 364,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS na transição: VPC10 enquanto houver estoque, depois VPC20 (se a 1ª dose foi VPC10, a 2ª é VPC20). Intervalo de 60 dias; 30 dias só se o esquema começou a partir de 6 meses.",
+        "en": "SUS during the transition: PCV10 while stocks last, then PCV20 (if the 1st dose was PCV10, the 2nd is PCV20). Interval 60 days; 30 days only when the series started at 6 months or later."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "PNI transition: the product at this dose (PCV10 or PCV20) depends on local stock and on the 1st dose, and the public calendar of 2026-10-13 still lists PCV10 here; the 30-day minimum applies only to series started at 6 months or later (60 days otherwise).",
+      "previousDoseIds": [
+        "pneumo-conjugada-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "pneumo-conjugada",
+      "doseId": "pneumo-conjugada-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 183,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Esquema 3+1 das sociedades (VPC20 ou VPC15) para quem começa até 6 meses; o SUS usa 2+1. Para quem começa depois dos 4 meses, seguir a bula do produto.",
+        "en": "The societies' 3+1 scheme (PCV20 or PCV15) for babies starting by 6 months; the SUS uses 2+1. For babies starting after 4 months, follow the product label."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "The number of doses depends on the product and on the age at the first dose (SBP note 07 and SBIm comment 7 defer to the product labels); no minimum age or interval stated.",
+      "previousDoseIds": [
+        "pneumo-conjugada-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "pneumo-conjugada",
+      "doseId": "pneumo-conjugada-reforco",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 60,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: VPC20 aos 12 meses, pelo menos 60 dias após a 2ª dose, até 4 anos, 11 meses e 29 dias. De 12 meses a 4 anos sem nenhuma dose: dose única de VPC20. SBIm: 12 a 15 meses.",
+        "en": "SUS: PCV20 at 12 months, at least 60 days after the 2nd dose, up to 4 years, 11 months and 29 days. From 12 months to 4 years with no dose at all: a single PCV20 dose. SBIm: 12 to 15 months."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "pneumo-conjugada-2",
+        "pneumo-conjugada-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-c",
+      "doseId": "meningo-c-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 91,
+      "earliestAgeDays": 91,
+      "latestAgeDays": 364,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Esquema primário até 11 meses e 29 dias; a partir de 12 meses sem esquema, o SUS aplica dose única de ACWY.",
+        "en": "Primary series up to 11 months and 29 days; from 12 months without the series, the SUS gives a single ACWY dose."
+      },
+      "alternativeGroup": "meningo-primaria-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-c",
+      "doseId": "meningo-c-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 152,
+      "earliestAgeDays": 121,
+      "latestAgeDays": 364,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Intervalo recomendado de 60 dias, mínimo de 30 dias.",
+        "en": "Recommended interval 60 days, minimum 30 days."
+      },
+      "alternativeGroup": "meningo-primaria-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "meningo-c-1",
+        "meningo-acwy-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-acwy",
+      "doseId": "meningo-acwy-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 91,
+      "earliestAgeDays": 61,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm preferem ACWY em todas as doses; o esquema depende do produto. SBP: vacinas conjugadas a partir de 2 meses.",
+        "en": "SBP and SBIm prefer ACWY for every dose; the scheme depends on the product. SBP: conjugate vaccines from 2 months."
+      },
+      "alternativeGroup": "meningo-primaria-1",
+      "needsReview": true,
+      "needsReviewReason": "The number of infant doses and their ages depend on the ACWY product (SBP note 08, SBIm comment 8); 3 and 5 months come from the society tables.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-acwy",
+      "doseId": "meningo-acwy-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 152,
+      "earliestAgeDays": 152,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Aos 5 meses; o esquema depende do produto ACWY.",
+        "en": "At 5 months; the scheme depends on the ACWY product."
+      },
+      "alternativeGroup": "meningo-primaria-2",
+      "needsReview": true,
+      "needsReviewReason": "The number of infant doses and their ages depend on the ACWY product (SBP note 08, SBIm comment 8); no minimum interval stated.",
+      "previousDoseIds": [
+        "meningo-acwy-1",
+        "meningo-c-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-acwy",
+      "doseId": "meningo-acwy-reforco-1",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 60,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: ACWY aos 12 meses, pelo menos 60 dias após a 2ª dose (recomendado 7 meses); sem esquema, dose única até 4 anos, 11 meses e 29 dias. SBIm: 12 a 15 meses.",
+        "en": "SUS: ACWY at 12 months, at least 60 days after the 2nd dose (7 months recommended); without the series, a single dose up to 4 years, 11 months and 29 days. SBIm: 12 to 15 months."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "meningo-c-2",
+        "meningo-acwy-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-acwy",
+      "doseId": "meningo-acwy-reforco-2",
+      "label": {
+        "pt-BR": "2º reforço",
+        "en": "2nd booster"
+      },
+      "recommendedAgeDays": 1826,
+      "earliestAgeDays": 1826,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Entre 5 e 6 anos (ou 5 anos após a última dose), pela queda dos anticorpos. Não existe no SUS.",
+        "en": "Between 5 and 6 years (or 5 years after the last dose), because antibodies wane. Not offered by the SUS."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "SBP's table marks the 4-6 years column while its note says between 5 and 6 years; the window end (6 years, 11 months, 29 days) is our reading of '5-6 anos'.",
+      "previousDoseIds": [
+        "meningo-acwy-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-acwy",
+      "doseId": "meningo-acwy-adolescente",
+      "label": {
+        "pt-BR": "Dose do adolescente",
+        "en": "Adolescent dose"
+      },
+      "recommendedAgeDays": 4018,
+      "earliestAgeDays": 4018,
+      "latestAgeDays": 5478,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: 1 dose aos 11 anos (reforço para quem já foi vacinado); em atraso, até 14 anos, 11 meses e 29 dias. SBP: 11 a 12 anos.",
+        "en": "SUS: 1 dose at 11 years (a booster for those already vaccinated); catch-up up to 14 years, 11 months and 29 days. SBP: 11 to 12 years."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-acwy",
+      "doseId": "meningo-acwy-adolescente-2",
+      "label": {
+        "pt-BR": "2ª dose do adolescente",
+        "en": "2nd adolescent dose"
+      },
+      "recommendedAgeDays": 5844,
+      "earliestAgeDays": 5844,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP: adolescente que nunca recebeu ACWY até 15 anos faz 2 doses com 5 anos de intervalo (11 e 16 anos); de 16 a 18 anos, só 1 dose.",
+        "en": "SBP: an adolescent who never had ACWY by age 15 gets 2 doses 5 years apart (11 and 16 years); at 16 to 18 years, only 1 dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Marked with a hollow circle in the SBP table, whose legend is not printed; note 08 ties it to adolescents who never had MenACWY, so it may not apply to a child who followed the SBP infant schedule.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-b",
+      "doseId": "meningo-b-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 91,
+      "earliestAgeDays": 61,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Fora do SUS. Pode começar a partir de 2 meses; idealmente aos 3 e 5 meses, com reforço no 2º ano de vida.",
+        "en": "Not offered by the SUS. Can start from 2 months; ideally at 3 and 5 months, with a booster in the second year of life."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-b",
+      "doseId": "meningo-b-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 152,
+      "earliestAgeDays": 122,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 61,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Intervalo mínimo de 2 meses (SBP).",
+        "en": "Minimum interval 2 months (SBP)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "meningo-b-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "meningo-b",
+      "doseId": "meningo-b-reforco",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": 730,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "No 2º ano de vida (SBP: 12 meses; SBIm: 12 a 15 meses). Quem começa entre 12 e 23 meses: 2 doses com 2 meses de intervalo e reforço 12 a 23 meses depois.",
+        "en": "In the second year of life (SBP: 12 months; SBIm: 12 to 15 months). Children starting at 12 to 23 months: 2 doses 2 months apart and a booster 12 to 23 months later."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "influenza",
+      "doseId": "influenza-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 183,
+      "latestAgeDays": 2191,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Primeira vez: 2 doses com 30 dias de intervalo (PNI: de 6 meses a menores de 6 anos; SBP e SBIm: menores de 9 anos). SUS: rotina até 5 anos, 11 meses e 29 dias.",
+        "en": "First time: 2 doses 30 days apart (PNI: 6 months to under 6 years; SBP and SBIm: under 9 years). SUS: routine up to 5 years, 11 months and 29 days."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "influenza",
+      "doseId": "influenza-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 213,
+      "earliestAgeDays": 211,
+      "latestAgeDays": 2191,
+      "minIntervalDaysFromPrevious": 28,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Só na primeira temporada de vacinação. Intervalo de 30 dias, mínimo de 4 semanas (PNI).",
+        "en": "Only in the first vaccination season. Interval 30 days, minimum 4 weeks (PNI)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "influenza-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "influenza",
+      "doseId": "influenza-anual",
+      "label": {
+        "pt-BR": "Dose anual",
+        "en": "Yearly dose"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": 2191,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Uma dose por temporada, todo ano, depois da primeira. SUS: até 5 anos, 11 meses e 29 dias (indígenas e crianças com comorbidades até 8 anos, 11 meses e 29 dias).",
+        "en": "One dose per season, every year after the first. SUS: up to 5 years, 11 months and 29 days (Indigenous children and children with comorbidities up to 8 years, 11 months and 29 days)."
+      },
+      "alternativeGroup": "influenza-anual",
+      "needsReview": true,
+      "needsReviewReason": "Recurring yearly dose: schema v1 has no recurrence field; 365 days is a placeholder meaning 'from the second year of life, once per season'. The real date follows the yearly campaign (SBIm: earlier in the North region).",
+      "previousDoseIds": [
+        "influenza-1",
+        "influenza-2"
+      ],
+      "covers": [],
+      "recurrence": {
+        "everyDays": 365,
+        "startAgeDays": 365
+      },
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "influenza",
+      "doseId": "influenza-anual-sociedades",
+      "label": {
+        "pt-BR": "Dose anual",
+        "en": "Yearly dose"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm: todas as crianças e adolescentes, todo ano, de preferência antes da época de maior circulação do vírus.",
+        "en": "SBP and SBIm: every child and adolescent, every year, preferably before the peak season."
+      },
+      "alternativeGroup": "influenza-anual",
+      "needsReview": true,
+      "needsReviewReason": "Recurring yearly dose: schema v1 has no recurrence field; 365 days is a placeholder meaning 'from the second year of life, once per season'.",
+      "previousDoseIds": [
+        "influenza-1",
+        "influenza-2"
+      ],
+      "covers": [],
+      "recurrence": {
+        "everyDays": 365,
+        "startAgeDays": 365
+      },
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "covid-19",
+      "doseId": "covid-19-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 183,
+      "earliestAgeDays": 183,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: rotina de 6 meses até 4 anos, 11 meses e 29 dias (Comirnaty: 3 doses aos 6, 7 e 9 meses; Spikevax: 2 doses aos 6 e 7 meses). SBP e SBIm seguem o esquema do PNI.",
+        "en": "SUS: routine from 6 months up to 4 years, 11 months and 29 days (Comirnaty: 3 doses at 6, 7 and 9 months; Spikevax: 2 doses at 6 and 7 months). SBP and SBIm follow the PNI scheme."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "covid-19",
+      "doseId": "covid-19-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 213,
+      "earliestAgeDays": 211,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 28,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Pelo menos 4 semanas após a 1ª dose.",
+        "en": "At least 4 weeks after the 1st dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "covid-19-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "covid-19",
+      "doseId": "covid-19-3",
+      "label": {
+        "pt-BR": "3ª dose",
+        "en": "3rd dose"
+      },
+      "recommendedAgeDays": 274,
+      "earliestAgeDays": 267,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": 56,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Só no esquema com Comirnaty (Pfizer), pelo menos 8 semanas após a 2ª dose. Com Spikevax (Moderna) o esquema termina na 2ª dose.",
+        "en": "Only in the Comirnaty (Pfizer) scheme, at least 8 weeks after the 2nd dose. With Spikevax (Moderna) the series ends at the 2nd dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Exists only with the Comirnaty product (3-dose scheme), which schema v1 cannot express. SBP and SBIm do not list doses; they defer to the PNI scheme.",
+      "previousDoseIds": [
+        "covid-19-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "febre-amarela",
+      "doseId": "febre-amarela-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 274,
+      "earliestAgeDays": 274,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Aos 9 meses. Dose entre 6 e 8 meses só em surto ou viagem para área com circulação do vírus, e não substitui esta. Menores de 2 anos: não aplicar no mesmo dia da tríplice viral ou tetraviral (30 dias de intervalo, mínimo 15).",
+        "en": "At 9 months. A dose at 6 to 8 months is only for outbreaks or travel to areas with virus circulation, and does not replace this one. Under 2 years: not on the same day as MMR or MMRV (30 days apart, minimum 15)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "febre-amarela",
+      "doseId": "febre-amarela-reforco",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 304,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 30,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Aos 4 anos, só se a 1ª dose foi antes dos 5 anos (PNI). 1ª dose a partir de 5 anos: dose única no SUS; a SBIm sugere uma 2ª dose 10 anos depois.",
+        "en": "At 4 years, only if the 1st dose was given before age 5 (PNI). First dose at 5 years or later: a single dose in the SUS; SBIm suggests a 2nd dose 10 years later."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Conditional on the age at the first dose (before 5 years), which schema v1 cannot express; SBP and SBIm prefer a second dose for everyone.",
+      "previousDoseIds": [
+        "febre-amarela-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "triplice-viral",
+      "doseId": "triplice-viral-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "A partir de 12 meses. Dose entre 6 e 11 meses (surto ou bloqueio) não conta para o esquema. As sociedades aplicam a 1ª dose de varicela na mesma visita (ou usam a tetraviral).",
+        "en": "From 12 months. A dose at 6 to 11 months (outbreak response) does not count. The societies give the 1st varicella dose at the same visit (or use MMRV)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "triplice-viral",
+      "doseId": "triplice-viral-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 380,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 15,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "Aos 15 meses. PNI: intervalo de 30 dias; mínimo de 15 só para viagem ou surto. SBP e SBIm preferem a tetraviral nesta dose, 3 meses após a dose anterior.",
+        "en": "At 15 months. PNI: interval 30 days; the 15-day minimum is only for travel or outbreaks. SBP and SBIm prefer MMRV for this dose, 3 months after the previous dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "minIntervalDaysFromPrevious holds the PNI minimum (15 days, travel or outbreak only; 30 days recommended); SBP and SBIm require 3 months when this dose is given as MMRV.",
+      "previousDoseIds": [
+        "triplice-viral-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "tetraviral",
+      "doseId": "tetraviral-1-sociedades",
+      "label": {
+        "pt-BR": "Dose dos 12 meses (1ª tríplice viral + 1ª varicela)",
+        "en": "12-month dose (1st MMR + 1st varicella)"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada: a tetraviral aos 12 meses vale pela 1ª dose da tríplice viral e pela 1ª da varicela.",
+        "en": "Private clinics: MMRV at 12 months counts as the 1st MMR dose and the 1st varicella dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "triplice-viral-1",
+        "varicela-1-sociedades"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "tetraviral",
+      "doseId": "tetraviral-15m",
+      "label": {
+        "pt-BR": "Dose dos 15 meses no SUS (2ª tríplice viral + 1ª varicela)",
+        "en": "15-month dose in the SUS (2nd MMR + 1st varicella)"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: quando falta a varicela isolada, a tetraviral aos 15 meses vale pela 2ª dose da tríplice viral e pela 1ª da varicela.",
+        "en": "SUS: when stand-alone varicella is missing, MMRV at 15 months counts as the 2nd MMR dose and the 1st varicella dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "triplice-viral-2",
+        "varicela-1"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "tetraviral",
+      "doseId": "tetraviral-2-sociedades",
+      "label": {
+        "pt-BR": "Dose dos 15 meses (2ª tríplice viral + 2ª varicela)",
+        "en": "15-month dose (2nd MMR + 2nd varicella)"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm preferem a tetraviral na 2ª dose: vale pela 2ª da tríplice viral e pela 2ª da varicela.",
+        "en": "SBP and SBIm prefer MMRV for the 2nd dose: it counts as the 2nd MMR dose and the 2nd varicella dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "triplice-viral-2",
+        "varicela-2-sociedades"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "varicela",
+      "doseId": "varicela-1-sociedades",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm: aos 12 meses, junto com a tríplice viral (aplicações separadas) ou como tetraviral.",
+        "en": "SBP and SBIm: at 12 months, together with MMR (separate injections) or as MMRV."
+      },
+      "alternativeGroup": "varicela-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "varicela",
+      "doseId": "varicela-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: aos 15 meses, até 6 anos, 11 meses e 29 dias. Sem varicela monovalente, o SUS pode usar a tetraviral.",
+        "en": "SUS: at 15 months, up to 6 years, 11 months and 29 days. Without monovalent varicella vaccine, the SUS may use MMRV."
+      },
+      "alternativeGroup": "varicela-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "varicela",
+      "doseId": "varicela-2-sociedades",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 91,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP: aos 15 meses; SBIm: de 15 a 24 meses; de preferência como tetraviral, 3 meses após a dose anterior.",
+        "en": "SBP: at 15 months; SBIm: 15 to 24 months; preferably as MMRV, 3 months after the previous dose."
+      },
+      "alternativeGroup": "varicela-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "varicela-1-sociedades",
+        "varicela-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "varicela",
+      "doseId": "varicela-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 548,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": 91,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: aos 4 anos. Até 12 anos, 3 meses entre as doses.",
+        "en": "SUS: at 4 years. Up to age 12, 3 months between doses."
+      },
+      "alternativeGroup": "varicela-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "varicela-1",
+        "varicela-1-sociedades"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hepatite-a",
+      "doseId": "hepatite-a-1-sociedades",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 365,
+      "earliestAgeDays": 365,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm: 2 doses a partir de 12 meses.",
+        "en": "SBP and SBIm: 2 doses from 12 months."
+      },
+      "alternativeGroup": "hepatite-a-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hepatite-a",
+      "doseId": "hepatite-a-1",
+      "label": {
+        "pt-BR": "Dose única",
+        "en": "Single dose"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: dose única aos 15 meses, até 4 anos, 11 meses e 29 dias.",
+        "en": "SUS: single dose at 15 months, up to 4 years, 11 months and 29 days."
+      },
+      "alternativeGroup": "hepatite-a-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hepatite-a",
+      "doseId": "hepatite-a-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 548,
+      "earliestAgeDays": 548,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 183,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm: aos 18 meses, 6 meses após a 1ª. O SUS aplica dose única.",
+        "en": "SBP and SBIm: at 18 months, 6 months after the 1st. The SUS gives a single dose."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "hepatite-a-1-sociedades",
+        "hepatite-a-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dtp",
+      "doseId": "dtp-reforco-1",
+      "label": {
+        "pt-BR": "1º reforço",
+        "en": "1st booster"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": 183,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: DTP aos 15 meses, 6 a 12 meses após a 3ª dose da penta (mínimo de 6 meses).",
+        "en": "SUS: DTP at 15 months, 6 to 12 months after the 3rd penta dose (minimum 6 months)."
+      },
+      "alternativeGroup": "dtp-reforco-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "penta-3",
+        "hexavalente-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dtp",
+      "doseId": "dtp-reforco-2",
+      "label": {
+        "pt-BR": "2º reforço",
+        "en": "2nd booster"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 640,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": 183,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: DTP aos 4 anos (recomendado 2 anos e 9 meses após o 1º reforço; mínimo de 6 meses), até 6 anos, 11 meses e 29 dias.",
+        "en": "SUS: DTP at 4 years (recommended 2 years and 9 months after the 1st booster; minimum 6 months), up to 6 years, 11 months and 29 days."
+      },
+      "alternativeGroup": "dtp-reforco-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dtp-reforco-1",
+        "dtpa-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dtpa",
+      "doseId": "dtpa-reforco-1",
+      "label": {
+        "pt-BR": "1º reforço",
+        "en": "1st booster"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP: 15 meses; SBIm: 15 a 18 meses. As sociedades preferem a acelular (DTPa), em geral combinada com Hib e VIP.",
+        "en": "SBP: 15 months; SBIm: 15 to 18 months. The societies prefer acellular DTaP, usually combined with Hib and IPV."
+      },
+      "alternativeGroup": "dtp-reforco-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "hexavalente-3",
+        "penta-3"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dtpa",
+      "doseId": "dtpa-reforco-2",
+      "label": {
+        "pt-BR": "2º reforço",
+        "en": "2nd booster"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 1461,
+      "latestAgeDays": 2556,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Entre 4 e 6 anos; SBIm: pode ser DTPa-VIP ou dTpa-VIP.",
+        "en": "Between 4 and 6 years; SBIm: may be DTaP-IPV or Tdap-IPV."
+      },
+      "alternativeGroup": "dtp-reforco-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dtpa-reforco-1",
+        "dtp-reforco-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hib",
+      "doseId": "hib-reforco",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": 1825,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP: obrigatório quando o esquema usou vacina combinada acelular; SBIm: recomendado aos 15 a 18 meses, principalmente nesse caso. A Hib isolada saiu do mercado privado em 2024: vem combinada.",
+        "en": "SBP: required when the primary series used an acellular combined vaccine; SBIm: recommended at 15 to 18 months, mainly in that case. Stand-alone Hib left the private market in 2024: it comes combined."
+      },
+      "alternativeGroup": null,
+      "needsReview": true,
+      "needsReviewReason": "Conditional dose (SBP: only after acellular combinations; SBIm: recommended, mainly then) that schema v1 cannot express; usually given inside a combined vaccine, whose coverage schema v1 cannot express either.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "penta-acelular",
+      "doseId": "penta-acelular-reforco",
+      "label": {
+        "pt-BR": "Reforço dos 15 meses (DTPa + VIP + Hib)",
+        "en": "15-month booster (DTaP + IPV + Hib)"
+      },
+      "recommendedAgeDays": 457,
+      "earliestAgeDays": 457,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "Rede privada: vale pelo 1º reforço da tríplice bacteriana, pelo reforço da Hib e pelo 1º reforço da pólio.",
+        "en": "Private clinics: counts as the 1st DTP booster, the Hib booster and the 1st polio booster."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "dtpa-reforco-1",
+        "hib-reforco",
+        "vip-reforco-1"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "dtpa-vip",
+      "doseId": "dtpa-vip-reforco",
+      "label": {
+        "pt-BR": "Reforço dos 4 a 6 anos (DTPa + VIP)",
+        "en": "4-to-6-year booster (DTaP + IPV)"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 1461,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBIm: vale pelo 2º reforço da tríplice bacteriana e pelo 2º reforço da pólio.",
+        "en": "SBIm: counts as the 2nd DTP booster and the 2nd polio booster."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [
+        "dtpa-reforco-2",
+        "vip-reforco-2"
+      ],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": true
+    },
+    {
+      "vaccineKey": "dt-adulto",
+      "doseId": "dt-adulto-reforco-14a",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 5114,
+      "earliestAgeDays": 5114,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 1826,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: dT aos 14 anos (10 anos após o 2º reforço de DTP), depois a cada 10 anos; antecipar para 5 anos em caso de risco de tétano ou difteria.",
+        "en": "SUS: Td at 14 years (10 years after the 2nd DTP booster), then every 10 years; brought forward to 5 years when there is a tetanus or diphtheria risk."
+      },
+      "alternativeGroup": "dt-reforco-adolescente",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dtp-reforco-2",
+        "dtpa-reforco-2"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dtpa-adulto",
+      "doseId": "dtpa-adulto-reforco-9a",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 3287,
+      "earliestAgeDays": 3287,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBIm: dTpa 5 anos após o reforço dos 4 a 6 anos, de preferência entre 9 e 11 anos.",
+        "en": "SBIm: Tdap 5 years after the 4-to-6-year booster, preferably between 9 and 11 years."
+      },
+      "alternativeGroup": "dt-reforco-adolescente",
+      "needsReview": true,
+      "needsReviewReason": "Only the SBIm child calendar (0 to under 10 years) was used; the SBIm adolescent calendar was not consulted, so later SBIm boosters and the relation to the SBP and PNI booster at 14 years are not covered.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dtpa-adulto",
+      "doseId": "dtpa-adulto-reforco-14a",
+      "label": {
+        "pt-BR": "Reforço",
+        "en": "Booster"
+      },
+      "recommendedAgeDays": 5114,
+      "earliestAgeDays": 5114,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP: aos 14 anos, de preferência dTpa (ou dT).",
+        "en": "SBP: at 14 years, preferably Tdap (or Td)."
+      },
+      "alternativeGroup": "dt-reforco-adolescente",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hpv",
+      "doseId": "hpv-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 3287,
+      "earliestAgeDays": 3287,
+      "latestAgeDays": 5478,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni",
+        "sbp",
+        "sbim"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: HPV4 em dose única para meninas e meninos de 9 a 14 anos (de 15 a 19 anos conforme a estratégia de cada estado). SBP e SBIm preferem HPV9 em 2 doses.",
+        "en": "SUS: a single HPV4 dose for girls and boys aged 9 to 14 (15 to 19 per each state's catch-up strategy). SBP and SBIm prefer HPV9 in 2 doses."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "hpv",
+      "doseId": "hpv-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 3470,
+      "earliestAgeDays": 3470,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 183,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm: 2ª dose 6 meses após a 1ª (esquema de 2 doses de 9 a 19 anos).",
+        "en": "SBP and SBIm: 2nd dose 6 months after the 1st (2-dose scheme from 9 to 19 years)."
+      },
+      "alternativeGroup": null,
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "hpv-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dengue",
+      "doseId": "dengue-1-sociedades",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 1461,
+      "earliestAgeDays": 1461,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "SBP e SBIm: Qdenga a partir de 4 anos, com ou sem dengue anterior. Contraindicada em imunocomprometidos.",
+        "en": "SBP and SBIm: Qdenga from 4 years, whether or not the child had dengue. Contraindicated in immunocompromised children."
+      },
+      "alternativeGroup": "dengue-1",
+      "needsReview": true,
+      "needsReviewReason": "The societies give a starting age ('from 4 years'), not a recommended age; 4 years is used as both.",
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dengue",
+      "doseId": "dengue-2-sociedades",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 1552,
+      "earliestAgeDays": 1552,
+      "latestAgeDays": null,
+      "minIntervalDaysFromPrevious": 91,
+      "sources": [
+        "sbp",
+        "sbim"
+      ],
+      "network": "private",
+      "notes": {
+        "pt-BR": "3 meses após a 1ª dose.",
+        "en": "3 months after the 1st dose."
+      },
+      "alternativeGroup": "dengue-2",
+      "needsReview": true,
+      "needsReviewReason": "Follows dengue-1-sociedades, whose recommended age is the societies' starting age (4 years).",
+      "previousDoseIds": [
+        "dengue-1-sociedades",
+        "dengue-1"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dengue",
+      "doseId": "dengue-1",
+      "label": {
+        "pt-BR": "1ª dose",
+        "en": "1st dose"
+      },
+      "recommendedAgeDays": 3653,
+      "earliestAgeDays": 3653,
+      "latestAgeDays": 5478,
+      "minIntervalDaysFromPrevious": null,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "SUS: Qdenga dos 10 aos 14 anos (em atraso, até 14 anos, 11 meses e 29 dias). Após dengue, esperar 6 meses. Não misturar fabricantes.",
+        "en": "SUS: Qdenga from 10 to 14 years (catch-up up to 14 years, 11 months and 29 days). After dengue, wait 6 months. Do not mix manufacturers."
+      },
+      "alternativeGroup": "dengue-1",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    },
+    {
+      "vaccineKey": "dengue",
+      "doseId": "dengue-2",
+      "label": {
+        "pt-BR": "2ª dose",
+        "en": "2nd dose"
+      },
+      "recommendedAgeDays": 3744,
+      "earliestAgeDays": 3744,
+      "latestAgeDays": 5478,
+      "minIntervalDaysFromPrevious": 91,
+      "sources": [
+        "pni"
+      ],
+      "network": "public",
+      "notes": {
+        "pt-BR": "3 meses após a 1ª dose.",
+        "en": "3 months after the 1st dose."
+      },
+      "alternativeGroup": "dengue-2",
+      "needsReview": false,
+      "needsReviewReason": null,
+      "previousDoseIds": [
+        "dengue-1",
+        "dengue-1-sociedades"
+      ],
+      "covers": [],
+      "recurrence": null,
+      "condition": null,
+      "recordOnly": false
+    }
+  ]
+}

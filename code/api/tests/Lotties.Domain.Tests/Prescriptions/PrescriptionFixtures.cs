@@ -28,6 +28,13 @@ internal static class PrescriptionFixtures
     public static Prescription AtTimes(Guid medicationId, string[] times, string? group = null, DateOnly? start = null, DateOnly? end = null, DateTimeOffset? createdAt = null) =>
         Create(Terms(medicationId, PrescriptionSchedule.Create(PrescriptionKind.Scheduled, TimesOfDay.Parse(times), null, null, null, null), null, group, start, end), createdAt);
 
+    /// <summary>A part-of-the-day prescription; <paramref name="reminders"/> as stored, e.g. <c>morning=08:00,night=22:00</c>.</summary>
+    public static Prescription ByParts(Guid medicationId, string[] parts, string? reminders = null, string? group = null, DateOnly? start = null, DateOnly? end = null, DateTimeOffset? createdAt = null) =>
+        Create(Terms(medicationId, PartsSchedule(parts, reminders), null, group, start, end), createdAt);
+
+    public static PrescriptionSchedule PartsSchedule(string[] parts, string? reminders = null) =>
+        PrescriptionSchedule.Create(PrescriptionKind.Scheduled, null, null, null, null, null, DayPartSet.Parse(parts), reminders is null ? null : DayPartReminders.FromStorage(reminders));
+
     public static Prescription Every(Guid medicationId, int everyMinutes) =>
         Create(Terms(medicationId, PrescriptionSchedule.Create(PrescriptionKind.Scheduled, null, everyMinutes, null, null, null)));
 

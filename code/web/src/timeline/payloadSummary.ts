@@ -11,6 +11,15 @@ import { formatDuration, formatNumber } from '../i18n/format';
 import { t } from '../i18n/i18n';
 import { getOwn } from '../util/ownProperty';
 import { PAUSE_KEYS, SEGMENT_START_KEY } from '../timers/pauseMath';
+import { FORMULA_NAME_KEY } from '../formulas/formulaModel';
+import {
+  DRUNK_KEY,
+  ENDED_BY_KEY,
+  ENDED_BY_SLEEP,
+  PREPARED_KEY,
+  drunkMl,
+  preparedMl,
+} from '../events/bottleAmounts';
 
 const SEPARATOR = ' · ';
 
@@ -27,12 +36,28 @@ function fieldPart(
   text: EventTypeText,
 ): string | null {
   if (raw === undefined || raw === null || raw === '') return null;
+  // A bottle's formula, as named when it was logged (renames and archiving keep the history).
+  if (type.babyId === null && type.key === 'feeding' && field.key === FORMULA_NAME_KEY) {
+    return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
+  }
+  // A feeding a starting sleep stopped says so (the hidden `ended_by` field).
+  if (type.babyId === null && type.key === 'feeding' && field.key === ENDED_BY_KEY) {
+    return raw === ENDED_BY_SLEEP ? t('feedingAmounts.endedBySleep') : null;
+  }
   // Forms never show hidden fields (pause keys, deprecated ones); neither does the detail line.
   if (field.hidden === true) return null;
   const label = text.fieldLabel(type, field);
   if (type.babyId === null && type.key === 'sleep') {
     const sleep = sleepDetailPart(field, raw, text, type);
     if (sleep !== undefined) return sleep;
+  }
+  if (type.babyId === null && type.key === 'belly_massage') {
+    const massage = bellyMassagePart(field, raw);
+    if (massage !== undefined) return massage;
+  }
+  if (type.babyId === null && type.key === 'fussy') {
+    const fussy = fussyPart(field, raw);
+    if (fussy !== undefined) return fussy;
   }
   if (field.kind === 'bool') return raw === true ? label : null;
   if (field.kind === 'number') {
@@ -60,6 +85,36 @@ function sleepDetailPart(
     return t('timeline.moodOnWake', { mood: text.optionLabel(type, field, raw).toLowerCase() });
   }
   return undefined;
+}
+
+/** Whether a belly massage helped, as words that read alone (`helped`, not a bare `Yes`). */
+const MASSAGE_HELPED: ReadonlyMap<string, () => string> = new Map([
+  ['yes', () => t('timeline.massageHelped.yes')],
+  ['a_little', () => t('timeline.massageHelped.aLittle')],
+  ['no', () => t('timeline.massageHelped.no')],
+]);
+
+/** The detail line wording of the belly massage fields (`undefined`: use the generic one). */
+function bellyMassagePart(field: EventFieldDefinition, raw: unknown): string | undefined {
+  if (field.key !== 'helped' || typeof raw !== 'string') return undefined;
+  return MASSAGE_HELPED.get(raw)?.();
+}
+
+/** What soothed a fussy spell, as words that read alone (`rocking helped`, `nothing helped`). */
+const FUSSY_HELPED: ReadonlyMap<string, () => string> = new Map([
+  ['feeding', () => t('timeline.fussyHelped.feeding')],
+  ['rocking', () => t('timeline.fussyHelped.rocking')],
+  ['pacifier', () => t('timeline.fussyHelped.pacifier')],
+  ['massage', () => t('timeline.fussyHelped.massage')],
+  ['sleep', () => t('timeline.fussyHelped.sleep')],
+  ['other', () => t('timeline.fussyHelped.other')],
+  ['nothing', () => t('timeline.fussyHelped.nothing')],
+]);
+
+/** The detail line wording of the fussy fields (`undefined`: use the generic one). */
+function fussyPart(field: EventFieldDefinition, raw: unknown): string | undefined {
+  if (field.key !== 'what_helped' || typeof raw !== 'string') return undefined;
+  return FUSSY_HELPED.get(raw)?.();
 }
 
 /** Keys of the app itself (pause keys, the open nursing segment): never shown as details. */
@@ -101,7 +156,54 @@ export function payloadParts(
       .filter(([key]) => !known.has(key) && !INTERNAL_KEYS.has(key))
       .map(([key, raw]) => ({ key, text: extraPart(key, raw) })),
   ];
-  return parts.filter((p): p is PayloadPart => !!p.text);
+  return withBottleAmounts(parts, payload, type)
+    .filter((p): p is PayloadPart => !!p.text)
+    .filter((p) => !isOtherMilestoneWithWords(type, payload, p));
+}
+
+/**
+ * A bottle with less drunk than prepared reads `80 of 120 ml` in place of the prepared amount's
+ * part; the drunk part is then left out (a fully drunk bottle keeps `120 ml`).
+ */
+function withBottleAmounts<P extends { key: string; text: string | null }>(
+  parts: P[],
+  payload: EventPayload,
+  type: EventType | undefined,
+): P[] {
+  if (type?.babyId !== null || type.key !== 'feeding') return parts;
+  const prepared = preparedMl(payload);
+  const drunk = drunkMl(payload);
+  if (prepared === undefined || drunk === undefined) return parts;
+  // A drunk amount equal to the prepared one (all of it) adds nothing to say.
+  const shown = parts.filter((p) => p.key !== DRUNK_KEY);
+  if (drunk >= prepared) return shown;
+  return shown.map((p) =>
+    p.key === PREPARED_KEY ? { ...p, text: amountOfText(drunk, prepared) } : p,
+  );
+}
+
+/** `80 of 120 ml`: what was drunk of what was prepared. */
+export function amountOfText(drunk: number, prepared: number): string {
+  return t('feedingAmounts.amountOf', {
+    drunk: formatNumber(drunk),
+    prepared: formatNumber(prepared),
+  });
+}
+
+/**
+ * A milestone of the "other" option described in the parents' own words reads as those words
+ * alone (`Waved bye-bye`, not `Other · Waved bye-bye`).
+ */
+function isOtherMilestoneWithWords(
+  type: EventType | undefined,
+  payload: EventPayload,
+  part: PayloadPart,
+): boolean {
+  if (type?.babyId !== null || type.key !== 'milestone' || part.key !== 'milestone') return false;
+  const custom = getOwn(payload, 'custom');
+  return (
+    getOwn(payload, 'milestone') === 'other' && typeof custom === 'string' && custom.trim() !== ''
+  );
 }
 
 /** Names of the logged medications, falling back to the catalog. */

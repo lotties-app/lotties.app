@@ -21,6 +21,8 @@ export interface NumberStepperProps {
   unit?: string;
   /** Quick-value chips under the stepper. */
   quickValues?: readonly number[];
+  /** A short word shown after a quick chip ("120 ml · all"), by chip value. */
+  quickTags?: Readonly<Record<number, string>>;
   /** The last used value: marked "· last" on its chip (added to the chips when not in the list). */
   lastValue?: number | null;
   /** Where the first press starts when the value is empty (defaults to `min`, else 0). */
@@ -48,6 +50,7 @@ export function NumberStepper({
   max,
   unit,
   quickValues,
+  quickTags,
   lastValue = null,
   decimals,
   start,
@@ -270,6 +273,11 @@ export function NumberStepper({
               {chip === lastValue && (
                 <Box component="span" sx={{ fontSize: '0.6875rem', opacity: 0.8 }}>
                   {`· ${t('ui.stepper.last')}`}
+                </Box>
+              )}
+              {quickTags && Object.hasOwn(quickTags, chip) && (
+                <Box component="span" sx={{ fontSize: '0.6875rem', opacity: 0.8 }}>
+                  {`· ${quickTags[chip]}`}
                 </Box>
               )}
             </Box>

@@ -1,0 +1,29 @@
+{
+  "baby": {
+    "viewerNotice": "You have view-only access to this baby, so logging is turned off.",
+    "viewOnlyNamed": "You have view-only access to {{name}}.",
+    "nameLabel": "Name",
+    "birthDate": "Birth date",
+    "nameRequired": "Name is required.",
+    "birthRequired": "Birth date is required.",
+    "birthFuture": "Birth date cannot be in the future.",
+    "noBabyYet": "No baby yet",
+    "createPrompt": "Create a baby to start logging, or open an invite link someone shared with you.",
+    "create": "Create baby",
+    "roles": {
+      "Owner": "Owner",
+      "Parent": "Parent",
+      "Viewer": "Viewer",
+      "Caregiver": "Caregiver",
+      "Doctor": "Doctor"
+    },
+    "roleHints": {
+      "Owner": "Full control, including members and invites",
+      "Parent": "Can log and edit everything, and manage medications and settings",
+      "Caregiver": "Can log events and edit their own entries",
+      "Viewer": "Can only view",
+      "Doctor": "A healthcare professional: sees everything, writes notes and measurements"
+    },
+    "caregiverNamed": "You are a caregiver for {{name}}: you can log events and edit your own entries. The parents manage everything else."
+  }
+}

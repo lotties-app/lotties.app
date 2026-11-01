@@ -11,6 +11,8 @@ interface Props {
   babyName: string;
   /** Viewers cannot log or import. */
   readOnly: boolean;
+  /** Owners and Parents can import (not Caregivers); absent = `!readOnly`. */
+  canImport?: boolean;
   /** Owners can invite. */
   canInvite: boolean;
   onFellAsleep: () => void;
@@ -58,7 +60,15 @@ function OfferCard({
  * predictions will come from, and the two things that decide whether a family sticks with the app,
  * importing the history and inviting the other parent (docs/design/01-ux-strategy.md section 5).
  */
-export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, disabled }: Props) {
+export function FirstRun({
+  babyName,
+  readOnly,
+  canImport = !readOnly,
+  canInvite,
+  onFellAsleep,
+  onFeed,
+  disabled,
+}: Props) {
   const { t } = useTranslation();
   const options = [
     {
@@ -145,14 +155,14 @@ export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, 
           </Box>
         </Stack>
       </Card>
-      {!readOnly && (
+      {canImport && (
         <OfferCard
           icon="upload-file"
           category="feeding"
           title={t('now.firstRun.importTitle')}
           body={t('now.firstRun.importBody')}
           action={t('now.firstRun.importAction')}
-          to="/settings#import"
+          to="/hub/import"
         />
       )}
       {canInvite && (
@@ -162,7 +172,7 @@ export function FirstRun({ babyName, readOnly, canInvite, onFellAsleep, onFeed, 
           title={t('now.firstRun.inviteTitle', { name: babyName })}
           body={t('now.firstRun.inviteBody')}
           action={t('now.firstRun.inviteAction')}
-          to="/settings#members"
+          to="/hub/family#invite"
         />
       )}
     </>

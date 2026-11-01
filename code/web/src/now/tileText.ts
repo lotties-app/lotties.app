@@ -2,6 +2,7 @@ import type { EventType } from '../db/models';
 import { eventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatList, formatTime, formatUnit } from '../i18n/format';
 import { t } from '../i18n/i18n';
+import { amountOfText } from '../timeline/payloadSummary';
 import { typeForKey } from './eventFacts';
 import type { QuickTile } from './quickLog';
 
@@ -24,7 +25,11 @@ export function tileDetailText(tile: QuickTile, types: readonly EventType[]): st
       const extra =
         detail.method === 'bottle'
           ? [
-              detail.amountMl !== null ? formatUnit(detail.amountMl, 'milliliter') : '',
+              detail.amountMl === null
+                ? ''
+                : detail.drunkMl !== null
+                  ? amountOfText(detail.drunkMl, detail.amountMl)
+                  : formatUnit(detail.amountMl, 'milliliter'),
               detail.bottleMs !== null ? formatDuration(detail.bottleMs) : '',
             ]
               .filter(Boolean)

@@ -112,9 +112,17 @@ function prescriptionIdsOf(mutation: OutboxMutation): string[] {
     .filter((id): id is string => typeof id === 'string');
 }
 
+/** Formula id a bottle upsert names (`payload.formula_id`). */
+function formulaIdOfMutation(mutation: OutboxMutation): string | null {
+  if (mutation.entityType !== 'event' || mutation.kind !== 'upsert') return null;
+  const payload = (mutation.payload as { payload?: { formula_id?: unknown } } | null)?.payload;
+  return typeof payload?.formula_id === 'string' ? payload.formula_id : null;
+}
+
 /**
  * The queued mutation that must reach the server before `head`, if any: an event naming a
- * prescription needs that prescription first, and a prescription needs its medication. Queue order
+ * prescription needs that prescription first, a bottle naming a formula needs that formula, and a
+ * prescription needs its medication. Queue order
  * alone is not enough because a later edit of the same entity absorbs the earlier one
  * (`dropIfSuperseded`), which can move it behind the mutations that depend on it.
  */
@@ -124,6 +132,8 @@ export async function dependencyOf(
 ): Promise<OutboxMutation | undefined> {
   const wanted = new Map<string, MutationEntityType>();
   for (const id of prescriptionIdsOf(head)) wanted.set(id, 'prescription');
+  const formulaId = formulaIdOfMutation(head);
+  if (formulaId) wanted.set(formulaId, 'formula');
   if (head.entityType === 'prescription' && head.kind === 'upsert') {
     const medicationId = (head.payload as { medicationId?: unknown } | null)?.medicationId;
     if (typeof medicationId === 'string') wanted.set(medicationId, 'medication');

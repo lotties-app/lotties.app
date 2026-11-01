@@ -22,6 +22,8 @@ public sealed class EventPayloadValidationTests
     [Theory]
     [InlineData("""{"method":"bottle","amount_ml":120,"bottle_feeding_type":"formula"}""")]
     [InlineData("""{"method":"breast","side":"both","breast_left_seconds":600,"breast_right_seconds":540}""")]
+    [InlineData("""{"method":"bottle","amount_ml":120,"amount_drunk_ml":80,"bottle_feeding_type":"formula"}""")]
+    [InlineData("""{"method":"breast","ended_by":"sleep"}""")]
     [InlineData("""{"method":"solid","food":"Banana"}""")]
     [InlineData("""{"method":"bottle","amount_ml":null,"side":null}""")]
     [InlineData("""{"method":"bottle","amount":120,"extra":{"nested":[1,2]}}""")]
@@ -33,6 +35,7 @@ public sealed class EventPayloadValidationTests
     [Theory]
     [InlineData("""{"method":"bottle","side":"left"}""", "side")]
     [InlineData("""{"method":"breast","amount_ml":120}""", "amount_ml")]
+    [InlineData("""{"method":"breast","amount_drunk_ml":60}""", "amount_drunk_ml")]
     [InlineData("""{"method":"breast","bottle_feeding_type":"formula"}""", "bottle_feeding_type")]
     [InlineData("""{"method":"bottle","breast_left_seconds":60}""", "breast_left_seconds")]
     [InlineData("""{"method":"bottle","food":"Banana"}""", "food")]
@@ -58,6 +61,8 @@ public sealed class EventPayloadValidationTests
     [InlineData("""{"method":"bottle","bottle_feeding_type":"FORMULA"}""", "bottle_feeding_type")]
     [InlineData("""{"method":"bottle","amount_ml":-1}""", "amount_ml")]
     [InlineData("""{"method":"bottle","amount_ml":"120"}""", "amount_ml")]
+    [InlineData("""{"method":"bottle","amount_drunk_ml":-1}""", "amount_drunk_ml")]
+    [InlineData("""{"method":"bottle","ended_by":"timer"}""", "ended_by")]
     [InlineData("""{"method":"solid","food":42}""", "food")]
     public void Feeding_WrongKindOptionOrRange_IsRejectedOnThatField(string json, string field)
     {
@@ -124,6 +129,183 @@ public sealed class EventPayloadValidationTests
     public void BreastPump_NegativeAmount_IsRejected()
     {
         Assert.Equal("amount_left_ml", Rejected(BuiltInEventTypes.BreastPump, """{"amount_left_ml":-0.5}""").Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"tool":"bulb","saline":true}""")]
+    [InlineData("""{"tool":"electric"}""")]
+    [InlineData("""{"tool":"mouth","saline":false}""")]
+    [InlineData("""{"saline":true}""")]
+    public void NasalSuction_OptionalToolAndSaline_AreAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.NasalSuction, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{"tool":"syringe"}""", "tool")]
+    [InlineData("""{"tool":"BULB"}""", "tool")]
+    [InlineData("""{"saline":"yes"}""", "saline")]
+    [InlineData("""{"saline":1}""", "saline")]
+    public void NasalSuction_UnknownToolOrNonBooleanSaline_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.NasalSuction, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"reason":"gas","helped":"yes"}""")]
+    [InlineData("""{"reason":"constipation"}""")]
+    [InlineData("""{"reason":"colic","helped":"a_little"}""")]
+    [InlineData("""{"reason":"other","helped":"no","pause_count":1,"paused_seconds":30}""")]
+    public void BellyMassage_OptionalReasonAndHelped_AreAcceptedRunningOrEnded(string json)
+    {
+        Ensure(BuiltInEventTypes.BellyMassage, json, Ended);
+        Ensure(BuiltInEventTypes.BellyMassage, json, null);
+    }
+
+    [Theory]
+    [InlineData("""{"reason":"pain"}""", "reason")]
+    [InlineData("""{"reason":"GAS"}""", "reason")]
+    [InlineData("""{"helped":"maybe"}""", "helped")]
+    [InlineData("""{"helped":true}""", "helped")]
+    public void BellyMassage_UnknownReasonOrHelped_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.BellyMassage, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"intensity":"mild"}""")]
+    [InlineData("""{"intensity":"moderate","what_helped":"rocking"}""")]
+    [InlineData("""{"intensity":"intense","what_helped":"nothing"}""")]
+    [InlineData("""{"what_helped":"pacifier","pause_count":1,"paused_seconds":30}""")]
+    public void Fussy_OptionalIntensityAndWhatHelped_AreAcceptedRunningOrEnded(string json)
+    {
+        Ensure(BuiltInEventTypes.Fussy, json, Ended);
+        Ensure(BuiltInEventTypes.Fussy, json, null);
+    }
+
+    [Theory]
+    [InlineData("""{"intensity":3}""", "intensity")]
+    [InlineData("""{"intensity":"MILD"}""", "intensity")]
+    [InlineData("""{"what_helped":"singing"}""", "what_helped")]
+    [InlineData("""{"what_helped":true}""", "what_helped")]
+    public void Fussy_UnknownIntensityOrWhatHelped_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Fussy, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{"value_c":37.8,"method":"armpit"}""")]
+    [InlineData("""{"value_c":37}""")]
+    [InlineData("""{"value_c":30}""")]
+    [InlineData("""{"value_c":45.0,"method":"rectal"}""")]
+    [InlineData("""{"value_c":36.50}""")]
+    public void Temperature_ValueInRangeWithOneDecimal_IsAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.Temperature, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{}""", "value_c")]
+    [InlineData("""{"method":"ear"}""", "value_c")]
+    [InlineData("""{"value_c":29.9}""", "value_c")]
+    [InlineData("""{"value_c":45.1}""", "value_c")]
+    [InlineData("""{"value_c":37.85}""", "value_c")]
+    [InlineData("""{"value_c":"37.8"}""", "value_c")]
+    [InlineData("""{"value_c":37.8,"method":"toe"}""", "method")]
+    public void Temperature_MissingOutOfRangeOrTooPreciseValue_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Temperature, json).Field);
+    }
+
+    [Fact]
+    public void Temperature_TooManyDecimals_MessageNamesTheLimit()
+    {
+        Assert.Equal("'value_c' must have at most 1 decimal place(s).", Rejected(BuiltInEventTypes.Temperature, """{"value_c":37.85}""").Message);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"stage":"gums_sore"}""")]
+    [InlineData("""{"stage":"tooth_came_through"}""")]
+    [InlineData("""{"stage":"tooth_came_through","tooth":"lower_central_incisor"}""")]
+    [InlineData("""{"stage":"tooth_came_through","tooth":"other"}""")]
+    public void Teething_ToothWithAToothThatCameThrough_IsAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.Teething, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{"tooth":"canine"}""", "tooth")]
+    [InlineData("""{"stage":"gums_sore","tooth":"canine"}""", "tooth")]
+    [InlineData("""{"stage":"tooth_came_through","tooth":"wisdom"}""", "tooth")]
+    [InlineData("""{"stage":"erupted"}""", "stage")]
+    public void Teething_ToothWithoutAToothThatCameThroughOrUnknownOption_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Teething, json).Field);
+    }
+
+    [Theory]
+    [InlineData("""{}""")]
+    [InlineData("""{"milestone":"first_steps"}""")]
+    [InlineData("""{"milestone":"other","custom":"Waved bye-bye"}""")]
+    [InlineData("""{"milestone":"other"}""")]
+    public void Milestone_CustomTextForOther_IsAccepted(string json)
+    {
+        Ensure(BuiltInEventTypes.Milestone, json, Ended);
+    }
+
+    [Theory]
+    [InlineData("""{"custom":"Waved"}""", "custom")]
+    [InlineData("""{"milestone":"sits","custom":"Waved"}""", "custom")]
+    [InlineData("""{"milestone":"other","custom":3}""", "custom")]
+    [InlineData("""{"milestone":"jumps"}""", "milestone")]
+    public void Milestone_CustomTextWithoutOtherOrUnknownOption_IsRejected(string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.Milestone, json).Field);
+    }
+
+    [Theory]
+    [InlineData("nail_trim", """{"where":"both"}""")]
+    [InlineData("spit_up", """{"kind":"vomit","amount":"a_lot"}""")]
+    [InlineData("symptom", """{"symptom":"runny_nose","severity":"mild"}""")]
+    [InlineData("outdoor", """{"kind":"stroller_walk","pause_count":1,"paused_seconds":60}""")]
+    [InlineData("skin_care", """{"product":"diaper_cream"}""")]
+    [InlineData("nail_trim", """{}""")]
+    [InlineData("spit_up", """{}""")]
+    [InlineData("symptom", """{}""")]
+    [InlineData("outdoor", """{}""")]
+    [InlineData("skin_care", """{}""")]
+    public void SelectOnlyTypes_KnownOptionsOrNothing_AreAccepted(string key, string json)
+    {
+        Ensure(BuiltInEventTypes.All.Single(type => type.Key.Value == key), json, Ended);
+    }
+
+    [Theory]
+    [InlineData("nail_trim", """{"where":"toes"}""", "where")]
+    [InlineData("spit_up", """{"kind":"burp"}""", "kind")]
+    [InlineData("spit_up", """{"amount":"huge"}""", "amount")]
+    [InlineData("symptom", """{"symptom":"fever"}""", "symptom")]
+    [InlineData("symptom", """{"severity":"intense"}""", "severity")]
+    [InlineData("outdoor", """{"kind":"beach"}""", "kind")]
+    [InlineData("skin_care", """{"product":"SUNSCREEN"}""", "product")]
+    public void SelectOnlyTypes_UnknownOption_IsRejected(string key, string json, string field)
+    {
+        Assert.Equal(field, Rejected(BuiltInEventTypes.All.Single(type => type.Key.Value == key), json).Field);
+    }
+
+    [Fact]
+    public void Custom_NumberWithDecimals_AcceptsUpToThatManyPlaces()
+    {
+        var eventType = Custom(false, EventFieldDefinition.Create("weight", "Weight", EventFieldKind.Number, decimals: 2));
+
+        Ensure(eventType, """{"weight":3.25}""", Ended);
+        Ensure(eventType, """{"weight":3}""", Ended);
+        Ensure(eventType, """{"weight":3.2500}""", Ended);
+        Assert.Equal("weight", Rejected(eventType, """{"weight":3.251}""").Field);
+        Assert.Equal("weight", Rejected(eventType, """{"weight":1e400}""").Field);
     }
 
     [Fact]

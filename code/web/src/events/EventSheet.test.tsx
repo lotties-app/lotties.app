@@ -4,7 +4,13 @@ import axe from 'axe-core';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent } from '../db/eventCommands';
 import { fromEventTypeDto } from '../sync/contract';
-import { FEEDING_DTO, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import {
+  BELLY_MASSAGE_TYPE,
+  FEEDING_DTO,
+  FEEDING_TYPE,
+  NASAL_SUCTION_TYPE,
+  SLEEP_TYPE,
+} from '../test/builtInTypes';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import { renderWithDb } from '../test/renderApp';
 import { DIAPER, EVENT_TYPES, FEEDING, MEDICATION, seedBaby } from '../test/seed';
@@ -250,6 +256,76 @@ describe('EventSheet change of type', () => {
   });
 });
 
+describe('EventSheet nasal suction', () => {
+  const renderSuction = () =>
+    renderSheet({
+      types: [NASAL_SUCTION_TYPE, FEEDING_TYPE],
+      initialTypeId: NASAL_SUCTION_TYPE.id,
+    });
+
+  it('offers the optional tool choices and the saline switch', () => {
+    renderSuction();
+    expect(screen.getByRole('dialog', { name: 'Nasal suction' })).toBeTruthy();
+    for (const tool of ['Bulb', 'Electric', 'Mouth suction']) {
+      expect(screen.getByRole('radio', { name: tool })).toBeTruthy();
+    }
+    expect(screen.getByRole('switch', { name: 'Saline used' })).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: 'Still running' })).toBeNull();
+  });
+
+  it('logs an instant event with the tool and saline', async () => {
+    const onDone = renderSuction();
+    fireEvent.click(screen.getByRole('radio', { name: 'Bulb' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Saline used' }));
+    save();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [saved] = await db.events.toArray();
+    expect(saved.typeId).toBe(NASAL_SUCTION_TYPE.id);
+    expect(saved.payload).toEqual({ tool: 'bulb', saline: true });
+    expect(saved.endedAt).toBe(saved.startedAt);
+  });
+
+  it('logs without any detail, since every field is optional', async () => {
+    const onDone = renderSuction();
+    save();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [saved] = await db.events.toArray();
+    expect(saved.payload.tool).toBeUndefined();
+    expect(saved.payload.saline).not.toBe(true);
+  });
+});
+
+describe('EventSheet belly massage', () => {
+  const renderMassage = () =>
+    renderSheet({
+      types: [BELLY_MASSAGE_TYPE, FEEDING_TYPE],
+      initialTypeId: BELLY_MASSAGE_TYPE.id,
+    });
+
+  it('offers the optional reasons, whether it helped, and a running timer', () => {
+    renderMassage();
+    expect(screen.getByRole('dialog', { name: 'Belly massage' })).toBeTruthy();
+    for (const option of ['Gas', 'Constipation', 'Colic', 'Other', 'Yes', 'A little', 'No']) {
+      expect(screen.getByRole('radio', { name: option })).toBeTruthy();
+    }
+    expect(screen.getByText('Reason')).toBeTruthy();
+    expect(screen.getByText('Did it help?')).toBeTruthy();
+    expect(screen.getByRole('switch', { name: 'Still running' })).toBeTruthy();
+    expect(screen.queryByText('Pauses')).toBeNull();
+  });
+
+  it('logs the reason and whether it helped', async () => {
+    const onDone = renderMassage();
+    fireEvent.click(screen.getByRole('radio', { name: 'Gas' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'A little' }));
+    save();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [saved] = await db.events.toArray();
+    expect(saved.typeId).toBe(BELLY_MASSAGE_TYPE.id);
+    expect(saved.payload).toEqual({ reason: 'gas', helped: 'a_little' });
+  });
+});
+
 describe('EventSheet conditional fields (visibleWhen)', () => {
   const types = [FEEDING_TYPE, SLEEP_TYPE];
   const renderFeeding = (props: Partial<Parameters<typeof EventSheet>[0]> = {}) =>
@@ -266,18 +342,30 @@ describe('EventSheet conditional fields (visibleWhen)', () => {
     expect(await screen.findByText('Side')).toBeTruthy();
     expect(screen.getByText('Left breast')).toBeTruthy();
     expect(screen.getByText('Right breast')).toBeTruthy();
-    expect(screen.queryByText('Amount')).toBeNull();
+    expect(screen.queryByText('Amount prepared')).toBeNull();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Solid food' }));
     expect(await screen.findByLabelText(/Food/)).toBeTruthy();
     await waitFor(() => expect(screen.queryByText('Side')).toBeNull());
   });
 
-  it('offers quick amounts and marks the last used one', async () => {
+  it('offers quick amounts from the recent bottles and marks the last used one', async () => {
+    for (const hoursAgo of [3, 6, 9]) {
+      const at = new Date(Date.now() - hoursAgo * 60 * MINUTE).toISOString();
+      await createEvent(db, {
+        babyId: BABY_ID,
+        typeId: FEEDING_TYPE.id,
+        startedAt: at,
+        endedAt: at,
+        payload: { method: 'bottle', amount_ml: 120 },
+      });
+    }
     recordLastUsed(BABY_ID, FEEDING_TYPE, { method: 'bottle', amount_ml: 100 });
     renderFeeding();
-    expect(await screen.findByText('Amount')).toBeTruthy();
-    for (const amount of ['60', '90', '120', '150']) {
+    expect(await screen.findByText('Amount prepared')).toBeTruthy();
+    // Typical 120, topped up to 150 and 180, plus the remembered 100.
+    expect(await screen.findByText('From your recent feeds')).toBeTruthy();
+    for (const amount of ['120', '150', '180']) {
       expect(screen.getByRole('button', { name: new RegExp(`^${amount}`) })).toBeTruthy();
     }
     expect(screen.getByRole('button', { name: /^100.*last/ })).toBeTruthy();
@@ -289,7 +377,10 @@ describe('EventSheet conditional fields (visibleWhen)', () => {
     fireEvent.click(await screen.findByRole('radio', { name: 'Left' }));
 
     fireEvent.click(screen.getByRole('radio', { name: 'Bottle' }));
-    fireEvent.click(await screen.findByRole('button', { name: /^90/ }));
+    // Typed, not a chip: the chips follow the baby's age and history.
+    fireEvent.change(await screen.findByRole('spinbutton', { name: /Amount prepared/ }), {
+      target: { value: '90' },
+    });
     fireEvent.click(screen.getByRole('radio', { name: 'Breast milk' }));
     save();
 

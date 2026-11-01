@@ -1,0 +1,141 @@
+{
+  "hub": {
+    "title": "Central",
+    "back": "Voltar à Central",
+    "search": {
+      "label": "Buscar na Central",
+      "placeholder": "Buscar na Central",
+      "clear": "Limpar a busca",
+      "none": "Nada na Central corresponde a “{{query}}”.",
+      "results_one": "{{count}} resultado",
+      "results_other": "{{count}} resultados"
+    },
+    "shortcuts": {
+      "title": "Atalhos",
+      "customize": "Personalizar",
+      "customizeTitle": "Escolha seus atalhos",
+      "customizeHint": "Escolha até {{count}}. Enquanto você não escolher, aparecem os lugares que você mais abre.",
+      "picked": "{{picked}} de {{count}} escolhidos",
+      "automatic": "Escolher pelo uso",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "sections": {
+      "care": "Cuidados com o bebê",
+      "family": "Família",
+      "app": "Aplicativo"
+    },
+    "badge_one": "{{count}} precisa de atenção",
+    "badge_other": "{{count}} precisam de atenção",
+    "tabBadge_one": "{{count}} item precisa de atenção na Central",
+    "tabBadge_other": "{{count}} itens precisam de atenção na Central",
+    "entries": {
+      "appointments": {
+        "title": "Consultas",
+        "hint": "Visitas e lembretes",
+        "keywords": "visitas médico calendário pediatra retorno agenda"
+      },
+      "vaccines": {
+        "title": "Vacinas",
+        "hint": "Calendário e carteirinha",
+        "keywords": "doses imunização carteirinha cartão"
+      },
+      "growth": {
+        "title": "Crescimento",
+        "hint": "Peso, comprimento e perímetro cefálico",
+        "keywords": "peso altura comprimento cabeça medidas gráfico"
+      },
+      "medicines": {
+        "title": "Remédios",
+        "hint": "Medicamentos e receitas",
+        "keywords": "medicamentos doses receitas"
+      },
+      "formulas": {
+        "title": "Fórmulas",
+        "hint": "Marcas e modo de preparo",
+        "keywords": "leite mamadeira pó"
+      },
+      "notes": {
+        "title": "Notas",
+        "hint": "Notas do médico sobre as consultas",
+        "keywords": "médico notas recomendações"
+      },
+      "fromDoctor": {
+        "title": "Do seu médico",
+        "hint": "Sugestões esperando por você",
+        "keywords": "médico propostas prescrições recomendações caixa"
+      },
+      "myProposals": {
+        "title": "Minhas propostas",
+        "hint": "Prescrições que você sugeriu",
+        "keywords": "médico propostas prescrições"
+      },
+      "patients": {
+        "title": "Pacientes",
+        "hint": "Bebês compartilhados com você",
+        "keywords": "médico bebês famílias"
+      },
+      "members": {
+        "title": "Membros e papéis",
+        "hint": "Quem pode ver e registrar",
+        "keywords": "família pessoas papéis responsável cuidador leitor sair"
+      },
+      "invite": {
+        "title": "Convidar alguém",
+        "hint": "Envie um link para a família ou um cuidador",
+        "keywords": "link compartilhar adicionar pessoa família cuidador"
+      },
+      "doctorAccess": {
+        "title": "Acesso do médico",
+        "hint": "Convide um médico e veja quem consultou",
+        "keywords": "médico convite acesso registro auditoria"
+      },
+      "settings": {
+        "title": "Ajustes",
+        "hint": "Aparência, idioma, notificações, sincronização",
+        "keywords": "preferências tema escuro idioma notificações sincronização perfil tipos de evento"
+      },
+      "import": {
+        "title": "Importar",
+        "hint": "Traga o histórico de outro app",
+        "keywords": "napper exportação arquivo csv histórico"
+      },
+      "updates": {
+        "title": "Buscar atualizações",
+        "hint": "Receba a versão mais recente",
+        "keywords": "atualizar versão recarregar nova"
+      },
+      "about": {
+        "title": "Sobre",
+        "hint": "Versão e licença",
+        "keywords": "versão build licença código"
+      }
+    },
+    "updates": {
+      "title": "Buscar atualizações",
+      "current": "Você está na versão {{version}}.",
+      "check": "Buscar atualizações",
+      "checking": "Buscando atualizações…",
+      "upToDate": "Você está na versão mais recente.",
+      "checkedAt": "Verificado às {{time}}.",
+      "ready": "Há uma nova versão pronta.",
+      "readyHint": "Recarregar troca para ela. O que ainda não sincronizou continua neste aparelho.",
+      "reload": "Recarregar para atualizar",
+      "error": "Não foi possível verificar. Confira se está online e tente de novo.",
+      "retry": "Tentar de novo",
+      "unsupportedNative": "Este app é atualizado pela loja de aplicativos.",
+      "unsupportedBrowser": "Este navegador não guarda uma cópia offline do app, então ele sempre abre a versão mais recente."
+    },
+    "about": {
+      "title": "Sobre",
+      "tagline": "Um registro calmo da rotina do bebê que funciona offline.",
+      "version": "Versão",
+      "builtAt": "Compilado em",
+      "commit": "Build",
+      "license": "Licença",
+      "licenseValue": "Software livre, AGPL-3.0",
+      "source": "Código-fonte",
+      "unknown": "Desconhecido"
+    }
+  }
+}

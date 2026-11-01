@@ -380,8 +380,8 @@ function TimeSection() {
       <Field label="End (with Still running)">
         <TimePanel value={end} onChange={setEnd} now={NOW} min={start} allowRunning />
       </Field>
-      <Field label="Yesterday, 12-hour clock">
-        <TimePanel value={yesterday} onChange={setYesterday} now={NOW} hourCycle="h12" />
+      <Field label="Yesterday">
+        <TimePanel value={yesterday} onChange={setYesterday} now={NOW} />
       </Field>
       <Field label="Disabled" disabled>
         <TimePanel value={start} onChange={() => {}} now={NOW} />

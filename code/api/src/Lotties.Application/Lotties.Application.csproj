@@ -13,6 +13,12 @@
     <InternalsVisibleTo Include="Lotties.Api.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The vaccine schedule (docs/design/18-vaccines.md): one source of truth in code/api/data, shipped inside this assembly.
+         WithCulture="false": ".br" in the name is the country (Brazil), not the Breton culture (no satellite assembly). -->
+    <EmbeddedResource Include="..\..\data\vaccine-schedule.br.json" LogicalName="Lotties.Application.Vaccinations.vaccine-schedule.br.json" WithCulture="false" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

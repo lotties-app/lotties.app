@@ -1,7 +1,9 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { darkManifestPlugin, LIGHT_MANIFEST } from './pwa-manifest';
+import pkg from './package.json' with { type: 'json' };
 
 /** Matches modules of the given top-level packages (bundler module ids use forward slashes). */
 const vendor = (...packages: string[]) =>
@@ -13,7 +15,33 @@ const MUI_LOCALES = /@mui[\\/]material[\\/](esm[\\/])?locale[\\/]/;
 /** The date pickers (and date-fns) load on demand with the date field: keep them out of vendor-mui. */
 const LAZY_PICKERS = /@mui[\\/]x-date-pickers[\\/]/;
 
+/**
+ * Per-checkout caches (gitignored): git worktrees share node_modules through a junction, so the
+ * default node_modules/.vite and node_modules/.vitest-cache would be shared by every checkout.
+ */
+const CACHE_DIR = '.vite-cache';
+
+/** Short commit of the build: `APP_COMMIT` (CI, Docker build arg) first, else git, else empty. */
+function buildCommit(): string {
+  const fromEnv = process.env.APP_COMMIT?.trim();
+  if (fromEnv) return fromEnv.slice(0, 12);
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return '';
+  }
+}
+
 export default defineConfig({
+  cacheDir: CACHE_DIR,
+  // Stamped when the bundle is built (so a deploy carries its own version): the About screen.
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_BUILT_AT__: JSON.stringify(new Date().toISOString()),
+    __APP_COMMIT__: JSON.stringify(buildCommit()),
+  },
   plugins: [
     react(),
     VitePWA({
@@ -86,5 +114,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     // jsdom + MUI renders (and the lazy date pickers) are slow when the machine is busy (CI, parallel builds)
     testTimeout: 30000,
+    fsModuleCachePath: `${CACHE_DIR}/vitest-modules`,
   },
 });

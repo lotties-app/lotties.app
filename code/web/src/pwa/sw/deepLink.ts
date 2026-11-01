@@ -1,18 +1,63 @@
 /*
  * The notification deep link (docs/design/09-push-notifications.md sections 10 and 11), shared by
- * the service worker (builds it) and the app (reads it): `/#notify=dose&baby=..&rx=..&d=..&t=..`
- * or `/#notify=nap&baby=..&d=..`. Ids are validated GUIDs and the token a validated base64url
- * string on both sides; nothing else from a URL or a message is ever used. The fragment keeps ids
- * and the token out of server logs; the app strips it after reading it.
+ * the service worker (builds it) and the app (reads it): `/#notify=dose&baby=..&rx=..&d=..&t=..`,
+ * `/#notify=nap&baby=..&d=..`, `/#notify=belly&..`, `/#notify=overtired&..`, `/#notify=fussy&..`,
+ * `/#notify=wet&..` or `/#notify=dirty&..` (each opens Now, where the matching card shows when it
+ * applies), and `/appointments#notify=appt&baby=..&appt=..&d=..` (opens the appointment's detail
+ * in the calendar), `/from-doctor#notify=doctor&baby=..&d=..` (the doctor's suggestions page) and
+ * `/vaccines#notify=vaccine&baby=..&d=..` (the vaccine schedule of the baby).
+ * Ids are validated GUIDs and the
+ * token a validated base64url string on both sides; nothing else from a URL or a message is ever
+ * used. The fragment keeps ids and the token out of server logs; the app strips it after reading
+ * it.
  */
+import { getOwn } from '../../util/ownProperty';
 import { guid, type PushPayload } from './payload';
+
+/** Links that just open Now for a baby. */
+export type NowLinkKind = 'nap' | 'belly' | 'overtired' | 'fussy' | 'wet' | 'dirty';
 
 export type NotificationLink =
   | { kind: 'dose'; babyId: string; rxId: string; deliveryId: string; token?: string }
-  | { kind: 'nap'; babyId: string; deliveryId: string };
+  | { kind: NowLinkKind; babyId: string; deliveryId: string }
+  | { kind: 'appt'; babyId: string; appointmentId: string; deliveryId: string }
+  | { kind: 'doctor'; babyId: string; deliveryId: string }
+  | { kind: 'vaccine'; babyId: string; deliveryId: string };
+
+/** The payload kind of each Now link, and back. */
+const PAYLOAD_KIND_OF_LINK: Readonly<Record<NowLinkKind, PushPayload['kind']>> = {
+  nap: 'nap_window',
+  belly: 'belly_pain_pattern',
+  overtired: 'overtired_warning',
+  fussy: 'fussy_pattern',
+  wet: 'diaper_wet_headsup',
+  dirty: 'diaper_dirty_headsup',
+};
+
+const isNowLinkKind = (kind: unknown): kind is NowLinkKind =>
+  typeof kind === 'string' && getOwn(PAYLOAD_KIND_OF_LINK, kind) !== undefined;
 
 /** The app route a notification opens (the Now screen). */
 export const DEEP_LINK_PATH = '/';
+
+/** The route an appointment reminder opens (the calendar, with the appointment's detail). */
+export const APPOINTMENTS_PATH = '/appointments';
+
+/** The route a doctor suggestion opens ("From your doctor"). */
+export const FROM_DOCTOR_PATH = '/from-doctor';
+
+/** The route a vaccine reminder opens (the baby's vaccine schedule). */
+export const VACCINES_PATH = '/vaccines';
+
+/**
+ * The route of a link: the calendar for an appointment reminder, "From your doctor" for a
+ * suggestion, the vaccine schedule for a vaccine reminder, Now for the rest.
+ */
+export function linkPath(link: Pick<NotificationLink, 'kind'>): string {
+  if (link.kind === 'appt') return APPOINTMENTS_PATH;
+  if (link.kind === 'vaccine') return VACCINES_PATH;
+  return link.kind === 'doctor' ? FROM_DOCTOR_PATH : DEEP_LINK_PATH;
+}
 
 const TOKEN = /^[A-Za-z0-9_-]{16,128}$/;
 
@@ -32,20 +77,42 @@ export function linkOfPayload(payload: PushPayload): NotificationLink | null {
       };
     case 'nap_window':
       return { kind: 'nap', babyId: payload.babyId, deliveryId: payload.id };
+    case 'belly_pain_pattern':
+      return { kind: 'belly', babyId: payload.babyId, deliveryId: payload.id };
+    case 'overtired_warning':
+      return { kind: 'overtired', babyId: payload.babyId, deliveryId: payload.id };
+    case 'fussy_pattern':
+      return { kind: 'fussy', babyId: payload.babyId, deliveryId: payload.id };
+    case 'diaper_wet_headsup':
+      return { kind: 'wet', babyId: payload.babyId, deliveryId: payload.id };
+    case 'diaper_dirty_headsup':
+      return { kind: 'dirty', babyId: payload.babyId, deliveryId: payload.id };
+    case 'appointment_reminder':
+      return {
+        kind: 'appt',
+        babyId: payload.babyId,
+        appointmentId: payload.apptId,
+        deliveryId: payload.id,
+      };
+    case 'doctor_suggestion':
+      return { kind: 'doctor', babyId: payload.babyId, deliveryId: payload.id };
+    case 'vaccine_due':
+      return { kind: 'vaccine', babyId: payload.babyId, deliveryId: payload.id };
     case 'test':
       return null;
   }
 }
 
-/** `/#notify=...` for a link (same order of parameters as always: notify, baby, rx, d, t). */
+/** `/#notify=...` for a link (same order of parameters as always: notify, baby, rx|appt, d, t). */
 export function deepLinkUrl(link: NotificationLink): string {
   const params = new URLSearchParams();
   params.set('notify', link.kind);
   params.set('baby', link.babyId);
   if (link.kind === 'dose') params.set('rx', link.rxId);
+  if (link.kind === 'appt') params.set('appt', link.appointmentId);
   params.set('d', link.deliveryId);
   if (link.kind === 'dose' && link.token !== undefined) params.set('t', link.token);
-  return `${DEEP_LINK_PATH}#${params.toString()}`;
+  return `${linkPath(link)}#${params.toString()}`;
 }
 
 /** Reads a link from `location.hash` (`#notify=...`); `null` when absent or not valid. */
@@ -57,6 +124,7 @@ export function parseDeepLinkHash(hash: string): NotificationLink | null {
     kind: params.get('notify'),
     babyId: params.get('baby'),
     rxId: params.get('rx'),
+    appointmentId: params.get('appt'),
     deliveryId: params.get('d'),
     token: params.get('t'),
   });
@@ -67,7 +135,15 @@ function validLink(fields: Record<string, unknown>): NotificationLink | null {
   const babyId = guid(fields.babyId);
   const deliveryId = guid(fields.deliveryId);
   if (!babyId || !deliveryId) return null;
-  if (fields.kind === 'nap') return { kind: 'nap', babyId, deliveryId };
+  if (isNowLinkKind(fields.kind)) {
+    return { kind: fields.kind, babyId, deliveryId };
+  }
+  if (fields.kind === 'appt') {
+    const appointmentId = guid(fields.appointmentId);
+    return appointmentId ? { kind: 'appt', babyId, appointmentId, deliveryId } : null;
+  }
+  if (fields.kind === 'doctor') return { kind: 'doctor', babyId, deliveryId };
+  if (fields.kind === 'vaccine') return { kind: 'vaccine', babyId, deliveryId };
   if (fields.kind !== 'dose') return null;
   const rxId = guid(fields.rxId);
   if (!rxId) return null;
@@ -87,11 +163,37 @@ export interface NotificationOpenMessage {
   kind: PushPayload['kind'];
   babyId?: string;
   rxId?: string;
+  appointmentId?: string;
   deliveryId: string;
   token?: string;
 }
 
 export function openMessageOf(link: NotificationLink): NotificationOpenMessage {
+  if (link.kind === 'vaccine') {
+    return {
+      type: 'notification-open',
+      kind: 'vaccine_due',
+      babyId: link.babyId,
+      deliveryId: link.deliveryId,
+    };
+  }
+  if (link.kind === 'doctor') {
+    return {
+      type: 'notification-open',
+      kind: 'doctor_suggestion',
+      babyId: link.babyId,
+      deliveryId: link.deliveryId,
+    };
+  }
+  if (link.kind === 'appt') {
+    return {
+      type: 'notification-open',
+      kind: 'appointment_reminder',
+      babyId: link.babyId,
+      appointmentId: link.appointmentId,
+      deliveryId: link.deliveryId,
+    };
+  }
   return link.kind === 'dose'
     ? {
         type: 'notification-open',
@@ -103,11 +205,24 @@ export function openMessageOf(link: NotificationLink): NotificationOpenMessage {
       }
     : {
         type: 'notification-open',
-        kind: 'nap_window',
+        kind: PAYLOAD_KIND_OF_LINK[link.kind],
         babyId: link.babyId,
         deliveryId: link.deliveryId,
       };
 }
+
+const LINK_KIND_OF_MESSAGE: Readonly<Record<string, NotificationLink['kind']>> = {
+  dose_due: 'dose',
+  nap_window: 'nap',
+  belly_pain_pattern: 'belly',
+  overtired_warning: 'overtired',
+  fussy_pattern: 'fussy',
+  diaper_wet_headsup: 'wet',
+  diaper_dirty_headsup: 'dirty',
+  appointment_reminder: 'appt',
+  doctor_suggestion: 'doctor',
+  vaccine_due: 'vaccine',
+};
 
 /** Reads a link from a worker message (re-validated: messages are untrusted input). */
 export function linkOfMessage(data: unknown): NotificationLink | null {
@@ -115,6 +230,6 @@ export function linkOfMessage(data: unknown): NotificationLink | null {
   const message = data as Record<string, unknown>;
   if (message.type !== 'notification-open') return null;
   const kind =
-    message.kind === 'dose_due' ? 'dose' : message.kind === 'nap_window' ? 'nap' : undefined;
+    typeof message.kind === 'string' ? getOwn(LINK_KIND_OF_MESSAGE, message.kind) : undefined;
   return validLink({ ...message, kind });
 }

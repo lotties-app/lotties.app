@@ -68,6 +68,25 @@ describe('apiClient', () => {
     expect(result.headers.get('x-next-cursor')).toBe('abc');
   });
 
+  it('sends extra request headers beside its own', async () => {
+    const { client, fetchImpl } = setup(jsonResponse({}));
+    await client.request('/x', { headers: { 'If-None-Match': '"v1"' } });
+    const [, init] = fetchImpl.mock.calls[0];
+    expect(init?.headers).toEqual({
+      Accept: 'application/json',
+      'If-None-Match': '"v1"',
+      Authorization: 'Bearer tok',
+    });
+  });
+
+  it('resolves a 304 answer to a conditional request with its status and no body', async () => {
+    const { client, onUnauthorized } = setup(new Response(null, { status: 304 }));
+    const answer = await client.requestWithMeta('/x', { headers: { 'If-None-Match': '"v1"' } });
+    expect(answer.status).toBe(304);
+    expect(answer.data).toBeUndefined();
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
   it('exposes the problem details code on ApiError', async () => {
     const { client } = setup(jsonResponse({ title: 'Conflict', code: 'event_baby_mismatch' }, 409));
     const error = (await client.request('/x').catch((e: unknown) => e)) as ApiError;

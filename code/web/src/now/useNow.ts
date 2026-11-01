@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { canWrite } from '../baby/permissions';
+import { eventAccess, type EventAccess } from '../baby/useEventAccess';
 import {
   useEventTypes,
   useEventsStartedSince,
@@ -8,6 +8,7 @@ import {
 } from '../db/hooks';
 import type { Baby, BabyEvent, EventType, Medication } from '../db/models';
 import { useNow } from '../events/time';
+import { useBottleHistory } from '../events/useBottleHistory';
 import { useMedicationStatuses, type MedicationStatuses } from '../medications/useMedicationStatus';
 import { usePredictions } from '../predictions/usePredictions';
 import { catchUp, type CatchUp } from './catchUp';
@@ -64,8 +65,13 @@ export interface NowScreenModel {
   meds: MedicationStatuses;
   /** The last 3 days plus running timers, newest first. */
   events: BabyEvent[];
-  /** Viewers read; the commands are for Parents and Owners. */
+  /** Viewers read; the commands are for Owners, Parents and Caregivers. */
   readOnly: boolean;
+  /**
+   * Per event: whether the user may change it, and who logged it (a Caregiver changes only their
+   * own entries: someone else's running timer shows "Started by" instead of its controls).
+   */
+  access: EventAccess;
   commands: NowCommands;
 }
 
@@ -106,10 +112,12 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
   const recent = useEventsStartedSince(baby.id, since);
   const runningTimers = useRunningEvents(baby.id);
   const predictions = usePredictions(baby.id).query.data;
-  const members = useMembers(baby.id);
+  const members = useMembers(baby);
   const handover = useHandover(baby.id);
   const meds = useMedicationStatuses(baby.id);
   const commands = useNowCommands(baby, types ?? EMPTY_TYPES);
+  const bottleHistory = useBottleHistory(baby.id);
+  const access = useMemo(() => eventAccess(baby, members), [baby, members]);
 
   const events = useMemo(
     () => (recent && runningTimers ? mergeRunning(recent, runningTimers) : undefined),
@@ -126,7 +134,10 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       sleepActions: sleepToggleActions(state, now),
       tiles: lastAndLogTiles(types, events, now),
       trays: {
-        feed: feedTrayOptions(baby.id, types, events, now),
+        feed: feedTrayOptions(baby.id, types, events, now, {
+          events: bottleHistory?.events ?? events,
+          birthDate: baby.birthDate,
+        }),
         diaper: diaperTray(types),
         meds: medsTray(baby.id, types, medications, events, now, meds.statuses),
         bellyPain: bellyPainTray(types),
@@ -134,7 +145,19 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       forgotten: forgottenTimers(events, types, now),
       catchUp: catchUp(events, members, handover.since, now, { types }),
     };
-  }, [types, events, medications, meds, predictions, members, handover.since, tick, baby.id]);
+  }, [
+    types,
+    events,
+    medications,
+    meds,
+    predictions,
+    members,
+    handover.since,
+    tick,
+    baby.id,
+    baby.birthDate,
+    bottleHistory,
+  ]);
 
   return useMemo(() => {
     if (!derived || !types || !events || !medications || !meds || !runningTimers) return undefined;
@@ -146,7 +169,8 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
       medications,
       meds,
       events,
-      readOnly: !canWrite(baby),
+      readOnly: !access.canLog,
+      access,
       commands,
     };
   }, [
@@ -157,7 +181,7 @@ export function useNowScreen(baby: Baby): NowScreenModel | undefined {
     meds,
     runningTimers,
     handover.acknowledge,
-    baby,
+    access,
     commands,
   ]);
 }

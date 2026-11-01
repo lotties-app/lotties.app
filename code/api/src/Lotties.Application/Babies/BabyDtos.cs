@@ -1,11 +1,14 @@
 using System.Text.Json.Serialization;
+using Lotties.Application.Professionals;
 using Lotties.Application.Serialization;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Professionals;
 using Lotties.Domain.Users;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Application.Babies;
 
-/// <summary>A baby as seen by the current user, who holds <see cref="Role"/> on it.</summary>
+/// <summary>A baby as seen by the current user, who holds <see cref="Role"/> on it as <see cref="UserId"/>.</summary>
 public sealed record BabyResponse
 {
     public Guid Id { get; init; }
@@ -19,17 +22,63 @@ public sealed record BabyResponse
 
     public DateTimeOffset CreatedAt { get; init; }
 
-    public static BabyResponse For(Baby baby, BabyRole role)
+    /// <summary>
+    /// The caller's own user id (additive): the <c>createdBy</c> of the events they log, so a client can tell its own
+    /// entries apart (a Caregiver may change only those) while offline.
+    /// </summary>
+    public Guid UserId { get; init; }
+
+    /// <summary>Which recommendations the vaccine schedule shows: <c>public</c> or <c>public+private</c> (additive).</summary>
+    public string VaccineProfile { get; init; } = Domain.Vaccinations.VaccineProfile.PublicCode;
+
+    /// <summary>Weeks of gestation at birth, or <c>null</c> (additive).</summary>
+    public int? GestationalAgeWeeks { get; init; }
+
+    /// <summary>Whether the mother got the RSV vaccine in pregnancy: <c>unknown</c>, <c>yes</c>, <c>no</c> or <c>null</c> (additive).</summary>
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public RsvMaternalVaccination? RsvMaternalVaccination { get; init; }
+
+    public static BabyResponse For(Baby baby, BabyMember member)
     {
         ArgumentNullException.ThrowIfNull(baby);
+        ArgumentNullException.ThrowIfNull(member);
         return new BabyResponse
         {
             Id = baby.Id,
             Name = baby.Name,
             BirthDate = baby.BirthDate,
-            Role = role,
+            Role = member.Role,
             CreatedAt = baby.CreatedAt,
+            UserId = member.UserId,
+            VaccineProfile = Domain.Vaccinations.VaccineProfile.CodeOf(baby.VaccineCoverage),
+            GestationalAgeWeeks = baby.GestationalAgeWeeks,
+            RsvMaternalVaccination = baby.RsvMaternalVaccination,
         };
+    }
+}
+
+/// <summary>
+/// Body of <c>PUT /api/v1/babies/{babyId}/vaccine-profile</c> (Owners and Parents): the full vaccine profile.
+/// <c>vaccineProfile</c> is <c>public</c> or <c>public+private</c> (required); <c>gestationalAgeWeeks</c> 20-44 or
+/// <c>null</c>; <c>rsvMaternalVaccination</c> <c>unknown</c>, <c>yes</c>, <c>no</c> or <c>null</c>.
+/// </summary>
+public sealed record UpdateVaccineProfileRequest
+{
+    public string? VaccineProfile { get; init; }
+
+    public int? GestationalAgeWeeks { get; init; }
+
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public RsvMaternalVaccination? RsvMaternalVaccination { get; init; }
+
+    /// <summary>Validates; throws <see cref="Domain.Exceptions.DomainValidationException"/> naming the field.</summary>
+    public static explicit operator Domain.Vaccinations.VaccineProfile(UpdateVaccineProfileRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return Domain.Vaccinations.VaccineProfile.Create(
+            Domain.Vaccinations.VaccineProfile.CoverageOf(request.VaccineProfile),
+            request.GestationalAgeWeeks,
+            request.RsvMaternalVaccination);
     }
 }
 
@@ -53,7 +102,10 @@ public sealed record MemberResponse
 
     public DateTimeOffset JoinedAt { get; init; }
 
-    public static MemberResponse For(BabyMember member, User? user)
+    /// <summary>A Doctor member's professional details (additive; <c>null</c> for every other role).</summary>
+    public ProfessionalSummary? Professional { get; init; }
+
+    public static MemberResponse For(BabyMember member, User? user, ProfessionalProfile? doctorProfile = null)
     {
         ArgumentNullException.ThrowIfNull(member);
         return new MemberResponse
@@ -62,6 +114,7 @@ public sealed record MemberResponse
             DisplayName = user?.DisplayName ?? ExternalIdentity.FallbackDisplayName,
             Role = member.Role,
             JoinedAt = member.JoinedAt,
+            Professional = member.Role.IsDoctor() && doctorProfile is not null ? (ProfessionalSummary)doctorProfile : null,
         };
     }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BabyEvent, EventType } from '../db/models';
 import { BABY_ID } from '../test/fakeApi';
-import { FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import { BELLY_MASSAGE_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import {
   clearAllLastUsed,
   clearLastUsedForBaby,
@@ -10,7 +10,7 @@ import {
   readLastUsed,
   recordLastUsed,
 } from './lastUsedValues';
-import { fixFields, planStop, rememberedFormValues } from './stopPlan';
+import { fillEmptyFields, fixFields, planStop, rememberedFormValues } from './stopPlan';
 
 const event = (overrides: Partial<BabyEvent>): BabyEvent => ({
   id: 'e1',
@@ -34,6 +34,14 @@ describe('planStop', () => {
     expect(planStop(undefined, {})).toEqual({ kind: 'stop' });
   });
 
+  it('stops a belly massage at once, like tummy time: its details are all optional', () => {
+    expect(planStop(BELLY_MASSAGE_TYPE, {})).toEqual({ kind: 'stop' });
+    expect(planStop(BELLY_MASSAGE_TYPE, { reason: 'gas' })).toEqual({ kind: 'stop' });
+    expect(planStop(BELLY_MASSAGE_TYPE, { reason: 'gas', helped: 'yes' })).toEqual({
+      kind: 'stop',
+    });
+  });
+
   it('asks for missing required fields first', () => {
     expect(planStop(FEEDING_TYPE, {})).toEqual({ kind: 'finish', fields: ['method'] });
   });
@@ -53,22 +61,41 @@ describe('planStop', () => {
   });
 
   it('asks for the amount (optional) when a bottle timer without one stops', () => {
-    expect(planStop(FEEDING_TYPE, { method: 'bottle' })).toEqual({
-      kind: 'finish',
-      fields: ['amount_ml', 'bottle_feeding_type'],
-    });
+    // The content and, for formula, which one (the sheet's formula chips) are asked with it.
+    const asked = [
+      'amount_ml',
+      'amount_drunk_ml',
+      'bottle_feeding_type',
+      'formula_id',
+      'formula_name',
+    ];
+    expect(planStop(FEEDING_TYPE, { method: 'bottle' })).toEqual({ kind: 'finish', fields: asked });
     // Hidden values go with the finish sheet, which drops them on save.
     expect(planStop(FEEDING_TYPE, { method: 'bottle', side: 'left' })).toEqual({
       kind: 'finish',
-      fields: ['amount_ml', 'bottle_feeding_type'],
+      fields: asked,
     });
   });
 
-  it('stops a bottle with its amount at once, with or without the content', () => {
-    expect(planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120 })).toEqual({ kind: 'stop' });
+  it('stops a bottle with both amounts at once, with or without the content', () => {
+    const both = { method: 'bottle', amount_ml: 120, amount_drunk_ml: 80 };
+    expect(planStop(FEEDING_TYPE, both)).toEqual({ kind: 'stop' });
+    expect(planStop(FEEDING_TYPE, { ...both, bottle_feeding_type: 'formula' })).toEqual({
+      kind: 'stop',
+    });
+  });
+
+  it('still asks how much was drunk while only the prepared amount is known', () => {
+    expect(planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120 })).toEqual({
+      kind: 'finish',
+      fields: ['amount_ml', 'amount_drunk_ml', 'bottle_feeding_type', 'formula_id', 'formula_name'],
+    });
+  });
+
+  it('asks again for a drunk amount above the prepared one (the server would reject it)', () => {
     expect(
-      planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 120, bottle_feeding_type: 'formula' }),
-    ).toEqual({ kind: 'stop' });
+      planStop(FEEDING_TYPE, { method: 'bottle', amount_ml: 100, amount_drunk_ml: 130 }),
+    ).toEqual({ kind: 'finish', fields: ['amount_drunk_ml'] });
   });
 
   it('never asks a custom type for a bottle amount', () => {
@@ -189,5 +216,25 @@ describe('quickStartPayload', () => {
   it('leaves fields without a remembered value empty (the stop asks)', () => {
     expect(quickStartPayload(custom, {}, {})).toEqual({});
     expect(planStop(custom, {})).toEqual({ kind: 'finish', fields: ['side'] });
+  });
+});
+
+describe('fillEmptyFields (a Caregiver finishing someone else’s timer)', () => {
+  it('fills only the asked fields that were empty and keeps every stored value', () => {
+    const stored = { method: 'bottle', bottle_feeding_type: 'formula', food: '', pause_count: 1 };
+    const built = {
+      method: 'breast',
+      bottle_feeding_type: 'breast_milk',
+      food: 'rice',
+      amount_ml: 90,
+      side: 'left',
+    };
+    expect(fillEmptyFields(stored, built, ['amount_ml', 'bottle_feeding_type', 'food'])).toEqual({
+      method: 'bottle',
+      bottle_feeding_type: 'formula',
+      food: 'rice',
+      pause_count: 1,
+      amount_ml: 90,
+    });
   });
 });

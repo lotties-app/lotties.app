@@ -7,6 +7,8 @@ export interface ApiCall {
   method: string;
   path: string;
   body?: unknown;
+  /** Extra request headers the caller sent (e.g. `If-None-Match`). */
+  headers?: Record<string, string>;
   /** Whether the caller opted out of the client's 401 login redirect. */
   skipUnauthorizedHandler?: boolean;
 }
@@ -57,15 +59,22 @@ function defaultResponse(call: ApiCall): unknown {
 export class FakeResponse {
   readonly body: unknown;
   readonly headers: Headers;
+  readonly status: number;
 
-  constructor(body: unknown, headers: Record<string, string> = {}) {
+  constructor(body: unknown, headers: Record<string, string> = {}, status = 200) {
     this.body = body;
     this.headers = new Headers(headers);
+    this.status = status;
   }
 }
 
 export function withHeaders(body: unknown, headers: Record<string, string>) {
   return new FakeResponse(body, headers);
+}
+
+/** A `304 Not Modified` answer to a conditional request (no body). */
+export function notModified(headers: Record<string, string> = {}) {
+  return new FakeResponse(null, headers, 304);
 }
 
 /** Scripted in-memory API client that records every call. */
@@ -77,13 +86,14 @@ export function fakeApi(handler: ApiHandler = () => undefined) {
       method: options.method ?? 'GET',
       path,
       body: options.body,
+      ...(options.headers ? { headers: options.headers } : {}),
       skipUnauthorizedHandler: options.skipUnauthorizedHandler ?? false,
     };
     calls.push(call);
     const result = await handler(call);
     const response = result instanceof FakeResponse ? result : new FakeResponse(result);
     const data = response.body === undefined ? defaultResponse(call) : response.body;
-    return { data: data as T, status: 200, headers: response.headers };
+    return { data: data as T, status: response.status, headers: response.headers };
   }
 
   const api: ApiClient = {

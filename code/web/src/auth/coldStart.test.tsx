@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import Dexie from 'dexie';
 import { User, UserManager } from 'oidc-client-ts';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
@@ -87,6 +87,9 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  // Unmount first (this hook runs before the setup file's cleanup): the app's sync engine and
+  // session renewal stop before the mocks are restored and while its databases still exist.
+  cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   for (const name of await Dexie.getDatabaseNames()) await Dexie.delete(name);

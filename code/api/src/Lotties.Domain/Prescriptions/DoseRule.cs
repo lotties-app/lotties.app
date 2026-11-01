@@ -8,7 +8,9 @@ namespace Lotties.Domain.Prescriptions;
 /// The prescribed dose: <see cref="Amount"/> <see cref="Unit"/> per dose, or per kg of body weight when
 /// <see cref="PerKg"/> (then <see cref="RoundingStep"/> optionally rounds the computed amount, e.g. 0.5 or 1 drop).
 /// Amounts follow <see cref="Dosage"/> (3 decimals, 0.001-9999999.999, the <c>numeric(10,3)</c> column); the step is
-/// 0.001-1000 and only allowed with <see cref="PerKg"/>.
+/// 0.001-1000 and only allowed with <see cref="PerKg"/>. A dose in a counted unit (<see cref="DoseUnits"/>: sprays,
+/// puffs, suppositories, applications) is never per kg; sprays and puffs are whole numbers and suppositories are
+/// multiples of 0.5 (half suppositories).
 /// </summary>
 public sealed record DoseRule
 {
@@ -40,6 +42,7 @@ public sealed record DoseRule
         var validAmount = ValidAmount(amount);
         var validUnit = Text.Required(unit, "dose.unit", Dosage.UnitMaxLength);
         var validStep = ValidRoundingStep(roundingStep, perKg);
+        EnsureFitsCountedUnit(validAmount, DoseUnits.CountedUnitOf(validUnit), perKg);
         return new DoseRule(validAmount, validUnit, perKg, validStep);
     }
 
@@ -65,6 +68,29 @@ public sealed record DoseRule
             ? rounded
             : throw new DomainValidationException("dose.amount", $"dose.amount must be between 0.001 and {Dosage.MaxAmount}.");
     }
+
+    private static void EnsureFitsCountedUnit(decimal amount, CountedDoseUnit? counted, bool perKg)
+    {
+        if (counted is null)
+        {
+            return;
+        }
+
+        if (perKg)
+        {
+            throw new DomainValidationException("dose.perKg", "dose.perKg is only for measured units (drops, ml, mg), not for sprays, puffs, suppositories or applications.");
+        }
+
+        if (DoseUnits.AmountStepOf(counted.Value) is { } step && amount % step != 0)
+        {
+            throw new DomainValidationException("dose.amount", AmountStepMessage(counted.Value));
+        }
+    }
+
+    private static string AmountStepMessage(CountedDoseUnit counted) =>
+        counted == CountedDoseUnit.Suppository
+            ? "dose.amount must be a whole or half number of suppositories (a multiple of 0.5)."
+            : "dose.amount must be a whole number of sprays or puffs.";
 
     private static decimal? ValidRoundingStep(decimal? roundingStep, bool perKg)
     {

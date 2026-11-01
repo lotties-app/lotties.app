@@ -24,4 +24,12 @@
     <ProjectReference Include="..\..\src\Lotties.Domain\Lotties.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Part-of-the-day vectors shared with the web port (code/web/src/medications/dayParts.test.ts). -->
+    <None Include="..\..\..\web\src\medications\dayPartVectors.json" Link="Prescriptions\dayPartVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Vaccine status vectors shared with the web port (code/web/src/vaccines/vaccineStatus.test.ts) and the shipped schedule. -->
+    <None Include="..\..\..\web\src\vaccines\vaccineStatusVectors.json" Link="Vaccinations\vaccineStatusVectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\data\vaccine-schedule.br.json" Link="Vaccinations\vaccine-schedule.br.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -15,11 +15,13 @@ interface Props {
   errors: FormErrors;
   /** Interval groups already used by the baby's prescriptions (normalised names). */
   groups: readonly string[];
+  /** The Doctor writing a proposal: no prescriber field, the instructions are hers to the parents. */
+  forDoctor?: boolean;
   onChange: (patch: Partial<PrescriptionForm>) => void;
 }
 
 /** Shared wait, course dates, prescriber and instructions. */
-export function ExtraFields({ form, errors, groups, onChange }: Props) {
+export function ExtraFields({ form, errors, groups, forDoctor = false, onChange }: Props) {
   const { t } = useTranslation();
   const current = normalizeGroupName(form.group);
   const options = [...new Set([...groups, ...(current ? [current] : [])])];
@@ -64,14 +66,20 @@ export function ExtraFields({ form, errors, groups, onChange }: Props) {
           max={LATEST_DATE}
         />
       </Field>
-      <Field label={t('medications.editor.prescriber')} optional error={errors.prescriber}>
-        <TextInput
-          value={form.prescriber}
-          onChange={(prescriber) => onChange({ prescriber })}
-          maxLength={PRESCRIBER_MAX}
-        />
-      </Field>
-      <Field label={t('medications.editor.instructions')} optional error={errors.instructions}>
+      {!forDoctor && (
+        <Field label={t('medications.editor.prescriber')} optional error={errors.prescriber}>
+          <TextInput
+            value={form.prescriber}
+            onChange={(prescriber) => onChange({ prescriber })}
+            maxLength={PRESCRIBER_MAX}
+          />
+        </Field>
+      )}
+      <Field
+        label={t(forDoctor ? 'proposals.sheet.instructions' : 'medications.editor.instructions')}
+        optional
+        error={errors.instructions}
+      >
         <NotesRow
           value={form.instructions}
           onChange={(instructions) => onChange({ instructions })}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
+import type { Prescription } from '../../db/models';
 import { formatList } from '../../i18n/format';
 import { Illustration } from '../../ui/illustrations';
 import { ChipGroup } from '../../ui/form';
@@ -23,6 +24,8 @@ interface Props {
   onChoose: (medications: MedicationEntry[]) => void;
   /** Opens the prescription editor (hidden when omitted). */
   onAddPrescription?: () => void;
+  /** The Doctor proposes a change to a prescription a doctor suggested (hidden when omitted). */
+  onProposeChange?: (prescription: Prescription) => void;
   /** Opened from a dose reminder: the line goes on that prescription's card. */
   reminder?: TrayReminder;
 }
@@ -47,6 +50,7 @@ export function MedsTraySheet({
   disabled,
   onChoose,
   onAddPrescription,
+  onProposeChange,
   reminder,
 }: Props) {
   const { t } = useTranslation();
@@ -83,6 +87,9 @@ export function MedsTraySheet({
                   now={now}
                   disabled={disabled}
                   onLog={(entry) => onChoose([entry])}
+                  {...(onProposeChange
+                    ? { onProposeChange: () => onProposeChange(item.status.prescription) }
+                    : {})}
                 >
                   {reminder && slotAt && (
                     <DoseReminderLine
@@ -114,7 +121,7 @@ export function MedsTraySheet({
       {all.length === 0 && !prescribed ? (
         <Typography color="text.secondary">
           {t('now.medsTray.none')}{' '}
-          <Link to="/settings#medications" onClick={onClose}>
+          <Link to="/hub/medicines" onClick={onClose}>
             {t('now.medsTray.open')}
           </Link>
         </Typography>

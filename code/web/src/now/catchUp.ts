@@ -1,9 +1,9 @@
 import type { BabyEvent, Dosage, EventType } from '../db/models';
 import type { MemberDto } from '../sync/contract';
+import { drunkMl } from '../events/bottleAmounts';
 import { effectiveDurationSeconds } from '../timers/pauseMath';
 import { getOwn } from '../util/ownProperty';
 import {
-  payloadNumber,
   payloadString,
   payloadValue,
   sleepSessionKind,
@@ -119,7 +119,7 @@ function addEvent(group: CatchUpGroup, event: BabyEvent, ids: TypeIds, now: Date
     }
   } else if (ids.feeding.has(event.typeId)) {
     group.feeds.count += 1;
-    group.feeds.totalMl += payloadNumber(event, 'amount_ml') ?? 0;
+    group.feeds.totalMl += drunkMl(event.payload) ?? 0;
     if (!group.feeds.lastAt || event.startedAt > group.feeds.lastAt) {
       group.feeds.lastAt = event.startedAt;
     }

@@ -12,6 +12,15 @@ export function utcOffsetMinutes(date: Date = new Date()): number {
   return -date.getTimezoneOffset() || 0;
 }
 
+/** The device's IANA time zone, when the browser reports one. */
+export function deviceTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Tolerates missing lists so the cards never crash on an unexpected body. */
 function normalize(body: Partial<PredictionsDto> | undefined, babyId: string): PredictionsDto {
   return {
@@ -21,6 +30,9 @@ function normalize(body: Partial<PredictionsDto> | undefined, babyId: string): P
     predictions: Array.isArray(body?.predictions) ? body.predictions : [],
     insufficientData: Array.isArray(body?.insufficientData) ? body.insufficientData : [],
     bedTime: body?.bedTime ?? null,
+    patterns: Array.isArray(body?.patterns) ? body.patterns : [],
+    wakeWindow: body?.wakeWindow ?? null,
+    diaper: body?.diaper ?? null,
   };
 }
 
@@ -36,7 +48,7 @@ export function usePredictions(babyId: string) {
   const query = useQuery({
     queryKey: ['predictions', babyId],
     queryFn: async ({ signal }) => {
-      const path = apiPaths.predictions(babyId, utcOffsetMinutes());
+      const path = apiPaths.predictions(babyId, utcOffsetMinutes(), deviceTimeZone());
       const data = normalize(await api.request<Partial<PredictionsDto>>(path, { signal }), babyId);
       writeCachedPredictions(babyId, { data, fetchedAt: Date.now() });
       return data;

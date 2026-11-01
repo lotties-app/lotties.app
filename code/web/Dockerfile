@@ -11,7 +11,10 @@ ARG VITE_OIDC_CLIENT_ID=""
 ARG VITE_OIDC_AUDIENCE=""
 # Source repository link in the landing footer (AGPL source offer); empty hides the link.
 ARG VITE_REPO_URL=""
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+# Short commit shown on the About screen (the image build has no git checkout); empty hides it.
+ARG APP_COMMIT=""
+ENV APP_COMMIT=$APP_COMMIT \
+VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
     VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
     VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE \

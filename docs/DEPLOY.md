@@ -45,7 +45,7 @@ Compose reads `.env` from the repository root.
 | `POSTGRES_PASSWORD` | localdb | with `localdb` | Superuser password of the local container (no default) |
 | `AUTH_AUTHORITY` | api | yes | OIDC issuer URL |
 | `AUTH_AUDIENCE` | api | yes | API audience access tokens must carry |
-| `CORS_ALLOWED_ORIGINS` | api | no | Only if the web app is served from a different origin than the API |
+| `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `VITE_OIDC_AUTHORITY` | web build | yes | Issuer URL (same as `AUTH_AUTHORITY`); its origin is added to the CSP `connect-src` |
@@ -84,6 +84,14 @@ The app uses the OIDC authorization code flow with PKCE, scopes `openid profile 
 2. Add the provider to an application. The authority is the provider's issuer URL, `https://HOST/application/o/SLUG/`.
 3. Set the audience to the client id (Authentik puts it in `aud`), and use it as `AUTH_AUDIENCE`. Post-logout redirect: `${origin}/login`.
 4. Enable refresh token rotation if your version offers it; otherwise lower the refresh token validity.
+
+### Native apps (iOS/Android)
+
+The Capacitor shell in `code/mobile` bundles the web build and calls the production API from its own WebView origins; sign-in runs in the system browser and returns through the app's URL scheme. Only needed when the apps ship (full design: `docs/design/12-mobile-capacitor.md`):
+
+- API: `CORS_ALLOWED_ORIGINS` also lists `https://localhost` (Android, `androidScheme: https`) and `capacitor://localhost` (iOS), e.g. `https://lotties.app,https://localhost,capacitor://localhost`. The home lab kit takes it from `deploy/homelab/.env`.
+- Identity provider (same public client): valid redirect URI `app.lotties.app://auth/callback`, valid post logout redirect URI `app.lotties.app://auth/logout`, web origins `https://localhost` and `capacitor://localhost` (Keycloak answers the token and userinfo calls of the WebView with CORS for these origins).
+- Native build values: `code/web/.env.native` (public, committed) plus `VITE_OIDC_CLIENT_ID` in `code/web/.env.native.local` or the shell; build with `npm --prefix code/mobile run build:web`.
 
 ## Keycloak theme
 
@@ -370,6 +378,8 @@ Put `lotties_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator 
 
 The migrations are the EF Core code-first migrations in `code/api/src/Lotties.Infrastructure/Persistence/Migrations/`. There is no checked-in SQL script. Supported ways, in order of preference for production:
 
+**Dedicated migrator role.** A separate non-superuser role can run the migrations (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`) if it owns the tables and may create objects in the schema. `docs/sql/grant-migrator-role.sql` sets that up once, as an admin, and is idempotent: it makes the role the owner of the existing tables, gives it `CREATE` on the schema, and sets the API role's default privileges for tables the migrator creates. Never make the migrator a member of a superuser role.
+
 1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 8.0.32):
 
    ```bash
@@ -397,6 +407,30 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
    - It is skipped when the runtime database is not PostgreSQL (the SQLite integration-test host creates its schema itself).
 
 Do not use `EnsureCreated()` against a real database: it creates the tables without the `__EFMigrationsHistory` table, after which migrations can no longer be applied.
+
+#### Migrations that seed built-in event types
+
+Built-in event types are rows in `event_types` (with `baby_id` null) inserted by migrations, and clients only learn about them from `GET /babies/{id}/event-types`. Until the migration is applied the API does not serve the type, so phones show neither its tile nor its form, and the API rejects events that reference the new type id.
+
+- `NasalSuction` (`20261022000952_NasalSuction`): adds the built-in `nasal_suction` type (Nasal suction / Aspiração nasal, instant, optional `tool` and `saline`). Seed only: one insert, no table changes, no event rewrites, no new grants. Apply it with `dotnet ef database update` (option 1 above) or let `DB_AUTO_MIGRATE=true` apply it at startup, **before** deploying the web build that offers the Nasal suction preset; the preset stays hidden until the type is served.
+- `BellyMassage` (`20261022011434_BellyMassage`, after `PrescriptionDayParts`): adds the built-in `belly_massage` type (Belly massage / Massagem na barriguinha, timed, optional `reason` and `helped`, plus the hidden pause keys). Seed only: one insert, no table changes, no event rewrites, no new grants. Apply it with `dotnet ef database update` (option 1 above) or let `DB_AUTO_MIGRATE=true` apply it at startup, **before** deploying the web build that offers the Belly massage preset; the preset stays hidden until the type is served.
+- `FussyEvent` (`20261022020422_FussyEvent`, after `BellyPainPattern`): adds the built-in `fussy` type (Fussy / crying / Choro / irritação, timed, optional `intensity` and `what_helped`, plus the hidden pause keys). Seed only: one insert, no table changes, no event rewrites, no new grants. Apply it **before** deploying the web build that offers the Fussy preset; the preset stays hidden until the type is served.
+- `MoreEventTypes` (`20261022213633_MoreEventTypes`, after `DoctorProposals`): adds eight built-in types (`nail_trim`, `temperature`, `spit_up`, `teething`, `milestone`, `symptom`, `outdoor`, `skin_care`). Seed only: one insert of eight rows, no table changes, no event rewrites, no new grants. The temperature field uses the new optional `decimals` member of the field JSON; an older API build would read that field without its one-decimal limit, so deploy the API build of this change with the migration. It is applied at the next deploy like the others (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`), **before** the web build that offers the eight presets; each preset stays hidden until its type is served.
+
+#### Migrations of the notification preferences
+
+- `BellyPainPattern` (`20261022014026_BellyPainPattern`) and `FussyAndOvertiredPrefs` (`20261022021117_FussyAndOvertiredPrefs`, right after `FussyEvent`): add `baby_notification_preferences.belly_pain_pattern`, then `overtired_warning` and `fussy_pattern` (all `boolean NOT NULL DEFAULT FALSE`, so stored rows stay valid with the new kinds off) and recreate the scheduler's filtered candidate index `ix_baby_notification_preferences_baby_id` with the wider filter (dropped and created again inside the migration; no data is dropped or rewritten, no new grants). Apply them with the API that sends the new kinds; until then the API keeps working on the old columns. From this API version `PUT /babies/{id}/notification-preferences` merges (an omitted field keeps its stored value), so an older web build still in a browser cache can no longer turn off a kind it does not know.
+- `DiaperHeadsUpPrefs` (`20261022045238_DiaperHeadsUpPrefs`, right after `FussyAndOvertiredPrefs`): adds `baby_notification_preferences.diaper_wet_headsup` and `diaper_dirty_headsup` (`boolean NOT NULL DEFAULT FALSE`, the heads-ups stay off for stored rows) and recreates `ix_baby_notification_preferences_baby_id` with the filter widened to them (dropped and created again inside the migration; no data dropped or rewritten, no new grants). Apply it with `dotnet ef database update` (or `DB_AUTO_MIGRATE=true`) together with the API that plans `diaper_wet_headsup` / `diaper_dirty_headsup`; the predictions' `diaper` part needs no migration. An older web build keeps working: it does not send the new fields, and the merge keeps them.
+
+## Medicine catalog (ANVISA official list)
+
+The shared catalog can be filled with Brazil's registered medicines (brand names, forms and active ingredients) from ANVISA's open data, plus a small curated list (`code/api/tools/Lotties.CatalogImporter/Data/curated-products.json`, not reviewed by a pharmacist), by the admin tool `code/api/tools/Lotties.CatalogImporter` (design, licence, mapping and safety rules: [docs/design/13-anvisa-catalog.md](design/13-anvisa-catalog.md)). It is optional: the app works without it.
+
+1. Apply the migration `ProductExternalRef` (`20261022143647_ProductExternalRef`, right after `DiaperHeadsUpPrefs`) with the API version that ships it, like any other migration (see [Applying migrations](#applying-migrations)). It only adds nullable columns to `products` (`source`, `external_ref`, `presentation`, `ambiguous_name`, `inactive_since`) and the partial unique index `ix_products_source_external_ref`; no data is rewritten and no grant is needed.
+2. Run the importer from a machine that can reach the database (an admin workstation through a VPN or port-forward, or a one-off job). Never from inside the API pod: the pod has no SDK and must not download files. It needs the .NET 8 SDK and outbound HTTPS to `dados.anvisa.gov.br` (or the two CSV files copied to that machine).
+3. Dry run first (no database connection): `dotnet run --project code/api/tools/Lotties.CatalogImporter -- --dry-run --lookup "Luftal,Simeticona"`. Check the counts and the spot checks.
+4. Real run, with the same variables as the API: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD` (the app role has `SELECT, INSERT, UPDATE, DELETE` on all tables, which is enough), or `--use-migrator` to connect with `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD` instead: `dotnet run --project code/api/tools/Lotties.CatalogImporter`. Set the variables in the shell (for example from a password manager), never on the command line or in a committed file; the tool prints the host and database name, never the user or password. One transaction; about 20 s for the full list (8,880 official + 7 curated products) on a local database; re-running changes only what changed in the sources. The curated list ships next to the tool (`--curated <path|none>` to change or skip it).
+5. Refresh monthly (ANVISA updates the registrations monthly, the CMED price list about monthly) with the same command plus `--refresh` to download again. Products that left the list are marked inactive (hidden from search, still readable for linked medications), never deleted. The downloads live in `--cache-dir` (default `<temp>/lotties-anvisa-cache`), never in the repository.
 
 ## Podman
 

@@ -2,9 +2,13 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { formatDate, formatNumber, formatUnit } from '../../i18n/format';
+import { DayPartRows } from '../../medications/DayPartRows';
 import { needsConfirmation, offeredAmount, prescriptionEntry } from '../../medications/doseEntry';
+import { amountStepOf, countedUnitOf } from '../../medications/doseUnits';
 import { amountWithUnit, doseText, unitText } from '../../medications/prescriptionForm';
 import { earlyWarning, stateLine, type StateTone } from '../../medications/statusText';
+import { isDoctorSourced } from '../../proposals/proposalModel';
+import { Provenance } from '../../proposals/Provenance';
 import { Field, NumberStepper } from '../../ui/form';
 import { filledSurface, palette } from '../../ui/form/styles';
 import { Icon } from '../../ui/Icon';
@@ -15,6 +19,11 @@ interface Props {
   now: Date;
   disabled: boolean;
   onLog: (entry: MedicationEntry) => void;
+  /**
+   * The Doctor proposes a change to this prescription (offered on prescriptions a doctor suggested
+   * only; the parents decide, docs/design/16-doctor-access.md section 10.5).
+   */
+  onProposeChange?: () => void;
   /** Shown under the state line (the reminder line of a notification). */
   children?: ReactNode;
 }
@@ -103,7 +112,9 @@ function Confirm({
   const [amount, setAmount] = useState<number | null>(offeredAmount(status));
   const perKg = status.prescription.dose.perKg;
   const unit = status.prescription.dose.unit;
-  const step = unit.toLowerCase() === 'ml' ? 0.5 : 1;
+  const counted = countedUnitOf(unit);
+  // Half steps for ml and suppositories (half suppositories); whole steps otherwise.
+  const step = unit.toLowerCase() === 'ml' ? 0.5 : ((counted && amountStepOf(counted)) ?? 1);
   const label = early
     ? t('medications.confirm.logAnyway')
     : t('medications.confirm.log', { dose: amount ? amountWithUnit(amount, unit) : '' });
@@ -156,9 +167,11 @@ function Confirm({
  * One active prescription in the Meds tray: its dose, its state from the offline calculator and a
  * Log button. A fixed dose logs in one tap; a per-kg dose or a dose before the allowed time opens
  * a confirm step first (the inputs of the suggestion; "Too early: next allowed at 18:00. Log
- * anyway?"). Logging early is never blocked and is recorded as `override`.
+ * anyway?"). Logging early is never blocked and is recorded as `override`. A part-of-the-day
+ * prescription lists today's parts, offers "Give now" while a part is open and not given, and asks
+ * first for a second dose in a part or a dose outside the chosen parts (also `override`).
  */
-export function PrescriptionCard({ item, now, disabled, onLog, children }: Props) {
+export function PrescriptionCard({ item, now, disabled, onLog, onProposeChange, children }: Props) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
   const { status, medication } = item;
@@ -166,6 +179,8 @@ export function PrescriptionCard({ item, now, disabled, onLog, children }: Props
   const line = stateLine(status, now);
   const warning = earlyWarning(status, now);
   const early = warning !== null;
+  // A part of the day is open and has no dose yet: one tap gives the prescribed dose.
+  const partDue = !early && status.dayParts?.current?.state === 'due';
   const offered = offeredAmount(status);
   const doseLine = p.dose.perKg
     ? offered !== null
@@ -211,14 +226,31 @@ export function PrescriptionCard({ item, now, disabled, onLog, children }: Props
             variant={early ? 'outlined' : 'contained'}
             disabled={disabled}
             onClick={press}
-            aria-label={t('medications.tray.logNamed', { name: medication.name })}
+            aria-label={
+              partDue
+                ? t('medications.tray.giveNowNamed', { name: medication.name })
+                : t('medications.tray.logNamed', { name: medication.name })
+            }
             sx={{ minHeight: 48, minWidth: 80, borderRadius: '999px', flex: 'none' }}
           >
-            {t('medications.tray.logOne')}
+            {partDue ? t('medications.tray.giveNow') : t('medications.tray.logOne')}
           </Button>
         )}
       </Box>
       <StateText text={line.text} tone={line.tone} />
+      {status.dayParts && <DayPartRows parts={status.dayParts} now={now} />}
+      <Provenance prescription={p} />
+      {onProposeChange && isDoctorSourced(p) && (
+        <Button
+          size="small"
+          startIcon={<Icon name="exchange" size={20} />}
+          onClick={onProposeChange}
+          aria-label={t('medications.tray.proposeChangeNamed', { name: medication.name })}
+          sx={{ minHeight: 44, justifySelf: 'start' }}
+        >
+          {t('medications.tray.proposeChange')}
+        </Button>
+      )}
       {children}
       {confirming && (
         <Confirm

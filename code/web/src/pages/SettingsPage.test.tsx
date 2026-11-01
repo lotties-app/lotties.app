@@ -14,7 +14,37 @@ import { renderWithDb, settleSync } from '../test/renderApp';
 import { FEEDING, seedBaby } from '../test/seed';
 import { createEvent, stopEvent } from '../db/eventCommands';
 import { FEEDING_TYPE } from '../test/builtInTypes';
+import { Link, Route, Routes } from 'react-router-dom';
+import { HubFamilyPage, HubFormulasPage, HubImportPage, HubMedicinesPage } from './HubSubPages';
 import { SettingsPage } from './SettingsPage';
+
+/** Sections that moved from Settings to the Hub: their page and a test link to reach it. */
+const MOVED: Record<string, string> = {
+  Medications: '/hub/medicines',
+  Formulas: '/hub/formulas',
+  Import: '/hub/import',
+  'Members & invites': '/hub/family',
+};
+
+function SettingsAndHub() {
+  return (
+    <>
+      <nav>
+        {Object.values(MOVED).map((to) => (
+          <Link key={to} to={to}>{`go ${to}`}</Link>
+        ))}
+        <Link to="/settings">go settings</Link>
+      </nav>
+      <Routes>
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/hub/medicines" element={<HubMedicinesPage />} />
+        <Route path="/hub/formulas" element={<HubFormulasPage />} />
+        <Route path="/hub/family" element={<HubFamilyPage />} />
+        <Route path="/hub/import" element={<HubImportPage />} />
+      </Routes>
+    </>
+  );
+}
 
 let db: BabyRoutineDb;
 
@@ -54,11 +84,16 @@ async function setup(
 ) {
   await seedBaby(db, { medications: true, role });
   const fake = fakeApi(handler);
-  renderWithDb(db, <SettingsPage />, { api: fake.api });
+  renderWithDb(db, <SettingsAndHub />, { api: fake.api, route: '/settings' });
   return fake;
 }
 
 const openSection = async (name: string) => {
+  const moved = Object.hasOwn(MOVED, name) ? MOVED[name] : undefined;
+  if (moved) {
+    fireEvent.click(await screen.findByRole('link', { name: `go ${moved}` }));
+    return;
+  }
   fireEvent.click(await screen.findByRole('button', { name }));
 };
 
@@ -443,7 +478,7 @@ describe('SettingsPage members and invites', () => {
     await screen.findByText('Bia');
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Role for Ana' }));
-    fireEvent.click(screen.getByRole('option', { name: 'Viewer' }));
+    fireEvent.click(screen.getByRole('option', { name: /^Viewer/ }));
     expect(await screen.findByText(/needs at least one owner/)).toBeTruthy();
     expect(writes()[0]).toMatchObject({
       method: 'PATCH',
@@ -456,6 +491,97 @@ describe('SettingsPage members and invites', () => {
     await waitFor(() =>
       expect(writes().at(-1)).toMatchObject({ method: 'DELETE', path: `${BASE}/members/u2` }),
     );
+  });
+
+  it('invites a caregiver: the picker names each role with what it may do', async () => {
+    const { writes } = await setup((call) => {
+      if (call.method === 'POST') {
+        return {
+          id: 'inv-2',
+          babyId: BABY_ID,
+          role: 'Caregiver',
+          createdBy: 'u1',
+          createdAt: JOINED,
+          expiresAt: '2026-10-30T10:00:00.000Z',
+          token: 'grandma-token',
+        };
+      }
+      return handler()(call);
+    });
+    await openSection('Members & invites');
+    await screen.findByText('Bia');
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Invite role' }));
+    const options = screen.getAllByRole('option').map((option) => option.textContent);
+    expect(options).toEqual([
+      'ParentCan log and edit everything, and manage medications and settings',
+      'CaregiverCan log events and edit their own entries',
+      'ViewerCan only view',
+      'OwnerFull control, including members and invites',
+      'DoctorA healthcare professional: sees everything, writes notes and measurements',
+    ]);
+    fireEvent.click(screen.getByRole('option', { name: /^Caregiver/ }));
+    expect(await screen.findByText('Can log events and edit their own entries')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create invite link' }));
+
+    await waitFor(() =>
+      expect(writes()[0]).toMatchObject({
+        method: 'POST',
+        path: `${BASE}/invites`,
+        body: { role: 'Caregiver', expiresInDays: 7 },
+      }),
+    );
+  });
+
+  it('makes a member a caregiver, and lists caregivers by their role name', async () => {
+    const { writes } = await setup((call) => {
+      if (call.method === 'GET' && call.path === `${BASE}/members`) {
+        return [
+          ...MEMBERS,
+          { userId: 'u3', displayName: 'Lu', role: 'Caregiver', joinedAt: JOINED },
+        ];
+      }
+      return handler()(call);
+    });
+    await openSection('Members & invites');
+    await screen.findByText('Lu');
+    expect(screen.getByRole('combobox', { name: 'Role for Lu' }).textContent).toBe('Caregiver');
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Role for Bia' }));
+    fireEvent.click(screen.getByRole('option', { name: /^Caregiver/ }));
+
+    await waitFor(() =>
+      expect(writes()[0]).toMatchObject({
+        method: 'PATCH',
+        path: `${BASE}/members/u2`,
+        body: { role: 'Caregiver' },
+      }),
+    );
+  });
+
+  it('tells a caregiver what they can do and offers nothing to manage', async () => {
+    await setup(handler(), 'Caregiver');
+    expect(
+      await screen.findByText(
+        'You are a caregiver for Lia: you can log events and edit your own entries. The parents manage everything else.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/view-only access/)).toBeNull();
+    await openSection('Event types');
+    expect(await screen.findByText('You can view event types but not change them.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add event type' })).toBeNull();
+    await openSection('Medications');
+    expect(await screen.findByText('You can view medications but not change them.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add medication' })).toBeNull();
+    await openSection('Import');
+    expect(
+      await screen.findByText('Only parents and owners can import data into this baby.'),
+    ).toBeTruthy();
+    await openSection('Members & invites');
+    await screen.findByText('Bia');
+    expect(screen.queryByRole('button', { name: 'Create invite link' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Role for Bia' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Leave this baby' })).toBeTruthy();
   });
 
   it('lets any member leave', async () => {
@@ -630,14 +756,11 @@ describe('SettingsPage links to one section (#hash)', () => {
   it('opens the baby section by default', async () => {
     await renderAt('/settings');
     expect(await expanded('Baby')).toBe('true');
-    expect(await expanded('Members & invites')).toBe('false');
+    expect(await expanded('Sync')).toBe('false');
   });
 
   it.each([
     ['#baby', 'Baby'],
-    ['#members', 'Members & invites'],
-    ['#import', 'Import'],
-    ['#medications', 'Medications'],
     ['#event-types', 'Event types'],
     ['#sync', 'Sync'],
   ])('%s opens %s', async (hash, title) => {
@@ -646,8 +769,8 @@ describe('SettingsPage links to one section (#hash)', () => {
   });
 
   it('a link to another section collapses the baby section', async () => {
-    await renderAt('/settings#members');
-    expect(await expanded('Members & invites')).toBe('true');
+    await renderAt('/settings#sync');
+    expect(await expanded('Sync')).toBe('true');
     expect(await expanded('Baby')).toBe('false');
   });
 
@@ -658,8 +781,8 @@ describe('SettingsPage links to one section (#hash)', () => {
   });
 
   it('a section can still be closed by hand', async () => {
-    await renderAt('/settings#members');
-    fireEvent.click(await screen.findByRole('button', { name: 'Members & invites' }));
-    await waitFor(async () => expect(await expanded('Members & invites')).toBe('false'));
+    await renderAt('/settings#sync');
+    fireEvent.click(await screen.findByRole('button', { name: 'Sync' }));
+    await waitFor(async () => expect(await expanded('Sync')).toBe('false'));
   });
 });

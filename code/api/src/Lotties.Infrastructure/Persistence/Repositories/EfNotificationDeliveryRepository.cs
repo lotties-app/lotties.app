@@ -41,6 +41,30 @@ internal sealed class EfNotificationDeliveryRepository(LottiesDbContext context,
         return claimed.Select(key => new DeliveredNotification(key.UserId, key.DedupeKey)).ToArray();
     }
 
+    /// <remarks>The kinds are filtered in memory (a day of one family's deliveries) so the query needs no converted-enum list translation.</remarks>
+    public async Task<IReadOnlyList<SentHeadsUp>> ListSentHeadsUpsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        IReadOnlyCollection<NotificationKind> kinds,
+        DateTimeOffset createdSince,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(userIds);
+        ArgumentNullException.ThrowIfNull(kinds);
+        var rows = await context.NotificationDeliveries
+            .AsNoTracking()
+            .Where(delivery => userIds.Contains(delivery.UserId)
+                && delivery.CreatedAt >= createdSince
+                && delivery.BabyId != null
+                && (delivery.Status == DeliveryStatus.Sent || delivery.Status == DeliveryStatus.Pending))
+            .Select(delivery => new { delivery.UserId, delivery.BabyId, delivery.Kind, delivery.DedupeKey, delivery.DueAt, delivery.SentAt })
+            .ToListAsync(cancellationToken);
+        return rows
+            .Where(row => kinds.Contains(row.Kind))
+            .GroupBy(row => (row.UserId, row.DedupeKey))
+            .Select(group => new SentHeadsUp(group.Key.UserId, group.First().BabyId!.Value, group.First().Kind, group.Key.DedupeKey, group.Min(row => row.SentAt ?? row.DueAt)))
+            .ToArray();
+    }
+
     public Task<int> CancelPendingForSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default) =>
         CancelAsync(context.NotificationDeliveries.Where(delivery => delivery.SubscriptionId == subscriptionId), cancellationToken);
 

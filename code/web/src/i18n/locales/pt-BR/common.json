@@ -1,0 +1,47 @@
+{
+  "app": {
+    "name": "Lotties",
+    "loadingPage": "Carregando a página"
+  },
+  "common": {
+    "add": "Adicionar",
+    "back": "Voltar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "discard": "Descartar",
+    "done": "Pronto",
+    "edit": "Editar",
+    "loading": "Carregando",
+    "name": "Nome",
+    "next": "Avançar",
+    "notes": "Observações",
+    "reload": "Recarregar",
+    "retry": "Tentar de novo",
+    "save": "Salvar",
+    "type": "Tipo",
+    "unit": "Unidade",
+    "required": "Obrigatório",
+    "running": "Em andamento",
+    "event": "Evento",
+    "account": "Conta"
+  },
+  "age": {
+    "day_one": "{{count}} dia",
+    "day_other": "{{count}} dias",
+    "week_one": "{{count}} semana",
+    "week_other": "{{count}} semanas",
+    "month_one": "{{count}} mês",
+    "month_other": "{{count}} meses",
+    "year_one": "{{count}} ano",
+    "year_other": "{{count}} anos",
+    "join": "{{first}} e {{second}}"
+  },
+  "format": {
+    "durationH": "{{h}} h",
+    "durationM": "{{m}} min",
+    "durationHM": "{{h}} h {{m}} min",
+    "durationCompactH": "{{h}}h",
+    "durationCompactM": "{{m}}min",
+    "durationCompactHM": "{{h}}h {{m}}min"
+  }
+}

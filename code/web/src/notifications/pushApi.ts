@@ -48,14 +48,51 @@ export interface NotificationSettingsDto {
 export type DoseLead = 0 | 5 | 15;
 export type NapLead = 0 | 10 | 20;
 
+/**
+ * The state sent by `PUT /babies/{id}/notification-preferences`. The server merges: a field left
+ * out keeps its stored value, so a client that does not know a newer kind never turns it off.
+ */
 export interface ReminderPreferences {
   doseDue: boolean;
   doseLeadMinutes: DoseLead;
   napWindow: boolean;
   napLeadMinutes: NapLead;
+  /** The belly pain pattern heads-up (`belly_pain_pattern`); off by default. */
+  bellyPainPattern: boolean;
+  /** The overtired heads-up (`overtired_warning`); off by default. */
+  overtiredWarning: boolean;
+  /** The fussy pattern heads-up (`fussy_pattern`); off by default. */
+  fussyPattern: boolean;
+  /** The wet diaper heads-up (`diaper_wet_headsup`); off by default. */
+  diaperWetHeadsUp: boolean;
+  /** The dirty diaper heads-up (`diaper_dirty_headsup`); off by default. */
+  diaperDirtyHeadsUp: boolean;
+  /** The appointment reminders (`appointment_reminder`); ON by default (the family created the appointment). */
+  appointmentReminders: boolean;
+  /** The doctor's suggestions and recommendations (`doctor_suggestion`); off by default. */
+  doctorSuggestions: boolean;
+  /** The vaccine reminders (`vaccine_due`, Owners and Parents only); off by default. */
+  vaccineReminders: boolean;
 }
 
-export interface BabyPreferencesDto extends ReminderPreferences {
+/**
+ * The kinds added after the first release: absent on older servers (= off, except the appointment
+ * reminders, which such a server does not send at all).
+ */
+type AdditiveKinds =
+  | 'bellyPainPattern'
+  | 'overtiredWarning'
+  | 'fussyPattern'
+  | 'diaperWetHeadsUp'
+  | 'diaperDirtyHeadsUp'
+  | 'appointmentReminders'
+  | 'doctorSuggestions'
+  | 'vaccineReminders';
+
+export interface BabyPreferencesDto
+  extends
+    Omit<ReminderPreferences, AdditiveKinds>,
+    Partial<Pick<ReminderPreferences, AdditiveKinds>> {
   babyId: string;
   /** False for Viewers: they never get baby reminders. */
   canReceive: boolean;

@@ -22,13 +22,14 @@ const measurementsApi = (call: { path: string }) =>
   call.path.includes('/measurements') ? [] : undefined;
 
 describe('InsightsPage', () => {
-  it('has its own heading, a calm "more is coming" note and Growth under it', async () => {
+  it('has its own heading, the insights on their way and Growth under it', async () => {
     await seedBaby(db);
     renderWithDb(db, <InsightsPage />, { api: fakeApi(measurementsApi).api });
 
     expect(screen.getByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
-    expect(screen.getByText(/Sleep rhythm, feeding and diaper trends/)).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
+    expect(await screen.findByText(/Each one opens after a few days of logging/)).toBeTruthy();
+    expect(screen.getByRole('progressbar', { name: 'Sleep rhythm' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Growth', level: 2 })).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Add measurement' })).toBeTruthy();
   });
@@ -37,6 +38,7 @@ describe('InsightsPage', () => {
     renderWithDb(db, <InsightsPage />, { api: fakeApi(measurementsApi).api });
     expect(await screen.findByText(/Create a baby on the Now screen to track growth/)).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'More insights are coming' })).toBeTruthy();
+    expect(screen.getByText(/Sleep rhythm, feeding and diaper trends/)).toBeTruthy();
   });
 
   it('speaks Portuguese', async () => {
@@ -44,7 +46,7 @@ describe('InsightsPage', () => {
     await seedBaby(db);
     renderWithDb(db, <InsightsPage />, { api: fakeApi(measurementsApi).api });
     expect(screen.getByRole('heading', { name: 'Insights', level: 1 })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Mais análises a caminho' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Mais análises a caminho' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Crescimento', level: 2 })).toBeTruthy();
   });
 });

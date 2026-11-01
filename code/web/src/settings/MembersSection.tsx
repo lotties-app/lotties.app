@@ -8,7 +8,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -18,7 +17,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { purgeBabyData } from '../db/purge';
 import { changeMemberRole, leaveBaby, listMembers, removeMember } from '../api/managementApi';
 import { useApiClient } from '../api/ApiClientContext';
-import { isOwner } from '../baby/permissions';
+import { canSeeFamilyRecords, isOwner } from '../baby/permissions';
 import { useDatabase } from '../db/DatabaseContext';
 import type { Baby, BabyRole } from '../db/models';
 import { formatDate } from '../i18n/format';
@@ -31,10 +30,14 @@ import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorNotice } from './ErrorNotice';
 import { InvitesPanel } from './InvitesPanel';
+import { AccessLogPanel } from './AccessLogPanel';
+import { DoctorName } from '../professional/DoctorName';
+import { fromProfessionalDto } from '../sync/contract';
+import { roleOptions, selectRoleProps } from './roleOptions';
 import { useServerAction } from './useServerAction';
 import { Icon } from '../ui/Icon';
 
-const ROLES: BabyRole[] = ['Owner', 'Parent', 'Viewer'];
+const ROLES: BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer'];
 
 const memberName = (m: MemberDto) => m.displayName?.trim() || translate('settings.members.unnamed');
 
@@ -54,13 +57,42 @@ function MemberRow({
   const { t } = useTranslation();
   const name = memberName(member);
   const role = parseRole(member.role);
+  const professional = role === 'Doctor' ? fromProfessionalDto(member.professional) : null;
   return (
     <ListItem divider sx={{ gap: 1, flexWrap: 'wrap' }}>
       <ListItemText
-        primary={name}
-        secondary={t('settings.members.joined', { date: formatDate(member.joinedAt) })}
+        disableTypography={!!professional}
+        primary={
+          professional ? (
+            <DoctorName person={{ displayName: name, professional }} variant="body2" />
+          ) : (
+            name
+          )
+        }
+        secondary={
+          professional ? (
+            <Typography variant="body2" color="text.secondary" component="p">
+              {t('settings.members.joined', { date: formatDate(member.joinedAt) })}
+            </Typography>
+          ) : (
+            t('settings.members.joined', { date: formatDate(member.joinedAt) })
+          )
+        }
       />
-      {manage ? (
+      {manage && role === 'Doctor' ? (
+        // Doctor access comes with an invite (it needs her professional profile) and ends by
+        // removing her: no role picker.
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Chip size="small" label={t('baby.roles.Doctor')} />
+          <IconButton
+            aria-label={t('settings.members.removeNamed', { name })}
+            disabled={disabled}
+            onClick={onRemove}
+          >
+            <Icon name="person-remove" />
+          </IconButton>
+        </Stack>
+      ) : manage ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <TextField
             select
@@ -69,13 +101,10 @@ function MemberRow({
             value={role}
             disabled={disabled}
             onChange={(e) => onRole(e.target.value as BabyRole)}
+            slotProps={{ select: selectRoleProps(t) }}
             sx={{ minWidth: 120 }}
           >
-            {ROLES.map((r) => (
-              <MenuItem key={r} value={r}>
-                {t(`baby.roles.${r}`)}
-              </MenuItem>
-            ))}
+            {roleOptions(ROLES, t)}
           </TextField>
           <IconButton
             aria-label={t('settings.members.removeNamed', { name })}
@@ -105,9 +134,12 @@ export function MembersSection({ baby }: { baby: Baby }) {
   const [leaving, setLeaving] = useState<'confirm' | 'unsynced' | null>(null);
   const countUnsynced = () => countUnsyncedMutations(db, baby.id);
   const unsynced = useLiveQuery(countUnsynced, [db, baby.id]) ?? 0;
+  // A Doctor never lists the family (the server refuses her): she only gets "Leave".
+  const family = canSeeFamilyRecords(baby);
   const members = useQuery({
     queryKey: ['members', baby.id],
     queryFn: () => listMembers(api, baby.id),
+    enabled: family,
   });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['members', baby.id] });
 
@@ -153,21 +185,35 @@ export function MembersSection({ baby }: { baby: Baby }) {
     <Stack spacing={2}>
       {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
       {!dialogOpen && <ErrorNotice message={error} />}
-      {members.isError && <ErrorNotice message={t('settings.members.loadFailed')} />}
-      <List aria-label={t('settings.members.list')} disablePadding>
-        {members.data?.map((m) => (
-          <MemberRow
-            key={m.userId}
-            member={m}
-            manage={manage}
-            disabled={pending || !online}
-            onRole={(role) => void setRole(m, role)}
-            onRemove={() => setRemoving(m)}
-          />
-        ))}
-      </List>
-      {manage && <InvitesPanel baby={baby} />}
-      {!manage && <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>}
+      {family && members.isError && <ErrorNotice message={t('settings.members.loadFailed')} />}
+      {family && (
+        <List aria-label={t('settings.members.list')} disablePadding>
+          {members.data?.map((m) => (
+            <MemberRow
+              key={m.userId}
+              member={m}
+              manage={manage}
+              disabled={pending || !online}
+              onRole={(role) => void setRole(m, role)}
+              onRemove={() => setRemoving(m)}
+            />
+          ))}
+        </List>
+      )}
+      {/* Anchors of the Hub entries "Invite someone" and "Doctor access" (/hub/family#invite). */}
+      {manage && (
+        <div id="invite">
+          <InvitesPanel baby={baby} />
+        </div>
+      )}
+      {manage && (
+        <div id="doctor-access">
+          <AccessLogPanel baby={baby} />
+        </div>
+      )}
+      {family && !manage && (
+        <Typography color="text.secondary">{t('settings.members.ownerOnly')}</Typography>
+      )}
       <Button
         color="error"
         variant="outlined"
@@ -180,7 +226,12 @@ export function MembersSection({ baby }: { baby: Baby }) {
       {removing && (
         <ConfirmDialog
           title={t('settings.members.removeTitle', { name: memberName(removing) })}
-          body={t('settings.members.removeBody')}
+          body={t(
+            parseRole(removing.role) === 'Doctor'
+              ? 'doctor.members.removeBody'
+              : 'settings.members.removeBody',
+            { baby: baby.name },
+          )}
           confirmLabel={t('settings.members.removeConfirm')}
           pending={pending}
           error={error}

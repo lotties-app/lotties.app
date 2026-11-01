@@ -102,6 +102,9 @@ public sealed class NotificationLeaseContentionTests : IDisposable
         public Task<IReadOnlyList<DeliveredNotification>> ListClaimedKeysAsync(IReadOnlyCollection<Guid> userIds, DateTimeOffset createdSince, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<DeliveredNotification>>([]);
 
+        public Task<IReadOnlyList<SentHeadsUp>> ListSentHeadsUpsAsync(IReadOnlyCollection<Guid> userIds, IReadOnlyCollection<NotificationKind> kinds, DateTimeOffset createdSince, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SentHeadsUp>>([]);
+
         public Task<int> CancelPendingForSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default) =>
             inner.CancelPendingForSubscriptionAsync(subscriptionId, cancellationToken);
 

@@ -220,6 +220,33 @@ public sealed class NotificationRepositoryTests(NotificationPersistenceHost host
     }
 
     [Fact]
+    public async Task ListSentHeadsUpsAsync_ReturnsSentOrPendingHeadsUpsOfTheKindsOncePerKey()
+    {
+        var userId = await NewUserAsync();
+        var phone = NewSubscription(userId, Now);
+        var laptop = NewSubscription(userId, Now);
+        await SeedAsync(phone, laptop);
+        var babyId = Guid.NewGuid();
+        var wet = NewDiaperPlan(userId, babyId, NotificationKind.DiaperWetHeadsUp, Now.AddMinutes(-50));
+        var sentOnPhone = Claim(phone, wet, Now.AddMinutes(-50));
+        sentOnPhone.RecordAttempt(201, null, Now.AddMinutes(-49));
+        var failedOnLaptop = Claim(laptop, wet, Now.AddMinutes(-50));
+        failedOnLaptop.RecordAttempt(413, null, Now.AddMinutes(-49));
+        var dirtyPending = Claim(phone, NewDiaperPlan(userId, babyId, NotificationKind.DiaperDirtyHeadsUp, Now.AddMinutes(-5)), Now.AddMinutes(-5));
+        var dirtyFailed = Claim(phone, NewDiaperPlan(userId, babyId, NotificationKind.DiaperDirtyHeadsUp, Now.AddMinutes(-20)), Now.AddMinutes(-20));
+        dirtyFailed.RecordAttempt(413, null, Now.AddMinutes(-20));
+        await SeedAsync(sentOnPhone, failedOnLaptop, dirtyPending, dirtyFailed, Claim(phone, NewDosePlan(userId, babyId, Now), Now));
+
+        var sent = await WithAsync<INotificationDeliveryRepository, IReadOnlyList<SentHeadsUp>>(repository =>
+            repository.ListSentHeadsUpsAsync([userId], [NotificationKind.DiaperWetHeadsUp, NotificationKind.DiaperDirtyHeadsUp], Now.AddDays(-1)));
+
+        Assert.Equal(
+            [(NotificationKind.DiaperDirtyHeadsUp, Now.AddMinutes(-5)), (NotificationKind.DiaperWetHeadsUp, Now.AddMinutes(-49))],
+            sent.OrderBy(headsUp => headsUp.At).Reverse().Select(headsUp => (headsUp.Kind, headsUp.At)));
+        Assert.All(sent, headsUp => Assert.Equal((userId, babyId), (headsUp.UserId, headsUp.BabyId)));
+    }
+
+    [Fact]
     public async Task ListCandidatesAsync_ReturnsOwnersAndParentsWithAKindOnAndAnActiveSubscription()
     {
         var baby = await Factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Viewer);
@@ -420,6 +447,12 @@ public sealed class NotificationRepositoryTests(NotificationPersistenceHost host
             NotificationRules.DoseTimeToLive,
             NotificationUrgency.High,
             new NotificationContent(babyId, prescriptionId, slot, null));
+    }
+
+    private static PlannedNotification NewDiaperPlan(Guid userId, Guid babyId, NotificationKind kind, DateTimeOffset dueAt)
+    {
+        var key = kind == NotificationKind.DiaperWetHeadsUp ? NotificationKey.ForDiaperWet(babyId, dueAt.AddHours(-2)) : NotificationKey.ForDiaperDirty(babyId, dueAt.AddHours(-1));
+        return new PlannedNotification(userId, kind, babyId, key, key, dueAt, TimeSpan.FromMinutes(40), NotificationUrgency.Normal, new NotificationContent(babyId, null, dueAt.AddMinutes(10), null));
     }
 
     private static NotificationDelivery Claim(PushSubscription subscription, PlannedNotification planned, DateTimeOffset now) =>

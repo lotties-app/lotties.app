@@ -33,7 +33,9 @@ export function tileLabel(id: TileId): string {
 /** "Running 0:42", "Last 2h ago", "Not tracked today"; empty for More. */
 export function formatTileStatus(tile: QuickTile, now: Date): string {
   if (tile.status === null) return '';
-  return formatPresetStatus(tile.status, now, tile.running?.startedAt);
+  // The nursing session, else a running bottle (the newest feed, still open): never "Running 0:00".
+  const open = tile.last?.endedAt === null ? tile.last.startedAt : undefined;
+  return formatPresetStatus(tile.status, now, tile.running?.startedAt ?? open);
 }
 
 export function sleepActionLabel(kind: SleepActionKind): string {
@@ -101,7 +103,12 @@ function sleepMessage(receipt: Extract<Receipt, { kind: 'sleep' }>, time: string
 function trayMessage(choice: TrayChoice, types: readonly EventType[]): string {
   switch (choice.kind) {
     case 'bottle':
-      return t('now.toast.bottle', { amount: formatNumber(choice.amountMl) });
+      return choice.drunkMl !== undefined && choice.drunkMl < choice.amountMl
+        ? t('feedingAmounts.toastBottle', {
+            drunk: formatNumber(choice.drunkMl),
+            prepared: formatNumber(choice.amountMl),
+          })
+        : t('now.toast.bottle', { amount: formatNumber(choice.amountMl) });
     case 'diaper': {
       const type = typeForKey(types, 'diaper');
       const content = type

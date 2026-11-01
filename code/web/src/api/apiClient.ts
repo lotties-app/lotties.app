@@ -17,6 +17,8 @@ export interface ApiClientOptions {
 export interface RequestOptions {
   method?: string;
   body?: unknown;
+  /** Extra request headers (e.g. `If-None-Match`); a `304` answer then resolves with an empty body. */
+  headers?: Record<string, string>;
   signal?: AbortSignal;
   /**
    * Skip `onUnauthorized` on a 401 (the `ApiError` is still thrown). Background work such as sync
@@ -54,10 +56,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
   function send(
     token: string | null,
-    { method = 'GET', body, signal }: RequestOptions,
+    { method = 'GET', body, signal, headers: extraHeaders }: RequestOptions,
     path: string,
   ) {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: 'application/json', ...extraHeaders };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     const doFetch = options.fetchImpl ?? fetch;
@@ -81,7 +83,8 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     }
 
     const payload = await parseBody(response);
-    if (!response.ok) {
+    // A 304 only answers a conditional request the caller made itself: "your copy is current".
+    if (!response.ok && response.status !== 304) {
       if (response.status === 401 && !requestOptions.skipUnauthorizedHandler) onUnauthorized?.();
       throw new ApiError(response.status, payload);
     }

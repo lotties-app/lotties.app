@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
 import { createEvent } from '../db/eventCommands';
 import type { BabyEvent } from '../db/models';
+import { cacheProducts } from '../db/catalogCache';
 import {
   BABY_ID,
   TYPE_ID,
   fakeApi,
+  httpError,
   networkError,
   serverEvent,
   testDatabase,
@@ -14,7 +16,7 @@ import {
   type ApiHandler,
 } from '../test/fakeApi';
 import { DEFAULT_BACKOFF } from './backoff';
-import { fromEventDto, type EventDto } from './contract';
+import { fromEventDto, type EventDto, type ProductDto } from './contract';
 import { mergeEventDelta, pullAll } from './pull';
 import { SyncEngine } from './SyncEngine';
 import type { SyncContext } from './syncContext';
@@ -291,5 +293,57 @@ describe('reference data', () => {
     });
     expect(await db.eventTypes.get('t-builtin')).toMatchObject({ babyId: null });
     expect(await db.medications.get('m1')).toMatchObject({ defaultDosage: null, notes: null });
+  });
+});
+
+describe('linked catalog products', () => {
+  const linkedProduct = (id: string, name: string) => ({
+    id,
+    name,
+    form: 'drops',
+    country: 'BR',
+    status: 'official',
+    source: 'anvisa',
+    mergedIntoId: null,
+    substances: [],
+    createdAt: '2026-10-01T00:00:00Z',
+  });
+  const medication = (id: string, productId: string | null) => ({
+    id,
+    babyId: BABY_ID,
+    name: id,
+    isUsual: false,
+    productId,
+    createdAt: '2026-10-01T00:00:00Z',
+  });
+
+  it('fetches only the products the family links to that this device lacks, never the catalog', async () => {
+    await cacheProducts(db, [linkedProduct('p-cached', 'Mylicon') as ProductDto]);
+    const { ctx, calls } = ctxWith((call) => {
+      if (call.path.endsWith('/medications')) {
+        return [medication('m1', 'p-luftal'), medication('m2', 'p-cached'), medication('m3', null)];
+      }
+      if (call.path === '/api/v1/catalog/products/p-luftal')
+        return linkedProduct('p-luftal', 'Luftal');
+    });
+
+    await pullAll(ctx);
+
+    const catalogCalls = calls.filter((c) => c.path.includes('/catalog/')).map((c) => c.path);
+    expect(catalogCalls).toEqual(['/api/v1/catalog/products/p-luftal']);
+    expect((await db.catalogProducts.get('p-luftal'))?.product.name).toBe('Luftal');
+  });
+
+  it('keeps going when a linked product cannot be fetched', async () => {
+    const { ctx } = ctxWith((call) => {
+      if (call.path.endsWith('/medications')) return [medication('m1', 'p-gone')];
+      if (call.path.includes('/catalog/products/')) throw httpError(404, 'product_not_found');
+    });
+
+    const errors = await pullAll(ctx);
+
+    expect(errors).toEqual([]);
+    expect(await db.catalogProducts.count()).toBe(0);
+    expect(await db.medications.get('m1')).toMatchObject({ productId: 'p-gone' });
   });
 });

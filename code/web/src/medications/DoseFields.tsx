@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Box } from '@mui/material';
 import type { BodyWeightRow } from '../db/models';
 import { formatDate, formatNumber, formatUnit } from '../i18n/format';
+import type { ProductForm } from '../sync/contract';
 import { ChipGroup, Field, NumberStepper, SwitchRow, TextInput } from '../ui/form';
+import { countedUnitForForm, countedUnitLabel, countedUnitOf } from './doseUnits';
 import {
   AMOUNT_MAX,
   ROUNDING_CHOICES,
@@ -16,17 +18,29 @@ interface Props {
   form: PrescriptionForm;
   errors: FormErrors;
   weight: BodyWeightRow | null;
+  /** The form of the catalog product the medication is linked to, when known. */
+  productForm?: ProductForm | null;
   onChange: (patch: Partial<PrescriptionForm>) => void;
 }
 
 const UNIT_CHIPS = ['drops', 'ml', 'mg'] as const;
 
-/** Dose: amount and unit, the "per kg" switch and, for per-kg rules, the rounding step. */
-export function DoseFields({ form, errors, weight, onChange }: Props) {
+/**
+ * Dose: amount and unit, the "per kg" switch and, for per-kg rules, the rounding step. A product
+ * dosed in a counted unit (spray, inhaler, suppository, ointment) offers only that unit chip.
+ */
+export function DoseFields({ form, errors, weight, productForm = null, onChange }: Props) {
   const { t } = useTranslation();
   const unitLabel = (unit: (typeof UNIT_CHIPS)[number]) => t(`ui.units.${unit}`);
   const dropsLabel = unitLabel('drops');
-  const step = form.unit.trim().toLowerCase() === unitLabel('ml').toLowerCase() ? 0.5 : 1;
+  const formUnit = countedUnitForForm(productForm);
+  const unitChips = formUnit ? [countedUnitLabel(formUnit)] : UNIT_CHIPS.map(unitLabel);
+  // Half steps for ml and suppositories (half suppositories); other counted units step by 1.
+  // Validation keeps sprays and puffs whole without hiding a typed fraction.
+  const halfSteps =
+    form.unit.trim().toLowerCase() === unitLabel('ml').toLowerCase() ||
+    countedUnitOf(form.unit) === 'suppository';
+  const step = halfSteps ? 0.5 : 1;
   const roundingLabel = (choice: RoundingChoice) =>
     choice === 'none'
       ? t('medications.editor.roundingNone')
@@ -54,14 +68,14 @@ export function DoseFields({ form, errors, weight, onChange }: Props) {
           value={form.unit}
           onChange={(unit) => onChange({ unit })}
           maxLength={UNIT_MAX}
-          placeholder={dropsLabel}
+          placeholder={unitChips[0] ?? dropsLabel}
         />
       </Field>
       <ChipGroup
         aria-label={t('medications.editor.unitChoices')}
-        value={UNIT_CHIPS.map(unitLabel).find((u) => u === form.unit) ?? null}
+        value={unitChips.find((u) => u === form.unit) ?? null}
         onChange={(unit) => onChange({ unit: unit ?? '' })}
-        options={UNIT_CHIPS.map((unit) => ({ value: unitLabel(unit), label: unitLabel(unit) }))}
+        options={unitChips.map((unit) => ({ value: unit, label: unit }))}
       />
       <SwitchRow
         checked={form.perKg}

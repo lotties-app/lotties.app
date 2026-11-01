@@ -1,24 +1,30 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { LanguageSection } from '../settings/LanguageSection';
 import { BabySection } from '../settings/BabySection';
 import { EventTypesSection } from '../settings/EventTypesSection';
-import { MedicationsSection } from '../settings/MedicationsSection';
-import { MembersSection } from '../settings/MembersSection';
+import { FeedingSection } from '../settings/FeedingSection';
 import { SettingsSection } from '../settings/SettingsSection';
 import { SyncSection } from '../settings/SyncSection';
-import { canWrite } from '../baby/permissions';
+import { ProfessionalSection } from '../settings/ProfessionalSection';
+import { canLog, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 
-// The importer is only needed when its section is opened, so it loads on demand.
-const ImportSection = lazy(() =>
-  import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
-);
+/**
+ * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
+ * a first-run card from an older version) lands on the page that holds it now.
+ */
+const MOVED_TO_HUB: Readonly<Record<string, string>> = {
+  medications: '/hub/medicines',
+  formulas: '/hub/formulas',
+  import: '/hub/import',
+  members: '/hub/family',
+};
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -27,6 +33,7 @@ export function SettingsPage() {
   // the first-run cards (#import, #members) and the reminder prompts (#notifications).
   const { hash } = useLocation();
   const target = hash.slice(1);
+  const moved = Object.hasOwn(MOVED_TO_HUB, target) ? MOVED_TO_HUB[target] : undefined;
   const wants = (...ids: string[]) => ids.includes(target);
   // Hidden when the server has push off (or before its config loaded).
   const push = usePushConfig().data;
@@ -35,17 +42,29 @@ export function SettingsPage() {
     if (target) document.getElementById(`${target}-header`)?.scrollIntoView?.({ block: 'start' });
   }, [target, babies]);
 
+  if (moved) return <Navigate to={moved} replace />;
   if (!babies) return <CircularProgress aria-label={t('common.loading')} />;
 
   return (
-    <Stack spacing={1}>
-      <Typography variant="h5" component="h1" gutterBottom>
+    <Stack spacing={1} useFlexGap>
+      <Typography variant="h5" component="h1" sx={{ mb: 2 }}>
         {t('settings.title')}
       </Typography>
       {baby ? (
         <>
           {!canWrite(baby) && (
-            <Alert severity="info">{t('baby.viewOnlyNamed', { name: baby.name })}</Alert>
+            <Alert severity="info">
+              {t(
+                isDoctor(baby)
+                  ? 'doctor.settingsNotice'
+                  : isCaregiver(baby)
+                    ? 'baby.caregiverNamed'
+                    : 'baby.viewOnlyNamed',
+                {
+                  name: baby.name,
+                },
+              )}
+            </Alert>
           )}
           <SettingsSection
             id="baby"
@@ -61,33 +80,17 @@ export function SettingsPage() {
           >
             <EventTypesSection baby={baby} />
           </SettingsSection>
-          <SettingsSection
-            id="medications"
-            title={t('settings.sections.medications')}
-            defaultExpanded={wants('medications')}
-          >
-            <MedicationsSection baby={baby} />
-          </SettingsSection>
-          <SettingsSection
-            id="import"
-            title={t('settings.sections.import')}
-            defaultExpanded={wants('import')}
-          >
-            <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
-              <ImportSection baby={baby} />
-            </Suspense>
-          </SettingsSection>
-          <SettingsSection
-            id="members"
-            title={t('settings.sections.members')}
-            defaultExpanded={wants('members')}
-          >
-            <MembersSection baby={baby} />
-          </SettingsSection>
         </>
       ) : (
         <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
       )}
+      <SettingsSection
+        id="professional"
+        title={t('doctor.profile.sectionTitle')}
+        defaultExpanded={wants('professional')}
+      >
+        <ProfessionalSection />
+      </SettingsSection>
       {push?.enabled && push.publicKey && (
         <SettingsSection
           id="notifications"
@@ -95,6 +98,15 @@ export function SettingsPage() {
           defaultExpanded={wants('notifications')}
         >
           <NotificationsSection babies={babies} publicKey={push.publicKey} />
+        </SettingsSection>
+      )}
+      {babies.some(canLog) && (
+        <SettingsSection
+          id="feeding"
+          title={t('feedingAmounts.timeBottles.title')}
+          defaultExpanded={wants('feeding')}
+        >
+          <FeedingSection />
         </SettingsSection>
       )}
       <SettingsSection

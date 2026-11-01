@@ -77,11 +77,9 @@ describe('loading and empty states', () => {
     expect(await screen.findByRole('heading', { name: "Log Lia's first event" })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Fell asleep' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Feed' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Import' }).getAttribute('href')).toBe(
-      '/settings#import',
-    );
+    expect(screen.getByRole('link', { name: 'Import' }).getAttribute('href')).toBe('/hub/import');
     expect(screen.getByRole('link', { name: 'Invite' }).getAttribute('href')).toBe(
-      '/settings#members',
+      '/hub/family#invite',
     );
     expect(screen.getByText(/Log a few days and predictions appear here/)).toBeTruthy();
   });
@@ -93,7 +91,8 @@ describe('loading and empty states', () => {
     renderNow();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Fell asleep' }));
-    expect(await screen.findByText('Asleep · Nap')).toBeTruthy();
+    // The pill, and the middle of the day ring when it is open.
+    expect((await screen.findAllByText('Asleep · Nap')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { name: "Log Lia's first event" })).toBeNull();
     expect((await live()).length).toBeGreaterThan(0);
   });
@@ -345,7 +344,7 @@ describe('Portuguese (pt-BR)', () => {
     for (const name of [/^Mamada/, /^Fralda/, /^Remédios/, /^Mais/]) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
-    expect(screen.getByText('Registrar')).toBeTruthy();
+    expect(screen.getByText('Registro rápido')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /^Fralda/ }));
     const tray = await screen.findByRole('dialog', { name: 'Fralda' });
@@ -355,7 +354,8 @@ describe('Portuguese (pt-BR)', () => {
     expect(screen.getByRole('group', { name: 'Quando aconteceu' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Adormeceu' }));
-    expect(await screen.findByText('Dormindo · Soneca')).toBeTruthy();
+    // The pill, and the middle of the day ring when it is open.
+    expect((await screen.findAllByText('Dormindo · Soneca')).length).toBeGreaterThan(0);
     expect(await screen.findByRole('button', { name: 'Acordou' })).toBeTruthy();
   });
 

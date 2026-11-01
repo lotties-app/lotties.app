@@ -1,5 +1,6 @@
 using Lotties.Domain.Common;
 using Lotties.Domain.Exceptions;
+using Lotties.Domain.Vaccinations;
 
 namespace Lotties.Domain.Babies;
 
@@ -32,6 +33,18 @@ public sealed class Baby
 
     public IReadOnlyCollection<BabyMember> Members => _members.AsReadOnly();
 
+    /// <summary>Which recommendations the vaccine schedule shows (public by default).</summary>
+    public VaccineCoverage VaccineCoverage { get; private set; }
+
+    /// <summary>Weeks of gestation at birth; <c>null</c> = not told (term assumed).</summary>
+    public short? GestationalAgeWeeks { get; private set; }
+
+    /// <summary>Whether the mother got the RSV vaccine in pregnancy; <c>null</c> = not answered.</summary>
+    public RsvMaternalVaccination? RsvMaternalVaccination { get; private set; }
+
+    /// <summary>What the vaccine schedule needs to know about the baby besides the birth date.</summary>
+    public VaccineProfile VaccineProfile => VaccineProfile.Create(VaccineCoverage, GestationalAgeWeeks, RsvMaternalVaccination);
+
     public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
     {
         Ids.Required(ownerUserId, nameof(ownerUserId));
@@ -52,6 +65,15 @@ public sealed class Baby
         Name = validatedName;
     }
 
+    /// <summary>Replaces the vaccine profile (Owners and Parents, from the Vaccines page).</summary>
+    public void UpdateVaccineProfile(VaccineProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        VaccineCoverage = profile.Coverage;
+        GestationalAgeWeeks = (short?)profile.GestationalAgeWeeks;
+        RsvMaternalVaccination = profile.RsvMaternalVaccination;
+    }
+
     public BabyMember? FindMember(Guid userId) => _members.Find(member => member.UserId == userId);
 
     public BabyMember AddMember(Guid userId, BabyRole role, DateTimeOffset joinedAt)
@@ -63,11 +85,15 @@ public sealed class Baby
         return member;
     }
 
-    /// <summary>Changes the role of a member. The last owner cannot be demoted.</summary>
-    public BabyMember ChangeMemberRole(Guid userId, BabyRole role)
+    /// <summary>
+    /// Changes the role of a member. The last owner cannot be demoted; the Doctor role needs the member's declared
+    /// professional profile (<paramref name="isDeclaredProfessional"/>, else <see cref="ProfessionalProfileRequiredException"/>).
+    /// </summary>
+    public BabyMember ChangeMemberRole(Guid userId, BabyRole role, bool isDeclaredProfessional = false)
     {
         var member = GetMember(userId);
         var newRole = BabyRoleRules.EnsureDefined(role);
+        EnsureProfessionalWhenRequired(newRole, userId, isDeclaredProfessional);
         EnsureOwnerRemains(member, newRole == BabyRole.Owner);
         member.ChangeRole(newRole);
         return member;
@@ -81,12 +107,17 @@ public sealed class Baby
         _members.Remove(member);
     }
 
-    /// <summary>Accepts <paramref name="invite"/> for <paramref name="userId"/> and adds them with the invite's role.</summary>
-    public BabyMember AdmitWith(Invite invite, Guid userId, DateTimeOffset now)
+    /// <summary>
+    /// Accepts <paramref name="invite"/> for <paramref name="userId"/> and adds them with the invite's role. A Doctor
+    /// invite needs the user's declared professional profile (<paramref name="isDeclaredProfessional"/>, else
+    /// <see cref="ProfessionalProfileRequiredException"/>, and the invite stays usable).
+    /// </summary>
+    public BabyMember AdmitWith(Invite invite, Guid userId, DateTimeOffset now, bool isDeclaredProfessional = false)
     {
         ArgumentNullException.ThrowIfNull(invite);
         EnsureInviteBelongsHere(invite);
         EnsureNotMember(userId);
+        EnsureProfessionalWhenRequired(invite.Role, userId, isDeclaredProfessional);
         invite.Accept(userId, now);
         return AddMember(userId, invite.Role, now);
     }
@@ -99,6 +130,14 @@ public sealed class Baby
         if (isLastOwner && !remainsOwner)
         {
             throw new LastOwnerException(Id, member.UserId);
+        }
+    }
+
+    private static void EnsureProfessionalWhenRequired(BabyRole role, Guid userId, bool isDeclaredProfessional)
+    {
+        if (role.RequiresProfessionalProfile() && !isDeclaredProfessional)
+        {
+            throw new ProfessionalProfileRequiredException(userId);
         }
     }
 

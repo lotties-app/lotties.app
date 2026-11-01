@@ -478,6 +478,35 @@ describe('SyncEngine while the access token is renewed (B1)', () => {
     expect(engine.isPaused).toBe(false);
   });
 
+  it('a run still in flight when the engine stops schedules no retry: it never syncs again', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    await newEvent();
+    let reached!: () => void;
+    const putSent = new Promise<void>((resolve) => (reached = resolve));
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const { engine, calls } = setup(async (call) => {
+      if (call.method !== 'PUT') return undefined;
+      reached();
+      await held;
+      throw pending();
+    });
+
+    engine.start();
+    await putSent;
+    // Signed out or the session ended while the push waited for a token renewal.
+    engine.stop();
+    release();
+    await engine.whenIdle();
+    const sent = calls.length;
+
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    await engine.whenIdle();
+
+    expect(calls).toHaveLength(sent);
+    expect(await db.outbox.count()).toBe(1);
+  });
+
   it('pauses for sign-in when the session ended', async () => {
     await newEvent();
     const { engine } = setup(() => {

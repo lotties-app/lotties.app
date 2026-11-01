@@ -1,7 +1,9 @@
+using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Catalog;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
+using Lotties.Domain.Formulas;
 using Lotties.Domain.Measurements;
 using Lotties.Domain.Medications;
 using Lotties.Domain.Notifications;
@@ -36,6 +38,30 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
 
     /// <summary>Prescriptions including soft-deleted ones (no query filter: delta sync must see deletions).</summary>
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
+
+    /// <summary>The babies' formulas, archived ones included (formulas are never deleted).</summary>
+    public DbSet<Formula> Formulas => Set<Formula>();
+
+    /// <summary>The babies' appointments, cancelled ones included (appointments are never deleted).</summary>
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+
+    /// <summary>The babies' recorded vaccines, soft-deleted ones included (readers of the schedule filter them).</summary>
+    public DbSet<Lotties.Domain.Vaccinations.Vaccination> Vaccinations => Set<Lotties.Domain.Vaccinations.Vaccination>();
+
+    /// <summary>Users' self-declared healthcare professional profiles (one per user).</summary>
+    public DbSet<Lotties.Domain.Professionals.ProfessionalProfile> ProfessionalProfiles => Set<Lotties.Domain.Professionals.ProfessionalProfile>();
+
+    /// <summary>The babies' notes including soft-deleted ones; readers filter by visibility (private notes: author only).</summary>
+    public DbSet<Lotties.Domain.Notes.BabyNote> BabyNotes => Set<Lotties.Domain.Notes.BabyNote>();
+
+    /// <summary>Recorded accesses of Doctors to the babies' data (append only).</summary>
+    public DbSet<Lotties.Domain.AccessLogs.AccessLogEntry> AccessLog => Set<Lotties.Domain.AccessLogs.AccessLogEntry>();
+
+    /// <summary>Prescriptions doctors suggested, decided ones included (never deleted); readers filter by visibility.</summary>
+    public DbSet<Lotties.Domain.Proposals.PrescriptionProposal> PrescriptionProposals => Set<Lotties.Domain.Proposals.PrescriptionProposal>();
+
+    /// <summary>Which member opened which note (the recommendations inbox).</summary>
+    public DbSet<Lotties.Domain.Notes.NoteRead> NoteReads => Set<Lotties.Domain.Notes.NoteRead>();
 
     public DbSet<Substance> Substances => Set<Substance>();
 

@@ -1,6 +1,8 @@
 /*
  * Push payload parsing (docs/design/09-push-notifications.md sections 3 and 8). The server sends
- * codes, ids and instants only: `{v, id, kind, babyId?, rxId?, at, lang, token?, names?, snooze?}`.
+ * codes, ids and instants only: `{v, id, kind, babyId?, rxId?, apptId?, offset?, proposalId?,
+ * noteId?, at, lang, token?, names?, snooze?}` (never an appointment's title, doctor or notes, a
+ * medicine name or the text of a note).
  * Everything here is pure and never throws: anything unexpected becomes a generic notification
  * ("Open the app for details"), so a raw code or a broken string never reaches the lock screen.
  */
@@ -15,18 +17,36 @@ export const MAX_NAME_LENGTH = 40;
 /** Snooze re-sends are numbered 1 to 3 (`{base}:s{n}` on the server). */
 export const MAX_SNOOZES = 3;
 
-const KINDS = { dose_due: true, nap_window: true, test: true } as const;
+const KINDS = {
+  dose_due: true,
+  nap_window: true,
+  belly_pain_pattern: true,
+  overtired_warning: true,
+  fussy_pattern: true,
+  diaper_wet_headsup: true,
+  diaper_dirty_headsup: true,
+  appointment_reminder: true,
+  doctor_suggestion: true,
+  vaccine_due: true,
+  test: true,
+} as const;
 export type PushKind = keyof typeof KINDS;
 
 export interface PushNames {
   baby: string;
   medication?: string;
+  /** The vaccine's name in the payload's language (a vaccine reminder only). */
+  vaccine?: string;
 }
 
 interface PayloadBase {
   /** Delivery id (lower-case GUID); also the id the snooze action posts to. */
   id: string;
-  /** Instant shown in the text: the dose slot or the nap window's earliest start (epoch ms). */
+  /**
+   * Instant shown in the text: the dose slot, the nap window's earliest start, the start of the
+   * usual belly pain or fussy window, when the awake stretch reaches the usual limit, or when the
+   * wet or dirty diaper is expected (epoch ms).
+   */
   at: number;
   lang: PushLang;
   names?: PushNames;
@@ -48,11 +68,107 @@ export interface NapPayload extends PayloadBase {
   token?: string;
 }
 
+/** The belly pain pattern heads-up: codes only, never a symptom detail or medical advice. */
+export interface BellyPainPayload extends PayloadBase {
+  kind: 'belly_pain_pattern';
+  babyId: string;
+  token?: string;
+}
+
+/** The overtired heads-up: codes only, never a symptom detail or medical advice. */
+export interface OvertiredPayload extends PayloadBase {
+  kind: 'overtired_warning';
+  babyId: string;
+  token?: string;
+}
+
+/** The fussy pattern heads-up: codes only, never a symptom detail or medical advice. */
+export interface FussyPayload extends PayloadBase {
+  kind: 'fussy_pattern';
+  babyId: string;
+  token?: string;
+}
+
+/** The diaper heads-ups (wet and dirty): codes only, never a symptom detail or medical advice. */
+export interface DiaperPayload extends PayloadBase {
+  kind: 'diaper_wet_headsup' | 'diaper_dirty_headsup';
+  babyId: string;
+  token?: string;
+}
+
+/** The reminder offsets of an appointment, in minutes before its start (1 week, 1 day, 2 h, 30 min). */
+export const APPOINTMENT_OFFSETS = [10080, 1440, 120, 30] as const;
+export type AppointmentOffset = (typeof APPOINTMENT_OFFSETS)[number];
+
+/**
+ * An appointment reminder: the appointment id, its start (`at`) and the reminder offset; the text is
+ * worded from them in the recipient's zone. Never the title, the doctor or the notes.
+ */
+export interface AppointmentPayload extends PayloadBase {
+  kind: 'appointment_reminder';
+  babyId: string;
+  apptId: string;
+  offset: AppointmentOffset;
+  token?: string;
+}
+
+/**
+ * The doctor sent a suggestion (docs/design/16-doctor-access.md section 10.4): exactly one of a
+ * proposal id and a note id (a recommendation); `at` is when it was created. Generic lock-screen
+ * text only: never the medicine name, the dose or the note text.
+ */
+export type DoctorSuggestionPayload = PayloadBase & {
+  kind: 'doctor_suggestion';
+  babyId: string;
+} & ({ proposalId: string; noteId?: never } | { noteId: string; proposalId?: never });
+
+/** The slug of a schedule dose (`penta-1`), as the API's vaccine schedule ids. */
+const DOSE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_DOSE_ID_LENGTH = 60;
+
+/**
+ * A vaccine may be due on this day (docs/design/18-vaccines.md): the schedule dose id and the
+ * instant of the reminder (`at`, 09:00 local). Generic lock-screen text; the vaccine's name only
+ * travels in `names.vaccine` when the recipient turned on "Show names". No actions: nothing to snooze.
+ */
+export interface VaccinePayload extends PayloadBase {
+  kind: 'vaccine_due';
+  babyId: string;
+  doseId: string;
+  token?: string;
+}
+
 export interface TestPayload extends PayloadBase {
   kind: 'test';
 }
 
-export type PushPayload = DosePayload | NapPayload | TestPayload;
+export type PushPayload =
+  | DosePayload
+  | NapPayload
+  | BellyPainPayload
+  | OvertiredPayload
+  | FussyPayload
+  | DiaperPayload
+  | AppointmentPayload
+  | DoctorSuggestionPayload
+  | VaccinePayload
+  | TestPayload;
+
+/** The kinds about a baby that open Now and carry nothing but codes (not a dose). */
+const BABY_ONLY_KINDS: ReadonlySet<string> = new Set([
+  'nap_window',
+  'belly_pain_pattern',
+  'overtired_warning',
+  'fussy_pattern',
+  'diaper_wet_headsup',
+  'diaper_dirty_headsup',
+]);
+
+type BabyOnlyKind = (
+  NapPayload | BellyPainPayload | OvertiredPayload | FussyPayload | DiaperPayload
+)['kind'];
+
+const isBabyOnlyKind = (kind: string): kind is BabyOnlyKind => BABY_ONLY_KINDS.has(kind);
 
 /** A valid payload, or the generic fallback (only the language survives). */
 export type ParsedPayload = { ok: true; payload: PushPayload } | { ok: false; lang: PushLang };
@@ -101,13 +217,28 @@ function names(value: unknown): PushNames | undefined {
   const baby = name(field(value, 'baby'));
   if (!baby) return undefined;
   const medication = name(field(value, 'medication'));
-  return medication ? { baby, medication } : { baby };
+  const vaccine = name(field(value, 'vaccine'));
+  return {
+    baby,
+    ...(medication ? { medication } : {}),
+    ...(vaccine ? { vaccine } : {}),
+  };
+}
+
+function doseId(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length <= MAX_DOSE_ID_LENGTH && DOSE_ID.test(value)
+    ? value
+    : undefined;
 }
 
 function snooze(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SNOOZES
     ? value
     : undefined;
+}
+
+function offset(value: unknown): AppointmentOffset | undefined {
+  return APPOINTMENT_OFFSETS.find((candidate) => candidate === value);
 }
 
 function token(value: unknown): string | undefined {
@@ -140,7 +271,35 @@ export function validatePayload(raw: unknown): ParsedPayload {
   const actionToken = token(field(raw, 'token'));
   const withToken = actionToken ? { token: actionToken } : {};
 
-  if (kind === 'nap_window') return { ok: true, payload: { ...base, ...withToken, kind, babyId } };
+  if (isBabyOnlyKind(kind)) {
+    return { ok: true, payload: { ...base, ...withToken, kind, babyId } };
+  }
+
+  if (kind === 'appointment_reminder') {
+    const apptId = guid(field(raw, 'apptId'));
+    const minutes = offset(field(raw, 'offset'));
+    if (!apptId || minutes === undefined) return fail;
+    return { ok: true, payload: { ...base, ...withToken, kind, babyId, apptId, offset: minutes } };
+  }
+
+  if (kind === 'doctor_suggestion') {
+    // A suggestion names its proposal or its note, never both and never neither.
+    const proposalId = guid(field(raw, 'proposalId'));
+    const noteId = guid(field(raw, 'noteId'));
+    if (!proposalId === !noteId) return fail;
+    return {
+      ok: true,
+      payload: proposalId
+        ? { ...base, kind, babyId, proposalId }
+        : { ...base, kind, babyId, noteId: noteId as string },
+    };
+  }
+
+  if (kind === 'vaccine_due') {
+    const dose = doseId(field(raw, 'doseId'));
+    if (!dose) return fail;
+    return { ok: true, payload: { ...base, ...withToken, kind, babyId, doseId: dose } };
+  }
 
   const rxId = guid(field(raw, 'rxId'));
   if (!rxId) return fail;

@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import { canWrite } from '../baby/permissions';
+import {
+  canChangeMeasurement,
+  canRecordMeasurements,
+  isCaregiver,
+  isDoctor,
+} from '../baby/permissions';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { GrowthChart } from '../measurements/GrowthChart';
@@ -24,7 +29,7 @@ function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
   const { query, online } = useMeasurements(baby.id);
   const actions = useMeasurementActions(baby.id);
   const { run, pending, error, clearError } = useServerAction();
-  const writable = canWrite(baby);
+  const writable = canRecordMeasurements(baby);
   const [editing, setEditing] = useState<Editing>(null);
   const [deleting, setDeleting] = useState<MeasurementDto | null>(null);
   const measurements = query.data;
@@ -56,7 +61,14 @@ function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
         )}
       </Stack>
       {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
-      {!writable && <Alert severity="info">{t('baby.viewOnlyNamed', { name: baby.name })}</Alert>}
+      {isDoctor(baby) && (
+        <Alert severity="info">{t('doctor.growth.doctorNotice', { name: baby.name })}</Alert>
+      )}
+      {!writable && (
+        <Alert severity="info">
+          {t(isCaregiver(baby) ? 'baby.caregiverNamed' : 'baby.viewOnlyNamed', { name: baby.name })}
+        </Alert>
+      )}
       {query.isError && <ErrorNotice message={t('growth.loadFailed')} />}
       {!deleting && <ErrorNotice message={error} />}
       {query.isPending && online && <CircularProgress aria-label={t('common.loading')} />}
@@ -70,7 +82,7 @@ function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel }) {
           ) : (
             <MeasurementList
               measurements={measurements}
-              writable={writable && online}
+              canChange={(m) => online && canChangeMeasurement(baby, m)}
               onEdit={setEditing}
               onDelete={setDeleting}
             />

@@ -1,5 +1,6 @@
 import type { EventFieldDefinition, EventPayload, EventType } from '../db/models';
 import { getOwn, setOwn } from '../util/ownProperty';
+import { DRUNK_KEY, PREPARED_KEY } from './bottleAmounts';
 
 /*
  * Client mirror of the API's payload field rules (docs/SPEC.md "Payload field rules",
@@ -16,6 +17,8 @@ export type PayloadProblemCode =
   | 'number'
   /** A whole number was required (`integer` fields). */
   | 'integer'
+  /** Too many decimal places (`decimals` fields). */
+  | 'decimals'
   | 'option'
   | 'bool'
   | 'min'
@@ -91,10 +94,19 @@ function kindProblem(field: EventFieldDefinition, value: unknown): PayloadProble
     case 'number':
       if (typeof value !== 'number' || Number.isNaN(value)) return 'number';
       if (field.integer === true && !Number.isInteger(value)) return 'integer';
+      if (!withinDecimals(field, value)) return 'decimals';
       if (field.min !== null && value < field.min) return 'min';
       if (field.max !== null && value > field.max) return 'max';
       return null;
   }
+}
+
+/** Whether `value` has no more decimal places than the field's `decimals` allows (any when unset). */
+export function withinDecimals(
+  field: Pick<EventFieldDefinition, 'decimals'>,
+  value: number,
+): boolean {
+  return field.decimals === undefined || Number(value.toFixed(field.decimals)) === value;
 }
 
 const payloadValue = (payload: EventPayload) => (key: string) => getOwn(payload, key);
@@ -106,7 +118,7 @@ const payloadValue = (payload: EventPayload) => (key: string) => getOwn(payload,
  * Members no field declares are not checked (e.g. the medication list).
  */
 export function validatePayload(
-  type: Pick<EventType, 'fields'>,
+  type: Pick<EventType, 'fields'> & Partial<Pick<EventType, 'key' | 'babyId'>>,
   payload: EventPayload,
   completing: boolean,
 ): PayloadProblem[] {
@@ -129,7 +141,21 @@ export function validatePayload(
     const code = kindProblem(field, value);
     if (code) problems.push({ field: field.key, code });
   }
+  if (drunkAbovePrepared(type, payload) && !problems.some((p) => p.field === DRUNK_KEY)) {
+    problems.push({ field: DRUNK_KEY, code: 'max' });
+  }
   return problems;
+}
+
+/** The built-in feeding rule: the drunk amount is never above the prepared one (server: `BottleAmounts`). */
+function drunkAbovePrepared(
+  type: Partial<Pick<EventType, 'key' | 'babyId'>>,
+  payload: EventPayload,
+): boolean {
+  if (type.babyId !== null || type.key !== 'feeding') return false;
+  const prepared = getOwn(payload, PREPARED_KEY);
+  const drunk = getOwn(payload, DRUNK_KEY);
+  return typeof prepared === 'number' && typeof drunk === 'number' && drunk > prepared;
 }
 
 /** Whether the event is complete once it has `endedAt` (instant types always are). */

@@ -11,6 +11,7 @@ import { PausedClock, PauseResumeButton } from '../../timers/TimerParts';
 import { useTimerCommands } from '../../timers/useTimerCommands';
 import { nursingElapsed, type BreastSide } from '../nursing';
 import type { NowCommands } from '../useNowCommands';
+import { LockedNote } from '../../baby/LockedNote';
 import type { NowAction } from './useNowAction';
 
 interface Props {
@@ -19,6 +20,11 @@ interface Props {
   commands: Pick<NowCommands, 'switchSide' | 'stopNursing'>;
   action: NowAction;
   readOnly: boolean;
+  /**
+   * Who started the session when the user may not use its controls (`EventAccess.controlLockedBy`:
+   * someone else's nursing session moves its side clock, which a Caregiver may not change).
+   */
+  lockedBy?: string | null;
   /** Bigger targets for the night view. */
   large?: boolean;
 }
@@ -104,12 +110,19 @@ function SideButton({
  * side" and "Finish". The seconds live in the event, so they survive a reload and sync to the
  * other caregiver.
  */
-export function NursingCard({ event, commands, action, readOnly, large = false }: Props) {
+export function NursingCard({
+  event,
+  commands,
+  action,
+  readOnly,
+  lockedBy = null,
+  large = false,
+}: Props) {
   const { t } = useTranslation();
   const now = new Date(useNow(1000));
   const elapsed = nursingElapsed(event, now);
   const running = elapsed.side ?? 'left';
-  const disabled = readOnly;
+  const disabled = readOnly || lockedBy !== null;
   const timers = useTimerCommands();
   const paused = elapsed.paused;
 
@@ -155,37 +168,47 @@ export function NursingCard({ event, commands, action, readOnly, large = false }
           />
         ))}
       </Box>
-      <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
-        <Button
-          variant="outlined"
-          color="inherit"
-          disabled={disabled}
-          startIcon={<Icon name="arrow-right" size={20} />}
-          onClick={() => void action.run(() => commands.switchSide(event.id))}
-          sx={{ flex: 1, minHeight: 56 }}
-        >
-          {t('now.nursing.switch')}
-        </Button>
-        <PauseResumeButton
-          paused={paused}
-          name={t('now.nursing.title')}
-          large
-          disabled={disabled}
-          onPress={() =>
-            void action.run(() => (paused ? timers.resume(event.id) : timers.pause(event.id)))
-          }
-        />
-      </Box>
-      <Button
-        variant="contained"
-        fullWidth
-        disabled={disabled}
-        startIcon={<Icon name="check" size={20} />}
-        onClick={() => void action.run(() => commands.stopNursing(event.id))}
-        sx={{ mt: 1.5, minHeight: 56 }}
-      >
-        {t('now.nursing.finish')}
-      </Button>
+      {/* Readers (Viewer, Doctor) follow the session without its controls. */}
+      {!readOnly && (
+        <>
+          <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              disabled={disabled}
+              startIcon={<Icon name="arrow-right" size={20} />}
+              onClick={() => void action.run(() => commands.switchSide(event.id))}
+              sx={{ flex: 1, minHeight: 56 }}
+            >
+              {t('now.nursing.switch')}
+            </Button>
+            <PauseResumeButton
+              paused={paused}
+              name={t('now.nursing.title')}
+              large
+              disabled={disabled}
+              onPress={() =>
+                void action.run(() => (paused ? timers.resume(event.id) : timers.pause(event.id)))
+              }
+            />
+          </Box>
+          <Button
+            variant="contained"
+            fullWidth
+            disabled={disabled}
+            startIcon={<Icon name="check" size={20} />}
+            onClick={() => void action.run(() => commands.stopNursing(event.id))}
+            sx={{ mt: 1.5, minHeight: 56 }}
+          >
+            {t('now.nursing.finish')}
+          </Button>
+        </>
+      )}
+      {lockedBy !== null && (
+        <Box sx={{ mt: 1 }}>
+          <LockedNote name={lockedBy} />
+        </Box>
+      )}
     </Card>
   );
 }

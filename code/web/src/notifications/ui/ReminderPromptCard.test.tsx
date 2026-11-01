@@ -29,6 +29,10 @@ const PREFS = {
   doseLeadMinutes: 5 as const,
   napWindow: true,
   napLeadMinutes: 20 as const,
+  bellyPainPattern: true,
+  overtiredWarning: true,
+  fussyPattern: false,
+  diaperWetHeadsUp: true,
 };
 
 function wrap(
@@ -85,6 +89,14 @@ describe('ReminderPromptCard', () => {
       doseLeadMinutes: 5,
       napWindow: true,
       napLeadMinutes: 20,
+      bellyPainPattern: true,
+      overtiredWarning: true,
+      fussyPattern: false,
+      diaperWetHeadsUp: true,
+      diaperDirtyHeadsUp: false,
+      appointmentReminders: true,
+      doctorSuggestions: false,
+      vaccineReminders: false,
     });
   });
 

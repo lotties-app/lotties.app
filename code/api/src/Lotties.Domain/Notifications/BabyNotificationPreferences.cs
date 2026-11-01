@@ -4,7 +4,7 @@ namespace Lotties.Domain.Notifications;
 
 /// <summary>
 /// One member's reminder preferences for one baby (stored only once the member changes anything; otherwise
-/// <see cref="ReminderPreferences.Default"/>). Only Owners and Parents may store them (<see cref="NotificationRules.CanReceive"/>,
+/// <see cref="ReminderPreferences.Default"/>). Only Owners, Parents and Caregivers may store them, each only their own (<see cref="NotificationRules.CanReceive"/>,
 /// enforced by the baby role policy); the row goes away with the membership.
 /// </summary>
 public sealed class BabyNotificationPreferences
@@ -31,9 +31,29 @@ public sealed class BabyNotificationPreferences
 
     public short NapLeadMinutes { get; private set; }
 
+    public bool BellyPainPattern { get; private set; }
+
+    public bool OvertiredWarning { get; private set; }
+
+    public bool FussyPattern { get; private set; }
+
+    public bool DiaperWetHeadsUp { get; private set; }
+
+    public bool DiaperDirtyHeadsUp { get; private set; }
+
+    /// <summary>On unless the member turned it off (rows stored before the column existed are on: database default true).</summary>
+    public bool AppointmentReminders { get; private set; } = true;
+
+    /// <summary>The doctor suggestions are on (off by default; rows stored before the column existed are off).</summary>
+    public bool DoctorSuggestions { get; private set; }
+
+    /// <summary>The vaccine reminders are on (off by default; rows stored before the column existed are off).</summary>
+    public bool VaccineReminders { get; private set; }
+
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public ReminderPreferences Preferences => ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes);
+    public ReminderPreferences Preferences =>
+        ReminderPreferences.Create(DoseDue, DoseLeadMinutes, NapWindow, NapLeadMinutes, BellyPainPattern, OvertiredWarning, FussyPattern, DiaperWetHeadsUp, DiaperDirtyHeadsUp, AppointmentReminders, DoctorSuggestions, VaccineReminders);
 
     public static BabyNotificationPreferences Create(Guid babyId, Guid userId, ReminderPreferences preferences, DateTimeOffset now)
     {
@@ -59,6 +79,14 @@ public sealed class BabyNotificationPreferences
         DoseLeadMinutes = (short)preferences.DoseLeadMinutes;
         NapWindow = preferences.NapWindow;
         NapLeadMinutes = (short)preferences.NapLeadMinutes;
+        BellyPainPattern = preferences.BellyPainPattern;
+        OvertiredWarning = preferences.OvertiredWarning;
+        FussyPattern = preferences.FussyPattern;
+        DiaperWetHeadsUp = preferences.DiaperWetHeadsUp;
+        DiaperDirtyHeadsUp = preferences.DiaperDirtyHeadsUp;
+        AppointmentReminders = preferences.AppointmentReminders;
+        DoctorSuggestions = preferences.DoctorSuggestions;
+        VaccineReminders = preferences.VaccineReminders;
         UpdatedAt = UtcTime.Normalize(now);
     }
 }

@@ -1,0 +1,1865 @@
+{
+  "description": "Shared vectors of the vaccine status engine: read by code/web/src/vaccines/vaccineStatus.test.ts and by code/api/tests/Lotties.Domain.Tests/Vaccinations/VaccineStatusVectorTests.cs (linked file). Each schedule lists doses with only the fields that matter; a missing field takes the default: vaccineKey 'v', label and notes = the doseId, earliestAgeDays = recommendedAgeDays, latestAgeDays and minIntervalDaysFromPrevious null, sources ['pni'] (['sbp'] when network is private), network 'public', alternativeGroup null, previousDoseIds and covers [], recurrence and condition null, recordOnly false. Expected doses list only the fields to compare (null = must be null). Dates are local calendar dates.",
+  "vectors": [
+    {
+      "name": "birth day: the birth doses are due, the 2-month dose is upcoming",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-01",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "bcg-1",
+          "vaccineKey": "bcg",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 1825
+        },
+        {
+          "doseId": "hepb-1",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 30
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "latestAgeDays": 2556
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 0,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "bcg-1",
+            "state": "due",
+            "dueOn": "2026-03-01",
+            "earliestOn": "2026-03-01",
+            "latestOn": "2031-02-28",
+            "overdueFrom": null,
+            "optionalPrivate": false
+          },
+          {
+            "doseId": "hepb-1",
+            "state": "due",
+            "dueOn": "2026-03-01",
+            "latestOn": "2026-03-31"
+          },
+          {
+            "doseId": "penta-1",
+            "state": "upcoming",
+            "dueOn": "2026-05-01",
+            "earliestOn": "2026-04-12",
+            "latestOn": "2033-02-28"
+          }
+        ]
+      }
+    },
+    {
+      "name": "two months: a recorded birth dose is given, a missed hepatitis B birth dose is past its window, the 2-month dose is due",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-01",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "bcg-1",
+          "vaccineKey": "bcg",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 1825
+        },
+        {
+          "doseId": "hepb-1",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 30
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "latestAgeDays": 2556
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "bcg-1",
+          "givenOn": "2026-03-01"
+        }
+      ],
+      "expected": {
+        "ageDays": 61,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "bcg-1",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000001",
+            "givenOn": "2026-03-01",
+            "coveredBy": null
+          },
+          {
+            "doseId": "hepb-1",
+            "state": "expired",
+            "latestOn": "2026-03-31"
+          },
+          {
+            "doseId": "penta-1",
+            "state": "due",
+            "dueOn": "2026-05-01"
+          }
+        ]
+      }
+    },
+    {
+      "name": "thirty days after the due date the dose is still due",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-31",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "bcg-1",
+          "vaccineKey": "bcg",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 1825
+        },
+        {
+          "doseId": "hepb-1",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 30
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "latestAgeDays": 2556
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "bcg-1",
+          "givenOn": "2026-03-01"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "hepb-1",
+          "givenOn": "2026-03-01"
+        }
+      ],
+      "expected": {
+        "ageDays": 91,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "penta-1",
+            "state": "due",
+            "dueOn": "2026-05-01",
+            "overdueFrom": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "thirty-one days after the due date the dose is overdue",
+      "birthDate": "2026-03-01",
+      "today": "2026-06-01",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "bcg-1",
+          "vaccineKey": "bcg",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 1825
+        },
+        {
+          "doseId": "hepb-1",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 30
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "latestAgeDays": 2556
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "bcg-1",
+          "givenOn": "2026-03-01"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "hepb-1",
+          "givenOn": "2026-03-01"
+        }
+      ],
+      "expected": {
+        "ageDays": 92,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "penta-1",
+            "state": "overdue",
+            "dueOn": "2026-05-01",
+            "overdueFrom": "2026-06-01"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a late previous dose pushes the next due date and the earliest valid date",
+      "birthDate": "2026-03-01",
+      "today": "2026-07-04",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "d-1",
+          "vaccineKey": "d",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42
+        },
+        {
+          "doseId": "d-2",
+          "vaccineKey": "d",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 72,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["d-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "d-1",
+          "givenOn": "2026-06-19"
+        }
+      ],
+      "expected": {
+        "ageDays": 125,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "d-1",
+            "state": "given",
+            "givenOn": "2026-06-19"
+          },
+          {
+            "doseId": "d-2",
+            "state": "upcoming",
+            "dueOn": "2026-07-19",
+            "earliestOn": "2026-07-19"
+          }
+        ]
+      }
+    },
+    {
+      "name": "an on-time previous dose keeps the recommended date",
+      "birthDate": "2026-03-01",
+      "today": "2026-07-04",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "d-1",
+          "vaccineKey": "d",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42
+        },
+        {
+          "doseId": "d-2",
+          "vaccineKey": "d",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 72,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["d-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "d-1",
+          "givenOn": "2026-05-01"
+        }
+      ],
+      "expected": {
+        "ageDays": 125,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "d-2",
+            "state": "due",
+            "dueOn": "2026-07-01",
+            "earliestOn": "2026-05-31"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a combined dose covers other doses and fills its alternative slot",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-10",
+      "profile": {
+        "coverage": "public+private",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "hepb-2",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 30,
+          "network": "private",
+          "sources": ["sbp"],
+          "previousDoseIds": []
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "alternativeGroup": "dtp-1",
+          "covers": ["hepb-2"]
+        },
+        {
+          "doseId": "hexa-1",
+          "vaccineKey": "hexa",
+          "recommendedAgeDays": 61,
+          "network": "private",
+          "sources": ["sbp", "sbim"],
+          "alternativeGroup": "dtp-1",
+          "covers": ["vip-1", "hepb-2"]
+        },
+        {
+          "doseId": "vip-1",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 61
+        },
+        {
+          "doseId": "vip-2",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 91,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["vip-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "hexa-1",
+          "givenOn": "2026-05-01"
+        }
+      ],
+      "expected": {
+        "ageDays": 70,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "hexa-1",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000001",
+            "givenOn": "2026-05-01",
+            "coveredBy": null,
+            "optionalPrivate": true
+          },
+          {
+            "doseId": "penta-1",
+            "state": "notApplicable",
+            "reason": "alternative",
+            "alternativeOf": "hexa-1"
+          },
+          {
+            "doseId": "vip-1",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000001",
+            "givenOn": "2026-05-01",
+            "coveredBy": "hexa-1"
+          },
+          {
+            "doseId": "hepb-2",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000001",
+            "coveredBy": "hexa-1",
+            "optionalPrivate": true
+          },
+          {
+            "doseId": "vip-2",
+            "state": "upcoming",
+            "dueOn": "2026-07-01"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a covered dose counts as the previous dose for the interval",
+      "birthDate": "2026-03-01",
+      "today": "2026-07-04",
+      "profile": {
+        "coverage": "public+private",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "hepb-2",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 30,
+          "network": "private",
+          "sources": ["sbp"],
+          "previousDoseIds": []
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "alternativeGroup": "dtp-1",
+          "covers": ["hepb-2"]
+        },
+        {
+          "doseId": "hexa-1",
+          "vaccineKey": "hexa",
+          "recommendedAgeDays": 61,
+          "network": "private",
+          "sources": ["sbp", "sbim"],
+          "alternativeGroup": "dtp-1",
+          "covers": ["vip-1", "hepb-2"]
+        },
+        {
+          "doseId": "vip-1",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 61
+        },
+        {
+          "doseId": "vip-2",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 91,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["vip-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "hexa-1",
+          "givenOn": "2026-06-09"
+        }
+      ],
+      "expected": {
+        "ageDays": 125,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "vip-1",
+            "state": "given",
+            "coveredBy": "hexa-1",
+            "givenOn": "2026-06-09"
+          },
+          {
+            "doseId": "vip-2",
+            "state": "upcoming",
+            "dueOn": "2026-07-09",
+            "earliestOn": "2026-07-09"
+          }
+        ]
+      }
+    },
+    {
+      "name": "alternatives both show until one is given; the private one is marked optional",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-10",
+      "profile": {
+        "coverage": "public+private",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "hepb-2",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 30,
+          "network": "private",
+          "sources": ["sbp"],
+          "previousDoseIds": []
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "alternativeGroup": "dtp-1",
+          "covers": ["hepb-2"]
+        },
+        {
+          "doseId": "hexa-1",
+          "vaccineKey": "hexa",
+          "recommendedAgeDays": 61,
+          "network": "private",
+          "sources": ["sbp", "sbim"],
+          "alternativeGroup": "dtp-1",
+          "covers": ["vip-1", "hepb-2"]
+        },
+        {
+          "doseId": "vip-1",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 61
+        },
+        {
+          "doseId": "vip-2",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 91,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["vip-1"]
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 70,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "penta-1",
+            "state": "due",
+            "optionalPrivate": false
+          },
+          {
+            "doseId": "hexa-1",
+            "state": "due",
+            "optionalPrivate": true
+          },
+          {
+            "doseId": "hepb-2",
+            "state": "overdue",
+            "dueOn": "2026-03-31",
+            "overdueFrom": "2026-05-01"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the public profile leaves private doses out",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-10",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "hepb-2",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 30,
+          "network": "private",
+          "sources": ["sbp"],
+          "previousDoseIds": []
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "alternativeGroup": "dtp-1",
+          "covers": ["hepb-2"]
+        },
+        {
+          "doseId": "hexa-1",
+          "vaccineKey": "hexa",
+          "recommendedAgeDays": 61,
+          "network": "private",
+          "sources": ["sbp", "sbim"],
+          "alternativeGroup": "dtp-1",
+          "covers": ["vip-1", "hepb-2"]
+        },
+        {
+          "doseId": "vip-1",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 61
+        },
+        {
+          "doseId": "vip-2",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 91,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["vip-1"]
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 70,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "penta-1",
+            "state": "due",
+            "optionalPrivate": false
+          },
+          {
+            "doseId": "hexa-1",
+            "state": "notApplicable",
+            "reason": "network",
+            "optionalPrivate": false
+          },
+          {
+            "doseId": "hepb-2",
+            "state": "notApplicable",
+            "reason": "network"
+          },
+          {
+            "doseId": "vip-1",
+            "state": "due"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a recorded private dose shows as given even with the public profile",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-10",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "hepb-2",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 30,
+          "network": "private",
+          "sources": ["sbp"],
+          "previousDoseIds": []
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "alternativeGroup": "dtp-1",
+          "covers": ["hepb-2"]
+        },
+        {
+          "doseId": "hexa-1",
+          "vaccineKey": "hexa",
+          "recommendedAgeDays": 61,
+          "network": "private",
+          "sources": ["sbp", "sbim"],
+          "alternativeGroup": "dtp-1",
+          "covers": ["vip-1", "hepb-2"]
+        },
+        {
+          "doseId": "vip-1",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 61
+        },
+        {
+          "doseId": "vip-2",
+          "vaccineKey": "vip",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 91,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["vip-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "hexa-1",
+          "givenOn": "2026-05-01"
+        }
+      ],
+      "expected": {
+        "ageDays": 70,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "hexa-1",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000001"
+          },
+          {
+            "doseId": "penta-1",
+            "state": "notApplicable",
+            "reason": "alternative",
+            "alternativeOf": "hexa-1"
+          },
+          {
+            "doseId": "vip-1",
+            "state": "given",
+            "coveredBy": "hexa-1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the RSV antibody does not apply when the mother got the RSV vaccine",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-04",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": "yes"
+      },
+      "schedule": [
+        {
+          "doseId": "rsv-1",
+          "vaccineKey": "rsv",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 364,
+          "condition": "rsv-maternal-vaccination-unknown-or-no"
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 3,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rsv-1",
+            "state": "notApplicable",
+            "reason": "condition"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the RSV antibody applies when the mother's RSV vaccination is unknown",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-04",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": "unknown"
+      },
+      "schedule": [
+        {
+          "doseId": "rsv-1",
+          "vaccineKey": "rsv",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 364,
+          "condition": "rsv-maternal-vaccination-unknown-or-no"
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 3,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rsv-1",
+            "state": "due",
+            "dueOn": "2026-03-01",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "the RSV antibody applies when the mother's RSV vaccination is no",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-04",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": "no"
+      },
+      "schedule": [
+        {
+          "doseId": "rsv-1",
+          "vaccineKey": "rsv",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 364,
+          "condition": "rsv-maternal-vaccination-unknown-or-no"
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 3,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rsv-1",
+            "state": "due",
+            "dueOn": "2026-03-01",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "the RSV antibody applies when the mother's RSV vaccination is not answered",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-04",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "rsv-1",
+          "vaccineKey": "rsv",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 364,
+          "condition": "rsv-maternal-vaccination-unknown-or-no"
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 3,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rsv-1",
+            "state": "due",
+            "dueOn": "2026-03-01",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "on the last day of its window a missed dose is overdue",
+      "birthDate": "2026-03-01",
+      "today": "2027-02-28",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "rota-1",
+          "vaccineKey": "rota",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 45,
+          "latestAgeDays": 364
+        },
+        {
+          "doseId": "rota-2",
+          "vaccineKey": "rota",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 106,
+          "latestAgeDays": 730,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["rota-1"]
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 364,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rota-1",
+            "state": "overdue",
+            "latestOn": "2027-02-28"
+          }
+        ]
+      }
+    },
+    {
+      "name": "after its latest age a missed dose has expired",
+      "birthDate": "2026-03-01",
+      "today": "2027-03-01",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "rota-1",
+          "vaccineKey": "rota",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 45,
+          "latestAgeDays": 364
+        },
+        {
+          "doseId": "rota-2",
+          "vaccineKey": "rota",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 106,
+          "latestAgeDays": 730,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["rota-1"]
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 365,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rota-1",
+            "state": "expired",
+            "latestOn": "2027-02-28"
+          },
+          {
+            "doseId": "rota-2",
+            "state": "overdue",
+            "dueOn": "2026-07-01"
+          }
+        ]
+      }
+    },
+    {
+      "name": "an interval that pushes a dose past its latest age expires it",
+      "birthDate": "2026-03-01",
+      "today": "2028-02-24",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "rota-1",
+          "vaccineKey": "rota",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 45,
+          "latestAgeDays": 364
+        },
+        {
+          "doseId": "rota-2",
+          "vaccineKey": "rota",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 106,
+          "latestAgeDays": 730,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["rota-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "rota-1",
+          "givenOn": "2028-02-19"
+        }
+      ],
+      "expected": {
+        "ageDays": 725,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "rota-1",
+            "state": "given",
+            "givenOn": "2028-02-19"
+          },
+          {
+            "doseId": "rota-2",
+            "state": "expired",
+            "earliestOn": "2028-03-20",
+            "latestOn": "2028-02-29"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a yearly dose waits for the first doses while they are pending",
+      "birthDate": "2026-03-01",
+      "today": "2027-04-05",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 400,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-1",
+            "state": "overdue"
+          },
+          {
+            "doseId": "flu-2",
+            "state": "overdue"
+          },
+          {
+            "doseId": "flu-yearly",
+            "state": "upcoming",
+            "dueOn": null,
+            "waitingFor": "flu-1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a yearly dose is due a year after the last first-season dose",
+      "birthDate": "2026-03-01",
+      "today": "2027-07-14",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "flu-1",
+          "givenOn": "2026-08-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "flu-2",
+          "givenOn": "2026-09-30"
+        }
+      ],
+      "expected": {
+        "ageDays": 500,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-2",
+            "state": "given",
+            "givenOn": "2026-09-30"
+          },
+          {
+            "doseId": "flu-yearly",
+            "state": "upcoming",
+            "dueOn": "2027-09-30",
+            "waitingFor": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "a yearly dose becomes due on its day and is never overdue",
+      "birthDate": "2026-03-01",
+      "today": "2028-01-30",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "flu-1",
+          "givenOn": "2026-08-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "flu-2",
+          "givenOn": "2026-09-30"
+        }
+      ],
+      "expected": {
+        "ageDays": 700,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-yearly",
+            "state": "due",
+            "dueOn": "2027-09-30",
+            "overdueFrom": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "a yearly dose given this season shows as given with the next due date",
+      "birthDate": "2026-03-01",
+      "today": "2028-01-30",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "flu-1",
+          "givenOn": "2026-08-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "flu-2",
+          "givenOn": "2026-09-30"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000003",
+          "doseId": "flu-yearly",
+          "givenOn": "2027-10-22"
+        }
+      ],
+      "expected": {
+        "ageDays": 700,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-yearly",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000003",
+            "givenOn": "2027-10-22",
+            "nextDueOn": "2028-10-21",
+            "dueOn": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "a yearly dose is due again a year after the last one",
+      "birthDate": "2026-03-01",
+      "today": "2028-10-21",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "flu-1",
+          "givenOn": "2026-08-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "flu-2",
+          "givenOn": "2026-09-30"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000003",
+          "doseId": "flu-yearly",
+          "givenOn": "2027-10-22"
+        }
+      ],
+      "expected": {
+        "ageDays": 965,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-yearly",
+            "state": "due",
+            "dueOn": "2028-10-21",
+            "recordId": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "yearly alternatives share the season",
+      "birthDate": "2026-03-01",
+      "today": "2028-01-30",
+      "profile": {
+        "coverage": "public+private",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "flu-1",
+          "givenOn": "2026-08-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "flu-2",
+          "givenOn": "2026-09-30"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000003",
+          "doseId": "flu-yearly-soc",
+          "givenOn": "2027-10-22"
+        }
+      ],
+      "expected": {
+        "ageDays": 700,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-yearly-soc",
+            "state": "given",
+            "givenOn": "2027-10-22",
+            "optionalPrivate": true
+          },
+          {
+            "doseId": "flu-yearly",
+            "state": "notApplicable",
+            "reason": "alternative",
+            "alternativeOf": "flu-yearly-soc",
+            "nextDueOn": "2028-10-21"
+          }
+        ]
+      }
+    },
+    {
+      "name": "yearly alternatives are both due once the season is over",
+      "birthDate": "2026-03-01",
+      "today": "2028-10-26",
+      "profile": {
+        "coverage": "public+private",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": "flu-1",
+          "givenOn": "2026-08-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "flu-2",
+          "givenOn": "2026-09-30"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000003",
+          "doseId": "flu-yearly-soc",
+          "givenOn": "2027-10-22"
+        }
+      ],
+      "expected": {
+        "ageDays": 970,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-yearly-soc",
+            "state": "due",
+            "dueOn": "2028-10-21"
+          },
+          {
+            "doseId": "flu-yearly",
+            "state": "due",
+            "dueOn": "2028-10-21"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a yearly dose stops waiting when the first doses are past their window",
+      "birthDate": "2026-03-01",
+      "today": "2032-03-09",
+      "profile": {
+        "coverage": "public+private",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "flu-1",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 183,
+          "latestAgeDays": 2191
+        },
+        {
+          "doseId": "flu-2",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 213,
+          "earliestAgeDays": 211,
+          "latestAgeDays": 2191,
+          "minIntervalDaysFromPrevious": 28,
+          "previousDoseIds": ["flu-1"]
+        },
+        {
+          "doseId": "flu-yearly",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "latestAgeDays": 2191,
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        },
+        {
+          "doseId": "flu-yearly-soc",
+          "vaccineKey": "flu",
+          "recommendedAgeDays": 365,
+          "network": "private",
+          "sources": ["sbp"],
+          "alternativeGroup": "flu-yearly",
+          "previousDoseIds": ["flu-1", "flu-2"],
+          "recurrence": {
+            "everyDays": 365,
+            "startAgeDays": 365
+          }
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 2200,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "flu-1",
+            "state": "expired"
+          },
+          {
+            "doseId": "flu-yearly",
+            "state": "expired",
+            "latestOn": "2032-02-29"
+          },
+          {
+            "doseId": "flu-yearly-soc",
+            "state": "due",
+            "dueOn": "2027-03-01",
+            "waitingFor": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "a premature baby gets the notice and the same dates",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-01",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": 32,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "bcg-1",
+          "vaccineKey": "bcg",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 1825
+        },
+        {
+          "doseId": "hepb-1",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 30
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "latestAgeDays": 2556
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 0,
+        "prematureNotice": true,
+        "doses": [
+          {
+            "doseId": "penta-1",
+            "state": "upcoming",
+            "dueOn": "2026-05-01",
+            "earliestOn": "2026-04-12"
+          }
+        ]
+      }
+    },
+    {
+      "name": "37 weeks is term: no notice",
+      "birthDate": "2026-03-01",
+      "today": "2026-03-01",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": 37,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "bcg-1",
+          "vaccineKey": "bcg",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 1825
+        },
+        {
+          "doseId": "hepb-1",
+          "vaccineKey": "hepb",
+          "recommendedAgeDays": 0,
+          "latestAgeDays": 30
+        },
+        {
+          "doseId": "penta-1",
+          "vaccineKey": "penta",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42,
+          "latestAgeDays": 2556
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 0,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "bcg-1",
+            "state": "due"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a leap-day birth counts whole calendar days",
+      "birthDate": "2024-02-29",
+      "today": "2025-02-28",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "y-1",
+          "vaccineKey": "y",
+          "recommendedAgeDays": 365
+        },
+        {
+          "doseId": "y-4",
+          "vaccineKey": "y",
+          "recommendedAgeDays": 1461
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 365,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "y-1",
+            "state": "due",
+            "dueOn": "2025-02-28"
+          },
+          {
+            "doseId": "y-4",
+            "state": "upcoming",
+            "dueOn": "2028-02-29"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ages across a daylight saving change stay whole days",
+      "birthDate": "2026-03-07",
+      "today": "2026-05-07",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "m-2",
+          "vaccineKey": "m",
+          "recommendedAgeDays": 61
+        },
+        {
+          "doseId": "m-8",
+          "vaccineKey": "m",
+          "recommendedAgeDays": 244
+        }
+      ],
+      "records": [],
+      "expected": {
+        "ageDays": 61,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "m-2",
+            "state": "due",
+            "dueOn": "2026-05-07"
+          },
+          {
+            "doseId": "m-8",
+            "state": "upcoming",
+            "dueOn": "2026-11-06"
+          }
+        ]
+      }
+    },
+    {
+      "name": "records outside the schedule are ignored; the earliest record of a dose is shown",
+      "birthDate": "2026-03-01",
+      "today": "2026-05-10",
+      "profile": {
+        "coverage": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      },
+      "schedule": [
+        {
+          "doseId": "d-1",
+          "vaccineKey": "d",
+          "recommendedAgeDays": 61,
+          "earliestAgeDays": 42
+        },
+        {
+          "doseId": "d-2",
+          "vaccineKey": "d",
+          "recommendedAgeDays": 122,
+          "earliestAgeDays": 72,
+          "minIntervalDaysFromPrevious": 30,
+          "previousDoseIds": ["d-1"]
+        }
+      ],
+      "records": [
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000001",
+          "doseId": null,
+          "givenOn": "2026-03-31"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000003",
+          "doseId": "removed-dose",
+          "givenOn": "2026-04-01"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000002",
+          "doseId": "d-1",
+          "givenOn": "2026-05-02"
+        },
+        {
+          "id": "0b7e9f5c-0000-4000-8000-000000000004",
+          "doseId": "d-1",
+          "givenOn": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "ageDays": 70,
+        "prematureNotice": false,
+        "doses": [
+          {
+            "doseId": "d-1",
+            "state": "given",
+            "recordId": "0b7e9f5c-0000-4000-8000-000000000002",
+            "givenOn": "2026-05-02"
+          },
+          {
+            "doseId": "d-2",
+            "state": "upcoming",
+            "dueOn": "2026-07-01"
+          }
+        ]
+      }
+    }
+  ]
+}

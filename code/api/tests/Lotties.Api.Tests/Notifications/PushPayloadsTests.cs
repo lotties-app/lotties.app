@@ -42,6 +42,61 @@ public sealed class PushPayloadsTests
     }
 
     [Fact]
+    public void Build_AppointmentReminder_CarriesTheAppointmentIdAndOffsetOnly()
+    {
+        var appointmentId = Guid.Parse("3f2504e0-4f89-41d3-9a0c-0305e82c3301");
+        var key = NotificationKey.ForAppointment(appointmentId, Slot, 120);
+        var content = new NotificationContent(BabyId, null, Slot, NotificationNames.Create("Lia", null), appointmentId, 120);
+
+        var payload = PushPayloads.Build(DeliveryId, NotificationKind.AppointmentReminder, content, key, NotificationLocale.FromOrDefault("pt-BR"), null);
+
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"appointment_reminder\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"apptId\":\"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\"offset\":120,\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"pt-BR\",\"names\":{\"baby\":\"Lia\"}}",
+            payload);
+    }
+
+    [Fact]
+    public void Build_DoctorSuggestion_CarriesTheProposalOrTheNoteIdOnly()
+    {
+        var suggestionId = Guid.Parse("3f2504e0-4f89-41d3-9a0c-0305e82c3301");
+        var proposal = NotificationContent.ForDoctorSuggestion(BabyId, DoctorSuggestionSource.Proposal, suggestionId, Slot, NotificationNames.Create("Lia", null));
+        var recommendation = NotificationContent.ForDoctorSuggestion(BabyId, DoctorSuggestionSource.Recommendation, suggestionId, Slot, null);
+
+        var proposalPayload = PushPayloads.Build(DeliveryId, NotificationKind.DoctorSuggestion, proposal, NotificationKey.ForDoctorSuggestion(DoctorSuggestionSource.Proposal, suggestionId), NotificationLocale.FromOrDefault("pt-BR"), null);
+        var notePayload = PushPayloads.Build(DeliveryId, NotificationKind.DoctorSuggestion, recommendation, NotificationKey.ForDoctorSuggestion(DoctorSuggestionSource.Recommendation, suggestionId), NotificationLocale.English, null);
+
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"doctor_suggestion\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"proposalId\":\"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"pt-BR\",\"names\":{\"baby\":\"Lia\"}}",
+            proposalPayload);
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"doctor_suggestion\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"noteId\":\"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"en\"}",
+            notePayload);
+    }
+
+    [Fact]
+    public void Build_VaccineDue_CarriesTheDoseIdAndTheVaccineNameInTheDeviceLanguage()
+    {
+        var vaccine = new Lotties.Domain.Vaccinations.LocalizedText(new Dictionary<string, string> { ["en"] = "Pentavalent (whole-cell DTP + Hib + hepatitis B)", ["pt-BR"] = "Pentavalente (DTP + Hib + hepatite B, células inteiras)" });
+        var named = new NotificationContent(BabyId, null, Slot, NotificationNames.Create("Lia", null, vaccine), VaccineDoseId: "penta-1");
+        var key = NotificationKey.ForVaccine(BabyId, "penta-1", null, 1);
+
+        var portuguese = PushPayloads.Build(DeliveryId, NotificationKind.VaccineDue, named, key, NotificationLocale.FromOrDefault("pt-BR"), null);
+        var english = PushPayloads.Build(DeliveryId, NotificationKind.VaccineDue, named with { Names = null }, key, NotificationLocale.English, null);
+
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"vaccine_due\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"doseId\":\"penta-1\",\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"pt-BR\",\"names\":{\"baby\":\"Lia\",\"vaccine\":\"Pentavalente\"}}",
+            portuguese);
+        Assert.Equal(
+            "{\"v\":1,\"id\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"kind\":\"vaccine_due\",\"babyId\":\"7c9e6679-7425-40de-944b-e07fc1f90ae7\","
+            + "\"doseId\":\"penta-1\",\"at\":\"2026-10-21T21:00:00Z\",\"lang\":\"en\"}",
+            english);
+    }
+
+    [Fact]
     public void Build_Test_HasNoBabyNoTokenNoNames()
     {
         var planned = NotificationPlanner.PlanTest(Guid.NewGuid(), DeliveryId, Slot);

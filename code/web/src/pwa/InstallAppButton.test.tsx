@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pretendNativeApp } from '../platform/nativeTestKit';
 
 const IPHONE_SAFARI =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
@@ -100,6 +101,19 @@ describe('InstallAppButton', () => {
     const InstallAppButton = await loadComponent();
     const { container } = render(<InstallAppButton />);
     expect(container.innerHTML).toBe('');
+  });
+
+  it('offers neither the install button nor the iOS hint inside the native app', async () => {
+    setUserAgent(IPHONE_SAFARI);
+    const undo = pretendNativeApp();
+    try {
+      const InstallAppButton = await loadComponent();
+      const { container } = render(<InstallAppButton />);
+      fireBeforeInstallPrompt();
+      expect(container.innerHTML).toBe('');
+    } finally {
+      undo();
+    }
   });
 
   it('hides the install button when the app is already installed', async () => {

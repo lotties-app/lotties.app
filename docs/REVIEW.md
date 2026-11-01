@@ -24,5 +24,6 @@ Status column: `todo` / `wave-N` (assigned) / `done`. Source file:line reference
 | 18 | Low | Email used as display name when no `name` claim | Do not expose email | done |
 | 19 | Low | Invite token in URL path ends up in logs | Accept via POST body; keep link fragment (`/invite#token`) | done |
 | 20 | Low | .NET 8 EOL 2026-11-10; very new web majors | Plan upgrade to .NET 10 LTS; pin/lock web versions | todo |
+| 21 | Low | A sync run (or token renewal) still in flight at `stop()` re-armed its retry timer, so a stopped engine woke up later on a closed account database with a stale token getter (after sign-out, a session end, or the native in-app re-sign-in); made `coldStart.test.tsx` B1 flaky, where an earlier test's engine pushed the queue | `stop()` suppresses retries and follow-up runs of the in-flight run (`SyncEngine`, `SessionRenewal`); regression tests; the B1 test unmounts before its teardown | done |
 
 Reviewed with no findings: route protection and role policies, IDOR across all baby-scoped resources, invite token entropy/hashing, user provisioning races, JWT validation, CORS, error leakage, injection, CSV parser, delta paging ties, soft deletes, migrations snapshot test, import transaction, prediction math, web XSS and redirects, service worker caching, git history secrets.

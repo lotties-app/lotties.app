@@ -81,6 +81,11 @@ const ALIASES: ReadonlyMap<string, IllustrationName> = new Map<string, Illustrat
     tummy_time: 'tummy_time',
     custom: 'custom',
     // Built-in event type keys (diaper, medication, belly_pain, bath, tummy_time above).
+    // `nasal_suction` and `belly_massage` have no drawing yet: they fall back to their type icon in
+    // the health tile; `fussy` falls back to its crying-face icon in the care tile. Of the types of
+    // the `MoreEventTypes` migration only `temperature` has a drawing (below); `nail_trim`,
+    // `spit_up`, `teething`, `milestone`, `symptom`, `outdoor` and `skin_care` fall back to their
+    // type icon in their category tile.
     sleep: 'nap',
     feeding: 'bottle',
     breast_pump: 'pumping',

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axe from 'axe-core';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useTestLocale } from '../../test/locale';
@@ -8,6 +9,7 @@ import { TimePanel } from './TimePanel';
 import {
   addMinutes,
   clampDate,
+  clockValue,
   dateAtRatio,
   daysBeforeToday,
   hourMarks,
@@ -24,29 +26,23 @@ import {
 const at = (h: number, m: number, day = 21) => new Date(2026, 9, day, h, m, 0, 0);
 
 describe('parseClock', () => {
-  it('reads 24-hour times in the usual typed shapes', () => {
+  it('reads the HH:MM value of a native time input', () => {
     expect(parseClock('14:30')).toEqual({ hours: 14, minutes: 30 });
-    expect(parseClock('1430')).toEqual({ hours: 14, minutes: 30 });
-    expect(parseClock('930')).toEqual({ hours: 9, minutes: 30 });
-    expect(parseClock('0005')).toEqual({ hours: 0, minutes: 5 });
-    expect(parseClock('9')).toEqual({ hours: 9, minutes: 0 });
-    expect(parseClock('14h30')).toEqual({ hours: 14, minutes: 30 });
-    expect(parseClock('7.05')).toEqual({ hours: 7, minutes: 5 });
-    expect(parseClock(' 23:59 ')).toEqual({ hours: 23, minutes: 59 });
+    expect(parseClock('00:00')).toEqual({ hours: 0, minutes: 0 });
+    expect(parseClock('09:05')).toEqual({ hours: 9, minutes: 5 });
+    expect(parseClock('23:59:00')).toEqual({ hours: 23, minutes: 59 });
   });
 
-  it('reads am and pm', () => {
-    expect(parseClock('2:30 pm')).toEqual({ hours: 14, minutes: 30 });
-    expect(parseClock('2:30PM')).toEqual({ hours: 14, minutes: 30 });
-    expect(parseClock('12 am')).toEqual({ hours: 0, minutes: 0 });
-    expect(parseClock('12:15 pm')).toEqual({ hours: 12, minutes: 15 });
-    expect(parseClock('11 p.m.')).toEqual({ hours: 23, minutes: 0 });
-  });
-
-  it('rejects non-times', () => {
-    for (const text of ['', 'abc', '24:00', '12:60', '25', '13 pm', '0 am', '1:2', '9m']) {
+  it('rejects an empty (incomplete) field and non-times', () => {
+    for (const text of ['', 'abc', '24:00', '12:60', '9:30', '1430', '2:30 pm']) {
       expect(parseClock(text), text).toBeNull();
     }
+  });
+
+  it('writes the local clock of an instant as a native value', () => {
+    expect(clockValue(at(9, 5))).toBe('09:05');
+    expect(clockValue(at(0, 0))).toBe('00:00');
+    expect(clockValue(at(23, 59))).toBe('23:59');
   });
 });
 
@@ -102,16 +98,24 @@ describe('time maths', () => {
       ok: true,
       value: at(15, 0, 20),
     });
-    // ...but not when that falls before the minimum.
+    // ...but not when that falls before the minimum: the nearest allowed instant comes along.
     expect(resolveTypedTime('15:00', now, { max: now, min: at(14, 0) })).toEqual({
       ok: false,
       problem: 'beforeMin',
+      nearest: at(14, 0),
     });
     expect(resolveTypedTime('13:00', now, { max: now, min: at(14, 0) })).toEqual({
       ok: false,
       problem: 'beforeMin',
+      nearest: at(14, 0),
     });
-    expect(resolveTypedTime('nope', now, { max: now })).toEqual({ ok: false, problem: 'invalid' });
+    // A later day than today (the date chip of a future day cannot be reached, but the maths holds).
+    expect(resolveTypedTime('10:00', at(9, 0, 22), { max: now })).toEqual({
+      ok: false,
+      problem: 'future',
+      nearest: now,
+    });
+    expect(resolveTypedTime('', now, { max: now })).toEqual({ ok: false, problem: 'invalid' });
   });
 
   it('builds a ruler of twelve hours that snaps to five minutes and lands exactly on now', () => {
@@ -182,26 +186,60 @@ describe('TimePanel', () => {
     expect(chosen()).toBe(NOW.toISOString());
   });
 
-  it('commits a typed time on blur or Enter, in several shapes', () => {
-    renderUi(<Panel />);
-    fireEvent.change(pill(), { target: { value: '1305' } });
-    fireEvent.blur(pill());
-    expect(chosen()).toBe(at(13, 5).toISOString());
-    fireEvent.change(pill(), { target: { value: '9:45 am' } });
-    fireEvent.keyDown(pill(), { key: 'Enter' });
-    expect(chosen()).toBe(at(9, 45).toISOString());
-    expect(pill().value).toBe('09:45');
+  it('is the native time picker with the chosen time as HH:MM', () => {
+    renderUi(<Panel initial={at(9, 5)} />);
+    expect(pill().type).toBe('time');
+    expect(pill().getAttribute('step')).toBe('60');
+    expect(pill().value).toBe('09:05');
   });
 
-  it('explains text that is not a time and keeps the old value', () => {
+  it('applies a picked time that fits on the chosen day at once, as the wheel turns', () => {
     renderUi(<Panel />);
-    fireEvent.change(pill(), { target: { value: '99:99' } });
+    fireEvent.change(pill(), { target: { value: '13:05' } });
+    expect(chosen()).toBe(at(13, 5).toISOString());
+    fireEvent.change(pill(), { target: { value: '00:00' } });
+    expect(chosen()).toBe(at(0, 0).toISOString());
+    fireEvent.blur(pill());
+    expect(chosen()).toBe(at(0, 0).toISOString());
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('keeps an out-of-range value mid-scroll and settles it when the field is left', () => {
+    renderUi(<Panel min={at(14, 0)} />);
+    fireEvent.change(pill(), { target: { value: '13:30' } }); // before the start: kept as a draft
+    expect(pill().value).toBe('13:30');
+    expect(chosen()).toBe(NOW.toISOString());
+    expect(screen.queryByRole('status')).toBeNull(); // no message while scrolling
+    fireEvent.change(pill(), { target: { value: '14:10' } }); // back in range: applied
+    expect(chosen()).toBe(at(14, 10).toISOString());
+    fireEvent.change(pill(), { target: { value: '13:45' } });
+    fireEvent.blur(pill());
+    expect(chosen()).toBe(at(14, 0).toISOString()); // clamped to the start
+    expect(pill().value).toBe('14:00');
+    expect(screen.getByRole('status').textContent).toBe('The time cannot be before 14:00.');
+    expect(pill().getAttribute('aria-invalid')).toBe('true');
+    expect(pill().getAttribute('aria-describedby')).toContain(screen.getByRole('status').id);
+  });
+
+  it('explains an emptied field and keeps the old value', () => {
+    renderUi(<Panel />);
+    fireEvent.change(pill(), { target: { value: '' } });
     fireEvent.blur(pill());
     expect(screen.getByRole('status').textContent).toBe('Enter a time like 14:30.');
     expect(pill().getAttribute('aria-invalid')).toBe('true');
     expect(chosen()).toBe(NOW.toISOString());
+    expect(pill().value).toBe('14:20');
     fireEvent.change(pill(), { target: { value: '14:00' } });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('has no axe violations, also while showing a problem', async () => {
+    const { container } = renderUi(<Panel />);
+    const rules = { rules: { 'color-contrast': { enabled: false } } };
+    expect((await axe.run(container, rules)).violations).toEqual([]);
+    fireEvent.change(pill(), { target: { value: '' } });
+    fireEvent.blur(pill());
+    expect((await axe.run(container, rules)).violations).toEqual([]);
   });
 
   it('turns a late typed time into yesterday evening just after midnight', () => {
@@ -314,15 +352,6 @@ describe('TimePanel', () => {
     expect(
       screen.getByRole('slider', { name: 'Ajustar o horário' }).getAttribute('aria-valuetext'),
     ).toMatch(/^14:05, há 15 minutos$/);
-  });
-
-  it('can show a 12-hour clock with am/pm', () => {
-    renderUi(
-      <Field label="Start">
-        <TimePanel value={at(14, 5)} onChange={() => {}} now={NOW} hourCycle="h12" />
-      </Field>,
-    );
-    expect(pill().value.replace(/\s/g, ' ')).toMatch(/^2:05 PM$/);
   });
 
   describe('compact', () => {

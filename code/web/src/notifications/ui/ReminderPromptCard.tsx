@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Button, Card, Stack, Typography } from '@mui/material';
 import { ApiError } from '../../api/ApiError';
 import { describeApiError } from '../../api/errorMessages';
-import { canWrite } from '../../baby/permissions';
+import { canLog } from '../../baby/permissions';
 import type { Baby } from '../../db/models';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useOnline } from '../../sync/useOnline';
@@ -41,7 +41,7 @@ function useDoseReminderOffer(baby: Baby) {
     permission: thisDevice.data?.permission ?? device.permission(),
     subscribed: !!thisDevice.data?.endpoint,
     doseDueOn: !!prefs?.doseDue,
-    canReceive: prefs?.canReceive ?? canWrite(baby),
+    canReceive: prefs?.canReceive ?? canLog(baby),
     dismissedAt: readPromptDismissedAt(),
     now: new Date(),
   });
@@ -54,6 +54,14 @@ function useDoseReminderOffer(baby: Baby) {
       doseLeadMinutes: prefs?.doseLeadMinutes ?? 0,
       napWindow: prefs?.napWindow ?? false,
       napLeadMinutes: prefs?.napLeadMinutes ?? 10,
+      bellyPainPattern: prefs?.bellyPainPattern ?? false,
+      overtiredWarning: prefs?.overtiredWarning ?? false,
+      fussyPattern: prefs?.fussyPattern ?? false,
+      diaperWetHeadsUp: prefs?.diaperWetHeadsUp ?? false,
+      diaperDirtyHeadsUp: prefs?.diaperDirtyHeadsUp ?? false,
+      appointmentReminders: prefs?.appointmentReminders ?? true,
+      doctorSuggestions: prefs?.doctorSuggestions ?? false,
+      vaccineReminders: prefs?.vaccineReminders ?? false,
     },
   } as const;
 }

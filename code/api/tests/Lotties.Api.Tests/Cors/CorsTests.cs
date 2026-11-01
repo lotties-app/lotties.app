@@ -29,6 +29,21 @@ public sealed class CorsTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.True(response.Headers.Contains("Access-Control-Allow-Origin"));
     }
 
+    [Theory]
+    [InlineData("https://lotties.app")]
+    [InlineData("https://localhost")]
+    [InlineData("capacitor://localhost")]
+    public async Task Preflight_NativeAppOrigins_AreAllowedNextToTheWebOrigin(string origin)
+    {
+        // The Capacitor shell (code/mobile): Android serves the bundle from https://localhost, iOS from capacitor://localhost.
+        using var configured = WithAllowedOrigins("https://lotties.app,https://localhost,capacitor://localhost");
+
+        var response = await configured.CreateClient().SendAsync(Preflight(origin));
+
+        Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var values));
+        Assert.Equal(origin, Assert.Single(values));
+    }
+
     [Fact]
     public async Task Preflight_UnlistedOrigin_ReturnsNoAllowOriginHeader()
     {

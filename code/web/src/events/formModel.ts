@@ -10,7 +10,9 @@ import { eventTypeText, type EventTypeText } from '../i18n/eventTypeText';
 import { t } from '../i18n/i18n';
 import { getOwn, setOwn } from '../util/ownProperty';
 import { formatNumber } from '../i18n/format';
-import { visibleFields } from './payloadRules';
+import { declaresFormula, FORMULA_KEYS } from '../formulas/formulaModel';
+import { DRUNK_KEY, PREPARED_KEY, withoutRedundantDrunk } from './bottleAmounts';
+import { visibleFields, withinDecimals } from './payloadRules';
 import { fromLocalInput, toLocalInput } from './time';
 
 export interface MedicationSelection {
@@ -74,19 +76,38 @@ export function isInstantByNature(
 export function defaultRunning(
   type: Pick<EventType, 'key' | 'babyId' | 'hasDuration'> | undefined,
   values: EventFormState['values'],
+  timeBottles = true,
 ): boolean {
+  if (!timeBottles && isBottle(type, values)) return false;
   return !!type?.hasDuration && !isInstantByNature(type, values);
+}
+
+/** A bottle of the built-in feeding type (the "Time bottle feedings" setting decides if it is timed). */
+function isBottle(
+  type: Pick<EventType, 'key' | 'babyId'> | undefined,
+  values: EventFormState['values'],
+): boolean {
+  return type?.babyId === null && type.key === 'feeding' && getOwn(values, 'method') === 'bottle';
 }
 
 export function isMedicationType(type: EventType | undefined): boolean {
   return type?.key === MEDICATION_TYPE_KEY;
 }
 
+/**
+ * Whether the form edits the field's value: every field that is not hidden, plus the hidden
+ * formula members of the built-in feeding type, which the formula chips edit (not a generic
+ * control).
+ */
+export function isFormField(type: EventType | undefined, field: EventFieldDefinition): boolean {
+  return field.hidden !== true || (declaresFormula(type) && FORMULA_KEYS.includes(field.key));
+}
+
 function valuesFromPayload(type: EventType | undefined, payload: EventPayload) {
   const values: EventFormState['values'] = {};
   for (const field of type?.fields ?? []) {
     // Hidden fields (pause keys, deprecated ones) have no control; `buildPayload` keeps their values.
-    if (field.hidden === true) continue;
+    if (!isFormField(type, field)) continue;
     const raw = getOwn(payload, field.key);
     if (raw === undefined || raw === null) continue;
     setOwn(values, field.key, field.kind === 'bool' ? raw === true : String(raw));
@@ -165,6 +186,9 @@ function fieldError(label: string, field: EventFieldDefinition, raw: string | bo
   if (field.integer === true && !Number.isInteger(n)) {
     return t('events.validation.fieldInteger', { label });
   }
+  if (!withinDecimals(field, n)) {
+    return t('events.validation.fieldDecimals', { label, count: field.decimals });
+  }
   if (field.min !== null && n < field.min) {
     return t('events.validation.fieldMin', { label, min: formatNumber(field.min) });
   }
@@ -172,6 +196,21 @@ function fieldError(label: string, field: EventFieldDefinition, raw: string | bo
     return t('events.validation.fieldMax', { label, max: formatNumber(field.max) });
   }
   return null;
+}
+
+/** The drunk amount of a bottle above the prepared one. */
+function drunkError(
+  label: string,
+  type: EventType,
+  field: EventFieldDefinition,
+  values: EventFormState['values'],
+): string | null {
+  if (type.babyId !== null || type.key !== 'feeding' || field.key !== DRUNK_KEY) return null;
+  const drunk = parseNumber(getOwn(values, DRUNK_KEY));
+  const prepared = parseNumber(getOwn(values, PREPARED_KEY));
+  return drunk !== null && prepared !== null && drunk > prepared
+    ? t('feedingAmounts.drunkAbovePrepared', { label })
+    : null;
 }
 
 function doseError(name: string, m: MedicationSelection) {
@@ -237,11 +276,9 @@ export function formProblems(
     problems.push({ field: 'end', message: t('events.validation.endBeforeStart') });
   }
   for (const field of shownFields(form, type)) {
-    const message = fieldError(
-      names.fieldLabel(type, field),
-      field,
-      getOwn(form.values, field.key),
-    );
+    const message =
+      fieldError(names.fieldLabel(type, field), field, getOwn(form.values, field.key)) ??
+      drunkError(names.fieldLabel(type, field), type, field, form.values);
     if (message) problems.push({ field: field.key, message });
   }
   if (isMedicationType(type)) {
@@ -296,16 +333,18 @@ export function buildPayload(
   }
   const payload: EventPayload = {};
   // Members no field declares (imports) and the values of hidden fields (pause keys) are kept.
-  const editable = new Set(type.fields.filter((f) => f.hidden !== true).map((f) => f.key));
+  const editable = new Set(type.fields.filter((f) => isFormField(type, f)).map((f) => f.key));
   for (const [key, value] of Object.entries(base)) {
     if (!editable.has(key)) setOwn(payload, key, value);
   }
-  for (const field of shownFields(form, type)) {
+  const visible = visibleFields(type.fields, formValue(form.values));
+  for (const field of visible.filter((f) => isFormField(type, f))) {
     const raw = getOwn(form.values, field.key);
     if (raw === undefined || raw === '') continue;
     setOwn<unknown>(payload, field.key, field.kind === 'number' ? parseNumber(raw) : raw);
   }
-  return payload;
+  // "All was drunk" is stored as no drunk amount, so editing the prepared amount later cannot leave it above.
+  return type.babyId === null && type.key === 'feeding' ? withoutRedundantDrunk(payload) : payload;
 }
 
 /**
@@ -331,6 +370,7 @@ function acceptedBy(
     const n = parseNumber(value);
     if (n === null || Number.isNaN(n)) return false;
     if (field.integer === true && !Number.isInteger(n)) return false;
+    if (!withinDecimals(field, n)) return false;
     return (field.min === null || n >= field.min) && (field.max === null || n <= field.max);
   }
   return typeof value === 'string';

@@ -182,6 +182,34 @@ public sealed class BabyTests
         Assert.Equal(BabyRole.Viewer, baby.FindMember(parentId)!.Role);
     }
 
+    [Theory]
+    [InlineData(BabyRole.Parent, BabyRole.Caregiver)]
+    [InlineData(BabyRole.Viewer, BabyRole.Caregiver)]
+    [InlineData(BabyRole.Caregiver, BabyRole.Parent)]
+    [InlineData(BabyRole.Caregiver, BabyRole.Viewer)]
+    public void ChangeMemberRole_ToAndFromCaregiver_ChangesRole(BabyRole from, BabyRole to)
+    {
+        var baby = Baby.Create("Lia", TestClock.Today, OwnerId, TestClock.Now);
+        var memberId = Guid.NewGuid();
+        baby.AddMember(memberId, from, TestClock.Now);
+
+        var member = baby.ChangeMemberRole(memberId, to);
+
+        Assert.Equal(to, member.Role);
+    }
+
+    [Fact]
+    public void AdmitWith_CaregiverInvite_AddsCaregiver()
+    {
+        var baby = Baby.Create("Lia", TestClock.Today, OwnerId, TestClock.Now);
+        var invite = Invite.Issue(baby.Id, BabyRole.Caregiver, OwnerId, TestClock.Now, TimeSpan.FromDays(1)).Invite;
+        var grandmother = Guid.NewGuid();
+
+        var member = baby.AdmitWith(invite, grandmother, TestClock.Now);
+
+        Assert.Equal((BabyRole.Caregiver, true, false), (member.Role, member.CanLogEvents, member.CanWrite));
+    }
+
     [Fact]
     public void ChangeMemberRole_UnknownUser_ThrowsMemberNotFound()
     {
@@ -274,6 +302,7 @@ public sealed class BabyTests
     [Theory]
     [InlineData(BabyRole.Owner, true, true)]
     [InlineData(BabyRole.Parent, true, false)]
+    [InlineData(BabyRole.Caregiver, false, false)]
     [InlineData(BabyRole.Viewer, false, false)]
     public void RolePermissions_PerRole_MatchSpec(BabyRole role, bool canWrite, bool canManageMembers)
     {

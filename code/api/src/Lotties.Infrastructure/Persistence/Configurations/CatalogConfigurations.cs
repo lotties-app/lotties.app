@@ -34,13 +34,15 @@ internal sealed class SubstanceConfiguration : IEntityTypeConfiguration<Substanc
 /// <remarks>
 /// Non-merged products are unique by (normalized name, form, country): a partial unique index (<c>merged_into_id IS NULL</c>),
 /// which PostgreSQL and SQLite both support. Search loads candidates by normalized-name prefix and length buckets, so no
-/// trigram extension is needed.
+/// trigram extension is needed. Official products are also unique by (source, external ref) (partial index on rows that
+/// have both), the importer's upsert key.
 /// </remarks>
 internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public const int FormMaxLength = 16;
     public const int StatusMaxLength = 16;
     public const string NotMergedFilter = "merged_into_id IS NULL";
+    public const string HasExternalRefFilter = "source IS NOT NULL AND external_ref IS NOT NULL";
 
     public void Configure(EntityTypeBuilder<Product> builder)
     {
@@ -57,8 +59,17 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .IsRequired();
         builder.Property(product => product.Status).HasConversion<string>().HasMaxLength(StatusMaxLength).IsRequired();
         builder.Property(product => product.CreatedAt).IsRequired();
+        builder.Property(product => product.Source).HasMaxLength(Product.SourceMaxLength);
+        builder.Property(product => product.ExternalRef).HasMaxLength(Product.ExternalRefMaxLength);
+        builder.Property(product => product.Presentation).HasMaxLength(Product.PresentationMaxLength);
+        builder.Property(product => product.AmbiguousName).HasMaxLength(Product.AmbiguousNameMaxLength);
+        builder.Property(product => product.InactiveSince);
         builder.Ignore(product => product.SubstanceIds);
         builder.Ignore(product => product.IsMerged);
+        builder.Ignore(product => product.IsActive);
+        builder.Ignore(product => product.IsOfficial);
+        builder.Ignore(product => product.SourceRank);
+        builder.HasIndex(product => new { product.Source, product.ExternalRef }).IsUnique().HasFilter(HasExternalRefFilter);
         builder.HasMany(product => product.Substances).WithOne().HasForeignKey(substance => substance.ProductId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(product => product.Substances).HasField("_substances").UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.HasIndex(product => new { product.NormalizedName, product.Form, product.Country }).IsUnique().HasFilter(NotMergedFilter);

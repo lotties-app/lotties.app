@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
-import { DEEP_LINK_PATH, linkOfMessage, type NotificationLink } from '../pwa/sw/deepLink';
+import { linkOfMessage, linkPath, type NotificationLink } from '../pwa/sw/deepLink';
 import { SyncEngineContext } from '../sync/SyncEngineContext';
 import { NotificationLinkContext } from './notificationLinkContext';
 import { linkFromLocation, pullBriefly, scrubNotificationHash } from './notificationLinks';
@@ -10,7 +10,8 @@ import { linkFromLocation, pullBriefly, scrubNotificationHash } from './notifica
  * Opens what a notification points at (docs/design/09-push-notifications.md section 11): from the
  * `/#notify=...` deep link of a new window, or from the worker's message to an open one. The baby
  * is selected only when the user belongs to it (else the link is ignored), a sync pull runs for at
- * most 3 s, then the Now screen takes the link. Nothing is logged or confirmed here.
+ * most 3 s, then the Now screen takes the link (the appointments page an appointment reminder's).
+ * Nothing is logged or confirmed here.
  */
 export function NotificationLinkProvider({ children }: { children: ReactNode }) {
   const { babies, select } = useSelectedBaby();
@@ -31,7 +32,7 @@ export function NotificationLinkProvider({ children }: { children: ReactNode }) 
       const link = linkOfMessage(event.data);
       if (!link) return;
       setIncoming(link);
-      navigate(DEEP_LINK_PATH);
+      navigate(linkPath(link));
     };
     worker.addEventListener('message', onMessage);
     return () => worker.removeEventListener('message', onMessage);

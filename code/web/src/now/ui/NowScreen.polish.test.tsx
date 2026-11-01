@@ -20,7 +20,7 @@ import { nightPeriodKey } from '../../theme/nightFeed';
 import { NIGHT_FEED_STATE_STORAGE_KEY } from '../../theme/nightFeedStorage';
 import { THEME_STORAGE_KEY } from '../../theme/themeStorage';
 import { napWindowKey, readSkippedNap } from '../napGuidance';
-import { readNowView } from '../ringPrefs';
+import { readNowView, readRingOpen } from '../ringPrefs';
 
 let db: BabyRoutineDb;
 
@@ -109,7 +109,8 @@ describe('the estimated nap sheet', () => {
       expect(running).toHaveLength(1);
       expect(running[0].payload).toMatchObject({ kind: 'nap' });
     });
-    expect(await screen.findByText('Asleep · Nap')).toBeTruthy();
+    // The pill, and the middle of the day ring when it is open.
+    expect((await screen.findAllByText('Asleep · Nap')).length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Estimated nap' })).toBeNull());
   });
 
@@ -142,6 +143,10 @@ describe('the estimated nap sheet', () => {
 });
 
 describe('the day rhythm view', () => {
+  // The ring draws today only: a morning seeded relative to now (and a nap window 40 minutes ahead)
+  // must stay inside the same calendar day, whatever hour the suite runs at.
+  beforeEach(() => pinClock(14));
+
   it('shows the ruler by default and the ring after choosing it, remembered', async () => {
     await seedNow(db);
     await seedMorning(db, 112);
@@ -156,9 +161,11 @@ describe('the day rhythm view', () => {
     // A text equivalent for the picture: the state, the sleep so far and the predicted window.
     const image = within(ring).getByRole('img');
     expect(image.getAttribute('aria-label')).toMatch(/^Day rhythm\. Awake 1h 52m\./);
-    expect(image.getAttribute('aria-label')).toMatch(/Nap window \d\d:\d\d to \d\d:\d\d\./);
+    expect(image.getAttribute('aria-label')).toMatch(/Next nap window \d\d:\d\d to \d\d:\d\d\./);
     expect(within(ring).getByTestId('ring-now')).toBeTruthy();
     expect(within(ring).getAllByTestId('ring-window').length).toBeGreaterThan(0);
+    expect(within(ring).getByTestId('ring-window-line').textContent).toMatch(/^Next nap about /);
+    expect(within(ring).getByRole('list', { name: 'What the ring shows' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ruler' }));
     expect(await screen.findByTestId('ruler-now')).toBeTruthy();
@@ -184,25 +191,28 @@ describe('the day rhythm view', () => {
     expect(within(ring).getByText('Asleep · Nap')).toBeTruthy();
   });
 
-  it('offers the ring when there is no nap window to put on the ruler', async () => {
+  it('shows the ring when there is no nap window to put on the ruler, and folds it', async () => {
     await seedNow(db);
     await seedMorning(db, 40);
     renderNow(learningPredictions());
     expect(await screen.findByText("Learning Lia's rhythm")).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show the day ring' }));
     const ring = await screen.findByTestId('day-ring');
     expect(within(ring).queryByTestId('ring-window')).toBeNull();
     expect(within(ring).getByText('Awake')).toBeTruthy();
+    const toggle = screen.getByRole('button', { name: 'Hide the ring' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(toggle);
+    await waitFor(() => expect(screen.queryByTestId('day-ring')).toBeNull());
+    expect(readRingOpen()).toBe(false);
   });
 
-  it('offers the ring while asleep when the ruler is chosen', async () => {
+  it('shows the ring while asleep (no ruler then)', async () => {
     await seedNow(db);
     await seedMorning(db, 400);
     await putEvent(db, 'sleep', 42, null, { kind: 'nap' });
     renderNow();
-    fireEvent.click(await screen.findByRole('button', { name: 'Show the day ring' }));
     expect(await screen.findByTestId('day-ring')).toBeTruthy();
-    expect(readNowView()).toBe('ring');
+    expect(screen.queryByTestId('ruler-now')).toBeNull();
   });
 });
 
@@ -216,8 +226,9 @@ describe('illustrations on the Now screen', () => {
     renderNow(sleepPredictions(40));
     const card = await screen.findByRole('region', { name: 'Current state' });
     expect(art(card, 'woke_up')).toBeTruthy();
+    // Compact hero: 64 px since the "Running now" layout.
     expect(card.querySelector('svg[data-illustration="woke_up"]')?.getAttribute('width')).toBe(
-      '96',
+      '64',
     );
     const tiles = screen.getByRole('region', { name: 'Quick log' });
     for (const name of ['bottle', 'diaper', 'medication', 'custom']) {

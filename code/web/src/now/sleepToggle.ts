@@ -142,23 +142,60 @@ export async function runSleepAction(
   const options: CommandOptions = { ...ctx.options, now: () => when };
   const base = { babyId: ctx.babyId, options };
 
-  const token = await db.transaction('rw', db.events, db.outbox, db.eventTypes, async () => {
-    if (action === 'back_asleep') {
-      const preset = sleepPreset(ctx.types, 'night_waking');
+  const token = await db.transaction(
+    'rw',
+    db.events,
+    db.outbox,
+    db.eventTypes,
+    db.babies,
+    async () => {
+      if (action === 'back_asleep') {
+        const preset = sleepPreset(ctx.types, 'night_waking');
+        const sleepType = ctx.types.find((t) => t.id === preset.typeId);
+        const stops = await stopNightWakings(
+          db,
+          ctx.babyId,
+          sleepType,
+          preset.typeId,
+          iso,
+          options,
+        );
+        return mergeTokens({ babyId: ctx.babyId, createdIds: [], stopped: [] }, stops);
+      }
+      const preset = sleepPreset(ctx.types, PRESET_OF[action] as string);
+      const ran = await runPreset(db, preset, base);
+      if (action !== 'woke_up' && action !== 'up_for_the_day') return ran;
       const sleepType = ctx.types.find((t) => t.id === preset.typeId);
-      const stops = await stopNightWakings(db, ctx.babyId, sleepType, preset.typeId, iso, options);
-      return mergeTokens({ babyId: ctx.babyId, createdIds: [], stopped: [] }, stops);
-    }
-    const preset = sleepPreset(ctx.types, PRESET_OF[action] as string);
-    const ran = await runPreset(db, preset, base);
-    if (action !== 'woke_up' && action !== 'up_for_the_day') return ran;
-    const sleepType = ctx.types.find((t) => t.id === preset.typeId);
-    return mergeTokens(
-      ran,
-      await stopNightWakings(db, ctx.babyId, sleepType, preset.typeId, iso, options),
-    );
-  });
+      return mergeTokens(
+        ran,
+        await stopNightWakings(db, ctx.babyId, sleepType, preset.typeId, iso, options),
+      );
+    },
+  );
   return { ...token, at: iso, shiftMinutes: 0 };
+}
+
+/** Whether the action stops the running sleep or night waking (changes an event, not a new one). */
+export function changesRunningSleep(kind: SleepActionKind): boolean {
+  return kind === 'woke_up' || kind === 'up_for_the_day' || kind === 'back_asleep';
+}
+
+/**
+ * Who logged a running sleep or night waking the user may not change (a Caregiver and someone
+ * else's timer): the Woke up / Up for the day / Back asleep actions are off then. `lockedBy` is
+ * `EventAccess.lockedBy`; `null` when nothing running is locked.
+ */
+export function runningSleepLock(
+  running: readonly BabyEvent[],
+  sleepTypeId: string | undefined,
+  lockedBy: (event: BabyEvent) => string | null,
+): string | null {
+  for (const event of running) {
+    if (event.typeId !== sleepTypeId) continue;
+    const lock = lockedBy(event);
+    if (lock !== null) return lock;
+  }
+  return null;
 }
 
 /** The command changed nothing (e.g. Back asleep with no night waking running). */

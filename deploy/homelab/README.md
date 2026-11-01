@@ -31,7 +31,10 @@ One Ingress ([manifests/ingress.yaml](manifests/ingress.yaml)), class `traefik-e
 
 - TLS: cert-manager issues the certificate into the Secret `lotties-tls` from the ClusterIssuer
   `letsencrypt-production-lotties-app-issuer` (DNS-01 in Cloudflare). Plain HTTP is redirected to HTTPS by Traefik.
-- The browser talks to one origin, so no CORS is needed (`CORS_ALLOWED_ORIGINS` is still set to `https://lotties.app`).
+- The browser talks to one origin, so no CORS is needed (`CORS_ALLOWED_ORIGINS` defaults to `https://lotties.app`).
+  The iOS/Android app ([code/mobile](../../code/mobile), [docs/design/12-mobile-capacitor.md](../../docs/design/12-mobile-capacitor.md))
+  runs its bundled copy of the web app from its own origins, so before it ships set in `deploy/homelab/.env`:
+  `CORS_ALLOWED_ORIGINS=https://lotties.app,https://localhost,capacitor://localhost` (Android WebView, iOS WKWebView).
 - nginx never sees `/api` in the cluster. Its `API_UPSTREAM` points at `lotties-api.<ns>.svc.cluster.local:8080`, so
   `kubectl port-forward svc/lotties-web 8080:8080` serves the whole app.
 - The API trusts `X-Forwarded-For`/`-Proto` only from private networks (default `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16`,
@@ -60,6 +63,10 @@ One Ingress ([manifests/ingress.yaml](manifests/ingress.yaml)), class `traefik-e
    - Valid post logout redirect URIs: `https://lotties.app/login`
    - Web origins: `https://lotties.app`
    - An audience mapper that adds `lotties-api` (the API's `AUTH_AUDIENCE`) to the access token.
+   - For the iOS/Android app, on the same client (only when it ships; the web app does not need them):
+     valid redirect URI `app.lotties.app://auth/callback`, valid post logout redirect URI `app.lotties.app://auth/logout`,
+     Web origins `https://localhost` and `capacitor://localhost`. See
+     [docs/design/12-mobile-capacitor.md section 4](../../docs/design/12-mobile-capacitor.md#4-keycloak-client-changes-owner).
 7. **Settings:** copy [.env.example](.env.example) to `deploy/homelab/.env` (gitignored; `chmod 600`) and fill it in.
    The repository root `.env` (docker compose) is not used.
 

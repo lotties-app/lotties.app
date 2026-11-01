@@ -11,6 +11,30 @@ public enum NotificationKind
 
     /// <summary>A test sent on demand from Settings (<c>test</c>).</summary>
     Test,
+
+    /// <summary>Belly pain often shows up around this time of day; a good moment for a belly massage (<c>belly_pain_pattern</c>).</summary>
+    BellyPainPattern,
+
+    /// <summary>The baby has been awake nearly as long as her usual longest comfortable stretch (<c>overtired_warning</c>).</summary>
+    OvertiredWarning,
+
+    /// <summary>Fussiness often starts around this time of day; a calm routine may help (<c>fussy_pattern</c>).</summary>
+    FussyPattern,
+
+    /// <summary>A wet diaper is usually due soon, from the gaps between wet diapers (<c>diaper_wet_headsup</c>).</summary>
+    DiaperWetHeadsUp,
+
+    /// <summary>A dirty diaper may be coming, after a feed or from the gaps between dirty diapers (<c>diaper_dirty_headsup</c>).</summary>
+    DiaperDirtyHeadsUp,
+
+    /// <summary>An upcoming appointment of the baby starts in a week, a day, 2 hours or 30 minutes (<c>appointment_reminder</c>).</summary>
+    AppointmentReminder,
+
+    /// <summary>The baby's doctor sent a prescription proposal or a recommendation (<c>doctor_suggestion</c>; Owners and Parents only).</summary>
+    DoctorSuggestion,
+
+    /// <summary>A vaccine dose is due according to the baby's schedule (<c>vaccine_due</c>; Owners and Parents only).</summary>
+    VaccineDue,
 }
 
 /// <summary>Web Push <c>Urgency</c> header value.</summary>
@@ -40,6 +64,12 @@ public enum NotificationSkipReason
 
     /// <summary>The recipient stopped reminders for it.</summary>
     Dismissed,
+
+    /// <summary>Another diaper heads-up reached the recipient less than an hour ago (both diaper kinds count).</summary>
+    Spacing,
+
+    /// <summary>The recipient already got the most diaper heads-ups of this kind for the baby today (local day).</summary>
+    DailyCap,
 }
 
 /// <summary>Stable lower snake case codes of the notification enums.</summary>
@@ -50,6 +80,14 @@ public static class NotificationCodes
         NotificationKind.DoseDue => "dose_due",
         NotificationKind.NapWindow => "nap_window",
         NotificationKind.Test => "test",
+        NotificationKind.BellyPainPattern => "belly_pain_pattern",
+        NotificationKind.OvertiredWarning => "overtired_warning",
+        NotificationKind.FussyPattern => "fussy_pattern",
+        NotificationKind.DiaperWetHeadsUp => "diaper_wet_headsup",
+        NotificationKind.DiaperDirtyHeadsUp => "diaper_dirty_headsup",
+        NotificationKind.AppointmentReminder => "appointment_reminder",
+        NotificationKind.DoctorSuggestion => "doctor_suggestion",
+        NotificationKind.VaccineDue => "vaccine_due",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown notification kind."),
     };
 
@@ -68,6 +106,8 @@ public static class NotificationCodes
         NotificationSkipReason.Limit => "limit",
         NotificationSkipReason.Snoozed => "snoozed",
         NotificationSkipReason.Dismissed => "dismissed",
+        NotificationSkipReason.Spacing => "spacing",
+        NotificationSkipReason.DailyCap => "daily_cap",
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "Unknown skip reason."),
     };
 

@@ -1,0 +1,98 @@
+{
+  "appointments": {
+    "title": "Appointments",
+    "add": "New appointment",
+    "open": "Appointments calendar",
+    "createBabyFirst": "Add a baby first to keep their appointments.",
+    "viewOnly": "You can see the appointments but not change them.",
+    "caregiverNotice": "You can see the appointments. Only parents add or change them.",
+    "viewerNotice": "You can see the appointments but not change them.",
+    "types": {
+      "consultation": "Consultation",
+      "vaccine": "Vaccine",
+      "exam": "Exam",
+      "other": "Other"
+    },
+    "status": {
+      "done": "Done",
+      "cancelled": "Cancelled",
+      "ask": "Did it happen?"
+    },
+    "reminders": {
+      "30": "30 min",
+      "120": "2 hours",
+      "1440": "1 day",
+      "10080": "1 week"
+    },
+    "calendar": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "today": "Today",
+      "todayMark": "today",
+      "count_one": "{{count}} appointment",
+      "count_other": "{{count}} appointments"
+    },
+    "agenda": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "showAll": "Show all appointments",
+      "noneOnDay": "No appointments on {{date}}.",
+      "noneUpcoming": "Nothing coming up."
+    },
+    "empty": {
+      "title": "No appointments yet",
+      "body": "Keep doctor visits, vaccines and exams here, with a reminder before each one."
+    },
+    "next": {
+      "label": "Next appointment"
+    },
+    "day": {
+      "label": "Appointments of the day"
+    },
+    "sheet": {
+      "newTitle": "New appointment",
+      "editTitle": "Edit appointment",
+      "title": "Title",
+      "titlePlaceholder": "e.g. Pediatrician, 2-month vaccines",
+      "titleRequired": "Enter a title of up to 80 characters.",
+      "type": "Type",
+      "date": "Date",
+      "time": "Time",
+      "whenRequired": "Choose the date and the time.",
+      "duration": "Duration",
+      "minutesUnit": "min",
+      "durationChoices": "Usual lengths",
+      "durationChips": {
+        "15": "15 minutes",
+        "30": "30 minutes",
+        "60": "1 hour"
+      },
+      "location": "Place",
+      "doctor": "Doctor",
+      "notes": "Notes",
+      "outcome": "How it went",
+      "reminders": "Remind me",
+      "remindersHelp": "Sent before the start to the devices with notifications on.",
+      "notStarted": "A visit marked as done can't start in the future.",
+      "saveFailed": "Couldn't save the appointment. Try again."
+    },
+    "detail": {
+      "when": "When",
+      "location": "Place",
+      "doctor": "Doctor",
+      "reminders": "Reminders",
+      "remindersBefore": "{{list}} before",
+      "noReminders": "No reminders",
+      "notes": "Notes",
+      "outcome": "How it went",
+      "addToCalendar": "Add to calendar",
+      "edit": "Edit",
+      "cancel": "Cancel appointment",
+      "restore": "Restore appointment",
+      "markDone": "Mark as done",
+      "ask": "Did it happen? Mark it as done and note how it went.",
+      "addMeasurements": "Add measurements",
+      "cancelledNotice": "{{title}} cancelled"
+    }
+  }
+}

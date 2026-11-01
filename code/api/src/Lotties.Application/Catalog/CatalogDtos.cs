@@ -90,6 +90,35 @@ public sealed record ProductResponse
     public IReadOnlyList<ProductSubstanceResponse> Substances { get; init; } = [];
 
     public DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>The source of an imported product: <c>anvisa</c> (status <c>official</c>) or <c>curated</c> (status <c>curated</c>); <c>null</c> otherwise.</summary>
+    public string? Source { get; init; }
+
+    /// <summary>Dosage or presentation text the official name carried (e.g. <c>0,9%</c>); <c>null</c> when none.</summary>
+    public string? Presentation { get; init; }
+
+    /// <summary>The official product left its source (no longer registered): search no longer offers it.</summary>
+    public bool Inactive { get; init; }
+
+    /// <summary>
+    /// The source name shared by products with different ingredients (show a warning to check the box); <c>null</c> when
+    /// the name is unambiguous.
+    /// </summary>
+    public string? AmbiguousName { get; init; }
+}
+
+/// <summary>A page of the products containing one substance (<c>GET /catalog/substances/{id}/products</c>); information only.</summary>
+public sealed record SubstanceProductsResponse
+{
+    public required SubstanceResponse Substance { get; init; }
+
+    public int Total { get; init; }
+
+    public int Offset { get; init; }
+
+    public int Limit { get; init; }
+
+    public IReadOnlyList<ProductResponse> Items { get; init; } = [];
 }
 
 /// <summary>A short reference to a product (used for the "same active ingredient" siblings).</summary>

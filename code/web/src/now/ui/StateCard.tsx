@@ -11,16 +11,22 @@ import type { IconName } from '../../ui/icons';
 import { Illustration } from '../../ui/illustrations';
 import type { AsleepState, AwakeState, LearningState, NapWindow, NightWaking } from '../nowState';
 import { sleepActionLabel } from '../nowText';
-import type { SleepAction, SleepActionKind } from '../sleepToggle';
+import { LockedNote } from '../../baby/LockedNote';
+import { typeForKey } from '../eventFacts';
+import {
+  changesRunningSleep,
+  runningSleepLock,
+  type SleepAction,
+  type SleepActionKind,
+} from '../sleepToggle';
 import type { NowScreenModel } from '../useNow';
 import { napWindowKey, readSkippedNap, writeSkippedNap } from '../napGuidance';
 import { readNowView, writeNowView, type NowView } from '../ringPrefs';
 import { DayRing } from './DayRing';
 import { DayRuler } from './DayRuler';
 import { NapSheet } from './NapSheet';
+import { RhythmCollapse } from './RhythmCollapse';
 import { RhythmToggle } from './RhythmToggle';
-import { ForgottenNotice } from './ForgottenNotice';
-import { SleepTimerRow } from './SleepTimerRow';
 import type { NowAction } from './useNowAction';
 import { BedtimeLine } from './BedtimeLine';
 import { WhySheet } from './WhySheet';
@@ -52,10 +58,6 @@ export interface StateCardProps {
   prediction?: PredictionDto;
   /** The next night's start (heuristic v1.1), when the server sent one. */
   bedTime?: BedTimeDto | null;
-  /** Ends a forgotten timer at the suggested time. */
-  onEndAt: (eventId: string, endedAt: string) => void;
-  isSnoozed: (eventId: string) => boolean;
-  onKeepRunning: (eventId: string) => void;
 }
 
 /** Tinted pill with the state ("Awake", "Asleep · Nap"). */
@@ -114,7 +116,7 @@ function StateHero({
           variant="hero"
           component="p"
           data-testid="state-duration"
-          sx={{ mt: 1, fontSize: 'clamp(2.25rem, 11vw, 3rem)', overflowWrap: 'anywhere' }}
+          sx={{ mt: 0.75, fontSize: 'clamp(2rem, 9vw, 2.5rem)', overflowWrap: 'anywhere' }}
         >
           {duration}
         </Typography>
@@ -122,27 +124,23 @@ function StateHero({
           {since}
         </Typography>
       </Box>
-      <Illustration name={illustration} size={96} glow />
+      <Illustration name={illustration} size={64} glow />
     </Box>
   );
 }
 
-function NapWindowBlock({
-  state,
+/**
+ * The nap window as one compact line: "Nap window 21:30–22:26 · opens in 40m", the confidence, a
+ * tap for the details sheet and "Why?". The ruler or ring lives in the folding part below.
+ */
+function NapWindowLine({
   window,
   now,
-  view,
-  onView,
-  ring,
   onWhy,
   onOpen,
 }: {
-  state: AwakeState;
   window: NapWindow;
   now: Date;
-  view: NowView;
-  onView: (view: NowView) => void;
-  ring: ReactNode;
   onWhy: () => void;
   onOpen: () => void;
 }) {
@@ -158,21 +156,17 @@ function NapWindowBlock({
   return (
     <Box
       sx={(theme) => ({
-        mt: 2,
-        p: 1.5,
+        mt: 1.5,
+        py: 0.5,
+        pl: 1.5,
+        pr: 0.5,
         borderRadius: `${RADIUS.input}px`,
         backgroundColor: palette(theme).surfaceRaised,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
       })}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <Typography variant="subtitle2" component="h3" sx={{ flexGrow: 1 }}>
-          {t('now.nap.title')}
-        </Typography>
-        <Chip size="small" label={t(CONFIDENCE_LABEL[window.confidence])} />
-        <Button size="small" onClick={onWhy} sx={{ minHeight: 44, minWidth: 44 }}>
-          {t('predictions.why')}
-        </Button>
-      </Box>
       <ButtonBase
         onClick={onOpen}
         aria-label={t('now.nap.openDetails', {
@@ -181,27 +175,60 @@ function NapWindowBlock({
         })}
         aria-haspopup="dialog"
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 1,
-          width: '100%',
+          flex: '1 1 auto',
+          minWidth: 0,
           minHeight: 44,
+          justifyContent: 'flex-start',
           textAlign: 'start',
           borderRadius: `${RADIUS.input}px`,
         }}
       >
-        <Typography variant="body1" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-          {t('now.nap.range', {
-            from: formatTime(window.earliest),
-            to: formatTime(window.latest),
-          })}
-          <Typography component="span" color="text.secondary" sx={{ fontWeight: 400 }}>
-            {` · ${status}`}
-          </Typography>
+        <Typography variant="body2" component="span" sx={{ display: 'block', minWidth: 0 }}>
+          <Box component="span" sx={{ fontWeight: 600 }}>
+            <span>{t('now.nap.title')}</span>{' '}
+            <Box component="span" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {t('now.nap.range', {
+                from: formatTime(window.earliest),
+                to: formatTime(window.latest),
+              })}
+            </Box>
+          </Box>
+          <Box component="span" sx={{ color: 'text.secondary' }}>
+            {` · ${status} `}
+          </Box>
+          <Chip
+            size="small"
+            component="span"
+            label={t(CONFIDENCE_LABEL[window.confidence])}
+            sx={{ height: 22, fontSize: '0.75rem', verticalAlign: 'middle' }}
+          />
         </Typography>
-        <Icon name="chevron-right" size={20} />
       </ButtonBase>
+      <Button size="small" onClick={onWhy} sx={{ minHeight: 44, minWidth: 44, flexShrink: 0 }}>
+        {t('predictions.why')}
+      </Button>
+    </Box>
+  );
+}
+
+/** The ruler of the awake window, or the ring, with the toggle between them. */
+function RhythmView({
+  state,
+  window,
+  now,
+  view,
+  onView,
+  ring,
+}: {
+  state: AwakeState;
+  window: NapWindow;
+  now: Date;
+  view: NowView;
+  onView: (view: NowView) => void;
+  ring: ReactNode;
+}) {
+  return (
+    <>
       {view === 'ring' ? (
         ring
       ) : (
@@ -212,7 +239,7 @@ function NapWindowBlock({
         />
       )}
       <RhythmToggle view={view} onChange={onView} />
-    </Box>
+    </>
   );
 }
 
@@ -226,7 +253,7 @@ function LearningBlock({ learning, babyName }: { learning: LearningState; babyNa
   return (
     <Box
       sx={(theme) => ({
-        mt: 2,
+        mt: 1.5,
         p: 1.5,
         borderRadius: `${RADIUS.input}px`,
         backgroundColor: palette(theme).surfaceRaised,
@@ -259,23 +286,29 @@ function SleepButtons({
   actions,
   onRun,
   disabled,
+  lockedBy = null,
 }: {
   actions: SleepAction[];
   onRun: (kind: SleepActionKind) => void;
   disabled: boolean;
+  /** Who started the running sleep the user may not change (see `runningSleepLock`). */
+  lockedBy?: string | null;
 }) {
   const [primary, ...others] = actions;
   if (!primary) return null;
+  const off = (kind: SleepActionKind) =>
+    disabled || (lockedBy !== null && changesRunningSleep(kind));
+  const locked = !disabled && lockedBy !== null && actions.some((a) => changesRunningSleep(a.kind));
   return (
     <>
       <Button
         variant="contained"
         size="large"
         fullWidth
-        disabled={disabled}
+        disabled={off(primary.kind)}
         startIcon={<Icon name={ACTION_ICON[primary.kind]} size={24} />}
         onClick={() => onRun(primary.kind)}
-        sx={{ mt: 2, minHeight: 64, fontSize: '1.0625rem' }}
+        sx={{ mt: 1.5, minHeight: 56, fontSize: '1.0625rem' }}
       >
         {sleepActionLabel(primary.kind)}
       </Button>
@@ -285,13 +318,18 @@ function SleepButtons({
             <Button
               key={other.kind}
               color="inherit"
-              disabled={disabled}
+              disabled={off(other.kind)}
               onClick={() => onRun(other.kind)}
               sx={{ minHeight: 44, color: 'text.secondary' }}
             >
               {sleepActionLabel(other.kind)}
             </Button>
           ))}
+        </Box>
+      )}
+      {locked && (
+        <Box sx={{ mt: 1 }}>
+          <LockedNote name={lockedBy} />
         </Box>
       )}
     </>
@@ -401,44 +439,10 @@ function asleepLabel(state: AsleepState, t: TFunction): string {
 const asleepMinutes = (state: AsleepState) => state.nightWaking?.minutes ?? state.minutes;
 
 /**
- * Under the asleep hero: the day ring when that view is chosen, otherwise a quiet button that
- * offers it (the ruler only exists while awake).
- */
-function RhythmFooter({
-  view,
-  onView,
-  ring,
-}: {
-  view: NowView;
-  onView: (view: NowView) => void;
-  ring: ReactNode;
-}) {
-  const { t } = useTranslation();
-  if (view !== 'ring') {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-        <Button
-          color="inherit"
-          onClick={() => onView('ring')}
-          sx={{ minHeight: 44, color: 'text.secondary' }}
-        >
-          {t('now.ring.show')}
-        </Button>
-      </Box>
-    );
-  }
-  return (
-    <Box sx={{ mt: 2 }}>
-      {ring}
-      <RhythmToggle view={view} onChange={onView} />
-    </Box>
-  );
-}
-
-/**
- * The state card (docs/design/mockups/01-now.html): awake or asleep with a live duration, the nap
- * window on a day ruler (or what the app is still learning), and the one big action that changes
- * the state, with the quiet secondary one.
+ * The state card (docs/design/mockups/01-now.html, compact since the "Running now" layout): awake
+ * or asleep with a live duration, the nap window as one line (or what the app is still learning),
+ * the bedtime line, the one big action that changes the state with the quiet secondary ones, and
+ * the day ruler or ring folded below (`RhythmCollapse`). Running timers have their own cards above.
  */
 export function StateCard({
   model,
@@ -447,9 +451,6 @@ export function StateCard({
   action,
   prediction,
   bedTime,
-  onEndAt,
-  isSnoozed,
-  onKeepRunning,
 }: StateCardProps) {
   const { t } = useTranslation();
   const [whyOpen, setWhyOpen] = useState(false);
@@ -466,6 +467,11 @@ export function StateCard({
     writeSkippedNap(babyId, key);
   };
   const disabled = model.readOnly;
+  const sleepLock = runningSleepLock(
+    model.running,
+    typeForKey(model.types, 'sleep')?.id,
+    model.access.controlLockedBy,
+  );
   const run = (kind: SleepActionKind) =>
     void action.run(() =>
       model.commands.sleep(kind, state.kind === 'asleep' ? undefined : state.sleepKindHint),
@@ -486,151 +492,124 @@ export function StateCard({
     />
   );
 
-  const forgotten =
-    state.kind === 'asleep' ? (state.nightWaking?.forgotten ?? state.forgotten) : undefined;
-  const forgottenEventId =
-    state.kind === 'asleep' ? (state.nightWaking?.eventId ?? state.eventId) : '';
-  /** The running timer the card shows (the sleep, or the night waking inside it). */
-  const timerEvent = model.events.find((candidate) => candidate.id === forgottenEventId);
+  const sleepButtons = state.kind !== 'unknown' && (
+    <SleepButtons
+      actions={model.sleepActions}
+      onRun={run}
+      disabled={disabled}
+      lockedBy={sleepLock}
+    />
+  );
 
-  return (
-    <Card component="section" aria-label={t('now.state.region')} sx={{ p: 2.5 }}>
-      {state.kind === 'unknown' ? (
+  if (state.kind === 'unknown') {
+    return (
+      <Card component="section" aria-label={t('now.state.region')} sx={{ p: 2 }}>
         <AskBlock babyName={babyName} onRun={run} disabled={disabled} />
-      ) : state.kind === 'awake' ? (
+      </Card>
+    );
+  }
+
+  if (state.kind === 'asleep') {
+    return (
+      <Card component="section" aria-label={t('now.state.region')} sx={{ p: 2 }}>
+        <AsleepBlock state={state} />
+        {sleepButtons}
+        <RhythmCollapse>
+          {ringFor(asleepLabel(state, t), formatDuration(asleepMinutes(state) * MINUTE_MS))}
+        </RhythmCollapse>
+      </Card>
+    );
+  }
+
+  const awakeDuration = formatDuration(state.awakeMinutes * MINUTE_MS);
+  const window = state.window && napWindowKey(state.window) !== skipped ? state.window : null;
+  return (
+    <Card component="section" aria-label={t('now.state.region')} sx={{ p: 2 }}>
+      <StateHero
+        illustration="woke_up"
+        pill={<StatePill category="care" icon="sun" label={t('now.state.awake')} />}
+        duration={awakeDuration}
+        since={
+          state.after === 'nap'
+            ? t('now.state.sinceAfterNap', { time: formatTime(state.since) })
+            : state.after === 'night'
+              ? t('now.state.sinceAfterNight', { time: formatTime(state.since) })
+              : t('now.state.since', { time: formatTime(state.since) })
+        }
+      />
+      {window ? (
         <>
-          <StateHero
-            illustration="woke_up"
-            pill={<StatePill category="care" icon="sun" label={t('now.state.awake')} />}
-            duration={formatDuration(state.awakeMinutes * MINUTE_MS)}
-            since={
-              state.after === 'nap'
-                ? t('now.state.sinceAfterNap', { time: formatTime(state.since) })
-                : state.after === 'night'
-                  ? t('now.state.sinceAfterNight', { time: formatTime(state.since) })
-                  : t('now.state.since', { time: formatTime(state.since) })
-            }
+          <NapWindowLine
+            window={window}
+            now={now}
+            onWhy={() => setWhyOpen(true)}
+            onOpen={() => setNapOpen(true)}
           />
-          {state.window && napWindowKey(state.window) !== skipped ? (
-            <>
-              <NapWindowBlock
-                state={state}
-                window={state.window}
-                now={now}
-                view={view}
-                onView={setView}
-                ring={ringFor(
-                  t('now.state.awake'),
-                  formatDuration(state.awakeMinutes * MINUTE_MS),
-                  state.window,
-                )}
-                onWhy={() => setWhyOpen(true)}
-                onOpen={() => setNapOpen(true)}
-              />
-              <WhySheet
-                open={whyOpen}
-                onClose={() => setWhyOpen(false)}
-                window={state.window}
-                prediction={prediction}
-              />
-              <NapSheet
-                open={napOpen}
-                onClose={() => setNapOpen(false)}
-                window={state.window}
-                {...(prediction?.expectedDuration
-                  ? { expectedMinutes: prediction.expectedDuration.minutes }
-                  : {})}
-                now={now}
-                readOnly={model.readOnly}
-                onSkip={() => {
-                  setNapOpen(false);
-                  skipNap(napWindowKey(state.window!));
-                }}
-                onLog={() => {
-                  setNapOpen(false);
-                  run('fell_asleep');
-                }}
-              />
-            </>
-          ) : state.window ? (
-            <Box
-              sx={(theme) => ({
-                mt: 2,
-                p: 1.5,
-                borderRadius: `${RADIUS.input}px`,
-                backgroundColor: palette(theme).surfaceRaised,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
-              })}
-            >
-              <Typography variant="body2" color="text.secondary">
-                {t('now.napSheet.skipped')}
-              </Typography>
-              <Button size="small" onClick={() => skipNap(null)} sx={{ minHeight: 44 }}>
-                {t('now.napSheet.show')}
-              </Button>
-            </Box>
-          ) : null}
-          {state.window && napWindowKey(state.window) === skipped && null}
-          {bedTime && <BedtimeLine bedTime={bedTime} now={now} />}
-          {state.learning && <LearningBlock learning={state.learning} babyName={babyName} />}
-          {(!state.window || napWindowKey(state.window) === skipped) && (
-            <RhythmFooter
-              view={view}
-              onView={setView}
-              ring={ringFor(t('now.state.awake'), formatDuration(state.awakeMinutes * MINUTE_MS))}
-            />
-          )}
-        </>
-      ) : (
-        <>
-          <AsleepBlock state={state} />
-          <SleepTimerRow
-            state={state}
-            babyId={babyId}
-            event={timerEvent}
-            type={model.types.find((candidate) => candidate.id === timerEvent?.typeId)}
+          <WhySheet
+            open={whyOpen}
+            onClose={() => setWhyOpen(false)}
+            window={window}
+            prediction={prediction}
+          />
+          <NapSheet
+            open={napOpen}
+            onClose={() => setNapOpen(false)}
+            window={window}
+            {...(prediction?.expectedDuration
+              ? { expectedMinutes: prediction.expectedDuration.minutes }
+              : {})}
+            now={now}
             readOnly={model.readOnly}
-            action={action}
+            onSkip={() => {
+              setNapOpen(false);
+              skipNap(napWindowKey(window));
+            }}
+            onLog={() => {
+              setNapOpen(false);
+              run('fell_asleep');
+            }}
           />
-          <RhythmFooter
+        </>
+      ) : state.window ? (
+        <Box
+          sx={(theme) => ({
+            mt: 1.5,
+            py: 0.5,
+            pl: 1.5,
+            pr: 0.5,
+            borderRadius: `${RADIUS.input}px`,
+            backgroundColor: palette(theme).surfaceRaised,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+          })}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {t('now.napSheet.skipped')}
+          </Typography>
+          <Button size="small" onClick={() => skipNap(null)} sx={{ minHeight: 44 }}>
+            {t('now.napSheet.show')}
+          </Button>
+        </Box>
+      ) : null}
+      {bedTime && <BedtimeLine bedTime={bedTime} now={now} />}
+      {state.learning && <LearningBlock learning={state.learning} babyName={babyName} />}
+      {sleepButtons}
+      <RhythmCollapse>
+        {window ? (
+          <RhythmView
+            state={state}
+            window={window}
+            now={now}
             view={view}
             onView={setView}
-            ring={ringFor(asleepLabel(state, t), formatDuration(asleepMinutes(state) * MINUTE_MS))}
+            ring={ringFor(t('now.state.awake'), awakeDuration, window)}
           />
-        </>
-      )}
-
-      {forgotten && !isSnoozed(forgottenEventId) && state.kind === 'asleep' && (
-        <Box sx={{ mt: 2 }}>
-          <ForgottenNotice
-            art={state.nightWaking ? 'night_waking' : state.sleepKind === 'night' ? 'night' : 'nap'}
-            title={
-              state.nightWaking
-                ? t('now.forgotten.waking', {
-                    duration: formatDuration(state.nightWaking.minutes * MINUTE_MS),
-                  })
-                : t('now.forgotten.asleep', {
-                    kind:
-                      state.sleepKind === 'night'
-                        ? t('now.state.asleepNightLower')
-                        : t('now.state.asleepNapLower'),
-                    duration: formatDuration(state.minutes * MINUTE_MS),
-                  })
-            }
-            endLabel={t('now.forgotten.wokeAt', { time: formatTime(forgotten.suggestedEnd) })}
-            onEnd={() => onEndAt(forgottenEventId, forgotten.suggestedEnd)}
-            onKeep={() => onKeepRunning(forgottenEventId)}
-            disabled={model.readOnly}
-          />
-        </Box>
-      )}
-
-      {state.kind !== 'unknown' && (
-        <SleepButtons actions={model.sleepActions} onRun={run} disabled={disabled} />
-      )}
+        ) : (
+          ringFor(t('now.state.awake'), awakeDuration)
+        )}
+      </RhythmCollapse>
     </Card>
   );
 }

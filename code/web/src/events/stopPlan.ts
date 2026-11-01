@@ -1,6 +1,8 @@
 import type { BabyEvent, EventPayload, EventType } from '../db/models';
-import { getOwn } from '../util/ownProperty';
+import { getOwn, setOwn } from '../util/ownProperty';
 import type { EventFormState } from './formModel';
+import { FORMULA_KEYS } from '../formulas/formulaModel';
+import { DRUNK_KEY, PREPARED_KEY } from './bottleAmounts';
 import { lastUsedFor } from './lastUsedValues';
 import {
   isComplete,
@@ -29,16 +31,22 @@ const askable = (problems: PayloadProblem[]) =>
 
 /**
  * Optional fields of a built-in type worth asking when its timer stops, because they are only known
- * then: how much of the bottle was drunk (and what was in it). Asked only while the amount is
- * missing; none of them is required, so the stop never depends on them.
+ * then: how much was prepared and how much of it was drunk (and what was in it: the content and,
+ * for formula, which one). Asked until both amounts are set; none of them is required, so the stop
+ * never depends on them.
  */
 function askedAtStop(type: EventType, payload: EventPayload): string[] {
   if (type.babyId !== null || type.key !== 'feeding') return [];
-  if (getOwn(payload, 'method') !== 'bottle' || getOwn(payload, 'amount_ml') !== undefined) {
+  if (
+    getOwn(payload, 'method') !== 'bottle' ||
+    (getOwn(payload, PREPARED_KEY) !== undefined && getOwn(payload, DRUNK_KEY) !== undefined)
+  ) {
     return [];
   }
   const declared = new Set(type.fields.map((f) => f.key));
-  return ['amount_ml', 'bottle_feeding_type'].filter((key) => declared.has(key));
+  return [PREPARED_KEY, DRUNK_KEY, 'bottle_feeding_type', ...FORMULA_KEYS].filter((key) =>
+    declared.has(key),
+  );
 }
 
 export function planStop(type: EventType | undefined, payload: EventPayload): StopPlan {
@@ -51,6 +59,26 @@ export function planStop(type: EventType | undefined, payload: EventPayload): St
   if (asked.length > 0) return { kind: 'finish', fields: asked };
   if (problems.length === 0) return { kind: 'stop' };
   return { kind: 'strip', payload: withoutHiddenValues(type, payload) };
+}
+
+/**
+ * `stored` with only `fields` taken from `built`, and only where `stored` had no value (absent,
+ * `null` or `''`): what a Caregiver's "Finish this ..." on someone else's timer may save.
+ */
+export function fillEmptyFields(
+  stored: EventPayload,
+  built: EventPayload,
+  fields: readonly string[],
+): EventPayload {
+  const next: EventPayload = { ...stored };
+  for (const key of fields) {
+    const before = getOwn(stored, key);
+    const value = getOwn(built, key);
+    if ((before === undefined || before === null || before === '') && value !== undefined) {
+      setOwn<unknown>(next, key, value);
+    }
+  }
+  return next;
 }
 
 /**

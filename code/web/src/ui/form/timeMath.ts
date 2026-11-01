@@ -66,37 +66,44 @@ export interface Clock {
   minutes: number;
 }
 
-const CLOCK_PATTERN = /^(\d{1,2})(?:[:.hH](\d{2}))?\s*(?:([aApP])\.?[mM]\.?)?$/;
-const DIGITS_PATTERN = /^(\d{1,2})(\d{2})$/;
+/** A native time input's value: `HH:MM`, with seconds only if a browser adds them. */
+const CLOCK_PATTERN = /^(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/;
 
 /**
- * Reads a typed time of day: `14:30`, `1430`, `930`, `9`, `14h30`, `2:30 pm`, `2.30PM`, `12 am`.
- * Hours are 0-23 (1-12 with am/pm); `null` when it is not a time.
+ * Reads the value of a native time input (`14:30`, `09:05`, `09:05:00`). Hours 0-23, minutes
+ * 0-59; `null` when it is empty (an incomplete native field) or not a time.
  */
 export function parseClock(text: string): Clock | null {
-  const value = text.trim();
-  const digits = DIGITS_PATTERN.exec(value);
-  const match = digits ?? CLOCK_PATTERN.exec(value);
+  const match = CLOCK_PATTERN.exec(text);
   if (!match) return null;
-  let hours = Number(match[1]);
-  const minutes = match[2] === undefined ? 0 : Number(match[2]);
-  const meridiem = digits ? undefined : match[3]?.toLowerCase();
-  if (minutes > 59) return null;
-  if (meridiem) {
-    if (hours < 1 || hours > 12) return null;
-    hours = (hours % 12) + (meridiem === 'p' ? 12 : 0);
-  } else if (hours > 23) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
   return { hours, minutes };
+}
+
+/** The local clock of `date` as the `HH:MM` value of a native time input (`09:05`). */
+export function clockValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export type TimeProblem = 'invalid' | 'future' | 'beforeMin';
 
-export type ResolvedTime = { ok: true; value: Date } | { ok: false; problem: TimeProblem };
+/**
+ * A typed time placed on a day: the instant, or why not. Out of range, `nearest` is the instant
+ * clamped into the limits (what the panel falls back to when the field is left).
+ */
+export type ResolvedTime =
+  | { ok: true; value: Date }
+  | { ok: false; problem: 'invalid' }
+  | { ok: false; problem: 'future' | 'beforeMin'; nearest: Date };
 
 /**
- * Places a typed clock time on `day` (the currently chosen day). Typing a time later than `max`
- * while the day is today means the previous evening ("23:30" typed at 00:10), so it moves back
- * one day instead of failing. A value before `min` or after `max` otherwise reports a problem.
+ * Places a clock time (`HH:MM` from the native time input) on `day` (the currently chosen day).
+ * A time later than `max` while the day is today means the previous evening ("23:30" picked at
+ * 00:10), so it moves back one day instead of failing. A value before `min` or after `max`
+ * otherwise reports a problem, with the nearest allowed instant.
  */
 export function resolveTypedTime(
   text: string,
@@ -109,8 +116,9 @@ export function resolveTypedTime(
   if (value > limits.max && daysBeforeToday(value, limits.max) === 0) {
     value = shiftLocalDays(value, -1);
   }
-  if (value > limits.max) return { ok: false, problem: 'future' };
-  if (limits.min && value < limits.min) return { ok: false, problem: 'beforeMin' };
+  const nearest = clampDate(value, limits.min, limits.max);
+  if (value > limits.max) return { ok: false, problem: 'future', nearest };
+  if (limits.min && value < limits.min) return { ok: false, problem: 'beforeMin', nearest };
   return { ok: true, value };
 }
 

@@ -1,0 +1,29 @@
+{
+  "baby": {
+    "viewerNotice": "Você tem acesso somente para visualização a este bebê, então os registros estão desativados.",
+    "viewOnlyNamed": "Você tem acesso somente para visualização a {{name}}.",
+    "nameLabel": "Nome",
+    "birthDate": "Data de nascimento",
+    "nameRequired": "Informe o nome.",
+    "birthRequired": "Informe a data de nascimento.",
+    "birthFuture": "A data de nascimento não pode ser no futuro.",
+    "noBabyYet": "Nenhum bebê ainda",
+    "createPrompt": "Cadastre um bebê para começar a registrar ou abra um link de convite que alguém compartilhou com você.",
+    "create": "Cadastrar bebê",
+    "roles": {
+      "Owner": "Titular",
+      "Parent": "Responsável",
+      "Viewer": "Visualizador",
+      "Caregiver": "Cuidador(a)",
+      "Doctor": "Médico(a)"
+    },
+    "roleHints": {
+      "Owner": "Controle total, incluindo membros e convites",
+      "Parent": "Pode registrar e editar tudo, e gerenciar remédios e ajustes",
+      "Caregiver": "Pode registrar eventos e editar os próprios registros",
+      "Viewer": "Só pode visualizar",
+      "Doctor": "Profissional de saúde: vê tudo, escreve notas e medidas"
+    },
+    "caregiverNamed": "Você é cuidador(a) de {{name}}: pode registrar eventos e editar os seus próprios registros. Os responsáveis cuidam do resto."
+  }
+}

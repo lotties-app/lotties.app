@@ -8,6 +8,7 @@ Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec:
 - Layout: application code under `code/` (`api`, `web`, `keycloak-theme`), the Playwright suite in `tests/e2e/`, the Python benchmark in `ml/`; docs, workflows, `docker-compose.yml` and the root `.env` stay at the root.
 - `code/web/`: React 19 + TS + MUI, Vite SPA (no SSR), Dexie offline store.
 - `code/api/`: .NET 8, layers Domain / Application / Infrastructure / Api; EF Core + Npgsql.
+- `code/mobile/`: Capacitor 8 iOS/Android shell bundling `code/web/dist` (Vite mode `native`, `code/web/.env.native`); `npm --prefix code/mobile run build:web|sync|android|ios`; `@capacitor/*` pinned identically in web and mobile; web code reaches native only behind `isNativeApp()` (`code/web/src/platform`, lazy imports); see `docs/design/12-mobile-capacitor.md`.
 - Commands: `dotnet build code/api/Lotties.sln`, `dotnet test code/api/Lotties.sln`, `npm --prefix code/web run dev|build|test|lint`.
 - E2E (real Keycloak + DB, needs root `.env` incl. `E2E_*`): `npm --prefix tests/e2e install`, then `cd tests/e2e && npx playwright test`; see `docs/E2E.md`.
 
@@ -18,12 +19,18 @@ Baby event-tracking PWA (React + .NET 8 + Postgres), open source AGPL-3.0. Spec:
 - Persistence: Entity Framework Core (Npgsql), code-first migrations only; no raw SQL schema changes, no `EnsureCreated` outside the SQLite test host. Migrations are applied with `dotnet ef database update` (default) or, opt-in, at API startup with `DB_AUTO_MIGRATE=true` (migrator role, advisory lock); see docs/DEPLOY.md "Applying migrations".
 - Predictions are pure Domain functions, no I/O.
 - All AI-produced docs, plans, specs, reports and graphs go in `docs/` (graphify writes to `docs/graphify`, set via `.claude/settings.json`). Only CLAUDE.md, README, LICENSE, CONTRIBUTING stay at root.
-- UI text: every user-visible string goes through i18n `t()` (en + pt-BR catalogs in code/web/src/i18n/locales); dates/numbers via Intl helpers; see docs/DESIGN.md section 9. Add keys to both catalogs.
+- UI text: every user-visible string goes through i18n `t()` (en + pt-BR catalogs in code/web/src/i18n/locales); dates/numbers via Intl helpers; see docs/DESIGN.md section 9. Add UI strings to the feature's own file under `locales/<lang>/` (`locales/en/<feature>.json` and `locales/pt-BR/<feature>.json`).
+- Parallel work: one git worktree per agent (`scripts/worktree-new.sh`, `worktree-integrate.sh`, `worktree-remove.sh`), integrated and deployed one feature at a time from the main clone; see `docs/PROCESS.md`.
+- In a worktree never run `npm install`/`npm ci` or change dependencies: its node_modules are junctions to the main clone's.
 - Use skills `develop:dotnet8` (api) and `refactor:react` (web).
 - Subagents: Opus plans/orchestrates, Sonnet medium-hard, Haiku simple, never Fable.
 - Container runtime is Podman inside WSL (archlinux distro), not Docker: run `wsl -- podman ...` or `podman-compose`. The WSL host runs the user's OTHER containers (traefik on :80, databases, etc.): never stop, remove or prune anything not named `br-*`; use only your own names and high ports. Rootful bridge networks fail there (nftables), use `--network host`.
 - Secrets live only in the gitignored root `.env` (never read, print or commit it); the API reads `DB_*`, `AUTH_*`, `CORS_ALLOWED_ORIGINS` from env. No Docker/nginx on the dev machine: compose/Dockerfile/nginx changes can only be reviewed by eye.
 - Sync contract: server `updatedAt` is the delta cursor; conflicts compare client `updatedAt` against stored `ClientUpdatedAt` (see SPEC "Events sync contract"). Never compare client clock with server `updatedAt`.
+- Roles Owner > Parent > Caregiver > Viewer (SPEC "Roles and permissions"): a new API route needs a row in `EndpointRoleMatrixTests` (the test fails otherwise); web gates go through `baby/permissions.ts`.
+- Doctor role (docs/design/16-doctor-access.md): outside the Owner > Parent > Caregiver > Viewer order; reads, writes only her notes and consultation measurements, never gets reminders. Note visibility is filtered in the server query of every read: a private note never reaches another member.
 - Web local data is per account (Dexie DB named from issuer+sub); logout/leave must warn about unsynced outbox and clear it. Server-provided keys (icons, field keys) go through `util/ownProperty.ts`.
 - API tests run on SQLite (no Docker/Postgres): Postgres-only behavior (jsonb, xmin) is verified by the model/snapshot tests only. EF migrations are generated with `dotnet ef migrations add` (local tool manifest in code/api); no SQL script is checked in (generate one on demand with `dotnet ef migrations script --idempotent`, never commit it).
+- Vaccine schedule: one source of truth `code/api/data/vaccine-schedule.br.json` (embedded in Lotties.Application, validated at startup, served with an ETag); the status engine exists in C# and TS with shared vectors (`code/web/src/vaccines/vaccineStatusVectors.json`); facts only, never advice (docs/design/18-vaccines.md section 8 for yearly updates).
 - Real Napper exports contain a child's data: never commit them (`docs/samples/` is gitignored); tests use synthetic fixtures.
+- Official medicine list: ANVISA open data via the admin tool `code/api/tools/Lotties.CatalogImporter` (docs/design/13-anvisa-catalog.md); never infer an ingredient from a name or another product; never commit downloaded or derived data files (keep them in the tool's cache dir), never run it against the real DB from the agent.

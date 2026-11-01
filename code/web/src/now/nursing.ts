@@ -256,6 +256,20 @@ function usedSides(left: number, right: number, running: BreastSide): 'left' | '
   return running;
 }
 
+/**
+ * The payload of a nursing session stopped at `end` (UTC ISO): the open segment closed into its
+ * side's seconds, the sides used, and the side it ended on (`last_side`).
+ */
+export function stoppedNursingPayload(event: BabyEvent, end: string): EventPayload {
+  const side = currentSide(event);
+  const payload = withoutOwn(closeSegment(event, new Date(end)), SIDE_SINCE_KEY);
+  const left = payloadNumber({ payload }, SECONDS_KEY.left) ?? 0;
+  const right = payloadNumber({ payload }, SECONDS_KEY.right) ?? 0;
+  setOwn<unknown>(payload, 'side', usedSides(left, right, side));
+  setOwn<unknown>(payload, LAST_SIDE_KEY, side);
+  return payload;
+}
+
 /** Closes the open segment and stops the session; undo re-opens it with the earlier payload. */
 export async function stopNursing(
   db: BabyRoutineDb,
@@ -265,15 +279,8 @@ export async function stopNursing(
   const { iso, options: at } = tapMoment(options);
   return db.transaction('rw', db.events, db.outbox, async () => {
     const event = await loadRunning(db, eventId);
-    const side = currentSide(event);
     const end = iso < event.startedAt ? event.startedAt : iso;
-    const closed = closeSegment(event, new Date(end));
-    const payload = withoutOwn(closed, SIDE_SINCE_KEY);
-    const left = payloadNumber({ payload }, SECONDS_KEY.left) ?? 0;
-    const right = payloadNumber({ payload }, SECONDS_KEY.right) ?? 0;
-    setOwn<unknown>(payload, 'side', usedSides(left, right, side));
-    setOwn<unknown>(payload, LAST_SIDE_KEY, side);
-    const after = await finishEvent(db, eventId, payload, end, at);
+    const after = await finishEvent(db, eventId, stoppedNursingPayload(event, end), end, at);
     return editedToken(event.babyId, event, after, iso, true);
   });
 }

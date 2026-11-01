@@ -1,6 +1,7 @@
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Exceptions;
+using Lotties.Domain.Professionals;
 using Microsoft.Extensions.Logging;
 
 namespace Lotties.Application.Babies;
@@ -9,6 +10,7 @@ internal sealed class InviteService : IInviteService
 {
     private readonly IInviteRepository _invites;
     private readonly IBabyRepository _babies;
+    private readonly IProfessionalProfileRepository _professionals;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<InviteService> _logger;
@@ -16,12 +18,14 @@ internal sealed class InviteService : IInviteService
     public InviteService(
         IInviteRepository invites,
         IBabyRepository babies,
+        IProfessionalProfileRepository professionals,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
         ILogger<InviteService> logger)
     {
         _invites = invites ?? throw new ArgumentNullException(nameof(invites));
         _babies = babies ?? throw new ArgumentNullException(nameof(babies));
+        _professionals = professionals ?? throw new ArgumentNullException(nameof(professionals));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -62,11 +66,15 @@ internal sealed class InviteService : IInviteService
         var invite = await FindInviteAsync(token, cancellationToken);
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var baby = await _babies.FindAsync(invite.BabyId, cancellationToken) ?? throw new InviteNotFoundException();
-        var member = baby.AdmitWith(invite, user.Id, _timeProvider.GetUtcNow());
+        var isDeclaredProfessional = await IsDeclaredProfessionalAsync(invite.Role, user.Id, cancellationToken);
+        var member = baby.AdmitWith(invite, user.Id, _timeProvider.GetUtcNow(), isDeclaredProfessional);
         await _babies.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("User {UserId} joined baby {BabyId} as {Role} with invite {InviteId}", user.Id, baby.Id, member.Role, invite.Id);
-        return BabyResponse.For(baby, member.Role);
+        return BabyResponse.For(baby, member);
     }
+
+    private async Task<bool> IsDeclaredProfessionalAsync(BabyRole role, Guid userId, CancellationToken cancellationToken) =>
+        role.RequiresProfessionalProfile() && await _professionals.FindAsync(userId, cancellationToken) is not null;
 
     private async Task<Invite> FindInviteAsync(string? token, CancellationToken cancellationToken)
     {

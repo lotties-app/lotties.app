@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, Typography } from '@mui/material';
 import { useApiClient } from '../../api/ApiClientContext';
-import { canWrite } from '../../baby/permissions';
+import { canDecideProposals, canLog, canWrite } from '../../baby/permissions';
 import type { Baby } from '../../db/models';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useServerAction } from '../../settings/useServerAction';
@@ -18,15 +18,24 @@ import {
 } from '../pushApi';
 import { pushKeys } from '../usePush';
 
-/** What a member who never changed anything has (everything off). */
+/** What a member who never changed anything has (everything off but the appointment reminders). */
 function defaultsFor(baby: Baby): BabyPreferencesDto {
+  const canReceive = canLog(baby);
   return {
     babyId: baby.id,
-    canReceive: canWrite(baby),
+    canReceive,
     doseDue: false,
     doseLeadMinutes: 0,
     napWindow: false,
     napLeadMinutes: 10,
+    bellyPainPattern: false,
+    overtiredWarning: false,
+    fussyPattern: false,
+    diaperWetHeadsUp: false,
+    diaperDirtyHeadsUp: false,
+    appointmentReminders: canReceive,
+    doctorSuggestions: false,
+    vaccineReminders: false,
   };
 }
 
@@ -51,6 +60,14 @@ function BabyRow({
       doseLeadMinutes: prefs.doseLeadMinutes,
       napWindow: prefs.napWindow,
       napLeadMinutes: prefs.napLeadMinutes,
+      bellyPainPattern: prefs.bellyPainPattern ?? false,
+      overtiredWarning: prefs.overtiredWarning ?? false,
+      fussyPattern: prefs.fussyPattern ?? false,
+      diaperWetHeadsUp: prefs.diaperWetHeadsUp ?? false,
+      diaperDirtyHeadsUp: prefs.diaperDirtyHeadsUp ?? false,
+      appointmentReminders: prefs.appointmentReminders ?? prefs.canReceive,
+      doctorSuggestions: prefs.doctorSuggestions ?? false,
+      vaccineReminders: prefs.vaccineReminders ?? false,
       ...change,
     };
     const replace = (stored: BabyPreferencesDto) =>
@@ -120,6 +137,74 @@ function BabyRow({
             }))}
           />
         </Field>
+      )}
+      <SwitchRow
+        icon="massage"
+        checked={prefs.bellyPainPattern ?? false}
+        disabled={off}
+        onChange={(bellyPainPattern) => update({ bellyPainPattern })}
+        label={t('notifications.reminders.bellyPain')}
+        description={t('notifications.reminders.bellyPainHelp')}
+      />
+      <SwitchRow
+        icon="zzz"
+        checked={prefs.overtiredWarning ?? false}
+        disabled={off}
+        onChange={(overtiredWarning) => update({ overtiredWarning })}
+        label={t('notifications.reminders.overtired')}
+        description={t('notifications.reminders.overtiredHelp')}
+      />
+      <SwitchRow
+        icon="mood-cry"
+        checked={prefs.fussyPattern ?? false}
+        disabled={off}
+        onChange={(fussyPattern) => update({ fussyPattern })}
+        label={t('notifications.reminders.fussy')}
+        description={t('notifications.reminders.fussyHelp')}
+      />
+      <SwitchRow
+        icon="diaper"
+        checked={prefs.diaperWetHeadsUp ?? false}
+        disabled={off}
+        onChange={(diaperWetHeadsUp) => update({ diaperWetHeadsUp })}
+        label={t('notifications.reminders.diaperWet')}
+        description={t('notifications.reminders.diaperWetHelp')}
+      />
+      <SwitchRow
+        icon="diaper"
+        checked={prefs.diaperDirtyHeadsUp ?? false}
+        disabled={off}
+        onChange={(diaperDirtyHeadsUp) => update({ diaperDirtyHeadsUp })}
+        label={t('notifications.reminders.diaperDirty')}
+        description={t('notifications.reminders.diaperDirtyHelp')}
+      />
+      <SwitchRow
+        icon="calendar"
+        checked={prefs.appointmentReminders ?? prefs.canReceive}
+        disabled={off}
+        onChange={(appointmentReminders) => update({ appointmentReminders })}
+        label={t('notifications.reminders.appointments')}
+        description={t('notifications.reminders.appointmentsHelp')}
+      />
+      {canWrite(baby) && (
+        <SwitchRow
+          icon="vaccine"
+          checked={prefs.vaccineReminders ?? false}
+          disabled={off}
+          onChange={(vaccineReminders) => update({ vaccineReminders })}
+          label={t('notifications.reminders.vaccines')}
+          description={t('notifications.reminders.vaccinesHelp')}
+        />
+      )}
+      {canDecideProposals(baby) && (
+        <SwitchRow
+          icon="stethoscope"
+          checked={prefs.doctorSuggestions ?? false}
+          disabled={off}
+          onChange={(doctorSuggestions) => update({ doctorSuggestions })}
+          label={t('notifications.reminders.doctor')}
+          description={t('notifications.reminders.doctorHelp')}
+        />
       )}
       <ErrorNotice message={save.error} />
     </Stack>

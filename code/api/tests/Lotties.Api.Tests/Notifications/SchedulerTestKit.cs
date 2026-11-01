@@ -154,8 +154,34 @@ internal sealed class SchedulerTestHost : IDisposable
             new NotificationSettingsTerms(NotificationTimeZone.From(timeZone), quietHours ?? QuietHours.Default, quietIncludesMedicine, showNames),
             TestUsers.Now));
 
-    public Task SeedPreferencesAsync(Guid babyId, Guid userId, bool doseDue = true, int doseLead = 0, bool napWindow = false, int napLead = 10) =>
-        SeedAsync(BabyNotificationPreferences.Create(babyId, userId, ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead), TestUsers.Now));
+    public Task SeedPreferencesAsync(
+        Guid babyId,
+        Guid userId,
+        bool doseDue = true,
+        int doseLead = 0,
+        bool napWindow = false,
+        int napLead = 10,
+        bool bellyPainPattern = false,
+        bool overtiredWarning = false,
+        bool fussyPattern = false,
+        bool diaperWet = false,
+        bool diaperDirty = false,
+        bool appointmentReminders = true,
+        bool doctorSuggestions = false,
+        bool vaccineReminders = false) =>
+        SeedAsync(BabyNotificationPreferences.Create(
+            babyId,
+            userId,
+            ReminderPreferences.Create(doseDue, doseLead, napWindow, napLead, bellyPainPattern, overtiredWarning, fussyPattern, diaperWet, diaperDirty, appointmentReminders, doctorSuggestions, vaccineReminders),
+            TestUsers.Now));
+
+    /// <summary>An instant event of a built-in type (e.g. belly pain with intensity 3, or a finished belly massage).</summary>
+    public Task SeedEventAsync(Guid babyId, Guid userId, Guid typeId, DateTimeOffset startedAt, string payload = "{}") =>
+        SeedAsync(Event.Create(Guid.NewGuid(), babyId, typeId, userId, startedAt, startedAt, EventPayload.From(payload), null, startedAt));
+
+    /// <summary>A timed event of a built-in type from <paramref name="startedAt"/> to <paramref name="endedAt"/> (<c>null</c> = running), e.g. a nap.</summary>
+    public Task SeedTimedEventAsync(Guid babyId, Guid userId, Guid typeId, DateTimeOffset startedAt, DateTimeOffset? endedAt, string payload = "{}") =>
+        SeedAsync(Event.Create(Guid.NewGuid(), babyId, typeId, userId, startedAt, endedAt, EventPayload.From(payload), null, startedAt));
 
     /// <summary>An opted-in recipient: São Paulo zone unless given, dose reminders on, one device.</summary>
     public async Task<PushSubscription> SeedRecipientAsync(Guid babyId, Guid userId, string timeZone = "America/Sao_Paulo", int doseLead = 0, bool quietIncludesMedicine = false, QuietHours? quietHours = null, bool showNames = false)

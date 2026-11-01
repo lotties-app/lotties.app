@@ -23,6 +23,17 @@ public interface INotificationDeliveryRepository
     /// <summary>The distinct dedupe keys claimed for these users (any status, any subscription) since <paramref name="createdSince"/>.</summary>
     Task<IReadOnlyList<DeliveredNotification>> ListClaimedKeysAsync(IReadOnlyCollection<Guid> userIds, DateTimeOffset createdSince, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The heads-ups of <paramref name="kinds"/> claimed for these users since <paramref name="createdSince"/> that count
+    /// toward the diaper caps: sent or still pending on some subscription (one per user and dedupe key, at the earliest
+    /// send time, else the due time).
+    /// </summary>
+    Task<IReadOnlyList<SentHeadsUp>> ListSentHeadsUpsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        IReadOnlyCollection<NotificationKind> kinds,
+        DateTimeOffset createdSince,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Cancels every pending delivery of the subscription (transferred or revoked); returns how many.</summary>
     Task<int> CancelPendingForSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default);
 

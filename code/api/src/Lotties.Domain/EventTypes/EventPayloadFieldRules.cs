@@ -13,7 +13,8 @@ namespace Lotties.Domain.EventTypes;
 /// A visible required field must hold a value once the event is complete (a running timer may still be filled in),
 /// except bool fields, where no value means <c>false</c>. Values must match their kind: text a string, number a number
 /// within <see cref="EventFieldDefinition.Min"/>/<see cref="EventFieldDefinition.Max"/>, select one of the options,
-/// bool <c>true</c>/<c>false</c>; an integer number field takes whole numbers only. Members no field declares are not
+/// bool <c>true</c>/<c>false</c>; an integer number field takes whole numbers only, and a number field with
+/// <see cref="EventFieldDefinition.Decimals"/> at most that many decimal places. Members no field declares are not
 /// checked. <see cref="EventFieldDefinition.IsHidden"/> does not change any of this (it only tells forms not to render).
 /// </summary>
 internal static class EventPayloadFieldRules
@@ -116,6 +117,11 @@ internal static class EventPayloadFieldRules
             throw new DomainValidationException(field.Key, $"'{field.Key}' must be a whole number.");
         }
 
+        if (field.Decimals is { } decimals && !HasAtMostDecimals(value, decimals))
+        {
+            throw new DomainValidationException(field.Key, $"'{field.Key}' must have at most {decimals} decimal place(s).");
+        }
+
         if (field.Min is { } min && number < (double)min)
         {
             throw new DomainValidationException(field.Key, $"'{field.Key}' must be at least {min.ToString(CultureInfo.InvariantCulture)}.");
@@ -126,6 +132,13 @@ internal static class EventPayloadFieldRules
             throw new DomainValidationException(field.Key, $"'{field.Key}' must be at most {max.ToString(CultureInfo.InvariantCulture)}.");
         }
     }
+
+    /// <summary>
+    /// Whether the JSON number has at most <paramref name="decimals"/> decimal places, read exactly as a decimal (so
+    /// <c>37.8</c> passes and <c>37.85</c> does not); a number outside the decimal range fails (range checks reject it anyway).
+    /// </summary>
+    private static bool HasAtMostDecimals(JsonElement value, int decimals) =>
+        value.TryGetDecimal(out var exact) && decimal.Round(exact, decimals) == exact;
 
     /// <summary>A number too large for a double, as the infinity of its sign so range checks still apply.</summary>
     private static double Overflowed(JsonElement value) =>

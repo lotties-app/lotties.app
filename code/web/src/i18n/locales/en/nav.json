@@ -1,0 +1,35 @@
+{
+  "nav": {
+    "main": "Main",
+    "timeline": "Timeline",
+    "growth": "Growth",
+    "now": "Now",
+    "day": "Day",
+    "insights": "Insights",
+    "hub": "Hub",
+    "add": "Add event",
+    "settings": "Settings"
+  },
+  "layout": {
+    "switchBaby": "{{name}}, switch baby",
+    "userMenu": "User menu",
+    "logout": "Log out",
+    "logoutTitle": "Log out?",
+    "logoutMessage": "You have {{changes}} that will be lost.",
+    "pushNow": "Push now",
+    "logoutAnyway": "Logout anyway",
+    "somethingWentWrong": "Something went wrong.",
+    "nightView": "Night view",
+    "nightViewPrompt": "Switch to night view?",
+    "nightViewSwitch": "Switch",
+    "nightViewNotNow": "Not now",
+    "babyProfile": "Baby profile",
+    "settings": "Settings",
+    "appearanceLanguage": "Appearance and language"
+  },
+  "pwa": {
+    "install": "Install app",
+    "iosHint": "To install, tap Share, then Add to Home Screen.",
+    "newVersion": "New version available"
+  }
+}

@@ -73,9 +73,84 @@ public sealed record GroupMemberDto
     public string MedicationName { get; init; } = string.Empty;
 }
 
+/// <summary>One chosen part of the day on one routine day (see <see cref="DayPartSlot"/>); instants in UTC.</summary>
+public sealed record DayPartSlotDto
+{
+    public string Part { get; init; } = string.Empty;
+
+    public DateOnly Day { get; init; }
+
+    public DateTimeOffset Start { get; init; }
+
+    public DateTimeOffset End { get; init; }
+
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public DayPartState State { get; init; }
+
+    public DateTimeOffset? GivenAt { get; init; }
+
+    public int DoseCount { get; init; }
+
+    public DateTimeOffset? ReminderAt { get; init; }
+
+    public static implicit operator DayPartSlotDto(DayPartSlot slot)
+    {
+        ArgumentNullException.ThrowIfNull(slot);
+        return new DayPartSlotDto
+        {
+            Part = DayPartWindows.CodeOf(slot.Part),
+            Day = slot.Window.Day,
+            Start = slot.Window.Start,
+            End = slot.Window.End,
+            State = slot.State,
+            GivenAt = slot.GivenAt,
+            DoseCount = slot.DoseCount,
+            ReminderAt = slot.ReminderAt,
+        };
+    }
+}
+
+/// <summary>
+/// The part-of-the-day state of a prescription (see <see cref="DayPartsStatus"/>): today's chosen parts, the current
+/// and next ones, <c>givenCount</c> of <c>total</c> ("1 of 2 today") and the guard a client asks before logging now.
+/// </summary>
+public sealed record DayPartsStatusDto
+{
+    public DateOnly Day { get; init; }
+
+    public IReadOnlyList<DayPartSlotDto> Parts { get; init; } = [];
+
+    public string? CurrentPart { get; init; }
+
+    public DayPartSlotDto? Next { get; init; }
+
+    public int GivenCount { get; init; }
+
+    public int Total { get; init; }
+
+    [JsonConverter(typeof(CamelCaseStringEnumConverter))]
+    public DayPartGuard Guard { get; init; }
+
+    public static implicit operator DayPartsStatusDto(DayPartsStatus status)
+    {
+        ArgumentNullException.ThrowIfNull(status);
+        return new DayPartsStatusDto
+        {
+            Day = status.Day,
+            Parts = status.Parts.Select(slot => (DayPartSlotDto)slot).ToArray(),
+            CurrentPart = status.Current is { } current ? DayPartWindows.CodeOf(current.Part) : null,
+            Next = status.Next is null ? null : (DayPartSlotDto)status.Next,
+            GivenCount = status.GivenCount,
+            Total = status.Parts.Count,
+            Guard = status.Guard,
+        };
+    }
+}
+
 /// <summary>
 /// The computed state of one active prescription plus the rule fields (no prose: the client words it). Times are UTC.
-/// <c>availableAt</c> may be in the past; <c>overdueByMinutes</c> is whole minutes.
+/// <c>availableAt</c> may be in the past; <c>overdueByMinutes</c> is whole minutes. <c>dayPartsStatus</c> only for
+/// part-of-the-day prescriptions.
 /// </summary>
 public sealed record PrescriptionStatusResponse
 {
@@ -95,6 +170,10 @@ public sealed record PrescriptionStatusResponse
     public IReadOnlyList<string>? TimesOfDay { get; init; }
 
     public int? EveryMinutes { get; init; }
+
+    public IReadOnlyList<string>? DayParts { get; init; }
+
+    public IReadOnlyList<DayPartReminderDto>? DayPartReminders { get; init; }
 
     public int? MinIntervalMinutes { get; init; }
 
@@ -129,6 +208,8 @@ public sealed record PrescriptionStatusResponse
     public bool LimitReached { get; init; }
 
     public SuggestedDoseDto? SuggestedDose { get; init; }
+
+    public DayPartsStatusDto? DayPartsStatus { get; init; }
 }
 
 /// <summary>Response of <c>GET /api/v1/babies/{babyId}/medications/status</c>.</summary>

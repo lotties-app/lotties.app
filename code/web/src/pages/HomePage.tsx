@@ -1,4 +1,6 @@
+import { Navigate } from 'react-router-dom';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
+import { isDoctorOnly, patientChosenThisSession } from '../patients/patientsModel';
 import { CreateBabyCard } from '../baby/CreateBabyCard';
 import { useBabiesListed } from '../db/hooks';
 import { ServerUnreachableCard } from '../home/ServerUnreachableCard';
@@ -19,6 +21,9 @@ export function HomePage() {
   const spinner = <NowSkeleton />;
 
   if (!babies) return spinner;
+  // A doctor without a baby of her own lands on her Patients list until she opens one.
+  if (isDoctorOnly(babies) && !patientChosenThisSession())
+    return <Navigate to="/patients" replace />;
   if (baby) return <NowScreen key={baby.id} baby={baby} />;
   if (listed === undefined) return spinner;
   if (listed) return <CreateBabyCard />;

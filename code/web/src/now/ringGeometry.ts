@@ -80,6 +80,75 @@ export function arcPath(cx: number, cy: number, radius: number, from: number, to
   return `M ${round(a.x)} ${round(a.y)} A ${radius} ${radius} 0 ${large} 1 ${round(b.x)} ${round(b.y)}`;
 }
 
+/**
+ * SVG path of a ring sector (a thick arc with square ends) between `inner` and `outer` radii, from
+ * angle `from` to `to` clockwise, or `''` for an empty one. Filled and outlined like a block of the
+ * Day ribbon, so a nap can be a tint with a rim and the nap window a band with a dashed edge.
+ */
+export function sectorPath(
+  cx: number,
+  cy: number,
+  inner: number,
+  outer: number,
+  from: number,
+  to: number,
+): string {
+  const sweep = to - from;
+  if (sweep <= 0) return '';
+  const end = sweep >= 359.99 ? from + 359.99 : to;
+  const large = end - from > 180 ? 1 : 0;
+  const a = polar(cx, cy, outer, from);
+  const b = polar(cx, cy, outer, end);
+  const c = polar(cx, cy, inner, end);
+  const d = polar(cx, cy, inner, from);
+  return [
+    `M ${round(a.x)} ${round(a.y)}`,
+    `A ${outer} ${outer} 0 ${large} 1 ${round(b.x)} ${round(b.y)}`,
+    `L ${round(c.x)} ${round(c.y)}`,
+    `A ${inner} ${inner} 0 ${large} 0 ${round(d.x)} ${round(d.y)}`,
+    'Z',
+  ].join(' ');
+}
+
+/** Shortest distance in degrees between two angles of the face (0 and 360 are the same point). */
+export function angleDistance(a: number, b: number): number {
+  const diff = Math.abs(a - b) % 360;
+  return Math.min(diff, 360 - diff);
+}
+
+export interface RingLabelCandidate {
+  key: string;
+  angle: number;
+  /** Higher wins when two labels would be too close. */
+  priority: number;
+}
+
+export interface LabelPlacement {
+  /** Two kept labels are never closer than this (degrees along the face). */
+  minDegrees: number;
+  /** Angles of marks a label must keep clear of (the "now" marker), by the same distance. */
+  blockers?: readonly number[];
+}
+
+/**
+ * Which labels around the face to draw: the most important first, each kept only when it is at
+ * least `minDegrees` away from every label kept before it and from every blocker; the less important
+ * one of a close pair is dropped, never moved, so a label always names the place it sits at. Pure;
+ * the kept labels come back in angle order.
+ */
+export function placeRingLabels<T extends RingLabelCandidate>(
+  candidates: readonly T[],
+  { minDegrees, blockers = [] }: LabelPlacement,
+): T[] {
+  const ordered = [...candidates].sort((a, b) => b.priority - a.priority || a.angle - b.angle);
+  const kept: T[] = [];
+  for (const candidate of ordered) {
+    const clear = (angle: number) => angleDistance(candidate.angle, angle) >= minDegrees;
+    if (blockers.every(clear) && kept.every((label) => clear(label.angle))) kept.push(candidate);
+  }
+  return kept.sort((a, b) => a.angle - b.angle);
+}
+
 export type RingSpanKind = 'nap' | 'night' | 'waking';
 
 export interface RingSpan extends ArcSpan {
@@ -192,4 +261,40 @@ export function buildRing({ events, types, now, windows = [] }: RingInput): Ring
     nowAngle: angleOf(nowMs, frame),
     sleptMinutes,
   };
+}
+
+/** The hours named around the face. */
+export const RING_HOURS = [0, 6, 12, 18] as const;
+/**
+ * Least distance (degrees) between an hour label and the "now" marker or another label: at the
+ * ring's size a 12 degree gap keeps a two-digit label clear of the marker's dot.
+ */
+export const RING_LABEL_CLEARANCE = 12;
+
+export interface RingHourLabel extends RingLabelCandidate {
+  hour: number;
+}
+
+/** The hour labels to draw: the four fixed hours, minus any too close to the "now" marker. */
+export function ringHourLabels(nowAngle: number | null): RingHourLabel[] {
+  return placeRingLabels(
+    RING_HOURS.map((hour) => ({ key: `hour-${hour}`, hour, angle: hour * 15, priority: 1 })),
+    {
+      minDegrees: RING_LABEL_CLEARANCE,
+      blockers: nowAngle === null ? [] : [nowAngle],
+    },
+  );
+}
+
+export type RingLegendKey = RingSpanKind | 'window' | 'now';
+
+/** The keys of the legend under the ring: only what the ring draws, in a fixed order. */
+export function ringLegendKeys(ring: Pick<RingModel, 'spans' | 'windows'>): RingLegendKey[] {
+  const kinds = new Set(ring.spans.map((span) => span.kind));
+  const keys: RingLegendKey[] = (['night', 'nap', 'waking'] as const).filter((kind) =>
+    kinds.has(kind),
+  );
+  if (ring.windows.length > 0) keys.push('window');
+  keys.push('now');
+  return keys;
 }

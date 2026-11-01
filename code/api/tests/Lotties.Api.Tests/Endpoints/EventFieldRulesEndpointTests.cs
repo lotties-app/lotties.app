@@ -182,6 +182,189 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task List_NasalSuctionBuiltIn_IsAnInstantTypeWithOptionalToolAndSaline()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var types = await (await Owner(baby).GetAsync(TypesPath(baby.BabyId))).ReadAsync<List<EventTypeResponse>>();
+
+        var suction = types.Single(type => type.Key == "nasal_suction");
+        Assert.Equal((BuiltInEventTypes.NasalSuctionId, (Guid?)null, "Nasal suction", "air", "#78909c", false), (suction.Id, suction.BabyId, suction.Name, suction.Icon, suction.Color, suction.HasDuration));
+        Assert.Equal([("tool", EventFieldKind.Select), ("saline", EventFieldKind.Bool)], suction.Fields.Select(field => (field.Key, field.Kind)));
+        Assert.Equal(["bulb", "electric", "mouth"], suction.Fields[0].Options!);
+        Assert.All(suction.Fields, field => Assert.Equal((false, false), (field.IsRequired, field.Hidden)));
+    }
+
+    [Fact]
+    public async Task PutEvent_NasalSuction_StoresConformingPayloadsAndRejectsUnknownTool()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var full = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.NasalSuctionId, new { tool = "bulb", saline = true }, Start));
+        var empty = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.NasalSuctionId, new { }, Start));
+        var unknown = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.NasalSuctionId, new { tool = "syringe" }, Start));
+
+        Assert.Equal([HttpStatusCode.Created, HttpStatusCode.Created], new[] { full.StatusCode, empty.StatusCode });
+        await AssertFieldProblemAsync(unknown, "tool");
+    }
+
+    [Fact]
+    public async Task List_BellyMassageBuiltIn_IsATimedTypeWithOptionalReasonAndHelped()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var types = await (await Owner(baby).GetAsync(TypesPath(baby.BabyId))).ReadAsync<List<EventTypeResponse>>();
+
+        var massage = types.Single(type => type.Key == "belly_massage");
+        Assert.Equal((BuiltInEventTypes.BellyMassageId, (Guid?)null, "Belly massage", "massage", "#ff7043", true), (massage.Id, massage.BabyId, massage.Name, massage.Icon, massage.Color, massage.HasDuration));
+        Assert.Equal(["reason", "helped", "pause_count", "paused_seconds", "paused_at"], massage.Fields.Select(field => field.Key));
+        Assert.Equal(["gas", "constipation", "colic", "other"], massage.Fields[0].Options!);
+        Assert.Equal(["yes", "a_little", "no"], massage.Fields[1].Options!);
+        Assert.All(massage.Fields.Take(2), field => Assert.Equal((EventFieldKind.Select, false, false), (field.Kind, field.IsRequired, field.Hidden)));
+        Assert.All(massage.Fields.Skip(2), field => Assert.True(field.Hidden));
+    }
+
+    [Fact]
+    public async Task PutEvent_BellyMassage_StoresRunningAndEndedPayloadsAndRejectsUnknownOptions()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var running = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.BellyMassageId, new { }, null));
+        var ended = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.BellyMassageId, new { reason = "gas", helped = "a_little" }, Start.AddMinutes(10)));
+        var badReason = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.BellyMassageId, new { reason = "pain" }, Start.AddMinutes(10)));
+        var badHelped = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.BellyMassageId, new { helped = "maybe" }, Start.AddMinutes(10)));
+
+        Assert.Equal([HttpStatusCode.Created, HttpStatusCode.Created], new[] { running.StatusCode, ended.StatusCode });
+        await AssertFieldProblemAsync(badReason, "reason");
+        await AssertFieldProblemAsync(badHelped, "helped");
+    }
+
+    [Fact]
+    public async Task List_FussyBuiltIn_IsATimedTypeWithOptionalIntensityAndWhatHelped()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var types = await (await Owner(baby).GetAsync(TypesPath(baby.BabyId))).ReadAsync<List<EventTypeResponse>>();
+
+        var fussy = types.Single(type => type.Key == "fussy");
+        Assert.Equal((BuiltInEventTypes.FussyId, (Guid?)null, "Fussy / crying", "sentiment_very_dissatisfied", "#81c784", true), (fussy.Id, fussy.BabyId, fussy.Name, fussy.Icon, fussy.Color, fussy.HasDuration));
+        Assert.Equal(["intensity", "what_helped", "pause_count", "paused_seconds", "paused_at"], fussy.Fields.Select(field => field.Key));
+        Assert.Equal(["mild", "moderate", "intense"], fussy.Fields[0].Options!);
+        Assert.Equal(["feeding", "rocking", "pacifier", "massage", "sleep", "other", "nothing"], fussy.Fields[1].Options!);
+        Assert.All(fussy.Fields.Take(2), field => Assert.Equal((EventFieldKind.Select, false, false), (field.Kind, field.IsRequired, field.Hidden)));
+        Assert.All(fussy.Fields.Skip(2), field => Assert.True(field.Hidden));
+    }
+
+    [Fact]
+    public async Task PutEvent_Fussy_StoresRunningAndEndedPayloadsAndRejectsUnknownOptions()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var running = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FussyId, new { }, null));
+        var ended = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FussyId, new { intensity = "moderate", what_helped = "rocking" }, Start.AddMinutes(20)));
+        var badIntensity = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FussyId, new { intensity = "screaming" }, Start.AddMinutes(20)));
+        var badHelped = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FussyId, new { what_helped = "singing" }, Start.AddMinutes(20)));
+
+        Assert.Equal([HttpStatusCode.Created, HttpStatusCode.Created], new[] { running.StatusCode, ended.StatusCode });
+        await AssertFieldProblemAsync(badIntensity, "intensity");
+        await AssertFieldProblemAsync(badHelped, "what_helped");
+    }
+
+    [Theory]
+    [InlineData("nail_trim", "bd1fde97-19c8-49a9-9ffd-537449183686", "Nail trim", "content_cut", "#5c6bc0", false, "where")]
+    [InlineData("temperature", "c3691235-0279-429c-be1c-db6692ad5455", "Temperature", "thermostat", "#ffca28", false, "value_c,method")]
+    [InlineData("spit_up", "1a08d284-a71f-44f5-ae83-49446a6f0e3f", "Spit-up / vomit", "sentiment_sick", "#c0ca33", false, "kind,amount")]
+    [InlineData("teething", "0a3e94b0-55c5-4d85-b530-317f161ef0cc", "Teething", "dentistry", "#29b6f6", false, "stage,tooth")]
+    [InlineData("milestone", "3491e7b4-895b-406f-885a-238da041dd7c", "Milestone", "emoji_events", "#ab47bc", false, "milestone,custom")]
+    [InlineData("symptom", "fb45be64-6741-4762-ab9a-abf5c9e6a875", "Symptom", "coronavirus", "#e57373", false, "symptom,severity")]
+    [InlineData("outdoor", "b22205ae-bae1-432f-802a-06e0c173efe1", "Outdoor time", "park", "#66bb6a", true, "kind,pause_count,paused_seconds,paused_at")]
+    [InlineData("skin_care", "9ad3dce5-dd4e-43d8-a022-5561ee7256ee", "Skin care", "sanitizer", "#f48fb1", false, "product")]
+    public async Task List_MoreBuiltIns_AreServedWithTheirFields(string key, string id, string name, string icon, string color, bool hasDuration, string fields)
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var types = await (await Owner(baby).GetAsync(TypesPath(baby.BabyId))).ReadAsync<List<EventTypeResponse>>();
+
+        var type = types.Single(type => type.Key == key);
+        Assert.Equal((new Guid(id), (Guid?)null, name, icon, color, hasDuration), (type.Id, type.BabyId, type.Name, type.Icon, type.Color, type.HasDuration));
+        Assert.Equal(fields.Split(','), type.Fields.Select(field => field.Key));
+    }
+
+    [Fact]
+    public async Task List_TemperatureValue_IsServedWithOneDecimalPlaceAndOtherFieldsWithoutTheLimit()
+    {
+        var baby = await factory.SeedBabyAsync();
+
+        var json = await Owner(baby).GetStringAsync(TypesPath(baby.BabyId));
+        var types = System.Text.Json.JsonSerializer.Deserialize<List<EventTypeResponse>>(json, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+
+        var value = types.Single(type => type.Key == "temperature").Fields[0];
+        Assert.Equal(("value_c", EventFieldKind.Number, true, 30m, 45m, "°C", (int?)1), (value.Key, value.Kind, value.IsRequired, value.Min!.Value, value.Max!.Value, value.Unit, value.Decimals));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(json, "\"decimals\""));
+    }
+
+    [Fact]
+    public async Task PutEvent_Temperature_StoresAOneDecimalValueAndRejectsMissingOutOfRangeOrTooPreciseValues()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var full = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TemperatureId, new { value_c = 37.8m, method = "armpit" }, Start));
+        var missing = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TemperatureId, new { method = "ear" }, Start));
+        var tooHigh = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TemperatureId, new { value_c = 45.1m }, Start));
+        var tooPrecise = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TemperatureId, new { value_c = 37.85m }, Start));
+        var badMethod = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TemperatureId, new { value_c = 37.8m, method = "toe" }, Start));
+
+        Assert.Equal(HttpStatusCode.Created, full.StatusCode);
+        await AssertFieldProblemAsync(missing, "value_c");
+        await AssertFieldProblemAsync(tooHigh, "value_c");
+        await AssertFieldProblemAsync(tooPrecise, "value_c");
+        await AssertFieldProblemAsync(badMethod, "method");
+    }
+
+    [Fact]
+    public async Task PutEvent_TeethingAndMilestone_ApplyTheirVisibleWhenRules()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var tooth = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TeethingId, new { stage = "tooth_came_through", tooth = "lower_central_incisor" }, Start));
+        var toothWhileSore = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.TeethingId, new { stage = "gums_sore", tooth = "canine" }, Start));
+        var custom = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.MilestoneId, new { milestone = "other", custom = "Waved bye-bye" }, Start));
+        var customForSits = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.MilestoneId, new { milestone = "sits", custom = "Waved" }, Start));
+
+        Assert.Equal([HttpStatusCode.Created, HttpStatusCode.Created], new[] { tooth.StatusCode, custom.StatusCode });
+        await AssertFieldProblemAsync(toothWhileSore, "tooth");
+        await AssertFieldProblemAsync(customForSits, "custom");
+    }
+
+    [Fact]
+    public async Task PutEvent_SelectOnlyNewTypes_StoreKnownOptionsAndRejectUnknownOnes()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var stored = new[]
+        {
+            await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.NailTrimId, new { where = "both" }, Start)),
+            await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.SpitUpId, new { kind = "vomit", amount = "a_lot" }, Start)),
+            await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.SymptomId, new { symptom = "rash", severity = "mild" }, Start)),
+            await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.OutdoorId, new { }, null)),
+            await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.OutdoorId, new { kind = "stroller_walk" }, Start.AddMinutes(30))),
+            await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.SkinCareId, new { product = "sunscreen" }, Start)),
+        };
+        var badWhere = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.NailTrimId, new { where = "toes" }, Start));
+        var badSeverity = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.SymptomId, new { severity = "intense" }, Start));
+
+        Assert.All(stored, response => Assert.Equal(HttpStatusCode.Created, response.StatusCode));
+        await AssertFieldProblemAsync(badWhere, "where");
+        await AssertFieldProblemAsync(badSeverity, "severity");
+    }
+
+    [Fact]
     public async Task Create_CustomTypeWithVisibleWhen_RoundTripsIt()
     {
         var baby = await factory.SeedBabyAsync();
@@ -287,6 +470,35 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
         var pump = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.BreastPumpId, new { amount_left_ml = 40, amount_right_ml = 35.5 }, Start.AddMinutes(15)));
 
         Assert.Equal([HttpStatusCode.Created, HttpStatusCode.Created, HttpStatusCode.Created], new[] { bottle.StatusCode, solid.StatusCode, pump.StatusCode });
+    }
+
+    [Fact]
+    public async Task PutEvent_BottleDrunkAmount_MustNotExceedPrepared()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var partly = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, amount_drunk_ml = 80 }, Start));
+        var legacy = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120 }, Start));
+        var tooMuch = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, amount_drunk_ml = 130 }, Start));
+        var onBreast = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "breast", amount_drunk_ml = 30 }, Start));
+
+        Assert.Equal((HttpStatusCode.Created, HttpStatusCode.Created), (partly.StatusCode, legacy.StatusCode));
+        await AssertFieldProblemAsync(tooMuch, "amount_drunk_ml");
+        await AssertFieldProblemAsync(onBreast, "amount_drunk_ml");
+    }
+
+    [Fact]
+    public async Task PutEvent_FeedingEndedBySleep_IsStored()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        var ended = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "breast", ended_by = "sleep" }, Start.AddMinutes(10)));
+        var unknown = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "breast", ended_by = "nap" }, Start.AddMinutes(10)));
+
+        Assert.Equal(HttpStatusCode.Created, ended.StatusCode);
+        await AssertFieldProblemAsync(unknown, "ended_by");
     }
 
     [Fact]

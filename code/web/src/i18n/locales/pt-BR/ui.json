@@ -1,0 +1,70 @@
+{
+  "ui": {
+    "field": {
+      "required": "obrigatório",
+      "optional": "opcional"
+    },
+    "stepper": {
+      "increase": "Aumentar",
+      "decrease": "Diminuir",
+      "value": "Valor",
+      "atMost": "No máximo {{value}}",
+      "atLeast": "No mínimo {{value}}",
+      "last": "último",
+      "quickValues": "Valores rápidos"
+    },
+    "duration": {
+      "unit": "min",
+      "invalid": "Digite minutos, como 12 ou 12:30.",
+      "tooLong": "No máximo {{value}}.",
+      "placeholder": "0"
+    },
+    "time": {
+      "now": "Agora",
+      "minutesAgo": "há {{count}} min",
+      "quick": "Horários rápidos",
+      "day": "Dia",
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "clock": "Hora do dia",
+      "ruler": "Ajustar o horário",
+      "rulerValue": "{{time}}, {{relative}}",
+      "invalid": "Digite um horário como 14:30.",
+      "future": "O horário não pode estar no futuro.",
+      "beforeMin": "O horário não pode ser antes de {{time}}.",
+      "stillRunning": "Ainda em andamento",
+      "morePrecise": "Mais preciso"
+    },
+    "date": {
+      "choose": "Escolher data",
+      "invalid": "Digite uma data válida.",
+      "loading": "Carregando o campo de data"
+    },
+    "notes": {
+      "add": "Adicionar uma observação",
+      "label": "Observação",
+      "counter": "{{count}} de {{max}} caracteres"
+    },
+    "medication": {
+      "find": "Buscar ou adicionar um medicamento",
+      "add": "Adicionar \"{{name}}\"",
+      "usual": "De uso comum",
+      "dose": "Dose de {{name}}",
+      "unit": "Unidade",
+      "noneYet": "Nenhum medicamento ainda. Digite um nome para adicionar.",
+      "noMatch": "Nenhum medicamento corresponde a \"{{query}}\".",
+      "adding": "Adicionando",
+      "addFailed": "Não foi possível adicionar o medicamento."
+    },
+    "units": {
+      "drops": "gotas",
+      "drop": "gota",
+      "ml": "ml",
+      "mg": "mg",
+      "sprays": "jatos",
+      "puffs": "jatos",
+      "suppositories": "supositórios",
+      "applications": "aplicações"
+    }
+  }
+}

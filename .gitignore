@@ -7,7 +7,11 @@ dist/
 .env
 .env.*
 !.env.example
+# Public build values of the native app (no secrets; its .env.native.local stays ignored)
+!code/web/.env.native
 coverage/
+# Vite and Vitest caches, one per checkout (code/web/vite.config.ts cacheDir; worktrees share node_modules)
+.vite-cache/
 *.log
 .idea/
 docs/graphify/
@@ -38,4 +42,13 @@ code/api/out.sql
 
 # Home lab deploy settings (secrets); see deploy/homelab/.env.example
 deploy/homelab/.env
+
+
+
+
+
+
+
+
+
 

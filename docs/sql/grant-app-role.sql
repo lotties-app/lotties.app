@@ -1,3 +1,5 @@
+-- If a dedicated migrator role runs the migrations, use docs/sql/grant-migrator-role.sql instead: it also owns the tables and
+-- sets the default privileges for the objects that role creates.
 -- Run as the migrator/admin role (the role that owns the tables), connected to database lotties.
 -- Create the login role first (choose your own password, do not commit it):
 --   CREATE ROLE k_lotties_usr LOGIN PASSWORD '<password>';

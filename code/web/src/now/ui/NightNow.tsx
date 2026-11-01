@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { formatDuration, formatTime } from '../../i18n/format';
@@ -8,10 +9,11 @@ import { Illustration } from '../../ui/illustrations';
 import type { IconName } from '../../ui/icons';
 import type { NowState } from '../nowState';
 import { formatTileStatus, sleepActionLabel } from '../nowText';
-import type { SleepActionKind } from '../sleepToggle';
+import { LockedNote } from '../../baby/LockedNote';
+import { typeForKey } from '../eventFacts';
+import { changesRunningSleep, runningSleepLock, type SleepActionKind } from '../sleepToggle';
 import type { NowScreenModel } from '../useNow';
 import { canKeepScreenOn, useWakeLock } from '../useWakeLock';
-import { NursingCard } from './NursingCard';
 import type { NowAction } from './useNowAction';
 
 const MINUTE_MS = 60_000;
@@ -29,6 +31,8 @@ interface Props {
   model: NowScreenModel;
   babyName: string;
   action: NowAction;
+  /** "Running now": every running timer, first (the nursing session among them). */
+  running: ReactNode;
   onOpenFeed: () => void;
   onOpenDiaper: () => void;
 }
@@ -140,16 +144,24 @@ function headline(state: NowState): { key: HeadlineKey; minutes: number } | null
 
 /**
  * The night view of Now (docs/design/mockups/01-night-and-visit.html): a state line and three
- * giant buttons (Feed, Diaper, the sleep toggle), no cards or charts. A running nursing session
- * keeps its timers on screen. The screen is kept awake while this view is open.
+ * giant buttons (Feed, Diaper, the sleep toggle), no charts. Running timers come first ("Running
+ * now", the nursing session with its large side clocks), then the state line and the one primary
+ * action. The screen is kept awake while this view is open.
  */
-export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: Props) {
+export function NightNow({ model, babyName, action, running, onOpenFeed, onOpenDiaper }: Props) {
   const { t } = useTranslation();
   useWakeLock(true);
   const { state, now } = model;
   const feed = model.tiles.find((tile) => tile.id === 'feed');
   const diaper = model.tiles.find((tile) => tile.id === 'diaper');
   const disabled = model.readOnly;
+  const sleepLock = runningSleepLock(
+    model.running,
+    typeForKey(model.types, 'sleep')?.id,
+    model.access.controlLockedBy,
+  );
+  const off = (kind: SleepActionKind) =>
+    disabled || (sleepLock !== null && changesRunningSleep(kind));
   const [primary, ...others] = model.sleepActions;
   const info = headline(state);
   const run = (kind: SleepActionKind) =>
@@ -160,6 +172,7 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
 
   return (
     <Box component="section" aria-label={t('now.night.region')} sx={{ display: 'grid', gap: 2 }}>
+      {running}
       <Box>
         <Typography variant="overline" color="text.secondary">
           {babyName}
@@ -190,15 +203,8 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
         )}
       </Box>
 
-      {nursing ? (
-        <NursingCard
-          event={nursing}
-          commands={model.commands}
-          action={action}
-          readOnly={model.readOnly}
-          large
-        />
-      ) : (
+      {/* A running nursing session is in "Running now" above, with its large side clocks. */}
+      {!nursing && (
         <GiantButton
           icon="bottle"
           art="bottle"
@@ -226,7 +232,7 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
           icon={ACTION_ICON[primary.kind]}
           category="sleep"
           title={sleepActionLabel(primary.kind)}
-          disabled={disabled}
+          disabled={off(primary.kind)}
           onClick={() => run(primary.kind)}
         />
       )}
@@ -235,7 +241,7 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
           {others.map((other) => (
             <ButtonBase
               key={other.kind}
-              disabled={disabled}
+              disabled={off(other.kind)}
               onClick={() => run(other.kind)}
               sx={{
                 minHeight: 64,
@@ -252,6 +258,7 @@ export function NightNow({ model, babyName, action, onOpenFeed, onOpenDiaper }: 
           ))}
         </Box>
       )}
+      {!disabled && sleepLock !== null && <LockedNote name={sleepLock} />}
       {canKeepScreenOn() && (
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
           {t('now.night.screenOn')}

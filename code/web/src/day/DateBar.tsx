@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link as RouterLink } from 'react-router-dom';
 import { Badge, Box, Button, ButtonBase, IconButton } from '@mui/material';
 import { formatDate } from '../i18n/format';
+import { currentLocale } from '../i18n/i18n';
 import { SheetFrame } from '../now/ui/SheetFrame';
 import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
@@ -19,6 +21,8 @@ interface Props {
   /** Categories selected in the filter. */
   filterCount: number;
   onOpenFilter: () => void;
+  /** Whether the appointments calendar button is shown (default true; never for a Doctor). */
+  showAppointments?: boolean;
 }
 
 const roundButton = (theme: Parameters<typeof palette>[0]) => ({
@@ -29,18 +33,51 @@ const roundButton = (theme: Parameters<typeof palette>[0]) => ({
   flexShrink: 0,
 });
 
+/** "Oct 2026" / "out. 2026": the abbreviated month and the year, for a narrow header. */
+function shortMonthYear(day: Date): string {
+  const parts = new Intl.DateTimeFormat(currentLocale(), { month: 'short', year: 'numeric' })
+    .formatToParts(day)
+    .filter((part) => part.type === 'month' || part.type === 'year')
+    .map((part) => part.value);
+  return parts.join(' ');
+}
+
 /**
- * Day navigation: the month (tap it to pick any day) between the week-jump chevrons, the filter
- * button with the number of active categories as a badge, a "Today" shortcut when another day is
- * shown, and the week strip. Swiping the list changes the day, swiping the strip the week (see
- * `DayScreen` and `WeekStrip`).
+ * The month label keeps one line: the full month ("October 2026") while the button is wide, the
+ * abbreviated one ("Oct 2026") when it is narrow, and without the chevron when it is narrower still
+ * (large text on a small phone). Measured in `em`, so a larger text size switches earlier.
  */
-export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Props) {
+const MONTH_LABEL = {
+  '& .month-short': { display: 'none' },
+  '@container (max-width: 11em)': {
+    '& .month-long': { display: 'none' },
+    '& .month-short': { display: 'inline-block' },
+  },
+  '@container (max-width: 6.75em)': {
+    '& .month-expand': { display: 'none' },
+  },
+} as const;
+
+/**
+ * Day navigation: the month (tap it to pick any day) between the week-jump chevrons, the
+ * appointments calendar button, the filter button with the number of active categories as a
+ * badge, a "Today" shortcut when another day is shown, and the week strip. Swiping the list
+ * changes the day, swiping the strip the week (see `DayScreen` and `WeekStrip`).
+ */
+export function DateBar({
+  day,
+  today,
+  onChange,
+  filterCount,
+  onOpenFilter,
+  showAppointments = true,
+}: Props) {
   const { t } = useTranslation();
   const [picking, setPicking] = useState(false);
   const label = useDayLabel(day, today);
   const isToday = isSameDay(day, today);
   const month = formatDate(day, 'monthYear');
+  const shortMonth = shortMonthYear(day);
   const atLatestWeek = isSameDay(jumpWeek(day, 1, today), day);
 
   return (
@@ -58,10 +95,12 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
           aria-label={t('day.chooseMonth', { month, date: label })}
           aria-haspopup="dialog"
           sx={{
+            ...MONTH_LABEL,
+            containerType: 'inline-size',
             flex: '1 1 auto',
             minWidth: 0,
             minHeight: 44,
-            px: 1,
+            px: 0.5,
             borderRadius: `${RADIUS.input}px`,
             justifyContent: 'center',
             gap: 0.75,
@@ -72,8 +111,15 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
             textAlign: 'center',
           }}
         >
-          <span>{month}</span>
-          <Icon name="expand" size={16} />
+          <Box component="span" className="month-long" sx={oneLine}>
+            {month}
+          </Box>
+          <Box component="span" className="month-short" sx={oneLine}>
+            {shortMonth}
+          </Box>
+          <Box component="span" className="month-expand" sx={{ display: 'inline-flex' }}>
+            <Icon name="expand" size={16} />
+          </Box>
         </ButtonBase>
         <IconButton
           aria-label={t('day.nextWeek')}
@@ -83,6 +129,16 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
         >
           <Icon name="chevron-right" size={20} />
         </IconButton>
+        {showAppointments && (
+          <IconButton
+            component={RouterLink}
+            to="/appointments"
+            aria-label={t('appointments.open')}
+            sx={(theme) => ({ ...roundButton(theme), borderRadius: `${RADIUS.input}px` })}
+          >
+            <Icon name="calendar" size={20} />
+          </IconButton>
+        )}
         <Badge
           badgeContent={filterCount}
           color="primary"
@@ -130,3 +186,12 @@ export function DateBar({ day, today, onChange, filterCount, onOpenFilter }: Pro
     </Box>
   );
 }
+
+/** Never wraps; ellipsis only as the last resort. */
+const oneLine = {
+  display: 'inline-block',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  minWidth: 0,
+} as const;

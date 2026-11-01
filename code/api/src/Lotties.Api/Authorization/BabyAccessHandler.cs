@@ -28,8 +28,20 @@ internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, ILogger<B
             return;
         }
 
-        var decision = await babyAccess.CheckAsync(babyId, requirement.RequiredRole, httpContext.RequestAborted);
+        var decision = await DecideAsync(babyId, requirement, httpContext.RequestAborted);
         ApplyDecision(context, requirement, decision);
+    }
+
+    /// <summary>The first accepted role that grants access wins; a non-member is refused at once.</summary>
+    private async Task<BabyAccessDecision> DecideAsync(Guid babyId, BabyAccessRequirement requirement, CancellationToken cancellationToken)
+    {
+        var decision = BabyAccessDecision.InsufficientRole;
+        foreach (var role in requirement.AcceptedRoles.TakeWhile(_ => decision == BabyAccessDecision.InsufficientRole))
+        {
+            decision = await babyAccess.CheckAsync(babyId, role, cancellationToken);
+        }
+
+        return decision;
     }
 
     private void ApplyDecision(AuthorizationHandlerContext context, BabyAccessRequirement requirement, BabyAccessDecision decision)
@@ -43,6 +55,7 @@ internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, ILogger<B
         context.Fail(new AuthorizationFailureReason(this, $"Baby access denied: {decision}."));
     }
 
-    private static Guid? ReadBabyId(HttpContext httpContext) =>
+    /// <summary>The <c>{babyId}</c> route value, or <c>null</c> when the route has none (or it is not a GUID).</summary>
+    internal static Guid? ReadBabyId(HttpContext httpContext) =>
         Guid.TryParse(httpContext.GetRouteValue(BabyRoutes.BabyIdParameter)?.ToString(), out var babyId) ? babyId : null;
 }

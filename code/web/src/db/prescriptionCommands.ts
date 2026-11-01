@@ -3,6 +3,7 @@ import type { Prescription, PrescriptionStatus } from './models';
 import { enqueueMutation } from './outbox';
 import { toPrescriptionUpsertRequest } from '../sync/contract';
 import type { CommandOptions } from './eventCommands';
+import { isDoctorSourced } from '../proposals/proposalModel';
 
 /** The terms a parent edits; ids, authorship and times are set by the commands. */
 export type PrescriptionTerms = Pick<
@@ -13,6 +14,8 @@ export type PrescriptionTerms = Pick<
   | 'dose'
   | 'timesOfDay'
   | 'everyMinutes'
+  | 'dayParts'
+  | 'dayPartReminders'
   | 'minIntervalMinutes'
   | 'maxDosesPer24h'
   | 'indication'
@@ -41,6 +44,8 @@ export function termsOf(p: Prescription): PrescriptionTerms {
     dose: p.dose,
     timesOfDay: p.timesOfDay,
     everyMinutes: p.everyMinutes,
+    dayParts: p.dayParts ?? null,
+    dayPartReminders: p.dayPartReminders ?? null,
     minIntervalMinutes: p.minIntervalMinutes,
     maxDosesPer24h: p.maxDosesPer24h,
     indication: p.indication,
@@ -50,6 +55,22 @@ export function termsOf(p: Prescription): PrescriptionTerms {
     prescriber: p.prescriber,
     instructions: p.instructions,
   };
+}
+
+/** Key order and `undefined` never matter when two sets of terms are compared; the status is left out. */
+function stableJson(terms: PrescriptionTerms): string {
+  const sorted = Object.entries({ ...terms, status: 'active' }).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  return JSON.stringify(sorted, (_key, value: unknown) => value ?? null);
+}
+
+/**
+ * Whether the edit changes the content of a prescription a doctor suggested (anything but stopping
+ * or resuming it): the server then flags it "changed by parent" for good; the device shows it at once.
+ */
+function changesDoctorContent(current: Prescription, terms: PrescriptionTerms): boolean {
+  return isDoctorSourced(current) && stableJson(termsOf(current)) !== stableJson(terms);
 }
 
 async function queueUpsert(db: BabyRoutineDb, p: Prescription, now: string) {
@@ -101,7 +122,13 @@ export async function updatePrescription(
     if (!current || current.deletedAt) {
       throw new InvalidPrescriptionError('This prescription no longer exists.');
     }
-    const updated: Prescription = { ...current, ...terms, updatedAt: now, clientUpdatedAt: now };
+    const updated: Prescription = {
+      ...current,
+      ...terms,
+      ...(changesDoctorContent(current, terms) ? { changedByParent: true } : {}),
+      updatedAt: now,
+      clientUpdatedAt: now,
+    };
     await db.prescriptions.put(updated);
     await queueUpsert(db, updated, now);
     return updated;

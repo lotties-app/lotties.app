@@ -1,0 +1,26 @@
+{
+  "sync": {
+    "signInToSync": "Entre para sincronizar",
+    "syncing": "Sincronizando…",
+    "offline": "Sem conexão",
+    "error": "Erro de sincronização",
+    "synced": "Sincronizado",
+    "failedSuffix": "{{count}} com falha",
+    "labelWithFailed": "{{label}} · {{failed}}",
+    "iconLabel": "Sincronização: {{label}}. Abrir ajustes de sincronização",
+    "statusLabel": "Status da sincronização: {{label}}",
+    "unauthorized": "Sessão expirada: entre de novo para retomar a sincronização.",
+    "pending_one": "{{count}} pendente",
+    "pending_other": "{{count}} pendentes",
+    "waitingForSignIn": "Reconectando",
+    "waitingForToken": "Aguardando a renovação do seu login.",
+    "networkError": "Não foi possível falar com o servidor.",
+    "gaveUp": "O servidor continuou falhando depois de {{attempts}} tentativas ({{error}}). Tente de novo mais tarde ou descarte a alteração.",
+    "attentionSuffix_one": "{{count}} precisa da sua atenção",
+    "attentionSuffix_other": "{{count}} precisam da sua atenção",
+    "rejected": "O servidor recusou esta alteração.",
+    "rejectedNotOwned": "Uma alteração em um registro de outra pessoa não foi salva: você só pode alterar os seus próprios registros.",
+    "rejectedRole": "Seu acesso a este bebê mudou e uma alteração não foi salva. Ela ficou guardada em Ajustes > Sincronização.",
+    "rejectedProposalDecided": "Esta sugestão já foi decidida, então sua alteração não foi aplicada."
+  }
+}

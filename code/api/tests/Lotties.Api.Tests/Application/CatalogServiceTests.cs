@@ -77,6 +77,12 @@ public sealed class CatalogServiceTests
 
         public Task<IReadOnlyList<Product>> FindBySubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
 
+        public Task<IReadOnlyList<Product>> FindWithSameSubstancesAsync(IReadOnlyCollection<Guid> substanceIds, int take, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
+
+        public Task<IReadOnlyList<Product>> FindAmbiguousVariantsAsync(IReadOnlyCollection<string> ambiguousNames, int take, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
+
+        public Task<ProductPage> ListContainingSubstanceAsync(Guid substanceId, CatalogPage page, CancellationToken cancellationToken = default) => Task.FromResult(new ProductPage([], 0));
+
         public Task<Product?> FindDuplicateAsync(string normalizedName, ProductForm form, CountryCode country, CancellationToken cancellationToken = default) => Task.FromResult(Duplicate);
 
         public Task<bool> TryAddProductAsync(Product product, CancellationToken cancellationToken = default)

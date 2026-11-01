@@ -182,7 +182,20 @@ describe('NotificationsSection reminders and settings', () => {
       expect(writes(server).at(-1)).toEqual({
         method: 'PUT',
         path: `/api/v1/babies/${LIA.id}/notification-preferences`,
-        body: { doseDue: true, doseLeadMinutes: 0, napWindow: false, napLeadMinutes: 10 },
+        body: {
+          doseDue: true,
+          doseLeadMinutes: 0,
+          napWindow: false,
+          napLeadMinutes: 10,
+          bellyPainPattern: false,
+          overtiredWarning: false,
+          fussyPattern: false,
+          diaperWetHeadsUp: false,
+          diaperDirtyHeadsUp: false,
+          appointmentReminders: true,
+          doctorSuggestions: false,
+          vaccineReminders: false,
+        },
       }),
     );
     fireEvent.click(await within(lia).findByRole('radio', { name: '15 min before' }));
@@ -192,8 +205,164 @@ describe('NotificationsSection reminders and settings', () => {
         doseLeadMinutes: 15,
         napWindow: false,
         napLeadMinutes: 10,
+        bellyPainPattern: false,
+        overtiredWarning: false,
+        fussyPattern: false,
+        diaperWetHeadsUp: false,
+        diaperDirtyHeadsUp: false,
+        appointmentReminders: true,
+        doctorSuggestions: false,
+        vaccineReminders: false,
       }),
     );
+  });
+
+  it('turns the belly pain heads-up on per baby, off by default', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Belly pain heads-up/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      within(lia).getByText(
+        'When belly pain often shows up around the same time, a note 30 min before.',
+      ),
+    ).toBeTruthy();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: {
+          doseDue: false,
+          doseLeadMinutes: 0,
+          napWindow: false,
+          napLeadMinutes: 10,
+          bellyPainPattern: true,
+          overtiredWarning: false,
+          fussyPattern: false,
+          diaperWetHeadsUp: false,
+          diaperDirtyHeadsUp: false,
+          appointmentReminders: true,
+          doctorSuggestions: false,
+          vaccineReminders: false,
+        },
+      }),
+    );
+  });
+
+  it.each([
+    [
+      'Overtired heads-up',
+      'When the baby has been awake nearly as long as usual, a note 15 min before.',
+      { overtiredWarning: true, fussyPattern: false },
+    ],
+    [
+      'Fussy time heads-up',
+      'When fussiness often starts around the same time, a note 30 min before.',
+      { overtiredWarning: false, fussyPattern: true },
+    ],
+    [
+      'Wet diaper heads-up',
+      'When a wet diaper is usually due, a note 10 min before.',
+      { overtiredWarning: false, fussyPattern: false, diaperWetHeadsUp: true },
+    ],
+    [
+      'Dirty diaper heads-up',
+      'When a dirty diaper usually comes, after a feed or from the usual gaps, a note shortly before.',
+      { overtiredWarning: false, fussyPattern: false, diaperDirtyHeadsUp: true },
+    ],
+  ])('turns the %s on per baby, off by default', async (name, help, kinds) => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: new RegExp(name) });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(within(lia).getByText(help)).toBeTruthy();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: {
+          doseDue: false,
+          doseLeadMinutes: 0,
+          napWindow: false,
+          napLeadMinutes: 10,
+          bellyPainPattern: false,
+          diaperWetHeadsUp: false,
+          diaperDirtyHeadsUp: false,
+          appointmentReminders: true,
+          doctorSuggestions: false,
+          vaccineReminders: false,
+          ...kinds,
+        },
+      }),
+    );
+  });
+
+  it('shows the appointment reminders on by default and turns them off per baby', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Appointment reminders/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    expect(
+      within(lia).getByText('Before each appointment, at the times chosen for it.'),
+    ).toBeTruthy();
+    const theo = await screen.findByRole('region', { name: 'Theo' });
+    expect(
+      within(theo)
+        .getByRole('switch', { name: /Appointment reminders/ })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toMatchObject({ appointmentReminders: false }),
+    );
+  });
+
+  it('shows the appointment reminders switch in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Lembretes de consultas/ })).toBeTruthy();
+    expect(
+      within(lia).getByText('Antes de cada consulta, nos horários escolhidos para ela.'),
+    ).toBeTruthy();
+  });
+
+  it('shows the diaper switches in Portuguese, off by default', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const wet = within(lia).getByRole('switch', { name: /Aviso de fralda molhada/ });
+    const dirty = within(lia).getByRole('switch', { name: /Aviso de fralda suja/ });
+    expect([wet, dirty].map((toggle) => toggle.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'false',
+    ]);
+    expect(
+      within(lia).getByText(
+        'Quando costuma ser hora de uma fralda molhada, um aviso 10 min antes.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('shows the overtired and fussy switches in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Aviso de cansaço/ })).toBeTruthy();
+    expect(within(lia).getByRole('switch', { name: /Aviso da hora do choro/ })).toBeTruthy();
+    expect(
+      within(lia).getByText(
+        'Quando a irritação costuma começar no mesmo horário, um aviso 30 min antes.',
+      ),
+    ).toBeTruthy();
   });
 
   it('disables Viewer rows with the reason', async () => {
@@ -215,7 +384,8 @@ describe('NotificationsSection reminders and settings', () => {
         body: { timeZone: 'Europe/Lisbon', showNames: true },
       }),
     );
-    const start = screen.getByLabelText('From');
+    const start = screen.getByLabelText('From') as HTMLInputElement;
+    expect(start.type).toBe('time');
     fireEvent.change(start, { target: { value: '21:30' } });
     fireEvent.blur(start);
     await waitFor(() =>
@@ -319,5 +489,134 @@ describe.each(['light', 'dark', 'night'] as const)('in the %s scheme', (scheme) 
       await screen.findByRole('dialog');
       expect(await violations()).toEqual([]);
     }, 60_000);
+  });
+});
+
+describe('NotificationsSection doctor suggestions', () => {
+  it('offers the switch to the parents only, off by default, and saves it per baby', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Doctor suggestions/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      within(lia).getByText('When the doctor sends a prescription suggestion or a recommendation.'),
+    ).toBeTruthy();
+    const theo = screen.getByRole('region', { name: 'Theo' });
+    expect(within(theo).queryByRole('switch', { name: /Doctor suggestions/ })).toBeNull();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: expect.objectContaining({ doctorSuggestions: true, doseDue: false }),
+      }),
+    );
+  });
+
+  it('is not offered for a Caregiver, who never receives it', async () => {
+    const device = fakePushDevice({});
+    const server = fakePushServer({ preferences: PREFS });
+    render(
+      <I18nProvider>
+        <AppThemeProvider>
+          <QueryClientProvider client={testQueryClient()}>
+            <ApiClientContext value={server.api}>
+              <PushDeviceContext value={device}>
+                <NotificationsSection
+                  babies={[{ ...LIA, role: 'Caregiver' }]}
+                  publicKey="BFakeKey"
+                />
+              </PushDeviceContext>
+            </ApiClientContext>
+          </QueryClientProvider>
+        </AppThemeProvider>
+      </I18nProvider>,
+    );
+
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).queryByRole('switch', { name: /Doctor suggestions/ })).toBeNull();
+    expect(within(lia).getByRole('switch', { name: /Medicine reminders/ })).toBeTruthy();
+  });
+});
+
+describe('NotificationsSection vaccine reminders', () => {
+  it('offers the switch to the parents only, off by default, and saves it per baby', async () => {
+    const { server } = setup();
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    const toggle = within(lia).getByRole('switch', { name: /Vaccine reminders/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(
+      within(lia).getByText('A note on the day a dose may be due, according to the schedule.'),
+    ).toBeTruthy();
+    // A Viewer never receives it, so there is no switch to leave off.
+    const theo = screen.getByRole('region', { name: 'Theo' });
+    expect(within(theo).queryByRole('switch', { name: /Vaccine reminders/ })).toBeNull();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)).toEqual({
+        method: 'PUT',
+        path: `/api/v1/babies/${LIA.id}/notification-preferences`,
+        body: expect.objectContaining({ vaccineReminders: true, doseDue: false }),
+      }),
+    );
+  });
+
+  it('keeps the setting when another switch is saved', async () => {
+    const { server } = setup(
+      {},
+      { preferences: [{ ...PREFS[0]!, vaccineReminders: true }, PREFS[1]!] },
+    );
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    await waitFor(() =>
+      expect(
+        within(lia)
+          .getByRole('switch', { name: /Vaccine reminders/ })
+          .getAttribute('aria-checked'),
+      ).toBe('true'),
+    );
+
+    fireEvent.click(within(lia).getByRole('switch', { name: /Belly pain heads-up/ }));
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toEqual(
+        expect.objectContaining({ bellyPainPattern: true, vaccineReminders: true }),
+      ),
+    );
+  });
+
+  it.each(['Caregiver', 'Doctor'] as const)(
+    'is not offered for a %s, who never receives it',
+    async (role) => {
+      const device = fakePushDevice({});
+      const server = fakePushServer({ preferences: PREFS });
+      render(
+        <I18nProvider>
+          <AppThemeProvider>
+            <QueryClientProvider client={testQueryClient()}>
+              <ApiClientContext value={server.api}>
+                <PushDeviceContext value={device}>
+                  <NotificationsSection babies={[{ ...LIA, role }]} publicKey="BFakeKey" />
+                </PushDeviceContext>
+              </ApiClientContext>
+            </QueryClientProvider>
+          </AppThemeProvider>
+        </I18nProvider>,
+      );
+
+      const lia = await screen.findByRole('region', { name: 'Lia' });
+      expect(within(lia).queryByRole('switch', { name: /Vaccine reminders/ })).toBeNull();
+    },
+  );
+
+  it('is in Portuguese for a Portuguese user', async () => {
+    await useTestLocale('pt-BR');
+    setup();
+
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    expect(within(lia).getByRole('switch', { name: /Lembretes de vacinas/ })).toBeTruthy();
   });
 });

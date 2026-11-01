@@ -1,20 +1,48 @@
 import {
+  isAppointmentStatus,
+  isAppointmentType,
+  normalizeReminders,
+} from '../appointments/appointmentModel';
+import { isProposalStatus } from '../proposals/proposalModel';
+import {
   editTimeOf,
+  type Appointment,
+  type Note,
+  type NoteRead,
+  type PrescriptionContent,
+  type PrescriptionOriginal,
+  type Proposal,
+  type ProposalCancelReason,
+  type NoteKind,
+  type NoteVisibility,
+  type PersonSummary,
+  type ProfessionalSummary,
+  type AppointmentStatus,
+  type AppointmentType,
+  type ReminderOffset,
   type Baby,
   type BabyEvent,
   type BabyRole,
+  type DayPart,
+  type DayPartReminder,
   type Dosage,
   type EventFieldDefinition,
   type EventFieldKind,
   type FieldVisibility,
   type EventPayload,
   type EventType,
+  type Formula,
   type Medication,
   type Prescription,
   type PrescriptionDose,
   type PrescriptionKind,
   type PrescriptionStatus,
+  type RsvMaternalAnswer,
+  type Vaccination,
+  type VaccineProfileSetting,
 } from '../db/models';
+import { isVaccineNetwork } from '../vaccines/vaccinationModel';
+import type { VaccineNetwork } from '../vaccines/vaccineSchedule';
 
 /*
  * API wire contract (`/api/v1`) used by the sync engine. This is the ONLY place the client
@@ -44,8 +72,38 @@ import {
  *          /babies/{id}/prescriptions?since= (incl. soft-deleted), PUT/DELETE
  *          /babies/{id}/prescriptions/{id}. A prescription must reach the server before the events
  *          that name it (`medications[i].prescriptionId`), and its medication before it.
+ * - Formulas (docs/SPEC.md "Formulas"): GET /babies/{id}/formulas?since= (archived included, no
+ *          delete), PUT /babies/{id}/formulas/{id} (Owner/Parent). Making one current makes the
+ *          others not current on the server (they come back in the delta). A formula must reach the
+ *          server before the bottles that name it (feeding payload `formula_id`, `formula_name`).
+ * - Notes (docs/design/16-doctor-access.md): GET /babies/{id}/notes?since= (deleted included; only
+ *          the notes the caller may see: shared ones and her own private ones), GET/PUT/DELETE
+ *          /babies/{id}/notes/{id} (writes: the Doctor, her own notes only). A shared note never
+ *          becomes private (422 `note_already_shared`).
+ * - Prescription proposals (docs/design/16-doctor-access.md section 10): GET
+ *          /babies/{id}/prescription-proposals?since= (the Doctor's own, or every one for Owners and
+ *          Parents, none for others; all statuses), GET /prescription-proposals/{id}, PUT (the
+ *          Doctor, client GUID; 409 `proposal_decided` once decided), DELETE (withdraw, 204),
+ *          POST .../accept `{prescriptionId, acceptedOn}` and .../decline `{reason}` (Owner,
+ *          Parent; 200 `{proposal, prescription}`; 409 `proposal_not_pending`). PUT
+ *          /babies/{id}/notes/{id}/read marks a shared note read, GET /babies/{id}/note-reads?since=
+ *          lists the caller's own reads.
+ * - Doctor access: GET/PUT /me/professional-profile (404 `professional_profile_not_found` before
+ *          one is declared; a Doctor invite needs one: 422 `professional_profile_required`), GET
+ *          /babies/{id}/access-log (Owner).
+ * - Appointments (docs/SPEC.md "Appointments"): GET /babies/{id}/appointments?since= (cancelled and
+ *          done included, no delete), PUT /babies/{id}/appointments/{id} (Owner/Parent). `done` is
+ *          refused (422 `appointment_not_started`) while the start is in the future.
+ * - Vaccinations (docs/design/18-vaccines.md): GET /babies/{id}/vaccinations?since= (deleted
+ *          included), PUT/DELETE /babies/{id}/vaccinations/{id} (Owner/Parent; a PUT to a deleted id
+ *          returns the stored deleted copy, 409 `vaccination_baby_mismatch`). GET /vaccine-schedule
+ *          (any signed-in user; `ETag` + `If-None-Match`, 304 without a body) serves the schedule
+ *          the device caches. PUT /babies/{id}/vaccine-profile (Owner/Parent, online) replaces the
+ *          baby's vaccine profile (`vaccineProfile`, `gestationalAgeWeeks`, `rsvMaternalVaccination`).
  * - Shared catalog: GET /catalog/products?q=, POST /catalog/products (409 `product_exists` carries
- *          the existing `product`).
+ *          the existing `product`), GET /catalog/products/{id} (a product a medication links to; pulled
+ *          for the family's linked products only, the catalog itself is never synced: official ANVISA
+ *          products are searched online, see docs/design/13-anvisa-catalog.md).
  * - Medication event payload: { medications: [{ medicationId, name, dose?, prescriptionId?, kgUsed?,
  *          override? }] }.
  * - Enum values (field kind, role) are strings, compared case-insensitively.
@@ -79,17 +137,52 @@ export const apiPaths = {
     `${API_PREFIX}/babies/${enc(babyId)}/prescriptions` + query({ since }),
   prescription: (babyId: string, prescriptionId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/prescriptions/${enc(prescriptionId)}`,
+  formulas: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/formulas` + query({ since }),
+  formula: (babyId: string, formulaId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/formulas/${enc(formulaId)}`,
+  appointments: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/appointments` + query({ since }),
+  appointment: (babyId: string, appointmentId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/appointments/${enc(appointmentId)}`,
+  vaccinations: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/vaccinations` + query({ since }),
+  vaccination: (babyId: string, vaccinationId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/vaccinations/${enc(vaccinationId)}`,
+  vaccineProfile: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/vaccine-profile`,
+  vaccineSchedule: () => `${API_PREFIX}/vaccine-schedule`,
+  notes: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notes` + query({ since }),
+  note: (babyId: string, noteId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notes/${enc(noteId)}`,
+  proposals: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals` + query({ since }),
+  proposal: (babyId: string, proposalId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals/${enc(proposalId)}`,
+  proposalAccept: (babyId: string, proposalId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals/${enc(proposalId)}/accept`,
+  proposalDecline: (babyId: string, proposalId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/prescription-proposals/${enc(proposalId)}/decline`,
+  noteRead: (babyId: string, noteId: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/notes/${enc(noteId)}/read`,
+  noteReads: (babyId: string, since?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/note-reads` + query({ since }),
+  accessLog: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/access-log`,
+  professionalProfile: () => `${API_PREFIX}/me/professional-profile`,
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
     query({ q, limit: limit === undefined ? undefined : String(limit) }),
+  catalogProduct: (productId: string) => `${API_PREFIX}/catalog/products/${enc(productId)}`,
   measurements: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/measurements`,
   measurement: (babyId: string, measurementId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/measurements/${enc(measurementId)}`,
   importNapper: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/import/napper`,
   importNapperPreview: (babyId: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/import/napper/preview`,
-  predictions: (babyId: string, utcOffsetMinutes: number) =>
-    `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}`,
+  /** `timeZone` (IANA) places the recurring patterns in local time, daylight saving included. */
+  predictions: (babyId: string, utcOffsetMinutes: number, timeZone?: string) =>
+    `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}` +
+    (timeZone ? `&timeZone=${encodeURIComponent(timeZone)}` : ''),
   pushConfig: () => `${API_PREFIX}/push/config`,
   pushSubscriptions: () => `${API_PREFIX}/push/subscriptions`,
   /** Body `{ endpoint }`: the endpoint never travels in a URL. */
@@ -125,6 +218,14 @@ export interface BabyDto {
   name: string;
   birthDate: string;
   role?: string;
+  /** The caller's own user id (additive; absent from older servers). */
+  userId?: string;
+  /** Vaccine profile (additive): `public` or `public+private`. */
+  vaccineProfile?: string;
+  /** Weeks at birth, 20-44 (additive); `null` = not told. */
+  gestationalAgeWeeks?: number | null;
+  /** `unknown`, `yes` or `no` (additive); `null` = not answered. */
+  rsvMaternalVaccination?: string | null;
 }
 
 export interface FieldVisibilityDto {
@@ -147,6 +248,8 @@ export interface EventFieldDefinitionDto {
   hidden?: boolean;
   /** Number fields: whole numbers only (additive; absent = false). */
   integer?: boolean;
+  /** Number fields: at most this many decimal places, 1 to 3 (additive; absent or `null` = any). */
+  decimals?: number | null;
 }
 
 export interface EventTypeDto {
@@ -232,6 +335,8 @@ export interface MemberDto {
   displayName: string | null;
   role: string;
   joinedAt: string;
+  /** A Doctor member's professional details (additive; absent or `null` for other roles). */
+  professional?: ProfessionalSummaryDto | null;
 }
 
 export interface InviteDto {
@@ -312,6 +417,138 @@ export interface BedTimeDto {
   basis: Record<string, unknown>;
 }
 
+/** One supporting day of a pattern: `yyyy-MM-dd` and its local `HH:mm` times inside the window. */
+export interface PatternDayDto {
+  date: string;
+  times: string[];
+}
+
+/**
+ * A time of day an event type keeps happening at (docs/design/11-patterns.md), in local `HH:mm`
+ * (the window crosses midnight when `windowEnd` is earlier than `windowStart`). Numbers only: the
+ * client writes the text.
+ */
+export interface TimeOfDayPatternDto {
+  /** `belly_pain` or `fussy`. */
+  typeKey: string;
+  typicalClock: string;
+  windowStart: string;
+  windowEnd: string;
+  windowMinutes: number;
+  spreadMinutes: number;
+  confidence: PredictionConfidence;
+  eventDayCount: number;
+  recentDayCount: number;
+  /** IANA zone of the local times; `null` when the fixed offset was used. */
+  timeZone: string | null;
+  /** Oldest first. */
+  days: PatternDayDto[];
+  rule: {
+    lookBackDays: number;
+    recentDays: number;
+    minimumRecentDays: number;
+    maximumSpreadMinutes: number;
+    minimumCoveragePercent: number;
+    /** The suggestion shows from this long before the window starts. */
+    leadMinutes: number;
+  };
+}
+
+/** One awake stretch the wake window used: UTC ISO start and end, whole minutes. */
+export interface AwakeStretchDto {
+  start: string;
+  end: string;
+  minutes: number;
+}
+
+/**
+ * The overtired heads-up numbers (docs/design/11-patterns.md section 6): the baby's usual longest
+ * comfortable awake stretch (`limitMinutes`, a percentile of the recent daytime stretches) and the
+ * current stretch at `generatedAt`. Numbers only: the client writes the text and measures the
+ * current stretch from local events.
+ */
+export interface WakeWindowDto {
+  limitMinutes: number;
+  sampleCount: number;
+  /** UTC ISO start of the current awake stretch; `null` while asleep or after a night waking. */
+  awakeSince: string | null;
+  awakeMinutes: number | null;
+  timeZone: string | null;
+  /** Oldest first. */
+  stretches: AwakeStretchDto[];
+  rule: {
+    lookBackDays: number;
+    /** Local `HH:mm` (inclusive) and before `dayEndsAt` (exclusive): daytime stretch starts. */
+    dayStartsAt: string;
+    dayEndsAt: string;
+    percentile: number;
+    minimumStretches: number;
+    /** The heads-up shows from this long before the limit... */
+    leadMinutes: number;
+    /** ...until this long after it. */
+    graceMinutes: number;
+  };
+}
+
+/**
+ * The next wet or dirty diaper from the gaps between them (docs/design/11-patterns.md section 8),
+ * anchored at the latest one on the server. Whole minutes; the client re-anchors at its latest
+ * local event.
+ */
+export interface DiaperGapDto {
+  /** UTC ISO of the latest diaper of the kind. */
+  anchorAt: string;
+  nextStart: { earliest: string; expected: string; latest: string };
+  lowerGapMinutes: number;
+  medianGapMinutes: number;
+  upperGapMinutes: number;
+  eventCount: number;
+  gapCount: number;
+  confidence: PredictionConfidence;
+  /** Wet only: the last 24 hours against the usual count; `null` with too little history. */
+  trend?: { last24Hours: number; usualPer24Hours: number; droppedSharply: boolean } | null;
+}
+
+/** How long after a feed ends the next dirty diaper usually comes (whole minutes). */
+export interface DiaperFeedLagDto {
+  lowerLagMinutes: number;
+  medianLagMinutes: number;
+  upperLagMinutes: number;
+  pairCount: number;
+  confidence: PredictionConfidence;
+  /** UTC ISO end of the latest finished feed on the server, or `null`. */
+  latestFeedEndedAt: string | null;
+}
+
+export interface DirtyDiaperDto {
+  lastDirtyAt: string | null;
+  gap: DiaperGapDto | null;
+  afterFeed: DiaperFeedLagDto | null;
+}
+
+export interface DiaperRuleDto {
+  wetLookBackDays: number;
+  minimumWetEvents: number;
+  dirtyLookBackDays: number;
+  minimumDirtyEvents: number;
+  lowerPercentile: number;
+  upperPercentile: number;
+  feedWindowMinutes: number;
+  minimumFeedPairs: number;
+  maximumLagSpreadMinutes: number;
+  /** The Now card shows from this long before the expected time... */
+  leadMinutes: number;
+  /** ...until this long after it. */
+  graceMinutes: number;
+}
+
+/** The diaper predictions: each part `null` when its gate did not pass (nothing is guessed). */
+export interface DiaperPredictionsDto {
+  wet: DiaperGapDto | null;
+  dirty: DirtyDiaperDto | null;
+  rule: DiaperRuleDto;
+}
+
 export interface PredictionsDto {
   babyId: string;
   generatedAt: string;
@@ -321,6 +558,12 @@ export interface PredictionsDto {
   insufficientData: InsufficientDataDto[];
   /** Absent or `null` when no bed time can be estimated. */
   bedTime?: BedTimeDto | null;
+  /** Recurring time-of-day patterns (additive; absent on older servers). */
+  patterns?: TimeOfDayPatternDto[];
+  /** The overtired heads-up numbers (additive); `null` or absent without enough data. */
+  wakeWindow?: WakeWindowDto | null;
+  /** The next wet and dirty diaper (additive; absent on older servers). */
+  diaper?: DiaperPredictionsDto | null;
 }
 
 /** Normalizes any ISO-8601 timestamp to UTC `Z` with millisecond precision. */
@@ -366,17 +609,43 @@ export function fromEventDto(dto: EventDto): BabyEvent {
   };
 }
 
-const ROLES: readonly BabyRole[] = ['Owner', 'Parent', 'Viewer'];
+const ROLES: readonly BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer', 'Doctor'];
 const FIELD_KINDS: readonly EventFieldKind[] = ['text', 'number', 'select', 'bool'];
 
 function matchEnum<T extends string>(values: readonly T[], raw: string | undefined): T | undefined {
   return values.find((v) => v.toLowerCase() === raw?.toLowerCase());
 }
 
+const VACCINE_PROFILES: readonly VaccineProfileSetting[] = ['public', 'public+private'];
+const RSV_ANSWERS: readonly RsvMaternalAnswer[] = ['unknown', 'yes', 'no'];
+
+/** The vaccine profile fields of a baby wire object; only the ones the server sent (older servers send none). */
+export function vaccineProfileFromDto(
+  dto: Pick<BabyDto, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'>,
+): Pick<Baby, 'vaccineProfile' | 'gestationalAgeWeeks' | 'rsvMaternalVaccination'> {
+  const profile = matchEnum(VACCINE_PROFILES, dto.vaccineProfile);
+  const rsv = matchEnum(RSV_ANSWERS, dto.rsvMaternalVaccination ?? undefined);
+  const weeks = dto.gestationalAgeWeeks;
+  return {
+    ...(profile ? { vaccineProfile: profile } : {}),
+    ...(typeof weeks === 'number' && Number.isFinite(weeks) ? { gestationalAgeWeeks: weeks } : {}),
+    ...(weeks === null ? { gestationalAgeWeeks: null } : {}),
+    ...(rsv ? { rsvMaternalVaccination: rsv } : {}),
+    ...(dto.rsvMaternalVaccination === null ? { rsvMaternalVaccination: null } : {}),
+  };
+}
+
 export function fromBabyDto(dto: BabyDto): Baby {
   const role = matchEnum(ROLES, dto.role);
   // A missing role degrades to the least privilege; the server enforces roles regardless.
-  return { id: dto.id, name: dto.name, birthDate: dto.birthDate, role: role ?? 'Viewer' };
+  return {
+    id: dto.id,
+    name: dto.name,
+    birthDate: dto.birthDate,
+    role: role ?? 'Viewer',
+    ...(typeof dto.userId === 'string' && dto.userId !== '' ? { userId: dto.userId } : {}),
+    ...vaccineProfileFromDto(dto),
+  };
 }
 
 /** A well-formed condition, else `null` (an unreadable condition never hides a field). */
@@ -400,7 +669,13 @@ function fromFieldDto(dto: EventFieldDefinitionDto): EventFieldDefinition {
     visibleWhen: fromVisibilityDto(dto.visibleWhen),
     ...(dto.hidden === true ? { hidden: true } : {}),
     ...(dto.integer === true ? { integer: true } : {}),
+    ...(isDecimalPlaces(dto.decimals) ? { decimals: dto.decimals } : {}),
   };
+}
+
+/** A decimal-places limit the client understands (1 to 3); anything else is ignored. */
+function isDecimalPlaces(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 3;
 }
 
 export function fromEventTypeDto(dto: EventTypeDto): EventType {
@@ -440,6 +715,9 @@ export interface PrescriptionDto {
   dose: { amount: number; unit: string; perKg?: boolean; roundingStep?: number | null };
   timesOfDay?: string[] | null;
   everyMinutes?: number | null;
+  /** Part-of-the-day codes (`morning`, `afternoon`, `evening`, `night`); absent on older servers. */
+  dayParts?: string[] | null;
+  dayPartReminders?: { part: string; time: string }[] | null;
   minIntervalMinutes?: number | null;
   maxDosesPer24h?: number | null;
   indication?: string | null;
@@ -448,6 +726,14 @@ export interface PrescriptionDto {
   endDate?: string | null;
   prescriber?: string | null;
   instructions?: string | null;
+  /** Provenance (additive; absent on prescriptions the parents entered). */
+  prescribedByUserId?: string | null;
+  /** The doctor's name without a title. */
+  prescribedByName?: string | null;
+  prescribedBy?: PersonSummaryDto | null;
+  proposalId?: string | null;
+  changedByParent?: boolean;
+  original?: PrescriptionOriginalDto | null;
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -463,6 +749,8 @@ export interface PrescriptionUpsertRequest {
   dose: PrescriptionDose;
   timesOfDay: string[] | null;
   everyMinutes: number | null;
+  dayParts: DayPart[] | null;
+  dayPartReminders: DayPartReminder[] | null;
   minIntervalMinutes: number | null;
   maxDosesPer24h: number | null;
   indication: string | null;
@@ -482,6 +770,8 @@ export function toPrescriptionUpsertRequest(p: Prescription): PrescriptionUpsert
     dose: p.dose,
     timesOfDay: p.timesOfDay,
     everyMinutes: p.everyMinutes,
+    dayParts: p.dayParts ?? null,
+    dayPartReminders: p.dayPartReminders ?? null,
     minIntervalMinutes: p.minIntervalMinutes,
     maxDosesPer24h: p.maxDosesPer24h,
     indication: p.indication,
@@ -499,6 +789,28 @@ export function isPrescriptionDtoFor(value: unknown, id: string): value is Presc
   return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
 }
 
+const DAY_PARTS: readonly DayPart[] = ['morning', 'afternoon', 'evening', 'night'];
+
+const isDayPart = (value: unknown): value is DayPart =>
+  typeof value === 'string' && (DAY_PARTS as readonly string[]).includes(value);
+
+/** Known part codes in day order (unknown ones are dropped); `null` when absent or empty. */
+function dayPartsFromDto(codes: PrescriptionDto['dayParts']): DayPart[] | null {
+  if (!Array.isArray(codes)) return null;
+  const parts = DAY_PARTS.filter((part) => codes.includes(part));
+  return parts.length > 0 ? parts : null;
+}
+
+function dayPartRemindersFromDto(
+  reminders: PrescriptionDto['dayPartReminders'],
+): DayPartReminder[] | null {
+  if (!Array.isArray(reminders)) return null;
+  const valid = reminders.filter(
+    (r): r is DayPartReminder => isDayPart(r?.part) && typeof r.time === 'string',
+  );
+  return valid.length > 0 ? valid.map((r) => ({ part: r.part, time: r.time })) : null;
+}
+
 export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
   return {
     id: dto.id,
@@ -514,6 +826,8 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
     },
     timesOfDay: dto.timesOfDay ? [...dto.timesOfDay].sort() : null,
     everyMinutes: dto.everyMinutes ?? null,
+    dayParts: dayPartsFromDto(dto.dayParts),
+    dayPartReminders: dayPartRemindersFromDto(dto.dayPartReminders),
     minIntervalMinutes: dto.minIntervalMinutes ?? null,
     maxDosesPer24h: dto.maxDosesPer24h ?? null,
     indication: dto.indication ?? null,
@@ -522,6 +836,16 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
     endDate: dto.endDate ?? null,
     prescriber: dto.prescriber ?? null,
     instructions: dto.instructions ?? null,
+    ...(dto.prescribedByUserId !== undefined || dto.proposalId !== undefined
+      ? {
+          prescribedByUserId: dto.prescribedByUserId ?? null,
+          prescribedByName: dto.prescribedByName ?? null,
+          prescribedBy: fromPersonDto(dto.prescribedBy),
+          proposalId: dto.proposalId ?? null,
+          changedByParent: dto.changedByParent === true,
+          original: dto.original ? fromOriginalDto(dto.original) : null,
+        }
+      : {}),
     createdBy: dto.createdBy ?? null,
     createdAt: toUtcIso(dto.createdAt),
     updatedAt: toUtcIso(dto.updatedAt),
@@ -530,9 +854,435 @@ export function fromPrescriptionDto(dto: PrescriptionDto): Prescription {
   };
 }
 
+/* Prescription proposals (docs/design/16-doctor-access.md section 10) */
+
+/** The prescription content as the wire carries it (a proposal's, and the `original` of a prescription). */
+export interface PrescriptionContentDto {
+  kind: string;
+  dose: { amount: number; unit: string; perKg?: boolean; roundingStep?: number | null };
+  timesOfDay?: string[] | null;
+  everyMinutes?: number | null;
+  dayParts?: string[] | null;
+  dayPartReminders?: { part: string; time: string }[] | null;
+  minIntervalMinutes?: number | null;
+  maxDosesPer24h?: number | null;
+  indication?: string | null;
+  intervalGroup?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  instructions?: string | null;
+}
+
+export interface PrescriptionOriginalDto extends PrescriptionContentDto {
+  medicationName: string;
+  productId?: string | null;
+}
+
+export interface ProposalDto extends PrescriptionContentDto {
+  id: string;
+  babyId: string;
+  authorUserId?: string | null;
+  author?: PersonSummaryDto | null;
+  medicationId?: string | null;
+  productId?: string | null;
+  medicationName: string;
+  replacesPrescriptionId?: string | null;
+  status: string;
+  declineReason?: string | null;
+  cancelReason?: string | null;
+  decidedBy?: string | null;
+  decidedAt?: string | null;
+  acceptedPrescriptionId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full state of a proposal plus the client edit time (`PUT` replaces it). */
+export interface ProposalUpsertRequest extends PrescriptionContent {
+  medicationId: string | null;
+  productId: string | null;
+  medicationName: string;
+  replacesPrescriptionId: string | null;
+  updatedAt?: string;
+}
+
+/** What a parent's accept or decline queues (the outbox payload of a `proposalDecision`). */
+export interface ProposalDecisionPayload {
+  action: 'accept' | 'decline';
+  /** Accept: the id of the prescription the server creates (a replay reuses it). */
+  prescriptionId?: string;
+  /** Accept: the parent's local calendar day, when a replaced prescription ends. */
+  acceptedOn?: string;
+  /** Decline: the parent's optional words (up to 500 characters). */
+  reason?: string | null;
+}
+
+/** The answer of accept and decline: the proposal and, on accept, the prescription it created. */
+export interface ProposalDecisionResponse {
+  proposal: ProposalDto;
+  prescription?: PrescriptionDto | null;
+}
+
+/** The answer of `PUT /notes/{id}/read` and the items of `GET /note-reads`. */
+export interface NoteReadDto {
+  noteId: string;
+  readAt: string;
+}
+
+export function toProposalUpsertRequest(p: Proposal): ProposalUpsertRequest {
+  return {
+    medicationId: p.medicationId,
+    productId: p.productId,
+    medicationName: p.medicationName,
+    kind: p.kind,
+    dose: p.dose,
+    timesOfDay: p.timesOfDay,
+    everyMinutes: p.everyMinutes,
+    dayParts: p.dayParts,
+    dayPartReminders: p.dayPartReminders,
+    minIntervalMinutes: p.minIntervalMinutes,
+    maxDosesPer24h: p.maxDosesPer24h,
+    indication: p.indication,
+    intervalGroup: p.intervalGroup,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    instructions: p.instructions,
+    replacesPrescriptionId: p.replacesPrescriptionId,
+    updatedAt: p.clientUpdatedAt ?? p.updatedAt,
+  };
+}
+
+export function isProposalDtoFor(value: unknown, id: string): value is ProposalDto {
+  const dto = value as Partial<ProposalDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function isProposalDecisionFor(
+  value: unknown,
+  id: string,
+): value is ProposalDecisionResponse {
+  const response = value as Partial<ProposalDecisionResponse> | undefined;
+  return (
+    typeof response === 'object' && response !== null && isProposalDtoFor(response.proposal, id)
+  );
+}
+
+/** The prescription content of a wire object; unknown codes degrade to the safest reading. */
+function fromContentDto(dto: PrescriptionContentDto): PrescriptionContent {
+  return {
+    kind: dto.kind?.toLowerCase() === 'scheduled' ? 'scheduled' : 'asNeeded',
+    dose: {
+      amount: dto.dose.amount,
+      unit: dto.dose.unit,
+      perKg: dto.dose.perKg === true,
+      roundingStep: dto.dose.roundingStep ?? null,
+    },
+    timesOfDay: dto.timesOfDay ? [...dto.timesOfDay].sort() : null,
+    everyMinutes: dto.everyMinutes ?? null,
+    dayParts: dayPartsFromDto(dto.dayParts),
+    dayPartReminders: dayPartRemindersFromDto(dto.dayPartReminders),
+    minIntervalMinutes: dto.minIntervalMinutes ?? null,
+    maxDosesPer24h: dto.maxDosesPer24h ?? null,
+    indication: dto.indication ?? null,
+    intervalGroup: dto.intervalGroup ?? null,
+    startDate: dto.startDate,
+    endDate: dto.endDate ?? null,
+    instructions: dto.instructions ?? null,
+  };
+}
+
+export function fromOriginalDto(dto: PrescriptionOriginalDto): PrescriptionOriginal {
+  return {
+    ...fromContentDto(dto),
+    medicationName: dto.medicationName,
+    productId: dto.productId ?? null,
+  };
+}
+
+const CANCEL_REASONS: readonly ProposalCancelReason[] = ['withdrawn', 'access_removed'];
+
+/** An unknown status from a newer server reads as cancelled: never offered for a decision. */
+export function fromProposalDto(dto: ProposalDto): Proposal {
+  const status = dto.status?.toLowerCase();
+  return {
+    ...fromContentDto(dto),
+    id: dto.id,
+    babyId: dto.babyId,
+    authorUserId: dto.authorUserId ?? null,
+    author: fromPersonDto(dto.author),
+    medicationId: dto.medicationId ?? null,
+    productId: dto.productId ?? null,
+    medicationName: dto.medicationName,
+    replacesPrescriptionId: dto.replacesPrescriptionId ?? null,
+    status: isProposalStatus(status) ? status : 'cancelled',
+    declineReason: dto.declineReason ?? null,
+    cancelReason: matchEnum(CANCEL_REASONS, dto.cancelReason ?? undefined) ?? null,
+    decidedBy: dto.decidedBy ?? null,
+    decidedAt: toUtcIsoOrNull(dto.decidedAt),
+    acceptedPrescriptionId: dto.acceptedPrescriptionId ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
+export function fromNoteReadDto(babyId: string, dto: NoteReadDto): NoteRead {
+  return { noteId: dto.noteId, babyId, readAt: toUtcIso(dto.readAt) };
+}
+
+/* Formulas */
+
+export interface FormulaDto {
+  id: string;
+  babyId: string;
+  name: string;
+  brand?: string | null;
+  stage?: string | null;
+  notes?: string | null;
+  startedOn?: string | null;
+  isCurrent?: boolean;
+  archived?: boolean;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full editable state of a formula plus the client edit time (`PUT` replaces it). */
+export interface FormulaUpsertRequest {
+  name: string;
+  brand: string | null;
+  stage: string | null;
+  notes: string | null;
+  startedOn: string | null;
+  isCurrent: boolean;
+  archived: boolean;
+  updatedAt?: string;
+}
+
+export function toFormulaUpsertRequest(f: Formula): FormulaUpsertRequest {
+  return {
+    name: f.name,
+    brand: f.brand,
+    stage: f.stage,
+    notes: f.notes,
+    startedOn: f.startedOn,
+    isCurrent: f.isCurrent,
+    archived: f.archived,
+    updatedAt: f.clientUpdatedAt ?? f.updatedAt,
+  };
+}
+
+export function isFormulaDtoFor(value: unknown, id: string): value is FormulaDto {
+  const dto = value as Partial<FormulaDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromFormulaDto(dto: FormulaDto): Formula {
+  const archived = dto.archived === true;
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    name: dto.name,
+    brand: dto.brand ?? null,
+    stage: dto.stage ?? null,
+    notes: dto.notes ?? null,
+    startedOn: dto.startedOn ?? null,
+    isCurrent: dto.isCurrent === true && !archived,
+    archived,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
+/* Appointments */
+
+export interface AppointmentDto {
+  id: string;
+  babyId: string;
+  title: string;
+  type: string;
+  startsAt: string;
+  durationMinutes?: number | null;
+  location?: string | null;
+  doctorName?: string | null;
+  notes?: string | null;
+  outcome?: string | null;
+  status?: string;
+  reminderOffsetsMinutes?: number[] | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+}
+
+/** The full editable state of an appointment plus the client edit time (`PUT` replaces it). */
+export interface AppointmentUpsertRequest {
+  title: string;
+  type: AppointmentType;
+  startsAt: string;
+  durationMinutes: number | null;
+  location: string | null;
+  doctorName: string | null;
+  notes: string | null;
+  outcome: string | null;
+  status: AppointmentStatus;
+  reminderOffsetsMinutes: ReminderOffset[];
+  updatedAt?: string;
+}
+
+export function toAppointmentUpsertRequest(a: Appointment): AppointmentUpsertRequest {
+  return {
+    title: a.title,
+    type: a.type,
+    startsAt: a.startsAt,
+    durationMinutes: a.durationMinutes,
+    location: a.location,
+    doctorName: a.doctorName,
+    notes: a.notes,
+    outcome: a.outcome,
+    status: a.status,
+    reminderOffsetsMinutes: a.reminderOffsetsMinutes,
+    updatedAt: a.clientUpdatedAt ?? a.updatedAt,
+  };
+}
+
+export function isAppointmentDtoFor(value: unknown, id: string): value is AppointmentDto {
+  const dto = value as Partial<AppointmentDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+/** Unknown codes from a newer server degrade to `other` / `upcoming`; unknown offsets are dropped. */
+export function fromAppointmentDto(dto: AppointmentDto): Appointment {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    title: dto.title,
+    type: isAppointmentType(dto.type) ? dto.type : 'other',
+    startsAt: toUtcIso(dto.startsAt),
+    durationMinutes: dto.durationMinutes ?? null,
+    location: dto.location ?? null,
+    doctorName: dto.doctorName ?? null,
+    notes: dto.notes ?? null,
+    outcome: dto.outcome ?? null,
+    status: isAppointmentStatus(dto.status) ? dto.status : 'upcoming',
+    reminderOffsetsMinutes: normalizeReminders(dto.reminderOffsetsMinutes ?? []),
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+  };
+}
+
+/* Vaccinations (docs/design/18-vaccines.md) */
+
+export interface VaccinationDto {
+  id: string;
+  babyId: string;
+  vaccineKey?: string | null;
+  doseId?: string | null;
+  customName?: string | null;
+  doseLabel?: string | null;
+  givenOn: string;
+  network?: string;
+  clinic?: string | null;
+  lot?: string | null;
+  administeredBy?: string | null;
+  notes?: string | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+  deletedAt?: string | null;
+}
+
+/** The full editable state of a vaccination plus the client edit time (`PUT` replaces it). */
+export interface VaccinationUpsertRequest {
+  vaccineKey: string | null;
+  doseId: string | null;
+  customName: string | null;
+  doseLabel: string | null;
+  givenOn: string;
+  network: VaccineNetwork;
+  clinic: string | null;
+  lot: string | null;
+  administeredBy: string | null;
+  notes: string | null;
+  updatedAt?: string;
+}
+
+export function toVaccinationUpsertRequest(v: Vaccination): VaccinationUpsertRequest {
+  return {
+    vaccineKey: v.vaccineKey,
+    doseId: v.doseId,
+    customName: v.customName,
+    doseLabel: v.doseLabel,
+    givenOn: v.givenOn,
+    network: v.network,
+    clinic: v.clinic,
+    lot: v.lot,
+    administeredBy: v.administeredBy,
+    notes: v.notes,
+    updatedAt: v.clientUpdatedAt ?? v.updatedAt,
+  };
+}
+
+export function isVaccinationDtoFor(value: unknown, id: string): value is VaccinationDto {
+  const dto = value as Partial<VaccinationDto> | undefined;
+  return (
+    typeof dto === 'object' &&
+    dto !== null &&
+    dto.id === id &&
+    !!dto.updatedAt &&
+    typeof dto.givenOn === 'string'
+  );
+}
+
+/** An unknown network from a newer server reads as `public`. */
+export function fromVaccinationDto(dto: VaccinationDto): Vaccination {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    vaccineKey: dto.vaccineKey ?? null,
+    doseId: dto.doseId ?? null,
+    customName: dto.customName ?? null,
+    doseLabel: dto.doseLabel ?? null,
+    givenOn: dto.givenOn,
+    network: isVaccineNetwork(dto.network) ? dto.network : 'public',
+    clinic: dto.clinic ?? null,
+    lot: dto.lot ?? null,
+    administeredBy: dto.administeredBy ?? null,
+    notes: dto.notes ?? null,
+    createdBy: dto.createdBy ?? null,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+    deletedAt: toUtcIsoOrNull(dto.deletedAt),
+  };
+}
+
+/** Body of `PUT /babies/{id}/vaccine-profile` (full state; `null` clears). */
+export interface VaccineProfileRequest {
+  vaccineProfile: VaccineProfileSetting;
+  gestationalAgeWeeks: number | null;
+  rsvMaternalVaccination: RsvMaternalAnswer | null;
+}
+
 /* Shared medication catalog (instance-wide). */
 
-export type ProductForm = 'drops' | 'syrup' | 'tablet' | 'powder' | 'other';
+export type ProductForm =
+  | 'drops'
+  | 'syrup'
+  | 'tablet'
+  | 'powder'
+  | 'spray'
+  | 'ointment'
+  | 'suppository'
+  | 'inhaler'
+  | 'other';
 
 export interface ProductSubstanceDto {
   substanceId: string;
@@ -552,10 +1302,25 @@ export interface ProductDto {
   name: string;
   form: ProductForm;
   country: string;
-  status: 'seed' | 'community' | 'verified';
+  /**
+   * `official`: imported from an official registry (`source` `anvisa`); `curated`: from the importer's
+   * curated list (`source` `curated`, not reviewed by a pharmacist).
+   */
+  status: 'seed' | 'community' | 'verified' | 'official' | 'curated';
   mergedIntoId: string | null;
   substances: ProductSubstanceDto[];
   createdAt: string;
+  /** Additive: the official registry of an `official` product, else `null`/absent. */
+  source?: string | null;
+  /** Additive: dosage text the official name carried (e.g. `0,9%`). */
+  presentation?: string | null;
+  /** Additive: the official product left its registry; search no longer offers it. */
+  inactive?: boolean;
+  /**
+   * Additive: the source name this product shares with products of other ingredients (e.g. `Sorine`);
+   * the app warns to check the box. `null`/absent when the name is unambiguous.
+   */
+  ambiguousName?: string | null;
 }
 
 export interface SiblingProductDto {
@@ -599,6 +1364,10 @@ export interface MeasurementDto {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Recorded by the baby's Doctor during a consultation (additive). */
+  recordedByDoctor?: boolean;
+  /** That Doctor, as the family sees her; only when `recordedByDoctor` (additive). */
+  recordedBy?: PersonSummaryDto | null;
 }
 
 /** Full state of a measurement (`PUT` replaces it). */
@@ -709,4 +1478,118 @@ export interface NapperImportResultDto {
   createdMedications: { id: string; name: string }[];
   logs: NapperLogsSummary | null;
   measurements: NapperMeasurementsSummary | null;
+}
+
+/* Notes and doctor access (docs/design/16-doctor-access.md) */
+
+export interface ProfessionalSummaryDto {
+  kind?: string;
+  displayName: string;
+  specialty?: string | null;
+  registrationNumber?: string | null;
+  verified?: boolean;
+}
+
+export interface PersonSummaryDto {
+  userId: string;
+  displayName: string;
+  professional?: ProfessionalSummaryDto | null;
+}
+
+/** The caller's own professional profile (`GET/PUT /me/professional-profile`). */
+export interface ProfessionalProfileDto extends ProfessionalSummaryDto {
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Body of `PUT /me/professional-profile` (v1 knows the `doctor` kind only; never `verified`). */
+export interface ProfessionalProfileRequest {
+  kind: 'doctor';
+  displayName: string;
+  specialty: string | null;
+  registrationNumber: string | null;
+}
+
+export interface AccessLogEntryDto {
+  userId: string;
+  person?: PersonSummaryDto | null;
+  role: string;
+  kind: string;
+  at: string;
+}
+
+export interface NoteDto {
+  id: string;
+  babyId: string;
+  authorUserId: string;
+  author?: PersonSummaryDto | null;
+  kind: string;
+  visibility: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  clientUpdatedAt?: string | null;
+  deletedAt?: string | null;
+}
+
+/** The full editable state of a note plus the client edit time (`PUT` replaces it). */
+export interface NoteUpsertRequest {
+  kind: NoteKind;
+  visibility: NoteVisibility;
+  body: string;
+  updatedAt?: string;
+}
+
+export function fromProfessionalDto(
+  dto: ProfessionalSummaryDto | null | undefined,
+): ProfessionalSummary | null {
+  if (!dto || typeof dto.displayName !== 'string') return null;
+  return {
+    kind: 'doctor',
+    displayName: dto.displayName,
+    specialty: dto.specialty ?? null,
+    registrationNumber: dto.registrationNumber ?? null,
+    verified: dto.verified === true,
+  };
+}
+
+export function fromPersonDto(dto: PersonSummaryDto | null | undefined): PersonSummary | null {
+  if (!dto || typeof dto.userId !== 'string') return null;
+  return {
+    userId: dto.userId,
+    displayName: dto.displayName ?? '',
+    professional: fromProfessionalDto(dto.professional),
+  };
+}
+
+export function toNoteUpsertRequest(note: Note): NoteUpsertRequest {
+  return {
+    kind: note.kind,
+    visibility: note.visibility,
+    body: note.body,
+    updatedAt: note.clientUpdatedAt ?? note.updatedAt,
+  };
+}
+
+export function isNoteDtoFor(value: unknown, id: string): value is NoteDto {
+  const dto = value as Partial<NoteDto> | undefined;
+  return typeof dto === 'object' && dto !== null && dto.id === id && !!dto.updatedAt;
+}
+
+export function fromNoteDto(dto: NoteDto): Note {
+  return {
+    id: dto.id,
+    babyId: dto.babyId,
+    authorUserId: dto.authorUserId ?? null,
+    author: fromPersonDto(dto.author),
+    kind: dto.kind === 'recommendation' ? 'recommendation' : 'note',
+    // Anything unreadable is treated as private: shown to nobody but the author's own device.
+    visibility: dto.visibility === 'shared' ? 'shared' : 'private',
+    body: dto.body,
+    createdAt: toUtcIso(dto.createdAt),
+    updatedAt: toUtcIso(dto.updatedAt),
+    clientUpdatedAt: toUtcIso(dto.clientUpdatedAt || dto.updatedAt),
+    deletedAt: toUtcIsoOrNull(dto.deletedAt ?? null),
+  };
 }

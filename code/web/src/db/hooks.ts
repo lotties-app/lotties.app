@@ -2,11 +2,21 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useDatabase } from './DatabaseContext';
 import { BABIES_LISTED_KEY, type EventPayload } from './models';
 import {
+  cancelAppointment,
+  createAppointment,
+  markAppointmentDone,
+  restoreAppointment,
+  updateAppointment,
+  type AppointmentTerms,
+} from './appointmentCommands';
+import {
   allBabies,
+  appointmentsFor,
   entitySyncStates,
   eventsInRange,
   eventsStartedSince,
   eventTypesFor,
+  formulasFor,
   liveEvent,
   medicationsFor,
   latestBodyWeight,
@@ -39,6 +49,13 @@ import {
   type PrescriptionTerms,
 } from './prescriptionCommands';
 import type { PrescriptionStatus } from './models';
+import {
+  createFormula,
+  setCurrentFormula,
+  setFormulaArchived,
+  updateFormula,
+  type FormulaTerms,
+} from './formulaCommands';
 
 /*
  * Reads come straight from Dexie through `useLiveQuery`, which re-runs on any local or synced
@@ -155,5 +172,38 @@ export function usePrescriptionCommands() {
     update: (id: string, terms: PrescriptionTerms) => updatePrescription(db, id, terms),
     setStatus: (id: string, status: PrescriptionStatus) => setPrescriptionStatus(db, id, status),
     remove: (id: string) => deletePrescription(db, id),
+  };
+}
+
+/** Every formula of the baby, archived ones included (`undefined` while loading). */
+export function useFormulas(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(() => formulasFor(db, babyId), [db, babyId]);
+}
+
+/** Every appointment of the baby, cancelled and done ones included, by start (`undefined` while loading). */
+export function useAppointments(babyId: string) {
+  const db = useDatabase();
+  return useLiveQuery(() => appointmentsFor(db, babyId), [db, babyId]);
+}
+
+export function useAppointmentCommands() {
+  const db = useDatabase();
+  return {
+    create: (babyId: string, terms: AppointmentTerms) => createAppointment(db, babyId, terms),
+    update: (id: string, terms: AppointmentTerms) => updateAppointment(db, id, terms),
+    markDone: (id: string, outcome: string | null) => markAppointmentDone(db, id, outcome),
+    cancel: (id: string) => cancelAppointment(db, id),
+    restore: (id: string) => restoreAppointment(db, id),
+  };
+}
+
+export function useFormulaCommands() {
+  const db = useDatabase();
+  return {
+    create: (babyId: string, terms: FormulaTerms) => createFormula(db, babyId, terms),
+    update: (id: string, terms: FormulaTerms) => updateFormula(db, id, terms),
+    setCurrent: (id: string) => setCurrentFormula(db, id),
+    setArchived: (id: string, archived: boolean) => setFormulaArchived(db, id, archived),
   };
 }

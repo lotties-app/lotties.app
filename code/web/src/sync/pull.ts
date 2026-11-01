@@ -1,30 +1,45 @@
+import { ApiError } from '../api/ApiError';
+import { canSeeAppointments } from '../baby/permissions';
 import type { BabyRoutineDb } from '../db/database';
 import { saveLatestWeight } from '../db/bodyWeight';
+import { cacheProducts } from '../db/catalogCache';
+import { isProduct } from '../medications/catalogApi';
 import {
   BABIES_LISTED_KEY,
   editTimeOf,
   prescriptionEditTime,
+  type Appointment,
   type BabyEvent,
+  type Formula,
   type Prescription,
+  type Vaccination,
 } from '../db/models';
 import { pendingEntityIds, rejectedStopIds } from '../db/outbox';
 import { clearBabyDeviceState, deleteBabyRows, purgeTables } from '../db/purge';
 import {
   apiPaths,
+  fromAppointmentDto,
   fromBabyDto,
   fromEventDto,
   fromEventTypeDto,
+  fromFormulaDto,
   fromMedicationDto,
   fromPrescriptionDto,
+  fromVaccinationDto,
+  type AppointmentDto,
   type BabyDto,
   type EventDto,
   type EventsDeltaResponse,
   type EventTypeDto,
+  type FormulaDto,
   type MedicationDto,
   type MeasurementDto,
   type PrescriptionDto,
+  type VaccinationDto,
   NEXT_CURSOR_HEADER,
 } from './contract';
+import { pullNotes } from '../notes/noteSync';
+import { pullNoteReads, pullProposals } from '../proposals/proposalSync';
 import { classifyFailure, describeFailure } from './failures';
 import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
 
@@ -213,6 +228,152 @@ export async function pullPrescriptions(ctx: SyncContext, babyId: string): Promi
 }
 
 /**
+ * Merges pulled formulas like prescriptions: a copy with a queued local change is skipped until
+ * that is pushed, otherwise the newer client edit time wins (formulas are never deleted). The
+ * server's clearing of the previous current formula arrives here too. The cursor moves in the
+ * same transaction.
+ */
+export async function mergeFormulaDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: FormulaDto[],
+): Promise<void> {
+  await db.transaction('rw', db.formulas, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromFormulaDto);
+    const locals = await db.formulas.bulkGet(incoming.map((f) => f.id));
+    const editTime = (f: Formula) => Date.parse(f.clientUpdatedAt ?? f.updatedAt);
+    const wins = (remote: Formula, local: Formula | undefined) =>
+      !local || editTime(remote) >= editTime(local);
+    await db.formulas.bulkPut(incoming.filter((f, i) => wins(f, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'formulas']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'formulas', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the formulas changed since the stored cursor (minus the overlap), archived included. */
+export async function pullFormulas(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'formulas']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  const items = await get<FormulaDto[]>(ctx, apiPaths.formulas(babyId, since));
+  await mergeFormulaDelta(ctx.db, babyId, items ?? []);
+}
+
+/**
+ * Merges pulled appointments like formulas: a copy with a queued local change is skipped until it
+ * is pushed, otherwise the newer client edit time wins (appointments are never deleted: a
+ * cancelled one arrives like any edit). The cursor moves in the same transaction.
+ */
+export async function mergeAppointmentDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: AppointmentDto[],
+): Promise<void> {
+  await db.transaction('rw', db.appointments, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromAppointmentDto);
+    const locals = await db.appointments.bulkGet(incoming.map((a) => a.id));
+    const editTime = (a: Appointment) => Date.parse(a.clientUpdatedAt ?? a.updatedAt);
+    const wins = (remote: Appointment, local: Appointment | undefined) =>
+      !local || editTime(remote) >= editTime(local);
+    await db.appointments.bulkPut(incoming.filter((a, i) => wins(a, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'appointments']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'appointments', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the appointments changed since the stored cursor (minus the overlap), cancelled included. */
+export async function pullAppointments(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'appointments']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  const items = await get<AppointmentDto[]>(ctx, apiPaths.appointments(babyId, since));
+  await mergeAppointmentDelta(ctx.db, babyId, items ?? []);
+}
+
+/**
+ * Removes a baby's appointments and their cursor from this device. Run for a Doctor on every pull:
+ * she never holds the family's appointments (docs/design/16-doctor-access.md, "Doctor read
+ * audit"), so copies stored while the user had a family role are purged as soon as the role is
+ * Doctor, and a later change back to a family role pulls them all again from scratch.
+ */
+export async function dropAppointments(db: BabyRoutineDb, babyId: string): Promise<void> {
+  await db.transaction('rw', db.appointments, db.syncState, async () => {
+    await db.appointments.where('babyId').equals(babyId).delete();
+    await db.syncState.delete([babyId, 'appointments']);
+  });
+}
+
+/** Pulls the appointments for the family roles; for a Doctor, never asks and drops local copies. */
+export async function syncAppointments(ctx: SyncContext, babyId: string): Promise<void> {
+  const baby = await ctx.db.babies.get(babyId);
+  if (baby && !canSeeAppointments(baby)) {
+    await dropAppointments(ctx.db, babyId);
+    return;
+  }
+  await pullAppointments(ctx, babyId);
+}
+
+/**
+ * Merges pulled vaccinations like prescriptions: a copy with a queued local change is skipped until
+ * it is pushed, a server soft delete is final, otherwise the newer client edit time wins. The cursor
+ * moves in the same transaction.
+ */
+export async function mergeVaccinationDelta(
+  db: BabyRoutineDb,
+  babyId: string,
+  items: VaccinationDto[],
+): Promise<void> {
+  await db.transaction('rw', db.vaccinations, db.outbox, db.syncState, async () => {
+    const pending = await pendingEntityIds(db, babyId);
+    const incoming = items.filter((dto) => !pending.has(dto.id)).map(fromVaccinationDto);
+    const locals = await db.vaccinations.bulkGet(incoming.map((v) => v.id));
+    const editTime = (v: Vaccination) => Date.parse(v.clientUpdatedAt ?? v.updatedAt);
+    const wins = (remote: Vaccination, local: Vaccination | undefined) =>
+      !local || remote.deletedAt !== null || editTime(remote) >= editTime(local);
+    await db.vaccinations.bulkPut(incoming.filter((v, i) => wins(v, locals[i])));
+
+    const cursor = await db.syncState.get([babyId, 'vaccinations']);
+    let next = cursor?.lastSyncedAt;
+    for (const item of items) {
+      if (!next || Date.parse(item.updatedAt) > Date.parse(next)) next = item.updatedAt;
+    }
+    if (next && next !== cursor?.lastSyncedAt) {
+      await db.syncState.put({ babyId, entity: 'vaccinations', lastSyncedAt: next });
+    }
+  });
+}
+
+/** Pulls the vaccinations changed since the stored cursor (minus the overlap), deleted included. */
+export async function pullVaccinations(ctx: SyncContext, babyId: string): Promise<void> {
+  const cursor = await ctx.db.syncState.get([babyId, 'vaccinations']);
+  const since = overlappedSince(cursor?.lastSyncedAt);
+  let items: VaccinationDto[] | undefined;
+  try {
+    items = await get<VaccinationDto[]>(ctx, apiPaths.vaccinations(babyId, since));
+  } catch (error) {
+    // A server that does not have vaccinations yet (the web app updated first): nothing to pull,
+    // and the events that follow in this run must not be held back.
+    if (error instanceof ApiError && error.status === 404) return;
+    throw error;
+  }
+  await mergeVaccinationDelta(ctx.db, babyId, Array.isArray(items) ? items : []);
+}
+
+/**
  * Keeps the latest weight on the device (growth is online-only) for per-kg suggestions. Best
  * effort: a failure leaves the stored weight as it was.
  */
@@ -225,6 +386,47 @@ export async function refreshLatestWeight(ctx: SyncContext, babyId: string): Pro
   }
 }
 
+/** Most catalog products fetched per baby and pull (the rest follow on later pulls). */
+export const LINKED_PRODUCTS_PER_PULL = 20;
+
+/**
+ * Keeps the shared-catalog products the family's medications link to on this device, so the
+ * product details and the offline search work on every device of the family. Only linked products
+ * missing from the device cache are fetched (`GET /catalog/products/{id}`): the shared catalog
+ * itself (thousands of official ANVISA products) is never pulled. Best effort: a failure leaves the
+ * cache as it was.
+ */
+export async function refreshLinkedProducts(ctx: SyncContext, babyId: string): Promise<void> {
+  const { db } = ctx;
+  const linked = new Set(
+    (await db.medications.where('babyId').equals(babyId).toArray())
+      .map((m) => m.productId)
+      .filter((id): id is string => !!id),
+  );
+  const cached = new Set((await db.catalogProducts.bulkGet([...linked])).map((row) => row?.id));
+  const missing = [...linked].filter((id) => !cached.has(id)).slice(0, LINKED_PRODUCTS_PER_PULL);
+  for (const productId of missing) {
+    try {
+      const product = await get<unknown>(ctx, apiPaths.catalogProduct(productId));
+      if (isProduct(product)) await cacheProducts(db, [product]);
+    } catch {
+      // Offline or unknown product: keep what is cached.
+    }
+  }
+}
+
+/**
+ * The doctor suggestions of one baby (docs/design/16-doctor-access.md section 10): the proposals
+ * for the Doctor (her own) and the Owners and Parents (all of them), the user's own note reads for
+ * the Owners and Parents (the recommendations inbox). Caregivers and Viewers have neither.
+ */
+export async function pullSuggestions(ctx: SyncContext, babyId: string): Promise<void> {
+  const role = (await ctx.db.babies.get(babyId))?.role;
+  const decides = role === 'Owner' || role === 'Parent';
+  if (decides || role === 'Doctor') await pullProposals(ctx, babyId);
+  if (decides) await pullNoteReads(ctx, babyId);
+}
+
 /**
  * Refreshes babies, then each baby's catalogs and events. A permanent (4xx) failure or a paging
  * loop for one baby is collected and the others continue; network/401/transient failures are
@@ -235,9 +437,15 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
   for (const babyId of await refreshBabies(ctx)) {
     try {
       await refreshCatalogs(ctx, babyId);
+      await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
+      await pullFormulas(ctx, babyId);
+      await syncAppointments(ctx, babyId);
+      await pullVaccinations(ctx, babyId);
+      await pullNotes(ctx, babyId);
       await pullEvents(ctx, babyId);
       await refreshLatestWeight(ctx, babyId);
+      await pullSuggestions(ctx, babyId);
     } catch (error) {
       const perBaby =
         error instanceof RepeatedCursorError || classifyFailure(error) === 'permanent';

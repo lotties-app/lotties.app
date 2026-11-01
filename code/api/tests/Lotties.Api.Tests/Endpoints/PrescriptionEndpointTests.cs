@@ -96,6 +96,16 @@ public sealed class PrescriptionEndpointTests(ApiFactory factory) : IClassFixtur
     [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"timesOfDay":["08:00"],"everyMinutes":60,"startDate":"2026-01-01"}""", "timesOfDay")]
     [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"timesOfDay":["8h"],"startDate":"2026-01-01"}""", "timesOfDay")]
     [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":0,"unit":"drop"},"minIntervalMinutes":60,"startDate":"2026-01-01"}""", "dose.amount")]
+    [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":1,"unit":"sprays","perKg":true},"minIntervalMinutes":60,"startDate":"2026-01-01"}""", "dose.perKg")]
+    [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":1.25,"unit":"supositório"},"minIntervalMinutes":60,"startDate":"2026-01-01"}""", "dose.amount")]
+    [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":1.5,"unit":"sprays"},"minIntervalMinutes":60,"startDate":"2026-01-01"}""", "dose.amount")]
+    [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"dayParts":["morning"],"timesOfDay":["08:00"],"startDate":"2026-01-01"}""", "timesOfDay")]
+    [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"dayParts":["dawn"],"startDate":"2026-01-01"}""", "dayParts")]
+    [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"dayParts":[],"startDate":"2026-01-01"}""", "dayParts")]
+    [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"dayParts":["morning"],"dayPartReminders":[{"part":"night","time":"22:00"}],"startDate":"2026-01-01"}""", "dayPartReminders")]
+    [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"dayParts":["night"],"dayPartReminders":[{"part":"night","time":"21:00"}],"startDate":"2026-01-01"}""", "dayPartReminders")]
+    [InlineData("""{"medicationId":"{M}","kind":"scheduled","dose":{"amount":1,"unit":"drop"},"timesOfDay":["08:00"],"dayPartReminders":[{"part":"morning","time":"08:00"}],"startDate":"2026-01-01"}""", "dayPartReminders")]
+    [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":1,"unit":"drop"},"minIntervalMinutes":60,"dayParts":["morning"],"startDate":"2026-01-01"}""", "dayParts")]
     [InlineData("""{"medicationId":"{M}","kind":"asNeeded","minIntervalMinutes":60,"startDate":"2026-01-01"}""", "dose")]
     [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":1,"unit":"drop"},"minIntervalMinutes":60}""", "startDate")]
     [InlineData("""{"medicationId":"{M}","kind":"asNeeded","dose":{"amount":1,"unit":"drop"},"minIntervalMinutes":60,"startDate":"2026-01-10","endDate":"2026-01-09"}""", "endDate")]
@@ -311,6 +321,88 @@ public sealed class PrescriptionEndpointTests(ApiFactory factory) : IClassFixtur
         Assert.Equal(30, item.GetProperty("overdueByMinutes").GetInt32());
         Assert.Equal(new DateTimeOffset(2026, 3, 3, 12, 0, 0, TimeSpan.Zero), item.GetProperty("nextScheduledAt").GetDateTimeOffset());
         Assert.True(item.GetProperty("availableNow").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Put_ByPartsOfTheDay_StoresPartsAndRemindersInDayOrder()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = As(baby, BabyRole.Owner);
+        var medicationId = await CreateMedicationAsync(client, baby.BabyId, "Vitamin D");
+        var id = Guid.NewGuid();
+        var request = new
+        {
+            medicationId,
+            kind = "scheduled",
+            dose = new { amount = 1, unit = "drop" },
+            dayParts = new[] { "night", "morning" },
+            dayPartReminders = new[] { new { part = "night", time = "22:30" }, new { part = "morning", time = "08:00" } },
+            startDate = "2026-01-01",
+        };
+
+        var created = await client.PutAsJsonAsync(PrescriptionPath(baby.BabyId, id), request);
+        var replay = await client.PutAsJsonAsync(PrescriptionPath(baby.BabyId, id), request);
+        var listed = await JsonAsync(await client.GetAsync($"{BabyPath(baby.BabyId)}/prescriptions"));
+
+        Assert.Equal((HttpStatusCode.Created, HttpStatusCode.OK), (created.StatusCode, replay.StatusCode));
+        var body = Assert.Single(listed.EnumerateArray());
+        Assert.Equal(["morning", "night"], body.GetProperty("dayParts").EnumerateArray().Select(part => part.GetString()));
+        Assert.Equal(["morning@08:00", "night@22:30"], body.GetProperty("dayPartReminders").EnumerateArray().Select(reminder => $"{reminder.GetProperty("part").GetString()}@{reminder.GetProperty("time").GetString()}"));
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (body.GetProperty("timesOfDay").ValueKind, body.GetProperty("everyMinutes").ValueKind));
+        Assert.Equal((await JsonAsync(created)).GetProperty("updatedAt").GetDateTimeOffset(), (await JsonAsync(replay)).GetProperty("updatedAt").GetDateTimeOffset());
+    }
+
+    [Fact]
+    public async Task Put_ByPartsWithEmptyReminders_StoresRemindersOff()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = As(baby, BabyRole.Owner);
+        var medicationId = await CreateMedicationAsync(client, baby.BabyId, "Vitamin D");
+
+        var response = await client.PutAsJsonAsync(PrescriptionPath(baby.BabyId, Guid.NewGuid()), new { medicationId, kind = "scheduled", dose = new { amount = 1, unit = "drop" }, dayParts = new[] { "morning" }, dayPartReminders = Array.Empty<object>(), startDate = "2026-01-01" });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await JsonAsync(response)).GetProperty("dayPartReminders").ValueKind);
+    }
+
+    [Fact]
+    public async Task Put_ExistingTimesOfDayPrescription_HasNoDayParts()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = As(baby, BabyRole.Owner);
+        var medicationId = await CreateMedicationAsync(client, baby.BabyId, "Vitamin D");
+
+        var response = await client.PutAsJsonAsync(PrescriptionPath(baby.BabyId, Guid.NewGuid()), new { medicationId, kind = "scheduled", dose = new { amount = 0.5, unit = "supositório" }, timesOfDay = new[] { "08:00" }, startDate = "2026-01-01" });
+
+        var body = await JsonAsync(response);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null, 0.5m), (body.GetProperty("dayParts").ValueKind, body.GetProperty("dayPartReminders").ValueKind, body.GetProperty("dose").GetProperty("amount").GetDecimal()));
+    }
+
+    [Fact]
+    public async Task Status_ByPartsOfTheDay_ReportsPartStatesAndTheGuard()
+    {
+        using var host = WithClock(new DateTimeOffset(2026, 3, 2, 12, 0, 0, TimeSpan.Zero));
+        var baby = await factory.SeedBabyAsync();
+        var owner = ClientFor(host, baby.OwnerSubject);
+        var medicationId = await CreateMedicationAsync(owner, baby.BabyId, "Vitamin D");
+        var prescriptionId = Guid.NewGuid();
+        await owner.PutAsJsonAsync(PrescriptionPath(baby.BabyId, prescriptionId), new { medicationId, kind = "scheduled", dose = new { amount = 1, unit = "drop" }, dayParts = new[] { "morning", "night" }, dayPartReminders = new[] { new { part = "night", time = "22:00" } }, startDate = "2026-03-01" });
+        var givenAt = new DateTimeOffset(2026, 3, 2, 8, 12, 0, TimeSpan.FromHours(-3));
+        Assert.Equal(HttpStatusCode.Created, (await PutDoseEventAsync(owner, baby.BabyId, $$"""{"medications":[{"medicationId":"{{medicationId}}","name":"Vitamin D","prescriptionId":"{{prescriptionId}}"}]}""", givenAt)).StatusCode);
+
+        var status = await JsonAsync(await owner.GetAsync($"{BabyPath(baby.BabyId)}/medications/status?utcOffsetMinutes=-180"));
+
+        var item = Assert.Single(status.GetProperty("items").EnumerateArray());
+        Assert.Equal(["morning", "night"], item.GetProperty("dayParts").EnumerateArray().Select(part => part.GetString()));
+        var parts = item.GetProperty("dayPartsStatus");
+        Assert.Equal(("2026-03-02", 1, 2, "alreadyGiven", "morning"), (parts.GetProperty("day").GetString(), parts.GetProperty("givenCount").GetInt32(), parts.GetProperty("total").GetInt32(), parts.GetProperty("guard").GetString(), parts.GetProperty("currentPart").GetString()));
+        var slots = parts.GetProperty("parts").EnumerateArray().ToArray();
+        Assert.Equal(["given", "upcoming"], slots.Select(slot => slot.GetProperty("state").GetString()));
+        Assert.Equal(givenAt, slots[0].GetProperty("givenAt").GetDateTimeOffset());
+        Assert.Equal(new DateTimeOffset(2026, 3, 3, 1, 0, 0, TimeSpan.Zero), slots[1].GetProperty("reminderAt").GetDateTimeOffset());
+        Assert.Equal("night", parts.GetProperty("next").GetProperty("part").GetString());
+        Assert.Equal(JsonValueKind.Null, item.GetProperty("nextScheduledAt").ValueKind);
     }
 
     [Theory]

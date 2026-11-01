@@ -109,6 +109,66 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
     payloadDefaults: {},
   },
   {
+    // Built-in `nasal_suction` type (added after DESIGN.md section 3 was written). Instant, with
+    // optional tool and saline fields, so the sheet opens; not pinned by default.
+    id: 'nasal_suction',
+    label: 'Nasal suction',
+    category: 'health',
+    icon: 'nasal_suction',
+    typeKey: 'nasal_suction',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    // Built-in `belly_massage` type (added after DESIGN.md section 3 was written). Timed like tummy
+    // time; the optional reason and "did it help" are filled in the sheet; not pinned by default.
+    id: 'belly_massage',
+    label: 'Belly massage',
+    category: 'health',
+    icon: 'belly_massage',
+    typeKey: 'belly_massage',
+    mode: 'timer',
+    payloadDefaults: {},
+  },
+  // Built-in health types added with the `MoreEventTypes` migration: instants whose fields are
+  // filled in the sheet (the temperature value is required); not pinned by default.
+  {
+    id: 'temperature',
+    label: 'Temperature',
+    category: 'health',
+    icon: 'temperature',
+    typeKey: 'temperature',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    id: 'symptom',
+    label: 'Symptom',
+    category: 'health',
+    icon: 'symptom',
+    typeKey: 'symptom',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    id: 'spit_up',
+    label: 'Spit-up / vomit',
+    category: 'health',
+    icon: 'spit_up',
+    typeKey: 'spit_up',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    id: 'teething',
+    label: 'Teething',
+    category: 'health',
+    icon: 'teething',
+    typeKey: 'teething',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
     id: 'bath',
     label: 'Bath',
     category: 'care',
@@ -117,6 +177,55 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
     mode: 'sheet',
     payloadDefaults: {},
     endsImmediately: true,
+  },
+  {
+    // Built-in `fussy` type ("Fussy / crying", added after DESIGN.md section 3 was written). Timed
+    // like tummy time; the optional intensity and what helped are filled in the sheet; not pinned.
+    id: 'fussy',
+    label: 'Fussy',
+    category: 'care',
+    icon: 'fussy',
+    typeKey: 'fussy',
+    mode: 'timer',
+    payloadDefaults: {},
+  },
+  // Built-in care types added with the `MoreEventTypes` migration: instants with optional fields in
+  // the sheet, and outdoor time timed like tummy time; not pinned by default.
+  {
+    id: 'nail_trim',
+    label: 'Nail trim',
+    category: 'care',
+    icon: 'nail_trim',
+    typeKey: 'nail_trim',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    id: 'skin_care',
+    label: 'Skin care',
+    category: 'care',
+    icon: 'skin_care',
+    typeKey: 'skin_care',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    id: 'milestone',
+    label: 'Milestone',
+    category: 'care',
+    icon: 'milestone',
+    typeKey: 'milestone',
+    mode: 'sheet',
+    payloadDefaults: {},
+  },
+  {
+    id: 'outdoor',
+    label: 'Outdoor time',
+    category: 'care',
+    icon: 'outdoor',
+    typeKey: 'outdoor',
+    mode: 'timer',
+    payloadDefaults: {},
   },
   {
     id: 'tummy_time',

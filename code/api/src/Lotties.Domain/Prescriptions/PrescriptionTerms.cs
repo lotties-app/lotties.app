@@ -6,12 +6,13 @@ namespace Lotties.Domain.Prescriptions;
 /// <summary>
 /// The full editable state of a prescription, as entered by the parent from the doctor's prescription. Validated on
 /// creation: dates 2000-01-01 to 2100-12-31 with <see cref="EndDate"/> on or after <see cref="StartDate"/>; prescriber
-/// at most 100 characters, instructions at most 1000, no NUL. Compared by value (idempotent replays change nothing).
+/// at most 100 characters, instructions at most 2000 (widened from 1000 so an accepted doctor's proposal carries her
+/// text verbatim), no NUL. Compared by value (idempotent replays change nothing).
 /// </summary>
 public sealed record PrescriptionTerms
 {
     public const int PrescriberMaxLength = 100;
-    public const int InstructionsMaxLength = 1000;
+    public const int InstructionsMaxLength = 2000;
 
     public static readonly DateOnly EarliestDate = new(2000, 1, 1);
     public static readonly DateOnly LatestDate = new(2100, 12, 31);
@@ -71,7 +72,7 @@ public sealed record PrescriptionTerms
         ArgumentNullException.ThrowIfNull(schedule);
         EnsureMedication(medicationId);
         EnsureStatus(status);
-        EnsureDates(startDate, endDate);
+        EnsureCourseDates(startDate, endDate);
         return new PrescriptionTerms(
             medicationId,
             status,
@@ -83,6 +84,33 @@ public sealed record PrescriptionTerms
             Text.Optional(prescriber, "prescriber", PrescriberMaxLength),
             Text.Optional(instructions, "instructions", InstructionsMaxLength));
     }
+
+    /// <summary>
+    /// Whether these terms say the same as <paramref name="other"/> apart from the active/stopped status: what a parent
+    /// changes when she edits the content of a prescription (a doctor-sourced one is then marked as changed).
+    /// </summary>
+    public bool HasSameContentAs(PrescriptionTerms other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return WithStatus(other.Status) == other;
+    }
+
+    /// <summary>The course date rules shared by prescriptions and prescription proposals (field-named 400).</summary>
+    internal static void EnsureCourseDates(DateOnly startDate, DateOnly? endDate)
+    {
+        if (startDate < EarliestDate || startDate > LatestDate)
+        {
+            throw new DomainValidationException("startDate", $"startDate must be between {EarliestDate:yyyy-MM-dd} and {LatestDate:yyyy-MM-dd}.");
+        }
+
+        if (endDate is { } end && (end < startDate || end > LatestDate))
+        {
+            throw new DomainValidationException("endDate", $"endDate must be on or after startDate and at most {LatestDate:yyyy-MM-dd}.");
+        }
+    }
+
+    private PrescriptionTerms WithStatus(PrescriptionStatus status) =>
+        new(MedicationId, status, Dose, Schedule, IntervalGroup, StartDate, EndDate, Prescriber, Instructions);
 
     private static void EnsureMedication(Guid medicationId)
     {
@@ -97,19 +125,6 @@ public sealed record PrescriptionTerms
         if (!Enum.IsDefined(status))
         {
             throw new DomainValidationException("status", "status must be active or stopped.");
-        }
-    }
-
-    private static void EnsureDates(DateOnly startDate, DateOnly? endDate)
-    {
-        if (startDate < EarliestDate || startDate > LatestDate)
-        {
-            throw new DomainValidationException("startDate", $"startDate must be between {EarliestDate:yyyy-MM-dd} and {LatestDate:yyyy-MM-dd}.");
-        }
-
-        if (endDate is { } end && (end < startDate || end > LatestDate))
-        {
-            throw new DomainValidationException("endDate", $"endDate must be on or after startDate and at most {LatestDate:yyyy-MM-dd}.");
         }
     }
 }

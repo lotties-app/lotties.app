@@ -66,6 +66,9 @@ internal sealed class FakeBabyAccessService(BabyAccessDecision decision) : IBaby
         Calls.Add((babyId, requiredRole));
         return Task.FromResult(decision);
     }
+
+    public Task<BabyRole?> FindRoleAsync(Guid babyId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<BabyRole?>(decision == BabyAccessDecision.NotMember ? null : BabyRole.Viewer);
 }
 
 internal sealed class FakeUserProvisioningService : IUserProvisioningService

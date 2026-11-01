@@ -280,6 +280,29 @@ public sealed class NapperImportEndpointTests(ApiFactory factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Import_TemperatureRows_StoreTheCelsiusValueAndSkipEmptyOrOutOfRangeOnes()
+    {
+        var baby = await factory.SeedBabyAsync();
+        const string csv = "start,end,category,temperature,units,comment\n"
+            + "2025-09-01T09:00:00Z,2025-09-01T09:00:00Z,TEMPERATURE,37.8,,Armpit\n"
+            + "2025-09-01T10:00:00Z,2025-09-01T10:00:00Z,TEMPERATURE,100.4,FAHRENHEIT,\n"
+            + "2025-09-01T11:00:00Z,2025-09-01T11:00:00Z,TEMPERATURE,,,\n"
+            + "2025-09-01T12:00:00Z,2025-09-01T12:00:00Z,TEMPERATURE,98.6,,\n";
+
+        var response = await As(baby, BabyRole.Owner).PostAsJsonAsync(ImportPath(baby.BabyId), Body(logsCsv: csv, measurementsCsv: string.Empty));
+
+        var imported = await response.ReadAsync<NapperImportResponse>();
+        Assert.Equal(2, imported.EventsCreated);
+        Assert.Equal([(3, "missing_value"), (4, "invalid_record")], imported.Logs!.SkippedRows.Select(skipped => (skipped.Row, skipped.Code)));
+        Assert.Equal("temperature", imported.Logs.Categories.Single(category => category.Category == "TEMPERATURE").EventTypeKey);
+        var events = await factory.QueryAsync(context => context.Events.Where(stored => stored.BabyId == baby.BabyId).OrderBy(stored => stored.StartedAt).ToListAsync());
+        Assert.All(events, stored => Assert.Equal(BuiltInEventTypes.TemperatureId, stored.TypeId));
+        Assert.True(Domain.Events.EventPayload.From("""{"value_c":37.8}""").IsEquivalentTo(events[0].Payload));
+        Assert.True(Domain.Events.EventPayload.From("""{"value_c":38.0}""").IsEquivalentTo(events[1].Payload));
+        Assert.Equal(("Armpit", events[0].StartedAt), (events[0].Notes, events[0].EndedAt!.Value));
+    }
+
+    [Fact]
     public async Task Import_CategoryOption_ImportsOnlyThoseCategories()
     {
         var baby = await factory.SeedBabyAsync();

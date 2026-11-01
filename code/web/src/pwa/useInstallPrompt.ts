@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { isNativeApp } from '../platform/nativeApp';
 import {
   getInstallPromptSnapshot,
   isIosSafari,
@@ -15,14 +16,16 @@ export interface InstallPromptState {
   install: () => Promise<InstallOutcome>;
 }
 
+/** Inside the iOS/Android app (`isNativeApp()`) there is nothing to install: no prompt, no hint. */
 export function useInstallPrompt(): InstallPromptState {
-  const { deferred, installed } = useSyncExternalStore(
+  const snapshot = useSyncExternalStore(
     subscribeInstallPrompt,
     getInstallPromptSnapshot,
     getInstallPromptSnapshot,
   );
+  const installed = snapshot.installed || isNativeApp();
   return {
-    canInstall: !installed && deferred !== null,
+    canInstall: !installed && snapshot.deferred !== null,
     showIosHint: !installed && isIosSafari(),
     install: promptInstall,
   };

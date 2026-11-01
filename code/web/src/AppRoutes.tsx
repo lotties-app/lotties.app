@@ -15,8 +15,37 @@ const InsightsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
+const HubPage = lazy(() => import('./pages/HubPage').then((m) => ({ default: m.HubPage })));
+type HubSubPageName = Exclude<keyof typeof import('./pages/HubSubPages'), never>;
+const hubSubPage = (name: HubSubPageName) =>
+  lazy(() => import('./pages/HubSubPages').then((m) => ({ default: m[name] })));
+const HubMedicinesPage = hubSubPage('HubMedicinesPage');
+const HubFormulasPage = hubSubPage('HubFormulasPage');
+const HubFamilyPage = hubSubPage('HubFamilyPage');
+const HubImportPage = hubSubPage('HubImportPage');
+const HubUpdatesPage = hubSubPage('HubUpdatesPage');
+const HubAboutPage = hubSubPage('HubAboutPage');
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
+);
+const AppointmentsPage = lazy(() =>
+  import('./pages/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })),
+);
+const VaccinesPage = lazy(() =>
+  import('./pages/VaccinesPage').then((m) => ({ default: m.VaccinesPage })),
+);
+const VaccinationCardPage = lazy(() =>
+  import('./pages/VaccinationCardPage').then((m) => ({ default: m.VaccinationCardPage })),
+);
+const NotesPage = lazy(() => import('./pages/NotesPage').then((m) => ({ default: m.NotesPage })));
+const PatientsPage = lazy(() =>
+  import('./pages/PatientsPage').then((m) => ({ default: m.PatientsPage })),
+);
+const ProposalsPage = lazy(() =>
+  import('./pages/ProposalsPage').then((m) => ({ default: m.ProposalsPage })),
+);
+const FromDoctorPage = lazy(() =>
+  import('./pages/FromDoctorPage').then((m) => ({ default: m.FromDoctorPage })),
 );
 
 /**
@@ -26,15 +55,28 @@ const InvitePage = lazy(() =>
 const DevUiGallery = import.meta.env.DEV ? lazy(() => import('./dev/UiGallery')) : null;
 const DevNowPreview = import.meta.env.DEV ? lazy(() => import('./dev/NowPreview')) : null;
 const DevDayPreview = import.meta.env.DEV ? lazy(() => import('./dev/DayPreview')) : null;
+const DevRolesPreview = import.meta.env.DEV ? lazy(() => import('./dev/RolesPreview')) : null;
 const DevSheetPreview = import.meta.env.DEV ? lazy(() => import('./dev/SheetPreview')) : null;
 const DevMedsPreview = import.meta.env.DEV ? lazy(() => import('./dev/MedsPreview')) : null;
 const DevLandingPreview = import.meta.env.DEV ? lazy(() => import('./dev/LandingPreview')) : null;
 const DevNotificationsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/NotificationsPreview'))
   : null;
+const DevInsightsPreview = import.meta.env.DEV ? lazy(() => import('./dev/InsightsPreview')) : null;
+const DevFormulasPreview = import.meta.env.DEV ? lazy(() => import('./dev/FormulasPreview')) : null;
+const DevAppointmentsPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/AppointmentsPreview'))
+  : null;
+const DevVaccinesPreview = import.meta.env.DEV ? lazy(() => import('./dev/VaccinesPreview')) : null;
+const DevDoctorPreview = import.meta.env.DEV ? lazy(() => import('./dev/DoctorPreview')) : null;
+const DevProposalsPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/ProposalsPreview'))
+  : null;
 const DevIllustrationGallery = import.meta.env.DEV
   ? lazy(() => import('./dev/IllustrationGallery'))
   : null;
+const DevRingPreview = import.meta.env.DEV ? lazy(() => import('./dev/RingPreview')) : null;
+const DevHubPreview = import.meta.env.DEV ? lazy(() => import('./dev/HubPreview')) : null;
 
 export function AppRoutes() {
   return (
@@ -89,6 +131,66 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevFormulasPreview && (
+        <Route
+          path="/dev/formulas"
+          element={
+            <Suspense fallback={null}>
+              <DevFormulasPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevAppointmentsPreview && (
+        <Route
+          path="/dev/appointments"
+          element={
+            <Suspense fallback={null}>
+              <DevAppointmentsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevVaccinesPreview && (
+        <Route
+          path="/dev/vaccines"
+          element={
+            <Suspense fallback={null}>
+              <DevVaccinesPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevDoctorPreview && (
+        <Route
+          path="/dev/doctor"
+          element={
+            <Suspense fallback={null}>
+              <DevDoctorPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevProposalsPreview && (
+        <Route
+          path="/dev/proposals"
+          element={
+            <Suspense fallback={null}>
+              <DevProposalsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevInsightsPreview && (
+        <Route
+          path="/dev/insights"
+          element={
+            <Suspense fallback={null}>
+              <DevInsightsPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevIllustrationGallery && (
         <Route
           path="/dev/illustrations"
@@ -109,12 +211,42 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevRolesPreview && (
+        <Route
+          path="/dev/roles"
+          element={
+            <Suspense fallback={null}>
+              <DevRolesPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevNotificationsPreview && (
         <Route
           path="/dev/notifications"
           element={
             <Suspense fallback={null}>
               <DevNotificationsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevHubPreview && (
+        <Route
+          path="/dev/hub"
+          element={
+            <Suspense fallback={null}>
+              <DevHubPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevRingPreview && (
+        <Route
+          path="/dev/ring"
+          element={
+            <Suspense fallback={null}>
+              <DevRingPreview />
             </Suspense>
           }
         />
@@ -140,7 +272,21 @@ export function AppRoutes() {
             {/* Old routes keep working: bookmarks and links from before the three-tab layout. */}
             <Route path="timeline" element={<Navigate to="/day" replace />} />
             <Route path="growth" element={<Navigate to="/insights" replace />} />
+            <Route path="hub" element={<HubPage />} />
+            <Route path="hub/medicines" element={<HubMedicinesPage />} />
+            <Route path="hub/formulas" element={<HubFormulasPage />} />
+            <Route path="hub/family" element={<HubFamilyPage />} />
+            <Route path="hub/import" element={<HubImportPage />} />
+            <Route path="hub/updates" element={<HubUpdatesPage />} />
+            <Route path="hub/about" element={<HubAboutPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="appointments" element={<AppointmentsPage />} />
+            <Route path="vaccines" element={<VaccinesPage />} />
+            <Route path="vaccines/card" element={<VaccinationCardPage />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="patients" element={<PatientsPage />} />
+            <Route path="proposals" element={<ProposalsPage />} />
+            <Route path="from-doctor" element={<FromDoctorPage />} />
           </Route>
         </Route>
       </Route>

@@ -6,7 +6,10 @@ namespace Lotties.Api.Cors;
 
 internal static class CorsServiceCollectionExtensions
 {
-    /// <summary>Registers a default CORS policy for <see cref="CorsSettings.Origins"/> with any header and method (bearer tokens, no cookies).</summary>
+    /// <summary>
+    /// Registers a default CORS policy for <see cref="CorsSettings.Origins"/> with any header and method (bearer tokens, no
+    /// cookies); the events cursor and the <c>ETag</c> (vaccine schedule revalidation) are readable by the web app.
+    /// </summary>
     public static IServiceCollection AddApiCors(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -22,5 +25,5 @@ internal static class CorsServiceCollectionExtensions
             .WithOrigins(settings.Value.Origins.ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .WithExposedHeaders(EventEndpoints.NextCursorHeader));
+            .WithExposedHeaders(EventEndpoints.NextCursorHeader, Microsoft.Net.Http.Headers.HeaderNames.ETag));
 }

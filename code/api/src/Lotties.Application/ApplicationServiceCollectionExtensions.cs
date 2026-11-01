@@ -30,6 +30,15 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddScoped<Catalog.ICatalogService, Catalog.CatalogService>();
         services.AddScoped<Prescriptions.IPrescriptionService, Prescriptions.PrescriptionService>();
+        services.AddScoped<Formulas.IFormulaService, Formulas.FormulaService>();
+        services.AddScoped<Appointments.IAppointmentService, Appointments.AppointmentService>();
+        services.AddScoped<Vaccinations.IVaccinationService, Vaccinations.VaccinationService>();
+        services.TryAddSingleton<Vaccinations.IVaccineScheduleProvider, Vaccinations.EmbeddedVaccineScheduleProvider>();
+        services.AddScoped<Professionals.IPersonDirectory, Professionals.PersonDirectory>();
+        services.AddScoped<Professionals.IProfessionalProfileService, Professionals.ProfessionalProfileService>();
+        services.AddScoped<Notes.INoteService, Notes.NoteService>();
+        services.AddScoped<Proposals.IPrescriptionProposalService, Proposals.PrescriptionProposalService>();
+        services.AddScoped<AccessLogs.IAccessLogService, AccessLogs.AccessLogService>();
         services.AddScoped<Prescriptions.IMedicationStatusService, Prescriptions.MedicationStatusService>();
         services.AddScoped<Imports.INapperImportService, Imports.NapperImportService>();
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);

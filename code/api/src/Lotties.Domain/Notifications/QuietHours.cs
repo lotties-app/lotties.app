@@ -1,4 +1,5 @@
 using Lotties.Domain.Exceptions;
+using Lotties.Domain.Patterns;
 
 namespace Lotties.Domain.Notifications;
 
@@ -31,4 +32,23 @@ public readonly record struct QuietHours
     /// <summary>Whether <paramref name="instant"/>, seen with the local <paramref name="utcOffset"/>, is inside enabled quiet hours.</summary>
     public bool Contains(DateTimeOffset instant, TimeSpan utcOffset) =>
         Enabled && TimeOnly.FromTimeSpan(instant.ToOffset(utcOffset).TimeOfDay).IsBetween(Start, End);
+
+    /// <summary>
+    /// When the quiet period containing <paramref name="instant"/> ends, read on the user's local <paramref name="clock"/>
+    /// (daylight saving applied at that instant); <paramref name="instant"/> itself when it is outside quiet hours.
+    /// </summary>
+    public DateTimeOffset EndOfQuietPeriod(DateTimeOffset instant, LocalClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        var local = clock.ToLocal(instant);
+        var time = TimeOnly.FromDateTime(local);
+        if (!Enabled || !time.IsBetween(Start, End))
+        {
+            return instant;
+        }
+
+        var endsNextDay = Start > End && time >= Start;
+        var endDate = DateOnly.FromDateTime(local).AddDays(endsNextDay ? 1 : 0);
+        return clock.ToInstant(endDate.ToDateTime(End));
+    }
 }

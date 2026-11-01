@@ -31,16 +31,20 @@ export function wouldResurrectTimer(mutation: OutboxMutation, copy: ServerCopy |
  * copy is best effort here (offline, 5xx): `discardDeadLetter` loads it again.
  *
  * The local copy is kept instead (the user fixes it, see `needsAttention`) when the server rejected
- * the event's details, or when the server copy would restart a timer the user stopped.
+ * the event's details, when the server copy would restart a timer the user stopped, or when
+ * `keepLocal` asks for it (the user's own entry refused because their role changed: it stays on
+ * screen, marked, until Retry or Discard in Settings > Sync).
  */
 export async function deadLetter(
   ctx: TransportContext & { db: BabyRoutineDb },
   mutation: OutboxMutation,
   patch: DeadLetterPatch,
+  { keepLocal = false }: { keepLocal?: boolean } = {},
 ): Promise<void> {
-  const copy: ServerCopy | null = patch.needsAttention
-    ? null
-    : await fetchServerCopy(ctx, mutation).catch(() => null);
+  const copy: ServerCopy | null =
+    patch.needsAttention || keepLocal
+      ? null
+      : await fetchServerCopy(ctx, mutation).catch(() => null);
   const { db } = ctx;
   await db.transaction('rw', serverCopyTables(db), async () => {
     await db.outbox.update(mutation.id, { ...patch, status: 'dead', nextAttemptAt: null });

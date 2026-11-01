@@ -68,6 +68,11 @@ export class SyncEngine {
   /** Consecutive runs that waited for a token renewal (drives their backoff). */
   private tokenWaits = 0;
   private started = false;
+  /**
+   * Set by `stop()`, cleared by `start()`: a run still in flight then schedules nothing more, so a
+   * stopped engine (signed out, session ended, account switched) never wakes itself up later.
+   */
+  private stopped = false;
   private lastPending: number | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private intervalTimer: ReturnType<typeof setInterval> | null = null;
@@ -107,6 +112,7 @@ export class SyncEngine {
   start(): void {
     if (this.started) return;
     this.started = true;
+    this.stopped = false;
     this.paused = false;
     this.status.update({ authRequired: false });
     this.eventTarget?.addEventListener('online', this.handleOnline);
@@ -120,9 +126,13 @@ export class SyncEngine {
     void this.syncNow();
   }
 
-  /** Stops triggers and timers. An in-flight run finishes on its own. */
+  /**
+   * Stops triggers and timers. An in-flight run finishes on its own, but schedules no retry and no
+   * follow-up run.
+   */
   stop(): void {
     this.started = false;
+    this.stopped = true;
     this.eventTarget?.removeEventListener('online', this.handleOnline);
     this.eventTarget?.removeEventListener('offline', this.handleOffline);
     if (this.intervalTimer) clearInterval(this.intervalTimer);
@@ -172,7 +182,7 @@ export class SyncEngine {
     do {
       this.rerunRequested = false;
       await this.withLock(() => this.runOnceSafely());
-    } while (this.rerunRequested && !this.paused);
+    } while (this.rerunRequested && !this.paused && !this.stopped);
   }
 
   private async withLock(run: () => Promise<void>): Promise<void> {
@@ -283,6 +293,7 @@ export class SyncEngine {
 
   private scheduleRetry(retryAt: number): void {
     this.clearRetryTimer();
+    if (this.stopped) return;
     const delay = Math.max(0, retryAt - this.ctx.now());
     this.retryTimer = setTimeout(() => {
       this.retryTimer = null;

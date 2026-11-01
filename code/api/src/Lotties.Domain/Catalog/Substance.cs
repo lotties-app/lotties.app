@@ -6,7 +6,8 @@ namespace Lotties.Domain.Catalog;
 /// <summary>
 /// An active ingredient of the shared catalog, by generic name in English and Brazilian Portuguese (plus synonyms such
 /// as <c>acetaminophen</c>). Substances are curated: they ship as migration seed data with cited sources and carry no
-/// dosing information. There is no API to create them.
+/// dosing information. There is no API to create them; the official-list importer adds the ones its source names
+/// (<see cref="FromOfficialList"/>) and never changes existing rows.
 /// </summary>
 public sealed class Substance
 {
@@ -47,6 +48,10 @@ public sealed class Substance
 
     /// <summary>Every name search compares against: the key (underscores as spaces), both names and the synonyms.</summary>
     public IReadOnlyList<string> SearchNames => [Key.Replace('_', ' '), NameEn, NamePtBr, .. Synonyms];
+
+    /// <summary>A substance named by an official registry, added by the official-list importer; the rules of <see cref="Seed"/> apply.</summary>
+    public static Substance FromOfficialList(Guid id, string key, string nameEn, string namePtBr, IReadOnlyList<string> synonyms, DateTimeOffset createdAt) =>
+        Seed(id, key, nameEn, namePtBr, synonyms, createdAt);
 
     /// <summary>A curated substance for seed data.</summary>
     public static Substance Seed(Guid id, string key, string nameEn, string namePtBr, IReadOnlyList<string> synonyms, DateTimeOffset createdAt)

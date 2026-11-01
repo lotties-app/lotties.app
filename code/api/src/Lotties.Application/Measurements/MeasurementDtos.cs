@@ -1,3 +1,4 @@
+using Lotties.Application.Professionals;
 using Lotties.Domain.Measurements;
 
 namespace Lotties.Application.Measurements;
@@ -25,11 +26,25 @@ public sealed record MeasurementResponse
 
     public DateTimeOffset UpdatedAt { get; init; }
 
+    /// <summary>Whether a Doctor recorded it during a consultation (additive).</summary>
+    public bool RecordedByDoctor { get; init; }
+
+    /// <summary>The Doctor who recorded it, as the family sees her; only when <see cref="RecordedByDoctor"/> (additive).</summary>
+    public PersonSummary? RecordedBy { get; init; }
+
+    /// <summary>The measurement with the Doctor who recorded it (<paramref name="recordedBy"/>, used only when it was a Doctor).</summary>
+    public static MeasurementResponse For(Measurement measurement, PersonSummary? recordedBy)
+    {
+        MeasurementResponse response = measurement;
+        return response with { RecordedBy = measurement.RecordedByDoctor ? recordedBy : null };
+    }
+
     public static implicit operator MeasurementResponse(Measurement measurement)
     {
         ArgumentNullException.ThrowIfNull(measurement);
         return new MeasurementResponse
         {
+            RecordedByDoctor = measurement.RecordedByDoctor,
             Id = measurement.Id,
             BabyId = measurement.BabyId,
             Date = measurement.Date,

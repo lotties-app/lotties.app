@@ -19,6 +19,8 @@ public static class NotificationPersistenceServiceCollectionExtensions
         services.AddScoped<INotificationDeliveryRepository, EfNotificationDeliveryRepository>();
         services.AddScoped<INotificationActionRepository, EfNotificationActionRepository>();
         services.AddScoped<IJobLeaseRepository, EfJobLeaseRepository>();
+        services.AddScoped<IDoctorSuggestionRepository, EfDoctorSuggestionRepository>();
+        services.AddScoped<IDoctorSuggestionRepository, EfDoctorSuggestionRepository>();
         return services;
     }
 }

@@ -9,8 +9,8 @@ import { useLocale } from '../i18n/useLocale';
 import type { ProductDto, ProductForm } from '../sync/contract';
 import { ChipGroup, Field, TextInput } from '../ui/form';
 import { createProduct } from './catalogApi';
+import { FORM_ICONS, PRODUCT_FORMS } from './doseUnits';
 
-const FORMS: ProductForm[] = ['drops', 'syrup', 'tablet', 'powder', 'other'];
 const COUNTRY = /^[A-Za-z]{2}$/;
 
 interface Props {
@@ -90,7 +90,11 @@ export function NewProductForm({ initialName, onCreated, onCancel }: Props) {
         <ChipGroup
           value={form}
           onChange={setForm}
-          options={FORMS.map((value) => ({ value, label: t(`medications.forms.${value}`) }))}
+          options={PRODUCT_FORMS.map((value) => ({
+            value,
+            label: t(`medications.forms.${value}`),
+            icon: FORM_ICONS[value],
+          }))}
         />
       </Field>
       <Field

@@ -82,8 +82,9 @@ describe('PredictionsSection', () => {
     expect(screen.getByText(/not medical advice/)).toBeTruthy();
 
     const offset = -new Date().getTimezoneOffset() || 0;
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     expect(predictionCalls(calls).map((c) => c.path)).toEqual([
-      `/api/v1/babies/${BABY_ID}/predictions?utcOffsetMinutes=${offset}`,
+      `/api/v1/babies/${BABY_ID}/predictions?utcOffsetMinutes=${offset}&timeZone=${encodeURIComponent(zone)}`,
     ]);
   });
 

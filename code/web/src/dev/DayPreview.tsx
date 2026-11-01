@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { DayScreen } from '../day/DayScreen';
@@ -9,7 +10,9 @@ import type { Baby, BabyEvent, EventPayload } from '../db/models';
 import { DeletedEventSnackbar } from '../events/DeletedEventSnackbar';
 import { AddSheetProvider } from '../layout/AddSheetProvider';
 import { BottomNav } from '../layout/BottomNav';
-import { MiniTimerBar } from '../timers/MiniTimerBar';
+import { NAV_CONTENT_PADDING } from '../layout/navMetrics';
+import { RunningTimerPill } from '../timers/RunningTimerPill';
+import { MORE_BUILT_IN_TYPES } from '../test/builtInTypes';
 import { PREVIEW_BABY_ID, PREVIEW_MEDICATIONS, PREVIEW_TYPES, typeIdOf } from './previewData';
 import { PreviewToolbar } from './PreviewToolbar';
 
@@ -17,10 +20,11 @@ import { PreviewToolbar } from './PreviewToolbar';
  * Developer-only (route `/dev/day`, never in production builds): the Day screen on a throw-away
  * local database, seeded per scenario, with no sign-in and no server. `?state=full` is a busy day
  * (yesterday, `offset=1`) with a night that crosses midnight; `?offset=0` is today with a running
- * timer; `busy` seeds about 1,200 events for a speed check.
+ * timer; `busy` seeds about 1,200 events for a speed check; `caregiver` is the full day seen by a
+ * Caregiver ("Lu") where most entries were logged by "Ana" (read-only rows, "Given by Ana").
  */
 
-const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers'] as const;
+const SCENARIOS = ['full', 'empty', 'busy', 'viewer', 'timers', 'caregiver', 'moretypes'] as const;
 type Scenario = (typeof SCENARIOS)[number];
 const MIN = 60_000;
 
@@ -107,6 +111,52 @@ function fullDay(day: Date): BabyEvent[] {
   ];
 }
 
+/**
+ * The `moretypes` scenario: one day with the built-in types of the `MoreEventTypes` migration, to
+ * review their Day rows (a temperature reads as the number only, never judged).
+ */
+function moreTypesDay(day: Date): BabyEvent[] {
+  const of = (key: string) => MORE_BUILT_IN_TYPES.find((type) => type.key === key)!.id;
+  const instant = (key: string, hour: number, minute: number, payload: EventPayload) =>
+    make(key, at(day, hour, minute), at(day, hour, minute), payload, { typeId: of(key) });
+  return [
+    instant('temperature', 8, 10, { value_c: 37.8, method: 'armpit' }),
+    instant('nail_trim', 9, 0, { where: 'both' }),
+    instant('spit_up', 10, 15, { kind: 'spit_up', amount: 'little' }),
+    instant('teething', 11, 0, { stage: 'tooth_came_through', tooth: 'lower_central_incisor' }),
+    make(
+      'outdoor',
+      at(day, 15, 0),
+      at(day, 15, 40),
+      { kind: 'stroller_walk' },
+      {
+        typeId: of('outdoor'),
+      },
+    ),
+    instant('milestone', 16, 20, { milestone: 'rolls_over' }),
+    instant('symptom', 17, 30, { symptom: 'runny_nose', severity: 'mild' }),
+    instant('skin_care', 19, 0, { product: 'diaper_cream' }),
+    instant('temperature', 20, 30, { value_c: 38.4 }),
+  ];
+}
+
+const CAREGIVER_ID = 'dev-me';
+const ANA_ID = 'dev-ana';
+const PREVIEW_MEMBERS = [
+  { userId: ANA_ID, displayName: 'Ana', role: 'Owner', joinedAt: '2026-08-01T10:00:00.000Z' },
+  {
+    userId: CAREGIVER_ID,
+    displayName: 'Lu',
+    role: 'Caregiver',
+    joinedAt: '2026-10-01T10:00:00.000Z',
+  },
+];
+
+/** The caregiver scenario: the diapers are the caregiver's own, everything else is Ana's. */
+function loggedByAnaOrMe(event: BabyEvent): BabyEvent {
+  return { ...event, createdBy: event.typeId === typeIdOf('diaper') ? CAREGIVER_ID : ANA_ID };
+}
+
 /** About 1,200 events over 60 days, for the speed check. */
 function busyHistory(today: Date): BabyEvent[] {
   const events: BabyEvent[] = [];
@@ -131,7 +181,8 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
     id: PREVIEW_BABY_ID,
     name: 'Lia',
     birthDate: '2026-08-01',
-    role: scenario === 'viewer' ? 'Viewer' : 'Owner',
+    role: scenario === 'viewer' ? 'Viewer' : scenario === 'caregiver' ? 'Caregiver' : 'Owner',
+    ...(scenario === 'caregiver' ? { userId: CAREGIVER_ID } : {}),
   };
   await Promise.all([
     db.babies.clear(),
@@ -141,14 +192,22 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
     db.outbox.clear(),
   ]);
   await db.babies.put(baby);
-  await db.eventTypes.bulkPut(PREVIEW_TYPES);
+  await db.eventTypes.bulkPut(
+    scenario === 'moretypes' ? [...PREVIEW_TYPES, ...MORE_BUILT_IN_TYPES] : PREVIEW_TYPES,
+  );
   await db.medications.bulkPut(PREVIEW_MEDICATIONS);
   if (scenario === 'empty') return baby;
+  if (scenario === 'moretypes') {
+    await db.events.bulkPut(moreTypesDay(yesterday));
+    return baby;
+  }
   if (scenario === 'busy') {
     await db.events.bulkPut(busyHistory(today));
     return baby;
   }
-  await db.events.bulkPut(fullDay(yesterday));
+  await db.events.bulkPut(
+    scenario === 'caregiver' ? fullDay(yesterday).map(loggedByAnaOrMe) : fullDay(yesterday),
+  );
 
   // Today: a few recent events, a running timer, one unsynced and one rejected row.
   const ago = (minutes: number) => new Date(now.getTime() - minutes * MIN).toISOString();
@@ -168,7 +227,8 @@ async function seed(db: BabyRoutineDb, scenario: Scenario): Promise<Baby> {
   ]
     .filter((event) => Date.parse(event.startedAt) >= startOfToday)
     // Stable ids: seeding twice (StrictMode runs effects twice) must not duplicate the rows.
-    .map((event, index) => ({ ...event, id: `dev-day-recent-${index}` }));
+    .map((event, index) => ({ ...event, id: `dev-day-recent-${index}` }))
+    .map((event) => (scenario === 'caregiver' ? { ...event, createdBy: ANA_ID } : event));
   await db.events.bulkPut(recent);
   if (now.getTime() - startOfToday > 15 * MIN) {
     const pending = await createEvent(
@@ -210,17 +270,19 @@ export default function DayPreview() {
   const offset = Number(params.get('offset') ?? 0) || 0;
   const [db] = useState(() => createDatabase('dev-day-preview'));
   const [ready, setReady] = useState<{ scenario: Scenario; baby: Baby } | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let live = true;
     void (async () => {
       const baby = await seed(db, scenario);
+      queryClient.setQueryData(['members', PREVIEW_BABY_ID], PREVIEW_MEMBERS);
       if (live) setReady({ scenario, baby });
     })();
     return () => {
       live = false;
     };
-  }, [db, scenario]);
+  }, [db, scenario, queryClient]);
 
   const today = new Date();
   const initialDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset);
@@ -228,7 +290,7 @@ export default function DayPreview() {
     <DatabaseProvider db={db}>
       <AddSheetProvider enabled={scenario !== 'viewer'}>
         <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
-          <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, pt: 1, pb: 12 }}>
+          <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, pt: 1, pb: NAV_CONTENT_PADDING }}>
             <Typography variant="h5" component="p" sx={{ py: 1 }}>
               Lia
             </Typography>
@@ -243,7 +305,11 @@ export default function DayPreview() {
               }
             />
           </Box>
-          {ready?.scenario === scenario && <MiniTimerBar key={scenario} baby={ready.baby} />}
+          {ready?.scenario === scenario && (
+            <Box sx={{ position: 'fixed', top: 8, right: 8, zIndex: 1100, display: 'flex' }}>
+              <RunningTimerPill key={scenario} baby={ready.baby} />
+            </Box>
+          )}
           <BottomNav />
           <DeletedEventSnackbar />
         </Box>

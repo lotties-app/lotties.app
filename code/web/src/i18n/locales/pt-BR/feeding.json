@@ -1,0 +1,26 @@
+{
+  "feedingAmounts": {
+    "amountOf": "{{drunk}} de {{prepared}} ml",
+    "drunkHint": "Opcional. Deixe vazio se o bebê tomou tudo.",
+    "share": {
+      "all": "tudo",
+      "threeQuarters": "3/4",
+      "half": "metade",
+      "quarter": "1/4"
+    },
+    "drunkAbovePrepared": "{{label}} não pode ser maior que a quantidade preparada.",
+    "endedBySleep": "Encerrada quando o sono começou",
+    "stoppedBySleep": "Mamada encerrada.",
+    "toastBottle": "Mamadeira registrada, {{drunk}} de {{prepared}} ml",
+    "timeBottles": {
+      "title": "Alimentação",
+      "label": "Cronometrar mamadeiras",
+      "hint": "Vale para a sua conta, em todos os bebês. Desligado: o botão da mamadeira registra a mamada na hora, com a quantidade preparada e a bebida. Ligado: inicia um cronômetro, como a amamentação."
+    },
+    "tray": {
+      "drunk": "Quanto foi bebido",
+      "logDrunk": "Registrar {{drunk}} de {{prepared}} ml",
+      "logDrunkContent": "Registrar {{drunk}} de {{prepared}} ml {{content}}"
+    }
+  }
+}

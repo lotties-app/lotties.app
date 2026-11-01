@@ -33,6 +33,14 @@ internal static class ValueObjectConverters
     public static readonly ValueConverter<TimesOfDay?, string> TimesOfDay =
         new(times => string.Join(',', times!.ToStrings()), value => Domain.Prescriptions.TimesOfDay.Parse(value.Split(',', StringSplitOptions.None)));
 
+    /// <summary><see cref="DayPartSet"/> as comma-separated part codes, e.g. <c>morning,night</c> (EF never converts <c>null</c>).</summary>
+    public static readonly ValueConverter<DayPartSet?, string> DayParts =
+        new(parts => string.Join(',', parts!.ToCodes()), value => DayPartSet.Parse(value.Split(',', StringSplitOptions.None)));
+
+    /// <summary><see cref="Domain.Prescriptions.DayPartReminders"/> as <c>morning=08:00,night=22:00</c> (EF never converts <c>null</c>).</summary>
+    public static readonly ValueConverter<DayPartReminders?, string> DayPartReminders =
+        new(reminders => reminders!.ToStorage(), value => Domain.Prescriptions.DayPartReminders.FromStorage(value));
+
     /// <summary>Substance synonyms joined by <see cref="Substance.SynonymSeparator"/> (empty text for none).</summary>
     public static readonly ValueConverter<IReadOnlyList<string>, string> Synonyms =
         new(

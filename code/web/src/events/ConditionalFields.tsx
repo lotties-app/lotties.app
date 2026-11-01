@@ -1,9 +1,11 @@
 import { Box, Collapse, useMediaQuery } from '@mui/material';
 import type { EventFieldDefinition, EventType } from '../db/models';
 import { getOwn } from '../util/ownProperty';
+import type { BottleSuggestions } from './bottleSuggestions';
 import type { EventFormState } from './formModel';
 import { visibleFields } from './payloadRules';
 import { FieldControl } from './FieldControl';
+import { PREPARED_KEY } from './bottleAmounts';
 
 interface Props {
   type: EventType;
@@ -16,8 +18,19 @@ interface Props {
   errors?: Readonly<Record<string, string>>;
   /** Last used values by field key (quick-value chips mark them). */
   remembered?: Readonly<Record<string, string | number | boolean>>;
+  /** Bottle amount chips for the `amount_ml` field (feeding only). */
+  bottle?: BottleSuggestions;
   onChange: (key: string, value: string | boolean) => void;
 }
+
+/** The prepared amount typed in the form (ml), if any. */
+function preparedOf(values: EventFormState['values']): number | null {
+  const raw = getOwn(values, PREPARED_KEY);
+  const n = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : Number.NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+const BOTTLE_AMOUNT_KEY = PREPARED_KEY;
 
 /** Whether `field` is one of `keys` or shown because of one of them (through its `visibleWhen`). */
 function dependsOn(
@@ -46,6 +59,7 @@ export function ConditionalFields({
   exclude,
   errors,
   remembered,
+  bottle,
   onChange,
 }: Props) {
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -66,6 +80,8 @@ export function ConditionalFields({
           value={getOwn(values, field.key)}
           error={errors ? getOwn(errors, field.key) : undefined}
           remembered={remembered ? getOwn(remembered, field.key) : undefined}
+          {...(bottle && field.key === BOTTLE_AMOUNT_KEY ? { bottle } : {})}
+          prepared={preparedOf(values)}
           onChange={(value) => onChange(field.key, value)}
         />
       </Box>

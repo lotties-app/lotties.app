@@ -25,6 +25,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.useRealTimers();
   await settleSync();
   vi.restoreAllMocks();
   await db.delete();
@@ -238,7 +239,8 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
 
     fireEvent.click(await screen.findByRole('button', { name: 'Stop Bottle' }));
     expect(await screen.findByRole('heading', { name: 'Finish this feeding' })).toBeTruthy();
-    expect(screen.getByText('Amount')).toBeTruthy();
+    expect(screen.getByText('Amount prepared')).toBeTruthy();
+    expect(screen.getByText('Amount drunk')).toBeTruthy();
     expect((await db.events.get(running.id))?.endedAt).toBeNull();
     // The amount is optional: Save and stop works with it left empty.
     fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
@@ -248,6 +250,10 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
   });
 
   it('a bottle timer stopped with an amount keeps it and its duration', async () => {
+    // The amount chips follow Lia's age in months (docs/design/10-bottle-suggestions.md): pin the date
+    // so she stays 2 months old and the 120 ml chip exists.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 14, 0));
     window.localStorage.clear();
     await seedBuiltIns();
     const startedAt = new Date(Date.now() - 18 * 60_000).toISOString();
@@ -272,13 +278,57 @@ describe('Stopping a timer without its required fields (feeding stop bug)', () =
     );
   });
 
-  it('a bottle timer that already has its amount stops at once', async () => {
+  it('a bottle timer stopped with a prepared amount and a share drunk keeps both', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 14, 0));
     window.localStorage.clear();
     await seedBuiltIns();
     const running = await createEvent(db, {
       babyId: BABY_ID,
       typeId: FEEDING_TYPE.id,
+      startedAt: new Date(Date.now() - 12 * 60_000).toISOString(),
+      payload: { method: 'bottle' },
+    });
+    renderWithDb(db, <HomePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop Bottle' }));
+    await screen.findByRole('heading', { name: 'Finish this feeding' });
+    fireEvent.click(screen.getByRole('button', { name: /^120/ }));
+    // The drunk amount's choices follow the prepared one: 120 is all, 60 half.
+    fireEvent.click(screen.getByRole('button', { name: /^60 ml.*half/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save and stop' }));
+
+    await waitFor(async () => expect((await db.events.get(running.id))?.endedAt).not.toBeNull());
+    expect((await db.events.get(running.id))?.payload).toEqual({
+      method: 'bottle',
+      amount_ml: 120,
+      amount_drunk_ml: 60,
+    });
+  });
+
+  it('a bottle timer with only its prepared amount still asks how much was drunk', async () => {
+    window.localStorage.clear();
+    await seedBuiltIns();
+    await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
       payload: { method: 'bottle', amount_ml: 90 },
+    });
+    renderWithDb(db, <HomePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop Bottle' }));
+
+    expect(await screen.findByRole('heading', { name: 'Finish this feeding' })).toBeTruthy();
+    expect(screen.getByText('Amount drunk')).toBeTruthy();
+  });
+
+  it('a bottle timer that already has both amounts stops at once', async () => {
+    window.localStorage.clear();
+    await seedBuiltIns();
+    const running = await createEvent(db, {
+      babyId: BABY_ID,
+      typeId: FEEDING_TYPE.id,
+      payload: { method: 'bottle', amount_ml: 90, amount_drunk_ml: 60 },
     });
     renderWithDb(db, <HomePage />);
 

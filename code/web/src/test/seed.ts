@@ -82,13 +82,14 @@ function med(id: string, name: string, isUsual: boolean, defaultDosage: Dosage |
 
 export async function seedBaby(
   db: BabyRoutineDb,
-  extras: { medications?: boolean; role?: BabyRole } = {},
+  extras: { medications?: boolean; role?: BabyRole; userId?: string } = {},
 ) {
   await db.babies.put({
     id: BABY_ID,
     name: 'Lia',
     birthDate: '2026-08-01',
     role: extras.role ?? 'Owner',
+    ...(extras.userId ? { userId: extras.userId } : {}),
   });
   await db.eventTypes.bulkPut(EVENT_TYPES);
   if (extras.medications) {

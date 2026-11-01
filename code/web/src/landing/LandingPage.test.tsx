@@ -55,7 +55,8 @@ describe('LandingPage', () => {
     expect(screen.getByRole('heading', { name: /Not a medical device/ })).toBeTruthy();
     expect(screen.getAllByText(/Not a medical device/).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/AGPL-3\.0/, { selector: 'footer p' })).toBeTruthy();
-    expect(document.title).toBe("Lotties: track your baby's day, together");
+    // The title is set by an effect that can run just after the page is in the document.
+    await waitFor(() => expect(document.title).toBe("Lotties: track your baby's day, together"));
   });
 
   it('starts sign-in from the header and the hero, and registration from the secondary button', async () => {

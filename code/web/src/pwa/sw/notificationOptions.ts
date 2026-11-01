@@ -35,7 +35,14 @@ export function keyInstant(at: number): string {
 /**
  * The device tag: the server's base key where the payload carries its parts (`dose:{rx}:{slot}`,
  * `test:{id}`). The nap key's anchor is not sent, so a nap notification uses `nap:{baby}`
- * (one awake window per baby at a time; a newer window replaces the older one).
+ * (one awake window per baby at a time; a newer window replaces the older one); the belly pain
+ * and fussy heads-ups use `belly:{baby}` and `fussy:{baby}` (at most one a day; the next day's
+ * replaces it); the overtired heads-up uses `overtired:{baby}` (one per awake stretch; the next
+ * stretch's replaces it); the diaper heads-ups use `wet:{baby}` and `dirty:{baby}` (the next
+ * expected diaper of the kind replaces the earlier one); an appointment reminder uses
+ * `appt:{appointment}` (its next reminder, "in 2 hours" after "tomorrow", replaces the earlier one);
+ * a doctor suggestion uses `doctor:{proposal or note}` (one notification per suggestion, only Open);
+ * a vaccine reminder uses `vaccine:{baby}:{dose}` (one per dose, only Open: nothing to snooze).
  */
 export function notificationTag(payload: PushPayload): string {
   switch (payload.kind) {
@@ -43,14 +50,34 @@ export function notificationTag(payload: PushPayload): string {
       return `dose:${compactGuid(payload.rxId)}:${keyInstant(payload.at)}`;
     case 'nap_window':
       return `nap:${compactGuid(payload.babyId)}`;
+    case 'belly_pain_pattern':
+      return `belly:${compactGuid(payload.babyId)}`;
+    case 'overtired_warning':
+      return `overtired:${compactGuid(payload.babyId)}`;
+    case 'fussy_pattern':
+      return `fussy:${compactGuid(payload.babyId)}`;
+    case 'diaper_wet_headsup':
+      return `wet:${compactGuid(payload.babyId)}`;
+    case 'diaper_dirty_headsup':
+      return `dirty:${compactGuid(payload.babyId)}`;
+    case 'appointment_reminder':
+      return `appt:${compactGuid(payload.apptId)}`;
+    case 'doctor_suggestion':
+      return `doctor:${compactGuid((payload.proposalId ?? payload.noteId) as string)}`;
+    case 'vaccine_due':
+      return `vaccine:${compactGuid(payload.babyId)}:${payload.doseId}`;
     case 'test':
       return `test:${compactGuid(payload.id)}`;
   }
 }
 
 /** Builds the notification for a parsed payload; generic text without tag or actions when invalid. */
-export function buildNotification(parsed: ParsedPayload, timeZone?: string): ShownNotification {
-  const { title, body } = renderText(parsed, timeZone);
+export function buildNotification(
+  parsed: ParsedPayload,
+  timeZone?: string,
+  now: number = Date.now(),
+): ShownNotification {
+  const { title, body } = renderText(parsed, timeZone, now);
   const lang = parsed.ok ? parsed.payload.lang : parsed.lang;
   const options: ShownNotificationOptions = {
     body,

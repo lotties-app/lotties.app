@@ -1,0 +1,145 @@
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import axe from 'axe-core';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { BabyRoutineDb } from '../db/database';
+import { BABY_ID, fakeApi, testDatabase } from '../test/fakeApi';
+import { useTestLocale } from '../test/locale';
+import { renderWithDb, settleSync } from '../test/renderApp';
+import { seedBaby } from '../test/seed';
+import { THEME_STORAGE_KEY } from '../theme/themeStorage';
+import { MembersSection } from './MembersSection';
+
+/* Members with a doctor: the Doctor invite and its consent line, her row, the access log. */
+
+let db: BabyRoutineDb;
+
+const PROFILE = {
+  kind: 'doctor',
+  displayName: 'Ana Souza',
+  specialty: 'Pediatrics',
+  verified: false,
+};
+const MEMBERS = [
+  { userId: 'mom', displayName: 'Carla', role: 'Owner', joinedAt: '2026-08-01T10:00:00Z' },
+  {
+    userId: 'doc',
+    displayName: 'ana.s',
+    role: 'Doctor',
+    joinedAt: '2026-10-01T10:00:00Z',
+    professional: PROFILE,
+  },
+];
+const LOG = [
+  {
+    userId: 'doc',
+    person: { userId: 'doc', displayName: 'Ana Souza', professional: PROFILE },
+    role: 'Doctor',
+    kind: 'view',
+    at: '2026-10-21T14:05:00Z',
+  },
+];
+
+beforeEach(async () => {
+  db = testDatabase();
+  await seedBaby(db);
+});
+
+afterEach(async () => {
+  await settleSync();
+  await db.delete();
+});
+
+function renderMembers(log: unknown[] = LOG) {
+  const fake = fakeApi((call) => {
+    if (call.path.endsWith('/members')) return MEMBERS;
+    if (call.path.endsWith('/access-log')) return log;
+    if (call.path.endsWith('/invites') && call.method === 'POST') {
+      return {
+        id: 'i1',
+        babyId: BABY_ID,
+        role: 'Doctor',
+        createdBy: 'mom',
+        createdAt: '2026-10-21T10:00:00Z',
+        expiresAt: '2026-10-28T10:00:00Z',
+        token: 'tok',
+      };
+    }
+    return undefined;
+  });
+  renderWithDb(
+    db,
+    <MembersSection baby={{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' }} />,
+    { api: fake.api },
+  );
+  return fake;
+}
+
+describe('members with a doctor', () => {
+  it('shows the doctor with the self-declared badge and only a remove button', async () => {
+    renderMembers();
+
+    const list = await screen.findByRole('list', { name: 'Members' });
+    const doctorRow = (await within(list).findByText('Dr. Ana Souza')).closest('li')!;
+    expect(within(doctorRow).getByText('Self-declared doctor')).toBeTruthy();
+    expect(within(doctorRow).queryByRole('combobox')).toBeNull();
+    fireEvent.click(within(doctorRow).getByRole('button', { name: 'Remove ana.s' }));
+    expect(
+      await screen.findByText(/The notes they shared stay visible to the family/),
+    ).toBeTruthy();
+  });
+
+  it('invites a doctor with the consent line', async () => {
+    const fake = renderMembers();
+
+    fireEvent.mouseDown(await screen.findByRole('combobox', { name: 'Invite role' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Doctor/ }));
+    expect(
+      await screen.findByText(
+        'The doctor who accepts will see everything logged for Lia and can add notes and measurements. You can remove access at any time.',
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create invite link' }));
+
+    await waitFor(() => expect(fake.writes()).toHaveLength(1));
+    expect(fake.writes()[0].body).toMatchObject({ role: 'Doctor' });
+  });
+
+  it('lists the access log for the owner', async () => {
+    renderMembers();
+
+    const log = await screen.findByRole('list', { name: 'Access log' });
+    expect(within(log).getByText('Dr. Ana Souza')).toBeTruthy();
+    expect(log.textContent).toContain('Doctor ·');
+  });
+
+  it('says when no doctor opened the data yet', async () => {
+    renderMembers([]);
+
+    expect(await screen.findByText("No doctor has opened Lia's data yet.")).toBeTruthy();
+  });
+
+  it('reads Registro de acessos and the consent line in pt-BR', async () => {
+    await useTestLocale('pt-BR');
+    renderMembers();
+
+    expect(await screen.findByRole('list', { name: 'Registro de acessos' })).toBeTruthy();
+    fireEvent.mouseDown(await screen.findByRole('combobox', { name: 'Papel do convite' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Médico\(a\)/ }));
+    expect(await screen.findByText(/Você pode remover o acesso a qualquer momento/)).toBeTruthy();
+  });
+
+  it.each(['light', 'dark'] as const)(
+    'has no accessibility violations (%s)',
+    async (scheme) => {
+      window.localStorage.setItem(THEME_STORAGE_KEY, scheme);
+      renderMembers();
+      await screen.findByRole('list', { name: 'Access log' });
+      const result = await axe.run(document.body, {
+        runOnly: ['wcag2a', 'wcag2aa'],
+        rules: { 'color-contrast': { enabled: false } },
+      });
+      expect(result.violations.map((v) => v.id)).toEqual([]);
+    },
+    60_000,
+  );
+});

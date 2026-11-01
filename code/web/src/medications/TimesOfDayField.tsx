@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Button, IconButton } from '@mui/material';
 import { Icon } from '../ui/Icon';
+import { ClockTimeField } from '../ui/form/ClockTimeField';
 import { useControlAttributes } from '../ui/form/fieldContext';
-import { filledSurface, focusRing } from '../ui/form/styles';
 import { MAX_TIMES } from './prescriptionForm';
 
 interface Props {
@@ -32,25 +32,15 @@ export function TimesOfDayField({ value, onChange, disabled = false }: Props) {
     <Box sx={{ display: 'grid', gap: 1 }}>
       {value.map((time, index) => (
         <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Box
-            component="input"
-            type="time"
-            value={time}
-            disabled={off}
-            id={index === 0 ? control.id : undefined}
-            aria-label={t('medications.editor.timeN', { n: index + 1 })}
-            aria-invalid={control['aria-invalid']}
-            onChange={(e: { target: { value: string } }) => setAt(index, e.target.value)}
-            sx={(theme) => ({
-              ...filledSurface(theme, !!control['aria-invalid']),
-              flex: 1,
-              minWidth: 0,
-              px: 1.75,
-              border: 0,
-              font: 'inherit',
-              '&:focus-visible': { outline: focusRing(theme), outlineOffset: 0 },
-            })}
-          />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <ClockTimeField
+              value={time}
+              disabled={off}
+              id={index === 0 ? control.id : `${control.id ?? 'time-of-day'}-${index + 1}`}
+              aria-label={t('medications.editor.timeN', { n: index + 1 })}
+              onChange={(next) => setAt(index, next)}
+            />
+          </Box>
           <IconButton
             disabled={off}
             aria-label={t('medications.editor.removeTimeN', { n: index + 1 })}

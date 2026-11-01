@@ -8,7 +8,10 @@ namespace Lotties.Application.Catalog;
 /// <summary>The shared, instance-wide medication catalog. Callers are authenticated; no baby access is involved.</summary>
 public interface ICatalogService
 {
-    /// <summary>Fuzzy product search (name, merged aliases, substance names, typos) with "same active ingredient" siblings.</summary>
+    /// <summary>
+    /// Fuzzy product search (name, merged aliases, substance names, typos) with "same active ingredient" siblings; every
+    /// variant of an ambiguous name follows its first name match, so all of them show together.
+    /// </summary>
     Task<IReadOnlyList<ProductSearchResult>> SearchProductsAsync(string? query, int? limit, CancellationToken cancellationToken = default);
 
     /// <summary>Every curated substance, or those matching <paramref name="query"/> (best first).</summary>
@@ -16,6 +19,12 @@ public interface ICatalogService
 
     /// <summary>The product; throws <see cref="ProductNotFoundException"/> when unknown.</summary>
     Task<ProductResponse> GetProductAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One page of the active products containing the substance (combinations included), official first, then by name;
+    /// throws <see cref="CatalogSubstanceNotFoundException"/> when the substance is unknown. Information only.
+    /// </summary>
+    Task<SubstanceProductsResponse> ListProductsWithSubstanceAsync(Guid substanceId, int? offset, int? limit, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a community product unless a non-merged product with the same normalized name, form and country exists;
@@ -27,6 +36,9 @@ public interface ICatalogService
 
 internal sealed class CatalogService : ICatalogService
 {
+    /// <summary>Rows loaded per substance set for the siblings: enough for <see cref="ProductSearch.MaxSiblings"/> distinct names.</summary>
+    private const int SiblingCandidates = ProductSearch.MaxSiblings * 5;
+
     private readonly ICatalogRepository _catalog;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
@@ -49,10 +61,21 @@ internal sealed class CatalogService : ICatalogService
         var nameCandidates = await _catalog.FindNameCandidatesAsync(search.CandidateFilter, ProductSearch.MaxCandidates, cancellationToken);
         var mergeTargets = await _catalog.FindProductsAsync(MergeTargetIds(nameCandidates), cancellationToken);
         var bySubstance = await _catalog.FindBySubstancesAsync(matchedSubstanceIds, ProductSearch.MaxCandidates, cancellationToken);
-        var matches = ProductSearch.Rank(search, nameCandidates, mergeTargets, bySubstance, take);
-        var siblingPool = await _catalog.FindBySubstancesAsync(matches.SelectMany(match => match.Product.SubstanceIds).ToHashSet(), ProductSearch.MaxCandidates, cancellationToken);
+        var ranked = ProductSearch.Rank(search, nameCandidates, mergeTargets, bySubstance, take);
+        var variants = await _catalog.FindAmbiguousVariantsAsync(ProductSearch.AmbiguousNames(ranked), ProductSearch.MaxCandidates, cancellationToken);
+        var matches = ProductSearch.WithAmbiguousVariants(ranked, variants);
+        var siblingPool = await LoadSiblingPoolAsync(matches, cancellationToken);
         _logger.LogDebug("Catalog search matched {MatchCount} products", matches.Count);
         return matches.Select(match => CatalogMapper.ToSearchResult(match, ProductSearch.SameActiveIngredient(match.Product, siblingPool), substances)).ToArray();
+    }
+
+    public async Task<SubstanceProductsResponse> ListProductsWithSubstanceAsync(Guid substanceId, int? offset, int? limit, CancellationToken cancellationToken = default)
+    {
+        var page = CatalogPage.From(offset, limit);
+        var substances = await LoadSubstancesAsync(cancellationToken);
+        var substance = substances.GetValueOrDefault(substanceId) ?? throw new CatalogSubstanceNotFoundException(substanceId);
+        var products = await _catalog.ListContainingSubstanceAsync(substance.Id, page, cancellationToken);
+        return CatalogMapper.ToSubstanceProducts(substance, products, page, substances);
     }
 
     public async Task<IReadOnlyList<SubstanceResponse>> SearchSubstancesAsync(string? query, CancellationToken cancellationToken = default)
@@ -105,6 +128,23 @@ internal sealed class CatalogService : ICatalogService
     {
         _logger.LogInformation("Product creation matched existing product {ProductId}", existing.Id);
         return new CreateProductResult(CatalogMapper.ToResponse(existing, substances), Created: false);
+    }
+
+    /// <summary>The products with exactly the substance set of each result (one query per distinct set; sets are few).</summary>
+    private async Task<IReadOnlyList<Product>> LoadSiblingPoolAsync(IReadOnlyList<ProductMatch> matches, CancellationToken cancellationToken)
+    {
+        var sets = matches
+            .Select(match => match.Product.SubstanceIds)
+            .Where(set => set.Count > 0)
+            .DistinctBy(set => string.Join('|', set.Order()))
+            .ToArray();
+        var pool = new List<Product>();
+        foreach (var set in sets)
+        {
+            pool.AddRange(await _catalog.FindWithSameSubstancesAsync(set.ToArray(), SiblingCandidates, cancellationToken));
+        }
+
+        return pool;
     }
 
     private async Task<IReadOnlyDictionary<Guid, Substance>> LoadSubstancesAsync(CancellationToken cancellationToken) =>

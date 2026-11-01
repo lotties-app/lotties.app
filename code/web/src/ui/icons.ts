@@ -5,6 +5,7 @@ import IconCircleCheck from '@tabler/icons-react/dist/esm/icons/IconCircleCheck.
 import IconCheck from '@tabler/icons-react/dist/esm/icons/IconCheck.mjs';
 import IconPencil from '@tabler/icons-react/dist/esm/icons/IconPencil.mjs';
 import IconTrash from '@tabler/icons-react/dist/esm/icons/IconTrash.mjs';
+import IconArchive from '@tabler/icons-react/dist/esm/icons/IconArchive.mjs';
 import IconShare from '@tabler/icons-react/dist/esm/icons/IconShare.mjs';
 import IconCopy from '@tabler/icons-react/dist/esm/icons/IconCopy.mjs';
 import IconFileUpload from '@tabler/icons-react/dist/esm/icons/IconFileUpload.mjs';
@@ -81,6 +82,34 @@ import IconBuildingCarousel from '@tabler/icons-react/dist/esm/icons/IconBuildin
 import IconSunrise from '@tabler/icons-react/dist/esm/icons/IconSunrise.mjs';
 import IconBellRinging from '@tabler/icons-react/dist/esm/icons/IconBellRinging.mjs';
 import IconArrowsExchange from '@tabler/icons-react/dist/esm/icons/IconArrowsExchange.mjs';
+import IconWind from '@tabler/icons-react/dist/esm/icons/IconWind.mjs';
+import IconMedicineSyrup from '@tabler/icons-react/dist/esm/icons/IconMedicineSyrup.mjs';
+import IconFlask from '@tabler/icons-react/dist/esm/icons/IconFlask.mjs';
+import IconSpray from '@tabler/icons-react/dist/esm/icons/IconSpray.mjs';
+import IconBandage from '@tabler/icons-react/dist/esm/icons/IconBandage.mjs';
+import IconCapsule from '@tabler/icons-react/dist/esm/icons/IconCapsule.mjs';
+import IconLungs from '@tabler/icons-react/dist/esm/icons/IconLungs.mjs';
+import IconMedicalCross from '@tabler/icons-react/dist/esm/icons/IconMedicalCross.mjs';
+import IconMassage from '@tabler/icons-react/dist/esm/icons/IconMassage.mjs';
+import IconStethoscope from '@tabler/icons-react/dist/esm/icons/IconStethoscope.mjs';
+import IconMicroscope from '@tabler/icons-react/dist/esm/icons/IconMicroscope.mjs';
+import IconMapPin from '@tabler/icons-react/dist/esm/icons/IconMapPin.mjs';
+import IconCalendarPlus from '@tabler/icons-react/dist/esm/icons/IconCalendarPlus.mjs';
+import IconCalendarCheck from '@tabler/icons-react/dist/esm/icons/IconCalendarCheck.mjs';
+import IconCalendarX from '@tabler/icons-react/dist/esm/icons/IconCalendarX.mjs';
+import IconRuler2 from '@tabler/icons-react/dist/esm/icons/IconRuler2.mjs';
+import IconLock from '@tabler/icons-react/dist/esm/icons/IconLock.mjs';
+import IconScissors from '@tabler/icons-react/dist/esm/icons/IconScissors.mjs';
+import IconMoodSick from '@tabler/icons-react/dist/esm/icons/IconMoodSick.mjs';
+import IconDental from '@tabler/icons-react/dist/esm/icons/IconDental.mjs';
+import IconTrophy from '@tabler/icons-react/dist/esm/icons/IconTrophy.mjs';
+import IconVirus from '@tabler/icons-react/dist/esm/icons/IconVirus.mjs';
+import IconTrees from '@tabler/icons-react/dist/esm/icons/IconTrees.mjs';
+import IconHandSanitizer from '@tabler/icons-react/dist/esm/icons/IconHandSanitizer.mjs';
+import IconLayoutGrid from '@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mjs';
+import IconRefresh from '@tabler/icons-react/dist/esm/icons/IconRefresh.mjs';
+import IconUserPlus from '@tabler/icons-react/dist/esm/icons/IconUserPlus.mjs';
+import IconPalette from '@tabler/icons-react/dist/esm/icons/IconPalette.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -100,6 +129,7 @@ export const ICON_COMPONENTS = {
   success: IconCircleCheck,
   edit: IconPencil,
   delete: IconTrash,
+  archive: IconArchive,
   share: IconShare,
   copy: IconCopy,
   'upload-file': IconFileUpload,
@@ -176,6 +206,34 @@ export const ICON_COMPONENTS = {
   sunrise: IconSunrise,
   bell: IconBellRinging,
   exchange: IconArrowsExchange,
+  wind: IconWind,
+  'medicine-syrup': IconMedicineSyrup,
+  flask: IconFlask,
+  spray: IconSpray,
+  bandage: IconBandage,
+  capsule: IconCapsule,
+  lungs: IconLungs,
+  'medical-cross': IconMedicalCross,
+  massage: IconMassage,
+  stethoscope: IconStethoscope,
+  microscope: IconMicroscope,
+  'map-pin': IconMapPin,
+  'calendar-plus': IconCalendarPlus,
+  'calendar-check': IconCalendarCheck,
+  'calendar-x': IconCalendarX,
+  ruler: IconRuler2,
+  lock: IconLock,
+  scissors: IconScissors,
+  'mood-sick': IconMoodSick,
+  tooth: IconDental,
+  trophy: IconTrophy,
+  virus: IconVirus,
+  trees: IconTrees,
+  lotion: IconHandSanitizer,
+  hub: IconLayoutGrid,
+  refresh: IconRefresh,
+  'user-plus': IconUserPlus,
+  palette: IconPalette,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;

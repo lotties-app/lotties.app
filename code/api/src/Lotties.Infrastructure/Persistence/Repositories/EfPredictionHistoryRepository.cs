@@ -7,8 +7,9 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// <remarks>
 /// The event query filters on <c>(baby_id, started_at)</c>, served by the index of the same name; soft-deleted events
 /// are excluded by the global query filter. Only the type key, the two timestamps and the payload are read; the
-/// payload's <c>kind</c> (sleep sessions, see <see cref="SleepKinds"/>) and <c>paused_seconds</c> (effective durations)
-/// are extracted in memory (<see cref="EventPayloadFacts"/>) so the query stays provider-neutral.
+/// payload's <c>kind</c> (sleep sessions, see <see cref="SleepKinds"/>), <c>paused_seconds</c> (effective durations) and
+/// the diaper <c>content</c> (<see cref="DiaperContents"/>) are extracted in memory (<see cref="EventPayloadFacts"/>)
+/// so the query stays provider-neutral.
 /// </remarks>
 internal sealed class EfPredictionHistoryRepository(LottiesDbContext context) : IPredictionHistoryRepository
 {
@@ -35,5 +36,5 @@ internal sealed class EfPredictionHistoryRepository(LottiesDbContext context) : 
     }
 
     private static ObservedEvent Observed(Domain.EventTypes.EventTypeKey key, DateTimeOffset startedAt, DateTimeOffset? endedAt, EventPayloadFacts facts) =>
-        new(key, startedAt, endedAt, facts.Kind, facts.Paused);
+        new(key, startedAt, endedAt, facts.Kind, facts.Paused, facts.Content);
 }

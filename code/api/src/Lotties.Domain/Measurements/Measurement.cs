@@ -1,3 +1,4 @@
+using Lotties.Domain.Babies;
 using Lotties.Domain.Common;
 using Lotties.Domain.Exceptions;
 
@@ -5,7 +6,8 @@ namespace Lotties.Domain.Measurements;
 
 /// <summary>
 /// A growth measurement of a baby on a day: at least one of weight, height and head circumference. Several per day
-/// are allowed. Values are rounded to two decimals.
+/// are allowed. Values are rounded to two decimals. A Doctor's consultation measurement is marked
+/// <see cref="RecordedByDoctor"/> (her role when she created it) and only she, an Owner or a Parent changes it.
 /// </summary>
 public sealed class Measurement
 {
@@ -54,7 +56,13 @@ public sealed class Measurement
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    /// <summary>Creates a measurement with a client-generated id, for idempotent upserts. <paramref name="now"/> bounds the date.</summary>
+    /// <summary>Whether the creator recorded it as the baby's Doctor (a consultation measurement, shown "Recorded by Dr. ...").</summary>
+    public bool RecordedByDoctor { get; private set; }
+
+    /// <summary>
+    /// Creates a measurement with a client-generated id, for idempotent upserts. <paramref name="now"/> bounds the date;
+    /// <paramref name="creatorRole"/> (the creator's role on the baby) marks a Doctor's consultation measurement.
+    /// </summary>
     public static Measurement Create(
         Guid id,
         Guid babyId,
@@ -64,11 +72,27 @@ public sealed class Measurement
         decimal? headCircumferenceCm,
         string? notes,
         Guid createdBy,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        BabyRole? creatorRole = null)
     {
-        var measurement = new Measurement(Ids.Required(id, nameof(id)), Ids.Required(babyId, nameof(babyId)), Ids.Required(createdBy, nameof(createdBy)), UtcTime.Normalize(now));
+        var measurement = new Measurement(Ids.Required(id, nameof(id)), Ids.Required(babyId, nameof(babyId)), Ids.Required(createdBy, nameof(createdBy)), UtcTime.Normalize(now))
+        {
+            RecordedByDoctor = creatorRole?.IsDoctor() == true,
+        };
         measurement.Apply(date, weightKg, heightCm, headCircumferenceCm, notes, measurement.CreatedAt);
         return measurement;
+    }
+
+    /// <summary>
+    /// Throws <see cref="MeasurementNotOwnedException"/> unless <paramref name="userId"/> holding <paramref name="role"/>
+    /// may edit or delete this measurement (<see cref="BabyRoleRules.CanChangeMeasurement"/>: a Doctor only her own).
+    /// </summary>
+    public void EnsureChangeableBy(Guid userId, BabyRole role)
+    {
+        if (!role.CanChangeMeasurement(CreatedBy, userId))
+        {
+            throw new MeasurementNotOwnedException(Id, userId);
+        }
     }
 
     /// <summary>

@@ -1,0 +1,300 @@
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
+using Lotties.Api.Tests.Support;
+using Lotties.Domain.Babies;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Lotties.Api.Tests.Authorization;
+
+/// <summary>
+/// Every mapped endpoint x every caller (Owner, Parent, Caregiver, Viewer, Doctor, non-member, anonymous). <see cref="Matrix"/>
+/// holds the role decision of each route; <see cref="Matrix_CoversEveryMappedEndpoint"/> fails when a route is mapped
+/// without a decision (or a decision is left for a route that no longer exists), so a new endpoint cannot ship
+/// without one. A denied call must be exactly 401 (anonymous) or 403; an allowed call must get past authorization
+/// (any status but 401/403/5xx: the requests carry an empty JSON body, so validation may answer 400).
+/// </summary>
+public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClassFixture<ApiFactory>
+{
+    /// <summary>Who may call a route.</summary>
+    public enum Access
+    {
+        /// <summary>No sign-in needed.</summary>
+        Anonymous,
+
+        /// <summary>Any signed-in user (no baby involved, or the route reads only the caller's own data).</summary>
+        SignedIn,
+
+        /// <summary>Any member of the baby (<c>BabyRead</c>).</summary>
+        Read,
+
+        /// <summary>
+        /// Family members only: Owner, Parent, Caregiver, Viewer, never the Doctor (<c>BabyReadFamily</c>): appointments
+        /// and the members list (docs/design/16-doctor-access.md, "Doctor read audit").
+        /// </summary>
+        ReadFamily,
+
+        /// <summary>Owner, Parent, Caregiver (<c>BabyLog</c>): events and the caller's own reminder preferences.</summary>
+        Log,
+
+        /// <summary>Owner, Parent (<c>BabyWrite</c>).</summary>
+        Write,
+
+        /// <summary>Owner only (<c>BabyManageMembers</c>).</summary>
+        Owner,
+
+        /// <summary>Owner, Parent, Doctor (<c>BabyMeasure</c>): growth measurements; a Doctor changes only her own.</summary>
+        Measure,
+
+        /// <summary>The Doctor only (<c>BabyNote</c>): notes; only the author changes a note.</summary>
+        Note,
+
+        /// <summary>The Doctor only (<c>BabyPropose</c>): prescription proposals; only the author changes or withdraws one.</summary>
+        Propose,
+    }
+
+    /// <summary>The callers every route is tried with.</summary>
+    public enum Caller
+    {
+        Owner,
+        Parent,
+        Caregiver,
+        Viewer,
+        Doctor,
+        NonMember,
+        Anonymous,
+    }
+
+    /// <summary>The role decision of every route, keyed by <c>"METHOD /route/pattern"</c> as the endpoint data source lists it.</summary>
+    public static readonly IReadOnlyDictionary<string, Access> Matrix = new Dictionary<string, Access>(StringComparer.Ordinal)
+    {
+        ["GET /health"] = Access.Anonymous,
+        ["GET /api/v1/me"] = Access.SignedIn,
+        // The caller's own professional profile: any signed-in user may declare one (needed to accept a Doctor invite).
+        ["GET /api/v1/me/professional-profile"] = Access.SignedIn,
+        ["PUT /api/v1/me/professional-profile"] = Access.SignedIn,
+
+        ["GET /api/v1/babies"] = Access.SignedIn,
+        ["POST /api/v1/babies"] = Access.SignedIn,
+        ["GET /api/v1/babies/{babyId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}"] = Access.Owner,
+        // The vaccine profile (coverage, gestational age, the mother's RSV vaccination): Owners and Parents.
+        ["PUT /api/v1/babies/{babyId:guid}/vaccine-profile"] = Access.Write,
+
+        // The members list (names and roles of the family): family members only, a Doctor gets 403; she can still leave.
+        ["GET /api/v1/babies/{babyId:guid}/members"] = Access.ReadFamily,
+        ["PATCH /api/v1/babies/{babyId:guid}/members/{userId:guid}"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/members/{userId:guid}"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/members/me"] = Access.Read,
+
+        ["POST /api/v1/babies/{babyId:guid}/invites"] = Access.Owner,
+        ["GET /api/v1/babies/{babyId:guid}/invites"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/invites/{inviteId:guid}"] = Access.Owner,
+        ["POST /api/v1/invites/accept"] = Access.SignedIn,
+        ["POST /api/v1/invites/{token}/accept"] = Access.SignedIn,
+
+        ["GET /api/v1/babies/{babyId:guid}/event-types"] = Access.Read,
+        ["POST /api/v1/babies/{babyId:guid}/event-types"] = Access.Write,
+        ["PUT /api/v1/babies/{babyId:guid}/event-types/{eventTypeId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/event-types/{eventTypeId:guid}"] = Access.Write,
+
+        // The shared catalog is instance-wide (no baby): any signed-in user, whatever their roles on babies.
+        ["GET /api/v1/catalog/products"] = Access.SignedIn,
+        ["GET /api/v1/catalog/products/{productId:guid}"] = Access.SignedIn,
+        ["POST /api/v1/catalog/products"] = Access.SignedIn,
+        ["GET /api/v1/catalog/substances"] = Access.SignedIn,
+        ["GET /api/v1/catalog/substances/{substanceId:guid}/products"] = Access.SignedIn,
+
+        ["GET /api/v1/babies/{babyId:guid}/medications"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/medications/{medicationId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/medications/{medicationId:guid}"] = Access.Write,
+
+        ["GET /api/v1/babies/{babyId:guid}/measurements"] = Access.Read,
+        // A Doctor adds consultation measurements and edits or deletes only her own (403 measurement_not_owned).
+        ["PUT /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Measure,
+        ["DELETE /api/v1/babies/{babyId:guid}/measurements/{measurementId:guid}"] = Access.Measure,
+
+        ["GET /api/v1/babies/{babyId:guid}/prescriptions"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/prescriptions/{prescriptionId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/prescriptions/{prescriptionId:guid}"] = Access.Write,
+        ["GET /api/v1/babies/{babyId:guid}/medications/status"] = Access.Read,
+
+        // Formulas: everyone reads them (a Caregiver picks one when logging a bottle, which the events PUT allows her);
+        // only Owners and Parents create, edit, set the current one or archive (there is no delete).
+        ["GET /api/v1/babies/{babyId:guid}/formulas"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/formulas/{formulaId:guid}"] = Access.Write,
+
+        // Appointments: every family member reads them (the list with its delta and range, one by id); only Owners and
+        // Parents create, edit, mark done or cancel (there is no delete). Caregivers and Viewers read only. The Doctor
+        // gets 403 on every appointment route (they name other doctors, clinics and private reasons).
+        ["GET /api/v1/babies/{babyId:guid}/appointments"] = Access.ReadFamily,
+        ["GET /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.ReadFamily,
+        ["PUT /api/v1/babies/{babyId:guid}/appointments/{appointmentId:guid}"] = Access.Write,
+
+        // Vaccines: the schedule is the same for everyone (any signed-in user); every member reads a baby's records,
+        // a Doctor included; only Owners and Parents record, edit or delete. Caregivers, Viewers and the Doctor read only.
+        ["GET /api/v1/vaccine-schedule"] = Access.SignedIn,
+        ["GET /api/v1/babies/{babyId:guid}/vaccinations"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
+        ["DELETE /api/v1/babies/{babyId:guid}/vaccinations/{vaccinationId:guid}"] = Access.Write,
+
+        ["GET /api/v1/babies/{babyId:guid}/events"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Read,
+        // A Caregiver passes the policy; the use case then allows only their own events, plus stopping, pausing or
+        // resuming someone else's running one (PUT only), else 403 event_not_owned (CaregiverEndpointTests).
+        ["PUT /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
+        ["DELETE /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
+
+        ["GET /api/v1/babies/{babyId:guid}/predictions"] = Access.Read,
+
+        // Notes (docs/design/16-doctor-access.md): every member reads the shared ones (a private note only its author,
+        // filtered by the use case); only the Doctor writes, and only her own (403 note_not_owned).
+        ["GET /api/v1/babies/{babyId:guid}/notes"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Note,
+        ["DELETE /api/v1/babies/{babyId:guid}/notes/{noteId:guid}"] = Access.Note,
+        ["GET /api/v1/babies/{babyId:guid}/access-log"] = Access.Owner,
+
+        // Doctor access step 2 (docs/design/16-doctor-access.md section 10). Note reads: any member who sees the note marks
+        // it read and lists her own reads. Proposals: every member passes the read policy and the use case filters (Owner
+        // and Parent all, the Doctor her own, Caregiver and Viewer an empty list and 404 by id); only the Doctor writes and
+        // withdraws (her own; another doctor's is 404); only Owners and Parents accept or decline. Prescriptions and
+        // medications stay Write: the Doctor never changes them directly.
+        ["PUT /api/v1/babies/{babyId:guid}/notes/{noteId:guid}/read"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/note-reads"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/prescription-proposals"] = Access.Read,
+        ["GET /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = Access.Read,
+        ["PUT /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = Access.Propose,
+        ["DELETE /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}"] = Access.Propose,
+        ["POST /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}/accept"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/prescription-proposals/{proposalId:guid}/decline"] = Access.Write,
+
+        ["POST /api/v1/babies/{babyId:guid}/import/napper/preview"] = Access.Write,
+        ["POST /api/v1/babies/{babyId:guid}/import/napper"] = Access.Write,
+
+        ["GET /api/v1/push/config"] = Access.SignedIn,
+        ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
+        ["POST /api/v1/push/subscriptions/revoke"] = Access.SignedIn,
+        ["GET /api/v1/push/subscriptions"] = Access.SignedIn,
+        ["DELETE /api/v1/push/subscriptions/{subscriptionId:guid}"] = Access.SignedIn,
+        ["GET /api/v1/push/settings"] = Access.SignedIn,
+        ["PUT /api/v1/push/settings"] = Access.SignedIn,
+        ["GET /api/v1/push/preferences"] = Access.SignedIn,
+        ["POST /api/v1/push/test"] = Access.SignedIn,
+        ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = Access.Anonymous,
+        ["PUT /api/v1/babies/{babyId:guid}/notification-preferences"] = Access.Log,
+    };
+
+    public static TheoryData<string, Caller> Cases()
+    {
+        var cases = new TheoryData<string, Caller>();
+        foreach (var route in Matrix.Keys)
+        {
+            Array.ForEach(Enum.GetValues<Caller>(), caller => cases.Add(route, caller));
+        }
+
+        return cases;
+    }
+
+    [Fact]
+    public void Matrix_CoversEveryMappedEndpoint()
+    {
+        var mapped = MappedRoutes();
+
+        var missing = mapped.Except(Matrix.Keys).Order().ToArray();
+        var stale = Matrix.Keys.Except(mapped).Order().ToArray();
+
+        Assert.True(missing.Length == 0, $"Routes without a role decision in {nameof(Matrix)}: {string.Join(", ", missing)}");
+        Assert.True(stale.Length == 0, $"Decisions for routes that are not mapped: {string.Join(", ", stale)}");
+    }
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public async Task Route_ByCaller_FollowsTheMatrix(string route, Caller caller)
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer, BabyRole.Doctor);
+
+        var response = await SendAsync(ClientFor(baby, caller), route, baby.BabyId);
+
+        AssertOutcome(Expected(Matrix[route], caller), response, $"{route} as {caller}");
+    }
+
+    private static void AssertOutcome(HttpStatusCode? expectedDenial, HttpResponseMessage response, string what)
+    {
+        var status = response.StatusCode;
+        if (expectedDenial is { } denial)
+        {
+            Assert.True(status == denial, $"{what}: expected {(int)denial}, got {(int)status}");
+            return;
+        }
+
+        Assert.True(
+            status is not (HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) && (int)status < 500,
+            $"{what}: expected to pass authorization, got {(int)status}");
+    }
+
+    /// <summary>The denial status for <paramref name="caller"/>, or <c>null</c> when the call is allowed.</summary>
+    private static HttpStatusCode? Expected(Access access, Caller caller) => (access, caller) switch
+    {
+        (Access.Anonymous, _) => null,
+        (_, Caller.Anonymous) => HttpStatusCode.Unauthorized,
+        (Access.SignedIn, _) => null,
+        (_, Caller.NonMember) => HttpStatusCode.Forbidden,
+        (Access.Read, _) => null,
+        (Access.ReadFamily, Caller.Owner or Caller.Parent or Caller.Caregiver or Caller.Viewer) => null,
+        (Access.Log, Caller.Owner or Caller.Parent or Caller.Caregiver) => null,
+        (Access.Write, Caller.Owner or Caller.Parent) => null,
+        (Access.Owner, Caller.Owner) => null,
+        (Access.Measure, Caller.Owner or Caller.Parent or Caller.Doctor) => null,
+        (Access.Note, Caller.Doctor) => null,
+        (Access.Propose, Caller.Doctor) => null,
+        _ => HttpStatusCode.Forbidden,
+    };
+
+    private HttpClient ClientFor(SeededBaby baby, Caller caller) => caller switch
+    {
+        Caller.Anonymous => factory.CreateClient(),
+        Caller.NonMember => factory.CreateClientFor(TestUsers.NewSubject()),
+        Caller.Owner => factory.CreateClientFor(baby.OwnerSubject),
+        _ => factory.CreateClientFor(baby.SubjectOf(Enum.Parse<BabyRole>(caller.ToString()))),
+    };
+
+    private static Task<HttpResponseMessage> SendAsync(HttpClient client, string route, Guid babyId)
+    {
+        var separator = route.IndexOf(' ', StringComparison.Ordinal);
+        var method = new HttpMethod(route[..separator]);
+        var path = RouteParameter().Replace(route[(separator + 1)..], match => ParameterValue(match.Groups["name"].Value, babyId));
+        var request = new HttpRequestMessage(method, path);
+        if (method != HttpMethod.Get && method != HttpMethod.Delete)
+        {
+            request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
+        }
+
+        return client.SendAsync(request);
+    }
+
+    private static string ParameterValue(string name, Guid babyId) => name switch
+    {
+        "babyId" => babyId.ToString(),
+        "token" => "not-a-real-token",
+        _ => Guid.NewGuid().ToString(),
+    };
+
+    private HashSet<string> MappedRoutes()
+    {
+        var sources = factory.Services.GetRequiredService<IEnumerable<EndpointDataSource>>();
+        return sources
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText?.StartsWith(ProbeEndpointsStartupFilter.Prefix, StringComparison.Ordinal) == false)
+            .SelectMany(endpoint => (endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods ?? []).Select(method => $"{method} {Normalized(endpoint.RoutePattern.RawText!)}"))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private static string Normalized(string rawText) => "/" + rawText.TrimStart('/').TrimEnd('/');
+
+    [GeneratedRegex(@"\{(?<name>\w+)(:[^}]*)?\}")]
+    private static partial Regex RouteParameter();
+}

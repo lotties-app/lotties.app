@@ -34,7 +34,8 @@ public sealed record FieldVisibilityConditionDto
 /// <see cref="Options"/> apply to select fields, <see cref="Min"/>, <see cref="Max"/> and <see cref="Unit"/> to number fields.
 /// <see cref="VisibleWhen"/> (any kind, <c>null</c> when the field is always shown) makes the field depend on a select field.
 /// <see cref="Hidden"/> fields are validated like any other but forms must not render them; <see cref="Integer"/>
-/// (number fields) accepts whole numbers only. Both default to <c>false</c>.
+/// (number fields) accepts whole numbers only. Both default to <c>false</c>. <see cref="Decimals"/> (number fields, not with
+/// <see cref="Integer"/>; <c>null</c> when unlimited) is the most decimal places a value may have, 1 to 3.
 /// </summary>
 public sealed record EventFieldDefinitionDto
 {
@@ -61,6 +62,9 @@ public sealed record EventFieldDefinitionDto
 
     public bool Integer { get; init; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Decimals { get; init; }
+
     public static implicit operator EventFieldDefinitionDto(EventFieldDefinition field)
     {
         ArgumentNullException.ThrowIfNull(field);
@@ -77,6 +81,7 @@ public sealed record EventFieldDefinitionDto
             VisibleWhen = field.VisibleWhen is null ? null : (FieldVisibilityConditionDto)field.VisibleWhen,
             Hidden = field.IsHidden,
             Integer = field.IsInteger,
+            Decimals = field.Decimals,
         };
     }
 
@@ -85,7 +90,7 @@ public sealed record EventFieldDefinitionDto
     {
         ArgumentNullException.ThrowIfNull(dto);
         var visibleWhen = dto.VisibleWhen is null ? null : (FieldVisibilityCondition)dto.VisibleWhen;
-        return EventFieldDefinition.Create(dto.Key, dto.Label, dto.Kind, dto.IsRequired, dto.Options, dto.Min, dto.Max, dto.Unit, visibleWhen, dto.Hidden, dto.Integer);
+        return EventFieldDefinition.Create(dto.Key, dto.Label, dto.Kind, dto.IsRequired, dto.Options, dto.Min, dto.Max, dto.Unit, visibleWhen, dto.Hidden, dto.Integer, dto.Decimals);
     }
 }
 

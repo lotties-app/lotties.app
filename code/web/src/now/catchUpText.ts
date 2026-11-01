@@ -2,6 +2,7 @@ import type { Dosage, EventType } from '../db/models';
 import { eventTypeText } from '../i18n/eventTypeText';
 import { formatDuration, formatNumber, formatTime, formatUnit } from '../i18n/format';
 import { t } from '../i18n/i18n';
+import { countedAmountText, countedUnitOf } from '../medications/doseUnits';
 import type { CategoryName } from '../theme/tokens';
 import type { IconName } from '../ui/icons';
 import { catchUpName } from './nowText';
@@ -22,8 +23,10 @@ export interface CatchUpLine {
 
 const MINUTE_MS = 60_000;
 
-/** "2.5 ml", "5 drops": the dose as logged, with the unit in the active language when known. */
+/** "2.5 ml", "5 drops", "2 sprays": the dose as logged, with the unit in the active language when known. */
 export function doseText(dose: Dosage): string {
+  const counted = countedUnitOf(dose.unit);
+  if (counted) return countedAmountText(dose.amount, counted);
   const unit =
     dose.unit === 'drops' || dose.unit === 'ml' || dose.unit === 'mg'
       ? t(`ui.units.${dose.unit}`)

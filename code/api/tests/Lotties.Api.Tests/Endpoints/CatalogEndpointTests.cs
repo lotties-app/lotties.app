@@ -121,6 +121,20 @@ public sealed class CatalogEndpointTests(ApiFactory factory) : IClassFixture<Api
         Assert.Equal(3, await factory.QueryAsync(context => context.Products.CountAsync(product => product.NormalizedName == "plorimex")));
     }
 
+    [Theory]
+    [InlineData("spray")]
+    [InlineData("ointment")]
+    [InlineData("suppository")]
+    [InlineData("inhaler")]
+    public async Task Create_CountedUnitForm_Returns201WithTheForm(string form)
+    {
+        var created = await CreateAsync(User(), Product($"Nasorvex {form}", form: form));
+
+        Assert.Equal(form, created.GetProperty("form").GetString());
+        var read = await JsonAsync(await User().GetAsync($"{ProductsPath}/{created.GetProperty("id").GetGuid()}"));
+        Assert.Equal(form, read.GetProperty("form").GetString());
+    }
+
     [Fact]
     public async Task Create_UnknownSubstance_Returns422()
     {

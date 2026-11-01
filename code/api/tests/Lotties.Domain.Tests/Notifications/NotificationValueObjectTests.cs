@@ -17,6 +17,8 @@ public sealed class NotificationValueObjectTests
         Assert.Equal("dose:0f8fad5bd9cb469fa16570867728950e:202610212100", NotificationKey.ForDose(Id, slot).Value);
         Assert.Equal("nap:0f8fad5bd9cb469fa16570867728950e:202610212100", NotificationKey.ForNap(Id, slot).Value);
         Assert.Equal("test:0f8fad5bd9cb469fa16570867728950e", NotificationKey.ForTest(Id).Value);
+        Assert.Equal("overtired:0f8fad5bd9cb469fa16570867728950e:202610212100", NotificationKey.ForOvertired(Id, slot).Value);
+        Assert.Equal("fussy:0f8fad5bd9cb469fa16570867728950e:20261021", NotificationKey.ForFussy(Id, new DateOnly(2026, 10, 21)).Value);
     }
 
     [Fact]
@@ -38,10 +40,19 @@ public sealed class NotificationValueObjectTests
     [InlineData("dose:0f8fad5bd9cb469fa16570867728950e:202610212100", true)]
     [InlineData("nap:0f8fad5bd9cb469fa16570867728950e:202610212100:s3", true)]
     [InlineData("test:0f8fad5bd9cb469fa16570867728950e", true)]
+    [InlineData("overtired:0f8fad5bd9cb469fa16570867728950e:202610212100", true)]
+    [InlineData("overtired:0f8fad5bd9cb469fa16570867728950e:202610212100:s1", true)]
+    [InlineData("fussy:0f8fad5bd9cb469fa16570867728950e:20261021", true)]
+    [InlineData("fussy:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
+    [InlineData("overtired:0f8fad5bd9cb469fa16570867728950e:20261021", false)]
     [InlineData("dose:0f8fad5bd9cb469fa16570867728950e", false)]
     [InlineData("test:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
     [InlineData("dose:0F8FAD5BD9CB469FA16570867728950E:202610212100", false)]
     [InlineData("feed:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
+    [InlineData("proposal:0f8fad5bd9cb469fa16570867728950e", true)]
+    [InlineData("recommendation:0f8fad5bd9cb469fa16570867728950e:s1", true)]
+    [InlineData("proposal:0f8fad5bd9cb469fa16570867728950e:202610212100", false)]
+    [InlineData("recommendation:not-a-guid", false)]
     [InlineData("", false)]
     [InlineData(null, false)]
     public void NotificationKey_TryFrom_AcceptsOnlyKnownShapes(string? value, bool expected)
@@ -98,9 +109,84 @@ public sealed class NotificationValueObjectTests
     }
 
     [Fact]
-    public void ReminderPreferences_DefaultIsAllOffWithTenMinuteNapLead()
+    public void ReminderPreferences_DefaultIsAllOffButAppointmentsWithTenMinuteNapLead()
     {
-        Assert.Equal((false, 0, false, 10, false), (ReminderPreferences.Default.DoseDue, ReminderPreferences.Default.DoseLeadMinutes, ReminderPreferences.Default.NapWindow, ReminderPreferences.Default.NapLeadMinutes, ReminderPreferences.Default.WantsAny));
+        Assert.Equal((false, 0, false, 10, true), (ReminderPreferences.Default.DoseDue, ReminderPreferences.Default.DoseLeadMinutes, ReminderPreferences.Default.NapWindow, ReminderPreferences.Default.NapLeadMinutes, ReminderPreferences.Default.WantsAny));
+        Assert.True(ReminderPreferences.Default.AppointmentReminders);
+        Assert.Equal((false, false), (ReminderPreferences.None.AppointmentReminders, ReminderPreferences.None.WantsAny));
+        Assert.False(ReminderPreferences.Default.BellyPainPattern);
+        Assert.Equal((false, false, false), (ReminderPreferences.Default.OvertiredWarning, ReminderPreferences.Default.FussyPattern, ReminderPreferences.Default.WantsEventHistory));
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void ReminderPreferences_OvertiredOrFussyAlone_MakesTheBabyACandidateThatNeedsTheEvents(bool overtired, bool fussy)
+    {
+        var preferences = ReminderPreferences.Create(false, 0, false, 10, overtiredWarning: overtired, fussyPattern: fussy);
+
+        Assert.Equal((overtired, fussy, true, true), (preferences.OvertiredWarning, preferences.FussyPattern, preferences.WantsAny, preferences.WantsEventHistory));
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void ReminderPreferences_ADiaperHeadsUpAlone_MakesTheBabyACandidateThatNeedsTheEvents(bool wet, bool dirty)
+    {
+        var preferences = ReminderPreferences.Create(false, 0, false, 10, diaperWetHeadsUp: wet, diaperDirtyHeadsUp: dirty);
+
+        Assert.Equal((wet, dirty, true, true, true), (preferences.DiaperWetHeadsUp, preferences.DiaperDirtyHeadsUp, preferences.WantsAny, preferences.WantsEventHistory, preferences.WantsDiapers));
+        Assert.Equal((false, false, false), (ReminderPreferences.Default.DiaperWetHeadsUp, ReminderPreferences.Default.DiaperDirtyHeadsUp, ReminderPreferences.Default.WantsDiapers));
+    }
+
+    [Fact]
+    public void ReminderPreferences_With_MergesTheDiaperHeadsUpsAndKeepsTheRest()
+    {
+        var stored = ReminderPreferences.Create(true, 5, false, 10, fussyPattern: true, diaperDirtyHeadsUp: true);
+
+        var wetOn = stored.With(new ReminderPreferencesChange(DiaperWetHeadsUp: true));
+        var olderClient = wetOn.With(new ReminderPreferencesChange(DoseDue: false, FussyPattern: false));
+
+        Assert.Equal(ReminderPreferences.Create(true, 5, false, 10, fussyPattern: true, diaperWetHeadsUp: true, diaperDirtyHeadsUp: true), wetOn);
+        Assert.Equal((true, true), (olderClient.DiaperWetHeadsUp, olderClient.DiaperDirtyHeadsUp));
+    }
+
+    [Fact]
+    public void ReminderPreferences_DoseOnly_DoesNotNeedTheEvents()
+    {
+        Assert.False(ReminderPreferences.Create(true, 5, false, 10).WantsEventHistory);
+    }
+
+    [Fact]
+    public void ReminderPreferences_With_ChangesOnlyTheNamedValues()
+    {
+        var stored = ReminderPreferences.Create(true, 15, true, 20, bellyPainPattern: true, overtiredWarning: true, fussyPattern: true);
+
+        var unchanged = stored.With(new ReminderPreferencesChange());
+        var napOff = stored.With(new ReminderPreferencesChange(NapWindow: false));
+        var fussyOff = stored.With(new ReminderPreferencesChange(FussyPattern: false, DoseLeadMinutes: 0));
+
+        Assert.Equal(stored, unchanged);
+        Assert.Equal(ReminderPreferences.Create(true, 15, false, 20, true, true, true), napOff);
+        Assert.Equal(ReminderPreferences.Create(true, 0, true, 20, true, true, false), fussyOff);
+    }
+
+    [Fact]
+    public void ReminderPreferences_With_ValidatesTheMergedLeads()
+    {
+        var change = new ReminderPreferencesChange(NapLeadMinutes: 7);
+
+        Assert.Equal("napLeadMinutes", Assert.Throws<DomainValidationException>(() => ReminderPreferences.Default.With(change)).Field);
+    }
+
+    [Fact]
+    public void ReminderPreferences_BellyPainPatternAlone_MakesTheBabyACandidate()
+    {
+        var preferences = ReminderPreferences.Create(false, 0, false, 10, bellyPainPattern: true);
+
+        Assert.True(preferences.BellyPainPattern);
+        Assert.True(preferences.WantsAny);
+        Assert.NotEqual(ReminderPreferences.Create(false, 0, false, 10), preferences);
     }
 
     [Theory]
@@ -262,22 +348,36 @@ public sealed class NotificationValueObjectTests
     }
 
     [Fact]
-    public void NotificationRules_OnlyOwnersAndParentsReceive()
+    public void NotificationRules_OnlyMembersWhoLogReceive()
     {
-        Assert.Equal([true, true, false], new[] { BabyRole.Owner, BabyRole.Parent, BabyRole.Viewer }.Select(NotificationRules.CanReceive));
+        Assert.Equal([true, true, true, false], new[] { BabyRole.Owner, BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer }.Select(NotificationRules.CanReceive));
     }
 
     [Fact]
     public void NotificationCodes_RoundTripEveryValue()
     {
-        AssertRoundTrip<NotificationKind>(["dose_due", "nap_window", "test"]);
         AssertRoundTrip<NotificationUrgency>(["normal", "high"]);
-        AssertRoundTrip<NotificationSkipReason>(["stale", "quiet_hours", "unavailable", "limit", "snoozed", "dismissed"]);
+        AssertRoundTrip<NotificationSkipReason>(["stale", "quiet_hours", "unavailable", "limit", "snoozed", "dismissed", "spacing", "daily_cap"]);
         AssertRoundTrip<DeliveryStatus>(["pending", "sent", "failed", "expired", "gone", "cancelled"]);
         AssertRoundTrip<SubscriptionRevokeReason>(["user", "gone", "invalid", "inactive", "transferred"]);
         AssertRoundTrip<NotificationActionKind>(["snoozed", "dismissed"]);
         Assert.False(NotificationCodes.TryParse<NotificationKind>("DoseDue", out _));
         Assert.False(NotificationCodes.TryParse<NotificationKind>(null, out _));
+    }
+
+    [Fact]
+    public void NotificationKindCodes_KeepTheDeployedCodesAndRoundTripEveryKind()
+    {
+        // Codes already stored (deliveries, preferences, push payloads): they never change. A new kind is appended to the
+        // enum and to NotificationCodes and needs no edit here: the rules below cover it.
+        string[] deployed = ["dose_due", "nap_window", "test", "belly_pain_pattern", "overtired_warning", "fussy_pattern", "diaper_wet_headsup", "diaper_dirty_headsup", "appointment_reminder", "doctor_suggestion", "vaccine_due"];
+        var kinds = Enum.GetValues<NotificationKind>();
+        var codes = kinds.Select(NotificationCodes.Of).ToArray();
+
+        Assert.Equal(deployed, codes.Take(deployed.Length));
+        Assert.All(codes, code => Assert.Matches("^[a-z][a-z0-9_]*$", code));
+        Assert.Equal(codes.Length, codes.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(kinds, codes.Select(code => NotificationCodes.TryParse<NotificationKind>(code, out var kind) ? kind : throw new Xunit.Sdk.XunitException($"{code} did not parse")));
     }
 
     private static void AssertRoundTrip<TEnum>(string[] codes)

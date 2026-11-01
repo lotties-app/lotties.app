@@ -25,7 +25,7 @@
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
 # App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_* and VITE_REPO_URL (public, baked into the
-# web image), DB_* and PUSH_VAPID_* (the Secret lotties-secrets), DB_AUTO_MIGRATE.
+# web image), DB_* and PUSH_VAPID_* (the Secret lotties-secrets), DB_AUTO_MIGRATE, CORS_ALLOWED_ORIGINS.
 #
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
 # for the web image the VITE_* values). A tag already in the registry is not rebuilt and its pods are not restarted.
@@ -43,7 +43,7 @@ PULL_SECRET_SOURCE_NS=keycloak
 
 # Files each image is built from (repository-relative pathspecs). The API image uses only these from its context
 # (code/api/.dockerignore leaves the tests out); the web image takes its whole context.
-API_SOURCES=(code/api/Dockerfile code/api/.dockerignore code/api/Directory.Build.props code/api/src)
+API_SOURCES=(code/api/Dockerfile code/api/.dockerignore code/api/Directory.Build.props code/api/src code/api/data)
 WEB_SOURCES=(code/web ':(exclude)code/web/dist' ':(exclude)code/web/node_modules' ':(exclude)code/web/coverage')
 
 # ── Pure helpers (deploy.test.sh checks them) ─────────────────────────────────
@@ -75,6 +75,9 @@ source_tag() { # salt pathspecs...
   shift
   files=$(cd "$REPO" && git ls-files --cached --others --exclude-standard -- "$@" | sort -u \
     | while IFS= read -r file; do [ -f "$file" ] && printf '%s\n' "$file"; done)
+  # An empty list means git could not be read here (a git worktree made on Windows cannot be read from WSL, for example): every image would get the
+  # same tag and a stale image in the registry would be deployed. Stop instead.
+  [ -n "$files" ] || { echo "error: git listed no files under $* in $REPO: cannot compute the image tag. Run from a normal clone (not a git worktree), or set TAG." >&2; exit 1; }
   printf 'src-%s' "$( { (cd "$REPO" && paste <(printf '%s\n' "$files") <(printf '%s\n' "$files" | git hash-object --stdin-paths)); printf '%s\n' "$salt"; } \
     | sha256sum | cut -c1-12)"
 }
@@ -152,7 +155,9 @@ configure() {
   VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
   VITE_REPO_URL=${VITE_REPO_URL:-}
   FORWARDED_HEADERS_TRUSTED_NETWORKS=${FORWARDED_HEADERS_TRUSTED_NETWORKS:-}
-  CORS_ALLOWED_ORIGINS="https://$PUBLIC_HOST"
+  # Browser origins allowed to call the API. Default: the web app only. The iOS/Android app (code/mobile) adds its
+  # WebView origins: https://$PUBLIC_HOST,https://localhost,capacitor://localhost (docs/design/12-mobile-capacitor.md).
+  CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://$PUBLIC_HOST}
   # Where the web pod's nginx would send /api/ (the Ingress sends /api to the API directly).
   API_UPSTREAM="lotties-api.$NS.svc.cluster.local:8080"
   DB_AUTO_MIGRATE=$(parse_bool "${DB_AUTO_MIGRATE:-false}") || die "DB_AUTO_MIGRATE must be true or false"
@@ -165,6 +170,8 @@ configure() {
   [ -n "$VITE_OIDC_CLIENT_ID" ] || die "set VITE_OIDC_CLIENT_ID (the public SPA client id) in deploy/homelab/.env"
   ! is_placeholder "$VITE_OIDC_CLIENT_ID" || die "VITE_OIDC_CLIENT_ID is still the .env.example placeholder"
   [[ "$AUTH_AUTHORITY" =~ ^https?:// && "$VITE_OIDC_AUTHORITY" =~ ^https?:// ]] || die "AUTH_AUTHORITY and VITE_OIDC_AUTHORITY must be http(s) URLs"
+  [[ "$CORS_ALLOWED_ORIGINS" =~ ^[a-z][a-z0-9+.-]*://[^,/[:space:]]+(,[a-z][a-z0-9+.-]*://[^,/[:space:]]+)*$ ]] \
+    || die "CORS_ALLOWED_ORIGINS must be comma-separated origins (scheme://host[:port], no path or spaces)"
 
   API_TAG=$(image_tag "" "${API_SOURCES[@]}")
   WEB_TAG=$(image_tag "$(web_build_salt)" "${WEB_SOURCES[@]}")

@@ -22,11 +22,29 @@ public sealed class PredictionsResponse
     /// <summary>The next night's start (bed time), or <c>null</c> when there is none to predict.</summary>
     public BedTimePredictionResponse? BedTime { get; set; }
 
-    public static PredictionsResponse Create(Guid babyId, DateTimeOffset generatedAt, PredictionSet predictions)
+    /// <summary>Recurring time-of-day patterns (additive): one entry per event type that has one (<c>belly_pain</c>, <c>fussy</c>).</summary>
+    public IReadOnlyList<TimeOfDayPatternResponse> Patterns { get; set; } = [];
+
+    /// <summary>The overtired heads-up numbers (additive), or <c>null</c> with too few daytime awake stretches.</summary>
+    public WakeWindowResponse? WakeWindow { get; set; }
+
+    /// <summary>The next wet and dirty diaper (additive); each part <c>null</c> when its gate did not pass.</summary>
+    public DiaperPredictionsResponse? Diaper { get; set; }
+
+    public static PredictionsResponse Create(
+        Guid babyId,
+        DateTimeOffset generatedAt,
+        PredictionSet predictions,
+        IReadOnlyList<TimeOfDayPatternResponse>? patterns = null,
+        WakeWindowResponse? wakeWindow = null,
+        DiaperPredictionsResponse? diaper = null)
     {
         ArgumentNullException.ThrowIfNull(predictions);
         return new PredictionsResponse
         {
+            Patterns = patterns ?? [],
+            WakeWindow = wakeWindow,
+            Diaper = diaper,
             BabyId = babyId,
             GeneratedAt = generatedAt.ToUniversalTime(),
             EngineVersion = predictions.EngineVersion,
