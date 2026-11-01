@@ -157,7 +157,7 @@ The owner asked for Siri to mirror the Alexa intents, answered by the same serve
      breast pump never get it. For the duration ones Siri asks "How many minutes?" when it was not given; "zero" sends nothing
      and the server starts a timer.
   6. Health: "Log {temperature|symptom|belly pain}" (`SiriLogHealthIntent`); temperature and level are asked after. The symptom
-     is logged without a choice, as before (the tool accepts none; no free text).
+     is logged without a choice, as before (the tool takes an optional choice from a list, not wired yet; no free text).
   7. Ask: "Ask {topic}" (`SiriAskIntent`): last feed, next nap window, next feed, next diaper change, last diaper, diapers
      today, bottles today, feeds today, sleep today, day summary, week summary, next appointment, vaccines due. "When was the
      last feed" is dropped as a phrase (it stays an intent in Shortcuts).
