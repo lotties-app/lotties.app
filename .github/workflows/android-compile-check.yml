@@ -1,0 +1,73 @@
+name: Android compile check
+
+# Builds the Android app (debug, unsigned by a release key), runs Android lint and the plain-JVM unit tests, without any
+# secret: proves that the native code (code/mobile/android, edited without Android Studio on the development machine)
+# compiles. Runs only for pull requests that touch the Android project, or by hand.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'code/mobile/android/**'
+      - 'code/mobile/package*.json'
+      - '.github/workflows/android-compile-check.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-compile-check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+
+jobs:
+  compile:
+    name: Compile, lint and unit-test Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            code/web/package-lock.json
+            code/mobile/package-lock.json
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      # Gradle caches (dependencies, wrapper); read-only outside the default branch.
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - run: npm ci
+        working-directory: code/web
+      - run: npm ci
+        working-directory: code/mobile
+      - name: Build the web app (Vite mode native) and sync it into the Android project
+        env:
+          VITE_OIDC_CLIENT_ID: compile-check
+        run: |
+          set -euo pipefail
+          npm run build:web
+          npm run sync -- android
+        working-directory: code/mobile
+      - name: Build, lint and unit tests
+        run: ./gradlew --no-daemon assembleDebug lintDebug testDebugUnitTest
+        working-directory: code/mobile/android
+      - name: Upload the lint and test reports
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-reports
+          path: |
+            code/mobile/android/app/build/reports/
+            code/mobile/android/app/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
