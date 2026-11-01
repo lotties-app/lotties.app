@@ -136,7 +136,7 @@ Keychain. Create the client once:
 2. Valid redirect URIs: `app.lotties.app://siri/callback`. Web origins: none. Advanced > PKCE method `S256`.
 3. Login settings: **Consent required** On (the parent sees the texts of 2.3), **Display client on screen** On.
 4. Client scopes tab: add `lotties.read` and `lotties.write` as **Optional** (the app asks for both, plus `offline_access`),
-   and `offline_access` as Optional. The audience mapper of 2.1 on both scopes puts `lotties-mcp` in the token.
+   and `offline_access` as Optional. The audience mapper of 2.1 on both scopes puts the MCP audience in the token.
 5. Token lifetimes: access token 5 minutes (2.2); **Offline Session Idle** 30 days or more, so Siri keeps working
    without opening the app (a longer idle time means fewer reconnects).
 
