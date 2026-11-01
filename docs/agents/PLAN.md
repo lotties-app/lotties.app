@@ -23,6 +23,7 @@ Tiers: Light=Haiku, Medium=Sonnet, Careful/Heavy=Opus per user model policy (nev
 | 16 | Measurements: `Measurement` entity + migration + endpoints; web list/chart | Medium (done) | 2, 8 | tests |
 | 17 | Napper CSV importer (API service + web upload + medication mapping step), synthetic fixtures | Careful (done) | 5, 6, 16 | tests on fixtures incl. idempotent re-import |
 | 23 | Diaper predictions (wet gap, dirty gap, lag after feeds; heuristics, see docs/ml/BENCHMARK.md) in `GET /predictions` and on Now (cards + Why sheets), opt-in heads-ups `diaper_wet_headsup` / `diaper_dirty_headsup` (3 a day per kind, 60 min apart, quiet hours), migration `DiaperHeadsUpPrefs` (not applied) | Careful (done 2026-10-22) | 7, 21 | Domain/API/web tests; docs/design/11-patterns.md section 8 |
+| 38 | Consent, terms of use and the beta notice (docs/design/38-consent-and-terms.md): `user_consents` + history (migration `Consent`), `GET/PUT /me/consents`, server gate `403 consent_required` on every baby route (gated by default, exempt-routes test), Alexa/MCP/reminders wait for it, web `ConsentGate` + consent screen + `/terms` + beta line + policy-updated notice + Settings > Privacy and data, privacy policy version 9; closes audit gaps G3 and G6 | Careful (built on `feat/consent`, not deployed; the lawyer reviews the texts) | 37 | API and web tests |
 
 Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8; 10-14 after their deps.
 

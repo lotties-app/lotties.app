@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 using Lotties.Api.Tests.Support;
 using Lotties.Application.Assistants;
@@ -211,7 +212,7 @@ public sealed class AssistantQueriesTests(ApiFactory factory) : IClassFixture<Ap
 
         Assert.Equal(AssistantResultCode.Babies, result.Code);
         Assert.Equal(
-            [new AssistantBabyAccess(babyIds[0], "Baby0", "parent", true, true), new AssistantBabyAccess(babyIds[1], "Baby1", "viewer", false, false)],
+            [new AssistantBabyAccess(babyIds[0], null, "parent", true, true), new AssistantBabyAccess(babyIds[1], null, "viewer", false, false)],
             result.Babies);
         Assert.Null(result.Baby);
     }
@@ -281,15 +282,19 @@ public sealed class AssistantQueriesTests(ApiFactory factory) : IClassFixture<Ap
     }
 
     [Fact]
-    public async Task BabyProfile_IsTheNameAndAgeOnly()
+    public async Task BabyProfile_IsTheAgeOnly_AndTheNameOnlyWithTheOptIn()
     {
         var (subject, userId) = await factory.SeedUserAsync("Parent");
         var patient = await factory.SeedPatientAsync(userId, "Theo", role: BabyRole.Parent, birthDate: new DateOnly(2025, 10, 5));
 
         var result = await _host.RunAsAsync(subject, assistant => assistant.ReadBabyProfileAsync(Invocation()));
 
-        Assert.Equal((AssistantResultCode.BabyProfile, patient.BabyId, "Theo"), (result.Code, result.Baby!.Id, result.Baby.Name));
+        Assert.Equal((AssistantResultCode.BabyProfile, patient.BabyId, (string?)null), (result.Code, result.Baby!.Id, result.Baby.Name));
         Assert.Equal(new AssistantBabyAge(97, 13, 3), result.Age);
+        var put = await factory.CreateClientFor(subject).PutAsJsonAsync("/api/v1/me/assistant-settings", new { sayBabyName = true });
+        put.EnsureSuccessStatusCode();
+        var named = await _host.RunAsAsync(subject, assistant => assistant.ReadBabyProfileAsync(Invocation()));
+        Assert.Equal("Theo", named.Baby!.Name);
     }
 
     private static string Json<T>(T value) => JsonSerializer.Serialize(value, WebJson);

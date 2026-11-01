@@ -114,6 +114,23 @@ public static class AlexaSlots
         _ => null,
     };
 
+    /// <summary>
+    /// A choice slot of a custom type whose ids are the built-in option values (<c>AssistantChoices</c>): the resolved id (or entity name)
+    /// when Alexa matched one of <paramref name="options"/>, else the spoken value when it is exactly one of them, else <c>null</c>.
+    /// What was said is never passed on as it is: only a built-in option can be stored.
+    /// </summary>
+    public static string? Choice(AlexaIntent? intent, string slot, IReadOnlyList<string> options)
+    {
+        var resolved = ResolvedId(intent, slot) ?? ResolvedName(intent, slot);
+        if (resolved is not null && options.Contains(resolved, StringComparer.Ordinal))
+        {
+            return resolved;
+        }
+
+        var spoken = Value(intent, slot)?.Trim().ToLowerInvariant().Replace(' ', '_');
+        return spoken is not null && options.Contains(spoken, StringComparer.Ordinal) ? spoken : null;
+    }
+
     private static string? Id(AlexaIntent? intent, string slot) => ResolvedId(intent, slot) ?? SynonymOf(Value(intent, slot));
 
     private static string? ResolvedId(AlexaIntent? intent, string slot) =>
@@ -121,8 +138,16 @@ public static class AlexaSlots
             .FirstOrDefault(resolution => resolution.Status?.Code == "ER_SUCCESS_MATCH")?
             .Values?.FirstOrDefault()?.Value?.Id;
 
+    private static string? ResolvedName(AlexaIntent? intent, string slot) =>
+        SlotOf(intent, slot)?.Resolutions?.ResolutionsPerAuthority?
+            .FirstOrDefault(resolution => resolution.Status?.Code == "ER_SUCCESS_MATCH")?
+            .Values?.FirstOrDefault()?.Value?.Name;
+
     private static string? SynonymOf(string? spoken) =>
         spoken is not null && Synonyms.TryGetValue(spoken.Trim(), out var id) ? id : null;
+
+    /// <summary>The raw spoken value of a slot, or <c>null</c> when absent.</summary>
+    public static string? SlotValue(AlexaIntent? intent, string slot) => SlotOf(intent, slot)?.Value is { Length: > 0 } value ? value : null;
 
     private static string? Value(AlexaIntent? intent, string slot) => SlotOf(intent, slot)?.Value is { Length: > 0 } value ? value : null;
 

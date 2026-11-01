@@ -61,11 +61,17 @@ de verdade.**
 3. No Keycloak (realm `lotties.app`), abra o usuário e deixe **Email verified = On** e **sem ações obrigatórias** (sem
    "Verify email", sem "Update password"), para o revisor não travar no login. Confirme que ele consegue entrar em uma
    janela anônima.
-4. No app, crie o bebê **"Demo Baby"** (nome fictício, data de nascimento fictícia, de uns 3 a 5 meses).
-5. Deixe o papel dessa conta como **Owner**.
-6. Ajuste "Unidades" (Ajustes > Unidades) para **Automático**.
-7. Preencha dados para os comandos de consulta terem o que dizer (ver "Dados mínimos" abaixo).
-8. **Não deixe um sono aberto.** Se houver um, o comando de janela de sono responde "está dormindo".
+4. **Aceite a tela de consentimento uma vez.** Na primeira vez que a conta abre o app Lotties aparece a tela "Antes de
+   começar" (docs/design/38-consent-and-terms.md): escolha "pai, mãe ou responsável legal da criança", marque a
+   declaração e toque em **Aceitar e continuar**. Sem esse aceite o servidor recusa tudo sobre o bebê (inclusive a
+   importação do backup) e a Alexa responde "abra o app Lotties e aceite os termos de uso". Os revisores **vão ver essa
+   tela** se a conta nunca tiver aceitado; deixe-a aceita antes de submeter. Depois de uma mudança relevante nos
+   textos (nova versão do consentimento) a conta precisa aceitar de novo antes de cada submissão.
+5. No app, crie o bebê **"Demo Baby"** (nome fictício, data de nascimento fictícia, de uns 3 a 5 meses).
+6. Deixe o papel dessa conta como **Owner**.
+7. Ajuste "Unidades" (Ajustes > Unidades) para **Automático**.
+8. Preencha dados para os comandos de consulta terem o que dizer (ver "Dados mínimos" abaixo).
+9. **Não deixe um sono aberto.** Se houver um, o comando de janela de sono responde "está dormindo".
 
 ### Dados mínimos da conta de demonstração
 
@@ -83,9 +89,23 @@ Para todas as respostas da Alexa terem conteúdo:
 | vacinas pendentes | o bebê com data de nascimento que gere vacinas pendentes ou em dia |
 | por que está chorando | dados recentes de mamada, fralda e sono (e o resultado sempre traz o aviso) |
 
-Atalho: peça-me um arquivo de **backup sintético** do Lotties (o formato `lotties-backup`, que o app importa em
-Hub > Importar) com uma semana de eventos fictícios para o "Demo Baby". Só gero dados inventados, nunca de uma criança
-real.
+Atalho (recomendado): o repositório gera um **backup sintético** com 14 dias de dados inventados (56 sonos, 70 mamadeiras, 98 fraldas, nenhum sono aberto) para um bebê fictício chamado **Lia** (nascimento 2026-06-20), que o app importa sem erro:
+
+1. O arquivo já foi gerado em `docs/samples/lotties-demo-backup-lia.json` (essa pasta é ignorada pelo git; não há dado real nele).
+2. No app, com a conta de demonstração: **Hub > Import backup**, escolha esse arquivo e confirme. Isso cria o bebê "Lia" com os dados (use-o no lugar de criar "Demo Baby" à mão).
+3. Para refazer o arquivo (por exemplo, com datas mais novas), rode no clone:
+
+```bash
+scripts/generate-demo-backup.sh   # Windows: scripts\generate-demo-backup.ps1
+```
+
+O arquivo cobre um mês e termina no momento em que é gerado: tudo finalizado, com um único sono em andamento (à noite o da noite, de dia uma soneca começada há 20 minutos). Gere-o e importe-o logo antes de enviar a skill, e de novo se a revisão demorar dias: com dados antigos o app mostra "acordada há dezenas de horas".
+
+   O teste também importa o arquivo no servidor de testes e falha se qualquer registro for recusado. As datas vão de 2026-10-12 a 2026-10-25; para outras datas, mude `FirstDay` e `LastDay` em `code/api/tests/Lotties.Api.Tests/Backups/DemoBackupGenerator.cs`.
+4. **Nomes:** use "Lia" (não "Alexa Baby": a resposta falada "Alexa Baby tomou…" acorda a assistente em um aparelho de verdade).
+5. As respostas de "hoje" ficam vazias, porque o histórico termina em 2026-10-25. Registre uma mamadeira e uma fralda por voz antes de enviar (ou antes de cada revisão) para as consultas do dia terem o que dizer.
+
+---
 
 ## Etapa 3. Textos e imagens da página do skill
 
@@ -138,11 +158,14 @@ Português (nome do skill sempre, com "ao" quando a frase pede):
 - `pergunte ao lotties quantas mamadas hoje`
 - `pergunte ao lotties qual a próxima janela de sono`
 - `pergunte ao lotties por que ela está chorando` (tem que terminar com o aviso e os sinais de alerta)
+- `peça ao lotties para registrar banho`
+- `peça ao lotties para registrar temperatura 37` e `pergunte ao lotties quando é o próximo remédio` (a resposta de lembrete tem que terminar com: são lembretes dos medicamentos que você cadastrou, não recomendações do Lotties)
+- `pergunte ao lotties quando é a próxima consulta` (pode dizer a especialidade, como "com pediatra", nunca o nome de um médico ou clínica)
 - `peça ao lotties para desfazer o último registro` (deve dizer que nada foi apagado)
 
 English (US): as equivalentes em `ALEXA-CERTIFICATION.md` (`open lotties`, `tell lotties the baby fell asleep`, `ask
 lotties when was the last feed`, `tell lotties to log a bottle` + `one hundred twenty`, `ask lotties how many diapers
-today`, `ask lotties how much did she drink today`, `ask lotties when is the next nap window`, `ask lotties why is she
+today`, `tell lotties to log a bath`, `ask lotties is any medicine due`, `ask lotties how much did she drink today`, `ask lotties when is the next nap window`, `ask lotties why is she
 crying`, `tell lotties to undo the last thing`).
 
 Confira também:
@@ -165,7 +188,7 @@ Console > **Certification** > **Submission** (ou o formulário "Testing Instruct
 - Informe que o skill exige vincular a conta, que abrir o skill e a ajuda funcionam sem vincular, e que os comandos de
   escrita dizem na tela do app "Adicionado pela Alexa".
 - Informe que o skill **nunca exclui registros** (só pede, e a pessoa aprova no app) e que **não dá conselho médico,
-  dose nem diagnóstico**.
+  dose nem diagnóstico**. Os comandos de remédio só registram que foi dada uma dose de um remédio cadastrado no app, do jeito que a pessoa disse, e leem os lembretes cadastrados no app (sempre "não são recomendações do Lotties"); nunca sugerem, conferem nem dizem uma dose.
 
 ## Etapa 7. Validação e envio
 
@@ -192,9 +215,9 @@ A Amazon responde por e-mail e no console, dizendo o que falhou. Os motivos mais
 | --- | --- |
 | nome de invocação de uma palavra sem prova de marca | trocar para `lotties baby` (Etapa 1) e reenviar |
 | frase de exemplo não funciona como escrita | reescrever a frase no console para a que o simulador aceita |
-| conta de demonstração não entra, ou sem dados | consertar a conta (Etapa 2) e responder com a nova senha no campo de teste |
+| conta de demonstração não entra, sem dados, ou a Alexa diz "abra o app Lotties e aceite os termos" | consertar a conta (Etapa 2; abrir o app com ela e aceitar a tela de consentimento) e responder com a nova senha no campo de teste |
 | política de privacidade sem a parte da Alexa, ou sem contato | completar a política (Etapa 4) e reenviar |
-| resposta de saúde percebida como conselho médico | confirmar que o texto de choro traz o aviso e os sinais de alerta; mostrar nas notas que o skill nunca dá dose ou diagnóstico |
+| resposta de saúde percebida como conselho médico | confirmar que o texto de choro traz o aviso e os sinais de alerta; mostrar nas notas que o skill nunca dá dose ou diagnóstico; os lembretes de remédio são os que a família cadastrou e dizem isso |
 | vinculação de conta falha | conferir os três redirect URLs no Keycloak e o `Client ID`/secret do console |
 
 Cada rodada recomeça a contagem de dias úteis. Guarde o texto de cada rejeição na issue do projeto (sem credenciais).
@@ -214,7 +237,7 @@ Cada rodada recomeça a contagem de dias úteis. Guarde o texto de cada rejeiç�
 - [ ] Nome decidido: `lotties` ou `lotties baby`
 - [ ] Modelos atuais colados e construídos (pt-BR e en-US)
 - [ ] Endpoint com a opção de certificado de curinga
-- [ ] Conta de demonstração com dados, sem sono aberto, e-mail verificado, sem ações obrigatórias
+- [ ] Conta de demonstração com dados, sem sono aberto, e-mail verificado, sem ações obrigatórias, **com a tela de consentimento já aceita na versão atual**
 - [ ] Textos e frases de exemplo testados no simulador, nos dois idiomas
 - [ ] Ícones 108x108 e 512x512 enviados
 - [ ] Política de privacidade aberta e com responsável e contato reais

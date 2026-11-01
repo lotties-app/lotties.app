@@ -92,6 +92,12 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>Users' measurement unit setting (one per user; docs/design/37-measurement-units.md).</summary>
     public DbSet<Lotties.Domain.Units.UserUnitSettings> UserUnitSettings => Set<Lotties.Domain.Units.UserUnitSettings>();
 
+    /// <summary>People's current consents, one per user and kind (docs/design/38-consent-and-terms.md).</summary>
+    public DbSet<Lotties.Domain.Consents.UserConsent> UserConsents => Set<Lotties.Domain.Consents.UserConsent>();
+
+    /// <summary>The append-only history of the consents (granted, withdrawn).</summary>
+    public DbSet<Lotties.Domain.Consents.UserConsentHistoryEntry> UserConsentHistory => Set<Lotties.Domain.Consents.UserConsentHistoryEntry>();
+
     /// <summary>The project board's topics (docs/design/36-project-board.md; internal project tracking, never baby data).</summary>
     public DbSet<Lotties.Domain.Board.BoardTopic> BoardTopics => Set<Lotties.Domain.Board.BoardTopic>();
 

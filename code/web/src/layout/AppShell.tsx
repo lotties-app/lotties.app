@@ -19,6 +19,7 @@ import { BottomNav } from './BottomNav';
 import { ErrorBoundary } from './ErrorBoundary';
 import { NAV_CONTENT_PADDING } from './navMetrics';
 import { OffTabAdd } from './OffTabAdd';
+import { PolicyUpdatedNotice } from '../consent/PolicyUpdatedNotice';
 import { SessionBanner } from './SessionBanner';
 import { NightFeedBanner } from './NightFeedBanner';
 
@@ -53,6 +54,7 @@ function ShellBody() {
         >
           <TopBar baby={baby} />
           <SessionBanner />
+          <PolicyUpdatedNotice />
           <NightFeedBanner />
           <Box
             component="main"

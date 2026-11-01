@@ -44,6 +44,10 @@ export const privacyEn: PolicyDocument = {
       blocks: [
         {
           kind: 'p',
+          text: 'Lotties was built to help parents navigate the journey of raising a baby without the burden of expensive tracking tools and subscriptions. It exists because we believe every family deserves access to the same tools we use for our own children, free from cost barriers.',
+        },
+        {
+          kind: 'p',
           text: "This policy explains how the Lotties service at lotties.app and its iOS and Android apps handle personal data. Responsible for that data (the controller, or controlador, under Brazil's General Data Protection Law, the LGPD): {controller}.",
         },
         { kind: 'p', text: 'Contact: {contact}. Data protection contact (encarregado): {dpo}.' },
@@ -77,6 +81,14 @@ export const privacyEn: PolicyDocument = {
                 'Your sign-in account',
                 'The details you register with at our sign-in server (Keycloak), such as your name and email address, and your password, which Keycloak keeps only in a protected form (a one-way hash). The Lotties server keeps just an internal id and your display name; it never reads your email. The app on your device receives your name and email from the sign-in server. We also keep your measurement unit choice (automatic, metric or US customary), which only changes how amounts are shown to you; records stay stored in metric units.',
                 'To let you sign in on your devices, and to show your name to the people you share a baby with.',
+              ],
+            },
+            {
+              id: 'consent',
+              cells: [
+                'Your consent records',
+                "When you accept the terms of use and this policy: your internal user id, the version you accepted, the date and time, the language you read it in and whether you declared that you are the child's parent or legal guardian or an adult they authorised. The same for each optional feature you turn on or off (reminders, the Alexa skill, AI assistants). No IP address and no device details.",
+                'To show that you consented, to ask again after a material change, and to keep the optional choices you made. Deleted with your account.',
               ],
             },
             {
@@ -155,8 +167,8 @@ export const privacyEn: PolicyDocument = {
               id: 'assistants',
               cells: [
                 'Voice assistant (Alexa)',
-                'The baby you choose for voice commands (Settings > Voice assistants) and, if you enable and link the Lotties Alexa skill, in each request from Amazon the command and its values (such as "bottle" and "120 ml"), the language and a sign-in token for your account.',
-                'To log entries and answer questions by voice.',
+                'The baby you choose for voice commands (Settings > Voice assistants) and, if you enable and link the Lotties Alexa skill, in each request from Amazon the command and its values (such as "bottle" and "120 ml", a temperature reading, a belly pain level from 1 to 5, a symptom or milestone chosen from a fixed list, or the name of a medicine you registered when you say you gave a dose), the language and a sign-in token for your account.',
+                'To log entries, to answer questions and to read back the medicine reminders you registered, by voice.',
               ],
             },
             {
@@ -236,6 +248,27 @@ export const privacyEn: PolicyDocument = {
       ],
     },
     {
+      id: 'consent',
+      title: 'Your consent and the terms of use',
+      blocks: [
+        {
+          kind: 'p',
+          text: "Before you use Lotties we ask you to accept the [Terms of use](/terms) and this policy, once for each version, and to declare that you are the child's parent or legal guardian, or an adult they authorised (a family member, caregiver or health professional). It is your specific and highlighted consent to process a child's health data to run the service (LGPD art. 11, I, and art. 14, §1). Each person consents for herself, the family's owner, an invited parent or caregiver and a doctor alike.",
+        },
+        {
+          kind: 'list',
+          items: [
+            'What we record: your user id, the version, the date and time, the language of the text and the capacity you declared. Not your IP address. The records are deleted with your account.',
+            "Until you accept, the server refuses every request for a baby's data, and reminders, the Alexa skill and AI assistants do not work for you. You can always open your account settings, download your data and delete your account.",
+            'Optional features (reminders, the Alexa skill, AI assistants) have their own consent, off by default, recorded when you turn them on or off, with a sentence next to the switch saying what leaves our control.',
+            'A material change (new data collected, a new recipient or purpose, a change in your rights or in who is responsible) asks for your consent again before you continue. A minor change shows a notice with a link to this page.',
+            'You can withdraw your consent at any time. Because Lotties cannot work without it, withdrawing means downloading your data and deleting your account in Settings > Privacy and data. If you decline at the start, you are signed out and nothing about a child is stored.',
+            'Lotties is a beta: it can have bugs, go offline and lose data, and no system is fully secure, so a leak cannot be ruled out. We take the security measures described below and, if something relevant happens, we will tell you and the ANPD as the law requires.',
+          ],
+        },
+      ],
+    },
+    {
       id: 'sharing',
       title: 'Who sees your data and who we share it with',
       blocks: [],
@@ -289,7 +322,7 @@ export const privacyEn: PolicyDocument = {
                   id: 'alexa',
                   cells: [
                     'Amazon (Alexa)',
-                    "Amazon records and processes what you say to Alexa, under Amazon's own privacy terms. Lotties receives only the command and its values, and sends back a short answer that Alexa speaks, which can include your baby's name, feed and sleep times, diaper counts, the next appointment and vaccines that are due, and estimates and summaries worked out from your log: the expected next nap, feed or diaper change, the diapers a day on average, the amounts of the last bottles, the sleep so far today, and, if you ask why the baby is crying, the likeliest everyday causes with the logged facts behind them. Entries made by voice are marked in the app as made through Alexa; the mark holds only the word “alexa” and, for a deletion request, the time. Amazon also keeps the sign-in token that links the skill to your account.",
+                    "Amazon records and processes what you say to Alexa, under Amazon's own privacy terms. Lotties receives only the command and its values, and sends back a short answer that Alexa speaks. The answer does not include your baby's name unless you turn on “Say my baby's name in answers” in Settings, Voice assistants, and it does not include the name of a medicine unless you turn on “Say the names of my medicines in answers” there. It never includes text that you or other people typed (notes, appointment titles, formula names) or any data about a doctor or a clinic (name, address, phone, e-mail, registration): of the doctor it can say only the specialty of the next appointment, such as “with a pediatrician”, when what you typed matches a known specialty. It never includes the amount, dose, schedule or interval of a medicine. It can include feed and sleep times, diaper counts, the date and time of the next appointment (and, for a built-in kind such as a vaccination, that kind), the vaccines that are due, what you just logged (such as a bath, a temperature reading, a symptom or that a medicine dose was given, as you said it, with no judgement and no advice), the number of medicine reminders you registered that are due and the time of the next one (with the statement that they are your own reminders and not recommendations from Lotties), and estimates and summaries worked out from your log: the expected next nap, feed or diaper change, the diapers a day on average, the amounts of the last bottles, the sleep so far today, and, if you ask why the baby is crying, the likeliest everyday causes with the logged facts behind them. Entries made by voice are marked in the app as made through Alexa; the mark holds only the word “alexa” and, for a deletion request, the time. Amazon also keeps the sign-in token that links the skill to your account.",
                     'Only if you enable the Lotties skill and link your account. Unlink it in the Alexa app to stop.',
                   ],
                 },

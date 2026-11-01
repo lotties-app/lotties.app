@@ -1,5 +1,6 @@
 using Lotties.Api.Assistants;
 using Lotties.Api.Assistants.Mcp;
+using Lotties.Api.Consents;
 using Lotties.Application.Assistants;
 using Lotties.Application.Professionals;
 using Lotties.Application.Units;
@@ -15,6 +16,8 @@ internal static class MeEndpoints
     private const string AssistantSettingsPath = "/me/assistant-settings";
     private const string UnitSettingsPath = "/me/unit-settings";
 
+    private const string MeReason = "The person's own account, profile and settings: no baby data, and she must always be able to see, export and delete what is hers (docs/design/38-consent-and-terms.md).";
+
     /// <summary>
     /// Maps <c>GET /me</c> (the signed-in user, created on first sign-in) and the caller's own professional profile:
     /// <c>GET /me/professional-profile</c> (404 <c>professional_profile_not_found</c> before she declares one) and
@@ -27,29 +30,39 @@ internal static class MeEndpoints
     {
         ArgumentNullException.ThrowIfNull(api);
         api.MapGet("/me", GetCurrentUserAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("GetCurrentUser")
             .Produces(StatusCodes.Status401Unauthorized);
         api.MapGet(ProfessionalProfilePath, GetProfessionalProfileAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("GetProfessionalProfile")
             .ProducesProblem(StatusCodes.Status404NotFound);
         api.MapPut(ProfessionalProfilePath, SaveProfessionalProfileAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("SaveProfessionalProfile")
             .ProducesProblem(StatusCodes.Status400BadRequest);
         api.MapGet("/me/deletion-preview", PreviewDeletionAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("PreviewAccountDeletion");
         api.MapDelete("/me", DeleteAccountAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("DeleteAccount")
             .ProducesProblem(StatusCodes.Status409Conflict);
         api.MapGet(AssistantSettingsPath, GetAssistantSettingsAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("GetAssistantSettings");
         api.MapPut(AssistantSettingsPath, SaveAssistantSettingsAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("SaveAssistantSettings")
             .ProducesProblem(StatusCodes.Status400BadRequest);
         api.MapGet(UnitSettingsPath, GetUnitSettingsAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("GetUnitSettings");
         api.MapPut(UnitSettingsPath, SaveUnitSettingsAsync)
+            .AllowWithoutConsent(MeReason)
             .WithName("SaveUnitSettings")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapConsentEndpoints();
         return api;
     }
 

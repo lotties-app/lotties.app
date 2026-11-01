@@ -1,16 +1,21 @@
 using Lotties.Application.Clinical;
 using Lotties.Application.Events;
+using Lotties.Application.Users;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
+using Lotties.Domain.CareProviders;
 using Lotties.Domain.Clinical;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Formulas;
+using Lotties.Domain.Measurements;
+using Lotties.Domain.Medications;
 using Lotties.Domain.Patterns;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Units;
 using Lotties.Application.Units;
+using Lotties.Domain.Prescriptions;
 using Microsoft.Extensions.Logging;
 
 namespace Lotties.Application.Assistants;
@@ -33,9 +38,13 @@ internal sealed class AssistantService(
     IAppointmentRepository appointments,
     VaccineOverviewReader vaccines,
     DailyObservationReader dailyObservations,
-    AssistantForecasts forecasts,
+AssistantForecasts forecasts,
     AssistantCryReasons cryReasons,
     IUnitPreferences unitPreferences,
+    IPrescriptionRepository prescriptions,
+    IMedicationRepository medications,
+    IMedicationDoseHistoryRepository medicationDoses,
+    ICareProviderRepository careProviders,
     ILogger<AssistantService> logger) : IAssistantService
 {
     /// <summary>How far back a day or week summary may be asked for, in days before the user's today.</summary>
@@ -59,7 +68,8 @@ internal sealed class AssistantService(
     private const int VaccinesTold = 5;
     private const string WokeUpEntry = "woke_up";
     private const int AverageDays = 7;
-    private static readonly string[] MadeByAssistantKeys = [SleepKey, FeedingKey, DiaperKey];
+    /// <summary>Every built-in kind of entry an assistant command can create: "undo the last thing" looks at all of them, so the newest is never skipped.</summary>
+    private static readonly string[] MadeByAssistantKeys = BuiltInEventTypes.All.Select(type => type.Key.Value).ToArray();
     private static readonly TimeSpan DeleteWindow = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan DeleteLookback = TimeSpan.FromHours(1);
     private const int MinimumAverageDays = 3;
@@ -115,7 +125,7 @@ internal sealed class AssistantService(
         {
             Code = AssistantResultCode.Babies,
             AsOf = family.Now,
-            Babies = family.Members.Select(AccessOf).ToArray(),
+            Babies = family.Members.Select(member => AccessOf(member, family.SayBabyName)).ToArray(),
         };
         Log(invocation, AssistantCommands.ListBabies, result);
         return result;
@@ -239,8 +249,8 @@ internal sealed class AssistantService(
         return subject.Result(AssistantResultCode.BabyProfile) with { Age = new AssistantBabyAge(days, days / WeekDays, months) };
     }
 
-    private static AssistantBabyAccess AccessOf(AssistantFamilyMember member) =>
-        new(member.Baby.Id, member.Baby.Name, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
+    private static AssistantBabyAccess AccessOf(AssistantFamilyMember member, bool sayBabyName) =>
+        new(member.Baby.Id, sayBabyName ? member.Baby.Name : null, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
 
     /// <summary>The user's local clock, or UTC days when no zone is known (summaries then report <c>UTC</c>).</summary>
     private static LocalClock ClockOf(AssistantSubject subject) =>
@@ -304,7 +314,6 @@ internal sealed class AssistantService(
             At = stored.StartedAt,
             AmountMl = feed.AmountMl,
             BottleKind = feed.BottleKind,
-            FormulaName = feed.FormulaName,
         };
     }
 
@@ -530,8 +539,22 @@ internal sealed class AssistantService(
             : subject.Result(AssistantResultCode.NextAppointment) with
             {
                 At = next.StartsAt,
-                Appointment = new AssistantAppointment(next.StartsAt, next.Title, next.Type.ToString().ToLowerInvariant()),
+                Appointment = new AssistantAppointment(next.StartsAt, next.Type.ToString().ToLowerInvariant(), await SpecialtyCodeAsync(subject, next.ProviderId, cancellationToken)),
             };
+    }
+
+    /// <summary>
+    /// The only thing said about the doctor: the code of her specialty, when the care provider linked to the appointment (one of this
+    /// baby's, not deleted) typed a specialty that is one of the known ones. The typed text, the name and everything else stay here.
+    /// </summary>
+    private async Task<string?> SpecialtyCodeAsync(AssistantSubject subject, Guid? providerId, CancellationToken cancellationToken)
+    {
+        if (providerId is not { } id || await careProviders.FindAsync(id, cancellationToken) is not { } provider || provider.BabyId != subject.Baby.Id || provider.IsDeleted)
+        {
+            return null;
+        }
+
+        return DoctorSpecialties.CodeOf(provider.Specialty);
     }
 
     private async Task<AssistantResult> DueVaccinesAsync(AssistantSubject subject, CancellationToken cancellationToken)
@@ -624,6 +647,297 @@ internal sealed class AssistantService(
     private static double OneDecimal(double value) => Math.Round(value, 1, MidpointRounding.AwayFromZero);
 
     private static int? WholeMinutes(TimeSpan? duration) => duration is { } value ? (int)Math.Floor(value.TotalMinutes) : null;
+
+    public Task<AssistantResult> LogBathAsync(AssistantInvocation invocation, decimal? temperature, TemperatureUnit? unit = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Bath, AssistantAccess.Log, subject => LogBathInnerAsync(invocation, subject, temperature, unit, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogTummyTimeAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.TummyTime, AssistantAccess.Log, subject => LogTummyTimeInnerAsync(invocation, subject, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogBellyPainAsync(AssistantInvocation invocation, int? intensity, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BellyPain, AssistantAccess.Log, subject => LogBellyPainInnerAsync(invocation, subject, intensity, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogBreastPumpAsync(AssistantInvocation invocation, int? amountLeftMl, int? amountRightMl, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BreastPump, AssistantAccess.Log, subject => LogBreastPumpInnerAsync(invocation, subject, amountLeftMl, amountRightMl, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogNasalSuctionAsync(AssistantInvocation invocation, string? tool, bool? saline, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.NasalSuction, AssistantAccess.Log, subject => LogNasalSuctionInnerAsync(invocation, subject, tool, saline, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogBellyMassageAsync(AssistantInvocation invocation, string? reason, string? helped, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.BellyMassage, AssistantAccess.Log, subject => LogBellyMassageInnerAsync(invocation, subject, reason, helped, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogFussyAsync(AssistantInvocation invocation, string? intensity, string? whatHelped, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Fussy, AssistantAccess.Log, subject => LogFussyInnerAsync(invocation, subject, intensity, whatHelped, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogNailTrimAsync(AssistantInvocation invocation, string? where, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.NailTrim, AssistantAccess.Log, subject => LogNailTrimInnerAsync(invocation, subject, where, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogTemperatureAsync(AssistantInvocation invocation, decimal? value, TemperatureUnit? unit = null, string? method = null, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Temperature, AssistantAccess.Log, subject => LogTemperatureInnerAsync(invocation, subject, value, unit, method, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogSpitUpAsync(AssistantInvocation invocation, string? kind, string? amount, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.SpitUp, AssistantAccess.Log, subject => LogSpitUpInnerAsync(invocation, subject, kind, amount, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogTeethingAsync(AssistantInvocation invocation, string? stage, string? tooth, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Teething, AssistantAccess.Log, subject => LogTeethingInnerAsync(invocation, subject, stage, tooth, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogMilestoneAsync(AssistantInvocation invocation, string? milestone, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Milestone, AssistantAccess.Log, subject => LogMilestoneInnerAsync(invocation, subject, milestone, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogSymptomAsync(AssistantInvocation invocation, string? symptom, string? severity, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Symptom, AssistantAccess.Log, subject => LogSymptomInnerAsync(invocation, subject, symptom, severity, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogOutdoorAsync(AssistantInvocation invocation, string? kind, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Outdoor, AssistantAccess.Log, subject => LogOutdoorInnerAsync(invocation, subject, kind, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogSkinCareAsync(AssistantInvocation invocation, string? product, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.SkinCare, AssistantAccess.Log, subject => LogSkinCareInnerAsync(invocation, subject, product, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> LogMedicationAsync(AssistantInvocation invocation, string? medicationName, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.Medication, AssistantAccess.Log, subject => LogMedicationInnerAsync(invocation, subject, medicationName, cancellationToken), cancellationToken);
+
+    public Task<AssistantResult> ReadMedicationReminderAsync(AssistantInvocation invocation, CancellationToken cancellationToken = default) =>
+        RunAsync(invocation, AssistantCommands.MedicationReminder, AssistantAccess.Read, subject => ReadMedicationReminderInnerAsync(subject, cancellationToken), cancellationToken);
+
+    /// <summary>An instant marker: the stored event when this request id already wrote it (a retry), else a new one with the payload.</summary>
+    private async Task<Event> MarkerAsync(AssistantInvocation invocation, AssistantSubject subject, string command, Guid typeId, EventPayload payload, CancellationToken cancellationToken)
+    {
+        var eventId = IdOf(invocation, command, subject);
+        return await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken)
+            ?? await CreateAsync(subject, eventId, typeId, subject.Now, subject.Now, payload, cancellationToken);
+    }
+
+    /// <summary>A timer started now (no end): the stored event on a retry, else a new running one.</summary>
+    private async Task<Event> TimerAsync(AssistantInvocation invocation, AssistantSubject subject, string command, Guid typeId, EventPayload payload, CancellationToken cancellationToken)
+    {
+        var eventId = IdOf(invocation, command, subject);
+        return await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken)
+            ?? await CreateAsync(subject, eventId, typeId, subject.Now, endedAt: null, payload, cancellationToken);
+    }
+
+    private static AssistantResult Invalid(AssistantSubject subject, string field, int min, int max) =>
+        subject.Result(AssistantResultCode.InvalidValue) with { Field = field, Min = min, Max = max };
+
+    /// <summary>
+    /// Degrees Celsius, one decimal, of a temperature said in <paramref name="unit"/>; without one it is read in the user's unit system
+    /// (docs/design/37-measurement-units.md section 6, as bottle amounts are). Absurd magnitudes are capped so the maths stays in range.
+    /// </summary>
+    private async Task<decimal?> CelsiusOfAsync(AssistantInvocation invocation, decimal? value, TemperatureUnit? unit, CancellationToken cancellationToken)
+    {
+        if (value is not { } said)
+        {
+            return null;
+        }
+
+        var capped = Math.Clamp(said, -MaxSpokenAmount, MaxSpokenAmount);
+        var chosen = unit ?? (await unitPreferences.ResolveAsync(invocation.Locale, cancellationToken) == UnitSystem.Us ? TemperatureUnit.Fahrenheit : TemperatureUnit.Celsius);
+        return chosen == TemperatureUnit.Fahrenheit ? UnitConversions.FahrenheitToCelsius(capped) : Math.Round(capped, 1, MidpointRounding.AwayFromZero);
+    }
+
+    private async Task<AssistantResult> LogBathInnerAsync(AssistantInvocation invocation, AssistantSubject subject, decimal? temperature, TemperatureUnit? unit, CancellationToken cancellationToken)
+    {
+        var water = await CelsiusOfAsync(invocation, temperature, unit, cancellationToken);
+        if (water is { } celsius && !AssistantLimits.IsBathWaterC(celsius))
+        {
+            return Invalid(subject, "water_temperature", AssistantLimits.BathWaterMinC, AssistantLimits.BathWaterMaxC);
+        }
+
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.Bath, BuiltInEventTypes.BathId, AssistantPayloads.Bath(water), cancellationToken);
+        return subject.Result(AssistantResultCode.BathLogged) with { At = stored.StartedAt, TemperatureC = water };
+    }
+
+    private async Task<AssistantResult> LogTummyTimeInnerAsync(AssistantInvocation invocation, AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var started = await TimerAsync(invocation, subject, AssistantCommands.TummyTime, BuiltInEventTypes.TummyTimeId, AssistantPayloads.TummyTime(), cancellationToken);
+        return subject.Result(AssistantResultCode.TummyTimeStarted) with { At = started.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogBellyPainInnerAsync(AssistantInvocation invocation, AssistantSubject subject, int? intensity, CancellationToken cancellationToken)
+    {
+        if (!AssistantLimits.IsPain(intensity))
+        {
+            return Invalid(subject, "pain_level", AssistantLimits.PainMin, AssistantLimits.PainMax);
+        }
+
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.BellyPain, BuiltInEventTypes.BellyPainId, AssistantPayloads.BellyPain(intensity!.Value), cancellationToken);
+        return subject.Result(AssistantResultCode.BellyPainLogged) with { At = stored.StartedAt, Intensity = intensity.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) };
+    }
+
+    private async Task<AssistantResult> LogBreastPumpInnerAsync(AssistantInvocation invocation, AssistantSubject subject, int? amountLeftMl, int? amountRightMl, CancellationToken cancellationToken)
+    {
+        if ((amountLeftMl is not null && !AssistantLimits.IsPumpAmount(amountLeftMl)) || (amountRightMl is not null && !AssistantLimits.IsPumpAmount(amountRightMl)))
+        {
+            return Invalid(subject, "pump_amount", AssistantLimits.PumpMinMl, AssistantLimits.PumpMaxMl);
+        }
+
+        var started = await TimerAsync(invocation, subject, AssistantCommands.BreastPump, BuiltInEventTypes.BreastPumpId, AssistantPayloads.BreastPump(amountLeftMl, amountRightMl), cancellationToken);
+        return subject.Result(AssistantResultCode.BreastPumpStarted) with { At = started.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogNasalSuctionInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? tool, bool? saline, CancellationToken cancellationToken)
+    {
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.NasalSuction, BuiltInEventTypes.NasalSuctionId, AssistantPayloads.NasalSuction(AssistantChoices.NasalTool(tool), saline), cancellationToken);
+        return subject.Result(AssistantResultCode.NasalSuctionLogged) with { At = stored.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogBellyMassageInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? reason, string? helped, CancellationToken cancellationToken)
+    {
+        var payload = AssistantPayloads.BellyMassage(AssistantChoices.MassageReason(reason), AssistantChoices.MassageHelped(helped));
+        var started = await TimerAsync(invocation, subject, AssistantCommands.BellyMassage, BuiltInEventTypes.BellyMassageId, payload, cancellationToken);
+        return subject.Result(AssistantResultCode.BellyMassageStarted) with { At = started.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogFussyInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? intensity, string? whatHelped, CancellationToken cancellationToken)
+    {
+        var chosen = AssistantChoices.FussyIntensity(intensity);
+        var started = await TimerAsync(invocation, subject, AssistantCommands.Fussy, BuiltInEventTypes.FussyId, AssistantPayloads.Fussy(chosen, AssistantChoices.FussyWhatHelped(whatHelped)), cancellationToken);
+        return subject.Result(AssistantResultCode.FussyStarted) with { At = started.StartedAt, Intensity = chosen };
+    }
+
+    private async Task<AssistantResult> LogNailTrimInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? where, CancellationToken cancellationToken)
+    {
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.NailTrim, BuiltInEventTypes.NailTrimId, AssistantPayloads.NailTrim(AssistantChoices.NailWhere(where)), cancellationToken);
+        return subject.Result(AssistantResultCode.NailTrimLogged) with { At = stored.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogTemperatureInnerAsync(AssistantInvocation invocation, AssistantSubject subject, decimal? value, TemperatureUnit? unit, string? method, CancellationToken cancellationToken)
+    {
+        var celsius = await CelsiusOfAsync(invocation, value, unit, cancellationToken);
+        if (celsius is not { } reading || !AssistantLimits.IsTemperatureC(reading))
+        {
+            return Invalid(subject, "temperature", AssistantLimits.TemperatureMinC, AssistantLimits.TemperatureMaxC);
+        }
+
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.Temperature, BuiltInEventTypes.TemperatureId, AssistantPayloads.Temperature(reading, AssistantChoices.TemperatureMethod(method)), cancellationToken);
+        return subject.Result(AssistantResultCode.TemperatureLogged) with { At = stored.StartedAt, TemperatureC = reading };
+    }
+
+    private async Task<AssistantResult> LogSpitUpInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? kind, string? amount, CancellationToken cancellationToken)
+    {
+        var payload = AssistantPayloads.SpitUp(AssistantChoices.SpitUpKind(kind), AssistantChoices.SpitUpAmount(amount));
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.SpitUp, BuiltInEventTypes.SpitUpId, payload, cancellationToken);
+        return subject.Result(AssistantResultCode.SpitUpLogged) with { At = stored.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogTeethingInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? stage, string? tooth, CancellationToken cancellationToken)
+    {
+        var chosenStage = AssistantChoices.TeethingStage(stage);
+        var chosenTooth = chosenStage == "tooth_came_through" ? AssistantChoices.TeethingTooth(tooth) : null;
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.Teething, BuiltInEventTypes.TeethingId, AssistantPayloads.Teething(chosenStage, chosenTooth), cancellationToken);
+        return subject.Result(AssistantResultCode.TeethingLogged) with { At = stored.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogMilestoneInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? milestone, CancellationToken cancellationToken)
+    {
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.Milestone, BuiltInEventTypes.MilestoneId, AssistantPayloads.Milestone(AssistantChoices.Milestone(milestone)), cancellationToken);
+        return subject.Result(AssistantResultCode.MilestoneLogged) with { At = stored.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogSymptomInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? symptom, string? severity, CancellationToken cancellationToken)
+    {
+        var payload = AssistantPayloads.Symptom(AssistantChoices.Symptom(symptom), AssistantChoices.SymptomSeverity(severity));
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.Symptom, BuiltInEventTypes.SymptomId, payload, cancellationToken);
+        return subject.Result(AssistantResultCode.SymptomLogged) with { At = stored.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogOutdoorInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? kind, CancellationToken cancellationToken)
+    {
+        var started = await TimerAsync(invocation, subject, AssistantCommands.Outdoor, BuiltInEventTypes.OutdoorId, AssistantPayloads.Outdoor(AssistantChoices.OutdoorKind(kind)), cancellationToken);
+        return subject.Result(AssistantResultCode.OutdoorStarted) with { At = started.StartedAt };
+    }
+
+    private async Task<AssistantResult> LogSkinCareInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? product, CancellationToken cancellationToken)
+    {
+        var stored = await MarkerAsync(invocation, subject, AssistantCommands.SkinCare, BuiltInEventTypes.SkinCareId, AssistantPayloads.SkinCare(AssistantChoices.SkinProduct(product)), cancellationToken);
+        return subject.Result(AssistantResultCode.SkinCareLogged) with { At = stored.StartedAt };
+    }
+
+    /// <summary>
+    /// A dose of a registered medicine given now, recorded as said: the medicine is matched by name among the baby's medicines and
+    /// needs an active prescription for the user's local today; the entry copies what the family registered (name, dose, prescription)
+    /// as the app's own "given" does. Nothing is computed, checked or judged here (no interval, no maximum, no "too early"): the
+    /// app's status screens do that for the family, voice only keeps the record.
+    /// </summary>
+    private async Task<AssistantResult> LogMedicationInnerAsync(AssistantInvocation invocation, AssistantSubject subject, string? medicationName, CancellationToken cancellationToken)
+    {
+        var eventId = IdOf(invocation, AssistantCommands.Medication, subject);
+        if (await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken) is { } replayed)
+        {
+            return subject.Result(AssistantResultCode.MedicationLogged) with { At = replayed.StartedAt, Medicine = subject.SayMedicineNames ? MedicineNameOf(replayed) : null };
+        }
+
+        var name = medicationName?.Trim();
+        if (string.IsNullOrEmpty(name) || name.Length > MaxMedicationNameLength)
+        {
+            return subject.Result(AssistantResultCode.NoActivePrescription);
+        }
+
+        var meds = await medications.ListForBabyAsync(subject.Baby.Id, cancellationToken);
+        var med = meds.FirstOrDefault(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (med is null)
+        {
+            return subject.Result(AssistantResultCode.NoActivePrescription);
+        }
+
+        var today = ClockOf(subject).DateOf(subject.Now);
+        var candidates = await prescriptions.ListForMedicationAsync(subject.Baby.Id, med.Id, cancellationToken);
+        var prescription = candidates.FirstOrDefault(p => !p.IsDeleted && p.CoversDay(today));
+        if (prescription is null)
+        {
+            return subject.Result(AssistantResultCode.NoActivePrescription);
+        }
+
+        var payload = AssistantPayloads.Medication(med.Id, med.Name, prescription.Id, prescription.Dose.Amount, prescription.Dose.Unit);
+        var created = await CreateAsync(subject, eventId, BuiltInEventTypes.MedicationId, subject.Now, subject.Now, payload, cancellationToken);
+        return subject.Result(AssistantResultCode.MedicationLogged) with { At = created.StartedAt, Medicine = subject.SayMedicineNames ? med.Name : null };
+    }
+
+    /// <summary>
+    /// The family's own reminders: the status the medication screen shows (<see cref="MedicationStatusCalculator"/>, no weight, so never a
+    /// suggested dose), counting the scheduled doses (times of day, every N hours, part of the day) that are due now and the next
+    /// scheduled time. As-needed prescriptions have no schedule and no reminder. Nothing is invented: no default interval, no start time.
+    /// </summary>
+    private async Task<AssistantResult> ReadMedicationReminderInnerAsync(AssistantSubject subject, CancellationToken cancellationToken)
+    {
+        var active = await prescriptions.ListActiveAsync(subject.Baby.Id, cancellationToken);
+        var doses = await medicationDoses.ListDosesAsync(subject.Baby.Id, subject.Now - MedicationStatusCalculator.HistoryLookBack, cancellationToken);
+        var offset = subject.Zone is { } zone ? zone.GetUtcOffset(subject.Now) : TimeSpan.Zero;
+        var statuses = MedicationStatusCalculator.Calculate(new MedicationStatusInput(active, doses, subject.Now, offset, null));
+        var dueNow = statuses.Where(IsReminderDue).ToArray();
+        var upcoming = statuses.Select(status => (Status: status, At: NextReminderAfter(status, subject.Now))).Where(entry => entry.At is not null).OrderBy(entry => entry.At).FirstOrDefault();
+        if (dueNow.Length == 0 && upcoming.Status is null)
+        {
+            return subject.Result(AssistantResultCode.NoMedicationDue);
+        }
+
+        var result = subject.Result(AssistantResultCode.MedicationReminder) with { Count = dueNow.Length, At = upcoming.At };
+        if (!subject.SayMedicineNames)
+        {
+            return result;
+        }
+
+        var names = (await medications.ListForBabyAsync(subject.Baby.Id, cancellationToken)).ToDictionary(medicine => medicine.Id, medicine => medicine.Name);
+        return result with
+        {
+            DueMedicines = dueNow.Select(status => names.GetValueOrDefault(status.Prescription.MedicationId)).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+            Medicine = upcoming.Status is null ? null : names.GetValueOrDefault(upcoming.Status.Prescription.MedicationId),
+        };
+    }
+
+    /// <summary>The medicine name a stored dose entry copied (only read when the user allowed names).</summary>
+    private static string? MedicineNameOf(Event entry) => MedicationDosePayload.ReadGiven(entry.Payload, entry.StartedAt).FirstOrDefault()?.Name;
+
+    private static bool IsReminderDue(MedicationStatus status) =>
+        status.OverdueBy is not null || status.DayParts?.Parts.Any(part => part.State == DayPartState.Due) == true;
+
+    private static DateTimeOffset? NextReminderAfter(MedicationStatus status, DateTimeOffset now)
+    {
+        var scheduled = status.NextScheduledAt is { } at && at > now ? at : (DateTimeOffset?)null;
+        var part = status.DayParts?.Parts.Where(slot => slot.State == DayPartState.Upcoming).Select(slot => slot.ReminderAt ?? slot.Window.Start).Where(at => at > now).Order().Cast<DateTimeOffset?>().FirstOrDefault();
+        return scheduled is null ? part : part is null ? scheduled : (scheduled < part ? scheduled : part);
+    }
+
+    private const int MaxMedicationNameLength = 200;
 }
 
 /// <summary>The stable names of the assistant commands (logs and event id derivation; never change them).</summary>
@@ -643,7 +957,7 @@ internal static class AssistantCommands
     public const string BabyProfile = "baby_profile";
     public const string DaySummary = "day_summary";
     public const string WeekSummary = "week_summary";
-    public const string NextNapWindow = "next_nap_window";
+public const string NextNapWindow = "next_nap_window";
     public const string NextFeed = "next_feed";
     public const string NextDiaper = "next_diaper";
     public const string DiapersAverage = "diapers_average";
@@ -654,4 +968,21 @@ internal static class AssistantCommands
     public const string FeedsToday = "feeds_today";
     public const string CryReasons = "cry_reasons";
     public const string RequestDeleteLast = "request_delete_last";
-}
+    public const string Bath = "bath";
+    public const string TummyTime = "tummy_time";
+    public const string BellyPain = "belly_pain";
+    public const string BreastPump = "breast_pump";
+    public const string NasalSuction = "nasal_suction";
+    public const string BellyMassage = "belly_massage";
+    public const string Fussy = "fussy";
+    public const string NailTrim = "nail_trim";
+    public const string Temperature = "temperature";
+    public const string SpitUp = "spit_up";
+    public const string Teething = "teething";
+    public const string Milestone = "milestone";
+    public const string Symptom = "symptom";
+    public const string Outdoor = "outdoor";
+    public const string SkinCare = "skin_care";
+    public const string Medication = "medication";
+    public const string MedicationReminder = "medication_reminder";
+    }

@@ -87,7 +87,11 @@
     "licence": "Software livre e de código aberto, sob a licença AGPL-3.0.",
     "notMedical": "Não é um dispositivo médico.",
     "credits": "Créditos e licenças",
-    "privacy": "Política de privacidade"
+    "privacy": "Política de privacidade",
+    "terms": "Termos de uso"
+  },
+  "beta": {
+    "notice": "O Lotties está em fase de teste. Leia os [Termos de Uso](/terms)."
   },
   "openSource": {
     "title": "Feito sobre software livre",

@@ -69,6 +69,7 @@ export const POLICY_SECTION_IDS = [
   'data',
   'other-people',
   'legal-bases',
+  'consent',
   'sharing',
   'children',
   'rights',

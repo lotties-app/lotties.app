@@ -21,6 +21,9 @@ public enum AssistantResultCode
     /// <summary>The caller belongs to no baby.</summary>
     NoBaby,
 
+    /// <summary>The caller has not accepted the current terms of use and privacy policy: she must open the Lotties app and accept them; nothing was read or written.</summary>
+    ConsentRequired,
+
     /// <summary>Several babies and no default: set one in the app (Settings, Voice assistants).</summary>
     ChooseBaby,
 
@@ -105,7 +108,7 @@ public enum AssistantResultCode
     /// <summary>Seven local days' sleep, feeding and diaper counts and totals (<see cref="AssistantResult.Days"/>, oldest first).</summary>
     WeekSummary,
 
-    /// <summary>The next nap window the sleep prediction expects (<see cref="AssistantResult.Estimate"/>); the baby is awake.</summary>
+/// <summary>The next nap window the sleep prediction expects (<see cref="AssistantResult.Estimate"/>); the baby is awake.</summary>
     NextNapWindow,
 
     /// <summary>The baby sleeps since <see cref="AssistantResult.At"/>; <see cref="AssistantResult.EndedAt"/> is the expected wake-up when the prediction has one.</summary>
@@ -167,7 +170,75 @@ public enum AssistantResultCode
 
     /// <summary>The newest entry this adapter made in 30 minutes (<see cref="AssistantResult.EntryType"/> <c>woke_up</c>, <see cref="AssistantResult.At"/>) is not something voice may mark; nothing was changed and no older entry was chosen. It can be corrected in the app.</summary>
     LastNotUndoable,
-}
+
+    /// <summary>A bath was logged.</summary>
+    BathLogged,
+
+    /// <summary>A tummy time timer started.</summary>
+    TummyTimeStarted,
+
+    /// <summary>Belly pain was logged.</summary>
+    BellyPainLogged,
+
+    /// <summary>A breast pump timer started.</summary>
+    BreastPumpStarted,
+
+    /// <summary>Nasal suction was logged.</summary>
+    NasalSuctionLogged,
+
+    /// <summary>A belly massage timer started.</summary>
+    BellyMassageStarted,
+
+    /// <summary>A fussy/crying timer started.</summary>
+    FussyStarted,
+
+    /// <summary>A nail trim was logged.</summary>
+    NailTrimLogged,
+
+    /// <summary>A temperature reading was logged.</summary>
+    TemperatureLogged,
+
+    /// <summary>Spit-up or vomit was logged.</summary>
+    SpitUpLogged,
+
+    /// <summary>A teething event was logged.</summary>
+    TeethingLogged,
+
+    /// <summary>A milestone was logged.</summary>
+    MilestoneLogged,
+
+    /// <summary>A symptom was logged.</summary>
+    SymptomLogged,
+
+    /// <summary>An outdoor time timer started.</summary>
+    OutdoorStarted,
+
+    /// <summary>Skin care was logged.</summary>
+    SkinCareLogged,
+
+    /// <summary>It was recorded that a dose of a registered medicine was given (<see cref="AssistantResult.At"/>); the medicine and the dose are never told.</summary>
+    MedicationLogged,
+
+    /// <summary>No active prescription found for the named medication.</summary>
+    NoActivePrescription,
+
+    /// <summary>
+    /// The family's own medicine reminders (the schedule they registered): <see cref="AssistantResult.Count"/> due now (may be 0) and
+    /// <see cref="AssistantResult.At"/> the next scheduled time after now, when there is one. No name, no amount.
+    /// </summary>
+    MedicationReminder,
+
+    /// <summary>No registered medicine reminder is due now or scheduled ahead.</summary>
+    NoMedicationDue,
+
+    /// <summary>
+    /// A number the command needs is missing or outside its limits (<see cref="AssistantResult.Field"/>: <c>temperature</c>,
+    /// <c>water_temperature</c>, <c>pain_level</c>, <c>pump_amount</c>; <see cref="AssistantResult.Min"/>..<see cref="AssistantResult.Max"/>,
+    /// degrees Celsius or ml or the level); nothing was logged.
+    /// </summary>
+    InvalidValue,
+
+    }
 
 /// <summary>Which days a count covers.</summary>
 [JsonConverter(typeof(SnakeCaseStringEnumConverter))]
@@ -180,11 +251,19 @@ public enum AssistantDayWindow
     LastDay,
 }
 
-/// <summary>The baby a result is about (her name from the profile).</summary>
-public sealed record AssistantBaby(Guid Id, string Name);
+/// <summary>
+/// The baby a result is about. <see cref="Name"/> (from the profile) is <c>null</c> unless the user turned on "say my baby's
+/// name" (<c>UserAssistantSettings.SayBabyName</c>): the answer goes to Amazon or a third-party AI assistant and a name would
+/// tie the child to the facts. Renderers read it only through the guarded accessors (design 32, "what an assistant may say").
+/// </summary>
+public sealed record AssistantBaby(Guid Id, string? Name = null);
 
-/// <summary>An upcoming appointment as an answer tells it: when, its title (the family's own text) and its type code.</summary>
-public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Title, string Type);
+/// <summary>
+/// An upcoming appointment as an answer tells it: when, its built-in kind code (<c>consultation</c>, <c>vaccine</c>, <c>exam</c>,
+/// <c>other</c>) and, only when the care provider's typed specialty is one of the known ones (<c>DoctorSpecialties</c>), that
+/// specialty's CODE. Never the title, the doctor's or clinic's name, the location, notes, outcome, phone, address or registration.
+/// </summary>
+public sealed record AssistantAppointment(DateTimeOffset StartsAt, string Type, string? Specialty = null);
 
 /// <summary>An expected time with the range it usually falls in (UTC): the prediction's earliest, expected and latest.</summary>
 public sealed record AssistantTimeWindow(DateTimeOffset Earliest, DateTimeOffset Expected, DateTimeOffset Latest);
@@ -214,10 +293,10 @@ public sealed record AssistantCryCause(
 public sealed record AssistantVaccineDose(string VaccineKey, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string> DoseLabel, bool Overdue, DateOnly DueOn);
 
 /// <summary>
-/// A baby the user may ask about: its id and name, her role (<c>owner</c>, <c>parent</c>, <c>caregiver</c>, <c>viewer</c>),
+/// A baby the user may ask about: its id and name (<c>null</c> unless she allowed it), her role (<c>owner</c>, <c>parent</c>, <c>caregiver</c>, <c>viewer</c>),
 /// whether she can log events for it, and whether it is the one commands use when no baby is named.
 /// </summary>
-public sealed record AssistantBabyAccess(Guid Id, string Name, string Role, bool CanLog, bool IsDefault);
+public sealed record AssistantBabyAccess(Guid Id, string? Name, string Role, bool CanLog, bool IsDefault);
 
 /// <summary>A baby's age on the user's local date: whole days, whole weeks and whole calendar months since birth.</summary>
 public sealed record AssistantBabyAge(int Days, int Weeks, int Months);
@@ -273,8 +352,6 @@ public sealed record AssistantResult
     [JsonConverter(typeof(SnakeCaseStringEnumConverter))]
     public BottleKind? BottleKind { get; init; }
 
-    public string? FormulaName { get; init; }
-
     [JsonConverter(typeof(SnakeCaseStringEnumConverter))]
     public FeedMethod? FeedMethod { get; init; }
 
@@ -308,7 +385,7 @@ public sealed record AssistantResult
 
     public IReadOnlyList<AssistantDaySummary> Days { get; init; } = [];
 
-    /// <summary>The expected time (and the range it usually falls in) of the next nap or feed.</summary>
+/// <summary>The expected time (and the range it usually falls in) of the next nap or feed.</summary>
     public AssistantTimeWindow? Estimate { get; init; }
 
     /// <summary>The next wet diaper's expected time, when the diaper predictions have one.</summary>
@@ -350,6 +427,28 @@ public sealed record AssistantResult
 
     /// <summary>When to call the pediatrician instead of looking at the log (<c>fever</c>, <c>inconsolable</c>, <c>refusing_feeds</c>, <c>unusual_sleepiness</c>, <c>bulging_or_stiff_fontanelle</c>); always set with a cry answer.</summary>
     public IReadOnlyList<string> RedFlags { get; init; } = [];
+
+    /// <summary>The temperature value logged (°C): what was said, converted to Celsius, never judged.</summary>
+    public decimal? TemperatureC { get; init; }
+
+    /// <summary>The intensity value logged (belly pain 1-5, fussy: mild, moderate or intense; both validated choices, never free text).</summary>
+    public string? Intensity { get; init; }
+
+    /// <summary>
+    /// The medicine an answer is about, as the family registered its name, ONLY when the user turned on "say my medicines' names"
+    /// (<c>UserAssistantSettings.SayMedicineNames</c>); never an amount, dose, schedule or interval. Renderers read it only through
+    /// <c>SpokenMedicine</c>. <see cref="AssistantResultCode.MedicationLogged"/>: the one given; a reminder: the next one.
+    /// </summary>
+    public string? Medicine { get; init; }
+
+    /// <summary>With <see cref="AssistantResultCode.MedicationReminder"/>, same opt-in as <see cref="Medicine"/>: the names of the medicines due now.</summary>
+    public IReadOnlyList<string> DueMedicines { get; init; } = [];
+
+    /// <summary>Which value <see cref="AssistantResultCode.InvalidValue"/> is about (<c>temperature</c>, <c>water_temperature</c>, <c>pain_level</c>, <c>pump_amount</c>).</summary>
+    public string? Field { get; init; }
+
+    /// <summary>The event type key logged (for generic event results).</summary>
+    public string? EventTypeKey { get; init; }
 
     /// <summary>The earliest date a summary may be asked for (with <see cref="AssistantResultCode.InvalidDate"/>).</summary>
     public DateOnly? EarliestDate { get; init; }

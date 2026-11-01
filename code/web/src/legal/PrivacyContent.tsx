@@ -1,6 +1,6 @@
-import { Fragment, useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   GlobalStyles,
@@ -11,95 +11,21 @@ import {
   type SxProps,
   type Theme,
 } from '@mui/material';
-import { ExternalLink } from '../credits/ExternalLink';
-import { SOURCE_REPOSITORY } from '../credits/curatedCredits';
 import { formatDate } from '../i18n/format';
 import { useLocale } from '../i18n/useLocale';
 import { RADIUS } from '../theme/tokens';
-import { parseInline, type InlinePart, type SlotName, type UrlToken } from './inlineText';
 import { policyFor } from './policyDocuments';
-import type { Block, Inline, PolicyDocument, Table } from './policyTypes';
-import { isEmailAddress, ISSUES_URL, privacyContacts, PRIVATE_REPORT_URL } from './privacyConfig';
+import { Rich, type Slots } from './RichText';
+import { slotsFor } from './richSlots';
+import type { Block, Table } from './policyTypes';
 import {
   PRIVACY_POLICY_LAST_UPDATED,
   PRIVACY_POLICY_VERSION,
   sectionAnchor,
 } from './privacyPolicy';
 
-const URLS: Readonly<Record<UrlToken, string>> = {
-  issuesUrl: ISSUES_URL,
-  advisoryUrl: PRIVATE_REPORT_URL,
-  repoUrl: SOURCE_REPOSITORY,
-};
-
 /** Headings leave room for the app's sticky header when an anchor scrolls to them. */
 const HEADING_SCROLL_MARGIN = '88px';
-
-type Slots = Readonly<Record<SlotName, ReactNode>>;
-
-function InlineLink({ part }: { part: Extract<InlinePart, { kind: 'link' }> }) {
-  if (part.target === 'route') {
-    return (
-      <Link component={RouterLink} to={part.href}>
-        {part.label}
-      </Link>
-    );
-  }
-  if (part.target === 'anchor' || part.href.startsWith('mailto:')) {
-    return <Link href={part.href}>{part.label}</Link>;
-  }
-  return <ExternalLink href={part.href}>{part.label}</ExternalLink>;
-}
-
-/** Inline policy text: plain text, links (in-app, anchors, outside) and the filled-in values. */
-function Rich({ text, slots }: { text: Inline; slots: Slots }) {
-  return (
-    <>
-      {parseInline(text, URLS).map((part, index) => (
-        <Fragment key={index}>
-          {part.kind === 'text' && part.text}
-          {part.kind === 'link' && <InlineLink part={part} />}
-          {part.kind === 'slot' && slots[part.name]}
-        </Fragment>
-      ))}
-    </>
-  );
-}
-
-function MailOrText({ value }: { value: string }) {
-  return isEmailAddress(value) ? <Link href={`mailto:${value}`}>{value}</Link> : <>{value}</>;
-}
-
-/**
- * The values of `{controller}`, `{contact}`, `{dpo}`, `{version}` and `{lastUpdated}`: the owner's
- * build-time settings (privacyConfig.ts), or the policy's own default text when one is not set.
- */
-function slotsFor(policy: PolicyDocument): Slots {
-  const contacts = privacyContacts();
-  // The default contact and encarregado texts only hold links, so they need no values themselves.
-  const none: Slots = {
-    controller: null,
-    contact: null,
-    dpo: null,
-    version: null,
-    lastUpdated: null,
-  };
-  return {
-    controller: contacts.controllerName ?? policy.fallbacks.controller,
-    contact: contacts.contactEmail ? (
-      <MailOrText value={contacts.contactEmail} />
-    ) : (
-      <Rich text={policy.fallbacks.contact} slots={none} />
-    ),
-    dpo: contacts.dpo ? (
-      <MailOrText value={contacts.dpo} />
-    ) : (
-      <Rich text={policy.fallbacks.dpo} slots={none} />
-    ),
-    version: PRIVACY_POLICY_VERSION,
-    lastUpdated: formatDate(PRIVACY_POLICY_LAST_UPDATED, 'dayMonthYear', policy.locale),
-  };
-}
 
 const tableSx: SxProps<Theme> = (theme) => ({
   '& table': { width: '100%', borderCollapse: 'collapse' },

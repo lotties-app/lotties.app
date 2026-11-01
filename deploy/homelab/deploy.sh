@@ -25,6 +25,7 @@
 #                   They are not part of the source tag: an image that is not rebuilt keeps the release that built it.
 #                   To have both images carry the same release (About shows one number), rebuild both: FORCE_BUILD=1
 #                   (pods restart; the src-<hash> tags stay the same, the images are pushed again under them).
+#   TAG_RELEASE=0   Do not create the annotated git tag vX.Y.Z on HEAD after a release. PUSH_TAG=0: create it but do not push it.
 #   COPY_PULL_SECRET=1  When the pull Secret cr-homel4b is missing in NS, copy it from namespace keycloak without asking.
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
@@ -487,8 +488,33 @@ summary() {
   kube get certificate "$TLS_SECRET" 2>/dev/null || true
   echo
   echo "App  https://$PUBLIC_HOST      API  https://$PUBLIC_HOST/api/v1"
-  [ -z "$VERSION" ] || echo "Release v$VERSION (images tagged v$VERSION and latest). To mark it in git: git tag -a v$VERSION -m \"Release $VERSION\""
+  if [ -n "$VERSION" ]; then
+    echo "Release v$VERSION (images tagged v$VERSION and latest)."
+    tag_release "$VERSION"
+  fi
   echo "Roll back one release: helm ${ctx}-n $NS rollback lotties-api   (or lotties-web)"
+}
+
+# Marks the release in git: an annotated vX.Y.Z tag on HEAD, pushed to origin. Never fails the deploy (it is already live): a problem
+# is printed with the command to run by hand. A tag that exists is left alone. Uncommitted changes are built into the images
+# (the source tags count the working tree), so the tag then points at the nearest commit and the output says so.
+tag_release() {
+  local version=$1 dirty=""
+  [ "${TAG_RELEASE:-1}" = 1 ] || return 0
+  if (cd "$REPO" && git rev-parse -q --verify "refs/tags/v$version" >/dev/null 2>&1); then
+    echo "Git tag v$version already exists: left as it is."
+    return 0
+  fi
+  [ -z "$(cd "$REPO" && git status --porcelain 2>/dev/null)" ] || dirty=" (the working tree had uncommitted changes: the images may hold more than that commit)"
+  if ! (cd "$REPO" && git tag -a "v$version" -m "Release $version" 2>/dev/null); then
+    echo "Could not create the git tag. By hand: git tag -a v$version -m \"Release $version\"" >&2
+    return 0
+  fi
+  echo "Git tag v$version created on $(cd "$REPO" && git rev-parse --short=12 HEAD)$dirty."
+  [ "${PUSH_TAG:-1}" = 1 ] || return 0
+  if (cd "$REPO" && git remote get-url origin >/dev/null 2>&1); then
+    (cd "$REPO" && git push -q origin "refs/tags/v$version" 2>/dev/null)       && echo "Git tag v$version pushed to origin."       || echo "Could not push the tag. By hand: git push origin v$version" >&2
+  fi
 }
 
 cleanup() { [ -z "${WORK:-}" ] || rm -rf "$WORK"; }

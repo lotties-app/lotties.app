@@ -31,6 +31,27 @@ and [docs/MCP.md](../MCP.md) (Keycloak client scopes and clients, connecting Cla
 | `LastDiaperIntent` | "when was the last diaper change", "when did I last change her diaper", "last diaper" | "quando foi a última troca de fralda", "quando troquei a fralda dela", "última fralda" | `ReadLastDiaper` |
 | `CryReasonsIntent` | "why is she crying", "why is the baby fussy", "what could be making her cry" | "por que ela está chorando", "por que ela está irritada", "por que ela não para de chorar" | `ReadCryReasons` |
 | `RequestDeleteLastIntent` | "undo the last thing I logged", "delete the last entry", "undo the last entry", "cancel the last entry" | "desfazer o último registro", "apagar o último registro", "excluir o último registro" | `RequestDeleteLast` (asks only, section 5.3) |
+| `BathIntent` (`temperature` AMAZON.NUMBER, optional, in the user's unit system) | "log a bath", "water was thirty seven degrees" | "registrar banho" | `LogBath` |
+| `TummyTimeIntent` | "start tummy time" | "iniciar tempo de bruços" | `LogTummyTime` (timer, stopped in the app) |
+| `BellyPainIntent` (`painLevel` AMAZON.NUMBER, 1-5, asked for when missing) | "belly pain level three" | "dor de barriga nível 3" | `LogBellyPain` |
+| `BreastPumpIntent` (`amountLeft`, `amountRight` in ml, optional) | "start pumping" | "começar a ordenhar" | `LogBreastPump` (timer) |
+| `NasalSuctionIntent` | "suctioned her nose" | "aspirei o nariz dela" | `LogNasalSuction` |
+| `BellyMassageIntent` | "gave her a belly massage" | "fiz massagem na barriga dela" | `LogBellyMassage` (timer) |
+| `FussyIntent` (`intensity` FUSSY_INTENSITY, optional) | "she's fussy" | "ela está irritada" | `LogFussy` (timer) |
+| `NailTrimIntent` | "trimmed her nails" | "cortei as unhas dela" | `LogNailTrim` |
+| `TemperatureIntent` (`value` AMAZON.NUMBER, required, in the user's unit system; `method` TEMP_METHOD, optional) | "log temperature thirty seven" | "registrar temperatura 37" | `LogTemperature` (a record only) |
+| `SpitUpIntent` | "she spit up" | "ela regurgitou" | `LogSpitUp` |
+| `TeethingIntent` | "she's teething" | "ela está dentando" | `LogTeething` |
+| `MilestoneIntent` (`milestone` MILESTONE_TYPE, optional) | "she rolled over" | "ela virou de bruços" | `LogMilestone` |
+| `SymptomIntent` (`symptom` SYMPTOM_TYPE, `severity` SYMPTOM_SEVERITY, optional) | "she has a cough" | "ela está com tosse" | `LogSymptom` (a record only) |
+| `OutdoorIntent` | "went for a walk" | "saímos para passear" | `LogOutdoor` (timer) |
+| `SkinCareIntent` | "applied lotion" | "passei hidratante" | `LogSkinCare` |
+| `MedicationIntent` (`medicationName` AMAZON.SearchQuery, required) | "gave her" + the registered medicine name | "dei" + the registered medicine name | `LogMedication` (section 5.4) |
+| `MedicationReminderIntent` | "is any medicine due" | "tem algum remédio para dar" | `ReadMedicationReminder` (section 5.4) |
+| `DaySummaryIntent` | "how was her day" | "como foi o dia dela" | `ReadDaySummary` (today) |
+| `WeekSummaryIntent` | "how was her week" | "como foi a semana dela" | `ReadWeekSummary` (up to today) |
+| `BabyProfileIntent` | "how old is she" | "quantos anos ela tem" | `ReadBabyProfile` (the age only) |
+| `ListBabiesIntent` | "list my babies" | "listar meus bebês" | `ListBabies` |
 | `SetBabyHelpIntent` | "choose the baby" | "escolher o bebê" | (help: Settings, Voice assistants) |
 | `AMAZON.HelpIntent`, `StopIntent`, `CancelIntent`, `FallbackIntent`, `NavigateHomeIntent` | | | built-in |
 
@@ -41,10 +62,12 @@ brand name may need evidence of brand ownership at certification (site lotties.a
 Amazon rejects it, switch both models to the documented fallback **"lotties baby"** BEFORE publishing: the invocation
 name cannot be changed after the skill is certified and published (docs/ALEXA.md section 1).
 
-Not offered, on purpose: medications (no intent exists; an assistant never logs, reads or advises a dose), free-text
-notes (nothing the parent says is stored as text), health advice of any kind (answers are facts from the parents' own
-log and the published vaccine schedule), the "ended by sleep" rule (section 5), and other built-in markers (nasal
-suction and the like were skipped: they add utterances, not value, and are easy to add as one command each later).
+Not offered, on purpose: free-text notes (nothing the parent says is stored as text: every choice slot resolves to one of the
+built-in options of the event type's own field and anything else is left out), health advice of any kind (answers are facts from
+the parents' own log and the published vaccine schedule), dose commands (section 5.4: by voice a parent can only say that a dose
+of a medicine she registered was given, and ask for the reminders she registered), the "ended by sleep" rule (section 5), a
+"fever" or "dehydration" symptom (the Symptom event type has no such option: a temperature is logged with `TemperatureIntent`,
+as a number, never interpreted) and the `other` option of the milestone and symptom fields (it would need her own words).
 
 ## 2. Layers
 
@@ -95,7 +118,7 @@ with a line for every code, tested for every code in both languages.
 | `last_feed`, `no_feeds` | the newest feeding of 30 days: `at`, `endedAt`, `running`, `minutes`, `feedMethod`, `amountMl`, `side`, `bottleKind` |
 | `sleeping`, `awake`, `no_sleeps` | since `at` (`minutes` so far, or the last sleep's length) |
 | `diapers_today` | `count`, `wet`, `dirty`, `window` (`today` in the user's zone, else `last_day`) |
-| `next_appointment`, `no_appointment` | the next upcoming appointment within a year: `appointment` (start, the family's title, type) |
+| `next_appointment`, `no_appointment` | the next upcoming appointment within a year: `appointment` (`startsAt`, `type` code, and `specialty`: the CODE of the linked care provider's specialty, only when her typed specialty is one of `DoctorSpecialties`; never a title, name, clinic, place, note or any other provider data) |
 | `vaccines_due`, `no_vaccines_due` | `count` due or overdue, `overdue`, up to five doses with their names in `en` and `pt-BR` (the vaccine status engine, facts only) |
 | `next_nap_window`, `nap_window_asleep`, `no_nap_prediction` | the sleep prediction's window (`estimate`: earliest, expected, latest, UTC) while awake, by the Now screen's rules (stale after 2 h past the window or no sleep in 24 h = none); asleep: `at` and, when the prediction measures the running sleep to its expected end, `endedAt` = the expected wake-up |
 | `next_feed`, `no_next_feed` | the feeding prediction's window (`estimate`) |
@@ -108,15 +131,20 @@ with a line for every code, tested for every code in both languages.
 | `last_diaper`, `no_diapers` | the newest diaper of 30 days: `at`, `diaper` |
 | `cry_reasons`, `cry_no_data` | up to three likely causes (`cryCauses`: cause, level, facts), always `redFlags` (each cause carries its ranking score internally; the spoken Alexa answer leads with the top cause and its first fact, and adds the second only when its score is within 0.1 of the first, while the safety sentence and the full red-flag list are never shortened; MCP keeps every cause); `running` = a sleep timer runs so the log may be behind |
 | `delete_requested`, `no_entry_to_delete`, `last_not_undoable` | the newest entry this adapter made in 30 minutes was marked as a deletion request (`at`, `entryType`); nothing was deleted; none to ask about (section 5.3) |
+| `bath_logged`, `tummy_time_started`, `belly_pain_logged`, `breast_pump_started`, `nasal_suction_logged`, `belly_massage_started`, `fussy_started`, `nail_trim_logged`, `temperature_logged`, `spit_up_logged`, `teething_logged`, `milestone_logged`, `symptom_logged`, `outdoor_started`, `skin_care_logged` | the entry was written (`at`); `temperature_c` (as said, converted to Celsius), `intensity` (belly pain level, or the fussy choice) only where the person gave them; timers are running until stopped in the app |
+| `invalid_value` | a number is missing or out of range (`field`: `temperature` 30-45 C, `water_temperature` 0-60 C, `pain_level` 1-5, `pump_amount` 1-500 ml; `min`, `max` in C, ml or the level); nothing was written |
+| `medication_logged`, `no_active_prescription` | it was recorded that a dose of a registered medicine was given (`at`; `medicine` only with `sayMedicineNames`); the medicine name matches none with an active prescription today (nothing written) |
+| `medication_reminder`, `no_medication_due` | the family's own reminders: `count` due now (may be 0), `at` the next scheduled time, `dueMedicines`/`medicine` only with `sayMedicineNames`; none registered or scheduled |
 | `unknown_baby` | the adapter named a baby (`babyId`) that is not one of the user's family memberships (unknown, someone else's, or hers only as Doctor: the same answer) |
 | `invalid_date` | a summary date in the future or more than 365 days back (`earliestDate`, `latestDate`) |
-| `babies` | the user's family babies (`babies`: `id`, `name`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
-| `baby_profile` | the baby's name and `age` (`days`, `weeks`, whole calendar `months` on the user's local date); nothing else of the profile |
+| `babies` | the user's family babies (`babies`: `id`, `name` only with `sayBabyName`, `role`, `canLog`, `isDefault`), never a Doctor's patients |
+| `baby_profile` | the baby's `age` (and the name only with `sayBabyName`) (`days`, `weeks`, whole calendar `months` on the user's local date); nothing else of the profile |
 | `day_summary`, `week_summary` | `days`: one or seven local days, oldest first, each `date`, `complete` (false for today) and the clinical summary's day rows: `sleep` (`totalMinutes`, `nightMinutes`, `napMinutes`, `naps`, `longestMinutes`), `feeding` (`feeds`, `bottleMl`, `breast`, `bottle`, `solid`), `diapers` (`total`, `wet`, `dirty`) |
 
 The queries added with the MCP server (`ListBabies`, `ReadBabyProfile`, `ReadDaySummary(date?)`,
-`ReadWeekSummary(endDate?)`) are adapter-neutral too: Alexa renders their codes in both languages (no intent uses them
-yet). The summaries reuse the clinical summary's reader and math unchanged (`DailyObservationReader`, `SleepSummaries`,
+`ReadWeekSummary(endDate?)`) are adapter-neutral too: Alexa renders their codes in both languages (`ListBabiesIntent`,
+`BabyProfileIntent`, `DaySummaryIntent`, `WeekSummaryIntent`; the Alexa day and week summaries are always today and the seven
+days up to today). The summaries reuse the clinical summary's reader and math unchanged (`DailyObservationReader`, `SleepSummaries`,
 `FeedingSummaries`, `DiaperSummaries`: the day rows of `GET /clinical-summary`, ported from the parents' Insights); the
 tests compare them with that endpoint on the shared golden scenario. Days are local days in the zone of section 5's zone
 rule; the summaries always name it (`timeZone`, `UTC` when none is known, and `timeZoneSource`: `requested`, `stored`,
@@ -135,11 +163,20 @@ a Doctor gets `not_allowed`. An adapter that lets the user name the baby (the MC
 then apply as usual.
 
 The default lives in `user_assistant_settings(user_id PK/FK users ON DELETE CASCADE, default_baby_id FK babies ON DELETE
-SET NULL, updated_at)` (migration `VoiceAssistants`), set by `PUT /me/assistant-settings {defaultBabyId|null}` (only a
+SET NULL, say_baby_name bool NOT NULL default false, say_medicine_names bool NOT NULL default false, updated_at)` (migrations `VoiceAssistants`, `AssistantSayBabyName`, `AssistantSayMedicineNames`), set by `PUT /me/assistant-settings {defaultBabyId|null, sayBabyName?, sayMedicineNames?}` (only a
 baby she can log for: Owner, Parent, Caregiver; anything else, a foreign or unknown id included, is 400
 `validation_failed` field `defaultBabyId`, so nothing tells babies apart) and read by `GET`. The web: Settings >
 Voice assistants (`code/web/src/settings/VoiceAssistantsSection.tsx`), a select of the babies she logs for, shown
 when she logs for at least one. Account deletion removes her row and clears other rows that point at an erased baby.
+
+`sayBabyName` (default false, section 7) is a per-user switch beside it: a `PUT` without the member leaves the stored value
+alone (an older client keeps working); `GET` always returns it. Settings > Voice assistants has the switch "Say my baby's
+name in answers"; it is hers, not a baby's, so a user who logs for no baby still sees it.
+
+`sayMedicineNames` (default false, section 7) works the same way: a second per-user switch, "Say the names of my medicines in
+answers" ("Falar o nome dos remédios nas respostas"), below the first. Off, a medicine is "a medication dose" or "medicine reminders";
+on, the name as the family registered it is spoken in the `MedicationIntent` confirmation and the reminder, in Alexa and in the MCP
+text, and is in the structured JSON (`medicine`, `dueMedicines`) only then. Never an amount, dose, schedule or interval, whatever it says.
 
 ## 5. Rules of the commands
 
@@ -241,6 +278,35 @@ The web shows, in the day list row and in the event sheet (not on Now), a banner
 roles that may already edit the entry see the buttons; a Viewer, or a Caregiver looking at someone else's entry, sees the
 banner read-only. Strings: `assistants.deleteRequest.*`.
 
+## 5.4 The loggers added later and medication
+
+- **Choices are the field's own options.** `AssistantChoices` (Domain) reads the options of the built-in event type's field
+  (`BuiltInEventTypes`); a value that is not one of them is "not said", never stored, so there is no free text and no value the app
+  does not offer. The Alexa slot types carry those options as ids (`FUSSY_INTENSITY`, `TEMP_METHOD`, `MILESTONE_TYPE`,
+  `SYMPTOM_TYPE`, `SYMPTOM_SEVERITY`; the spoken synonyms map to them); a test compares the model ids with the options. `other` is
+  never offered for milestones and symptoms.
+- **Numbers are validated, never invented.** A belly pain level (1-5), a temperature (30-45 C) and a missing value are asked for by the
+  adapter (`PainLevelMissing`, `TemperatureMissing` prompts, which end the session) or answered `invalid_value`; pump amounts are
+  1-500 ml each (the samples say "ml"). Temperatures, bath water included, are said in the user's unit system (docs/design/37) and
+  stored in Celsius with one decimal; the answer tells them back in that system. A temperature answer is a fact: no threshold, no
+  "fever", no "normal", no advice; the Symptom answer is "logged a symptom", nothing else.
+- **Same write path as everything else:** the normal event service, `via`, an idempotent id from the request id, Owner, Parent or
+  Caregiver only (a Viewer or Doctor is `not_allowed`). "Undo the last thing" looks at every built-in kind of entry, so the newest
+  entry of the adapter is never skipped. Timers (tummy time, pump, belly massage, fussy, outdoor) start and are stopped in the app.
+- **Medication by voice is limited to two things.** (1) `MedicationIntent`: that a dose of a medicine the family registered was
+  given now. The medicine is matched by name among the baby's medicines with a prescription active on her local today; the entry
+  copies what the family registered (name, prescription, the registered dose) as the app's "given" does, and nothing is computed,
+  checked or judged (no interval, no "too early", no "safe"); the answer says "I recorded that a medication dose was given, as you
+  told me. Lotties doesn't check or suggest doses." (2) `MedicationReminderIntent`: the family's own reminders, from the registered
+  schedule through the app's own `MedicationStatusCalculator` (no weight, so never a suggested dose; as-needed prescriptions have
+  none; no default interval): how many are due now and the next scheduled time. **Every** reminder answer, in Alexa and in the MCP
+  text, ends with: "These are reminders of the medicines you registered in Lotties, not recommendations from Lotties. Check the
+  prescription, and ask your doctor or pharmacist if you have doubts." ("São lembretes dos medicamentos que você cadastrou no
+  Lotties, não recomendações do Lotties. Confira a receita e, em caso de dúvida, fale com o médico ou o farmacêutico."). No answer
+  has an amount, unit, schedule or interval; the medicine name only with `sayMedicineNames`. No MCP tool exists for either
+  (an AI assistant writes the arguments, and a medicine is the case where a wrong guess matters most): this is the owner's call to
+  revisit.
+
 ## 6. The Alexa adapter (`POST /api/v1/alexa`)
 
 Anonymous for ASP.NET (no `Authorization` header), like `POST /push/deliveries/.../actions`: Amazon's signature and the
@@ -284,7 +350,44 @@ account-linking token in the body authenticate it. In order:
 - Logged: the request type, the intent name (only names the skill knows), the result code and the correlation id
   (`HttpContext.TraceIdentifier`), plus verification refusals by reason code. Never the body, slot values, tokens,
   Amazon user or device ids. The command layer logs the adapter, command, baby id and result code, as the REST routes do.
-- Answers speak the baby's name and the family's own appointment title aloud on the device; that is the point of asking.
+- **What an assistant may say (data minimisation, LGPD art. 6 III and art. 46 §2).** An answer leaves Lotties: Amazon keeps
+  it in the voice history, an AI assistant's provider receives it. So an answer is built from this list only:
+  - **No baby name by default.** The result carries the name (`AssistantBaby.Name`, `AssistantBabyAccess.Name`) only when
+    the user turned on `sayBabyName`; `AssistantSubject.Result` and `AccessOf` put it there, nowhere else. Without it Alexa
+    says "the baby" / "o bebê" (en: "The baby drank 838 ml in 7 bottles today."; pt-BR drops "para X" tails that add nothing:
+    "Registrei uma mamadeira de 118 ml às 23:28."), and the MCP text and structured JSON have no name member. The
+    `list_babies` answer then has only `id`, `role`, `canLog`, `isDefault` (Alexa says how many babies and where to choose in
+    Settings > Voice assistants), so with several babies and names off an AI assistant cannot tell them apart: the parent
+    picks a default baby in the app or turns the names on.
+  - **No free text people typed and no names of people**: never an appointment title, a formula name, a note, a custom
+    milestone/symptom text. Formula bottles say "of formula". The fussy timer echoes only its validated intensity (mild,
+    moderate, intense). The medicine is matched by name when the parent says it, and a medication dose is "a medication dose"
+    unless the user turned on `sayMedicineNames` (default false, a second switch like `sayBabyName`): only then the name as the family
+    registered it is spoken (Alexa, MCP text) and returned (`medicine`, `dueMedicines` in the structured JSON). **Never** an amount,
+    dose, unit, schedule or interval, in either case (section 5.4).
+  - **Nothing about a doctor or a clinic, except the specialty.** Forbidden in every spoken text, MCP text and structured JSON: a
+    doctor's or professional's name, a clinic name, the appointment's title, location, notes or outcome, phone numbers, addresses,
+    registration council/number/region, e-mail, any other text of an appointment or care provider. The one thing allowed is the
+    **specialty**, and `CareProvider.Specialty` is free text, so it is said only when it normalises (case, accents, punctuation
+    ignored, exact match) to one of `DoctorSpecialties` (Domain/Assistants): pediatrician, neonatologist, neurologist,
+    neuropediatrician, cardiologist, dermatologist, ophthalmologist, ENT (otolaryngologist), orthopedist, gastroenterologist,
+    allergist/immunologist, pulmonologist, endocrinologist, nutritionist, speech therapist, physiotherapist, psychologist, dentist,
+    general practitioner (each with en-US and pt-BR spoken names and synonyms such as "pediatra", "pediatria", "neuro", "otorrino",
+    "fono"). The Application resolves the appointment's linked provider (`providerId`, one of this baby's, not deleted) and puts only
+    the CODE in the result (`appointment.specialty`); the typed text never leaves it. "The baby's next appointment is with a
+    pediatrician, tomorrow at 3:15 PM." / "A próxima consulta do bebê é com pediatra, amanhã às 15:15."; without a recognised
+    specialty: "The baby's next appointment is tomorrow at 3:15 PM." (a vaccination or exam keeps its kind: "a vaccination, ...").
+  - **Facts from fixed vocabularies**: times, amounts, counts, durations, ages, diaper/feed kinds, built-in cry causes and
+    red flags, the vaccine names of the published schedule (not typed by the family).
+  - **Guards.** Adapters read a name only through `SpokenBaby` (`Lotties.Api/Assistants/SpokenBaby.cs`) and a medicine name only
+    through `SpokenMedicine`; a source scan fails when an adapter reads a medicine member, an appointment or care provider member
+    (title, doctor name, location, notes, outcome, clinic, phone, address, e-mail, registration), and the Application reads a
+    provider's typed specialty only through `DoctorSpecialties.CodeOf`. Tests with distinctive doctor, clinic, phone and medicine
+    strings assert none appears in any rendering of any command (JSON, en, pt-BR, MCP sentence, content and structured JSON). Tests
+    (`AssistantNamePrivacyTests`) run every command through the service with the setting off and on and scan every
+    rendering (Alexa en/pt-BR, MCP sentence, content, structured JSON); a source scan fails the build when an adapter
+    reads `Baby.Name` or a listed baby's name outside `SpokenBaby`, when the application sets a name without `SayBabyName`,
+    or when an adapter reads an appointment title, a formula or medication name.
 - Account linking issues Keycloak tokens to Amazon for the Alexa client only (its own confidential client and secret,
   never in this repository). Unlinking the skill in the Alexa app, or removing the client's sessions in Keycloak,
   revokes it.
@@ -299,7 +402,8 @@ account-linking token in the body authenticate it. In order:
    log twice).
 3. Render `AssistantResult` (for MCP: return it as JSON; it is already language-neutral), and add the adapter's routes to
    `EndpointRoleMatrixTests` with a role and scope decision.
-4. Never add a medication command, a free-text field, or advice.
+4. Never add a free-text field or advice. Medication is limited to section 5.4 (a dose given, as said; the family's own reminders, always with
+   the not-a-recommendation sentence); no dose is ever computed, suggested or spoken.
 
 ## 9. The MCP adapter (`/api/v1/mcp`)
 
@@ -383,8 +487,17 @@ the server knows, else `invalid_arguments`; it wins over the stored zone, sectio
 | `log_bottle` | write | `babyId?`, `amountMl` (1-500), `kind?` (`formula`, `breast_milk`), `idempotencyKey?` | `LogBottle` |
 | `log_nursing` | write | `babyId?`, `side?` (`left`, `right`), `idempotencyKey?` | `LogNursing` |
 | `log_diaper` | write | `babyId?`, `kind` (`wet`, `dirty`, `both`), `idempotencyKey?` | `LogDiaper` |
+| `log_bath` | write | `babyId?`, `temperatureC?` (above 0 up to 60), `idempotencyKey?` | `LogBath` |
+| `log_tummy_time`, `log_nasal_suction` (`tool?`, `saline?`), `log_belly_massage` (`reason?`, `helped?`), `log_nail_trim` (`where?`), `log_spit_up` (`kind?`, `amount?`), `log_teething` (`stage?`, `tooth?`), `log_outdoor` (`kind?`), `log_skin_care` (`product?`) | write | `babyId?`, the listed choices (the event field's options), `idempotencyKey?` | `LogTummyTime`, `LogNasalSuction`, ... |
+| `log_belly_pain` | write | `babyId?`, `level` (1-5, required), `idempotencyKey?` | `LogBellyPain` |
+| `log_breast_pump` | write | `babyId?`, `amountLeftMl?`, `amountRightMl?` (1-500), `idempotencyKey?` | `LogBreastPump` |
+| `log_fussy` | write | `babyId?`, `intensity?`, `whatHelped?`, `idempotencyKey?` | `LogFussy` |
+| `log_temperature` | write | `babyId?`, `temperatureC` (30-45, required), `method?`, `idempotencyKey?` | `LogTemperature` (Celsius, a record only) |
+| `log_milestone` | write | `babyId?`, `milestone?`, `idempotencyKey?` | `LogMilestone` |
+| `log_symptom` | write | `babyId?`, `symptom?`, `severity?`, `idempotencyKey?` | `LogSymptom` (a record only) |
 
-No medication tool, no dose, no free-text argument (nothing a model writes is stored as text), no advice.
+The choice arguments are enums built from the event types' own field options, so no free text can be sent. `invalid_value` is a tool
+error. No medication tool (section 5.4), no dose, no free-text argument (nothing a model writes is stored as text), no advice.
 
 **Idempotency.** The adapter's request id (what the event id derives from, section 5) is, for a write with an
 `idempotencyKey` (8-64 of `[A-Za-z0-9._:-]`), `key:<hash of issuer and sub>:<key>`: the same key from the same user

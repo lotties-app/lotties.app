@@ -23,13 +23,51 @@ public sealed class UserAssistantSettings
 
     public Guid? DefaultBabyId { get; private set; }
 
+    /// <summary>
+    /// Whether answers may carry the baby's name (default <c>false</c>, data minimisation: an answer goes to Amazon or to a
+    /// third-party AI assistant, and a name would tie the child to what was asked).
+    /// </summary>
+    public bool SayBabyName { get; private set; }
+
+    /// <summary>
+    /// Whether answers may carry the name of a medicine the family registered (default <c>false</c>: the name tells Amazon or an AI
+    /// assistant's provider what the child takes). Never an amount, dose, schedule or interval, whatever this says.
+    /// </summary>
+    public bool SayMedicineNames { get; private set; }
+
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public static UserAssistantSettings Create(Guid userId, Guid? defaultBabyId, DateTimeOffset now)
+    public static UserAssistantSettings Create(Guid userId, Guid? defaultBabyId, DateTimeOffset now, bool sayBabyName = false, bool sayMedicineNames = false)
     {
         var settings = new UserAssistantSettings(Ids.Required(userId, nameof(userId)));
         settings.Apply(defaultBabyId, now);
+        settings.SayBabyName = sayBabyName;
+        settings.SayMedicineNames = sayMedicineNames;
         return settings;
+    }
+
+    /// <summary>Turns medicine names in answers on or off; the same value changes nothing (not even <see cref="UpdatedAt"/>).</summary>
+    public void ChangeSayMedicineNames(bool sayMedicineNames, DateTimeOffset now)
+    {
+        if (SayMedicineNames == sayMedicineNames)
+        {
+            return;
+        }
+
+        SayMedicineNames = sayMedicineNames;
+        UpdatedAt = UtcTime.Normalize(now);
+    }
+
+    /// <summary>Turns the baby's name in answers on or off; the same value changes nothing (not even <see cref="UpdatedAt"/>).</summary>
+    public void ChangeSayBabyName(bool sayBabyName, DateTimeOffset now)
+    {
+        if (SayBabyName == sayBabyName)
+        {
+            return;
+        }
+
+        SayBabyName = sayBabyName;
+        UpdatedAt = UtcTime.Normalize(now);
     }
 
     /// <summary>Replaces the default baby; the same value changes nothing (not even <see cref="UpdatedAt"/>).</summary>

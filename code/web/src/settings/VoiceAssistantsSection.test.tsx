@@ -4,6 +4,7 @@ import type { BabyRoutineDb } from '../db/database';
 import type { Baby } from '../db/models';
 import { fakeApi, httpError, testDatabase, type ApiCall } from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
+import { useTestLocale } from '../test/locale';
 import { VoiceAssistantsSection } from './VoiceAssistantsSection';
 
 /* Settings > Voice assistants: the default baby of voice commands, among the babies the user logs for. */
@@ -52,18 +53,27 @@ function renderSection(
   babies: Baby[],
   stored: string | null = null,
   onPut?: (call: ApiCall) => unknown,
+  sayBabyName?: boolean,
 ) {
+  let saySaved = sayBabyName;
   const { api, calls } = fakeApi((call) => {
     if (call.path !== PATH) return undefined;
     if (call.method === 'PUT') {
+      const body = call.body as { defaultBabyId: string | null; sayBabyName?: boolean };
+      if (body.sayBabyName !== undefined) saySaved = body.sayBabyName;
       return (
         onPut?.(call) ?? {
-          defaultBabyId: (call.body as { defaultBabyId: string | null }).defaultBabyId,
+          defaultBabyId: body.defaultBabyId,
           updatedAt: '2026-10-23T12:00:00Z',
+          ...(saySaved === undefined ? {} : { sayBabyName: saySaved }),
         }
       );
     }
-    return { defaultBabyId: stored, updatedAt: stored ? '2026-10-22T12:00:00Z' : null };
+    return {
+      defaultBabyId: stored,
+      updatedAt: stored ? '2026-10-22T12:00:00Z' : null,
+      ...(saySaved === undefined ? {} : { sayBabyName: saySaved }),
+    };
   });
   renderWithDb(db, <VoiceAssistantsSection babies={babies} />, { api });
   return calls;
@@ -185,5 +195,194 @@ describe('VoiceAssistantsSection', () => {
 
     expect(await screen.findByLabelText('MCP server URL')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /Manage connected apps/ })).toBeNull();
+  });
+
+  describe('the switch to say the baby name in answers', () => {
+    const LABEL = "Say my baby's name in answers";
+
+    it('is off by default (also from an older server that does not say), with the reason beside it', async () => {
+      renderSection(BABIES);
+
+      const toggle = (await screen.findByRole('switch', { name: LABEL })) as HTMLInputElement;
+
+      expect(toggle.checked).toBe(false);
+      expect(toggle.disabled).toBe(false);
+      expect(toggle.getAttribute('aria-describedby')).toBe('voice-assistants-name-hint');
+      expect(document.getElementById('voice-assistants-name-hint')?.textContent).toContain(
+        'a name ties your child to what you ask',
+      );
+      expect(screen.getByText(/The answer has no baby name unless you turn on/)).toBeTruthy();
+    });
+
+    it('shows the stored value', async () => {
+      renderSection(BABIES, 'b1', undefined, true);
+
+      const toggle = (await screen.findByRole('switch', { name: LABEL })) as HTMLInputElement;
+
+      expect(toggle.checked).toBe(true);
+    });
+
+    it('turns on and off through the settings route, keeping the chosen baby', async () => {
+      const calls = renderSection(BABIES, 'b2');
+
+      fireEvent.click(await screen.findByRole('switch', { name: LABEL }));
+      expect(await screen.findByText('Saved.')).toBeTruthy();
+      await waitFor(() =>
+        expect((screen.getByRole('switch', { name: LABEL }) as HTMLInputElement).checked).toBe(
+          true,
+        ),
+      );
+      fireEvent.click(screen.getByRole('switch', { name: LABEL }));
+      await waitFor(() =>
+        expect((screen.getByRole('switch', { name: LABEL }) as HTMLInputElement).checked).toBe(
+          false,
+        ),
+      );
+
+      const puts = calls.filter((call) => call.method === 'PUT');
+      expect(puts.map((call) => [call.path, call.body])).toEqual([
+        [PATH, { defaultBabyId: 'b2', sayBabyName: true }],
+        [PATH, { defaultBabyId: 'b2', sayBabyName: false }],
+      ]);
+    });
+
+    it('still works for a user who logs for no baby (a Viewer): the setting is hers', async () => {
+      const calls = renderSection([baby('b3', 'Zoe', 'Viewer')]);
+
+      fireEvent.click(await screen.findByRole('switch', { name: LABEL }));
+
+      await waitFor(() =>
+        expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+          defaultBabyId: null,
+          sayBabyName: true,
+        }),
+      );
+    });
+
+    it('explains a refused save and leaves the switch where it was', async () => {
+      renderSection(BABIES, null, () => {
+        throw httpError(400, 'validation_failed');
+      });
+
+      fireEvent.click(await screen.findByRole('switch', { name: LABEL }));
+
+      expect(await screen.findByText(/can't be used for voice commands/)).toBeTruthy();
+      expect((screen.getByRole('switch', { name: LABEL }) as HTMLInputElement).checked).toBe(false);
+    });
+
+    it('reads in Brazilian Portuguese', async () => {
+      await useTestLocale('pt-BR');
+      renderSection(BABIES);
+
+      const toggle = (await screen.findByRole('switch', {
+        name: 'Falar o nome do bebê nas respostas',
+      })) as HTMLInputElement;
+
+      expect(toggle.checked).toBe(false);
+      expect(screen.getByText(/então um nome liga o seu filho ao que você pergunta/)).toBeTruthy();
+      expect(
+        screen.getByText(/A resposta não tem o nome do bebê, a menos que você ative/),
+      ).toBeTruthy();
+    });
+  });
+});
+
+describe('VoiceAssistantsSection, medicine names switch', () => {
+  const MEDICINE_LABEL = 'Say the names of my medicines in answers';
+
+  function renderMedicines(stored?: boolean, onPut?: (call: ApiCall) => unknown) {
+    let saved = stored;
+    const { api, calls } = fakeApi((call) => {
+      if (call.path !== PATH) return undefined;
+      if (call.method === 'PUT') {
+        const body = call.body as { defaultBabyId: string | null; sayMedicineNames?: boolean };
+        if (body.sayMedicineNames !== undefined) saved = body.sayMedicineNames;
+        return (
+          onPut?.(call) ?? {
+            defaultBabyId: body.defaultBabyId,
+            updatedAt: '2026-10-23T12:00:00Z',
+            ...(saved === undefined ? {} : { sayMedicineNames: saved }),
+          }
+        );
+      }
+      return {
+        defaultBabyId: null,
+        updatedAt: null,
+        ...(saved === undefined ? {} : { sayMedicineNames: saved }),
+      };
+    });
+    renderWithDb(db, <VoiceAssistantsSection babies={BABIES} />, { api });
+    return calls;
+  }
+
+  it('is off by default and explains why', async () => {
+    renderMedicines();
+
+    const toggle = (await screen.findByRole('switch', {
+      name: MEDICINE_LABEL,
+    })) as HTMLInputElement;
+
+    expect(toggle.checked).toBe(false);
+    expect(screen.getByText(/a medicine name tells them what your child takes/)).toBeTruthy();
+  });
+
+  it('shows the stored value', async () => {
+    renderMedicines(true);
+
+    const toggle = (await screen.findByRole('switch', {
+      name: MEDICINE_LABEL,
+    })) as HTMLInputElement;
+
+    expect(toggle.checked).toBe(true);
+  });
+
+  it('turns on and off through the settings route without touching the baby name', async () => {
+    const calls = renderMedicines();
+
+    fireEvent.click(await screen.findByRole('switch', { name: MEDICINE_LABEL }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked,
+      ).toBe(true),
+    );
+    fireEvent.click(screen.getByRole('switch', { name: MEDICINE_LABEL }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked,
+      ).toBe(false),
+    );
+
+    const puts = calls.filter((call) => call.method === 'PUT');
+    expect(puts.map((call) => call.body)).toEqual([
+      { defaultBabyId: null, sayMedicineNames: true },
+      { defaultBabyId: null, sayMedicineNames: false },
+    ]);
+  });
+
+  it('explains a refused save and leaves the switch where it was', async () => {
+    renderMedicines(undefined, () => {
+      throw httpError(400, 'validation_failed');
+    });
+
+    fireEvent.click(await screen.findByRole('switch', { name: MEDICINE_LABEL }));
+
+    expect(await screen.findByText(/can't be used for voice commands/)).toBeTruthy();
+    expect((screen.getByRole('switch', { name: MEDICINE_LABEL }) as HTMLInputElement).checked).toBe(
+      false,
+    );
+  });
+
+  it('reads in Brazilian Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    renderMedicines();
+
+    const toggle = (await screen.findByRole('switch', {
+      name: 'Falar o nome dos remédios nas respostas',
+    })) as HTMLInputElement;
+
+    expect(toggle.checked).toBe(false);
+    expect(
+      screen.getByText(/o nome de um remédio mostra a eles o que o seu filho toma/),
+    ).toBeTruthy();
   });
 });

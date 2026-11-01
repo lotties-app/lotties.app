@@ -25,14 +25,16 @@ Lotties
 Log your baby's sleep, feeds and diapers by voice, and hear what you logged.
 ```
 
-### Detailed Description (1259/4000)
+### Detailed Description (1697/4000)
 
 ```
 Lotties is a free, open source baby tracker for parents. With this skill you can keep your hands on your baby and still keep the record up to date: say what happened and Lotties saves it in your family's Lotties account, so you and your co-parent see the same day.
 
-  Log by voice: the baby fell asleep or woke up, a bottle with the amount, nursing, a diaper (wet, dirty or both).
+  Log by voice: the baby fell asleep or woke up, a bottle with the amount, nursing, a diaper (wet, dirty or both), a bath, tummy time, a temperature reading, belly pain, spit-up, teething, a symptom or a milestone from a list, nail trims, skin care and outdoor time.
 
-  Ask about the day: when was the last feed, how long has she been sleeping, how many diapers today, how many diapers a day on average, how much she slept today, how much she drank in bottles today, how many feeds today, the next appointment, and which vaccines are due.
+  Ask about the day: when was the last feed, how long has she been sleeping, how many diapers today, how many diapers a day on average, how much she slept today, how much she drank in bottles today, how many feeds today, how old she is, a summary of the day or the week, the next appointment, and which vaccines are due.
+
+  Medicines: tell Lotties you gave a medicine you registered in the app, and ask for your medicine reminders. These are the reminders you registered yourself, not recommendations from Lotties: it never suggests, checks or says a dose.
 
   Look ahead from your own history: when the next nap window may be, when the next feed or diaper change may come, and how big her last bottles were. These are patterns from what you logged, not advice.
 
@@ -95,14 +97,16 @@ Lotties
 Registre sono, mamadas e fraldas do bebê por voz e ouça o que foi registrado.
 ```
 
-### Detailed Description (1335/4000)
+### Detailed Description (1769/4000)
 
 ```
 O Lotties é um acompanhamento de rotina do bebê, gratuito e de código aberto. Com este skill você mantém as mãos no bebê e o registro em dia: diga o que aconteceu e o Lotties guarda na conta da família, para você e quem cuida junto verem o mesmo dia.
 
-  Registre por voz: o bebê dormiu ou acordou, uma mamadeira com a quantidade, amamentação, uma fralda (xixi, cocô ou os dois).
+  Registre por voz: o bebê dormiu ou acordou, uma mamadeira com a quantidade, amamentação, uma fralda (xixi, cocô ou os dois), banho, tempo de bruços, temperatura, dor de barriga, regurgitação, dentição, um sintoma ou marco de uma lista, corte de unhas, cuidados com a pele e passeio.
 
-  Pergunte sobre o dia: quando foi a última mamada, há quanto tempo ela está dormindo, quantas fraldas hoje, quantas fraldas por dia em média, quanto ela dormiu hoje, quanto tomou de mamadeira hoje, quantas mamadas hoje, a próxima consulta e quais vacinas estão pendentes.
+  Pergunte sobre o dia: quando foi a última mamada, há quanto tempo ela está dormindo, quantas fraldas hoje, quantas fraldas por dia em média, quanto ela dormiu hoje, quanto tomou de mamadeira hoje, quantas mamadas hoje, a idade do bebê, o resumo do dia ou da semana, a próxima consulta e quais vacinas estão pendentes.
+
+  Remédios: diga ao Lotties que você deu um remédio que cadastrou no app e peça os seus lembretes de remédios. São os lembretes que você mesmo cadastrou, não recomendações do Lotties: ele nunca sugere, confere nem diz uma dose.
 
   Olhe para frente com o seu próprio histórico: quando pode ser a próxima janela de sono, a próxima mamada ou troca de fralda, e o tamanho das últimas mamadeiras. São padrões do que você registrou, não orientação.
 
@@ -169,7 +173,7 @@ Use **Copy from an existing locale** > English (US). Nada muda, a não ser que a
 | Export compliance | marque as caixas padrão (sem criptografia restrita além de HTTPS) |
 | Privacy Policy URL | https://lotties.app/privacy |
 
-### Testing Instructions (1612/2000)
+### Testing Instructions (1861/2000)
 
 Colar em inglês (os revisores da Amazon leem em inglês). Credenciais só no campo de conta de teste do console, nunca aqui.
 
@@ -184,10 +188,12 @@ Lotties is a baby tracker. Commands need the Alexa account to be linked to a Lot
    - "Alexa, tell lotties to log a wet diaper"
    - "Alexa, ask lotties when was the last feed"
    - "Alexa, ask lotties how many diapers today"
-   - "Alexa, ask lotties when is the next nap window" (CHECK)
-   - "Alexa, ask lotties how much did she drink today" (CHECK)
-   - "Alexa, ask lotties how many feeds today" (CHECK)
-3. The skill logs and reads back what the family recorded. It gives no medical advice, no doses and no diagnosis, and it never deletes records. Anything it logs is marked "Added by Alexa" in the Lotties app at https://lotties.app (same login).
+   - "Alexa, ask lotties when is the next nap window"
+   - "Alexa, ask lotties how much did she drink today"
+   - "Alexa, ask lotties how many feeds today"
+   - "Alexa, tell lotties to log a bath"
+   - "Alexa, ask lotties is any medicine due" (reminders you registered, not recommendations)
+3. The skill logs and reads back what the family recorded. It gives no medical advice, no doses and no diagnosis, and it never deletes records. Medicine commands only record a dose of a medicine registered in the app and read back its reminders; they never suggest or check a dose. Anything it logs is marked "Added by Alexa" in the Lotties app at https://lotties.app (same login).
 4. Portuguese (Brazil) works the same: "Alexa, abrir lotties", "Alexa, diga ao lotties que o bebê dormiu".
 5. Daily totals ("how much did she drink today", "how many feeds today") depend on entries of the current day. If the answer says nothing was logged today, first say "Alexa, tell lotties to log a bottle" and answer "one hundred twenty", then ask again.
 ```

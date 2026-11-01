@@ -42,6 +42,213 @@ public static class AssistantPayloads
 
     public static EventPayload Diaper(DiaperKind kind) => Of(new JsonObject { ["content"] = ContentCode(kind) });
 
+    public static EventPayload Bath(decimal? temperatureC)
+    {
+        var payload = new JsonObject();
+        if (temperatureC is not null)
+        {
+            payload["temperature_c"] = temperatureC;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload TummyTime() => Of(new JsonObject());
+
+    public static EventPayload BellyPain(int intensity) => Of(new JsonObject { ["intensity"] = intensity });
+
+    public static EventPayload BreastPump(int? amountLeftMl, int? amountRightMl)
+    {
+        var payload = new JsonObject();
+        if (amountLeftMl is not null)
+        {
+            payload["amount_left_ml"] = amountLeftMl;
+        }
+
+        if (amountRightMl is not null)
+        {
+            payload["amount_right_ml"] = amountRightMl;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload NasalSuction(string? tool, bool? saline)
+    {
+        var payload = new JsonObject();
+        if (tool is not null)
+        {
+            payload["tool"] = tool;
+        }
+
+        if (saline is not null)
+        {
+            payload["saline"] = saline;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload BellyMassage(string? reason, string? helped)
+    {
+        var payload = new JsonObject();
+        if (reason is not null)
+        {
+            payload["reason"] = reason;
+        }
+
+        if (helped is not null)
+        {
+            payload["helped"] = helped;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload Fussy(string? intensity, string? whatHelped)
+    {
+        var payload = new JsonObject();
+        if (intensity is not null)
+        {
+            payload["intensity"] = intensity;
+        }
+
+        if (whatHelped is not null)
+        {
+            payload["what_helped"] = whatHelped;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload NailTrim(string? where)
+    {
+        var payload = new JsonObject();
+        if (where is not null)
+        {
+            payload["where"] = where;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload Temperature(decimal valueC, string? method)
+    {
+        var payload = new JsonObject { ["value_c"] = valueC };
+        if (method is not null)
+        {
+            payload["method"] = method;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload SpitUp(string? kind, string? amount)
+    {
+        var payload = new JsonObject();
+        if (kind is not null)
+        {
+            payload["kind"] = kind;
+        }
+
+        if (amount is not null)
+        {
+            payload["amount"] = amount;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload Teething(string? stage, string? tooth)
+    {
+        var payload = new JsonObject();
+        if (stage is not null)
+        {
+            payload["stage"] = stage;
+        }
+
+        if (tooth is not null)
+        {
+            payload["tooth"] = tooth;
+        }
+
+        return Of(payload);
+    }
+
+    /// <summary>A milestone from the built-in list; voice never stores the "which milestone?" words (<c>custom</c>).</summary>
+    public static EventPayload Milestone(string? milestone)
+    {
+        var payload = new JsonObject();
+        if (milestone is not null)
+        {
+            payload["milestone"] = milestone;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload Symptom(string? symptom, string? severity)
+    {
+        var payload = new JsonObject();
+        if (symptom is not null)
+        {
+            payload["symptom"] = symptom;
+        }
+
+        if (severity is not null)
+        {
+            payload["severity"] = severity;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload Outdoor(string? kind)
+    {
+        var payload = new JsonObject();
+        if (kind is not null)
+        {
+            payload["kind"] = kind;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload SkinCare(string? product)
+    {
+        var payload = new JsonObject();
+        if (product is not null)
+        {
+            payload["product"] = product;
+        }
+
+        return Of(payload);
+    }
+
+    public static EventPayload Medication(Guid medicationId, string medicationName, Guid prescriptionId, decimal? doseAmount, string? doseUnit)
+    {
+        var dose = new JsonObject();
+        if (doseAmount is not null)
+        {
+            dose["amount"] = doseAmount;
+        }
+
+        if (doseUnit is not null)
+        {
+            dose["unit"] = doseUnit;
+        }
+
+        var entry = new JsonObject
+        {
+            ["medicationId"] = medicationId.ToString("D"),
+            ["name"] = medicationName,
+            ["dose"] = dose,
+            ["prescriptionId"] = prescriptionId.ToString("D"),
+        };
+
+        return Of(new JsonObject { ["medications"] = new JsonArray(entry) });
+    }
+
     /// <summary>
     /// <paramref name="payload"/> of a timer stopped at <paramref name="endedAt"/>: an open pause (<c>paused_at</c>) is
     /// folded into <c>paused_seconds</c> (never beyond the timer's length) and removed, as the web's finish does; every other

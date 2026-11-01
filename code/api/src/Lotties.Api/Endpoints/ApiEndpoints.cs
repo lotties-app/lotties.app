@@ -2,6 +2,7 @@ using Lotties.Api.Assistants.Alexa;
 using Lotties.Api.Assistants.Mcp;
 using Lotties.Api.Board;
 using Lotties.Api.Board.Mcp;
+using Lotties.Api.Consents;
 
 namespace Lotties.Api.Endpoints;
 
@@ -13,8 +14,10 @@ public static class ApiEndpoints
     public static WebApplication MapLottiesApi(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
-        app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous().DisableRateLimiting();
-        var api = app.MapGroup(V1Prefix).RequireAuthorization();
+        app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous().AllowWithoutConsent("The liveness probe: no user data.").DisableRateLimiting();
+        // Every route under the API group is behind the consent gate unless it says otherwise (AllowWithoutConsent) and is listed in
+        // ConsentGateCoverageTests: a new route is gated by default (docs/design/38-consent-and-terms.md).
+        var api = app.MapGroup(V1Prefix).RequireAuthorization().RequireConsent();
         api.MapVersionEndpoints();
         api.MapMeEndpoints();
         api.MapBabyCollectionEndpoints();

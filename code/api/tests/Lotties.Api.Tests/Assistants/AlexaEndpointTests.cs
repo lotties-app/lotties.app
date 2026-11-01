@@ -114,7 +114,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         var retry = await AlexaApiHost.ReadAsync(await host.PostAsync(body, SignedHeaders));
 
         var stored = Assert.Single(await Factory.EventsAsync(baby.BabyId));
-        Assert.StartsWith("Got it. Lia fell asleep", AlexaApiHost.Speech(first), StringComparison.Ordinal);
+        Assert.StartsWith("Got it. The baby fell asleep", AlexaApiHost.Speech(first), StringComparison.Ordinal);
         Assert.Equal(AlexaApiHost.Speech(first), AlexaApiHost.Speech(retry));
         Assert.Equal(BuiltInEventTypes.SleepId, stored.TypeId);
         Assert.Equal(await Factory.UserIdAsync(baby.OwnerSubject), stored.CreatedBy);
@@ -140,8 +140,8 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     }
 
     [Theory]
-    [InlineData("en-US", @"^I asked to delete Lia's last feed, just now\. Nothing was deleted: open the Lotties app to approve it or keep it\.$")]
-    [InlineData("pt-BR", @"^Pedi para apagar o último registro de alimentação de Lia, às? \d{2}:\d{2}\. Nada foi apagado: abra o app do Lotties para aprovar ou manter\.$")]
+    [InlineData("en-US", @"^I asked to delete the baby's last feed, just now\. Nothing was deleted: open the Lotties app to approve it or keep it\.$")]
+    [InlineData("pt-BR", @"^Pedi para apagar o último registro de alimentação do bebê, às? \d{2}:\d{2}\. Nada foi apagado: abra o app do Lotties para aprovar ou manter\.$")]
     public async Task Post_UndoTheLastEntry_OnlyAsksAndNothingIsDeleted(string locale, string expectedPattern)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -190,7 +190,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
 
         var bottle = Assert.Single(await Factory.EventsAsync(baby.BabyId));
         var speech = AlexaApiHost.Speech(json);
-        Assert.Matches(@"^Registrei uma mamadeira de 120 ml de leite materno às? \d{2}:\d{2} para Lia\.$", speech);
+        Assert.Matches(@"^Registrei uma mamadeira de 120 ml de leite materno às? \d{2}:\d{2}\.$", speech);
         Assert.Equal("breast_milk", JsonDocument.Parse(bottle.Payload.Value).RootElement.GetProperty("bottle_feeding_type").GetString());
     }
 
@@ -212,7 +212,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("DiaperIntent", host.TokenFor(baby.OwnerSubject), slots: new { diaperKind = Slot("diaperKind", "poop") }), SignedHeaders));
 
-        Assert.StartsWith("Logged a dirty diaper for Lia", AlexaApiHost.Speech(json), StringComparison.Ordinal);
+        Assert.StartsWith("Logged a dirty diaper for the baby", AlexaApiHost.Speech(json), StringComparison.Ordinal);
         Assert.Single(await Factory.EventsAsync(baby.BabyId));
     }
 
@@ -235,11 +235,11 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("SleepEndIntent", host.TokenFor(baby.OwnerSubject)), SignedHeaders));
 
-        Assert.Matches(@"^Lia woke up just now, after sleeping 1 hour and (19|20|21) minutes\.$", AlexaApiHost.Speech(json));
+        Assert.Matches(@"^The baby woke up just now, after sleeping 1 hour and (19|20|21) minutes\.$", AlexaApiHost.Speech(json));
     }
 
     [Theory]
-    [InlineData(BabyRole.Viewer, "Your role on Lia doesn't allow this. Ask the baby's owner in the app.")]
+    [InlineData(BabyRole.Viewer, "Your role on the baby doesn't allow this. Ask the baby's owner in the app.")]
     [InlineData(BabyRole.Doctor, "Voice commands are for the baby's family. Your account can't use them here.")]
     public async Task Post_WriteAsViewerOrDoctor_SpeaksTheRefusal(BabyRole role, string expected)
     {
@@ -252,10 +252,10 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     }
 
     [Theory]
-    [InlineData("LastFeedIntent", "I can't find a feed for Lia in the last 30 days.")]
-    [InlineData("SleepStatusIntent", "I can't find a sleep for Lia in the last 30 days.")]
-    [InlineData("DiapersTodayIntent", "Lia has had no diapers in the last 24 hours.")]
-    [InlineData("NextAppointmentIntent", "Lia has no upcoming appointments.")]
+    [InlineData("LastFeedIntent", "I can't find a feed for the baby in the last 30 days.")]
+    [InlineData("SleepStatusIntent", "I can't find a sleep for the baby in the last 30 days.")]
+    [InlineData("DiapersTodayIntent", "The baby has had no diapers in the last 24 hours.")]
+    [InlineData("NextAppointmentIntent", "The baby has no upcoming appointments.")]
     public async Task Post_Reads_AreSpokenInEnglish(string intent, string expected)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -266,13 +266,13 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     }
 
     [Theory]
-    [InlineData("NextNapWindowIntent", "I don't have enough sleep history yet to estimate Lia's next nap window.")]
-    [InlineData("NextFeedIntent", "I don't have enough feeds logged yet to estimate Lia's next feed.")]
-    [InlineData("NextDiaperIntent", "I don't have enough diapers logged yet to estimate Lia's next change.")]
+    [InlineData("NextNapWindowIntent", "I don't have enough sleep history yet to estimate the baby's next nap window.")]
+    [InlineData("NextFeedIntent", "I don't have enough feeds logged yet to estimate the baby's next feed.")]
+    [InlineData("NextDiaperIntent", "I don't have enough diapers logged yet to estimate the baby's next change.")]
     [InlineData("DiapersAverageIntent", "I need at least 3 complete days of diapers in the last week to give an average, and I found 0.")]
     [InlineData("BottleAverageIntent", "There aren't enough bottles with an amount logged in the last 14 days: I need at least 3, and I found 0.")]
-    [InlineData("SleepTodayIntent", "Lia has no sleep logged today.")]
-    [InlineData("LastDiaperIntent", "I can't find a diaper for Lia in the last 30 days.")]
+    [InlineData("SleepTodayIntent", "The baby has no sleep logged today.")]
+    [InlineData("LastDiaperIntent", "I can't find a diaper for the baby in the last 30 days.")]
     public async Task Post_NewReads_WithoutHistory_SaySoInEnglish(string intent, string expected)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -284,11 +284,11 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
     }
 
     [Theory]
-    [InlineData("NextNapWindowIntent", "Ainda não tenho histórico de sono suficiente para estimar a próxima janela de sono de Lia.")]
-    [InlineData("NextFeedIntent", "Ainda não tenho mamadas registradas o bastante para estimar a próxima mamada de Lia.")]
+    [InlineData("NextNapWindowIntent", "Ainda não tenho histórico de sono suficiente para estimar a próxima janela de sono do bebê.")]
+    [InlineData("NextFeedIntent", "Ainda não tenho mamadas registradas o bastante para estimar a próxima mamada do bebê.")]
     [InlineData("DiapersAverageIntent", "Preciso de pelo menos 3 dias completos com fraldas na última semana para dar uma média, e encontrei 0.")]
-    [InlineData("SleepTodayIntent", "Não há sono registrado hoje para Lia.")]
-    [InlineData("LastDiaperIntent", "Não encontrei nenhuma fralda de Lia nos últimos 30 dias.")]
+    [InlineData("SleepTodayIntent", "Não há sono registrado hoje.")]
+    [InlineData("LastDiaperIntent", "Não encontrei nenhuma fralda do bebê nos últimos 30 dias.")]
     public async Task Post_NewReads_WithoutHistory_SaySoInPortuguese(string intent, string expected)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -327,7 +327,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("CryReasonsIntent", host.TokenFor(baby.OwnerSubject)), SignedHeaders));
 
         var speech = AlexaApiHost.Speech(json);
-        Assert.StartsWith("From what is logged for Lia: hunger looks likely: the last feed was 6 hours ago", speech, StringComparison.Ordinal);
+        Assert.StartsWith("From what is logged for the baby: hunger looks likely: the last feed was 6 hours ago", speech, StringComparison.Ordinal);
         Assert.Contains("This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever", speech, StringComparison.Ordinal);
         Assert.Contains("a bulging or stiff soft spot on the head.", speech, StringComparison.Ordinal);
     }
@@ -339,7 +339,7 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("DueVaccinesIntent", host.TokenFor(baby.OwnerSubject), "pt-BR"), SignedHeaders));
 
-        Assert.StartsWith("Pelo calendário de vacinas, Lia tem ", AlexaApiHost.Speech(json), StringComparison.Ordinal);
+        Assert.StartsWith("Pelo calendário de vacinas, o bebê tem ", AlexaApiHost.Speech(json), StringComparison.Ordinal);
     }
 
     [Fact]

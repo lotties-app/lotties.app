@@ -1,4 +1,5 @@
 using Lotties.Api.Authentication;
+using Lotties.Api.Consents;
 using Lotties.Api.Limits;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
@@ -56,12 +57,15 @@ public static class McpServiceCollectionExtensions
     /// <c>/.well-known/oauth-protected-resource/api/v1/mcp</c> (anonymous). Every route is 404 while MCP is disabled
     /// (<see cref="McpRequestGuard"/>).
     /// </summary>
+    private const string McpReason = "Authenticated by the MCP OAuth scheme, not the API; the command layer answers a person without consent with an MCP error (docs/design/38-consent-and-terms.md).";
+
     public static WebApplication MapMcpEndpoints(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
         app.MapMcp(McpResource.Path)
             .RequireAuthorization(McpTokens.PolicyName)
             .RequireCors(EndpointCorsPolicy)
+            .AllowWithoutConsent(McpReason)
             .WithMetadata(McpEndpointMetadata.Endpoint);
 
         // Stateless Streamable HTTP has no GET stream and no session to DELETE: 405 (MCP 2026-07-28 "Earlier Streamable HTTP
@@ -69,6 +73,7 @@ public static class McpServiceCollectionExtensions
         app.MapMethods(McpResource.Path, [HttpMethods.Get, HttpMethods.Delete], MethodNotAllowed)
             .AllowAnonymous()
             .RequireCors(EndpointCorsPolicy)
+            .AllowWithoutConsent(McpReason)
             .WithMetadata(McpEndpointMetadata.Metadata)
             .ExcludeFromDescription();
         foreach (var path in new[] { McpResource.MetadataPrefix, McpResource.MetadataPrefix + McpResource.Path })
@@ -76,6 +81,7 @@ public static class McpServiceCollectionExtensions
             app.MapGet(path, Metadata)
                 .AllowAnonymous()
                 .RequireCors(MetadataCorsPolicy)
+                .AllowWithoutConsent(McpReason)
                 .WithMetadata(McpEndpointMetadata.Metadata)
                 .Produces<McpProtectedResourceMetadata>();
         }

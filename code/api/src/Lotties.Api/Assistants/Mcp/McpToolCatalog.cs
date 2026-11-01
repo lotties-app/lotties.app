@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
+using Lotties.Domain.EventTypes;
 using Lotties.Domain.Units;
 using ModelContextProtocol.Protocol;
 
@@ -61,7 +62,8 @@ internal sealed record McpTool(
 
 /// <summary>
 /// The tools of the MCP server (docs/design/32-assistants.md section 9). Reads need <see cref="McpScopes.Read"/>, logging
-/// needs <see cref="McpScopes.Write"/>. No medication tool, no dose, no free text: nothing a model says is stored as text.
+/// needs <see cref="McpScopes.Write"/>. No medication tool, no dose, no free text: nothing a model says is stored as text (every
+/// choice is an option of the built-in event type's own field, see <see cref="AssistantChoices"/>).
 /// </summary>
 internal static class McpToolCatalog
 {
@@ -93,18 +95,44 @@ internal static class McpToolCatalog
     private static readonly McpParameter Day = new("date", McpParameterKind.Date, "The local day, YYYY-MM-DD (today by default; up to a year back).");
     private static readonly McpParameter EndDay = new("endDate", McpParameterKind.Date, "The last local day of the week, YYYY-MM-DD (today by default; up to a year back).");
 
+    private static McpParameter Choice(string name, string description, IReadOnlyList<string> values, bool required = false) =>
+        new(name, McpParameterKind.Choice, description, required, Values: values);
+
+    private static readonly McpParameter BathWater = new("temperatureC", McpParameterKind.Number, "The water temperature in degrees Celsius (above 0 up to 60). Optional.", Max: AssistantLimits.BathWaterMaxC);
+    private static readonly McpParameter PainLevel = new("level", McpParameterKind.Integer, "The belly pain level the person gave, 1 to 5. Required: never guess it.", Required: true, Min: AssistantLimits.PainMin, Max: AssistantLimits.PainMax);
+    private static readonly McpParameter PumpLeft = new("amountLeftMl", McpParameterKind.Integer, "Milliliters from the left side, if the person said so.", Min: AssistantLimits.PumpMinMl, Max: AssistantLimits.PumpMaxMl);
+    private static readonly McpParameter PumpRight = new("amountRightMl", McpParameterKind.Integer, "Milliliters from the right side, if the person said so.", Min: AssistantLimits.PumpMinMl, Max: AssistantLimits.PumpMaxMl);
+    private static readonly McpParameter NasalToolChoice = Choice("tool", "The tool used, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.NasalSuction, "tool"));
+    private static readonly McpParameter Saline = new("saline", McpParameterKind.Boolean, "Whether saline was used, if said.");
+    private static readonly McpParameter MassageReasonChoice = Choice("reason", "Why, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.BellyMassage, "reason"));
+    private static readonly McpParameter MassageHelpedChoice = Choice("helped", "Whether it helped, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.BellyMassage, "helped"));
+    private static readonly McpParameter FussyIntensityChoice = Choice("intensity", "How intense, as the person said.", AssistantChoices.FussyIntensities);
+    private static readonly McpParameter FussyHelpedChoice = Choice("whatHelped", "What helped, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.Fussy, "what_helped"));
+    private static readonly McpParameter NailPlace = Choice("where", "Where, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.NailTrim, "where"));
+    private static readonly McpParameter ReadingC = new("temperatureC", McpParameterKind.Number, "The reading in degrees Celsius (30 to 45), exactly as the person gave it. Required: never guess it.", Required: true, Max: AssistantLimits.TemperatureMaxC);
+    private static readonly McpParameter ReadingMethod = Choice("method", "How it was taken, if said.", AssistantChoices.TemperatureMethods);
+    private static readonly McpParameter SpitKind = Choice("kind", "Spit-up or vomit, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.SpitUp, "kind"));
+    private static readonly McpParameter SpitAmount = Choice("amount", "How much, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.SpitUp, "amount"));
+    private static readonly McpParameter TeethStage = Choice("stage", "The stage, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.Teething, "stage"));
+    private static readonly McpParameter TeethTooth = Choice("tooth", "Which tooth, only with stage tooth_came_through.", AssistantChoices.OptionsOf(BuiltInEventTypes.Teething, "tooth"));
+    private static readonly McpParameter MilestoneChoice = Choice("milestone", "The milestone from the list; omit it when none fits (no free text is stored).", AssistantChoices.Milestones);
+    private static readonly McpParameter SymptomChoice = Choice("symptom", "The symptom from the list; omit it when none fits (no free text is stored).", AssistantChoices.Symptoms);
+    private static readonly McpParameter SymptomSeverityChoice = Choice("severity", "The severity, as the person said.", AssistantChoices.Severities);
+    private static readonly McpParameter OutdoorKindChoice = Choice("kind", "The kind, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.Outdoor, "kind"));
+    private static readonly McpParameter SkinProductChoice = Choice("product", "The product, if said.", AssistantChoices.OptionsOf(BuiltInEventTypes.SkinCare, "product"));
+
     public static IReadOnlyList<McpTool> All { get; } =
     [
         Read(
             "list_babies",
             "List babies",
-            "Lists the babies the signed-in user can ask about: id, name, the user's role (owner, parent, caregiver, viewer), whether the user can log events for the baby, and which one the other tools use when no babyId is given. Use an id as babyId in the other tools.",
+            "Lists the babies the signed-in user can ask about: id, the name only when the user turned on \"say my baby's name\" in the Lotties app (otherwise no name is returned), the user's role (owner, parent, caregiver, viewer), whether the user can log events for the baby, and which one the other tools use when no babyId is given. Use an id as babyId in the other tools.",
             [],
             (assistant, invocation, _, token) => assistant.ListBabiesAsync(invocation, token)),
         Read(
             "get_baby_profile",
             "Baby profile",
-            "The baby's name and age (whole days, weeks and months).",
+            "The baby's age (whole days, weeks and months); the name only when the user turned on \"say my baby's name\" in the Lotties app.",
             [McpParameter.BabyId],
             (assistant, invocation, _, token) => assistant.ReadBabyProfileAsync(invocation, token)),
         Read(
@@ -128,7 +156,7 @@ internal static class McpToolCatalog
         Read(
             "get_next_appointment",
             "Next appointment",
-            "The next upcoming appointment within a year: when it starts (UTC), and the family's own title and type.",
+            "The next upcoming appointment within a year: when it starts (UTC), its type (consultation, vaccine, exam, other) and, only when the care provider's specialty is a known one, that specialty as a code (for example pediatrician). Never a doctor's or clinic's name, a title, a location or notes.",
             [McpParameter.BabyId],
             (assistant, invocation, _, token) => assistant.ReadNextAppointmentAsync(invocation, token)),
         Read(
@@ -248,6 +276,96 @@ internal static class McpToolCatalog
             "Logs a diaper changed now.",
             [DiaperContent],
             (assistant, invocation, arguments, token) => assistant.LogDiaperAsync(invocation, DiaperOf(arguments.Text(DiaperContent.Name)), token)),
+        Write(
+            "log_bath",
+            "Log bath",
+            "Logs a bath given now, with the water temperature in degrees Celsius when the person said it.",
+            [BathWater],
+            (assistant, invocation, arguments, token) => assistant.LogBathAsync(invocation, arguments.Decimal(BathWater.Name), TemperatureUnit.Celsius, token)),
+        Write(
+            "log_tummy_time",
+            "Log tummy time",
+            "Starts a tummy time timer now (stop it in the app).",
+            [],
+            (assistant, invocation, _, token) => assistant.LogTummyTimeAsync(invocation, token)),
+        Write(
+            "log_belly_pain",
+            "Log belly pain",
+            "Logs belly pain with the level the person gave (1 to 5). A record of what was said: no interpretation, no advice.",
+            [PainLevel],
+            (assistant, invocation, arguments, token) => assistant.LogBellyPainAsync(invocation, arguments.Integer(PainLevel.Name), token)),
+        Write(
+            "log_breast_pump",
+            "Log breast pump",
+            "Starts a breast pump timer now, with the amounts of each side when the person said them (stop it in the app).",
+            [PumpLeft, PumpRight],
+            (assistant, invocation, arguments, token) => assistant.LogBreastPumpAsync(invocation, arguments.Integer(PumpLeft.Name), arguments.Integer(PumpRight.Name), token)),
+        Write(
+            "log_nasal_suction",
+            "Log nasal suction",
+            "Logs nasal suction done now.",
+            [NasalToolChoice, Saline],
+            (assistant, invocation, arguments, token) => assistant.LogNasalSuctionAsync(invocation, arguments.Text(NasalToolChoice.Name), arguments.Bool(Saline.Name), token)),
+        Write(
+            "log_belly_massage",
+            "Log belly massage",
+            "Starts a belly massage timer now (stop it in the app).",
+            [MassageReasonChoice, MassageHelpedChoice],
+            (assistant, invocation, arguments, token) => assistant.LogBellyMassageAsync(invocation, arguments.Text(MassageReasonChoice.Name), arguments.Text(MassageHelpedChoice.Name), token)),
+        Write(
+            "log_fussy",
+            "Log fussy spell",
+            "Starts a fussy or crying timer now (stop it in the app). A log of what happened, never a diagnosis.",
+            [FussyIntensityChoice, FussyHelpedChoice],
+            (assistant, invocation, arguments, token) => assistant.LogFussyAsync(invocation, arguments.Text(FussyIntensityChoice.Name), arguments.Text(FussyHelpedChoice.Name), token)),
+        Write(
+            "log_nail_trim",
+            "Log nail trim",
+            "Logs a nail trim done now.",
+            [NailPlace],
+            (assistant, invocation, arguments, token) => assistant.LogNailTrimAsync(invocation, arguments.Text(NailPlace.Name), token)),
+        Write(
+            "log_temperature",
+            "Log temperature",
+            "Logs a temperature reading exactly as the person gave it, in degrees Celsius. A record only: it is never interpreted, no fever threshold, no advice; do not judge the number to the user.",
+            [ReadingC, ReadingMethod],
+            (assistant, invocation, arguments, token) => assistant.LogTemperatureAsync(invocation, arguments.Decimal(ReadingC.Name), TemperatureUnit.Celsius, arguments.Text(ReadingMethod.Name), token)),
+        Write(
+            "log_spit_up",
+            "Log spit-up",
+            "Logs spit-up or vomit that just happened.",
+            [SpitKind, SpitAmount],
+            (assistant, invocation, arguments, token) => assistant.LogSpitUpAsync(invocation, arguments.Text(SpitKind.Name), arguments.Text(SpitAmount.Name), token)),
+        Write(
+            "log_teething",
+            "Log teething",
+            "Logs a teething event now.",
+            [TeethStage, TeethTooth],
+            (assistant, invocation, arguments, token) => assistant.LogTeethingAsync(invocation, arguments.Text(TeethStage.Name), arguments.Text(TeethTooth.Name), token)),
+        Write(
+            "log_milestone",
+            "Log milestone",
+            "Logs a development milestone from the list, reached now.",
+            [MilestoneChoice],
+            (assistant, invocation, arguments, token) => assistant.LogMilestoneAsync(invocation, arguments.Text(MilestoneChoice.Name), token)),
+        Write(
+            "log_symptom",
+            "Log symptom",
+            "Logs a symptom the parents noticed, from the list, with the severity they gave. A record only: no diagnosis, no advice, no medicine.",
+            [SymptomChoice, SymptomSeverityChoice],
+            (assistant, invocation, arguments, token) => assistant.LogSymptomAsync(invocation, arguments.Text(SymptomChoice.Name), arguments.Text(SymptomSeverityChoice.Name), token)),
+        Write(
+            "log_outdoor",
+            "Log outdoor time",
+            "Starts an outdoor time timer now (stop it in the app).",
+            [OutdoorKindChoice],
+            (assistant, invocation, arguments, token) => assistant.LogOutdoorAsync(invocation, arguments.Text(OutdoorKindChoice.Name), token)),
+        Write(
+            "log_skin_care",
+            "Log skin care",
+            "Logs skin care done now.",
+            [SkinProductChoice],
+            (assistant, invocation, arguments, token) => assistant.LogSkinCareAsync(invocation, arguments.Text(SkinProductChoice.Name), token)),
     ];
 
     private static readonly FrozenDictionary<string, McpTool> ByName = All.ToFrozenDictionary(tool => tool.Name, StringComparer.Ordinal);

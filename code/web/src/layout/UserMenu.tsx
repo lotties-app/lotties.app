@@ -153,6 +153,19 @@ export function UserMenu() {
           </ListItemIcon>
           {t('layout.appearanceLanguage')}
         </MenuItem>
+        {!doctorMode && (
+          <MenuItem
+            component={Link}
+            to="/settings#privacy"
+            sx={{ minHeight: 48 }}
+            onClick={() => setAnchor(null)}
+          >
+            <ListItemIcon>
+              <Icon name="lock" size={20} />
+            </ListItemIcon>
+            {t('layout.privacyConsents')}
+          </MenuItem>
+        )}
         {doctorMode && (
           <MenuItem
             component={Link}

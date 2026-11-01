@@ -4,6 +4,7 @@ using System.Text.Json;
 using Lotties.Api.Authentication;
 using Lotties.Api.Limits;
 using Lotties.Application.Assistants;
+using Lotties.Domain.Assistants;
 using Lotties.Domain.Exceptions;
 using Microsoft.Extensions.Options;
 
@@ -60,6 +61,27 @@ internal sealed class AlexaSkill(
         ["LastDiaperIntent"] = (service, invocation, _, token) => service.ReadLastDiaperAsync(invocation, token),
         ["RequestDeleteLastIntent"] = (service, invocation, _, token) => service.RequestDeleteLastAsync(invocation, token),
         ["CryReasonsIntent"] = (service, invocation, _, token) => service.ReadCryReasonsAsync(invocation, token),
+        ["BathIntent"] = (service, invocation, intent, token) => service.LogBathAsync(invocation, AlexaSlots.Decimal(intent, "temperature"), null, token),
+        ["TummyTimeIntent"] = (service, invocation, _, token) => service.LogTummyTimeAsync(invocation, token),
+        ["BellyPainIntent"] = (service, invocation, intent, token) => service.LogBellyPainAsync(invocation, AlexaSlots.Number(intent, "painLevel"), token),
+        ["BreastPumpIntent"] = (service, invocation, intent, token) => service.LogBreastPumpAsync(invocation, AlexaSlots.Number(intent, "amountLeft"), AlexaSlots.Number(intent, "amountRight"), token),
+        ["NasalSuctionIntent"] = (service, invocation, _, token) => service.LogNasalSuctionAsync(invocation, null, null, token),
+        ["BellyMassageIntent"] = (service, invocation, _, token) => service.LogBellyMassageAsync(invocation, null, null, token),
+        ["FussyIntent"] = (service, invocation, intent, token) => service.LogFussyAsync(invocation, AlexaSlots.Choice(intent, "intensity", AssistantChoices.FussyIntensities), null, token),
+        ["NailTrimIntent"] = (service, invocation, _, token) => service.LogNailTrimAsync(invocation, null, token),
+        ["TemperatureIntent"] = (service, invocation, intent, token) => service.LogTemperatureAsync(invocation, AlexaSlots.Decimal(intent, "value"), null, AlexaSlots.Choice(intent, "method", AssistantChoices.TemperatureMethods), token),
+        ["SpitUpIntent"] = (service, invocation, _, token) => service.LogSpitUpAsync(invocation, null, null, token),
+        ["TeethingIntent"] = (service, invocation, _, token) => service.LogTeethingAsync(invocation, null, null, token),
+        ["MilestoneIntent"] = (service, invocation, intent, token) => service.LogMilestoneAsync(invocation, AlexaSlots.Choice(intent, "milestone", AssistantChoices.Milestones), token),
+        ["SymptomIntent"] = (service, invocation, intent, token) => service.LogSymptomAsync(invocation, AlexaSlots.Choice(intent, "symptom", AssistantChoices.Symptoms), AlexaSlots.Choice(intent, "severity", AssistantChoices.Severities), token),
+        ["OutdoorIntent"] = (service, invocation, _, token) => service.LogOutdoorAsync(invocation, null, token),
+        ["SkinCareIntent"] = (service, invocation, _, token) => service.LogSkinCareAsync(invocation, null, token),
+        ["MedicationIntent"] = (service, invocation, intent, token) => service.LogMedicationAsync(invocation, AlexaSlots.SlotValue(intent, "medicationName"), token),
+        ["MedicationReminderIntent"] = (service, invocation, _, token) => service.ReadMedicationReminderAsync(invocation, token),
+        ["WeekSummaryIntent"] = (service, invocation, _, token) => service.ReadWeekSummaryAsync(invocation, null, token),
+        ["ListBabiesIntent"] = (service, invocation, _, token) => service.ListBabiesAsync(invocation, token),
+        ["BabyProfileIntent"] = (service, invocation, _, token) => service.ReadBabyProfileAsync(invocation, token),
+        ["DaySummaryIntent"] = (service, invocation, _, token) => service.ReadDaySummaryAsync(invocation, null, token),
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
     private static readonly FrozenDictionary<string, AlexaPrompt> Prompts = new Dictionary<string, AlexaPrompt>(StringComparer.Ordinal)
@@ -76,7 +98,18 @@ internal sealed class AlexaSkill(
     private static readonly FrozenDictionary<string, Func<AlexaIntent, AlexaPrompt?>> RequiredSlots = new Dictionary<string, Func<AlexaIntent, AlexaPrompt?>>(StringComparer.Ordinal)
     {
         ["DiaperIntent"] = intent => AlexaSlots.Diaper(intent) is null ? AlexaPrompt.DiaperKindMissing : null,
+        ["BellyPainIntent"] = intent => AlexaSlots.Number(intent, "painLevel") is null ? AlexaPrompt.PainLevelMissing : null,
+        ["TemperatureIntent"] = intent => AlexaSlots.Decimal(intent, "value") is null ? AlexaPrompt.TemperatureMissing : null,
+        ["MedicationIntent"] = intent => AlexaSlots.SlotValue(intent, "medicationName") is null ? AlexaPrompt.MedicationNameMissing : null,
     }.ToFrozenDictionary(StringComparer.Ordinal);
+
+    /// <summary>The intents that write (log an event or ask to delete one): a question must never match one of them.</summary>
+    public static IReadOnlySet<string> WriteIntents { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "SleepStartIntent", "SleepEndIntent", "BottleIntent", "NursingIntent", "DiaperIntent", "RequestDeleteLastIntent", "BathIntent", "TummyTimeIntent",
+        "BellyPainIntent", "BreastPumpIntent", "NasalSuctionIntent", "BellyMassageIntent", "FussyIntent", "NailTrimIntent", "TemperatureIntent", "SpitUpIntent",
+        "TeethingIntent", "MilestoneIntent", "SymptomIntent", "OutdoorIntent", "SkinCareIntent", "MedicationIntent",
+    }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <summary>The intent names this skill knows (the only ones that may appear in a log line).</summary>
     public static IReadOnlyCollection<string> KnownIntents { get; } = Commands.Keys.Concat(Prompts.Keys).ToArray();

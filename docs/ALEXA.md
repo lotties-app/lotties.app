@@ -136,6 +136,15 @@ tuning is in docs/DEPLOY.md "Alexa skill". The migration `VoiceAssistants` must 
 Check: `curl -i -X POST https://lotties.app/api/v1/alexa -d '{}'` answers **400** when enabled (unsigned), **404** when
 disabled.
 
+## 6a. Models of 2026-10-27 (the review of the 21 added intents)
+
+Re-paste both models and **Build** again: the choice slot types (`FUSSY_INTENSITY`, `TEMP_METHOD`, `MILESTONE_TYPE`,
+`SYMPTOM_TYPE`, `SYMPTOM_SEVERITY`) now have ids equal to the Lotties field options (the API reads the ids), the symptoms are
+the ones the app offers (cough, runny nose, congestion, rash, diarrhea, constipation: no fever, vomiting, lethargy or
+dehydration), and the temperature samples without a number are gone. A temperature is always said with its number
+("log temperature thirty seven"), in the unit system of Settings > Units. Settings > Voice assistants has two opt-in
+switches: the baby's name and the names of your medicines in answers (both off by default).
+
 ## 7. Test in the console
 
 **Test** tab, set "Skill testing is enabled in" to **Development**, then type or say, in each language:
@@ -169,7 +178,8 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 - **Privacy policy URL:** `https://lotties.app/privacy` (published; the Alexa part is in "Who sees your data" >
   "Companies and services that receive data", anchor `#privacy-sharing-companies`). It says that Amazon records and
   processes the voice, that Lotties receives only the command and its values, **and** that the answer Lotties sends back
-  for Alexa to speak can carry the baby's name, feed and sleep times, diaper counts, the next appointment and due
+  for Alexa to speak carries no baby name unless the parent turned on "Say my baby's name in answers" (Settings > Voice
+  assistants, off by default) and no free text or names of people; it can carry feed and sleep times, diaper counts, the date and time of the next appointment and due
   vaccines (Amazon receives that text), plus that Amazon keeps the account-linking token. Before submitting: the
   owner's values and the legal review in [docs/PRIVACY-OWNER-CHECKLIST.md](PRIVACY-OWNER-CHECKLIST.md). Terms of use
   URL: optional.
@@ -178,14 +188,17 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
   "Alexa, ask lotties when was the last feed"), small and large icons (`docs/design/icons`), category
   **Health & Fitness** or **Lifestyle**, keywords.
 - **Privacy & Compliance:** no purchases; "collects personal information": **yes**, answer honestly: with account
-  linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers contain the
-  baby's name and log facts (docs/design/33-privacy-audit.md section 3); **child-directed: No** (it is used by parents,
+  linking the skill reads and writes the parent's baby log in her Lotties account, and its spoken answers carry log facts and
+  no child name by default (docs/design/33-privacy-audit.md section 3); **child-directed: No** (it is used by parents,
   not children, although the data is about a child), no advertising, export compliance. Note that the skill does not
   give medical advice.
 - **Testing instructions** for the reviewers: a test Lotties account (create one for them; never a real family's),
   that account linking is required for commands, the example phrases, and that a bottle needs an amount.
 - **No health claims:** descriptions say it logs and reads back the family's own records; never "monitors", "detects",
-  "keeps your baby healthy" or anything about doses. The skill has no medication intent.
+  "keeps your baby healthy" or anything about doses. Medication by voice is limited to two things (docs/design/32-assistants.md
+  section 5.4): saying that a dose of a medicine you registered was given (recorded as said, never checked or suggested) and
+  asking for the reminders you registered (always with "these are reminders of the medicines you registered in Lotties, not
+  recommendations from Lotties"). Describe them that way, never as dosing, advice or "reminds you what to give".
 - **Availability:** the countries of each language (US for en-US, Brazil for pt-BR).
 - Submit for review. After approval of the brand invocation name (section 1), switch it in a later version.
 
@@ -199,6 +212,7 @@ correlation id (`kubectl ... logs deploy/lotties-api | grep Alexa`).
 | "Please link your account" after linking | the Alexa client's access token lacks the `lotties-api` audience (5.1.4), or the issuer is not `https://auth.lotties.app/realms/lotties.app` (`AUTH_AUTHORITY`); decode one token from the console's JSON Input (`context.System.user.accessToken`) at a JWT debugger you trust, offline |
 | Linking page shows "Invalid parameter: redirect_uri" | the Alexa Redirect URLs are not all in the client's Valid redirect URIs (5.1.2) |
 | Answers in English to a Brazilian device | the device's language is not Portuguese (Brasil), or the pt-BR model was not built |
+| Alexa says "open the Lotties app and accept the terms of use" | the linked person has not accepted the current terms and privacy policy (the consent screen, docs/design/38-consent-and-terms.md): she opens the Lotties app once with that account and accepts; the demo account for the reviewers must accept it too (ALEXA-SUBMISSION.md Etapa 2) |
 | "You have more than one baby" | the parent belongs to several babies: Settings > Voice assistants in the app |
 | Times said as "20 minutes ago" instead of a clock time (English) | the user has no time zone stored yet: the assistant uses the one saved with her notification settings (Settings > Notifications, saved once from a device: it stores that device's zone); Portuguese falls back to `America/Sao_Paulo` |
 | "That's a lot of requests" | more than `RequestLimits__AssistantPermitsPerMinute` (30) commands in a minute |

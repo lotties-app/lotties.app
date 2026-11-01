@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using Lotties.Api.Assistants.Mcp;
+using Lotties.Api.Consents;
 using Lotties.Api.Endpoints;
 using Lotties.Api.Limits;
 using Microsoft.AspNetCore.Cors.Infrastructure;
@@ -79,6 +80,8 @@ public static class BoardMcpServer
     /// 405 answers to <c>GET</c> and <c>DELETE</c>. Every route is 404 unless both <c>Board:Enabled</c> and
     /// <c>Board:Mcp:Enabled</c> (<see cref="BoardMcpRequestGuard"/>, then the board guard).
     /// </summary>
+    private const string BoardReason = "The project board is internal project tracking, never baby data (docs/design/36-project-board.md).";
+
     public static WebApplication MapBoardMcpEndpoints(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -86,12 +89,14 @@ public static class BoardMcpServer
             .RequireAuthorization(BoardPolicies.Read)
             .RequireRateLimiting(RequestLimitPolicies.Board)
             .RequireCors(CorsPolicy)
+            .AllowWithoutConsent(BoardReason)
             .WithMetadata(BoardMcpEndpointMetadata.Endpoint, BoardEndpointMetadata.Instance, BoardRequestLimitsMetadata.Standard);
 
         // Stateless Streamable HTTP has no GET stream and no session to DELETE: 405, never a sign-in challenge.
         app.MapMethods(Path, [HttpMethods.Get, HttpMethods.Delete], MethodNotAllowed)
             .AllowAnonymous()
             .RequireCors(CorsPolicy)
+            .AllowWithoutConsent(BoardReason)
             .WithMetadata(BoardMcpEndpointMetadata.Other, BoardEndpointMetadata.Instance)
             .ExcludeFromDescription();
         return app;

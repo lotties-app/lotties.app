@@ -16,31 +16,31 @@ internal sealed partial class PortugueseAlexaLanguage
     {
         [AssistantResultCode.NextNapWindow] = NextNapWindow,
         [AssistantResultCode.NapWindowAsleep] = NapWindowAsleep,
-        [AssistantResultCode.NoNapPrediction] = result => $"Ainda não tenho histórico de sono suficiente para estimar a próxima janela de sono de {Name(result)}.",
-        [AssistantResultCode.NextFeed] = result => $"A próxima mamada de {Name(result)} {Expected(result, result.Estimate!)}.",
-        [AssistantResultCode.NoNextFeed] = result => $"Ainda não tenho mamadas registradas o bastante para estimar a próxima mamada de {Name(result)}.",
+        [AssistantResultCode.NoNapPrediction] = result => $"Ainda não tenho histórico de sono suficiente para estimar a próxima janela de sono {De(result)}.",
+        [AssistantResultCode.NextFeed] = result => $"A próxima mamada {De(result)} {Expected(result, result.Estimate!)}.",
+        [AssistantResultCode.NoNextFeed] = result => $"Ainda não tenho mamadas registradas o bastante para estimar a próxima mamada {De(result)}.",
         [AssistantResultCode.NextDiaper] = NextDiaper,
-        [AssistantResultCode.NoNextDiaper] = result => $"Ainda não tenho fraldas registradas o bastante para estimar a próxima troca de {Name(result)}.",
+        [AssistantResultCode.NoNextDiaper] = result => $"Ainda não tenho fraldas registradas o bastante para estimar a próxima troca {De(result)}.",
         [AssistantResultCode.DiapersAverage] = result =>
             $"Nos últimos {Speech.Count(result.Count ?? 0, "dia", "dias")} com fraldas, {Name(result)} usou cerca de {Number(result.PerDay)} fraldas por dia: cerca de {Number(result.WetPerDay)} com xixi e {Number(result.DirtyPerDay)} com cocô.",
         [AssistantResultCode.NoDiapersAverage] = result =>
             $"Preciso de pelo menos 3 dias completos com fraldas na última semana para dar uma média, e encontrei {result.Count ?? 0}.",
         [AssistantResultCode.BottleAverage] = result =>
-            $"As últimas {Speech.Count(result.Count ?? 0, "mamadeira", "mamadeiras")} de {Name(result)} tiveram em média {Volume(result, result.AmountMl)}, e a última foi de {Volume(result, result.LastAmountMl)}.",
+            $"As últimas {Speech.Count(result.Count ?? 0, "mamadeira", "mamadeiras")} {De(result)} tiveram em média {Volume(result, result.AmountMl)}, e a última foi de {Volume(result, result.LastAmountMl)}.",
         [AssistantResultCode.NoBottleData] = result =>
             $"Não há mamadeiras com quantidade registrada o bastante nos últimos 14 dias: preciso de pelo menos 3, e encontrei {result.Count ?? 0}.",
         [AssistantResultCode.SleepToday] = SleepToday,
         [AssistantResultCode.BottleToday] = BottleToday,
         [AssistantResultCode.FeedsToday] = FeedsToday,
         [AssistantResultCode.LastDiaper] = result =>
-            $"A última fralda de {Name(result)} foi {LastDiaperContent(result)}, {AtAndAgo(result, result.At)}.",
-        [AssistantResultCode.NoDiapers] = result => $"Não encontrei nenhuma fralda de {Name(result)} nos últimos 30 dias.",
+            $"A última fralda {De(result)} foi {LastDiaperContent(result)}, {AtAndAgo(result, result.At)}.",
+        [AssistantResultCode.NoDiapers] = result => $"Não encontrei nenhuma fralda {De(result)} nos últimos 30 dias.",
         [AssistantResultCode.CryReasons] = CryReasons,
         [AssistantResultCode.CryNoData] = CryNoData,
         [AssistantResultCode.DeleteRequested] = result =>
-            $"Pedi para apagar o último registro de {EntryName(result.EntryType)} de {Name(result)}, {When(result, result.At)}. Nada foi apagado: abra o app do Lotties para aprovar ou manter.",
+            $"Pedi para apagar o último registro de {EntryName(result.EntryType)} {De(result)}, {When(result, result.At)}. Nada foi apagado: abra o app do Lotties para aprovar ou manter.",
         [AssistantResultCode.LastNotUndoable] = result =>
-            $"A última coisa que você registrou por voz para {Name(result)} foi o despertar, {When(result, result.At)}. Isso não pode ser desfeito por voz, então nada foi alterado. Você pode corrigir no app do Lotties.",
+            $"A última coisa que você registrou por voz{Para(result)} foi o despertar, {When(result, result.At)}. Isso não pode ser desfeito por voz, então nada foi alterado. Você pode corrigir no app do Lotties.",
         [AssistantResultCode.NoEntryToDelete] = _ => "Não encontrei nenhum registro feito por voz nos últimos 30 minutos, então nada foi alterado.",
     };
 
@@ -49,6 +49,22 @@ internal sealed partial class PortugueseAlexaLanguage
         "feeding" => "alimentação",
         "sleep" => "sono",
         "diaper" => "troca de fralda",
+        "bath" => "banho",
+        "tummy_time" => "tempo de bruços",
+        "belly_pain" => "dor de barriga",
+        "breast_pump" => "ordenha",
+        "nasal_suction" => "aspiração nasal",
+        "belly_massage" => "massagem na barriga",
+        "fussy" => "irritação",
+        "nail_trim" => "corte de unhas",
+        "temperature" => "temperatura",
+        "spit_up" => "regurgitação",
+        "teething" => "dentição",
+        "milestone" => "marco",
+        "symptom" => "sintoma",
+        "outdoor" => "passeio",
+        "skin_care" => "cuidados com a pele",
+        "medication" => "medicamento",
         _ => "item",
     };
 
@@ -61,15 +77,15 @@ internal sealed partial class PortugueseAlexaLanguage
         var count = result.Count ?? 0;
         if (count == 0)
         {
-            return $"{Name(result)} não tomou nenhuma mamadeira {window}.";
+            return $"{Subject(result)} não tomou nenhuma mamadeira {window}.";
         }
 
         if ((result.AmountMl ?? 0) == 0)
         {
-            return $"{Name(result)} teve {Speech.Count(count, "mamadeira", "mamadeiras")} {window}, sem quantidade registrada.";
+            return $"{Subject(result)} teve {Speech.Count(count, "mamadeira", "mamadeiras")} {window}, sem quantidade registrada.";
         }
 
-        var total = $"{Name(result)} tomou {Volume(result, result.AmountMl)} em {Speech.Count(count, "mamadeira", "mamadeiras")} {window}";
+        var total = $"{Subject(result)} tomou {Volume(result, result.AmountMl)} em {Speech.Count(count, "mamadeira", "mamadeiras")} {window}";
         return result.FormulaBottles is { Bottles: > 0 } formula && result.BreastMilkBottles is { Bottles: > 0 } milk
             ? $"{total}: {formula.Bottles} de fórmula, {Volume(result, formula.Ml)}, e {milk.Bottles} de leite materno, {Volume(result, milk.Ml)}."
             : $"{total}.";
@@ -82,7 +98,7 @@ internal sealed partial class PortugueseAlexaLanguage
         var count = result.Count ?? 0;
         if (count == 0)
         {
-            return $"{Name(result)} não teve nenhuma alimentação {window}.";
+            return $"{Subject(result)} não teve nenhuma alimentação {window}.";
         }
 
         var parts = new[]
@@ -92,7 +108,7 @@ internal sealed partial class PortugueseAlexaLanguage
             result.SolidFeeds is > 0 ? Speech.Count(result.SolidFeeds.Value, "refeição sólida", "refeições sólidas") : null,
         }.OfType<string>().ToArray();
         var split = parts.Length == 0 ? string.Empty : $": {Speech.List(parts)}";
-        return $"{Name(result)} teve {Speech.Count(count, "alimentação", "alimentações")} {window}{split}.";
+        return $"{Subject(result)} teve {Speech.Count(count, "alimentação", "alimentações")} {window}{split}.";
     }
 
     private static string SleepToday(AssistantResult result)
@@ -100,9 +116,9 @@ internal sealed partial class PortugueseAlexaLanguage
         var slept = Speech.Duration(result.Minutes);
         return (result.Minutes, result.Count) switch
         {
-            (null or 0, _) => $"Não há sono registrado hoje para {Name(result)}.",
-            (_, null or 0) => $"{Name(result)} dormiu {slept} hoje, sem sonecas.",
-            _ => $"{Name(result)} dormiu {slept} hoje, com {Speech.Count(result.Count.Value, "soneca", "sonecas")}.",
+            (null or 0, _) => $"Não há sono registrado hoje{Para(result)}.",
+            (_, null or 0) => $"{Subject(result)} dormiu {slept} hoje, sem sonecas.",
+            _ => $"{Subject(result)} dormiu {slept} hoje, com {Speech.Count(result.Count.Value, "soneca", "sonecas")}.",
         };
     }
 
@@ -110,14 +126,14 @@ internal sealed partial class PortugueseAlexaLanguage
     {
         var window = result.Estimate!;
         return window.Latest <= result.AsOf
-            ? $"A janela de sono de {Name(result)} era {Between(result, window)}."
-            : $"A próxima janela de sono de {Name(result)} deve ser {Between(result, window)}.";
+            ? $"A janela de sono {De(result)} era {Between(result, window)}."
+            : $"A próxima janela de sono {De(result)} deve ser {Between(result, window)}.";
     }
 
     private static string NapWindowAsleep(AssistantResult result)
     {
-        var asleep = $"{Name(result)} está dormindo{SinceClause(result)}.";
-        return result.EndedAt is { } wakes ? $"{asleep} {Name(result)} deve acordar {Moment(result, wakes)}." : asleep;
+        var asleep = $"{Subject(result)} está dormindo{SinceClause(result)}.";
+        return result.EndedAt is { } wakes ? $"{asleep} {Subject(result)} deve acordar {Moment(result, wakes)}." : asleep;
     }
 
     private static string NextDiaper(AssistantResult result)
@@ -164,7 +180,7 @@ internal sealed partial class PortugueseAlexaLanguage
     private static string CryReasons(AssistantResult result)
     {
         var causes = AssistantCryCause.Spoken(result.CryCauses).Select((cause, index) => index == 0 ? LowerFirst(CauseSentence(result, cause)) : CauseSentence(result, cause)).ToArray();
-        return $"Pelo que está registrado de {Name(result)}: {string.Join(' ', causes)} {CrySafety(result)}";
+        return $"Pelo que está registrado {De(result)}: {string.Join(' ', causes)} {CrySafety(result)}";
     }
 
     private static string LowerFirst(string sentence) => sentence.Length == 0 ? sentence : char.ToLowerInvariant(sentence[0]) + sentence[1..];

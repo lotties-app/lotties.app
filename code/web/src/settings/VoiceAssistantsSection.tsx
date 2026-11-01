@@ -6,9 +6,11 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  FormControlLabel,
   FormHelperText,
   Link,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -20,6 +22,7 @@ import {
 } from '../assistants/assistantSettingsApi';
 import { configuredAuthority } from '../assistants/connectedApps';
 import { canLog } from '../baby/permissions';
+import { OptionalConsentSwitch } from '../consent/OptionalConsentSwitch';
 import type { Baby } from '../db/models';
 import { ErrorNotice } from './ErrorNotice';
 import { McpConnectorPanel } from './McpConnectorPanel';
@@ -71,6 +74,31 @@ export function VoiceAssistantsSection({
     setSaved(ok);
   };
 
+  const sayBabyName = settings.data.sayBabyName === true;
+  const toggleName = async (next: boolean) => {
+    setSaved(false);
+    const ok = await action.run(async () => {
+      const result = await saveAssistantSettings(api, value === NONE ? null : value, next);
+      queryClient.setQueryData(ASSISTANT_SETTINGS_KEY, result);
+    });
+    setSaved(ok);
+  };
+
+  const sayMedicineNames = settings.data.sayMedicineNames === true;
+  const toggleMedicines = async (next: boolean) => {
+    setSaved(false);
+    const ok = await action.run(async () => {
+      const result = await saveAssistantSettings(
+        api,
+        value === NONE ? null : value,
+        undefined,
+        next,
+      );
+      queryClient.setQueryData(ASSISTANT_SETTINGS_KEY, result);
+    });
+    setSaved(ok);
+  };
+
   return (
     <Stack spacing={1.5}>
       <Typography color="text.secondary">{t('assistants.intro')}</Typography>
@@ -98,6 +126,35 @@ export function VoiceAssistantsSection({
           ? t('assistants.hintOne', { name: loggable[0].name })
           : t('assistants.hintSeveral')}
       </FormHelperText>
+      <OptionalConsentSwitch kind="alexa" />
+      <FormControlLabel
+        control={
+          <Switch
+            checked={sayBabyName}
+            disabled={action.pending}
+            onChange={(e) => void toggleName(e.target.checked)}
+            slotProps={{ input: { 'aria-describedby': 'voice-assistants-name-hint' } }}
+          />
+        }
+        label={t('assistants.sayBabyName.label')}
+      />
+      <FormHelperText id="voice-assistants-name-hint" sx={{ mt: -1 }}>
+        {t('assistants.sayBabyName.hint')} {t('consent.optional.sayBabyName')}
+      </FormHelperText>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={sayMedicineNames}
+            disabled={action.pending}
+            onChange={(e) => void toggleMedicines(e.target.checked)}
+            slotProps={{ input: { 'aria-describedby': 'voice-assistants-medicine-hint' } }}
+          />
+        }
+        label={t('assistants.sayMedicineNames.label')}
+      />
+      <FormHelperText id="voice-assistants-medicine-hint" sx={{ mt: -1 }}>
+        {t('assistants.sayMedicineNames.hint')} {t('consent.optional.sayMedicineNames')}
+      </FormHelperText>
       <ErrorNotice message={action.error} />
       <Typography variant="body2" role="status" aria-live="polite">
         {saved ? t('assistants.saved') : ''}
@@ -121,6 +178,7 @@ export function VoiceAssistantsSection({
       {settings.data.mcpEnabled && settings.data.mcpUrl && (
         <>
           <Divider />
+          <OptionalConsentSwitch kind="mcp" />
           <McpConnectorPanel url={settings.data.mcpUrl} authority={authority} />
         </>
       )}

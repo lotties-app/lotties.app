@@ -17,7 +17,7 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.NextNapWindow] = NextNapWindow,
         [AssistantResultCode.NapWindowAsleep] = NapWindowAsleep,
         [AssistantResultCode.NoNapPrediction] = result => $"I don't have enough sleep history yet to estimate {Name(result)}'s next nap window.",
-        [AssistantResultCode.NextFeed] = result => $"{Name(result)}'s next feed {Expected(result, result.Estimate!)}.",
+        [AssistantResultCode.NextFeed] = result => $"{Subject(result)}'s next feed {Expected(result, result.Estimate!)}.",
         [AssistantResultCode.NoNextFeed] = result => $"I don't have enough feeds logged yet to estimate {Name(result)}'s next feed.",
         [AssistantResultCode.NextDiaper] = NextDiaper,
         [AssistantResultCode.NoNextDiaper] = result => $"I don't have enough diapers logged yet to estimate {Name(result)}'s next change.",
@@ -26,14 +26,14 @@ internal sealed partial class EnglishAlexaLanguage
         [AssistantResultCode.NoDiapersAverage] = result =>
             $"I need at least 3 complete days of diapers in the last week to give an average, and I found {result.Count ?? 0}.",
         [AssistantResultCode.BottleAverage] = result =>
-            $"{Name(result)}'s last {Speech.Count(result.Count ?? 0, "bottle", "bottles")} averaged {Volume(result, result.AmountMl)}, and the last one was {Volume(result, result.LastAmountMl)}.",
+            $"{Subject(result)}'s last {Speech.Count(result.Count ?? 0, "bottle", "bottles")} averaged {Volume(result, result.AmountMl)}, and the last one was {Volume(result, result.LastAmountMl)}.",
         [AssistantResultCode.NoBottleData] = result =>
             $"There aren't enough bottles with an amount logged in the last 14 days: I need at least 3, and I found {result.Count ?? 0}.",
         [AssistantResultCode.SleepToday] = SleepToday,
         [AssistantResultCode.BottleToday] = BottleToday,
         [AssistantResultCode.FeedsToday] = FeedsToday,
         [AssistantResultCode.LastDiaper] = result =>
-            $"{Name(result)}'s last diaper was {LastDiaperContent(result)}, {AtAndAgo(result, result.At)}.",
+            $"{Subject(result)}'s last diaper was {LastDiaperContent(result)}, {AtAndAgo(result, result.At)}.",
         [AssistantResultCode.NoDiapers] = result => $"I can't find a diaper for {Name(result)} in the last 30 days.",
         [AssistantResultCode.CryReasons] = CryReasons,
         [AssistantResultCode.CryNoData] = CryNoData,
@@ -49,6 +49,22 @@ internal sealed partial class EnglishAlexaLanguage
         "feeding" => "feed",
         "sleep" => "sleep",
         "diaper" => "diaper change",
+        "bath" => "bath",
+        "tummy_time" => "tummy time",
+        "belly_pain" => "belly pain",
+        "breast_pump" => "pumping session",
+        "nasal_suction" => "nasal suction",
+        "belly_massage" => "belly massage",
+        "fussy" => "fussy spell",
+        "nail_trim" => "nail trim",
+        "temperature" => "temperature reading",
+        "spit_up" => "spit-up",
+        "teething" => "teething entry",
+        "milestone" => "milestone",
+        "symptom" => "symptom",
+        "outdoor" => "outdoor time",
+        "skin_care" => "skin care",
+        "medication" => "medication entry",
         _ => "entry",
     };
 
@@ -61,15 +77,15 @@ internal sealed partial class EnglishAlexaLanguage
         var count = result.Count ?? 0;
         if (count == 0)
         {
-            return $"{Name(result)} has had no bottles {window}.";
+            return $"{Subject(result)} has had no bottles {window}.";
         }
 
         if ((result.AmountMl ?? 0) == 0)
         {
-            return $"{Name(result)} has had {Speech.Count(count, "bottle", "bottles")} {window}, with no amount logged.";
+            return $"{Subject(result)} has had {Speech.Count(count, "bottle", "bottles")} {window}, with no amount logged.";
         }
 
-        var total = $"{Name(result)} drank {Volume(result, result.AmountMl)} in {Speech.Count(count, "bottle", "bottles")} {window}";
+        var total = $"{Subject(result)} drank {Volume(result, result.AmountMl)} in {Speech.Count(count, "bottle", "bottles")} {window}";
         return result.FormulaBottles is { Bottles: > 0 } formula && result.BreastMilkBottles is { Bottles: > 0 } milk
             ? $"{total}: {formula.Bottles} of formula, {Volume(result, formula.Ml)}, and {milk.Bottles} of breast milk, {Volume(result, milk.Ml)}."
             : $"{total}.";
@@ -82,7 +98,7 @@ internal sealed partial class EnglishAlexaLanguage
         var count = result.Count ?? 0;
         if (count == 0)
         {
-            return $"{Name(result)} has had no feeds {window}.";
+            return $"{Subject(result)} has had no feeds {window}.";
         }
 
         var parts = new[]
@@ -92,7 +108,7 @@ internal sealed partial class EnglishAlexaLanguage
             result.SolidFeeds is > 0 ? Speech.Count(result.SolidFeeds.Value, "solid meal", "solid meals") : null,
         }.OfType<string>().ToArray();
         var split = parts.Length == 0 ? string.Empty : $": {Speech.List(parts)}";
-        return $"{Name(result)} has had {Speech.Count(count, "feed", "feeds")} {window}{split}.";
+        return $"{Subject(result)} has had {Speech.Count(count, "feed", "feeds")} {window}{split}.";
     }
 
     private static string SleepToday(AssistantResult result)
@@ -100,9 +116,9 @@ internal sealed partial class EnglishAlexaLanguage
         var slept = Speech.Duration(result.Minutes);
         return (result.Minutes, result.Count) switch
         {
-            (null or 0, _) => $"{Name(result)} has no sleep logged today.",
-            (_, null or 0) => $"{Name(result)} has slept {slept} today, with no naps.",
-            _ => $"{Name(result)} has slept {slept} today, with {Speech.Count(result.Count.Value, "nap", "naps")}.",
+            (null or 0, _) => $"{Subject(result)} has no sleep logged today.",
+            (_, null or 0) => $"{Subject(result)} has slept {slept} today, with no naps.",
+            _ => $"{Subject(result)} has slept {slept} today, with {Speech.Count(result.Count.Value, "nap", "naps")}.",
         };
     }
 
@@ -110,14 +126,14 @@ internal sealed partial class EnglishAlexaLanguage
     {
         var window = result.Estimate!;
         return window.Latest <= result.AsOf
-            ? $"{Name(result)}'s nap window was {Between(result, window)}."
-            : $"{Name(result)}'s next nap window is probably {Between(result, window)}.";
+            ? $"{Subject(result)}'s nap window was {Between(result, window)}."
+            : $"{Subject(result)}'s next nap window is probably {Between(result, window)}.";
     }
 
     private static string NapWindowAsleep(AssistantResult result)
     {
-        var asleep = $"{Name(result)} is asleep{SinceClause(result)}.";
-        return result.EndedAt is { } wakes ? $"{asleep} {Name(result)} may wake up {Moment(result, wakes)}." : asleep;
+        var asleep = $"{Subject(result)} is asleep{SinceClause(result)}.";
+        return result.EndedAt is { } wakes ? $"{asleep} {Subject(result)} may wake up {Moment(result, wakes)}." : asleep;
     }
 
     private static string NextDiaper(AssistantResult result)

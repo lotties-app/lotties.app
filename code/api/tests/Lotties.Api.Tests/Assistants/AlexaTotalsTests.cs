@@ -22,6 +22,8 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
 
     private ApiFactory Factory => host.Factory;
 
+    // The events sit a few minutes before now so they stay on today's local date whatever the hour the suite runs at
+    // (an hour back would land on yesterday for a time zone just after its midnight).
     private async Task<SeededBaby> BabyWithAFeedingDayAsync(string? unitSystem = null)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -31,9 +33,9 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
         }
 
         var feeding = BuiltInEventTypes.FeedingId;
-        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-50), Now.AddMinutes(-50), """{"method":"bottle","amount_ml":120,"amount_drunk_ml":90,"bottle_feeding_type":"formula"}""");
-        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-40), Now.AddMinutes(-40), """{"method":"bottle","amount_ml":100,"bottle_feeding_type":"breast_milk"}""");
-        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-30), Now.AddMinutes(-20), """{"method":"breast","side":"left"}""");
+        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-3), Now.AddMinutes(-3), """{"method":"bottle","amount_ml":120,"amount_drunk_ml":90,"bottle_feeding_type":"formula"}""");
+        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddMinutes(-2), Now.AddMinutes(-2), """{"method":"bottle","amount_ml":100,"bottle_feeding_type":"breast_milk"}""");
+        await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddSeconds(-90), Now.AddSeconds(-30), """{"method":"breast","side":"left"}""");
         await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, feeding, Now.AddDays(-3), Now.AddDays(-3), """{"method":"bottle","amount_ml":200}""");
         return baby;
     }
@@ -80,10 +82,10 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
     }
 
     [Theory]
-    [InlineData("BottleTodayIntent", "en-US", "Lia has had no bottles in the last 24 hours.")]
-    [InlineData("FeedsTodayIntent", "en-US", "Lia has had no feeds in the last 24 hours.")]
-    [InlineData("BottleTodayIntent", "pt-BR", "Lia não tomou nenhuma mamadeira hoje.")]
-    [InlineData("FeedsTodayIntent", "pt-BR", "Lia não teve nenhuma alimentação hoje.")]
+    [InlineData("BottleTodayIntent", "en-US", "The baby has had no bottles in the last 24 hours.")]
+    [InlineData("FeedsTodayIntent", "en-US", "The baby has had no feeds in the last 24 hours.")]
+    [InlineData("BottleTodayIntent", "pt-BR", "O bebê não tomou nenhuma mamadeira hoje.")]
+    [InlineData("FeedsTodayIntent", "pt-BR", "O bebê não teve nenhuma alimentação hoje.")]
     public async Task Post_WithoutData_SaysSo(string intent, string locale, string expected)
     {
         var baby = await Factory.SeedBabyAsync();
@@ -96,7 +98,7 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
     {
         var baby = await BabyWithAFeedingDayAsync("metric");
 
-        Assert.Equal("Lia drank 190 ml in 2 bottles in the last 24 hours: 1 of formula, 90 ml, and 1 of breast milk, 100 ml.", await SayAsync(baby, "BottleTodayIntent"));
+        Assert.Equal("The baby drank 190 ml in 2 bottles in the last 24 hours: 1 of formula, 90 ml, and 1 of breast milk, 100 ml.", await SayAsync(baby, "BottleTodayIntent"));
     }
 
     [Fact]
@@ -105,7 +107,7 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
         var baby = await BabyWithAFeedingDayAsync("us");
 
         Assert.Equal(
-            $"Lia drank {Ounces(190)} ounces in 2 bottles in the last 24 hours: 1 of formula, {Ounces(90)} ounces, and 1 of breast milk, {Ounces(100)} ounces.",
+            $"The baby drank {Ounces(190)} ounces in 2 bottles in the last 24 hours: 1 of formula, {Ounces(90)} ounces, and 1 of breast milk, {Ounces(100)} ounces.",
             await SayAsync(baby, "BottleTodayIntent"));
     }
 
@@ -115,8 +117,8 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
         var metric = await BabyWithAFeedingDayAsync("metric");
         var us = await BabyWithAFeedingDayAsync("us");
 
-        Assert.StartsWith("Lia tomou 190 ml em 2 mamadeiras", await SayAsync(metric, "BottleTodayIntent", "pt-BR"), StringComparison.Ordinal);
-        Assert.StartsWith($"Lia tomou {Ounces(190).Replace('.', ',')} onças em 2 mamadeiras", await SayAsync(us, "BottleTodayIntent", "pt-BR"), StringComparison.Ordinal);
+        Assert.StartsWith("O bebê tomou 190 ml em 2 mamadeiras", await SayAsync(metric, "BottleTodayIntent", "pt-BR"), StringComparison.Ordinal);
+        Assert.StartsWith($"O bebê tomou {Ounces(190).Replace('.', ',')} onças em 2 mamadeiras", await SayAsync(us, "BottleTodayIntent", "pt-BR"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -124,8 +126,8 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
     {
         var baby = await BabyWithAFeedingDayAsync();
 
-        Assert.Equal("Lia has had 3 feeds in the last 24 hours: 2 bottles and 1 nursing session.", await SayAsync(baby, "FeedsTodayIntent"));
-        Assert.Equal("Lia teve 3 alimentações hoje: 2 mamadeiras e 1 mamada no peito.", await SayAsync(baby, "FeedsTodayIntent", "pt-BR"));
+        Assert.Equal("The baby has had 3 feeds in the last 24 hours: 2 bottles and 1 nursing session.", await SayAsync(baby, "FeedsTodayIntent"));
+        Assert.Equal("O bebê teve 3 alimentações hoje: 2 mamadeiras e 1 mamada no peito.", await SayAsync(baby, "FeedsTodayIntent", "pt-BR"));
     }
 
     [Fact]
@@ -135,7 +137,7 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
         (await Factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync("/api/v1/me/unit-settings", new { system = "metric" })).EnsureSuccessStatusCode();
         await Factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, BuiltInEventTypes.FeedingId, Now.AddMinutes(-5), Now.AddMinutes(-5), """{"method":"bottle","amount_ml":80,"bottle_feeding_type":"breast_milk"}""");
 
-        Assert.Equal("Lia drank 80 ml in 1 bottle in the last 24 hours.", await SayAsync(baby, "BottleTodayIntent"));
+        Assert.Equal("The baby drank 80 ml in 1 bottle in the last 24 hours.", await SayAsync(baby, "BottleTodayIntent"));
     }
 
     // The interaction models: a question can never match a write intent.
@@ -232,7 +234,7 @@ public sealed class AlexaTotalsTests(AlexaApiHost host) : IClassFixture<AlexaApi
         var english = await SayAsync(baby, "SleepStartIntent");
         var portuguese = await SayAsync(baby, "SleepStartIntent", "pt-BR");
 
-        Assert.Matches(@"^Lia is already sleeping for \d+ hours?( and \d+ minutes?)?\.$", english);
-        Assert.Matches(@"^Lia já está dormindo desde \d{2}:\d{2}\.$", portuguese);
+        Assert.Matches(@"^The baby is already sleeping for \d+ hours?( and \d+ minutes?)?\.$", english);
+        Assert.Matches(@"^O bebê já está dormindo desde \d{2}:\d{2}\.$", portuguese);
     }
 }

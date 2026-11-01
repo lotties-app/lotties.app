@@ -52,7 +52,7 @@ table, `docs/DEPLOY.md` and the build wiring in step.
 | C10 | GitHub private vulnerability reporting is enabled on the repository (the default private contact) | otherwise the default "private report" link does not work: set `VITE_PRIVACY_CONTACT_EMAIL` | Contact |
 | C11 | Whether the app stores' statistics and crash reports are shared with you (App Store Connect, Play Console) | the policy mentions them | Companies table |
 | C12 | That you can answer a full access request within 15 days (LGPD art. 19) and erase a soft-deleted record on request (a manual database operation today) | the policy promises both | Your rights |
-| C13 | That you will announce significant changes before they apply | there is no in-app announcement yet (gap G6) | Changes |
+| C13 | That you will announce significant changes before they apply | done in the app (2026-10-27): a material change shows the consent screen again, a minor one a notice; you decide what is material (`consentVersions.json`, section 7 below) | Changes |
 | C14 | That you will notify users and the ANPD of a relevant incident (LGPD art. 48), and how | the policy promises it | Security |
 
 ## 4. Decisions to take with the lawyer
@@ -60,9 +60,12 @@ table, `docs/DEPLOY.md` and the build wiring in step.
 - [ ] **Legal bases** (policy section "Why we may use it"): execution of the service (art. 7, V) for the account and
   records; consent (art. 11, I) for health data; specific consent for the doctor invite; consent for optional
   features; legitimate interest (art. 7, IX) for technical logs; legal obligation. The text says consent for health data
-  is given "when you choose to record that information": **the app does not collect a separate, highlighted consent
-  today** (gap G3). Decide whether that is enough or whether a consent step with a stored record is needed (a Keycloak
-  "Terms and conditions" required action with the policy link, or an in-app first-run consent: an API change).
+  is given "when you choose to record that information"; since 2026-10-27 **the app also collects a separate, highlighted
+  consent** before any baby data (gap G3, built: docs/design/38-consent-and-terms.md) with a stored record. **The
+  lawyer must review the texts** (`docs/CONSENT-AND-TERMS-DRAFT.md`: the consent screen, the beta notice, the optional
+  consent sentences and the Terms of use at `/terms`) and answer the six questions at the end of that file (items 13 to
+  18 of `docs/PRIVACY-LAWYER-BRIEF.md`). Until then the texts are drafts: the terms' venue and the liability clause are
+  marked for the lawyer.
 - [ ] **Children (art. 14)**: the policy relies on the child's best interest and the parents' use; art. 14, §1 asks
   for specific and highlighted consent of a parent or guardian. As we read it, ANPD's Enunciado CD/ANPD nº 1/2023
   allows the bases of art. 7 or 11 for children's data when the best interest prevails. Confirm, and whether the app
@@ -84,12 +87,12 @@ table, `docs/DEPLOY.md` and the build wiring in step.
 - [x] G1: account deletion now erases saved doctors and clinics (it failed on the `RESTRICT` key, proven by a test);
   a model-driven test covers every table that points at a baby or a user.
 - [x] G2: `/doctor/settings` has "Account and data" (download of her own data, account deletion).
-- [ ] G3: consent capture (section 4).
+- [x] G3: the consent screen, the stored record and the server gate are built (docs/design/38-consent-and-terms.md). **To do: the lawyer reviews the texts** (section 4).
 - [ ] G5: the kit and the app are ready; **you** create the Keycloak client `lotties-account-deletion` (service account,
   `realm-management` > `manage-users` only), put `AUTH_ADMIN_CLIENT_ID/SECRET` in `deploy/homelab/.env`, deploy, and
   test with a throwaway user: docs/KEYCLOAK-ACCOUNT-DELETION.md. Until then the app tells users the sign-in account
   stays, and you remove it on request.
-- [ ] G6: a "policy updated" notice keyed on `PRIVACY_POLICY_VERSION`.
+- [x] G6: the "policy updated" notice (minor changes) and the consent screen again (material changes), keyed on `code/web/src/legal/consentVersions.json`.
 - [ ] G7: Google Play's deletion URL: until a public `/delete-account` page exists, decide whether
   `https://lotties.app/privacy#privacy-rights` (in-app steps plus the contact) is acceptable.
 - [ ] G8/G9: drop query strings of `/api/v1/address/*` from proxy logs; decide the nginx log format; add HSTS.
@@ -106,6 +109,7 @@ Answers are in `docs/design/20-store-readiness.md` section 3 (Apple App Privacy,
 2. Raise `PRIVACY_POLICY_VERSION` and set `PRIVACY_POLICY_LAST_UPDATED` in `code/web/src/legal/privacyPolicy.ts`.
 3. Update `docs/design/33-privacy-audit.md` and, for a new data flow or company, `code/web/src/legal/dataFlows.ts`.
 4. Check the store forms (section 6) still match.
+5. Add an entry to `code/web/src/legal/consentVersions.json` **and** to `Lotties.Domain.Consents.ConsentVersions` (`material: true` when everyone must accept again: new data, a new recipient or purpose, a change in rights or in who is responsible; `false` for a notice) with the terms and policy versions, and update the entry's `textDigest` (`consentVersions.test.ts` prints it). A test fails if a text changed without this.
 
 ## 8. Community insights (planned, not built)
 

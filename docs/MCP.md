@@ -14,10 +14,18 @@ Values used below (replace with yours): public host `https://lotties.app` (so th
 
 ## 1. What the parent agrees to
 
+Before any of it, she (and every person who uses the app) accepts the terms of use and the privacy policy in the Lotties
+app (the consent screen, docs/design/38-consent-and-terms.md). A person who has not accepted gets a tool error with code
+`consent_required` ("the user must open the Lotties app and accept the terms of use and the privacy policy before
+assistants can use her data") from every tool, and nothing is read or written. The "I connect an AI assistant" switch in
+Settings > Voice assistants records the optional MCP consent with the sentence about what the provider receives; it is a
+record, not a lock.
+
 The child's data leaves Lotties: the assistant's provider (Anthropic for Claude, or whoever runs the client) receives the
-facts the assistant asks for (the baby's name, times, amounts, appointment titles, vaccine names) and processes them under
+facts the assistant asks for (times, amounts, counts, vaccine names; the baby's name only if she turned on "Say my baby's name in answers", and never appointment titles or other text people typed) and processes them under
 its own terms. Lotties shows this twice: on the Keycloak consent screen (section 2.3 texts) and in Settings > Voice
-assistants > AI assistants (MCP). Access is read-only unless she also grants logging. Medications are never available,
+assistants > AI assistants (MCP). Access is read-only unless she also grants logging. Medications are never available
+(no tool reads or logs one),
 and answers are facts from the family's own log, not medical advice. She can revoke the access at any time (section 8).
 
 ## 2. Keycloak: the two client scopes
@@ -60,7 +68,7 @@ Realm settings > **Localization** > **Realm overrides**, for **English** and **P
 | Key | en | pt-BR |
 | --- | --- | --- |
 | `lottiesMcpReadConsent` | Read your baby's Lotties log (sleep, feeds, diapers, appointments, vaccines due). What it reads goes to the company that runs this AI assistant. Read-only. Revoke any time: your account page, Applications. | Ler o registro do seu bebê no Lotties (sono, alimentações, fraldas, consultas, vacinas pendentes). O que ele ler vai para a empresa que opera este assistente de IA. Só leitura. Revogue quando quiser: página da sua conta, Aplicativos. |
-| `lottiesMcpWriteConsent` | Also log sleep, feeds and diapers for your baby in Lotties, as you. Never medications. Revoke any time: your account page, Applications. | Também registrar sono, alimentações e fraldas do seu bebê no Lotties, em seu nome. Nunca medicamentos. Revogue quando quiser: página da sua conta, Aplicativos. |
+| `lottiesMcpWriteConsent` | Also log sleep, feeds, diapers and other everyday events (bath, tummy time, temperature, symptoms from a list...) for your baby in Lotties, as you. Never medications. Revoke any time: your account page, Applications. | Também registrar sono, alimentações, fraldas e outros eventos do dia a dia (banho, tempo de bruços, temperatura, sintomas de uma lista...) do seu bebê no Lotties, em seu nome. Nunca medicamentos. Revogue quando quiser: página da sua conta, Aplicativos. |
 
 The consent screen also names the client (the assistant) and its redirect host; use clear client names (section 3).
 
@@ -203,6 +211,7 @@ size and scope refusals. Arguments, tokens and results are never logged.
 | Every call is 403 `insufficient_scope` | the token's `scope` has neither `lotties.*` scope: the scope is not on the client (3.1.6) or "Include in token scope" is off (2) |
 | Only read tools appear | expected for a read-only client; use `lotties-claude-write` to log (3.1.6) |
 | A tool answers `choose_baby` | the parent has several babies and no default: the assistant should call `list_babies` and pass `babyId`, or she picks a default in Settings > Voice assistants |
+| A tool answers `consent_required` | the parent has not accepted the current terms: she opens the Lotties app once and accepts the consent screen (a material change to the terms asks again) |
 | A tool answers `not_allowed` | the parent's role (a Viewer cannot log; a Doctor's patients are not available) |
 
 ## Resolved: the well-known path reached the web app (found and fixed 2026-10-24)

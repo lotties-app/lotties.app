@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { BrandMark } from '../ui/BrandMark';
+import { BetaNotice } from './BetaNotice';
 import { PAGE_WIDTH } from './features';
 import { HeroArt } from './HeroArt';
 
@@ -79,6 +80,7 @@ export function Hero({ notice, onSignIn, onRegister, signedIn }: Props) {
             </>
           )}
         </Stack>
+        {!signedIn && <BetaNotice />}
       </Stack>
       <HeroArt />
     </Box>

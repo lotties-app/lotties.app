@@ -126,6 +126,6 @@ public sealed class AlexaUnitsEndpointTests(AlexaApiHost host) : IClassFixture<A
 
         var json = await AlexaApiHost.ReadAsync(await host.PostAsync(Intent("LastFeedIntent", host.TokenFor(baby.OwnerSubject), "pt-BR"), SignedHeaders));
 
-        Assert.StartsWith("A última alimentação de Lia foi uma mamadeira de 4 onças", AlexaApiHost.Speech(json), StringComparison.Ordinal);
+        Assert.StartsWith("A última alimentação do bebê foi uma mamadeira de 4 onças", AlexaApiHost.Speech(json), StringComparison.Ordinal);
     }
 }

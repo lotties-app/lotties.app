@@ -1,3 +1,4 @@
+using Lotties.Api.Consents;
 using Lotties.Api.Errors;
 using Lotties.Api.Limits;
 using Lotties.Application.Catalog;
@@ -32,7 +33,7 @@ internal static class CatalogEndpoints
     public static IEndpointRouteBuilder MapCatalogEndpoints(this IEndpointRouteBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
-        var catalog = api.MapGroup(CatalogPath);
+        var catalog = api.MapGroup(CatalogPath).AllowWithoutConsent("The shared medicine catalog is instance-wide reference data, no baby is involved.");
         catalog.MapGet(ProductsPath, SearchProductsAsync)
             .WithName("SearchCatalogProducts")
             .ProducesProblem(StatusCodes.Status400BadRequest);

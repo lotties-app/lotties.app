@@ -135,6 +135,20 @@ export function syncChip(page: Page) {
   return page.getByRole('status', { name: /^Sync status:/ });
 }
 
+/**
+ * The consent screen (docs/design/38-consent-and-terms.md): a fresh test account sees it once, after its first sign-in, instead of
+ * the app. Accepts it as the child's parent or guardian; does nothing when the app is already up (the account accepted before).
+ */
+export async function acceptConsentIfShown(page: Page): Promise<void> {
+  const home = page.getByRole('navigation').getByText('Home');
+  const consent = page.getByRole('heading', { level: 1, name: 'Before you start' });
+  await expect(home.or(consent)).toBeVisible({ timeout: 30_000 });
+  if (!(await consent.isVisible())) return;
+  await page.getByRole('radio', { name: /parent or legal guardian/ }).check();
+  await page.getByRole('checkbox', { name: /I declare that I am/ }).check();
+  await page.getByRole('button', { name: 'Accept and continue' }).click();
+}
+
 /** Signs in through the real Keycloak page, starting from the app's /login screen. */
 export async function signInThroughKeycloak(page: Page): Promise<void> {
   const username = process.env.E2E_USERNAME;
@@ -146,6 +160,7 @@ export async function signInThroughKeycloak(page: Page): Promise<void> {
   await page.locator('#username').fill(username);
   await page.locator('#password').fill(password);
   await page.locator('#kc-login').click();
-  // Back in the app with the session established.
+  // Back in the app with the session established (after the consent screen, for an account that has not accepted yet).
+  await acceptConsentIfShown(page);
   await expect(page.getByRole('navigation').getByText('Home')).toBeVisible({ timeout: 30_000 });
 }

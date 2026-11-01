@@ -7,6 +7,7 @@ import { createEvent } from '../db/eventCommands';
 import { openAccountDatabase, accountDatabaseName } from '../session/accountDatabase';
 import { seedBaby } from '../test/seed';
 import { BABY_ID, TYPE_ID } from '../test/fakeApi';
+import { acceptedView } from '../consent/consentTestData';
 import { accountIdOf } from './AuthContext';
 
 // The service worker is not available in jsdom.
@@ -66,6 +67,7 @@ function stubApi() {
       const url = String(input);
       const headers = (init?.headers ?? {}) as Record<string, string>;
       calls.push({ url, authorization: headers.Authorization });
+      if (url === `${API}/api/v1/me/consents`) return json(acceptedView());
       if (url === `${API}/api/v1/babies`) {
         return json([{ id: BABY_ID, name: 'Lia', birthDate: '2026-08-01', role: 'Owner' }]);
       }

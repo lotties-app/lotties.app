@@ -86,6 +86,9 @@ public sealed class MigrationTests
         "20261024133642_CryDetector",
         "20261024142612_ProjectBoard",
         "20261025173022_UnitSettings",
+        "20261027013822_AssistantSayBabyName",
+        "20261027022418_AssistantSayMedicineNames",
+        "20261027031353_Consent",
     ];
 
     [Fact]

@@ -1,3 +1,4 @@
+using Lotties.Api.Consents;
 using Lotties.Api.Limits;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -40,6 +41,7 @@ public static class AlexaServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(api);
         api.MapPost("/alexa", (HttpContext context, AlexaSkill skill, CancellationToken cancellationToken) => skill.HandleAsync(context, cancellationToken))
             .AllowAnonymous()
+            .AllowWithoutConsent("Authenticated by Amazon's signature and the account-linking token, not by the API; the command layer answers a person without consent (docs/design/38-consent-and-terms.md).")
             .WithName("AlexaSkill")
             .Produces<AlexaResponseEnvelope>()
             .Produces(StatusCodes.Status400BadRequest)

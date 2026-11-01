@@ -45,6 +45,10 @@ export const privacyPtBR: PolicyDocument = {
       blocks: [
         {
           kind: 'p',
+          text: 'O Lotties foi criado para ajudar pais e mães a atravessar a jornada de criar um bebê sem o peso de ferramentas de acompanhamento caras e assinaturas. Ele existe porque acreditamos que toda família merece acesso às mesmas ferramentas que usamos para nossos próprios filhos, livre de barreiras de custo.',
+        },
+        {
+          kind: 'p',
           text: 'Esta política explica como o serviço Lotties, em lotties.app, e os apps para iOS e Android tratam dados pessoais. Responsável por esses dados (o controlador, nos termos da Lei Geral de Proteção de Dados, a LGPD): {controller}.',
         },
         {
@@ -81,6 +85,14 @@ export const privacyPtBR: PolicyDocument = {
                 'Sua conta de acesso',
                 'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno e o seu nome de exibição; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login. Guardamos também a sua escolha de unidades de medida (automática, métrica ou americana), que só muda como as quantidades aparecem para você; os registros continuam em unidades métricas.',
                 'Para você entrar nos seus aparelhos e para mostrar seu nome às pessoas com quem você compartilha um bebê.',
+              ],
+            },
+            {
+              id: 'consent',
+              cells: [
+                'Seus registros de consentimento',
+                'Quando você aceita os termos de uso e esta política: seu identificador interno de usuário, a versão que você aceitou, a data e a hora, o idioma em que você leu e se você declarou ser pai, mãe ou responsável legal da criança ou um adulto autorizado por eles. O mesmo para cada recurso opcional que você liga ou desliga (lembretes, a skill da Alexa, assistentes de IA). Sem endereço IP e sem dados do aparelho.',
+                'Para comprovar que você consentiu, para pedir de novo depois de uma mudança relevante e para guardar as escolhas opcionais que você fez. Apagados junto com a sua conta.',
               ],
             },
             {
@@ -159,8 +171,8 @@ export const privacyPtBR: PolicyDocument = {
               id: 'assistants',
               cells: [
                 'Assistente de voz (Alexa)',
-                'O bebê que você escolhe para os comandos de voz (Ajustes > Assistentes de voz) e, se você ativar e vincular a skill do Lotties na Alexa, em cada pedido vindo da Amazon o comando e seus valores (como "mamadeira" e "120 ml"), o idioma e um token de acesso da sua conta.',
-                'Para registrar e responder perguntas por voz.',
+                'O bebê que você escolhe para os comandos de voz (Ajustes > Assistentes de voz) e, se você ativar e vincular a skill do Lotties na Alexa, em cada pedido vindo da Amazon o comando e seus valores (como "mamadeira" e "120 ml", uma temperatura, um nível de dor de barriga de 1 a 5, um sintoma ou marco escolhido de uma lista fixa, ou o nome de um medicamento que você cadastrou quando diz que deu uma dose), o idioma e um token de acesso da sua conta.',
+                'Para registrar, responder perguntas e ler de volta os lembretes de medicamentos que você cadastrou, por voz.',
               ],
             },
             {
@@ -240,6 +252,27 @@ export const privacyPtBR: PolicyDocument = {
       ],
     },
     {
+      id: 'consent',
+      title: 'Seu consentimento e os termos de uso',
+      blocks: [
+        {
+          kind: 'p',
+          text: 'Antes de você usar o Lotties, pedimos que aceite os [Termos de Uso](/terms) e esta política, uma vez para cada versão, e que declare ser pai, mãe ou responsável legal da criança, ou um adulto autorizado por eles (familiar, cuidador ou profissional de saúde). É o seu consentimento específico e em destaque para tratar os dados de saúde de uma criança para o serviço funcionar (LGPD art. 11, I, e art. 14, §1). Cada pessoa consente por si mesma: quem é dono da família, um pai ou cuidador convidado e um médico.',
+        },
+        {
+          kind: 'list',
+          items: [
+            'O que registramos: seu identificador de usuário, a versão, a data e a hora, o idioma do texto e a condição que você declarou. Não registramos seu endereço IP. Os registros são apagados junto com a sua conta.',
+            'Enquanto você não aceitar, o servidor recusa qualquer pedido de dados de um bebê, e os lembretes, a skill da Alexa e os assistentes de IA não funcionam para você. Você sempre pode abrir os ajustes da conta, baixar seus dados e apagar sua conta.',
+            'Os recursos opcionais (lembretes, a skill da Alexa, assistentes de IA) têm consentimento próprio, desligado por padrão, registrado quando você liga ou desliga, com uma frase ao lado do botão dizendo o que sai do nosso controle.',
+            'Uma mudança relevante (novos dados coletados, um novo destinatário ou finalidade, uma mudança nos seus direitos ou em quem é o responsável) pede seu consentimento de novo antes de você continuar. Uma mudança pequena mostra um aviso com um link para esta página.',
+            'Você pode retirar o consentimento a qualquer momento. Como o Lotties não funciona sem ele, retirar significa baixar seus dados e apagar sua conta em Ajustes > Privacidade e dados. Se você recusar no início, sai do app e nada sobre uma criança é guardado.',
+            'O Lotties está em fase de teste: pode ter falhas, ficar fora do ar e perder dados, e nenhum sistema é totalmente seguro, então não dá para descartar um vazamento. Adotamos as medidas de segurança descritas abaixo e, se algo relevante acontecer, avisamos você e a ANPD, como a lei exige.',
+          ],
+        },
+      ],
+    },
+    {
       id: 'sharing',
       title: 'Quem vê seus dados e com quem compartilhamos',
       blocks: [],
@@ -293,7 +326,7 @@ export const privacyPtBR: PolicyDocument = {
                   id: 'alexa',
                   cells: [
                     'Amazon (Alexa)',
-                    'A Amazon grava e processa o que você fala com a Alexa, segundo os termos de privacidade da própria Amazon. O Lotties recebe só o comando e seus valores e devolve uma resposta curta que a Alexa fala, que pode incluir o nome do bebê, horários de mamadas e de sono, a quantidade de fraldas, a próxima consulta e as vacinas pendentes, e estimativas e resumos calculados a partir do seu registro: a próxima soneca, mamada ou troca de fralda esperada, a média de fraldas por dia, as quantidades das últimas mamadeiras, o sono de hoje até agora e, se você perguntar por que o bebê está chorando, as causas mais prováveis do dia a dia com os fatos registrados por trás delas. Os registros feitos por voz ficam marcados no app como feitos pela Alexa; a marca guarda só a palavra “alexa” e, num pedido de exclusão, o horário. A Amazon também guarda o token de acesso que liga a skill à sua conta.',
+                    'A Amazon grava e processa o que você fala com a Alexa, segundo os termos de privacidade da própria Amazon. O Lotties recebe só o comando e seus valores e devolve uma resposta curta que a Alexa fala. A resposta não inclui o nome do bebê, a menos que você ative “Falar o nome do bebê nas respostas” em Configurações, Assistentes de voz, e não inclui o nome de um medicamento, a menos que você ative ali “Falar o nome dos remédios nas respostas”. Ela nunca inclui textos digitados por você ou por outras pessoas (anotações, títulos de consultas, nomes de fórmulas) nem dados de médicos ou de clínicas (nome, endereço, telefone, e-mail, registro): do médico, pode dizer só a especialidade do próximo compromisso, como “com pediatra”, quando o que você digitou corresponde a uma especialidade conhecida. Ela nunca inclui a quantidade, a dose, os horários ou o intervalo de um medicamento. Pode incluir horários de mamadas e de sono, a quantidade de fraldas, a data e a hora do próximo compromisso (e, num tipo predefinido como vacinação, esse tipo), as vacinas pendentes, o que você acabou de registrar (como um banho, uma temperatura, um sintoma ou que uma dose de medicamento foi dada, do jeito que você disse, sem julgamento e sem orientação), o número de lembretes de medicamentos cadastrados por você que estão pendentes e o horário do próximo (com o aviso de que são lembretes seus e não recomendações do Lotties), e estimativas e resumos calculados a partir do seu registro: a próxima soneca, mamada ou troca de fralda esperada, a média de fraldas por dia, as quantidades das últimas mamadeiras, o sono de hoje até agora e, se você perguntar por que o bebê está chorando, as causas mais prováveis do dia a dia com os fatos registrados por trás delas. Os registros feitos por voz ficam marcados no app como feitos pela Alexa; a marca guarda só a palavra “alexa” e, num pedido de exclusão, o horário. A Amazon também guarda o token de acesso que liga a skill à sua conta.',
                     'Só se você ativar a skill do Lotties e vincular sua conta. Para parar, desvincule no app Alexa.',
                   ],
                 },
