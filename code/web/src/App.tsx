@@ -9,6 +9,7 @@ import { ApiClientProvider } from './api/ApiClientProvider';
 import { ConsentProvider } from './consent/ConsentProvider';
 import { AccountDataProvider } from './session/AccountDataProvider';
 import { UnitsProvider } from './units/UnitsProvider';
+import { TimeBottlesSync } from './presets/FeedingSettingsSync';
 import { AppRoutes } from './AppRoutes';
 import { ReloadPrompt } from './pwa/ReloadPrompt';
 
@@ -25,6 +26,7 @@ export default function App({ configResult = readConfig() }: { configResult?: Co
                 <ConsentProvider>
                   <AccountDataProvider>
                     <UnitsProvider>
+                      <TimeBottlesSync />
                       <QueryClientProvider client={queryClient}>
                         <AppRoutes />
                       </QueryClientProvider>

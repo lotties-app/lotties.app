@@ -63,15 +63,26 @@ A bottle has two amounts in the generic feeding payload (no new table):
 ## 3. Setting: Time bottle feedings (default off)
 
 - A preference of the **signed-in account**: one value for all its babies, because caregivers differ (one parent
-  records when the feeding ended, the other does not). Stored on this device in the account's localStorage entries,
-  key `baby-routine.time-bottles` (`presets/timeBottlesStorage.ts`), like the pinned presets: cleared on sign-out
-  or account switch (`clearAccountDeviceState`, `claimDeviceState`) so it never leaks between accounts; leaving one
-  baby does not touch it. Settings > Feeding, next to Appearance and Language, shown when the user can log events
+  records when the feeding ended, the other does not). **Stored on the server per account** (2026-11-01, so the voice
+  assistants can follow it): table `user_feeding_settings` (`time_bottle_feedings`, one row per user, created on the
+  first PUT), `GET/PUT /me/feeding-settings` (`{timeBottleFeedings: bool|null, updatedAt}`; `null` before the first
+  save, every reader treats it as off), any signed-in role, never in the baby backup file, erased with the account.
+  The web keeps a cache in the account's localStorage entries, key `baby-routine.time-bottles`
+  (`presets/timeBottlesStorage.ts`), so `loadTimeBottles()` stays synchronous and works offline; it is cleared on
+  sign-out or account switch (`clearAccountDeviceState`, `claimDeviceState`) so it never leaks between accounts;
+  leaving one baby does not touch it. `presets/timeBottlesSync.ts` keeps it in step (the pattern of the unit
+  setting): a toggle writes the cache and marks it pending (`baby-routine.time-bottles-pending`), then PUTs; a failed
+  PUT stays pending and is retried on the next load and when the device is back online, and a pending value is never
+  overwritten by the server's; on load (`FeedingSettingsSync`, mounted in `App`) the server's value refreshes the cache,
+  and when the server has none yet the value this device already has is uploaded once, only if it is on (so people who
+  opted in before keep it, and nobody gets a row for "off"). Settings > Feeding, next to Appearance and Language, shown when the user can log events
   on at least one baby; the helper text says it applies to the account on all babies.
 - **Migration.** The first version stored it per baby (`baby-routine.time-bottles.<babyId>`). On first read the
   old keys are folded in once: if any baby had it on, the preference is on; the old keys are then deleted.
-- **Follow-up (not done):** it is not synced, so a second device of the same account has its own choice; syncing it
-  would need a server-side per-user preferences store.
+- **Voice assistants** (docs/design/32-assistants.md section 5): with it on, a bottle by voice (Alexa `BottleIntent`,
+  MCP `log_bottle`) starts running with the prepared amount (`amount_ml`, no `amount_drunk_ml`, `ended_at` null, the
+  same shape as the Feed tray) and the answer is `bottle_started`; off, it is an instant as before (`bottle_logged`).
+  It is stopped, with what was drunk, in the app.
 - **Off (default):** the Bottle quick action (the Bottle preset: Track sheet, More sheet, pinned tile) does not start
   a timer. It opens the event sheet for a new bottle as a moment (start = end = now, no "Still running"), which asks
   the prepared and drunk amounts. The Feed tray logs a bottle at once, with the drunk row. In the event sheet a **new** bottle is a moment too; editing a stored bottle keeps its times.

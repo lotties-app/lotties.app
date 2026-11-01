@@ -108,6 +108,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["user_rest_mornings.user_id"] = Rule.Erase,
         ["user_rest_settings.user_id"] = Rule.Erase,
         ["user_unit_settings.user_id"] = Rule.Erase,
+        ["user_feeding_settings.user_id"] = Rule.Erase,
         ["vaccinations.created_by"] = Rule.KeepForTheFamily,
     };
 
@@ -446,6 +447,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
     private async Task SeedPersonalRecordsAsync(HttpClient client, Guid babyId, Guid userId)
     {
         await client.PutAsJsonAsync("/api/v1/me/unit-settings", new { system = "us" }).Ok();
+        await client.PutAsJsonAsync("/api/v1/me/feeding-settings", new { timeBottleFeedings = true }).Ok();
         await client.PutAsJsonAsync("/api/v1/me/rest-settings", new
         {
             enabled = true,

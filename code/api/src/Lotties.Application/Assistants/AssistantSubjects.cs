@@ -3,6 +3,7 @@ using Lotties.Application.Notifications;
 using Lotties.Application.Users;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
+using Lotties.Domain.FeedingPreferences;
 using Lotties.Domain.Notifications;
 using Lotties.Domain.Patterns;
 
@@ -16,7 +17,7 @@ internal enum AssistantAccess
 }
 
 /// <summary>The baby a command acts on, the caller's role, the zone to tell local times in and the command's clock.</summary>
-internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "", bool SayBabyName = false, bool SayMedicineNames = false)
+internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? Zone, string? ZoneId, DateTimeOffset Now, AssistantZoneSource ZoneSource = AssistantZoneSource.Utc, string Adapter = "", bool SayBabyName = false, bool SayMedicineNames = false, bool TimeBottleFeedings = false)
 {
     /// <summary>A result about this subject's baby; the name is in it only when <see cref="SayBabyName"/> (the user's opt-in).</summary>
     public AssistantResult Result(AssistantResultCode code) =>
@@ -50,6 +51,7 @@ internal sealed class AssistantSubjects(
     IConsentService consents,
     IBabyRepository babies,
     IUserAssistantSettingsRepository assistantSettings,
+    IUserFeedingSettingsRepository feedingSettings,
     IUserNotificationSettingsRepository notificationSettings,
     IPushSubscriptionRepository pushSubscriptions,
     TimeProvider timeProvider)
@@ -74,7 +76,7 @@ internal sealed class AssistantSubjects(
 
         var baby = userBabies.Single(candidate => candidate.Id == babyId);
         var zone = await ZoneAsync(user.Id, invocation, now, cancellationToken);
-        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter, settings?.SayBabyName ?? false, settings?.SayMedicineNames ?? false);
+        var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter, settings?.SayBabyName ?? false, settings?.SayMedicineNames ?? false, (await feedingSettings.FindAsync(user.Id, cancellationToken))?.TimeBottleFeedings ?? false);
         return Allows(subject.Role, access)
             ? new AssistantSubjectLookup(subject, null)
             : new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));

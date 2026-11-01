@@ -4,6 +4,7 @@ using Lotties.Api.Consents;
 using Lotties.Application.Assistants;
 using Lotties.Application.Professionals;
 using Lotties.Application.Rest;
+using Lotties.Application.FeedingPreferences;
 using Lotties.Application.Units;
 using Lotties.Application.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -16,6 +17,7 @@ internal static class MeEndpoints
     private const string ProfessionalProfilePath = "/me/professional-profile";
     private const string AssistantSettingsPath = "/me/assistant-settings";
     private const string UnitSettingsPath = "/me/unit-settings";
+    private const string FeedingSettingsPath = "/me/feeding-settings";
     private const string RestSettingsPath = "/me/rest-settings";
 
     private const string MeReason = "The person's own account, profile and settings: no baby data, and she must always be able to see, export and delete what is hers (docs/design/38-consent-and-terms.md).";
@@ -64,6 +66,13 @@ internal static class MeEndpoints
             .AllowWithoutConsent(MeReason)
             .WithName("SaveUnitSettings")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapGet(FeedingSettingsPath, GetFeedingSettingsAsync)
+            .AllowWithoutConsent(MeReason)
+            .WithName("GetFeedingSettings");
+        api.MapPut(FeedingSettingsPath, SaveFeedingSettingsAsync)
+            .AllowWithoutConsent(MeReason)
+            .WithName("SaveFeedingSettings")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         api.MapGet(RestSettingsPath, GetRestSettingsAsync)
             .WithName("GetRestSettings");
         api.MapPut(RestSettingsPath, SaveRestSettingsAsync)
@@ -100,6 +109,12 @@ internal static class MeEndpoints
         TypedResults.Ok(await settings.GetMineAsync(cancellationToken));
 
     private static async Task<Ok<UnitSettingsResponse>> SaveUnitSettingsAsync(SaveUnitSettingsRequest request, IUnitSettingsService settings, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await settings.SaveMineAsync(request, cancellationToken));
+
+    private static async Task<Ok<FeedingSettingsResponse>> GetFeedingSettingsAsync(IFeedingSettingsService settings, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await settings.GetMineAsync(cancellationToken));
+
+    private static async Task<Ok<FeedingSettingsResponse>> SaveFeedingSettingsAsync(SaveFeedingSettingsRequest request, IFeedingSettingsService settings, CancellationToken cancellationToken) =>
         TypedResults.Ok(await settings.SaveMineAsync(request, cancellationToken));
 
     private static async Task<Ok<RestSettingsResponse>> GetRestSettingsAsync(IRestSettingsService rest, CancellationToken cancellationToken) =>

@@ -1552,6 +1552,28 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("events", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.FeedingPreferences.UserFeedingSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("TimeBottleFeedings")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("time_bottle_feedings");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_feeding_settings");
+
+                    b.ToTable("user_feeding_settings", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Formulas.Formula", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2983,6 +3005,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_events_event_types_type_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.FeedingPreferences.UserFeedingSettings", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.FeedingPreferences.UserFeedingSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_feeding_settings_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Formulas.Formula", b =>

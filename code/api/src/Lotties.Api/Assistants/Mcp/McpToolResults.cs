@@ -131,6 +131,7 @@ internal static class McpResultText
             AssistantResultCode.NoRunningSleep => $"{subject} is not sleeping; nothing was changed.",
             AssistantResultCode.SeveralRunningSleeps => $"{subject} has {result.Count} sleep timers running; nothing was changed (stop them in the app).",
             AssistantResultCode.BottleLogged => $"Logged a {Volume(result.AmountMl, result.Units)} bottle for {baby} at {Time(result, result.At)}.",
+            AssistantResultCode.BottleStarted => $"Started a bottle timer of {Volume(result.AmountMl, result.Units)} for {baby} at {Time(result, result.At)}; stop it in the app to say how much was drunk.",
             AssistantResultCode.NursingStarted => $"Nursing started for {baby} at {Time(result, result.At)}.",
             AssistantResultCode.NursingAlreadyRunning => $"{subject} is already nursing, since {Time(result, result.At)}; nothing was logged.",
             AssistantResultCode.DiaperLogged => $"Logged a diaper for {baby} at {Time(result, result.At)}.",

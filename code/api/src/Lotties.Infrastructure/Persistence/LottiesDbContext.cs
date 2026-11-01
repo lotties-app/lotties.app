@@ -92,6 +92,8 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>Users' measurement unit setting (one per user; docs/design/37-measurement-units.md).</summary>
     public DbSet<Lotties.Domain.Units.UserUnitSettings> UserUnitSettings => Set<Lotties.Domain.Units.UserUnitSettings>();
 
+    public DbSet<Lotties.Domain.FeedingPreferences.UserFeedingSettings> UserFeedingSettings => Set<Lotties.Domain.FeedingPreferences.UserFeedingSettings>();
+
     /// <summary>People's caregiver rest settings (one per user; docs/design/41-caregiver-rest.md).</summary>
     public DbSet<Lotties.Domain.Rest.UserRestSettings> UserRestSettings => Set<Lotties.Domain.Rest.UserRestSettings>();
 

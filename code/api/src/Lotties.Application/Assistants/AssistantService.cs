@@ -306,10 +306,15 @@ AssistantForecasts forecasts,
         }
 
         var eventId = IdOf(invocation, AssistantCommands.Bottle, subject);
+        // "Time bottle feedings" (the account setting, like the web's Feed tray): the bottle starts running with the prepared
+        // amount, and is stopped, with what was drunk, in the app; off, it is logged at once.
+        var endedAt = subject.TimeBottleFeedings ? (DateTimeOffset?)null : subject.Now;
         var stored = await events.FindForBabyAsync(subject.Baby.Id, eventId, cancellationToken)
-            ?? await CreateAsync(subject, eventId, BuiltInEventTypes.FeedingId, subject.Now, subject.Now, await BottlePayloadAsync(subject, amountMl!.Value, kind, cancellationToken), cancellationToken);
+            ?? await CreateAsync(subject, eventId, BuiltInEventTypes.FeedingId, subject.Now, endedAt, await BottlePayloadAsync(subject, amountMl!.Value, kind, cancellationToken), cancellationToken);
         var feed = AssistantEventFacts.ReadFeed(stored);
-        return subject.Result(AssistantResultCode.BottleLogged) with
+        // A retry is answered from the stored event: running (or stopped later) means it was started as a timer.
+        var code = stored.EndedAt is null || stored.EndedAt != stored.StartedAt ? AssistantResultCode.BottleStarted : AssistantResultCode.BottleLogged;
+        return subject.Result(code) with
         {
             At = stored.StartedAt,
             AmountMl = feed.AmountMl,
