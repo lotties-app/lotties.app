@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Atalhos de voz do Android e App Actions (docs/design/37-widgets-siri.md seção 14). -->
+<resources>
+    <string name="voice_shortcut_diaper_wet_short">Xixi</string>
+    <string name="voice_shortcut_diaper_wet_long">Registrar fralda de xixi</string>
+    <string name="voice_shortcut_diaper_dirty_short">Cocô</string>
+    <string name="voice_shortcut_diaper_dirty_long">Registrar fralda de cocô</string>
+    <string name="voice_shortcut_diaper_both_short">Xixi+cocô</string>
+    <string name="voice_shortcut_diaper_both_long">Registrar xixi e cocô</string>
+    <string name="voice_shortcut_bottle_short">Mamadeira</string>
+    <string name="voice_shortcut_bottle_long">Registrar mamadeira</string>
+    <string name="voice_shortcut_breastfeed_short">Peito</string>
+    <string name="voice_shortcut_breastfeed_long">Iniciar amamentação</string>
+    <string name="voice_shortcut_fell_asleep_short">Dormiu</string>
+    <string name="voice_shortcut_fell_asleep_long">O bebê dormiu</string>
+    <string name="voice_shortcut_woke_up_short">Acordou</string>
+    <string name="voice_shortcut_woke_up_long">O bebê acordou</string>
+    <string name="voice_shortcut_activity_short">Atividade</string>
+    <string name="voice_shortcut_activity_long">Registrar atividade</string>
+    <string name="voice_shortcut_health_short">Saúde</string>
+    <string name="voice_shortcut_health_long">Registrar item de saúde</string>
+    <string name="voice_shortcut_ask_last_feed_short">Última</string>
+    <string name="voice_shortcut_ask_last_feed_long">Quando mamou por último?</string>
+    <string name="voice_shortcut_ask_short">Perguntar</string>
+    <string name="voice_shortcut_ask_long">Perguntar sobre o bebê</string>
+    <string name="voice_shortcut_undo_short">Desfazer</string>
+    <string name="voice_shortcut_undo_long">Desfazer último registro</string>
+
+    <string name="voice_activity_bath">Banho</string>
+    <string name="voice_activity_tummy_time">Tummy time</string>
+    <string name="voice_activity_belly_massage">Massagem na barriga</string>
+    <string name="voice_activity_nasal_suction">Aspiração nasal</string>
+    <string name="voice_activity_nail_trim">Cortar unhas</string>
+    <string name="voice_activity_skin_care">Cuidados com a pele</string>
+    <string name="voice_activity_outdoor">Passeio ao ar livre</string>
+    <string name="voice_activity_fussy">Choro</string>
+    <string name="voice_activity_spit_up">Regurgitação</string>
+    <string name="voice_activity_teething">Dentição</string>
+    <string name="voice_activity_breast_pump">Bomba de leite</string>
+
+    <string name="voice_health_temperature">Temperatura</string>
+    <string name="voice_health_symptom">Sintoma</string>
+    <string name="voice_health_belly_pain">Dor de barriga</string>
+
+    <string name="voice_ask_last_feed">Última mamada</string>
+    <string name="voice_ask_next_nap_window">Próxima janela de soneca</string>
+    <string name="voice_ask_next_feed">Próxima mamada</string>
+    <string name="voice_ask_next_diaper">Próxima troca de fralda</string>
+    <string name="voice_ask_last_diaper">Última fralda</string>
+    <string name="voice_ask_diapers_today">Fraldas hoje</string>
+    <string name="voice_ask_bottles_today">Mamadeiras hoje</string>
+    <string name="voice_ask_feeds_today">Mamadas hoje</string>
+    <string name="voice_ask_sleep_today">Sono hoje</string>
+    <string name="voice_ask_day_summary">Resumo do dia</string>
+    <string name="voice_ask_week_summary">Resumo da semana</string>
+    <string name="voice_ask_next_appointment">Próxima consulta</string>
+    <string name="voice_ask_due_vaccines">Vacinas pendentes</string>
+
+    <string name="voice_pick_activity">Qual atividade?</string>
+    <string name="voice_pick_minutes">Quantos minutos?</string>
+    <string name="voice_minutes_timer">Iniciar cronômetro</string>
+    <string name="voice_minutes_value">%1$d min</string>
+    <string name="voice_pick_bottle">Quantos ml?</string>
+    <string name="voice_ml_value">%1$d ml</string>
+    <string name="voice_pick_health">O que registrar?</string>
+    <string name="voice_pick_temperature">Qual a temperatura?</string>
+    <string name="voice_celsius_value">%1$s °C</string>
+    <string name="voice_pick_pain">Qual o nível, de 1 a 5?</string>
+    <string name="voice_pick_topic">O que você quer saber?</string>
+    <string name="voice_confirm_title">Registrar agora?</string>
+    <string name="voice_confirm_log">Registrar</string>
+    <string name="voice_cancel">Cancelar</string>
+
+    <string name="voice_done">Pronto.</string>
+    <string name="voice_could_not">O Lotties não conseguiu fazer isso.</string>
+    <string name="voice_nothing_logged">Nada registrado.</string>
+    <string name="voice_not_connected">Conecte a voz no Lotties: Ajustes, Assistentes de voz.</string>
+    <string name="voice_offline">Sem conexão com o Lotties agora. Nada foi registrado.</string>
+    <string name="voice_forbidden">O Lotties não permite isso para a sua conta ou para a conexão de voz.</string>
+    <string name="voice_no_answer">O Lotties não respondeu. Tente de novo.</string>
+    <string name="voice_unknown">Este atalho não está disponível.</string>
+</resources>

@@ -30,6 +30,13 @@ android {
             }
         }
     }
+    // Voice answers follow the app language, not the phone's (voice/VoiceRunner.kt): every language stays in the
+    // installed app, so a pt-BR app on an English phone still has its pt-BR strings.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
     buildTypes {
         release {
             if (System.getenv('LOTTIES_KEYSTORE_FILE')) {

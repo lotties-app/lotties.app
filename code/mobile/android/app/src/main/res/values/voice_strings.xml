@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android voice shortcuts and App Actions (docs/design/37-widgets-siri.md section 14). pt-BR in values-pt-rBR.
+     Short labels: up to 10 characters (the launcher cuts longer ones); long labels: up to 25. -->
+<resources>
+    <string name="voice_shortcut_diaper_wet_short">Wet diaper</string>
+    <string name="voice_shortcut_diaper_wet_long">Log a wet diaper</string>
+    <string name="voice_shortcut_diaper_dirty_short">Dirty</string>
+    <string name="voice_shortcut_diaper_dirty_long">Log a dirty diaper</string>
+    <string name="voice_shortcut_diaper_both_short">Wet+dirty</string>
+    <string name="voice_shortcut_diaper_both_long">Log a wet+dirty diaper</string>
+    <string name="voice_shortcut_bottle_short">Bottle</string>
+    <string name="voice_shortcut_bottle_long">Log a bottle</string>
+    <string name="voice_shortcut_breastfeed_short">Breastfeed</string>
+    <string name="voice_shortcut_breastfeed_long">Start a breastfeed</string>
+    <string name="voice_shortcut_fell_asleep_short">Asleep</string>
+    <string name="voice_shortcut_fell_asleep_long">Baby fell asleep</string>
+    <string name="voice_shortcut_woke_up_short">Woke up</string>
+    <string name="voice_shortcut_woke_up_long">Baby woke up</string>
+    <string name="voice_shortcut_activity_short">Activity</string>
+    <string name="voice_shortcut_activity_long">Log an activity</string>
+    <string name="voice_shortcut_health_short">Health</string>
+    <string name="voice_shortcut_health_long">Log a health item</string>
+    <string name="voice_shortcut_ask_last_feed_short">Last feed</string>
+    <string name="voice_shortcut_ask_last_feed_long">When was the last feed?</string>
+    <string name="voice_shortcut_ask_short">Ask</string>
+    <string name="voice_shortcut_ask_long">Ask about the baby</string>
+    <string name="voice_shortcut_undo_short">Undo</string>
+    <string name="voice_shortcut_undo_long">Undo the last entry</string>
+
+    <string name="voice_activity_bath">Bath</string>
+    <string name="voice_activity_tummy_time">Tummy time</string>
+    <string name="voice_activity_belly_massage">Belly massage</string>
+    <string name="voice_activity_nasal_suction">Nasal suction</string>
+    <string name="voice_activity_nail_trim">Nail trim</string>
+    <string name="voice_activity_skin_care">Skin care</string>
+    <string name="voice_activity_outdoor">Outdoor time</string>
+    <string name="voice_activity_fussy">Fussy</string>
+    <string name="voice_activity_spit_up">Spit-up</string>
+    <string name="voice_activity_teething">Teething</string>
+    <string name="voice_activity_breast_pump">Breast pump</string>
+
+    <string name="voice_health_temperature">Temperature</string>
+    <string name="voice_health_symptom">Symptom</string>
+    <string name="voice_health_belly_pain">Belly pain</string>
+
+    <string name="voice_ask_last_feed">Last feed</string>
+    <string name="voice_ask_next_nap_window">Next nap window</string>
+    <string name="voice_ask_next_feed">Next feed</string>
+    <string name="voice_ask_next_diaper">Next diaper change</string>
+    <string name="voice_ask_last_diaper">Last diaper</string>
+    <string name="voice_ask_diapers_today">Diapers today</string>
+    <string name="voice_ask_bottles_today">Bottles today</string>
+    <string name="voice_ask_feeds_today">Feeds today</string>
+    <string name="voice_ask_sleep_today">Sleep today</string>
+    <string name="voice_ask_day_summary">Day summary</string>
+    <string name="voice_ask_week_summary">Week summary</string>
+    <string name="voice_ask_next_appointment">Next appointment</string>
+    <string name="voice_ask_due_vaccines">Vaccines due</string>
+
+    <string name="voice_pick_activity">Which activity?</string>
+    <string name="voice_pick_minutes">How many minutes?</string>
+    <string name="voice_minutes_timer">Start a timer</string>
+    <string name="voice_minutes_value">%1$d min</string>
+    <string name="voice_pick_bottle">How many ml?</string>
+    <string name="voice_ml_value">%1$d ml</string>
+    <string name="voice_pick_health">What to log?</string>
+    <string name="voice_pick_temperature">What is the temperature?</string>
+    <string name="voice_celsius_value">%1$s °C</string>
+    <string name="voice_pick_pain">What level, from 1 to 5?</string>
+    <string name="voice_pick_topic">What do you want to know?</string>
+    <string name="voice_confirm_title">Log this now?</string>
+    <string name="voice_confirm_log">Log</string>
+    <string name="voice_cancel">Cancel</string>
+
+    <string name="voice_done">Done.</string>
+    <string name="voice_could_not">Lotties could not do that.</string>
+    <string name="voice_nothing_logged">Nothing logged.</string>
+    <string name="voice_not_connected">Connect voice in Lotties: Settings, Voice assistants.</string>
+    <string name="voice_offline">Cannot reach Lotties now. Nothing was logged.</string>
+    <string name="voice_forbidden">Lotties does not allow that for your account or the voice connection.</string>
+    <string name="voice_no_answer">Lotties did not answer. Try again.</string>
+    <string name="voice_unknown">This shortcut is not available.</string>
+    <!-- App Actions synonyms of each shortcut (res/xml/shortcuts.xml), in the language of the labels. -->
+    <string-array name="voice_feature_diaper_wet" translatable="false">
+        <item>@string/voice_shortcut_diaper_wet_long</item>
+        <item>@string/voice_shortcut_diaper_wet_short</item>
+    </string-array>
+    <string-array name="voice_feature_diaper_dirty" translatable="false">
+        <item>@string/voice_shortcut_diaper_dirty_long</item>
+        <item>@string/voice_shortcut_diaper_dirty_short</item>
+    </string-array>
+    <string-array name="voice_feature_bottle" translatable="false">
+        <item>@string/voice_shortcut_bottle_long</item>
+        <item>@string/voice_shortcut_bottle_short</item>
+    </string-array>
+    <string-array name="voice_feature_fell_asleep" translatable="false">
+        <item>@string/voice_shortcut_fell_asleep_long</item>
+        <item>@string/voice_shortcut_fell_asleep_short</item>
+    </string-array>
+    <string-array name="voice_feature_woke_up" translatable="false">
+        <item>@string/voice_shortcut_woke_up_long</item>
+        <item>@string/voice_shortcut_woke_up_short</item>
+    </string-array>
+    <string-array name="voice_feature_breastfeed" translatable="false">
+        <item>@string/voice_shortcut_breastfeed_long</item>
+        <item>@string/voice_shortcut_breastfeed_short</item>
+    </string-array>
+    <string-array name="voice_feature_diaper_both" translatable="false">
+        <item>@string/voice_shortcut_diaper_both_long</item>
+        <item>@string/voice_shortcut_diaper_both_short</item>
+    </string-array>
+    <string-array name="voice_feature_activity" translatable="false">
+        <item>@string/voice_shortcut_activity_long</item>
+        <item>@string/voice_shortcut_activity_short</item>
+    </string-array>
+    <string-array name="voice_feature_health" translatable="false">
+        <item>@string/voice_shortcut_health_long</item>
+        <item>@string/voice_shortcut_health_short</item>
+    </string-array>
+    <string-array name="voice_feature_ask_last_feed" translatable="false">
+        <item>@string/voice_shortcut_ask_last_feed_long</item>
+        <item>@string/voice_shortcut_ask_last_feed_short</item>
+    </string-array>
+    <string-array name="voice_feature_ask" translatable="false">
+        <item>@string/voice_shortcut_ask_long</item>
+        <item>@string/voice_shortcut_ask_short</item>
+    </string-array>
+    <string-array name="voice_feature_undo" translatable="false">
+        <item>@string/voice_shortcut_undo_long</item>
+        <item>@string/voice_shortcut_undo_short</item>
+    </string-array>
+</resources>

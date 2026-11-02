@@ -33,7 +33,40 @@
                 <data android:scheme="@string/custom_url_scheme" android:host="auth" />
             </intent-filter>
 
+            <!-- Voice on Android: the voice sign-in's redirect app.lotties.app://siri/callback (voice/LottiesVoicePlugin.kt)
+                 and app.lotties.app://siri/settings, which a voice shortcut opens when the phone is not connected. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/custom_url_scheme" android:host="siri" />
+            </intent-filter>
+
+            <!-- Voice shortcuts and App Actions (res/xml/shortcuts.xml, docs/design/37-widgets-siri.md section 14). -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
         </activity>
+
+        <!-- Voice shortcuts run here (no UI but the choice dialogs). Not exported: launcher shortcuts start it as the app. -->
+        <activity
+            android:name=".voice.VoiceActivity"
+            android:theme="@style/Theme.Lotties.Voice"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:exported="false" />
+
+        <!-- The App Actions target (another app, Google Assistant, starts it): writes ask for one tap first. -->
+        <activity-alias
+            android:name=".voice.VoiceAssistantEntry"
+            android:targetActivity=".voice.VoiceActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="app.lotties.app.VOICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -49,4 +82,11 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Voice on Android speaks its answers: the text-to-speech engines must be visible (Android 11+). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 </manifest>
