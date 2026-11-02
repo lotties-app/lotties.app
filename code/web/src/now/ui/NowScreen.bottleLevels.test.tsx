@@ -68,7 +68,7 @@ describe('"How much is left in the bottle?" when a bottle is paused', () => {
     // The pause is saved before any answer.
     expect((await byId(bottle.id)).payload).toMatchObject({
       paused_at: expect.any(String),
-      segments: expect.stringMatching(/^120>\?@\d+$/),
+      segments: expect.stringMatching(/^120>\?@\d+\+0$/),
     });
     const chips = within(sheet).getByRole('radiogroup', { name: 'Left in the bottle' });
     expect(
