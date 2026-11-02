@@ -3,7 +3,7 @@ import { getOwn } from '../util/ownProperty';
 
 /*
  * The origin marker of the voice and AI assistants (docs/design/32-assistants.md "Origin marker"):
- * an event an assistant command created carries `via` (the adapter name: `alexa`, `siri` or `mcp`), one it
+ * an event an assistant command created carries `via` (the adapter name: `alexa`, `siri`, `android` or `mcp`), one it
  * stopped that another origin created carries `updated_via`, and one the assistant asked to delete
  * carries `delete_requested_via` and `delete_requested_at` (docs/design/32-assistants.md "Assistants
  * never delete"). Plain payload members no field declares: the editor keeps them, backups and sync
@@ -23,12 +23,12 @@ export const ASSISTANT_KEYS: readonly string[] = [
   DELETE_REQUESTED_AT_KEY,
 ];
 
-/** How the sentences name an origin: Alexa, Siri, or any other adapter as "an AI assistant". */
-export type AssistantOrigin = 'alexa' | 'siri' | 'assistant';
+/** How the sentences name an origin: Alexa, Siri, Android, or any other adapter as "an AI assistant". */
+export type AssistantOrigin = 'alexa' | 'siri' | 'android' | 'assistant';
 
 const originOf = (value: unknown): AssistantOrigin | null => {
   if (typeof value !== 'string' || value.trim() === '') return null;
-  return value === 'alexa' || value === 'siri' ? value : 'assistant';
+  return value === 'alexa' || value === 'siri' || value === 'android' ? value : 'assistant';
 };
 
 /** Who created the entry, when an assistant did. */

@@ -35,14 +35,17 @@
     "origin": {
       "addedByAlexa": "Adicionado pela Alexa",
       "addedBySiri": "Adicionado pela Siri",
+      "addedByAndroid": "Adicionado pela voz do Android",
       "addedByAssistant": "Adicionado por um assistente de IA",
       "finishedByAlexa": "Finalizado pela Alexa",
       "finishedBySiri": "Finalizado pela Siri",
+      "finishedByAndroid": "Finalizado pela voz do Android",
       "finishedByAssistant": "Finalizado por um assistente de IA"
     },
     "deleteRequest": {
       "alexa": "A Alexa pediu para apagar este registro",
       "siri": "A Siri pediu para apagar este registro",
+      "android": "A voz do Android pediu para apagar este registro",
       "assistant": "Um assistente de IA pediu para apagar este registro",
       "delete": "Apagar",
       "keep": "Manter"
@@ -57,6 +60,17 @@
       "failed": "Não foi possível conectar a Siri. Tente de novo.",
       "needsInternet": "A Siri precisa de internet: nada é registrado sem conexão. Os botões do widget funcionam offline.",
       "revoke": "Desconectar remove o acesso deste iPhone. Você também pode revogar em todos os aparelhos nos apps conectados da sua conta."
+    },
+    "androidVoice": {
+      "title": "Voz no Android",
+      "intro": "Registre e pergunte sobre o bebê pelos atalhos do app (toque e segure o ícone do Lotties, ou adicione um à tela inicial), com as mesmas respostas da skill da Alexa, na tela e em voz alta. Onde o Google Assistente permitir, você também pode dizer \"Abrir xixi no Lotties\". O celular entra no Lotties uma vez, aqui, e funciona como os assistentes de IA abaixo: lê o registro do bebê e, só se você permitir, registra eventos.",
+      "connect": "Conectar a voz",
+      "disconnect": "Desconectar a voz",
+      "connected": "A voz está conectada neste celular.",
+      "notConnected": "A voz ainda não está conectada.",
+      "failed": "Não foi possível conectar a voz. Tente de novo.",
+      "needsInternet": "A voz precisa de internet: nada é registrado sem conexão.",
+      "revoke": "Desconectar remove o acesso deste celular. Você também pode revogar em todos os aparelhos nos apps conectados da sua conta."
     }
   }
 }

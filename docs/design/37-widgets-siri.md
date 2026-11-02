@@ -1,4 +1,4 @@
-# 37. Widgets and Siri (iOS first)
+# 37. Widgets and voice (iOS and Android)
 
 Turns docs/design/12-mobile-capacitor.md section 8 ("plan, not built") into a buildable plan for the iOS app. Android
 follows the same data contract later. **Status (2026-10-31): written, not yet compiled or run.** There is no Xcode on the
@@ -231,8 +231,152 @@ was, said outright ("há 35 min", "há 2 h+", "há 2 h 30+": minutes under an ho
 row that is coming up gets a tinted fill. The last row is "Mais" (the list of every activity). The "ago" is computed per timeline
 entry (at most 15 minutes old) instead of ticking live; the lock screen and the single-purpose widgets keep the live text.
 
+## 13. Android widgets (2026-11-01)
+
+**Status: compiles, lints and passes its JVM unit tests (local container build and the Android compile check); never run on
+a device or an emulator, so no screenshot exists.** Same data contract as iOS (2.1, 2.2, 9-11): the widgets read
+`widget-snapshot.json` and their buttons append to `widget-outbox.json`, both through `LottiesStore`
+(`filesDir/lotties-shared`); no network, no token, the app need not be open. The app drains the outbox on resume as on iOS.
+
+What is built (`code/mobile/android/app/src/main/java/app/lotties/app/widgets/`, Jetpack Glance 1.1.1 with the Kotlin
+compose compiler plugin at `kotlinVersion`):
+
+| Widget | Content |
+| --- | --- |
+| Summary (4x2 by default, resizable to 2x2; Glance `SizeMode.Responsive` small 110x110 dp, medium 250x110 dp) | Small: name, asleep/awake and for how long (a live `Chronometer`), "Próxima soneca 14:20", the sleep button ("Soneca 14:20", filled, while the nap is coming up). Medium: that column, and rows Bottle, Diaper, Breast with "há 35 min" (`Ago.rounded`, the iOS `agoRounded` rules; "Nada hoje" when not from today) and "próx. 11:30", the coming-up row tinted, then "Mais". A running bottle/breastfeed takes the first row: its timer, pause/resume (bottle only) and stop. |
+| Lotties (adaptive; 4x1 by default, resizable in both directions; Glance `SizeMode.Responsive` 180x40, 180x110, 250x250, 250x420 dp) | One widget that shows more as it grows (it folds in the old Quick actions widget). 1 row: the buttons only, short tiles (Bottle, Diaper, Breast or pause/stop while a feed runs, More, Asleep/Woke up), the coming-up ones framed. 2 rows: plus a line with the name, awake/asleep and its live timer, and the running feed row with its stop button. 3 rows: plus the Summary list (Diaper, Bottle and Breast rows with "há 35 min" and "próx."). 4 rows: plus the eight activities. A choice (Xixi/Cocô/Os dois, ml, side, More) replaces the content at any size; in one row it is a single line of chips with a close button. Launcher cells differ, so a size near a threshold may show the next smaller layout. |
+| Activities (4x2) | The eight non-everyday activities (`WidgetActivity.panel`, same keys as `widgets/activities.ts`), one tap logs. |
+
+- Choices inside the widget: Diaper (Xixi, Cocô, Os dois), Bottle (the last bottle's ml, then 60/90/120/150, four at most),
+  Breast (Esquerdo, Direito), More (the eight activities). The open choice is kept **per widget** in SharedPreferences
+  (`lotties-widgets`, 25 s, `OpenPicker`) with a close button; iOS keeps one for all widgets. When it expires, the next
+  render shows the buttons again.
+- Outbox entries (`WidgetOutbox.entry`): `{id: random UUID, babyId: selected baby else the first, type, occurredAt: now ISO
+  UTC with ms, payload: {kind?, amountMl?, side?}, source: "widget"}`, absent payload fields left out; the same change is
+  applied to the snapshot at once (`applyToSnapshot`, the iOS `LottiesLogger.log`: clears the matching estimate, a
+  breastfeed starts running, pause freezes the elapsed time, unknown fields kept). Signed out or no baby: nothing is written.
+- Refresh: `WidgetRefresher` registers a `LottiesStore` listener from `LottiesSharedPlugin.load()` and from the widget
+  receivers' `onUpdate` (process-wide, debounced 300 ms); a refresh bumps each widget's Glance state version so it reads
+  the files again. No `updatePeriodMillis`: one non-waking alarm (`WidgetRefreshReceiver`, not exported) at the soonest of
+  an open choice's end, the next highlight change (`DueRules.dueChanges`) and 15 minutes. Below Android 12 the alarm is
+  exact; from 12 on it is inexact (no exact-alarm permission), so a choice can stay open, or a highlight change can show,
+  late, and nothing renders while the phone sleeps until it wakes.
+- Signed out or no snapshot: "Abra o Lotties" / "Open Lotties"; a tap anywhere outside a button opens the app.
+- Strings: `res/values/widgets_strings.xml` and `res/values-pt-rBR/widgets_strings.xml`; the widgets follow the snapshot's
+  `language` (`createConfigurationContext`), else the phone's; the widget picker names follow the phone's. The Play bundle
+  no longer splits by language (`bundle.language.enableSplit = false`), else the other language's strings would be missing.
+  The brand strings of `values/strings.xml` are marked `translatable="false"`.
+- Icons: the Tabler SVGs of the iOS asset catalog as vector drawables `res/drawable/ic_tabler_*.xml`, generated by
+  `node code/mobile/scripts/tabler-to-android.mjs` (bed and plus skipped, unused); tinted per category. Colours: "Linen & Ink"
+  day/night (`ColorProvider(day, night)`, `res/values(-night)/widgets_colors.xml` for the timers and previews).
+- Picker entries: label, description, `previewLayout` (Android 12+, an invented baby "Lia"), target cells, min and resize
+  sizes, `widgetCategory="home_screen"`, in `res/xml/widget_*_info.xml`; receivers in `AndroidManifest.xml`.
+- Privacy: names show on the home screen, as on iOS; on a lock-screen host (keyguard category, not declared today) they
+  are hidden unless the snapshot says `hideNamesOnLockScreen: false`. Nothing leaves the device.
+- Tests (plain JVM): `app/src/test/java/app/lotties/app/widgets/` (ago rounding, the due window and its changes, choice
+  expiry, bottle amounts, quick tiles, the refresh plan, the outbox shapes `parseOutbox` accepts, the snapshot update,
+  ISO parsing).
+
+Differences from iOS: no "Edit widget" configuration (the buttons are the iOS defaults Bottle, Diaper, Breast; a
+configuration Activity is not done); no large size, no lock-screen or single-purpose Sleep/Feed/Diaper widgets; the open
+choice is per widget; the sleep and running-feed times are a `Chronometer` (H:MM:SS, ticking) instead of iOS's relative
+text; rounded corners need Android 12 (square before); Glance has no border, so a frame is a coloured box with the fill
+inset.
+
+Unverified: everything on a real launcher (no device or emulator test): layout at real cell sizes (launchers differ in
+cell size and padding; Samsung One UI, Pixel Launcher, Nova), the `Chronometer` inside Glance (`AndroidRemoteViews`), the
+day/night colours, how late the inexact alarm comes, the previews, and the drain on resume after a widget tap with the app
+closed.
+
 ## 7. Unverified
 
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive
 widget buttons call an App Intent that writes to the outbox on iOS 17, and whether the "last feed" question needs
 `AppEntity` for the baby when several exist.
+
+## 14. Voice on Android (2026-11-01, branch feat/android-voice)
+
+The counterpart of section 8 for the Android app: the same MCP tools, the same server-rendered sentence, its own OAuth client.
+**Status: built and compiled (local container build and unit tests green); not run on a device.**
+
+What is built:
+
+| Piece | Where |
+| --- | --- |
+| Pure wire (PKCE S256, authorize URL, token and `tools/call` requests, JSON and event-stream parsing, token expiry, speech locale) | `code/mobile/android/app/src/main/java/app/lotties/app/voice/McpWire.kt`; JVM tests `app/src/test/.../voice/McpWireTest.kt` |
+| Feature id to MCP tool (the Siri mapping), fixed choice lists | `voice/VoiceCatalog.kt`; tests `VoiceCatalogTest.kt` (also checks the ids of `res/xml/shortcuts.xml`) |
+| HTTP (HttpURLConnection, no new library), refresh a minute early and once after a 401, sign-in dropped when the refresh token is refused | `voice/VoiceMcpClient.kt` |
+| Token storage: AES-256-GCM with a non-exportable Android Keystore key, file `noBackupFilesDir/lotties-voice/connection.bin` (not in the widget files) | `voice/VoiceTokenStore.kt` |
+| Capacitor plugin `LottiesVoice` (`status`, `connect {authority, clientId, mcpUrl}`, `disconnect`, each answers `{connected}`), registered in `MainActivity` | `voice/LottiesVoicePlugin.kt` |
+| Shortcut target: transparent `VoiceActivity` (not exported) and the exported alias `.voice.VoiceAssistantEntry` (App Actions) | `voice/VoiceActivity.kt`, `voice/VoiceRunner.kt`, `AndroidManifest.xml` |
+| Static shortcuts and the App Actions capability | `res/xml/shortcuts.xml`; strings `res/values/voice_strings.xml`, `res/values-pt-rBR/voice_strings.xml` |
+| Web: `siriBridge` delegates to `assistants/androidVoiceBridge.ts` on Android (`nativePlatform()`, lazy import); the panel reads "Voice on Android" (`assistants.androidVoice.*`); `platform/voiceSettingsLink.ts` opens Settings > Voice assistants | `code/web/src/` |
+
+Sign-in: Settings > Voice assistants > Voice on Android > Connect voice. The web app passes the authority (the realm issuer)
+and the MCP URL the server reports, and the client id `VITE_ANDROID_VOICE_CLIENT_ID` (`code/web/.env.native`, default
+`lotties-android`). The plugin reads the discovery document, opens the system browser (a Custom Tab when the browser
+supports it: only the `android.support.customtabs.extra.SESSION` extra, no androidx.browser dependency) with PKCE S256 and
+scopes `openid offline_access lotties.read lotties.write`; the redirect `app.lotties.app://siri/callback` reaches
+`MainActivity` (intent filter host `siri`, next to `auth`) and the plugin through `handleOnNewIntent`. The state must
+match; a missing code (consent denied) or coming back without a redirect resolves `connected: false` (cancelled). The
+PKCE verifier lives in memory only: if Android kills the app while the browser is open, the person taps Connect again.
+Keycloak client: docs/MCP.md 3.5 (owner step). Every call sends `Lotties-Client: android` (adapter `android`, PR #28),
+`MCP-Protocol-Version: 2025-11-25` and `Lotties-Speech-Locale` (the app language from the widget snapshot's `language`,
+else the phone's; only `pt-BR` or `en-US`). Write tools get a fresh `idempotencyKey`.
+
+Sign-out and erasure: `endSession` calls `LottiesShared.clearAll`, which on Android also deletes the voice file and its
+Keystore key (`LottiesSharedPlugin.clearAll`), as the iOS message handler drops the Siri Keychain item. Disconnect does the
+same for the voice part only.
+
+### 14.1 Entry points and what they call
+
+Twelve static shortcuts (Android allows a few more; the launcher shows the first four or five on a long-press of the
+icon, all of them can be pinned to the home screen). Each starts `VoiceActivity` with the extra `feature` = its id.
+
+| Shortcut id | Label (en) | MCP tool and arguments (same as the Siri intent) |
+| --- | --- | --- |
+| `diaper_wet`, `diaper_dirty`, `diaper_both` | Wet diaper, Dirty, Wet+dirty | `log_diaper {kind: wet/dirty/both}` |
+| `bottle` | Bottle | asks "How many ml?" from 30..240 (step 30), then `log_bottle {amountMl}` (content omitted: the tool says to omit it when unknown) |
+| `breastfeed` | Breastfeed | `log_nursing` |
+| `fell_asleep`, `woke_up` | Asleep, Woke up | `log_sleep_start`, `log_sleep_end` |
+| `activity` | Activity | pick one of the 11 `SiriActivity` activities; for tummy time, breast pump, belly massage, fussy and outdoor also pick minutes (start a timer, 5..60) and `minutes` is sent only when 1..720; the other six never get it |
+| `health` | Health | temperature (36.0..40.0 °C by 0.2) `log_temperature {temperatureC}`; belly pain 1..5 `log_belly_pain {level}`; symptom `log_symptom` (no choice, as on iOS) |
+| `ask_last_feed` | Last feed | `get_last_feed` |
+| `ask` | Ask | pick one of the 13 `SiriAskTopic` questions (`get_*`) |
+| `undo` | Undo | `request_delete_last_entry` (the app asks the parent to confirm; assistants never delete) |
+
+No medication entry (no MCP tool by design), no free text anywhere: every value is a fixed choice. The answer is the
+server's sentence (`structuredContent.speech`, the Alexa wording of docs/design/32), shown in a Toast and spoken with
+TextToSpeech in the speech locale; local texts only cover failures (not connected, offline: "nothing was logged",
+refused, no answer), as `SiriSay` does. The choice dialogs and the local texts use the speech locale too (the app bundle
+keeps every language: `bundle.language.enableSplit = false`). Not connected: the Toast says so and the app opens on
+Settings > Voice assistants (`app.lotties.app://siri/settings`). The network call runs after the activity has closed, so
+no invisible window stays over the home screen.
+
+### 14.2 Google Assistant (App Actions)
+
+`shortcuts.xml` declares the built-in intent `actions.intent.OPEN_APP_FEATURE` (it exists in the current BII reference,
+Common category; it requires inline inventory for its `feature` parameter, and its user invocation lists en-US and pt-BR
+among the locales). The twelve shortcuts are that inventory (`capability-binding`, synonyms = the long and short labels,
+arrays in `values/voice_strings.xml`, so they follow the language). Assistant sends the matched shortcut id as the extra
+`feature` to the exported alias `.voice.VoiceAssistantEntry`. Phrases are of the form "Open wet diaper in Lotties" /
+"Abrir xixi no Lotties": the BII is about opening a feature, and logging is a stretch of it; there is no BII for "log a
+baby event", and none was invented. Because any app can start an exported component, **a write through that alias asks
+for one tap** ("Log this now?"); questions are answered at once (the answer is shown and spoken, never returned to the
+caller). Launcher shortcuts start the non-exported activity and log at once.
+
+### 14.3 What works where
+
+| Works | Needs |
+| --- | --- |
+| Launcher shortcuts (long-press the icon, pin to the home screen), choice dialogs, spoken answer | Nothing from Google: any launcher with shortcuts (Android 7.1+), a TTS engine for the voice, the Keycloak client of docs/MCP.md 3.5 |
+| "Hey Google, open wet diaper in Lotties" | An app release through the Play Console (App Actions ship with the Play release of the app), Google's review (Google may choose not to surface it), and Google Assistant on the phone. Gemini replaced Assistant on most phones; whether Gemini still fulfils `shortcuts.xml` App Actions of third-party apps is not verified (reports differ; Google's App Actions pages still document them). Testing needs the App Actions test tool (Android Studio plugin) with a preview, inline inventory testable for 6 hours per preview |
+| Quick Settings tile, dynamic shortcuts, Gemini AppFunctions (Android 16) | Not built |
+
+### 14.4 Unverified (no device, no Android Studio on the development machine)
+
+- Any run on a device: the Custom Tab sign-in and the return through `handleOnNewIntent`, the cancel detection on resume
+  (1.5 s without a redirect), the Keystore on real hardware, the dialogs over the home screen, TextToSpeech in pt-BR.
+- Whether the launcher accepts all twelve static shortcuts (the limit is per device, usually more than 12).
+- Whether Assistant or Gemini starts the alias with the `feature` extra as documented, and how it matches the synonyms.
+- The settings link reaching the Voice assistants section on a cold start (the web app reads the launch URL).

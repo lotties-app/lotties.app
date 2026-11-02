@@ -39,6 +39,19 @@ describe('SiriConnectPanel', () => {
     expect(connect).toHaveBeenCalledWith(AUTHORITY, URL);
   });
 
+  it('is "Voice on Android" in the Android app', async () => {
+    vi.spyOn(siriBridge, 'status').mockResolvedValue(false);
+    const connect = vi.spyOn(siriBridge, 'connect').mockResolvedValue(false);
+    renderWithDb(db, <SiriConnectPanel url={URL} authority={AUTHORITY} kind="android" />);
+
+    expect(screen.getByRole('heading', { name: 'Voice on Android' })).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Connect voice' }));
+
+    await waitFor(() => expect(connect).toHaveBeenCalledWith(AUTHORITY, URL));
+    expect(await screen.findByText('Voice is not connected yet.')).toBeTruthy();
+    expect(screen.queryByText(/Siri/)).toBeNull();
+  });
+
   it('says so when the sign-in fails', async () => {
     vi.spyOn(siriBridge, 'status').mockResolvedValue(false);
     vi.spyOn(siriBridge, 'connect').mockRejectedValue(new Error('no'));

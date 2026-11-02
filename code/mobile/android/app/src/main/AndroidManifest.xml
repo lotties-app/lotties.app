@@ -33,7 +33,40 @@
                 <data android:scheme="@string/custom_url_scheme" android:host="auth" />
             </intent-filter>
 
+            <!-- Voice on Android: the voice sign-in's redirect app.lotties.app://siri/callback (voice/LottiesVoicePlugin.kt)
+                 and app.lotties.app://siri/settings, which a voice shortcut opens when the phone is not connected. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/custom_url_scheme" android:host="siri" />
+            </intent-filter>
+
+            <!-- Voice shortcuts and App Actions (res/xml/shortcuts.xml, docs/design/37-widgets-siri.md section 14). -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
         </activity>
+
+        <!-- Voice shortcuts run here (no UI but the choice dialogs). Not exported: launcher shortcuts start it as the app. -->
+        <activity
+            android:name=".voice.VoiceActivity"
+            android:theme="@style/Theme.Lotties.Voice"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:exported="false" />
+
+        <!-- The App Actions target (another app, Google Assistant, starts it): writes ask for one tap first. -->
+        <activity-alias
+            android:name=".voice.VoiceAssistantEntry"
+            android:targetActivity=".voice.VoiceActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="app.lotties.app.VOICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -44,9 +77,56 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Home-screen widgets (docs/design/37-widgets-siri.md section 13, app/lotties/app/widgets). They read the
+             local snapshot and append to the local outbox: no network. -->
+        <receiver
+            android:name=".widgets.SummaryWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_summary_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_summary_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.LottiesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lotties_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lotties_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.ActivitiesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_activities_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_activities_info" />
+        </receiver>
+        <!-- The widgets' own alarm (the end of a choice, an estimate coming up); not reachable from other apps. -->
+        <receiver
+            android:name=".widgets.WidgetRefreshReceiver"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Voice on Android speaks its answers: the text-to-speech engines must be visible (Android 11+). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 </manifest>

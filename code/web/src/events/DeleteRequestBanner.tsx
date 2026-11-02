@@ -25,7 +25,9 @@ export function DeleteRequestBanner({
       ? t('assistants.deleteRequest.alexa')
       : asked === 'siri'
         ? t('assistants.deleteRequest.siri')
-        : t('assistants.deleteRequest.assistant');
+        : asked === 'android'
+          ? t('assistants.deleteRequest.android')
+          : t('assistants.deleteRequest.assistant');
   return (
     <Box
       role="group"

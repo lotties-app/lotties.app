@@ -138,6 +138,25 @@ public sealed class McpHttpTests(McpApiHost host) : IClassFixture<McpApiHost>
     }
 
     [Fact]
+    public async Task ClientHeaderAndroid_MarksTheEntryAsAndroids_AndADeleteRequestOnlyMatchesAndroidEntries()
+    {
+        var baby = await host.Factory.SeedBabyAsync();
+        var token = host.TokenFor(baby.OwnerSubject, McpApiHost.ReadWrite);
+
+        await host.PostAsync(token, McpMessages.Call("log_bath"), (McpToolRunner.ClientHeader, "ANDROID"));
+        await host.PostAsync(token, McpMessages.Call("log_bath"));
+        await host.PostAsync(token, McpMessages.Call("request_delete_last_entry"), (McpToolRunner.ClientHeader, "android"));
+
+        var entries = (await host.Factory.EventsAsync(baby.BabyId))
+            .Select(entry => AssistantTestKit.PayloadOf(entry))
+            .ToArray();
+        Assert.Equal(["android", "mcp"], entries.Select(p => p.GetProperty("via").GetString()).Order().ToArray());
+        var marked = entries.Where(p => p.TryGetProperty("delete_requested_via", out _)).ToArray();
+        Assert.Single(marked);
+        Assert.Equal("android", marked[0].GetProperty("via").GetString());
+    }
+
+    [Fact]
     public async Task ReadToken_ToolsCallOfAReadTool_Passes()
     {
         var baby = await host.Factory.SeedBabyAsync();

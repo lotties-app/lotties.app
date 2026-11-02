@@ -1,4 +1,7 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+// Jetpack Glance (Compose) for the home-screen widgets; the version is kotlinVersion (android/build.gradle).
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
     namespace = "app.lotties.app"
@@ -29,6 +32,16 @@ android {
             }
         }
     }
+    buildFeatures {
+        compose = true
+    }
+    // The widgets and the voice answers follow the app's language, not the phone's (createConfigurationContext): every language's native
+    // strings must be installed, so the Play bundle does not split by language (a few kB of strings).
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
     buildTypes {
         release {
             if (System.getenv('LOTTIES_KEYSTORE_FILE')) {
@@ -37,6 +50,13 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+// Same bytecode level as the Java code (capacitor.build.gradle sets Java 21).
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
@@ -52,7 +72,11 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // Home-screen widgets (docs/design/37-widgets-siri.md section 13).
+    implementation "androidx.glance:glance-appwidget:$glanceVersion"
     testImplementation "junit:junit:$junitVersion"
+    // The real org.json for plain-JVM unit tests (android.jar only has stubs that throw).
+    testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

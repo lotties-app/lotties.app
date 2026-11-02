@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android voice entry points (docs/design/37-widgets-siri.md section 14). Same ids as VoiceCatalog.FEATURE_IDS.
+  - Static launcher shortcuts (long-press the app icon, or drag one to the home screen): each starts the non-exported
+    .voice.VoiceActivity with the extra `feature` = the shortcut id; VoiceCatalog.feature maps it to an MCP tool.
+  - Google Assistant App Actions: built-in intent actions.intent.OPEN_APP_FEATURE with these shortcuts as its inline
+    inventory (capability-binding; the synonyms are arrays in values/voice_strings.xml). Assistant sends the matched
+    shortcut id as the extra `feature` to the exported alias .voice.VoiceAssistantEntry. Needs a Play Console release
+    and Google's review; not verified on a device.
+  Labels must be @string resources.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:targetApi="25">
+
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceAssistantEntry">
+            <parameter
+                android:name="feature"
+                android:key="feature" />
+        </intent>
+    </capability>
+    <shortcut
+        android:shortcutId="diaper_wet"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_diaper_wet_short"
+        android:shortcutLongLabel="@string/voice_shortcut_diaper_wet_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="diaper_wet" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_diaper_wet" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="diaper_dirty"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_diaper_dirty_short"
+        android:shortcutLongLabel="@string/voice_shortcut_diaper_dirty_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="diaper_dirty" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_diaper_dirty" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="bottle"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_bottle_short"
+        android:shortcutLongLabel="@string/voice_shortcut_bottle_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="bottle" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_bottle" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="fell_asleep"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_fell_asleep_short"
+        android:shortcutLongLabel="@string/voice_shortcut_fell_asleep_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="fell_asleep" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_fell_asleep" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="woke_up"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_woke_up_short"
+        android:shortcutLongLabel="@string/voice_shortcut_woke_up_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="woke_up" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_woke_up" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="breastfeed"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_breastfeed_short"
+        android:shortcutLongLabel="@string/voice_shortcut_breastfeed_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="breastfeed" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_breastfeed" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="diaper_both"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_diaper_both_short"
+        android:shortcutLongLabel="@string/voice_shortcut_diaper_both_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="diaper_both" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_diaper_both" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="activity"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_activity_short"
+        android:shortcutLongLabel="@string/voice_shortcut_activity_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="activity" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_activity" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="health"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_health_short"
+        android:shortcutLongLabel="@string/voice_shortcut_health_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="health" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_health" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="ask_last_feed"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_ask_last_feed_short"
+        android:shortcutLongLabel="@string/voice_shortcut_ask_last_feed_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="ask_last_feed" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_ask_last_feed" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="ask"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_ask_short"
+        android:shortcutLongLabel="@string/voice_shortcut_ask_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="ask" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_ask" />
+        </capability-binding>
+    </shortcut>
+    <shortcut
+        android:shortcutId="undo"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_shortcut_undo_short"
+        android:shortcutLongLabel="@string/voice_shortcut_undo_long">
+        <intent
+            android:action="app.lotties.app.VOICE"
+            android:targetPackage="app.lotties.app"
+            android:targetClass="app.lotties.app.voice.VoiceActivity">
+            <extra
+                android:name="feature"
+                android:value="undo" />
+        </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/voice_feature_undo" />
+        </capability-binding>
+    </shortcut>
+</shortcuts>
