@@ -35,7 +35,7 @@ android {
     buildFeatures {
         compose = true
     }
-    // The widgets follow the app's language, not the phone's (createConfigurationContext): every language's native
+    // The widgets and the voice answers follow the app's language, not the phone's (createConfigurationContext): every language's native
     // strings must be installed, so the Play bundle does not split by language (a few kB of strings).
     bundle {
         language {

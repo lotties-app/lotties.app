@@ -1,5 +1,6 @@
 package app.lotties.app.shared
 
+import app.lotties.app.voice.VoiceTokenStore
 import app.lotties.app.widgets.WidgetRefresher
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -57,9 +58,11 @@ class LottiesSharedPlugin : Plugin() {
         }
     }
 
+    /** Sign-out and account erasure (code/web/src/session/endSession.ts): also drops the voice sign-in, like iOS. */
     @PluginMethod
     fun clearAll(call: PluginCall) {
         LottiesStore.clearAll(context)
+        VoiceTokenStore.clear(context)
         call.resolve()
     }
 

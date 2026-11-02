@@ -293,3 +293,90 @@ closed.
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive
 widget buttons call an App Intent that writes to the outbox on iOS 17, and whether the "last feed" question needs
 `AppEntity` for the baby when several exist.
+
+## 14. Voice on Android (2026-11-01, branch feat/android-voice)
+
+The counterpart of section 8 for the Android app: the same MCP tools, the same server-rendered sentence, its own OAuth client.
+**Status: built and compiled (local container build and unit tests green); not run on a device.**
+
+What is built:
+
+| Piece | Where |
+| --- | --- |
+| Pure wire (PKCE S256, authorize URL, token and `tools/call` requests, JSON and event-stream parsing, token expiry, speech locale) | `code/mobile/android/app/src/main/java/app/lotties/app/voice/McpWire.kt`; JVM tests `app/src/test/.../voice/McpWireTest.kt` |
+| Feature id to MCP tool (the Siri mapping), fixed choice lists | `voice/VoiceCatalog.kt`; tests `VoiceCatalogTest.kt` (also checks the ids of `res/xml/shortcuts.xml`) |
+| HTTP (HttpURLConnection, no new library), refresh a minute early and once after a 401, sign-in dropped when the refresh token is refused | `voice/VoiceMcpClient.kt` |
+| Token storage: AES-256-GCM with a non-exportable Android Keystore key, file `noBackupFilesDir/lotties-voice/connection.bin` (not in the widget files) | `voice/VoiceTokenStore.kt` |
+| Capacitor plugin `LottiesVoice` (`status`, `connect {authority, clientId, mcpUrl}`, `disconnect`, each answers `{connected}`), registered in `MainActivity` | `voice/LottiesVoicePlugin.kt` |
+| Shortcut target: transparent `VoiceActivity` (not exported) and the exported alias `.voice.VoiceAssistantEntry` (App Actions) | `voice/VoiceActivity.kt`, `voice/VoiceRunner.kt`, `AndroidManifest.xml` |
+| Static shortcuts and the App Actions capability | `res/xml/shortcuts.xml`; strings `res/values/voice_strings.xml`, `res/values-pt-rBR/voice_strings.xml` |
+| Web: `siriBridge` delegates to `assistants/androidVoiceBridge.ts` on Android (`nativePlatform()`, lazy import); the panel reads "Voice on Android" (`assistants.androidVoice.*`); `platform/voiceSettingsLink.ts` opens Settings > Voice assistants | `code/web/src/` |
+
+Sign-in: Settings > Voice assistants > Voice on Android > Connect voice. The web app passes the authority (the realm issuer)
+and the MCP URL the server reports, and the client id `VITE_ANDROID_VOICE_CLIENT_ID` (`code/web/.env.native`, default
+`lotties-android`). The plugin reads the discovery document, opens the system browser (a Custom Tab when the browser
+supports it: only the `android.support.customtabs.extra.SESSION` extra, no androidx.browser dependency) with PKCE S256 and
+scopes `openid offline_access lotties.read lotties.write`; the redirect `app.lotties.app://siri/callback` reaches
+`MainActivity` (intent filter host `siri`, next to `auth`) and the plugin through `handleOnNewIntent`. The state must
+match; a missing code (consent denied) or coming back without a redirect resolves `connected: false` (cancelled). The
+PKCE verifier lives in memory only: if Android kills the app while the browser is open, the person taps Connect again.
+Keycloak client: docs/MCP.md 3.5 (owner step). Every call sends `Lotties-Client: android` (adapter `android`, PR #28),
+`MCP-Protocol-Version: 2025-11-25` and `Lotties-Speech-Locale` (the app language from the widget snapshot's `language`,
+else the phone's; only `pt-BR` or `en-US`). Write tools get a fresh `idempotencyKey`.
+
+Sign-out and erasure: `endSession` calls `LottiesShared.clearAll`, which on Android also deletes the voice file and its
+Keystore key (`LottiesSharedPlugin.clearAll`), as the iOS message handler drops the Siri Keychain item. Disconnect does the
+same for the voice part only.
+
+### 14.1 Entry points and what they call
+
+Twelve static shortcuts (Android allows a few more; the launcher shows the first four or five on a long-press of the
+icon, all of them can be pinned to the home screen). Each starts `VoiceActivity` with the extra `feature` = its id.
+
+| Shortcut id | Label (en) | MCP tool and arguments (same as the Siri intent) |
+| --- | --- | --- |
+| `diaper_wet`, `diaper_dirty`, `diaper_both` | Wet diaper, Dirty, Wet+dirty | `log_diaper {kind: wet/dirty/both}` |
+| `bottle` | Bottle | asks "How many ml?" from 30..240 (step 30), then `log_bottle {amountMl}` (content omitted: the tool says to omit it when unknown) |
+| `breastfeed` | Breastfeed | `log_nursing` |
+| `fell_asleep`, `woke_up` | Asleep, Woke up | `log_sleep_start`, `log_sleep_end` |
+| `activity` | Activity | pick one of the 11 `SiriActivity` activities; for tummy time, breast pump, belly massage, fussy and outdoor also pick minutes (start a timer, 5..60) and `minutes` is sent only when 1..720; the other six never get it |
+| `health` | Health | temperature (36.0..40.0 °C by 0.2) `log_temperature {temperatureC}`; belly pain 1..5 `log_belly_pain {level}`; symptom `log_symptom` (no choice, as on iOS) |
+| `ask_last_feed` | Last feed | `get_last_feed` |
+| `ask` | Ask | pick one of the 13 `SiriAskTopic` questions (`get_*`) |
+| `undo` | Undo | `request_delete_last_entry` (the app asks the parent to confirm; assistants never delete) |
+
+No medication entry (no MCP tool by design), no free text anywhere: every value is a fixed choice. The answer is the
+server's sentence (`structuredContent.speech`, the Alexa wording of docs/design/32), shown in a Toast and spoken with
+TextToSpeech in the speech locale; local texts only cover failures (not connected, offline: "nothing was logged",
+refused, no answer), as `SiriSay` does. The choice dialogs and the local texts use the speech locale too (the app bundle
+keeps every language: `bundle.language.enableSplit = false`). Not connected: the Toast says so and the app opens on
+Settings > Voice assistants (`app.lotties.app://siri/settings`). The network call runs after the activity has closed, so
+no invisible window stays over the home screen.
+
+### 14.2 Google Assistant (App Actions)
+
+`shortcuts.xml` declares the built-in intent `actions.intent.OPEN_APP_FEATURE` (it exists in the current BII reference,
+Common category; it requires inline inventory for its `feature` parameter, and its user invocation lists en-US and pt-BR
+among the locales). The twelve shortcuts are that inventory (`capability-binding`, synonyms = the long and short labels,
+arrays in `values/voice_strings.xml`, so they follow the language). Assistant sends the matched shortcut id as the extra
+`feature` to the exported alias `.voice.VoiceAssistantEntry`. Phrases are of the form "Open wet diaper in Lotties" /
+"Abrir xixi no Lotties": the BII is about opening a feature, and logging is a stretch of it; there is no BII for "log a
+baby event", and none was invented. Because any app can start an exported component, **a write through that alias asks
+for one tap** ("Log this now?"); questions are answered at once (the answer is shown and spoken, never returned to the
+caller). Launcher shortcuts start the non-exported activity and log at once.
+
+### 14.3 What works where
+
+| Works | Needs |
+| --- | --- |
+| Launcher shortcuts (long-press the icon, pin to the home screen), choice dialogs, spoken answer | Nothing from Google: any launcher with shortcuts (Android 7.1+), a TTS engine for the voice, the Keycloak client of docs/MCP.md 3.5 |
+| "Hey Google, open wet diaper in Lotties" | An app release through the Play Console (App Actions ship with the Play release of the app), Google's review (Google may choose not to surface it), and Google Assistant on the phone. Gemini replaced Assistant on most phones; whether Gemini still fulfils `shortcuts.xml` App Actions of third-party apps is not verified (reports differ; Google's App Actions pages still document them). Testing needs the App Actions test tool (Android Studio plugin) with a preview, inline inventory testable for 6 hours per preview |
+| Quick Settings tile, dynamic shortcuts, Gemini AppFunctions (Android 16) | Not built |
+
+### 14.4 Unverified (no device, no Android Studio on the development machine)
+
+- Any run on a device: the Custom Tab sign-in and the return through `handleOnNewIntent`, the cancel detection on resume
+  (1.5 s without a redirect), the Keystore on real hardware, the dialogs over the home screen, TextToSpeech in pt-BR.
+- Whether the launcher accepts all twelve static shortcuts (the limit is per device, usually more than 12).
+- Whether Assistant or Gemini starts the alias with the `feature` extra as documented, and how it matches the synonyms.
+- The settings link reaching the Voice assistants section on a cold start (the web app reads the launch URL).
