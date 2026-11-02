@@ -5,8 +5,8 @@
     <!-- Widget picker -->
     <string name="widget_summary_name">Summary</string>
     <string name="widget_summary_description">Sleep, last feed and diaper, and buttons to log without opening the app.</string>
-    <string name="widget_quick_name">Quick actions</string>
-    <string name="widget_quick_description">Bottle, diaper, breast and sleep buttons, to log without opening the app.</string>
+    <string name="widget_lotties_name">Lotties</string>
+    <string name="widget_lotties_description">One widget that grows with its size: buttons, then sleep and the running feed, then the summary, then every activity.</string>
     <string name="widget_activities_name">Activities</string>
     <string name="widget_activities_description">Bath, massage, tummy time and more: one tap logs.</string>
 

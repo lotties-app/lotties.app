@@ -3,8 +3,8 @@
 <resources>
     <string name="widget_summary_name">Resumo</string>
     <string name="widget_summary_description">Sono, última mamada e fralda, e botões para registrar sem abrir o app.</string>
-    <string name="widget_quick_name">Ações rápidas</string>
-    <string name="widget_quick_description">Botões de mamadeira, fralda, peito e sono, para registrar sem abrir o app.</string>
+    <string name="widget_lotties_name">Lotties</string>
+    <string name="widget_lotties_description">Um widget que cresce com o tamanho: botões, depois sono e mamada em andamento, depois o resumo, depois todas as atividades.</string>
     <string name="widget_activities_name">Atividades</string>
     <string name="widget_activities_description">Banho, massagem, bruços e outros: um toque registra.</string>
 

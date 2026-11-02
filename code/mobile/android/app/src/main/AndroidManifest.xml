@@ -92,15 +92,15 @@
                 android:resource="@xml/widget_summary_info" />
         </receiver>
         <receiver
-            android:name=".widgets.QuickWidgetReceiver"
+            android:name=".widgets.LottiesWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_quick_name">
+            android:label="@string/widget_lotties_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_quick_info" />
+                android:resource="@xml/widget_lotties_info" />
         </receiver>
         <receiver
             android:name=".widgets.ActivitiesWidgetReceiver"

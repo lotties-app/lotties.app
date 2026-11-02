@@ -97,7 +97,7 @@ object WidgetRefresher {
 
     private fun widgets(): List<Pair<Class<out GlanceAppWidget>, GlanceAppWidget>> = listOf(
         SummaryWidget::class.java to SummaryWidget(),
-        QuickWidget::class.java to QuickWidget(),
+        LottiesWidget::class.java to LottiesWidget(),
         ActivitiesWidget::class.java to ActivitiesWidget(),
     )
 

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Quick actions widget (LottiesWidgets.kt QuickWidget): 4x2, home screen only. -->
+<!-- Lotties widget (LottiesWidgets.kt LottiesWidget): adaptive: 4x1 buttons, growing to sleep and running feed, the summary list and the activity grid. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/widget_quick_description"
+    android:description="@string/widget_lotties_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="250dp"
-    android:minHeight="110dp"
+    android:minHeight="40dp"
     android:minResizeWidth="180dp"
-    android:minResizeHeight="80dp"
-    android:previewLayout="@layout/widget_preview_quick"
+    android:minResizeHeight="40dp"
+    android:previewLayout="@layout/widget_preview_lotties"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
-    android:targetCellHeight="2"
+    android:targetCellHeight="1"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

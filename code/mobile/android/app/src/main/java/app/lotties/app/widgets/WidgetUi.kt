@@ -30,6 +30,7 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.RowScope
 import androidx.glance.layout.Spacer
+import androidx.glance.LocalSize
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -177,7 +178,8 @@ internal fun openAppAction(): Action = actionStartActivity<MainActivity>()
 @Composable
 internal fun WidgetHost(data: WidgetData, content: @Composable (WidgetSnapshot.Baby) -> Unit) {
     Box(
-        modifier = GlanceModifier.fillMaxSize().background(Ink.background).cornerRadius(16.dp).padding(10.dp)
+        modifier = GlanceModifier.fillMaxSize().background(Ink.background).cornerRadius(16.dp)
+            .padding(if (isCompact()) 6.dp else 10.dp)
             .clickable(openAppAction()),
         contentAlignment = Alignment.Center,
     ) {
@@ -206,6 +208,10 @@ internal fun Icon(name: String, size: Dp, color: ColorProvider) {
         colorFilter = ColorFilter.tint(color),
     )
 }
+
+/** One-row widget (about 4x1): tiles are short, icon and label side by side in the choices. */
+@Composable
+internal fun isCompact(): Boolean = LocalSize.current.height < 100.dp
 
 /** A box with a fill and, when [border] is set, a frame of [borderWidth] around it. */
 @Composable
@@ -327,18 +333,23 @@ internal fun SquareTile(
     modifier: GlanceModifier,
     due: Boolean = false,
 ) {
+    val compact = isCompact()
     Framed(
         modifier = modifier.clickable(action),
         fill = category.tint(),
-        radius = 14.dp,
+        radius = if (compact) 12.dp else 14.dp,
         border = if (due) category.tone() else null,
-        borderWidth = 2.5.dp,
+        borderWidth = if (compact) 2.dp else 2.5.dp,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, 24.dp, category.tone())
+            Icon(icon, if (compact) 20.dp else 24.dp, category.tone())
             Text(
                 title,
-                style = TextStyle(color = category.tone(), fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                style = TextStyle(
+                    color = category.tone(),
+                    fontSize = if (compact) 10.sp else 11.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
                 maxLines = 1,
             )
         }
@@ -478,6 +489,10 @@ internal fun PickerPanel(data: WidgetData, baby: WidgetSnapshot.Baby, target: Pi
         PickerTarget.BREAST -> R.string.widget_pick_breast
         PickerTarget.MORE -> R.string.widget_pick_more
     }
+    if (isCompact()) {
+        CompactPicker(data, baby, target)
+        return
+    }
     Column(GlanceModifier.fillMaxSize()) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -527,6 +542,47 @@ internal fun PickerPanel(data: WidgetData, baby: WidgetSnapshot.Baby, target: Pi
                 }
             }
             PickerTarget.MORE -> ActivityGrid(data, GlanceModifier.fillMaxWidth().defaultWeight())
+        }
+    }
+}
+
+/** The choices of a one-row widget: the title is the first chip's context, so only chips and the close button. */
+@Composable
+private fun CompactPicker(data: WidgetData, baby: WidgetSnapshot.Baby, target: PickerTarget) {
+    val words = data.words
+    Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        val chip = GlanceModifier.defaultWeight().fillMaxHeight()
+        when (target) {
+            PickerTarget.DIAPER -> {
+                val labels = listOf(R.string.widget_choice_wet, R.string.widget_choice_dirty, R.string.widget_choice_both)
+                Choices.diaperKinds.forEachIndexed { i, kind ->
+                    ChoiceChip(words.s(labels[i]), Category.DIAPER, logAction(WidgetRequest.diaper(kind)), chip)
+                    Spacer(GlanceModifier.width(6.dp))
+                }
+            }
+            PickerTarget.BOTTLE -> Choices.bottleAmounts(baby).forEach { ml ->
+                ChoiceChip(words.s(R.string.widget_ml, ml), Category.FEEDING, logAction(WidgetRequest.bottle(ml)), chip)
+                Spacer(GlanceModifier.width(6.dp))
+            }
+            PickerTarget.BREAST -> {
+                val labels = listOf(R.string.widget_choice_left, R.string.widget_choice_right)
+                Choices.breastSides.forEachIndexed { i, side ->
+                    ChoiceChip(words.s(labels[i]), Category.FEEDING, logAction(WidgetRequest.breast(side)), chip)
+                    Spacer(GlanceModifier.width(6.dp))
+                }
+            }
+            PickerTarget.MORE -> WidgetActivity.panel.forEach { activity ->
+                ActivitySquare(data, activity, chip)
+                Spacer(GlanceModifier.width(4.dp))
+            }
+        }
+        Box(GlanceModifier.size(32.dp).clickable(closePickerAction()), contentAlignment = Alignment.Center) {
+            Image(
+                provider = ImageProvider(iconRes("x")),
+                contentDescription = words.s(R.string.widget_close),
+                modifier = GlanceModifier.size(16.dp),
+                colorFilter = ColorFilter.tint(Ink.muted),
+            )
         }
     }
 }

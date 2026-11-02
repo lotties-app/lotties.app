@@ -1,4 +1,4 @@
-# 37. Widgets and Siri (iOS first)
+# 37. Widgets and voice (iOS and Android)
 
 Turns docs/design/12-mobile-capacitor.md section 8 ("plan, not built") into a buildable plan for the iOS app. Android
 follows the same data contract later. **Status (2026-10-31): written, not yet compiled or run.** There is no Xcode on the
@@ -244,7 +244,7 @@ compose compiler plugin at `kotlinVersion`):
 | Widget | Content |
 | --- | --- |
 | Summary (4x2 by default, resizable to 2x2; Glance `SizeMode.Responsive` small 110x110 dp, medium 250x110 dp) | Small: name, asleep/awake and for how long (a live `Chronometer`), "Próxima soneca 14:20", the sleep button ("Soneca 14:20", filled, while the nap is coming up). Medium: that column, and rows Bottle, Diaper, Breast with "há 35 min" (`Ago.rounded`, the iOS `agoRounded` rules; "Nada hoje" when not from today) and "próx. 11:30", the coming-up row tinted, then "Mais". A running bottle/breastfeed takes the first row: its timer, pause/resume (bottle only) and stop. |
-| Quick actions (4x2) | Bottle, Diaper, Breast (pause/resume and stop instead while a feed runs), More, and the sleep tile; coming-up tiles framed in the category tone. |
+| Lotties (adaptive; 4x1 by default, resizable in both directions; Glance `SizeMode.Responsive` 180x40, 180x110, 250x250, 250x420 dp) | One widget that shows more as it grows (it folds in the old Quick actions widget). 1 row: the buttons only, short tiles (Bottle, Diaper, Breast or pause/stop while a feed runs, More, Asleep/Woke up), the coming-up ones framed. 2 rows: plus a line with the name, awake/asleep and its live timer, and the running feed row with its stop button. 3 rows: plus the Summary list (Diaper, Bottle and Breast rows with "há 35 min" and "próx."). 4 rows: plus the eight activities. A choice (Xixi/Cocô/Os dois, ml, side, More) replaces the content at any size; in one row it is a single line of chips with a close button. Launcher cells differ, so a size near a threshold may show the next smaller layout. |
 | Activities (4x2) | The eight non-everyday activities (`WidgetActivity.panel`, same keys as `widgets/activities.ts`), one tap logs. |
 
 - Choices inside the widget: Diaper (Xixi, Cocô, Os dois), Bottle (the last bottle's ml, then 60/90/120/150, four at most),
