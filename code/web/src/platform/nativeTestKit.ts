@@ -3,11 +3,14 @@
 import { vi } from 'vitest';
 import type { NativeShell, SharedFile, SystemBarsStyle } from './nativeShell';
 
-/** Makes `isNativeApp()` true, like the bridge the Capacitor shell injects. Returns the undo. */
-export function pretendNativeApp(): () => void {
+/**
+ * Makes `isNativeApp()` true and `nativePlatform()` = `platform`, like the bridge the Capacitor
+ * shell injects. Returns the undo.
+ */
+export function pretendNativeApp(platform: 'ios' | 'android' = 'ios'): () => void {
   const scope = globalThis as { Capacitor?: unknown };
   const previous = scope.Capacitor;
-  scope.Capacitor = { isNativePlatform: () => true };
+  scope.Capacitor = { isNativePlatform: () => true, getPlatform: () => platform };
   return () => {
     if (previous === undefined) delete scope.Capacitor;
     else scope.Capacitor = previous;

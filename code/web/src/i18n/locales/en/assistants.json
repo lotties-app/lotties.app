@@ -57,6 +57,17 @@
       "failed": "Could not connect Siri. Try again.",
       "needsInternet": "Siri needs an internet connection: nothing is logged while offline. The widget buttons work offline.",
       "revoke": "Disconnecting removes the sign-in from this iPhone. You can also revoke it for every device in your account's connected apps."
+    },
+    "androidVoice": {
+      "title": "Voice on Android",
+      "intro": "Log and ask about your baby from the app's shortcuts (touch and hold the Lotties icon, or add one to your home screen), with the same answers as the Alexa skill, shown and spoken aloud. Where Google Assistant supports it, you can also say \"Open wet diaper in Lotties\". The phone signs in to Lotties once, here, and then works like the AI assistants below: it can read your baby's log and, only if you allow it, log events.",
+      "connect": "Connect voice",
+      "disconnect": "Disconnect voice",
+      "connected": "Voice is connected on this phone.",
+      "notConnected": "Voice is not connected yet.",
+      "failed": "Could not connect voice. Try again.",
+      "needsInternet": "Voice needs an internet connection: nothing is logged while offline.",
+      "revoke": "Disconnecting removes the sign-in from this phone. You can also revoke it for every device in your account's connected apps."
     }
   }
 }
