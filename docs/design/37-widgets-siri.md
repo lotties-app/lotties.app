@@ -380,3 +380,23 @@ caller). Launcher shortcuts start the non-exported activity and log at once.
 - Whether the launcher accepts all twelve static shortcuts (the limit is per device, usually more than 12).
 - Whether Assistant or Gemini starts the alias with the `feature` extra as documented, and how it matches the synonyms.
 - The settings link reaching the Voice assistants section on a cold start (the web app reads the launch URL).
+
+## 15. The adaptive "Lotties" widget (2026-11-02)
+
+One more widget kind, `LottiesAdaptiveWidget` (small, medium, large), added next to Summary, Quick actions and Activities,
+which stay as they are (removing a kind leaves blank widgets on home screens). It takes the same "Edit widget" buttons
+(`LottiesButtonsIntent`) and shares the code of the others (`SummaryMedium`, `QuickItemTile`, `SleepSquare`, `PickerPanel`).
+
+iOS widget sizes are fixed: the person picks small, medium or large when adding it, and cannot drag it bigger afterwards
+(Android can, section 13). So the "grows with the size" idea is one widget that adapts its content to the size added,
+using the same tiers as the Android widget (section 13):
+
+| Size | Content |
+| --- | --- |
+| Small | Name, the sleep state's icon and live timer on one line, then four tiles: the three chosen buttons (pause and stop while a feed runs) and the sleep tile (framed while the nap is coming up). |
+| Medium | The Summary content: sleep column (state, timer, next nap, sleep button) and the rows (the running feed first, the chosen buttons with "há X" and estimates, the coming-up row tinted, More). |
+| Large | The medium content and, under it, the eight activities (`WidgetActivity.panel`). |
+
+Choices (Wet/Dirty/Both, ml, side) replace the content at any size; in the small widget the ml go in two rows of two, and
+a More opened from another widget is ignored (the list of activities does not fit). No lock-screen families: Summary keeps them.
+Unverified until a device runs it: the layout at each size and the interactive buttons (the compile check only builds it).
