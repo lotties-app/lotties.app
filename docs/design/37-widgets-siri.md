@@ -231,6 +231,26 @@ was, said outright ("há 35 min", "há 2 h+", "há 2 h 30+": minutes under an ho
 row that is coming up gets a tinted fill. The last row is "Mais" (the list of every activity). The "ago" is computed per timeline
 entry (at most 15 minutes old) instead of ticking live; the lock screen and the single-purpose widgets keep the live text.
 
+## 13. The adaptive "Lotties" widget (2026-11-02)
+
+One more widget kind, `LottiesAdaptiveWidget` (small, medium, large), added next to Summary, Quick actions and Activities,
+which stay as they are (removing a kind leaves blank widgets on home screens). It takes the same "Edit widget" buttons
+(`LottiesButtonsIntent`) and shares the code of the others (`SummaryMedium`, `QuickItemTile`, `SleepSquare`, `PickerPanel`).
+
+iOS widget sizes are fixed: the person picks small, medium or large when adding it, and cannot drag it bigger afterwards
+(Android can, design below). So the "grows with the size" idea is one widget that adapts its content to the size added,
+using the same tiers as the Android widget (section "Android" of this document, PR with `feat/android-widgets`):
+
+| Size | Content |
+| --- | --- |
+| Small | Name, the sleep state's icon and live timer on one line, then four tiles: the three chosen buttons (pause and stop while a feed runs) and the sleep tile (framed while the nap is coming up). |
+| Medium | The Summary content: sleep column (state, timer, next nap, sleep button) and the rows (the running feed first, the chosen buttons with "há X" and estimates, the coming-up row tinted, More). |
+| Large | The medium content and, under it, the eight activities (`WidgetActivity.panel`). |
+
+Choices (Wet/Dirty/Both, ml, side) replace the content at any size; in the small widget the ml go in two rows of two, and
+a More opened from another widget is ignored (the list of activities does not fit). No lock-screen families: Summary keeps them.
+Unverified until a device runs it: the layout at each size and the interactive buttons (the compile check only builds it).
+
 ## 7. Unverified
 
 Everything: nothing is built. Open points to settle during step 2: raising the deployment target to 16, how interactive

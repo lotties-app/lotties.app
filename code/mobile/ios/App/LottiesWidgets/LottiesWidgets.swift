@@ -602,6 +602,8 @@ private struct PickerPanel: View {
     let target: PickerTarget
     let baby: WidgetSnapshot.Baby
     let due: WidgetSnapshot.Baby.Due
+    /// The small widget: the amounts go in two rows of two, the title is a size smaller.
+    var compact = false
 
     private var title: String {
         switch target {
@@ -620,9 +622,10 @@ private struct PickerPanel: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: compact ? 4 : 8) {
             HStack {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text).lineLimit(1)
+                Text(title).font((compact ? Font.caption : Font.subheadline).weight(.semibold))
+                    .foregroundStyle(Ink.text).lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 Act(ClosePickerIntent()) {
                     Icon(name: "x", size: 16).foregroundStyle(Ink.muted).padding(4)
@@ -636,9 +639,18 @@ private struct PickerPanel: View {
                     ChoiceChip(title: LottiesText.t("Os dois", "Both"), category: .diaper, intent: choiceIntent(.diaper, "mixed"))
                 }
             case .bottle:
-                HStack(spacing: 8) {
-                    ForEach(amounts, id: \.self) { ml in
-                        ChoiceChip(title: "\(ml) ml", category: .feeding, intent: choiceIntent(.bottle, String(ml)))
+                if compact {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 2), spacing: 6) {
+                        ForEach(amounts, id: \.self) { ml in
+                            ChoiceChip(title: "\(ml) ml", category: .feeding, intent: choiceIntent(.bottle, String(ml)))
+                                .frame(height: 32)
+                        }
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        ForEach(amounts, id: \.self) { ml in
+                            ChoiceChip(title: "\(ml) ml", category: .feeding, intent: choiceIntent(.bottle, String(ml)))
+                        }
                     }
                 }
             case .breast:
@@ -674,6 +686,48 @@ private enum QuickItem: Hashable {
             items = slots.map { QuickItem.activity($0) }
         }
         return Array(items.prefix(3)) + [.more]
+    }
+}
+
+/// One tile of the quick buttons: a chosen activity, pause or resume, stop, or More (quick-actions and adaptive widgets).
+private struct QuickItemTile: View {
+    let item: QuickItem
+    let due: WidgetSnapshot.Baby.Due
+
+    @ViewBuilder
+    var body: some View {
+        switch item {
+        case .activity(let activity):
+            ActivitySquare(activity: activity, due: due)
+        case .pause(let paused):
+            SquareTile(
+                icon: paused ? "player-play" : "player-pause",
+                title: paused ? LottiesText.t("Retomar", "Resume") : LottiesText.t("Pausar", "Pause"),
+                category: .feeding, intent: feedTimerIntent(paused ? .resume : .pause))
+        case .stop:
+            SquareTile(
+                icon: "player-stop", title: LottiesText.t("Parar", "Stop"),
+                category: .feeding, intent: feedTimerIntent(.stop))
+        case .more:
+            MoreSquare()
+        }
+    }
+}
+
+/// The sleep tile of the quick buttons: "Woke up" while asleep, else "Asleep" (framed while the nap is coming up).
+private struct SleepSquare: View {
+    let facts: SleepFacts
+    let due: WidgetSnapshot.Baby.Due
+
+    @ViewBuilder
+    var body: some View {
+        if facts.asleep {
+            SquareTile(icon: "sun", title: LottiesText.t("Acordou", "Woke up"),
+                       category: .sleep, intent: BabyWokeUpIntent())
+        } else {
+            SquareTile(icon: "moon-stars", title: LottiesText.t("Dormiu", "Asleep"),
+                       category: .sleep, intent: BabyFellAsleepIntent(), due: due.nap)
+        }
     }
 }
 
@@ -787,28 +841,7 @@ struct LottiesSummaryWidget: Widget {
                     if let picker = entry.picker {
                         PickerPanel(target: picker, baby: baby, due: due)
                     } else {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                SleepBlock(facts: facts, name: baby.name, nextNap: baby.nextNap?.expected)
-                                Spacer(minLength: 0)
-                                SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
-                            }
-                            .frame(width: 124)
-                            VStack(spacing: 2) {
-                                if let run = baby.runningFeed {
-                                    RunningFeedRow(run: run)
-                                    ForEach(Array(entry.slots.filter { !$0.isFeed }.prefix(2).enumerated()), id: \.offset) { _, activity in
-                                        ActivityRow(activity: activity, baby: baby, due: due)
-                                    }
-                                } else {
-                                    ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
-                                        ActivityRow(activity: activity, baby: baby, due: due)
-                                    }
-                                }
-                                MoreRow()
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
+                        SummaryMedium(entry: entry, baby: baby, facts: facts, due: due)
                     }
                 case .systemLarge, .systemExtraLarge:
                     VStack(alignment: .leading, spacing: 10) {
@@ -1002,29 +1035,9 @@ struct LottiesQuickWidget: Widget {
                     Text(baby.name).font(.caption).foregroundStyle(Ink.muted).lineLimit(1)
                     HStack(spacing: 8) {
                         ForEach(QuickItem.items(slots: entry.slots, run: baby.runningFeed), id: \.self) { item in
-                            switch item {
-                            case .activity(let activity):
-                                ActivitySquare(activity: activity, due: due)
-                            case .pause(let paused):
-                                SquareTile(
-                                    icon: paused ? "player-play" : "player-pause",
-                                    title: paused ? LottiesText.t("Retomar", "Resume") : LottiesText.t("Pausar", "Pause"),
-                                    category: .feeding, intent: feedTimerIntent(paused ? .resume : .pause))
-                            case .stop:
-                                SquareTile(
-                                    icon: "player-stop", title: LottiesText.t("Parar", "Stop"),
-                                    category: .feeding, intent: feedTimerIntent(.stop))
-                            case .more:
-                                MoreSquare()
-                            }
+                            QuickItemTile(item: item, due: due)
                         }
-                        if facts.asleep {
-                            SquareTile(icon: "sun", title: LottiesText.t("Acordou", "Woke up"),
-                                       category: .sleep, intent: BabyWokeUpIntent())
-                        } else {
-                            SquareTile(icon: "moon-stars", title: LottiesText.t("Dormiu", "Asleep"),
-                                       category: .sleep, intent: BabyFellAsleepIntent(), due: due.nap)
-                        }
+                        SleepSquare(facts: facts, due: due)
                     }
                 }
                 }
@@ -1064,6 +1077,125 @@ struct LottiesActivitiesWidget: Widget {
     }
 }
 
+/// The medium content of the Summary and adaptive widgets: the sleep column (state, timer, sleep button) and the list of
+/// rows (the running feed first, the three chosen buttons with "há X" and estimates, then More).
+private struct SummaryMedium: View {
+    let entry: LottiesEntry
+    let baby: WidgetSnapshot.Baby
+    let facts: SleepFacts
+    let due: WidgetSnapshot.Baby.Due
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                SleepBlock(facts: facts, name: baby.name, nextNap: baby.nextNap?.expected)
+                Spacer(minLength: 0)
+                SleepButton(facts: facts, napDue: due.nap ? baby.nextNap?.expected : nil)
+            }
+            .frame(width: 124)
+            VStack(spacing: 2) {
+                if let run = baby.runningFeed {
+                    RunningFeedRow(run: run)
+                    ForEach(Array(entry.slots.filter { !$0.isFeed }.prefix(2).enumerated()), id: \.offset) { _, activity in
+                        ActivityRow(activity: activity, baby: baby, due: due)
+                    }
+                } else {
+                    ForEach(Array(entry.slots.enumerated()), id: \.offset) { _, activity in
+                        ActivityRow(activity: activity, baby: baby, due: due)
+                    }
+                }
+                MoreRow()
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// The small content of the adaptive widget: the sleep state and its timer on one line, then four tiles (the chosen
+/// buttons, or pause and stop while a feed runs, and the sleep one).
+private struct SmallBody: View {
+    let entry: LottiesEntry
+    let baby: WidgetSnapshot.Baby
+    let facts: SleepFacts
+    let due: WidgetSnapshot.Baby.Due
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(baby.name).font(.caption2).foregroundStyle(Ink.muted).lineLimit(1)
+                HStack(spacing: 4) {
+                    Icon(name: facts.icon, size: 14).foregroundStyle(Category.sleep.tone)
+                    if let since = facts.since {
+                        Text(since, style: .relative)
+                            .font(.system(size: 18, weight: .semibold, design: .serif))
+                            .minimumScaleFactor(0.5).lineLimit(1).monospacedDigit().foregroundStyle(Ink.text)
+                    } else {
+                        Text("—").font(.system(size: 18, weight: .semibold, design: .serif)).foregroundStyle(Ink.text)
+                    }
+                }
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 2), spacing: 6) {
+                ForEach(QuickItem.items(slots: entry.slots, run: baby.runningFeed).prefix(3), id: \.self) { item in
+                    QuickItemTile(item: item, due: due)
+                }
+                SleepSquare(facts: facts, due: due)
+            }
+            .frame(maxHeight: .infinity)
+        }
+    }
+}
+
+// MARK: Widget 7: adaptive (small, medium, large)
+
+/// One widget that shows more as the size grows (iOS sizes are fixed: the person picks one when adding it).
+/// Small: sleep and four tiles. Medium: the Summary content. Large: medium plus the eight activities.
+struct LottiesAdaptiveWidget: Widget {
+    let kind = "LottiesAdaptiveWidget"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: kind, intent: LottiesButtonsIntent.self, provider: LottiesConfigProvider()) { entry in
+            Host(entry: entry) { _, baby, family in
+                let facts = SleepFacts(baby)
+                let due = baby.due(at: entry.date)
+                switch family {
+                case .systemMedium:
+                    if let picker = entry.picker {
+                        PickerPanel(target: picker, baby: baby, due: due)
+                    } else {
+                        SummaryMedium(entry: entry, baby: baby, facts: facts, due: due)
+                    }
+                case .systemLarge, .systemExtraLarge:
+                    if let picker = entry.picker {
+                        PickerPanel(target: picker, baby: baby, due: due)
+                    } else {
+                        VStack(alignment: .leading, spacing: 10) {
+                            SummaryMedium(entry: entry, baby: baby, facts: facts, due: due)
+                                .frame(maxHeight: .infinity)
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                                ForEach(WidgetActivity.panel, id: \.self) { activity in
+                                    ActivitySquare(activity: activity, due: due).frame(height: 54)
+                                }
+                            }
+                        }
+                    }
+                default:
+                    // The list of every activity does not fit here; a More open from a bigger widget is ignored.
+                    if let picker = entry.picker, picker != .more {
+                        PickerPanel(target: picker, baby: baby, due: due, compact: true)
+                    } else {
+                        SmallBody(entry: entry, baby: baby, facts: facts, due: due)
+                    }
+                }
+            }
+        }
+        .configurationDisplayName(LottiesText.t("Lotties", "Lotties"))
+        .description(LottiesText.t(
+            "Pequeno: sono e quatro botões. Médio: resumo. Grande: resumo e atividades. Toque e segure para editar os botões.",
+            "Small: sleep and four buttons. Medium: summary. Large: summary and activities. Touch and hold to edit the buttons."))
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+
 @main
 struct LottiesWidgetsBundle: WidgetBundle {
     var body: some Widget {
@@ -1073,5 +1205,6 @@ struct LottiesWidgetsBundle: WidgetBundle {
         LottiesDiaperWidget()
         LottiesQuickWidget()
         LottiesActivitiesWidget()
+        LottiesAdaptiveWidget()
     }
 }
