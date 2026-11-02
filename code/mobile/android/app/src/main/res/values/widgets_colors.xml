@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Linen & Ink" for the widget pieces drawn outside Glance (timers, picker previews); night: values-night. -->
+<resources>
+    <color name="widget_background">#F5EFE4</color>
+    <color name="widget_text">#2A251F</color>
+    <color name="widget_muted">#6A6054</color>
+    <color name="widget_accent">#A8482A</color>
+    <color name="widget_sleep_tint">#E2E7F0</color>
+    <color name="widget_sleep_tone">#2C4870</color>
+    <color name="widget_feeding_tint">#E1EADB</color>
+    <color name="widget_feeding_tone">#375F39</color>
+    <color name="widget_diaper_tint">#F2E5C6</color>
+    <color name="widget_diaper_tone">#6E4E0E</color>
+    <color name="widget_care_tint">#DCEBE8</color>
+    <color name="widget_care_tone">#2F6B60</color>
+</resources>

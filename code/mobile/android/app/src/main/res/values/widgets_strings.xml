@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widgets (docs/design/37-widgets-siri.md section 13). Translations: values-pt-rBR/widgets_strings.xml.
+     The widgets follow the app's language (the snapshot's "language"); the picker names follow the phone's. -->
+<resources>
+    <!-- Widget picker -->
+    <string name="widget_summary_name">Summary</string>
+    <string name="widget_summary_description">Sleep, last feed and diaper, and buttons to log without opening the app.</string>
+    <string name="widget_quick_name">Quick actions</string>
+    <string name="widget_quick_description">Bottle, diaper, breast and sleep buttons, to log without opening the app.</string>
+    <string name="widget_activities_name">Activities</string>
+    <string name="widget_activities_description">Bath, massage, tummy time and more: one tap logs.</string>
+
+    <string name="widget_open_app">Open Lotties</string>
+
+    <!-- Sleep -->
+    <string name="widget_sleep">Sleep</string>
+    <string name="widget_asleep_for">Asleep for</string>
+    <string name="widget_awake_for">Awake for</string>
+    <string name="widget_next_nap">Next nap %1$s</string>
+    <string name="widget_nap_at">Nap %1$s</string>
+    <string name="widget_fell_asleep">Fell asleep</string>
+    <string name="widget_asleep_short">Asleep</string>
+    <string name="widget_woke_up">Woke up</string>
+
+    <!-- Rows -->
+    <string name="widget_next_short">next %1$s</string>
+    <string name="widget_ago">%1$s ago</string>
+    <string name="widget_just_now">just now</string>
+    <string name="widget_nothing_today">Nothing today</string>
+    <string name="widget_more">More</string>
+
+    <!-- Activities -->
+    <string name="widget_activity_bottle">Bottle</string>
+    <string name="widget_activity_breast">Breast</string>
+    <string name="widget_activity_diaper">Diaper</string>
+    <string name="widget_activity_bath">Bath</string>
+    <string name="widget_activity_belly_massage">Massage</string>
+    <string name="widget_activity_tummy_time">Tummy</string>
+    <string name="widget_activity_nasal_suction">Suction</string>
+    <string name="widget_activity_nail_trim">Nails</string>
+    <string name="widget_activity_skin_care">Skin</string>
+    <string name="widget_activity_outdoor">Outdoors</string>
+    <string name="widget_activity_fussy">Fussy</string>
+
+    <!-- Choices inside the widget -->
+    <string name="widget_pick_diaper">Diaper: what was it?</string>
+    <string name="widget_pick_bottle">Bottle: how many ml?</string>
+    <string name="widget_pick_breast">Breast: which side?</string>
+    <string name="widget_pick_more">More activities</string>
+    <string name="widget_choice_wet">Wet</string>
+    <string name="widget_choice_dirty">Dirty</string>
+    <string name="widget_choice_both">Both</string>
+    <string name="widget_choice_left">Left</string>
+    <string name="widget_choice_right">Right</string>
+    <string name="widget_close">Close</string>
+    <string name="widget_ml" translatable="false">%1$d ml</string>
+
+    <!-- Running feed -->
+    <string name="widget_paused_minutes">%1$d min · paused</string>
+    <string name="widget_pause">Pause</string>
+    <string name="widget_resume">Resume</string>
+    <string name="widget_stop">Stop</string>
+
+    <!-- Picker previews (invented sample, never a real child) -->
+    <string name="widget_preview_name" translatable="false">Lia</string>
+    <string name="widget_preview_time" translatable="false">1:10</string>
+</resources>

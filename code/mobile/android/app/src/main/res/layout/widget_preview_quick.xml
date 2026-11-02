@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget picker preview of the Quick actions widget (Android 12+). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/widget_background"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    tools:ignore="UseCompatTextViewDrawableXml,Overdraw,NestedWeights,DisableBaselineAlignment">
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@color/widget_feeding_tint"
+        android:drawableTop="@drawable/ic_tabler_bottle"
+        android:drawableTint="@color/widget_feeding_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_bottle"
+        android:textColor="@color/widget_feeding_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:background="@color/widget_diaper_tint"
+        android:drawableTop="@drawable/ic_tabler_diaper"
+        android:drawableTint="@color/widget_diaper_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_diaper"
+        android:textColor="@color/widget_diaper_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:background="@color/widget_feeding_tint"
+        android:drawableTop="@drawable/ic_tabler_heart"
+        android:drawableTint="@color/widget_feeding_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_breast"
+        android:textColor="@color/widget_feeding_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:background="@color/widget_care_tint"
+        android:drawableTop="@drawable/ic_tabler_dots"
+        android:drawableTint="@color/widget_care_tone"
+        android:gravity="center"
+        android:text="@string/widget_more"
+        android:textColor="@color/widget_care_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:background="@color/widget_sleep_tint"
+        android:drawableTop="@drawable/ic_tabler_moon_stars"
+        android:drawableTint="@color/widget_sleep_tone"
+        android:gravity="center"
+        android:text="@string/widget_asleep_short"
+        android:textColor="@color/widget_sleep_tone"
+        android:textSize="12sp" />
+</LinearLayout>

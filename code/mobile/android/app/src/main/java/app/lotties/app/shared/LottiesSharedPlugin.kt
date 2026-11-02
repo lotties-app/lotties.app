@@ -1,5 +1,6 @@
 package app.lotties.app.shared
 
+import app.lotties.app.widgets.WidgetRefresher
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -13,6 +14,11 @@ import com.getcapacitor.annotation.CapacitorPlugin
  */
 @CapacitorPlugin(name = "LottiesShared")
 class LottiesSharedPlugin : Plugin() {
+
+    /** The widgets follow every snapshot the web app writes from now on (process-wide listener). */
+    override fun load() {
+        WidgetRefresher.register(context)
+    }
 
     @PluginMethod
     fun writeSnapshot(call: PluginCall) {

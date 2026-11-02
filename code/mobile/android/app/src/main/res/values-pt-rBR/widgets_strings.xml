@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widgets da tela inicial (docs/design/37-widgets-siri.md seção 13). -->
+<resources>
+    <string name="widget_summary_name">Resumo</string>
+    <string name="widget_summary_description">Sono, última mamada e fralda, e botões para registrar sem abrir o app.</string>
+    <string name="widget_quick_name">Ações rápidas</string>
+    <string name="widget_quick_description">Botões de mamadeira, fralda, peito e sono, para registrar sem abrir o app.</string>
+    <string name="widget_activities_name">Atividades</string>
+    <string name="widget_activities_description">Banho, massagem, bruços e outros: um toque registra.</string>
+
+    <string name="widget_open_app">Abra o Lotties</string>
+
+    <string name="widget_sleep">Sono</string>
+    <string name="widget_asleep_for">Dormindo há</string>
+    <string name="widget_awake_for">Acordado há</string>
+    <string name="widget_next_nap">Próxima soneca %1$s</string>
+    <string name="widget_nap_at">Soneca %1$s</string>
+    <string name="widget_fell_asleep">Dormiu</string>
+    <string name="widget_asleep_short">Dormiu</string>
+    <string name="widget_woke_up">Acordou</string>
+
+    <string name="widget_next_short">próx. %1$s</string>
+    <string name="widget_ago">há %1$s</string>
+    <string name="widget_just_now">agora</string>
+    <string name="widget_nothing_today">Nada hoje</string>
+    <string name="widget_more">Mais</string>
+
+    <string name="widget_activity_bottle">Mamadeira</string>
+    <string name="widget_activity_breast">Peito</string>
+    <string name="widget_activity_diaper">Fralda</string>
+    <string name="widget_activity_bath">Banho</string>
+    <string name="widget_activity_belly_massage">Massagem</string>
+    <string name="widget_activity_tummy_time">Bruços</string>
+    <string name="widget_activity_nasal_suction">Aspiração</string>
+    <string name="widget_activity_nail_trim">Unhas</string>
+    <string name="widget_activity_skin_care">Pele</string>
+    <string name="widget_activity_outdoor">Ar livre</string>
+    <string name="widget_activity_fussy">Choro</string>
+
+    <string name="widget_pick_diaper">Fralda: o que foi?</string>
+    <string name="widget_pick_bottle">Mamadeira: quantos ml?</string>
+    <string name="widget_pick_breast">Peito: qual lado?</string>
+    <string name="widget_pick_more">Mais atividades</string>
+    <string name="widget_choice_wet">Xixi</string>
+    <string name="widget_choice_dirty">Cocô</string>
+    <string name="widget_choice_both">Os dois</string>
+    <string name="widget_choice_left">Esquerdo</string>
+    <string name="widget_choice_right">Direito</string>
+    <string name="widget_close">Fechar</string>
+
+    <string name="widget_paused_minutes">%1$d min · pausada</string>
+    <string name="widget_pause">Pausar</string>
+    <string name="widget_resume">Retomar</string>
+    <string name="widget_stop">Parar</string>
+</resources>
