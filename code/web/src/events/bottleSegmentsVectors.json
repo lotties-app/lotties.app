@@ -1,6 +1,30 @@
 {
-  "_doc": "Shared vectors of the bottle segments grammar and rules: code/web/src/events/bottleSegments.ts and code/api/src/Lotties.Domain/Events/BottleSegments.cs (docs/design/20-feeding-amounts.md section 5).",
+  "_doc": "Shared vectors of the bottle segments grammar and rules: code/web/src/events/bottleSegments.ts (+ bottleHistory.ts) and code/api/src/Lotties.Domain/Events/BottleSegments.cs (+ BottleHistory.cs) (docs/design/20-feeding-amounts.md section 5, docs/design/44-bottle-history.md). A payload vector's optional lengthSeconds is the ended feeding's whole seconds from start to end. totals: pause_count and paused_seconds derived from a timed history (null: not derivable). extends: what someone else's running bottle may change (rule 7).",
   "parse": [
+    {
+      "text": "120>80@360+0;80>15@780+540",
+      "segments": [
+        { "startMl": 120, "leftMl": 80, "seconds": 360, "begin": 0 },
+        { "startMl": 80, "leftMl": 15, "seconds": 780, "begin": 540 }
+      ]
+    },
+    {
+      "text": "120>80@360+0;80>?@60",
+      "segments": [
+        { "startMl": 120, "leftMl": 80, "seconds": 360, "begin": 0 },
+        { "startMl": 80, "leftMl": null, "seconds": 60 }
+      ]
+    },
+    {
+      "text": "2000>0@86400+86400",
+      "segments": [{ "startMl": 2000, "leftMl": 0, "seconds": 86400, "begin": 86400 }]
+    },
+    { "text": "120>70@300+86401", "segments": null },
+    { "text": "120>70@300+", "segments": null },
+    { "text": "120>70@300+01", "segments": null },
+    { "text": "120>70@300+-1", "segments": null },
+    { "text": "120>70@300+1+2", "segments": null },
+    { "text": "120>70+0@300", "segments": null },
     {
       "text": "120>70@300;70>0@240",
       "segments": [
@@ -427,6 +451,162 @@
       },
       "ended": true,
       "valid": true
+    },
+    {
+      "note": "history: owner example, fell asleep while drinking",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "amount_drunk_ml": 105,
+        "segments": "120>80@360+0;80>15@780+540;15>15@240+1440"
+      },
+      "ended": true,
+      "lengthSeconds": 1680,
+      "valid": true
+    },
+    {
+      "note": "history: the first stretch must begin at the start",
+      "payload": { "method": "bottle", "amount_ml": 120, "segments": "120>80@360+10" },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "history: a resume before the pause (overlap)",
+      "payload": { "method": "bottle", "amount_ml": 120, "segments": "120>80@360+0;80>15@100+300" },
+      "ended": false,
+      "valid": false
+    },
+    {
+      "note": "history: a stretch after the end",
+      "payload": { "method": "bottle", "amount_ml": 120, "amount_drunk_ml": 40, "segments": "120>80@360+0" },
+      "ended": true,
+      "lengthSeconds": 300,
+      "valid": false
+    },
+    {
+      "note": "history: ends at the end exactly",
+      "payload": { "method": "bottle", "amount_ml": 120, "amount_drunk_ml": 40, "segments": "120>80@300+0" },
+      "ended": true,
+      "lengthSeconds": 300,
+      "valid": true
+    },
+    {
+      "note": "history: running, a pause of 0 s is allowed",
+      "payload": { "method": "bottle", "amount_ml": 120, "segments": "120>80@360+0;80>?@100+360" },
+      "ended": false,
+      "valid": true
+    },
+    {
+      "note": "history: an old stretch without a time is skipped",
+      "payload": { "method": "bottle", "amount_ml": 120, "segments": "120>80@360+0;80>?@100" },
+      "ended": false,
+      "valid": true
+    },
+    {
+      "note": "history: a timed stretch after an untimed one is checked against the last timed end",
+      "payload": { "method": "bottle", "amount_ml": 120, "segments": "120>80@360+0;80>60@100;60>?@50+200" },
+      "ended": false,
+      "valid": false
     }
+  ],
+  "totals": [
+    {
+      "note": "owner example: fell asleep while drinking (resumed 12:49, asleep 12:53)",
+      "segments": "120>80@360+0;80>15@780+540;15>15@240+1440",
+      "lengthSeconds": 1680,
+      "paused": false,
+      "pausedSeconds": 0,
+      "totals": { "pauseCount": 2, "pausedSeconds": 300 }
+    },
+    {
+      "note": "owner example: asleep while paused, the last pause runs to the end",
+      "segments": "120>80@360+0;80>15@780+540",
+      "lengthSeconds": 1680,
+      "paused": false,
+      "pausedSeconds": 0,
+      "totals": { "pauseCount": 2, "pausedSeconds": 540 }
+    },
+    {
+      "note": "running and paused: the open pause is not counted",
+      "segments": "120>80@360+0;80>15@780+540",
+      "lengthSeconds": null,
+      "paused": true,
+      "pausedSeconds": 999,
+      "totals": { "pauseCount": 1, "pausedSeconds": 180 }
+    },
+    {
+      "note": "running and drinking: the last pause keeps its stored length",
+      "segments": "120>80@360+0;80>15@780+540",
+      "lengthSeconds": null,
+      "paused": false,
+      "pausedSeconds": 300,
+      "totals": { "pauseCount": 2, "pausedSeconds": 300 }
+    },
+    {
+      "note": "running and drinking: never below the pauses between stretches",
+      "segments": "120>80@360+0;80>15@780+540",
+      "lengthSeconds": null,
+      "paused": false,
+      "pausedSeconds": 100,
+      "totals": { "pauseCount": 2, "pausedSeconds": 180 }
+    },
+    {
+      "note": "one stretch to the end: no pause",
+      "segments": "120>0@600+0",
+      "lengthSeconds": 600,
+      "paused": false,
+      "pausedSeconds": 0,
+      "totals": { "pauseCount": 0, "pausedSeconds": 0 }
+    },
+    {
+      "note": "stopped while paused after one stretch",
+      "segments": "120>60@300+0",
+      "lengthSeconds": 400,
+      "paused": false,
+      "pausedSeconds": 0,
+      "totals": { "pauseCount": 1, "pausedSeconds": 100 }
+    },
+    {
+      "note": "a pause of 0 s still counts",
+      "segments": "120>80@360+0;80>0@100+360",
+      "lengthSeconds": 460,
+      "paused": false,
+      "pausedSeconds": 0,
+      "totals": { "pauseCount": 1, "pausedSeconds": 0 }
+    },
+    {
+      "note": "no times: not derivable",
+      "segments": "120>80@360;80>15@780",
+      "lengthSeconds": 1680,
+      "paused": false,
+      "pausedSeconds": 540,
+      "totals": null
+    },
+    {
+      "note": "one stretch without a time: not derivable",
+      "segments": "120>80@360+0;80>15@780",
+      "lengthSeconds": 1680,
+      "paused": false,
+      "pausedSeconds": 540,
+      "totals": null
+    },
+    {
+      "note": "times that break the rules: not derivable",
+      "segments": "120>80@360+0;80>15@780+300",
+      "lengthSeconds": 1680,
+      "paused": false,
+      "pausedSeconds": 540,
+      "totals": null
+    }
+  ],
+  "extends": [
+    { "note": "nothing before", "before": null, "after": "120>?@300+0", "allowed": true },
+    { "note": "a level answer", "before": "120>?@300+0", "after": "120>80@300+0", "allowed": true },
+    { "note": "a pause adds a stretch", "before": "120>80@300+0", "after": "120>80@300+0;80>?@200+400", "allowed": true },
+    { "note": "the last stretch may be extended (the cap)", "before": "120>?@300+0", "after": "120>?@320", "allowed": true },
+    { "note": "an earlier stretch rewritten", "before": "120>80@300+0;80>?@200+400", "after": "120>80@250+0;80>?@250+400", "allowed": false },
+    { "note": "a stretch removed", "before": "120>80@300+0;80>?@200+400", "after": "120>80@300+0", "allowed": false },
+    { "note": "a resume time moved", "before": "120>80@300+0;80>?@200+400;?>?@10+700", "after": "120>80@300+0;80>?@200+450;?>?@10+700", "allowed": false },
+    { "note": "the detail dropped at a stop", "before": "120>80@300+0", "after": null, "allowed": true }
   ]
 }

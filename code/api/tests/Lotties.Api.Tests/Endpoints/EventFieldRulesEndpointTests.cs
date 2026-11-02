@@ -528,6 +528,24 @@ public sealed class EventFieldRulesEndpointTests(ApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task PutEvent_BottleHistory_TimesAreCheckedAndTheTotalsRecomputed()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = Owner(baby);
+
+        // Owner's example: 120 ml at 12:25, pause 12:31 left 80, resume 12:34, pause 12:47 left 15, asleep 12:53 while paused.
+        var edited = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, amount_drunk_ml = 105, pause_count = 9, paused_seconds = 1, segments = "120>80@360+0;80>15@780+540" }, Start.AddSeconds(1680)));
+        var afterTheEnd = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, amount_drunk_ml = 105, segments = "120>80@360+0;80>15@780+1000" }, Start.AddSeconds(1680)));
+        var overlapping = await client.PutAsJsonAsync(EventPath(baby.BabyId, Guid.NewGuid()), EventBody(BuiltInEventTypes.FeedingId, new { method = "bottle", amount_ml = 120, segments = "120>80@360+0;80>?@60+300" }, endedAt: null));
+
+        Assert.Equal(HttpStatusCode.Created, edited.StatusCode);
+        var stored = (await edited.Content.ReadFromJsonAsync<JsonObject>())!["payload"]!;
+        Assert.Equal((2, 540), ((int)stored["pause_count"]!, (int)stored["paused_seconds"]!));
+        await AssertFieldProblemAsync(afterTheEnd, "segments");
+        await AssertFieldProblemAsync(overlapping, "segments");
+    }
+
+    [Fact]
     public async Task PutEvent_CustomTypeRules_ApplyToItsFields()
     {
         var baby = await factory.SeedBabyAsync();

@@ -19,8 +19,13 @@ import { RADIUS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Field, MedicationPicker, NotesRow } from '../ui/form';
 import { daysBeforeToday } from '../ui/form/timeMath';
-import { getOwn } from '../util/ownProperty';
-import { currentStartLevel } from './bottleSegments';
+import { getOwn, withOwn, withoutOwn } from '../util/ownProperty';
+import type { BabyEvent, EventPayload, EventType } from '../db/models';
+import { readPause } from '../timers/pauseMath';
+import { DRUNK_KEY, PREPARED_KEY } from './bottleAmounts';
+import { BottleHistory, BottleHistoryTotals } from './BottleHistoryList';
+import { withHistoryTotals } from './bottleHistory';
+import { currentStartLevel, isBuiltInBottle } from './bottleSegments';
 import { FUSSY_KEY } from '../now/fussyPattern';
 import { AssistantOriginNote } from './AssistantOriginNote';
 import { ConditionalFields } from './ConditionalFields';
@@ -176,6 +181,60 @@ function Frame({
 
 const minuteOf = (d: Date) => Math.floor(d.getTime() / 60_000);
 
+const positiveNumber = (value: unknown): number | null => {
+  const n = typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+/** `payload` with the prepared and drunk amounts of the form (absent when empty). */
+function withAmounts(
+  payload: Readonly<EventPayload>,
+  preparedMl: number | null,
+  values: Readonly<Record<string, unknown>>,
+): EventPayload {
+  const drunk = positiveNumber(getOwn(values, DRUNK_KEY));
+  let next = withoutOwn<unknown>(withoutOwn<unknown>(payload, PREPARED_KEY), DRUNK_KEY);
+  if (preparedMl !== null) next = withOwn<unknown>(next, PREPARED_KEY, preparedMl);
+  if (drunk !== null) next = withOwn<unknown>(next, DRUNK_KEY, drunk);
+  return next;
+}
+
+/** A timed built-in bottle being edited shows its history (docs/design/44-bottle-history.md). */
+function hasHistory(
+  type: EventType,
+  values: Readonly<Record<string, unknown>>,
+  event: Pick<BabyEvent, 'startedAt' | 'endedAt'>,
+): boolean {
+  return (
+    isBuiltInBottle(type, { method: getOwn(values, 'method') }) &&
+    (event.endedAt === null || event.endedAt !== event.startedAt)
+  );
+}
+
+/** The totals the history gives, live: drunk (the form's total), pauses, paused and drinking time. */
+function liveTotals(
+  bottle: Pick<BabyEvent, 'startedAt' | 'endedAt' | 'payload'>,
+  values: Readonly<Record<string, unknown>>,
+  nowMs: number,
+  preparedMl: number | null,
+) {
+  const payload = withHistoryTotals({ ...bottle.payload }, bottle);
+  const pause = readPause(payload);
+  const openSince = bottle.endedAt === null ? pause.pausedAt : null;
+  const open = openSince !== null;
+  const openSeconds = open ? Math.max(0, Math.floor((nowMs - Date.parse(openSince)) / 1000)) : 0;
+  const pausedSeconds = pause.pausedSeconds + openSeconds;
+  const end = bottle.endedAt === null ? nowMs : Date.parse(bottle.endedAt);
+  const wall = Math.max(0, Math.floor((end - Date.parse(bottle.startedAt)) / 1000));
+  const drunk = positiveNumber(getOwn(values, DRUNK_KEY));
+  return {
+    drunkMl: drunk ?? (bottle.endedAt === null ? null : preparedMl),
+    pauseCount: pause.count + (open ? 1 : 0),
+    pausedSeconds,
+    drinkingSeconds: Math.max(0, wall - pausedSeconds),
+  };
+}
+
 /** "Today", "Yesterday" or the date, for the large time of the header. */
 function heroDayLabel(date: Date, now: Date, t: TFunction): string {
   const days = daysBeforeToday(date, now);
@@ -269,7 +328,19 @@ export function EventSheet(props: EventSheetProps) {
   const note =
     problems.length > 0
       ? t('events.sheet.problems', { count: problems.length, first: problems[0].message })
-      : state.saveError;
+      : state.historyProblem
+        ? t(`feedingAmounts.history.problem.${state.historyProblem}`)
+        : state.saveError;
+  const preparedMl = positiveNumber(getOwn(form.values, PREPARED_KEY));
+  const history =
+    event && !finishing && type && hasHistory(type, form.values, event)
+      ? {
+          startedAt: event.startedAt,
+          endedAt: event.endedAt,
+          // The amounts as typed, so the rows and their checks follow the form.
+          payload: withAmounts(state.historyPayload ?? event.payload, preparedMl, form.values),
+        }
+      : null;
 
   return (
     <Frame desktop={desktop} titleId={titleId} onClose={requestClose}>
@@ -350,6 +421,16 @@ export function EventSheet(props: EventSheetProps) {
               onChange={state.setValue}
             />
           )}
+          {history && (
+            <BottleHistory
+              bottle={history}
+              preparedMl={preparedMl}
+              nowMs={state.openedAt.getTime()}
+              editable
+              onChange={state.editHistory}
+              onEndLevel={state.setEndLevel}
+            />
+          )}
           <FormulaField babyId={babyId} choice={state.formula} />
           {type && !finishing && (
             <SleepDetails type={type} values={form.values} onChange={state.setValue} />
@@ -383,6 +464,11 @@ export function EventSheet(props: EventSheetProps) {
           <DiscardBar onKeep={() => setDiscarding(false)} onDiscard={onDone} />
         ) : (
           <Box sx={{ display: 'grid', gap: 1 }}>
+            {history && (
+              <BottleHistoryTotals
+                {...liveTotals(history, form.values, state.openedAt.getTime(), preparedMl)}
+              />
+            )}
             <Box role="status" sx={{ color: 'error.main', fontSize: '0.875rem' }}>
               {note}
             </Box>

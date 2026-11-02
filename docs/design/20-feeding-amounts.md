@@ -147,7 +147,9 @@ and pace. Only timed bottles ("Time bottle feedings" on) have pauses; with it of
   ended, each whole ml 0-2000 or `?` (unknown: the question was skipped), `seconds` its drinking time (0-86400,
   pauses excluded). At most 20 stretches, 400 characters. Levels rather than drunk amounts are stored so a level
   reported without a known start (no prepared amount) is never lost; what was drunk in a stretch is `start - left`
-  when both are known. Old bottles and bottles never paused have no `segments` and work as before.
+  when both are known. Old bottles and bottles never paused have no `segments` and work as before. Since design 44
+  (2026-11-02) a stretch may end in `+begin` (seconds from the feeding's start), the history is editable and the pause
+  totals are derived from it; see [44-bottle-history.md](44-bottle-history.md) section 8.
 - **Totals stay single-sourced.** `amount_drunk_ml` (absent = all) is still what every total reads (Insights, the
   formula comparison, the clinical summary, the assistants). The stretches only add detail.
 - **Rules** (Domain `BottleSegments.EnsureValid`, 400 `validation_failed` field `segments`, called by `EventService`

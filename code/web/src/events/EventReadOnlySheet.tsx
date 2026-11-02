@@ -9,6 +9,9 @@ import { CategoryIcon } from '../ui/CategoryIcon';
 import type { FedToSleep } from '../now/bottleFollowUp';
 import { FUSSY_KEY } from '../now/fussyPattern';
 import { AssistantOriginNote } from './AssistantOriginNote';
+import { preparedMl } from './bottleAmounts';
+import { BottleHistory } from './BottleHistoryList';
+import { isBuiltInBottle } from './bottleSegments';
 import { CryAnswerRow } from './CryAnswerRow';
 import { DeleteRequestBanner } from './DeleteRequestBanner';
 import { cryAnswer, isAutoDetected } from './cryDetection';
@@ -83,6 +86,14 @@ export function EventReadOnlySheet({
         </Box>
         {type?.key === FUSSY_KEY && isAutoDetected(event) && (
           <CryAnswerRow answer={cryAnswer(event)} />
+        )}
+        {isBuiltInBottle(type, event.payload) && event.endedAt !== event.startedAt && (
+          <BottleHistory
+            bottle={event}
+            preparedMl={preparedMl(event.payload) ?? null}
+            nowMs={Date.parse(event.startedAt)}
+            editable={false}
+          />
         )}
         <AssistantOriginNote event={event} />
         <DeleteRequestBanner event={event} />

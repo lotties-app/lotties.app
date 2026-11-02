@@ -9,18 +9,24 @@ namespace Lotties.Domain.Events;
 /// One drinking stretch of a timed bottle (docs/design/20-feeding-amounts.md section 5): from the start or a resume to the
 /// next pause or the stop. <see cref="StartMl"/> is the level in the bottle when it began (the prepared amount for the
 /// first one), <see cref="LeftMl"/> the level when it ended; either may be unknown (<c>null</c>: the parent skipped the
-/// question). <see cref="Seconds"/> is its drinking time (pauses excluded).
+/// question). <see cref="Seconds"/> is its drinking time (pauses excluded). <see cref="Begin"/> (docs/design/44-bottle-history.md)
+/// is when it began, in whole seconds from the feeding's start (<c>null</c>: time unknown, a bottle written before the
+/// history had times); it ends at <see cref="End"/>, and the pause after it lasts until the next stretch begins.
 /// </summary>
-public sealed record BottleSegment(int? StartMl, int? LeftMl, int Seconds)
+public sealed record BottleSegment(int? StartMl, int? LeftMl, int Seconds, int? Begin = null)
 {
     /// <summary>What the baby drank in this stretch (ml), when both levels are known.</summary>
     public int? DrunkMl => StartMl is { } start && LeftMl is { } left ? start - left : null;
+
+    /// <summary>When it ended (seconds from the feeding's start), when its begin is known.</summary>
+    public int? End => Begin is { } begin ? begin + Seconds : null;
 }
 
 /// <summary>
 /// The hidden built-in feeding member <c>segments</c>: the drinking stretches of a timed bottle, as compact text
-/// <c>start&gt;left@seconds</c> per stretch, joined by <c>;</c> (e.g. <c>120&gt;70@300;70&gt;0@240</c>), where a level is
-/// whole ml (0 to <see cref="MaxLevelMl"/>) or <c>?</c> (unknown) and seconds a whole number (0 to
+/// <c>start&gt;left@seconds</c> per stretch, optionally followed by <c>+begin</c> (when it began, seconds from the feeding's
+/// start, docs/design/44-bottle-history.md), joined by <c>;</c> (e.g. <c>120&gt;80@360+0;80&gt;15@780+540</c>), where a
+/// level is whole ml (0 to <see cref="MaxLevelMl"/>) or <c>?</c> (unknown) and seconds and begin whole numbers (0 to
 /// <see cref="MaxSeconds"/>). Text because the field kinds have no list; the web parses the same grammar
 /// (<c>code/web/src/events/bottleSegments.ts</c>) and both read the shared vectors <c>bottleSegmentsVectors.json</c>.
 /// The total <c>amount_drunk_ml</c> stays the single source of every total: the segments only add detail.
@@ -29,7 +35,7 @@ public static partial class BottleSegments
 {
     public const string Member = "segments";
     public const int MaxSegments = 20;
-    public const int MaxLength = 400;
+    public const int MaxLength = 480;
     public const int MaxLevelMl = 2000;
     public const int MaxSeconds = 86_400;
 
@@ -73,7 +79,13 @@ public static partial class BottleSegments
     /// end level disagrees with the total (<c>amount_ml - left = total</c>). Absent or <c>null</c>: nothing to check (old
     /// bottles, bottles never paused). A value that is not text is left to the field rules.
     /// </summary>
-    public static void EnsureValid(EventPayload payload, bool ended)
+    /// <remarks>
+    /// With times (<see cref="BottleSegment.Begin"/>, design 44 section 4): a timed first stretch begins at 0, a timed
+    /// stretch begins at or after the end of the timed one before it (pauses in order, never overlapping) and, once the
+    /// feeding ended (<paramref name="lengthSeconds"/>: its whole seconds from start to end), no timed stretch ends after
+    /// the end. Stretches without a time are skipped by these checks.
+    /// </remarks>
+    public static void EnsureValid(EventPayload payload, bool ended, long? lengthSeconds = null)
     {
         using var document = JsonDocument.Parse(payload.Value);
         var root = document.RootElement;
@@ -85,8 +97,13 @@ public static partial class BottleSegments
         }
 
         var segments = TryParse(member.GetString())
-            ?? throw Invalid($"'{Member}' must be 1 to {MaxSegments} stretches 'start>left@seconds' joined by ';' (levels whole ml or '?').");
+            ?? throw Invalid($"'{Member}' must be 1 to {MaxSegments} stretches 'start>left@seconds' or 'start>left@seconds+begin' joined by ';' (levels whole ml or '?').");
         EnsureChain(segments);
+        if (BottleHistory.TimeProblem(segments, ended ? lengthSeconds : null) is { } problem)
+        {
+            throw Invalid($"'{Member}': {problem}");
+        }
+
         EnsureAmounts(segments, Amount(root, BottleAmounts.PreparedMember), Amount(root, BottleAmounts.DrunkMember), ended);
     }
 
@@ -131,6 +148,15 @@ public static partial class BottleSegments
         }
     }
 
+    /// <summary>The text form of <paramref name="segments"/> (the caller keeps them within the bounds).</summary>
+    public static string Format(IEnumerable<BottleSegment> segments) =>
+        string.Join(Separator, segments.Select(segment =>
+            string.Create(CultureInfo.InvariantCulture, $"{LevelText(segment.StartMl)}>{LevelText(segment.LeftMl)}@{segment.Seconds}")
+            + (segment.Begin is { } begin ? string.Create(CultureInfo.InvariantCulture, $"+{begin}") : string.Empty)));
+
+    private static string LevelText(int? level) =>
+        level is { } value ? value.ToString(CultureInfo.InvariantCulture) : UnknownLevel;
+
     /// <summary>The known levels in time order: the first start, then every end.</summary>
     private static IEnumerable<int?> Levels(IReadOnlyList<BottleSegment> segments) =>
         segments.Take(1).Select(segment => segment.StartMl)
@@ -146,14 +172,18 @@ public static partial class BottleSegments
         }
 
         var seconds = int.Parse(match.Groups["seconds"].Value, NumberStyles.None, CultureInfo.InvariantCulture);
+        int? begin = match.Groups["begin"].Success
+            ? int.Parse(match.Groups["begin"].Value, NumberStyles.None, CultureInfo.InvariantCulture)
+            : null;
         if (seconds > MaxSeconds
+            || begin > MaxSeconds
             || !TryLevel(match.Groups["start"].Value, out var start)
             || !TryLevel(match.Groups["left"].Value, out var left))
         {
             return null;
         }
 
-        return new BottleSegment(start, left, seconds);
+        return new BottleSegment(start, left, seconds, begin);
     }
 
     private static bool TryLevel(string text, out int? level)
@@ -180,6 +210,6 @@ public static partial class BottleSegments
 
     private static DomainValidationException Invalid(string message) => new(Member, message);
 
-    [GeneratedRegex(@"^(?<start>\?|0|[1-9][0-9]{0,3})>(?<left>\?|0|[1-9][0-9]{0,3})@(?<seconds>0|[1-9][0-9]{0,4})\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?<start>\?|0|[1-9][0-9]{0,3})>(?<left>\?|0|[1-9][0-9]{0,3})@(?<seconds>0|[1-9][0-9]{0,4})(?:\+(?<begin>0|[1-9][0-9]{0,4}))?\z", RegexOptions.CultureInvariant)]
     private static partial Regex SegmentPattern();
 }

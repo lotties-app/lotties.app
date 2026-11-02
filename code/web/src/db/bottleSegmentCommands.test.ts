@@ -49,12 +49,12 @@ describe('a bottle records its drinking stretches', () => {
   it('a pause closes the stretch (level unknown) and the answer fills it', async () => {
     const event = await bottle();
     const paused = await pauseTimer(db, event.id, at(5));
-    expect(paused.payload).toMatchObject({ segments: '120>?@300', paused_at: iso(5) });
+    expect(paused.payload).toMatchObject({ segments: '120>?@300+0', paused_at: iso(5) });
     const answered = await recordBottleLevel(db, event.id, 70, 1, at(5));
-    expect(answered.payload.segments).toBe('120>70@300');
+    expect(answered.payload.segments).toBe('120>70@300+0');
     const outbox = await db.outbox.toArray();
     expect(outbox[outbox.length - 1].payload).toMatchObject({
-      payload: { segments: '120>70@300' },
+      payload: { segments: '120>70@300+0' },
     });
   });
 
@@ -75,7 +75,7 @@ describe('a bottle records its drinking stretches', () => {
     );
     // 3 min paused: 10 min of drinking, 5 + 3 + 2.
     expect(stopped.payload).toMatchObject({
-      segments: '120>70@300;70>30@180;30>10@120',
+      segments: '120>70@300+0;70>30@180+420;30>10@120+660',
       amount_drunk_ml: 110,
       paused_seconds: 180,
       pause_count: 2,
@@ -87,7 +87,7 @@ describe('a bottle records its drinking stretches', () => {
     await pauseTimer(db, event.id, at(4));
     await resumeTimer(db, event.id, at(5));
     const stopped = await stopEvent(db, event.id, undefined, at(9));
-    expect(stopped.payload.segments).toBe('120>?@240;?>0@240');
+    expect(stopped.payload.segments).toBe('120>?@240+0;?>0@240+300');
   });
 
   it('nursing and bottles never paused get no stretches', async () => {
@@ -110,7 +110,7 @@ describe('a bottle records its drinking stretches', () => {
       { payload: { ...(await load(event.id)).payload, amount_drunk_ml: 80 } },
       at(20),
     );
-    expect(edited.payload.segments).toBe('120>?@300;?>40@240');
+    expect(edited.payload.segments).toBe('120>?@300+0;?>40@240+360');
   });
 
   it('a sleep that stops the bottle leaves its end unknown; the follow-up fills it and the total', async () => {
@@ -123,11 +123,11 @@ describe('a bottle records its drinking stretches', () => {
       options: at(12),
     });
     const stopped = await load(event.id);
-    expect(stopped.payload).toMatchObject({ ended_by: 'sleep', segments: '120>60@300;60>?@360' });
+    expect(stopped.payload).toMatchObject({ ended_by: 'sleep', segments: '120>60@300+0;60>?@360+360' });
     expect(stopped.payload).not.toHaveProperty('amount_drunk_ml');
     const answered = await recordBottleLevel(db, event.id, 20, 2, at(30));
     expect(answered.payload).toMatchObject({
-      segments: '120>60@300;60>20@360',
+      segments: '120>60@300+0;60>20@360+360',
       amount_drunk_ml: 100,
     });
   });

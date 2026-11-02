@@ -1,4 +1,5 @@
 import type { EventPayload, EventType } from '../db/models';
+import { readPause } from '../timers/pauseMath';
 import { getOwn, setOwn, withoutOwn } from '../util/ownProperty';
 import { DRUNK_KEY, ENDED_BY_KEY, ENDED_BY_SLEEP, PREPARED_KEY, preparedMl } from './bottleAmounts';
 
@@ -8,14 +9,17 @@ import { DRUNK_KEY, ENDED_BY_KEY, ENDED_BY_SLEEP, PREPARED_KEY, preparedMl } fro
  * by `;` ("120>70@300;70>0@240"). A stretch runs from the start or a resume to the next pause or
  * the stop; `start` is the level in the bottle when it began (the prepared amount for the first),
  * `left` the level when it ended, either `?` when unknown (the parent skipped the question), and
- * `seconds` its drinking time (pauses excluded). Same grammar and rules as the API's
- * `BottleSegments`; both read `bottleSegmentsVectors.json`. The total `amount_drunk_ml` stays the
- * single source of every total: the segments only add detail. Pure.
+ * `seconds` its drinking time (pauses excluded). Since the bottle history
+ * (docs/design/44-bottle-history.md) a stretch may end in `+begin`: when it began, whole seconds
+ * from the feeding's start ("120>80@360+0;80>15@780+540"); the pause after a stretch lasts until
+ * the next one begins. Same grammar and rules as the API's `BottleSegments`/`BottleHistory`; both
+ * read `bottleSegmentsVectors.json`. The total `amount_drunk_ml` stays the single source of every
+ * total. Pure.
  */
 
 export const SEGMENTS_KEY = 'segments';
 export const MAX_SEGMENTS = 20;
-export const MAX_SEGMENTS_LENGTH = 400;
+export const MAX_SEGMENTS_LENGTH = 480;
 export const MAX_LEVEL_ML = 2000;
 export const MAX_SEGMENT_SECONDS = 86_400;
 
@@ -26,9 +30,16 @@ export interface BottleSegment {
   leftMl: number | null;
   /** Drinking time of the stretch (pauses excluded). */
   seconds: number;
+  /** When it began, whole seconds from the feeding's start; absent: time unknown (older bottles). */
+  begin?: number;
 }
 
-const SEGMENT = /^(\?|0|[1-9][0-9]{0,3})>(\?|0|[1-9][0-9]{0,3})@(0|[1-9][0-9]{0,4})$/;
+/** When a stretch ended (seconds from the feeding's start), when its begin is known. */
+export const segmentEnd = (segment: BottleSegment): number | null =>
+  segment.begin === undefined ? null : segment.begin + segment.seconds;
+
+const SEGMENT =
+  /^(\?|0|[1-9][0-9]{0,3})>(\?|0|[1-9][0-9]{0,3})@(0|[1-9][0-9]{0,4})(?:\+(0|[1-9][0-9]{0,4}))?$/;
 
 function level(text: string): number | null | undefined {
   if (text === '?') return null;
@@ -48,8 +59,10 @@ export function parseSegments(text: unknown): BottleSegment[] | null {
     const startMl = level(match[1]);
     const leftMl = level(match[2]);
     const seconds = Number(match[3]);
+    const begin = match[4] === undefined ? undefined : Number(match[4]);
     if (startMl === undefined || leftMl === undefined || seconds > MAX_SEGMENT_SECONDS) return null;
-    segments.push({ startMl, leftMl, seconds });
+    if (begin !== undefined && begin > MAX_SEGMENT_SECONDS) return null;
+    segments.push(begin === undefined ? { startMl, leftMl, seconds } : { startMl, leftMl, seconds, begin });
   }
   return segments;
 }
@@ -59,8 +72,37 @@ const levelText = (value: number | null) => (value === null ? '?' : String(value
 /** The text form of `segments` (the caller keeps them within the bounds). */
 export function formatSegments(segments: readonly BottleSegment[]): string {
   return segments
-    .map((s) => `${levelText(s.startMl)}>${levelText(s.leftMl)}@${s.seconds}`)
+    .map(
+      (s) =>
+        `${levelText(s.startMl)}>${levelText(s.leftMl)}@${s.seconds}` +
+        (s.begin === undefined ? '' : `+${s.begin}`),
+    )
     .join(';');
+}
+
+export type HistoryTimeProblem = 'firstBegin' | 'order' | 'afterEnd';
+
+/**
+ * Why the times of `segments` break the rules (API `BottleHistory.TimeProblem`), or `null`: a
+ * timed first stretch begins at 0; a timed stretch begins at or after the end of the timed one
+ * before it (in order, pauses never overlap); once ended (`lengthSeconds`: whole seconds from
+ * start to end) no timed stretch ends after the end. Stretches without a time are skipped.
+ */
+export function historyTimeProblem(
+  segments: readonly BottleSegment[],
+  lengthSeconds: number | null,
+): HistoryTimeProblem | null {
+  const first = segments[0]?.begin;
+  if (first !== undefined && first !== 0) return 'firstBegin';
+  let previousEnd: number | null = null;
+  for (const segment of segments) {
+    const end = segmentEnd(segment);
+    if (segment.begin === undefined || end === null) continue;
+    if (previousEnd !== null && segment.begin < previousEnd) return 'order';
+    if (lengthSeconds !== null && end > lengthSeconds) return 'afterEnd';
+    previousEnd = end;
+  }
+  return null;
 }
 
 /** What the baby drank in a stretch (ml), when both levels are known. */
@@ -90,9 +132,15 @@ function knownLevels(segments: readonly BottleSegment[]): number[] {
  * a stretch ends above its start; a stretch does not start where the previous one ended (both known
  * and equal, or both unknown); a known level above `amount_ml`; the levels say more was drunk than
  * the total (`amount_drunk_ml`, absent = all); or, once `ended`, the last known end level disagrees
- * with the total. Absent, `null` or not text: no problem here.
+ * with the total; or the times break `historyTimeProblem` (`lengthSeconds`: the ended feeding's
+ * whole seconds, `null`/absent: not checked against the end). Absent, `null` or not text: no
+ * problem here.
  */
-export function segmentsProblem(payload: Readonly<EventPayload>, ended: boolean): boolean {
+export function segmentsProblem(
+  payload: Readonly<EventPayload>,
+  ended: boolean,
+  lengthSeconds: number | null = null,
+): boolean {
   const raw = getOwn(payload, SEGMENTS_KEY);
   if (typeof raw !== 'string') return false;
   const segments = parseSegments(raw);
@@ -102,6 +150,7 @@ export function segmentsProblem(payload: Readonly<EventPayload>, ended: boolean)
     if (drunk !== null && drunk < 0) return true;
     if (i > 0 && segments[i].startMl !== segments[i - 1].leftMl) return true;
   }
+  if (historyTimeProblem(segments, ended ? lengthSeconds : null) !== null) return true;
   const prepared = finite(getOwn(payload, PREPARED_KEY));
   if (prepared === null) return false;
   const levels = knownLevels(segments);
@@ -154,8 +203,10 @@ const drinkingSum = (segments: readonly BottleSegment[]) =>
  * The payload with the open stretch closed: it began at the previous stretch's end level (the
  * prepared amount for the first) and lasted `drinkingSeconds` (all drinking so far) minus the
  * earlier stretches; `leftMl` is the level now (`null`: unknown). At the cap of stretches the last
- * one is extended instead. Used at a pause (level unknown until the parent answers) and at the
- * stop.
+ * one is extended instead (its time dropped: the pause inside it is no longer in the history).
+ * The new stretch carries its begin (design 44) when every earlier one does: the drinking and the
+ * finished pauses (`paused_seconds`) before it. Used at a pause (level unknown until the parent
+ * answers) and at the stop.
  */
 export function closeSegment(
   payload: Readonly<EventPayload>,
@@ -169,18 +220,20 @@ export function closeSegment(
   );
   const last = segments[segments.length - 1];
   if (last && segments.length >= MAX_SEGMENTS) {
-    const merged = {
-      ...last,
+    const merged: BottleSegment = {
+      startMl: last.startMl,
       leftMl: fittingLevel(payload, last.startMl, leftMl),
       seconds: Math.min(MAX_SEGMENT_SECONDS, last.seconds + seconds),
     };
     return withSegments(payload, [...segments.slice(0, -1), merged]);
   }
   const startMl = last ? last.leftMl : firstLevel(payload);
-  return withSegments(payload, [
-    ...segments,
-    { startMl, leftMl: fittingLevel(payload, startMl, leftMl), seconds },
-  ]);
+  const begin = segments.every((s) => s.begin !== undefined)
+    ? drinkingSum(segments) + readPause(payload).pausedSeconds
+    : undefined;
+  const closed: BottleSegment = { startMl, leftMl: fittingLevel(payload, startMl, leftMl), seconds };
+  if (begin !== undefined && begin <= MAX_SEGMENT_SECONDS) closed.begin = begin;
+  return withSegments(payload, [...segments, closed]);
 }
 
 /**
@@ -218,14 +271,19 @@ function finalLevel(payload: Readonly<EventPayload>): number | null {
 /**
  * The payload of a bottle that just stopped, with its last stretch closed: the drinking time since
  * the previous stretch (`drinkingSeconds` = the bottle's effective length) and the level the totals
- * give. Stopped while paused (no drinking since): the last stretch takes that level instead. A
- * bottle without stretches (never paused) is returned as is.
+ * give. Stopped while paused (`wasPaused`, or no drinking since): the last stretch takes that
+ * level instead, and the history keeps the last pause running to the end. A bottle without
+ * stretches (never paused) is returned as is.
  */
-export function closeAtStop(payload: Readonly<EventPayload>, drinkingSeconds: number) {
+export function closeAtStop(
+  payload: Readonly<EventPayload>,
+  drinkingSeconds: number,
+  wasPaused = false,
+) {
   const segments = readSegments(payload);
   if (segments.length === 0) return payload;
   const left = finalLevel(payload);
-  if (Math.floor(drinkingSeconds) - drinkingSum(segments) >= 1) {
+  if (!wasPaused && Math.floor(drinkingSeconds) - drinkingSum(segments) >= 1) {
     return closeSegment(payload, drinkingSeconds, left);
   }
   return left === null ? payload : withLastLevel(payload, left);
@@ -240,7 +298,8 @@ export function closeAtStop(payload: Readonly<EventPayload>, drinkingSeconds: nu
 export function settleSegments(payload: EventPayload, ended: boolean): EventPayload {
   if (getOwn(payload, 'method') !== 'bottle' || !segmentsProblem(payload, ended)) return payload;
   const segments = parseSegments(getOwn(payload, SEGMENTS_KEY));
-  if (segments === null) return payload;
+  // Times are checked by the sheet's history (`bottleHistory.ts`), never silently dropped here.
+  if (segments === null || historyTimeProblem(segments, null) !== null) return payload;
   const last = segments[segments.length - 1];
   const candidates: (number | null)[] = [];
   const total = ended ? finalLevel(payload) : null;

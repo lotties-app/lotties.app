@@ -9,7 +9,8 @@ namespace Lotties.Domain.Events;
 /// resume it while it runs. Allowed only when the stored event is running and the edit keeps its type, start and
 /// notes; ends it at or after its start and at most <see cref="ClientEditTime.MaxFutureSkew"/> ahead of the server
 /// clock (or keeps it running); changes only the pause keys (<see cref="PauseFields"/>) and the bottle's drinking
-/// stretches (<see cref="BottleSegments"/>, written at each pause and at the stop) and otherwise only fills
+/// stretches (<see cref="BottleSegments"/>, written at each pause and at the stop; only added to or given a level, never
+/// rewritten: <see cref="BottleHistory.OnlyExtends"/>, docs/design/44-bottle-history.md rule 7) and otherwise only fills
 /// payload members that were absent, <c>null</c> or <c>""</c> (what the stop flow asks, e.g. a bottle's amount).
 /// Every other stored payload value must stay (as a JSON value).
 /// </summary>
@@ -27,7 +28,8 @@ public static class RunningEventControl
             && stored.StartedAt == UtcTime.Normalize(edit.StartedAt)
             && string.Equals(stored.Notes, NormalizedNotes(edit.Notes), StringComparison.Ordinal)
             && EndsAllowed(stored.StartedAt, edit.EndedAt, now)
-            && KeepsStoredValues(stored.Payload, edit.Payload);
+            && KeepsStoredValues(stored.Payload, edit.Payload)
+            && BottleHistory.OnlyExtends(stored.Payload.GetString(BottleSegments.Member), edit.Payload.GetString(BottleSegments.Member));
     }
 
     /// <summary>Notes as the event would store them (trimmed, blank = none).</summary>

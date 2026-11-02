@@ -50,6 +50,43 @@
     },
     "target": {
       "usualBottle": "A bottle usually takes about {{duration}}"
+    },
+    "history": {
+      "title": "History",
+      "start": "Started",
+      "pause": "Paused",
+      "resume": "Resumed",
+      "end": "Stopped",
+      "drinkingNow": "drinking now",
+      "timeUnknown": "time unknown",
+      "levelIn": "{{ml}} in the bottle",
+      "levelLeft": "{{ml}} left",
+      "levelUnknown": "level unknown",
+      "drank": "drank {{ml}}",
+      "editRow": "Change: {{row}}",
+      "time": "Time",
+      "level": "Left in the bottle",
+      "otherLevel": "Other amount",
+      "done": "Done",
+      "remove": "Remove pause",
+      "add": "Add pause",
+      "pausedAt": "Paused at",
+      "resumedAt": "Resumed at",
+      "addConfirm": "Add",
+      "cancel": "Cancel",
+      "endLevelHint": "The level at the end sets how much was drunk.",
+      "totalDrunk": "Drank {{ml}}",
+      "totalPauses_one": "{{count}} pause",
+      "totalPauses_other": "{{count}} pauses",
+      "totalPaused": "{{duration}} paused",
+      "totalDrinking": "{{duration}} drinking",
+      "problem": {
+        "order": "Times must be in order: each pause after the drinking before it, each resume after its pause.",
+        "afterEnd": "A pause or a resume is after the end of the feeding.",
+        "firstBegin": "The first drinking starts with the feeding.",
+        "level": "The level can't go up between rows or be above what was prepared.",
+        "full": "This bottle already keeps as many pauses as it can."
+      }
     }
   }
 }
