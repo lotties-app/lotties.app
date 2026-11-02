@@ -144,6 +144,24 @@ The build reads the client id from `VITE_SIRI_CLIENT_ID` (`code/web/.env.native`
 revoke Siri like any app in the account console (section 8); Disconnect in the app removes it from that iPhone only.
 Medication is not available to Siri either (no MCP tool, by design).
 
+### 3.5 Voice on Android (the Lotties app)
+
+The Android app's voice shortcuts are MCP clients of their own, like Siri on iOS (3.4): a system sign-in (PKCE) opens from
+the app and the tokens stay on the phone. Create the client once. This is an owner action, not done by the assistant:
+
+1. Clients > **Create client**: Client ID `lotties-android`, Name `Lotties on Android (voice)`, Client authentication **Off**,
+   Standard flow **On**, Direct access grants / Implicit / Service accounts / Device grant **Off**.
+2. Valid redirect URIs: `app.lotties.app://siri/callback`. Web origins: none. Advanced > PKCE method `S256`.
+3. Login settings: **Consent required** On (the parent sees the texts of 2.3), **Display client on screen** On.
+4. Client scopes tab: add `lotties.read` and `lotties.write` as **Optional** (the app asks for both, plus `offline_access`),
+   and `offline_access` as Optional. The audience mapper of 2.1 on both scopes puts the MCP audience in the token.
+5. Token lifetimes: access token 5 minutes (2.2); **Offline Session Idle** 30 days or more, so voice keeps working
+   without opening the app.
+
+The app sends the header `Lotties-Client: android`, so what it logs is marked "Added by Android voice" and a delete
+request only matches entries Android itself made (docs/design/32-assistants.md section 5.2). The parent can revoke it
+like any app in the account console (section 8).
+
 ## 4. Turn the API on
 
 In the cluster (deploy kit `deploy/homelab`), add to `deploy/homelab/values/api.yaml` under `env:`; none is a secret:

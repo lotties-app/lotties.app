@@ -6,12 +6,14 @@ import { createdVia, updatedVia } from './assistantOrigin';
 const ADDED_BY = {
   alexa: 'assistants.origin.addedByAlexa',
   siri: 'assistants.origin.addedBySiri',
+  android: 'assistants.origin.addedByAndroid',
   assistant: 'assistants.origin.addedByAssistant',
 } as const;
 
 const FINISHED_BY = {
   alexa: 'assistants.origin.finishedByAlexa',
   siri: 'assistants.origin.finishedBySiri',
+  android: 'assistants.origin.finishedByAndroid',
   assistant: 'assistants.origin.finishedByAssistant',
 } as const;
 

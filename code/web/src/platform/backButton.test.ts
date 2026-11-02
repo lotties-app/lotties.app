@@ -38,7 +38,8 @@ describe("Android's back button in the store app", () => {
     const shell = fakeNativeShell();
     const stop = startNativeShell(shell);
     await settle();
-    expect(shell.listenerCount()).toBe(1);
+    // The back button and the voice settings link (voiceSettingsLink.ts).
+    expect(shell.listenerCount()).toBe(2);
     stop();
     expect(shell.listenerCount()).toBe(0);
   });

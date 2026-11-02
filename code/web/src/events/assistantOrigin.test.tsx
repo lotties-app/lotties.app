@@ -35,6 +35,7 @@ describe('reading the origin', () => {
   it('names Alexa and any other adapter as an AI assistant', () => {
     expect(createdVia(stub({ via: 'alexa' }))).toBe('alexa');
     expect(createdVia(stub({ via: 'siri' }))).toBe('siri');
+    expect(createdVia(stub({ via: 'android' }))).toBe('android');
     expect(createdVia(stub({ via: 'mcp' }))).toBe('assistant');
     expect(createdVia(stub({}))).toBeNull();
     expect(createdVia(stub({ via: 7 }))).toBeNull();

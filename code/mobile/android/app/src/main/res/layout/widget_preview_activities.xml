@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget picker preview of the Activities widget (Android 12+): the first four of the eight tiles. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/widget_background"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    tools:ignore="UseCompatTextViewDrawableXml,Overdraw,NestedWeights,DisableBaselineAlignment">
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@color/widget_care_tint"
+        android:drawableTop="@drawable/ic_tabler_bath"
+        android:drawableTint="@color/widget_care_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_bath"
+        android:textColor="@color/widget_care_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="6dp"
+        android:layout_weight="1"
+        android:background="@color/widget_care_tint"
+        android:drawableTop="@drawable/ic_tabler_massage"
+        android:drawableTint="@color/widget_care_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_belly_massage"
+        android:textColor="@color/widget_care_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="6dp"
+        android:layout_weight="1"
+        android:background="@color/widget_care_tint"
+        android:drawableTop="@drawable/ic_tabler_baby_carriage"
+        android:drawableTint="@color/widget_care_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_tummy_time"
+        android:textColor="@color/widget_care_tone"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="6dp"
+        android:layout_weight="1"
+        android:background="@color/widget_care_tint"
+        android:drawableTop="@drawable/ic_tabler_wind"
+        android:drawableTint="@color/widget_care_tone"
+        android:gravity="center"
+        android:text="@string/widget_activity_nasal_suction"
+        android:textColor="@color/widget_care_tone"
+        android:textSize="12sp" />
+</LinearLayout>

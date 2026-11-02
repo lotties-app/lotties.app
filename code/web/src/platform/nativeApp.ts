@@ -18,3 +18,27 @@ export function isNativeApp(
     return false;
   }
 }
+
+/** The part of the bridge global `nativePlatform` reads. */
+interface CapacitorPlatformBridge extends CapacitorBridge {
+  getPlatform?: () => string;
+}
+
+/**
+ * 'ios' or 'android' inside the Lotties app (`Capacitor.getPlatform()` of the injected bridge, no
+ * @capacitor/core import), null in every browser. The voice connection differs per platform (Siri
+ * on iOS, Voice on Android: assistants/siriBridge.ts).
+ */
+export function nativePlatform(
+  scope: { Capacitor?: CapacitorPlatformBridge } = globalThis as {
+    Capacitor?: CapacitorPlatformBridge;
+  },
+): 'ios' | 'android' | null {
+  if (!isNativeApp(scope)) return null;
+  try {
+    const platform = scope.Capacitor?.getPlatform?.();
+    return platform === 'ios' || platform === 'android' ? platform : null;
+  } catch {
+    return null;
+  }
+}
