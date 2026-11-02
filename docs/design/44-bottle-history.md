@@ -137,7 +137,7 @@ changing the history (voice and MCP still only start, pause, resume and stop).
 
 ### Not verified here
 
-- The web test suite, lint and type check did not run in the implementing worktree (no installed `node_modules` in the
-  main clone); CI on the PR is the check. The UI was not tried on a phone (owner check: widget/Siri pause, then the History
-  edit).
+- The web test suite, lint and type check ran only in CI on the PR (green), not in the implementing worktree (no
+  installed `node_modules` in the main clone). The UI was not tried on a phone (owner check: widget/Siri pause, then the
+  History edit).
 - No migration (the field stays text); the backup round trip test now uses a timed history.
