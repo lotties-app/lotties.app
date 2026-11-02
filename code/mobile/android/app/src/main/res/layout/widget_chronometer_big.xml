@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sleep time of the Summary widget (WidgetUi.kt Timer): counts up from the snapshot's start. -->
+<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_chronometer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="serif"
+    android:maxLines="1"
+    android:textColor="@color/widget_text"
+    android:textSize="26sp"
+    android:textStyle="bold" />

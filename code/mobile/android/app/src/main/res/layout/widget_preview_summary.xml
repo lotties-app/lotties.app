@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget picker preview of the Summary widget (Android 12+), with an invented baby. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/widget_background"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    tools:ignore="UseCompatTextViewDrawableXml,Overdraw,NestedWeights,DisableBaselineAlignment">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_preview_name"
+            android:textColor="@color/widget_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_awake_for"
+            android:textColor="@color/widget_sleep_tone"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:text="@string/widget_preview_time"
+            android:textColor="@color/widget_text"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/widget_fell_asleep"
+            android:textColor="@color/widget_accent"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1.4"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_tabler_bottle"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/widget_feeding_tone"
+            android:gravity="center_vertical"
+            android:text="@string/widget_activity_bottle"
+            android:textColor="@color/widget_text"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_tabler_diaper"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/widget_diaper_tone"
+            android:gravity="center_vertical"
+            android:text="@string/widget_activity_diaper"
+            android:textColor="@color/widget_text"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_tabler_heart"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/widget_feeding_tone"
+            android:gravity="center_vertical"
+            android:text="@string/widget_activity_breast"
+            android:textColor="@color/widget_text"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_tabler_dots"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/widget_muted"
+            android:gravity="center_vertical"
+            android:text="@string/widget_more"
+            android:textColor="@color/widget_muted"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

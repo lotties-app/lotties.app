@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#1B1814</color>
+    <color name="widget_text">#F2EADC</color>
+    <color name="widget_muted">#B5AA99</color>
+    <color name="widget_accent">#E58F68</color>
+    <color name="widget_sleep_tint">#26303F</color>
+    <color name="widget_sleep_tone">#A9C1E3</color>
+    <color name="widget_feeding_tint">#263425</color>
+    <color name="widget_feeding_tone">#A9CF9F</color>
+    <color name="widget_diaper_tint">#3A3120</color>
+    <color name="widget_diaper_tone">#E8C47A</color>
+    <color name="widget_care_tint">#1F3330</color>
+    <color name="widget_care_tone">#9FD3C7</color>
+</resources>

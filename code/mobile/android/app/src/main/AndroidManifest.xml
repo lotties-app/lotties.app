@@ -44,6 +44,46 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Home-screen widgets (docs/design/37-widgets-siri.md section 13, app/lotties/app/widgets). They read the
+             local snapshot and append to the local outbox: no network. -->
+        <receiver
+            android:name=".widgets.SummaryWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_summary_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_summary_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.QuickWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quick_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.ActivitiesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_activities_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_activities_info" />
+        </receiver>
+        <!-- The widgets' own alarm (the end of a choice, an estimate coming up); not reachable from other apps. -->
+        <receiver
+            android:name=".widgets.WidgetRefreshReceiver"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->
