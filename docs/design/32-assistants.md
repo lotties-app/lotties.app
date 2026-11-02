@@ -249,7 +249,7 @@ Eight read-only questions reuse pure Domain functions; the adapters only render:
 ## 5.2 Origin marker
 
 Every event an assistant command **creates** carries the payload member `via` = the adapter's lowercase name (`alexa`,
-`siri`, `mcp`; `AssistantOrigin`, from the `AssistantInvocation` adapter name; nothing else is ever written: no text, id, token or
+`siri`, `android`, `mcp`; `AssistantOrigin`, from the `AssistantInvocation` adapter name; nothing else is ever written: no text, id, token or
 utterance). When a command **changes** an event that another origin created (stopping a sleep timer or nursing session
 the app, or another adapter, started; night wakings stopped by a wake-up), the original `via` stays and
 `updated_via` = the adapter is added; an adapter stopping its own timer changes nothing but the usual folding. A replayed
@@ -263,6 +263,7 @@ assistant", "Finished by Alexa" (`assistants.origin.*`).
 Siri is an MCP client, so it would be `mcp`; its requests send the header `Lotties-Client: siri` and the MCP adapter then uses the
 adapter name `siri` (any other header value is ignored). That keeps Siri's entries apart from an AI assistant's, and a
 delete request (section 5.3) only ever matches entries of the adapter that asks, so Siri could only ever ask about its own.
+The Android app's voice shortcuts do the same with `Lotties-Client: android` (adapter name `android`, shown as "Added by Android voice").
 
 ## 5.3 Assistants never delete
 
