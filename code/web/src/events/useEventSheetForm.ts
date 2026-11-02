@@ -28,6 +28,9 @@ import { CRY_CONFIRMED_KEY, cryAnswer, isAutoDetected } from './cryDetection';
 import { deleteEventWithWakeUp, editFollowingWakeUp } from '../now/nightEndsWakeUp';
 import { createEventStoppingFeeding } from '../now/sleepStopsFeeding';
 import { loadTimeBottles } from '../presets/timeBottlesStorage';
+import { DRUNK_KEY, PREPARED_KEY } from './bottleAmounts';
+import { lengthSeconds, rebaseHistory, type HistoryEditProblem } from './bottleHistory';
+import { SEGMENTS_KEY, historyTimeProblem, parseSegments } from './bottleSegments';
 
 /** Required choices that are never pre-selected: a wrong silent value costs more than one tap. */
 const NEVER_DEFAULT: ReadonlyMap<string, string> = new Map([['diaper', 'content']]);
@@ -105,11 +108,15 @@ export function useEventSheetForm(props: EventSheetProps) {
   const [timeBottles] = useState(() => !!event || loadTimeBottles());
   // A cry monitor spell's "Was she crying?" answer: saved at once, and kept by a later Save.
   const [crying, setCrying] = useState<boolean | null>(() => (event ? cryAnswer(event) : null));
+  // A bottle's history edited in the sheet (design 44): the stored payload with the new
+  // `segments` and pause keys, saved with the rest; `null` until the history is touched.
+  const [historyPayload, setHistoryPayload] = useState<EventPayload | null>(null);
+  const [historyProblem, setHistoryProblem] = useState<HistoryEditProblem | null>(null);
   const cryQuestion = !!event && isAutoDetected(event);
 
   const type = types.find((candidate) => candidate.id === form.typeId);
   const formula = useFormulaChoice({ babyId, type, event, finish, values: form.values, setForm });
-  const dirty = JSON.stringify(form) !== initial;
+  const dirty = JSON.stringify(form) !== initial || historyPayload !== null;
   // Solid food or a bedtime marker is a moment, not a timer; a finished event keeps its own length.
   const instant =
     !!type?.hasDuration &&
@@ -153,11 +160,23 @@ export function useEventSheetForm(props: EventSheetProps) {
       return payload;
     }
     const times = buildTimes(toSave, selected, instant);
-    const base = event ? editBase(event.payload, selected, event.typeId === selected.id) : {};
-    if (event && crying !== null && event.typeId === selected.id) {
+    const sameType = !!event && event.typeId === selected.id;
+    const base = event ? editBase(historyPayload ?? event.payload, selected, sameType) : {};
+    if (event && crying !== null && sameType) {
       setOwn<unknown>(base, CRY_CONFIRMED_KEY, crying);
     }
-    const payload = buildPayload(toSave, selected, base);
+    let payload = buildPayload(toSave, selected, base);
+    if (event && sameType) {
+      // The history keeps every pause at its clock time when the sheet's times move (design 44).
+      const to = { startedAt: times.startedAt, endedAt: times.endedAt ?? null };
+      payload = rebaseHistory(payload, event, to);
+      const length = to.endedAt === null ? null : lengthSeconds(to.startedAt, to.endedAt);
+      const timeProblem = historyTimeProblemOf(payload, length);
+      if (timeProblem !== null) {
+        setHistoryProblem(timeProblem);
+        return null;
+      }
+    }
     const data = { typeId: selected.id, ...times, payload, notes: toSave.notes.trim() || null };
     await (event
       ? editFollowingWakeUp(db, event, () => editEvent(db, event.id, data))
@@ -175,7 +194,12 @@ export function useEventSheetForm(props: EventSheetProps) {
     }
     setSaving(true);
     try {
-      recordLastUsed(babyId, type, await persist(type));
+      const saved = await persist(type);
+      if (saved === null) {
+        setSaving(false);
+        return;
+      }
+      recordLastUsed(babyId, type, saved);
       onDone();
     } catch (error) {
       setSaveError(error instanceof Error ? describeApiError(error) : t('events.saveFailed'));
@@ -198,6 +222,18 @@ export function useEventSheetForm(props: EventSheetProps) {
     if (!event) return null;
     // A night takes its automatic wake-up with it (see `deleteEventWithWakeUp`).
     return deleteEventWithWakeUp(db, event.id);
+  };
+
+  /** A new history from the sheet's History list; an end level also sets the drunk total. */
+  const editHistory = (payload: EventPayload) => {
+    setSwitched(null);
+    setHistoryProblem(null);
+    setHistoryPayload(payload);
+  };
+  const setEndLevel = (levelMl: number) => {
+    const prepared = Number(getOwn(form.values, PREPARED_KEY));
+    if (!Number.isFinite(prepared)) return;
+    setValue(DRUNK_KEY, String(Math.max(0, prepared - levelMl)));
   };
 
   const problemFor = (key: string) => problems.find((p) => p.field === key)?.message;
@@ -228,5 +264,15 @@ export function useEventSheetForm(props: EventSheetProps) {
     cryQuestion,
     crying,
     answerCry,
+    historyPayload,
+    historyProblem,
+    editHistory,
+    setEndLevel,
   };
+}
+
+/** Why the times of the payload's history break the rules once saved with `length` (or `null`). */
+function historyTimeProblemOf(payload: EventPayload, length: number | null) {
+  const segments = parseSegments(getOwn(payload, SEGMENTS_KEY));
+  return segments === null ? null : historyTimeProblem(segments, length);
 }

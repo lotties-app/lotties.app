@@ -251,15 +251,16 @@ public static class AssistantPayloads
 
     /// <summary>
     /// <paramref name="payload"/> of a timer stopped at <paramref name="endedAt"/>: an open pause (<c>paused_at</c>) is
-    /// folded into <c>paused_seconds</c> (never beyond the timer's length) and removed, as the web's finish does; every other
-    /// member is kept.
+    /// folded into <c>paused_seconds</c> (never beyond the timer's length) and removed, as the web's finish does; a bottle
+    /// drinking now closes its last timed stretch (<see cref="BottleHistory.ClosedAtStop"/>); every other member is kept.
     /// </summary>
     public static EventPayload Stopped(EventPayload payload, DateTimeOffset startedAt, DateTimeOffset endedAt)
     {
         var facts = EventPayloadFacts.Read(payload);
         if (facts.PausedAt is not { } pausedAt)
         {
-            return payload;
+            // A bottle drinking now closes its last stretch, so its history (design 44) says it was not paused at the end.
+            return BottleHistory.ClosedAtStop(payload, startedAt, endedAt);
         }
 
         var root = JsonNode.Parse(payload.Value)!.AsObject();

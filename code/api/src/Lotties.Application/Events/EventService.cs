@@ -65,6 +65,7 @@ internal sealed class EventService : IEventService
     {
         ArgumentNullException.ThrowIfNull(request);
         EnsureEventId(eventId);
+        request = WithHistoryTotals(request);
         var existing = await _events.FindAsync(eventId, cancellationToken);
         return existing is null
             ? await CreateAsync(babyId, eventId, request, cancellationToken)
@@ -198,9 +199,21 @@ internal sealed class EventService : IEventService
         if (request.TypeId == BuiltInEventTypes.FeedingId)
         {
             BottleAmounts.EnsureDrunkWithinPrepared(request.Payload);
-            BottleSegments.EnsureValid(request.Payload, ended: request.EndedAt is not null);
+            BottleSegments.EnsureValid(
+                request.Payload,
+                ended: request.EndedAt is not null,
+                request.EndedAt is { } end ? BottleHistory.LengthSeconds(request.StartedAt, end) : null);
         }
     }
+
+    /// <summary>
+    /// A built-in bottle's pause totals recomputed from its history (docs/design/44-bottle-history.md: the history is the
+    /// source, so a client that wrote other totals, an older app or an assistant's stop, never stores a disagreement).
+    /// </summary>
+    private static UpsertEventRequest WithHistoryTotals(UpsertEventRequest request) =>
+        request.TypeId == BuiltInEventTypes.FeedingId
+            ? request with { Payload = BottleHistory.WithTotals(request.Payload, request.StartedAt, request.EndedAt) }
+            : request;
 
     private async Task EnsureFormulaReferenceAsync(Guid babyId, UpsertEventRequest request, CancellationToken cancellationToken)
     {

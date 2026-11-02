@@ -179,7 +179,7 @@ public sealed partial class BackupImportEndpointTests(ApiFactory factory) : ICla
         var owner = factory.As(baby, BabyRole.Owner);
         await owner.PutAsJsonAsync(
             $"{BackupFixture.BabyPath(baby.BabyId)}/events/{Guid.NewGuid()}",
-            new { typeId = BuiltInEventTypes.FeedingId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(12), payload = new { method = "bottle", amount_ml = 120, amount_drunk_ml = 90, pause_count = 1, paused_seconds = 60, segments = "120>60@300;60>30@360" } }).Ok();
+            new { typeId = BuiltInEventTypes.FeedingId, startedAt = BackupFixture.Start, endedAt = BackupFixture.Start.AddMinutes(12), payload = new { method = "bottle", amount_ml = 120, amount_drunk_ml = 90, pause_count = 1, paused_seconds = 60, segments = "120>60@300+0;60>30@360+360" } }).Ok();
         var text = await owner.ExportTextAsync(baby.BabyId);
         var restorer = factory.NewUser();
 
@@ -188,7 +188,7 @@ public sealed partial class BackupImportEndpointTests(ApiFactory factory) : ICla
         Assert.Equal(0, report.IssueCount);
         var events = (await (await restorer.GetAsync($"{BackupFixture.BabyPath(report.BabyId)}/events?limit=500").Ok()).Content.ReadFromJsonAsync<JsonArray>())!.OfType<JsonObject>();
         var payload = events.Single(item => (Guid)item["typeId"]! == BuiltInEventTypes.FeedingId && (string?)item["payload"]!["segments"] is not null)["payload"]!;
-        Assert.Equal(("120>60@300;60>30@360", 90d), ((string?)payload["segments"], (double)payload["amount_drunk_ml"]!));
+        Assert.Equal(("120>60@300+0;60>30@360+360", 90d), ((string?)payload["segments"], (double)payload["amount_drunk_ml"]!));
     }
 
     [Fact]

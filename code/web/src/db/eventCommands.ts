@@ -12,9 +12,11 @@ import {
   effectiveElapsedSeconds,
   isPaused,
   normalizePause,
+  readPause,
   withPause,
   withResume,
 } from '../timers/pauseMath';
+import { withHistoryTotals } from '../events/bottleHistory';
 import {
   closeAtStop,
   closeSegment,
@@ -77,11 +79,14 @@ function ensureValidRange(event: BabyEvent) {
  * without pause keys or stretches are returned unchanged.
  */
 function withSettledPause(event: BabyEvent, wasRunning = false): BabyEvent {
+  const wasPaused = readPause(event.payload).pausedAt !== null;
   let payload = normalizePause(event.payload, event.startedAt, event.endedAt);
   if (wasRunning && event.endedAt !== null) {
-    payload = closeAtStop(payload, effectiveElapsedSeconds({ ...event, payload }));
+    payload = closeAtStop(payload, effectiveElapsedSeconds({ ...event, payload }), wasPaused);
   }
   payload = settleSegments(payload, event.endedAt !== null);
+  // The history is the source of the pause totals (docs/design/44-bottle-history.md).
+  payload = withHistoryTotals(payload, event);
   return payload === event.payload ? event : { ...event, payload };
 }
 

@@ -1,4 +1,5 @@
 import type { Baby, BabyEvent } from '../db/models';
+import { historyOnlyExtends } from '../events/bottleHistory';
 import { SEGMENTS_KEY } from '../events/bottleSegments';
 import { PAUSE_KEYS, withPause, withResume } from '../timers/pauseMath';
 import { getOwn } from '../util/ownProperty';
@@ -155,6 +156,10 @@ export function isRunningControlChange(
   if (next.endedAt !== null) {
     const end = Date.parse(next.endedAt);
     if (!(end >= Date.parse(stored.startedAt) && end <= now + MAX_FUTURE_END_MS)) return false;
+  }
+  // A bottle's history may grow (a pause, a level, the stop) but never be rewritten (design 44 rule 7).
+  if (!historyOnlyExtends(getOwn(stored.payload, SEGMENTS_KEY), getOwn(next.payload, SEGMENTS_KEY))) {
+    return false;
   }
   return Object.keys(stored.payload).every(
     (key) =>

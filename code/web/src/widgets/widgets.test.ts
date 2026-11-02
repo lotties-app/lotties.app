@@ -204,11 +204,21 @@ describe('drainOutbox', () => {
     const at = (time: string, type: OutboxEntry['type']) =>
       entry({ type, occurredAt: `2026-10-31T${time}.000Z`, payload: {} });
     await drainOutbox(db, fakeBridge([at('11:50:00', 'feed_pause')]));
-    expect((await db.events.get('bottle-1'))?.payload).toHaveProperty('paused_at');
+    // The widget's pause never asks: its stretch keeps the time, the level stays unknown (design 44).
+    expect((await db.events.get('bottle-1'))?.payload).toMatchObject({
+      paused_at: '2026-10-31T11:50:00.000Z',
+      segments: '90>?@600+0',
+    });
     await drainOutbox(db, fakeBridge([at('11:55:00', 'feed_resume')]));
     expect((await db.events.get('bottle-1'))?.payload).not.toHaveProperty('paused_at');
     await drainOutbox(db, fakeBridge([at('11:58:00', 'feed_stop')]));
-    expect((await db.events.get('bottle-1'))?.endedAt).toBe('2026-10-31T11:58:00.000Z');
+    const stopped = await db.events.get('bottle-1');
+    expect(stopped?.endedAt).toBe('2026-10-31T11:58:00.000Z');
+    expect(stopped?.payload).toMatchObject({
+      segments: '90>?@600+0;?>0@180+900',
+      pause_count: 1,
+      paused_seconds: 300,
+    });
   });
 
   it('starts a breastfeed on the chosen side', async () => {

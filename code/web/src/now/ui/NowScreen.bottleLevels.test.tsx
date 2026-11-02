@@ -80,7 +80,7 @@ describe('"How much is left in the bottle?" when a bottle is paused', () => {
     fireEvent.click(within(chips).getByRole('radio', { name: '60 ml · half' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     await waitFor(async () =>
-      expect((await byId(bottle.id)).payload.segments).toMatch(/^120>60@\d+$/),
+      expect((await byId(bottle.id)).payload.segments).toMatch(/^120>60@\d+\+0$/),
     );
   });
 
@@ -95,7 +95,7 @@ describe('"How much is left in the bottle?" when a bottle is paused', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Skip' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     const stored = await byId(bottle.id);
-    expect(stored.payload.segments).toMatch(/^120>\?@\d+$/);
+    expect(stored.payload.segments).toMatch(/^120>\?@\d+\+0$/);
     expect(stored.payload.paused_at).toEqual(expect.any(String));
   });
 
@@ -116,7 +116,7 @@ describe('"How much is left in the bottle?" when a bottle is paused', () => {
     await waitFor(() => expect((save as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(save);
     await waitFor(async () =>
-      expect((await byId(bottle.id)).payload.segments).toMatch(/^\?>40@\d+$/),
+      expect((await byId(bottle.id)).payload.segments).toMatch(/^\?>40@\d+\+0$/),
     );
   });
 

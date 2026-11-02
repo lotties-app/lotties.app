@@ -50,6 +50,43 @@
     },
     "target": {
       "usualBottle": "Uma mamadeira costuma levar cerca de {{duration}}"
+    },
+    "history": {
+      "title": "Histórico",
+      "start": "Começou",
+      "pause": "Pausou",
+      "resume": "Retomou",
+      "end": "Terminou",
+      "drinkingNow": "mamando agora",
+      "timeUnknown": "horário desconhecido",
+      "levelIn": "{{ml}} na mamadeira",
+      "levelLeft": "sobraram {{ml}}",
+      "levelUnknown": "quantidade desconhecida",
+      "drank": "mamou {{ml}}",
+      "editRow": "Alterar: {{row}}",
+      "time": "Horário",
+      "level": "Sobrou na mamadeira",
+      "otherLevel": "Outra quantidade",
+      "done": "Pronto",
+      "remove": "Remover pausa",
+      "add": "Adicionar pausa",
+      "pausedAt": "Pausou às",
+      "resumedAt": "Retomou às",
+      "addConfirm": "Adicionar",
+      "cancel": "Cancelar",
+      "endLevelHint": "A quantidade no fim define quanto ela mamou.",
+      "totalDrunk": "Mamou {{ml}}",
+      "totalPauses_one": "{{count}} pausa",
+      "totalPauses_other": "{{count}} pausas",
+      "totalPaused": "{{duration}} em pausa",
+      "totalDrinking": "{{duration}} mamando",
+      "problem": {
+        "order": "Os horários precisam estar em ordem: cada pausa depois da mamada anterior, cada retomada depois da sua pausa.",
+        "afterEnd": "Uma pausa ou retomada está depois do fim da mamada.",
+        "firstBegin": "A primeira parte começa junto com a mamada.",
+        "level": "A quantidade não pode subir entre as linhas nem passar do que foi preparado.",
+        "full": "Esta mamadeira já guarda o máximo de pausas."
+      }
     }
   }
 }

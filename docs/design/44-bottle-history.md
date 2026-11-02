@@ -1,6 +1,7 @@
 # 44. Bottle history, editable at any time
 
-Status: design agreed with the owner on 2026-11-02, nothing built. Extends [20-feeding-amounts.md](20-feeding-amounts.md)
+Status: design agreed with the owner on 2026-11-02; built 2026-11-02 (web + API, section 8 records the decisions taken in
+implementation and what is not verified). Extends [20-feeding-amounts.md](20-feeding-amounts.md)
 section 5 (bottle stretches). Facts only: what happened in the feeding, never advice, never "normal / abnormal".
 
 ## 1. Why
@@ -81,3 +82,62 @@ values.
 
 Editing breast sessions the same way, advice about how much a baby should drink, charts of the history, and assistants
 changing the history (voice and MCP still only start, pause, resume and stop).
+
+## 8. As built (2026-11-02)
+
+### Grammar
+
+- A stretch is `start>left@seconds` as before, optionally followed by `+begin`: when the stretch began, in whole seconds
+  from the feeding's start (0-86400, no leading zeros), e.g. the owner's example
+  `120>80@360+0;80>15@780+540` (start 12:25; pause 12:31 with 80 left; resume 12:34; pause 12:47 with 15 left). A
+  stretch ends at `begin + seconds`; the pause after it lasts until the next stretch begins. Max length raised from 400 to
+  480 characters (20 stretches with times). Domain `BottleSegments`/`BottleHistory`, web `bottleSegments.ts`/`bottleHistory.ts`,
+  shared vectors `bottleSegmentsVectors.json` (new `totals` and `extends` lists, `lengthSeconds` on payload vectors).
+- Offsets, not clock instants: DST- and midnight-safe and short. The start and end rows are the event's own `startedAt` and
+  `endedAt`, edited with the sheet's time fields; when those move, `rebaseHistory` keeps every pause at its clock time
+  (the sheet's `datetime-local` drops seconds, so even a plain save moves the start by up to 59 s).
+- A stretch without `+begin` (bottles from before) shows "time unknown"; tapping its pause or resume row gives it a time
+  (keeping its drinking seconds). Mixed histories are allowed.
+
+### Rules (decisions the doc left open)
+
+- Times: a timed first stretch begins at 0; a timed stretch begins at or after the end of the timed one before it; once
+  ended, no timed stretch ends after the end. A pause of 0 s is allowed (still counted).
+- Totals (`historyTotals` / `BottleHistory.Totals`), only when every stretch has a time and the times keep the rules:
+  ended: the pauses between stretches plus the last one up to the end when it stopped while paused; running and paused:
+  the pauses between stretches (the open one is `paused_at`); running and drinking: every stretch was followed by a pause
+  whose resume is not stored (the open stretch is never written), so that last pause keeps its length from
+  `paused_seconds` (never below the others). The drunk total is unchanged: it is the sheet's drunk field, and the existing
+  `settleSegments` keeps the last level equal to it (a level at the end sets the drunk field).
+- **Where the recompute runs:** the web on every save (`withSettledPause`) and the API on every feeding upsert
+  (`EventService` applies `BottleHistory.WithTotals` before validating). The API rewrites `pause_count`/`paused_seconds`
+  rather than refusing a mismatch, because older app builds (the phone app bundles the web) and the assistants' stop
+  (`AssistantPayloads.Stopped` folds the open pause into `paused_seconds` but never bumps `pause_count`) would otherwise be
+  refused. A history that breaks the time rules is refused (`400 validation_failed`, field `segments`).
+- Add and remove a pause only on a history with times on every stretch (or a bottle with no pause yet); an old
+  untimed history can only have its times and levels filled in, so its stored pause totals are never thrown away.
+- At the cap of 20 stretches a pause extends the last stretch as before and drops its time (the pause inside it is no
+  longer in the history), so the totals stop being derived rather than becoming wrong.
+- A stop while paused no longer adds a 1 s stretch from rounding: `closeAtStop` gets `wasPaused`.
+- Rule 7: someone else's running bottle may only have its history extended (`BottleHistory.OnlyExtends` in
+  `RunningEventControl`, web `historyOnlyExtends` in `isRunningControlChange`): earlier stretches keep their drinking time
+  and begin, none removed, levels may change. The web never offers the History editor there (the read-only sheet shows it
+  without controls).
+
+### Widgets, lock screen, Siri, assistants (finding)
+
+- Widget / lock screen / Siri: the native side only writes `feed_pause` to `widget-outbox.json`; on app open
+  `widgets/outbox.ts` replays it through `pauseTimer` at the entry's time. That closes the stretch with its time and an
+  unknown level (`?`) and never opens "How much is left in the bottle?" (the prompt is only opened by the in-app pause), so
+  a pause from outside the app never blocks; the level is filled later from the History. `widgets.test.ts` checks the
+  stored `segments` and the recomputed totals after pause, resume and stop.
+- Alexa / MCP: there is no pause or resume command in `Application/Assistants` (contrary to section 7's wording); their
+  stop writes no `segments` and folds an open pause without counting it. The API's recompute now fixes the count for a
+  bottle with a timed history.
+
+### Not verified here
+
+- The web test suite, lint and type check did not run in the implementing worktree (no installed `node_modules` in the
+  main clone); CI on the PR is the check. The UI was not tried on a phone (owner check: widget/Siri pause, then the History
+  edit).
+- No migration (the field stays text); the backup round trip test now uses a timed history.

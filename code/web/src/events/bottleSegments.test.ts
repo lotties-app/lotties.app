@@ -27,7 +27,10 @@ describe('the shared vectors (same as the API BottleSegments)', () => {
   });
 
   it.each(vectors.payloads.map((v) => [v.note, v] as const))('rules: %s', (_, vector) => {
-    expect(segmentsProblem(vector.payload as EventPayload, vector.ended)).toBe(!vector.valid);
+    const length = 'lengthSeconds' in vector ? vector.lengthSeconds : null;
+    expect(segmentsProblem(vector.payload as EventPayload, vector.ended, length)).toBe(
+      !vector.valid,
+    );
   });
 
   it('formats what it parses', () => {
@@ -40,16 +43,16 @@ describe('the shared vectors (same as the API BottleSegments)', () => {
 describe('stretches written at pauses and at the stop', () => {
   it('the first pause closes a stretch from the prepared amount, level unknown', () => {
     const paused = closeSegment(bottle(), 300.9, null);
-    expect(paused.segments).toBe('120>?@300');
+    expect(paused.segments).toBe('120>?@300+0');
     expect(segmentsProblem(paused, false)).toBe(false);
   });
 
   it('the answer fills the level and the next stretch starts there', () => {
     const answered = withLastLevel(closeSegment(bottle(), 300, null), 70, 1);
-    expect(answered.segments).toBe('120>70@300');
+    expect(answered.segments).toBe('120>70@300+0');
     expect(currentStartLevel(answered)).toBe(70);
     const again = closeSegment(answered, 540, 30);
-    expect(again.segments).toBe('120>70@300;70>30@240');
+    expect(again.segments).toBe('120>70@300+0;70>30@240+300');
     expect(readSegments(again).map(segmentDrunkMl)).toEqual([50, 40]);
   });
 
@@ -64,7 +67,7 @@ describe('stretches written at pauses and at the stop', () => {
 
   it('without a prepared amount the first level is unknown; levels are whole ml', () => {
     const paused = closeSegment({ method: 'bottle' }, 120, 40.7);
-    expect(paused.segments).toBe('?>40@120');
+    expect(paused.segments).toBe('?>40@120+0');
   });
 
   it('at the cap of 20 stretches the last one is extended', () => {
@@ -78,20 +81,39 @@ describe('stretches written at pauses and at the stop', () => {
   it('the stop closes the last stretch with the level the totals give', () => {
     const paused = withLastLevel(closeSegment(bottle(), 300, null), 70);
     expect(closeAtStop({ ...paused, amount_drunk_ml: 100 }, 540).segments).toBe(
-      '120>70@300;70>20@240',
+      '120>70@300+0;70>20@240+300',
     );
     // No drunk amount = all of it: empty at the end.
-    expect(closeAtStop(paused, 540).segments).toBe('120>70@300;70>0@240');
+    expect(closeAtStop(paused, 540).segments).toBe('120>70@300+0;70>0@240+300');
   });
 
   it('a stop while paused gives the last stretch the level instead of a stretch of 0 s', () => {
     const paused = closeSegment(bottle(), 300, null);
-    expect(closeAtStop({ ...paused, amount_drunk_ml: 50 }, 300).segments).toBe('120>70@300');
+    expect(closeAtStop({ ...paused, amount_drunk_ml: 50 }, 300).segments).toBe('120>70@300+0');
   });
 
   it('a sleep stop without a drunk amount leaves the end unknown', () => {
     const paused = withLastLevel(closeSegment(bottle(), 300, null), 70);
-    expect(closeAtStop({ ...paused, ended_by: 'sleep' }, 420).segments).toBe('120>70@300;70>?@120');
+    expect(closeAtStop({ ...paused, ended_by: 'sleep' }, 420).segments).toBe('120>70@300+0;70>?@120+300');
+  });
+
+  it('a stretch begins after the drinking and the finished pauses before it', () => {
+    const first = withLastLevel(closeSegment(bottle(), 360, null), 80);
+    const resumed = { ...first, pause_count: 1, paused_seconds: 180 };
+    expect(closeSegment(resumed, 1140, 15).segments).toBe('120>80@360+0;80>15@780+540');
+  });
+
+  it('a stop while paused (wasPaused) adds no stretch, even a second late', () => {
+    const paused = withLastLevel(closeSegment(bottle(), 300, null), 70);
+    expect(closeAtStop({ ...paused, amount_drunk_ml: 50 }, 301, true).segments).toBe(
+      '120>70@300+0',
+    );
+  });
+
+  it('a stretch without a time keeps the next ones without a time', () => {
+    expect(closeSegment(bottle({ segments: '120>80@300' }), 500, null).segments).toBe(
+      '120>80@300;80>?@200',
+    );
   });
 
   it('a bottle never paused gets no stretches', () => {
