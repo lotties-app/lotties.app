@@ -16,18 +16,26 @@ gh run download <run-id> -n android-debug-apk -D android-apk    # creates androi
 
 By hand: the run page on GitHub, section Artifacts, `android-debug-apk`.
 
-## 2. Run it on an emulator (Windows)
+## 2. Run it on an emulator (Windows, no Android Studio needed)
 
-1. Turn on a hypervisor: Windows features **Windows Hypervisor Platform** (WHPX) or Hyper-V, then reboot.
-2. Install Android Studio. Device Manager > Create device > a Pixel with a recent system image (API 34 or 36, "Google
-   Play" or "Google APIs" image; Google APIs is enough). Start it.
-3. Install the APK (`adb` is in `%LOCALAPPDATA%\Android\Sdk\platform-tools`):
+Tried and working (2026-11-01, Windows 11, WHPX active; the APK opened on the sign-in screen). Only the command-line tools
+are needed: a JDK 21 (Temurin zip), then in Git Bash:
 
 ```bash
+# Command-line tools (zip from developer.android.com/studio#command-line-tools-only) unzipped to E:\Android\Sdk\cmdline-tools\latest
+sdkmanager --sdk_root=E:\Android\Sdk --licenses
+sdkmanager --sdk_root=E:\Android\Sdk "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64"
+export ANDROID_AVD_HOME=E:\Androidvd
+avdmanager create avd -n lotties -k "system-images;android-34;google_apis;x86_64" -d pixel_7
+emulator -accel-check          # must say WHPX is installed and usable (Windows feature "Windows Hypervisor Platform")
+emulator -avd lotties          # starts it (a window opens)
 adb install -r android-apk/app-debug.apk
+adb shell monkey -p app.lotties.app -c android.intent.category.LAUNCHER 1
 ```
 
-Dragging the APK onto the emulator window also installs it. A physical phone works the same way with USB debugging on.
+Pass `--sdk_root` in the same form every time and keep `cmdline-tools` inside that root, or `avdmanager` cannot find the
+system image. With Android Studio instead: Device Manager > Create device, same image, then `adb install -r`. A physical
+phone works the same way with USB debugging on. Dragging the APK onto the emulator window also installs it.
 
 ## 3. What to check
 
@@ -42,19 +50,8 @@ Dragging the APK onto the emulator window also installs it. A physical phone wor
   Android voice client (docs/design/37-widgets-siri.md section 14, owner step in docs/MCP.md 3.5).
 - **Offline.** Turn on airplane mode: the app and the widget buttons keep working; voice shortcuts say nothing was logged.
 
-## 4. Optional: an emulator in a container (not tested)
+## 4. Emulator in a container (does not work as first written)
 
-Not tried on this project: the image `docker.io/budtmay/docker-android` runs an Android emulator and serves its screen
-through noVNC in the browser. It needs hardware virtualization inside WSL2 (`/dev/kvm`, nested virtualization enabled in
-`.wslconfig`) and, on this machine, Podman with `--network host` and only `br-*` container names (CLAUDE.md). Rough
-shape, to be adjusted from the image's own README:
-
-```bash
-podman run -d --name br-android-emu --network host --device /dev/kvm \
-  -e EMULATOR_DEVICE="Samsung Galaxy S10" -e WEB_VNC=true docker.io/budtmay/docker-android:emulator_14.0
-# open the noVNC address from the image README, then
-podman cp android-apk/app-debug.apk br-android-emu:/tmp/ && podman exec br-android-emu adb install -r /tmp/app-debug.apk
-```
-
-Emulators in containers are slow without KVM and often unusable without it; the Android Studio emulator above is the
-route that is known to work. Remove the container when done (`podman rm -f br-android-emu`).
+The image tag first suggested here, `docker.io/budtmay/docker-android:emulator_14.0`, does not exist ("requested access
+to the resource is denied" on pull). An emulator in a container also needs `/dev/kvm` inside WSL2 (nested virtualization),
+which this machine has not been checked for. Use section 2.
