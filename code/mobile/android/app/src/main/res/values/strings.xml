@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Lotties</string>
-    <string name="title_activity_main">Lotties</string>
-    <string name="package_name">app.lotties.app</string>
-    <string name="custom_url_scheme">app.lotties.app</string>
+    <!-- Brand and identifiers: the same in every language (values-pt-rBR has translations of other strings). -->
+    <string name="app_name" translatable="false">Lotties</string>
+    <string name="title_activity_main" translatable="false">Lotties</string>
+    <string name="package_name" translatable="false">app.lotties.app</string>
+    <string name="custom_url_scheme" translatable="false">app.lotties.app</string>
 </resources>
