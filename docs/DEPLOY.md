@@ -64,7 +64,7 @@ Compose reads `.env` from the repository root.
 | `VITE_API_BASE_URL` | web build | no (empty) | Empty = same origin through nginx |
 | `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer and Hub > About (http/https only; labelled "Source code on GitHub" for a github.com address); empty hides it. Set it at the public flip: it also turns on the default "Report a problem" link (`<repo>/issues/new`). See "Footer links" |
 | `VITE_ISSUES_URL` | web build | no (empty) | "Report a problem" link in the footer and Hub > About (http/https only). Empty = `VITE_REPO_URL` + `/issues/new` when the repository is set, else a `mailto:` to `VITE_PRIVACY_CONTACT_EMAIL` when that is set, else hidden |
-| `VITE_SUPPORT_URL` | web build | no (empty) | "Support Lotties" link in the footer and Hub > About (http/https only, opens in a new tab; a link out, never a payment in the app: docs/design/43-funding-options.md); empty hides it |
+| `VITE_SUPPORT_URL` | web build | no (empty) | "Support the developer" link in the footer and Hub > About (http/https only, opens in a new tab; a link out, never a payment in the app: docs/design/43-funding-options.md); empty hides it |
 | `VITE_PRIVACY_CONTROLLER_NAME` | web build | before a store submission | The controller (person or company) the privacy policy names; empty = "the Lotties project maintainers". See "Privacy policy" |
 | `VITE_PRIVACY_CONTACT_EMAIL` | web build | before a store submission | Contact address for privacy requests (a plain email, shown as a `mailto:` link); empty = the GitHub issue tracker and private reports |
 | `VITE_PRIVACY_DPO` | web build | before a store submission | The encarregado (DPO) contact: a name, an email or both; empty = "the contact above" |
@@ -428,7 +428,7 @@ public web build value and hidden when it is unset:
 |------|-------|---------|
 | Source code on GitHub | `VITE_REPO_URL` | hidden |
 | Report a problem | `VITE_ISSUES_URL` | `VITE_REPO_URL` + `/issues/new`; else `mailto:` `VITE_PRIVACY_CONTACT_EMAIL` (subject and the app version only); else hidden |
-| Support Lotties | `VITE_SUPPORT_URL` | hidden |
+| Support the developer | `VITE_SUPPORT_URL` | hidden |
 | Voice assistant commands | none (the public page `/voice-commands`) | always shown |
 
 Only http/https addresses are accepted (anything else hides the link). The addresses carry no user or baby data: the

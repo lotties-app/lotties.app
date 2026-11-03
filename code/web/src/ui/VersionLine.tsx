@@ -10,7 +10,16 @@ import { visuallyHidden } from '../insights/charts/chartStyle';
  * device's release as real text, "v0.1.38", or "Lotties v0.1.38" with `brand`. With `to` it is a
  * link to the About screen. Screen readers hear "App version" first.
  */
-export function VersionLine({ to, brand = false }: { to?: string; brand?: boolean }) {
+export function VersionLine({
+  to,
+  brand = false,
+  prominent = false,
+}: {
+  to?: string;
+  brand?: boolean;
+  /** Larger, bold and in the primary text colour (the landing footer). */
+  prominent?: boolean;
+}) {
   const { t } = useTranslation();
   const version = displayVersion(readBuildInfo().version);
   const text = (
@@ -23,11 +32,11 @@ export function VersionLine({ to, brand = false }: { to?: string; brand?: boolea
   );
   return (
     <Typography
-      variant="caption"
-      color="text.secondary"
+      variant={prominent ? 'subtitle1' : 'caption'}
+      color={prominent ? 'text.primary' : 'text.secondary'}
       component="p"
       data-testid="version-line"
-      sx={{ m: 0 }}
+      sx={{ m: 0, ...(prominent && { fontWeight: 700 }) }}
     >
       {to ? (
         <Link

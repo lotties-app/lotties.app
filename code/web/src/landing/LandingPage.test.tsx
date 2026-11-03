@@ -108,15 +108,24 @@ describe('LandingPage', () => {
     ).toBe('/credits');
   });
 
-  it('links the public privacy policy in the footer, next to the credits', async () => {
+  it('groups the footer links in three named navigation columns', async () => {
     renderLanding();
     const footer = await screen.findByRole('contentinfo');
-    const links = within(footer)
-      .getAllByRole('link')
-      .map((link) => [link.textContent, link.getAttribute('href')]);
-    const credits = links.findIndex(([, href]) => href === '/credits');
-    expect(links[credits + 1]).toEqual(['Privacy policy', '/privacy']);
-    expect(links[credits + 2]).toEqual(['Terms of use', '/terms']);
+    const linksOf = (name: string) =>
+      within(within(footer).getByRole('navigation', { name }))
+        .getAllByRole('link')
+        .map((link) => [link.textContent, link.getAttribute('href')]);
+    expect(within(footer).getAllByRole('navigation')).toHaveLength(3);
+    expect(linksOf('App')).toEqual([
+      ['Install the app', '/install'],
+      ['Voice assistant commands', '/voice-commands'],
+      ['Run it yourself', '/self-host'],
+    ]);
+    expect(linksOf('Project')).toContainEqual(['Credits and licenses', '/credits']);
+    expect(linksOf('Help and legal').slice(-2)).toEqual([
+      ['Privacy policy', '/privacy'],
+      ['Terms of use', '/terms'],
+    ]);
   });
 
   it('says Lotties is a beta, linking the terms, next to the sign-up button and in the footer', async () => {
@@ -201,6 +210,14 @@ describe('LandingPage', () => {
     expect(line.textContent).toBe(
       `App version: Lotties ${displayVersion(readBuildInfo().version)}`,
     );
+    expect(
+      within(footer).getByText(`Lotties ${displayVersion(readBuildInfo().version)}`, {
+        exact: false,
+      }),
+    ).toBeTruthy();
+    // The version is plain text, outside every link column.
+    expect(line.closest('nav')).toBeNull();
+    expect(within(line).queryByRole('link')).toBeNull();
   });
 
   it('hides the source link without VITE_REPO_URL and shows it for a web address', () => {
@@ -231,7 +248,7 @@ describe('LandingPage', () => {
       ).toBe('/voice-commands');
       expect(within(box).queryByRole('link', { name: /Source code/ })).toBeNull();
       expect(within(box).queryByRole('link', { name: 'Report a problem' })).toBeNull();
-      expect(within(box).queryByRole('link', { name: 'Support Lotties' })).toBeNull();
+      expect(within(box).queryByRole('link', { name: 'Support the developer' })).toBeNull();
     });
 
     it('labels a GitHub repository and derives the new-issue page from it', async () => {
@@ -242,11 +259,13 @@ describe('LandingPage', () => {
       expect(report.getAttribute('href')).toBe('https://github.com/example/lotties/issues/new');
       expect(report.getAttribute('target')).toBe('_blank');
       expect(report.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(source.closest('nav')?.getAttribute('aria-labelledby')).toBe('landing-footer-project');
+      expect(report.closest('nav')?.getAttribute('aria-labelledby')).toBe('landing-footer-help');
     });
 
     it('opens the support page in a new tab without sending anything', async () => {
       const box = await footer({ VITE_SUPPORT_URL: 'https://example.org/sponsor' });
-      const support = within(box).getByRole('link', { name: 'Support Lotties' });
+      const support = within(box).getByRole('link', { name: 'Support the developer' });
       expect(support.getAttribute('href')).toBe('https://example.org/sponsor');
       expect(support.getAttribute('target')).toBe('_blank');
       expect(support.getAttribute('rel')).toBe('noopener noreferrer');
