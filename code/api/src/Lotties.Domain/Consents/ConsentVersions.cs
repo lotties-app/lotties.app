@@ -24,6 +24,7 @@ public static class ConsentVersions
     [
         new("2026-10-27.1", TermsVersion: "1", PrivacyPolicyVersion: "9", Material: true, Date: "2026-10-27"),
         new("2026-10-30.1", TermsVersion: "1", PrivacyPolicyVersion: "10", Material: false, Date: "2026-10-30"),
+        new("2026-11-03.1", TermsVersion: "1", PrivacyPolicyVersion: "11", Material: false, Date: "2026-11-03"),
     ];
 
     /// <summary>The newest version.</summary>
