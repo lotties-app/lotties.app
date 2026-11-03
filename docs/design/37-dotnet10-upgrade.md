@@ -193,8 +193,8 @@ the connection string), Keycloak tokens from the real realm, push sends to real 
 
 ## 8. Rollback
 
-`helm --kube-context home-lab-main -n lotties-app-production rollback lotties-api [REVISION]` (deploy/homelab/README.md
-"Roll back"): the .NET 8 image stays in Harbor under its `src-<hash>` tag. The schema is the same, so nothing to do in
+`helm --kube-context "$KUBE_CONTEXT" -n lotties-app-production rollback lotties-api [REVISION]` (deploy/homelab/README.md
+"Roll back"): the .NET 8 image stays in the registry under its `src-<hash>` tag. The schema is the same, so nothing to do in
 the database. Rolling the code back in git is a revert of the upgrade commits; the snapshot change goes with it.
 
 ## 9. Post-deploy checks (for the orchestrator)

@@ -30,7 +30,7 @@ Parallel groups after 1: {2→3→(4,5,6,7)} and {8} run in parallel; 9 after 8;
 ## Backlog
 | # | Task | Tier | Notes |
 |---|------|------|-------|
-| 15 | E2E smoke (Playwright) against the stack with Keycloak (realm `baby-routine` on auth.homel4b.dev) and the `baby_routine` DB | Medium | Blocked on Keycloak client + test user; migrations applied 2026-10-21; DB grants for the app role via docs/sql/grant-app-role.sql |
+| 15 | E2E smoke (Playwright) against the stack with Keycloak (realm `baby-routine` on the owner's Keycloak) and the `baby_routine` DB | Medium | Blocked on Keycloak client + test user; migrations applied 2026-10-21; DB grants for the app role via docs/sql/grant-app-role.sql |
 | 18 | Bath with OPTIONAL duration (user may add an end time, not required): quick action logs an instant bath; sheet allows adding an end time. Needs a decision on modelling (`durationMode: none/optional/required` on EventType vs allowing EndedAt on any type) | Medium | Decided by user 2026-10-21: optional |
 | 19 | Upgrade to .NET 10 LTS (net8.0 EOL 2026-11-10) | Medium | REVIEW #20 |
 | 20 | Issuer backfill clean-up for legacy user rows; Postgres-specific tests (xmin concurrency, jsonb) via a real database or Testcontainers on Podman | Careful | REVIEW wave-2 doubts |

@@ -123,7 +123,7 @@ A login theme runs on the page where users type passwords, on the IdP origin: tr
 `deploy/keycloak/configure-realm.sh` sets the login theme and the supported locales through the admin API, idempotent:
 
 ```bash
-export KC_URL=https://auth.homel4b.dev KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
+export KC_URL=https://auth.example.com KC_REALM=lotties.app KC_ADMIN_USER=admin KC_ADMIN_PASSWORD='...'   # from your secret store
 bash deploy/keycloak/configure-realm.sh --dry-run    # prints the intended changes, writes nothing
 bash deploy/keycloak/configure-realm.sh              # applies; a second run says "Nothing to do"
 ```
@@ -157,7 +157,7 @@ Cry monitor files (docs/design/35-cry-engine.md section 4): the web image carrie
 
 ## Home lab (Kubernetes + Traefik)
 
-`deploy/homelab/` deploys the two images to the home lab cluster (context `home-lab-main`, namespace `lotties-app-production`, registry `cr.homel4b.dev/lotties`): one Helm chart for the API and the web releases, an Ingress on the external Traefik for `https://lotties.app` (`/api` to the API, the rest to the web app, certificate from cert-manager), the Secret `lotties-secrets` built from `deploy/homelab/.env`, and `DRY_RUN=1` to see the plan without changing anything. Prerequisites (Harbor project, pull Secret, Keycloak client settings), secrets rotation, migrations, verification and rollback: [deploy/homelab/README.md](../deploy/homelab/README.md).
+`deploy/homelab/` deploys the two images to the home lab cluster (namespace `lotties-app-production`; the kube context, registry, ingress class, cluster issuer and pull Secret are required settings in the gitignored `deploy/homelab/.env`, never in the repository, and the script stops when one is missing): one Helm chart for the API and the web releases, an Ingress on the external Traefik for `https://lotties.app` (`/api` to the API, the rest to the web app, certificate from cert-manager), the Secret `lotties-secrets` built from `deploy/homelab/.env`, and `DRY_RUN=1` to see the plan without changing anything. Settings, prerequisites (registry project, pull Secret, Keycloak client settings), secrets rotation, migrations, verification and rollback: [deploy/homelab/README.md](../deploy/homelab/README.md).
 
 ### Versions
 
@@ -216,7 +216,7 @@ The API runs on .NET 10 (LTS) since October 2026; before, .NET 8 (end of support
 - **Connections:** GSS encryption stays off in the connection string built from `DB_*` (Npgsql 10 would try it first);
   Npgsql 9+ closes pooled connections older than an hour (`Connection Lifetime` now defaults to 3600 s; it was unlimited).
 - **Rollback:** `helm rollback lotties-api [REVISION]` (deploy/homelab/README.md "Roll back") goes back to the .NET 8
-  image, which stays in Harbor under its old `src-<hash>` tag. The schema is the same for both, so no database step is
+  image, which stays in the registry under its old `src-<hash>` tag. The schema is the same for both, so no database step is
   needed; a migration added later with EF Core 10 records `10.0.13` as its product version, which EF Core 8 ignores.
 
 ## Push notifications
@@ -486,13 +486,13 @@ ALTER DEFAULT PRIVILEGES FOR ROLE lotties_migrator IN SCHEMA public
   GRANT USAGE ON SEQUENCES TO lotties_app;
 ```
 
-Put `lotties_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container, unless you deliberately opt in to `DB_AUTO_MIGRATE` (below). The same grants are in `docs/sql/grant-app-role.sql`.
+Put `lotties_app` in `DB_APP_USER` / `DB_APP_PASSWORD`. Never give the migrator credentials to the running API container, unless you deliberately opt in to `DB_AUTO_MIGRATE` (below). The same grants are in `docs/sql/grant-app-role.sql` (role names passed as psql variables: `psql -v app_role=lotties_app -v migrator_role=lotties_migrator -f docs/sql/grant-app-role.sql`).
 
 ### Applying migrations
 
 The migrations are the EF Core code-first migrations in `code/api/src/Lotties.Infrastructure/Persistence/Migrations/`. There is no checked-in SQL script. Supported ways, in order of preference for production:
 
-**Dedicated migrator role.** A separate non-superuser role can run the migrations (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`) if it owns the tables and may create objects in the schema. `docs/sql/grant-migrator-role.sql` sets that up once, as an admin, and is idempotent: it makes the role the owner of the existing tables, gives it `CREATE` on the schema, and sets the API role's default privileges for tables the migrator creates. Never make the migrator a member of a superuser role.
+**Dedicated migrator role.** A separate non-superuser role can run the migrations (`dotnet ef database update` or `DB_AUTO_MIGRATE=true`) if it owns the tables and may create objects in the schema. `docs/sql/grant-migrator-role.sql` sets that up once, as an admin (`psql -v migrator_role=<migrator> -v app_role=<app role> -f docs/sql/grant-migrator-role.sql`), and is idempotent: it makes the role the owner of the existing tables, gives it `CREATE` on the schema, and sets the API role's default privileges for tables the migrator creates. Never make the migrator a member of a superuser role.
 
 1. **`dotnet ef` (recommended, the default).** Run as the migrator role, from `code/api`, using the local tool manifest (`dotnet-tools.json`, `dotnet-ef` 10.0.13, which needs the .NET 10 SDK or runtime):
 

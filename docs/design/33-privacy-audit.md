@@ -18,15 +18,15 @@ outside the repository: `OWNER TO CONFIRM`).
 | Web app container (`lotties-web`, nginx) | the SPA files | no personal data stored; its stock access log (the image's default `main` format, `nginx.conf` sets no `access_log`) writes the client address from `X-Forwarded-For`, time, request line, status, size and user agent of each static/page request to stdout |
 | API container (`lotties-api`, .NET 10) | no local storage | logs to stdout (below); keeps rate-limit counters and the address-lookup answer cache in memory only; Napper and backup uploads are read in memory, never written to disk (no `File.*` or temp-file use in `code/api/src`) |
 | PostgreSQL (external to the cluster) | every server-side record | location `OWNER TO CONFIRM`; encryption at rest `OWNER TO CONFIRM` (nothing in the repo); the API connects with a role limited to `SELECT, INSERT, UPDATE, DELETE` (docs/DEPLOY.md "Database roles") |
-| Keycloak (realm `lotties.app`, `https://auth.lotties.app`) | sign-in accounts | runs in the same home lab cluster (namespace `keycloak`, deploy/homelab/README.md), shared with the owner's other apps (docs/DEPLOY.md "Multi-theme"); realm isolation, registration fields, email verification, OTP, brute-force protection and event logging: `OWNER TO CONFIRM` |
+| Keycloak (realm `lotties.app`, `https://auth.lotties.app`) | sign-in accounts | runs in the same home lab cluster (its own namespace), shared with the owner's other apps (docs/DEPLOY.md "Multi-theme"); realm isolation, registration fields, email verification, OTP, brute-force protection and event logging: `OWNER TO CONFIRM` |
 | Traefik (external ingress) and cert-manager | TLS termination, routing | `https://lotties.app` routes `/api` to the API and the rest to the web app; HTTP redirected to HTTPS; certificate from Let's Encrypt via DNS-01 at Cloudflare; Traefik access logs on/off and retention `OWNER TO CONFIRM`; whether Cloudflare only serves DNS or also proxies traffic `OWNER TO CONFIRM` (a proxy would see all traffic in clear text) |
-| Harbor (`cr.homel4b.dev/lotties`) | container images | no personal data |
+| Container registry (the owner's private Harbor; `REGISTRY` in deploy/homelab/.env) | container images | no personal data |
 | GitHub | source code, CI | no personal data from the app; issues are public |
 | The user's device | offline copy and session | section 4 |
 | Backup files | `pg_dump` copies | taken by the owner before deploys that apply a migration, kept until the owner deletes them; location, encryption and any other backup (database server snapshots) `OWNER TO CONFIRM` |
 
-Hosting: everything Lotties runs (web app, API, Keycloak) is in the owner's home lab Kubernetes cluster (`home-lab-main`,
-k3s), not on a cloud provider. Country and physical site: `OWNER TO CONFIRM`.
+Hosting: everything Lotties runs (web app, API, Keycloak) is in the owner's home lab Kubernetes cluster (k3s),
+not on a cloud provider. Country and physical site: `OWNER TO CONFIRM`.
 
 ## 2. Inventory by category
 

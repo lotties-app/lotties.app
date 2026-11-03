@@ -3209,7 +3209,7 @@
       "type": "memory",
       "topic": "infrastructure-deploy",
       "title": "Infrastructure map (no secrets)",
-      "body": "- Home lab Kubernetes, kubectl context `home-lab-main`; app namespace `lotties-app-production`.\n- Images in the owner's Harbor registry; deploy kit `deploy/homelab` (Helm releases `lotties-api`, `lotties-web`).\n- Keycloak realm `lotties.app` at `https://auth.lotties.app` (shared Keycloak, single replica: test before touching it).\n- Ingress class `traefik-external`; Cloudflare in front (DNS; proxying to be confirmed, C2). Public host `https://lotties.app` (`/api` to the API).\n- PostgreSQL outside the cluster; the API uses a role limited to DML; migrations by the migrator role.\n- Any cluster change needs the owner's explicit go-ahead; read-only kubectl is fine.",
+      "body": "- Home lab Kubernetes, kubectl context from `KUBE_CONTEXT` in deploy/homelab/.env; app namespace `lotties-app-production`.\n- Images in the owner's Harbor registry; deploy kit `deploy/homelab` (Helm releases `lotties-api`, `lotties-web`).\n- Keycloak realm `lotties.app` at `https://auth.lotties.app` (shared Keycloak, single replica: test before touching it).\n- Ingress class from `INGRESS_CLASS` (Traefik); Cloudflare in front (DNS; proxying to be confirmed, C2). Public host `https://lotties.app` (`/api` to the API).\n- PostgreSQL outside the cluster; the API uses a role limited to DML; migrations by the migrator role.\n- Any cluster change needs the owner's explicit go-ahead; read-only kubectl is fine.",
       "status": "open",
       "side": "both",
       "priority": "normal",
