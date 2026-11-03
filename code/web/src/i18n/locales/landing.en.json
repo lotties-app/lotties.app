@@ -86,12 +86,17 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "source": "Source code",
+    "sourceGithub": "Source code on GitHub",
     "licence": "Free and open source software, licensed under the AGPL-3.0.",
     "notMedical": "Not a medical device.",
     "credits": "Credits and licenses",
     "selfHost": "Run it yourself",
     "privacy": "Privacy policy",
-    "terms": "Terms of use"
+    "terms": "Terms of use",
+    "voiceCommands": "Voice assistant commands",
+    "reportProblem": "Report a problem",
+    "reportSubject": "Lotties: a problem",
+    "support": "Support Lotties"
   },
   "beta": {
     "notice": "Lotties is in beta. Read the [Terms of Use](/terms)."

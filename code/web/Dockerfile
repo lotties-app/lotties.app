@@ -18,6 +18,10 @@ ARG VITE_OIDC_CLIENT_ID=""
 ARG VITE_OIDC_AUDIENCE=""
 # Source repository link in the landing footer (AGPL source offer); empty hides the link.
 ARG VITE_REPO_URL=""
+# Footer "Report a problem" (http/https; empty = VITE_REPO_URL/issues/new, else a mailto: to VITE_PRIVACY_CONTACT_EMAIL,
+# else hidden) and "Support Lotties" (http/https; empty hides it). docs/DEPLOY.md.
+ARG VITE_ISSUES_URL=""
+ARG VITE_SUPPORT_URL=""
 # Privacy policy contacts the owner publishes (docs/PRIVACY-OWNER-CHECKLIST.md); empty = the policy's defaults.
 ARG VITE_PRIVACY_CONTROLLER_NAME=""
 ARG VITE_PRIVACY_CONTACT_EMAIL=""
@@ -36,6 +40,8 @@ ENV APP_VERSION=$APP_VERSION \
     VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
     VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE \
     VITE_REPO_URL=$VITE_REPO_URL \
+    VITE_ISSUES_URL=$VITE_ISSUES_URL \
+    VITE_SUPPORT_URL=$VITE_SUPPORT_URL \
     VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME \
     VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL \
     VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO

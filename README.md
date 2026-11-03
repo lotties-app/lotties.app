@@ -51,6 +51,8 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `POSTGRES_PASSWORD` | Password of the optional `localdb` container (user is `DB_APP_USER`); no default |
 | `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, `VITE_API_BASE_URL` | Web build arguments (public, compiled into the bundle); see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | `VITE_REPO_URL` | Optional web build argument: source repository link in the landing page footer (http/https only); empty (default) hides it |
+| `VITE_ISSUES_URL` | Optional web build argument: "Report a problem" link (http/https only); empty = `VITE_REPO_URL` + `/issues/new`, else a `mailto:` to `VITE_PRIVACY_CONTACT_EMAIL`, else hidden ([docs/DEPLOY.md](docs/DEPLOY.md) "Footer links") |
+| `VITE_SUPPORT_URL` | Optional web build argument: "Support Lotties" link (http/https only, a link out, no payment in the app); empty (default) hides it |
 | `VITE_PRIVACY_CONTROLLER_NAME`, `VITE_PRIVACY_CONTACT_EMAIL`, `VITE_PRIVACY_DPO` | Web build arguments (public): who is responsible for the data, the privacy contact and the encarregado shown on `/privacy`; empty = neutral defaults. Set them before a store submission ([docs/PRIVACY-OWNER-CHECKLIST.md](docs/PRIVACY-OWNER-CHECKLIST.md)) |
 | `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |
 | `AUTH_AUDIENCE` | API audience that access tokens must carry (config `Auth:Audience`); required outside Development |

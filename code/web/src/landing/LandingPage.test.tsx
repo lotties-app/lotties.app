@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../i18n/I18nProvider';
 import { LOCALE_STORAGE_KEY } from '../i18n/localeStorage';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
@@ -208,6 +208,60 @@ describe('LandingPage', () => {
     expect(repoUrl({ VITE_REPO_URL: ' ' })).toBeNull();
     expect(repoUrl({ VITE_REPO_URL: 'javascript:alert(1)' })).toBeNull();
     expect(repoUrl({ VITE_REPO_URL: 'https://example.org/repo' })).toBe('https://example.org/repo');
+  });
+
+  describe('footer links', () => {
+    const LINK_ENV = [
+      'VITE_REPO_URL',
+      'VITE_ISSUES_URL',
+      'VITE_SUPPORT_URL',
+      'VITE_PRIVACY_CONTACT_EMAIL',
+    ] as const;
+    const footer = async (env: Partial<Record<(typeof LINK_ENV)[number], string>> = {}) => {
+      for (const name of LINK_ENV) vi.stubEnv(name, env[name] ?? '');
+      renderLanding();
+      return screen.findByRole('contentinfo');
+    };
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('shows only the voice commands link when nothing is configured', async () => {
+      const box = await footer();
+      expect(
+        within(box).getByRole('link', { name: 'Voice assistant commands' }).getAttribute('href'),
+      ).toBe('/voice-commands');
+      expect(within(box).queryByRole('link', { name: /Source code/ })).toBeNull();
+      expect(within(box).queryByRole('link', { name: 'Report a problem' })).toBeNull();
+      expect(within(box).queryByRole('link', { name: 'Support Lotties' })).toBeNull();
+    });
+
+    it('labels a GitHub repository and derives the new-issue page from it', async () => {
+      const box = await footer({ VITE_REPO_URL: 'https://github.com/example/lotties' });
+      const source = within(box).getByRole('link', { name: 'Source code on GitHub' });
+      expect(source.getAttribute('href')).toBe('https://github.com/example/lotties');
+      const report = within(box).getByRole('link', { name: 'Report a problem' });
+      expect(report.getAttribute('href')).toBe('https://github.com/example/lotties/issues/new');
+      expect(report.getAttribute('target')).toBe('_blank');
+      expect(report.getAttribute('rel')).toBe('noopener noreferrer');
+    });
+
+    it('opens the support page in a new tab without sending anything', async () => {
+      const box = await footer({ VITE_SUPPORT_URL: 'https://example.org/sponsor' });
+      const support = within(box).getByRole('link', { name: 'Support Lotties' });
+      expect(support.getAttribute('href')).toBe('https://example.org/sponsor');
+      expect(support.getAttribute('target')).toBe('_blank');
+      expect(support.getAttribute('rel')).toBe('noopener noreferrer');
+    });
+
+    it('falls back to an e-mail with only the app version when no tracker is set', async () => {
+      const box = await footer({ VITE_PRIVACY_CONTACT_EMAIL: 'privacy@example.org' });
+      const report = within(box).getByRole('link', { name: 'Report a problem' });
+      const subject = encodeURIComponent('Lotties: a problem');
+      const body = encodeURIComponent(`Lotties ${displayVersion(readBuildInfo().version)}`);
+      expect(report.getAttribute('href')).toBe(
+        `mailto:privacy@example.org?subject=${subject}&body=${body}`,
+      );
+      expect(report.getAttribute('target')).toBeNull();
+    });
   });
 
   describe('install', () => {

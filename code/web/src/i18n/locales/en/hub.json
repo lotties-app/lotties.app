@@ -198,7 +198,10 @@
       "licenseValue": "Free software, AGPL-3.0",
       "source": "Source code",
       "credits": "Built on open source. Credits and licenses",
-      "privacy": "Privacy policy"
+      "privacy": "Privacy policy",
+      "reportProblem": "Report a problem",
+      "reportSubject": "Lotties: a problem",
+      "support": "Support Lotties"
     }
   }
 }

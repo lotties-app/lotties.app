@@ -4,6 +4,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, Link, Stack, Typography } from '@mui/material';
 import { isLocalePreference, LOCALES, type LocalePreference } from '../i18n/config';
 import { useLocale } from '../i18n/useLocale';
+import { readBuildInfo } from '../config/buildInfo';
+import { displayVersion } from '../config/versionInfo';
 import { useInstallState } from '../install/useInstallState';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import type { ThemeMode } from '../theme/theme';
@@ -11,6 +13,7 @@ import { SegmentedControl } from '../ui/form';
 import { VersionLine } from '../ui/VersionLine';
 import { BetaNotice } from './BetaNotice';
 import { PAGE_WIDTH } from './features';
+import { newTabFor, problemReportUrl, supportUrl } from './outboundLinks';
 import { repoUrl } from './repoUrl';
 
 const THEME_OPTIONS = [
@@ -30,9 +33,15 @@ function Setting({ id, label, children }: { id: string; label: string; children:
   );
 }
 
+/** Whether `url` points at GitHub (the source link then says so). */
+function onGithub(url: string): boolean {
+  return new URL(url).hostname.replace(/^www\./, '') === 'github.com';
+}
+
 /**
- * Language and theme switches, the version line with the source link, the install guide, credits and privacy policy links,
- * the licence line and the medical note.
+ * Language and theme switches, the version line with the source link, the install guide, credits,
+ * privacy, terms, self-host and voice commands links, "Report a problem" and "Support Lotties"
+ * (each only when configured, src/landing/outboundLinks.ts), the licence line and the medical note.
  */
 export function LandingFooter() {
   const { t } = useTranslation('landing');
@@ -40,6 +49,11 @@ export function LandingFooter() {
   const { preference, setPreference } = useLocale();
   const { mode, setMode } = useThemeMode();
   const source = repoUrl();
+  const support = supportUrl();
+  const report = problemReportUrl(undefined, {
+    subject: t('footer.reportSubject'),
+    body: `Lotties ${displayVersion(readBuildInfo().version)}`,
+  });
   const languages: { value: LocalePreference; label: string }[] = [
     { value: 'system', label: t('footer.languageSystem') },
     ...LOCALES.map((l) => ({
@@ -88,7 +102,7 @@ export function LandingFooter() {
                   ·
                 </Typography>
                 <Link href={source} target="_blank" rel="noopener noreferrer">
-                  {t('footer.source')}
+                  {t(onGithub(source) ? 'footer.sourceGithub' : 'footer.source')}
                 </Link>
               </>
             )}
@@ -110,6 +124,19 @@ export function LandingFooter() {
           <Link component={RouterLink} to="/self-host" sx={{ alignSelf: 'flex-start' }}>
             {t('footer.selfHost')}
           </Link>
+          <Link component={RouterLink} to="/voice-commands" sx={{ alignSelf: 'flex-start' }}>
+            {t('footer.voiceCommands')}
+          </Link>
+          {report && (
+            <Link href={report} {...newTabFor(report)} sx={{ alignSelf: 'flex-start' }}>
+              {t('footer.reportProblem')}
+            </Link>
+          )}
+          {support && (
+            <Link href={support} {...newTabFor(support)} sx={{ alignSelf: 'flex-start' }}>
+              {t('footer.support')}
+            </Link>
+          )}
           <BetaNotice />
           <Typography variant="body2" color="text.secondary">
             {t('footer.licence')}

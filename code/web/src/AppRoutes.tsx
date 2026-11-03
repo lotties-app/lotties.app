@@ -37,12 +37,14 @@ const HubInstallPage = hubSubPage('HubInstallPage');
 const HubPrivacyPage = hubSubPage('HubPrivacyPage');
 // The cry monitor's page is its own chunk; the engine loads only when monitoring starts.
 const HubCryMonitorPage = lazy(() => import('./cryMonitor/CryMonitorPage'));
-// The public credits, install and privacy pages: outside the auth gate, so they open without signing in.
+// The public credits, install, privacy and voice commands pages: outside the auth gate, so they
+// open without signing in.
 const CreditsPage = lazy(() => import('./credits/CreditsPage'));
 const InstallPage = lazy(() => import('./install/InstallPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const SelfHostPage = lazy(() => import('./selfHost/SelfHostPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
+const VoiceCommandsPage = lazy(() => import('./assistants/VoiceCommandsPage'));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
@@ -329,6 +331,14 @@ export function AppRoutes() {
         element={
           <Suspense fallback={null}>
             <SelfHostPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/voice-commands"
+        element={
+          <Suspense fallback={null}>
+            <VoiceCommandsPage />
           </Suspense>
         }
       />
