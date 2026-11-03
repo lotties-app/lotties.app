@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
-# Deploys Lotties to the home lab cluster (kube context home-lab-main): the API (.NET 10) and the web app (React SPA on
-# nginx) in namespace lotties-app-production, public at https://lotties.app through the external Traefik.
+# Deploys Lotties to a Kubernetes cluster (the owner's home lab): the API (.NET 10) and the web app (React SPA on
+# nginx) in namespace lotties-app-production, public at https://lotties.app through an Ingress.
 #
 # Run as root inside WSL, from anywhere:
 #   ./deploy/homelab/deploy.sh             settings from deploy/homelab/.env (copy .env.example)
 #   DRY_RUN=1 ./deploy/homelab/deploy.sh   changes nothing: read-only checks, the plan, the rendered manifests
 #
-# Options (environment, or deploy/homelab/.env; a variable set in the environment wins over the file):
-#   REGISTRY        Registry and project of the images. Default cr.homel4b.dev/lotties (images lotties-api, lotties-web).
-#   KUBE_CONTEXT    Default home-lab-main, always passed to kubectl and helm. KUBECONFIG is used as usual (for example
-#                   KUBECONFIG=~/.kube/home-lab.yaml). KUBE_CONTEXT=in-cluster: a pod's own service account (a CI runner).
+# Where to deploy (environment, or deploy/homelab/.env; a variable set in the environment wins over the file). The
+# cluster-specific ones are required and have no default: the script stops before doing anything when one is not set.
+#   REGISTRY        Required. Registry host and project of the images, e.g. registry.example.com/lotties (images
+#                   lotties-api, lotties-web).
+#   KUBE_CONTEXT    Required. Kube context, always passed to kubectl and helm (e.g. my-cluster). KUBECONFIG is used as
+#                   usual. KUBE_CONTEXT=in-cluster: a pod's own service account (a CI runner).
+#   INGRESS_CLASS   Required. Ingress class of the public entry (e.g. traefik).
+#   CLUSTER_ISSUER  Required, may be empty. cert-manager ClusterIssuer (e.g. letsencrypt-production); empty: no certificate.
+#   PULL_SECRET     Required. Name of the docker-registry Secret the pods pull the images with (e.g. registry-pull).
+#   PULL_SECRET_SOURCE_NS  Optional. A namespace that already holds PULL_SECRET: when it is missing in NS, it is copied
+#                   from there. Empty: a missing pull Secret stops the run with the command to create it.
 #   NS              Namespace. Default lotties-app-production; created when missing.
 #   PUBLIC_HOST     Default lotties.app: / is the web app, /api the API.
-#   INGRESS_CLASS   Default traefik-external.
-#   CLUSTER_ISSUER  cert-manager ClusterIssuer. Default letsencrypt-production-lotties-app-issuer; empty: no certificate.
 #   TLS_SECRET      Secret the certificate is issued into. Default lotties-tls.
 #   TAG             One tag for both images (both are rebuilt). Default: per-image source tags src-<hash>.
 #   FORCE_BUILD=1   Rebuild even when the registry already has the tag.
@@ -26,7 +31,7 @@
 #                   To have both images carry the same release (About shows one number), rebuild both: FORCE_BUILD=1
 #                   (pods restart; the src-<hash> tags stay the same, the images are pushed again under them).
 #   TAG_RELEASE=0   Do not create the annotated git tag vX.Y.Z on HEAD after a release. PUSH_TAG=0: create it but do not push it.
-#   COPY_PULL_SECRET=1  When the pull Secret cr-homel4b is missing in NS, copy it from namespace keycloak without asking.
+#   COPY_PULL_SECRET=1  When PULL_SECRET is missing in NS, copy it from PULL_SECRET_SOURCE_NS without asking.
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
@@ -45,8 +50,6 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
 CHART="$HERE/charts/lotties-app"
 APP_SECRET=lotties-secrets
-PULL_SECRET=cr-homel4b
-PULL_SECRET_SOURCE_NS=keycloak
 
 # Files each image is built from (repository-relative pathspecs). The API image uses only these from its context
 # (code/api/.dockerignore leaves the tests out); the web image takes its whole context.
@@ -154,14 +157,28 @@ secret_value() { # namespace secret key -> decoded value, empty when missing
 }
 
 # ── Settings ──────────────────────────────────────────────────────────────────
+# The cluster-specific settings belong to whoever runs the deploy, never to the repository: they have no default. Every
+# one that is not set is listed at once, before anything is checked or changed; a .env.example <placeholder> is refused.
+require_deploy_settings() {
+  local key missing=()
+  for key in REGISTRY KUBE_CONTEXT INGRESS_CLASS PULL_SECRET; do
+    [ -n "${!key:-}" ] || missing+=("$key")
+  done
+  [ -n "${CLUSTER_ISSUER+x}" ] || missing+=("CLUSTER_ISSUER (set it empty for no certificate)")
+  [ "${#missing[@]}" -eq 0 ] \
+    || die "missing deploy settings: ${missing[*]}. Set them in deploy/homelab/.env (see deploy/homelab/.env.example)"
+  for key in REGISTRY KUBE_CONTEXT INGRESS_CLASS CLUSTER_ISSUER PULL_SECRET PULL_SECRET_SOURCE_NS; do
+    ! is_placeholder "${!key:-}" || die "$key is still the .env.example placeholder"
+  done
+}
+
 configure() {
-  CONTEXT=${KUBE_CONTEXT:-home-lab-main}
+  require_deploy_settings
+  CONTEXT=$KUBE_CONTEXT
   CONTAINER_TOOL=${CONTAINER_TOOL:-$(command -v podman >/dev/null 2>&1 && echo podman || echo docker)}
-  REGISTRY=${REGISTRY:-cr.homel4b.dev/lotties}
   NS=${NS:-lotties-app-production}
   PUBLIC_HOST=${PUBLIC_HOST:-lotties.app}
-  INGRESS_CLASS=${INGRESS_CLASS:-traefik-external}
-  CLUSTER_ISSUER=${CLUSTER_ISSUER-letsencrypt-production-lotties-app-issuer}
+  PULL_SECRET_SOURCE_NS=${PULL_SECRET_SOURCE_NS:-}
   TLS_SECRET=${TLS_SECRET:-lotties-tls}
   VERSION=${VERSION:-}
   VERSION=${VERSION#v}
@@ -191,7 +208,11 @@ configure() {
 
   [[ "$NS" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || die "NS '$NS' is not a valid namespace name"
   [[ "$PUBLIC_HOST" =~ ^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$ ]] || die "PUBLIC_HOST '$PUBLIC_HOST' is not a host name"
-  [[ "$INGRESS_CLASS$TLS_SECRET$CLUSTER_ISSUER" =~ ^[a-z0-9.-]+$ ]] || die "INGRESS_CLASS, TLS_SECRET and CLUSTER_ISSUER must be resource names"
+  [[ "$REGISTRY" =~ ^[a-z0-9.-]+(:[0-9]+)?(/[a-z0-9._-]+)*$ ]] || die "REGISTRY '$REGISTRY' must be <host>[:port][/<project>] (e.g. registry.example.com/lotties)"
+  [[ "$INGRESS_CLASS$TLS_SECRET$CLUSTER_ISSUER$PULL_SECRET" =~ ^[a-z0-9.-]+$ ]] \
+    || die "INGRESS_CLASS, TLS_SECRET, CLUSTER_ISSUER and PULL_SECRET must be resource names"
+  [[ -z "$PULL_SECRET_SOURCE_NS" || "$PULL_SECRET_SOURCE_NS" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] \
+    || die "PULL_SECRET_SOURCE_NS '$PULL_SECRET_SOURCE_NS' is not a valid namespace name"
   [ -n "$VITE_OIDC_CLIENT_ID" ] || die "set VITE_OIDC_CLIENT_ID (the public SPA client id) in deploy/homelab/.env"
   ! is_placeholder "$VITE_OIDC_CLIENT_ID" || die "VITE_OIDC_CLIENT_ID is still the .env.example placeholder"
   [[ "$AUTH_AUTHORITY" =~ ^https?:// && "$VITE_OIDC_AUTHORITY" =~ ^https?:// ]] || die "AUTH_AUTHORITY and VITE_OIDC_AUTHORITY must be http(s) URLs"
@@ -314,6 +335,15 @@ ensure_namespace() {
 pull_secret_hint() {
   local ctx=""
   [ "$CONTEXT" = in-cluster ] || ctx="--context $CONTEXT "
+  if [ -z "$PULL_SECRET_SOURCE_NS" ]; then
+    cat <<EOF
+Create it from a login of an account that can pull ${REGISTRY} (or set PULL_SECRET_SOURCE_NS to a namespace that has it):
+  podman login --authfile ./pull-auth.json ${REGISTRY%%/*}
+  kubectl ${ctx}-n $NS create secret docker-registry $PULL_SECRET --from-file=.dockerconfigjson=./pull-auth.json
+  rm ./pull-auth.json
+EOF
+    return 0
+  fi
   cat <<EOF
 Copy it from namespace $PULL_SECRET_SOURCE_NS with COPY_PULL_SECRET=1, or by hand:
   kubectl ${ctx}-n $PULL_SECRET_SOURCE_NS get secret $PULL_SECRET -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d \\
@@ -334,6 +364,10 @@ ensure_pull_secret() {
   # Pods can only pull with a docker-registry Secret; any other type leaves them in ImagePullBackOff.
   if [ "$type" = kubernetes.io/dockerconfigjson ]; then echo "present"; return 0; fi
   [ -z "$type" ] || die "Secret $PULL_SECRET in $NS has type $type, not kubernetes.io/dockerconfigjson: delete it and re-run"
+  if [ -z "$PULL_SECRET_SOURCE_NS" ]; then
+    if dry; then echo "warning: Secret $PULL_SECRET is missing in $NS: a real run stops here (no PULL_SECRET_SOURCE_NS to copy it from)"; pull_secret_hint; return 0; fi
+    echo "error: Secret $PULL_SECRET is missing in $NS." >&2; pull_secret_hint >&2; exit 1
+  fi
   [ "$(k -n "$PULL_SECRET_SOURCE_NS" get secret "$PULL_SECRET" -o 'jsonpath={.type}' 2>/dev/null || true)" = kubernetes.io/dockerconfigjson ] \
     || die "Secret $PULL_SECRET is missing in $NS and in $PULL_SECRET_SOURCE_NS: create it (see deploy/homelab/README.md)"
   if dry; then would "copy $PULL_SECRET from namespace $PULL_SECRET_SOURCE_NS into $NS (COPY_PULL_SECRET=1 or a yes)"; return 0; fi
@@ -448,7 +482,8 @@ images() {
 release() { # release values-file image tag [helm args...]
   local name=$1 values=$2 image=$3 tag=$4 args
   shift 4
-  args=("$name" "$CHART" -f "$HERE/values/$values.yaml" --set-string "image.repository=$REGISTRY/$image" --set-string "image.tag=$tag")
+  args=("$name" "$CHART" -f "$HERE/values/$values.yaml" --set-string "image.repository=$REGISTRY/$image" --set-string "image.tag=$tag"
+    --set-string "imagePullSecrets[0].name=$PULL_SECRET")
   [ -z "$VERSION" ] || args+=(--set-string "appVersion=v$VERSION")
   args+=("$@")
   step "Release $name ($REGISTRY/$image:$tag)"

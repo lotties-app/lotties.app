@@ -103,9 +103,9 @@ printf 'kubectl %s\n' "$*" >> "$STUB_LOG"
 args=" $* "
 case "$args" in
   *" get namespace "*) [ "${STUB_NS_EXISTS:-yes}" = yes ]; exit ;;
-  *" -n keycloak get secret cr-homel4b "*"{.type}"*) printf 'kubernetes.io/dockerconfigjson' ;;
-  *" -n keycloak get secret cr-homel4b "*dockerconfigjson*) printf '%s' 'eyJhdXRocyI6e319' ;;
-  *" get secret cr-homel4b "*"{.type}"*) [ "${STUB_PULL_SECRET:-yes}" = yes ] && printf 'kubernetes.io/dockerconfigjson' || exit 1 ;;
+  *" -n shared-ns get secret pull-test "*"{.type}"*) printf 'kubernetes.io/dockerconfigjson' ;;
+  *" -n shared-ns get secret pull-test "*dockerconfigjson*) printf '%s' 'eyJhdXRocyI6e319' ;;
+  *" get secret pull-test "*"{.type}"*) [ "${STUB_PULL_SECRET:-yes}" = yes ] && printf 'kubernetes.io/dockerconfigjson' || exit 1 ;;
   *" get secret lotties-secrets "*) exit 1 ;;
   *" create secret generic "*)
     dir=$(printf '%s\n' "$@" | sed -n 's/^--from-file=//p')
@@ -139,16 +139,19 @@ PASSWORD='Sup3r-Secret-Pass'
 cat > "$WORK/app.env" <<EOF
 VITE_OIDC_CLIENT_ID=lotties-web
 DB_HOST=db.example.test
-DB_APP_USER=k_lotties_usr
+DB_APP_USER=app_usr
 DB_APP_PASSWORD=$PASSWORD
 EOF
 
+# The cluster-specific settings (required, no defaults in deploy.sh) of every whole run; an argument of run() wins.
+DEPLOY_SETTINGS=(KUBE_CONTEXT=mine REGISTRY=reg.test/lotties INGRESS_CLASS=ingress-test CLUSTER_ISSUER=issuer-test
+  PULL_SECRET=pull-test PULL_SECRET_SOURCE_NS=shared-ns)
 run() { # name, env assignments... ; leaves the log in $WORK/log and the output in $WORK/out
   local name=$1
   shift
   : > "$WORK/log"
-  env -i PATH="$WORK/bin:$PATH" HOME="$WORK" STUB_LOG="$WORK/log" ENV_FILE="$WORK/app.env" KUBE_CONTEXT=mine \
-    REGISTRY=reg.test/lotties TAG_RELEASE=0 "$@" bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
+  env -i PATH="$WORK/bin:$PATH" HOME="$WORK" STUB_LOG="$WORK/log" ENV_FILE="$WORK/app.env" \
+    "${DEPLOY_SETTINGS[@]}" TAG_RELEASE=0 "$@" bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
   RUN_CODE=$?
   [ "$RUN_CODE" -eq 0 ] || [ "${EXPECT_FAIL:-0}" = 1 ] || { echo "not ok - $name: deploy.sh exited $RUN_CODE"; sed 's/^/    /' "$WORK/out" | tail -5; FAILED=1; return 1; }
 }
@@ -163,14 +166,16 @@ run "dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered" STUB_NS_EXISTS=no STUB_PULL
   check "dry run: nothing is created" log_lacks '^kubectl .* create '
   check "dry run: every kubectl apply is a client dry run" bash -c "! grep '^kubectl .* apply ' '$WORK/log' | grep -v -- '--dry-run=client'"
   check "dry run: the namespace would be created" out_has 'namespace.yaml|would create'
-  check "dry run: the pull Secret would be copied" out_has 'would copy cr-homel4b from namespace keycloak'
+  check "dry run: the pull Secret would be copied" out_has 'would copy pull-test from namespace shared-ns'
   check "dry run: the images would be built" out_has 'would build and push it: podman build .*lotties-web'
   check "dry run: the release is chosen before the builds and stamped into them" out_has 'would build and push it: podman build .*lotties-api:src-[0-9a-f]{12} .*--build-arg APP_VERSION=[0-9]+\.[0-9]+\.[0-9]+ '
   check "dry run: the Secret keys are listed" out_has 'keys: DB_APP_PASSWORD DB_APP_USER DB_HOST DB_NAME DB_PORT'
   check "dry run: the Ingress is rendered for lotties.app" grep -q 'host: "lotties.app"' "$WORK/rendered/ingress.yaml"
   check "dry run: /api goes to the API" bash -c "grep -A4 'path: /api' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
   check "dry run: the MCP resource metadata goes to the API" bash -c "grep -A4 'path: /.well-known/oauth-protected-resource' '$WORK/rendered/ingress.yaml' | grep -q 'name: lotties-api'"
-  check "dry run: the certificate comes from the issuer" grep -q 'cert-manager.io/cluster-issuer: letsencrypt-production-lotties-app-issuer' "$WORK/rendered/ingress.yaml"
+  check "dry run: the certificate comes from the issuer" grep -q 'cert-manager.io/cluster-issuer: issuer-test' "$WORK/rendered/ingress.yaml"
+  check "dry run: the Ingress has the configured class" grep -q 'ingressClassName: ingress-test' "$WORK/rendered/ingress.yaml"
+  check "dry run: the releases pull with the configured Secret" bash -c "[ \$(grep -c '^helm .* template .*imagePullSecrets\[0\]\.name=pull-test' '$WORK/log') -eq 2 ]"
   check "dry run: the namespace is labelled" grep -q 'app.kubernetes.io/part-of: lotties' "$WORK/rendered/namespace.yaml"
   check "dry run: both releases are rendered" bash -c "[ -s '$WORK/rendered/lotties-api.yaml' ] && [ -s '$WORK/rendered/lotties-web.yaml' ]"
   check "dry run: no secret value is printed" no_password
@@ -236,11 +241,11 @@ unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
 
 EXPECT_FAIL=1 run "pull secret missing, no flag" STUB_PULL_SECRET=no
 check "pull secret: a missing one stops a non-interactive run" bash -c "[ $RUN_CODE -ne 0 ]"
-check "pull secret: the copy command is shown" out_has 'create secret docker-registry cr-homel4b --from-file=\.dockerconfigjson=/dev/stdin'
+check "pull secret: the copy command is shown" out_has 'create secret docker-registry pull-test --from-file=\.dockerconfigjson=/dev/stdin'
 
 run "pull secret copy" STUB_PULL_SECRET=no COPY_PULL_SECRET=1 SKIP_BUILD=1 && {
-  check "pull secret: read from keycloak" log_has '^kubectl --context mine -n keycloak get secret cr-homel4b -o jsonpath=\{\.data\.\\\.dockerconfigjson\}'
-  check "pull secret: created from stdin" log_has '^kubectl --context mine -n lotties-app-production create secret docker-registry cr-homel4b --from-file=\.dockerconfigjson=/dev/stdin'
+  check "pull secret: read from the source namespace" log_has '^kubectl --context mine -n shared-ns get secret pull-test -o jsonpath=\{\.data\.\\\.dockerconfigjson\}'
+  check "pull secret: created from stdin" log_has '^kubectl --context mine -n lotties-app-production create secret docker-registry pull-test --from-file=\.dockerconfigjson=/dev/stdin'
   check "skip build: nothing is built" log_lacks '^podman build'
 }
 
@@ -294,5 +299,31 @@ run "native app origins" CORS_ALLOWED_ORIGINS=https://lotties.app,https://localh
 
 EXPECT_FAIL=1 run "bad CORS origin" CORS_ALLOWED_ORIGINS='https://lotties.app/app, https://localhost' SKIP_BUILD=1
 check "CORS: a path or a space is refused" out_has 'CORS_ALLOWED_ORIGINS must be comma-separated origins'
+
+# The cluster-specific settings have no defaults: without them the run stops before calling anything.
+: > "$WORK/log"
+env -i PATH="$WORK/bin:$PATH" HOME="$WORK" STUB_LOG="$WORK/log" ENV_FILE="$WORK/app.env" TAG_RELEASE=0 SKIP_BUILD=1 \
+  bash "$DEPLOY" > "$WORK/out" 2>&1 < /dev/null
+RUN_CODE=$?
+check "deploy settings: none set stops the run" bash -c "[ $RUN_CODE -ne 0 ]"
+check "deploy settings: every missing one is named" \
+  out_has 'missing deploy settings: REGISTRY KUBE_CONTEXT INGRESS_CLASS PULL_SECRET CLUSTER_ISSUER \(set it empty for no certificate\)'
+check "deploy settings: nothing is called before the check" bash -c "[ ! -s '$WORK/log' ]"
+
+EXPECT_FAIL=1 run "registry placeholder" REGISTRY='<registry-host>/<project>' SKIP_BUILD=1
+check "deploy settings: the .env.example placeholder is refused" out_has 'REGISTRY is still the \.env\.example placeholder'
+
+EXPECT_FAIL=1 run "bad registry" REGISTRY='https://reg.test/lotties' SKIP_BUILD=1
+check "deploy settings: a registry with a scheme is refused" out_has "REGISTRY 'https://reg\.test/lotties' must be"
+
+EXPECT_FAIL=1 run "pull secret missing, no source namespace" STUB_PULL_SECRET=no PULL_SECRET_SOURCE_NS= SKIP_BUILD=1
+check "pull secret: without a source namespace a missing one stops the run" bash -c "[ $RUN_CODE -ne 0 ]"
+check "pull secret: the create command is shown" out_has 'create secret docker-registry pull-test --from-file=\.dockerconfigjson=\./pull-auth\.json'
+check "pull secret: nothing is copied" log_lacks ' -n shared-ns '
+
+run "no issuer, no source namespace, dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered-bare" CLUSTER_ISSUER= PULL_SECRET_SOURCE_NS= \
+  STUB_PULL_SECRET=no SKIP_BUILD=1 && {
+  check "dry run: a missing pull Secret without a source is a warning" out_has 'warning: Secret pull-test is missing in lotties-app-production'
+}
 
 exit "$FAILED"

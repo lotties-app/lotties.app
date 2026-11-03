@@ -1,8 +1,6 @@
 # The web app (React SPA served by nginx-unprivileged, image lotties-web built from code/web/Dockerfile). The OIDC
 # settings are baked in at build time (VITE_* build arguments). The Ingress sends everything but /api here.
-# Set by deploy.sh: image, API_UPSTREAM.
-imagePullSecrets:
-  - name: cr-homel4b
+# Set by deploy.sh: image, imagePullSecrets (PULL_SECRET), API_UPSTREAM.
 
 # nginx-unprivileged runs as 101 and listens on 8080.
 runAsUser: 101
