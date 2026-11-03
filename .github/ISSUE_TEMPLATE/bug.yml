@@ -1,0 +1,91 @@
+name: Bug report
+description: Something in Lotties does not work as expected
+title: "[screen] summary"
+labels: ["bug", "needs-triage"]
+body:
+  - type: checkboxes
+    id: no_personal_data
+    attributes:
+      label: Before you write
+      description: >-
+        Issues are public. Security problems go through the private report link on the issue chooser,
+        never here.
+      options:
+        - label: >-
+            I did not include my baby's name, photos, health records or anyone's personal data
+            (issues are public)
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        When you came here from "Report a problem" in the app, the version, platform, language and screen are already
+        filled in. Check them and describe what went wrong. Use made-up data in examples and screenshots.
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened
+      description: What you did and what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: One step per line, starting from the screen below.
+      placeholder: |
+        1. Open the timeline
+        2. Tap the bottle button
+        3. ...
+  - type: input
+    id: screen
+    attributes:
+      label: Screen
+      description: The screen or route where it happened, for example /timeline or Hub > Medicines.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown on the About page, for example v0.1.54.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Web browser
+        - iOS app
+        - Android app
+        - Other
+  - type: input
+    id: browser_device
+    attributes:
+      label: Browser or device
+      description: For example iPhone 15 / iOS 18 / Safari, Android 15 / Chrome 130, or the installed web app.
+  - type: dropdown
+    id: language
+    attributes:
+      label: App language
+      options:
+        - en
+        - pt-BR
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often
+      options:
+        - Every time
+        - Sometimes
+        - Once
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - I could not log an event
+        - It gets in the way
+        - Small detail

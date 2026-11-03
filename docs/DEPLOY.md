@@ -427,12 +427,20 @@ public web build value and hidden when it is unset:
 | Link | Value | Default |
 |------|-------|---------|
 | Source code on GitHub | `VITE_REPO_URL` | hidden |
-| Report a problem | `VITE_ISSUES_URL` | `VITE_REPO_URL` + `/issues/new`; else `mailto:` `VITE_PRIVACY_CONTACT_EMAIL` (subject and the app version only); else hidden |
+| Report a problem | `VITE_ISSUES_URL` | `VITE_REPO_URL` + `/issues/new`; else `mailto:` `VITE_PRIVACY_CONTACT_EMAIL` (subject and the app version only); else hidden. A github.com new-issue page opens the prefilled bug form (below) |
 | Support the developer | `VITE_SUPPORT_URL` | hidden |
 | Voice assistant commands | none (the public page `/voice-commands`) | always shown |
 
-Only http/https addresses are accepted (anything else hides the link). The addresses carry no user or baby data: the
-GitHub link is the bare new-issue page. While the repository is private, leave `VITE_REPO_URL` empty; at the public
+Only http/https addresses are accepted (anything else hides the link). The addresses carry no user or baby data. When
+the "Report a problem" address is a GitHub new-issue page (`https://github.com/<owner>/<repo>/issues/new`, from
+`VITE_ISSUES_URL` or derived from `VITE_REPO_URL`), the link opens the bug form `.github/ISSUE_TEMPLATE/bug.yml` with
+four fields prefilled from the query string: `template=bug.yml&version=<app version>&platform=<Web browser|iOS app|Android app>&language=<en|pt-BR>&screen=<route path>`.
+The route path has no query or hash and every segment that is not a plain route word (an id, a number, a token)
+becomes `:id`; nothing else is added (no account, baby, name, token or event). Any other address is used as is. The
+four values travel only in the link the person opens; the person reviews the form and submits it on github.com, and
+Lotties itself makes no request to GitHub. The form only works
+once the repository is public; to try it before, copy `.github/ISSUE_TEMPLATE/` to a throwaway public repository and
+open `https://github.com/<you>/<throwaway>/issues/new?template=bug.yml&version=v0.0.0&platform=iOS%20app&language=en&screen=%2Fhub`. While the repository is private, leave `VITE_REPO_URL` empty; at the public
 flip set it (and, if wanted, `VITE_SUPPORT_URL`) in `deploy/homelab/.env` and redeploy: the changed values rebuild the
 web image. They reach the bundle like the privacy values above (compose build args, the web `Dockerfile`,
 `deploy/homelab/deploy.sh`, `code/web/.env.native.local` for the native build).
