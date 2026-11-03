@@ -6,6 +6,7 @@ import { readBuildInfo } from '../config/buildInfo';
 import { useServerVersion } from '../config/serverVersion';
 import { displayVersion, shortCommit, type VersionStamp } from '../config/versionInfo';
 import { formatDateTime } from '../i18n/format';
+import { newTabFor, problemReportUrl, supportUrl } from '../landing/outboundLinks';
 import { repoUrl } from '../landing/repoUrl';
 import { applyUpdate, useUpdateSnapshot } from '../pwa/updateStore';
 import { RADIUS } from '../theme/tokens';
@@ -85,6 +86,8 @@ function UpdateReady() {
   );
 }
 
+const LINK_SX = { minHeight: 44, display: 'inline-flex', alignItems: 'center' } as const;
+
 const SERVER_STATUS_KEY = {
   loading: 'hub.about.serverLoading',
   unavailable: 'hub.about.serverUnavailable',
@@ -94,7 +97,9 @@ const SERVER_STATUS_KEY = {
  * Hub > About: what this device runs and what the server runs (release, commit, build time, stamped
  * by the deploy), the reload when a new app version is waiting, a neutral note when the two differ
  * (the deploy rebuilds only the image that changed), "Copy version info" for bug reports, and the
- * licence. The server's version loads after the screen, with a short timeout.
+ * licence, then credits, privacy, source, "Report a problem" and "Support Lotties" (the last
+ * three only when configured, src/landing/outboundLinks.ts). The server's version loads after the
+ * screen, with a short timeout.
  */
 export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
   const { t } = useTranslation();
@@ -110,6 +115,11 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
   const report = t('hub.about.report', {
     app: reportPart(app),
     server: server.status === 'ok' ? reportPart(server.stamp) : t('hub.about.serverUnavailable'),
+  });
+  const support = supportUrl();
+  const problem = problemReportUrl(undefined, {
+    subject: t('hub.about.reportSubject'),
+    body: `Lotties ${displayVersion(app.version)}`,
   });
   const copy = async () => setCopied((await copyText(report)) ? 'yes' : 'failed');
 
@@ -160,6 +170,16 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
             sx={{ minHeight: 44, display: 'inline-flex', alignItems: 'center' }}
           >
             {t('hub.about.source')}
+          </Link>
+        )}
+        {problem && (
+          <Link href={problem} {...newTabFor(problem)} sx={LINK_SX}>
+            {t('hub.about.reportProblem')}
+          </Link>
+        )}
+        {support && (
+          <Link href={support} {...newTabFor(support)} sx={LINK_SX}>
+            {t('hub.about.support')}
           </Link>
         )}
       </Stack>

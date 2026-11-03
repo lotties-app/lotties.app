@@ -2,7 +2,8 @@
 
 What each voice assistant understands, what Lotties does and what you hear back. The same list is in the app:
 **Settings > Voice assistants > Voice commands** (`/settings/voice-commands`), one tab per assistant, in English and
-Portuguese. Everything here is taken from the code (sources at the end); the drift test
+Portuguese, and on the public page `/voice-commands` (no sign-in, linked from the landing footer; same screen and
+catalog). Everything here is taken from the code (sources at the end); the drift test
 `code/web/src/assistants/voiceCommands.test.ts` fails when an Alexa intent, a Siri phrase, an Android shortcut or an
 MCP tool is added or removed without updating the in-app list.
 

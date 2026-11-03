@@ -30,8 +30,8 @@
 #   DRY_RUN=1       Builds, pushes, creates and installs nothing. Renders the manifests into DRY_RUN_DIR (default: a new
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
-# App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL and VITE_PRIVACY_* (public,
-# baked into the web image), DB_*, PUSH_VAPID_* and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL, VITE_ISSUES_URL,
+# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_* and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
 # CORS_ALLOWED_ORIGINS.
 #
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
@@ -96,6 +96,7 @@ web_build_salt() {
     "$VITE_API_BASE_URL" "$VITE_OIDC_AUTHORITY" "$VITE_OIDC_CLIENT_ID" "$VITE_OIDC_AUDIENCE" "$VITE_REPO_URL"
   printf 'VITE_PRIVACY_CONTROLLER_NAME=%s\nVITE_PRIVACY_CONTACT_EMAIL=%s\nVITE_PRIVACY_DPO=%s\n' \
     "$VITE_PRIVACY_CONTROLLER_NAME" "$VITE_PRIVACY_CONTACT_EMAIL" "$VITE_PRIVACY_DPO"
+  printf 'VITE_ISSUES_URL=%s\nVITE_SUPPORT_URL=%s\n' "$VITE_ISSUES_URL" "$VITE_SUPPORT_URL"
 }
 
 # The next release X.Y.Z (no v) after the tags on standard input; only vX.Y.Z tags count, none at all gives 1.0.0.
@@ -171,6 +172,9 @@ configure() {
   VITE_OIDC_AUDIENCE=${VITE_OIDC_AUDIENCE:-}
   VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
   VITE_REPO_URL=${VITE_REPO_URL:-}
+  # Footer links (public; empty = the default report link, or hidden; docs/DEPLOY.md).
+  VITE_ISSUES_URL=${VITE_ISSUES_URL:-}
+  VITE_SUPPORT_URL=${VITE_SUPPORT_URL:-}
   # Privacy policy contacts (public; empty = the policy's defaults, docs/PRIVACY-OWNER-CHECKLIST.md).
   VITE_PRIVACY_CONTROLLER_NAME=${VITE_PRIVACY_CONTROLLER_NAME:-}
   VITE_PRIVACY_CONTACT_EMAIL=${VITE_PRIVACY_CONTACT_EMAIL:-}
@@ -430,6 +434,8 @@ images() {
     --build-arg "VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID" \
     --build-arg "VITE_OIDC_AUDIENCE=$VITE_OIDC_AUDIENCE" \
     --build-arg "VITE_REPO_URL=$VITE_REPO_URL" \
+    --build-arg "VITE_ISSUES_URL=$VITE_ISSUES_URL" \
+    --build-arg "VITE_SUPPORT_URL=$VITE_SUPPORT_URL" \
     --build-arg "VITE_PRIVACY_CONTROLLER_NAME=$VITE_PRIVACY_CONTROLLER_NAME" \
     --build-arg "VITE_PRIVACY_CONTACT_EMAIL=$VITE_PRIVACY_CONTACT_EMAIL" \
     --build-arg "VITE_PRIVACY_DPO=$VITE_PRIVACY_DPO"

@@ -198,7 +198,10 @@
       "licenseValue": "Software livre, AGPL-3.0",
       "source": "Código-fonte",
       "credits": "Feito sobre software livre. Créditos e licenças",
-      "privacy": "Política de privacidade"
+      "privacy": "Política de privacidade",
+      "reportProblem": "Relatar um problema",
+      "reportSubject": "Lotties: um problema",
+      "support": "Apoie o Lotties"
     }
   }
 }

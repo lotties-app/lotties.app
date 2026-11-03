@@ -292,6 +292,27 @@ describe('About', () => {
     vi.unstubAllEnvs();
   });
 
+  it('has report-a-problem and support links only when configured', () => {
+    vi.stubEnv('VITE_REPO_URL', '');
+    vi.stubEnv('VITE_ISSUES_URL', '');
+    vi.stubEnv('VITE_SUPPORT_URL', '');
+    vi.stubEnv('VITE_PRIVACY_CONTACT_EMAIL', '');
+    const { unmount } = renderScreen(<AboutScreen />);
+    expect(screen.queryByRole('link', { name: 'Report a problem' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Support Lotties' })).toBeNull();
+    unmount();
+    vi.stubEnv('VITE_ISSUES_URL', 'https://example.org/issues/new');
+    vi.stubEnv('VITE_SUPPORT_URL', 'https://example.org/sponsor');
+    renderScreen(<AboutScreen />);
+    expect(screen.getByRole('link', { name: 'Report a problem' }).getAttribute('href')).toBe(
+      'https://example.org/issues/new',
+    );
+    const support = screen.getByRole('link', { name: 'Support Lotties' });
+    expect(support.getAttribute('href')).toBe('https://example.org/sponsor');
+    expect(support.getAttribute('rel')).toBe('noopener noreferrer');
+    vi.unstubAllEnvs();
+  });
+
   it('has no source link without a repository address', () => {
     vi.stubEnv('VITE_REPO_URL', '');
     renderScreen(<AboutScreen />);

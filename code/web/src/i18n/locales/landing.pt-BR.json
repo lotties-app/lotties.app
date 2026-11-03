@@ -86,12 +86,17 @@
     "themeLight": "Claro",
     "themeDark": "Escuro",
     "source": "Código-fonte",
+    "sourceGithub": "Código-fonte no GitHub",
     "licence": "Software livre e de código aberto, sob a licença AGPL-3.0.",
     "notMedical": "Não é um dispositivo médico.",
     "credits": "Créditos e licenças",
     "selfHost": "Rode por conta própria",
     "privacy": "Política de privacidade",
-    "terms": "Termos de uso"
+    "terms": "Termos de uso",
+    "voiceCommands": "Comandos de voz dos assistentes",
+    "reportProblem": "Relatar um problema",
+    "reportSubject": "Lotties: um problema",
+    "support": "Apoie o Lotties"
   },
   "beta": {
     "notice": "O Lotties está em fase de teste. Leia os [Termos de Uso](/terms)."
