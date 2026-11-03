@@ -6,8 +6,9 @@ import { readBuildInfo } from '../config/buildInfo';
 import { useServerVersion } from '../config/serverVersion';
 import { displayVersion, shortCommit, type VersionStamp } from '../config/versionInfo';
 import { formatDateTime } from '../i18n/format';
-import { newTabFor, problemReportUrl, supportUrl } from '../landing/outboundLinks';
+import { newTabFor, supportUrl } from '../landing/outboundLinks';
 import { repoUrl } from '../landing/repoUrl';
+import { useProblemReportUrl } from '../landing/useProblemReportUrl';
 import { applyUpdate, useUpdateSnapshot } from '../pwa/updateStore';
 import { RADIUS } from '../theme/tokens';
 import { isNativeApp } from '../platform/nativeApp';
@@ -117,10 +118,7 @@ export function AboutScreen({ basePath = '/hub' }: { basePath?: string }) {
     server: server.status === 'ok' ? reportPart(server.stamp) : t('hub.about.serverUnavailable'),
   });
   const support = supportUrl();
-  const problem = problemReportUrl(undefined, {
-    subject: t('hub.about.reportSubject'),
-    body: `Lotties ${displayVersion(app.version)}`,
-  });
+  const problem = useProblemReportUrl(t('hub.about.reportSubject'));
   const copy = async () => setCopied((await copyText(report)) ? 'yes' : 'failed');
 
   return (
