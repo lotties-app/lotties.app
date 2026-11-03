@@ -251,12 +251,15 @@ describe('LandingPage', () => {
       expect(within(box).queryByRole('link', { name: 'Support the developer' })).toBeNull();
     });
 
-    it('labels a GitHub repository and derives the new-issue page from it', async () => {
+    it('labels a GitHub repository and derives the prefilled bug form from it', async () => {
       const box = await footer({ VITE_REPO_URL: 'https://github.com/example/lotties' });
       const source = within(box).getByRole('link', { name: 'Source code on GitHub' });
       expect(source.getAttribute('href')).toBe('https://github.com/example/lotties');
       const report = within(box).getByRole('link', { name: 'Report a problem' });
-      expect(report.getAttribute('href')).toBe('https://github.com/example/lotties/issues/new');
+      expect(report.getAttribute('href')).toBe(
+        'https://github.com/example/lotties/issues/new?template=bug.yml&version=dev' +
+          '&platform=Web%20browser&language=en&screen=%2F',
+      );
       expect(report.getAttribute('target')).toBe('_blank');
       expect(report.getAttribute('rel')).toBe('noopener noreferrer');
       expect(source.closest('nav')?.getAttribute('aria-labelledby')).toBe('landing-footer-project');

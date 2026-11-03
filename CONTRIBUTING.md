@@ -14,6 +14,6 @@ Thanks for helping out.
 4. Never commit secrets. `.env` is gitignored; use `.env.example` for placeholders.
 5. Project docs and specs live under `docs/`. See `docs/SPEC.md` and `docs/agents/PLAN.md`; deployment is in `docs/DEPLOY.md`.
 
-Security problems: see `SECURITY.md` (private report, never a public issue). Labels and triage: `docs/TRIAGE.md`.
+Security problems: see `SECURITY.md` (private report, never a public issue). Labels and triage: `docs/TRIAGE.md`; AI agents resolving an issue: `docs/agents/ISSUE-TRIAGE.md`.
 
 By contributing you agree that your contributions are licensed under AGPL-3.0.

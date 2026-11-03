@@ -4,8 +4,6 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, Divider, Link, Stack, Typography } from '@mui/material';
 import { isLocalePreference, LOCALES, type LocalePreference } from '../i18n/config';
 import { useLocale } from '../i18n/useLocale';
-import { readBuildInfo } from '../config/buildInfo';
-import { displayVersion } from '../config/versionInfo';
 import { useInstallState } from '../install/useInstallState';
 import { useThemeMode } from '../theme/ThemeModeContext';
 import type { ThemeMode } from '../theme/theme';
@@ -13,8 +11,9 @@ import { SegmentedControl } from '../ui/form';
 import { VersionLine } from '../ui/VersionLine';
 import { BetaNotice } from './BetaNotice';
 import { PAGE_WIDTH } from './features';
-import { newTabFor, problemReportUrl, supportUrl } from './outboundLinks';
+import { newTabFor, supportUrl } from './outboundLinks';
 import { repoUrl } from './repoUrl';
+import { useProblemReportUrl } from './useProblemReportUrl';
 
 const THEME_OPTIONS = [
   { value: 'system', key: 'footer.themeSystem' },
@@ -93,10 +92,7 @@ export function LandingFooter() {
   const { mode, setMode } = useThemeMode();
   const source = repoUrl();
   const support = supportUrl();
-  const report = problemReportUrl(undefined, {
-    subject: t('footer.reportSubject'),
-    body: `Lotties ${displayVersion(readBuildInfo().version)}`,
-  });
+  const report = useProblemReportUrl(t('footer.reportSubject'));
   const languages: { value: LocalePreference; label: string }[] = [
     { value: 'system', label: t('footer.languageSystem') },
     ...LOCALES.map((l) => ({

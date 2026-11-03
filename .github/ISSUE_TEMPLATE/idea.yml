@@ -1,0 +1,38 @@
+name: Idea or feature request
+description: Suggest something new or an improvement
+title: "[idea] summary"
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: checkboxes
+    id: no_personal_data
+    attributes:
+      label: Before you write
+      options:
+        - label: >-
+            I did not include my baby's name, photos, health records or anyone's personal data
+            (issues are public)
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: wanted_behavior
+    attributes:
+      label: What you would like
+      description: How it should work. Alternatives you considered are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: who_benefits
+    attributes:
+      label: Who benefits
+      description: For example parents at night feeds, caregivers, a doctor reading the log, self-hosters.
+  - type: markdown
+    attributes:
+      value: >-
+        Lotties shows facts and logged data, never medical advice or doses. Ideas that need clinical claims are
+        discussed before any work.

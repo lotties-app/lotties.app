@@ -152,7 +152,11 @@ describe('landing and sign-in routing', () => {
     renderWithDb(db, <AppRoutes />, { auth });
 
     expect(await screen.findByRole('heading', { level: 1, name: HEADLINE })).toBeTruthy();
-    expect(screen.queryByRole('navigation')).toBeNull();
+    // The footer's link groups are navigation landmarks; the app shell's navigation must not show.
+    const landmarks = screen
+      .queryAllByRole('navigation')
+      .map((n) => n.getAttribute('aria-labelledby'));
+    expect(landmarks.every((id) => id?.startsWith('landing-footer'))).toBe(true);
     expect(auth.login).not.toHaveBeenCalled();
   });
 
