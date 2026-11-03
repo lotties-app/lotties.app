@@ -27,12 +27,21 @@ interface LottiesSharedPlugin {
   diagnose(): Promise<{ container: boolean; snapshotBytes: number; outboxBytes: number }>;
 }
 
-let plugin: Promise<LottiesSharedPlugin> | undefined;
+/**
+ * The plugin sits in an object on purpose: a promise that resolves with Capacitor's plugin proxy reads its `then`,
+ * and the proxy answers that as a call to a native method named "then", which never settles (on Android
+ * `LottiesShared.then()` is not implemented; on iOS this is the "never answered on device" below).
+ */
+interface Loaded {
+  native: LottiesSharedPlugin;
+}
 
-function load(): Promise<LottiesSharedPlugin> {
-  plugin ??= import('@capacitor/core').then(({ registerPlugin }) =>
-    registerPlugin<LottiesSharedPlugin>('LottiesShared'),
-  );
+let plugin: Promise<Loaded> | undefined;
+
+function load(): Promise<Loaded> {
+  plugin ??= import('@capacitor/core').then(({ registerPlugin }) => ({
+    native: registerPlugin<LottiesSharedPlugin>('LottiesShared'),
+  }));
   return plugin;
 }
 
@@ -49,7 +58,7 @@ async function call<T>(
     );
   });
   try {
-    return await Promise.race([load().then(run), timeout]);
+    return await Promise.race([load().then(({ native }) => run(native)), timeout]);
   } finally {
     clearTimeout(timer);
   }

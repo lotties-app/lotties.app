@@ -72,4 +72,23 @@ describe('Voice on Android bridge', () => {
     expect(await siriBridge.status()).toBe(false); // no WebKit handler in the test DOM
     expect(plugin.status).not.toHaveBeenCalled();
   });
+
+  it('works with a Capacitor plugin proxy whose `then` is a native call that never answers', async () => {
+    // registerPlugin's proxy turns `.then` into a call to a native method "then"; resolving a promise with the proxy
+    // itself would wait for it forever (the Connect button stayed grey).
+    const proxy = {
+      then: vi.fn(() => undefined),
+      status: vi.fn(async () => ({ connected: true })),
+    };
+    vi.resetModules();
+    vi.doMock('@capacitor/core', () => ({ registerPlugin: () => proxy }));
+    try {
+      const fresh = await import('./androidVoiceBridge');
+      expect(await fresh.androidVoiceBridge.status()).toBe(true);
+      expect(proxy.then).not.toHaveBeenCalled();
+    } finally {
+      vi.doUnmock('@capacitor/core');
+      vi.resetModules();
+    }
+  });
 });

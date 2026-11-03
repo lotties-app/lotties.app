@@ -21,18 +21,26 @@ export interface LottiesVoicePlugin {
   disconnect(): Promise<Connected>;
 }
 
-let plugin: Promise<LottiesVoicePlugin> | undefined;
+/**
+ * The plugin sits in an object on purpose: a promise that resolves with Capacitor's plugin proxy reads its `then`,
+ * and the proxy answers that as a call to a native method named "then", which never settles (the sign-in hung).
+ */
+interface Loaded {
+  native: LottiesVoicePlugin;
+}
 
-function load(): Promise<LottiesVoicePlugin> {
-  plugin ??= import('@capacitor/core').then(({ registerPlugin }) =>
-    registerPlugin<LottiesVoicePlugin>('LottiesVoice'),
-  );
+let plugin: Promise<Loaded> | undefined;
+
+function load(): Promise<Loaded> {
+  plugin ??= import('@capacitor/core').then(({ registerPlugin }) => ({
+    native: registerPlugin<LottiesVoicePlugin>('LottiesVoice'),
+  }));
   return plugin;
 }
 
 /** Test seam: the next calls use `fake` (null goes back to the real plugin). */
 export function setVoicePluginForTests(fake: LottiesVoicePlugin | null): void {
-  plugin = fake ? Promise.resolve(fake) : undefined;
+  plugin = fake ? Promise.resolve({ native: fake }) : undefined;
 }
 
 /** A native call that never answers must become an error, not a promise that hangs. */
@@ -49,7 +57,7 @@ async function call<T>(
     );
   });
   try {
-    return await Promise.race([load().then(run), timeout]);
+    return await Promise.race([load().then(({ native }) => run(native)), timeout]);
   } finally {
     clearTimeout(timer);
   }
