@@ -52,7 +52,7 @@
     },
     "siri": {
       "title": "Siri and Shortcuts",
-      "intro": "Ask Siri, or use the Shortcuts app, to log and ask about your baby with your voice, with the same questions and answers as the Alexa skill (for example \"Log a diaper in Lotties\", \"When was the last feed in Lotties\"). Siri signs in to Lotties once, here, and then works like the AI assistants below: it can read your baby's log and, only if you allow it, log events.",
+      "intro": "Ask Siri, or use the Shortcuts app, to log and ask about your baby with your voice, with the same questions and answers as the Alexa skill (for example \"Log a diaper in Lotties\", \"Ask last feed in Lotties\"). Siri signs in to Lotties once, here, and then works like the AI assistants below: it can read your baby's log and, only if you allow it, log events.",
       "connect": "Connect Siri",
       "disconnect": "Disconnect Siri",
       "connected": "Siri is connected on this iPhone.",

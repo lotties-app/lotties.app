@@ -32,6 +32,7 @@ const HubBackupImportPage = hubSubPage('HubBackupImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
 const HubCreditsPage = hubSubPage('HubCreditsPage');
+const HubVoiceCommandsPage = hubSubPage('HubVoiceCommandsPage');
 const HubInstallPage = hubSubPage('HubInstallPage');
 const HubPrivacyPage = hubSubPage('HubPrivacyPage');
 // The cry monitor's page is its own chunk; the engine loads only when monitoring starts.
@@ -386,6 +387,7 @@ export function AppRoutes() {
               <Route path="hub/install" element={<HubInstallPage />} />
               <Route path="hub/privacy" element={<HubPrivacyPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="settings/voice-commands" element={<HubVoiceCommandsPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="vaccines" element={<VaccinesPage />} />
               <Route path="vaccines/card" element={<VaccinationCardPage />} />

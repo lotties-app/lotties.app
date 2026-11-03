@@ -1,0 +1,325 @@
+{
+  "voiceCommands": {
+    "title": "Voice commands",
+    "back": "Back to Settings",
+    "open": "Voice commands: what you can say",
+    "openHint": "Every phrase Siri, Alexa and Android understand, what it does and what you hear back.",
+    "intro": "What you can say to each voice assistant, what Lotties does and what you hear back. Answers are facts from your baby's own log, never medical advice. Times and amounts in the examples are made up.",
+    "tabsLabel": "Voice assistant",
+    "tabs": {
+      "siri": "Siri",
+      "alexa": "Alexa",
+      "android": "Android"
+    },
+    "status": {
+      "siri": "iPhone only, in the Lotties app: connect Siri first in Settings, Voice assistants. Siri understands only the phrases below, ending in “in Lotties”; every other action is in the Shortcuts app.",
+      "alexa": "Works on Alexa devices and the Alexa app once the Lotties skill is available to you and you link your Lotties account in the Alexa app. The night panel needs an Echo with a screen.",
+      "android": "Android only, in the Lotties app: connect voice first in Settings, Voice assistants. Touch and hold the Lotties icon to see these shortcuts, or add one to your home screen. Saying “Hey Google, open wet diaper in Lotties” depends on Google and is not confirmed to work; on phones where Gemini replaced Google Assistant it may not work at all."
+    },
+    "start": {
+      "siri": "Say “Hey Siri” (or hold the side button), then the phrase. Siri asks for numbers, such as ml, minutes or a temperature, after the phrase.",
+      "alexa": "Say “Alexa, open lotties” and then the phrase, or all at once: “Alexa, tell lotties the baby fell asleep”.",
+      "android": "Tap a shortcut. When it needs a choice (amount, activity, question), Lotties shows a list, then shows the answer and reads it aloud. Started from Google Assistant, a log asks you to confirm with one tap."
+    },
+    "labels": {
+      "say": "Say",
+      "shortcut": "Shortcut",
+      "does": "What it does",
+      "answer": "What you hear (example)"
+    },
+    "topics": {
+      "log": "Log",
+      "ask": "Ask",
+      "undo": "Undo",
+      "medication": "Medicines"
+    },
+    "safety": {
+      "title": "Good to know",
+      "facts": "Answers are facts and estimates from your own log, never a diagnosis or medical advice.",
+      "cry": "The answer to “why is the baby crying” always ends with the signs for which to call your pediatrician or emergency services.",
+      "medication": "No assistant ever computes, checks or suggests a dose, or says an amount of medicine. Only Alexa can record that a dose of a medicine you registered was given, and read your own reminders; those reminder answers end with “these are reminders of the medicines you registered in Lotties, not recommendations from Lotties”.",
+      "names": "Answers say “the baby” unless you turn on “Say my baby's name in answers”, and medicine names only if you turn on “Say the names of my medicines in answers”. Nothing anyone typed, such as notes, appointment titles or a doctor's name, is ever said.",
+      "undo": "“Undo” never deletes: it asks to delete the last entry that same assistant logged in the last 30 minutes, and you approve it or keep it in the app.",
+      "internet": "Voice needs an internet connection: when Lotties can't be reached, nothing is logged.",
+      "baby": "With more than one baby, choose the one voice commands are about in Settings, Voice assistants."
+    },
+    "say": {
+      "siriDiaper": "“Log a wet diaper in Lotties” (wet, dirty or both). “Log a diaper in Lotties” or “Diaper change in Lotties” logs a wet one.",
+      "siriBottle": "“Log a bottle in Lotties”",
+      "siriBreastfeed": "“Start a breastfeed in Lotties”",
+      "siriSleep": "“Baby fell asleep in Lotties” or “Baby woke up in Lotties”",
+      "siriActivity": "“Log bath in Lotties” or “Start tummy time in Lotties” (bath, tummy time, belly massage, nasal suction, nail trim, skin care, outdoor time, fussy, spit-up, teething, breast pump)",
+      "siriHealth": "“Log temperature in Lotties” (temperature, symptom or belly pain)",
+      "siriAsk": "“Ask last feed in Lotties” (last feed, next nap window, next feed, next diaper change, last diaper, diapers today, bottles today, feeds today, sleep today, day summary, week summary, next appointment, vaccines due)",
+      "siriShortcuts": "No phrase: find Lotties in the Shortcuts app",
+      "siriUndo": "“Undo the last entry in Lotties”",
+      "noMedication": "Nothing: there is no medicine command",
+      "alexaSleepStart": "“The baby fell asleep”",
+      "alexaSleepEnd": "“The baby woke up”",
+      "alexaBottle": "“Log a 120 ml bottle of formula” (or ounces, or breast milk)",
+      "alexaNursing": "“Start nursing on the left side”",
+      "alexaDiaper": "“Log a wet diaper” (wet, dirty or both)",
+      "alexaBath": "“Log a bath” or “Water was 37 degrees”",
+      "alexaTummyTime": "“Start tummy time” or “Log 15 minutes of tummy time”",
+      "alexaBreastPump": "“Start pumping” or “Pumped 100 ml on the left”",
+      "alexaBellyMassage": "“Log belly massage” or “Belly massage for 10 minutes”",
+      "alexaFussy": "“She's fussy” or “She was fussy for 20 minutes”",
+      "alexaOutdoor": "“Went outside” or “Log 30 minutes of outdoor time”",
+      "alexaNasalSuction": "“Used the nasal aspirator”",
+      "alexaNailTrim": "“Trimmed her nails”",
+      "alexaSkinCare": "“Put on diaper cream”",
+      "alexaSpitUp": "“She spit up”",
+      "alexaTeething": "“She's teething”",
+      "alexaMilestone": "“She rolled over” or “Baby smiled for the first time”",
+      "alexaSymptom": "“She has a cough” (cough, runny nose, congestion, rash, diarrhea, constipation)",
+      "alexaTemperature": "“Her temperature is 37.5”",
+      "alexaBellyPain": "“Belly pain level 3”",
+      "alexaLastFeed": "“When was the last feed?”",
+      "alexaLastDiaper": "“When was the last diaper change?”",
+      "alexaSleepStatus": "“Is the baby sleeping?”",
+      "alexaDiapersToday": "“How many diapers today?”",
+      "alexaFeedsToday": "“How many feeds today?”",
+      "alexaBottleToday": "“How much did she drink today?”",
+      "alexaSleepToday": "“How much did she sleep today?”",
+      "alexaDaySummary": "“How was her day?”",
+      "alexaWeekSummary": "“How was her week?”",
+      "alexaNextNap": "“When is the next nap?”",
+      "alexaNextFeed": "“When is the next feed?”",
+      "alexaNextDiaper": "“When is the next diaper change?”",
+      "alexaDiapersAverage": "“How many diapers does she use a day?”",
+      "alexaBottleAverage": "“How much does she usually drink?”",
+      "alexaNextAppointment": "“When is the next appointment?”",
+      "alexaDueVaccines": "“Which vaccines are due?”",
+      "alexaCryReasons": "“Why is the baby crying?”",
+      "alexaBabyProfile": "“How old is the baby?”",
+      "alexaListBabies": "“List my babies”",
+      "alexaSetBaby": "“Switch baby”",
+      "alexaPanel": "“Show the night panel”",
+      "alexaUndo": "“Undo the last entry”",
+      "alexaMedicationLog": "“Gave her …” and the medicine's name as registered in Lotties",
+      "alexaMedicationReminder": "“Is any medicine due?”",
+      "androidDiaperWet": "Log a wet diaper",
+      "androidDiaperDirty": "Log a dirty diaper",
+      "androidDiaperBoth": "Log a wet+dirty diaper",
+      "androidBottle": "Log a bottle",
+      "androidBreastfeed": "Start a breastfeed",
+      "androidFellAsleep": "Baby fell asleep",
+      "androidWokeUp": "Baby woke up",
+      "androidActivity": "Log an activity",
+      "androidHealth": "Log a health item",
+      "androidAskLastFeed": "When was the last feed?",
+      "androidAsk": "Ask about the baby",
+      "androidUndo": "Undo the last entry"
+    },
+    "actions": {
+      "sleepStart": {
+        "does": "Starts a sleep timer now (nap or night by the app's rule). If a sleep is already running, nothing changes.",
+        "answer": "Got it. The baby fell asleep at 1:10 PM."
+      },
+      "sleepEnd": {
+        "does": "Ends the running sleep now and logs the wake-up.",
+        "answer": "The baby woke up at 2:25 PM, after sleeping 1 hour and 15 minutes."
+      },
+      "sleepChange": {
+        "does": "“Fell asleep” starts a sleep timer now; “woke up” ends the running sleep and logs the wake-up.",
+        "answer": "Got it. The baby fell asleep at 1:10 PM."
+      },
+      "bottle": {
+        "does": "Logs a bottle given now, in ml or ounces, and formula or breast milk if you say it. A formula bottle names the baby's current formula when one is set. With “Time bottle feedings” on, it starts a bottle timer instead.",
+        "answer": "Logged a 120 ml bottle of formula at 3:15 PM for the baby."
+      },
+      "bottleSiri": {
+        "does": "Siri asks “How many ml?”, then logs a formula bottle given now. With “Time bottle feedings” on, it starts a bottle timer instead.",
+        "answer": "Logged a 120 ml bottle of formula at 3:15 PM for the baby."
+      },
+      "bottleAndroid": {
+        "does": "Pick the amount (30 to 240 ml), then it logs a bottle given now, without saying what it held. With “Time bottle feedings” on, it starts a bottle timer instead.",
+        "answer": "Logged a 120 ml bottle at 3:15 PM for the baby."
+      },
+      "nursing": {
+        "does": "Starts a nursing timer now; stop it in the app. The side is the opposite of where the last feed ended, unless you say one (Alexa only).",
+        "answer": "Nursing started on the left side for the baby at 3:15 PM."
+      },
+      "diaper": {
+        "does": "Logs a diaper changed now: wet, dirty or both.",
+        "answer": "Logged a wet diaper for the baby at 3:15 PM."
+      },
+      "bath": {
+        "does": "Logs a bath given now, with the water temperature if you say it.",
+        "answer": "Logged a bath for the baby at 7:00 PM, water at 37 degrees."
+      },
+      "tummyTime": {
+        "does": "Starts a tummy time timer now (stop it in the app); with minutes, logs one finished session that ended now.",
+        "answer": "Logged 15 minutes of tummy time for the baby."
+      },
+      "breastPump": {
+        "does": "Starts a pumping timer now, with the ml of each side if you say them; with minutes, logs one finished session.",
+        "answer": "Breast pump session started for the baby at 6:00 AM."
+      },
+      "bellyMassage": {
+        "does": "Starts a belly massage timer now; with minutes, logs one finished massage.",
+        "answer": "Logged 10 minutes of belly massage for the baby."
+      },
+      "fussy": {
+        "does": "Starts a fussy or crying timer now, with how intense if you say it; with minutes, logs one finished spell. A log of what happened, never a diagnosis.",
+        "answer": "Logged 20 minutes of fussy time for the baby."
+      },
+      "outdoor": {
+        "does": "Starts an outdoor time timer now; with minutes, logs one finished outing.",
+        "answer": "Logged 30 minutes of outdoor time for the baby."
+      },
+      "nasalSuction": {
+        "does": "Logs nasal suction done now.",
+        "answer": "Logged nasal suction for the baby at 3:15 PM."
+      },
+      "nailTrim": {
+        "does": "Logs a nail trim done now.",
+        "answer": "Logged a nail trim for the baby at 3:15 PM."
+      },
+      "skinCare": {
+        "does": "Logs skin care done now.",
+        "answer": "Logged skin care for the baby at 3:15 PM."
+      },
+      "spitUp": {
+        "does": "Logs spit-up that just happened.",
+        "answer": "Logged spit-up for the baby at 3:15 PM."
+      },
+      "teething": {
+        "does": "Logs a teething entry now.",
+        "answer": "Logged teething for the baby at 3:15 PM."
+      },
+      "milestone": {
+        "does": "Logs a milestone reached now, from the list: first smile, laughed, held head up, rolled over, sat up, crawled, stood up, first steps, first word.",
+        "answer": "Logged a milestone for the baby at 3:15 PM."
+      },
+      "symptom": {
+        "does": "Logs a symptom you noticed, with how severe if you say it. A record only: no diagnosis, no advice.",
+        "answer": "Logged a symptom for the baby at 3:15 PM."
+      },
+      "temperature": {
+        "does": "Logs a temperature reading exactly as you said it, in your units setting. A record only: never judged, no fever threshold, no advice.",
+        "answer": "Logged a temperature of 37.5 degrees for the baby at 3:15 PM."
+      },
+      "bellyPain": {
+        "does": "Logs belly pain with the level you give, from 1 to 5. A record only: no interpretation, no advice.",
+        "answer": "Logged belly pain for the baby at 3:15 PM, intensity 3."
+      },
+      "activity": {
+        "does": "Logs or starts one activity: bath, tummy time, belly massage, nasal suction, nail trim, skin care, outdoor time, fussy, spit-up, teething or breast pump. Tummy time, breast pump, belly massage, fussy and outdoor time also take minutes (Siri asks, Android shows a list); with none (zero, or “Start timer”) a timer starts and you stop it in the app.",
+        "answer": "Logged 15 minutes of tummy time for the baby."
+      },
+      "health": {
+        "does": "Logs a temperature in °C (Siri asks for it; Android shows 36.0 to 40.0), belly pain from 1 to 5, or a symptom (without saying which). A record only, never advice.",
+        "answer": "Logged a temperature of 37.5 degrees for the baby at 3:15 PM."
+      },
+      "askTopic": {
+        "does": "Answers one question about the log, from the list; the answer is the one Alexa gives to the same question.",
+        "answer": "The baby has had 6 diapers today: 5 wet and 2 dirty."
+      },
+      "shortcutsApp": {
+        "does": "The other actions, the same as the Alexa skill except medicines: for example why the baby is crying, whether the baby is asleep, diapers per day, the usual bottle, the baby's age, your babies and a milestone. Run them from the Shortcuts app or Spotlight, or add one to a shortcut of your own and say its name to Siri.",
+        "answer": "The same answers as Alexa."
+      },
+      "lastFeed": {
+        "does": "Says the newest feed of the last 30 days: when, and the bottle amount or the breast side.",
+        "answer": "The baby's last feed was a 120 ml bottle of formula, at 3:15 PM, 2 hours ago."
+      },
+      "lastDiaper": {
+        "does": "Says when the last diaper was changed and what it had.",
+        "answer": "The baby's last diaper was a wet diaper, at 3:15 PM, 40 minutes ago."
+      },
+      "sleepStatus": {
+        "does": "Says whether the baby is asleep (since when) or awake (since when, and how long the last sleep lasted).",
+        "answer": "The baby has been sleeping since 1:10 PM, for 45 minutes."
+      },
+      "diapersToday": {
+        "does": "Counts today's diaper changes, wet and dirty (a mixed one counts in both).",
+        "answer": "The baby has had 6 diapers today: 5 wet and 2 dirty."
+      },
+      "feedsToday": {
+        "does": "Counts today's feeds: bottles, nursing and solid meals.",
+        "answer": "The baby has had 7 feeds today: 4 bottles and 3 nursing sessions."
+      },
+      "bottleToday": {
+        "does": "Says how much the baby drank from bottles today, and in how many bottles.",
+        "answer": "The baby drank 480 ml in 4 bottles today."
+      },
+      "sleepToday": {
+        "does": "Says the total sleep since midnight and the number of naps.",
+        "answer": "The baby has slept 4 hours and 30 minutes today, with 3 naps."
+      },
+      "daySummary": {
+        "does": "Today so far: sleep and naps, feeds, bottle ml and diapers, counted like the app's Insights.",
+        "answer": "So far today, the baby slept 4 hours and 30 minutes with 3 naps, had 6 feeds with 480 ml in bottles, and 5 diapers."
+      },
+      "weekSummary": {
+        "does": "The same totals for the last 7 days.",
+        "answer": "In the 7 days up to November 3, the baby slept 98 hours with 21 naps, had 49 feeds with 3,360 ml in bottles, and 42 diapers."
+      },
+      "nextNapWindow": {
+        "does": "Says when the next nap window is likely, estimated from the sleep log; while the baby sleeps, when she may wake up.",
+        "answer": "The baby's next nap window is probably between 2:10 PM and 3:00 PM."
+      },
+      "nextFeed": {
+        "does": "Says when the next feed is likely, estimated from the feed log.",
+        "answer": "The baby's next feed is expected around 5:30 PM, usually between 5:00 PM and 6:00 PM."
+      },
+      "nextDiaper": {
+        "does": "Says when the next wet and dirty diapers are likely, estimated from the diaper log.",
+        "answer": "The next wet diaper is expected around 4:00 PM, usually between 3:30 PM and 4:30 PM."
+      },
+      "diapersAverage": {
+        "does": "The average diapers per day over the last complete days (at least 3 in the last week).",
+        "answer": "Over the last 7 days with diapers, the baby used about 7.3 diapers a day: about 6 wet and 2.1 dirty."
+      },
+      "bottleAverage": {
+        "does": "Facts, not a recommendation: the average and the last of the recent bottles with an amount (at least 3 in the last 14 days).",
+        "answer": "The baby's last 5 bottles averaged 130 ml, and the last one was 120 ml."
+      },
+      "nextAppointment": {
+        "does": "Says the next appointment: when, and the specialty or the kind. Never the doctor's or clinic's name, the place or notes.",
+        "answer": "The baby's next appointment is with a pediatrician, tomorrow at 9:00 AM."
+      },
+      "dueVaccines": {
+        "does": "Says which vaccine doses are due or overdue by the vaccination schedule Lotties ships, compared with the doses you recorded. Schedule facts only: the baby's health professional decides.",
+        "answer": "By the vaccine schedule, the baby has 2 vaccine doses due, 1 of them overdue: (the vaccine names). You can see them in the app."
+      },
+      "cryReasons": {
+        "does": "Up to three likely causes from your log (hunger, sleepiness, the diaper, gas), each with the fact behind it, then always the signs for which to call the pediatrician. Never a diagnosis, a remedy or a dose.",
+        "answer": "From what is logged for the baby: hunger looks likely: the last feed was 3 hours ago, and the usual gap is about 2 hours and 30 minutes. This is not a diagnosis or medical advice. Call your pediatrician or emergency services if there is a fever (babies under 3 months with a fever need a call right away), crying you cannot soothe, refusing feeds, unusual sleepiness or being hard to wake, or a bulging or stiff soft spot on the head."
+      },
+      "babyProfile": {
+        "does": "Says the baby's age.",
+        "answer": "The baby is 4 months old."
+      },
+      "listBabies": {
+        "does": "Says how many babies you can ask about; their names only if you turned on saying the baby's name.",
+        "answer": "You have 2 babies in Lotties. To choose the one voice commands are about, open the app, then Settings, Voice assistants."
+      },
+      "setBaby": {
+        "does": "Tells you where to choose the baby voice commands are about.",
+        "answer": "To choose the baby voice commands are about, open the Lotties app, then Settings, Voice assistants."
+      },
+      "panel": {
+        "does": "On an Echo with a screen, shows a dark night panel: sleep, the last feed and the next feed estimate, the last diaper, the next nap window. On a speaker without a screen, says the sleep, last feed and last diaper.",
+        "answer": "On a screen: the panel, no sentence. On a speaker: a short summary."
+      },
+      "undo": {
+        "does": "Asks to delete the last entry that same assistant logged in the last 30 minutes. Nothing is deleted: the app shows the request, and you approve it or keep the entry. A wake-up can't be undone by voice.",
+        "answer": "I asked to delete the baby's last diaper change, at 3:15 PM. Nothing was deleted: open the Lotties app to approve it or keep it."
+      },
+      "medicationLog": {
+        "does": "Records that a dose of a medicine registered in Lotties (an active prescription) was given now, as you said. Lotties never checks, computes or suggests a dose, and never says an amount. If the medicine isn't among the active prescriptions, nothing is recorded.",
+        "answer": "I recorded that a medication dose was given to the baby at 8:00 AM, as you told me. Lotties doesn't check or suggest doses."
+      },
+      "medicationReminder": {
+        "does": "Reads the medicine reminders your family registered: how many are due now and when the next one is. Never a dose, an amount or a schedule of its own.",
+        "answer": "One medicine reminder you registered in Lotties is due now for the baby. The next one is today at 8:00 PM. These are reminders of the medicines you registered in Lotties, not recommendations from Lotties. Check the prescription, and ask your doctor or pharmacist if you have doubts."
+      },
+      "medicationNotAvailable": {
+        "does": "There is no medicine command here, by design. Log doses and see reminders in the app (or with Alexa, once the skill is set up).",
+        "answer": "Nothing: no medicine command exists."
+      }
+    }
+  }
+}

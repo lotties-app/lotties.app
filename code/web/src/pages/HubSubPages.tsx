@@ -14,6 +14,7 @@ import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
 import { MembersSection } from '../settings/MembersSection';
 import { Icon } from '../ui/Icon';
+import { VoiceCommandsScreen } from '../assistants/VoiceCommandsScreen';
 
 // The importers are only needed when their page is opened, so they load on demand.
 const ExportSection = lazy(() =>
@@ -30,18 +31,29 @@ const PrivacyContent = lazy(() =>
   import('../legal/PrivacyContent').then((m) => ({ default: m.PrivacyContent })),
 );
 
-/** A page opened from the Hub: a way back, the page title as the one h1, then the content. */
-function HubSubPage({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * A page opened from the Hub (or, with `back`, from another page): a way back, the page title as
+ * the one h1, then the content.
+ */
+function HubSubPage({
+  title,
+  back,
+  children,
+}: {
+  title: string;
+  back?: { to: string; label: string };
+  children: ReactNode;
+}) {
   const { t } = useTranslation();
   return (
     <Stack spacing={2}>
       <Button
         component={RouterLink}
-        to="/hub"
+        to={back?.to ?? '/hub'}
         startIcon={<Icon name="arrow-left" size={20} />}
         sx={{ alignSelf: 'flex-start', minHeight: 44 }}
       >
-        {t('hub.back')}
+        {back?.label ?? t('hub.back')}
       </Button>
       <Typography variant="h5" component="h1">
         {title}
@@ -191,6 +203,22 @@ export function HubPrivacyPage() {
       <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
         <PrivacyContent />
       </Suspense>
+    </HubSubPage>
+  );
+}
+
+/**
+ * Settings > Voice assistants > Voice commands: what to say to Siri, Alexa and Android
+ * (docs/VOICE-COMMANDS.md). Static content any member can read; back goes to that settings section.
+ */
+export function HubVoiceCommandsPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage
+      title={t('voiceCommands.title')}
+      back={{ to: '/settings#voice-assistants', label: t('voiceCommands.back') }}
+    >
+      <VoiceCommandsScreen />
     </HubSubPage>
   );
 }
