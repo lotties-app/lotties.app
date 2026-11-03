@@ -364,8 +364,8 @@ export const privacyEn: PolicyDocument = {
                   id: 'github',
                   cells: [
                     'GitHub',
-                    "Nothing from the app. If you visit our source code or write to us there, GitHub's terms apply, and issues are public.",
-                    'Only if you visit or write.',
+                    "Nothing is sent automatically. If you tap Report a problem, GitHub's issue form opens with four technical facts already filled in: the app version, your platform (web, iOS or Android), the app's language and the screen you were on, with any ids removed. Never your name, account, baby or records. GitHub receives these four facts when the form opens; nothing is posted unless you choose to submit it. If you visit our source code or write to us there, GitHub's terms apply, and issues are public.",
+                    'Only if you visit, write, or tap Report a problem.',
                   ],
                 },
               ],

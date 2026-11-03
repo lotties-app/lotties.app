@@ -5,10 +5,10 @@
  */
 
 /** Raise on every change of meaning (not for typo fixes). */
-export const PRIVACY_POLICY_VERSION = '10';
+export const PRIVACY_POLICY_VERSION = '11';
 
 /** The date the current version was written, `yyyy-mm-dd` (a calendar date, shown in the reader's language). */
-export const PRIVACY_POLICY_LAST_UPDATED = '2026-10-30';
+export const PRIVACY_POLICY_LAST_UPDATED = '2026-11-03';
 
 /** Where the policy is published (store listings, the Alexa console, docs). */
 export const PRIVACY_POLICY_URL = 'https://lotties.app/privacy';

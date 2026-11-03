@@ -21,7 +21,7 @@ outside the repository: `OWNER TO CONFIRM`).
 | Keycloak (realm `lotties.app`, `https://auth.lotties.app`) | sign-in accounts | runs in the same home lab cluster (its own namespace), shared with the owner's other apps (docs/DEPLOY.md "Multi-theme"); realm isolation, registration fields, email verification, OTP, brute-force protection and event logging: `OWNER TO CONFIRM` |
 | Traefik (external ingress) and cert-manager | TLS termination, routing | `https://lotties.app` routes `/api` to the API and the rest to the web app; HTTP redirected to HTTPS; certificate from Let's Encrypt via DNS-01 at Cloudflare; Traefik access logs on/off and retention `OWNER TO CONFIRM`; whether Cloudflare only serves DNS or also proxies traffic `OWNER TO CONFIRM` (a proxy would see all traffic in clear text) |
 | Container registry (the owner's private Harbor; `REGISTRY` in deploy/homelab/.env) | container images | no personal data |
-| GitHub | source code, CI | no personal data from the app; issues are public |
+| GitHub | source code, CI | no personal data from the app ("Report a problem" prefills four technical values, section 15); issues are public |
 | The user's device | offline copy and session | section 4 |
 | Backup files | `pg_dump` copies | taken by the owner before deploys that apply a migration, kept until the owner deletes them; location, encryption and any other backup (database server snapshots) `OWNER TO CONFIRM` |
 
@@ -74,7 +74,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | Google Maps, WhatsApp, phone/email apps, calendar apps, the share sheet | what the user's own tap sends: "Open in maps" = Google Maps search of the provider's address (`providers/providerModel.ts`), WhatsApp `wa.me/<digits>`, `tel:`, `mailto:`, `.ics` export, invite links and backups shared by the user | the user taps a link or shares | the chosen service | built |
 | Keycloak SMTP relay (Brevo or another) | the account's email address and Keycloak's messages (verification, password reset) | Keycloak account emails | depends on the relay | **not confirmed**: only `configure-realm-smtp.sh` (generic) and docs/DEPLOY.md mention Brevo as one option `OWNER TO CONFIRM` |
 | Apple App Store, Google Play | store downloads; aggregate statistics and crash reports the platforms share with developers when the user's device settings allow it | installing the native app | Apple / Google | apps not published yet |
-| GitHub | nothing from the app; a person who opens the repository or writes an issue is under GitHub's terms (issues are public) | user action | United States | |
+| GitHub | nothing sent by Lotties itself; a person who opens the repository or writes an issue is under GitHub's terms (issues are public). Since policy version 11 (2026-11-03): tapping "Report a problem" (footer, Hub > About) opens the repository's bug form with four technical values in the URL query, so GitHub receives them when the page loads: app version, platform (`Web browser` / `iOS app` / `Android app`), UI language, and the route path with every segment that is not a plain route word replaced by `:id` and the invite token removed (`landing/outboundLinks.ts` `withIssueForm`, `issueScreen`; `useProblemReportUrl.ts`). No account, baby, name, record, token or query string; nothing is posted until the person submits the form (section 15) | user action | United States | built; only when `VITE_ISSUES_URL` or `VITE_REPO_URL` points at a github.com new-issue page |
 | Let's Encrypt, Cloudflare (DNS) | certificate issuance (no user data); DNS | infrastructure | | Cloudflare proxying `OWNER TO CONFIRM` |
 | Origin marker of assistant writes (2026-10-25, policy 5) | the event payload members `via` / `updated_via` = the adapter name (`alexa`, `mcp`), no text, id or token | marks entries made by voice or AI in the app | no new data flow: it is part of the event the user already stores and syncs; the deletion request adds `delete_requested_via` (adapter name) and `delete_requested_at` (a time) to the same event, nothing else | stored with the event | with the event | with the event |
 | AI assistants through an MCP server | the tool results (text and structured JSON) of the facts the assistant asks for, to the provider of the client the user connects; since policy version 7 with **no baby name unless `sayBabyName`** and no free text or names of people (same rule as Alexa, docs/design/32-assistants.md section 7); since version 8 no doctor or clinic data but the specialty code, the logging tools take only the built-in options of each field, and there is no medication tool (a medicine name would only be in a result with `sayMedicineNames`) | the user connects a client and grants `lotties.read` (and `lotties.write`) | the provider's (for Claude: Anthropic) | built; **off** unless `Mcp__Enabled` is set (docs/MCP.md) |
@@ -315,3 +315,25 @@ not offer the monitor today.
 - **Third parties**: none. **Consent version**: a `minor` entry (`2026-10-30.1`, policy 10): the feature is off, opt-in
   and adds no recipient, so the policy change is a notice, not a new acceptance for everyone; the owner may promote it
   to material after the lawyer answers (a later entry, never an edit).
+
+## 15. "Report a problem" prefills the GitHub bug form (2026-11-03, policy 11)
+
+- **What leaves the device**: when `VITE_ISSUES_URL` or `VITE_REPO_URL` points at a github.com new-issue page, the
+  "Report a problem" link (landing footer, Hub > About) opens `.../issues/new?template=bug.yml` with four values in the
+  query: the app version, the platform (`Web browser`, `iOS app`, `Android app`), the UI language and the route path with
+  every segment that is not a plain route word (a UUID, a number, a token) replaced by `:id`, the segment after `invite`
+  always replaced, no query or hash (`landing/outboundLinks.ts` `withIssueForm` and `issueScreen`,
+  `landing/useProblemReportUrl.ts`). No account, baby, name, record or token.
+- **Who receives it**: GitHub, only when the person taps the link: her browser loads the page, so GitHub sees the four
+  values in the address (and, under its own terms, what any page visit carries). Lotties sends nothing itself. Nothing is
+  posted until she submits the form; an issue is public. Other addresses (`VITE_ISSUES_URL` not on GitHub) are opened
+  untouched; the `mailto:` fallback carries the subject and the app version in an email she sends herself (the
+  `userLinks` row).
+- **Policy**: the GitHub row of "Companies and services that receive data" said "Nothing from the app"; version 11
+  names the four values and the trigger, in both languages. `legal/dataFlows.ts` keeps `github` as `userAction`, abroad.
+- **Consent version**: a `minor` entry (`2026-11-03.1`, policy 11). Under the material rule of
+  `Lotties.Domain.Consents.ConsentVersions` (new data collected, a new recipient or purpose, a change in rights or in who
+  is responsible) this is none of those: GitHub was already a listed recipient for a person's own action, the four values
+  are technical and not personal data, and the flow happens only on her tap. People who accepted an earlier version see
+  the dismissible "policy updated" notice once; nobody is asked to accept again. The owner may promote it to material
+  (a later entry, never an edit).
