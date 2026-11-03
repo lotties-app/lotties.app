@@ -96,7 +96,10 @@
     "voiceCommands": "Voice assistant commands",
     "reportProblem": "Report a problem",
     "reportSubject": "Lotties: a problem",
-    "support": "Support Lotties"
+    "support": "Support Lotties",
+    "groupApp": "App",
+    "groupProject": "Project",
+    "groupHelp": "Help and legal"
   },
   "beta": {
     "notice": "Lotties is in beta. Read the [Terms of Use](/terms)."

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, Link, Stack, Typography } from '@mui/material';
+import { Box, Divider, Link, Stack, Typography } from '@mui/material';
 import { isLocalePreference, LOCALES, type LocalePreference } from '../i18n/config';
 import { useLocale } from '../i18n/useLocale';
 import { readBuildInfo } from '../config/buildInfo';
@@ -38,10 +38,53 @@ function onGithub(url: string): boolean {
   return new URL(url).hostname.replace(/^www\./, '') === 'github.com';
 }
 
+/** One footer link: an in-app route (`to`) or an outbound address (`href` with its tab attributes). */
+interface FooterLink {
+  key: string;
+  label: string;
+  to?: string;
+  href?: string;
+  target?: string;
+  rel?: string;
+}
+
+const LINK_SX = {
+  alignSelf: 'flex-start',
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: { xs: 44, md: 'auto' },
+} as const;
+
+/** A labelled column of links, a `nav` landmark named by its heading; nothing when it has no link. */
+function LinkGroup({ id, label, links }: { id: string; label: string; links: FooterLink[] }) {
+  if (links.length === 0) return null;
+  return (
+    <Box component="nav" aria-labelledby={id} sx={{ minWidth: 0 }}>
+      <Typography id={id} variant="overline" component="p" color="text.secondary" sx={{ mb: 0.5 }}>
+        {label}
+      </Typography>
+      <Stack spacing={{ xs: 0, md: 1 }}>
+        {links.map(({ key, label: text, to, href, target, rel }) =>
+          to ? (
+            <Link key={key} component={RouterLink} to={to} sx={LINK_SX}>
+              {text}
+            </Link>
+          ) : (
+            <Link key={key} href={href} target={target} rel={rel} sx={LINK_SX}>
+              {text}
+            </Link>
+          ),
+        )}
+      </Stack>
+    </Box>
+  );
+}
+
 /**
- * Language and theme switches, the version line with the source link, the install guide, credits,
- * privacy, terms, self-host and voice commands links, "Report a problem" and "Support Lotties"
- * (each only when configured, src/landing/outboundLinks.ts), the licence line and the medical note.
+ * Language and theme switches; three link columns (App: install guide, voice commands, self-host;
+ * Project: source, credits, "Support Lotties"; Help and legal: "Report a problem", privacy, terms),
+ * the outbound ones only when configured (src/landing/outboundLinks.ts); then the version, the beta
+ * notice, the licence line and the medical note as plain text.
  */
 export function LandingFooter() {
   const { t } = useTranslation('landing');
@@ -60,6 +103,56 @@ export function LandingFooter() {
       value: l.code,
       label: l.code === 'pt-BR' ? 'Português' : l.nativeName,
     })),
+  ];
+  const groups: { id: string; label: string; links: FooterLink[] }[] = [
+    {
+      id: 'landing-footer-app',
+      label: t('footer.groupApp'),
+      links: [
+        ...(native ? [] : [{ key: 'install', label: t('footer.install'), to: '/install' }]),
+        { key: 'voice', label: t('footer.voiceCommands'), to: '/voice-commands' },
+        { key: 'self-host', label: t('footer.selfHost'), to: '/self-host' },
+      ],
+    },
+    {
+      id: 'landing-footer-project',
+      label: t('footer.groupProject'),
+      links: [
+        ...(source
+          ? [
+              {
+                key: 'source',
+                label: t(onGithub(source) ? 'footer.sourceGithub' : 'footer.source'),
+                href: source,
+                target: '_blank',
+                rel: 'noopener noreferrer',
+              },
+            ]
+          : []),
+        { key: 'credits', label: t('footer.credits'), to: '/credits' },
+        ...(support
+          ? [{ key: 'support', label: t('footer.support'), href: support, ...newTabFor(support) }]
+          : []),
+      ],
+    },
+    {
+      id: 'landing-footer-help',
+      label: t('footer.groupHelp'),
+      links: [
+        ...(report
+          ? [
+              {
+                key: 'report',
+                label: t('footer.reportProblem'),
+                href: report,
+                ...newTabFor(report),
+              },
+            ]
+          : []),
+        { key: 'privacy', label: t('footer.privacy'), to: '/privacy' },
+        { key: 'terms', label: t('footer.terms'), to: '/terms' },
+      ],
+    },
   ];
   return (
     <Box component="footer" sx={{ borderTop: 1, borderColor: 'divider', pb: 5 }}>
@@ -88,63 +181,38 @@ export function LandingFooter() {
             />
           </Setting>
         </Box>
-        <Stack spacing={1}>
-          <Stack
-            direction="row"
-            spacing={1}
-            useFlexGap
-            sx={{ alignItems: 'center', flexWrap: 'wrap' }}
-          >
-            <VersionLine brand />
-            {source && (
-              <>
-                <Typography variant="caption" color="text.secondary" aria-hidden>
-                  ·
-                </Typography>
-                <Link href={source} target="_blank" rel="noopener noreferrer">
-                  {t(onGithub(source) ? 'footer.sourceGithub' : 'footer.source')}
-                </Link>
-              </>
-            )}
+        <Divider sx={{ borderColor: 'divider' }} />
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 3,
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(3, minmax(0, 1fr))' },
+          }}
+        >
+          {groups.map((group) => (
+            <LinkGroup key={group.id} id={group.id} label={group.label} links={group.links} />
+          ))}
+        </Box>
+        <Divider sx={{ borderColor: 'divider' }} />
+        <Box
+          sx={{
+            display: 'grid',
+            gap: { xs: 1, md: 3 },
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(3, minmax(0, 1fr))' },
+            alignItems: 'start',
+          }}
+        >
+          <VersionLine brand prominent />
+          <Stack spacing={1} sx={{ gridColumn: { md: 'span 2' } }}>
+            <BetaNotice />
+            <Typography variant="body2" color="text.secondary">
+              {t('footer.licence')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('footer.notMedical')}
+            </Typography>
           </Stack>
-          {!native && (
-            <Link component={RouterLink} to="/install" sx={{ alignSelf: 'flex-start' }}>
-              {t('footer.install')}
-            </Link>
-          )}
-          <Link component={RouterLink} to="/credits" sx={{ alignSelf: 'flex-start' }}>
-            {t('footer.credits')}
-          </Link>
-          <Link component={RouterLink} to="/privacy" sx={{ alignSelf: 'flex-start' }}>
-            {t('footer.privacy')}
-          </Link>
-          <Link component={RouterLink} to="/terms" sx={{ alignSelf: 'flex-start' }}>
-            {t('footer.terms')}
-          </Link>
-          <Link component={RouterLink} to="/self-host" sx={{ alignSelf: 'flex-start' }}>
-            {t('footer.selfHost')}
-          </Link>
-          <Link component={RouterLink} to="/voice-commands" sx={{ alignSelf: 'flex-start' }}>
-            {t('footer.voiceCommands')}
-          </Link>
-          {report && (
-            <Link href={report} {...newTabFor(report)} sx={{ alignSelf: 'flex-start' }}>
-              {t('footer.reportProblem')}
-            </Link>
-          )}
-          {support && (
-            <Link href={support} {...newTabFor(support)} sx={{ alignSelf: 'flex-start' }}>
-              {t('footer.support')}
-            </Link>
-          )}
-          <BetaNotice />
-          <Typography variant="body2" color="text.secondary">
-            {t('footer.licence')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('footer.notMedical')}
-          </Typography>
-        </Stack>
+        </Box>
       </Stack>
     </Box>
   );
