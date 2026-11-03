@@ -368,8 +368,8 @@ export const privacyPtBR: PolicyDocument = {
                   id: 'github',
                   cells: [
                     'GitHub',
-                    'Nada vindo do app. Se você visitar nosso código-fonte ou nos escrever por lá, valem os termos do GitHub, e as issues são públicas.',
-                    'Só se você visitar ou escrever.',
+                    'Nada é enviado automaticamente. Se você tocar em Relatar um problema, o formulário de issue do GitHub abre com quatro dados técnicos já preenchidos: a versão do app, a sua plataforma (web, iOS ou Android), o idioma do app e a tela em que você estava, sem nenhum identificador. Nunca o seu nome, a sua conta, o bebê ou os registros. O GitHub recebe esses quatro dados quando o formulário abre; nada é publicado a menos que você decida enviar. Se você visitar nosso código-fonte ou nos escrever por lá, valem os termos do GitHub, e as issues são públicas.',
+                    'Só se você visitar, escrever ou tocar em Relatar um problema.',
                   ],
                 },
               ],

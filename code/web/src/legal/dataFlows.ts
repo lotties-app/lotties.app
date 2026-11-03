@@ -111,7 +111,9 @@ export const THIRD_PARTIES: readonly ThirdParty[] = [
   { id: 'userLinks', trigger: 'userAction', abroad: true, creditIds: [] },
   // Apple App Store and Google Play (when the native apps are published).
   { id: 'appStores', trigger: 'install', abroad: true, creditIds: [] },
-  // The source repository and the default contact channel (public issues, private reports).
+  // The source repository and the default contact channel (public issues, private reports). "Report a problem"
+  // (landing/outboundLinks.ts) opens the bug form with four technical facts in the address: version, platform,
+  // language, route path without ids (policy 11). Nothing is sent by Lotties itself.
   { id: 'github', trigger: 'userAction', abroad: true, creditIds: [] },
 ];
 
