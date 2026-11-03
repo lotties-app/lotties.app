@@ -15,6 +15,7 @@ import { SyncSection } from '../settings/SyncSection';
 import { DeleteAccountSection } from '../settings/DeleteAccountSection';
 import { ProfessionalSection } from '../settings/ProfessionalSection';
 import { VoiceAssistantsSection } from '../settings/VoiceAssistantsSection';
+import { VoiceCommandsLink } from '../assistants/VoiceCommandsLink';
 import { canLog, canWrite, isCaregiver, isDoctor } from '../baby/permissions';
 import { hasPatients } from '../doctor/appMode';
 import { useBabies } from '../db/hooks';
@@ -124,7 +125,10 @@ export function SettingsPage() {
           title={t('assistants.title')}
           defaultExpanded={wants('voice-assistants')}
         >
-          <VoiceAssistantsSection babies={babies} />
+          <Stack spacing={1.5}>
+            <VoiceCommandsLink />
+            <VoiceAssistantsSection babies={babies} />
+          </Stack>
         </SettingsSection>
       )}
       <SettingsSection

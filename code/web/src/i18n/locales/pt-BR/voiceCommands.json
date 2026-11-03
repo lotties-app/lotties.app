@@ -1,0 +1,325 @@
+{
+  "voiceCommands": {
+    "title": "Comandos de voz",
+    "back": "Voltar para Configurações",
+    "open": "Comandos de voz: o que você pode dizer",
+    "openHint": "Todas as frases que a Siri, a Alexa e o Android entendem, o que cada uma faz e o que você ouve de volta.",
+    "intro": "O que você pode dizer a cada assistente de voz, o que o Lotties faz e o que você ouve de volta. As respostas são fatos do registro do seu bebê, nunca orientação médica. Horários e quantidades dos exemplos são inventados.",
+    "tabsLabel": "Assistente de voz",
+    "tabs": {
+      "siri": "Siri",
+      "alexa": "Alexa",
+      "android": "Android"
+    },
+    "status": {
+      "siri": "Só no iPhone, no app Lotties: conecte a Siri antes em Configurações, Assistentes de voz. A Siri entende só as frases abaixo, terminadas em “no Lotties”; as outras ações ficam no app Atalhos.",
+      "alexa": "Funciona nos aparelhos Alexa e no app Alexa quando a skill do Lotties estiver disponível para você e você vincular a sua conta do Lotties no app Alexa. O painel noturno precisa de um Echo com tela.",
+      "android": "Só no Android, no app Lotties: conecte a voz antes em Configurações, Assistentes de voz. Toque e segure o ícone do Lotties para ver estes atalhos, ou adicione um à tela inicial. Dizer “Ok Google, abrir xixi no Lotties” depende do Google e não está confirmado; nos celulares em que o Gemini substituiu o Google Assistente, pode não funcionar."
+    },
+    "start": {
+      "siri": "Diga “E aí, Siri” (ou segure o botão lateral) e depois a frase. A Siri pergunta os números, como ml, minutos ou temperatura, depois da frase.",
+      "alexa": "Diga “Alexa, abrir lotes” e depois a frase. A frase inteira de uma vez (“Alexa, peça ao lotes: o bebê dormiu”) é reconhecida com menos frequência.",
+      "android": "Toque em um atalho. Quando precisa de uma escolha (quantidade, atividade, pergunta), o Lotties mostra uma lista, depois mostra a resposta e a lê em voz alta. Pelo Google Assistente, um registro pede um toque para confirmar."
+    },
+    "labels": {
+      "say": "Diga",
+      "shortcut": "Atalho",
+      "does": "O que faz",
+      "answer": "O que você ouve (exemplo)"
+    },
+    "topics": {
+      "log": "Registrar",
+      "ask": "Perguntar",
+      "undo": "Desfazer",
+      "medication": "Remédios"
+    },
+    "safety": {
+      "title": "Bom saber",
+      "facts": "As respostas são fatos e estimativas do seu próprio registro, nunca diagnóstico ou orientação médica.",
+      "cry": "A resposta a “por que o bebê está chorando” sempre termina com os sinais para ligar para o pediatra ou para a emergência.",
+      "medication": "Nenhum assistente calcula, confere ou sugere dose, nem diz quantidade de remédio. Só a Alexa pode registrar que uma dose de um remédio que você cadastrou foi dada e ler os seus próprios lembretes; essas respostas de lembrete terminam com “são lembretes dos medicamentos que você cadastrou no Lotties, não recomendações do Lotties”.",
+      "names": "As respostas dizem “o bebê”, a menos que você ative “Falar o nome do bebê nas respostas”, e nomes de remédios só se você ativar “Falar o nome dos remédios nas respostas”. Nada que alguém digitou, como notas, títulos de consultas ou o nome de um médico, é dito.",
+      "undo": "“Desfazer” nunca apaga: pede para apagar o último registro que aquele mesmo assistente fez nos últimos 30 minutos, e você aprova ou mantém no app.",
+      "internet": "A voz precisa de internet: quando o Lotties não responde, nada é registrado.",
+      "baby": "Com mais de um bebê, escolha o bebê dos comandos de voz em Configurações, Assistentes de voz."
+    },
+    "say": {
+      "siriDiaper": "“Registrar fralda de xixi no Lotties” (xixi, cocô ou os dois). “Registrar fralda no Lotties” ou “Troca de fralda no Lotties” registra uma de xixi.",
+      "siriBottle": "“Registrar mamadeira no Lotties”",
+      "siriBreastfeed": "“Iniciar mamada no Lotties”",
+      "siriSleep": "“O bebê dormiu no Lotties” ou “O bebê acordou no Lotties”",
+      "siriActivity": "“Registrar banho no Lotties” ou “Iniciar tummy time no Lotties” (banho, tummy time, massagem na barriga, aspiração nasal, corte de unhas, cuidado com a pele, ao ar livre, choro/irritação, regurgitação, dentição, bomba de leite)",
+      "siriHealth": "“Registrar temperatura no Lotties” (temperatura, sintoma ou dor de barriga)",
+      "siriAsk": "“Perguntar última mamada no Lotties” (última mamada, próxima janela de sono, próxima mamada, próxima troca de fralda, última fralda, fraldas hoje, mamadeiras hoje, mamadas hoje, sono hoje, resumo do dia, resumo da semana, próxima consulta, vacinas pendentes)",
+      "siriShortcuts": "Sem frase: procure o Lotties no app Atalhos",
+      "siriUndo": "“Desfazer o último registro no Lotties”",
+      "noMedication": "Nada: não há comando de remédios",
+      "alexaSleepStart": "“O bebê dormiu”",
+      "alexaSleepEnd": "“O bebê acordou”",
+      "alexaBottle": "“Registrar mamadeira de 120 mililitros de fórmula” (ou onças, ou leite materno)",
+      "alexaNursing": "“Começar amamentação no peito esquerdo”",
+      "alexaDiaper": "“Registrar fralda de xixi” (xixi, cocô ou os dois)",
+      "alexaBath": "“Registrar banho” ou “A água estava a 37 graus”",
+      "alexaTummyTime": "“Iniciar tempo de bruços” ou “Registrar 15 minutos de tempo de bruços”",
+      "alexaBreastPump": "“Começar a ordenhar” ou “Ordenei 100 ml no peito esquerdo”",
+      "alexaBellyMassage": "“Fiz massagem na barriga dela” ou “Massagem na barriga por 10 minutos”",
+      "alexaFussy": "“Ela está irritada” ou “Ela ficou irritada por 20 minutos”",
+      "alexaOutdoor": "“Saímos para passear” ou “Passeamos por 30 minutos”",
+      "alexaNasalSuction": "“Usei o aspirador nasal”",
+      "alexaNailTrim": "“Cortei as unhas dela”",
+      "alexaSkinCare": "“Passei pomada de assadura”",
+      "alexaSpitUp": "“Ela regurgitou”",
+      "alexaTeething": "“Ela está dentando”",
+      "alexaMilestone": "“Ela virou de bruços” ou “O bebê sorriu pela primeira vez”",
+      "alexaSymptom": "“Ela está com tosse” (tosse, nariz escorrendo, nariz entupido, manchas, diarreia, prisão de ventre)",
+      "alexaTemperature": "“A temperatura dela é 37,5”",
+      "alexaBellyPain": "“Dor de barriga nível 3”",
+      "alexaLastFeed": "“Quando foi a última mamada?”",
+      "alexaLastDiaper": "“Quando foi a última troca de fralda?”",
+      "alexaSleepStatus": "“Há quanto tempo ela está dormindo?” (só “ela está dormindo” registra um sono)",
+      "alexaDiapersToday": "“Quantas fraldas hoje?”",
+      "alexaFeedsToday": "“Quantas mamadas hoje?”",
+      "alexaBottleToday": "“Quanto ela tomou de mamadeira hoje?”",
+      "alexaSleepToday": "“Quanto ela dormiu hoje?”",
+      "alexaDaySummary": "“Como foi o dia dela?”",
+      "alexaWeekSummary": "“Como foi a semana dela?”",
+      "alexaNextNap": "“Quando é a próxima soneca?”",
+      "alexaNextFeed": "“Quando é a próxima mamada?”",
+      "alexaNextDiaper": "“Quando é a próxima troca de fralda?”",
+      "alexaDiapersAverage": "“Quantas fraldas ela usa por dia?”",
+      "alexaBottleAverage": "“Quanto ela costuma tomar de mamadeira?”",
+      "alexaNextAppointment": "“Quando é a próxima consulta?”",
+      "alexaDueVaccines": "“Quais vacinas estão pendentes?”",
+      "alexaCryReasons": "“Por que o bebê está chorando?”",
+      "alexaBabyProfile": "“Qual a idade dela?”",
+      "alexaListBabies": "“Listar meus bebês”",
+      "alexaSetBaby": "“Trocar de bebê”",
+      "alexaPanel": "“Abrir o painel noturno”",
+      "alexaUndo": "“Desfazer o último registro”",
+      "alexaMedicationLog": "“Dei … para ela”, com o nome do remédio como está cadastrado no Lotties",
+      "alexaMedicationReminder": "“Tem algum remédio para dar?”",
+      "androidDiaperWet": "Registrar fralda de xixi",
+      "androidDiaperDirty": "Registrar fralda de cocô",
+      "androidDiaperBoth": "Registrar xixi e cocô",
+      "androidBottle": "Registrar mamadeira",
+      "androidBreastfeed": "Iniciar amamentação",
+      "androidFellAsleep": "O bebê dormiu",
+      "androidWokeUp": "O bebê acordou",
+      "androidActivity": "Registrar atividade",
+      "androidHealth": "Registrar item de saúde",
+      "androidAskLastFeed": "Quando mamou por último?",
+      "androidAsk": "Perguntar sobre o bebê",
+      "androidUndo": "Desfazer último registro"
+    },
+    "actions": {
+      "sleepStart": {
+        "does": "Inicia um sono agora (soneca ou noite pela regra do app). Se já houver um sono em andamento, nada muda.",
+        "answer": "Certo. O bebê dormiu às 13:10."
+      },
+      "sleepEnd": {
+        "does": "Encerra o sono em andamento agora e registra o despertar.",
+        "answer": "O bebê acordou às 14:25, depois de dormir 1 hora e 15 minutos."
+      },
+      "sleepChange": {
+        "does": "“Dormiu” inicia um sono agora; “acordou” encerra o sono em andamento e registra o despertar.",
+        "answer": "Certo. O bebê dormiu às 13:10."
+      },
+      "bottle": {
+        "does": "Registra uma mamadeira dada agora, em ml ou onças, e fórmula ou leite materno se você disser. Uma mamadeira de fórmula leva a fórmula atual do bebê, quando houver uma. Com “Cronometrar mamadeiras” ativado, inicia um cronômetro de mamadeira.",
+        "answer": "Registrei uma mamadeira de 120 ml de fórmula às 15:15."
+      },
+      "bottleSiri": {
+        "does": "A Siri pergunta “Quantos ml?” e registra uma mamadeira de fórmula dada agora. Com “Cronometrar mamadeiras” ativado, inicia um cronômetro de mamadeira.",
+        "answer": "Registrei uma mamadeira de 120 ml de fórmula às 15:15."
+      },
+      "bottleAndroid": {
+        "does": "Escolha a quantidade (30 a 240 ml) e ele registra uma mamadeira dada agora, sem dizer o conteúdo. Com “Cronometrar mamadeiras” ativado, inicia um cronômetro de mamadeira.",
+        "answer": "Registrei uma mamadeira de 120 ml às 15:15."
+      },
+      "nursing": {
+        "does": "Inicia o cronômetro de amamentação agora; encerre no app. O peito é o oposto de onde a última mamada terminou, a menos que você diga um (só na Alexa).",
+        "answer": "Amamentação iniciada no peito esquerdo às 15:15."
+      },
+      "diaper": {
+        "does": "Registra uma troca de fralda agora: xixi, cocô ou os dois.",
+        "answer": "Registrei uma fralda de xixi às 15:15."
+      },
+      "bath": {
+        "does": "Registra um banho dado agora, com a temperatura da água se você disser.",
+        "answer": "Registrei um banho às 19:00, água a 37 graus."
+      },
+      "tummyTime": {
+        "does": "Inicia um cronômetro de tempo de bruços agora (encerre no app); com minutos, registra uma sessão já terminada.",
+        "answer": "Registrei 15 minutos de tempo de bruços."
+      },
+      "breastPump": {
+        "does": "Inicia um cronômetro de ordenha agora, com os ml de cada lado se você disser; com minutos, registra uma sessão já terminada.",
+        "answer": "Sessão de ordenha iniciada às 06:00."
+      },
+      "bellyMassage": {
+        "does": "Inicia um cronômetro de massagem na barriga agora; com minutos, registra uma massagem já terminada.",
+        "answer": "Registrei 10 minutos de massagem na barriga."
+      },
+      "fussy": {
+        "does": "Inicia um cronômetro de irritação ou choro agora, com a intensidade se você disser; com minutos, registra um episódio já terminado. Um registro do que aconteceu, nunca um diagnóstico.",
+        "answer": "Registrei 20 minutos de irritação."
+      },
+      "outdoor": {
+        "does": "Inicia um cronômetro de passeio ao ar livre agora; com minutos, registra um passeio já terminado.",
+        "answer": "Registrei 30 minutos de passeio ao ar livre."
+      },
+      "nasalSuction": {
+        "does": "Registra uma aspiração nasal feita agora.",
+        "answer": "Registrei aspiração nasal às 15:15."
+      },
+      "nailTrim": {
+        "does": "Registra um corte de unhas feito agora.",
+        "answer": "Registrei corte de unhas às 15:15."
+      },
+      "skinCare": {
+        "does": "Registra cuidados com a pele feitos agora.",
+        "answer": "Registrei cuidados com a pele às 15:15."
+      },
+      "spitUp": {
+        "does": "Registra uma regurgitação que acabou de acontecer.",
+        "answer": "Registrei regurgitação às 15:15."
+      },
+      "teething": {
+        "does": "Registra dentição agora.",
+        "answer": "Registrei dentição às 15:15."
+      },
+      "milestone": {
+        "does": "Registra um marco alcançado agora, da lista: sorriu, riu, firmou a cabeça, virou, sentou, engatinhou, ficou em pé, andou, falou.",
+        "answer": "Registrei um marco às 15:15."
+      },
+      "symptom": {
+        "does": "Registra um sintoma que você notou, com a intensidade se você disser. Apenas um registro: sem diagnóstico, sem orientação.",
+        "answer": "Registrei um sintoma às 15:15."
+      },
+      "temperature": {
+        "does": "Registra a temperatura exatamente como você disse, na sua configuração de unidades. Apenas um registro: nunca é avaliada, sem limite de febre, sem orientação.",
+        "answer": "Registrei temperatura de 37,5 graus às 15:15."
+      },
+      "bellyPain": {
+        "does": "Registra dor de barriga com o nível que você der, de 1 a 5. Apenas um registro: sem interpretação, sem orientação.",
+        "answer": "Registrei dor de barriga às 15:15, intensidade 3."
+      },
+      "activity": {
+        "does": "Registra ou inicia uma atividade: banho, tummy time, massagem na barriga, aspiração nasal, corte de unhas, cuidado com a pele, ao ar livre, choro/irritação, regurgitação, dentição ou bomba de leite. Tummy time, bomba de leite, massagem na barriga, choro/irritação e ao ar livre também aceitam minutos (a Siri pergunta, o Android mostra uma lista); sem minutos (zero, ou “Iniciar cronômetro”) um cronômetro começa e você encerra no app.",
+        "answer": "Registrei 15 minutos de tempo de bruços."
+      },
+      "health": {
+        "does": "Registra uma temperatura em °C (a Siri pergunta; o Android mostra de 36,0 a 40,0), dor de barriga de 1 a 5, ou um sintoma (sem dizer qual). Apenas um registro, nunca orientação.",
+        "answer": "Registrei temperatura de 37,5 graus às 15:15."
+      },
+      "askTopic": {
+        "does": "Responde uma pergunta sobre o registro, da lista; a resposta é a mesma que a Alexa dá para a mesma pergunta.",
+        "answer": "O bebê teve 6 fraldas hoje: 5 com xixi e 2 com cocô."
+      },
+      "shortcutsApp": {
+        "does": "As outras ações, as mesmas da skill da Alexa menos remédios: por exemplo por que o bebê está chorando, se o bebê está dormindo, fraldas por dia, mamadeira usual, a idade do bebê, os seus bebês e um marco. Use pelo app Atalhos ou pelo Spotlight, ou coloque uma em um atalho seu e diga o nome dele para a Siri.",
+        "answer": "As mesmas respostas da Alexa."
+      },
+      "lastFeed": {
+        "does": "Diz a alimentação mais recente dos últimos 30 dias: quando, e a quantidade da mamadeira ou o peito.",
+        "answer": "A última alimentação do bebê foi uma mamadeira de 120 ml de fórmula, às 15:15, há 2 horas."
+      },
+      "lastDiaper": {
+        "does": "Diz quando a última fralda foi trocada e como estava.",
+        "answer": "A última fralda do bebê foi uma fralda de xixi, às 15:15, há 40 minutos."
+      },
+      "sleepStatus": {
+        "does": "Diz se o bebê está dormindo (desde quando) ou acordado (desde quando, e quanto durou o último sono).",
+        "answer": "O bebê está dormindo desde 13:10, há 45 minutos."
+      },
+      "diapersToday": {
+        "does": "Conta as trocas de fralda de hoje, com xixi e com cocô (uma com os dois conta nos dois).",
+        "answer": "O bebê teve 6 fraldas hoje: 5 com xixi e 2 com cocô."
+      },
+      "feedsToday": {
+        "does": "Conta as alimentações de hoje: mamadeiras, mamadas no peito e refeições sólidas.",
+        "answer": "O bebê teve 7 alimentações hoje: 4 mamadeiras e 3 mamadas no peito."
+      },
+      "bottleToday": {
+        "does": "Diz quanto o bebê tomou de mamadeira hoje, e em quantas mamadeiras.",
+        "answer": "O bebê tomou 480 ml em 4 mamadeiras hoje."
+      },
+      "sleepToday": {
+        "does": "Diz o total de sono desde a meia-noite e o número de sonecas.",
+        "answer": "O bebê dormiu 4 horas e 30 minutos hoje, com 3 sonecas."
+      },
+      "daySummary": {
+        "does": "Hoje até agora: sono e sonecas, alimentações, ml de mamadeira e fraldas, contados como nos Insights do app.",
+        "answer": "Até agora, hoje, o bebê dormiu 4 horas e 30 minutos com 3 sonecas, teve 6 alimentações, 480 ml em mamadeiras e 5 fraldas."
+      },
+      "weekSummary": {
+        "does": "Os mesmos totais dos últimos 7 dias.",
+        "answer": "Nos 7 dias até 3 de novembro, o bebê dormiu 98 horas com 21 sonecas, teve 49 alimentações, 3.360 ml em mamadeiras e 42 fraldas."
+      },
+      "nextNapWindow": {
+        "does": "Diz quando a próxima janela de sono é provável, estimada pelo registro de sono; com o bebê dormindo, quando ele pode acordar.",
+        "answer": "A próxima janela de sono do bebê deve ser entre 14:10 e 15:00."
+      },
+      "nextFeed": {
+        "does": "Diz quando a próxima mamada é provável, estimada pelo registro de alimentação.",
+        "answer": "A próxima mamada do bebê é esperada por volta das 17:30, geralmente entre 17:00 e 18:00."
+      },
+      "nextDiaper": {
+        "does": "Diz quando as próximas fraldas de xixi e de cocô são prováveis, estimadas pelo registro de fraldas.",
+        "answer": "A próxima fralda de xixi é esperada por volta das 16:00, geralmente entre 15:30 e 16:30."
+      },
+      "diapersAverage": {
+        "does": "A média de fraldas por dia nos últimos dias completos (pelo menos 3 na última semana).",
+        "answer": "Nos últimos 7 dias com fraldas, o bebê usou cerca de 7,3 fraldas por dia: cerca de 6 com xixi e 2,1 com cocô."
+      },
+      "bottleAverage": {
+        "does": "Fatos, não uma recomendação: a média e a última das mamadeiras recentes com quantidade (pelo menos 3 nos últimos 14 dias).",
+        "answer": "As últimas 5 mamadeiras do bebê tiveram em média 130 ml, e a última foi de 120 ml."
+      },
+      "nextAppointment": {
+        "does": "Diz a próxima consulta: quando, e a especialidade ou o tipo. Nunca o nome do médico ou da clínica, o local ou as notas.",
+        "answer": "A próxima consulta do bebê é com pediatra, amanhã às 09:00."
+      },
+      "dueVaccines": {
+        "does": "Diz quais doses de vacina estão pendentes ou atrasadas pelo calendário de vacinação que o Lotties traz, comparado com as doses que você registrou. Só fatos do calendário: quem decide é o profissional de saúde do bebê.",
+        "answer": "Pelo calendário de vacinas, o bebê tem 2 doses pendentes, 1 atrasada: (os nomes das vacinas). Você pode vê-las no app."
+      },
+      "cryReasons": {
+        "does": "Até três causas prováveis pelo seu registro (fome, sono, a fralda, gases), cada uma com o fato que a sustenta, e sempre os sinais para ligar para o pediatra. Nunca diagnóstico, remédio ou dose.",
+        "answer": "Pelo que está registrado do bebê: fome parece provável: a última mamada foi há 3 horas, e o intervalo habitual é de cerca de 2 horas e 30 minutos. Isto não é um diagnóstico nem orientação médica. Ligue para o pediatra ou para a emergência se houver febre (bebês com menos de 3 meses com febre precisam de uma ligação na hora), choro que você não consegue acalmar, recusa para mamar ou comer, sonolência fora do comum ou dificuldade para acordar, ou moleira estufada ou dura."
+      },
+      "babyProfile": {
+        "does": "Diz a idade do bebê.",
+        "answer": "O bebê tem 4 meses."
+      },
+      "listBabies": {
+        "does": "Diz quantos bebês você pode consultar; os nomes só se você ativou dizer o nome do bebê.",
+        "answer": "Você tem 2 bebês no Lotties. Para escolher o bebê dos comandos de voz, abra o app, depois Configurações, Assistentes de voz."
+      },
+      "setBaby": {
+        "does": "Diz onde escolher o bebê dos comandos de voz.",
+        "answer": "Para escolher o bebê dos comandos de voz, abra o app Lotties, depois Configurações, Assistentes de voz."
+      },
+      "panel": {
+        "does": "Em um Echo com tela, mostra um painel noturno escuro: sono, a última mamada e a estimativa da próxima, a última fralda, a próxima janela de sono. Em uma caixa de som sem tela, diz o sono, a última mamada e a última fralda.",
+        "answer": "Com tela: o painel, sem frase. Sem tela: um resumo curto."
+      },
+      "undo": {
+        "does": "Pede para apagar o último registro que aquele mesmo assistente fez nos últimos 30 minutos. Nada é apagado: o app mostra o pedido, e você aprova ou mantém o registro. Um despertar não pode ser desfeito por voz.",
+        "answer": "Pedi para apagar o último registro de troca de fralda do bebê, às 15:15. Nada foi apagado: abra o app do Lotties para aprovar ou manter."
+      },
+      "medicationLog": {
+        "does": "Registra que uma dose de um remédio cadastrado no Lotties (uma prescrição ativa) foi dada agora, conforme você disse. O Lotties nunca confere, calcula ou sugere dose, e nunca diz quantidade. Se o remédio não estiver entre as prescrições ativas, nada é registrado.",
+        "answer": "Registrei que uma dose de medicamento foi dada às 08:00, conforme você informou. O Lotties não confere nem sugere doses."
+      },
+      "medicationReminder": {
+        "does": "Lê os lembretes de remédios que a sua família cadastrou: quantos estão pendentes agora e quando é o próximo. Nunca uma dose, uma quantidade ou um horário próprio.",
+        "answer": "Um lembrete de medicamento que você cadastrou no Lotties está pendente agora. O próximo é hoje às 20:00. São lembretes dos medicamentos que você cadastrou no Lotties, não recomendações do Lotties. Confira a receita e, em caso de dúvida, fale com o médico ou o farmacêutico."
+      },
+      "medicationNotAvailable": {
+        "does": "Não há comando de remédios aqui, de propósito. Registre doses e veja lembretes no app (ou pela Alexa, quando a skill estiver configurada).",
+        "answer": "Nada: não existe comando de remédios."
+      }
+    }
+  }
+}
