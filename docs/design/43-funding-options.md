@@ -64,7 +64,7 @@ The payment happens on someone else's page, the app only links to it, so there i
 
 Where the link lives: README, `/credits`, the landing page footer, a short note in Settings. Never on a baby screen, never
 a prompt after logging something.
-Built (2026-11-03): the landing footer and Hub > About show "Support Lotties" when the web build sets
+Built (2026-11-03): the landing footer and Hub > About show "Support the developer" when the web build sets
 `VITE_SUPPORT_URL` (http/https only, opens in a new tab, hidden when empty; docs/DEPLOY.md "Footer links").
 
 ## 5. Other sources (secondary)

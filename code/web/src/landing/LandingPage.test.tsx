@@ -248,7 +248,7 @@ describe('LandingPage', () => {
       ).toBe('/voice-commands');
       expect(within(box).queryByRole('link', { name: /Source code/ })).toBeNull();
       expect(within(box).queryByRole('link', { name: 'Report a problem' })).toBeNull();
-      expect(within(box).queryByRole('link', { name: 'Support Lotties' })).toBeNull();
+      expect(within(box).queryByRole('link', { name: 'Support the developer' })).toBeNull();
     });
 
     it('labels a GitHub repository and derives the new-issue page from it', async () => {
@@ -265,7 +265,7 @@ describe('LandingPage', () => {
 
     it('opens the support page in a new tab without sending anything', async () => {
       const box = await footer({ VITE_SUPPORT_URL: 'https://example.org/sponsor' });
-      const support = within(box).getByRole('link', { name: 'Support Lotties' });
+      const support = within(box).getByRole('link', { name: 'Support the developer' });
       expect(support.getAttribute('href')).toBe('https://example.org/sponsor');
       expect(support.getAttribute('target')).toBe('_blank');
       expect(support.getAttribute('rel')).toBe('noopener noreferrer');

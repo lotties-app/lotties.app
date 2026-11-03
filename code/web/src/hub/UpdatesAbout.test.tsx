@@ -299,7 +299,7 @@ describe('About', () => {
     vi.stubEnv('VITE_PRIVACY_CONTACT_EMAIL', '');
     const { unmount } = renderScreen(<AboutScreen />);
     expect(screen.queryByRole('link', { name: 'Report a problem' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Support Lotties' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Support the developer' })).toBeNull();
     unmount();
     vi.stubEnv('VITE_ISSUES_URL', 'https://example.org/issues/new');
     vi.stubEnv('VITE_SUPPORT_URL', 'https://example.org/sponsor');
@@ -307,7 +307,7 @@ describe('About', () => {
     expect(screen.getByRole('link', { name: 'Report a problem' }).getAttribute('href')).toBe(
       'https://example.org/issues/new',
     );
-    const support = screen.getByRole('link', { name: 'Support Lotties' });
+    const support = screen.getByRole('link', { name: 'Support the developer' });
     expect(support.getAttribute('href')).toBe('https://example.org/sponsor');
     expect(support.getAttribute('rel')).toBe('noopener noreferrer');
     vi.unstubAllEnvs();

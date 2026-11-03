@@ -97,7 +97,7 @@ const SERVER_STATUS_KEY = {
  * Hub > About: what this device runs and what the server runs (release, commit, build time, stamped
  * by the deploy), the reload when a new app version is waiting, a neutral note when the two differ
  * (the deploy rebuilds only the image that changed), "Copy version info" for bug reports, and the
- * licence, then credits, privacy, source, "Report a problem" and "Support Lotties" (the last
+ * licence, then credits, privacy, source, "Report a problem" and "Support the developer" (the last
  * three only when configured, src/landing/outboundLinks.ts). The server's version loads after the
  * screen, with a short timeout.
  */

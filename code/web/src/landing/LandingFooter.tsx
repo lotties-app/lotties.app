@@ -82,7 +82,7 @@ function LinkGroup({ id, label, links }: { id: string; label: string; links: Foo
 
 /**
  * Language and theme switches; three link columns (App: install guide, voice commands, self-host;
- * Project: source, credits, "Support Lotties"; Help and legal: "Report a problem", privacy, terms),
+ * Project: source, credits, "Support the developer"; Help and legal: "Report a problem", privacy, terms),
  * the outbound ones only when configured (src/landing/outboundLinks.ts); then the version, the beta
  * notice, the licence line and the medical note as plain text.
  */

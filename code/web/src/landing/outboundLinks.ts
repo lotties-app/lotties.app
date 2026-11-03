@@ -11,7 +11,7 @@ import { repoUrl, webAddress } from './repoUrl';
 type Env = Record<string, string | undefined>;
 
 /**
- * "Support Lotties": `VITE_SUPPORT_URL`, only when it is a web address
+ * "Support the developer": `VITE_SUPPORT_URL`, only when it is a web address
  * (docs/design/43-funding-options.md: a link out, never a payment inside the app).
  */
 export function supportUrl(env: Env = import.meta.env as Env): string | null {
