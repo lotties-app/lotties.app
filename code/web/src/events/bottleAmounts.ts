@@ -44,11 +44,16 @@ export function leftOverMl(payload: EventPayload): number {
   return prepared !== undefined && drunk !== undefined ? Math.max(0, prepared - drunk) : 0;
 }
 
-/** `payload` without a drunk amount equal to (or above) the prepared one: "all" is stored as nothing. */
+/**
+ * `payload` without a drunk amount equal to (or above) the prepared one: "all" is stored as nothing.
+ * Except for a bottle a sleep stopped: there no drunk amount means "unknown" (the follow-up asks),
+ * so an answer of "all of it" has to stay as a number or the question would never go away.
+ */
 export function withoutRedundantDrunk(payload: EventPayload): EventPayload {
   const prepared = preparedMl(payload);
   const drunk = finiteAmount(getOwn(payload, DRUNK_KEY));
   if (drunk === undefined || prepared === undefined || drunk < prepared) return payload;
+  if (getOwn(payload, ENDED_BY_KEY) === ENDED_BY_SLEEP) return payload;
   return withoutOwn<unknown>(payload, DRUNK_KEY);
 }
 

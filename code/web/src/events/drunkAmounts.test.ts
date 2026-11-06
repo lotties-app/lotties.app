@@ -77,6 +77,11 @@ describe('drunkMl', () => {
       amount_drunk_ml: 80,
     });
   });
+
+  it('keeps "all" as a number when a sleep stopped the bottle, so it no longer reads as unknown', () => {
+    const answered = { amount_ml: 120, amount_drunk_ml: 120, ended_by: 'sleep' };
+    expect(withoutRedundantDrunk(answered)).toEqual(answered);
+  });
 });
 
 describe('drunkChoices', () => {

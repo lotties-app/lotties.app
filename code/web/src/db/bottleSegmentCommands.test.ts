@@ -5,6 +5,7 @@ import {
   dismissBottleLevel,
   useBottleLevelPrompt,
 } from '../events/bottleLevelPrompt';
+import { hasUnknownFinish } from '../events/bottlePatterns';
 import { runPreset } from '../presets/actions';
 import { BUILT_IN_TYPES, presetById } from '../presets/presetFixtures';
 import { FEEDING_TYPE } from '../test/builtInTypes';
@@ -141,9 +142,11 @@ describe('a bottle records its drinking stretches', () => {
     const answered = await recordBottleLevel(db, event.id, 30, 0, at(30));
     expect(answered.payload).toMatchObject({ amount_drunk_ml: 90 });
     expect(answered.payload).not.toHaveProperty('segments');
-    // Empty: all of it, stored as no drunk amount.
+    // Empty: all of it. A sleep stopped this bottle, so "no drunk amount" would read as unknown and the
+    // follow-up card would stay: the answer is kept as a number.
     const all = await recordBottleLevel(db, event.id, 0, 0, at(31));
-    expect(all.payload).not.toHaveProperty('amount_drunk_ml');
+    expect(all.payload).toMatchObject({ amount_drunk_ml: 120 });
+    expect(hasUnknownFinish(all.payload)).toBe(false);
   });
 });
 
