@@ -47,7 +47,10 @@ public sealed class PostgresPlumbingTests(PostgresFixture postgres)
     public async Task Advisory_lock_is_released_when_the_holding_session_ends()
     {
         const long key = 4_747_002;
-        var holder = await postgres.DataSource.OpenConnectionAsync();
+        // Unpooled: the killed connection must never return to the shared pool other tests use.
+        var unpooled = new NpgsqlConnectionStringBuilder(postgres.ConnectionString) { Pooling = false };
+        await using var holderSource = NpgsqlDataSource.Create(unpooled.ConnectionString);
+        var holder = await holderSource.OpenConnectionAsync();
         Assert.True(await TryLockAsync(holder, key));
 
         var pid = holder.ProcessID;
