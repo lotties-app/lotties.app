@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lotties.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(LottiesDbContext))]
-    [Migration("20261107004947_PrivacyFirstOnboarding")]
+    [Migration("20261107064418_PrivacyFirstOnboarding")]
     partial class PrivacyFirstOnboarding
     {
         /// <inheritdoc />
@@ -2624,6 +2624,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.Property<DateTimeOffset?>("DemoExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("demo_expires_at");
+
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2649,6 +2653,9 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_users");
+
+                    b.HasIndex("DemoExpiresAt")
+                        .HasDatabaseName("ix_users_demo_expires_at");
 
                     b.HasIndex("Issuer", "Subject")
                         .IsUnique()
