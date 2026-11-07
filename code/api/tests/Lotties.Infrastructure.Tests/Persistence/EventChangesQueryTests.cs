@@ -11,7 +11,7 @@ public sealed class EventChangesQueryTests
     [Fact]
     public void ChangesQuery_WithCursor_TranslatesToKeysetPredicateIncludingDeleted()
     {
-        using var context = ModelTestContext.Create();
+        using var context = ModelTestContext.CreateData();
         var lastDelivered = Event.Create(Guid.NewGuid(), Guid.NewGuid(), BuiltInEventTypes.SleepId, Guid.NewGuid(), DateTimeOffset.UtcNow, null, EventPayload.Empty, null, DateTimeOffset.UtcNow);
 
         var sql = EfEventRepository.ChangesQuery(context, Guid.NewGuid(), EventSyncCursor.After(lastDelivered), 501).ToQueryString();
@@ -27,7 +27,7 @@ public sealed class EventChangesQueryTests
     [Fact]
     public void ChangesQuery_WithoutCursor_FiltersByBabyOnly()
     {
-        using var context = ModelTestContext.Create();
+        using var context = ModelTestContext.CreateData();
 
         var sql = EfEventRepository.ChangesQuery(context, Guid.NewGuid(), null, 10).ToQueryString();
 

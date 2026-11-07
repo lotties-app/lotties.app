@@ -11,13 +11,14 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// payload's <c>kind</c> (sleep sessions, see <see cref="SleepKinds"/>), <c>paused_seconds</c> (effective durations) and
 /// the diaper <c>content</c> (<see cref="DiaperContents"/>) are extracted in memory (<see cref="EventPayloadFacts"/>)
 /// so the query stays provider-neutral; so is the parent's "Not crying" answer on a fussy spell
-/// (<see cref="CryDetection.IsConfirmedNotCrying"/>), which the fussy pattern skips.
+/// (<see cref="CryDetection.IsConfirmedNotCrying"/>), which the fussy pattern skips. The birth date comes from the control
+/// plane, the events and their types from the data plane: two queries, no join across the planes.
 /// </remarks>
-internal sealed class EfPredictionHistoryRepository(LottiesDbContext context) : IPredictionHistoryRepository
+internal sealed class EfPredictionHistoryRepository(LottiesDbContext control, LottiesDataDbContext data) : IPredictionHistoryRepository
 {
     public async Task<PredictionHistory?> LoadAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken = default)
     {
-        var birthDate = await context.Babies
+        var birthDate = await control.Babies
             .AsNoTracking()
             .Where(baby => baby.Id == babyId)
             .Select(baby => (DateOnly?)baby.BirthDate)
@@ -29,10 +30,10 @@ internal sealed class EfPredictionHistoryRepository(LottiesDbContext context) : 
 
     private async Task<IReadOnlyList<ObservedEvent>> LoadEventsAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken)
     {
-        var rows = await context.Events
+        var rows = await data.Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && item.StartedAt >= since)
-            .Join(context.EventTypes, item => item.TypeId, type => type.Id, (item, type) => new { type.Key, item.StartedAt, item.EndedAt, item.Payload })
+            .Join(data.EventTypes, item => item.TypeId, type => type.Id, (item, type) => new { type.Key, item.StartedAt, item.EndedAt, item.Payload })
             .ToListAsync(cancellationToken);
         return rows.Select(row => Observed(row.Key, row.StartedAt, row.EndedAt, row.Payload)).ToArray();
     }

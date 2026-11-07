@@ -61,6 +61,7 @@ public sealed partial class BuiltInStoreNeutralityTests(ApiFactory factory) : IC
         {
             services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now));
             services.ConfigureDbContext<LottiesDbContext>(options => options.AddInterceptors(_sql));
+            services.ConfigureDbContext<LottiesDataDbContext>(options => options.AddInterceptors(_sql));
         }));
         var scenario = new Scenario(
             new Actors(host.ClientFor(baby.OwnerSubject), host.ClientFor(baby.SubjectOf(BabyRole.Doctor)), doctorId),

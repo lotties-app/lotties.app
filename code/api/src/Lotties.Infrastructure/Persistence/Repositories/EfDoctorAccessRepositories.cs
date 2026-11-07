@@ -28,7 +28,7 @@ internal sealed class EfProfessionalProfileRepository(LottiesDbContext context, 
 /// Visibility is part of every list query (<c>visibility = 'shared' OR author_user_id = reader</c>), so a private note
 /// never leaves the database for anyone but its author. A concurrent create of one id loses on the primary key.
 /// </remarks>
-internal sealed class EfNoteRepository(LottiesDbContext context, UniqueViolations uniqueViolations) : INoteRepository
+internal sealed class EfNoteRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations) : INoteRepository
 {
     public Task<BabyNote?> FindAsync(Guid noteId, CancellationToken cancellationToken = default) =>
         context.BabyNotes.SingleOrDefaultAsync(note => note.Id == noteId, cancellationToken);

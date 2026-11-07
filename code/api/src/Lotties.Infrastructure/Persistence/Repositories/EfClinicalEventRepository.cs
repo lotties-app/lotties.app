@@ -11,7 +11,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// few rows) so the event queries filter on plain type ids. The ids are a <see cref="List{T}"/>, not an array: newer C#
 /// compilers bind <c>array.Contains(x)</c> in a query to <c>MemoryExtensions.Contains(ReadOnlySpan)</c>, which EF Core 8 cannot translate.
 /// </remarks>
-internal sealed class EfClinicalEventRepository(LottiesDbContext context) : IClinicalEventRepository
+internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : IClinicalEventRepository
 {
     public async Task<IReadOnlyList<TypedEvent>> ListByTypesAsync(
         Guid babyId,

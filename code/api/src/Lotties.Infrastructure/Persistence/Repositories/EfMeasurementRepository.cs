@@ -9,7 +9,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
 /// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfMeasurementRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfMeasurementRepository> logger) : IMeasurementRepository
+internal sealed class EfMeasurementRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfMeasurementRepository> logger) : IMeasurementRepository
 {
     public async Task<IReadOnlyList<Measurement>> ListForBabyAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         await context.Measurements
