@@ -10,6 +10,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Board;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
+using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.Seed;
@@ -86,6 +87,9 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["board_item_events.actor_user_id"] = Rule.Clear,
         ["board_items.created_by_user_id"] = Rule.Clear,
         ["care_providers.created_by"] = Rule.KeepForTheFamily,
+
+        // Her bring-your-own-database stores (sealed descriptors) go with her (docs/design/47 section 9).
+        ["data_stores.owner_user_id"] = Rule.Erase,
         ["events.created_by"] = Rule.KeepForTheFamily,
         ["formulas.created_by"] = Rule.KeepForTheFamily,
         ["invites.accepted_by"] = Rule.KeepForTheFamily,
@@ -244,7 +248,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
     private static IReadOnlyList<Reference> ReferencesIn(IModel model) =>
     [
         .. from entity in model.GetEntityTypes()
-           where !entity.IsOwned() && entity.ClrType != typeof(User) && entity.ClrType != typeof(Baby)
+           where !entity.IsOwned() && entity.GetTableName() is not ("users" or "babies")
            from property in entity.GetProperties()
            where property.ClrType == typeof(Guid) || property.ClrType == typeof(Guid?)
            let target = TargetOf(property)
@@ -485,6 +489,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             context.NotificationActions.Add(NotificationAction.Snooze(userId, babyId, NotificationKey.ForNap(babyId, Start), Start));
             context.UserNotificationSettings.Add(UserNotificationSettings.Create(userId, new NotificationSettingsTerms(NotificationTimeZone.From("America/Sao_Paulo"), QuietHours.Default, false, false), Start));
             context.BabyNotificationPreferences.Add(BabyNotificationPreferences.Create(babyId, userId, ReminderPreferences.Default, Start));
+            context.DataStores.Add(DataStore.Create(Guid.NewGuid(), userId, Start));
             return Task.CompletedTask;
         });
     }

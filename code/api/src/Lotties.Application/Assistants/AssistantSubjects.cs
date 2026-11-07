@@ -1,5 +1,6 @@
 using Lotties.Application.Consents;
 using Lotties.Application.Notifications;
+using Lotties.Application.Stores;
 using Lotties.Application.Users;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
@@ -44,7 +45,8 @@ internal sealed record AssistantFamilyLookup(IReadOnlyList<AssistantFamilyMember
 /// (<see cref="AssistantBabyChoice"/>), the role the command needs, and her time zone (<see cref="AssistantZoneChoice"/>: the
 /// requested one, else the one stored with her notification settings, else the adapter's fallback, else
 /// <c>America/Sao_Paulo</c> when her app language is Portuguese (Brazil): the locale of her newest push subscription, the
-/// only language the server keeps).
+/// only language the server keeps). A command's baby is entered in the request's <see cref="IStoreScope"/> once the role check
+/// passes (the adapters' routes name no baby), so every command reads and writes that baby's store.
 /// </summary>
 internal sealed class AssistantSubjects(
     ICurrentUser currentUser,
@@ -54,6 +56,7 @@ internal sealed class AssistantSubjects(
     IUserFeedingSettingsRepository feedingSettings,
     IUserNotificationSettingsRepository notificationSettings,
     IPushSubscriptionRepository pushSubscriptions,
+    IStoreScope stores,
     TimeProvider timeProvider)
 {
     public async Task<AssistantSubjectLookup> LoadAsync(AssistantInvocation invocation, AssistantAccess access, CancellationToken cancellationToken = default)
@@ -77,9 +80,13 @@ internal sealed class AssistantSubjects(
         var baby = userBabies.Single(candidate => candidate.Id == babyId);
         var zone = await ZoneAsync(user.Id, invocation, now, cancellationToken);
         var subject = new AssistantSubject(baby, RoleOf(baby, user.Id), ZoneOf(zone.ZoneId), zone.ZoneId, now, zone.Source, invocation.Adapter, settings?.SayBabyName ?? false, settings?.SayMedicineNames ?? false, (await feedingSettings.FindAsync(user.Id, cancellationToken))?.TimeBottleFeedings ?? false);
-        return Allows(subject.Role, access)
-            ? new AssistantSubjectLookup(subject, null)
-            : new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));
+        if (!Allows(subject.Role, access))
+        {
+            return new AssistantSubjectLookup(null, subject.Result(AssistantResultCode.NotAllowed));
+        }
+
+        await stores.EnterAsync(babyId, cancellationToken);
+        return new AssistantSubjectLookup(subject, null);
     }
 
     /// <summary>

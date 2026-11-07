@@ -1,4 +1,5 @@
 using Lotties.Application.AccessLogs;
+using Lotties.Application.Stores;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Clinical;
@@ -28,6 +29,8 @@ public interface IDoctorPatientsService
 /// <remarks>
 /// One simple set of queries per patient (a doctor has dozens of patients, not thousands), and only for the sections the doctor's
 /// scopes on that baby open. The access view is recorded before the figures are read, so a baby is logged even when a figure fails.
+/// The route names no baby, so each patient (a baby she is the Doctor of) is entered in the request's <see cref="IStoreScope"/>
+/// before its figures are read.
 /// </remarks>
 internal sealed class DoctorPatientsService : IDoctorPatientsService
 {
@@ -42,6 +45,7 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
     private readonly IMeasurementRepository _measurements;
     private readonly IPrescriptionProposalRepository _proposals;
     private readonly INoteRepository _notes;
+    private readonly IStoreScope _stores;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<DoctorPatientsService> _logger;
 
@@ -55,6 +59,7 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
         IMeasurementRepository measurements,
         IPrescriptionProposalRepository proposals,
         INoteRepository notes,
+        IStoreScope stores,
         TimeProvider timeProvider,
         ILogger<DoctorPatientsService> logger)
     {
@@ -67,6 +72,7 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
         _measurements = measurements ?? throw new ArgumentNullException(nameof(measurements));
         _proposals = proposals ?? throw new ArgumentNullException(nameof(proposals));
         _notes = notes ?? throw new ArgumentNullException(nameof(notes));
+        _stores = stores ?? throw new ArgumentNullException(nameof(stores));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -100,6 +106,7 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
         var scopes = patient.Member!.EffectiveDoctorScopes;
         var view = SectionView.Of(patient.Member);
         await _accessLog.RecordViewAsync(baby.Id, BabyRole.Doctor, cancellationToken);
+        await _stores.EnterAsync(baby.Id, cancellationToken);
         return new DoctorPatientResponse
         {
             BabyId = baby.Id,

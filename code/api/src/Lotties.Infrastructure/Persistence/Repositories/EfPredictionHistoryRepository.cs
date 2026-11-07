@@ -1,6 +1,7 @@
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Predictions;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
@@ -14,7 +15,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// (<see cref="CryDetection.IsConfirmedNotCrying"/>), which the fussy pattern skips. The birth date comes from the control
 /// plane, the events and their types from the data plane: two queries, no join across the planes.
 /// </remarks>
-internal sealed class EfPredictionHistoryRepository(LottiesDbContext control, LottiesDataDbContext data) : IPredictionHistoryRepository
+internal sealed class EfPredictionHistoryRepository(LottiesDbContext control, StoreScope stores) : IPredictionHistoryRepository
 {
     public async Task<PredictionHistory?> LoadAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken = default)
     {
@@ -30,6 +31,7 @@ internal sealed class EfPredictionHistoryRepository(LottiesDbContext control, Lo
 
     private async Task<IReadOnlyList<ObservedEvent>> LoadEventsAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken)
     {
+        var data = stores.ContextFor(babyId);
         var rows = await data.Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && item.StartedAt >= since)

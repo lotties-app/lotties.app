@@ -1,3 +1,4 @@
+using Lotties.Application.Stores;
 using Lotties.Domain.Notifications;
 using Microsoft.Extensions.Logging;
 
@@ -7,13 +8,16 @@ namespace Lotties.Application.Notifications.Dispatching;
 /// Tick step 3 (design section 7): the candidate babies (a member with a kind on, Owner or Parent, with an active
 /// subscription), each planned by the pure <see cref="NotificationPlanner"/> with the recipients' settings, their
 /// snoozes and dismissals and the keys already claimed for them. A baby whose data cannot be planned is logged and
-/// skipped so the other babies still get their reminders.
+/// skipped so the other babies still get their reminders. Each baby is entered in the tick's <see cref="IStoreScope"/> before its
+/// data is read (a job has no request to do it; docs/design/47-bring-your-own-database.md section 2.2): a baby on an external
+/// store is skipped like any baby that cannot be planned (reminders for those are task T11).
 /// </summary>
 internal sealed class NotificationPlanningPass(
     IBabyNotificationPreferencesRepository preferences,
     IUserNotificationSettingsRepository settings,
     INotificationDeliveryRepository deliveries,
     NotificationPlanInputLoader loader,
+    IStoreScope stores,
     PushMetrics metrics,
     ILogger<NotificationPlanningPass> logger)
 {
@@ -63,6 +67,7 @@ internal sealed class NotificationPlanningPass(
     {
         try
         {
+            await stores.EnterAsync(babyId, cancellationToken);
             var recipients = candidates
                 .Select(candidate => NotificationRecipient.From(candidate.UserId, candidate.Role, candidate.Preferences, settingsByUser.GetValueOrDefault(candidate.UserId), now))
                 .ToArray();

@@ -7,6 +7,7 @@ using Lotties.Domain.Notifications;
 using Lotties.Domain.Prescriptions;
 using Lotties.Domain.Proposals;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -19,14 +20,14 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// <see cref="ConcurrentModificationException"/> and the accept saves nothing (one <c>SaveChanges</c>, one transaction).
 /// </remarks>
 internal sealed class EfPrescriptionProposalRepository(
-    LottiesDataDbContext context,
+    StoreScope stores,
     UniqueViolations uniqueViolations,
     ILogger<EfPrescriptionProposalRepository> logger) : IPrescriptionProposalRepository
 {
     private const string Resource = "proposal";
 
     public Task<PrescriptionProposal?> FindAsync(Guid proposalId, CancellationToken cancellationToken = default) =>
-        context.PrescriptionProposals.SingleOrDefaultAsync(proposal => proposal.Id == proposalId, cancellationToken);
+        stores.Current.PrescriptionProposals.SingleOrDefaultAsync(proposal => proposal.Id == proposalId, cancellationToken);
 
     public async Task<IReadOnlyList<PrescriptionProposal>> ListChangesVisibleToAsync(Guid babyId, Guid readerUserId, BabyRole readerRole, DateTimeOffset? since, CancellationToken cancellationToken = default)
     {
@@ -36,45 +37,49 @@ internal sealed class EfPrescriptionProposalRepository(
             return [];
         }
 
-        var ofBaby = context.PrescriptionProposals.AsNoTracking().Where(proposal => proposal.BabyId == babyId);
+        var ofBaby = stores.ContextFor(babyId).PrescriptionProposals.AsNoTracking().Where(proposal => proposal.BabyId == babyId);
         var visible = audience == ProposalAudience.Own ? ofBaby.Where(proposal => proposal.AuthorUserId == readerUserId) : ofBaby;
         var changed = since is { } from ? visible.Where(proposal => proposal.UpdatedAt >= from.ToUniversalTime()) : visible;
         return await changed.OrderBy(proposal => proposal.UpdatedAt).ThenBy(proposal => proposal.Id).ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<PrescriptionProposal>> ListPendingByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default) =>
-        await context.PrescriptionProposals
+        await stores.ContextFor(babyId).PrescriptionProposals
             .Where(proposal => proposal.BabyId == babyId && proposal.AuthorUserId == authorUserId && proposal.Status == ProposalStatus.Pending)
             .ToListAsync(cancellationToken);
 
     public Task<int> CountPendingByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default) =>
-        context.PrescriptionProposals.CountAsync(
+        stores.ContextFor(babyId).PrescriptionProposals.CountAsync(
             proposal => proposal.BabyId == babyId && proposal.AuthorUserId == authorUserId && proposal.Status == ProposalStatus.Pending,
             cancellationToken);
 
     public async Task<IReadOnlyList<PrescriptionProposal>> ListPendingReplacingAsync(Guid babyId, Guid prescriptionId, CancellationToken cancellationToken = default) =>
-        await context.PrescriptionProposals
+        await stores.ContextFor(babyId).PrescriptionProposals
             .Where(proposal => proposal.BabyId == babyId && proposal.ReplacesPrescriptionId == prescriptionId && proposal.Status == ProposalStatus.Pending)
             .ToListAsync(cancellationToken);
 
-    public Task<bool> TryAddAsync(PrescriptionProposal proposal, CancellationToken cancellationToken = default) =>
-        UniqueInserts.TryInsertAsync(context, uniqueViolations, proposal, cancellationToken);
+    public Task<bool> TryAddAsync(PrescriptionProposal proposal, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        return UniqueInserts.TryInsertAsync(stores.ContextFor(proposal.BabyId), uniqueViolations, proposal, cancellationToken);
+    }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => SaveOrConflictAsync(cancellationToken);
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => SaveOrConflictAsync(stores.Current, cancellationToken);
 
     public Task SaveAcceptanceAsync(Prescription prescription, Medication? addedMedication, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(prescription);
+        var context = stores.ContextFor(prescription.BabyId);
         if (addedMedication is not null)
         {
             context.Medications.Add(addedMedication);
         }
 
         context.Prescriptions.Add(prescription);
-        return SaveOrConflictAsync(cancellationToken);
+        return SaveOrConflictAsync(context, cancellationToken);
     }
 
-    private async Task SaveOrConflictAsync(CancellationToken cancellationToken)
+    private async Task SaveOrConflictAsync(LottiesDataDbContext context, CancellationToken cancellationToken)
     {
         try
         {
@@ -100,28 +105,32 @@ internal sealed class EfPrescriptionProposalRepository(
 }
 
 /// <remarks>A concurrent first read of one note by one member loses on the primary key (<see cref="UniqueInserts"/>).</remarks>
-internal sealed class EfNoteReadRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations) : INoteReadRepository
+internal sealed class EfNoteReadRepository(StoreScope stores, UniqueViolations uniqueViolations) : INoteReadRepository
 {
     public Task<NoteRead?> FindAsync(Guid noteId, Guid userId, CancellationToken cancellationToken = default) =>
-        context.NoteReads.AsNoTracking().SingleOrDefaultAsync(read => read.NoteId == noteId && read.UserId == userId, cancellationToken);
+        stores.Current.NoteReads.AsNoTracking().SingleOrDefaultAsync(read => read.NoteId == noteId && read.UserId == userId, cancellationToken);
 
     public async Task<IReadOnlyList<NoteRead>> ListChangesAsync(Guid babyId, Guid userId, DateTimeOffset? since, CancellationToken cancellationToken = default)
     {
-        var mine = context.NoteReads.AsNoTracking().Where(read => read.BabyId == babyId && read.UserId == userId);
+        var mine = stores.ContextFor(babyId).NoteReads.AsNoTracking().Where(read => read.BabyId == babyId && read.UserId == userId);
         var changed = since is { } from ? mine.Where(read => read.ReadAt >= from.ToUniversalTime()) : mine;
         return await changed.OrderBy(read => read.ReadAt).ThenBy(read => read.NoteId).ToListAsync(cancellationToken);
     }
 
-    public Task<bool> TryAddAsync(NoteRead read, CancellationToken cancellationToken = default) =>
-        UniqueInserts.TryInsertAsync(context, uniqueViolations, read, cancellationToken);
+    public Task<bool> TryAddAsync(NoteRead read, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        return UniqueInserts.TryInsertAsync(stores.ContextFor(read.BabyId), uniqueViolations, read, cancellationToken);
+    }
 }
 
 /// <remarks>Two small queries per baby, run only when an Owner or Parent of the baby wants the push.</remarks>
-internal sealed class EfDoctorSuggestionRepository(LottiesDataDbContext context) : IDoctorSuggestionRepository
+internal sealed class EfDoctorSuggestionRepository(StoreScope stores) : IDoctorSuggestionRepository
 {
     public async Task<IReadOnlyList<DoctorSuggestion>> ListSinceAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken = default)
     {
         var from = since.ToUniversalTime();
+        var context = stores.ContextFor(babyId);
         var proposals = await context.PrescriptionProposals
             .AsNoTracking()
             .Where(proposal => proposal.BabyId == babyId && proposal.Status == ProposalStatus.Pending && proposal.CreatedAt >= from)

@@ -16,13 +16,15 @@ public sealed class ModelTests
     {
         using var context = ModelTestContext.Create();
 
+        // Distinct: the baby's routing columns are a second entity on table babies (BabyStoreAssignment, table splitting).
         var tables = context.DesignTimeModel().GetEntityTypes()
             .Where(entity => !entity.IsOwned())
             .Select(entity => entity.GetTableName())
+            .Distinct()
             .Order()
             .ToArray();
 
-        Assert.Equal(["access_log", "appointments", "babies", "baby_members", "baby_notes", "baby_notification_preferences", "board_api_keys", "board_item_events", "board_items", "board_topics", "care_providers", "event_types", "events", "formulas", "invites", "job_leases", "measurements", "medications", "note_reads", "notification_actions", "notification_deliveries", "prescription_proposals", "prescriptions", "product_substances", "products", "professional_profiles", "push_subscriptions", "substances", "user_assistant_settings", "user_consent_history", "user_consents", "user_feeding_settings", "user_notification_settings", "user_rest_mornings", "user_rest_settings", "user_unit_settings", "users", "vaccinations"], tables);
+        Assert.Equal(["access_log", "appointments", "babies", "baby_members", "baby_notes", "baby_notification_preferences", "board_api_keys", "board_item_events", "board_items", "board_topics", "care_providers", "data_stores", "event_types", "events", "formulas", "invites", "job_leases", "measurements", "medications", "note_reads", "notification_actions", "notification_deliveries", "prescription_proposals", "prescriptions", "product_substances", "products", "professional_profiles", "push_subscriptions", "substances", "user_assistant_settings", "user_consent_history", "user_consents", "user_feeding_settings", "user_notification_settings", "user_rest_mornings", "user_rest_settings", "user_unit_settings", "users", "vaccinations"], tables);
     }
 
     [Theory]

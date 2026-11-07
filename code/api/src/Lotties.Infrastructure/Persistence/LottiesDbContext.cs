@@ -128,6 +128,12 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>The board API keys (hashes only), revoked ones included.</summary>
     public DbSet<Lotties.Domain.Board.BoardApiKey> BoardApiKeys => Set<Lotties.Domain.Board.BoardApiKey>();
 
+    /// <summary>The external data stores of bring-your-own-database (docs/design/47), by owner account; empty until task T6.</summary>
+    public DbSet<Lotties.Domain.Stores.DataStore> DataStores => Set<Lotties.Domain.Stores.DataStore>();
+
+    /// <summary>The routing columns of every baby row (<c>babies.data_store_id</c>, <c>babies.store_epoch</c>), read by the store resolver.</summary>
+    public DbSet<Lotties.Domain.Stores.BabyStoreAssignment> BabyStoreAssignments => Set<Lotties.Domain.Stores.BabyStoreAssignment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);

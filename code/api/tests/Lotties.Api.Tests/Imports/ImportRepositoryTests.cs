@@ -13,15 +13,19 @@ namespace Lotties.Api.Tests.Imports;
 /// <summary>The import repository against the SQLite test database (real transactions and primary keys).</summary>
 public sealed class ImportRepositoryTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
+    /// <summary>The babies this test seeded, bound in every repository scope (an import runs on its baby's route).</summary>
+    private readonly List<Guid> _babies = [];
+
     private async Task<TResult> WithImportsAsync<TResult>(Func<IImportRepository, Task<TResult>> action)
     {
-        await using var scope = factory.Services.CreateAsyncScope();
+        await using var scope = await factory.CreateScopeForAsync([.. _babies]);
         return await action(scope.ServiceProvider.GetRequiredService<IImportRepository>());
     }
 
     private async Task<(Guid BabyId, Guid UserId)> SeedAsync()
     {
         var baby = await factory.SeedBabyAsync();
+        _babies.Add(baby.BabyId);
         return (baby.BabyId, await factory.UserIdAsync(baby.OwnerSubject));
     }
 
