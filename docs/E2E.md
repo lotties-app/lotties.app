@@ -71,6 +71,10 @@ A separate, credential-free Playwright run (no API, no Keycloak, no `.env`) that
 
 It starts its own Vite dev server on port 5191 (`AUDIT_PORT`), runs 3 workers (`AUDIT_WORKERS`) and takes about 12-15 minutes for the full matrix. The report is `tests/e2e/design-review/output/overflow-audit.md` (gitignored), with the raw findings per group in `output/overflow-audit/*.json`.
 
+## Showcase media
+
+Screenshots and the demo video of the landing page and README come from a separate credential-free run, `tests/e2e/showcase` (docs/showcase-media.md); like the mobile audit it needs no API, Keycloak or `.env`.
+
 ## CI
 
 `.github/workflows/e2e.yml` is manual (`workflow_dispatch`) because it needs secrets: `E2E_DB_HOST`, `E2E_DB_PORT`, `E2E_DB_NAME`, `E2E_DB_APP_USER`, `E2E_DB_APP_PASSWORD`, `E2E_AUTH_AUTHORITY`, `E2E_AUTH_AUDIENCE`, `E2E_OIDC_CLIENT_ID`, `E2E_USERNAME`, `E2E_PASSWORD`. The database host must be reachable from GitHub-hosted runners. On CI there is one retry and a trace on the first retry (never for the login specs); the report is uploaded when the run fails.

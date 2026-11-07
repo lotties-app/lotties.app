@@ -59,6 +59,7 @@ const SCENARIOS = [
   'wet',
   'dirty',
   'bottle',
+  'bottlesleep',
   'stack',
   'caregiver',
   'cry',
@@ -681,6 +682,17 @@ function seedFor(scenario: Scenario, now: number): Seeded {
       return {
         baby,
         events: [...morning(now, 112), eventAt(now, 'feeding', 6, null, RUNNING_BOTTLE)],
+        predictions: prediction(now),
+      };
+    case 'bottlesleep':
+      // She fell asleep during the bottle: the follow-up asks how much was left.
+      return {
+        baby,
+        events: [
+          ...morning(now, 400),
+          eventAt(now, 'feeding', 40, 14, { ...RUNNING_BOTTLE, ended_by: 'sleep' }),
+          eventAt(now, 'sleep', 14, null, { kind: 'nap' }),
+        ],
         predictions: prediction(now),
       };
     case 'stack':
