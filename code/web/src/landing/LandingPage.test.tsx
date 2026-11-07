@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +13,7 @@ import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
 import summary from '../credits/third-party-summary.generated.json';
 import LandingPage from './LandingPage';
+import { SHOWCASE_SCREENS } from './features';
 import { repoUrl } from './repoUrl';
 import { readBuildInfo } from '../config/buildInfo';
 import { displayVersion } from '../config/versionInfo';
@@ -70,6 +71,7 @@ describe('LandingPage', () => {
       'Why we made Lotties',
       'Install on your phone',
       'What it does',
+      'See it in action',
       'How it works',
       'Not a medical device',
       'Built on open source',
@@ -81,6 +83,47 @@ describe('LandingPage', () => {
     expect(screen.getByText(/AGPL-3\.0/, { selector: 'footer p' })).toBeTruthy();
     // The title is set by an effect that can run just after the page is in the document.
     await waitFor(() => expect(document.title).toBe("Lotties: track your baby's day, together"));
+  });
+
+  it('shows the screenshots lazily and the demo video without autoplay, self-hosted', async () => {
+    renderLanding();
+    const section = (
+      await screen.findByRole('heading', { level: 2, name: 'See it in action' })
+    ).closest('section')!;
+    const images = within(section).getAllByRole('img');
+    expect(images).toHaveLength(SHOWCASE_SCREENS.length);
+    for (const image of images) {
+      expect(image.getAttribute('loading')).toBe('lazy');
+      expect(image.getAttribute('alt')!.length).toBeGreaterThan(20);
+      expect(image.getAttribute('src')).toMatch(/^\/showcase\/[a-z-]+-(light|dark)-en\.webp$/);
+    }
+    const video = section.querySelector('video')!;
+    expect(video.hasAttribute('autoplay')).toBe(false);
+    expect(video.getAttribute('preload')).toBe('none');
+    const sources = [...section.querySelectorAll('source')].map((el) => el.getAttribute('src'));
+    expect(sources).toEqual(['/showcase/demo-en.webm', '/showcase/demo-en.mp4']);
+  });
+
+  it('has every showcase file the page points at, in both languages', () => {
+    const files = [
+      ...SHOWCASE_SCREENS.flatMap(({ id, dark }) =>
+        ['en', 'pt-BR'].flatMap((lang) =>
+          (dark ? ['light', 'dark'] : ['light']).map((scheme) => `${id}-${scheme}-${lang}.webp`),
+        ),
+      ),
+      ...['en', 'pt-BR'].flatMap((lang) => [
+        `demo-${lang}.mp4`,
+        `demo-${lang}.webm`,
+        `demo-${lang}-poster.webp`,
+      ]),
+    ];
+    for (const file of files) {
+      const path = `public/showcase/${file}`; // vitest runs from code/web
+      const size = statSync(path).size;
+      expect(size, file).toBeGreaterThan(0);
+      // Screenshots stay small; the videos stay a few MB at most.
+      expect(size, file).toBeLessThan(file.endsWith('.webp') ? 300 * 1024 : 3 * 1024 * 1024);
+    }
   });
 
   it('credits open source in a visible section and in the footer, both linking to /credits', async () => {
