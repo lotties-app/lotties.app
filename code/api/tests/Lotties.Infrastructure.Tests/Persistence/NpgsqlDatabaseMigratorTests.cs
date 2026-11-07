@@ -100,7 +100,42 @@ public sealed class NpgsqlDatabaseMigratorTests
     }
 
     private static NpgsqlDatabaseMigrator Migrator(FakeMigrationSession session) =>
-        new(new FakeSessionFactory(session), FastLock, TimeProvider.System, NullLogger<NpgsqlDatabaseMigrator>.Instance);
+        new(new FakeSessionFactory(session), FastLock, new InstantDelayTimeProvider(), NullLogger<NpgsqlDatabaseMigrator>.Instance);
+
+    /// <summary>
+    /// A clock that moves only when the migrator waits: every delay completes at once and advances the clock by exactly its
+    /// length, so the lock retries and the lock timeout do not depend on how busy the test machine is.
+    /// </summary>
+    private sealed class InstantDelayTimeProvider : TimeProvider
+    {
+        private long _ticks;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => Interlocked.Read(ref _ticks);
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            if (dueTime != Timeout.InfiniteTimeSpan)
+            {
+                Interlocked.Add(ref _ticks, dueTime.Ticks);
+                callback(state);
+            }
+
+            return new NoTimer();
+        }
+
+        private sealed class NoTimer : ITimer
+        {
+            public bool Change(TimeSpan dueTime, TimeSpan period) => false;
+
+            public void Dispose()
+            {
+            }
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+    }
 
     private sealed class FakeSessionFactory(FakeMigrationSession session) : IMigrationSessionFactory
     {
