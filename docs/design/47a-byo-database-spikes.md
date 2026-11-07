@@ -90,8 +90,8 @@ Read through web search of vendor pages on 2026-11-07; to be confirmed by someon
 
 - The direct connection (5432) is **IPv6** unless the paid IPv4 add-on is bought. The shared pooler (Supavisor) is **IPv4**,
   in session mode (5432; session features and prepared statements work) and transaction mode (6543; no prepared statements
-  on the shared pooler). **A home lab without IPv6 must therefore use the shared pooler in session mode.** Whether the lab
-  has IPv6 egress is unknown (owner).
+  on the shared pooler). **A home lab without IPv6 must therefore use the shared pooler in session mode.** The lab
+  has no IPv6 egress (measured, see below).
 - The migrator needs session mode (advisory lock, DDL). Simplest rule: session mode for both roles. Free-plan pool and client
   limits: not retrieved.
 - Free projects pause after about a week of low activity; restore windows are quoted differently (90 days in an older
@@ -140,7 +140,7 @@ What this settles:
   terminates TLS and talks to the compute node itself, so **"the connection is encrypted" is true up to the provider's proxy,
   not necessarily end to end inside the provider**. We cannot see past the proxy, and the policy text must not claim more
   than "encrypted in transit to the provider".
-- IPv6 also resolved, and IPv4 was available, so Neon works from a lab without IPv6 (this lab's own IPv6 is still unknown).
+- IPv6 also resolved, and IPv4 was available, so Neon works from a lab without IPv6 (the lab has no IPv6 egress, measured below).
 
 Second run, after an idle period the owner did not time (Neon suspends a free compute after about 5 minutes without connections; we did not confirm it had suspended): the first connect to the direct endpoint took **748 ms** against 194 ms and 38 ms warm, and the pooled connect right after took 62 ms because the first call had already woken the compute. Results otherwise identical (same lock behavior, same TLS result). So a wake-up costs well under a second on this region and plan, in one sample. That is small next to our timeouts, but the guard's connect timeout must stay at several seconds (not 1 to 2) so a cold compute is not reported as `Unreachable`.
 
@@ -161,7 +161,7 @@ Second run, after an idle period the owner did not time (Neon suspends a free co
 What this settles:
 
 - **Supabase's TLS cannot be verified with the system trust store.** The chain ends in a private Supabase CA, so the strict recipe fails closed (correctly). Supabase therefore needs the **user-supplied CA as the only root** path that 47 section 3.2 already allows: the user downloads Supabase's CA certificate from the dashboard and pastes it into the form, we validate the chain against that root only (and the typed name), and the test-connection error must say "certificate not trusted, add the provider's CA" instead of a generic handshake error. The name check passed here (no name mismatch). **Second run with the downloaded CA: it works.** With Supabase's CA certificate as the only root, the chain built (`custom-CA chain ok=True`, intermediate taken from the server's own chain), the typed name matched, and the connection, schema, 1000 events, advisory-lock probe and prepared statement all behaved as before; session pooler (5432) held the lock, transaction pooler (6543) did not (this time the prompts were not swapped, so the labels match the ports). The same run is also a **negative test**: pointed at Neon with Supabase's CA as the only root, the handshake was refused, so a wrong CA fails closed and a pasted CA is not trusted for other hosts.
-- **The direct connection is IPv6 only and the owner's PC cannot reach it.** The lab's IPv6 egress is still unknown, so for Supabase the form must default to the **session pooler** (5432), which has IPv4. Transaction mode (6543) does not hold advisory locks and must be refused for the migrator, exactly like Neon's pooler.
+- **The direct connection is IPv6 only and the owner's PC cannot reach it.** The lab has no IPv6 egress (measured below), so for Supabase the form must default to the **session pooler** (5432), which has IPv4. Transaction mode (6543) does not hold advisory locks and must be refused for the migrator, exactly like Neon's pooler.
 - **Pool caps must be tiny.** `max_connections` was 60 on this plan (the pooler layer has its own limits, not retrieved). With many stores and a shared API, the per-store pool cap is a few connections (2 to 5), with idle eviction, and the API must never hold a connection per baby per request.
 - The pooler user is `postgres.<ref>`: the form and the guard handled the dotted name unchanged.
 - As with Neon, `pg_stat_ssl` shows no SSL on the backend: the pooler ends TLS. Same wording limit for the policy ("encrypted in transit to the provider").
@@ -203,12 +203,24 @@ What this settles:
 
 Not measured: behavior near the free plan limits.
 
+**Lab IPv6 egress, measured (2026-11-07, owner's home lab, k3s):** `curl -6 https://ipv6.icanhazip.com` from a throwaway **pod**
+failed immediately (`Failed to connect ... after 22 ms`, no route), and from the **node** it timed out after 10 s. So neither
+pods nor the host can reach IPv6-only hosts; the pods are IPv4-only. Consequences: an IPv6-only database host (Supabase's direct
+connection, any provider that is IPv6-only without an add-on) **cannot be reached from the lab**; the guard must say so
+precisely when a host resolves only to IPv6 ("this address is IPv6 only and Lotties cannot reach it, use the provider's IPv4
+pooler address") instead of a generic connection error; the Supabase form defaults to the session pooler; and both providers
+tested otherwise offer IPv4 endpoints (Neon direct and pooler, Supabase poolers). If the lab ever gets dual-stack, the guard
+already handles both families (it prefers a globally routable IPv4 and falls back to IPv6).
+The measurement was not run through the guard itself and the `curl` test only covers outbound TCP to port 443; the database
+ports 5432 and 6543 were reached over IPv4 from the owner's PC, not from the lab, so a lab-side run of the guard against a real
+provider is still a build-stage check (T3 or T5).
+
 ## Consequences for 47 (apply when the owner decides)
 
 1. The descriptor carries **separate app and migrator host/port**.
 2. The recipe in (b) replaces the "unverified" remark in 47 section 3.2 step 4 (done in this change).
 3. T0 is done for (a) and (b), and for (c) on Neon (two runs, one with a cold start sample) and on Supabase (two runs, the second with the downloaded CA). (c) still needs a restricted
-   role run and the lab's IPv6 answer.
+   role run.
 3a. The migration runner proves the advisory lock really holds (probe from a second connection) and refuses otherwise.
 3b. The privacy text says "encrypted in transit to the provider" and nothing about the inside of the provider.
 4. New data-chain task: a baseline migration with the built-in event types (47 section 4, plan T5).
@@ -217,6 +229,5 @@ Not measured: behavior near the free plan limits.
 ## Still open after the spikes
 
 - Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: a timed-idle cold start. Restricted roles passed on Neon and Supabase. Both providers are still to be run from the lab itself, through the guard.
-- IPv6 egress from the home lab.
 - NetworkPolicy enforcement on the k3s cluster.
 - The one-`SaveChanges`-across-planes question in (a).
