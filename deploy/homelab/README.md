@@ -144,6 +144,12 @@ kubectl --context "$KUBE_CONTEXT" -n lotties-app-production logs deploy/lotties-
 Then sign in at https://lotties.app. `/health` is not public; check it with
 `kubectl ... port-forward svc/lotties-api 18080:8080` and `curl localhost:18080/health`.
 
+## Logs and personal data
+
+The `lotties-web` pod writes its nginx access log to stdout and the cluster ships every pod log to Loki. The lines hold client addresses and paths
+(some with a baby's id in `/api/...` calls) for as long as Loki keeps them. Keep that retention short, and say so in the privacy policy if it is longer
+than a few weeks (docs/design/33-privacy-audit.md).
+
 ## Roll back
 
 ```bash
