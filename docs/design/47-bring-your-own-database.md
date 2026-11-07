@@ -7,6 +7,10 @@ traffic still goes through the Lotties API, so insights, predictions, vaccine st
 The API stores the connection string in a form that is not readable, runs the queries against the user's database and
 returns the results. Suggest the cheapest hosts to users.
 
+**Owner clarification (2026-11-07): this is an option, not a replacement.** Lotties-hosted storage stays the default for
+everyone. A user may choose their own database for a baby and may move back at any time. Nobody who never opts in sees any
+change, and the feature flag is off by default. The owner has decided to build it, staged (section 14).
+
 Related: [40 family tenant](#0-how-this-relates-to-earlier-notes) (design on branch `claude/design-family-tenant-bdb1b5`, not
 on `main`), [24 backup file](24-export-import.md), [33 privacy audit](33-privacy-audit.md),
 [38 consent](38-consent-and-terms.md), [16 doctor access](16-doctor-access.md), [39 self-hosting](39-self-hosting-page.md),
@@ -31,6 +35,7 @@ on `main`), [24 backup file](24-export-import.md), [33 privacy audit](33-privacy
 
 | # | Question | Decision | Why |
 | --- | --- | --- | --- |
+| D0 | Opt-in | **Opt-in, per baby, reversible; hosted is the default; the flag is off by default** | The hosted path must stay the one everyone uses; BYO is an extra store, never a migration of the user base |
 | D1 | Unit of routing | **Per baby**, the store is *owned by an account* (the Owner of the baby) and the baby points at it | A baby is shared by several accounts (members), so a per-account store cannot serve shared babies; a baby-level pointer lets one Owner keep babies in different places |
 | D2 | What moves | Records **about the baby's care** (events, custom event types, medications, prescriptions, formulas, appointments, care providers, vaccinations, measurements, notes, proposals, note reads) | Content is where the health data is |
 | D3 | What stays in Lotties | Accounts, consents, memberships and roles, invites, doctor access and its log, push subscriptions and notification preferences, settings, the board, the public catalog, and (MVP) the `babies` row | The app must authenticate, authorize and show the list when the store is down |
@@ -349,6 +354,9 @@ would be a far worse secret than a role limited to one schema).
 
 ## 8. Product
 
+Everything in this section applies only to a person who opens "Use your own database". Nothing in the hosted flows
+(sign-up, baby creation, invites, sync, export, deletion) changes for anyone else, and the entry sits behind the flag.
+
 ### 8.1 Onboarding ("Use your own database", Settings > Privacy and data)
 
 1. **What this is, in plain words**: your records are stored in a database you control; Lotties still reads and writes it
@@ -448,6 +456,13 @@ CA input in the MVP unless a target provider needs it (decided in T0).
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 
+**Neutrality rule for people who never opt in:** every task keeps the hosted path behaviorally identical. T1 and T2 are
+refactors with the built-in store as the only store: the whole existing suite must pass unchanged, API responses and
+sync payloads must be byte-identical for a hosted baby (add golden-response tests on the sync routes and a SQL-shape test
+that the hosted queries still hit the same tables), the `epoch` field is additive and ignored by old clients, and no new
+dependency, migration or table touches a hosted user's rows until the flag is on for that account (the `data_stores` table is
+empty and the control migration is additive). The flag defaults to off in `appsettings` and in the home-lab kit.
+
 | Task | Tier | Depends | What | Tests | Conventions touched |
 | --- | --- | --- | --- | --- | --- |
 | **T0** Spikes (throwaway, no merge): (a) FK and join inventory of the data tables, (b) Npgsql IP-pinned connect + name-verified TLS, (c) Supabase and Neon free accounts: IPv4 reach from the lab, pooler ports, session lock, schema exposure, pause, connection limits, row size measure | careful | none | Written findings in `docs/design/` as an addendum | The spikes' own scripts, not merged | none |
@@ -499,8 +514,9 @@ detected. *Which CI runner and image tag to use was not checked.*
 
 ## 14. Decisions the owner must make
 
-1. **Build it at all?** The model split costs a lot and the privacy gain is partial (the operator still reads). Recommend:
-   run T0 (spikes + FK inventory), decide after its findings; do not start T1 before.
+1. **Build it: yes, staged (owner decided 2026-11-07).** T0 spikes first (done for the FK inventory and the TLS recipe,
+   see 47a; the real-provider run needs the owner's accounts), then T1 onward in order. The model split costs a lot and the
+   privacy gain is partial (the operator still reads), so it stays opt-in and behavior-neutral for everyone else.
 2. **Honest wording.** Accept "stored in a database you control; Lotties reads and writes it", never "we cannot read it".
    Recommend yes.
 3. **Where the key lives.** Kubernetes Secret now; a separate data-gateway pod later. Recommend Secret, MVP.
