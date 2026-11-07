@@ -167,7 +167,7 @@ What this settles:
 - The pooler user is `postgres.<ref>`: the form and the guard handled the dotted name unchanged.
 - As with Neon, `pg_stat_ssl` shows no SSL on the backend: the pooler ends TLS. Same wording limit for the policy ("encrypted in transit to the provider").
 - Latency from the owner's PC: 47 to 131 ms to the pooler, 38 to 194 ms to Neon. Not a design constraint.
-- Not tested on Supabase: exposed schemas in the Data API (a dashboard check), a restricted role, free-plan pausing (a week of inactivity, cannot be tested quickly), the downloaded CA.
+- Not tested on Supabase: exposed schemas in the Data API (a dashboard check), a restricted role, free-plan pausing (a week of inactivity, cannot be tested quickly), the CA's expiry and how Supabase rotates it (a rotation would make every Supabase store fail closed until the user pastes the new CA: the store state must say so and the settings page must show the CA's expiry date).
 
 Not measured: a restricted role, behavior near the free
 plan limits, and **Supabase** (no account yet).
