@@ -51,6 +51,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                 table: "babies",
                 column: "data_store_id");
 
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_babies_store_epoch_present",
+                table: "babies",
+                sql: "store_epoch IS NOT NULL");
+
             migrationBuilder.CreateIndex(
                 name: "ix_data_stores_owner_user_id",
                 table: "data_stores",
@@ -77,6 +82,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropIndex(
                 name: "ix_babies_data_store_id",
+                table: "babies");
+
+            migrationBuilder.DropCheckConstraint(
+                name: "ck_babies_store_epoch_present",
                 table: "babies");
 
             migrationBuilder.DropColumn(

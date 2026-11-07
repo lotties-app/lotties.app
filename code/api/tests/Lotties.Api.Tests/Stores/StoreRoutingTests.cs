@@ -229,14 +229,7 @@ public sealed class StoreRoutingTests(StoreRoutingHost routing) : IClassFixture<
         return storeId;
     }
 
-    /// <summary>A <c>data_stores</c> row of the Owner and the baby's pointer to it (what moving a baby will do, task T7).</summary>
-    private Task AssignAsync(Family family, Guid babyId, Guid storeId) =>
-        Factory.SeedAsync(async context =>
-        {
-            context.DataStores.Add(DataStore.Create(storeId, family.OwnerId, Now));
-            var assignment = await context.BabyStoreAssignments.SingleAsync(row => row.BabyId == babyId);
-            assignment.MoveTo(DataStoreKey.External(storeId));
-        });
+    private Task AssignAsync(Family family, Guid babyId, Guid storeId) => Factory.AssignStoreAsync(babyId, family.OwnerId, storeId);
 
     private sealed record Family(Guid OwnerId, string Subject, IReadOnlyList<Guid> Babies);
 }

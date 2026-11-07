@@ -31,19 +31,23 @@ internal sealed class DataStoreConfiguration : IEntityTypeConfiguration<DataStor
 
 /// <remarks>
 /// The routing columns of the baby's own row (<c>babies.data_store_id</c>, null = the built-in store, and
-/// <c>babies.store_epoch</c>, NOT NULL DEFAULT 0), mapped as a second entity on table <c>babies</c> (table splitting) so that the
+/// <c>babies.store_epoch</c>, DEFAULT 0), mapped as a second entity on table <c>babies</c> (table splitting) so that the
 /// queries of <see cref="Baby"/> read and write exactly the columns they did before. Every baby row has them: a new baby gets the
 /// database defaults (built-in, epoch 0). The pointer is <c>RESTRICT</c>: a store a baby still points at cannot be deleted, so a
-/// baby never silently falls back to the built-in store.
+/// baby never silently falls back to the built-in store. EF maps the columns of an optional table-sharing entity as nullable and
+/// reads the row only where <c>store_epoch IS NOT NULL</c>; the check constraint <see cref="EpochPresentConstraint"/> keeps
+/// <c>store_epoch</c> from ever being null, so a pointer can never hide behind a null epoch.
 /// </remarks>
 internal sealed class BabyStoreAssignmentConfiguration : IEntityTypeConfiguration<BabyStoreAssignment>
 {
     /// <summary>The key column of <c>babies</c>, named the same on both entity types whatever the naming convention.</summary>
     public const string KeyColumn = "id";
 
+    public const string EpochPresentConstraint = "ck_babies_store_epoch_present";
+
     public void Configure(EntityTypeBuilder<BabyStoreAssignment> builder)
     {
-        builder.ToTable("babies");
+        builder.ToTable("babies", table => table.HasCheckConstraint(EpochPresentConstraint, "store_epoch IS NOT NULL"));
         builder.HasXminRowVersion();
         builder.HasKey(assignment => assignment.BabyId);
         builder.Property(assignment => assignment.BabyId).HasColumnName(KeyColumn).ValueGeneratedNever();

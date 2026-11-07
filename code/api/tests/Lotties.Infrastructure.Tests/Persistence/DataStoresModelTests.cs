@@ -41,6 +41,7 @@ public sealed class DataStoresModelTests
         Assert.Equal(("data_store_id", true, DeleteBehavior.Restrict), (pointer.Properties.Single().GetColumnName(), pointer.Properties.Single().IsNullable, pointer.DeleteBehavior));
         Assert.Equal(("store_epoch", 0), (epoch.GetColumnName(), epoch.GetDefaultValue()));
         Assert.Contains(assignment.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(Baby) && key.IsUnique);
+        Assert.Contains(assignment.GetCheckConstraints(), check => (check.Name, check.Sql) == ("ck_babies_store_epoch_present", "store_epoch IS NOT NULL"));
     }
 
     [Fact]

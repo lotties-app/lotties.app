@@ -15,7 +15,8 @@ namespace Lotties.Api.Tests.Stores;
 /// <summary>
 /// The push scheduler is a job, not a request: its planning pass enters each candidate baby in the tick's store scope itself
 /// (docs/design/47-bring-your-own-database.md section 2.2, task T2). A baby on an external store is planned from that store; a baby
-/// whose store cannot be opened is skipped, never planned from what the built-in database still holds; the others are planned.
+/// whose store cannot be opened (or any external store while <c>Stores:Enabled</c> is off) is skipped, never planned from what the
+/// built-in database still holds; the others are planned.
 /// </summary>
 public sealed class StoreRoutingSchedulerTests : IDisposable
 {
@@ -63,14 +64,25 @@ public sealed class StoreRoutingSchedulerTests : IDisposable
         Assert.DoesNotContain(_sender.Sent, push => push.IsFor(unreachablePhone));
     }
 
-    /// <summary>A store row of the family's Owner and the baby's pointer to it.</summary>
-    private Task AssignAsync(Family family, Guid storeId) =>
-        _host.Factory.SeedAsync(async context =>
-        {
-            context.DataStores.Add(DataStore.Create(storeId, family.OwnerId, TestUsers.Now));
-            var assignment = await context.BabyStoreAssignments.SingleAsync(row => row.BabyId == family.BabyId);
-            assignment.MoveTo(DataStoreKey.External(storeId));
-        });
+    [Fact]
+    public async Task RunOnceAsync_FlagOff_SkipsABabyOnAnExternalStoreEvenWithItsOldRowsInTheBuiltInDatabase()
+    {
+        var hosted = await _host.SeedFamilyAsync();
+        await _host.SeedPrescriptionAsync(hosted.BabyId, hosted.OwnerId, "18:00");
+        var hostedPhone = await _host.SeedRecipientAsync(hosted.BabyId, hosted.OwnerId);
+        var external = await _host.SeedFamilyAsync();
+        await _host.SeedPrescriptionAsync(external.BabyId, external.OwnerId, "18:00");
+        await AssignAsync(external, _stores.Create());
+        var externalPhone = await _host.SeedRecipientAsync(external.BabyId, external.OwnerId);
+
+        var result = await _host.RunAsync(SaoPaulo(18, 0));
+
+        Assert.Equal(1, result.Planned);
+        Assert.Contains(_host.Sender.Sent, push => push.IsFor(hostedPhone));
+        Assert.DoesNotContain(_host.Sender.Sent, push => push.IsFor(externalPhone));
+    }
+
+    private Task AssignAsync(Family family, Guid storeId) => _host.Factory.AssignStoreAsync(family.BabyId, family.OwnerId, storeId);
 
     /// <summary>A scheduled 18:00 prescription written into the family's own store only.</summary>
     private Task SeedPrescriptionInStoreAsync(Guid storeId, Family family)
