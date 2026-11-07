@@ -132,8 +132,7 @@ What this settles:
   connect to the direct endpoint. The migration runner must also **fail closed** if the lock probe says the lock did not
   persist (take the lock, probe from a second connection, abort if the second also gets it), because a pooled host name is not
   the only way to land on a pooler.
-- A custom schema and plain DDL work with the default owner role. We did not test a restricted role (the setup SQL in 47
-  section 8 still needs a run with a role that lacks `CREATE` on `public`).
+- A custom schema and plain DDL work with the default owner role. Restricted roles are covered by the third run below.
 - Size: 1000 events fit in 256 KiB including the primary key, so about 250 bytes per event as a rough upper figure for tiny
   payloads (small tables are padded to pages, so the real per-row cost is lower; a baby logs a few thousand events a year). A
   500 MB to 1 GB cap is therefore years of data. One run, small payloads, **not** a capacity guarantee.
@@ -169,10 +168,32 @@ What this settles:
 - Latency from the owner's PC: 47 to 131 ms to the pooler, 38 to 194 ms to Neon. Not a design constraint.
 - **Supabase Data API, checked in the dashboard (owner screenshots):** exposed schemas are `graphql_public` and `public` only ("2 of 2"), the text says a schema must be included before its tables can be exposed, so a new `lotties` schema is **not** reachable through the Data API by default. "Automatically expose new tables" is **on** by default, which grants Data API roles privileges on new tables, so anything created in `public` would be exposed. Rules for the setup guide and SQL: keep all Lotties tables in the `lotties` schema, never in `public`; create them as the dedicated Lotties role (not as `postgres`); explicitly revoke the Data API roles (`anon`, `authenticated`) on the schema in the setup SQL as a belt and braces step; advise turning "Automatically expose new tables" off; and have the test-connection check read the grants of those roles on the `lotties` schema and warn when they have any. Not tested: whether `anon` can read a table created in `lotties` by `postgres` on this project (default privileges may differ), so the revoke step is a requirement, not a guess.
 
-- Not tested on Supabase: a restricted role, free-plan pausing (a week of inactivity, cannot be tested quickly), the CA's expiry and how Supabase rotates it (a rotation would make every Supabase store fail closed until the user pastes the new CA: the store state must say so and the settings page must show the CA's expiry date).
+- Not tested on Supabase: the restricted-role run (script ready), free-plan pausing (a week of inactivity, cannot be tested quickly), the CA's expiry and how Supabase rotates it (a rotation would make every Supabase store fail closed until the user pastes the new CA: the store state must say so and the settings page must show the CA's expiry date).
 
-Not measured: a restricted role, behavior near the free
-plan limits, and **Supabase** (no account yet).
+**Neon, restricted roles (third run, direct endpoint, owner role `neondb_owner` which has `CREATEROLE` but is not a superuser):
+27 of 27 checks passed.** The setup in 47 section 3 works as designed:
+
+- The admin can create `lotties_migrator` and `lotties_app` with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS` and
+  `CONNECTION LIMIT`, and can temporarily `GRANT CREATE ON DATABASE` to the migrator.
+- **Recipe that works without role membership:** the migrator itself runs `CREATE SCHEMA lotties` (so it owns it; the admin
+  never needs `SET ROLE` or to be a member), then `GRANT USAGE` and `ALTER DEFAULT PRIVILEGES IN SCHEMA lotties ... TO lotties_app`
+  (tables: DML; sequences: usage, select), then the admin **revokes `CREATE` on the database from the migrator**, so the migrator
+  cannot create any other schema (verified: `42501 permission denied for database`).
+- Denied as expected (SQLSTATE 42501): migrator and app creating tables in `public`, creating roles, reading a canary table in
+  `public`; the app creating objects in `lotties`, dropping or truncating a table, and creating roles. The app can do DML on
+  `lotties.events` through an unqualified name (`search_path` set on the role).
+- Role-level settings (`search_path`, `statement_timeout = 30s`, `idle_in_transaction_session_timeout`) were in effect in a new
+  session on the **direct** endpoint. Not tested through a pooler.
+- The advisory lock held for the migrator on the direct endpoint.
+- Cleanup: the migrator could drop its own schema; the admin's `DROP OWNED BY` was refused (42501) but unnecessary, and both
+  roles were dropped; nothing was left behind. The product's "remove my data" step must therefore drop the schema **as the
+  migrator** and then the roles as the admin, and tell the user that this last part is theirs (we do not hold the admin
+  credential).
+- A session can still `SET statement_timeout` itself, so these role settings are defaults, not enforcement. Enforcement of
+  resource use is the provider's plan limits plus our own timeouts and pool caps.
+- Neon has no `anon`/`authenticated` Data API roles, so that part of the check was skipped here.
+
+Not measured: behavior near the free plan limits.
 
 ## Consequences for 47 (apply when the owner decides)
 
@@ -187,9 +208,9 @@ plan limits, and **Supabase** (no account yet).
 
 ## Still open after the spikes
 
-- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: a timed-idle cold start and a
-  restricted role. Supabase: a throwaway project, the setup SQL with a custom role, the pooler user suffix, exposed-schema
-  behavior. Both from the lab itself, through the guard.
+- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: a timed-idle cold start. Restricted roles passed on Neon; on Supabase it still needs a run (pooler user
+  suffix `role.<ref>` for the new roles, and whether `anon` and `authenticated` can read the new schema). Both from the lab itself,
+  through the guard.
 - IPv6 egress from the home lab.
 - NetworkPolicy enforcement on the k3s cluster.
 - The one-`SaveChanges`-across-planes question in (a).
