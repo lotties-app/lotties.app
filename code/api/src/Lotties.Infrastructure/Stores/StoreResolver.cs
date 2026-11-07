@@ -2,24 +2,19 @@ using Lotties.Application.Stores;
 using Lotties.Domain.Stores;
 using Lotties.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Lotties.Infrastructure.Stores;
 
 /// <remarks>
-/// With <see cref="StoreRoutingOptions.Enabled"/> off nothing is read (every baby: built-in, epoch 0). With it on, one query of
-/// the two routing columns of the baby's row through the control context; a baby without a row (never created, or erased) has
-/// no pointer, so it is on the built-in store, where it has no records either.
+/// Always one query of the two routing columns of the baby's row through the control context, whatever <c>Stores:Enabled</c> says:
+/// a baby that points at an external store must never be served from the built-in database, so the pointer is read even while no
+/// external store can be opened (<see cref="StoreScope"/> then answers <c>store_unavailable</c>). A baby without a row (never
+/// created, or erased) has no pointer, so it is on the built-in store, where it has no records either.
 /// </remarks>
-internal sealed class StoreResolver(IOptions<StoreRoutingOptions> options, LottiesDbContext control) : IStoreResolver
+internal sealed class StoreResolver(LottiesDbContext control) : IStoreResolver
 {
     public async Task<StoreRoute> ResolveForBabyAsync(Guid babyId, CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return StoreRoute.BuiltInDefault;
-        }
-
         var routing = await control.BabyStoreAssignments
             .AsNoTracking()
             .Where(assignment => assignment.BabyId == babyId)

@@ -2,6 +2,7 @@ using Lotties.Application.Stores;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 using Lotties.Infrastructure.Persistence;
+using Microsoft.Extensions.Options;
 
 namespace Lotties.Infrastructure.Stores;
 
@@ -16,9 +17,14 @@ namespace Lotties.Infrastructure.Stores;
 /// <remarks>
 /// A call by record id finds a record only in the scope's store. On the built-in store that is every hosted baby's records, as
 /// before; the services already check the record's baby against the one they were called for. An external store holds only
-/// the records of the babies that point at it.
+/// the records of the babies that point at it. With <c>Stores:Enabled</c> off no external store is ever opened: a baby whose
+/// pointer names one gets <c>store_unavailable</c>, never the built-in store.
 /// </remarks>
-internal sealed class StoreScope(IStoreResolver resolver, BuiltInDataStore builtIn, IExternalDataStores externals) : IStoreScope, IAsyncDisposable, IDisposable
+internal sealed class StoreScope(
+    IStoreResolver resolver,
+    BuiltInDataStore builtIn,
+    IExternalDataStores externals,
+    IOptions<StoreRoutingOptions> options) : IStoreScope, IAsyncDisposable, IDisposable
 {
     private readonly Dictionary<Guid, StoreRoute> _routes = [];
     private readonly Dictionary<DataStoreKey, IDataStore> _stores = [];
@@ -130,9 +136,18 @@ internal sealed class StoreScope(IStoreResolver resolver, BuiltInDataStore built
             return;
         }
 
-        _stores[key] = key.Id is { } id
-            ? await externals.FindAsync(id, cancellationToken) ?? throw new StoreUnavailableException()
-            : builtIn;
+        _stores[key] = key.Id is { } id ? await OpenExternalAsync(id, cancellationToken) : builtIn;
+    }
+
+    /// <summary>An external store, only while the feature is on and the store can be opened; <c>store_unavailable</c> otherwise.</summary>
+    private async Task<IDataStore> OpenExternalAsync(Guid storeId, CancellationToken cancellationToken)
+    {
+        if (!options.Value.Enabled)
+        {
+            throw new StoreUnavailableException();
+        }
+
+        return await externals.FindAsync(storeId, cancellationToken) ?? throw new StoreUnavailableException();
     }
 
     private DataStoreKey OnlyStore()

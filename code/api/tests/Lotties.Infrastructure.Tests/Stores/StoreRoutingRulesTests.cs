@@ -1,7 +1,6 @@
 using System.Data.Common;
 using System.Reflection;
 using Lotties.Application.Stores;
-using Lotties.Domain.Stores;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +13,8 @@ namespace Lotties.Infrastructure.Tests.Stores;
 
 /// <summary>
 /// The wiring rules of the data store routing (docs/design/47-bring-your-own-database.md sections 3.6 and 12, task T2): nothing reaches
-/// a data context except through the store scope, the data context is never pooled, and with the flag off the resolver reads nothing.
+/// a data context except through the store scope, the data context is never pooled, and the resolver reads the baby's pointer even
+/// with the flag off (fail closed: the flag never decides whether a pointer is honoured).
 /// </summary>
 public sealed class StoreRoutingRulesTests
 {
@@ -70,33 +70,33 @@ public sealed class StoreRoutingRulesTests
     }
 
     [Fact]
-    public async Task ResolveForBabyAsync_FlagOff_IsTheBuiltInStoreAtEpochZeroWithoutAnyQuery()
+    public async Task ResolveForBabyAsync_FlagOff_StillReadsTheBabysPointer()
     {
-        var commands = new FailingCommands();
+        var connections = new FailingConnections();
         var services = new ServiceCollection().AddInfrastructure(Options);
-        services.ConfigureDbContext<LottiesDbContext>(options => options.AddInterceptors(commands));
+        services.ConfigureDbContext<LottiesDbContext>(options => options.AddInterceptors(connections));
         await using var provider = services.BuildServiceProvider();
         await using var scope = provider.CreateAsyncScope();
+        Assert.False(provider.GetRequiredService<IOptions<StoreRoutingOptions>>().Value.Enabled);
 
-        var route = await scope.ServiceProvider.GetRequiredService<IStoreResolver>().ResolveForBabyAsync(Guid.NewGuid());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<IStoreResolver>().ResolveForBabyAsync(Guid.NewGuid()));
 
-        Assert.Equal(StoreRoute.BuiltInDefault, route);
-        Assert.Equal(0, commands.Count);
+        Assert.Equal(1, connections.Count);
     }
 
-    /// <summary>Fails every command, so a query the code under test should not run cannot reach a database.</summary>
-    private sealed class FailingCommands : DbCommandInterceptor
+    /// <summary>Fails (and counts) every attempt to open a connection: proves that a query was issued without reaching a database.</summary>
+    private sealed class FailingConnections : DbConnectionInterceptor
     {
         public int Count { get; private set; }
 
-        public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result) => throw Fail();
+        public override InterceptionResult ConnectionOpening(DbConnection connection, ConnectionEventData eventData, InterceptionResult result) => throw Fail();
 
-        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default) => throw Fail();
+        public override ValueTask<InterceptionResult> ConnectionOpeningAsync(DbConnection connection, ConnectionEventData eventData, InterceptionResult result, CancellationToken cancellationToken = default) => throw Fail();
 
         private InvalidOperationException Fail()
         {
             Count++;
-            return new InvalidOperationException("No query was expected.");
+            return new InvalidOperationException("Connections are counted, never opened.");
         }
     }
 }

@@ -2613,7 +2613,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.HasIndex("DataStoreId")
                         .HasDatabaseName("ix_babies_data_store_id");
 
-                    b.ToTable("babies", (string)null);
+                    b.ToTable("babies", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_babies_store_epoch_present", "store_epoch IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("Lotties.Domain.Stores.DataStore", b =>
