@@ -14,6 +14,7 @@ import { Icon } from '../ui/Icon';
 import { byNewest, contentOf } from './proposalModel';
 import { ProposalStatusChips } from './ProposalStatusChip';
 import { useProposalCommands, useProposals } from './useProposals';
+import { babyShownName } from '../baby/shownName';
 
 type Editor =
   | { kind: 'new' }
@@ -167,7 +168,7 @@ export function ProposalsScreen({
             {t('proposals.mine.title')}
           </Typography>
           <Typography color="text.secondary">
-            {t('proposals.mine.subtitle', { name: baby.name })}
+            {t('proposals.mine.subtitle', { name: babyShownName(baby) })}
           </Typography>
         </Stack>
         {prescribe}
@@ -184,7 +185,7 @@ export function ProposalsScreen({
             {t('proposals.mine.emptyTitle')}
           </Typography>
           <Typography color="text.secondary">
-            {t('proposals.mine.emptyBody', { name: baby.name })}
+            {t('proposals.mine.emptyBody', { name: babyShownName(baby) })}
           </Typography>
         </Box>
       ) : (

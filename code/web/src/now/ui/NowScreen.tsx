@@ -61,6 +61,7 @@ import { ToastHost } from './ToastHost';
 import { TodayStrip } from './TodayStrip';
 import type { TrayName } from './trays';
 import { useNowAction } from './useNowAction';
+import { babyShownName } from '../../baby/shownName';
 
 const HOUR_MS = 3_600_000;
 
@@ -164,13 +165,13 @@ function NowContent({
       !night && hasEvents && model.catchUp
         ? {
             babyId: baby.id,
-            babyName: baby.name,
+            babyName: babyShownName(baby),
             catchUp: model.catchUp,
             types: model.types,
             acknowledge: model.acknowledgeCatchUp,
           }
         : null,
-    [night, hasEvents, baby.id, baby.name, model.catchUp, model.types, model.acknowledgeCatchUp],
+    [night, hasEvents, baby, model.catchUp, model.types, model.acknowledgeCatchUp],
   );
   useOfferCatchUp(catchUpOffer);
   // The "+" of the bottom navigation opens the More sheet here (viewers have no "+").
@@ -200,7 +201,7 @@ function NowContent({
         onKeepRunning={snooze.keep}
         large={large}
       />
-      <BottleFollowUpRow babyId={baby.id} babyName={baby.name} model={model} />
+      <BottleFollowUpRow babyId={baby.id} babyName={babyShownName(baby)} model={model} />
     </>
   );
 
@@ -326,7 +327,7 @@ function NowContent({
       {night ? (
         <NightNow
           model={model}
-          babyName={baby.name}
+          babyName={babyShownName(baby)}
           action={action}
           running={running(true)}
           onOpenFeed={() => setTray('feed')}
@@ -337,7 +338,7 @@ function NowContent({
         <>
           <DoctorInbox baby={baby} />
           <FirstRun
-            babyName={baby.name}
+            babyName={babyShownName(baby)}
             readOnly={model.readOnly}
             canImport={canWrite(baby)}
             canInvite={isOwner(baby)}
@@ -362,7 +363,7 @@ function NowContent({
           <StateCard
             model={model}
             babyId={baby.id}
-            babyName={baby.name}
+            babyName={babyShownName(baby)}
             action={action}
             {...(sleepPrediction ? { prediction: sleepPrediction } : {})}
             bedTime={predictions?.bedTime ?? null}

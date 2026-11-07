@@ -425,7 +425,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
     private async Task<Guid> SeedDoctorRecordsAsync(SeededBaby baby, HttpClient owner, string path)
     {
         var doctor = factory.CreateClientFor(baby.SubjectOf(BabyRole.Doctor));
-        await doctor.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Dr. Ana Souza", specialty = "Pediatrics" }).Ok();
+        await doctor.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Dr. Ana Souza", specialty = "Pediatrics", shareDisplayName = true, shareRegistration = true }).Ok();
         await doctor.GetAsync(path).Ok();
         var recommendation = Guid.NewGuid();
         await doctor.PutAsJsonAsync($"{path}/notes/{recommendation}", new { kind = "recommendation", visibility = "shared", body = "Offer 120 ml every 3 hours." }).Ok();
@@ -459,7 +459,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             wakeLeadMinutes = 20,
         }).Ok();
         await client.PutAsJsonAsync("/api/v1/me/rest/morning", new { night = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd"), upAt = DateTimeOffset.UtcNow.AddHours(-1) }).Ok();
-        await client.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics" }).Ok();
+        await client.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics", shareDisplayName = true, shareRegistration = true }).Ok();
         if (!(await client.PutAsJsonAsync("/api/v1/me/assistant-settings", new { defaultBabyId = babyId })).IsSuccessStatusCode)
         {
             // Only a baby she may log events for can be the default (a Viewer's or a Doctor's settings have none).

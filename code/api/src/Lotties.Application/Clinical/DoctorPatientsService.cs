@@ -104,7 +104,9 @@ internal sealed class DoctorPatientsService : IDoctorPatientsService
         {
             BabyId = baby.Id,
             Name = baby.Name,
+            Label = baby.ResolvedLabel,
             BirthDate = baby.BirthDate,
+            BirthWeekOnly = baby.BirthDateWeekOnly,
             DoctorScopes = scopes.Codes,
             LastEventAt = scopes.Contains(DoctorScope.DailyLog) ? await _events.FindLatestStartAsync(baby.Id, now, view.HiddenEventTypeIds, cancellationToken) : null,
             Week = scopes.Contains(DoctorScope.DailyLog) ? await WeekAsync(baby.Id, clock, now, cancellationToken) : null,

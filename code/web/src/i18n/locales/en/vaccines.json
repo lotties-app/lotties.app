@@ -38,7 +38,8 @@
         "withPrivate": "Public schedule and private clinic recommendations",
         "premature": "Born at {{weeks}} weeks",
         "rsv": "RSV vaccine in pregnancy: {{answer}}"
-      }
+      },
+      "bornWeek": "Born in the week of {{date}} ({{age}})"
     },
     "premature": "Premature babies may follow a special schedule. Follow your pediatrician's guidance.",
     "filters": {
@@ -151,7 +152,8 @@
       },
       "empty": "No vaccines recorded yet.",
       "note": "A personal record kept in Lotties. It does not replace the official vaccination card.",
-      "printedOn": "Printed on {{date}}"
+      "printedOn": "Printed on {{date}}",
+      "bornWeek": "Born in the week of {{date}}"
     },
     "due": {
       "label": "Vaccines due",

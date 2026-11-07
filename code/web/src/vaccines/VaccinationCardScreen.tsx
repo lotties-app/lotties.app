@@ -11,6 +11,7 @@ import { useVaccineSchedule } from './useVaccineSchedule';
 import { hasBirthDate } from './vaccineModel';
 import { visuallyHidden } from './visuallyHidden';
 import { networkText, recordDoseLabel, recordName } from './vaccineText';
+import { babyShownName } from '../baby/shownName';
 
 const cellSx = {
   textAlign: 'start',
@@ -81,11 +82,13 @@ export function VaccinationCardScreen({ baby, now }: { baby: Baby; now?: Date })
         </Typography>
         <Box>
           <Typography variant="h6" component="p" sx={{ overflowWrap: 'anywhere' }}>
-            {baby.name}
+            {babyShownName(baby)}
           </Typography>
           {hasBirthDate(baby) && (
             <Typography color="text.secondary">
-              {t('vaccines.card.born', { date: formatDate(baby.birthDate) })}
+              {t(baby.birthWeekOnly ? 'vaccines.card.bornWeek' : 'vaccines.card.born', {
+                date: formatDate(baby.birthDate),
+              })}
             </Typography>
           )}
         </Box>
@@ -97,7 +100,7 @@ export function VaccinationCardScreen({ baby, now }: { baby: Baby; now?: Date })
             sx={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}
           >
             <Box component="caption" sx={visuallyHidden}>
-              {t('vaccines.card.table', { name: baby.name })}
+              {t('vaccines.card.table', { name: babyShownName(baby) })}
             </Box>
             <thead>
               <tr>

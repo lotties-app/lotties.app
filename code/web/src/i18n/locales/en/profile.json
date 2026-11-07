@@ -1,0 +1,24 @@
+{
+  "profile": {
+    "title": "Your name on Lotties",
+    "intro": "Your name is optional. Pick how you appear to the people who share a baby with you; a real name is your choice.",
+    "nameLabel": "Name (optional)",
+    "roleLabel": "I am the baby's...",
+    "custom": "Other text...",
+    "customLabel": "Custom label",
+    "save": "Save",
+    "saved": "Saved.",
+    "loadFailed": "Could not load your profile. Check your connection.",
+    "roleLabels": {
+      "mother": "Mother",
+      "father": "Father",
+      "stepMother": "Stepmother",
+      "stepFather": "Stepfather",
+      "sister": "Sister",
+      "brother": "Brother",
+      "grandmother": "Grandmother",
+      "grandfather": "Grandfather",
+      "friend": "Friend"
+    }
+  }
+}

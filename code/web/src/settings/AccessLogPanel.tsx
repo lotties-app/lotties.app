@@ -12,6 +12,7 @@ import { DoctorName } from '../professional/DoctorName';
 import { listAccessLog, type AccessLogEntry } from '../professional/professionalApi';
 import { useOnline } from '../sync/useOnline';
 import { ErrorNotice } from './ErrorNotice';
+import { babyShownName } from '../baby/shownName';
 
 function EntryRow({ entry }: { entry: AccessLogEntry }) {
   const { t } = useTranslation();
@@ -48,14 +49,14 @@ function DoctorScopesHeader({ baby, members }: { baby: Baby; members: readonly M
     <Stack component="ul" spacing={0.5} sx={{ m: 0, p: 0, listStyle: 'none' }}>
       {doctors.map((member) => {
         const doctor = doctorLabel(t, {
-          displayName: member.displayName?.trim() || t('settings.members.unnamed'),
+          displayName: member.displayName?.trim() ?? '',
           professional: fromProfessionalDto(member.professional),
         });
         const scopes = parseScopes(member.doctorScopes);
         return (
           <Typography component="li" variant="body2" key={member.userId}>
             {scopes.length === 0
-              ? t('doctorDashboard.access.logHeaderNothing', { doctor, baby: baby.name })
+              ? t('doctorDashboard.access.logHeaderNothing', { doctor, baby: babyShownName(baby) })
               : t('doctorDashboard.access.logHeader', { doctor, list: scopeList(scopes, t) })}
           </Typography>
         );
@@ -85,14 +86,14 @@ export function AccessLogPanel({ baby, members }: { baby: Baby; members?: readon
         {t('doctor.accessLog.title')}
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        {t('doctor.accessLog.explainer', { name: baby.name })}
+        {t('doctor.accessLog.explainer', { name: babyShownName(baby) })}
       </Typography>
       {members && <DoctorScopesHeader baby={baby} members={members} />}
       {log.isError && <ErrorNotice message={t('doctor.accessLog.loadFailed')} />}
       {log.isPending && online && <CircularProgress size={24} aria-label={t('common.loading')} />}
       {log.data?.length === 0 && (
         <Typography color="text.secondary">
-          {t('doctor.accessLog.none', { name: baby.name })}
+          {t('doctor.accessLog.none', { name: babyShownName(baby) })}
         </Typography>
       )}
       {!!log.data?.length && (

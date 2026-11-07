@@ -33,7 +33,7 @@ internal sealed class BabyService : IBabyService
     {
         ArgumentNullException.ThrowIfNull(request);
         var user = await _currentUser.GetUserAsync(cancellationToken);
-        var baby = Baby.Create(request.Name, request.BirthDate, user.Id, _timeProvider.GetUtcNow());
+        var baby = Baby.Create(request.Name, request.BirthDate, user.Id, _timeProvider.GetUtcNow(), request.Label, weekOnly: true);
         await _babies.AddAsync(baby, cancellationToken);
         _logger.LogInformation("User {UserId} created baby {BabyId}", user.Id, baby.Id);
         return ToResponse(baby, user);
@@ -50,7 +50,7 @@ internal sealed class BabyService : IBabyService
         ArgumentNullException.ThrowIfNull(request);
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var baby = await LoadAsync(babyId, cancellationToken);
-        baby.UpdateDetails(request.Name, request.BirthDate, _timeProvider.GetUtcNow());
+        baby.UpdateDetails(request.Name, request.BirthDate, _timeProvider.GetUtcNow(), request.Label, request.BirthWeekOnly == true);
         await _babies.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("User {UserId} updated baby {BabyId}", user.Id, baby.Id);
         return ToResponse(baby, user);

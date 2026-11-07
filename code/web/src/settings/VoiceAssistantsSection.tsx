@@ -29,6 +29,7 @@ import { isNativeApp } from '../platform/nativeApp';
 import { McpConnectorPanel } from './McpConnectorPanel';
 import { SiriConnectPanel } from './SiriConnectPanel';
 import { useServerAction } from './useServerAction';
+import { babyShownName } from '../baby/shownName';
 
 const NONE = '';
 
@@ -119,7 +120,7 @@ export function VoiceAssistantsSection({
         <option value={NONE}>{t('assistants.noneChosen')}</option>
         {loggable.map((baby) => (
           <option key={baby.id} value={baby.id}>
-            {baby.name}
+            {babyShownName(baby)}
           </option>
         ))}
       </TextField>

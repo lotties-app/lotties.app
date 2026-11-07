@@ -337,3 +337,27 @@ not offer the monitor today.
   are technical and not personal data, and the flow happens only on her tap. People who accepted an earlier version see
   the dismissible "policy updated" notice once; nobody is asked to accept again. The owner may promote it to material
   (a later entry, never an edit).
+
+## 16. Privacy-first onboarding: optional names, birth as a week, doctors share per field (2026-11-06, policy 12)
+
+Design: docs/design/45-privacy-first-onboarding.md. What changes in the data stored (inventory rows 2, baby profile and
+health professional profile above are read with this section):
+
+- **Baby**: `name` may be empty; a new `label` (preset `baby`/`girl`/`boy` or custom text) is the shown name when there
+  is none. Existing names stay. `birthDate` of a baby saved from now on is the Monday of its week of birth
+  (`birthWeekOnly = true`); older exact dates stay until edited or until the Owner/Parent chooses "store only the week"
+  (one way: the exact day is not kept).
+- **User**: `displayName` becomes optional; a new `roleLabel` (preset such as Mother or Friend, or custom text) is
+  shown when there is no name. Cleared with the rest of the row on account deletion.
+- **Doctor profile**: only the specialty is required; `displayName` and `registrationNumber` are optional and families
+  see each only when the doctor turned on `shareDisplayName` / `shareRegistration`; otherwise only the specialty (and
+  label). The account display name is never the fallback for a doctor profile.
+- **Assistants**: unchanged. A label is never spoken as a name (`sayBabyName` needs a real name); doctors: specialty
+  code only. No voice command changes (docs/VOICE-COMMANDS.md untouched).
+- **Backup file**: carries `label`, `birthWeekOnly`; a missing name imports empty; authors stay stand-ins.
+- **Policy**: version 12 describes optional names, labels, birth stored as a week and per-field doctor sharing, in
+  both languages (rows "Your sign-in account", "Your baby's profile", "Health professional profile"). No new data
+  category or recipient: `legal/dataFlows.ts` unchanged.
+- **Consent version**: a `minor` entry (`2026-11-06.1`, policy 12). It collects less, adds no recipient or purpose and
+  takes no right away; people who accepted an earlier version see the dismissible notice once. The owner may promote
+  it to material (a later entry, never an edit).

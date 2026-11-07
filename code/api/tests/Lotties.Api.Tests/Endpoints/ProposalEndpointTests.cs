@@ -200,7 +200,7 @@ public sealed class ProposalEndpointTests(ApiFactory factory) : IClassFixture<Ap
     public async Task Accept_IsOneTransaction_CreatingTheMedicationAndThePrescriptionWithProvenance()
     {
         var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Doctor);
-        await As(baby, BabyRole.Doctor).PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza" });
+        await As(baby, BabyRole.Doctor).PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics", shareDisplayName = true });
         var id = await ProposeAsync(baby);
         var prescriptionId = Guid.NewGuid();
 

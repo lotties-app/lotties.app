@@ -35,7 +35,8 @@
       "role": "Your role",
       "ownerOnly": "Only the owner can change these details.",
       "born": "Born {{date}}",
-      "save": "Save details"
+      "save": "Save details",
+      "bornWeek": "Born in the week of {{date}}"
     },
     "eventTypes": {
       "custom": "Custom",

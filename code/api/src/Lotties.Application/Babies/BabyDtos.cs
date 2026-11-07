@@ -13,9 +13,16 @@ public sealed record BabyResponse
 {
     public Guid Id { get; init; }
 
+    /// <summary>The real name; empty when the family gave none (use <see cref="Label"/>).</summary>
     public string Name { get; init; } = string.Empty;
 
+    /// <summary>Preset code (<c>baby</c>, <c>girl</c>, <c>boy</c>) or custom text; never empty (additive).</summary>
+    public string Label { get; init; } = Domain.Babies.BabyLabels.Default;
+
     public DateOnly BirthDate { get; init; }
+
+    /// <summary>Whether <see cref="BirthDate"/> is the Monday of the birth week and the exact day is not stored (additive).</summary>
+    public bool BirthWeekOnly { get; init; }
 
     [JsonConverter(typeof(RoleStringEnumConverter))]
     public BabyRole Role { get; init; }
@@ -55,7 +62,9 @@ public sealed record BabyResponse
         {
             Id = baby.Id,
             Name = baby.Name,
+            Label = baby.ResolvedLabel,
             BirthDate = baby.BirthDate,
+            BirthWeekOnly = baby.BirthDateWeekOnly,
             Role = member.Role,
             CreatedAt = baby.CreatedAt,
             UserId = member.UserId,
@@ -100,9 +109,19 @@ public sealed record UpdateVaccineProfileRequest
 /// <summary>Body of <c>POST /api/v1/babies</c> and <c>PUT /api/v1/babies/{babyId}</c>.</summary>
 public sealed record SaveBabyRequest
 {
-    public required string Name { get; init; }
+    /// <summary>Optional real name (opt-in); blank = none.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>Optional label: <c>baby</c>, <c>girl</c>, <c>boy</c> or a custom text; blank keeps the current one (<c>baby</c> on create).</summary>
+    public string? Label { get; init; }
 
     public required DateOnly BirthDate { get; init; }
+
+    /// <summary>
+    /// Update only: <c>true</c> stores only the week of an exact date that did not change. A changed date is always
+    /// stored as its week; create always stores the week.
+    /// </summary>
+    public bool? BirthWeekOnly { get; init; }
 }
 
 /// <summary>A member of a baby with the display name of the user.</summary>
@@ -111,6 +130,9 @@ public sealed record MemberResponse
     public Guid UserId { get; init; }
 
     public string DisplayName { get; init; } = string.Empty;
+
+    /// <summary>Label shown when the member has no display name (additive).</summary>
+    public string? RoleLabel { get; init; }
 
     [JsonConverter(typeof(RoleStringEnumConverter))]
     public BabyRole Role { get; init; }
@@ -123,13 +145,18 @@ public sealed record MemberResponse
     /// <summary>The sections a Doctor member sees (additive; <c>null</c> for every other role).</summary>
     public IReadOnlyList<string>? DoctorScopes { get; init; }
 
+    /// <summary>A Doctor with a profile that does not share her name is never named by her account name either.</summary>
+    private static string MemberShownName(User user, BabyMember member, ProfessionalProfile? doctorProfile) =>
+        member.Role.IsDoctor() && doctorProfile is not null && !doctorProfile.ShareDisplayName ? string.Empty : user.DisplayName;
+
     public static MemberResponse For(BabyMember member, User? user, ProfessionalProfile? doctorProfile = null)
     {
         ArgumentNullException.ThrowIfNull(member);
         return new MemberResponse
         {
             UserId = member.UserId,
-            DisplayName = user?.DisplayName ?? ExternalIdentity.FallbackDisplayName,
+            DisplayName = user is null ? ExternalIdentity.FallbackDisplayName : MemberShownName(user, member, doctorProfile),
+            RoleLabel = user?.RoleLabel,
             Role = member.Role,
             JoinedAt = member.JoinedAt,
             Professional = member.Role.IsDoctor() && doctorProfile is not null ? (ProfessionalSummary)doctorProfile : null,

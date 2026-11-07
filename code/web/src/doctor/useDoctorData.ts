@@ -15,6 +15,7 @@ import {
 } from './doctorApi';
 import type { PatientSort } from './dashboardStorage';
 import { hasScope, scopesOf } from './scopes';
+import { babyShownName } from '../baby/shownName';
 
 /*
  * The dashboard's data (docs/design/19-doctor-dashboard.md): on-demand reads with a short cache.
@@ -32,7 +33,9 @@ export const patientsKey = [...doctorKey, 'patients'] as const;
 export function doctorBabies(babies: readonly Baby[] | undefined): Baby[] | undefined {
   return babies
     ?.filter((baby) => baby.role === 'Doctor')
-    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    .sort(
+      (a, b) => babyShownName(a).localeCompare(babyShownName(b)) || a.id.localeCompare(b.id),
+    );
 }
 
 export function useDoctorBabies(): Baby[] | undefined {
@@ -44,7 +47,7 @@ export function useDoctorBabies(): Baby[] | undefined {
 export function localPatient(baby: Baby): DoctorPatient {
   return {
     babyId: baby.id,
-    name: baby.name,
+    name: babyShownName(baby),
     birthDate: baby.birthDate,
     scopes: [...scopesOf(baby)],
     lastEventAt: null,
@@ -77,7 +80,7 @@ export function usePatients() {
     return babies?.map((baby) => {
       const server = fromServer.get(baby.id);
       return server
-        ? { ...server, name: baby.name, birthDate: baby.birthDate }
+        ? { ...server, name: babyShownName(baby), birthDate: baby.birthDate }
         : localPatient(baby);
     });
   }, [babies, query.data]);

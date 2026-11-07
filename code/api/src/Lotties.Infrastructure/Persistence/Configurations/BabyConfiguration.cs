@@ -31,7 +31,11 @@ internal sealed class BabyConfiguration : IEntityTypeConfiguration<Baby>
         builder.HasKey(baby => baby.Id);
         builder.Property(baby => baby.Id).ValueGeneratedNever();
         builder.Property(baby => baby.Name).HasMaxLength(Baby.NameMaxLength).IsRequired();
+        builder.Property(baby => baby.Label).HasMaxLength(BabyLabels.MaxLength);
         builder.Property(baby => baby.BirthDate).IsRequired();
+        builder.Property(baby => baby.BirthDateWeekOnly).IsRequired().HasDefaultValue(false);
+        builder.Ignore(baby => baby.ShownName);
+        builder.Ignore(baby => baby.ResolvedLabel);
         builder.Property(baby => baby.CreatedAt).IsRequired();
         builder.Property(baby => baby.VaccineCoverage)
             .HasConversion(CoverageCode)

@@ -337,7 +337,7 @@ public sealed class ClinicalSummaryEndpointTests(ApiFactory factory) : IClassFix
     {
         var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Doctor);
         var doctor = As(baby, BabyRole.Doctor);
-        await doctor.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics" });
+        await doctor.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics", shareDisplayName = true, shareRegistration = true });
         var proposalId = Guid.NewGuid();
         var proposed = await doctor.PutAsJsonAsync($"{BabyPath(baby.BabyId)}/prescription-proposals/{proposalId}", new
         {

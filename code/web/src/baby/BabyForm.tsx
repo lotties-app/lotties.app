@@ -1,12 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Stack, TextField } from '@mui/material';
+import { Button, Stack, TextField, Typography } from '@mui/material';
 import { DateField } from '../ui/form/DateField';
 import { Field } from '../ui/form/Field';
+import { formatDate } from '../i18n/format';
 import type { BabyRequest } from '../sync/contract';
+import { mondayOf } from './birthWeek';
+import { LabelPicker } from './LabelPicker';
+import { BABY_LABEL_PRESETS, LABEL_MAX_LENGTH, babyLabelText } from './shownName';
 
 interface Props {
-  initial?: BabyRequest;
+  initial?: BabyRequest & { birthWeekOnly?: boolean };
   submitLabel: string;
   disabled?: boolean;
   pending?: boolean;
@@ -20,7 +24,10 @@ function todayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-/** Name + birth date form shared by baby creation and editing. */
+/**
+ * Name + label + birth date form shared by baby creation and editing (docs/design/45): the name is
+ * optional (the label is shown without one) and the date is stored as its week.
+ */
 export function BabyForm({
   initial,
   submitLabel,
@@ -30,22 +37,35 @@ export function BabyForm({
 }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState(initial?.name ?? '');
+  const [label, setLabel] = useState(initial?.label?.trim() || 'baby');
   const [birthDate, setBirthDate] = useState(initial?.birthDate ?? '');
   const [touched, setTouched] = useState(false);
   const today = todayIso();
+  const exactStored = initial !== undefined && initial.birthWeekOnly !== true;
 
-  const nameError = !name.trim() ? t('baby.nameRequired') : null;
   const dateError = !birthDate
     ? t('baby.birthRequired')
     : birthDate > today
       ? t('baby.birthFuture')
       : null;
 
+  const request = (): BabyRequest => ({
+    name: name.trim(),
+    label: label.trim() || 'baby',
+    birthDate,
+  });
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setTouched(true);
-    if (nameError || dateError) return;
-    onSubmit({ name: name.trim(), birthDate });
+    if (dateError) return;
+    onSubmit(request());
+  };
+
+  const storeOnlyWeek = () => {
+    setTouched(true);
+    if (dateError) return;
+    onSubmit({ ...request(), birthWeekOnly: true });
   };
 
   return (
@@ -55,10 +75,20 @@ export function BabyForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={disabled}
-        error={touched && !!nameError}
-        helperText={touched ? nameError : null}
-        required
+        helperText={t('baby.nameHelp')}
+        slotProps={{ htmlInput: { maxLength: LABEL_MAX_LENGTH } }}
         autoComplete="off"
+      />
+      <LabelPicker
+        value={label}
+        presets={BABY_LABEL_PRESETS}
+        presetText={babyLabelText}
+        label={t('baby.labelLabel')}
+        customLabel={t('baby.labelCustom')}
+        customOption={t('baby.labelPreset.custom')}
+        helperText={t('baby.labelHelp')}
+        disabled={disabled}
+        onChange={setLabel}
       />
       <Field
         label={t('baby.birthDate')}
@@ -69,6 +99,29 @@ export function BabyForm({
       >
         <DateField value={birthDate} onChange={setBirthDate} max={today} disabled={disabled} />
       </Field>
+      <Typography variant="body2" color="text.secondary">
+        {t('baby.birthWeekNotice')}
+      </Typography>
+      {birthDate && !dateError && (
+        <Typography variant="body2" color="text.secondary">
+          {t('baby.birthWeekStored', { date: formatDate(mondayOf(birthDate)) })}
+        </Typography>
+      )}
+      {exactStored && (
+        <>
+          <Typography variant="body2" color="text.secondary">
+            {t('baby.birthExactStored')}
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={storeOnlyWeek}
+            disabled={disabled || pending}
+            sx={{ minHeight: 48 }}
+          >
+            {t('baby.storeOnlyWeek')}
+          </Button>
+        </>
+      )}
       <Button
         type="submit"
         variant="contained"

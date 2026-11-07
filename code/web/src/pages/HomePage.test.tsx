@@ -111,8 +111,7 @@ describe('HomePage without a baby (M6)', () => {
       renderWithDb(db, <HomePage />, { api });
 
       fireEvent.click(await screen.findByRole('button', { name: 'Create baby' }));
-      expect(await screen.findByText('Name is required.')).toBeTruthy();
-      expect(screen.getByText('Birth date is required.')).toBeTruthy();
+      expect(await screen.findByText('Birth date is required.')).toBeTruthy();
       expect(writes()).toHaveLength(0);
 
       fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: ' Mia ' } });
@@ -123,7 +122,7 @@ describe('HomePage without a baby (M6)', () => {
       expect(writes()[0]).toMatchObject({
         method: 'POST',
         path: '/api/v1/babies',
-        body: { name: 'Mia', birthDate: '2026-09-01' },
+        body: { name: 'Mia', label: 'baby', birthDate: '2026-09-01' },
       });
       expect(await screen.findByText(/No event types yet/)).toBeTruthy();
       expect(screen.queryByText('No baby yet')).toBeNull();

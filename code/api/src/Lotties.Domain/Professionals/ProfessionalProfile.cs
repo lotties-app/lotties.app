@@ -26,9 +26,15 @@ public sealed class ProfessionalProfile
 
     public string DisplayName { get; private set; } = string.Empty;
 
-    public string? Specialty { get; private set; }
+    public string Specialty { get; private set; } = string.Empty;
 
     public string? RegistrationNumber { get; private set; }
+
+    /// <summary>Whether families see <see cref="DisplayName"/>; off = only the specialty.</summary>
+    public bool ShareDisplayName { get; private set; }
+
+    /// <summary>Whether families see <see cref="RegistrationNumber"/>.</summary>
+    public bool ShareRegistration { get; private set; }
 
     /// <summary>Whether someone checked the registration. Always <c>false</c> in v1 (self-declared).</summary>
     public bool Verified { get; private set; }
@@ -37,7 +43,7 @@ public sealed class ProfessionalProfile
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public ProfessionalProfileTerms Terms => ProfessionalProfileTerms.Create(Kind, DisplayName, Specialty, RegistrationNumber);
+    public ProfessionalProfileTerms Terms => ProfessionalProfileTerms.Create(Kind, DisplayName, Specialty, RegistrationNumber, ShareDisplayName, ShareRegistration);
 
     /// <summary>Declares a new, unverified profile for <paramref name="userId"/>.</summary>
     public static ProfessionalProfile Declare(Guid userId, ProfessionalProfileTerms terms, DateTimeOffset now)
@@ -70,5 +76,7 @@ public sealed class ProfessionalProfile
         DisplayName = terms.DisplayName;
         Specialty = terms.Specialty;
         RegistrationNumber = terms.RegistrationNumber;
+        ShareDisplayName = terms.ShareDisplayName;
+        ShareRegistration = terms.ShareRegistration;
     }
 }

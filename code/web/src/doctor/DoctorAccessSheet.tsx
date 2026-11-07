@@ -10,6 +10,7 @@ import { ErrorNotice } from '../settings/ErrorNotice';
 import { useServerAction } from '../settings/useServerAction';
 import { DoctorScopeFields } from './DoctorScopeFields';
 import { sameScopes, type DoctorScope } from './scopes';
+import { babyShownName } from '../baby/shownName';
 
 /**
  * "Doctor access" (docs/design/19-doctor-dashboard.md section 2): the Owner changes which sections
@@ -50,7 +51,7 @@ export function DoctorAccessSheet({
       open
       onClose={onClose}
       title={t('doctorDashboard.access.title')}
-      subtitle={t('doctorDashboard.access.intro', { doctor, baby: baby.name })}
+      subtitle={t('doctorDashboard.access.intro', { doctor, baby: babyShownName(baby) })}
     >
       <ErrorNotice message={error} />
       <DoctorScopeFields value={scopes} onChange={setScopes} disabled={pending} />

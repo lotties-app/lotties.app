@@ -110,7 +110,13 @@ public sealed record BackupBaby
 
     public string? Name { get; init; }
 
+    /// <summary>Preset code or custom text (absent in files from before labels).</summary>
+    public string? Label { get; init; }
+
     public DateOnly BirthDate { get; init; }
+
+    /// <summary>Whether <see cref="BirthDate"/> is the Monday of the birth week (absent = exact date).</summary>
+    public bool? BirthWeekOnly { get; init; }
 
     public DateTimeOffset CreatedAt { get; init; }
 

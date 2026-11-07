@@ -19,6 +19,7 @@ import { ErrorNotice } from '../settings/ErrorNotice';
 import { useServerAction } from '../settings/useServerAction';
 import type { MeasurementDto } from '../sync/contract';
 import { Icon } from '../ui/Icon';
+import { babyShownName } from '../baby/shownName';
 
 type Editing = MeasurementDto | 'new' | null;
 
@@ -63,11 +64,11 @@ export function Growth({ baby, heading }: { baby: Baby; heading: HeadingLevel })
       </Stack>
       {!online && <Alert severity="warning">{t('errors.offline')}</Alert>}
       {isDoctor(baby) && (
-        <Alert severity="info">{t('doctor.growth.doctorNotice', { name: baby.name })}</Alert>
+        <Alert severity="info">{t('doctor.growth.doctorNotice', { name: babyShownName(baby) })}</Alert>
       )}
       {!writable && (
         <Alert severity="info">
-          {t(isCaregiver(baby) ? 'baby.caregiverNamed' : 'baby.viewOnlyNamed', { name: baby.name })}
+          {t(isCaregiver(baby) ? 'baby.caregiverNamed' : 'baby.viewOnlyNamed', { name: babyShownName(baby) })}
         </Alert>
       )}
       {query.isError && <ErrorNotice message={t('growth.loadFailed')} />}

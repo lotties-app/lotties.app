@@ -60,6 +60,20 @@ public sealed class User
         Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength),
         UtcTime.Normalize(createdAt));
 
+    /// <summary>
+    /// Preset code (<see cref="RoleLabels.Presets"/>) or custom text shown when the user has no display name; the name is
+    /// optional (docs/design/45-privacy-first-onboarding.md).
+    /// </summary>
+    public string? RoleLabel { get; private set; }
+
+    /// <summary>Changes the profile the family sees: an empty name is allowed, the label stands in for it.</summary>
+    public void UpdateProfile(string? displayName, string? roleLabel)
+    {
+        var name = Text.Optional(displayName, nameof(DisplayName), DisplayNameMaxLength) ?? string.Empty;
+        DisplayName = name;
+        RoleLabel = RoleLabels.Normalize(roleLabel);
+    }
+
     /// <summary>Creates the user for a first sign-in, taking the display name from the provider's profile claims.</summary>
     public static User Register(ExternalIdentity identity, DateTimeOffset createdAt)
     {
@@ -80,6 +94,7 @@ public sealed class User
         Issuer = DeletedIssuer;
         Subject = Id.ToString("N");
         DisplayName = Text.Required(anonymousName, nameof(DisplayName), DisplayNameMaxLength);
+        RoleLabel = null;
         DeletedAt = UtcTime.Normalize(deletedAt);
     }
 

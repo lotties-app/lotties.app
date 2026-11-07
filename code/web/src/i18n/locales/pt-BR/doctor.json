@@ -9,6 +9,8 @@
   "doctor": {
     "name": "Dr(a). {{name}}",
     "nameNoAccess": "Dr(a). {{name}} (não tem mais acesso)",
+    "unnamed": "Médico(a){{name}}",
+    "unnamedNoAccess": "Médico(a){{name}} (não tem mais acesso)",
     "selfDeclared": "Médico(a) autodeclarado(a)",
     "verifiedDoctor": "Profissional verificado",
     "settingsNotice": "Você é médico(a) de {{name}}: pode ver tudo o que é registrado, escrever notas e adicionar medidas da consulta. Os responsáveis cuidam do resto.",
@@ -16,15 +18,20 @@
       "sectionTitle": "Sou profissional de saúde",
       "intro": "Pediatras e outros médicos se identificam aqui. Assim uma família pode convidar você para o bebê com o papel Médico(a).",
       "declared": "Seu perfil profissional",
-      "selfDeclaredNotice": "Autodeclarado: o Lotties não verifica registros. As famílias veem “Médico(a) autodeclarado(a)” ao lado do seu nome.",
+      "selfDeclaredNotice": "Autodeclarado: o Lotties não confere registros. As famílias veem “Médico(a) autodeclarado(a)” e a sua especialidade; seu nome e registro só se você ativar abaixo.",
       "displayName": "Nome que as famílias veem",
-      "displayNameHelp": "Sem o título: as famílias veem “Dr(a).” antes dele.",
+      "displayNameHelp": "Sem título: as famílias veem “Dr(a).” antes dele.",
       "displayNameRequired": "Informe o nome que as famílias vão ver.",
       "specialty": "Especialidade",
       "specialtyPlaceholder": "ex.: Pediatria",
       "registrationNumber": "Número de registro",
       "registrationNumberHelp": "Por exemplo, seu CRM. As famílias podem vê-lo.",
-      "loadFailed": "Não foi possível carregar seu perfil profissional. Verifique sua conexão."
+      "loadFailed": "Não foi possível carregar seu perfil profissional. Verifique sua conexão.",
+      "specialtyHelp": "É o único campo obrigatório. As famílias sempre veem.",
+      "specialtyRequired": "Informe sua especialidade.",
+      "shareName": "Mostrar meu nome para as famílias",
+      "shareRegistration": "Mostrar meu registro para as famílias",
+      "shareNotice": "O que fica desligado não aparece: as famílias veem só a sua especialidade."
     },
     "invite": {
       "consent": "O(a) médico(a) que aceitar vai ver as seções que você escolher de {{name}} e poderá adicionar notas e medidas. Você pode mudar o que compartilha ou remover o acesso a qualquer momento."

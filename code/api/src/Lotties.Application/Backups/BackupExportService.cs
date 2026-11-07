@@ -141,7 +141,7 @@ internal sealed class BackupExportService : IBackupExportService
             counts.GetValueOrDefault("events"),
             counts.Where(count => count.Key != "events").Sum(count => count.Value),
             checksum);
-        return new BackupExportSummary(baby.Name, exportedAt, counts);
+        return new BackupExportSummary(string.IsNullOrEmpty(baby.Name) ? Domain.Babies.BabyLabels.Shown(baby.Label) : baby.Name, exportedAt, counts);
     }
 
     private async Task EnsureMayExportAsync(Guid babyId, CancellationToken cancellationToken)
@@ -219,7 +219,9 @@ internal sealed class BackupExportService : IBackupExportService
     {
         Id = baby.Id,
         Name = baby.Name,
+        Label = baby.Label,
         BirthDate = baby.BirthDate,
+        BirthWeekOnly = baby.BirthWeekOnly ? true : null,
         CreatedAt = baby.CreatedAt,
         VaccineProfile = baby.VaccineProfile,
         GestationalAgeWeeks = baby.GestationalAgeWeeks,

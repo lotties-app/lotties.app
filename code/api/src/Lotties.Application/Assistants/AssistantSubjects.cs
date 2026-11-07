@@ -21,7 +21,7 @@ internal sealed record AssistantSubject(Baby Baby, BabyRole Role, TimeZoneInfo? 
 {
     /// <summary>A result about this subject's baby; the name is in it only when <see cref="SayBabyName"/> (the user's opt-in).</summary>
     public AssistantResult Result(AssistantResultCode code) =>
-        new() { Code = code, AsOf = Now, Baby = new AssistantBaby(Baby.Id, SayBabyName ? Baby.Name : null), TimeZone = ZoneId };
+        new() { Code = code, AsOf = Now, Baby = new AssistantBaby(Baby.Id, SayBabyName && Baby.Name.Length > 0 ? Baby.Name : null), TimeZone = ZoneId };
 
     /// <summary>The user's local clock, or UTC days when no zone is known.</summary>
     public LocalClock Clock => Zone is { } zone ? LocalClock.InZone(zone) : LocalClock.WithOffset(TimeSpan.Zero);
@@ -108,7 +108,7 @@ internal sealed class AssistantSubjects(
 
         var family = AssistantBabyChoice.Family(memberships)
             .Select(membership => userBabies.Single(baby => baby.Id == membership.BabyId))
-            .OrderBy(baby => baby.Name, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(baby => baby.ShownName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(baby => baby.Id)
             .Select(baby => new AssistantFamilyMember(baby, RoleOf(baby, user.Id), baby.Id == resolution.BabyId))
             .ToArray();

@@ -36,7 +36,7 @@ public sealed class BabyTests
 
         baby.UpdateDetails("Lia", TestClock.Today.AddDays(1), TestClock.Now);
 
-        Assert.Equal(TestClock.Today.AddDays(1), baby.BirthDate);
+        Assert.Equal(BirthWeek.MondayOf(TestClock.Today.AddDays(1)), baby.BirthDate);
     }
 
     [Fact]
@@ -49,9 +49,60 @@ public sealed class BabyTests
     }
 
     [Fact]
-    public void Create_BlankName_ThrowsValidation()
+    public void Create_BlankName_IsAllowedAndTheLabelStandsIn()
     {
-        Assert.Throws<DomainValidationException>(() => Baby.Create(" ", TestClock.Today, OwnerId, TestClock.Now));
+        var baby = Baby.Create(" ", TestClock.Today, OwnerId, TestClock.Now);
+
+        Assert.Equal((string.Empty, "baby", "Baby"), (baby.Name, baby.ResolvedLabel, baby.ShownName));
+    }
+
+    [Theory]
+    [InlineData("GIRL", "girl", "Girl")]
+    [InlineData(" Boy ", "boy", "Boy")]
+    [InlineData("Little Bean", "Little Bean", "Little Bean")]
+    public void Create_Label_IsNormalizedAndShownWhenThereIsNoName(string label, string resolved, string shown)
+    {
+        var baby = Baby.Create(null, TestClock.Today, OwnerId, TestClock.Now, label);
+
+        Assert.Equal((resolved, shown), (baby.ResolvedLabel, baby.ShownName));
+    }
+
+    [Fact]
+    public void ShownName_PrefersTheRealName()
+    {
+        var baby = Baby.Create("Lia", TestClock.Today, OwnerId, TestClock.Now, "girl");
+
+        Assert.Equal("Lia", baby.ShownName);
+    }
+
+    [Fact]
+    public void Create_WeekOnly_StoresTheMondayOfTheBirthWeek()
+    {
+        var baby = Baby.Create("Lia", new DateOnly(2026, 1, 1), OwnerId, TestClock.Now, weekOnly: true);
+
+        Assert.Equal((new DateOnly(2025, 12, 29), true), (baby.BirthDate, baby.BirthDateWeekOnly));
+    }
+
+    [Fact]
+    public void UpdateDetails_UnchangedExactDate_StaysExactUntilTheWeekIsRequested()
+    {
+        var baby = Baby.Create("Lia", new DateOnly(2026, 1, 1), OwnerId, TestClock.Now);
+
+        baby.UpdateDetails("Lia", new DateOnly(2026, 1, 1), TestClock.Now);
+        Assert.Equal((new DateOnly(2026, 1, 1), false), (baby.BirthDate, baby.BirthDateWeekOnly));
+
+        baby.UpdateDetails("Lia", new DateOnly(2026, 1, 1), TestClock.Now, storeWeekOnly: true);
+        Assert.Equal((new DateOnly(2025, 12, 29), true), (baby.BirthDate, baby.BirthDateWeekOnly));
+    }
+
+    [Fact]
+    public void UpdateDetails_WeekOnlyBabyKeepsItsMondayForTheSameWeek()
+    {
+        var baby = Baby.Create("Lia", new DateOnly(2026, 1, 1), OwnerId, TestClock.Now, weekOnly: true);
+
+        baby.UpdateDetails("Lia", new DateOnly(2025, 12, 31), TestClock.Now);
+
+        Assert.Equal(new DateOnly(2025, 12, 29), baby.BirthDate);
     }
 
     [Fact]
@@ -76,7 +127,7 @@ public sealed class BabyTests
         baby.UpdateDetails("Lia Maria", TestClock.Today.AddDays(-3), TestClock.Now);
 
         Assert.Equal("Lia Maria", baby.Name);
-        Assert.Equal(TestClock.Today.AddDays(-3), baby.BirthDate);
+        Assert.Equal(BirthWeek.MondayOf(TestClock.Today.AddDays(-3)), baby.BirthDate);
     }
 
     [Fact]

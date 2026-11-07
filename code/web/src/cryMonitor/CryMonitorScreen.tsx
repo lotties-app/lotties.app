@@ -25,6 +25,7 @@ import { deniedStepsFor } from './monitorView';
 import { RecentDetections } from './RecentDetections';
 import type { WakeLockEnvironment } from './screenWakeLock';
 import { useCryMonitor, type CreateCryEngine } from './useCryMonitor';
+import { babyShownName } from '../baby/shownName';
 
 export interface CryMonitorScreenProps {
   baby: Baby;
@@ -360,7 +361,7 @@ export function CryMonitorScreen({
     <Stack spacing={3}>
       {state.phase === 'intro' && (
         <Intro
-          name={baby.name}
+          name={babyShownName(baby)}
           consentAt={consentAt}
           onStart={() => void monitor.start()}
           onWithdraw={() => {
@@ -371,7 +372,7 @@ export function CryMonitorScreen({
       )}
       {state.phase === 'consent' && (
         <Consent
-          name={baby.name}
+          name={babyShownName(baby)}
           onAgree={() => {
             monitor.agree();
             setConsentAt(readConsent()?.at ?? null);

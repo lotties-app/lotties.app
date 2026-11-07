@@ -84,7 +84,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'account',
               cells: [
                 'Sua conta de acesso',
-                'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno e o seu nome de exibição; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login. Guardamos também a sua escolha de unidades de medida (automática, métrica ou americana), que só muda como as quantidades aparecem para você; os registros continuam em unidades métricas.',
+                'Os dados com que você se cadastra no nosso servidor de login (Keycloak), como nome e e-mail, e sua senha, que o Keycloak guarda apenas de forma protegida (um hash irreversível). O servidor do Lotties guarda só um identificador interno, o seu nome de exibição (opcional, você pode apagá-lo) e, se você quiser, um rótulo de papel como Mãe, Pai ou Amigo; ele nunca lê o seu e-mail. O app no seu aparelho recebe seu nome e e-mail do servidor de login. Guardamos também a sua escolha de unidades de medida (automática, métrica ou americana), que só muda como as quantidades aparecem para você; os registros continuam em unidades métricas.',
                 'Para você entrar nos seus aparelhos e para mostrar seu nome às pessoas com quem você compartilha um bebê.',
               ],
             },
@@ -100,7 +100,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'babyProfile',
               cells: [
                 'O perfil do bebê',
-                'Nome e data de nascimento e, se você preencher, dados de vacinação: a rede que vocês usam (pública, ou também particular), as semanas de gestação ao nascer e se a mãe tomou a vacina contra o VSR na gravidez.',
+                'O nome é opcional: você pode dar ao bebê só um rótulo (Bebê, Menina, Menino ou um texto que você escolher) e acrescentar um nome de verdade quando quiser. A data de nascimento é guardada apenas como a semana de nascimento (a segunda-feira daquela semana); bebês cadastrados antes mantêm a data exata até você editá-la ou escolher guardar só a semana. Se você preencher, dados de vacinação: a rede que vocês usam (pública, ou também particular), as semanas de gestação ao nascer e se a mãe tomou a vacina contra o VSR na gravidez.',
                 'Para mostrar idades e a rotina do dia, e o calendário de vacinas adequado ao seu bebê.',
               ],
             },
@@ -132,7 +132,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'doctorProfile',
               cells: [
                 'Perfil de profissional de saúde',
-                'Se você declarar que é profissional de saúde: o nome que as famílias veem, sua especialidade e seu número de registro. É autodeclarado: o Lotties não verifica.',
+                'Se você declarar que é profissional de saúde: sua especialidade (o único campo obrigatório) e, se quiser, seu nome e seu número de registro. As famílias veem seu nome e seu registro só nos campos que você escolher compartilhar; senão, veem apenas a especialidade. É autodeclarado: o Lotties não verifica.',
                 'Para que as famílias que convidam você como médico(a) do bebê saibam quem você é.',
               ],
             },

@@ -167,7 +167,7 @@ internal sealed class NotificationPlanInputLoader(
     {
         var baby = await babies.FindAsync(babyId, cancellationToken);
         var babyMedications = await medications.ListForBabyAsync(babyId, cancellationToken);
-        return new NotificationNameSource(baby?.Name ?? string.Empty, babyMedications.ToDictionary(item => item.Id, item => item.Name));
+        return new NotificationNameSource(baby?.ShownName ?? string.Empty, babyMedications.ToDictionary(item => item.Id, item => item.Name));
     }
 
     private sealed record MedicationData(IReadOnlyList<Prescription> Prescriptions, IReadOnlyList<MedicationDose> Doses, BodyWeight? Weight);

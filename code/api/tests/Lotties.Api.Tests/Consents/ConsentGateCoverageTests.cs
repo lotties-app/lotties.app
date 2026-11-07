@@ -29,6 +29,7 @@ public sealed class ConsentGateCoverageTests(ApiFactory factory) : IClassFixture
         ["GET /api/v1/me/deletion-preview"] = "Leaving: what deleting the account would remove.",
         ["GET /api/v1/me/professional-profile"] = MeReason,
         ["PUT /api/v1/me/professional-profile"] = MeReason,
+        ["PUT /api/v1/me/profile"] = MeReason,
         ["GET /api/v1/me/assistant-settings"] = MeReason,
         ["PUT /api/v1/me/assistant-settings"] = MeReason,
         ["GET /api/v1/me/unit-settings"] = MeReason,

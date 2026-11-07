@@ -1,0 +1,24 @@
+{
+  "profile": {
+    "title": "Seu nome no Lotties",
+    "intro": "O nome é opcional. Escolha como você aparece para quem compartilha um bebê com você; um nome real é escolha sua.",
+    "nameLabel": "Nome (opcional)",
+    "roleLabel": "Eu sou do bebê...",
+    "custom": "Outro texto...",
+    "customLabel": "Rótulo personalizado",
+    "save": "Salvar",
+    "saved": "Salvo.",
+    "loadFailed": "Não foi possível carregar seu perfil. Verifique sua conexão.",
+    "roleLabels": {
+      "mother": "Mãe",
+      "father": "Pai",
+      "stepMother": "Madrasta",
+      "stepFather": "Padrasto",
+      "sister": "Irmã",
+      "brother": "Irmão",
+      "grandmother": "Avó",
+      "grandfather": "Avô",
+      "friend": "Amigo(a)"
+    }
+  }
+}

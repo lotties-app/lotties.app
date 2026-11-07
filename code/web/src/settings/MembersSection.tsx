@@ -40,10 +40,12 @@ import { DoctorAccessSheet } from '../doctor/DoctorAccessSheet';
 import { seesText } from '../doctor/scopeText';
 import { parseScopes } from '../doctor/scopes';
 import { doctorLabel } from '../professional/doctorLabel';
+import { babyShownName } from '../baby/shownName';
+import { personShownName } from '../baby/shownName';
 
 const ROLES: BabyRole[] = ['Owner', 'Parent', 'Caregiver', 'Viewer'];
 
-const memberName = (m: MemberDto) => m.displayName?.trim() || translate('settings.members.unnamed');
+const memberName = (m: MemberDto) => personShownName(m, translate('settings.members.unnamed'));
 
 function MemberRow({
   member,
@@ -72,7 +74,10 @@ function MemberRow({
         disableTypography={!!professional}
         primary={
           professional ? (
-            <DoctorName person={{ displayName: name, professional }} variant="body2" />
+            <DoctorName
+              person={{ displayName: member.displayName?.trim() ?? '', professional }}
+              variant="body2"
+            />
           ) : (
             name
           )
@@ -255,7 +260,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
           baby={baby}
           userId={access.userId}
           doctor={doctorLabel(t, {
-            displayName: memberName(access),
+            displayName: access.displayName?.trim() ?? '',
             professional: fromProfessionalDto(access.professional),
           })}
           initial={parseScopes(access.doctorScopes)}
@@ -269,7 +274,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
             parseRole(removing.role) === 'Doctor'
               ? 'doctor.members.removeBody'
               : 'settings.members.removeBody',
-            { baby: baby.name },
+            { baby: babyShownName(baby) },
           )}
           confirmLabel={t('settings.members.removeConfirm')}
           pending={pending}
@@ -280,10 +285,10 @@ export function MembersSection({ baby }: { baby: Baby }) {
       )}
       {leaving === 'unsynced' && (
         <UnsyncedChangesDialog
-          title={t('settings.members.leaveTitle', { name: baby.name })}
+          title={t('settings.members.leaveTitle', { name: babyShownName(baby) })}
           message={t('settings.members.leaveUnsynced', {
             changes: unsyncedChangesLabel(unsynced),
-            name: baby.name,
+            name: babyShownName(baby),
           })}
           pushLabel={t('settings.members.pushFirst')}
           proceedLabel={t('settings.members.leaveAnyway')}
@@ -296,7 +301,7 @@ export function MembersSection({ baby }: { baby: Baby }) {
       )}
       {leaving === 'confirm' && (
         <ConfirmDialog
-          title={t('settings.members.leaveTitle', { name: baby.name })}
+          title={t('settings.members.leaveTitle', { name: babyShownName(baby) })}
           body={t('settings.members.leaveBody')}
           confirmLabel={t('settings.members.leaveConfirm')}
           pending={pending}

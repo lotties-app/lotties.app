@@ -14,6 +14,7 @@ import { unsyncedChangesLabel, usePushThenProceed } from '../session/usePushThen
 import { ConfirmDialog } from '../settings/ConfirmDialog';
 import { useServerAction } from '../settings/useServerAction';
 import { useSyncEngine } from '../sync/SyncEngineContext';
+import { babyShownName } from '../baby/shownName';
 
 /**
  * "Stop following Lia": the doctor ends her own access (`DELETE /members/me`), like leaving a baby
@@ -60,12 +61,12 @@ export function LeavePatient({ baby }: { baby: Baby }) {
         }
         sx={{ minHeight: 48, alignSelf: 'flex-start' }}
       >
-        {t('doctorDashboard.leave.button', { name: baby.name })}
+        {t('doctorDashboard.leave.button', { name: babyShownName(baby) })}
       </Button>
       {step === 'confirm' && (
         <ConfirmDialog
-          title={t('doctorDashboard.leave.title', { name: baby.name })}
-          body={t('doctorDashboard.leave.body', { name: baby.name })}
+          title={t('doctorDashboard.leave.title', { name: babyShownName(baby) })}
+          body={t('doctorDashboard.leave.body', { name: babyShownName(baby) })}
           confirmLabel={t('doctorDashboard.leave.confirm')}
           pending={pending}
           error={error}
@@ -75,10 +76,10 @@ export function LeavePatient({ baby }: { baby: Baby }) {
       )}
       {step === 'unsynced' && (
         <UnsyncedChangesDialog
-          title={t('doctorDashboard.leave.title', { name: baby.name })}
+          title={t('doctorDashboard.leave.title', { name: babyShownName(baby) })}
           message={t('settings.members.leaveUnsynced', {
             changes: unsyncedChangesLabel(unsynced),
-            name: baby.name,
+            name: babyShownName(baby),
           })}
           pushLabel={t('settings.members.pushFirst')}
           proceedLabel={t('doctorDashboard.leave.confirm')}

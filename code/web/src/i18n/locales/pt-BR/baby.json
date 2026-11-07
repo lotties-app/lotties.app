@@ -2,7 +2,7 @@
   "baby": {
     "viewerNotice": "Você tem acesso somente para visualização a este bebê, então os registros estão desativados.",
     "viewOnlyNamed": "Você tem acesso somente para visualização a {{name}}.",
-    "nameLabel": "Nome",
+    "nameLabel": "Nome (opcional)",
     "birthDate": "Data de nascimento",
     "nameRequired": "Informe o nome.",
     "birthRequired": "Informe a data de nascimento.",
@@ -24,6 +24,27 @@
       "Viewer": "Só pode visualizar",
       "Doctor": "Profissional de saúde: vê as seções que você compartilhar, escreve notas e medidas"
     },
-    "caregiverNamed": "Você é cuidador(a) de {{name}}: pode registrar eventos e editar os seus próprios registros. Os responsáveis cuidam do resto."
+    "caregiverNamed": "Você é cuidador(a) de {{name}}: pode registrar eventos e editar os seus próprios registros. Os responsáveis cuidam do resto.",
+    "nameHelp": "Deixe vazio para usar o rótulo abaixo. Um nome real fica na sua conta e é visto por todos com quem você compartilha o bebê.",
+    "labelLabel": "Rótulo",
+    "labelPreset": {
+      "baby": "Bebê",
+      "girl": "Menina",
+      "boy": "Menino",
+      "custom": "Outro texto..."
+    },
+    "labelCustom": "Rótulo personalizado",
+    "labelHelp": "Aparece quando não há nome. Digitar um texto próprio ou um nome é escolha sua.",
+    "birthWeekNotice": "O Lotties converte a data para a semana de nascimento (a segunda-feira daquela semana) e guarda só a semana. O dia exato não é guardado.",
+    "birthWeekStored": "Só a semana de nascimento é guardada (semana que começa em {{date}}).",
+    "birthExactStored": "A data de nascimento exata está guardada.",
+    "storeOnlyWeek": "Guardar só a semana",
+    "storeOnlyWeekDone": "Agora só a semana de nascimento é guardada.",
+    "weekBasis": "Com base na semana de nascimento: a idade pode variar até 6 dias.",
+    "labels": {
+      "baby": "Bebê",
+      "girl": "Menina",
+      "boy": "Menino"
+    }
   }
 }

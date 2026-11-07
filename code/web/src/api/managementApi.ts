@@ -29,8 +29,18 @@ export async function createBaby(api: ApiClient, request: BabyRequest): Promise<
 }
 
 /** `PUT` replies with the stored baby; the role is the caller's (Owner), so keep the known one. */
-export async function updateBaby(api: ApiClient, id: string, request: BabyRequest): Promise<void> {
-  await api.request<unknown>(apiPaths.baby(id), { method: 'PUT', body: request });
+export async function updateBaby(
+  api: ApiClient,
+  id: string,
+  request: BabyRequest,
+): Promise<Partial<Baby>> {
+  const stored = await api.request<BabyDto | undefined>(apiPaths.baby(id), {
+    method: 'PUT',
+    body: request,
+  });
+  if (!stored || typeof stored.birthDate !== 'string') return {};
+  const { name, label, birthDate, birthWeekOnly } = fromBabyDto(stored);
+  return { name, label, birthDate, birthWeekOnly };
 }
 
 export function listMembers(api: ApiClient, babyId: string) {

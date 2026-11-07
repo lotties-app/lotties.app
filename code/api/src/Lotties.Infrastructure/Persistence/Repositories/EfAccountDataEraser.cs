@@ -23,7 +23,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
     {
         var mine = await context.BabyMembers.AsNoTracking()
             .Where(member => member.UserId == userId)
-            .Join(context.Babies.AsNoTracking(), member => member.BabyId, baby => baby.Id, (member, baby) => new { baby.Id, baby.Name, member.Role })
+            .Join(context.Babies.AsNoTracking(), member => member.BabyId, baby => baby.Id, (member, baby) => new { baby.Id, baby.Name, baby.Label, member.Role })
             .OrderBy(row => row.Name)
             .ToListAsync(cancellationToken);
         IReadOnlyCollection<Guid> babyIds = [.. mine.Select(row => row.Id)];
@@ -37,7 +37,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         var blocked = new List<AccountDeletionBaby>();
         foreach (var row in mine)
         {
-            var baby = new AccountDeletionBaby(row.Id, row.Name);
+            var baby = new AccountDeletionBaby(row.Id, row.Name.Length > 0 ? row.Name : BabyLabels.Shown(BabyLabels.Normalize(row.Label)));
             var rest = others.Where(other => other.BabyId == row.Id).ToList();
             if (rest.Count == 0)
             {

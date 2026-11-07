@@ -108,6 +108,7 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         // The caller's own professional profile: any signed-in user may declare one (needed to accept a Doctor invite).
         ["GET /api/v1/me/professional-profile"] = Access.SignedIn,
         ["PUT /api/v1/me/professional-profile"] = Access.SignedIn,
+        ["PUT /api/v1/me/profile"] = Access.SignedIn,
 
         ["GET /api/v1/babies"] = Access.SignedIn,
         ["POST /api/v1/babies"] = Access.SignedIn,

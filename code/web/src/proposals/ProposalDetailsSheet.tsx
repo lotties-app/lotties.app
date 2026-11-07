@@ -19,6 +19,7 @@ import { ContentFacts } from './ContentFacts';
 import { DECLINE_REASON_MAX, contentOf, isOpen } from './proposalModel';
 import { ProposalStatusChips } from './ProposalStatusChip';
 import { useProposal, useProposalCommands } from './useProposals';
+import { babyShownName } from '../baby/shownName';
 
 type Phase = 'view' | 'declining' | 'added';
 
@@ -162,7 +163,7 @@ export function ProposalDetailsSheet({
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
                 <Icon name="info" size={16} sx={{ mt: '3px', color: 'text.secondary' }} />
                 <Typography variant="body2" color="text.secondary">
-                  {t('proposals.details.acceptAdds', { name: baby.name })}
+                  {t('proposals.details.acceptAdds', { name: babyShownName(baby) })}
                 </Typography>
               </Box>
             )}
@@ -263,7 +264,7 @@ function Added({ proposal, baby, onDone }: { proposal: Proposal; baby: Baby; onD
         >
           <CategoryIcon name="success" category="health" size={32} />
           <Typography variant="h6" component="p">
-            {t('proposals.details.addedTitle', { name: baby.name })}
+            {t('proposals.details.addedTitle', { name: babyShownName(baby) })}
           </Typography>
           {proposal.decisionPending === true && (
             <Typography color="text.secondary">{t('proposals.details.addedPending')}</Typography>

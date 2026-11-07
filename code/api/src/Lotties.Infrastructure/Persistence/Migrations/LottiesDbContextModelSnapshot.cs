@@ -214,6 +214,12 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("birth_date");
 
+                    b.Property<bool>("BirthDateWeekOnly")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("birth_date_week_only");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -221,6 +227,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.Property<short?>("GestationalAgeWeeks")
                         .HasColumnType("smallint")
                         .HasColumnName("gestational_age_weeks");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -2358,7 +2369,20 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("registration_number");
 
+                    b.Property<bool>("ShareDisplayName")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("share_display_name");
+
+                    b.Property<bool>("ShareRegistration")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("share_registration");
+
                     b.Property<string>("Specialty")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("specialty");
@@ -2608,6 +2632,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("issuer");
+
+                    b.Property<string>("RoleLabel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("role_label");
 
                     b.Property<string>("Subject")
                         .IsRequired()

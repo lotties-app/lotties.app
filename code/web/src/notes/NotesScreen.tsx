@@ -12,6 +12,7 @@ import { NoteComposer } from './NoteComposer';
 import { isOwnNote, timelineOf } from './noteModel';
 import { useReadRecommendationsOnView } from '../proposals/useProposals';
 import { useNoteCommands, useNotes } from './useNotes';
+import { babyShownName } from '../baby/shownName';
 
 type Composing = Note | 'new' | null;
 
@@ -82,7 +83,7 @@ export function NotesScreen({ baby }: { baby: Baby }) {
           <Typography variant="h4" component="h1">
             {t('doctor.notes.title')}
           </Typography>
-          <Typography color="text.secondary">{baby.name}</Typography>
+          <Typography color="text.secondary">{babyShownName(baby)}</Typography>
         </Stack>
         {writable && timeline.length > 0 && (
           <Button
@@ -96,10 +97,10 @@ export function NotesScreen({ baby }: { baby: Baby }) {
         )}
       </Box>
       {!writable && (
-        <Alert severity="info">{t('doctor.notes.familyNotice', { name: baby.name })}</Alert>
+        <Alert severity="info">{t('doctor.notes.familyNotice', { name: babyShownName(baby) })}</Alert>
       )}
       {timeline.length === 0 ? (
-        <EmptyNotes writable={writable} name={baby.name} onAdd={() => setComposing('new')} />
+        <EmptyNotes writable={writable} name={babyShownName(baby)} onAdd={() => setComposing('new')} />
       ) : (
         <Stack component="section" aria-label={t('doctor.notes.timeline')} spacing={1.5}>
           {timeline.map((note) => (

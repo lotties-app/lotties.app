@@ -200,6 +200,8 @@ export const apiPaths = {
   timeline: (babyId: string, from: string, to: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/timeline` + query({ from, to }),
   professionalProfile: () => `${API_PREFIX}/me/professional-profile`,
+  me: () => `${API_PREFIX}/me`,
+  meProfile: () => `${API_PREFIX}/me/profile`,
   catalogProducts: (q?: string, limit?: number) =>
     `${API_PREFIX}/catalog/products` +
     query({ q, limit: limit === undefined ? undefined : String(limit) }),
@@ -254,8 +256,13 @@ function enc(segment: string) {
 
 export interface BabyDto {
   id: string;
+  /** Real name; may be empty. */
   name: string;
+  /** Preset code or custom text (additive). */
+  label?: string | null;
   birthDate: string;
+  /** Only the week of birth is stored (additive). */
+  birthWeekOnly?: boolean;
   role?: string;
   /** The caller's own user id (additive; absent from older servers). */
   userId?: string;
@@ -369,14 +376,21 @@ export type EventsDeltaResponse = EventDto[];
 /* Online-only management endpoints (docs/SPEC.md "Babies, members, invites, event types, ..."). */
 
 export interface BabyRequest {
+  /** Optional real name (empty = none). */
   name: string;
+  /** Preset code or custom text. */
+  label?: string;
   /** `yyyy-mm-dd`. */
   birthDate: string;
+  /** Update only: store only the week (sent for the "Store only the week" action). */
+  birthWeekOnly?: boolean;
 }
 
 export interface MemberDto {
   userId: string;
   displayName: string | null;
+  /** Preset code or custom text (additive). */
+  roleLabel?: string | null;
   role: string;
   joinedAt: string;
   /** A Doctor member's professional details (additive; absent or `null` for other roles). */
@@ -696,8 +710,10 @@ export function fromBabyDto(dto: BabyDto): Baby {
   // A missing role degrades to the least privilege; the server enforces roles regardless.
   return {
     id: dto.id,
-    name: dto.name,
+    name: dto.name ?? '',
+    ...(typeof dto.label === 'string' && dto.label !== '' ? { label: dto.label } : {}),
     birthDate: dto.birthDate,
+    ...(dto.birthWeekOnly === true ? { birthWeekOnly: true } : {}),
     role: role ?? 'Viewer',
     ...(typeof dto.userId === 'string' && dto.userId !== '' ? { userId: dto.userId } : {}),
     ...vaccineProfileFromDto(dto),
@@ -1660,11 +1676,15 @@ export interface ProfessionalSummaryDto {
   specialty?: string | null;
   registrationNumber?: string | null;
   verified?: boolean;
+  /** Own profile only: whether name / registration are shown to families. */
+  shareDisplayName?: boolean;
+  shareRegistration?: boolean;
 }
 
 export interface PersonSummaryDto {
   userId: string;
   displayName: string;
+  roleLabel?: string | null;
   professional?: ProfessionalSummaryDto | null;
 }
 
@@ -1679,8 +1699,10 @@ export interface ProfessionalProfileDto extends ProfessionalSummaryDto {
 export interface ProfessionalProfileRequest {
   kind: 'doctor';
   displayName: string;
-  specialty: string | null;
+  specialty: string;
   registrationNumber: string | null;
+  shareDisplayName: boolean;
+  shareRegistration: boolean;
 }
 
 export interface AccessLogEntryDto {
@@ -1723,6 +1745,8 @@ export function fromProfessionalDto(
     specialty: dto.specialty ?? null,
     registrationNumber: dto.registrationNumber ?? null,
     verified: dto.verified === true,
+    shareDisplayName: dto.shareDisplayName ?? true,
+    shareRegistration: dto.shareRegistration ?? true,
   };
 }
 
@@ -1731,6 +1755,7 @@ export function fromPersonDto(dto: PersonSummaryDto | null | undefined): PersonS
   return {
     userId: dto.userId,
     displayName: dto.displayName ?? '',
+    roleLabel: dto.roleLabel ?? null,
     professional: fromProfessionalDto(dto.professional),
   };
 }

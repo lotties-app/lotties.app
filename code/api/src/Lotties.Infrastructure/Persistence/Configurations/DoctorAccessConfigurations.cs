@@ -34,6 +34,8 @@ internal sealed class ProfessionalProfileConfiguration : IEntityTypeConfiguratio
         builder.Property(profile => profile.DisplayName).HasMaxLength(ProfessionalProfileTerms.DisplayNameMaxLength).IsRequired();
         builder.Property(profile => profile.Specialty).HasMaxLength(ProfessionalProfileTerms.SpecialtyMaxLength);
         builder.Property(profile => profile.RegistrationNumber).HasMaxLength(ProfessionalProfileTerms.RegistrationNumberMaxLength);
+        builder.Property(profile => profile.ShareDisplayName).IsRequired().HasDefaultValue(false);
+        builder.Property(profile => profile.ShareRegistration).IsRequired().HasDefaultValue(false);
         builder.Property(profile => profile.Verified).IsRequired();
         builder.Property(profile => profile.CreatedAt).IsRequired();
         builder.Property(profile => profile.UpdatedAt).IsRequired();
