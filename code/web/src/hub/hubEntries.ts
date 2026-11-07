@@ -100,6 +100,8 @@ export interface HubContext {
   cryMonitorSupported: boolean;
   /** `GET /board/me` granted read access to the project board (unknown or none: false). */
   board?: boolean;
+  /** A demo account (docs/design/45-try-it-demo.md): no invites, doctor access, import, export or backup restore. */
+  demo?: boolean;
 }
 
 /** Whether the person sees the entry (role-aware: the server enforces the same rules). */
@@ -132,11 +134,12 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
       return !!baby && canPropose(baby);
     case 'invite':
     case 'doctorAccess':
-      return !!baby && isOwner(baby);
+      return !ctx.demo && !!baby && isOwner(baby);
     case 'import':
     case 'export':
-      return !!baby && canWrite(baby);
+      return !ctx.demo && !!baby && canWrite(baby);
     case 'backupImport':
+      if (ctx.demo) return false;
       // A backup restores into a new baby of anyone's; into the selected one only for who may write to it.
       return baby ? canWrite(baby) : !ctx.hasPatients;
     case 'cryMonitor':

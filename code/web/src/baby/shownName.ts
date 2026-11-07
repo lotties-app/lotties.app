@@ -1,7 +1,7 @@
 import { t as translate } from '../i18n/i18n';
 
 /*
- * Names are optional (docs/design/45-privacy-first-onboarding.md): a baby or a person shows the
+ * Names are optional (docs/design/46-privacy-first-onboarding.md): a baby or a person shows the
  * real name when there is one, else a label. Presets are stored as codes and localized here; any
  * other text is a custom label shown as typed.
  */

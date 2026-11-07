@@ -7,6 +7,7 @@ using Lotties.Api.Board.Mcp;
 using Lotties.Api.Configuration;
 using Lotties.Api.Consents;
 using Lotties.Api.Cors;
+using Lotties.Api.Demo;
 using Lotties.Api.Errors;
 using Lotties.Api.Limits;
 using Lotties.Api.Proxy;
@@ -40,6 +41,7 @@ public static class ApiHostExtensions
         builder.Services.AddAddressLookup(builder.Configuration);
         builder.Services.AddNotificationScheduler();
         builder.Services.AddOidcAuthentication(builder.Configuration);
+        builder.Services.AddTryItDemo(builder.Configuration);
         builder.Services.AddBabyAuthorization();
         builder.Services.AddApiCors(builder.Configuration);
         builder.Services.AddApiProblemDetails();
@@ -72,6 +74,7 @@ public static class ApiHostExtensions
         app.UseRequestRateAndTimeLimits();
         app.UseAuthorization();
         app.UseConsentGate();
+        app.UseDemoGate();
         app.UseMcpScopeGate();
         return app;
     }

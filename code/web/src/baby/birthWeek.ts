@@ -1,5 +1,5 @@
 /*
- * Birth is stored as its week (docs/design/45-privacy-first-onboarding.md section 2): the Monday
+ * Birth is stored as its week (docs/design/46-privacy-first-onboarding.md section 2): the Monday
  * (ISO week start) on or before the date. Twin of C# `Lotties.Domain.Babies.BirthWeek`, both
  * checked against `birthWeekVectors.json`.
  */

@@ -1,5 +1,6 @@
 import { canDecideProposals } from '../baby/permissions';
 import { cryMonitorSupported } from '../cryMonitor/support';
+import { useIsDemo } from '../auth/demo/useIsDemo';
 import { useBoardAccess } from '../board/useBoardAccess';
 import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import { useBabies } from '../db/hooks';
@@ -23,6 +24,7 @@ export function useHubContext(): HubContext | undefined {
   const { installed } = useInstallState();
   // Asked in the background: the Hub renders at once and the board entry appears when granted.
   const { access: board } = useBoardAccess();
+  const demo = useIsDemo();
   if (!babies || !all) return undefined;
   const hasDoctor = members?.some((member) => member.role === 'Doctor') ?? false;
   const anything = !!inbox && (inbox.proposals.length > 0 || inbox.recommendations.length > 0);
@@ -34,5 +36,6 @@ export function useHubContext(): HubContext | undefined {
     installed,
     cryMonitorSupported: cryMonitorSupported(),
     board: !!board?.canRead,
+    demo,
   };
 }

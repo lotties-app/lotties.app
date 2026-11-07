@@ -58,21 +58,25 @@ public enum ConsentCapacity
 
     /// <summary>An adult the parent or guardian authorised (a family member, caregiver or health professional).</summary>
     Authorised,
+
+    /// <summary>A visitor of the try-it demo (docs/design/45-try-it-demo.md): written only by the demo start, never accepted from a request.</summary>
+    Demo,
 }
 
-/// <summary>Wire names of <see cref="ConsentCapacity"/>: <c>guardian</c>, <c>authorised</c>.</summary>
+/// <summary>Wire names of <see cref="ConsentCapacity"/>: <c>guardian</c>, <c>authorised</c> (and <c>demo</c>, which a request can never name).</summary>
 public static class ConsentCapacities
 {
     public static string NameOf(ConsentCapacity capacity) => capacity switch
     {
         ConsentCapacity.Guardian => "guardian",
         ConsentCapacity.Authorised => "authorised",
+        ConsentCapacity.Demo => "demo",
         _ => throw new ArgumentOutOfRangeException(nameof(capacity), capacity, null),
     };
 
     public static bool TryParse(string? name, out ConsentCapacity capacity)
     {
-        foreach (var candidate in Enum.GetValues<ConsentCapacity>())
+        foreach (var candidate in Enum.GetValues<ConsentCapacity>().Where(value => value != ConsentCapacity.Demo))
         {
             if (string.Equals(NameOf(candidate), name, StringComparison.Ordinal))
             {
@@ -85,5 +89,7 @@ public static class ConsentCapacities
         return false;
     }
 
-    public static ConsentCapacity ParseOrAuthorised(string? name) => TryParse(name, out var capacity) ? capacity : ConsentCapacity.Authorised;
+    /// <summary>The stored capacity (the only reader that knows <c>demo</c>); a name the code does not know reads as <see cref="ConsentCapacity.Authorised"/>.</summary>
+    public static ConsentCapacity ParseOrAuthorised(string? name) =>
+        string.Equals(name, NameOf(ConsentCapacity.Demo), StringComparison.Ordinal) ? ConsentCapacity.Demo : TryParse(name, out var capacity) ? capacity : ConsentCapacity.Authorised;
 }

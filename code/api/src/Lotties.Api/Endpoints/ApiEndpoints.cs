@@ -19,6 +19,7 @@ public static class ApiEndpoints
         // ConsentGateCoverageTests: a new route is gated by default (docs/design/38-consent-and-terms.md).
         var api = app.MapGroup(V1Prefix).RequireAuthorization().RequireConsent();
         api.MapVersionEndpoints();
+        api.MapDemoEndpoints();
         api.MapMeEndpoints();
         api.MapBabyCollectionEndpoints();
         api.MapInviteAcceptEndpoints();

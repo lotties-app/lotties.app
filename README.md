@@ -8,6 +8,29 @@
 
 Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routines, share them with your family, and see simple predictions for the next ones. Works offline and syncs when you reconnect.
 
+## See it in action
+
+<p align="center">
+  <a href="code/web/public/showcase/demo-en.mp4" title="Play the 50 second demo video">
+    <img src="code/web/public/showcase/demo-en-poster.webp" alt="Demo video of Lotties: click to play" width="220">
+  </a>
+  <br><sub>Demo video (50 s, no sound): <a href="code/web/public/showcase/demo-en.mp4">MP4</a>, <a href="code/web/public/showcase/demo-pt-BR.mp4">em português</a></sub>
+</p>
+
+<table>
+<tr>
+  <td align="center"><img src="code/web/public/showcase/now-light-en.webp" alt="Now screen" width="150"><br><sub>Now screen</sub></td>
+  <td align="center"><img src="code/web/public/showcase/log-feed-light-en.webp" alt="Log a feed" width="150"><br><sub>Log a feed</sub></td>
+  <td align="center"><img src="code/web/public/showcase/bottle-followup-light-en.webp" alt="Bottle follow-up" width="150"><br><sub>Bottle follow-up</sub></td>
+  <td align="center"><img src="code/web/public/showcase/insights-light-en.webp" alt="Insights" width="150"><br><sub>Insights</sub></td>
+  <td align="center"><img src="code/web/public/showcase/vaccines-light-en.webp" alt="Vaccines" width="150"><br><sub>Vaccines</sub></td>
+  <td align="center"><img src="code/web/public/showcase/sharing-light-en.webp" alt="Sharing with a caregiver" width="150"><br><sub>Sharing with a caregiver</sub></td>
+  <td align="center"><img src="code/web/public/showcase/doctor-light-en.webp" alt="Doctor view" width="150"><br><sub>Doctor view</sub></td>
+</tr>
+</table>
+
+All pictures show a made-up baby with made-up events, never a real family. Also in Brazilian Portuguese and dark mode: [`code/web/public/showcase/`](code/web/public/showcase/). They are regenerated from the app itself, see [docs/showcase-media.md](docs/showcase-media.md).
+
 ## Stack
 
 - **code/web/**: React 19, TypeScript, MUI, Vite, PWA (vite-plugin-pwa)

@@ -104,11 +104,15 @@ public sealed class ConsentVersionTests
             Assert.Equal(kind, parsed);
         }
 
-        foreach (var capacity in Enum.GetValues<ConsentCapacity>())
+        foreach (var capacity in Enum.GetValues<ConsentCapacity>().Where(value => value != ConsentCapacity.Demo))
         {
             Assert.True(ConsentCapacities.TryParse(ConsentCapacities.NameOf(capacity), out var parsed));
             Assert.Equal(capacity, parsed);
         }
+
+        // The demo capacity is written by the demo start only: a request can never name it, the stored value reads back.
+        Assert.False(ConsentCapacities.TryParse(ConsentCapacities.NameOf(ConsentCapacity.Demo), out _));
+        Assert.Equal(ConsentCapacity.Demo, ConsentCapacities.ParseOrAuthorised(ConsentCapacities.NameOf(ConsentCapacity.Demo)));
 
         Assert.False(ConsentKinds.TryParse("everything", out _));
         Assert.False(ConsentCapacities.TryParse(null, out _));

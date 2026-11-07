@@ -27,6 +27,11 @@ env:
   # Not secrets. Off by default in the app: remove these two lines to switch the board off again.
   Board__Enabled: "true"
   Board__Mcp__Enabled: "true"
+  # Try-it demo tuning (not secrets; the key is in secretEnv). Defaults shown; uncomment to change.
+  # Demo__LifetimeDays: "3"
+  # Demo__MaxLiveAccounts: "200"
+  # Demo__StartPermitsPerHour: "3"
+  # Demo__CleanupMinutes: "30"
   # MCP server for AI assistants and the iPhone Siri intents (docs/MCP.md sections 2 to 4, 3.4). Not secrets. Needs the Keycloak
   # client scopes lotties.read/lotties.write with the audience mapper set to the same Audience first. Remove all three to switch it off.
   Mcp__Enabled: "true"
@@ -65,6 +70,11 @@ secretEnv:
   PUSH_VAPID_SUBJECT:
     secretName: lotties-secrets
     key: PUSH_VAPID_SUBJECT
+    optional: true
+  # Try-it demo (docs/design/45-try-it-demo.md): a random value of 32+ characters; without it the demo is off.
+  Demo__SigningKey:
+    secretName: lotties-secrets
+    key: DEMO_SIGNING_KEY
     optional: true
   # Keycloak service account for account deletion: both or none (none = the Keycloak user stays when a user deletes
   # her account, and the app says so). Setup: docs/KEYCLOAK-ACCOUNT-DELETION.md.

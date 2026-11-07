@@ -12,7 +12,7 @@ public enum ProfessionalKind
 /// <summary>
 /// The editable state of a professional profile: the specialty (the only required field, at most 100 characters; a
 /// <c>DoctorSpecialties</c> code when it matches), an optional name (100) and an optional registration number such as a
-/// CRM (40), each shown to families only when its share flag is on (docs/design/45-privacy-first-onboarding.md). Text is trimmed, blank optional text is
+/// CRM (40), each shown to families only when its share flag is on (docs/design/46-privacy-first-onboarding.md). Text is trimmed, blank optional text is
 /// absent, NUL is rejected. Compared by value, so an unchanged save changes nothing.
 /// </summary>
 public sealed record ProfessionalProfileTerms

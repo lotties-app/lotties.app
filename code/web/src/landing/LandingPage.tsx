@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Box, Button } from '@mui/material';
 import { useAuth } from '../auth/useAuth';
@@ -14,6 +14,7 @@ import { LandingFooter } from './LandingFooter';
 import { LandingHeader } from './LandingHeader';
 import { OpenSourceStrip } from './OpenSourceStrip';
 import { SessionNotice, type NoticeKind } from './SessionNotice';
+import { ShowcaseStrip } from './ShowcaseStrip';
 import { StepsStrip } from './StepsStrip';
 import { StoryStrip } from './StoryStrip';
 
@@ -52,6 +53,16 @@ export default function LandingPage({
   const [startFailed, setStartFailed] = useState(false);
   const countedUnsynced = useEndedSessionUnsynced();
   const unsynced = unsyncedOverride === undefined ? countedUnsynced : unsyncedOverride;
+
+  // "Create my real account" from a demo lands here with ?signup=1: go straight to the sign-up.
+  const [params] = useSearchParams();
+  const signup = params.get('signup') === '1' && !welcome;
+  const signupStarted = useRef(false);
+  useEffect(() => {
+    if (!signup || signupStarted.current) return;
+    signupStarted.current = true;
+    login('/', { register: true }).catch(() => setStartFailed(true));
+  }, [signup, login]);
 
   const title = ready ? t('meta.title') : null;
   useEffect(() => {
@@ -95,6 +106,7 @@ export default function LandingPage({
         <StoryStrip />
         <InstallStrip />
         <FeatureGrid />
+        <ShowcaseStrip />
         <StepsStrip />
         <ImportantNotice />
         <OpenSourceStrip />

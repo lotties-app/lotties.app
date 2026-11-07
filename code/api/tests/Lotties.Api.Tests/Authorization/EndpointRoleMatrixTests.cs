@@ -102,6 +102,9 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["GET /health"] = Access.Anonymous,
         // The running release (name, version, commit, build time): public, shown on the About screen.
         ["GET /api/v1/version"] = Access.Anonymous,
+        // The try-it demo (docs/design/45-try-it-demo.md): anonymous by nature, the start is rate limited per address.
+        ["GET /api/v1/demo"] = Access.Anonymous,
+        ["POST /api/v1/demo/start"] = Access.Anonymous,
         ["GET /api/v1/me"] = Access.SignedIn,
         ["GET /api/v1/me/deletion-preview"] = Access.SignedIn,
         ["DELETE /api/v1/me"] = Access.SignedIn,

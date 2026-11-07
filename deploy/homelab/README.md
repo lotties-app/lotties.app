@@ -105,6 +105,7 @@ is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
 
 - `lotties-secrets` holds `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD`, and when set
   `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
+  `DEMO_SIGNING_KEY` (32+ characters; without it the try-it demo is off; shorter is refused),
   `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
   Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md) and, only with `DB_AUTO_MIGRATE=true`,
   `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.
@@ -143,6 +144,12 @@ kubectl --context "$KUBE_CONTEXT" -n lotties-app-production logs deploy/lotties-
 
 Then sign in at https://lotties.app. `/health` is not public; check it with
 `kubectl ... port-forward svc/lotties-api 18080:8080` and `curl localhost:18080/health`.
+
+## Logs and personal data
+
+The `lotties-web` pod writes its nginx access log to stdout and the cluster ships every pod log to Loki. The lines hold client addresses and paths
+(some with a baby's id in `/api/...` calls) for as long as Loki keeps them. Keep that retention short, and say so in the privacy policy if it is longer
+than a few weeks (docs/design/33-privacy-audit.md).
 
 ## Roll back
 

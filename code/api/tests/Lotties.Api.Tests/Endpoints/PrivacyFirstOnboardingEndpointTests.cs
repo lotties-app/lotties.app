@@ -6,7 +6,7 @@ using Lotties.Domain.Babies;
 
 namespace Lotties.Api.Tests.Endpoints;
 
-/// <summary>Names optional, labels, and a doctor who shares only what she chooses (docs/design/45-privacy-first-onboarding.md).</summary>
+/// <summary>Names optional, labels, and a doctor who shares only what she chooses (docs/design/46-privacy-first-onboarding.md).</summary>
 public sealed class PrivacyFirstOnboardingEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     private const string ProfilePath = "/api/v1/me/professional-profile";

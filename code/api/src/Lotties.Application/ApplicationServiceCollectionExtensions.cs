@@ -69,6 +69,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Units.IUnitPreferences, Units.UnitPreferences>();
         services.AddScoped<Board.IBoardService, Board.BoardService>();
         services.AddScoped<Board.IBoardApiKeyService, Board.BoardApiKeyService>();
+        services.AddScoped<Users.ActingUserOverride>();
+        services.AddScoped<Demo.IDemoService, Demo.DemoService>();
+        services.AddScoped<Demo.IDemoCleanup, Demo.DemoCleanup>();
         return services;
     }
 }

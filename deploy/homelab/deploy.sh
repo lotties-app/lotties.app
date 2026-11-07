@@ -36,7 +36,7 @@
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
 # App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL, VITE_ISSUES_URL,
-# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_* and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_*, DEMO_SIGNING_KEY and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
 # CORS_ALLOWED_ORIGINS.
 #
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
@@ -265,7 +265,7 @@ put_secret() { # key value
 secret_keys() { (cd "$SECRET_DIR" && ls | tr '\n' ' '); }
 
 collect_secrets() {
-  local key value push_count=0 admin_count=0 missing=()
+  local key value demo_key push_count=0 admin_count=0 missing=()
   step "Secret $APP_SECRET (values are not shown)"
   SECRET_DIR="$WORK/secret"
   mkdir -m 700 "$SECRET_DIR"
@@ -280,6 +280,10 @@ collect_secrets() {
     [ -z "$value" ] || push_count=$((push_count + 1))
     put_secret "$key" "$value"
   done
+  # The try-it demo (docs/design/45-try-it-demo.md): one optional signing key; without it the demo is off.
+  demo_key=$(setting_or_secret DEMO_SIGNING_KEY)
+  [ -z "$demo_key" ] || [ "${#demo_key}" -ge 32 ] || die "DEMO_SIGNING_KEY is shorter than 32 characters (the minimum the API accepts)"
+  put_secret DEMO_SIGNING_KEY "$demo_key"
   # The Keycloak service account that deletes the sign-in account with the Lotties account (docs/KEYCLOAK-ACCOUNT-DELETION.md).
   for key in AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET; do
     value=$(setting_or_secret "$key")
@@ -300,6 +304,7 @@ collect_secrets() {
   SECRETS_HASH=$( (cd "$SECRET_DIR" && for key in *; do printf '%s\n' "$key"; cat "$key"; printf '\n'; done) | sha256sum | cut -c1-16)
   echo "keys: $(secret_keys)"
   [ "$push_count" = 3 ] && echo "push notifications: on" || echo "push notifications: off (no PUSH_VAPID_* values)"
+  [ -n "$demo_key" ] && echo "try-it demo: on" || echo "try-it demo: off (no DEMO_SIGNING_KEY)"
   [ "$admin_count" = 2 ] && echo "account deletion: also deletes the Keycloak user" \
     || echo "account deletion: keeps the Keycloak user (no AUTH_ADMIN_CLIENT_* values; see docs/KEYCLOAK-ACCOUNT-DELETION.md)"
   [ "$DB_AUTO_MIGRATE" = true ] && echo "DB_AUTO_MIGRATE=true: the API pod holds the migrator credentials" || true

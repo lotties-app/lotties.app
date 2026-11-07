@@ -55,6 +55,7 @@ Compose reads `.env` from the repository root.
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
+| `Demo__SigningKey` (home lab: `DEMO_SIGNING_KEY` in `deploy/homelab/.env`) | api | no | Try-it demo; 32+ characters, secret. Blank = demo off. Tuning: `Demo__LifetimeDays` (3), `Demo__MaxLiveAccounts` (200), `Demo__StartPermitsPerHour` (3), `Demo__CleanupMinutes` (30); see docs/design/45-try-it-demo.md |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
 | `Board__Enabled`, `Board__Mcp__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data) and its MCP endpoint for AI tools; see "Project board" and docs/KEYCLOAK-BOARD.md |

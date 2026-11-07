@@ -158,6 +158,7 @@ run() { # name, env assignments... ; leaves the log in $WORK/log and the output 
 log_has() { grep -qE -- "$1" "$WORK/log"; }
 log_lacks() { ! grep -qE -- "$1" "$WORK/log"; }
 out_has() { grep -qE -- "$1" "$WORK/out"; }
+out_lacks() { ! grep -qE -- "$1" "$WORK/out"; }
 no_password() { ! grep -qF -- "$PASSWORD" "$WORK/log" "$WORK/out"; }
 
 run "dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered" STUB_NS_EXISTS=no STUB_PULL_SECRET=no && {
@@ -262,6 +263,20 @@ check "push: one key alone is refused" out_has 'all three PUSH_VAPID_\* values o
 
 run "push on" PUSH_VAPID_PUBLIC_KEY=pub PUSH_VAPID_PRIVATE_KEY=priv PUSH_VAPID_SUBJECT=mailto:op@example.test SKIP_BUILD=1 && {
   check "push: the three keys go to the Secret" log_has '^secret-keys: .*PUSH_VAPID_PRIVATE_KEY PUSH_VAPID_PUBLIC_KEY PUSH_VAPID_SUBJECT'
+}
+
+run "no demo key" SKIP_BUILD=1 && {
+  check "demo: off without a key, and says so" out_has 'try-it demo: off'
+  check "demo: no DEMO_SIGNING_KEY in the Secret" log_lacks '^secret-keys: .*DEMO_SIGNING_KEY'
+}
+
+EXPECT_FAIL=1 run "short demo key" DEMO_SIGNING_KEY=short SKIP_BUILD=1
+check "demo: a short key is refused" out_has 'DEMO_SIGNING_KEY is shorter than 32'
+
+run "demo on" DEMO_SIGNING_KEY=abcdefghijklmnopqrstuvwxyz0123456789 SKIP_BUILD=1 && {
+  check "demo: on, and says so" out_has 'try-it demo: on'
+  check "demo: the key goes to the Secret" log_has '^secret-keys: .*DEMO_SIGNING_KEY'
+  check "demo: the value is never printed" out_lacks 'abcdefghijklmnopqrstuvwxyz0123456789'
 }
 
 run "no admin client" SKIP_BUILD=1 && {
