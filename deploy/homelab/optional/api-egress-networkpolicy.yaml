@@ -1,0 +1,111 @@
+# Egress NetworkPolicy of the API pod for "bring your own database" (docs/design/47-bring-your-own-database.md section 3.2
+# step 7, task T4). Defence in depth behind the application guard (IStoreEndpointGuard): even if the guard had a bug, the
+# API pod could not open a connection to the lab's private networks, the cluster, or the cloud metadata address.
+#
+# STATUS: NOT APPLIED. deploy.sh does not read this folder, and nothing here has run against the cluster. It is a
+# template with placeholders the owner fills in and applies by hand after checking the items below.
+#
+# Before applying, check (unverified when this file was written):
+#   1. NetworkPolicy is enforced on the cluster (k3s ships kube-router's policy controller unless started with
+#      --disable-network-policy; check with a throwaway pod that a denied address really times out).
+#   2. The API pods carry the label app=lotties-api (the chart sets app: <release name>).
+#   3. CONTROL_DB_CIDR / CONTROL_DB_PORT: the address(es) of the control Postgres (DB_HOST in lotties-secrets). Use the
+#      narrowest CIDR (/32). If DB_HOST is a name, resolve it first; if it is an in-cluster Service, replace that rule with
+#      a namespaceSelector/podSelector rule for the database pods.
+#   4. KEYCLOAK_CIDR: where the API reaches https://auth.lotties.app (token keys, account deletion admin calls). If the
+#      name resolves to a public address that is not the lab's own, the "public internet" rule already covers it and
+#      the Keycloak rule can be deleted. If it resolves to a private address, or to the lab's public address (hairpin
+#      through the router), put that address here (/32): it is then allowed on 443 only.
+#   5. LAB_PUBLIC_IP: the lab's own public address, refused on the database ports (the same value belongs in the API
+#      setting StoreEndpointGuard__DeniedNetworks__0=<LAB_PUBLIC_IP>/32).
+#   6. Other egress the API already needs, all public on 443 and covered by the public rule: Web Push services, the
+#      address lookup (BrasilAPI, ViaCEP, OpenStreetMap Nominatim), the Alexa signing certificate download.
+#   7. IPv6: the IPv6 block below only matters on a dual-stack cluster; delete it if the cluster is IPv4 only and the
+#      policy controller rejects it.
+#
+# Fill in and apply (from deploy/homelab, after the checks above):
+#   NS=lotties-app-production CONTROL_DB_CIDR=<a.b.c.d/32> CONTROL_DB_PORT=5432 KEYCLOAK_CIDR=<a.b.c.d/32> \
+#   LAB_PUBLIC_IP=<a.b.c.d> envsubst < optional/api-egress-networkpolicy.yaml \
+#     | kubectl --context "$KUBE_CONTEXT" apply --dry-run=server -f -     # then again without --dry-run
+# Roll back: kubectl --context "$KUBE_CONTEXT" -n "$NS" delete networkpolicy lotties-api-egress
+#
+# Only egress is restricted (policyTypes: Egress); ingress from Traefik is untouched.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lotties-api-egress
+  namespace: ${NS}
+  labels:
+    app.kubernetes.io/part-of: lotties
+spec:
+  podSelector:
+    matchLabels:
+      app: lotties-api
+  policyTypes:
+    - Egress
+  egress:
+    # Cluster DNS (CoreDNS in kube-system on k3s).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # The control database (the Lotties-run Postgres).
+    - to:
+        - ipBlock:
+            cidr: ${CONTROL_DB_CIDR}
+      ports:
+        - protocol: TCP
+          port: ${CONTROL_DB_PORT}
+    # Keycloak when it is reached on a private or the lab's own public address (see check 4); HTTPS only.
+    - to:
+        - ipBlock:
+            cidr: ${KEYCLOAK_CIDR}
+      ports:
+        - protocol: TCP
+          port: 443
+    # The public internet on HTTPS (push, address lookup, Alexa certificate, Keycloak by a public name) and on the
+    # database ports of user-owned stores (5432 Postgres, 6543 pooler; add any StoreEndpointGuard__ExtraAllowedPorts).
+    # Every non-public IPv4 range the guard refuses is excepted, plus the lab's own public address.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 0.0.0.0/8
+              - 10.0.0.0/8
+              - 100.64.0.0/10
+              - 127.0.0.0/8
+              - 169.254.0.0/16
+              - 172.16.0.0/12
+              - 192.0.0.0/24
+              - 192.0.2.0/24
+              - 192.88.99.0/24
+              - 192.168.0.0/16
+              - 198.18.0.0/15
+              - 198.51.100.0/24
+              - 203.0.113.0/24
+              - 224.0.0.0/4
+              - 240.0.0.0/4
+              - ${LAB_PUBLIC_IP}/32
+        # IPv6 global unicast only (see check 7); ULA, link-local, loopback and NAT64 are outside 2000::/3.
+        - ipBlock:
+            cidr: 2000::/3
+            except:
+              - 2001::/23
+              - 2001:db8::/32
+              - 2002::/16
+              - 3fff::/20
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6543
