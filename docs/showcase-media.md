@@ -47,7 +47,7 @@ committing: open the new files, or the landing page at `/welcome` in a dev serve
 | `doctor` | `/dev/doctor-dashboard?state=summary` | the pediatrician's summary of what was shared |
 
 Files are named `<stem>-<light|dark>-<en|pt-BR>.webp`, 780x1688 (a 390x844 phone at 2x). The video is
-`demo-<en|pt-BR>.mp4` and `.webm` (390x844, about 50 s) with `demo-<lang>-poster.webp`. The tour in
+`demo-<en|pt-BR>.mp4` and `.webm` (390x844, about 50 s) with `demo-<lang>-poster.webp`, and `demo-<lang>-anim.webp` (240 px, 8 fps, about 2 MB), an animated WebP that the README shows inline because GitHub cannot play a repo video in a README (a native player would need an upload through github.com's editor). The tour in
 `demo-video.review.ts`: Now, a diaper in one tap, the bottle follow-up answered, Insights, vaccines, sharing, the doctor's
 view.
 
