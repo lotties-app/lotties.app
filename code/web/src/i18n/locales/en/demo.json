@@ -1,0 +1,22 @@
+{
+  "demo": {
+    "try": {
+      "button": "Try the demo",
+      "hint": "No account needed. You get a sample baby with a week of made-up entries, deleted automatically after {{days}} days.",
+      "consent": "By trying the demo you accept the <terms>terms</terms> and the <privacy>privacy policy</privacy>. Do not type real data about a real child.",
+      "starting": "Preparing the demo…"
+    },
+    "errors": {
+      "capacity": "The demo is full right now. Try again in a little while.",
+      "rateLimited": "Too many demos started from here. Try again later.",
+      "unavailable": "The demo could not start. Try again later.",
+      "offline": "You are offline. Connect to the internet to try the demo."
+    },
+    "banner": {
+      "text": "Demo: the sample data is deleted {{when}}.",
+      "createAccount": "Create my real account",
+      "createHint": "The demo data is not carried over.",
+      "leave": "Leave the demo"
+    }
+  }
+}

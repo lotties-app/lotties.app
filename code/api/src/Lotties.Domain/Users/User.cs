@@ -20,6 +20,9 @@ public sealed class User
     /// <summary>Issuer of an anonymized (deleted) user; no identity provider ever issues it.</summary>
     public const string DeletedIssuer = "urn:lotties:deleted";
 
+    /// <summary>Issuer of a try-it demo user (docs/design/45-try-it-demo.md): minted by the API itself, never by an identity provider.</summary>
+    public const string DemoIssuer = "urn:lotties:demo";
+
     private User()
     {
     }
@@ -49,6 +52,12 @@ public sealed class User
     /// <summary>When the account was deleted; the row stays (as an anonymous author) so shared babies keep their history.</summary>
     public DateTimeOffset? DeletedAt { get; private set; }
 
+    /// <summary>When a demo account is deleted automatically; <c>null</c> for every real account.</summary>
+    public DateTimeOffset? DemoExpiresAt { get; private set; }
+
+    /// <summary>Whether this is a throwaway try-it demo account (its issuer is <see cref="DemoIssuer"/>).</summary>
+    public bool IsDemo => string.Equals(Issuer, DemoIssuer, StringComparison.Ordinal);
+
     public bool HasUnknownIssuer => Issuer.Length == 0;
 
     public bool IsDeleted => DeletedAt is not null;
@@ -59,6 +68,14 @@ public sealed class User
         ValidateSubject(subject),
         Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength),
         UtcTime.Normalize(createdAt));
+
+    /// <summary>Creates a throwaway demo account that expires at <paramref name="expiresAt"/>.</summary>
+    public static User CreateDemo(string subject, string displayName, DateTimeOffset createdAt, DateTimeOffset expiresAt)
+    {
+        var user = Create(DemoIssuer, subject, displayName, createdAt);
+        user.DemoExpiresAt = UtcTime.Normalize(expiresAt);
+        return user;
+    }
 
     /// <summary>Creates the user for a first sign-in, taking the display name from the provider's profile claims.</summary>
     public static User Register(ExternalIdentity identity, DateTimeOffset createdAt)
@@ -81,6 +98,7 @@ public sealed class User
         Subject = Id.ToString("N");
         DisplayName = Text.Required(anonymousName, nameof(DisplayName), DisplayNameMaxLength);
         DeletedAt = UtcTime.Normalize(deletedAt);
+        DemoExpiresAt = null;
     }
 
     public void ClaimIssuer(string issuer)
