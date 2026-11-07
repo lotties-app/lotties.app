@@ -11,7 +11,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// read in memory (<see cref="CryDetection"/>), so the query translates the same on PostgreSQL and SQLite. A baby has a
 /// handful of fussy spells in that window.
 /// </remarks>
-internal sealed class EfDetectedCrySpellRepository(LottiesDbContext context) : IDetectedCrySpellRepository
+internal sealed class EfDetectedCrySpellRepository(LottiesDataDbContext context) : IDetectedCrySpellRepository
 {
     public async Task<IReadOnlyList<DetectedCrySpell>> ListAsync(Guid babyId, DateTimeOffset since, DateTimeOffset lookBackFrom, CancellationToken cancellationToken = default)
     {

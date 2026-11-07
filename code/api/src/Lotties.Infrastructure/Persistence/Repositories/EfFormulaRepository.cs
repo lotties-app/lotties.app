@@ -11,7 +11,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// of the current formula (two formulas of one baby made current at the same moment). Either violation is a
 /// <see cref="ConcurrentModificationException"/> (409, retryable); any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfFormulaRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfFormulaRepository> logger) : IFormulaRepository
+internal sealed class EfFormulaRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfFormulaRepository> logger) : IFormulaRepository
 {
     private const string Resource = "formula";
 

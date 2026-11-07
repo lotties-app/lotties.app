@@ -10,7 +10,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
 /// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfPrescriptionRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfPrescriptionRepository> logger) : IPrescriptionRepository
+internal sealed class EfPrescriptionRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfPrescriptionRepository> logger) : IPrescriptionRepository
 {
     public Task<Prescription?> FindAsync(Guid prescriptionId, CancellationToken cancellationToken = default) =>
         context.Prescriptions.SingleOrDefaultAsync(prescription => prescription.Id == prescriptionId, cancellationToken);
@@ -69,7 +69,7 @@ internal sealed class EfPrescriptionRepository(LottiesDbContext context, UniqueV
 /// Reads the start time and payload of the baby's non-deleted built-in medication events (served by the
 /// <c>(baby_id, started_at)</c> index) and extracts the doses in memory, so the query stays provider-neutral.
 /// </remarks>
-internal sealed class EfMedicationDoseHistoryRepository(LottiesDbContext context) : IMedicationDoseHistoryRepository
+internal sealed class EfMedicationDoseHistoryRepository(LottiesDataDbContext context) : IMedicationDoseHistoryRepository
 {
     public async Task<IReadOnlyList<MedicationDose>> ListDosesAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken = default)
     {

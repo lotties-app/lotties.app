@@ -6,12 +6,12 @@ using Microsoft.Extensions.Logging;
 namespace Lotties.Infrastructure.Persistence.Repositories;
 
 /// <remarks>
-/// Reads go through <see cref="LottiesDbContext.EventsIncludingDeleted"/> so soft-deleted events are visible to
+/// Reads go through <see cref="LottiesDataDbContext.EventsIncludingDeleted"/> so soft-deleted events are visible to
 /// upserts (a deleted event stays deleted) and to delta sync (clients learn about deletions). Race safety of
 /// <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a unique
 /// violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfEventRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfEventRepository> logger) : IEventRepository
+internal sealed class EfEventRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfEventRepository> logger) : IEventRepository
 {
     public Task<Event?> FindAsync(Guid eventId, CancellationToken cancellationToken = default) =>
         context.EventsIncludingDeleted.SingleOrDefaultAsync(stored => stored.Id == eventId, cancellationToken);
@@ -50,7 +50,7 @@ internal sealed class EfEventRepository(LottiesDbContext context, UniqueViolatio
     }
 
     /// <summary>The delta query of <see cref="ListChangesAsync"/>; exposed to tests to check its SQL translation.</summary>
-    internal static IQueryable<Event> ChangesQuery(LottiesDbContext context, Guid babyId, EventSyncCursor? after, int take) =>
+    internal static IQueryable<Event> ChangesQuery(LottiesDataDbContext context, Guid babyId, EventSyncCursor? after, int take) =>
         StrictlyAfter(context.EventsIncludingDeleted.AsNoTracking().Where(stored => stored.BabyId == babyId), after)
             .OrderBy(stored => stored.UpdatedAt)
             .ThenBy(stored => stored.Id)

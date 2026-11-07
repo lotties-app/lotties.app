@@ -25,6 +25,8 @@
   <ItemGroup>
     <!-- Small synthetic Napper exports; never add real exports (they contain a child's personal data). -->
     <None Update="Imports\Fixtures\*.csv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Golden files of the built-in store neutrality test (synthetic data, recorded with LOTTIES_APPROVE_GOLDEN=1). -->
+    <None Update="Persistence\Golden\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

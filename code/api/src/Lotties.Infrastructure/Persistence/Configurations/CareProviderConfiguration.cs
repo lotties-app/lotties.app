@@ -1,6 +1,4 @@
-using Lotties.Domain.Babies;
 using Lotties.Domain.CareProviders;
-using Lotties.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -37,7 +35,6 @@ internal sealed class CareProviderConfiguration : IEntityTypeConfiguration<CareP
         builder.Property(provider => provider.ClientUpdatedAt).IsRequired();
         builder.Ignore(provider => provider.Terms);
         builder.HasIndex(provider => new { provider.BabyId, provider.UpdatedAt });
-        builder.HasOne<Baby>().WithMany().HasForeignKey(provider => provider.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(provider => provider.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(provider => provider.CreatedBy);
     }
 }

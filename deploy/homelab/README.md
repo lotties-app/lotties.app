@@ -126,8 +126,10 @@ that reaches the database (see [docs/DEPLOY.md "Applying migrations"](../../docs
 ```bash
 cd code/api && dotnet tool restore
 DB_HOST=... DB_PORT=5432 DB_NAME=lotties DB_MIGRATOR_USER=... DB_MIGRATOR_PASSWORD=... \
-  dotnet ef database update --project src/Lotties.Infrastructure
+  dotnet ef database update --project src/Lotties.Infrastructure --context LottiesDbContext
 ```
+
+(`--context LottiesDbContext` is required since the project also holds the data-plane context; it owns no migrations yet.)
 
 Opt-in alternative: `DB_AUTO_MIGRATE=true` with `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD` in `.env`. The API then
 migrates at start (an advisory lock serializes pods; the startup probe allows 6 minutes). **The API pod then holds the

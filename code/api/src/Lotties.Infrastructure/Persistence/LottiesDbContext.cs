@@ -14,7 +14,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence;
 
-/// <summary>EF Core context for the Lotties PostgreSQL database.</summary>
+/// <summary>
+/// EF Core context of the control plane (accounts, babies, members, invites, doctor access, consents, push, settings, board,
+/// catalog; docs/design/47-bring-your-own-database.md section 2.1) and the owner of the built-in database's schema.
+/// </summary>
+/// <remarks>
+/// Its model is still the whole built-in database: it also maps the tables of <see cref="DataPlane"/> with their physical foreign
+/// keys to <c>babies</c>, <c>users</c> and <c>products</c> (<see cref="Configurations.BuiltInDatabaseLinks"/>), so the migrations
+/// and the snapshot are unchanged and keep owning every table until the data plane gets its own chain (task T5). Repositories read
+/// and write the data tables through <see cref="LottiesDataDbContext"/>; the only code that reaches them through this context is
+/// built-in-only and cross-plane on purpose (the reminder candidates query, account erasure), plus the test host's seeding.
+/// </remarks>
 public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
@@ -118,6 +128,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>The board API keys (hashes only), revoked ones included.</summary>
     public DbSet<Lotties.Domain.Board.BoardApiKey> BoardApiKeys => Set<Lotties.Domain.Board.BoardApiKey>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);
+        Configurations.BuiltInDatabaseLinks.Apply(modelBuilder);
+    }
 }

@@ -15,8 +15,10 @@ namespace Lotties.Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <paramref name="databaseOptions"/>, a scoped <see cref="LottiesDbContext"/>, the PostgreSQL
-    /// <see cref="IUniqueViolationDetector"/> (another provider, e.g. a test database, adds its own) and the repositories.
+    /// Registers <paramref name="databaseOptions"/>, the scoped <see cref="LottiesDbContext"/> (control plane) and
+    /// <see cref="LottiesDataDbContext"/> (data plane, opened on the control context's connection: every baby's data is in the
+    /// built-in database), the PostgreSQL <see cref="IUniqueViolationDetector"/> (another provider, e.g. a test database, adds
+    /// its own) and the repositories.
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, DatabaseOptions databaseOptions)
     {
@@ -24,6 +26,8 @@ public static class InfrastructureServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(databaseOptions);
         services.AddSingleton(databaseOptions);
         services.AddDbContext<LottiesDbContext>(options => options.UseLottiesDatabase(databaseOptions.ToConnectionString()));
+        services.AddDbContext<LottiesDataDbContext>((provider, options) => options.UseLottiesDatabase(SharedConnection(provider)));
+        services.AddScoped<BuiltInUnitOfWork>();
         services.AddSingleton<IUniqueViolationDetector, NpgsqlUniqueViolationDetector>();
         services.AddSingleton<UniqueViolations>();
         services.AddScoped<IUserRepository, EfUserRepository>();
@@ -61,4 +65,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Lotties.Domain.Board.IBoardApiKeyRepository, EfBoardApiKeyRepository>();
         return services;
     }
+
+    /// <summary>
+    /// The connection of the scope's <see cref="LottiesDbContext"/>, which owns it; the data context opens and closes it as
+    /// needed but never disposes it, and a transaction on it can hold both planes (<see cref="BuiltInUnitOfWork"/>).
+    /// </summary>
+    public static System.Data.Common.DbConnection SharedConnection(IServiceProvider provider) =>
+        provider.GetRequiredService<LottiesDbContext>().Database.GetDbConnection();
 }
