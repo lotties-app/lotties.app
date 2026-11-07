@@ -164,5 +164,35 @@
     "title": "Not a medical device",
     "body": "Estimates come from your logged history and are not medical advice. Lotties helps you keep a record and spot patterns; it does not diagnose or recommend treatment.",
     "care": "For any health concern, or before giving or changing a medicine, talk to your doctor or pharmacist. In an emergency, call your local emergency number."
+  },
+  "phoneApp": {
+    "title": "Get the phone app",
+    "beta": "Beta test",
+    "intro": "The phone apps are in a closed beta test, not in the app stores yet. Join the test below to install them early. They may change or break, so keep using the website for anything important.",
+    "iphone": {
+      "title": "iPhone",
+      "body": "Join the beta in TestFlight, Apple’s app for testing apps before release. You need the free TestFlight app on your iPhone.",
+      "cta": "Join on TestFlight",
+      "note": "Not accepting testers? Try again later."
+    },
+    "android": {
+      "title": "Android",
+      "group": {
+        "title": "Join the testers group",
+        "hint": "Sign in to Google first (the account you use on your phone), then open the group and tap Join group."
+      },
+      "optIn": {
+        "title": "Opt in with the same account",
+        "hint": "Open the link in Chrome on your phone, not inside another app. When it says You are a tester, you’re done."
+      },
+      "cta": "Install from Google Play",
+      "note": "Check that the profile in the Play Store app is the same account. Play takes a few hours after you join the group (usually under half a day), so if the app isn’t found, try again later."
+    },
+    "bug": {
+      "before": "Found a bug?",
+      "link": "Open an issue on GitHub",
+      "linkOther": "Report a problem",
+      "after": "."
+    }
   }
 }
