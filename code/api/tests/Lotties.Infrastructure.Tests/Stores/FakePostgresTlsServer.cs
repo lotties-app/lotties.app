@@ -25,7 +25,11 @@ internal sealed class FakePostgresTlsServer : IAsyncDisposable
     {
         _certificate = certificate;
         _listener.Start();
-        _loop = AcceptLoopAsync();
+
+        // Off the caller's SynchronizationContext: started from a test, the awaits below would otherwise resume on xUnit's
+        // test threads, which other test classes can keep busy for seconds while the client (Npgsql, on the thread pool)
+        // runs into its 5 s connect timeout before the server even accepts (seen on the Linux CI runner).
+        _loop = Task.Run(AcceptLoopAsync);
     }
 
     public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
