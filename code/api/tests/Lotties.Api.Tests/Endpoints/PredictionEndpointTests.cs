@@ -296,7 +296,7 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
         var other = await SeedHistoryAsync();
         var since = DateTimeOffset.UtcNow - PredictionOptions.Default.LookBack;
 
-        var history = await WithHistoryAsync(repository => repository.LoadAsync(seeded.Baby.BabyId, since));
+        var history = await LoadHistoryAsync(seeded.Baby.BabyId, since);
 
         Assert.Equal(DateOnly.FromDateTime(TestUsers.Now.UtcDateTime), history!.BirthDate);
         Assert.Equal(seeded.SessionCount + 1, history.Events.Count);
@@ -318,7 +318,7 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
             return Task.CompletedTask;
         });
 
-        var history = await WithHistoryAsync(repository => repository.LoadAsync(baby.BabyId, bedTime.AddMinutes(-1)));
+        var history = await LoadHistoryAsync(baby.BabyId, bedTime.AddMinutes(-1));
 
         Assert.Equal([SleepKinds.BedTime, null], history!.Events.OrderBy(item => item.StartedAt).Select(item => item.Kind));
     }
@@ -335,7 +335,7 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
             return Task.CompletedTask;
         });
 
-        var history = await WithHistoryAsync(repository => repository.LoadAsync(baby.BabyId, changedAt.AddMinutes(-1)));
+        var history = await LoadHistoryAsync(baby.BabyId, changedAt.AddMinutes(-1));
 
         Assert.Equal(DiaperContents.Mixed, Assert.Single(history!.Events).Content);
     }
@@ -343,7 +343,7 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
     [Fact]
     public async Task HistoryRepository_UnknownBaby_ReturnsNull()
     {
-        Assert.Null(await WithHistoryAsync(repository => repository.LoadAsync(Guid.NewGuid(), DateTimeOffset.UtcNow)));
+        Assert.Null(await LoadHistoryAsync(Guid.NewGuid(), DateTimeOffset.UtcNow));
     }
 
     private static string PathFor(Guid babyId) => $"/api/v1/babies/{babyId}/predictions";
@@ -430,10 +430,11 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
     private static Event NewEvent(Guid babyId, Guid ownerId, Guid typeId, DateTimeOffset start, DateTimeOffset end) =>
         Event.Create(Guid.NewGuid(), babyId, typeId, ownerId, start, end, EventPayload.Empty, null, DateTimeOffset.UtcNow);
 
-    private async Task<TResult> WithHistoryAsync<TResult>(Func<IPredictionHistoryRepository, Task<TResult>> action)
+    /// <summary>The repository in a scope of its own with the baby bound, as the predictions route binds it.</summary>
+    private async Task<PredictionHistory?> LoadHistoryAsync(Guid babyId, DateTimeOffset since)
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        return await action(scope.ServiceProvider.GetRequiredService<IPredictionHistoryRepository>());
+        await using var scope = await factory.CreateScopeForAsync(babyId);
+        return await scope.ServiceProvider.GetRequiredService<IPredictionHistoryRepository>().LoadAsync(babyId, since);
     }
 
     private sealed record SeededHistory(SeededBaby Baby, int SessionCount, DateTimeOffset LastSessionStart, DateTimeOffset DeletedSessionStart);

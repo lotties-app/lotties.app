@@ -1,17 +1,17 @@
 using Lotties.Domain.Backups;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Lotties.Infrastructure.Persistence;
 
 /// <remarks>
-/// One explicit database transaction on the request's context. The repositories save through the same context, so
-/// everything the services write while it is open is part of it; <c>EfFormulaRepository.InTransactionAsync</c> joins an
-/// open transaction instead of starting a nested one. Rolling back also clears the change tracker.
+/// One explicit database transaction on the request's connection, shared by the control and the data context
+/// (<see cref="BuiltInUnitOfWork"/>): a restore creates the baby (control plane) and imports its records (data plane) in it.
+/// The repositories save through the scope's contexts, so everything the services write while it is open is part of it;
+/// <c>EfFormulaRepository.InTransactionAsync</c> joins an open transaction instead of starting a nested one. Rolling back
+/// also clears both change trackers.
 /// </remarks>
-internal sealed class EfBackupSession(LottiesDbContext context) : IBackupSession, IAsyncDisposable
+internal sealed class EfBackupSession(BuiltInUnitOfWork unitOfWork) : IBackupSession, IAsyncDisposable
 {
-    private IDbContextTransaction? _transaction;
+    private SharedTransaction? _transaction;
 
     public async Task BeginAsync(CancellationToken cancellationToken = default)
     {
@@ -20,7 +20,7 @@ internal sealed class EfBackupSession(LottiesDbContext context) : IBackupSession
             throw new InvalidOperationException("A backup session is already open.");
         }
 
-        _transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        _transaction = await unitOfWork.BeginAsync(cancellationToken);
     }
 
     public async Task CommitAsync(CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ internal sealed class EfBackupSession(LottiesDbContext context) : IBackupSession
         await transaction.CommitAsync(cancellationToken);
         await transaction.DisposeAsync();
         _transaction = null;
-        context.ChangeTracker.Clear();
+        unitOfWork.ClearTracked();
     }
 
     public async Task RollbackAsync(CancellationToken cancellationToken = default)
@@ -41,10 +41,10 @@ internal sealed class EfBackupSession(LottiesDbContext context) : IBackupSession
             await transaction.DisposeAsync();
         }
 
-        context.ChangeTracker.Clear();
+        unitOfWork.ClearTracked();
     }
 
-    public void ReleaseTrackedEntities() => context.ChangeTracker.Clear();
+    public void ReleaseTrackedEntities() => unitOfWork.ClearTracked();
 
     public async ValueTask DisposeAsync()
     {

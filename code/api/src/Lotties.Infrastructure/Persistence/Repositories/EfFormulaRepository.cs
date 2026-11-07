@@ -1,6 +1,7 @@
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Formulas;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,26 +12,27 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// of the current formula (two formulas of one baby made current at the same moment). Either violation is a
 /// <see cref="ConcurrentModificationException"/> (409, retryable); any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfFormulaRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfFormulaRepository> logger) : IFormulaRepository
+internal sealed class EfFormulaRepository(StoreScope stores, UniqueViolations uniqueViolations, ILogger<EfFormulaRepository> logger) : IFormulaRepository
 {
     private const string Resource = "formula";
 
     public Task<Formula?> FindAsync(Guid formulaId, CancellationToken cancellationToken = default) =>
-        context.Formulas.SingleOrDefaultAsync(formula => formula.Id == formulaId, cancellationToken);
+        stores.Current.Formulas.SingleOrDefaultAsync(formula => formula.Id == formulaId, cancellationToken);
 
     public async Task<IReadOnlyList<Formula>> ListChangesAsync(Guid babyId, DateTimeOffset? since, CancellationToken cancellationToken = default)
     {
-        var query = context.Formulas.AsNoTracking().Where(formula => formula.BabyId == babyId);
+        var query = stores.ContextFor(babyId).Formulas.AsNoTracking().Where(formula => formula.BabyId == babyId);
         var changed = since is { } from ? query.Where(formula => formula.UpdatedAt >= from.ToUniversalTime()) : query;
         return await changed.OrderBy(formula => formula.UpdatedAt).ThenBy(formula => formula.Id).ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Formula>> ListCurrentAsync(Guid babyId, CancellationToken cancellationToken = default) =>
-        await context.Formulas.Where(formula => formula.BabyId == babyId && formula.IsCurrent).ToListAsync(cancellationToken);
+        await stores.ContextFor(babyId).Formulas.Where(formula => formula.BabyId == babyId && formula.IsCurrent).ToListAsync(cancellationToken);
 
     public async Task InTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(work);
+        var context = stores.Current;
         if (context.Database.CurrentTransaction is not null)
         {
             // A backup import runs every write inside one transaction of its own; it commits or rolls back all of them.
@@ -55,7 +57,7 @@ internal sealed class EfFormulaRepository(LottiesDbContext context, UniqueViolat
     public Task AddAsync(Formula formula, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(formula);
-        context.Formulas.Add(formula);
+        stores.ContextFor(formula.BabyId).Formulas.Add(formula);
         return SaveChangesAsync(cancellationToken);
     }
 
@@ -63,7 +65,7 @@ internal sealed class EfFormulaRepository(LottiesDbContext context, UniqueViolat
     {
         try
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await stores.Current.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException exception) when (uniqueViolations.IsUniqueViolation(exception))
         {

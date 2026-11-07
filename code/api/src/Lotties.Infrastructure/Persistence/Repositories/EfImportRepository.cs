@@ -2,6 +2,7 @@ using Lotties.Domain.Events;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Imports;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +17,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// <see cref="Event.TryEnrichPayload"/>; an event that is gone or whose payload changed since the plan aborts the whole
 /// import with <see cref="ImportConflictException"/>. Id lookups are chunked to keep the parameter lists bounded.
 /// </remarks>
-internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfImportRepository> logger) : IImportRepository
+internal sealed class EfImportRepository(StoreScope stores, UniqueViolations uniqueViolations, ILogger<EfImportRepository> logger) : IImportRepository
 {
     public const int ChunkSize = 500;
 
@@ -26,7 +27,7 @@ internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolati
         var found = new HashSet<Guid>();
         foreach (var chunk in Chunks(eventIds))
         {
-            found.UnionWith(await context.EventsIncludingDeleted.AsNoTracking().Where(stored => chunk.Contains(stored.Id)).Select(stored => stored.Id).ToListAsync(cancellationToken));
+            found.UnionWith(await stores.Current.EventsIncludingDeleted.AsNoTracking().Where(stored => chunk.Contains(stored.Id)).Select(stored => stored.Id).ToListAsync(cancellationToken));
         }
 
         return found;
@@ -38,7 +39,7 @@ internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolati
         var found = new HashSet<Guid>();
         foreach (var chunk in Chunks(measurementIds))
         {
-            found.UnionWith(await context.Measurements.AsNoTracking().Where(stored => chunk.Contains(stored.Id)).Select(stored => stored.Id).ToListAsync(cancellationToken));
+            found.UnionWith(await stores.Current.Measurements.AsNoTracking().Where(stored => chunk.Contains(stored.Id)).Select(stored => stored.Id).ToListAsync(cancellationToken));
         }
 
         return found;
@@ -50,7 +51,7 @@ internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolati
         var found = new List<Event>();
         foreach (var chunk in Chunks(eventIds))
         {
-            found.AddRange(await context.Events.AsNoTracking().Where(stored => stored.BabyId == babyId && chunk.Contains(stored.Id)).ToListAsync(cancellationToken));
+            found.AddRange(await stores.ContextFor(babyId).Events.AsNoTracking().Where(stored => stored.BabyId == babyId && chunk.Contains(stored.Id)).ToListAsync(cancellationToken));
         }
 
         return found;
@@ -59,13 +60,14 @@ internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolati
     public async Task SaveAsync(ImportBatch batch, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(batch);
+        var context = stores.Current;
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await AddInChunksAsync(batch.Medications, cancellationToken);
-            await AddInChunksAsync(batch.Events, cancellationToken);
-            await AddInChunksAsync(batch.Measurements, cancellationToken);
-            await EnrichInChunksAsync(batch.Enrichments, cancellationToken);
+            await AddInChunksAsync(context, batch.Medications, cancellationToken);
+            await AddInChunksAsync(context, batch.Events, cancellationToken);
+            await AddInChunksAsync(context, batch.Measurements, cancellationToken);
+            await EnrichInChunksAsync(context, batch.Enrichments, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
         catch (ImportConflictException)
@@ -89,7 +91,7 @@ internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolati
     /// <remarks>Lists, not arrays: <c>array.Contains</c> may bind to the span overload, which EF Core cannot translate.</remarks>
     private static IEnumerable<List<Guid>> Chunks(IReadOnlyCollection<Guid> ids) => ids.Chunk(ChunkSize).Select(chunk => chunk.ToList());
 
-    private async Task EnrichInChunksAsync(IReadOnlyList<EventEnrichment> enrichments, CancellationToken cancellationToken)
+    private static async Task EnrichInChunksAsync(LottiesDataDbContext context, IReadOnlyList<EventEnrichment> enrichments, CancellationToken cancellationToken)
     {
         foreach (var chunk in enrichments.Chunk(ChunkSize))
         {
@@ -109,7 +111,7 @@ internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolati
         }
     }
 
-    private async Task AddInChunksAsync<TEntity>(IReadOnlyList<TEntity> entities, CancellationToken cancellationToken)
+    private static async Task AddInChunksAsync<TEntity>(LottiesDataDbContext context, IReadOnlyList<TEntity> entities, CancellationToken cancellationToken)
         where TEntity : class
     {
         foreach (var chunk in entities.Chunk(ChunkSize))

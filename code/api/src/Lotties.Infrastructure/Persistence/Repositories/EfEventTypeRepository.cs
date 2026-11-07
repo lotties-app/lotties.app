@@ -1,5 +1,6 @@
 using Lotties.Domain.EventTypes;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,16 +11,16 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// of the same key fails with a unique violation, the rejected entity is detached and <c>false</c> is returned. Any
 /// other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfEventTypeRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfEventTypeRepository> logger) : IEventTypeRepository
+internal sealed class EfEventTypeRepository(StoreScope stores, UniqueViolations uniqueViolations, ILogger<EfEventTypeRepository> logger) : IEventTypeRepository
 {
     public Task<EventType?> FindAsync(Guid eventTypeId, CancellationToken cancellationToken = default) =>
-        context.EventTypes.AsNoTracking().SingleOrDefaultAsync(eventType => eventType.Id == eventTypeId, cancellationToken);
+        stores.Current.EventTypes.AsNoTracking().SingleOrDefaultAsync(eventType => eventType.Id == eventTypeId, cancellationToken);
 
     public Task<EventType?> FindForUpdateAsync(Guid eventTypeId, CancellationToken cancellationToken = default) =>
-        context.EventTypes.SingleOrDefaultAsync(eventType => eventType.Id == eventTypeId, cancellationToken);
+        stores.Current.EventTypes.SingleOrDefaultAsync(eventType => eventType.Id == eventTypeId, cancellationToken);
 
     public async Task<IReadOnlyList<EventType>> ListAvailableAsync(Guid babyId, CancellationToken cancellationToken = default) =>
-        await context.EventTypes
+        await stores.ContextFor(babyId).EventTypes
             .AsNoTracking()
             .Where(eventType => eventType.BabyId == null || eventType.BabyId == babyId)
             .OrderBy(eventType => eventType.BabyId != null)
@@ -28,14 +29,15 @@ internal sealed class EfEventTypeRepository(LottiesDbContext context, UniqueViol
             .ToListAsync(cancellationToken);
 
     public Task<bool> KeyExistsAsync(Guid babyId, EventTypeKey key, CancellationToken cancellationToken = default) =>
-        context.EventTypes.AnyAsync(eventType => (eventType.BabyId == null || eventType.BabyId == babyId) && eventType.Key == key, cancellationToken);
+        stores.ContextFor(babyId).EventTypes.AnyAsync(eventType => (eventType.BabyId == null || eventType.BabyId == babyId) && eventType.Key == key, cancellationToken);
 
     public Task<bool> HasEventsAsync(Guid eventTypeId, CancellationToken cancellationToken = default) =>
-        context.EventsIncludingDeleted.AnyAsync(stored => stored.TypeId == eventTypeId, cancellationToken);
+        stores.Current.EventsIncludingDeleted.AnyAsync(stored => stored.TypeId == eventTypeId, cancellationToken);
 
     public async Task<bool> TryAddAsync(EventType eventType, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(eventType);
+        var context = ContextOf(eventType);
         try
         {
             context.EventTypes.Add(eventType);
@@ -58,9 +60,14 @@ internal sealed class EfEventTypeRepository(LottiesDbContext context, UniqueViol
     public async Task RemoveAsync(EventType eventType, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(eventType);
+        var context = ContextOf(eventType);
         context.EventTypes.Remove(eventType);
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => stores.Current.SaveChangesAsync(cancellationToken);
+
+    /// <summary>The store of the type's baby; a built-in template (no baby) is in every store, so the scope's own.</summary>
+    private LottiesDataDbContext ContextOf(EventType eventType) =>
+        eventType.BabyId is { } babyId ? stores.ContextFor(babyId) : stores.Current;
 }

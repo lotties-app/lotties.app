@@ -10,7 +10,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 internal static class UniqueInserts
 {
     public static async Task<bool> TryInsertAsync<TEntity>(
-        LottiesDbContext context,
+        DbContext context,
         UniqueViolations uniqueViolations,
         TEntity entity,
         CancellationToken cancellationToken)

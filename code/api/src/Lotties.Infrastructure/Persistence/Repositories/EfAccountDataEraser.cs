@@ -3,6 +3,7 @@ using Lotties.Domain.Exceptions;
 using Lotties.Domain.Notes;
 using Lotties.Domain.Proposals;
 using Lotties.Domain.Users;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
@@ -16,8 +17,12 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Every column of the model that points at a baby or a user has a rule in <c>AccountErasureTests.Rules</c> (Lotties.Api.Tests):
 /// a new one fails that test until it gets a rule here and a row in its fixture. Most foreign keys to <c>babies</c> are
 /// <c>RESTRICT</c>, so a table missing below makes the deletion fail (on PostgreSQL and SQLite alike) instead of leaving rows.
+/// The data tables are erased through the control context, which only the built-in database has: before anything is deleted,
+/// every baby whose records are touched is entered in the <see cref="StoreScope"/> and must be on the built-in store, else the
+/// erasure fails with <c>store_unavailable</c> and changes nothing (a family's own database is erased by task T10). Her
+/// <c>data_stores</c> rows go with her personal records (docs/design/47-bring-your-own-database.md section 9).
 /// </summary>
-internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDataEraser
+internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope stores) : IAccountDataEraser
 {
     public async Task<AccountDeletionPlan> PlanAsync(Guid userId, CancellationToken cancellationToken = default)
     {
@@ -64,6 +69,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
             throw new AccountDeletionBlockedException([.. plan.Blocked.Select(baby => baby.Id)]);
         }
 
+        await stores.RequireBuiltInAsync([.. plan.Deleted.Select(baby => baby.Id), .. plan.Left.Select(baby => baby.Id)], cancellationToken);
         var user = await context.Users.SingleAsync(candidate => candidate.Id == userId, cancellationToken);
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         await DeleteBabiesAsync([.. plan.Deleted.Select(baby => baby.Id)], cancellationToken);
@@ -102,7 +108,17 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.UserAssistantSettings
             .Where(row => row.DefaultBabyId != null && ids.Contains(row.DefaultBabyId.Value))
             .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.DefaultBabyId, (Guid?)null), cancellationToken);
-        await context.Babies.IgnoreQueryFilters().Where(row => ids.Contains(row.Id)).ExecuteDeleteAsync(cancellationToken);
+        await RemoveBabyRowsAsync(ids, cancellationToken);
+    }
+
+    /// <summary>
+    /// The baby rows themselves, through the change tracker (one statement per baby): table <c>babies</c> also holds the routing
+    /// columns (<c>BabyStoreAssignment</c>, table splitting), and EF Core does not bulk-delete a table two entity types share.
+    /// </summary>
+    private async Task RemoveBabyRowsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        context.Babies.RemoveRange(await context.Babies.IgnoreQueryFilters().Where(row => ids.Contains(row.Id)).ToListAsync(cancellationToken));
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>The memberships of the user on babies that stay (the babies she was alone in are already gone).</summary>
@@ -134,6 +150,9 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context) : IAccountDa
         await context.UserRestMornings.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserConsents.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserConsentHistory.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+
+        // Her external data stores (sealed descriptors): after her babies are gone, so no erased baby still points at one.
+        await context.DataStores.Where(row => row.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
 
         // Catalog products she added stay for everyone (instance-wide), without the link to her.
         await context.Products.IgnoreQueryFilters()

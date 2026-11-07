@@ -1,6 +1,4 @@
-using Lotties.Domain.Babies;
 using Lotties.Domain.Formulas;
-using Lotties.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -33,7 +31,6 @@ internal sealed class FormulaConfiguration : IEntityTypeConfiguration<Formula>
         builder.Ignore(formula => formula.Terms);
         builder.HasIndex(formula => new { formula.BabyId, formula.UpdatedAt });
         builder.HasIndex(formula => formula.BabyId).IsUnique().HasFilter(CurrentFilter).HasDatabaseName(OneCurrentIndex);
-        builder.HasOne<Baby>().WithMany().HasForeignKey(formula => formula.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(formula => formula.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(formula => formula.CreatedBy);
     }
 }

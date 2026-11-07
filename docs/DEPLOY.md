@@ -501,17 +501,20 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
    cd code/api
    dotnet tool restore
    DB_HOST=... DB_PORT=5432 DB_NAME=lotties DB_MIGRATOR_USER=lotties_migrator DB_MIGRATOR_PASSWORD=... \
-     dotnet ef database update --project src/Lotties.Infrastructure
+     dotnet ef database update --project src/Lotties.Infrastructure --context LottiesDbContext
    ```
 
    The design-time factory reads `DB_HOST`, `DB_PORT`, `DB_NAME` and `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to `DB_APP_*`).
+   `--context LottiesDbContext` is required: the project has a second context, `LottiesDataDbContext` (the data plane of
+   docs/design/47-bring-your-own-database.md), which has no migrations of its own yet, and without the option `dotnet ef`
+   stops with "More than one DbContext was found" before it touches the database. `LottiesDbContext` still owns every table.
 
 2. **SQL for a DBA.** Generate the idempotent script on demand and review/apply it with `psql` as the migrator (do not commit the output):
 
    ```bash
    cd code/api
    dotnet tool restore
-   dotnet ef migrations script --idempotent --project src/Lotties.Infrastructure -o out.sql
+   dotnet ef migrations script --idempotent --project src/Lotties.Infrastructure --context LottiesDbContext -o out.sql
    psql -U lotties_migrator -d lotties -f out.sql
    ```
 

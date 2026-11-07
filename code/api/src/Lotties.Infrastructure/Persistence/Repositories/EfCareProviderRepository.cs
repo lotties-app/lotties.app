@@ -1,5 +1,6 @@
 using Lotties.Domain.CareProviders;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -9,15 +10,15 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
 /// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfCareProviderRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfCareProviderRepository> logger) : ICareProviderRepository
+internal sealed class EfCareProviderRepository(StoreScope stores, UniqueViolations uniqueViolations, ILogger<EfCareProviderRepository> logger) : ICareProviderRepository
 {
     public Task<CareProvider?> FindAsync(Guid providerId, CancellationToken cancellationToken = default) =>
-        context.CareProviders.SingleOrDefaultAsync(provider => provider.Id == providerId, cancellationToken);
+        stores.Current.CareProviders.SingleOrDefaultAsync(provider => provider.Id == providerId, cancellationToken);
 
     public async Task<IReadOnlyList<CareProvider>> ListChangesAsync(Guid babyId, DateTimeOffset? since, CancellationToken cancellationToken = default)
     {
         var from = since?.ToUniversalTime();
-        return await context.CareProviders
+        return await stores.ContextFor(babyId).CareProviders
             .AsNoTracking()
             .Where(provider => provider.BabyId == babyId && (from == null || provider.UpdatedAt >= from))
             .OrderBy(provider => provider.UpdatedAt)
@@ -28,6 +29,7 @@ internal sealed class EfCareProviderRepository(LottiesDbContext context, UniqueV
     public async Task<bool> TryAddAsync(CareProvider provider, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(provider);
+        var context = stores.ContextFor(provider.BabyId);
         try
         {
             context.CareProviders.Add(provider);
@@ -47,5 +49,5 @@ internal sealed class EfCareProviderRepository(LottiesDbContext context, UniqueV
         }
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => stores.Current.SaveChangesAsync(cancellationToken);
 }

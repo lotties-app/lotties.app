@@ -1,5 +1,6 @@
 using Lotties.Domain.Appointments;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -9,15 +10,15 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
 /// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfAppointmentRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfAppointmentRepository> logger) : IAppointmentRepository
+internal sealed class EfAppointmentRepository(StoreScope stores, UniqueViolations uniqueViolations, ILogger<EfAppointmentRepository> logger) : IAppointmentRepository
 {
     public Task<Appointment?> FindAsync(Guid appointmentId, CancellationToken cancellationToken = default) =>
-        context.Appointments.SingleOrDefaultAsync(appointment => appointment.Id == appointmentId, cancellationToken);
+        stores.Current.Appointments.SingleOrDefaultAsync(appointment => appointment.Id == appointmentId, cancellationToken);
 
     public async Task<IReadOnlyList<Appointment>> ListAsync(Guid babyId, AppointmentQuery query, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
-        var matching = Filtered(context.Appointments.AsNoTracking().Where(appointment => appointment.BabyId == babyId), query);
+        var matching = Filtered(stores.ContextFor(babyId).Appointments.AsNoTracking().Where(appointment => appointment.BabyId == babyId), query);
         var ordered = query.Since is null
             ? matching.OrderBy(appointment => appointment.StartsAt).ThenBy(appointment => appointment.Id)
             : matching.OrderBy(appointment => appointment.UpdatedAt).ThenBy(appointment => appointment.Id);
@@ -28,7 +29,7 @@ internal sealed class EfAppointmentRepository(LottiesDbContext context, UniqueVi
     {
         var from = after.ToUniversalTime();
         var to = until.ToUniversalTime();
-        return await context.Appointments
+        return await stores.ContextFor(babyId).Appointments
             .AsNoTracking()
             .Where(appointment => appointment.BabyId == babyId && appointment.Status == AppointmentStatus.Upcoming && appointment.StartsAt > from && appointment.StartsAt <= to)
             .OrderBy(appointment => appointment.StartsAt)
@@ -39,6 +40,7 @@ internal sealed class EfAppointmentRepository(LottiesDbContext context, UniqueVi
     public async Task<bool> TryAddAsync(Appointment appointment, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(appointment);
+        var context = stores.ContextFor(appointment.BabyId);
         try
         {
             context.Appointments.Add(appointment);
@@ -58,7 +60,7 @@ internal sealed class EfAppointmentRepository(LottiesDbContext context, UniqueVi
         }
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => stores.Current.SaveChangesAsync(cancellationToken);
 
     private static IQueryable<Appointment> Filtered(IQueryable<Appointment> appointments, AppointmentQuery query)
     {

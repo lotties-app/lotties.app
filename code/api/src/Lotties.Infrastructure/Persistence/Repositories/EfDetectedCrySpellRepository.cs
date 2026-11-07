@@ -2,6 +2,7 @@ using Lotties.Application.Notifications;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
@@ -11,13 +12,13 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// read in memory (<see cref="CryDetection"/>), so the query translates the same on PostgreSQL and SQLite. A baby has a
 /// handful of fussy spells in that window.
 /// </remarks>
-internal sealed class EfDetectedCrySpellRepository(LottiesDbContext context) : IDetectedCrySpellRepository
+internal sealed class EfDetectedCrySpellRepository(StoreScope stores) : IDetectedCrySpellRepository
 {
     public async Task<IReadOnlyList<DetectedCrySpell>> ListAsync(Guid babyId, DateTimeOffset since, DateTimeOffset lookBackFrom, CancellationToken cancellationToken = default)
     {
         var from = since.ToUniversalTime();
         var lookBack = lookBackFrom.ToUniversalTime();
-        var spells = await context.Events
+        var spells = await stores.ContextFor(babyId).Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId
                 && item.TypeId == BuiltInEventTypes.FussyId

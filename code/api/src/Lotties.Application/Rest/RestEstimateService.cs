@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
 using Lotties.Application.Serialization;
+using Lotties.Application.Stores;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Clinical;
@@ -60,6 +61,7 @@ internal sealed class RestEstimateService(
     IUserRestRepository rest,
     IBabyRepository babies,
     IClinicalEventRepository events,
+    IStoreScope stores,
     TimeProvider timeProvider,
     ILogger<RestEstimateService> logger) : IRestEstimateService
 {
@@ -108,6 +110,7 @@ internal sealed class RestEstimateService(
                 continue;
             }
 
+            await stores.EnterAsync(baby.Id, cancellationToken);
             var sleepIds = (await events.ListByTypesAsync(baby.Id, SleepKeys, from - SleepIdLookBack, to, cancellationToken))
                 .Select(item => item.Event.Id)
                 .ToHashSet();
