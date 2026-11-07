@@ -152,7 +152,7 @@ plan limits, and **Supabase** (no account yet).
 
 1. The descriptor carries **separate app and migrator host/port**.
 2. The recipe in (b) replaces the "unverified" remark in 47 section 3.2 step 4 (done in this change).
-3. T0 is done for (a) and (b), and for (c) on Neon (one run). (c) still needs a Supabase account, a cold-start run, a restricted
+3. T0 is done for (a) and (b), and for (c) on Neon (two runs, one with a cold start sample). (c) still needs a Supabase account, a restricted
    role run and the lab's IPv6 answer.
 3a. The migration runner proves the advisory lock really holds (probe from a second connection) and refuses otherwise.
 3b. The privacy text says "encrypted in transit to the provider" and nothing about the inside of the provider.
@@ -161,7 +161,7 @@ plan limits, and **Supabase** (no account yet).
 
 ## Still open after the spikes
 
-- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: the cold-start run and a
+- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: a timed-idle cold start and a
   restricted role. Supabase: a throwaway project, the setup SQL with a custom role, the pooler user suffix, exposed-schema
   behavior. Both from the lab itself, through the guard.
 - IPv6 egress from the home lab.
