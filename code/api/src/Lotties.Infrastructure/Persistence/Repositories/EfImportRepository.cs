@@ -16,7 +16,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// <see cref="Event.TryEnrichPayload"/>; an event that is gone or whose payload changed since the plan aborts the whole
 /// import with <see cref="ImportConflictException"/>. Id lookups are chunked to keep the parameter lists bounded.
 /// </remarks>
-internal sealed class EfImportRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfImportRepository> logger) : IImportRepository
+internal sealed class EfImportRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfImportRepository> logger) : IImportRepository
 {
     public const int ChunkSize = 500;
 

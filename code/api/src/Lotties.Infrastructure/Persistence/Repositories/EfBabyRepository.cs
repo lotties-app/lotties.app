@@ -8,9 +8,11 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// <see cref="SaveChangesAsync"/> treats a baby and its members as one aggregate: when members were added, changed or
 /// removed, the baby row is rewritten too, so its <c>xmin</c> row version is checked and bumped and two concurrent
 /// member changes cannot both pass a rule such as "a baby keeps an owner". A lost race becomes a domain exception
-/// (<see cref="ConcurrencyConflicts"/>).
+/// (<see cref="ConcurrencyConflicts"/>). It also saves the data plane's pending changes in the same transaction
+/// (<see cref="BuiltInUnitOfWork.SaveBothAsync"/>): a member change that ends a doctor's access cancels her pending proposals
+/// in the same save (docs/design/16-doctor-access.md section 10.1).
 /// </remarks>
-internal sealed class EfBabyRepository(LottiesDbContext context) : IBabyRepository
+internal sealed class EfBabyRepository(LottiesDbContext context, BuiltInUnitOfWork unitOfWork) : IBabyRepository
 {
     public async Task<IReadOnlyList<Baby>> ListForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
         await context.Babies
@@ -36,7 +38,7 @@ internal sealed class EfBabyRepository(LottiesDbContext context) : IBabyReposito
         TouchBabiesWithChangedMembers();
         try
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await unitOfWork.SaveBothAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {

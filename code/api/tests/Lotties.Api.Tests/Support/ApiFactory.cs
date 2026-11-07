@@ -1,4 +1,5 @@
 using Lotties.Api.Configuration;
+using Lotties.Infrastructure;
 using Lotties.Infrastructure.AddressLookup;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.Errors;
@@ -25,6 +26,8 @@ namespace Lotties.Api.Tests.Support;
 /// them) and the <c>xmin</c> row versions (a plain integer concurrency token) differ (<see cref="SqliteModelCustomizer"/>).
 /// SQLite keeps the unique indexes, so user-creation races are real;
 /// <see cref="SqliteUniqueViolationDetector"/> lets the repositories recognize them as PostgreSQL unique violations.
+/// The data plane's context runs on the control context's connection, as in production, and <see cref="PlaneSaveGuard"/> fails
+/// a save of one plane that would leave the other plane's changes behind.
 /// </remarks>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
@@ -109,7 +112,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             .UseSqlite(ConnectionString)
             .UseSnakeCaseNamingConvention()
             .ReplaceService<IModelCustomizer, SqliteModelCustomizer>()
-            .AddInterceptors(_consentGrant));
+            .AddInterceptors(_consentGrant, PlaneSaveGuard.Instance));
+        services.RemoveAll<DbContextOptions<LottiesDataDbContext>>();
+        services.RemoveAll<IDbContextOptionsConfiguration<LottiesDataDbContext>>();
+        services.AddDbContext<LottiesDataDbContext>((provider, options) => options
+            .UseSqlite(InfrastructureServiceCollectionExtensions.SharedConnection(provider))
+            .UseSnakeCaseNamingConvention()
+            .ReplaceService<IModelCustomizer, SqliteModelCustomizer>()
+            .AddInterceptors(PlaneSaveGuard.Instance));
         services.AddSingleton<IUniqueViolationDetector, SqliteUniqueViolationDetector>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
         services.PostConfigure<AuthenticationOptions>(UseTestSchemeByDefault);

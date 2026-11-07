@@ -1,11 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Lotties.Domain.Babies;
 using Lotties.Domain.Medications;
 using Lotties.Domain.Notes;
 using Lotties.Domain.Prescriptions;
 using Lotties.Domain.Proposals;
-using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -81,9 +79,8 @@ internal sealed class PrescriptionProposalConfiguration : IEntityTypeConfigurati
         builder.HasIndex(proposal => new { proposal.BabyId, proposal.UpdatedAt });
         builder.HasIndex(proposal => new { proposal.BabyId, proposal.AuthorUserId });
         builder.HasIndex(proposal => new { proposal.BabyId, proposal.Status, proposal.CreatedAt });
-        builder.HasOne<Baby>().WithMany().HasForeignKey(proposal => proposal.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(proposal => proposal.AuthorUserId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(proposal => proposal.DecidedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(proposal => proposal.AuthorUserId);
+        builder.HasIndex(proposal => proposal.DecidedBy);
     }
 }
 
@@ -101,7 +98,6 @@ internal sealed class NoteReadConfiguration : IEntityTypeConfiguration<NoteRead>
         builder.Property(read => read.ReadAt).IsRequired();
         builder.HasIndex(read => new { read.BabyId, read.UserId, read.ReadAt });
         builder.HasOne<BabyNote>().WithMany().HasForeignKey(read => read.NoteId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne<User>().WithMany().HasForeignKey(read => read.UserId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Baby>().WithMany().HasForeignKey(read => read.BabyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(read => read.UserId);
     }
 }

@@ -1,6 +1,4 @@
 using Lotties.Domain.Appointments;
-using Lotties.Domain.Babies;
-using Lotties.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -57,7 +55,6 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.HasIndex(appointment => new { appointment.BabyId, appointment.StartsAt }, UpcomingIndex)
             .HasFilter(UpcomingFilter)
             .HasDatabaseName(UpcomingIndex);
-        builder.HasOne<Baby>().WithMany().HasForeignKey(appointment => appointment.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(appointment => appointment.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(appointment => appointment.CreatedBy);
     }
 }

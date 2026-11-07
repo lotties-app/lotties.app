@@ -71,8 +71,6 @@ internal sealed class BabyNoteConfiguration : IEntityTypeConfiguration<BabyNote>
         builder.Ignore(note => note.IsDeleted);
         builder.HasIndex(note => new { note.BabyId, note.UpdatedAt });
         builder.HasIndex(note => note.AuthorUserId);
-        builder.HasOne<Baby>().WithMany().HasForeignKey(note => note.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(note => note.AuthorUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -10,7 +10,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// of the same key fails with a unique violation, the rejected entity is detached and <c>false</c> is returned. Any
 /// other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfEventTypeRepository(LottiesDbContext context, UniqueViolations uniqueViolations, ILogger<EfEventTypeRepository> logger) : IEventTypeRepository
+internal sealed class EfEventTypeRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfEventTypeRepository> logger) : IEventTypeRepository
 {
     public Task<EventType?> FindAsync(Guid eventTypeId, CancellationToken cancellationToken = default) =>
         context.EventTypes.AsNoTracking().SingleOrDefaultAsync(eventType => eventType.Id == eventTypeId, cancellationToken);

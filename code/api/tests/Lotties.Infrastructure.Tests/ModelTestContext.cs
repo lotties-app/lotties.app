@@ -18,7 +18,16 @@ internal static class ModelTestContext
         return new LottiesDbContext((DbContextOptions<LottiesDbContext>)options);
     }
 
-    public static IModel DesignTimeModel(this LottiesDbContext context) =>
+    /// <summary>The data plane's context, on the same placeholder connection string.</summary>
+    public static LottiesDataDbContext CreateData()
+    {
+        var options = new DbContextOptionsBuilder<LottiesDataDbContext>()
+            .UseLottiesDatabase(PlaceholderConnectionString)
+            .Options;
+        return new LottiesDataDbContext((DbContextOptions<LottiesDataDbContext>)options);
+    }
+
+    public static IModel DesignTimeModel(this DbContext context) =>
         context.GetService<IDesignTimeModel>().Model;
 
     public static IEntityType Entity<TEntity>(this LottiesDbContext context) =>

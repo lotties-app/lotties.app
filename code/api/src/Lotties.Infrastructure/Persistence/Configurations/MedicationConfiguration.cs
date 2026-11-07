@@ -1,5 +1,3 @@
-using Lotties.Domain.Babies;
-using Lotties.Domain.Catalog;
 using Lotties.Domain.Medications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,7 +21,5 @@ internal sealed class MedicationConfiguration : IEntityTypeConfiguration<Medicat
         });
         builder.HasIndex(medication => medication.BabyId);
         builder.HasIndex(medication => medication.ProductId);
-        builder.HasOne<Product>().WithMany().HasForeignKey(medication => medication.ProductId).OnDelete(DeleteBehavior.SetNull);
-        builder.HasOne<Baby>().WithMany().HasForeignKey(medication => medication.BabyId).OnDelete(DeleteBehavior.Restrict);
     }
 }

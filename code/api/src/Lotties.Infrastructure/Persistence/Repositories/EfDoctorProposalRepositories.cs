@@ -19,7 +19,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// <see cref="ConcurrentModificationException"/> and the accept saves nothing (one <c>SaveChanges</c>, one transaction).
 /// </remarks>
 internal sealed class EfPrescriptionProposalRepository(
-    LottiesDbContext context,
+    LottiesDataDbContext context,
     UniqueViolations uniqueViolations,
     ILogger<EfPrescriptionProposalRepository> logger) : IPrescriptionProposalRepository
 {
@@ -100,7 +100,7 @@ internal sealed class EfPrescriptionProposalRepository(
 }
 
 /// <remarks>A concurrent first read of one note by one member loses on the primary key (<see cref="UniqueInserts"/>).</remarks>
-internal sealed class EfNoteReadRepository(LottiesDbContext context, UniqueViolations uniqueViolations) : INoteReadRepository
+internal sealed class EfNoteReadRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations) : INoteReadRepository
 {
     public Task<NoteRead?> FindAsync(Guid noteId, Guid userId, CancellationToken cancellationToken = default) =>
         context.NoteReads.AsNoTracking().SingleOrDefaultAsync(read => read.NoteId == noteId && read.UserId == userId, cancellationToken);
@@ -117,7 +117,7 @@ internal sealed class EfNoteReadRepository(LottiesDbContext context, UniqueViola
 }
 
 /// <remarks>Two small queries per baby, run only when an Owner or Parent of the baby wants the push.</remarks>
-internal sealed class EfDoctorSuggestionRepository(LottiesDbContext context) : IDoctorSuggestionRepository
+internal sealed class EfDoctorSuggestionRepository(LottiesDataDbContext context) : IDoctorSuggestionRepository
 {
     public async Task<IReadOnlyList<DoctorSuggestion>> ListSinceAsync(Guid babyId, DateTimeOffset since, CancellationToken cancellationToken = default)
     {
