@@ -1,5 +1,3 @@
-using Lotties.Domain.Babies;
-using Lotties.Domain.Users;
 using Lotties.Domain.Vaccinations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -42,7 +40,6 @@ internal sealed class VaccinationConfiguration : IEntityTypeConfiguration<Vaccin
         builder.Ignore(vaccination => vaccination.IsDeleted);
         builder.HasIndex(vaccination => new { vaccination.BabyId, vaccination.GivenOn });
         builder.HasIndex(vaccination => new { vaccination.BabyId, vaccination.UpdatedAt });
-        builder.HasOne<Baby>().WithMany().HasForeignKey(vaccination => vaccination.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(vaccination => vaccination.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(vaccination => vaccination.CreatedBy);
     }
 }

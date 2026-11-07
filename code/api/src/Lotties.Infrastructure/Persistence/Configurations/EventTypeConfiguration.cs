@@ -1,4 +1,3 @@
-using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
 using Lotties.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +27,6 @@ internal sealed class EventTypeConfiguration : IEntityTypeConfiguration<EventTyp
             .HasColumnType("jsonb")
             .IsRequired();
         builder.HasIndex(eventType => new { eventType.BabyId, eventType.Key }).IsUnique().AreNullsDistinct(false);
-        builder.HasOne<Baby>().WithMany().HasForeignKey(eventType => eventType.BabyId).OnDelete(DeleteBehavior.Restrict);
         builder.HasData(BuiltInEventTypes.All);
     }
 }

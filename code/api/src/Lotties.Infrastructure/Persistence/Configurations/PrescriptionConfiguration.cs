@@ -1,7 +1,5 @@
-using Lotties.Domain.Babies;
 using Lotties.Domain.Medications;
 using Lotties.Domain.Prescriptions;
-using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -53,8 +51,7 @@ internal sealed class PrescriptionConfiguration : IEntityTypeConfiguration<Presc
         builder.Ignore(prescription => prescription.IsDoctorSourced);
         builder.HasIndex(prescription => new { prescription.BabyId, prescription.UpdatedAt });
         builder.HasIndex(prescription => new { prescription.BabyId, prescription.MedicationId });
-        builder.HasOne<Baby>().WithMany().HasForeignKey(prescription => prescription.BabyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(prescription => prescription.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(prescription => prescription.CreatedBy);
     }
 
     /// <summary>The dose columns, shared with the prescription proposals (same names, same types).</summary>

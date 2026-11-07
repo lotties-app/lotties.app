@@ -1,7 +1,5 @@
-using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
-using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -10,7 +8,7 @@ namespace Lotties.Infrastructure.Persistence.Configurations;
 
 /// <remarks>
 /// Soft-deleted events are hidden by a global query filter. Delta sync must see deletions, so it reads
-/// <see cref="LottiesDbContext.EventsIncludingDeleted"/> (which calls <c>IgnoreQueryFilters()</c>).
+/// <see cref="LottiesDataDbContext.EventsIncludingDeleted"/> (which calls <c>IgnoreQueryFilters()</c>).
 /// </remarks>
 internal sealed class EventConfiguration : IEntityTypeConfiguration<Event>
 {
@@ -30,9 +28,8 @@ internal sealed class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(item => item.ClientUpdatedAt).IsRequired();
         builder.HasIndex(item => new { item.BabyId, item.UpdatedAt });
         builder.HasIndex(item => new { item.BabyId, item.StartedAt });
-        builder.HasOne<Baby>().WithMany().HasForeignKey(item => item.BabyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(item => item.CreatedBy);
         builder.HasOne<EventType>().WithMany().HasForeignKey(item => item.TypeId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(item => item.CreatedBy).OnDelete(DeleteBehavior.Restrict);
         builder.HasQueryFilter(item => item.DeletedAt == null);
     }
 }
