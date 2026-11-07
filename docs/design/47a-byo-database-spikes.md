@@ -111,18 +111,57 @@ Read through web search of vendor pages on 2026-11-07; to be confirmed by someon
 - Direct max connections scale with compute size (104 at 0.25 CU quoted); the free-plan figure was not retrieved. Scale to zero
   and the 1 GB cap are in 47 section 7. IPv4 reachability of the direct endpoint: not retrieved.
 
+**Neon, measured (2026-11-07, owner's free project in `sa-east-1`, PostgreSQL 18.6, throwaway program, one run):**
+
+| Check | Direct endpoint | Pooler endpoint (`-pooler`) |
+| --- | --- | --- |
+| DNS | 3 IPv4 + 3 IPv6, all globally routable | same |
+| Pinned IPv4 + `SslMode=Require` + `TargetHost` = typed name + system trust store, no policy errors | **works** | **works** |
+| Certificate | `*.c-2.sa-east-1.aws.neon.tech`, Let's Encrypt (public CA) | same |
+| First connect / second connect | 194 ms / 38 ms (project was awake) | 49 ms / 24 ms |
+| `max_connections` | 901 | 901 |
+| Create schema, create table, insert 1000 events with a small jsonb payload | ok; table plus primary key is 262144 bytes (256 KiB) | ok |
+| **Session advisory lock held by A, probed from B** | **B got `false`: the lock holds** | **B got `true`: the lock did not persist** |
+| Protocol-level prepared statement | works | works |
+
+What this settles:
+
+- The pinned-IP recipe from (b) works against a real provider with a public CA, over the pooler as well. The `TargetHost`
+  override also satisfied Neon's SNI routing (it connected, so the proxy found the endpoint by name).
+- **Advisory locks do not work through the Neon pooler**, as the docs said. This is now observed, not read. The migrator must
+  connect to the direct endpoint. The migration runner must also **fail closed** if the lock probe says the lock did not
+  persist (take the lock, probe from a second connection, abort if the second also gets it), because a pooled host name is not
+  the only way to land on a pooler.
+- A custom schema and plain DDL work with the default owner role. We did not test a restricted role (the setup SQL in 47
+  section 8 still needs a run with a role that lacks `CREATE` on `public`).
+- Size: 1000 events fit in 256 KiB including the primary key, so about 250 bytes per event as a rough upper figure for tiny
+  payloads (small tables are padded to pages, so the real per-row cost is lower; a baby logs a few thousand events a year). A
+  500 MB to 1 GB cap is therefore years of data. One run, small payloads, **not** a capacity guarantee.
+- `pg_stat_ssl` reported `ssl = false` for the backend even though our TLS handshake to the proxy was verified. Neon's proxy
+  terminates TLS and talks to the compute node itself, so **"the connection is encrypted" is true up to the provider's proxy,
+  not necessarily end to end inside the provider**. We cannot see past the proxy, and the policy text must not claim more
+  than "encrypted in transit to the provider".
+- IPv6 also resolved, and IPv4 was available, so Neon works from a lab without IPv6 (this lab's own IPv6 is still unknown).
+
+Not measured: cold start after scale-to-zero (re-run after about 5 minutes idle), a restricted role, behavior near the free
+plan limits, and **Supabase** (no account yet).
+
 ## Consequences for 47 (apply when the owner decides)
 
 1. The descriptor carries **separate app and migrator host/port**.
 2. The recipe in (b) replaces the "unverified" remark in 47 section 3.2 step 4 (done in this change).
-3. T0 is done for (a) and (b). (c) still needs the owner's throwaway Supabase and Neon accounts and the lab's IPv6 answer.
+3. T0 is done for (a) and (b), and for (c) on Neon (one run). (c) still needs a Supabase account, a cold-start run, a restricted
+   role run and the lab's IPv6 answer.
+3a. The migration runner proves the advisory lock really holds (probe from a second connection) and refuses otherwise.
+3b. The privacy text says "encrypted in transit to the provider" and nothing about the inside of the provider.
 4. New data-chain task: a baseline migration with the built-in event types (47 section 4, plan T5).
 5. Supabase free pausing plus "no backups" makes the monthly "download a backup" reminder a requirement, not an option.
 
 ## Still open after the spikes
 
-- Real-provider run (owner action): create a throwaway free project on Supabase and Neon, run the setup SQL with a custom
-  role, connect from the lab through the guard, measure row size and cold-start latency, check exposed-schema behavior.
+- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: the cold-start run and a
+  restricted role. Supabase: a throwaway project, the setup SQL with a custom role, the pooler user suffix, exposed-schema
+  behavior. Both from the lab itself, through the guard.
 - IPv6 egress from the home lab.
 - NetworkPolicy enforcement on the k3s cluster.
 - The one-`SaveChanges`-across-planes question in (a).
