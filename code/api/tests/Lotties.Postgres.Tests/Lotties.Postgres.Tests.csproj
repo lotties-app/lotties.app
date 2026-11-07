@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests that need a real Postgres (design 47 section 12): one postgres:17 container per test collection, started by
+    Testcontainers. They carry the trait Category=Postgres and report SKIPPED, never failed, where they cannot run: by
+    default they run only on Linux with a Docker/Podman socket (CI; GitHub-hosted ubuntu runners have Docker) and are
+    skipped on Windows/macOS (the dev machine). CI runs them in the "rest" shard (it tests the whole solution).
+    Run only these:  dotnet test code/api/tests/Lotties.Postgres.Tests   (or filter Category=Postgres)
+    LOTTIES_POSTGRES_TESTS=skip always skips; LOTTIES_POSTGRES_TESTS=run always runs (fails without a runtime).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.16.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
