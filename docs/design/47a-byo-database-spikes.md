@@ -143,7 +143,9 @@ What this settles:
   than "encrypted in transit to the provider".
 - IPv6 also resolved, and IPv4 was available, so Neon works from a lab without IPv6 (this lab's own IPv6 is still unknown).
 
-Not measured: cold start after scale-to-zero (re-run after about 5 minutes idle), a restricted role, behavior near the free
+Second run, after an idle period the owner did not time (Neon suspends a free compute after about 5 minutes without connections; we did not confirm it had suspended): the first connect to the direct endpoint took **748 ms** against 194 ms and 38 ms warm, and the pooled connect right after took 62 ms because the first call had already woken the compute. Results otherwise identical (same lock behavior, same TLS result). So a wake-up costs well under a second on this region and plan, in one sample. That is small next to our timeouts, but the guard's connect timeout must stay at several seconds (not 1 to 2) so a cold compute is not reported as `Unreachable`.
+
+Not measured: a restricted role, behavior near the free
 plan limits, and **Supabase** (no account yet).
 
 ## Consequences for 47 (apply when the owner decides)
