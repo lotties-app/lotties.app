@@ -166,9 +166,9 @@ What this settles:
 - The pooler user is `postgres.<ref>`: the form and the guard handled the dotted name unchanged.
 - As with Neon, `pg_stat_ssl` shows no SSL on the backend: the pooler ends TLS. Same wording limit for the policy ("encrypted in transit to the provider").
 - Latency from the owner's PC: 47 to 131 ms to the pooler, 38 to 194 ms to Neon. Not a design constraint.
-- **Supabase Data API, checked in the dashboard (owner screenshots):** exposed schemas are `graphql_public` and `public` only ("2 of 2"), the text says a schema must be included before its tables can be exposed, so a new `lotties` schema is **not** reachable through the Data API by default. "Automatically expose new tables" is **on** by default, which grants Data API roles privileges on new tables, so anything created in `public` would be exposed. Rules for the setup guide and SQL: keep all Lotties tables in the `lotties` schema, never in `public`; create them as the dedicated Lotties role (not as `postgres`); explicitly revoke the Data API roles (`anon`, `authenticated`) on the schema in the setup SQL as a belt and braces step; advise turning "Automatically expose new tables" off; and have the test-connection check read the grants of those roles on the `lotties` schema and warn when they have any. Not tested: whether `anon` can read a table created in `lotties` by `postgres` on this project (default privileges may differ), so the revoke step is a requirement, not a guess.
+- **Supabase Data API, checked in the dashboard (owner screenshots):** exposed schemas are `graphql_public` and `public` only ("2 of 2"), the text says a schema must be included before its tables can be exposed, so a new `lotties` schema is **not** reachable through the Data API by default. "Automatically expose new tables" is **on** by default, which grants Data API roles privileges on new tables, so anything created in `public` would be exposed. Rules for the setup guide and SQL: keep all Lotties tables in the `lotties` schema, never in `public`; create them as the dedicated Lotties role (not as `postgres`); explicitly revoke the Data API roles (`anon`, `authenticated`) on the schema in the setup SQL as a belt and braces step; advise turning "Automatically expose new tables" off; and have the test-connection check read the grants of those roles on the `lotties` schema and warn when they have any. Tested later (restricted-role run, below): a table created in `lotties` by the migrator role is **not** readable by `anon`, `authenticated` or `service_role` (no schema usage, no select) by default, so the explicit revoke is belt and braces, and the check stays as a warning for projects whose default privileges were changed.
 
-- Not tested on Supabase: the restricted-role run (script ready), free-plan pausing (a week of inactivity, cannot be tested quickly), the CA's expiry and how Supabase rotates it (a rotation would make every Supabase store fail closed until the user pastes the new CA: the store state must say so and the settings page must show the CA's expiry date).
+- Not tested on Supabase: free-plan pausing (a week of inactivity, cannot be tested quickly), the CA's expiry and how Supabase rotates it (a rotation would make every Supabase store fail closed until the user pastes the new CA: the store state must say so and the settings page must show the CA's expiry date).
 
 **Neon, restricted roles (third run, direct endpoint, owner role `neondb_owner` which has `CREATEROLE` but is not a superuser):
 27 of 27 checks passed.** The setup in 47 section 3 works as designed:
@@ -193,6 +193,14 @@ What this settles:
   resource use is the provider's plan limits plus our own timeouts and pool caps.
 - Neon has no `anon`/`authenticated` Data API roles, so that part of the check was skipped here.
 
+**Supabase, restricted roles (session pooler 5432 with the provider CA, admin `postgres` which has `CREATEROLE`, not a superuser): 30 of 30 checks passed.** Same results as Neon, plus:
+
+- The role names get the pooler suffix on login (`lotties_migrator.<ref>`, `lotties_app.<ref>`) and the session saw `current_user = lotties_migrator` / `lotties_app`: the form must let the guard append the project reference for pooler hosts, or ask for the full user name.
+- Role-level settings (`search_path`, `statement_timeout = 30s`, `idle_in_transaction_session_timeout`) **do apply through the session pooler**.
+- `anon`, `authenticated` and `service_role` have **no** usage on `lotties` and no select on its tables by default.
+- As on Neon, the admin's `DROP OWNED BY` was refused and unneeded: schema dropped by the migrator, both roles dropped by the admin, nothing left.
+- Not tested: the roles through the **transaction** pooler (refused for the migrator anyway), the free-plan connection limits for these roles, and a custom Postgres role name clash.
+
 Not measured: behavior near the free plan limits.
 
 ## Consequences for 47 (apply when the owner decides)
@@ -208,9 +216,7 @@ Not measured: behavior near the free plan limits.
 
 ## Still open after the spikes
 
-- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: a timed-idle cold start. Restricted roles passed on Neon; on Supabase it still needs a run (pooler user
-  suffix `role.<ref>` for the new roles, and whether `anon` and `authenticated` can read the new schema). Both from the lab itself,
-  through the guard.
+- Real-provider run, remaining (owner action): Neon is done once (above); still to do on Neon: a timed-idle cold start. Restricted roles passed on Neon and Supabase. Both providers are still to be run from the lab itself, through the guard.
 - IPv6 egress from the home lab.
 - NetworkPolicy enforcement on the k3s cluster.
 - The one-`SaveChanges`-across-planes question in (a).
