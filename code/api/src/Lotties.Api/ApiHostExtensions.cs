@@ -20,12 +20,13 @@ using Lotties.Infrastructure.AddressLookup;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.AutoMigration;
 using Lotties.Infrastructure.Push;
+using Lotties.Infrastructure.Stores;
 
 namespace Lotties.Api;
 
 public static class ApiHostExtensions
 {
-    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers, the Alexa skill and the MCP server (both off by default), the project board (off by default) and JSON converters.</summary>
+    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers, the Alexa skill and the MCP server (both off by default), the project board (off by default), the sealed store credentials of bring-your-own-database (off by default) and JSON converters.</summary>
     public static WebApplicationBuilder AddLottiesApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -39,6 +40,7 @@ public static class ApiHostExtensions
         builder.Services.AddSingleton<IPushConfiguration, PushOptionsConfiguration>();
 
         builder.Services.AddAddressLookup(builder.Configuration);
+        builder.Services.AddStoreCredentials(builder.Configuration);
         builder.Services.AddNotificationScheduler();
         builder.Services.AddOidcAuthentication(builder.Configuration);
         builder.Services.AddTryItDemo(builder.Configuration);
