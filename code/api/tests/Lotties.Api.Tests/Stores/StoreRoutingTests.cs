@@ -22,15 +22,20 @@ namespace Lotties.Api.Tests.Stores;
 
 /// <summary>
 /// The API with <c>Stores:Enabled</c> on and two kinds of external store (SQLite files holding only the data tables), next to the
-/// built-in store of the test database (docs/design/47-bring-your-own-database.md section 3.6, task T2). One host per class.
+/// built-in store of the test database (docs/design/47-bring-your-own-database.md section 3.6, task T2). One host per class. The flag
+/// also turns on the sealed store credentials (task T3), which refuse to start without a key: the host gets a throw-away one.
 /// </summary>
 public sealed class StoreRoutingHost : IDisposable
 {
+    private const string TestKeyId = "routing-test";
+
     public StoreRoutingHost()
     {
         Host = Factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("Stores:Enabled", "true");
+            builder.UseSetting("Stores:CurrentKeyId", TestKeyId);
+            builder.UseSetting($"Stores:KeyEncryptionKeys:{TestKeyId}", Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
             builder.ConfigureTestServices(services => services.AddSingleton<IExternalDataStores>(Stores));
         });
     }
