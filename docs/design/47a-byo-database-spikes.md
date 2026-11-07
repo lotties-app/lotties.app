@@ -145,6 +145,30 @@ What this settles:
 
 Second run, after an idle period the owner did not time (Neon suspends a free compute after about 5 minutes without connections; we did not confirm it had suspended): the first connect to the direct endpoint took **748 ms** against 194 ms and 38 ms warm, and the pooled connect right after took 62 ms because the first call had already woken the compute. Results otherwise identical (same lock behavior, same TLS result). So a wake-up costs well under a second on this region and plan, in one sample. That is small next to our timeouts, but the guard's connect timeout must stay at several seconds (not 1 to 2) so a cold compute is not reported as `Unreachable`.
 
+**Supabase, measured (2026-11-07, owner's free project, PostgreSQL 17.11, one run from the owner's PC).** The two pooler URIs were pasted into each other's prompts, so the program's labels are swapped; the table is by **port**, and the advisory-lock results agree with the ports.
+
+| Check | Direct (`db.<ref>`, 5432) | Session pooler (5432) | Transaction pooler (6543) |
+| --- | --- | --- | --- |
+| DNS | **one AAAA record, no IPv4** | 3 IPv4 | 3 IPv4 |
+| Connect | **failed from the owner's PC** ("Failed to connect" to the IPv6 address: no IPv6 route there) | works | works |
+| TLS with the system trust store and the typed name | not reached | **fails**: `RemoteCertificateChainErrors`, name matched | same |
+| Certificate | not seen | `*.pooler.supabase.com`, issued by **"Supabase Intermediate 2021 CA"** (a private CA) | same |
+| Connected with verification off (diagnostic only) | not reached | yes, 131 ms then 47 ms | yes, 70 ms then 48 ms |
+| Session advisory lock held by A, probed from B | not reached | **held** (B got `false`) | **not held** (B got `true`) |
+| Prepared statement | not reached | works | works (one sample; the docs said it would not) |
+| `max_connections` | not reached | **60** | **60** |
+| Schema, table, 1000 events | not reached | ok, 256 KiB | ok, 256 KiB |
+
+What this settles:
+
+- **Supabase's TLS cannot be verified with the system trust store.** The chain ends in a private Supabase CA, so the strict recipe fails closed (correctly). Supabase therefore needs the **user-supplied CA as the only root** path that 47 section 3.2 already allows: the user downloads Supabase's CA certificate from the dashboard and pastes it into the form, we validate the chain against that root only (and the typed name), and the test-connection error must say "certificate not trusted, add the provider's CA" instead of a generic handshake error. The name check passed here (no name mismatch). Verification **with** the downloaded CA is the next run (below); until then it is untested.
+- **The direct connection is IPv6 only and the owner's PC cannot reach it.** The lab's IPv6 egress is still unknown, so for Supabase the form must default to the **session pooler** (5432), which has IPv4. Transaction mode (6543) does not hold advisory locks and must be refused for the migrator, exactly like Neon's pooler.
+- **Pool caps must be tiny.** `max_connections` was 60 on this plan (the pooler layer has its own limits, not retrieved). With many stores and a shared API, the per-store pool cap is a few connections (2 to 5), with idle eviction, and the API must never hold a connection per baby per request.
+- The pooler user is `postgres.<ref>`: the form and the guard handled the dotted name unchanged.
+- As with Neon, `pg_stat_ssl` shows no SSL on the backend: the pooler ends TLS. Same wording limit for the policy ("encrypted in transit to the provider").
+- Latency from the owner's PC: 47 to 131 ms to the pooler, 38 to 194 ms to Neon. Not a design constraint.
+- Not tested on Supabase: exposed schemas in the Data API (a dashboard check), a restricted role, free-plan pausing (a week of inactivity, cannot be tested quickly), the downloaded CA.
+
 Not measured: a restricted role, behavior near the free
 plan limits, and **Supabase** (no account yet).
 
@@ -152,7 +176,7 @@ plan limits, and **Supabase** (no account yet).
 
 1. The descriptor carries **separate app and migrator host/port**.
 2. The recipe in (b) replaces the "unverified" remark in 47 section 3.2 step 4 (done in this change).
-3. T0 is done for (a) and (b), and for (c) on Neon (two runs, one with a cold start sample). (c) still needs a Supabase account, a restricted
+3. T0 is done for (a) and (b), and for (c) on Neon (two runs, one with a cold start sample) and on Supabase (one run, TLS only with verification off). (c) still needs a run with Supabase's downloaded CA, a restricted
    role run and the lab's IPv6 answer.
 3a. The migration runner proves the advisory lock really holds (probe from a second connection) and refuses otherwise.
 3b. The privacy text says "encrypted in transit to the provider" and nothing about the inside of the provider.
