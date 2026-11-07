@@ -15,3 +15,23 @@ export const STORY = ['one', 'two', 'three', 'four'] as const;
 
 /** Content width of the landing page in px. */
 export const PAGE_WIDTH = 960;
+
+/**
+ * The "See it in action" screenshots, in order: the id is the file stem in `public/showcase/`
+ * (`<id>-<scheme>-<lang>.webp`, made by tests/e2e/showcase, docs/showcase-media.md) and the key in
+ * the `landing` catalog (`showcase.screens.<id>`). `dark` marks a screenshot that also exists in dark.
+ */
+export const SHOWCASE_SCREENS = [
+  { id: 'now', dark: true },
+  { id: 'log-feed', dark: false },
+  { id: 'log-sleep', dark: false },
+  { id: 'log-diaper', dark: false },
+  { id: 'bottle-followup', dark: false },
+  { id: 'insights', dark: false },
+  { id: 'vaccines', dark: false },
+  { id: 'sharing', dark: false },
+  { id: 'doctor', dark: false },
+] as const;
+
+/** Pixel size of the screenshots (a 390x844 phone at 2x). */
+export const SHOWCASE_SIZE = { width: 780, height: 1688 } as const;

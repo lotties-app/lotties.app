@@ -11,3 +11,4 @@
 - [ ] Dependency changed: credits regenerated (`node code/web/scripts/generate-credits.mjs`)
 - [ ] No secrets, no real child data, no `.env` content
 - [ ] Docs and `docs/agents/filemap.md` updated when files moved or were added
+- [ ] New or changed screen or feature: showcase screenshots and demo video regenerated (`docs/showcase-media.md`)

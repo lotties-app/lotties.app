@@ -46,6 +46,7 @@ describe('Now preview (developer route)', () => {
     ['forgotten', /Still asleep\?/],
     ['catchup', /What changed since your last look/],
     ['viewer', /view-only access/],
+    ['bottlesleep', /fell asleep during the bottle/i],
     ['cry', /Why is she crying\?/],
   ])('seeds and renders the %s scenario', async (state, expected) => {
     renderPreview(state);

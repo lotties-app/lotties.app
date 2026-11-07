@@ -62,6 +62,50 @@
       "request": "Request an import for another app"
     }
   },
+  "showcase": {
+    "title": "See it in action",
+    "intro": "A short tour with a made-up baby and made-up events: your own data is never shown here.",
+    "video": "Demo video: logging a diaper, the bottle follow-up, insights, vaccines, sharing and the doctor's view",
+    "gallery": "Screenshots of Lotties",
+    "screens": {
+      "now": {
+        "caption": "Now: what is happening and what is next",
+        "alt": "The Now screen of Lotties: the baby has been awake for 1 hour 52 minutes, with the next nap window, the bedtime estimate and quick log buttons"
+      },
+      "log-feed": {
+        "caption": "Log a feed in seconds",
+        "alt": "The feeding sheet with the method set to bottle, the time and the amount in millilitres"
+      },
+      "log-sleep": {
+        "caption": "Start a nap, or log one afterwards",
+        "alt": "The sleep sheet with the start time, a still running switch and the kind of sleep"
+      },
+      "log-diaper": {
+        "caption": "A diaper is two taps",
+        "alt": "The diaper sheet with wet, dirty and mixed to choose from"
+      },
+      "bottle-followup": {
+        "caption": "A gentle follow-up when she falls asleep mid-bottle",
+        "alt": "The Now screen with a card asking how much was left in the bottle, with quick answers from full to empty"
+      },
+      "insights": {
+        "caption": "Charts of sleep, feeds and diapers",
+        "alt": "The Insights screen with 14 days of sleep as a bar chart and the average sleep per day"
+      },
+      "vaccines": {
+        "caption": "Vaccines, with the schedule of your country",
+        "alt": "The vaccines screen listing doses given and due by age"
+      },
+      "sharing": {
+        "caption": "Share with a co-parent or caregiver, each with their role",
+        "alt": "Settings listing family members with their roles and an invite link form"
+      },
+      "doctor": {
+        "caption": "What the pediatrician sees: only what you share",
+        "alt": "The doctor's summary of a baby with sleep totals for the last 7 days"
+      }
+    }
+  },
   "steps": {
     "title": "How it works",
     "one": {

@@ -62,6 +62,50 @@
       "request": "Pedir importação de outro app"
     }
   },
+  "showcase": {
+    "title": "Veja em ação",
+    "intro": "Um passeio rápido com um bebê e eventos inventados: seus dados nunca aparecem aqui.",
+    "video": "Vídeo de demonstração: registrar uma fralda, o acompanhamento da mamadeira, insights, vacinas, compartilhamento e a visão do médico",
+    "gallery": "Capturas de tela do Lotties",
+    "screens": {
+      "now": {
+        "caption": "Agora: o que está acontecendo e o que vem depois",
+        "alt": "A tela Agora do Lotties: o bebê está acordado há 1 hora e 52 minutos, com a próxima janela de soneca, a estimativa da hora de dormir e os botões de registro rápido"
+      },
+      "log-feed": {
+        "caption": "Registre uma mamada em segundos",
+        "alt": "A folha de mamada com o método mamadeira, o horário e a quantidade em mililitros"
+      },
+      "log-sleep": {
+        "caption": "Comece uma soneca ou registre depois",
+        "alt": "A folha de sono com o horário de início, a chave de ainda dormindo e o tipo de sono"
+      },
+      "log-diaper": {
+        "caption": "Uma fralda são dois toques",
+        "alt": "A folha de fralda com xixi, cocô e misto para escolher"
+      },
+      "bottle-followup": {
+        "caption": "Uma pergunta gentil quando ela dorme no meio da mamadeira",
+        "alt": "A tela Agora com um cartão perguntando quanto sobrou na mamadeira, com respostas rápidas de cheia a vazia"
+      },
+      "insights": {
+        "caption": "Gráficos de sono, mamadas e fraldas",
+        "alt": "A tela Insights com 14 dias de sono em um gráfico de barras e a média de sono por dia"
+      },
+      "vaccines": {
+        "caption": "Vacinas, com o calendário do seu país",
+        "alt": "A tela de vacinas com as doses aplicadas e as previstas por idade"
+      },
+      "sharing": {
+        "caption": "Compartilhe com o outro responsável ou cuidador, cada um com seu papel",
+        "alt": "Configurações com os membros da família e seus papéis e um formulário de link de convite"
+      },
+      "doctor": {
+        "caption": "O que o pediatra vê: só o que você compartilha",
+        "alt": "O resumo do médico de um bebê com os totais de sono dos últimos 7 dias"
+      }
+    }
+  },
   "steps": {
     "title": "Como funciona",
     "one": {
