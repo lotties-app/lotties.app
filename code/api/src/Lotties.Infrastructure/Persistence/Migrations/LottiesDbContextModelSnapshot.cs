@@ -2585,6 +2585,74 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("user_rest_settings", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Stores.BabyStoreAssignment", b =>
+                {
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("DataStoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("data_store_id");
+
+                    b.Property<int>("Epoch")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("store_epoch");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("BabyId")
+                        .HasName("pk_babies");
+
+                    b.HasIndex("DataStoreId")
+                        .HasDatabaseName("ix_babies_data_store_id");
+
+                    b.ToTable("babies", (string)null);
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Stores.DataStore", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<byte[]>("SealedDescriptor")
+                        .HasColumnType("bytea")
+                        .HasColumnName("sealed_descriptor");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_data_stores");
+
+                    b.HasIndex("OwnerUserId")
+                        .HasDatabaseName("ix_data_stores_owner_user_id");
+
+                    b.ToTable("data_stores", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -3469,6 +3537,32 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_rest_settings_users_user_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Stores.BabyStoreAssignment", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.Stores.BabyStoreAssignment", "BabyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_babies_babies_id");
+
+                    b.HasOne("Lotties.Domain.Stores.DataStore", null)
+                        .WithMany()
+                        .HasForeignKey("DataStoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_babies_data_stores_data_store_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Stores.DataStore", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_data_stores_users_owner_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>

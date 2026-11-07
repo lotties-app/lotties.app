@@ -25,5 +25,5 @@ internal static class CorsServiceCollectionExtensions
             .WithOrigins(settings.Value.Origins.ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .WithExposedHeaders(EventEndpoints.NextCursorHeader, Microsoft.Net.Http.Headers.HeaderNames.ETag));
+            .WithExposedHeaders(EventEndpoints.NextCursorHeader, Stores.StoreScopeEndpointFilter.SyncEpochHeader, Microsoft.Net.Http.Headers.HeaderNames.ETag));
 }

@@ -2,6 +2,7 @@ using Lotties.Domain.AccessLogs;
 using Lotties.Domain.Notes;
 using Lotties.Domain.Professionals;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
@@ -28,14 +29,14 @@ internal sealed class EfProfessionalProfileRepository(LottiesDbContext context, 
 /// Visibility is part of every list query (<c>visibility = 'shared' OR author_user_id = reader</c>), so a private note
 /// never leaves the database for anyone but its author. A concurrent create of one id loses on the primary key.
 /// </remarks>
-internal sealed class EfNoteRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations) : INoteRepository
+internal sealed class EfNoteRepository(StoreScope stores, UniqueViolations uniqueViolations) : INoteRepository
 {
     public Task<BabyNote?> FindAsync(Guid noteId, CancellationToken cancellationToken = default) =>
-        context.BabyNotes.SingleOrDefaultAsync(note => note.Id == noteId, cancellationToken);
+        stores.Current.BabyNotes.SingleOrDefaultAsync(note => note.Id == noteId, cancellationToken);
 
     public async Task<IReadOnlyList<BabyNote>> ListChangesVisibleToAsync(Guid babyId, Guid readerUserId, DateTimeOffset? since, CancellationToken cancellationToken = default)
     {
-        var visible = context.BabyNotes
+        var visible = stores.ContextFor(babyId).BabyNotes
             .AsNoTracking()
             .Where(note => note.BabyId == babyId)
             .Where(note => note.Visibility == NoteVisibility.Shared || note.AuthorUserId == readerUserId);
@@ -44,14 +45,17 @@ internal sealed class EfNoteRepository(LottiesDataDbContext context, UniqueViola
     }
 
     public Task<int> CountSharedByAuthorAsync(Guid babyId, Guid authorUserId, CancellationToken cancellationToken = default) =>
-        context.BabyNotes.CountAsync(
+        stores.ContextFor(babyId).BabyNotes.CountAsync(
             note => note.BabyId == babyId && note.AuthorUserId == authorUserId && note.Visibility == NoteVisibility.Shared && note.DeletedAt == null,
             cancellationToken);
 
-    public Task<bool> TryAddAsync(BabyNote note, CancellationToken cancellationToken = default) =>
-        UniqueInserts.TryInsertAsync(context, uniqueViolations, note, cancellationToken);
+    public Task<bool> TryAddAsync(BabyNote note, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(note);
+        return UniqueInserts.TryInsertAsync(stores.ContextFor(note.BabyId), uniqueViolations, note, cancellationToken);
+    }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => stores.Current.SaveChangesAsync(cancellationToken);
 }
 
 /// <remarks>

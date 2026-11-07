@@ -29,7 +29,9 @@ internal sealed class BabyConfiguration : IEntityTypeConfiguration<Baby>
         builder.ToTable("babies");
         builder.HasXminRowVersion();
         builder.HasKey(baby => baby.Id);
-        builder.Property(baby => baby.Id).ValueGeneratedNever();
+
+        // Named explicitly: the routing columns share this row and key (BabyStoreAssignmentConfiguration, table splitting).
+        builder.Property(baby => baby.Id).HasColumnName(BabyStoreAssignmentConfiguration.KeyColumn).ValueGeneratedNever();
         builder.Property(baby => baby.Name).HasMaxLength(Baby.NameMaxLength).IsRequired();
         builder.Property(baby => baby.Label).HasMaxLength(BabyLabels.MaxLength);
         builder.Property(baby => baby.BirthDate).IsRequired();

@@ -99,6 +99,9 @@ internal static class DomainExceptionStatusCodes
         [typeof(DemoNotAvailableException)] = StatusCodes.Status403Forbidden,
         [typeof(DemoDisabledException)] = StatusCodes.Status404NotFound,
         [typeof(DemoCapacityException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(StoreScopeMissingException)] = StatusCodes.Status500InternalServerError,
+        [typeof(StoreScopeAmbiguousException)] = StatusCodes.Status500InternalServerError,
+        [typeof(StoreUnavailableException)] = StatusCodes.Status503ServiceUnavailable,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

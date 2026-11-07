@@ -24,10 +24,11 @@ public sealed class MedicationsRepositoryTests(ApiFactory factory) : IClassFixtu
         return user.Id;
     }
 
-    private async Task<TResult> WithAsync<TRepository, TResult>(Func<TRepository, Task<TResult>> action)
+    /// <summary>The repository in a scope of its own, with <paramref name="babyIds"/> bound for the data-plane ones.</summary>
+    private async Task<TResult> WithAsync<TRepository, TResult>(Func<TRepository, Task<TResult>> action, params Guid[] babyIds)
         where TRepository : notnull
     {
-        await using var scope = factory.Services.CreateAsyncScope();
+        await using var scope = await factory.CreateScopeForAsync(babyIds);
         return await action(scope.ServiceProvider.GetRequiredService<TRepository>());
     }
 
@@ -79,7 +80,7 @@ public sealed class MedicationsRepositoryTests(ApiFactory factory) : IClassFixtu
             return Task.CompletedTask;
         });
 
-        var doses = await WithAsync<IMedicationDoseHistoryRepository, IReadOnlyList<MedicationDose>>(history => history.ListDosesAsync(baby.BabyId, TestUsers.Now.AddDays(-9)));
+        var doses = await WithAsync<IMedicationDoseHistoryRepository, IReadOnlyList<MedicationDose>>(history => history.ListDosesAsync(baby.BabyId, TestUsers.Now.AddDays(-9)), baby.BabyId);
 
         Assert.Equal(2, doses.Count);
         Assert.All(doses, dose => Assert.Equal((TestUsers.Now, medicationId), (dose.GivenAt, dose.MedicationId!.Value)));
@@ -100,7 +101,7 @@ public sealed class MedicationsRepositoryTests(ApiFactory factory) : IClassFixtu
             return Task.CompletedTask;
         });
 
-        var latest = await WithAsync<IMeasurementRepository, Measurement?>(measurements => measurements.FindLatestWithWeightAsync(baby.BabyId));
+        var latest = await WithAsync<IMeasurementRepository, Measurement?>(measurements => measurements.FindLatestWithWeightAsync(baby.BabyId), baby.BabyId);
 
         Assert.Equal((4.6m, day.AddDays(-3)), (latest!.WeightKg!.Value, latest.Date));
     }

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Lotties.Application.Babies;
 using Lotties.Application.Events;
 using Lotties.Application.Measurements;
+using Lotties.Application.Stores;
 using Lotties.Application.Users;
 using Lotties.Domain.Consents;
 using Lotties.Domain.Exceptions;
@@ -13,7 +14,8 @@ namespace Lotties.Application.Demo;
 /// <remarks>
 /// Order: switch and cap checks, the user (issuer <see cref="User.DemoIssuer"/>, random subject, expiry), its demo core consent,
 /// then the baby and the sample data written as that user through the normal application services
-/// (<see cref="ActingUserOverride"/> stands in for the request's identity, which is anonymous).
+/// (<see cref="ActingUserOverride"/> stands in for the request's identity, which is anonymous). The route has no baby, so the new
+/// baby is entered in the request's <see cref="IStoreScope"/> before its records are written.
 /// A failure after the user was saved leaves a demo account that the cleanup removes at its expiry.
 /// </remarks>
 internal sealed class DemoService(
@@ -25,6 +27,7 @@ internal sealed class DemoService(
     IBabyService babies,
     IEventService events,
     IMeasurementService measurements,
+    IStoreScope stores,
     IDemoTokenIssuer tokens,
     TimeProvider timeProvider,
     ILogger<DemoService> logger) : IDemoService
@@ -56,6 +59,7 @@ internal sealed class DemoService(
         var baby = await babies.CreateAsync(
             new SaveBabyRequest { Name = portuguese ? "Bebê Demo" : "Demo Baby", BirthDate = DateOnly.FromDateTime(now.UtcDateTime.AddDays(-DemoSampleData.BabyAgeDays)) },
             cancellationToken);
+        await stores.EnterAsync(baby.Id, cancellationToken);
         foreach (var sample in DemoSampleData.Build(baby.Id, now))
         {
             await events.UpsertAsync(baby.Id, DemoSampleData.EventId(baby.Id, sample.Slot), sample.Request, cancellationToken);

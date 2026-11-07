@@ -1,4 +1,5 @@
 using Lotties.Application.Babies;
+using Lotties.Application.Stores;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Backups;
@@ -31,6 +32,11 @@ public interface IBackupImportService
     Task<BackupImportReport> MergeAsync(Guid babyId, Stream file, CancellationToken cancellationToken = default);
 }
 
+/// <remarks>
+/// A restore's route names no baby: the baby of the file (new or the caller's earlier restore) is entered in the request's
+/// <see cref="IStoreScope"/> before the session begins, so the records go to that baby's store; a merge's baby is entered by its
+/// route.
+/// </remarks>
 internal sealed class BackupImportService : IBackupImportService
 {
     private const string RestoreMode = "restore";
@@ -40,6 +46,7 @@ internal sealed class BackupImportService : IBackupImportService
     private readonly IBabyAccessService _access;
     private readonly BackupApplier _applier;
     private readonly IBackupSession _session;
+    private readonly IStoreScope _stores;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<BackupImportService> _logger;
@@ -49,6 +56,7 @@ internal sealed class BackupImportService : IBackupImportService
         IBabyAccessService access,
         BackupApplier applier,
         IBackupSession session,
+        IStoreScope stores,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
         ILogger<BackupImportService> logger)
@@ -57,6 +65,7 @@ internal sealed class BackupImportService : IBackupImportService
         _access = access ?? throw new ArgumentNullException(nameof(access));
         _applier = applier ?? throw new ArgumentNullException(nameof(applier));
         _session = session ?? throw new ArgumentNullException(nameof(session));
+        _stores = stores ?? throw new ArgumentNullException(nameof(stores));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -85,6 +94,7 @@ internal sealed class BackupImportService : IBackupImportService
             throw new BackupBabyUnavailableException();
         }
 
+        await _stores.EnterAsync(babyId, cancellationToken);
         await _session.BeginAsync(cancellationToken);
         try
         {

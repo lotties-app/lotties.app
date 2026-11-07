@@ -1,4 +1,5 @@
 using Lotties.Api.Authorization;
+using Lotties.Api.Stores;
 
 namespace Lotties.Api.Endpoints;
 
@@ -16,13 +17,15 @@ public static class BabyRoutes
     /// <see cref="BabyPolicies.ManageMembers"/>. The routes that read a section of the baby's data add the doctor scope
     /// policy of that section (<see cref="BabyPolicies.ForScope"/>), which only limits a Doctor; the member list is the
     /// family's (<see cref="BabyPolicies.ReadFamily"/>). Every authorized <c>GET</c> of a Doctor is recorded in the baby's access
-    /// log (<see cref="AccessLogEndpoints.RecordDoctorAccess"/>, at most hourly).
+    /// log (<see cref="AccessLogEndpoints.RecordDoctorAccess"/>, at most hourly). Every authorized request binds the baby to its
+    /// data store and carries its store epoch (<see cref="StoreScopeEndpointFilter"/>).
     /// </summary>
     public static RouteGroupBuilder MapBabyScopedGroup(this IEndpointRouteBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
         var group = api.MapGroup(Prefix).RequireAuthorization(BabyPolicies.Read);
         group.AddEndpointFilter(AccessLogEndpoints.RecordDoctorAccess);
+        group.AddEndpointFilter(StoreScopeEndpointFilter.BindAsync);
         return group;
     }
 }
