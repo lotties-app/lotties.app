@@ -46,7 +46,7 @@ function profileApi(stored: typeof STORED | null) {
 }
 
 describe('Settings > I am a healthcare professional', () => {
-  it('declares a profile: name required, optional specialty and registration, never verified', async () => {
+  it('declares a profile: only the specialty is required, nothing is shared by default, never verified', async () => {
     const fake = profileApi(null);
     renderWithDb(db, <ProfessionalSection />, { api: fake.api });
 
@@ -54,23 +54,29 @@ describe('Settings > I am a healthcare professional', () => {
       await screen.findByText(/Self-declared: Lotties does not check registrations/),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('Enter the name families will see.')).toBeTruthy();
+    expect(await screen.findByText('Enter your specialty.')).toBeTruthy();
     expect(fake.writes()).toHaveLength(0);
 
+    fireEvent.change(screen.getByRole('textbox', { name: /^Specialty/ }), {
+      target: { value: ' Pediatrics ' },
+    });
     fireEvent.change(screen.getByRole('textbox', { name: /^Name shown to families/ }), {
       target: { value: ' Ana Souza ' },
     });
     fireEvent.change(screen.getByRole('textbox', { name: /^Registration number/ }), {
       target: { value: 'CRM-SP 123456' },
     });
+    fireEvent.click(screen.getByRole('switch', { name: 'Show my name to families' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(fake.writes()).toHaveLength(1));
     expect(fake.writes()[0].body).toEqual({
       kind: 'doctor',
       displayName: 'Ana Souza',
-      specialty: null,
+      specialty: 'Pediatrics',
       registrationNumber: 'CRM-SP 123456',
+      shareDisplayName: true,
+      shareRegistration: false,
     });
     expect(await screen.findByText('Your professional profile')).toBeTruthy();
     expect(screen.getByText('Self-declared doctor')).toBeTruthy();
@@ -140,8 +146,8 @@ describe('accepting a Doctor invite', () => {
     );
 
     expect(await screen.findByRole('heading', { name: "Join as the baby's doctor" })).toBeTruthy();
-    fireEvent.change(screen.getByRole('textbox', { name: /^Name shown to families/ }), {
-      target: { value: 'Ana Souza' },
+    fireEvent.change(screen.getByRole('textbox', { name: /^Specialty/ }), {
+      target: { value: 'Pediatrics' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save and join' }));
 

@@ -80,7 +80,7 @@ export const privacyEn: PolicyDocument = {
               id: 'account',
               cells: [
                 'Your sign-in account',
-                'The details you register with at our sign-in server (Keycloak), such as your name and email address, and your password, which Keycloak keeps only in a protected form (a one-way hash). The Lotties server keeps just an internal id and your display name; it never reads your email. The app on your device receives your name and email from the sign-in server. We also keep your measurement unit choice (automatic, metric or US customary), which only changes how amounts are shown to you; records stay stored in metric units.',
+                'The details you register with at our sign-in server (Keycloak), such as your name and email address, and your password, which Keycloak keeps only in a protected form (a one-way hash). The Lotties server keeps just an internal id and your display name (optional, you can clear it) and, if you choose, a role label such as Mother, Father or Friend; it never reads your email. The app on your device receives your name and email from the sign-in server. We also keep your measurement unit choice (automatic, metric or US customary), which only changes how amounts are shown to you; records stay stored in metric units.',
                 'To let you sign in on your devices, and to show your name to the people you share a baby with.',
               ],
             },
@@ -96,7 +96,7 @@ export const privacyEn: PolicyDocument = {
               id: 'babyProfile',
               cells: [
                 "Your baby's profile",
-                'Name and date of birth and, if you fill them in, vaccine details: the vaccine network you use (public, or also private), weeks of pregnancy at birth, and whether the mother had the RSV vaccine in pregnancy.',
+                'A name is optional: you can give the baby only a label (Baby, Girl, Boy or a text you choose) and add a real name whenever you want. The date of birth is stored only as the week of birth (the Monday of that week); babies registered earlier keep the exact date until you edit it or choose to store only the week. If you fill them in, vaccine details: the vaccine network you use (public, or also private), weeks of pregnancy at birth, and whether the mother had the RSV vaccine in pregnancy.',
                 "To show ages and the day's routine, and the vaccine schedule that fits your baby.",
               ],
             },
@@ -128,7 +128,7 @@ export const privacyEn: PolicyDocument = {
               id: 'doctorProfile',
               cells: [
                 'Health professional profile',
-                'If you declare that you are a health professional: the name families see, your specialty and your registration number. It is self-declared: Lotties does not verify it.',
+                'If you declare that you are a health professional: your specialty (the only required field) and, if you choose, your name and your registration number. Families see your name and your registration only for the fields you choose to share; otherwise they see only your specialty. It is self-declared: Lotties does not verify it.',
                 "So that the families who invite you as their baby's doctor know who you are.",
               ],
             },

@@ -24,6 +24,7 @@ import {
   useThisDevice,
 } from '../usePush';
 import { PushExplainerSheet } from './PushExplainerSheet';
+import { babyShownName } from '../../baby/shownName';
 
 /** Server and device facts for the offer; `null` until they are loaded (nothing is shown). */
 function useDoseReminderOffer(baby: Baby) {
@@ -137,7 +138,7 @@ export function ReminderPromptCard({ baby, onClose }: Props) {
         </Box>
         <Typography role="status" color={done ? 'text.primary' : 'text.secondary'}>
           {outcome === 'on'
-            ? t('notifications.prompt.done', { name: baby.name })
+            ? t('notifications.prompt.done', { name: babyShownName(baby) })
             : outcome === 'denied'
               ? t('notifications.announce.denied')
               : t('notifications.prompt.body')}

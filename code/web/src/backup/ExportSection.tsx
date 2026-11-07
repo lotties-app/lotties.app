@@ -23,6 +23,7 @@ import { useSyncEngine } from '../sync/SyncEngineContext';
 import { useOnline } from '../sync/useOnline';
 import { Icon } from '../ui/Icon';
 import { backupFileName, describeBackupError, saveBlob } from './backupModel';
+import { babyShownName } from '../baby/shownName';
 
 type Phase = 'idle' | 'sending' | 'exporting' | 'done';
 
@@ -75,7 +76,7 @@ export function ExportSection({ baby }: { baby: Baby }) {
       setUnsent(0);
       setPhase('exporting');
       const file = await exportBackup(api, baby.id, compress);
-      const name = backupFileName(baby.name, new Date(), compress);
+      const name = backupFileName(babyShownName(baby), new Date(), compress);
       await saveBlob(file, name);
       setSaved({ name, size: file.size });
       setPhase('done');
@@ -87,7 +88,7 @@ export function ExportSection({ baby }: { baby: Baby }) {
 
   return (
     <Stack spacing={2}>
-      <Typography>{t('backup.export.intro', { name: baby.name })}</Typography>
+      <Typography>{t('backup.export.intro', { name: babyShownName(baby) })}</Typography>
       <Typography variant="body2" color="text.secondary">
         {t('backup.export.includes')}
       </Typography>

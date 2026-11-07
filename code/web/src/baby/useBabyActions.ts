@@ -30,8 +30,13 @@ export function useBabyActions() {
     adopt,
     create: async (request: BabyRequest) => adopt(await createBaby(api, request)),
     update: async (id: string, request: BabyRequest) => {
-      await updateBaby(api, id, request);
-      await db.babies.update(id, { name: request.name, birthDate: request.birthDate });
+      const stored = await updateBaby(api, id, request);
+      await db.babies.update(id, {
+        name: request.name,
+        label: request.label,
+        birthDate: request.birthDate,
+        ...stored,
+      });
       void engine.syncNow();
     },
   };

@@ -24,9 +24,14 @@ export type RsvMaternalAnswer = 'unknown' | 'yes' | 'no';
 
 export interface Baby {
   id: string;
+  /** The real name; may be empty (names are optional, docs/design/45): the label is shown then. */
   name: string;
-  /** Calendar date `yyyy-mm-dd`. */
+  /** Preset code (`baby`, `girl`, `boy`) or a custom text; absent = `baby`. */
+  label?: string;
+  /** Calendar date `yyyy-mm-dd`; the Monday of the birth week when `birthWeekOnly`. */
   birthDate: string;
+  /** Only the week of birth is stored (docs/design/45 section 2); absent = exact date. */
+  birthWeekOnly?: boolean;
   /** The current user's role for this baby (from `GET /babies`). */
   role: BabyRole;
   /** Vaccine schedule profile (from `GET /babies`); absent on rows stored before it existed (= `public`). */
@@ -380,12 +385,17 @@ export interface ProfessionalSummary {
   specialty: string | null;
   registrationNumber: string | null;
   verified: boolean;
+  /** Own profile: whether the name / registration are shown to families (docs/design/45). */
+  shareDisplayName?: boolean;
+  shareRegistration?: boolean;
 }
 
 /** A person named on the baby's data: the professional name when she declared one. */
 export interface PersonSummary {
   userId: string;
   displayName: string;
+  /** Preset code or custom text of the person's role label. */
+  roleLabel?: string | null;
   professional: ProfessionalSummary | null;
 }
 

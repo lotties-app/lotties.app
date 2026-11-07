@@ -7,6 +7,7 @@ import { renderWithDb } from '../test/renderApp';
 import type { ClinicalSummaryDto, DoctorPatientDto } from './doctorApi';
 import { doctorRoutes } from './doctorRoutes';
 import { DOCTOR_SCOPES, type DoctorScope } from './scopes';
+import { babyShownName } from '../baby/shownName';
 
 /*
  * Test kit of the doctor's dashboard (docs/design/19-doctor-dashboard.md): patients, the server's
@@ -28,7 +29,7 @@ export function patientBaby(
 export function patientDto(baby: Baby, extra: Partial<DoctorPatientDto> = {}): DoctorPatientDto {
   return {
     babyId: baby.id,
-    name: baby.name,
+    name: babyShownName(baby),
     birthDate: baby.birthDate,
     doctorScopes: baby.doctorScopes ?? [...DOCTOR_SCOPES],
     lastEventAt: null,

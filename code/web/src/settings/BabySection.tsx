@@ -3,6 +3,7 @@ import { Alert, Chip, Stack, Typography } from '@mui/material';
 import { BabyForm } from '../baby/BabyForm';
 import { isOwner } from '../baby/permissions';
 import { useBabyActions } from '../baby/useBabyActions';
+import { babyShownName } from '../baby/shownName';
 import type { Baby } from '../db/models';
 import { formatDate } from '../i18n/format';
 import { ErrorNotice } from './ErrorNotice';
@@ -30,8 +31,13 @@ export function BabySection({ baby }: { baby: Baby }) {
       <ErrorNotice message={error} />
       {owner ? (
         <BabyForm
-          key={`${baby.name}|${baby.birthDate}`}
-          initial={{ name: baby.name, birthDate: baby.birthDate }}
+          key={`${baby.name}|${baby.label ?? ''}|${baby.birthDate}|${baby.birthWeekOnly ?? false}`}
+          initial={{
+            name: baby.name,
+            label: baby.label,
+            birthDate: baby.birthDate,
+            birthWeekOnly: baby.birthWeekOnly,
+          }}
           submitLabel={t('settings.baby.save')}
           disabled={!online}
           pending={pending}
@@ -39,9 +45,11 @@ export function BabySection({ baby }: { baby: Baby }) {
         />
       ) : (
         <Stack>
-          <Typography variant="subtitle1">{baby.name}</Typography>
+          <Typography variant="subtitle1">{babyShownName(baby)}</Typography>
           <Typography color="text.secondary">
-            {t('settings.baby.born', { date: formatDate(baby.birthDate) })}
+            {t(baby.birthWeekOnly ? 'settings.baby.bornWeek' : 'settings.baby.born', {
+              date: formatDate(baby.birthDate),
+            })}
           </Typography>
         </Stack>
       )}

@@ -15,19 +15,34 @@ public sealed class Baby
     {
     }
 
-    private Baby(Guid id, string name, DateOnly birthDate, DateTimeOffset createdAt)
+    private Baby(Guid id, string name, string? label, DateOnly birthDate, bool weekOnly, DateTimeOffset createdAt)
     {
         Id = id;
         Name = name;
+        Label = label;
         BirthDate = birthDate;
+        BirthDateWeekOnly = weekOnly;
         CreatedAt = createdAt;
     }
 
     public Guid Id { get; private set; }
 
+    /// <summary>The real name; empty when the family gave none (names are optional, docs/design/45).</summary>
     public string Name { get; private set; } = string.Empty;
 
+    /// <summary>Preset code (<see cref="BabyLabels.Presets"/>) or custom text; <c>null</c> in babies from before labels (read as <c>baby</c>).</summary>
+    public string? Label { get; private set; }
+
+    /// <summary>The name, else the label: what screens, notifications and file names show. Never spoken by assistants.</summary>
+    public string ShownName => Name.Length > 0 ? Name : BabyLabels.Shown(BabyLabels.Normalize(Label));
+
+    /// <summary>The label as resolved for clients (never null).</summary>
+    public string ResolvedLabel => BabyLabels.Normalize(Label);
+
     public DateOnly BirthDate { get; private set; }
+
+    /// <summary>Whether <see cref="BirthDate"/> is the Monday of the birth week (the exact day is not stored).</summary>
+    public bool BirthDateWeekOnly { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -45,33 +60,56 @@ public sealed class Baby
     /// <summary>What the vaccine schedule needs to know about the baby besides the birth date.</summary>
     public VaccineProfile VaccineProfile => VaccineProfile.Create(VaccineCoverage, GestationalAgeWeeks, RsvMaternalVaccination);
 
-    public static Baby Create(string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt) =>
-        Create(Guid.NewGuid(), name, birthDate, ownerUserId, createdAt);
+    public static Baby Create(string? name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt, string? label = null, bool weekOnly = false) =>
+        Create(Guid.NewGuid(), name, birthDate, ownerUserId, createdAt, label, weekOnly);
 
     /// <summary>
     /// Creates a baby with a chosen id: the backup restore derives the id from the importer and the source baby, so
     /// restoring the same file twice finds the baby restored the first time instead of creating a second one.
     /// </summary>
-    public static Baby Create(Guid id, string name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt)
+    public static Baby Create(Guid id, string? name, DateOnly birthDate, Guid ownerUserId, DateTimeOffset createdAt, string? label = null, bool weekOnly = false)
     {
         Ids.Required(id, nameof(id));
         Ids.Required(ownerUserId, nameof(ownerUserId));
         var normalizedCreatedAt = UtcTime.Normalize(createdAt);
         var baby = new Baby(
             id,
-            Text.Required(name, nameof(Name), NameMaxLength),
-            EnsureBirthDateNotInFuture(birthDate, normalizedCreatedAt),
+            Text.Optional(name, nameof(Name), NameMaxLength) ?? string.Empty,
+            label is null ? null : BabyLabels.Normalize(label),
+            Stored(EnsureBirthDateNotInFuture(birthDate, normalizedCreatedAt), weekOnly),
+            weekOnly,
             normalizedCreatedAt);
         baby._members.Add(new BabyMember(baby.Id, ownerUserId, BabyRole.Owner, normalizedCreatedAt));
         return baby;
     }
 
-    public void UpdateDetails(string name, DateOnly birthDate, DateTimeOffset now)
+    /// <summary>
+    /// Updates name (optional), label and birth date. The birth date is coarsened to its week when it changed, or when
+    /// <paramref name="storeWeekOnly"/>; an unchanged exact date stays exact until then.
+    /// </summary>
+    public void UpdateDetails(string? name, DateOnly birthDate, DateTimeOffset now, string? label = null, bool storeWeekOnly = false)
     {
-        var validatedName = Text.Required(name, nameof(Name), NameMaxLength);
-        BirthDate = EnsureBirthDateNotInFuture(birthDate, UtcTime.Normalize(now));
+        var validatedName = Text.Optional(name, nameof(Name), NameMaxLength) ?? string.Empty;
+        var validatedLabel = label is null ? Label : BabyLabels.Normalize(label);
+        var checkedDate = EnsureBirthDateNotInFuture(birthDate, UtcTime.Normalize(now));
+        if (BirthDateWeekOnly)
+        {
+            if (BirthWeek.MondayOf(checkedDate) != BirthDate)
+            {
+                BirthDate = BirthWeek.MondayOf(checkedDate);
+            }
+        }
+        else if (checkedDate != BirthDate || storeWeekOnly)
+        {
+            BirthDate = BirthWeek.MondayOf(checkedDate);
+            BirthDateWeekOnly = true;
+        }
+
         Name = validatedName;
+        Label = validatedLabel;
     }
+
+    private static DateOnly Stored(DateOnly date, bool weekOnly) => weekOnly ? BirthWeek.MondayOf(date) : date;
 
     /// <summary>Replaces the vaccine profile (Owners and Parents, from the Vaccines page).</summary>
     public void UpdateVaccineProfile(VaccineProfile profile)

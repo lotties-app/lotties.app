@@ -250,7 +250,7 @@ AssistantForecasts forecasts,
     }
 
     private static AssistantBabyAccess AccessOf(AssistantFamilyMember member, bool sayBabyName) =>
-        new(member.Baby.Id, sayBabyName ? member.Baby.Name : null, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
+        new(member.Baby.Id, sayBabyName && member.Baby.Name.Length > 0 ? member.Baby.Name : null, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
 
     /// <summary>The user's local clock, or UTC days when no zone is known (summaries then report <c>UTC</c>).</summary>
     private static LocalClock ClockOf(AssistantSubject subject) =>

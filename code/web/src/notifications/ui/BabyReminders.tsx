@@ -17,6 +17,7 @@ import {
   type ReminderPreferences,
 } from '../pushApi';
 import { pushKeys } from '../usePush';
+import { babyShownName } from '../../baby/shownName';
 
 /** What a member who never changed anything has (everything off but the appointment reminders). */
 function defaultsFor(baby: Baby): BabyPreferencesDto {
@@ -93,7 +94,7 @@ function BabyRow({
   return (
     <Stack spacing={1} component="section" aria-labelledby={`push-baby-${baby.id}`}>
       <Typography variant="subtitle2" component="h4" id={`push-baby-${baby.id}`}>
-        {baby.name}
+        {babyShownName(baby)}
       </Typography>
       {!prefs.canReceive && (
         <Typography variant="body2" color="text.secondary">

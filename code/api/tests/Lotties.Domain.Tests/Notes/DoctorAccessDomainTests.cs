@@ -21,9 +21,9 @@ public sealed class DoctorAccessDomainTests
     }
 
     [Theory]
-    [InlineData(null, null, null, "displayName")]
-    [InlineData("  ", null, null, "displayName")]
-    [InlineData("Ana", null, "12345678901234567890123456789012345678901", "registrationNumber")]
+    [InlineData("Ana", null, null, "specialty")]
+    [InlineData(null, "  ", null, "specialty")]
+    [InlineData("Ana", "Pediatrics", "12345678901234567890123456789012345678901", "registrationNumber")]
     [InlineData("Ana", "a\0b", null, "specialty")]
     public void Terms_Invalid_ThrowsNamingTheField(string? name, string? specialty, string? registration, string field)
     {
@@ -35,12 +35,12 @@ public sealed class DoctorAccessDomainTests
     [Fact]
     public void Update_SameTermsKeepsTimeAndChangedTermsStampIt()
     {
-        var terms = ProfessionalProfileTerms.Create(ProfessionalKind.Doctor, "Ana", null, null);
+        var terms = ProfessionalProfileTerms.Create(ProfessionalKind.Doctor, "Ana", "Pediatrics", null);
         var profile = ProfessionalProfile.Declare(Guid.NewGuid(), terms, TestClock.Now);
 
         profile.Update(terms, TestClock.Now.AddHours(1));
         var unchanged = profile.UpdatedAt;
-        profile.Update(ProfessionalProfileTerms.Create(ProfessionalKind.Doctor, "Ana Souza", null, null), TestClock.Now.AddHours(2));
+        profile.Update(ProfessionalProfileTerms.Create(ProfessionalKind.Doctor, "Ana Souza", "Pediatrics", null), TestClock.Now.AddHours(2));
 
         Assert.Equal((TestClock.Now, TestClock.Now.AddHours(2), false), (unchanged, profile.UpdatedAt, profile.Verified));
     }

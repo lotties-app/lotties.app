@@ -9,6 +9,8 @@
   "doctor": {
     "name": "Dr. {{name}}",
     "nameNoAccess": "Dr. {{name}} (no longer has access)",
+    "unnamed": "Doctor{{name}}",
+    "unnamedNoAccess": "Doctor{{name}} (no longer has access)",
     "selfDeclared": "Self-declared doctor",
     "verifiedDoctor": "Verified professional",
     "settingsNotice": "You are {{name}}'s doctor: you can read everything logged, write notes and add consultation measurements. The parents manage everything else.",
@@ -16,7 +18,7 @@
       "sectionTitle": "I'm a healthcare professional",
       "intro": "Pediatricians and other doctors declare it here. A family can then invite you to their baby with the Doctor role.",
       "declared": "Your professional profile",
-      "selfDeclaredNotice": "Self-declared: Lotties does not check registrations. Families see “Self-declared doctor” next to your name.",
+      "selfDeclaredNotice": "Self-declared: Lotties does not check registrations. Families see “Self-declared doctor” and your specialty; your name and registration only if you switch them on below.",
       "displayName": "Name shown to families",
       "displayNameHelp": "Without a title: families see “Dr.” before it.",
       "displayNameRequired": "Enter the name families will see.",
@@ -24,7 +26,12 @@
       "specialtyPlaceholder": "e.g. Pediatrics",
       "registrationNumber": "Registration number",
       "registrationNumberHelp": "For example your CRM. Families can see it.",
-      "loadFailed": "Could not load your professional profile. Check your connection."
+      "loadFailed": "Could not load your professional profile. Check your connection.",
+      "specialtyHelp": "The only required field. Families always see it.",
+      "specialtyRequired": "Enter your specialty.",
+      "shareName": "Show my name to families",
+      "shareRegistration": "Show my registration number to families",
+      "shareNotice": "What stays off is not shown: families see only your specialty."
     },
     "invite": {
       "consent": "The doctor who accepts will see the sections you choose for {{name}} and can add notes and measurements. You can change what you share or remove access at any time."

@@ -37,6 +37,10 @@ internal static class MeEndpoints
             .AllowWithoutConsent(MeReason)
             .WithName("GetCurrentUser")
             .Produces(StatusCodes.Status401Unauthorized);
+        api.MapPut("/me/profile", SaveProfileAsync)
+            .AllowWithoutConsent(MeReason)
+            .WithName("SaveUserProfile")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         api.MapGet(ProfessionalProfilePath, GetProfessionalProfileAsync)
             .AllowWithoutConsent(MeReason)
             .WithName("GetProfessionalProfile")
@@ -146,6 +150,9 @@ internal static class MeEndpoints
 
     private static async Task<Ok<CurrentUserResponse>> GetCurrentUserAsync(ICurrentUser currentUser, CancellationToken cancellationToken) =>
         TypedResults.Ok<CurrentUserResponse>(await currentUser.GetUserAsync(cancellationToken));
+
+    private static async Task<Ok<CurrentUserResponse>> SaveProfileAsync(SaveUserProfileRequest request, IUserProfileService profiles, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await profiles.SaveMineAsync(request, cancellationToken));
 
     private static async Task<Ok<ProfessionalProfileResponse>> GetProfessionalProfileAsync(IProfessionalProfileService profiles, CancellationToken cancellationToken) =>
         TypedResults.Ok(await profiles.GetMineAsync(cancellationToken));

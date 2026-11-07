@@ -35,7 +35,8 @@
       "role": "Seu papel",
       "ownerOnly": "Só o titular pode alterar estes dados.",
       "born": "Nasceu em {{date}}",
-      "save": "Salvar dados"
+      "save": "Salvar dados",
+      "bornWeek": "Nasceu na semana de {{date}}"
     },
     "eventTypes": {
       "custom": "Personalizados",

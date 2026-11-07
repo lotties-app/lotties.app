@@ -30,6 +30,7 @@ import type { DoctorPatient } from './doctorApi';
 import { useDoctorDashboard } from './DoctorDashboardContext';
 import { neighbours, useSwitchPatient } from './navModel';
 import { matchesName } from './useDoctorData';
+import { babyShownName } from '../baby/shownName';
 
 interface Group {
   id: string;
@@ -279,7 +280,7 @@ export function PatientSwitcher({ baby }: { baby: Baby }) {
         onClick={(event) => setAnchor(event.currentTarget)}
         aria-haspopup="dialog"
         aria-expanded={anchor !== null}
-        aria-label={t('doctorDashboard.switcher.button', { name: baby.name, age })}
+        aria-label={t('doctorDashboard.switcher.button', { name: babyShownName(baby), age })}
         sx={{
           flex: '0 1 auto',
           minWidth: 0,
@@ -291,11 +292,11 @@ export function PatientSwitcher({ baby }: { baby: Baby }) {
           gap: 1.25,
         }}
       >
-        <BabyAvatar id={baby.id} name={baby.name} />
+        <BabyAvatar id={baby.id} name={babyShownName(baby)} />
         <Stack sx={{ minWidth: 0, textAlign: 'left' }}>
           <Stack direction="row" spacing={0.25} sx={{ alignItems: 'center', minWidth: 0 }}>
             <Typography variant="h6" component="p" noWrap>
-              {baby.name}
+              {babyShownName(baby)}
             </Typography>
             <Icon name="expand" size={20} />
           </Stack>

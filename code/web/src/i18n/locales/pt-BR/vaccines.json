@@ -38,7 +38,8 @@
         "withPrivate": "Rede pública e recomendações de clínicas particulares",
         "premature": "Nasceu com {{weeks}} semanas",
         "rsv": "Vacina contra o VSR na gravidez: {{answer}}"
-      }
+      },
+      "bornWeek": "Nasceu na semana de {{date}} ({{age}})"
     },
     "premature": "Bebês prematuros podem seguir um calendário especial. Siga a orientação do pediatra.",
     "filters": {
@@ -151,7 +152,8 @@
       },
       "empty": "Nenhuma vacina registrada ainda.",
       "note": "Um registro pessoal guardado no Lotties. Não substitui a caderneta de vacinação oficial.",
-      "printedOn": "Impresso em {{date}}"
+      "printedOn": "Impresso em {{date}}",
+      "bornWeek": "Nasceu na semana de {{date}}"
     },
     "due": {
       "label": "Vacinas previstas",

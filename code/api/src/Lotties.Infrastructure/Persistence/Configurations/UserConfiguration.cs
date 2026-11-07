@@ -18,6 +18,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.Issuer).HasMaxLength(User.IssuerMaxLength).IsRequired();
         builder.Property(user => user.Subject).HasMaxLength(User.SubjectMaxLength).IsRequired();
         builder.Property(user => user.DisplayName).HasMaxLength(User.DisplayNameMaxLength).IsRequired();
+        builder.Property(user => user.RoleLabel).HasMaxLength(RoleLabels.MaxLength);
         builder.Property(user => user.CreatedAt).IsRequired();
         builder.Property(user => user.DeletedAt);
         builder.Property(user => user.DemoExpiresAt);

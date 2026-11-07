@@ -21,6 +21,7 @@ public static class ApplicationServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
+        services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IBabyAccessService, BabyAccessService>();
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IBabyService, BabyService>();

@@ -22,6 +22,8 @@ import { useBabies } from '../db/hooks';
 import { usePushConfig } from '../notifications/usePush';
 import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 import { VersionLine } from '../ui/VersionLine';
+import { babyShownName } from '../baby/shownName';
+import { ProfileSection } from '../settings/ProfileSection';
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -71,7 +73,7 @@ export function SettingsPage() {
                     ? 'baby.caregiverNamed'
                     : 'baby.viewOnlyNamed',
                 {
-                  name: baby.name,
+                  name: babyShownName(baby),
                 },
               )}
             </Alert>
@@ -94,6 +96,13 @@ export function SettingsPage() {
       ) : (
         !doctor && <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
       )}
+      <SettingsSection
+        id="profile"
+        title={t('profile.title')}
+        defaultExpanded={wants('profile')}
+      >
+        <ProfileSection />
+      </SettingsSection>
       <SettingsSection
         id="professional"
         title={t('doctor.profile.sectionTitle')}

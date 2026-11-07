@@ -145,12 +145,17 @@ export function VaccineProfileBlock({
         </Typography>
         <Typography>
           {hasBirthDate(baby)
-            ? t('vaccines.profile.born', {
+            ? t(baby.birthWeekOnly ? 'vaccines.profile.bornWeek' : 'vaccines.profile.born', {
                 date: formatDate(baby.birthDate),
-                age: formatAge(baby.birthDate, now),
+                age: formatAge(baby.birthDate, now, undefined, baby.birthWeekOnly === true),
               })
             : '—'}
         </Typography>
+        {baby.birthWeekOnly === true && hasBirthDate(baby) && (
+          <Typography variant="caption" color="text.secondary" component="p">
+            {t('baby.weekBasis')}
+          </Typography>
+        )}
       </Box>
       {writable ? (
         <>

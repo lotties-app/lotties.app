@@ -3,6 +3,7 @@ import type { Baby, BabyEvent } from '../db/models';
 import { useMembers } from '../now/useMembers';
 import type { MemberDto } from '../sync/contract';
 import { canChangeEvent, canControlTimer, canLog, isOwnEvent } from './permissions';
+import { personShownName } from './shownName';
 
 /** Who may do what with the baby's events, for one screen (docs/SPEC.md "Roles and permissions"). */
 export interface EventAccess {
@@ -29,7 +30,8 @@ export interface EventAccess {
 }
 
 function nameIn(members: readonly MemberDto[] | undefined, userId: string): string {
-  return members?.find((member) => member.userId === userId)?.displayName?.trim() ?? '';
+  const member = members?.find((m) => m.userId === userId);
+  return member ? personShownName(member) : '';
 }
 
 /** The rules of `permissions.ts` bound to `baby`, plus the members' names (online). */

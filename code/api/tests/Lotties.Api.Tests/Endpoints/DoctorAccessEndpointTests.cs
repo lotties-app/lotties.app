@@ -42,7 +42,7 @@ public sealed class DoctorAccessEndpointTests(ApiFactory factory) : IClassFixtur
     }
 
     private static Task<HttpResponseMessage> DeclareAsync(HttpClient client, string displayName = "Ana Souza") =>
-        client.PutAsJsonAsync(ProfilePath, new { displayName, specialty = "Pediatrics", registrationNumber = "CRM-SP 123456" });
+        client.PutAsJsonAsync(ProfilePath, new { displayName, specialty = "Pediatrics", registrationNumber = "CRM-SP 123456", shareDisplayName = true, shareRegistration = true });
 
     private async Task<Guid> PutNoteAsync(SeededBaby baby, string visibility, BabyRole author = BabyRole.Doctor)
     {
@@ -72,16 +72,16 @@ public sealed class DoctorAccessEndpointTests(ApiFactory factory) : IClassFixtur
     }
 
     [Fact]
-    public async Task ProfessionalProfile_VerifiedInTheBody_IsIgnoredAndBlankNameIs400()
+    public async Task ProfessionalProfile_VerifiedInTheBody_IsIgnoredAndBlankSpecialtyIs400()
     {
         var client = factory.CreateClientFor(TestUsers.NewSubject());
 
-        var selfVerified = await client.PutAsJsonAsync(ProfilePath, new { displayName = "Ana", verified = true });
-        var blank = await client.PutAsJsonAsync(ProfilePath, new { displayName = "  " });
+        var selfVerified = await client.PutAsJsonAsync(ProfilePath, new { displayName = "Ana", specialty = "Pediatrics", verified = true });
+        var blank = await client.PutAsJsonAsync(ProfilePath, new { displayName = "Ana", specialty = "  " });
 
         Assert.False((await JsonAsync(selfVerified)).GetProperty("verified").GetBoolean());
         var problem = await blank.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
-        Assert.Equal("displayName", problem.GetProperty("field").GetString());
+        Assert.Equal("specialty", problem.GetProperty("field").GetString());
     }
 
     [Fact]

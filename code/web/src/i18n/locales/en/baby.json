@@ -2,7 +2,7 @@
   "baby": {
     "viewerNotice": "You have view-only access to this baby, so logging is turned off.",
     "viewOnlyNamed": "You have view-only access to {{name}}.",
-    "nameLabel": "Name",
+    "nameLabel": "Name (optional)",
     "birthDate": "Birth date",
     "nameRequired": "Name is required.",
     "birthRequired": "Birth date is required.",
@@ -24,6 +24,27 @@
       "Viewer": "Can only view",
       "Doctor": "A healthcare professional: sees the sections you share, writes notes and measurements"
     },
-    "caregiverNamed": "You are a caregiver for {{name}}: you can log events and edit your own entries. The parents manage everything else."
+    "caregiverNamed": "You are a caregiver for {{name}}: you can log events and edit your own entries. The parents manage everything else.",
+    "nameHelp": "Leave empty to use the label below. A real name stays on your account and is seen by everyone you share the baby with.",
+    "labelLabel": "Label",
+    "labelPreset": {
+      "baby": "Baby",
+      "girl": "Girl",
+      "boy": "Boy",
+      "custom": "Other text..."
+    },
+    "labelCustom": "Custom label",
+    "labelHelp": "Shown when there is no name. Typing a custom text or a name is your choice.",
+    "birthWeekNotice": "Lotties converts the date to the week of birth (the Monday of that week) and stores only the week. The exact day is not kept.",
+    "birthWeekStored": "Only the week of birth is stored (week starting {{date}}).",
+    "birthExactStored": "The exact birth date is stored.",
+    "storeOnlyWeek": "Store only the week",
+    "storeOnlyWeekDone": "Now only the week of birth is stored.",
+    "weekBasis": "Based on the week of birth, so ages can be up to 6 days off.",
+    "labels": {
+      "baby": "Baby",
+      "girl": "Girl",
+      "boy": "Boy"
+    }
   }
 }

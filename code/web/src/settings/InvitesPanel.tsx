@@ -26,6 +26,7 @@ import { Icon } from '../ui/Icon';
 import { DoctorScopeFields } from '../doctor/DoctorScopeFields';
 import { seesText } from '../doctor/scopeText';
 import { DEFAULT_DOCTOR_SCOPES, parseScopes, type DoctorScope } from '../doctor/scopes';
+import { babyShownName } from '../baby/shownName';
 
 const ROLES: BabyRole[] = ['Parent', 'Caregiver', 'Viewer', 'Owner', 'Doctor'];
 const DEFAULT_DAYS = 7;
@@ -126,7 +127,7 @@ export function InvitesPanel({ baby }: { baby: Baby }) {
       </Stack>
       {role === 'Doctor' && (
         <>
-          <Alert severity="info">{t('doctor.invite.consent', { name: baby.name })}</Alert>
+          <Alert severity="info">{t('doctor.invite.consent', { name: babyShownName(baby) })}</Alert>
           <DoctorScopeFields value={scopes} onChange={setScopes} disabled={pending} />
         </>
       )}

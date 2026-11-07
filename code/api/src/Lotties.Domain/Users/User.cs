@@ -69,6 +69,20 @@ public sealed class User
         Text.Required(displayName, nameof(DisplayName), DisplayNameMaxLength),
         UtcTime.Normalize(createdAt));
 
+    /// <summary>
+    /// Preset code (<see cref="RoleLabels.Presets"/>) or custom text shown when the user has no display name; the name is
+    /// optional (docs/design/46-privacy-first-onboarding.md).
+    /// </summary>
+    public string? RoleLabel { get; private set; }
+
+    /// <summary>Changes the profile the family sees: an empty name is allowed, the label stands in for it.</summary>
+    public void UpdateProfile(string? displayName, string? roleLabel)
+    {
+        var name = Text.Optional(displayName, nameof(DisplayName), DisplayNameMaxLength) ?? string.Empty;
+        DisplayName = name;
+        RoleLabel = RoleLabels.Normalize(roleLabel);
+    }
+
     /// <summary>Creates a throwaway demo account that expires at <paramref name="expiresAt"/>.</summary>
     public static User CreateDemo(string subject, string displayName, DateTimeOffset createdAt, DateTimeOffset expiresAt)
     {
@@ -97,6 +111,7 @@ public sealed class User
         Issuer = DeletedIssuer;
         Subject = Id.ToString("N");
         DisplayName = Text.Required(anonymousName, nameof(DisplayName), DisplayNameMaxLength);
+        RoleLabel = null;
         DeletedAt = UtcTime.Normalize(deletedAt);
         DemoExpiresAt = null;
     }

@@ -15,6 +15,7 @@ import { contentOf, decidedProposals, waitingProposals } from './proposalModel';
 import { ProposalStatusChips } from './ProposalStatusChip';
 import { RecommendationSheet } from './RecommendationSheet';
 import { useDoctorInbox } from './useProposals';
+import { babyShownName } from '../baby/shownName';
 
 /** A tappable card of the page: an icon, the lines, and a chevron. */
 function Row({
@@ -170,7 +171,7 @@ export function FromDoctorScreen({ baby }: { baby: Baby }) {
         {t('proposals.fromDoctor.title')}
       </Typography>
       <Typography color="text.secondary">
-        {t('proposals.fromDoctor.subtitle', { name: baby.name })}
+        {t('proposals.fromDoctor.subtitle', { name: babyShownName(baby) })}
       </Typography>
     </Stack>
   );
@@ -212,7 +213,7 @@ export function FromDoctorScreen({ baby }: { baby: Baby }) {
             {t('proposals.fromDoctor.emptyTitle')}
           </Typography>
           <Typography color="text.secondary">
-            {t('proposals.fromDoctor.emptyBody', { name: baby.name })}
+            {t('proposals.fromDoctor.emptyBody', { name: babyShownName(baby) })}
           </Typography>
         </Box>
       ) : (

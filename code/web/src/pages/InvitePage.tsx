@@ -14,6 +14,7 @@ import { scopeList } from '../doctor/scopeText';
 import { patientPath } from '../doctor/dashboardStorage';
 import { scopesOf } from '../doctor/scopes';
 import { CategoryIcon } from '../ui/CategoryIcon';
+import { babyShownName } from '../baby/shownName';
 
 type InviteState =
   | { kind: 'joining' }
@@ -55,7 +56,7 @@ export function JoinedAsDoctor({ baby }: { baby: Baby }) {
     <Stack spacing={2} sx={{ py: 4, maxWidth: 480, mx: 'auto' }}>
       <CategoryIcon name="stethoscope" category="health" size={32} />
       <Typography variant="h5" component="h1">
-        {t('doctorDashboard.accept.title', { name: baby.name })}
+        {t('doctorDashboard.accept.title', { name: babyShownName(baby) })}
       </Typography>
       <Typography>
         {scopes.length === 0
@@ -69,7 +70,7 @@ export function JoinedAsDoctor({ baby }: { baby: Baby }) {
         variant="contained"
         sx={{ minHeight: 48 }}
       >
-        {t('doctorDashboard.accept.open', { name: baby.name })}
+        {t('doctorDashboard.accept.open', { name: babyShownName(baby) })}
       </Button>
       <Button component={RouterLink} to="/doctor" sx={{ minHeight: 48 }}>
         {t('doctorDashboard.accept.patients')}

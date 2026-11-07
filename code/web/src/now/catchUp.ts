@@ -10,6 +10,7 @@ import {
   isSleepKind,
   typeIdsForKey,
 } from './eventFacts';
+import { personShownName } from '../baby/shownName';
 
 /*
  * Hand-over catch-up (docs/design/01-ux-strategy.md flow 3): what other caregivers logged since this
@@ -159,7 +160,7 @@ export function catchUp(
     diaper: typeIdsForKey(context.types, 'diaper'),
     medication: typeIdsForKey(context.types, 'medication'),
   };
-  const names = new Map((users ?? []).map((u) => [u.userId, u.displayName?.trim() || null]));
+  const names = new Map((users ?? []).map((u) => [u.userId, personShownName(u) || null]));
   const groups = new Map<string, CatchUpGroup>();
   const relevant = events
     .filter(

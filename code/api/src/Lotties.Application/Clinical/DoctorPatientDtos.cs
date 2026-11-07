@@ -39,7 +39,13 @@ public sealed record DoctorPatientResponse
 
     public string Name { get; init; } = string.Empty;
 
+    /// <summary>Preset code or custom text shown when <see cref="Name"/> is empty (additive).</summary>
+    public string Label { get; init; } = Domain.Babies.BabyLabels.Default;
+
     public DateOnly BirthDate { get; init; }
+
+    /// <summary>Whether the birth date is the Monday of the birth week (additive).</summary>
+    public bool BirthWeekOnly { get; init; }
 
     public IReadOnlyList<string> DoctorScopes { get; init; } = [];
 

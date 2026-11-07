@@ -19,11 +19,17 @@ public sealed record SaveProfessionalProfileRequest
 
     public string? RegistrationNumber { get; init; }
 
+    /// <summary>Whether families see the name (default no).</summary>
+    public bool? ShareDisplayName { get; init; }
+
+    /// <summary>Whether families see the registration number (default no).</summary>
+    public bool? ShareRegistration { get; init; }
+
     /// <summary>Validates every rule; throws <see cref="Domain.Exceptions.DomainValidationException"/> naming the field.</summary>
     public static explicit operator ProfessionalProfileTerms(SaveProfessionalProfileRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return ProfessionalProfileTerms.Create(request.Kind ?? ProfessionalKind.Doctor, request.DisplayName, request.Specialty, request.RegistrationNumber);
+        return ProfessionalProfileTerms.Create(request.Kind ?? ProfessionalKind.Doctor, request.DisplayName, request.Specialty, request.RegistrationNumber, request.ShareDisplayName == true, request.ShareRegistration == true);
     }
 }
 
@@ -40,6 +46,10 @@ public sealed record ProfessionalProfileResponse
     public string? Specialty { get; init; }
 
     public string? RegistrationNumber { get; init; }
+
+    public bool ShareDisplayName { get; init; }
+
+    public bool ShareRegistration { get; init; }
 
     /// <summary>Always <c>false</c> in v1: the profile is self-declared.</summary>
     public bool Verified { get; init; }
@@ -58,6 +68,8 @@ public sealed record ProfessionalProfileResponse
             DisplayName = profile.DisplayName,
             Specialty = profile.Specialty,
             RegistrationNumber = profile.RegistrationNumber,
+            ShareDisplayName = profile.ShareDisplayName,
+            ShareRegistration = profile.ShareRegistration,
             Verified = profile.Verified,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt,
@@ -65,7 +77,7 @@ public sealed record ProfessionalProfileResponse
     }
 }
 
-/// <summary>What the members of a baby see of a professional: her name, specialty, registration and whether it was verified.</summary>
+/// <summary>What the members of a baby see of a professional: her specialty, and her name and registration only when she shares them.</summary>
 public sealed record ProfessionalSummary
 {
     [JsonConverter(typeof(CamelCaseStringEnumConverter))]
@@ -86,9 +98,9 @@ public sealed record ProfessionalSummary
         return new ProfessionalSummary
         {
             Kind = profile.Kind,
-            DisplayName = profile.DisplayName,
+            DisplayName = profile.ShareDisplayName ? profile.DisplayName : string.Empty,
             Specialty = profile.Specialty,
-            RegistrationNumber = profile.RegistrationNumber,
+            RegistrationNumber = profile.ShareRegistration ? profile.RegistrationNumber : null,
             Verified = profile.Verified,
         };
     }
@@ -103,7 +115,10 @@ public sealed record PersonSummary
 {
     public Guid UserId { get; init; }
 
+    /// <summary>Empty when the person gave no name (or a doctor does not share hers): show <see cref="RoleLabel"/> or the specialty.</summary>
     public required string DisplayName { get; init; }
+
+    public string? RoleLabel { get; init; }
 
     public ProfessionalSummary? Professional { get; init; }
 }

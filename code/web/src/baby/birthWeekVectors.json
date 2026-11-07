@@ -1,0 +1,12 @@
+{
+  "description": "Monday (ISO week start) on or before a date. Shared by C# Lotties.Domain.Babies.BirthWeek and TS baby/birthWeek.ts.",
+  "monday": [
+    { "date": "2026-11-02", "monday": "2026-11-02" },
+    { "date": "2026-11-03", "monday": "2026-11-02" },
+    { "date": "2026-11-08", "monday": "2026-11-02" },
+    { "date": "2026-11-09", "monday": "2026-11-09" },
+    { "date": "2026-01-01", "monday": "2025-12-29" },
+    { "date": "2024-02-29", "monday": "2024-02-26" },
+    { "date": "2023-01-01", "monday": "2022-12-26" }
+  ]
+}

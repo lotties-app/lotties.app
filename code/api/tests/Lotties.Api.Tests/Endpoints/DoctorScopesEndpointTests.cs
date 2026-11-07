@@ -28,7 +28,7 @@ public sealed class DoctorScopesEndpointTests(ApiFactory factory) : IClassFixtur
         element.GetProperty(property).ValueKind == JsonValueKind.Null ? null : element.GetProperty(property).EnumerateArray().Select(code => code.GetString()!).ToArray();
 
     private static Task<HttpResponseMessage> DeclareAsync(HttpClient client) =>
-        client.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics" });
+        client.PutAsJsonAsync("/api/v1/me/professional-profile", new { displayName = "Ana Souza", specialty = "Pediatrics", shareDisplayName = true, shareRegistration = true });
 
     private async Task<Guid> UserIdOfAsync(SeededBaby baby, BabyRole role) => await factory.UserIdAsync(baby.SubjectOf(role));
 

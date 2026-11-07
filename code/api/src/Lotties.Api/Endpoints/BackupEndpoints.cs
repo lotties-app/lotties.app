@@ -72,7 +72,7 @@ internal static class BackupEndpoints
     {
         var baby = await babies.GetAsync(babyId, cancellationToken);
         var gzip = compress ?? true;
-        var name = FileName(baby.Name, time.GetUtcNow(), gzip);
+        var name = FileName(string.IsNullOrEmpty(baby.Name) ? Lotties.Domain.Babies.BabyLabels.Shown(baby.Label) : baby.Name, time.GetUtcNow(), gzip);
         http.Response.Headers.CacheControl = "no-store";
         return Results.Stream(
             async stream =>

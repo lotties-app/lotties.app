@@ -29,7 +29,8 @@ internal sealed class PersonDirectory(IUserRepository users, IProfessionalProfil
     private static PersonSummary Describe(User user, ProfessionalProfile? profile) => new()
     {
         UserId = user.Id,
-        DisplayName = profile?.DisplayName ?? user.DisplayName,
+        DisplayName = profile is null ? user.DisplayName : (profile.ShareDisplayName ? profile.DisplayName : string.Empty),
+        RoleLabel = user.RoleLabel,
         Professional = profile is null ? null : (ProfessionalSummary)profile,
     };
 }

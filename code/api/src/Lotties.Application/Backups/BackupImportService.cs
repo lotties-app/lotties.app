@@ -130,7 +130,7 @@ internal sealed class BackupImportService : IBackupImportService
         var profile = file.Baby!;
         try
         {
-            var baby = Baby.Create(babyId, profile.Name ?? string.Empty, profile.BirthDate, ownerUserId, _timeProvider.GetUtcNow());
+            var baby = Baby.Create(babyId, profile.Name, profile.BirthDate, ownerUserId, _timeProvider.GetUtcNow(), profile.Label, profile.BirthWeekOnly == true);
             baby.UpdateVaccineProfile(VaccineProfile.Create(VaccineProfile.CoverageOf(profile.VaccineProfile), profile.GestationalAgeWeeks, profile.RsvMaternalVaccination));
             await _babies.AddAsync(baby, cancellationToken);
             return null;

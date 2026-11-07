@@ -31,7 +31,7 @@ public sealed class BabyEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var created = await response.ReadAsync<BabyResponse>();
         Assert.Equal(BabyPath(created.Id), response.Headers.Location?.OriginalString);
-        Assert.Equal(("Lia", new DateOnly(2026, 1, 2), BabyRole.Owner), (created.Name, created.BirthDate, created.Role));
+        Assert.Equal(("Lia", "baby", new DateOnly(2025, 12, 29), true, BabyRole.Owner), (created.Name, created.Label, created.BirthDate, created.BirthWeekOnly, created.Role));
         var userId = await factory.UserIdAsync(subject);
         var member = await factory.QueryAsync(context => context.BabyMembers.SingleAsync(stored => stored.BabyId == created.Id));
         Assert.Equal((userId, BabyRole.Owner), (member.UserId, member.Role));
@@ -68,10 +68,8 @@ public sealed class BabyEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     }
 
     [Theory]
-    [InlineData("""{"name":" ","birthDate":"2026-01-02"}""")]
     [InlineData("""{"name":"Lia","birthDate":"2999-01-01"}""")]
     [InlineData("""{"name":"Lia"}""")]
-    [InlineData("""{"birthDate":"2026-01-02"}""")]
     [InlineData("not json")]
     public async Task Create_Invalid_Returns400(string json)
     {
@@ -79,6 +77,40 @@ public sealed class BabyEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
             .PostAsync(BabiesPath, new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_WithoutNameOrLabel_IsAllowedAndTheLabelDefaultsToBaby()
+    {
+        var response = await factory.CreateClientFor(TestUsers.NewSubject()).PostAsJsonAsync(BabiesPath, new { birthDate = "2026-01-02" });
+
+        var created = await response.ReadAsync<BabyResponse>();
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal((string.Empty, "baby"), (created.Name, created.Label));
+    }
+
+    [Fact]
+    public async Task Create_WithACustomLabel_KeepsItAndNoName()
+    {
+        var response = await factory.CreateClientFor(TestUsers.NewSubject()).PostAsJsonAsync(BabiesPath, new { label = " Girl ", birthDate = "2026-01-02" });
+
+        var created = await response.ReadAsync<BabyResponse>();
+        Assert.Equal((string.Empty, "girl"), (created.Name, created.Label));
+    }
+
+    [Fact]
+    public async Task Put_ExactDateStaysUntilTheWeekIsRequested()
+    {
+        var baby = await factory.SeedBabyAsync();
+        var client = factory.CreateClientFor(baby.OwnerSubject);
+        var stored = await factory.QueryAsync(context => context.Babies.SingleAsync(item => item.Id == baby.BabyId));
+        var date = stored.BirthDate.ToString("yyyy-MM-dd");
+
+        var same = await (await client.PutAsJsonAsync(BabyPath(baby.BabyId), new { name = "Lia", birthDate = date })).ReadAsync<BabyResponse>();
+        var week = await (await client.PutAsJsonAsync(BabyPath(baby.BabyId), new { name = "Lia", birthDate = date, birthWeekOnly = true })).ReadAsync<BabyResponse>();
+
+        Assert.Equal((stored.BirthDate, false), (same.BirthDate, same.BirthWeekOnly));
+        Assert.Equal((Lotties.Domain.Babies.BirthWeek.MondayOf(stored.BirthDate), true), (week.BirthDate, week.BirthWeekOnly));
     }
 
     [Fact]
@@ -167,7 +199,7 @@ public sealed class BabyEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     {
         var baby = await factory.SeedBabyAsync();
 
-        var response = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync(BabyPath(baby.BabyId), new { name = "", birthDate = "2026-01-05" });
+        var response = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync(BabyPath(baby.BabyId), new { name = new string('a', 101), birthDate = "2026-01-05" });
 
         await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
     }

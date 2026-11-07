@@ -81,7 +81,7 @@ public sealed class BackupIdsTests
 
         Assert.Equal(id, baby.Id);
         Assert.Equal((Importer, BabyRole.Owner), (baby.Members.Single().UserId, baby.Members.Single().Role));
-        Assert.Throws<DomainValidationException>(() => Baby.Create(id, " ", TestClock.Today, Importer, TestClock.Now));
+        Assert.Throws<DomainValidationException>(() => Baby.Create(id, "Lia", TestClock.Today.AddDays(5), Importer, TestClock.Now));
         Assert.Throws<ArgumentException>(() => Baby.Create(Guid.Empty, "Lia", TestClock.Today, Importer, TestClock.Now));
     }
 }

@@ -11,6 +11,7 @@ import { upcomingToday } from '../now/upcoming';
 import { effectiveElapsedSeconds, isPaused } from '../timers/pauseMath';
 import { readCachedPredictions } from '../predictions/predictionsCache';
 import { WIDGET_ACTIVITY_KEYS } from './activities';
+import { babyShownName } from '../baby/shownName';
 
 /*
  * `widget-snapshot.json` (docs/design/37-widgets-siri.md 2.1): what the widget shows, facts only.
@@ -62,7 +63,7 @@ function newestOf(
 
 async function snapshotBaby(
   db: BabyRoutineDb,
-  baby: { id: string; name: string; birthDate?: string | null },
+  baby: { id: string; name: string; label?: string | null; birthDate?: string | null },
   ageNorms: AgeNormSet | null,
   now: Date,
 ): Promise<SnapshotBaby> {
@@ -72,7 +73,7 @@ async function snapshotBaby(
   const running = await runningEvents(db, baby.id);
   const events = [...new Map([...recent, ...running].map((e) => [e.id, e])).values()];
 
-  const result: SnapshotBaby = { id: baby.id, name: baby.name };
+  const result: SnapshotBaby = { id: baby.id, name: babyShownName(baby) };
 
   const predictions = readCachedPredictions(baby.id)?.data;
   const state = deriveNowState(events, types, predictions, now);

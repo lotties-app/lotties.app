@@ -14,6 +14,7 @@ import { SENSITIVITIES } from './monitorStorage';
 import { meterFill, wakeLockNoteKey } from './monitorView';
 import { RecentDetections } from './RecentDetections';
 import type { CryMonitor } from './useCryMonitor';
+import { babyShownName } from '../baby/shownName';
 
 /** A slow, opacity-only pulse; none with reduced motion. */
 const pulse = keyframes`
@@ -116,7 +117,7 @@ export function ListeningView({
                 {t('cryMonitor.listening.status')}
               </Typography>
             </Box>
-            <Typography>{t('cryMonitor.listening.for', { name: baby.name })}</Typography>
+            <Typography>{t('cryMonitor.listening.for', { name: babyShownName(baby) })}</Typography>
             <Typography color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
               {t('cryMonitor.listening.since', {
                 time: formatTime(since),

@@ -6,22 +6,23 @@ import { useSelectedBaby } from '../baby/SelectedBabyContext';
 import type { Baby } from '../db/models';
 import { formatAge } from '../i18n/format';
 import { Icon } from '../ui/Icon';
+import { babyShownName } from '../baby/shownName';
 
 const grow = { flexGrow: 1, minWidth: 0 };
 
 function BabyHeading({ baby, switchable }: { baby: Baby; switchable: boolean }) {
   return (
     <Stack direction="row" spacing={1.5} sx={{ minWidth: 0, alignItems: 'center' }}>
-      <BabyAvatar id={baby.id} name={baby.name} />
+      <BabyAvatar id={baby.id} name={babyShownName(baby)} />
       <Stack sx={{ minWidth: 0, textAlign: 'left' }}>
         <Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}>
           <Typography variant="h5" component="p" noWrap>
-            {baby.name}
+            {babyShownName(baby)}
           </Typography>
           {switchable && <Icon name="expand" size={20} />}
         </Stack>
         <Typography variant="caption" color="text.secondary" noWrap>
-          {formatAge(baby.birthDate, new Date())}
+          {formatAge(baby.birthDate, new Date(), undefined, baby.birthWeekOnly === true)}
         </Typography>
       </Stack>
     </Stack>
@@ -54,7 +55,7 @@ export function BabySwitcher() {
       <ButtonBase
         onClick={(e) => setAnchor(e.currentTarget)}
         aria-haspopup="menu"
-        aria-label={t('layout.switchBaby', { name: baby.name })}
+        aria-label={t('layout.switchBaby', { name: babyShownName(baby) })}
         sx={{ ...grow, justifyContent: 'flex-start', minHeight: 44, borderRadius: 2, py: 0.5 }}
       >
         <BabyHeading baby={baby} switchable />
@@ -70,8 +71,8 @@ export function BabySwitcher() {
               setAnchor(null);
             }}
           >
-            <BabyAvatar id={b.id} name={b.name} size={32} />
-            {b.name}
+            <BabyAvatar id={b.id} name={babyShownName(b)} size={32} />
+            {babyShownName(b)}
           </MenuItem>
         ))}
       </Menu>

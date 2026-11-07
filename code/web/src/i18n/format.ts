@@ -201,9 +201,15 @@ function wholeMonths(by: number, bm: number, bd: number, now: Date) {
 /**
  * Baby age line from the birth date (`yyyy-mm-dd`, a calendar date) and the local "now":
  * "11 days" (under 2 weeks), "5 weeks" (under 8 weeks), "2 months, 3 weeks" (under 12 months),
- * then "1 year, 2 months". Invalid or future dates read "0 days".
+ * then "1 year, 2 months". Invalid or future dates read "0 days". With `weekOnly` (a baby whose
+ * birth is stored as its week) the age is in whole weeks under 12 weeks.
  */
-export function formatAge(birthDate: string, now: Date, locale: Locale = currentLocale()): string {
+export function formatAge(
+  birthDate: string,
+  now: Date,
+  locale: Locale = currentLocale(),
+  weekOnly = false,
+): string {
   const lng = locale;
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(birthDate);
   if (!match) return t('age.day', { count: 0, lng });
@@ -211,6 +217,8 @@ export function formatAge(birthDate: string, now: Date, locale: Locale = current
   const today = dayStamp(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.max(0, Math.round((today - dayStamp(by, bm, bd)) / MS_PER_DAY));
 
+  // Only the week of birth is stored (docs/design/45): whole weeks up to 12 weeks, never days.
+  if (weekOnly && days < 84) return t('age.week', { count: Math.floor(days / 7), lng });
   if (days < 14) return t('age.day', { count: days, lng });
   if (days < 56) return t('age.week', { count: Math.floor(days / 7), lng });
 

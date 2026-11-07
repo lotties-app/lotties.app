@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Box, Button } from '@mui/material';
+import { Alert, Box, Button, FormControlLabel, Switch, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api/ApiClientContext';
 import type { ProfessionalSummary } from '../db/models';
@@ -35,17 +35,21 @@ export function ProfessionalProfileForm({ initial, onSaved, submitLabel }: Props
   const [displayName, setDisplayName] = useState(initial?.displayName ?? '');
   const [specialty, setSpecialty] = useState(initial?.specialty ?? '');
   const [registrationNumber, setRegistrationNumber] = useState(initial?.registrationNumber ?? '');
-  const [nameMissing, setNameMissing] = useState(false);
+  const [shareName, setShareName] = useState(initial?.shareDisplayName ?? false);
+  const [shareRegistration, setShareRegistration] = useState(initial?.shareRegistration ?? false);
+  const [specialtyMissing, setSpecialtyMissing] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!displayName.trim()) return setNameMissing(true);
+    if (!specialty.trim()) return setSpecialtyMissing(true);
     const result: { profile?: ProfessionalSummary } = {};
     const ok = await run(async () => {
       result.profile = await saveProfessionalProfile(api, {
         displayName: displayName.trim(),
-        specialty: specialty.trim() || null,
+        specialty: specialty.trim(),
         registrationNumber: registrationNumber.trim() || null,
+        shareDisplayName: shareName && displayName.trim() !== '',
+        shareRegistration: shareRegistration && registrationNumber.trim() !== '',
       });
       queryClient.setQueryData(PROFESSIONAL_PROFILE_KEY, result.profile);
     });
@@ -62,28 +66,42 @@ export function ProfessionalProfileForm({ initial, onSaved, submitLabel }: Props
       <Alert severity="info">{t('doctor.profile.selfDeclaredNotice')}</Alert>
       <ErrorNotice message={error} />
       <Field
-        label={t('doctor.profile.displayName')}
+        label={t('doctor.profile.specialty')}
         required
-        help={t('doctor.profile.displayNameHelp')}
-        error={nameMissing ? t('doctor.profile.displayNameRequired') : undefined}
+        help={t('doctor.profile.specialtyHelp')}
+        error={specialtyMissing ? t('doctor.profile.specialtyRequired') : undefined}
       >
         <TextInput
-          value={displayName}
-          onChange={(value) => {
-            setDisplayName(value);
-            setNameMissing(false);
-          }}
-          maxLength={PROFESSIONAL_LIMITS.displayName}
-        />
-      </Field>
-      <Field label={t('doctor.profile.specialty')} optional>
-        <TextInput
           value={specialty}
-          onChange={setSpecialty}
+          onChange={(value) => {
+            setSpecialty(value);
+            setSpecialtyMissing(false);
+          }}
           maxLength={PROFESSIONAL_LIMITS.specialty}
           placeholder={t('doctor.profile.specialtyPlaceholder')}
         />
       </Field>
+      <Field
+        label={t('doctor.profile.displayName')}
+        optional
+        help={t('doctor.profile.displayNameHelp')}
+      >
+        <TextInput
+          value={displayName}
+          onChange={setDisplayName}
+          maxLength={PROFESSIONAL_LIMITS.displayName}
+        />
+      </Field>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={shareName && displayName.trim() !== ''}
+            disabled={displayName.trim() === ''}
+            onChange={(e) => setShareName(e.target.checked)}
+          />
+        }
+        label={t('doctor.profile.shareName')}
+      />
       <Field
         label={t('doctor.profile.registrationNumber')}
         optional
@@ -95,6 +113,19 @@ export function ProfessionalProfileForm({ initial, onSaved, submitLabel }: Props
           maxLength={PROFESSIONAL_LIMITS.registrationNumber}
         />
       </Field>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={shareRegistration && registrationNumber.trim() !== ''}
+            disabled={registrationNumber.trim() === ''}
+            onChange={(e) => setShareRegistration(e.target.checked)}
+          />
+        }
+        label={t('doctor.profile.shareRegistration')}
+      />
+      <Typography variant="body2" color="text.secondary">
+        {t('doctor.profile.shareNotice')}
+      </Typography>
       <Button
         type="submit"
         variant="contained"

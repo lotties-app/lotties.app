@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Chip, Typography } from '@mui/material';
 import type { PersonSummary } from '../db/models';
 import { Icon } from '../ui/Icon';
+import { doctorNameOf } from '../notes/noteModel';
 import { doctorLabel } from './doctorLabel';
 
 /**
@@ -44,7 +45,7 @@ export function DoctorName({
         {doctorLabel(t, person, hasAccess)}
       </Typography>
       <SelfDeclaredBadge verified={person.professional?.verified === true} />
-      {specialty && (
+      {specialty && doctorNameOf(person) && (
         <Typography variant="caption" color="text.secondary" component="span">
           {specialty}
         </Typography>

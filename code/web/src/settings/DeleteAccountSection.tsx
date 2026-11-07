@@ -37,6 +37,7 @@ import { unsyncedChangesLabel } from '../session/usePushThenProceed';
 import { useSyncEngine } from '../sync/SyncEngineContext';
 import { ErrorNotice } from './ErrorNotice';
 import { useServerAction } from './useServerAction';
+import { babyShownName } from '../baby/shownName';
 
 function BabyList({ title, babies }: { title?: string; babies: AccountDeletionBaby[] }) {
   if (babies.length === 0) return null;
@@ -46,7 +47,7 @@ function BabyList({ title, babies }: { title?: string; babies: AccountDeletionBa
       <List dense disablePadding>
         {babies.map((baby) => (
           <ListItem key={baby.id} disableGutters>
-            {baby.name}
+            {babyShownName(baby)}
           </ListItem>
         ))}
       </List>

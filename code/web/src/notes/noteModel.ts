@@ -46,7 +46,7 @@ export function canMakePrivate(note: Pick<Note, 'visibility'> | undefined): bool
  * have typed herself ("Dra. Ana" -> "Ana"), so the screen never reads "Dr. Dra. Ana".
  */
 export function doctorNameOf(person: Pick<PersonSummary, 'displayName' | 'professional'>): string {
-  const name = person.professional?.displayName ?? person.displayName;
+  const name = (person.professional ? person.professional.displayName : person.displayName) ?? '';
   return (
     name.replace(/^\s*(dr\(a\)|dra|dr|doctor|doutora|doutor)\.?\s+/i, '').trim() || name.trim()
   );
