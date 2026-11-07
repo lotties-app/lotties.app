@@ -149,10 +149,7 @@ Applied when the descriptor is created, on test, and on **every new physical con
    the cluster pod/service CIDRs, the Postgres host the control DB uses).
 4. **Pin**: connect to the validated IP, not to the name. TLS must still be verified against the *original host name*:
    `SslMode=VerifyFull`-equivalent through a certificate validation callback that checks the name and chain, with
-   `Host` set to the pinned address. *Unverified: that Npgsql allows IP connect plus validation against another name in
-   the pinned version (a callback on `NpgsqlDataSourceBuilder` is expected to work). This is spike T0-b; if it fails, fall
-   back to "resolve, check, then connect by name" plus the egress policy as the real barrier, and say the rebinding window
-   is open.*
+   `Host` set to the pinned address. *Verified in a spike ([47a](47a-byo-database-spikes.md) (b)): `SslMode=Require` + `UseSslClientAuthenticationOptionsCallback` with `TargetHost` = the typed name and our own chain/name validation works; `VerifyFull` cannot be combined with a custom callback.*
 5. **TLS required**, no `Disable`/`Allow`/`Prefer`/`Require` without verification: only a verified chain. Providers that use
    a private CA (some poolers) need the user to paste the CA certificate (PEM, size-limited, parsed, stored in the
    descriptor); never "trust anything".

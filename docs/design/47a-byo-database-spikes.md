@@ -1,0 +1,128 @@
+# 47a. Bring your own database: spike results (T0, 2026-11-07)
+
+Companion to [47](47-bring-your-own-database.md). Spikes (a) and (b) were run; (c) was done from vendor documentation only,
+because creating provider accounts is something the owner must do. Nothing here is merged as code; the spike program for (b)
+was throwaway (about 70 lines, Npgsql 10.0.0, a fake TLS endpoint that answers the Postgres `SSLRequest` with `S` and then
+does a TLS handshake). Not legal advice.
+
+## (a) Foreign keys and joins that cross the control/data line
+
+Source: `code/api/src/Lotties.Infrastructure/Persistence/Configurations/*` and `Repositories/*`, `main` at 82025bc.
+
+**Foreign keys leaving the data tables** (to be dropped from the *data model*; the built-in database keeps them):
+
+| Data table | Points at (control) |
+| --- | --- |
+| `events`, `event_types`, `medications`, `prescriptions`, `formulas`, `appointments`, `care_providers`, `vaccinations`, `measurements`, `baby_notes`, `prescription_proposals`, `note_reads` | `babies.id` (`baby_id`) |
+| the same, plus `baby_notes.author_user_id`, `prescription_proposals.author_user_id` / `decided_by`, `note_reads.user_id` | `users.id` (`created_by`, ...) |
+| `medications.product_id` | `products.id` (public catalog, `ON DELETE SET NULL`) |
+
+**Foreign keys inside the data plane (stay):** `events.type_id` -> `event_types`, `note_reads.note_id` -> `baby_notes` (cascade).
+
+**Control-plane keys to data:** none. `babies`, `baby_members`, `invites`, push, consents, settings and the board never point at a
+data table. `user_assistant_settings.default_baby_id` points at `babies` (control to control).
+
+**Cross-plane queries found** (repositories are per aggregate and `Lotties.Application` never touches the DbContext):
+
+1. `EfBabyNotificationPreferencesRepository.CandidatesQuery`: joins `baby_notification_preferences` and `baby_members`
+   (control) with `EXISTS` subqueries on `appointments`, `prescription_proposals`, `baby_notes` (data). It is the reminder
+   scheduler's candidate query. It cannot stay one SQL statement for a BYO baby: it becomes two steps (control candidates,
+   then a data check per store). This confirms "no reminders for BYO babies in the MVP" (47 section 2.2).
+2. `EfAccountDataEraser`: joins `baby_members` and `babies` (control). It erases rows of both planes; the data-plane half
+   must run against the baby's store (47 section 9).
+3. `EfPredictionHistoryRepository`: joins `events` with `event_types` (both data). No change.
+4. Visibility of private notes and Doctor scopes is not a database join today (no `BabyMembers` reference in the notes,
+   proposals or doctor repositories); the rule is applied in code. So the "pass allowed author ids as parameters" design in
+   47 section 2.1 needs no query rewrite there. *Not read line by line: confirm during T1.*
+
+**Built-in event types are rows** (`event_types` with `baby_id` null, inserted and updated by migrations: `InitialCreate`,
+`ConditionalFieldsAndBreastPump`, `NasalSuction`, `BellyMassage`, `FussyEvent`, `MoreEventTypes`, ...). Events point at them, so
+**every store needs these rows**. The data migration chain therefore starts from a baseline that already contains the current
+built-in set (generated from the model, not replayed from the historical seeds), and future seeds are data-chain migrations
+applied to every store. A store that is behind on seeds rejects events of a newer type (existing behavior, same rule as
+`docs/DEPLOY.md` "Migrations that seed built-in event types").
+
+**Unresolved:** whether any service saves rows of both planes in one `SaveChanges` (an implicit transaction that would stop
+being atomic). Look at services that write an event and also touch membership or the baby row (baby creation, import, account
+erasure). Not searched.
+
+**Verdict:** the split is smaller than feared: about 13 data tables, 3 outgoing key groups, 1 cross-plane query that matters.
+The cost is mostly the baseline migration chain and the resolver plumbing, not rewriting queries.
+
+## (b) Pinned-IP connect with TLS verified against the real host name (Npgsql)
+
+Question (47 section 3.2 step 4): can the API connect to a validated IP address and still verify the server certificate
+against the host name the user typed, so that DNS rebinding after the check cannot redirect the connection?
+
+Result: **yes, with a specific recipe.** Observed with Npgsql 10.0.0 against a fake TLS endpoint on 127.0.0.1 whose
+certificate is for `db.example.test`:
+
+| Case | Setup | Observed |
+| --- | --- | --- |
+| 1 | `Host=<ip>`, `SslMode=VerifyFull`, defaults | rejected (the name is the IP, not the certificate's) |
+| 2 | `Host=<ip>`, `SslMode=Require`, `UseSslClientAuthenticationOptionsCallback`: `TargetHost = "db.example.test"` and our own `RemoteCertificateValidationCallback` | TLS handshake **succeeds**; the server sees SNI `db.example.test`; Postgres startup bytes arrive (the later error is the fake server closing) |
+| 3 | same as 2 but `TargetHost = "evil.example.test"` | callback receives `RemoteCertificateNameMismatch`, connection **rejected**; server SNI shows `evil.example.test` |
+| 4 | obsolete `UseUserCertificateValidationCallback` only, no `TargetHost` | name mismatch (the IP), rejected |
+
+Rules that follow for the guard:
+
+- Npgsql **refuses `SslMode=VerifyFull` together with a custom validation callback** (`ArgumentException`: "perform whatever
+  validation you require in that callback"). So use `SslMode=Require` **and** do the validation ourselves: no chain errors
+  (the system trust store, or a user-pasted CA as a custom root) and no `RemoteCertificateNameMismatch` with `TargetHost` set
+  to the typed name. A callback that returns `true` without these checks silently removes verification; a test must fail it
+  (a server with a wrong-name certificate and one with an untrusted chain must both be refused).
+- `UseUserCertificateValidationCallback` is marked obsolete in this version; use `UseSslClientAuthenticationOptionsCallback`.
+- `TargetHost` also sets the SNI name, which providers that route by SNI need (Neon is documented to; *not tested*).
+- **Not** tested: a real provider, a real chain, an IPv6 literal, a pooler (poolers present their own certificates, sometimes
+  from a private CA). In the spike the self-signed case showed `RemoteCertificateChainErrors` alongside the name result, so
+  the real-chain behavior must be checked with a real provider.
+- Npgsql resolves a DNS name itself, so the guard always passes an IP in `Host` and keeps the typed name only in
+  `TargetHost`. Re-resolve and re-validate whenever a pool is rebuilt (idle eviction already forces this).
+
+## (c) Providers, from vendor documentation (no accounts created)
+
+Read through web search of vendor pages on 2026-11-07; to be confirmed by someone with throwaway accounts.
+
+**Supabase** ([connect](https://supabase.com/docs/guides/database/connecting-to-postgres),
+[pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits),
+[IPv4 add-on](https://supabase.com/docs/guides/platform/ipv4-address),
+[pausing](https://supabase.com/docs/guides/platform/free-project-pausing)):
+
+- The direct connection (5432) is **IPv6** unless the paid IPv4 add-on is bought. The shared pooler (Supavisor) is **IPv4**,
+  in session mode (5432; session features and prepared statements work) and transaction mode (6543; no prepared statements
+  on the shared pooler). **A home lab without IPv6 must therefore use the shared pooler in session mode.** Whether the lab
+  has IPv6 egress is unknown (owner).
+- The migrator needs session mode (advisory lock, DDL). Simplest rule: session mode for both roles. Free-plan pool and client
+  limits: not retrieved.
+- Free projects pause after about a week of low activity; restore windows are quoted differently (90 days in an older
+  changelog, up to a year in the current docs). **Free plans have no downloadable database backups.** Our export file is
+  therefore the user's only portable backup.
+- Pooler user names are suffixed with the project reference (`role.<ref>`): the form must accept it and the guard must not
+  mangle it. *Not verified with a custom role.*
+- Not found: whether custom schemas are exposed by the Data API by default. The setup guide must tell users to check the
+  exposed schemas and keep `lotties` out of them.
+
+**Neon** ([connection pooling](https://neon.com/docs/connect/connection-pooling)):
+
+- The pooler (PgBouncer, transaction mode, host name with `-pooler`) does **not support session-level advisory locks**,
+  `SET`, `LISTEN` or SQL-level `PREPARE`; protocol-level prepared statements work. Neon recommends the **direct** endpoint for
+  migrations. So the migrator must use the direct endpoint while the app role may use the pooler. The descriptor needs two
+  endpoints (app, migrator), or a pooled-host check with the rule "the migrator never goes through a pooler".
+- Direct max connections scale with compute size (104 at 0.25 CU quoted); the free-plan figure was not retrieved. Scale to zero
+  and the 1 GB cap are in 47 section 7. IPv4 reachability of the direct endpoint: not retrieved.
+
+## Consequences for 47 (apply when the owner decides)
+
+1. The descriptor carries **separate app and migrator host/port**.
+2. The recipe in (b) replaces the "unverified" remark in 47 section 3.2 step 4 (done in this change).
+3. T0 is done for (a) and (b). (c) still needs the owner's throwaway Supabase and Neon accounts and the lab's IPv6 answer.
+4. New data-chain task: a baseline migration with the built-in event types (47 section 4, plan T5).
+5. Supabase free pausing plus "no backups" makes the monthly "download a backup" reminder a requirement, not an option.
+
+## Still open after the spikes
+
+- Real-provider run (owner action): create a throwaway free project on Supabase and Neon, run the setup SQL with a custom
+  role, connect from the lab through the guard, measure row size and cold-start latency, check exposed-schema behavior.
+- IPv6 egress from the home lab.
+- NetworkPolicy enforcement on the k3s cluster.
+- The one-`SaveChanges`-across-planes question in (a).
