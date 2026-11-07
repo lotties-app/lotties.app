@@ -1,0 +1,2586 @@
+[
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/medications/guid-002",
+    "status": 201,
+    "body": {
+      "id": "guid-002",
+      "babyId": "guid-001",
+      "name": "Simethicone",
+      "defaultDosage": {
+        "amount": 2,
+        "unit": "drops"
+      },
+      "notes": null,
+      "isUsual": true,
+      "productId": null,
+      "createdAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/prescriptions/guid-003",
+    "status": 201,
+    "body": {
+      "id": "guid-003",
+      "babyId": "guid-001",
+      "medicationId": "guid-002",
+      "status": "active",
+      "kind": "asNeeded",
+      "dose": {
+        "amount": 2,
+        "unit": "drops",
+        "perKg": false,
+        "roundingStep": null
+      },
+      "timesOfDay": null,
+      "everyMinutes": null,
+      "dayParts": null,
+      "dayPartReminders": null,
+      "minIntervalMinutes": 480,
+      "maxDosesPer24h": 3,
+      "indication": "belly pain",
+      "intervalGroup": null,
+      "startDate": "2026-01-01",
+      "endDate": null,
+      "prescriber": "Dr. Ana",
+      "instructions": null,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T11:30:00+00:00",
+      "deletedAt": null,
+      "prescribedByUserId": null,
+      "prescribedByName": null,
+      "prescribedBy": null,
+      "proposalId": null,
+      "changedByParent": false,
+      "original": null
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/formulas/guid-005",
+    "status": 201,
+    "body": {
+      "id": "guid-005",
+      "babyId": "guid-001",
+      "name": "Aptamil 2",
+      "brand": "Aptamil",
+      "stage": "2",
+      "notes": null,
+      "startedOn": "2026-01-01",
+      "isCurrent": true,
+      "archived": false,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/care-providers/guid-006",
+    "status": 201,
+    "body": {
+      "id": "guid-006",
+      "babyId": "guid-001",
+      "name": "Dr. Ana Lima",
+      "specialty": "pediatrician",
+      "registrationCouncil": null,
+      "registrationNumber": null,
+      "registrationRegion": null,
+      "clinicName": "Clinic Central",
+      "address": null,
+      "phone": "+55 11 5555-0000",
+      "whatsapp": null,
+      "email": null,
+      "website": null,
+      "notes": null,
+      "isFavorite": true,
+      "isDeleted": false,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/appointments/guid-007",
+    "status": 201,
+    "body": {
+      "id": "guid-007",
+      "babyId": "guid-001",
+      "title": "Pediatrician",
+      "type": "consultation",
+      "startsAt": "2026-01-13T12:00:00+00:00",
+      "durationMinutes": 30,
+      "location": "Clinic Central",
+      "doctorName": null,
+      "notes": null,
+      "outcome": null,
+      "status": "upcoming",
+      "reminderOffsetsMinutes": [
+        1440,
+        120
+      ],
+      "providerId": "guid-006",
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/vaccinations/guid-008",
+    "status": 201,
+    "body": {
+      "id": "guid-008",
+      "babyId": "guid-001",
+      "vaccineKey": "bcg",
+      "doseId": "bcg-1",
+      "customName": null,
+      "doseLabel": "Dose única",
+      "givenOn": "2026-01-05",
+      "network": "public",
+      "clinic": "UBS Centro",
+      "lot": "L123",
+      "administeredBy": null,
+      "notes": null,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/measurements/guid-009",
+    "status": 201,
+    "body": {
+      "id": "guid-009",
+      "babyId": "guid-001",
+      "date": "2026-01-09",
+      "weightKg": 5.2,
+      "heightCm": 55.5,
+      "headCircumferenceCm": 37.1,
+      "notes": null,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "recordedByDoctor": false,
+      "recordedBy": null
+    }
+  },
+  {
+    "request": "doctor PUT /api/v1/me/professional-profile",
+    "status": 201,
+    "body": {
+      "userId": "guid-010",
+      "kind": "doctor",
+      "displayName": "Ana Souza",
+      "specialty": "Pediatrics",
+      "registrationNumber": "CRM-SP 123456",
+      "shareDisplayName": true,
+      "shareRegistration": false,
+      "verified": false,
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "doctor PUT /api/v1/babies/guid-001/notes/guid-011",
+    "status": 201,
+    "body": {
+      "id": "guid-011",
+      "babyId": "guid-001",
+      "authorUserId": "guid-010",
+      "author": {
+        "userId": "guid-010",
+        "displayName": "Ana Souza",
+        "roleLabel": null,
+        "professional": {
+          "kind": "doctor",
+          "displayName": "Ana Souza",
+          "specialty": "Pediatrics",
+          "registrationNumber": null,
+          "verified": false
+        }
+      },
+      "kind": "recommendation",
+      "visibility": "shared",
+      "body": "Offer 120 ml every 3 hours.",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "doctor PUT /api/v1/babies/guid-001/notes/guid-012",
+    "status": 201,
+    "body": {
+      "id": "guid-012",
+      "babyId": "guid-001",
+      "authorUserId": "guid-010",
+      "author": {
+        "userId": "guid-010",
+        "displayName": "Ana Souza",
+        "roleLabel": null,
+        "professional": {
+          "kind": "doctor",
+          "displayName": "Ana Souza",
+          "specialty": "Pediatrics",
+          "registrationNumber": null,
+          "verified": false
+        }
+      },
+      "kind": "note",
+      "visibility": "private",
+      "body": "Ask about the rash.",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T11:55:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "doctor PUT /api/v1/babies/guid-001/prescription-proposals/guid-013",
+    "status": 201,
+    "body": {
+      "id": "guid-013",
+      "babyId": "guid-001",
+      "authorUserId": "guid-010",
+      "author": {
+        "userId": "guid-010",
+        "displayName": "Ana Souza",
+        "roleLabel": null,
+        "professional": {
+          "kind": "doctor",
+          "displayName": "Ana Souza",
+          "specialty": "Pediatrics",
+          "registrationNumber": null,
+          "verified": false
+        }
+      },
+      "medicationId": null,
+      "productId": null,
+      "medicationName": "Paracetamol drops",
+      "kind": "scheduled",
+      "dose": {
+        "amount": 2,
+        "unit": "drops",
+        "perKg": false,
+        "roundingStep": null
+      },
+      "timesOfDay": [
+        "08:00",
+        "20:00"
+      ],
+      "everyMinutes": null,
+      "dayParts": null,
+      "dayPartReminders": null,
+      "minIntervalMinutes": null,
+      "maxDosesPer24h": null,
+      "indication": null,
+      "intervalGroup": null,
+      "startDate": "2026-01-10",
+      "endDate": "2026-01-17",
+      "instructions": "Give after the morning feed.",
+      "replacesPrescriptionId": null,
+      "status": "pending",
+      "declineReason": null,
+      "cancelReason": null,
+      "decidedBy": null,
+      "decidedAt": null,
+      "acceptedPrescriptionId": null,
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/notes/guid-011/read",
+    "status": 200,
+    "body": {
+      "noteId": "guid-011",
+      "readAt": "2026-01-10T12:00:00+00:00"
+    }
+  },
+  {
+    "request": "owner POST /api/v1/babies/guid-001/event-types",
+    "status": 201,
+    "body": {
+      "id": "guid-014",
+      "babyId": "guid-001",
+      "key": "pumping",
+      "name": "Pumping",
+      "icon": "water_drop",
+      "color": "#123abc",
+      "hasDuration": true,
+      "fields": [
+        {
+          "key": "amount_ml",
+          "label": "Amount",
+          "kind": "number",
+          "isRequired": false,
+          "options": [],
+          "min": 0,
+          "max": null,
+          "unit": "ml",
+          "visibleWhen": null,
+          "hidden": false,
+          "integer": false
+        }
+      ]
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/events/guid-015",
+    "status": 201,
+    "body": {
+      "id": "guid-015",
+      "babyId": "guid-001",
+      "typeId": "guid-016",
+      "startedAt": "2026-01-10T09:00:00+00:00",
+      "endedAt": "2026-01-10T09:15:00+00:00",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "bottle_feeding_type": "formula",
+        "formula_id": "guid-005",
+        "formula_name": "Aptamil 2"
+      },
+      "notes": "first",
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T09:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/events/guid-017",
+    "status": 201,
+    "body": {
+      "id": "guid-017",
+      "babyId": "guid-001",
+      "typeId": "guid-018",
+      "startedAt": "2026-01-10T10:00:00+00:00",
+      "endedAt": "2026-01-10T11:00:00+00:00",
+      "payload": {
+        "kind": "nap",
+        "paused_seconds": 600,
+        "pause_count": 1
+      },
+      "notes": null,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/events/guid-019",
+    "status": 201,
+    "body": {
+      "id": "guid-019",
+      "babyId": "guid-001",
+      "typeId": "guid-020",
+      "startedAt": "2026-01-10T11:40:00+00:00",
+      "endedAt": "2026-01-10T11:40:00+00:00",
+      "payload": {
+        "content": "WET"
+      },
+      "notes": null,
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "owner PUT /api/v1/babies/guid-001/events/guid-017",
+    "status": 200,
+    "body": {
+      "id": "guid-017",
+      "babyId": "guid-001",
+      "typeId": "guid-018",
+      "startedAt": "2026-01-10T10:00:00+00:00",
+      "endedAt": "2026-01-10T11:00:00+00:00",
+      "payload": {
+        "kind": "nap",
+        "paused_seconds": 600,
+        "pause_count": 1
+      },
+      "notes": "edited",
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "owner DELETE /api/v1/babies/guid-001/events/guid-019",
+    "status": 204,
+    "body": null
+  },
+  {
+    "request": "owner GET /api/v1/babies",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-001",
+        "name": "Lia",
+        "label": "baby",
+        "birthDate": "2026-01-10",
+        "birthWeekOnly": false,
+        "role": "Owner",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "userId": "guid-004",
+        "doctorScopes": null,
+        "vaccineProfile": "public",
+        "gestationalAgeWeeks": null,
+        "rsvMaternalVaccination": null
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001",
+    "status": 200,
+    "body": {
+      "id": "guid-001",
+      "name": "Lia",
+      "label": "baby",
+      "birthDate": "2026-01-10",
+      "birthWeekOnly": false,
+      "role": "Owner",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "userId": "guid-004",
+      "doctorScopes": null,
+      "vaccineProfile": "public",
+      "gestationalAgeWeeks": null,
+      "rsvMaternalVaccination": null
+    }
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/events",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-015",
+        "babyId": "guid-001",
+        "typeId": "guid-016",
+        "startedAt": "2026-01-10T09:00:00+00:00",
+        "endedAt": "2026-01-10T09:15:00+00:00",
+        "payload": {
+          "method": "bottle",
+          "amount_ml": 120,
+          "bottle_feeding_type": "formula",
+          "formula_id": "guid-005",
+          "formula_name": "Aptamil 2"
+        },
+        "notes": "first",
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T09:00:00+00:00",
+        "deletedAt": null
+      },
+      {
+        "id": "guid-017",
+        "babyId": "guid-001",
+        "typeId": "guid-018",
+        "startedAt": "2026-01-10T10:00:00+00:00",
+        "endedAt": "2026-01-10T11:00:00+00:00",
+        "payload": {
+          "kind": "nap",
+          "paused_seconds": 600,
+          "pause_count": 1
+        },
+        "notes": "edited",
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": null
+      },
+      {
+        "id": "guid-019",
+        "babyId": "guid-001",
+        "typeId": "guid-020",
+        "startedAt": "2026-01-10T11:40:00+00:00",
+        "endedAt": "2026-01-10T11:40:00+00:00",
+        "payload": {
+          "content": "WET"
+        },
+        "notes": null,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/events?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-015",
+        "babyId": "guid-001",
+        "typeId": "guid-016",
+        "startedAt": "2026-01-10T09:00:00+00:00",
+        "endedAt": "2026-01-10T09:15:00+00:00",
+        "payload": {
+          "method": "bottle",
+          "amount_ml": 120,
+          "bottle_feeding_type": "formula",
+          "formula_id": "guid-005",
+          "formula_name": "Aptamil 2"
+        },
+        "notes": "first",
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T09:00:00+00:00",
+        "deletedAt": null
+      },
+      {
+        "id": "guid-017",
+        "babyId": "guid-001",
+        "typeId": "guid-018",
+        "startedAt": "2026-01-10T10:00:00+00:00",
+        "endedAt": "2026-01-10T11:00:00+00:00",
+        "payload": {
+          "kind": "nap",
+          "paused_seconds": 600,
+          "pause_count": 1
+        },
+        "notes": "edited",
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": null
+      },
+      {
+        "id": "guid-019",
+        "babyId": "guid-001",
+        "typeId": "guid-020",
+        "startedAt": "2026-01-10T11:40:00+00:00",
+        "endedAt": "2026-01-10T11:40:00+00:00",
+        "payload": {
+          "content": "WET"
+        },
+        "notes": null,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/events?limit=1",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-015",
+        "babyId": "guid-001",
+        "typeId": "guid-016",
+        "startedAt": "2026-01-10T09:00:00+00:00",
+        "endedAt": "2026-01-10T09:15:00+00:00",
+        "payload": {
+          "method": "bottle",
+          "amount_ml": 120,
+          "bottle_feeding_type": "formula",
+          "formula_id": "guid-005",
+          "formula_name": "Aptamil 2"
+        },
+        "notes": "first",
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T09:00:00+00:00",
+        "deletedAt": null
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/events/guid-015",
+    "status": 200,
+    "body": {
+      "id": "guid-015",
+      "babyId": "guid-001",
+      "typeId": "guid-016",
+      "startedAt": "2026-01-10T09:00:00+00:00",
+      "endedAt": "2026-01-10T09:15:00+00:00",
+      "payload": {
+        "method": "bottle",
+        "amount_ml": 120,
+        "bottle_feeding_type": "formula",
+        "formula_id": "guid-005",
+        "formula_name": "Aptamil 2"
+      },
+      "notes": "first",
+      "createdBy": "guid-004",
+      "createdAt": "2026-01-10T12:00:00+00:00",
+      "updatedAt": "2026-01-10T12:00:00+00:00",
+      "clientUpdatedAt": "2026-01-10T09:00:00+00:00",
+      "deletedAt": null
+    }
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/event-types",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-021",
+        "babyId": null,
+        "key": "bath",
+        "name": "Bath",
+        "icon": "bathtub",
+        "color": "#26a69a",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "temperature_c",
+            "label": "Water temperature",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 60,
+            "unit": "C",
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-022",
+        "babyId": null,
+        "key": "belly_massage",
+        "name": "Belly massage",
+        "icon": "massage",
+        "color": "#ff7043",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "reason",
+            "label": "Reason",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "gas",
+              "constipation",
+              "colic",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "helped",
+            "label": "Did it help?",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "yes",
+              "a_little",
+              "no"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-023",
+        "babyId": null,
+        "key": "belly_pain",
+        "name": "Belly pain",
+        "icon": "sick",
+        "color": "#ec407a",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "intensity",
+            "label": "Intensity",
+            "kind": "number",
+            "isRequired": true,
+            "options": [],
+            "min": 1,
+            "max": 5,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-024",
+        "babyId": null,
+        "key": "breast_pump",
+        "name": "Breast pump",
+        "icon": "opacity",
+        "color": "#26c6da",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "amount_left_ml",
+            "label": "Left amount",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "ml",
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "amount_right_ml",
+            "label": "Right amount",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "ml",
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-020",
+        "babyId": null,
+        "key": "diaper",
+        "name": "Diaper",
+        "icon": "baby_changing_station",
+        "color": "#8d6e63",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "content",
+            "label": "Content",
+            "kind": "select",
+            "isRequired": true,
+            "options": [
+              "WET",
+              "DIRTY",
+              "MIXED"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-016",
+        "babyId": null,
+        "key": "feeding",
+        "name": "Feeding",
+        "icon": "local_drink",
+        "color": "#4f8ef7",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "method",
+            "label": "Method",
+            "kind": "select",
+            "isRequired": true,
+            "options": [
+              "breast",
+              "bottle",
+              "solid"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "side",
+            "label": "Side",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "left",
+              "right",
+              "both"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "breast"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "amount_ml",
+            "label": "Amount prepared",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "ml",
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "bottle"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "amount_drunk_ml",
+            "label": "Amount drunk",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "ml",
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "bottle"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "bottle_feeding_type",
+            "label": "Bottle content",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "formula",
+              "breast_milk"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "bottle"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "formula_id",
+            "label": "Formula",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "bottle_feeding_type",
+              "equals": [
+                "formula"
+              ]
+            },
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "formula_name",
+            "label": "Formula name",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "bottle_feeding_type",
+              "equals": [
+                "formula"
+              ]
+            },
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "breast_left_seconds",
+            "label": "Left breast",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "s",
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "breast"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "breast_right_seconds",
+            "label": "Right breast",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "s",
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "breast"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "food",
+            "label": "Food",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "solid"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "ended_by",
+            "label": "Ended by",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "sleep"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "segments",
+            "label": "Bottle segments",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "method",
+              "equals": [
+                "bottle"
+              ]
+            },
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-025",
+        "babyId": null,
+        "key": "fussy",
+        "name": "Fussy / crying",
+        "icon": "sentiment_very_dissatisfied",
+        "color": "#81c784",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "intensity",
+            "label": "Intensity",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "mild",
+              "moderate",
+              "intense"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "what_helped",
+            "label": "What helped",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "feeding",
+              "rocking",
+              "pacifier",
+              "massage",
+              "sleep",
+              "other",
+              "nothing",
+              "diaper_change",
+              "burping",
+              "holding"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "suggested_cause",
+            "label": "First suggestion",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "hunger",
+              "sleepy",
+              "diaper",
+              "gas",
+              "comfort"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "auto_detected",
+            "label": "Detected automatically",
+            "kind": "bool",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "cry_confirmed",
+            "label": "Confirmed by parent",
+            "kind": "bool",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-026",
+        "babyId": null,
+        "key": "medication",
+        "name": "Medication",
+        "icon": "medication",
+        "color": "#ef5350",
+        "hasDuration": false,
+        "fields": []
+      },
+      {
+        "id": "guid-027",
+        "babyId": null,
+        "key": "milestone",
+        "name": "Milestone",
+        "icon": "emoji_events",
+        "color": "#ab47bc",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "milestone",
+            "label": "Milestone",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "first_smile",
+              "laughs",
+              "holds_head",
+              "rolls_over",
+              "sits",
+              "crawls",
+              "stands",
+              "first_steps",
+              "first_word",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "custom",
+            "label": "Which milestone?",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "milestone",
+              "equals": [
+                "other"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-028",
+        "babyId": null,
+        "key": "nail_trim",
+        "name": "Nail trim",
+        "icon": "content_cut",
+        "color": "#5c6bc0",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "where",
+            "label": "Where",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "hands",
+              "feet",
+              "both"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-029",
+        "babyId": null,
+        "key": "nasal_suction",
+        "name": "Nasal suction",
+        "icon": "air",
+        "color": "#78909c",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "tool",
+            "label": "Tool",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "bulb",
+              "electric",
+              "mouth"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "saline",
+            "label": "Saline used",
+            "kind": "bool",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-030",
+        "babyId": null,
+        "key": "outdoor",
+        "name": "Outdoor time",
+        "icon": "park",
+        "color": "#66bb6a",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "kind",
+            "label": "Kind",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "sun",
+              "stroller_walk",
+              "park",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-031",
+        "babyId": null,
+        "key": "skin_care",
+        "name": "Skin care",
+        "icon": "sanitizer",
+        "color": "#f48fb1",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "product",
+            "label": "Product",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "moisturizer",
+              "diaper_cream",
+              "sunscreen",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-018",
+        "babyId": null,
+        "key": "sleep",
+        "name": "Sleep",
+        "icon": "bedtime",
+        "color": "#7e57c2",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "kind",
+            "label": "Kind",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "nap",
+              "night",
+              "night_waking",
+              "bed_time",
+              "woke_up",
+              "fell_asleep"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "mood",
+            "label": "Mood",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          },
+          {
+            "key": "how_slept",
+            "label": "How slept",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "in_bed",
+              "nursing",
+              "held",
+              "next_to_me",
+              "bottle",
+              "stroller",
+              "car",
+              "swing",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "kind",
+              "equals": [
+                "nap",
+                "night"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "fall_asleep",
+            "label": "Falling asleep",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "easy",
+              "took_long",
+              "fussy"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "kind",
+              "equals": [
+                "nap",
+                "night"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "time_to_fall_asleep_minutes",
+            "label": "Time to fall asleep",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 240,
+            "unit": "min",
+            "visibleWhen": {
+              "field": "kind",
+              "equals": [
+                "nap",
+                "night"
+              ]
+            },
+            "hidden": false,
+            "integer": true
+          },
+          {
+            "key": "how_woke",
+            "label": "How woke",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "naturally",
+              "woken"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "kind",
+              "equals": [
+                "nap",
+                "night"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "mood_on_wake",
+            "label": "Mood on waking",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "good",
+              "neutral",
+              "bad"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "kind",
+              "equals": [
+                "nap",
+                "night"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-032",
+        "babyId": null,
+        "key": "spit_up",
+        "name": "Spit-up / vomit",
+        "icon": "sentiment_sick",
+        "color": "#c0ca33",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "kind",
+            "label": "Kind",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "spit_up",
+              "vomit"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "amount",
+            "label": "Amount",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "little",
+              "some",
+              "a_lot"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-033",
+        "babyId": null,
+        "key": "symptom",
+        "name": "Symptom",
+        "icon": "coronavirus",
+        "color": "#e57373",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "symptom",
+            "label": "Symptom",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "cough",
+              "runny_nose",
+              "congestion",
+              "rash",
+              "diarrhea",
+              "constipation",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "severity",
+            "label": "Severity",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "mild",
+              "moderate",
+              "severe"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-034",
+        "babyId": null,
+        "key": "teething",
+        "name": "Teething",
+        "icon": "dentistry",
+        "color": "#29b6f6",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "stage",
+            "label": "Stage",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "gums_sore",
+              "tooth_came_through"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "tooth",
+            "label": "Tooth",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "lower_central_incisor",
+              "upper_central_incisor",
+              "lower_lateral_incisor",
+              "upper_lateral_incisor",
+              "first_molar",
+              "canine",
+              "second_molar",
+              "other"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": {
+              "field": "stage",
+              "equals": [
+                "tooth_came_through"
+              ]
+            },
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-035",
+        "babyId": null,
+        "key": "temperature",
+        "name": "Temperature",
+        "icon": "thermostat",
+        "color": "#ffca28",
+        "hasDuration": false,
+        "fields": [
+          {
+            "key": "value_c",
+            "label": "Temperature",
+            "kind": "number",
+            "isRequired": true,
+            "options": [],
+            "min": 30,
+            "max": 45,
+            "unit": "°C",
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false,
+            "decimals": 1
+          },
+          {
+            "key": "method",
+            "label": "Method",
+            "kind": "select",
+            "isRequired": false,
+            "options": [
+              "armpit",
+              "ear",
+              "forehead",
+              "rectal",
+              "mouth"
+            ],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-036",
+        "babyId": null,
+        "key": "tummy_time",
+        "name": "Tummy time",
+        "icon": "child_care",
+        "color": "#ffa726",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "mood",
+            "label": "Mood",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          },
+          {
+            "key": "pause_count",
+            "label": "Pauses",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 100,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_seconds",
+            "label": "Paused time",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": 86400,
+            "unit": "s",
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": true
+          },
+          {
+            "key": "paused_at",
+            "label": "Paused at",
+            "kind": "text",
+            "isRequired": false,
+            "options": [],
+            "min": null,
+            "max": null,
+            "unit": null,
+            "visibleWhen": null,
+            "hidden": true,
+            "integer": false
+          }
+        ]
+      },
+      {
+        "id": "guid-014",
+        "babyId": "guid-001",
+        "key": "pumping",
+        "name": "Pumping",
+        "icon": "water_drop",
+        "color": "#123abc",
+        "hasDuration": true,
+        "fields": [
+          {
+            "key": "amount_ml",
+            "label": "Amount",
+            "kind": "number",
+            "isRequired": false,
+            "options": [],
+            "min": 0,
+            "max": null,
+            "unit": "ml",
+            "visibleWhen": null,
+            "hidden": false,
+            "integer": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/medications",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-002",
+        "babyId": "guid-001",
+        "name": "Simethicone",
+        "defaultDosage": {
+          "amount": 2.0,
+          "unit": "drops"
+        },
+        "notes": null,
+        "isUsual": true,
+        "productId": null,
+        "createdAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/prescriptions?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-003",
+        "babyId": "guid-001",
+        "medicationId": "guid-002",
+        "status": "active",
+        "kind": "asNeeded",
+        "dose": {
+          "amount": 2.0,
+          "unit": "drops",
+          "perKg": false,
+          "roundingStep": null
+        },
+        "timesOfDay": null,
+        "everyMinutes": null,
+        "dayParts": null,
+        "dayPartReminders": null,
+        "minIntervalMinutes": 480,
+        "maxDosesPer24h": 3,
+        "indication": "belly pain",
+        "intervalGroup": null,
+        "startDate": "2026-01-01",
+        "endDate": null,
+        "prescriber": "Dr. Ana",
+        "instructions": null,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T11:30:00+00:00",
+        "deletedAt": null,
+        "prescribedByUserId": null,
+        "prescribedByName": null,
+        "prescribedBy": null,
+        "proposalId": null,
+        "changedByParent": false,
+        "original": null
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/medications/status",
+    "status": 200,
+    "body": {
+      "babyId": "guid-001",
+      "generatedAt": "2026-01-10T12:00:00+00:00",
+      "utcOffsetMinutes": 0,
+      "items": [
+        {
+          "prescriptionId": "guid-003",
+          "medicationId": "guid-002",
+          "medicationName": "Simethicone",
+          "product": null,
+          "kind": "asNeeded",
+          "dose": {
+            "amount": 2.0,
+            "unit": "drops",
+            "perKg": false,
+            "roundingStep": null
+          },
+          "timesOfDay": null,
+          "everyMinutes": null,
+          "dayParts": null,
+          "dayPartReminders": null,
+          "minIntervalMinutes": 480,
+          "maxDosesPer24h": 3,
+          "indication": "belly pain",
+          "intervalGroup": null,
+          "groupMembers": [],
+          "startDate": "2026-01-01",
+          "endDate": null,
+          "courseStarted": true,
+          "courseEnded": false,
+          "availableNow": true,
+          "availableAt": null,
+          "nextScheduledAt": null,
+          "overdueByMinutes": null,
+          "lastDoseAt": null,
+          "dosesLast24h": 0,
+          "limitReached": false,
+          "suggestedDose": null,
+          "dayPartsStatus": null
+        }
+      ]
+    }
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/formulas?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-005",
+        "babyId": "guid-001",
+        "name": "Aptamil 2",
+        "brand": "Aptamil",
+        "stage": "2",
+        "notes": null,
+        "startedOn": "2026-01-01",
+        "isCurrent": true,
+        "archived": false,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/care-providers?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-006",
+        "babyId": "guid-001",
+        "name": "Dr. Ana Lima",
+        "specialty": "pediatrician",
+        "registrationCouncil": null,
+        "registrationNumber": null,
+        "registrationRegion": null,
+        "clinicName": "Clinic Central",
+        "address": null,
+        "phone": "+55 11 5555-0000",
+        "whatsapp": null,
+        "email": null,
+        "website": null,
+        "notes": null,
+        "isFavorite": true,
+        "isDeleted": false,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/appointments?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-007",
+        "babyId": "guid-001",
+        "title": "Pediatrician",
+        "type": "consultation",
+        "startsAt": "2026-01-13T12:00:00+00:00",
+        "durationMinutes": 30,
+        "location": "Clinic Central",
+        "doctorName": null,
+        "notes": null,
+        "outcome": null,
+        "status": "upcoming",
+        "reminderOffsetsMinutes": [
+          1440,
+          120
+        ],
+        "providerId": "guid-006",
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/vaccinations?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-008",
+        "babyId": "guid-001",
+        "vaccineKey": "bcg",
+        "doseId": "bcg-1",
+        "customName": null,
+        "doseLabel": "Dose única",
+        "givenOn": "2026-01-05",
+        "network": "public",
+        "clinic": "UBS Centro",
+        "lot": "L123",
+        "administeredBy": null,
+        "notes": null,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": null
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/measurements",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-009",
+        "babyId": "guid-001",
+        "date": "2026-01-09",
+        "weightKg": 5.2,
+        "heightCm": 55.5,
+        "headCircumferenceCm": 37.1,
+        "notes": null,
+        "createdBy": "guid-004",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "recordedByDoctor": false,
+        "recordedBy": null
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/notes?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-011",
+        "babyId": "guid-001",
+        "authorUserId": "guid-010",
+        "author": {
+          "userId": "guid-010",
+          "displayName": "Ana Souza",
+          "roleLabel": null,
+          "professional": {
+            "kind": "doctor",
+            "displayName": "Ana Souza",
+            "specialty": "Pediatrics",
+            "registrationNumber": null,
+            "verified": false
+          }
+        },
+        "kind": "recommendation",
+        "visibility": "shared",
+        "body": "Offer 120 ml every 3 hours.",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": null
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/note-reads?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "noteId": "guid-011",
+        "readAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/prescription-proposals?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-013",
+        "babyId": "guid-001",
+        "authorUserId": "guid-010",
+        "author": {
+          "userId": "guid-010",
+          "displayName": "Ana Souza",
+          "roleLabel": null,
+          "professional": {
+            "kind": "doctor",
+            "displayName": "Ana Souza",
+            "specialty": "Pediatrics",
+            "registrationNumber": null,
+            "verified": false
+          }
+        },
+        "medicationId": null,
+        "productId": null,
+        "medicationName": "Paracetamol drops",
+        "kind": "scheduled",
+        "dose": {
+          "amount": 2.0,
+          "unit": "drops",
+          "perKg": false,
+          "roundingStep": null
+        },
+        "timesOfDay": [
+          "08:00",
+          "20:00"
+        ],
+        "everyMinutes": null,
+        "dayParts": null,
+        "dayPartReminders": null,
+        "minIntervalMinutes": null,
+        "maxDosesPer24h": null,
+        "indication": null,
+        "intervalGroup": null,
+        "startDate": "2026-01-10",
+        "endDate": "2026-01-17",
+        "instructions": "Give after the morning feed.",
+        "replacesPrescriptionId": null,
+        "status": "pending",
+        "declineReason": null,
+        "cancelReason": null,
+        "decidedBy": null,
+        "decidedAt": null,
+        "acceptedPrescriptionId": null,
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/predictions",
+    "status": 200,
+    "body": {
+      "babyId": "guid-001",
+      "generatedAt": "2026-01-10T12:00:00+00:00",
+      "engineVersion": "heuristic-1.1",
+      "predictions": [],
+      "insufficientData": [
+        {
+          "typeKey": "feeding",
+          "sampleCount": 0,
+          "requiredSamples": 3,
+          "reason": "Not enough data: 0 of 3 intervals needed over the last 14 days."
+        },
+        {
+          "typeKey": "sleep",
+          "sampleCount": 0,
+          "requiredSamples": 3,
+          "reason": "Not enough data: 0 of 3 intervals needed over the last 14 days."
+        }
+      ],
+      "bedTime": null,
+      "patterns": [],
+      "wakeWindow": null,
+      "diaper": {
+        "wet": null,
+        "dirty": null,
+        "rule": {
+          "wetLookBackDays": 7,
+          "minimumWetEvents": 8,
+          "dirtyLookBackDays": 14,
+          "minimumDirtyEvents": 5,
+          "lowerPercentile": 25,
+          "upperPercentile": 75,
+          "feedWindowMinutes": 180,
+          "minimumFeedPairs": 5,
+          "maximumLagSpreadMinutes": 40,
+          "leadMinutes": 20,
+          "graceMinutes": 40
+        }
+      }
+    }
+  },
+  {
+    "request": "doctor GET /api/v1/babies/guid-001/notes?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-011",
+        "babyId": "guid-001",
+        "authorUserId": "guid-010",
+        "author": {
+          "userId": "guid-010",
+          "displayName": "Ana Souza",
+          "roleLabel": null,
+          "professional": {
+            "kind": "doctor",
+            "displayName": "Ana Souza",
+            "specialty": "Pediatrics",
+            "registrationNumber": null,
+            "verified": false
+          }
+        },
+        "kind": "recommendation",
+        "visibility": "shared",
+        "body": "Offer 120 ml every 3 hours.",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00",
+        "deletedAt": null
+      },
+      {
+        "id": "guid-012",
+        "babyId": "guid-001",
+        "authorUserId": "guid-010",
+        "author": {
+          "userId": "guid-010",
+          "displayName": "Ana Souza",
+          "roleLabel": null,
+          "professional": {
+            "kind": "doctor",
+            "displayName": "Ana Souza",
+            "specialty": "Pediatrics",
+            "registrationNumber": null,
+            "verified": false
+          }
+        },
+        "kind": "note",
+        "visibility": "private",
+        "body": "Ask about the rash.",
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T11:55:00+00:00",
+        "deletedAt": null
+      }
+    ]
+  },
+  {
+    "request": "doctor GET /api/v1/babies/guid-001/prescription-proposals?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-013",
+        "babyId": "guid-001",
+        "authorUserId": "guid-010",
+        "author": {
+          "userId": "guid-010",
+          "displayName": "Ana Souza",
+          "roleLabel": null,
+          "professional": {
+            "kind": "doctor",
+            "displayName": "Ana Souza",
+            "specialty": "Pediatrics",
+            "registrationNumber": null,
+            "verified": false
+          }
+        },
+        "medicationId": null,
+        "productId": null,
+        "medicationName": "Paracetamol drops",
+        "kind": "scheduled",
+        "dose": {
+          "amount": 2.0,
+          "unit": "drops",
+          "perKg": false,
+          "roundingStep": null
+        },
+        "timesOfDay": [
+          "08:00",
+          "20:00"
+        ],
+        "everyMinutes": null,
+        "dayParts": null,
+        "dayPartReminders": null,
+        "minIntervalMinutes": null,
+        "maxDosesPer24h": null,
+        "indication": null,
+        "intervalGroup": null,
+        "startDate": "2026-01-10",
+        "endDate": "2026-01-17",
+        "instructions": "Give after the morning feed.",
+        "replacesPrescriptionId": null,
+        "status": "pending",
+        "declineReason": null,
+        "cancelReason": null,
+        "decidedBy": null,
+        "decidedAt": null,
+        "acceptedPrescriptionId": null,
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner DELETE /api/v1/babies/guid-001/members/guid-010",
+    "status": 204,
+    "body": null
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/prescription-proposals?since=2026-01-09T12%3A00%3A00.0000000%2B00%3A00",
+    "status": 200,
+    "body": [
+      {
+        "id": "guid-013",
+        "babyId": "guid-001",
+        "authorUserId": "guid-010",
+        "author": {
+          "userId": "guid-010",
+          "displayName": "Ana Souza",
+          "roleLabel": null,
+          "professional": {
+            "kind": "doctor",
+            "displayName": "Ana Souza",
+            "specialty": "Pediatrics",
+            "registrationNumber": null,
+            "verified": false
+          }
+        },
+        "medicationId": null,
+        "productId": null,
+        "medicationName": "Paracetamol drops",
+        "kind": "scheduled",
+        "dose": {
+          "amount": 2.0,
+          "unit": "drops",
+          "perKg": false,
+          "roundingStep": null
+        },
+        "timesOfDay": [
+          "08:00",
+          "20:00"
+        ],
+        "everyMinutes": null,
+        "dayParts": null,
+        "dayPartReminders": null,
+        "minIntervalMinutes": null,
+        "maxDosesPer24h": null,
+        "indication": null,
+        "intervalGroup": null,
+        "startDate": "2026-01-10",
+        "endDate": "2026-01-17",
+        "instructions": "Give after the morning feed.",
+        "replacesPrescriptionId": null,
+        "status": "cancelled",
+        "declineReason": null,
+        "cancelReason": "access_removed",
+        "decidedBy": "guid-004",
+        "decidedAt": "2026-01-10T12:00:00+00:00",
+        "acceptedPrescriptionId": null,
+        "createdAt": "2026-01-10T12:00:00+00:00",
+        "updatedAt": "2026-01-10T12:00:00+00:00",
+        "clientUpdatedAt": "2026-01-10T12:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "request": "owner GET /api/v1/babies/guid-001/members",
+    "status": 200,
+    "body": [
+      {
+        "userId": "guid-004",
+        "displayName": "Owner",
+        "roleLabel": null,
+        "role": "Owner",
+        "joinedAt": "2026-01-10T12:00:00+00:00",
+        "professional": null,
+        "doctorScopes": null
+      }
+    ]
+  }
+]
