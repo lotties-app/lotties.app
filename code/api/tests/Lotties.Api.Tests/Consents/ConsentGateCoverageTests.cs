@@ -23,6 +23,8 @@ public sealed class ConsentGateCoverageTests(ApiFactory factory) : IClassFixture
     {
         ["GET /health"] = "The liveness probe.",
         ["GET /api/v1/version"] = "The running release: public build facts.",
+        ["GET /api/v1/demo"] = "The try-it demo status: reached before any account exists, no baby data.",
+        ["POST /api/v1/demo/start"] = "Creates the demo account and records its own demo consent in the same request; no baby data of a real person.",
 
         ["GET /api/v1/me"] = MeReason,
         ["DELETE /api/v1/me"] = "Leaving: a person can always delete her account.",

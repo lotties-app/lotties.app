@@ -67,6 +67,8 @@
     "backup_too_large": "This backup is too large to import.",
     "backup_rejected": "Some records of the backup are not valid, so nothing was imported.",
     "backup_baby_unavailable": "This backup was already restored into a baby you no longer have access to. Add it to one of your babies instead.",
-    "backup_not_allowed": "Only owners and parents can export or import a baby's data."
+    "backup_not_allowed": "Only owners and parents can export or import a baby's data.",
+    "demo_not_available": "This is not available in the demo.",
+    "demo_capacity": "The demo is full right now. Try again in a little while."
   }
 }

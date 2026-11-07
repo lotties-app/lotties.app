@@ -56,6 +56,10 @@ The loader is not `dotenv`: `dotenv` treats an unquoted `#` in a value as a comm
 | `invite.spec.ts` | owner creates an invite link of the form `/invite#<token>` (not accepted; revoked afterwards) |
 | `predictions.spec.ts` | predictions section renders without error for a baby without history |
 
+## Demo (manual smoke, no spec yet)
+
+The try-it demo (docs/design/45-try-it-demo.md) needs `Demo__SigningKey` on the API under test, so it is not in the default suite. Smoke test against a deployment that has it: signed out, open `/`, press "Try the demo" (the button shows only when `GET /api/v1/demo` says `enabled`), check the Now screen has about a week of events and the banner "Demo - the data is deleted in 3 days", log a feeding, open Insights and Vaccines, then "Create my real account" (lands on the identity provider's sign-up; the demo data is not carried over). A Playwright spec can start a demo with `POST /api/v1/demo/start` and seed `localStorage` key `lotties.demo.session`.
+
 ## Test data
 
 There is no baby delete API, so every run leaves `E2E-<label>-<timestamp>` babies (and their events, medications, custom types) in the database. Use the `E2E-` prefix to find them. Nothing in Keycloak or other databases is touched.

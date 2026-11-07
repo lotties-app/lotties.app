@@ -105,6 +105,7 @@ is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
 
 - `lotties-secrets` holds `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD`, and when set
   `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
+  `DEMO_SIGNING_KEY` (32+ characters; without it the try-it demo is off; shorter is refused),
   `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
   Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md) and, only with `DB_AUTO_MIGRATE=true`,
   `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.

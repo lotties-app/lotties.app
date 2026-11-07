@@ -20,6 +20,8 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.DisplayName).HasMaxLength(User.DisplayNameMaxLength).IsRequired();
         builder.Property(user => user.CreatedAt).IsRequired();
         builder.Property(user => user.DeletedAt);
+        builder.Property(user => user.DemoExpiresAt);
         builder.HasIndex(user => new { user.Issuer, user.Subject }).IsUnique();
+        builder.HasIndex(user => user.DemoExpiresAt).HasDatabaseName("ix_users_demo_expires_at");
     }
 }

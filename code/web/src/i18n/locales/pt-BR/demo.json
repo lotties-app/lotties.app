@@ -1,0 +1,22 @@
+{
+  "demo": {
+    "try": {
+      "button": "Experimentar a demonstração",
+      "hint": "Sem conta. Você recebe um bebê de exemplo com uma semana de registros inventados, apagados automaticamente após {{days}} dias.",
+      "consent": "Ao experimentar a demonstração você aceita os <terms>termos</terms> e a <privacy>política de privacidade</privacy>. Não digite dados reais de uma criança real.",
+      "starting": "Preparando a demonstração…"
+    },
+    "errors": {
+      "capacity": "A demonstração está lotada agora. Tente de novo daqui a pouco.",
+      "rateLimited": "Muitas demonstrações iniciadas daqui. Tente mais tarde.",
+      "unavailable": "Não foi possível iniciar a demonstração. Tente de novo mais tarde.",
+      "offline": "Você está sem conexão. Conecte-se à internet para experimentar a demonstração."
+    },
+    "banner": {
+      "text": "Demonstração: os dados de exemplo são apagados {{when}}.",
+      "createAccount": "Criar minha conta de verdade",
+      "createHint": "Os dados da demonstração não são levados para a conta.",
+      "leave": "Sair da demonstração"
+    }
+  }
+}

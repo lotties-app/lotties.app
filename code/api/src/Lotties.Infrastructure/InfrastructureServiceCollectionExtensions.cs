@@ -27,6 +27,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IUniqueViolationDetector, NpgsqlUniqueViolationDetector>();
         services.AddSingleton<UniqueViolations>();
         services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IDemoAccountRepository, EfDemoAccountRepository>();
         services.AddScoped<IAccountDataEraser, EfAccountDataEraser>();
         services.AddScoped<IBabyMembershipRepository, EfBabyMembershipRepository>();
         services.AddScoped<IBabyRepository, EfBabyRepository>();

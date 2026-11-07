@@ -21,6 +21,9 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of the anonymous snooze/dismiss route (per remote address).</summary>
     public const string PushAction = "push-action";
 
+    /// <summary>Rate limit policy of the anonymous demo start (per remote address, per hour, <c>Demo:StartPermitsPerHour</c>).</summary>
+    public const string DemoStart = "demo-start";
+
     /// <summary>Rate limit policy of the project board routes (per user, or per board API key).</summary>
     public const string Board = "board";
 
