@@ -79,6 +79,7 @@ check "tag: a changed working-tree file counts" bash -c "[ '$(source_tag "" code
 VITE_API_BASE_URL="" VITE_OIDC_AUTHORITY=https://auth.example.test/realms/r VITE_OIDC_AUDIENCE="" VITE_REPO_URL=""
 VITE_PRIVACY_CONTROLLER_NAME="" VITE_PRIVACY_CONTACT_EMAIL="" VITE_PRIVACY_DPO=""
 VITE_ISSUES_URL="" VITE_SUPPORT_URL=""
+VITE_TESTFLIGHT_URL="" VITE_ANDROID_TESTERS_GROUP_URL="" VITE_ANDROID_OPTIN_URL="" VITE_PLAY_STORE_URL=""
 VITE_OIDC_CLIENT_ID=web-a; salt_a=$(web_build_salt)
 VITE_OIDC_CLIENT_ID=web-b; salt_b=$(web_build_salt)
 check "tag: a different web build argument is a different tag" bash -c "[ '$(source_tag "$salt_a" code/web)' != '$(source_tag "$salt_b" code/web)' ]"
@@ -86,6 +87,8 @@ VITE_PRIVACY_CONTACT_EMAIL=privacy@example.test; salt_c=$(web_build_salt); VITE_
 check "tag: a different privacy contact is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_c" code/web)' ]"
 VITE_SUPPORT_URL=https://example.test/support; salt_d=$(web_build_salt); VITE_SUPPORT_URL=""
 check "tag: a different support link is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_d" code/web)' ]"
+VITE_TESTFLIGHT_URL=https://testflight.example.test/join/x; salt_e=$(web_build_salt); VITE_TESTFLIGHT_URL=""
+check "tag: a different TestFlight link is a different tag" bash -c "[ '$(source_tag "$salt_b" code/web)' != '$(source_tag "$salt_e" code/web)' ]"
 check "tag: TAG overrides the source tag" equals "$(TAG=fixed image_tag "" code/web)" fixed
 salt_v1=$(VERSION=0.1.38 APP_VERSION=0.1.38 web_build_salt); salt_v2=$(VERSION=0.1.39 APP_VERSION=0.1.39 web_build_salt)
 check "tag: the release number is not part of the web tag" equals "$(source_tag "$salt_v2" code/web)" "$(source_tag "$salt_v1" code/web)"

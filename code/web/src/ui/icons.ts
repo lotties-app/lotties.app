@@ -129,6 +129,8 @@ import IconBuildingHospital from '@tabler/icons-react/dist/esm/icons/IconBuildin
 import IconStarFilled from '@tabler/icons-react/dist/esm/icons/IconStarFilled.mjs';
 import IconExternalLink from '@tabler/icons-react/dist/esm/icons/IconExternalLink.mjs';
 import IconMicrophone from '@tabler/icons-react/dist/esm/icons/IconMicrophone.mjs';
+import IconBrandApple from '@tabler/icons-react/dist/esm/icons/IconBrandApple.mjs';
+import IconBrandAndroid from '@tabler/icons-react/dist/esm/icons/IconBrandAndroid.mjs';
 
 /**
  * Every icon the app draws: one family (Tabler, MIT, outline, 1.5 px stroke), imported one by one
@@ -271,6 +273,8 @@ export const ICON_COMPONENTS = {
   'external-link': IconExternalLink,
   download: IconDownload,
   microphone: IconMicrophone,
+  apple: IconBrandApple,
+  android: IconBrandAndroid,
 } as const satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICON_COMPONENTS;
