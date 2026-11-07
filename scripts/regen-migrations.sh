@@ -85,7 +85,7 @@ info "removed $OLD_ID; snapshot taken from $BASE"
   # Dummy settings: migrations add only builds the model; the bogus host guarantees no real database is reached.
   env -u DB_PORT -u DB_MIGRATOR_USER -u DB_MIGRATOR_PASSWORD \
     DB_HOST=x DB_NAME=x DB_APP_USER=x DB_APP_PASSWORD=x \
-    dotnet ef migrations add "$NAME" --project src/Lotties.Infrastructure --output-dir Persistence/Migrations
+    dotnet ef migrations add "$NAME" --project src/Lotties.Infrastructure --context LottiesDbContext --output-dir Persistence/Migrations
 ) || die "dotnet ef migrations add failed: restore the files with git -C $CHECKOUT checkout -- $MIGRATIONS_DIR"
 
 mapfile -t added < <(cd "$CHECKOUT" && ls -- "$MIGRATIONS_DIR"/*_"$NAME".Designer.cs)

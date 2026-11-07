@@ -453,6 +453,15 @@ CA input in the MVP unless a target provider needs it (decided in T0).
 
 ## 12. Implementation plan
 
+**Status (2026-11-07): T1 is built** (branch `feat/byo-t1-model-split`, not deployed). The control context kept its name
+`LottiesDbContext` (renaming it would rewrite every migration's `[DbContext]` attribute and the snapshot) and still maps the
+data tables with their physical keys (`BuiltInDatabaseLinks`), so it keeps owning every migration until T5; the data context
+`LottiesDataDbContext` maps the 12 data tables without keys to control tables and runs on the control context's connection.
+Cross-plane writes found: the member change that cancels a doctor's proposals and the backup restore (both share one transaction
+through `BuiltInUnitOfWork`). Two cross-plane places stay on `LottiesDbContext`, valid for the built-in database only: the
+reminder candidates query (one statement with `EXISTS` on data tables; T11) and account erasure (both planes in one
+transaction; T10). Hosted responses and SQL are pinned by golden tests. `dotnet ef` now needs `--context LottiesDbContext`.
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 

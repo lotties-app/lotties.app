@@ -120,7 +120,7 @@ the rule of each conflicting file).
 
 | Hot spot | Where to add | On conflict |
 | --- | --- | --- |
-| EF migrations: `Persistence/Migrations/` (Designer, `LottiesDbContextModelSnapshot.cs`) | one migration per branch (`dotnet ef migrations add <Feature>`) | keep `main`'s snapshot (during a rebase that is `--ours`), finish the rebase, then `scripts/regen-migrations.sh <Feature> --checkout <worktree>` and commit. Without a conflict, `worktree-integrate.sh` regenerates by itself when `main` gained migrations |
+| EF migrations: `Persistence/Migrations/` (Designer, `LottiesDbContextModelSnapshot.cs`) | one migration per branch (`dotnet ef migrations add <Feature> --context LottiesDbContext`) | keep `main`'s snapshot (during a rebase that is `--ours`), finish the rebase, then `scripts/regen-migrations.sh <Feature> --checkout <worktree>` and commit. Without a conflict, `worktree-integrate.sh` regenerates by itself when `main` gained migrations |
 | `MigrationTests.cs` `DeployedMigrations` | never by a worker: the rule tests (ids, Designers, latest Designer = snapshot) cover new migrations | take `main`'s side |
 | i18n catalogs `code/web/src/i18n/locales/<lang>/<feature>.json` | the feature's own file, both languages; a new feature area is a new file in both folders | keep both sides' keys (a conflict means two features edited the same feature file) |
 | `code/web/src/i18n/catalogEn.ts` (typed list) | one line per new English file, sorted | keep both lines |
