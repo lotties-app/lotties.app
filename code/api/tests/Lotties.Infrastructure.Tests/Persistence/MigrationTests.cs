@@ -92,6 +92,7 @@ public sealed class MigrationTests
         "20261030104625_CaregiverRest",
         "20261101173651_FeedingSettings",
         "20261107005201_TryItDemo",
+        "20261107064418_PrivacyFirstOnboarding",
     ];
 
     [Fact]
