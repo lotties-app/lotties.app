@@ -1,6 +1,6 @@
 // Turns the raw captures (showcase/output) into the small files that are committed to
 // code/web/public/showcase/: WebP screenshots (each under 250 KB), and per language the demo video
-// as MP4 (H.264) and WebM (VP9) plus a poster. sharp comes from code/web (a project dependency);
+// as MP4 (H.264) and WebM (VP9), an animated WebP for the README, plus a poster. sharp comes from code/web (a project dependency);
 // the video step needs ffmpeg on the PATH (skipped with a note when it is missing).
 // Run from tests/e2e/: node showcase/build-media.mjs   (docs/showcase-media.md)
 import { execFileSync } from 'node:child_process';
@@ -62,6 +62,10 @@ if (fs.existsSync(VIDEO)) {
     run(['-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4]);
     run(['-an', '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '38', '-row-mt', '1', webm]);
     // The poster is the Now screen (a video frame can be blank while the page loads).
+    // Animated WebP for the README (GitHub plays it inline, an <img> cannot hold a video).
+    const anim = path.join(OUT, `demo-${locale}-anim.webp`);
+    run(['-an', '-vf', 'fps=8,scale=240:-1:flags=lanczos', '-c:v', 'libwebp', '-quality', '40', '-compression_level', '6', '-loop', '0', anim]);
+    report.push(`${path.basename(anim)}  ${(fs.statSync(anim).size / 1024).toFixed(0)} KB`);
     const frame = path.join(RAW, `now-light-${locale}.png`);
     const poster = path.join(OUT, `demo-${locale}-poster.webp`);
     const { bytes } = await toWebp(await sharp(frame).resize(390, 844).png().toBuffer(), poster);
