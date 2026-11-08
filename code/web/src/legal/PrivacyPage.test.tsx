@@ -10,7 +10,7 @@ import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
-import { DATA_CATEGORY_IDS } from './dataFlows';
+import { DATA_CATEGORY_IDS, THIRD_PARTY_IDS } from './dataFlows';
 import { POLICY_DOCUMENTS } from './policyDocuments';
 import { ISSUES_URL, PRIVATE_REPORT_URL } from './privacyConfig';
 import {
@@ -124,7 +124,7 @@ describe('the public /privacy route', () => {
     const recipients = screen.getByRole('table', {
       name: 'Who receives data from Lotties, and when',
     });
-    expect(within(recipients).getAllByRole('rowheader')).toHaveLength(6);
+    expect(within(recipients).getAllByRole('rowheader')).toHaveLength(THIRD_PARTY_IDS.length);
     expect(within(recipients).getByRole('rowheader', { name: 'Amazon (Alexa)' })).toBeTruthy();
   });
 
