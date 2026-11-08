@@ -2633,6 +2633,11 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("owner_user_id");
 
+                    b.Property<string>("SchemaVersion")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("schema_version");
+
                     b.Property<byte[]>("SealedDescriptor")
                         .HasColumnType("bytea")
                         .HasColumnName("sealed_descriptor");

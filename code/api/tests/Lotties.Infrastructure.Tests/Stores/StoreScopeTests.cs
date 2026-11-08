@@ -12,8 +12,9 @@ namespace Lotties.Infrastructure.Tests.Stores;
 
 /// <summary>
 /// The fail-closed scope of docs/design/47-bring-your-own-database.md section 3.6, with a fake resolver and fake external stores (no
-/// connection is ever opened): a data context only for an entered baby, never the built-in store for a baby of another store, and no
-/// external store at all while <c>Stores:Enabled</c> is off. The flag is on unless a test turns it off before the first entry.
+/// connection is ever opened): a data context only for an entered baby, never the built-in store for a baby of another store, no
+/// external store at all while <c>Stores:Enabled</c> is off, and an external store only after the store migrator (task T5) found it
+/// ready. The flag is on unless a test turns it off before the first entry.
 /// </summary>
 public sealed class StoreScopeTests : IDisposable
 {
@@ -36,6 +37,7 @@ public sealed class StoreScopeTests : IDisposable
 
     private readonly FakeStores _externals = new(StoreX, StoreY);
     private readonly StoreRoutingOptions _routing = new() { Enabled = true };
+    private readonly FakeMigrator _migrator = new();
     private readonly ServiceProvider _provider;
     private readonly IServiceScope _scope;
 
@@ -44,6 +46,7 @@ public sealed class StoreScopeTests : IDisposable
         var services = new ServiceCollection().AddInfrastructure(Options);
         services.AddScoped<IStoreResolver>(_ => _resolver);
         services.AddSingleton<IExternalDataStores>(_externals);
+        services.AddSingleton<IStoreMigrator>(_migrator);
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(_routing));
         _provider = services.BuildServiceProvider();
         _scope = _provider.CreateScope();
@@ -105,6 +108,46 @@ public sealed class StoreScopeTests : IDisposable
         Assert.Equal("store_unavailable", error.Code);
         Assert.Throws<StoreScopeMissingException>(() => Stores.ContextFor(BabyInGone));
         Assert.Throws<StoreScopeMissingException>(() => Stores.Current);
+    }
+
+    [Fact]
+    public async Task EnterAsync_BabyOfAnExternalStore_AsksTheMigratorOncePerStoreBeforeHandingItOut()
+    {
+        await Stores.EnterAsync(BabyInX);
+        await Stores.EnterAsync(BabyInX);
+        _ = Stores.ContextFor(BabyInX);
+
+        Assert.Equal([StoreX], _migrator.Asked);
+        Assert.Single(_externals.ContextsOf(StoreX));
+    }
+
+    [Fact]
+    public async Task EnterAsync_HostedBaby_NeverAsksTheMigrator()
+    {
+        await Stores.EnterAsync(HostedBaby);
+
+        Assert.Empty(_migrator.Asked);
+    }
+
+    [Fact]
+    public async Task EnterAsync_StoreTheMigratorRefuses_ThrowsItsErrorAndBindsNothing()
+    {
+        _migrator.Failure = new StoreSchemaAheadException();
+
+        await Assert.ThrowsAsync<StoreSchemaAheadException>(() => Stores.EnterAsync(BabyInX));
+
+        Assert.Empty(_externals.ContextsOf(StoreX));
+        Assert.Throws<StoreScopeMissingException>(() => Stores.ContextFor(BabyInX));
+    }
+
+    [Fact]
+    public async Task EnterAsync_FlagOff_NeverAsksTheMigrator()
+    {
+        _routing.Enabled = false;
+
+        await Assert.ThrowsAsync<StoreUnavailableException>(() => Stores.EnterAsync(BabyInX));
+
+        Assert.Empty(_migrator.Asked);
     }
 
     [Fact]
@@ -222,6 +265,19 @@ public sealed class StoreScopeTests : IDisposable
         {
             _calls[babyId] = Calls(babyId) + 1;
             return Task.FromResult(routes[babyId]);
+        }
+    }
+
+    private sealed class FakeMigrator : IStoreMigrator
+    {
+        public List<Guid> Asked { get; } = [];
+
+        public Exception? Failure { get; set; }
+
+        public Task EnsureReadyAsync(Guid storeId, CancellationToken cancellationToken = default)
+        {
+            Asked.Add(storeId);
+            return Failure is { } failure ? Task.FromException(failure) : Task.CompletedTask;
         }
     }
 

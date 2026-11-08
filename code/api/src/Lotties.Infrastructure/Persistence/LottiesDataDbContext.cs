@@ -20,14 +20,20 @@ namespace Lotties.Infrastructure.Persistence;
 /// <c>note_reads.note_id</c>).
 /// </summary>
 /// <remarks>
-/// Today every baby's data lives in the built-in Lotties database, so this context is opened on the connection of the scope's
-/// <see cref="LottiesDbContext"/> (one connection per request, as before the split; <see cref="BuiltInUnitOfWork"/> shares a
-/// transaction when a write spans both planes). It has no migrations of its own yet: <see cref="LottiesDbContext"/> still maps
-/// these tables with their physical foreign keys and owns every migration (the data migration chain is task T5). No repository
-/// receives it directly: each gets the context of the baby's store from <see cref="Stores.StoreScope"/> (task T2).
+/// Two shapes of the same model. On the built-in store (the Lotties database) the context is opened on the connection of the
+/// scope's <see cref="LottiesDbContext"/> (one connection per request, as before the split; <see cref="BuiltInUnitOfWork"/> shares a
+/// transaction when a write spans both planes), its tables are in <c>public</c> and <see cref="LottiesDbContext"/> still maps them
+/// with their physical foreign keys and owns their migrations. On an external store (options from
+/// <see cref="ExternalStoreSchema"/>) the same tables are in schema <c>lotties</c>, with <c>lotties.store_meta</c> beside them, and
+/// the data migration chain (<c>Persistence/DataMigrations</c>, history table <c>lotties.__ef_data_migrations</c>) creates them; only
+/// the store migrator (task T5) applies that chain, never to the built-in database. No repository receives this context
+/// directly: each gets the context of the baby's store from <see cref="Stores.StoreScope"/> (task T2).
 /// </remarks>
 public sealed class LottiesDataDbContext(DbContextOptions<LottiesDataDbContext> options) : DbContext(options)
 {
+    /// <summary>Whether this context maps an external store (schema <c>lotties</c> and <c>store_meta</c>; <see cref="ExternalStoreSchema"/>).</summary>
+    internal bool IsExternalStore { get; } = options.FindExtension<ExternalStoreSchemaExtension>() is not null;
+
     public DbSet<EventType> EventTypes => Set<EventType>();
 
     /// <summary>Events that are not soft deleted (a global query filter applies).</summary>
@@ -64,6 +70,12 @@ public sealed class LottiesDataDbContext(DbContextOptions<LottiesDataDbContext> 
     /// <summary>Which member opened which note (the recommendations inbox).</summary>
     public DbSet<NoteRead> NoteReads => Set<NoteRead>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDataDbContext).Assembly, DataPlane.IsDataConfiguration);
+        if (IsExternalStore)
+        {
+            ExternalStoreSchema.Apply(modelBuilder);
+        }
+    }
 }

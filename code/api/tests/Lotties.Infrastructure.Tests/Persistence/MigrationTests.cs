@@ -126,7 +126,10 @@ public sealed class MigrationTests
         var assembly = context.GetService<IMigrationsAssembly>();
 
         // A migration class without its .Designer.cs has no [Migration]/[DbContext] attributes: EF would skip it silently.
-        var classes = typeof(LottiesDbContext).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(Migration)) && !type.IsAbstract).ToArray();
+        // The data migration chain of external stores (Persistence/DataMigrations) has its own checks (DataMigrationChainTests).
+        var classes = typeof(LottiesDbContext).Assembly.GetTypes()
+            .Where(type => type.IsSubclassOf(typeof(Migration)) && !type.IsAbstract && type.Namespace == "Lotties.Infrastructure.Persistence.Migrations")
+            .ToArray();
         var discovered = assembly.Migrations;
 
         Assert.Equal(classes.Length, discovered.Count);

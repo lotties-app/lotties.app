@@ -10,11 +10,15 @@ namespace Lotties.Infrastructure.Persistence.Configurations;
 /// <c>data_stores</c> (control plane; docs/design/47-bring-your-own-database.md D1, D11): one row per external store, owned by an
 /// account. The state is stored by name; the sealed descriptor is opaque bytes (task T3), nullable until the owner saves one.
 /// Deleting the account deletes its rows (<c>EfAccountDataEraser</c>); the user key is <c>RESTRICT</c> like the other keys
-/// erasure handles explicitly. Empty until the bring-your-own-database endpoints exist (task T6).
+/// erasure handles explicitly. <c>schema_version</c> mirrors the store's <c>lotties.store_meta</c> (task T5, the store migrator).
+/// Empty until the bring-your-own-database endpoints exist (task T6).
 /// </remarks>
 internal sealed class DataStoreConfiguration : IEntityTypeConfiguration<DataStore>
 {
     public const int StateMaxLength = 32;
+
+    /// <summary>A data migration id (EF's own history column is at most 150).</summary>
+    public const int SchemaVersionMaxLength = 150;
 
     public void Configure(EntityTypeBuilder<DataStore> builder)
     {
@@ -23,6 +27,7 @@ internal sealed class DataStoreConfiguration : IEntityTypeConfiguration<DataStor
         builder.Property(store => store.Id).ValueGeneratedNever();
         builder.Property(store => store.State).HasConversion<string>().HasMaxLength(StateMaxLength).IsRequired();
         builder.Property(store => store.SealedDescriptor);
+        builder.Property(store => store.SchemaVersion).HasMaxLength(SchemaVersionMaxLength);
         builder.Property(store => store.CreatedAt).IsRequired();
         builder.Property(store => store.UpdatedAt).IsRequired();
         builder.HasOne<User>().WithMany().HasForeignKey(store => store.OwnerUserId).OnDelete(DeleteBehavior.Restrict);

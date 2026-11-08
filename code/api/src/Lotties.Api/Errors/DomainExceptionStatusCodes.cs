@@ -102,6 +102,12 @@ internal static class DomainExceptionStatusCodes
         [typeof(StoreScopeMissingException)] = StatusCodes.Status500InternalServerError,
         [typeof(StoreScopeAmbiguousException)] = StatusCodes.Status500InternalServerError,
         [typeof(StoreUnavailableException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(StoreMigratingException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(StoreSchemaAheadException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(StoreRoleTooPowerfulException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(StoreSchemaConflictException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(StoreMigrationFailedException)] = StatusCodes.Status503ServiceUnavailable,
+        [typeof(DataStoreStateTransitionException)] = StatusCodes.Status500InternalServerError,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

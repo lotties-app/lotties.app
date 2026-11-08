@@ -1,6 +1,7 @@
 using Lotties.Api.Tests.Notifications;
 using Lotties.Api.Tests.Support;
 using Lotties.Application.Notifications.Dispatching;
+using Lotties.Application.Stores;
 using Lotties.Domain.Medications;
 using Lotties.Domain.Prescriptions;
 using Lotties.Domain.Stores;
@@ -31,6 +32,7 @@ public sealed class StoreRoutingSchedulerTests : IDisposable
         {
             services.Configure<StoreRoutingOptions>(options => options.Enabled = true);
             services.AddSingleton<IExternalDataStores>(_stores);
+            services.AddSingleton<IStoreMigrator>(_stores);
         });
     }
 

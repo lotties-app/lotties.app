@@ -36,7 +36,11 @@ public sealed class StoreRoutingHost : IDisposable
             builder.UseSetting("Stores:Enabled", "true");
             builder.UseSetting("Stores:CurrentKeyId", TestKeyId);
             builder.UseSetting($"Stores:KeyEncryptionKeys:{TestKeyId}", Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
-            builder.ConfigureTestServices(services => services.AddSingleton<IExternalDataStores>(Stores));
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IExternalDataStores>(Stores);
+                services.AddSingleton<IStoreMigrator>(Stores);
+            });
         });
     }
 
