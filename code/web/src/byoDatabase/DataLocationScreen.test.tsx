@@ -453,6 +453,21 @@ describe('update connection details', () => {
     expect(valueOf(/^Password/)).toBe(APP_PASSWORD);
   });
 
+  it('says in plain words when the new details open another database, and runs no test', async () => {
+    const { calls } = render({
+      view: OWN_TROUBLED,
+      save: httpError(409, 'store_not_same_database'),
+    });
+    await openForm();
+    typeNewDetails();
+    click('Save new details and test');
+    expect(await screen.findByText('Not the same database')).toBeTruthy();
+    expect(screen.getByText(/move the records back to Lotties hosting first/)).toBeTruthy();
+    expect(document.body.textContent).not.toContain('store_not_same_database');
+    expect(calls.some((c) => c.path === `${PATH}/test`)).toBe(false);
+    expect(valueOf(/^Password/)).toBe(APP_PASSWORD);
+  });
+
   it('tests the saved details on their own with the test route', async () => {
     const { calls } = render({
       view: OWN_TROUBLED,

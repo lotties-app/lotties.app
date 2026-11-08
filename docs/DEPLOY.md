@@ -574,7 +574,9 @@ With the flag on, startup fails on a missing current key, an unknown current key
 the KEKs with the database backups' secrets: without the KEK that sealed a row, that family's baby is unreachable
 (`store_unavailable`; the seal failure kind is logged) until the Owner enters her details again (Settings > Where your data
 lives: **Update connection details** while the records are in her database, **Replace the connection details** while they
-are with Lotties).
+are with Lotties). While the records are in her database, new details are saved only when both endpoints reach the
+database whose `lotties.store_meta` names the store (a read-only check before saving); anything else answers `409
+store_not_same_database` and changes nothing.
 
 **Home lab (`deploy/homelab/deploy.sh`).** Set these in `deploy/homelab/.env` (placeholders in `.env.example`); the script
 puts every `Stores__*` value only in the Secret `lotties-secrets` and gives the API pod each one as a `secretKeyRef` of the

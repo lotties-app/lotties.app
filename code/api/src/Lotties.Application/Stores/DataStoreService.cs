@@ -23,7 +23,9 @@ public interface IDataStoreService
 
     /// <summary>
     /// Validates the typed fields, runs the egress guard on both endpoints, seals the descriptor and saves it in the caller's store
-    /// (created on first save), which goes back to <c>pending</c>. Moves no data.
+    /// (created on first save), which goes back to <c>pending</c>. Moves no data. While a baby's records are in the store the new
+    /// details must open that same database (its <c>store_meta</c> names the store), else <c>store_not_same_database</c> (409) and
+    /// nothing changes.
     /// </summary>
     Task<DataStoreStatusResponse> SaveAsync(Guid babyId, SaveDataStoreRequest request, CancellationToken cancellationToken = default);
 
@@ -76,7 +78,9 @@ internal sealed class DataStoreService(
         var descriptor = (StoreDescriptor)request;
         await descriptorGuard.CheckAsync(descriptor, cancellationToken);
         var store = selection.Store ?? await AddStoreAsync(selection.User, cancellationToken);
-        store.ReplaceDescriptor(credentials.Seal(descriptor, SealContextOf(store)), descriptor.ProviderLabel, time.GetUtcNow());
+        var sealedDescriptor = credentials.Seal(descriptor, SealContextOf(store));
+        await EnsureSameDatabaseAsync(selection, store, sealedDescriptor, cancellationToken);
+        store.ReplaceDescriptor(sealedDescriptor, descriptor.ProviderLabel, time.GetUtcNow());
         await stores.SaveChangesAsync(cancellationToken);
         health.Forget(store.Id);
         logger.LogInformation("Saved a new descriptor for data store {StoreId}; state {State}", store.Id, store.State);
@@ -160,9 +164,50 @@ internal sealed class DataStoreService(
 
     private async Task EnsureNotInUseAsync(StoreSelection selection, DataStore store, CancellationToken cancellationToken)
     {
-        if (selection.Pointer is not null || await stores.IsInUseAsync(store.Id, cancellationToken))
+        if (await HoldsRecordsAsync(selection, store, cancellationToken))
         {
             throw new DataStoreInUseException();
+        }
+    }
+
+    /// <summary>Whether a baby's records are read from <paramref name="store"/>: this baby or another one points at it.</summary>
+    private async Task<bool> HoldsRecordsAsync(StoreSelection selection, DataStore store, CancellationToken cancellationToken) =>
+        selection.Pointer is not null || await stores.IsInUseAsync(store.Id, cancellationToken);
+
+    /// <summary>
+    /// New details of a store that holds a baby's records must open that same database (a new password, user, host or pooler of it):
+    /// before anything is saved, both endpoints of the new details are read (read only, bounded like the test) and their
+    /// <c>store_meta</c> must name this store. An empty database, a database set up for another store or one that cannot be checked
+    /// is refused and the saved details stay. A store no baby points at yet (first save, records moved back) takes any database.
+    /// </summary>
+    private async Task EnsureSameDatabaseAsync(StoreSelection selection, DataStore store, SealedDescriptor sealedDescriptor, CancellationToken cancellationToken)
+    {
+        if (!await HoldsRecordsAsync(selection, store, cancellationToken))
+        {
+            return;
+        }
+
+        var identity = await ReadIdentityAsync(store.WithCandidateDescriptor(sealedDescriptor), cancellationToken);
+        if (identity.IsOf(store.Id))
+        {
+            return;
+        }
+
+        logger.LogWarning("Refused new details of data store {StoreId}: they open another database", store.Id);
+        throw new StoreNotSameDatabaseException();
+    }
+
+    private async Task<StoreDatabaseIdentity> ReadIdentityAsync(DataStore candidate, CancellationToken cancellationToken)
+    {
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budget.CancelAfter(TestBudget);
+        try
+        {
+            return await tester.ReadIdentityAsync(candidate, budget.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw StoreFailureException.Of(StoreFailureClass.Timeout);
         }
     }
 

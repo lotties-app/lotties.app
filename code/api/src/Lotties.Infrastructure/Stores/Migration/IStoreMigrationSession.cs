@@ -29,6 +29,12 @@ internal interface IStoreMigrationSession : IAsyncDisposable
     /// <summary>The store's own row, or <c>null</c> when the store has none yet.</summary>
     Task<StoreMetaSnapshot?> ReadMetaAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The store id in <c>lotties.store_meta</c> as the app role sees it on the app endpoint (connects as the app role, reads only), or
+    /// <c>null</c> when that database has no such row.
+    /// </summary>
+    Task<Guid?> ReadAppStoreIdAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Applies every pending data migration (each in its own transaction: a failed step leaves the store as it was).</summary>
     Task MigrateAsync(CancellationToken cancellationToken = default);
 

@@ -12,6 +12,14 @@ namespace Lotties.Application.Stores;
 public interface IStoreConnectionTester
 {
     Task<StoreCheckResult> TestAsync(DataStore store, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Which store the database behind <paramref name="candidate"/>'s descriptor says it belongs to, on both endpoints (the same pinned,
+    /// guarded connections as the test). Reads only: no table, schema, lock or row is created or written there. Unlike
+    /// <see cref="TestAsync"/> a failure to connect throws: <see cref="StoreEndpointRejectedException"/> for a refused host, port or
+    /// CA, else the <see cref="StoreFailureException"/> of its class (task T8), with nothing of the database's own text.
+    /// </summary>
+    Task<StoreDatabaseIdentity> ReadIdentityAsync(DataStore candidate, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

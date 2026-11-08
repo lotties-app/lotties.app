@@ -5,6 +5,7 @@ using System.Text.Json;
 using Lotties.Api.Tests.Support;
 using Lotties.Application.Stores;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -392,6 +393,91 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task Put_BabyInItsOwnersStore_NewAddressOfTheSameDatabase_IsSavedAfterTheIdentityCheck()
+    {
+        var (client, baby, storeId) = await OwnerWithBabyInHerStoreAsync();
+        var checksBefore = factory.Tester.IdentityChecks.Count(id => id == storeId);
+
+        var response = await client.PutAsync(Route(baby), Body(host: "new-pooler.example.com", providerLabel: "Moved Cloud"));
+
+        var status = await response.ReadAsync<DataStoreStatusResponse>();
+        Assert.Equal(("own", "Moved Cloud"), (status.Kind, status.Store!.ProviderLabel));
+        Assert.Equal(checksBefore + 1, factory.Tester.IdentityChecks.Count(id => id == storeId));
+    }
+
+    [Theory]
+    [InlineData("empty")]
+    [InlineData("anotherStore")]
+    [InlineData("appEndpointElsewhere")]
+    [InlineData("migratorEndpointElsewhere")]
+    public async Task Put_BabyInItsOwnersStore_DetailsOfAnotherDatabase_Is409AndChangesNothing(string kind)
+    {
+        var (client, baby, storeId) = await OwnerWithBabyInHerStoreAsync();
+        factory.Tester.Identities[storeId] = IdentityOf(kind, storeId);
+        var sealedBefore = await SealedDescriptorOfAsync(baby.OwnerSubject);
+        var rowBefore = await StoreRowAsync(storeId);
+        var pointerBefore = await PointerOfAsync(baby.BabyId);
+        var forgottenBefore = factory.Health.Forgotten.Count(id => id == storeId);
+
+        var response = await client.PutAsync(Route(baby), Body(host: "typo-project.example.com", providerLabel: "Wrong Cloud"));
+
+        await response.AssertProblemAsync(HttpStatusCode.Conflict, "store_not_same_database");
+        Assert.Equal(sealedBefore, await SealedDescriptorOfAsync(baby.OwnerSubject));
+        Assert.Equal(rowBefore, await StoreRowAsync(storeId));
+        Assert.Equal(pointerBefore, await PointerOfAsync(baby.BabyId));
+        Assert.Equal(forgottenBefore, factory.Health.Forgotten.Count(id => id == storeId));
+        Assert.Contains(factory.Logs.Lines, line => line.Contains($"Refused new details of data store {storeId}", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Put_AnotherBabyOfTheOwnerInTheStore_ChecksTheIdentityToo()
+    {
+        var (client, baby, storeId) = await OwnerWithBabyInHerStoreAsync();
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        var hostedSibling = Baby.Create("Bia", DateOnly.FromDateTime(TestUsers.Now.UtcDateTime), ownerId, TestUsers.Now);
+        await factory.SeedAsync(context =>
+        {
+            context.Babies.Add(hostedSibling);
+            return Task.CompletedTask;
+        });
+        factory.Tester.Identities[storeId] = StoreDatabaseIdentity.None;
+
+        var response = await client.PutAsync($"/api/v1/babies/{hostedSibling.Id}/data-store", Body());
+
+        await response.AssertProblemAsync(HttpStatusCode.Conflict, "store_not_same_database");
+    }
+
+    [Fact]
+    public async Task Put_StoreNoBabyPointsAt_TakesAnyDatabaseWithoutTheIdentityCheck()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+        await client.PutAsync(Route(baby), Body());
+        var storeId = DataStore.FirstStoreIdOf(await factory.UserIdAsync(baby.OwnerSubject));
+        factory.Tester.Identities[storeId] = StoreDatabaseIdentity.None;
+
+        var response = await client.PutAsync(Route(baby), Body(host: "brand-new-project.example.com", providerLabel: "New Cloud"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain(storeId, factory.Tester.IdentityChecks);
+    }
+
+    [Fact]
+    public async Task Put_BabyInItsOwnersStore_IdentityCheckCannotConnect_AnswersTheStoreFailureAndChangesNothing()
+    {
+        var (client, baby, storeId) = await OwnerWithBabyInHerStoreAsync();
+        factory.Tester.IdentityFailures[storeId] = new StoreCredentialsRejectedException();
+        var sealedBefore = await SealedDescriptorOfAsync(baby.OwnerSubject);
+
+        var rejected = await client.PutAsync(Route(baby), Body());
+        factory.Tester.IdentityFailures[storeId] = new StoreEndpointRejectedException(StoreEndpointFailure.BlockedAddress);
+        var refusedEndpoint = await client.PutAsync(Route(baby), Body());
+
+        await rejected.AssertProblemAsync(HttpStatusCode.ServiceUnavailable, "store_credentials_rejected");
+        await refusedEndpoint.AssertProblemAsync(HttpStatusCode.UnprocessableEntity, "endpoint_blocked_address");
+        Assert.Equal(sealedBefore, await SealedDescriptorOfAsync(baby.OwnerSubject));
+    }
+
+    [Fact]
     public async Task Test_BabyInItsOwnersStoreAfterReplacingTheDetails_RunsTheConnectionTest()
     {
         var (client, baby) = await AllowedOwnerAsync(consent: true);
@@ -516,6 +602,29 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
         return (factory.CreateClientFor(subject), baby);
     }
 
+    /// <summary>An allowlisted Owner whose baby's records are in her own store, with saved details (the first save passes the check).</summary>
+    private async Task<(HttpClient Client, SeededBaby Baby, Guid StoreId)> OwnerWithBabyInHerStoreAsync()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+        var storeId = Guid.NewGuid();
+        await factory.AssignStoreAsync(baby.BabyId, await factory.UserIdAsync(baby.OwnerSubject), storeId);
+        (await client.PutAsync(Route(baby), Body())).EnsureSuccessStatusCode();
+        return (client, baby, storeId);
+    }
+
+    private static StoreDatabaseIdentity IdentityOf(string kind, Guid storeId) => kind switch
+    {
+        "empty" => StoreDatabaseIdentity.None,
+        "anotherStore" => new StoreDatabaseIdentity(Guid.NewGuid(), Guid.NewGuid()),
+        "appEndpointElsewhere" => new StoreDatabaseIdentity(storeId, null),
+        "migratorEndpointElsewhere" => new StoreDatabaseIdentity(null, storeId),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+    };
+
+    private Task<StoreRow> StoreRowAsync(Guid storeId) =>
+        factory.QueryAsync(context => context.DataStores.Where(store => store.Id == storeId)
+            .Select(store => new StoreRow(store.State, store.ProviderLabel, store.UpdatedAt)).SingleAsync());
+
     private async Task<bool> TryAddFirstStoreAsync(Guid ownerId)
     {
         await using var scope = factory.Services.CreateAsyncScope();
@@ -539,6 +648,8 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
     }
 
     private sealed record BabyPointer(Guid? DataStoreId, int Epoch);
+
+    private sealed record StoreRow(DataStoreState State, string? ProviderLabel, DateTimeOffset UpdatedAt);
 }
 
 /// <summary>With <c>Stores:Enabled</c> off (the default host) every data-store route answers a bare 404 to everyone, before any 401 or 403.</summary>

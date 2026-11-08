@@ -108,6 +108,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(DataStoreNotOwnedException)] = StatusCodes.Status403Forbidden,
         [typeof(DataStoreNotConfiguredException)] = StatusCodes.Status409Conflict,
         [typeof(DataStoreInUseException)] = StatusCodes.Status409Conflict,
+        [typeof(StoreNotSameDatabaseException)] = StatusCodes.Status409Conflict,
         [typeof(ByoDatabaseConsentRequiredException)] = StatusCodes.Status403Forbidden,
         [typeof(DataStoreMoveInProgressException)] = StatusCodes.Status409Conflict,
         [typeof(AccountDeletionInProgressException)] = StatusCodes.Status409Conflict,

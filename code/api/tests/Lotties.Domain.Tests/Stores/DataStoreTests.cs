@@ -145,6 +145,43 @@ public sealed class DataStoreTests
     }
 
     [Fact]
+    public void DataStore_WithCandidateDescriptor_IsACopyWithTheNewDescriptorAndLeavesTheRowAsItIs()
+    {
+        var store = DataStore.Create(StoreX, BabyId, DateTimeOffset.UnixEpoch);
+        store.ReplaceDescriptor(SealedDescriptor.FromBytes([1, 2, 3]), "Example Cloud", DateTimeOffset.UnixEpoch);
+        store.RecordMigrationState(DataStoreState.Ready, "v1", DateTimeOffset.UnixEpoch);
+
+        var candidate = store.WithCandidateDescriptor(SealedDescriptor.FromBytes([9, 9]));
+
+        Assert.NotSame(store, candidate);
+        Assert.Equal((StoreX, BabyId, DataStoreState.Ready, "v1"), (candidate.Id, candidate.OwnerUserId, candidate.State, candidate.SchemaVersion));
+        Assert.Equal([9, 9], candidate.SealedDescriptor);
+        Assert.Equal([1, 2, 3], store.SealedDescriptor);
+        Assert.Equal((DataStoreState.Ready, "Example Cloud"), (store.State, store.ProviderLabel));
+    }
+
+    [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, false)]
+    public void StoreDatabaseIdentity_IsOf_OnlyWhenBothEndpointsNameTheStore(bool migratorSeesStore, bool appSeesStore, bool expected)
+    {
+        var identity = new StoreDatabaseIdentity(migratorSeesStore ? StoreX : StoreY, appSeesStore ? StoreX : null);
+
+        Assert.Equal(expected, identity.IsOf(StoreX));
+    }
+
+    [Fact]
+    public void StoreDatabaseIdentity_EmptyDatabaseOrEmptyId_IsNeverTheStore()
+    {
+        Assert.False(StoreDatabaseIdentity.None.IsOf(StoreX));
+        Assert.False(new StoreDatabaseIdentity(Guid.Empty, Guid.Empty).IsOf(Guid.Empty));
+        Assert.True(new StoreDatabaseIdentity(StoreY, StoreY).IsOf(StoreY));
+        Assert.False(new StoreDatabaseIdentity(StoreY, StoreY).IsOf(StoreX));
+    }
+
+    [Fact]
     public void FirstStoreIdOf_SameOwner_SameIdAndDifferentPerOwner()
     {
         Assert.Equal(DataStore.FirstStoreIdOf(BabyId), DataStore.FirstStoreIdOf(BabyId));

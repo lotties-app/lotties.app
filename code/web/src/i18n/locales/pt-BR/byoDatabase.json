@@ -307,6 +307,10 @@
         "title": "Ainda em uso",
         "body": "Este banco ainda guarda os registros do seu bebê. Volte com eles para o Lotties antes e depois esqueça os dados."
       },
+      "notSameDatabase": {
+        "title": "Não é o mesmo banco",
+        "body": "Esses dados abrem um banco diferente daquele que guarda os registros do seu bebê, então nada foi alterado. Digite os dados desse mesmo banco. Para trocar de banco, volte com os registros para o Lotties antes e depois configure o novo."
+      },
       "notOwned": {
         "title": "Não é o seu banco",
         "body": "Outra conta configurou este banco. Só essa conta pode alterá-lo."

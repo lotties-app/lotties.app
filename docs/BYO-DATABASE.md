@@ -204,7 +204,8 @@ writes your baby's records to its own database instead.
   and type the details of the **same database** again (all of them, passwords included: Lotties never shows the saved ones).
   **Save new details and test** replaces the sealed details and tests them at once; **Test the saved details** tries the
   ones already saved (for example after you resumed a paused project). Your baby's records and where they live do not
-  change; Lotties starts using the new details at once.
+  change; Lotties starts using the new details at once. Details that open another database are refused
+  (`store_not_same_database`) and the saved ones stay (FAQ below).
 - After a few failures in a row Lotties stops trying for a short while (30 seconds, doubling up to 5 minutes), so a paused
   database is not woken up again and again.
 - Voice assistants answer that the information is temporarily unavailable.
@@ -257,6 +258,7 @@ The app shows plain words, never the server's own text. The codes, for reference
 | `store_credentials_rejected` | User name or password refused | Type them again (**Update connection details** once the records are in your database); on a pooler the user name may need `.project` |
 | `store_role_too_powerful` | The app role can do more than read and write its tables | Run the setup SQL again with new roles; never the admin user |
 | `store_schema_conflict` | The database holds tables Lotties did not create for this baby | Use an empty database |
+| `store_not_same_database` (409) | New details for a database that holds a baby's records open another database (empty, someone else's or unknown); nothing was changed | Type the details of the same database; to switch databases see the FAQ "How do I really switch to another database?" |
 | `store_schema_ahead` | Set up by a newer Lotties | Wait for the server update |
 | `byo_consent_required` | The agreement step was skipped | Go back and tick the box |
 | `store_not_configured` | No details saved yet | Save them first |
@@ -301,10 +303,21 @@ current details of the same database, then **Save new details and test**. This i
 role's password at your provider: give Lotties the new password, and it can read the records again (and move them back if
 you want).
 
-**Can I point Lotties at a different database with Update connection details?** Use it only for the database that already
-holds your baby's records. A database that Lotties set up for another store is refused (`store_schema_conflict`), but an
-empty one is not: Lotties would prepare empty tables there and use that database for the baby from then on, while the
-records stay in the old one until you give Lotties its details again. To change databases, move the records back to Lotties hosting, then set up the new one.
+**Can I point Lotties at a different database with Update connection details?** No. While a baby's records are in your
+database, new details are saved only when they open that same database: before saving, Lotties reads (and only reads) the
+small `lotties.store_meta` table through both addresses you typed and checks that it names your database. A new password,
+a new user, a new host or pooler address of the same database, or the same database after your provider moved it, all
+pass. An empty database (a typo in the project name, another project), a database Lotties set up for someone else, or one
+it cannot recognize is refused with `store_not_same_database`: nothing is created there and your saved details stay as
+they were. If Lotties cannot connect with the new details at all (wrong password, paused project), the save is refused
+with that reason instead, also without changing anything.
+
+**How do I really switch to another database?** In three steps: **Move back to Lotties hosting** (the records are copied
+to Lotties and the baby points there), then **Replace the connection details** with the new database (no baby's records
+are read from your database any more, so any empty database is accepted), test, and **Move my records there**. The copy
+left in the old database during the undo window is no longer deleted by Lotties once its details are replaced: drop the
+`lotties` schema there yourself when you no longer need it. The same is true before you ever moved records: until a
+baby's records are in your database, the details can point at any database.
 
 **Does it cost money?** Lotties does not charge for it. Your provider may; free plans exist at the time of writing, with
 limits that change. Lotties does not recommend a provider.

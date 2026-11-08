@@ -307,6 +307,10 @@
         "title": "Still in use",
         "body": "This database still holds your baby's records. Move them back to Lotties hosting first, then forget the details."
       },
+      "notSameDatabase": {
+        "title": "Not the same database",
+        "body": "These details open a different database from the one that holds your baby's records, so nothing was changed. Type the details of that same database. To switch to another database, move the records back to Lotties hosting first, then set up the new one."
+      },
       "notOwned": {
         "title": "Not your database",
         "body": "Another account set up this database. Only that account can change it."
