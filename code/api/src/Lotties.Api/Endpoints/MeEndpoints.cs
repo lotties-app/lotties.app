@@ -8,6 +8,7 @@ using Lotties.Application.FeedingPreferences;
 using Lotties.Application.Units;
 using Lotties.Application.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Lotties.Api.Endpoints;
@@ -145,8 +146,12 @@ internal static class MeEndpoints
     private static async Task<Ok<AccountDeletionPreviewResponse>> PreviewDeletionAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
         TypedResults.Ok(await deletion.PreviewAsync(cancellationToken));
 
-    private static async Task<Ok<AccountDeletionResponse>> DeleteAccountAsync(IAccountDeletionService deletion, CancellationToken cancellationToken) =>
-        TypedResults.Ok(await deletion.DeleteAsync(cancellationToken));
+    /// <summary><c>?wipeOwnDatabase=true</c> (opt-in, default false) also deletes the erased babies' records in her own database (design 47 section 9).</summary>
+    private static async Task<Ok<AccountDeletionResponse>> DeleteAccountAsync(
+        IAccountDeletionService deletion,
+        CancellationToken cancellationToken,
+        [FromQuery] bool wipeOwnDatabase = false) =>
+        TypedResults.Ok(await deletion.DeleteAsync(new AccountDeletionRequest { WipeOwnDatabase = wipeOwnDatabase }, cancellationToken));
 
     private static async Task<Ok<CurrentUserResponse>> GetCurrentUserAsync(ICurrentUser currentUser, CancellationToken cancellationToken) =>
         TypedResults.Ok<CurrentUserResponse>(await currentUser.GetUserAsync(cancellationToken));

@@ -24,6 +24,8 @@ import {
   getDeletionPreview,
   identityOutcome,
   type AccountDeletionBaby,
+  type AccountDeletionPreview,
+  type AccountDeletionResult,
   type IdentityRemoval,
 } from '../account/accountApi';
 import { downloadAccountData } from '../account/exportAccountData';
@@ -62,6 +64,24 @@ const IDENTITY_NOTICE = {
   failed: 'account.identityFailed',
 } as const satisfies Record<IdentityRemoval, string | null>;
 
+/** What the dialog shows after the deletion. */
+interface DeletionOutcome {
+  identity: IdentityRemoval;
+  /** Babies whose records in her own database could not be deleted (it was unreachable). */
+  notWiped: AccountDeletionBaby[];
+}
+
+function outcomeOf(
+  result: AccountDeletionResult,
+  preview: AccountDeletionPreview | undefined,
+): DeletionOutcome {
+  const notWiped = new Set(result.ownDatabaseNotWiped ?? []);
+  return {
+    identity: identityOutcome(result),
+    notWiped: (preview?.deletedBabies ?? []).filter((baby) => notWiped.has(baby.id)),
+  };
+}
+
 /**
  * Where the section is shown: the family's Settings (`family`, the default: the download is what
  * the device holds) or the doctor's shell (`professional`: the download is only what she produced,
@@ -81,8 +101,9 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
   const action = useServerAction();
   const [open, setOpen] = useState(false);
   const [understood, setUnderstood] = useState(false);
+  const [wipeOwnDatabase, setWipeOwnDatabase] = useState(false);
   const [exportFailed, setExportFailed] = useState<string | null>(null);
-  const [finished, setFinished] = useState<IdentityRemoval | null>(null);
+  const [finished, setFinished] = useState<DeletionOutcome | null>(null);
   const unsynced = useLiveQuery(() => countUnsyncedMutations(db), [db]) ?? 0;
   const preview = useQuery({
     queryKey: ACCOUNT_DELETION_PREVIEW_KEY,
@@ -94,6 +115,7 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
   const close = () => {
     setOpen(false);
     setUnderstood(false);
+    setWipeOwnDatabase(false);
     action.clearError();
   };
 
@@ -115,7 +137,11 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
     const ok = await action.run(async () => {
       // Best effort and before the delete: afterwards the request would provision a new, empty user.
       await releaseThisDevice(api)().catch(() => undefined);
-      setFinished(identityOutcome(await deleteAccount(api)));
+      const ownBabies = preview.data?.ownDatabaseBabies ?? [];
+      const result = await deleteAccount(api, {
+        wipeOwnDatabase: wipeOwnDatabase && ownBabies.length > 0,
+      });
+      setFinished(outcomeOf(result, preview.data));
     });
     if (!ok) {
       engine.start();
@@ -125,7 +151,8 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
 
   const data = preview.data;
   const blocked = (data?.blockedBabies.length ?? 0) > 0;
-  const identityNotice = finished ? IDENTITY_NOTICE[finished] : null;
+  const ownDatabaseBabies = data?.ownDatabaseBabies ?? [];
+  const identityNotice = finished ? IDENTITY_NOTICE[finished.identity] : null;
 
   return (
     <Stack spacing={2}>
@@ -167,6 +194,14 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
               <Stack spacing={2}>
                 <Typography>{t('account.doneBody')}</Typography>
                 {identityNotice && <Alert severity="warning">{t(identityNotice)}</Alert>}
+                {finished.notWiped.length > 0 && (
+                  <Alert severity="warning">
+                    <Typography variant="body2" gutterBottom>
+                      {t('account.ownDatabaseNotWiped')}
+                    </Typography>
+                    <BabyList babies={finished.notWiped} />
+                  </Alert>
+                )}
               </Stack>
             ) : (
               <Stack spacing={2}>
@@ -183,6 +218,24 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
                         </Typography>
                         <BabyList babies={data.blockedBabies} />
                       </Alert>
+                    )}
+                    {ownDatabaseBabies.length > 0 && (
+                      <Stack spacing={1}>
+                        <BabyList
+                          title={t('account.ownDatabaseTitle')}
+                          babies={ownDatabaseBabies}
+                        />
+                        <Typography variant="body2">{t('account.ownDatabaseExplain')}</Typography>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={wipeOwnDatabase}
+                              onChange={(e) => setWipeOwnDatabase(e.target.checked)}
+                            />
+                          }
+                          label={t('account.ownDatabaseWipe')}
+                        />
+                      </Stack>
                     )}
                     <Typography variant="body2">{t('account.whatElse')}</Typography>
                     <Typography variant="body2">

@@ -106,7 +106,7 @@ internal sealed class DemoCleanup(
         {
             try
             {
-                await eraser.EraseAsync(id, StandInName, now, cancellationToken);
+                await eraser.EraseAsync(id, StandInName, now, ExternalStoreErasure.Refuse, cancellationToken);
                 await demoAccounts.DeleteUserRowAsync(id, cancellationToken);
                 removed++;
             }

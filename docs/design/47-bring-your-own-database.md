@@ -404,15 +404,38 @@ CA input in the MVP unless a target provider needs it (decided in T0).
 - The user's database is theirs. Deleting the account **deletes the descriptor** (sealed blob, key id, pool) in all cases
   (`EfAccountDataEraser`, a rule in `AccountErasureTests.Rules` for `data_stores` and `babies.store_id`; the test is
   model-driven and fails until the rule exists).
-- The delete dialog gets a choice, **default on**: "also delete my data in my database". Lotties then, before removing
-  the descriptor, wipes *its* rows: for each baby the Owner owns and that no other member keeps, it deletes the baby's rows
-  in schema `lotties` (the same eraser logic as the built-in store, run against that store through the migrator role),
-  then drops nothing else. If the store is unreachable the dialog says so and gives the SQL the user can run
-  (`DROP SCHEMA lotties CASCADE;` and drop the two roles), and Lotties **does not delete the descriptor until the user
-  chooses to proceed anyway**, because after that Lotties can no longer reach it. A shared baby (other members) is kept
-  and handed to the policy that already applies for kept babies (the row stays under the anonymised author); the BYO
-  store of a baby with other members follows the Owner's choice at the time of the leave (a rule to settle in stage 2).
-- The eraser's data-plane half has its own fixture test: a store with a row in every data table of a baby, erased, empty.
+- *As built (T10, see its status in section 12; the owner decided **opt-in, default off**, because it is her database and the
+  delete cannot be undone):* the delete dialog shows, only when a baby erased with the account has records in her own
+  database, an unticked box "also delete these babies' records in my own database" (`DELETE /me?wipeOwnDatabase=true`).
+  Ticked: before Lotties' side goes, Lotties deletes, in her database, the rows of the 12 data tables of each such baby (the
+  store it points at, an old copy kept for a move's undo window, a failed move's leftovers), with the copier's wipe through
+  the routing (flag, breaker, migrator, the app role), and drops nothing else (no schema, no role). Not ticked: her database
+  is not touched. In both cases Lotties' side is erased in full (baby rows, descriptors, move rows) and the stores' pools and
+  breakers are forgotten.
+- *Unreachable store (as built, replacing the earlier "do not delete the descriptor until the user proceeds"):* the account
+  deletion never waits on her database. Each store gets at most 30 s (`OwnDatabaseWiper.StoreTimeout`) on top of the store's
+  own timeouts and breaker; a store that fails, is slow or whose breaker is open stops there, Lotties' side is erased
+  anyway, and the answer lists the babies whose records could not be deleted (`ownDatabaseNotWiped`, baby ids the user
+  already sees). The app then tells her those records are still in her database and that she can delete them there (for
+  example by removing the schema `lotties`). Nothing names the store, host, database or credentials in the answer or the
+  logs (counts and the exception type only). Reason: an account deletion is a right the person exercises (LGPD art. 18), so
+  a database Lotties cannot reach must not keep Lotties' copy of her account alive; and after the deletion Lotties holds no
+  credential, so the remaining records are entirely under her control. No `byo_database` consent is required for the wipe:
+  it removes data at her explicit request, and her consent records go with the account anyway.
+- A baby other people keep is never wiped: only babies erased with the account (she was the only member) and only in a
+  store whose `data_stores` row is hers; a move row naming another person's store is ignored. A kept baby on an external
+  store (impossible today, Owner-only rule of T11) still fails closed with `store_unavailable`. A running move of an erased
+  baby refuses the deletion (`409 store_move_in_progress`, it ends within minutes), so no worker keeps writing into a
+  database Lotties is about to forget.
+- The eraser's data-plane half has its own fixture test: a store with a row in every data table of a baby, erased, empty
+  (`AccountErasureOwnStoreTests`, SQLite; `StoreMovePostgresTests`, Postgres).
+- **Anonymous aggregates (owner rule, 2026-11-08).** Account erasure does not delete or change aggregate data derived from
+  babies **only when it is truly anonymous**: it holds no identifier (no baby, account or record id, no name or free text)
+  and cannot be traced back to a baby or a family (for example, every published group has a minimum size, as design 34
+  plans). Anything that fails either test is personal data and is erased like the rest. Today no such table or job exists
+  (community insights is not built; checked for T10: `EfAccountDataEraser` touches no aggregate, and the model has no
+  statistics table). A future aggregate table needs a rule in `AccountErasureTests.Rules` marked `KeepAnonymous`, keyed by
+  its table name, with the reason on that line; the test fails if such a table holds a baby or user reference.
 
 ## 10. Legal and privacy
 
@@ -608,6 +631,30 @@ T2 contract: Npgsql data source from the sealed descriptor, pinned, with the fai
 fails `store_unavailable` until that piece lands; the Postgres container tests (`Lotties.Postgres.Tests/Stores/StoreMovePostgresTests`,
 CI only) move a baby both ways against a real external store with a fixture-built opener. `docs/DEPLOY.md` "Moving a baby between
 databases" is the operator's view.
+
+**Status (2026-11-08): T10 is built** (branch `feat/byo-t10-account-erasure`, not deployed; no migration, no new route). `DELETE /me`
+takes the additive query flag `wipeOwnDatabase` (default false: older clients get today's behavior), and `GET /me/deletion-preview` adds
+`ownDatabaseBabies` (the erased babies that have records in the user's own database) so the web shows the box only then; the answer adds
+`ownDatabaseWiped` and `ownDatabaseNotWiped` (baby ids). `AccountDeletionService` is a recipe: plan, refuse a blocked deletion, find
+(`IAccountDataEraser.FindOwnStoreCopiesAsync`, control plane only) for each erased baby the store it points at and the store its move
+row may have left records in (`DataStoreMove.OwnStoreThatMayHoldRecords`: the target of a move in unless its leftovers are gone, the
+source of a move out unless its old copy was deleted), kept only when that `data_stores` row is the user's; refuse while a worker
+holds the move row of an erased baby (`409 store_move_in_progress`); with the flag, wipe (`OwnDatabaseWiper`: `IStoreRecordCopier.WipeAsync`
+per baby, opened through `StoreScope.OpenStoreAsync`, 30 s per store, a failure or timeout reports the store's remaining babies as not
+wiped and logs counts and the exception type only); erase Lotties' side with `ExternalStoreErasure.LottiesSideOnly` (a baby erased with
+the account goes whatever its store; a baby others keep must still be on the built-in store); then `IStoreHealth.Forget` each of her
+stores (pools, breakers, ready flags), which the eraser did not do before. The demo cleanup keeps `ExternalStoreErasure.Refuse` (fails
+closed without opening the store, T11's test unchanged). T11's two tests that expected `store_unavailable` for an Owner whose baby is on
+her store now expect Lotties' side erased and the store left (flag on, no wipe) or reported as not wiped (flag off, wipe asked). Tests:
+`Lotties.Api.Tests/Stores/AccountErasureOwnStoreTests.cs` (SQLite stores: opt-in wipes a row in every data table, opt-out leaves the
+store byte for byte, an unreachable store is reported with no store, baby or address in the answer or Lotties' log lines, the undo-window
+copy and a failed move's leftovers are wiped, another person's babies, database and a forged move naming her store are untouched, a member
+of a kept baby on an external store fails closed, a running move is 409, the preview names the right babies; `OwnStoreTables` lists the
+12 tables and fails for a new one), `AccountDeletionPlanTests` and `DataStoreMoveTests` (domain), and two container tests in
+`Lotties.Postgres.Tests/Stores/StoreMovePostgresTests.cs` (CI only: a moved-in baby wiped in a real store with another baby's row kept,
+and the opt-out leaving it). Residual risks: a write from another of her devices that lands in her database between the wipe and the
+erasure stays there (milliseconds; the app is being deleted from that same account); a move started in that same window is not refused
+(its worker then fails on the missing row and may leave a partial copy in her database, which she controls).
 
 **Status (2026-11-07): T11 is built** (branch `feat/byo-t11-assistants-jobs`, stacked on T8, not deployed; no migration, no new route, no
 voice command changed). *Assistants*: Alexa and MCP already resolved the baby's store through `AssistantSubjects` (T2) and answered any

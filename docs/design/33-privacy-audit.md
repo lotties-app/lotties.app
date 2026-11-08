@@ -380,7 +380,8 @@ terms and the privacy policy and that no real data should be typed.
 
 Status: the sealed descriptor (T3), the endpoint guard (T4) and the store routing (T2) are on `main`; the management
 endpoints and the `byo_database` consent kind (T6) are on a branch; the move in and out (T7), the reminder and assistant
-handling (T11) and the account-deletion half in the user's database (T10) are not built. Everything is behind
+handling (T11) and the account-deletion half in the user's database (T10) were built later on their own branches (design
+47 section 12 has each status). Everything is behind
 `Stores:Enabled` (off by default) and a per-account allowlist. The policy describes the feature as built to design 47's
 MVP; the facts below are the ones the text is held to (`legal/dataFlows.ts` `OWN_DATABASE_FLOW`, `dataFlows.test.ts`).
 
@@ -398,6 +399,24 @@ MVP; the facts below are the ones the text is held to (`legal/dataFlows.ts` `OWN
   `chosenBy: 'user'`), under its own terms, in the region she picked (art. 33 when abroad). It sees the API's address,
   never the phone's. It may pause, throttle or close a free database and may have no backups; Lotties keeps no copy
   after the move and its undo window (design 47 section 6, T7), and points to the export (design 24).
+- **Account deletion (T10, on a branch, 2026-11-08)**: deleting the account always erases Lotties' side, the sealed
+  descriptors included, so Lotties can no longer reach her database. The records in her database are deleted there only
+  if she ticks "also delete these babies' records in my own database" in the delete dialog (opt-in, off by default, owner
+  decision: it is her database and the delete cannot be undone); the box shows only when an erased baby has records there.
+  If her database cannot be reached, the deletion still completes and the app lists the babies whose records stay there,
+  with a hint to delete them herself; nothing about the database is logged or returned (design 47 section 9). The policy
+  text today ("The records in your own database are yours: delete them there when you want") stays true for the default
+  and is not changed here: the owner ships the sentence about the opt-in with the next material policy version (no consent
+  entry added now). Proposed wording: "When you delete your Lotties account you can choose to have Lotties delete these
+  babies' records in your own database too; if you do not, or if your database cannot be reached at that moment, they stay
+  there, under your control."
+- **Anonymous aggregates and deletion (owner rule, 2026-11-08)**: account erasure keeps aggregate data derived from babies
+  only when it is truly anonymous (no identifier of a baby, an account or a record, no name or free text, and it cannot be
+  traced back, for example a minimum group size as section 11 promises); otherwise it is erased like personal data. No such
+  table or job exists today (checked: `EfAccountDataEraser` touches none, no statistics table in the model). A future one
+  needs a `KeepAnonymous` rule with its reason in `AccountErasureTests.Rules` (the test fails if that table references a
+  baby or a user). This matches the policy's community insights text ("Statistics already calculated are group numbers with
+  no link to any baby").
 - **Not available for such a baby in the MVP**: reminders, invited members, doctor access (design 47 D9, D11). BYO
   babies are also left out of any aggregate (design 47 section 2.2), which today has nothing to leave out (community
   insights is not built).

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using Lotties.Application;
 using Lotties.Application.Stores;
+using Lotties.Application.Users;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.CareProviders;
@@ -33,7 +34,9 @@ namespace Lotties.Postgres.Tests.Stores;
 /// owner's store, and the production copier, runner and repositories move a baby with a row in every data table (owned dose and
 /// schedule columns, jsonb payloads and fields, the proposals' <c>xmin</c>, soft deletions, thousands of events in batches) into the
 /// store and back, value for value; a record id the store already gives another baby is refused as <c>store_move_conflict</c> with the
-/// baby left where it was; deleting one baby's copy in a store leaves the others'.
+/// baby left where it was; deleting one baby's copy in a store leaves the others'. Account deletion (task T10) through the production
+/// service: asked to, it deletes the moved baby's rows in the owner's store (and only them) before Lotties' side goes; not asked to,
+/// her store is left as it is.
 /// </summary>
 [Collection(PostgresCollection.Name)]
 [Trait("Category", PostgresCollection.Category)]
@@ -104,6 +107,48 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
         Assert.True(Count(secondBefore) > 30);
     }
 
+    [PostgresFact]
+    public async Task Account_deletion_asked_to_wipe_deletes_the_babys_rows_in_the_owners_store_and_lotties_side()
+    {
+        await using var world = await WorldAsync("erasewipe");
+        var family = await world.SeedFamilyAsync(events: 40);
+        await world.MoveAsync(family.BabyId, DataStoreMoveDirection.In);
+        Assert.All(await world.SnapshotAsync(world.Store, family.BabyId), table => Assert.True(table.Value.Count > 0, $"{table.Key} has no row"));
+        var strangerEvent = Guid.NewGuid();
+        await world.InStoreAsync(async context =>
+        {
+            context.Events.Add(Event.Create(strangerEvent, Guid.NewGuid(), BuiltInEventTypes.DiaperId, Guid.NewGuid(), Now, null, EventPayload.From("""{"content":"WET"}"""), null, Now));
+            await context.SaveChangesAsync();
+        });
+
+        var result = await world.DeleteAccountAsync(family.OwnerId, wipeOwnDatabase: true);
+
+        Assert.Equal([family.BabyId], result.OwnDatabaseWiped);
+        Assert.Empty(result.OwnDatabaseNotWiped);
+        Assert.Equal(0, Count(await world.SnapshotAsync(world.Store, family.BabyId)));
+        Assert.Equal(1, await world.InStoreAsync(context => context.Events.IgnoreQueryFilters().CountAsync(row => row.Id == strangerEvent)));
+        Assert.Equal(0, Count(await world.SnapshotAsync(DataStoreKey.BuiltIn, family.BabyId)));
+        Assert.False(await world.ControlAsync(context => context.Babies.AnyAsync(baby => baby.Id == family.BabyId)));
+        Assert.False(await world.ControlAsync(context => context.DataStores.AnyAsync(store => store.Id == world.StoreId)));
+        Assert.False(await world.ControlAsync(context => context.DataStoreMoves.AnyAsync(move => move.BabyId == family.BabyId)));
+    }
+
+    [PostgresFact]
+    public async Task Account_deletion_not_asked_to_wipe_leaves_the_owners_store_as_it_is()
+    {
+        await using var world = await WorldAsync("erasekeep");
+        var family = await world.SeedFamilyAsync(events: 40);
+        await world.MoveAsync(family.BabyId, DataStoreMoveDirection.In);
+        var own = await world.SnapshotAsync(world.Store, family.BabyId);
+
+        var result = await world.DeleteAccountAsync(family.OwnerId, wipeOwnDatabase: false);
+
+        Assert.Empty(result.OwnDatabaseWiped);
+        Assert.Equal(own, await world.SnapshotAsync(world.Store, family.BabyId));
+        Assert.False(await world.ControlAsync(context => context.Babies.AnyAsync(baby => baby.Id == family.BabyId)));
+        Assert.False(await world.ControlAsync(context => context.DataStores.AnyAsync(store => store.Id == world.StoreId)));
+    }
+
     private static int Count(SortedDictionary<string, List<string>> snapshot) => snapshot.Values.Sum(rows => rows.Count);
 
     private static SortedDictionary<string, List<string>> Without(SortedDictionary<string, List<string>> snapshot, string table, Guid id)
@@ -126,6 +171,9 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
             .AddApplication();
         services.AddSingleton<IExternalDataStores>(externals);
         services.AddSingleton<IStoreMigrator>(_harness.Migrator());
+        services.AddSingleton<SignedIn>();
+        services.AddScoped<ICurrentUser, FixtureCurrentUser>();
+        services.AddSingleton<IIdentityAccountRemover, NoIdentityRemover>();
         services.Configure<StoreRoutingOptions>(options => options.Enabled = true);
         services.Configure<StoreMoveOptions>(options =>
         {
@@ -156,6 +204,28 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
     }
 
     private sealed record Family(Guid BabyId, Guid OwnerId, Guid ForeignPrivateNoteId);
+
+    /// <summary>Who the account deletion runs for.</summary>
+    private sealed class SignedIn
+    {
+        public Guid UserId { get; set; }
+    }
+
+    private sealed class FixtureCurrentUser(SignedIn signedIn, LottiesDbContext context) : ICurrentUser
+    {
+        public bool IsAuthenticated => true;
+
+        public Task<User> GetUserAsync(CancellationToken cancellationToken = default) =>
+            context.Users.SingleAsync(user => user.Id == signedIn.UserId, cancellationToken);
+    }
+
+    private sealed class NoIdentityRemover : IIdentityAccountRemover
+    {
+        public bool CanRemove(string issuer) => false;
+
+        public Task<IdentityRemoval> RemoveAsync(string issuer, string subject, CancellationToken cancellationToken = default) =>
+            Task.FromResult(IdentityRemoval.NotConfigured);
+    }
 
     private sealed class MoveWorld(ServiceProvider provider, Guid storeId) : IAsyncDisposable
     {
@@ -220,6 +290,20 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
 
             await using var read = provider.CreateAsyncScope();
             return (await read.ServiceProvider.GetRequiredService<IDataStoreMoveRepository>().FindAsync(babyId))!;
+        }
+
+        /// <summary>Deletes the owner's account through the production service, as <c>DELETE /me</c> does.</summary>
+        public async Task<AccountDeletionResponse> DeleteAccountAsync(Guid ownerId, bool wipeOwnDatabase)
+        {
+            provider.GetRequiredService<SignedIn>().UserId = ownerId;
+            await using var scope = provider.CreateAsyncScope();
+            return await scope.ServiceProvider.GetRequiredService<IAccountDeletionService>().DeleteAsync(new AccountDeletionRequest { WipeOwnDatabase = wipeOwnDatabase });
+        }
+
+        public async Task<TResult> ControlAsync<TResult>(Func<LottiesDbContext, Task<TResult>> query)
+        {
+            await using var scope = provider.CreateAsyncScope();
+            return await query(scope.ServiceProvider.GetRequiredService<LottiesDbContext>());
         }
 
         public async Task WipeAsync(Guid babyId, DataStoreKey store)

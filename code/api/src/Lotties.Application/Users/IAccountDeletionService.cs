@@ -11,9 +11,11 @@ public interface IAccountDeletionService
     /// <summary>
     /// Erases the user's data and anonymizes the user row, then asks the identity provider to remove the sign-in
     /// account. Throws <see cref="Domain.Exceptions.AccountDeletionBlockedException"/> (409) when the user is the only
-    /// owner of a baby that other members still use.
+    /// owner of a baby that other members still use, and <see cref="Domain.Exceptions.DataStoreMoveInProgressException"/> (409)
+    /// while a move of one of the babies it erases runs. With <see cref="AccountDeletionRequest.WipeOwnDatabase"/> the erased
+    /// babies' records in her own database are deleted first; one that cannot be reached is reported, never in the way.
     /// </summary>
-    Task<AccountDeletionResponse> DeleteAsync(CancellationToken cancellationToken = default);
+    Task<AccountDeletionResponse> DeleteAsync(AccountDeletionRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <summary>What happened to the sign-in account at the identity provider when the Lotties account was deleted.</summary>
