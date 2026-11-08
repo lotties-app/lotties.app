@@ -32,6 +32,7 @@ public sealed class StoreFailureResponsesTests
     [InlineData(StoreFailureClass.Timeout, 5)]
     [InlineData(StoreFailureClass.RateLimited, 5)]
     [InlineData(StoreFailureClass.Migrating, 5)]
+    [InlineData(StoreFailureClass.Moving, 15)]
     [InlineData(StoreFailureClass.Unavailable, 30)]
     [InlineData(StoreFailureClass.PausedOrUnreachable, 30)]
     [InlineData(StoreFailureClass.CredentialsRejected, 30)]

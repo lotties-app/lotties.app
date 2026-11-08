@@ -20,7 +20,11 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// The data tables are erased through the control context, which only the built-in database has: before anything is deleted,
 /// every baby whose records are touched is entered in the <see cref="StoreScope"/> and must be on the built-in store, else the
 /// erasure fails with <c>store_unavailable</c> and changes nothing (a family's own database is erased by task T10). Her
-/// <c>data_stores</c> rows go with her personal records (docs/design/47-bring-your-own-database.md section 9).
+/// <c>data_stores</c> rows go with her personal records (docs/design/47-bring-your-own-database.md section 9), and an erased baby's
+/// <c>data_store_moves</c> row goes with the baby. Hook for task T10: a baby moved back to Lotties can still have its old copy (undo
+/// window) or a failed move's leftovers in her own database; that row names the store (<c>DataStoreMove.Source</c> of a
+/// <c>moved</c> move, <c>Target</c> of a <c>failed</c> one with leftovers), and T10 must delete them there with
+/// <c>IStoreRecordCopier.WipeAsync</c> before the row and the descriptor go (today they stay in her database, under her control).
 /// </summary>
 internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope stores) : IAccountDataEraser
 {
@@ -104,6 +108,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
         await context.NotificationActions.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.NotificationDeliveries.IgnoreQueryFilters().Where(row => row.BabyId != null && ids.Contains(row.BabyId.Value)).ExecuteDeleteAsync(cancellationToken);
         await context.BabyNotificationPreferences.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
+        await context.DataStoreMoves.Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.BabyMembers.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.UserAssistantSettings
             .Where(row => row.DefaultBabyId != null && ids.Contains(row.DefaultBabyId.Value))

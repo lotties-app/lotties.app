@@ -134,6 +134,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>The routing columns of every baby row (<c>babies.data_store_id</c>, <c>babies.store_epoch</c>), read by the store resolver.</summary>
     public DbSet<Lotties.Domain.Stores.BabyStoreAssignment> BabyStoreAssignments => Set<Lotties.Domain.Stores.BabyStoreAssignment>();
 
+    /// <summary>The latest move of each baby's records between the built-in store and the owner's store (task T7).</summary>
+    public DbSet<Lotties.Domain.Stores.DataStoreMove> DataStoreMoves => Set<Lotties.Domain.Stores.DataStoreMove>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);

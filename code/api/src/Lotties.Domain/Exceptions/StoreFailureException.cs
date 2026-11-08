@@ -38,6 +38,7 @@ public abstract class StoreFailureException : DomainException
         StoreFailureClass.RoleTooPowerful => new StoreRoleTooPowerfulException([], retryAfter),
         StoreFailureClass.Migrating => new StoreMigratingException(retryAfter),
         StoreFailureClass.MigrationFailed => new StoreMigrationFailedException(retryAfter),
+        StoreFailureClass.Moving => new StoreMovingException(retryAfter),
         _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, null),
     };
 

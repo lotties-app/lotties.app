@@ -2675,6 +2675,98 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("data_stores", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.Stores.DataStoreMove", b =>
+                {
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<int>("Attempt")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("direction");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(48)
+                        .HasColumnType("character varying(48)")
+                        .HasColumnName("failure_code");
+
+                    b.Property<string>("LeaseHolder")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("lease_holder");
+
+                    b.Property<DateTimeOffset?>("LeaseUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lease_until");
+
+                    b.Property<bool>("LeftoversPending")
+                        .HasColumnType("boolean")
+                        .HasColumnName("leftovers_pending");
+
+                    b.Property<DateTimeOffset?>("MovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("moved_at");
+
+                    b.Property<DateTimeOffset?>("NextCleanupAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_cleanup_at");
+
+                    b.Property<DateTimeOffset?>("OldCopyDeleteAfter")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("old_copy_delete_after");
+
+                    b.Property<DateTimeOffset?>("OldCopyDeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("old_copy_deleted_at");
+
+                    b.Property<int>("RecordsCopied")
+                        .HasColumnType("integer")
+                        .HasColumnName("records_copied");
+
+                    b.Property<int?>("RecordsTotal")
+                        .HasColumnType("integer")
+                        .HasColumnName("records_total");
+
+                    b.Property<Guid?>("SourceStoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_store_id");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("state");
+
+                    b.Property<Guid?>("TargetStoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_store_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("BabyId")
+                        .HasName("pk_data_store_moves");
+
+                    b.ToTable("data_store_moves", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -3585,6 +3677,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_data_stores_users_owner_user_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.Stores.DataStoreMove", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithOne()
+                        .HasForeignKey("Lotties.Domain.Stores.DataStoreMove", "BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_data_store_moves_babies_baby_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Units.UserUnitSettings", b =>

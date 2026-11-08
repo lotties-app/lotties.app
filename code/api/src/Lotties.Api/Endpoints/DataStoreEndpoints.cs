@@ -12,8 +12,8 @@ namespace Lotties.Api.Endpoints;
 /// role, whatever her scopes), answers 404 while <c>Stores:Enabled</c> is off (<see cref="DataStoreRequestGuard"/>, before any 401)
 /// and to an account that is not on <c>Stores:Allowlist</c> (<see cref="DataStoreAllowlistFilter"/>), is behind the consent gate, and
 /// is blocked in the try-it demo. These routes do not bind the baby to its store (no <c>StoreScopeEndpointFilter</c>): the owner
-/// must reach them while the store is down. Request bodies are never logged (they hold passwords) and responses never carry a host,
-/// a user name, a database name, a password or a CA.
+/// must reach them while the store is down, and while a move blocks the baby's writes. Request bodies are never logged (they hold
+/// passwords) and responses never carry a host, a user name, a database name, a password or a CA.
 /// </summary>
 internal static class DataStoreEndpoints
 {
@@ -21,7 +21,8 @@ internal static class DataStoreEndpoints
 
     /// <summary>
     /// Maps <c>GET</c>, <c>PUT</c> and <c>DELETE /data-store</c>, <c>POST /data-store/test</c> (rate limited
-    /// <see cref="RequestLimitPolicies.DataStoreTest"/>) and <c>POST /data-store/move-in</c>, <c>/move-out</c> (501 until task T7); the
+    /// <see cref="RequestLimitPolicies.DataStoreTest"/>) and <c>POST /data-store/move-in</c>, <c>/move-out</c> (task T7: 202 with the
+    /// started move, which a background worker copies, verifies and switches; its progress is the <c>move</c> of <c>GET</c>); the
     /// <c>PUT</c> and the moves are rate limited <see cref="RequestLimitPolicies.DataStoreWrite"/>.
     /// </summary>
     public static IEndpointRouteBuilder MapDataStoreEndpoints(this IEndpointRouteBuilder api)
@@ -51,12 +52,14 @@ internal static class DataStoreEndpoints
         store.MapPost(Path + "/move-in", MoveInAsync)
             .WithName("MoveIntoDataStore")
             .RequireRateLimiting(RequestLimitPolicies.DataStoreWrite)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesProblem(StatusCodes.Status501NotImplemented);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
         store.MapPost(Path + "/move-out", MoveOutAsync)
             .WithName("MoveOutOfDataStore")
             .RequireRateLimiting(RequestLimitPolicies.DataStoreWrite)
-            .ProducesProblem(StatusCodes.Status501NotImplemented);
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
         return api;
     }
 
@@ -75,15 +78,9 @@ internal static class DataStoreEndpoints
     private static async Task<Ok<DataStoreTestResponse>> TestAsync(Guid babyId, IDataStoreService stores, CancellationToken cancellationToken) =>
         TypedResults.Ok(await stores.TestAsync(babyId, cancellationToken));
 
-    private static async Task<NoContent> MoveInAsync(Guid babyId, IDataStoreService stores, CancellationToken cancellationToken)
-    {
-        await stores.MoveInAsync(babyId, cancellationToken);
-        return TypedResults.NoContent();
-    }
+    private static async Task<Accepted<DataStoreMoveStatus>> MoveInAsync(Guid babyId, IDataStoreService stores, CancellationToken cancellationToken) =>
+        TypedResults.Accepted((string?)null, await stores.MoveInAsync(babyId, cancellationToken));
 
-    private static async Task<NoContent> MoveOutAsync(Guid babyId, IDataStoreService stores, CancellationToken cancellationToken)
-    {
-        await stores.MoveOutAsync(babyId, cancellationToken);
-        return TypedResults.NoContent();
-    }
+    private static async Task<Accepted<DataStoreMoveStatus>> MoveOutAsync(Guid babyId, IDataStoreService stores, CancellationToken cancellationToken) =>
+        TypedResults.Accepted((string?)null, await stores.MoveOutAsync(babyId, cancellationToken));
 }

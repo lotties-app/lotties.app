@@ -26,6 +26,9 @@ internal sealed class EfDataStoreRepository(LottiesDbContext context, UniqueViol
             .Select(assignment => assignment.DataStoreId)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public Task<BabyStoreAssignment?> FindAssignmentAsync(Guid babyId, CancellationToken cancellationToken = default) =>
+        context.BabyStoreAssignments.SingleOrDefaultAsync(assignment => assignment.BabyId == babyId, cancellationToken);
+
     public Task<bool> IsInUseAsync(Guid storeId, CancellationToken cancellationToken = default) =>
         context.BabyStoreAssignments.AsNoTracking().AnyAsync(assignment => assignment.DataStoreId == storeId, cancellationToken);
 

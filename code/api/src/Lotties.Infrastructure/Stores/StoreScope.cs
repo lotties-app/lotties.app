@@ -3,6 +3,8 @@ using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Stores.Failures;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Options;
 
 namespace Lotties.Infrastructure.Stores;
@@ -21,6 +23,10 @@ namespace Lotties.Infrastructure.Stores;
 /// the records of the babies that point at it. With <c>Stores:Enabled</c> off no external store is ever opened: a baby whose
 /// pointer names one gets <c>store_unavailable</c>, never the built-in store. An external store is opened only through its circuit
 /// breaker (task T8): while it is open the request fails at once with the store's last failure class, without touching the network.
+/// While <c>Stores:Enabled</c> is on, entering a baby also reads whether a move of its records is running (task T7, one primary-key
+/// read of <c>data_store_moves</c>): such a baby's reads go on from its current store, but a save of any of its records through this
+/// scope's contexts throws <c>503 store_moving</c>. A move itself never enters the baby: it opens the two stores by name
+/// (<see cref="OpenStoreAsync"/>).
 /// </remarks>
 internal sealed class StoreScope(
     IStoreResolver resolver,
@@ -28,11 +34,17 @@ internal sealed class StoreScope(
     IExternalDataStores externals,
     IStoreMigrator migrator,
     StoreCircuitBreakers breakers,
+    IDataStoreMoveRepository moves,
+    TimeProvider time,
     IOptions<StoreRoutingOptions> options) : IStoreScope, IAsyncDisposable, IDisposable
 {
+    /// <summary>The property every data-plane record names its baby with.</summary>
+    private const string BabyIdProperty = "BabyId";
+
     private readonly Dictionary<Guid, StoreRoute> _routes = [];
     private readonly Dictionary<DataStoreKey, IDataStore> _stores = [];
     private readonly Dictionary<DataStoreKey, LottiesDataDbContext> _contexts = [];
+    private readonly HashSet<Guid> _moving = [];
 
     /// <summary>The data context of the only store this scope holds (<c>store_scope_missing</c> with none, <c>store_scope_ambiguous</c> with several).</summary>
     public LottiesDataDbContext Current => ContextOf(OnlyStore());
@@ -49,7 +61,19 @@ internal sealed class StoreScope(
 
         var route = await resolver.ResolveForBabyAsync(babyId, cancellationToken);
         await OpenAsync(route.Store, cancellationToken);
+        await NoteMoveAsync(babyId, cancellationToken);
         _routes[babyId] = route;
+    }
+
+    /// <summary>
+    /// The data context of <paramref name="store"/>, named by the caller instead of resolved for a baby: only for a move of a baby's
+    /// records between two stores (task T7), which reads one store and writes the other in the same scope. The store is opened like any
+    /// other (feature flag, circuit breaker, migrator); the scope enters no baby, so the data-plane repositories stay unusable here.
+    /// </summary>
+    public async Task<LottiesDataDbContext> OpenStoreAsync(DataStoreKey store, CancellationToken cancellationToken = default)
+    {
+        await OpenAsync(store, cancellationToken);
+        return ContextOf(store);
     }
 
     public StoreRoute RouteOf(Guid babyId) =>
@@ -190,11 +214,36 @@ internal sealed class StoreScope(
         if (!_contexts.TryGetValue(key, out var context))
         {
             context = _stores[key].CreateContext();
+            context.SavingChanges += RefuseWritesOfMovingBabies;
             _contexts[key] = context;
         }
 
         return context;
     }
+
+    /// <summary>Remembers that a move blocks the baby's writes (only while the feature is on: with it off, no move can exist).</summary>
+    private async Task NoteMoveAsync(Guid babyId, CancellationToken cancellationToken)
+    {
+        if (options.Value.Enabled && await moves.BlocksWritesAsync(babyId, time.GetUtcNow(), cancellationToken))
+        {
+            _moving.Add(babyId);
+        }
+    }
+
+    /// <summary>Refuses a save that adds, changes or deletes a record of a baby whose records are being moved (<c>store_moving</c>).</summary>
+    private void RefuseWritesOfMovingBabies(object? sender, SavingChangesEventArgs args)
+    {
+        if (_moving.Count > 0 && sender is DbContext context && context.ChangeTracker.Entries().Any(WritesAMovingBaby))
+        {
+            throw new StoreMovingException();
+        }
+    }
+
+    private bool WritesAMovingBaby(EntityEntry entry) =>
+        entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+        && entry.Metadata.FindProperty(BabyIdProperty) is not null
+        && entry.Property(BabyIdProperty).CurrentValue is Guid babyId
+        && _moving.Contains(babyId);
 
     /// <summary>The contexts this scope created on external stores; the built-in one belongs to the DI scope.</summary>
     private LottiesDataDbContext[] OwnedContexts() =>

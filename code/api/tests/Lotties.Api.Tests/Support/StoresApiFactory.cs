@@ -6,6 +6,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Consents;
 using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
+using Lotties.Infrastructure.Stores;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,8 +19,10 @@ namespace Lotties.Api.Tests.Support;
 /// The API with bring-your-own-database on (<c>Stores:Enabled</c>, a random test key-encryption key) and a fixed pool of allowlisted
 /// account subjects (<see cref="TakeAllowedSubject"/>), so the data-store routes (task T6) answer. Nothing reaches the network: the
 /// egress guard's DNS resolver is <see cref="FakeStoreHostResolver"/> (public names resolve to a public address, names under
-/// <see cref="FakeStoreHostResolver.PrivateSuffix"/> to a private one) and the connection test is <see cref="FakeStoreConnectionTester"/>.
-/// Every log line (with its exception) is kept in <see cref="Logs"/>. The endpoint role matrix runs on this host too.
+/// <see cref="FakeStoreHostResolver.PrivateSuffix"/> to a private one), the connection test is <see cref="FakeStoreConnectionTester"/>, and
+/// the external stores and their migrator are <see cref="Stores"/> (SQLite files; a store a test did not create there is unavailable, so
+/// the real migrator never connects anywhere). The move worker (task T7) runs without the drain delay. Every log line (with its
+/// exception) is kept in <see cref="Logs"/>. The endpoint role matrix runs on this host too.
 /// </summary>
 public class StoresApiFactory : ApiFactory
 {
@@ -33,6 +36,9 @@ public class StoresApiFactory : ApiFactory
     public FakeStoreConnectionTester Tester { get; } = new();
 
     public RecordingStoreHealth Health { get; } = new();
+
+    /// <summary>The external stores of this host and their migrator (task T7's moves copy into and out of them).</summary>
+    internal SqliteDataStores Stores { get; } = new();
 
     internal CapturingLogs Logs { get; } = new();
 
@@ -70,6 +76,7 @@ public class StoresApiFactory : ApiFactory
         base.ConfigureWebHost(builder);
         builder.UseSetting("Stores:Enabled", "true");
         builder.UseSetting("Stores:CurrentKeyId", TestKeyId);
+        builder.UseSetting("Stores:Moves:DrainSeconds", "0");
         builder.UseSetting($"Stores:KeyEncryptionKeys:{TestKeyId}", Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
         for (var index = 0; index < _allowed.Length; index++)
         {
@@ -81,8 +88,19 @@ public class StoresApiFactory : ApiFactory
             services.Replace(ServiceDescriptor.Singleton<IHostResolver, FakeStoreHostResolver>());
             services.Replace(ServiceDescriptor.Singleton<IStoreConnectionTester>(Tester));
             services.Replace(ServiceDescriptor.Singleton<IStoreHealth>(Health));
+            services.Replace(ServiceDescriptor.Singleton<IExternalDataStores>(Stores));
+            services.Replace(ServiceDescriptor.Singleton<IStoreMigrator>(Stores));
             services.AddSingleton<ILoggerProvider>(Logs);
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing)
+        {
+            Stores.Dispose();
+        }
     }
 }
 
