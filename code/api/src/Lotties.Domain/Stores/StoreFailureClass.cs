@@ -48,6 +48,12 @@ public enum StoreFailureClass
     /// failure of the store itself; never counts towards its circuit breaker.
     /// </summary>
     Moving,
+
+    /// <summary>
+    /// The account that alone keeps the baby is being deleted (task T10): writes wait (the account and the baby are gone a moment
+    /// later), reads go on. Not a failure of the store itself; never counts towards its circuit breaker.
+    /// </summary>
+    AccountDeleting,
 }
 
 /// <summary>The stable wire codes of <see cref="StoreFailureClass"/> and which classes count as connection failures.</summary>
@@ -69,6 +75,7 @@ public static class StoreFailureCodes
         StoreFailureClass.Migrating => "store_migrating",
         StoreFailureClass.MigrationFailed => "store_migration_failed",
         StoreFailureClass.Moving => "store_moving",
+        StoreFailureClass.AccountDeleting => "store_account_deleting",
         _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, null),
     };
 

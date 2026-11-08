@@ -231,4 +231,23 @@ describe('delete account in settings', () => {
     expect(await screen.findByText(/only owner of a baby that other people use/)).toBeTruthy();
     expect(screen.queryByText('Account deleted')).toBeNull();
   });
+
+  it.each([
+    ['store_move_in_progress', /being moved between Lotties and your own database/],
+    ['account_deletion_in_progress', /This account is already being deleted/],
+  ])('says why the server refused the deletion (%s)', async (code, text) => {
+    renderSection((path, method) => {
+      if (method === 'DELETE') throw httpError(409, code);
+      return path === '/api/v1/me/deletion-preview' ? preview() : undefined;
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'I understand that this is permanent.' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+    expect(await screen.findByText(text)).toBeTruthy();
+    expect(screen.queryByText('Account deleted')).toBeNull();
+  });
 });

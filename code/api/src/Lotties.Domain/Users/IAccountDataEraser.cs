@@ -29,25 +29,13 @@ public sealed record OwnStoreCopy(Guid BabyId, Guid StoreId);
 
 /// <summary>
 /// What account deletion finds in the user's own databases (docs/design/47-bring-your-own-database.md section 9, task T10): every
-/// baby erased with the account that has records there (it points at the store, or a move left an old copy or leftovers there), the
-/// user's stores (their descriptors go with the account in every case) and the erased babies whose move a worker is running now.
+/// baby erased with the account that has records there (it points at the store, or a move left an old copy or leftovers there) and
+/// the user's stores (their descriptors go with the account in every case).
 /// </summary>
-public sealed record OwnStoreCopies(IReadOnlyList<OwnStoreCopy> Copies, IReadOnlyList<Guid> StoreIds, IReadOnlyList<Guid> MovingBabyIds)
+public sealed record OwnStoreCopies(IReadOnlyList<OwnStoreCopy> Copies, IReadOnlyList<Guid> StoreIds)
 {
     /// <summary>The babies that have records in one of the user's own databases.</summary>
     public IReadOnlyList<Guid> BabyIds => [.. Copies.Select(copy => copy.BabyId).Distinct()];
-
-    /// <summary>
-    /// Throws <see cref="DataStoreMoveInProgressException"/> while a worker moves one of the babies (or deletes its old copy): erasing
-    /// it then would let the worker go on writing into a database Lotties is about to forget. The work ends within minutes.
-    /// </summary>
-    public void EnsureNoMoveRunning()
-    {
-        if (MovingBabyIds.Count > 0)
-        {
-            throw new DataStoreMoveInProgressException();
-        }
-    }
 }
 
 /// <summary>What the eraser does with a baby whose records are on an external store (its pointer names one).</summary>
@@ -79,7 +67,20 @@ public interface IAccountDataEraser
     /// owns: the store a baby points at and the store a move of it may have left records in, only when that store is one of the
     /// user's <c>data_stores</c> rows (another person's database is never named). Reads the control plane only.
     /// </summary>
-    Task<OwnStoreCopies> FindOwnStoreCopiesAsync(Guid userId, IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken = default);
+    Task<OwnStoreCopies> FindOwnStoreCopiesAsync(Guid userId, IReadOnlyCollection<Guid> babyIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Blocks the writes and moves of <paramref name="babyIds"/> (the babies erased with the account) for the time of the deletion
+    /// (<see cref="Stores.AccountDeletionBlock"/>), in one control-plane transaction: a conditional update that matches only babies no
+    /// other deletion blocks, then a check that no worker holds a move of one of them. Throws, with nothing changed,
+    /// <see cref="AccountDeletionInProgressException"/> when a deletion already blocks one and
+    /// <see cref="DataStoreMoveInProgressException"/> while a move of one runs (the mirror of a move start, which takes the baby's row
+    /// only while no deletion blocks it: of the two, exactly one goes ahead).
+    /// </summary>
+    Task BeginDeletionAsync(IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    /// <summary>Lifts the block of <see cref="BeginDeletionAsync"/> after a deletion that failed before Lotties' side was erased.</summary>
+    Task CancelDeletionAsync(IReadOnlyCollection<Guid> babyIds, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Applies the plan in one transaction and anonymizes the user row. Throws

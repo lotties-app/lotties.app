@@ -1,4 +1,5 @@
 using Lotties.Domain.Exceptions;
+using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 
 namespace Lotties.Domain.Tests.Users;
@@ -30,17 +31,19 @@ public sealed class AccountDeletionPlanTests
     [Fact]
     public void OwnStoreCopies_SameBabyTwice_IsNamedOnce()
     {
-        var copies = new OwnStoreCopies([new OwnStoreCopy(BabyA, Store), new OwnStoreCopy(BabyA, Guid.NewGuid()), new OwnStoreCopy(BabyB, Store)], [Store], []);
+        var copies = new OwnStoreCopies([new OwnStoreCopy(BabyA, Store), new OwnStoreCopy(BabyA, Guid.NewGuid()), new OwnStoreCopy(BabyB, Store)], [Store]);
 
         Assert.Equal([BabyA, BabyB], copies.BabyIds);
-        copies.EnsureNoMoveRunning();
     }
 
     [Fact]
-    public void EnsureNoMoveRunning_AMoveRuns_ThrowsMoveInProgress()
+    public void AccountDeletionBlock_HoldsForTenMinutesThenIsStale()
     {
-        var copies = new OwnStoreCopies([], [Store], [BabyA]);
+        var start = new DateTimeOffset(2026, 11, 8, 10, 0, 0, TimeSpan.FromHours(-3));
 
-        Assert.Throws<DataStoreMoveInProgressException>(copies.EnsureNoMoveRunning);
+        Assert.False(AccountDeletionBlock.IsActive(null, start));
+        Assert.True(AccountDeletionBlock.IsActive(start, start.AddMinutes(9)));
+        Assert.False(AccountDeletionBlock.IsActive(start, start.AddMinutes(10)));
+        Assert.Equal(TimeSpan.Zero, AccountDeletionBlock.StaleBefore(start).Offset);
     }
 }

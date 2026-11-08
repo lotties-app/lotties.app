@@ -404,7 +404,9 @@ MVP; the facts below are the ones the text is held to (`legal/dataFlows.ts` `OWN
   if she ticks "also delete these babies' records in my own database" in the delete dialog (opt-in, off by default, owner
   decision: it is her database and the delete cannot be undone); the box shows only when an erased baby has records there.
   If her database cannot be reached, the deletion still completes and the app lists the babies whose records stay there,
-  with a hint to delete them herself; nothing about the database is logged or returned (design 47 section 9). The policy
+  with a hint to delete them herself; nothing about the database is logged or returned (design 47 section 9). For the time
+  of the deletion the babies' writes and moves are blocked (`babies.account_deletion_started_at`, a timestamp only, gone
+  with the baby row), so nothing new reaches her database between the wipe and the erasure. The policy
   text today ("The records in your own database are yours: delete them there when you want") stays true for the default
   and is not changed here: the owner ships the sentence about the opt-in with the next material policy version (no consent
   entry added now). Proposed wording: "When you delete your Lotties account you can choose to have Lotties delete these

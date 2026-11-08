@@ -22,6 +22,8 @@
     "ownDatabaseExplain": "Excluir sua conta apaga o que o Lotties guarda, inclusive os dados de conexão do seu banco, e depois disso o Lotties não consegue mais acessá-lo. O banco é seu: se você não marcar a opção abaixo, os registros que estão nele continuam lá.",
     "ownDatabaseWipe": "Excluir também os registros destes bebês no meu próprio banco de dados",
     "ownDatabaseNotWiped": "O Lotties não conseguiu acessar seu próprio banco de dados, então os registros destes bebês continuam lá. Você pode apagá-los no seu banco (por exemplo, removendo o schema chamado lotties):",
+    "moveRunning": "Os registros de um destes bebês estão sendo movidos entre o Lotties e o seu próprio banco de dados agora. Espere a mudança terminar (normalmente alguns minutos) e exclua a conta de novo.",
+    "deletionRunning": "Esta conta já está sendo excluída, neste ou em outro aparelho. Espere um pouco e confira de novo.",
     "understand": "Entendo que isso é permanente.",
     "confirm": "Excluir tudo",
     "doneTitle": "Conta excluída",

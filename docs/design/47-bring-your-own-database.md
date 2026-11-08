@@ -427,6 +427,13 @@ CA input in the MVP unless a target provider needs it (decided in T0).
   store (impossible today, Owner-only rule of T11) still fails closed with `store_unavailable`. A running move of an erased
   baby refuses the deletion (`409 store_move_in_progress`, it ends within minutes), so no worker keeps writing into a
   database Lotties is about to forget.
+- *Write block (as built):* for the time of the deletion the erased babies carry `babies.account_deletion_started_at`. Their
+  writes answer the retriable `503 store_account_deleting` on every way in (reads go on), no move of them may start or
+  resume (`409 account_deletion_in_progress`), and a second deletion of the same account is refused the same way. The block
+  is set and the running-move check made in one control-plane transaction, the mirror of a move start, so of a deletion and
+  a move start that race exactly one goes ahead. The wipe waits the move drain first (`Stores:Moves:DrainSeconds`, only when
+  there is something to wipe). A deletion that fails before Lotties' side is erased lifts the block; a block nobody lifted
+  expires after 10 minutes (`AccountDeletionBlock.MaxAge`).
 - The eraser's data-plane half has its own fixture test: a store with a row in every data table of a baby, erased, empty
   (`AccountErasureOwnStoreTests`, SQLite; `StoreMovePostgresTests`, Postgres).
 - **Anonymous aggregates (owner rule, 2026-11-08).** Account erasure does not delete or change aggregate data derived from
@@ -632,14 +639,22 @@ fails `store_unavailable` until that piece lands; the Postgres container tests (
 CI only) move a baby both ways against a real external store with a fixture-built opener. `docs/DEPLOY.md` "Moving a baby between
 databases" is the operator's view.
 
-**Status (2026-11-08): T10 is built** (branch `feat/byo-t10-account-erasure`, not deployed; no migration, no new route). `DELETE /me`
+**Status (2026-11-08): T10 is built** (branch `feat/byo-t10-account-erasure`, not deployed; control migration
+`20261108135326_AccountDeletionBlock` adds the nullable column `babies.account_deletion_started_at`, additive, empty; no new route). `DELETE /me`
 takes the additive query flag `wipeOwnDatabase` (default false: older clients get today's behavior), and `GET /me/deletion-preview` adds
 `ownDatabaseBabies` (the erased babies that have records in the user's own database) so the web shows the box only then; the answer adds
 `ownDatabaseWiped` and `ownDatabaseNotWiped` (baby ids). `AccountDeletionService` is a recipe: plan, refuse a blocked deletion, find
 (`IAccountDataEraser.FindOwnStoreCopiesAsync`, control plane only) for each erased baby the store it points at and the store its move
 row may have left records in (`DataStoreMove.OwnStoreThatMayHoldRecords`: the target of a move in unless its leftovers are gone, the
-source of a move out unless its old copy was deleted), kept only when that `data_stores` row is the user's; refuse while a worker
-holds the move row of an erased baby (`409 store_move_in_progress`); with the flag, wipe (`OwnDatabaseWiper`: `IStoreRecordCopier.WipeAsync`
+source of a move out unless its old copy was deleted), kept only when that `data_stores` row is the user's. Before that the erased babies are
+blocked (`IAccountDataEraser.BeginDeletionAsync`, one control-plane transaction: a conditional update of `account_deletion_started_at`
+that matches only babies no fresh block holds, then a check that no worker holds a move row of one of them; `409 store_move_in_progress`
+or `409 account_deletion_in_progress` otherwise, nothing changed). The block refuses saves of the babies' records in `StoreScope` (one
+more primary-key read when a baby is entered while `Stores:Enabled` is on, also through `TryEnterBuiltInAsync`: `503
+store_account_deleting`, new failure class `AccountDeleting`, `Retry-After` 15 s, never counted by the breaker) and the starts and worker
+claims of moves (`IDataStoreMoveRepository.TrySaveUnlessDeletingAsync`: in one transaction, a conditional update that takes the baby's
+row only while no fresh block holds it, then the move row; on PostgreSQL the row lock orders the two, and the deletion's check, a new
+statement, sees a move committed first). With the flag, after the move drain, wipe (`OwnDatabaseWiper`: `IStoreRecordCopier.WipeAsync`
 per baby, opened through `StoreScope.OpenStoreAsync`, 30 s per store, a failure or timeout reports the store's remaining babies as not
 wiped and logs counts and the exception type only); erase Lotties' side with `ExternalStoreErasure.LottiesSideOnly` (a baby erased with
 the account goes whatever its store; a baby others keep must still be on the built-in store); then `IStoreHealth.Forget` each of her
@@ -652,9 +667,12 @@ copy and a failed move's leftovers are wiped, another person's babies, database 
 of a kept baby on an external store fails closed, a running move is 409, the preview names the right babies; `OwnStoreTables` lists the
 12 tables and fails for a new one), `AccountDeletionPlanTests` and `DataStoreMoveTests` (domain), and two container tests in
 `Lotties.Postgres.Tests/Stores/StoreMovePostgresTests.cs` (CI only: a moved-in baby wiped in a real store with another baby's row kept,
-and the opt-out leaving it). Residual risks: a write from another of her devices that lands in her database between the wipe and the
-erasure stays there (milliseconds; the app is being deleted from that same account); a move started in that same window is not refused
-(its worker then fails on the missing row and may leave a partial copy in her database, which she controls).
+and the opt-out leaving it), plus the block: a late write refused with `store_account_deleting` while reads go on, a move start refused
+while deleting and allowed once the block is lifted, a deletion refused while a move runs and setting no block, a second deletion refused,
+a stale block taken over (SQLite), the block lifted when the erasure fails (`Application/AccountDeletionServiceTests`), `StoreScopeTests`
+for both ways in, and a container test racing a deletion and a move start 25 times (exactly one goes ahead each time). Residual risk: a
+write that was already past `StoreScope`'s check when the block was set and takes longer than the drain to commit could still land after
+the wipe (the same window T7 states for a move); with the wipe not asked for, her database is not touched anyway.
 
 **Status (2026-11-07): T11 is built** (branch `feat/byo-t11-assistants-jobs`, stacked on T8, not deployed; no migration, no new route, no
 voice command changed). *Assistants*: Alexa and MCP already resolved the baby's store through `AssistantSubjects` (T2) and answered any

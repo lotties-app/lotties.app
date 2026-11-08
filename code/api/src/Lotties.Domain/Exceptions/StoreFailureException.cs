@@ -39,6 +39,7 @@ public abstract class StoreFailureException : DomainException
         StoreFailureClass.Migrating => new StoreMigratingException(retryAfter),
         StoreFailureClass.MigrationFailed => new StoreMigrationFailedException(retryAfter),
         StoreFailureClass.Moving => new StoreMovingException(retryAfter),
+        StoreFailureClass.AccountDeleting => new StoreAccountDeletingException(retryAfter),
         _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, null),
     };
 

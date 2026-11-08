@@ -8,6 +8,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.CareProviders;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.Formulas;
 using Lotties.Domain.Measurements;
 using Lotties.Domain.Medications;
@@ -147,6 +148,21 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
         Assert.Equal(own, await world.SnapshotAsync(world.Store, family.BabyId));
         Assert.False(await world.ControlAsync(context => context.Babies.AnyAsync(baby => baby.Id == family.BabyId)));
         Assert.False(await world.ControlAsync(context => context.DataStores.AnyAsync(store => store.Id == world.StoreId)));
+    }
+
+    [PostgresFact]
+    public async Task An_account_deletion_and_a_move_start_that_race_never_both_go_ahead()
+    {
+        await using var world = await WorldAsync("eraserace");
+        var family = await world.SeedFamilyAsync(events: 1);
+        var outcomes = new List<(bool Deleting, bool Moving)>();
+        for (var round = 0; round < 25; round++)
+        {
+            var babyId = await world.AddBabyAsync(family.OwnerId);
+            outcomes.Add(await world.RaceDeletionAndMoveAsync(babyId));
+        }
+
+        Assert.All(outcomes, outcome => Assert.True(outcome.Deleting ^ outcome.Moving, $"deleting {outcome.Deleting}, moving {outcome.Moving}"));
     }
 
     private static int Count(SortedDictionary<string, List<string>> snapshot) => snapshot.Values.Sum(rows => rows.Count);
@@ -290,6 +306,51 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
 
             await using var read = provider.CreateAsyncScope();
             return (await read.ServiceProvider.GetRequiredService<IDataStoreMoveRepository>().FindAsync(babyId))!;
+        }
+
+        /// <summary>A baby of the owner without records.</summary>
+        public async Task<Guid> AddBabyAsync(Guid ownerId)
+        {
+            await using var scope = provider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<LottiesDbContext>();
+            var baby = Baby.Create("Lia", new DateOnly(2026, 8, 1), ownerId, Now);
+            context.Babies.Add(baby);
+            await context.SaveChangesAsync();
+            return baby.Id;
+        }
+
+        /// <summary>
+        /// Starts an account deletion's block and a move of <paramref name="babyId"/> at the same moment, each in its own scope (its own
+        /// connection), and says which went ahead.
+        /// </summary>
+        public async Task<(bool Deleting, bool Moving)> RaceDeletionAndMoveAsync(Guid babyId)
+        {
+            using var start = new ManualResetEventSlim();
+            var deletion = Task.Run(async () =>
+            {
+                await using var scope = provider.CreateAsyncScope();
+                var eraser = scope.ServiceProvider.GetRequiredService<IAccountDataEraser>();
+                start.Wait();
+                try
+                {
+                    await eraser.BeginDeletionAsync([babyId], DateTimeOffset.UtcNow);
+                    return true;
+                }
+                catch (Exception exception) when (exception is DataStoreMoveInProgressException or AccountDeletionInProgressException)
+                {
+                    return false;
+                }
+            });
+            var move = Task.Run(async () =>
+            {
+                await using var scope = provider.CreateAsyncScope();
+                var moves = scope.ServiceProvider.GetRequiredService<IDataStoreMoveRepository>();
+                moves.Add(DataStoreMove.Start(babyId, DataStoreMoveDirection.In, storeId, "race-worker", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(10)));
+                start.Wait();
+                return await moves.TrySaveUnlessDeletingAsync(babyId, DateTimeOffset.UtcNow) == DataStoreMoveSave.Saved;
+            });
+            start.Set();
+            return (await deletion, await move);
         }
 
         /// <summary>Deletes the owner's account through the production service, as <c>DELETE /me</c> does.</summary>

@@ -1,12 +1,15 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text.Json;
+using Lotties.Api.Tests.Backups;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Appointments;
 using Lotties.Domain.Babies;
 using Lotties.Domain.CareProviders;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.Formulas;
 using Lotties.Domain.Measurements;
 using Lotties.Domain.Medications;
@@ -238,6 +241,136 @@ public sealed class AccountErasureOwnStoreTests : IClassFixture<StoresApiFactory
         Assert.Equal(new[] { onStore, movedBack, hosted }.Order(), preview.GetProperty("deletedBabies").EnumerateArray().Select(baby => baby.GetProperty("id").GetGuid()).Order());
         Assert.Equal(new[] { onStore, movedBack }.Order(), Ids(preview, "ownDatabaseBabies").Order());
     }
+
+    [Fact]
+    public async Task Write_WhileHerAccountIsBeingDeleted_Is503StoreAccountDeletingAndReadsGoOn()
+    {
+        var owner = await OwnerWithStoreAsync();
+        var babyId = await BabyOnStoreAsync(owner);
+        await PutRecordsInStoreAsync(owner.StoreId, babyId, owner.UserId);
+        var before = await StoreSnapshotAsync(owner.StoreId, babyId);
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], DateTimeOffset.UtcNow));
+        var client = _factory.CreateClientFor(owner.Subject);
+
+        var write = await client.PutAsJsonAsync($"/api/v1/babies/{babyId}/events/{Guid.NewGuid()}", new { typeId = BuiltInEventTypes.DiaperId, startedAt = Now, payload = new { content = "WET" } });
+        var read = await client.GetAsync($"/api/v1/babies/{babyId}/events");
+
+        await write.AssertProblemAsync(HttpStatusCode.ServiceUnavailable, "store_account_deleting");
+        Assert.Equal("15", write.Headers.GetValues("Retry-After").Single());
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+        Assert.Equal(before, await StoreSnapshotAsync(owner.StoreId, babyId));
+    }
+
+    [Fact]
+    public async Task MoveIn_WhileHerAccountIsBeingDeleted_Is409AndNoMoveStarts()
+    {
+        var subject = _factory.TakeAllowedSubject();
+        var baby = await _factory.SeedBabyOwnedByAsync(subject);
+        await _factory.GrantByoConsentAsync(subject);
+        var client = _factory.CreateClientFor(subject);
+        var storeId = DataStore.FirstStoreIdOf(await _factory.UserIdAsync(subject));
+        await client.PutAsJsonAsync($"/api/v1/babies/{baby.BabyId}/data-store", StoreBody()).Ok();
+        _factory.Stores.Create(storeId);
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([baby.BabyId], DateTimeOffset.UtcNow));
+
+        var response = await client.PostAsync($"/api/v1/babies/{baby.BabyId}/data-store/move-in", null);
+
+        await response.AssertProblemAsync(HttpStatusCode.Conflict, "account_deletion_in_progress");
+        Assert.False(await _factory.QueryAsync(context => context.DataStoreMoves.AnyAsync(move => move.BabyId == baby.BabyId)));
+    }
+
+    [Fact]
+    public async Task Delete_WhileAnotherDeletionOfHerAccountRuns_Is409AndErasesNothing()
+    {
+        var owner = await OwnerWithStoreAsync();
+        var babyId = await BabyOnStoreAsync(owner);
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], DateTimeOffset.UtcNow));
+
+        var response = await _factory.CreateClientFor(owner.Subject).DeleteAsync(WipePath);
+
+        await response.AssertProblemAsync(HttpStatusCode.Conflict, "account_deletion_in_progress");
+        Assert.True(await _factory.QueryAsync(context => context.Babies.AnyAsync(baby => baby.Id == babyId)));
+        Assert.True(await _factory.QueryAsync(context => context.DataStores.AnyAsync(store => store.Id == owner.StoreId)));
+    }
+
+    [Fact]
+    public async Task BeginDeletion_ThenAMoveSave_TheMoveLosesAndAfterTheBlockIsLiftedItWins()
+    {
+        var owner = await OwnerWithStoreAsync();
+        var babyId = await HostedBabyAsync(owner);
+        var now = DateTimeOffset.UtcNow;
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], now));
+
+        var refused = await TryStartMoveAsync(babyId, owner.StoreId, now);
+        var blockedThen = await WriteBlockAsync(babyId, now);
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.CancelDeletionAsync([babyId]));
+        var started = await TryStartMoveAsync(babyId, owner.StoreId, now);
+
+        Assert.Equal(DataStoreMoveSave.AccountDeleting, refused);
+        Assert.Equal(StoreWriteBlock.AccountDeleting, blockedThen);
+        Assert.Equal(DataStoreMoveSave.Saved, started);
+        Assert.Equal(StoreWriteBlock.Moving, await WriteBlockAsync(babyId, now));
+    }
+
+    [Fact]
+    public async Task MoveSave_ThenBeginDeletion_TheDeletionLosesAndSetsNoBlock()
+    {
+        var owner = await OwnerWithStoreAsync();
+        var babyId = await HostedBabyAsync(owner);
+        var now = DateTimeOffset.UtcNow;
+        Assert.Equal(DataStoreMoveSave.Saved, await TryStartMoveAsync(babyId, owner.StoreId, now));
+
+        await Assert.ThrowsAsync<DataStoreMoveInProgressException>(() => InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], now)));
+
+        Assert.Null(await DeletionStartedAtAsync(babyId));
+    }
+
+    [Fact]
+    public async Task BeginDeletion_StaleBlock_IsTakenOverAndAFreshOneRefusesASecondDeletion()
+    {
+        var owner = await OwnerWithStoreAsync();
+        var babyId = await HostedBabyAsync(owner);
+        var now = DateTimeOffset.UtcNow;
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], now - AccountDeletionBlock.MaxAge - TimeSpan.FromMinutes(1)));
+
+        Assert.Equal(StoreWriteBlock.None, await WriteBlockAsync(babyId, now));
+        await InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], now));
+        await Assert.ThrowsAsync<AccountDeletionInProgressException>(() => InScopeAsync<IAccountDataEraser>(eraser => eraser.BeginDeletionAsync([babyId], now)));
+        Assert.Equal(StoreWriteBlock.AccountDeleting, await WriteBlockAsync(babyId, now));
+    }
+
+    private static object StoreBody() => new
+    {
+        providerLabel = "Example Cloud",
+        app = new { host = "db.example.com", port = 6543, database = "lotties", username = "lotties_app", password = "app-secret-value" },
+        migrator = new { host = "direct.example.com", port = 5432, username = "lotties_migrator", password = "migrator-secret-value" },
+        tls = new { sslMode = "verify_full" },
+    };
+
+    private async Task InScopeAsync<TService>(Func<TService, Task> work)
+        where TService : notnull
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        await work(scope.ServiceProvider.GetRequiredService<TService>());
+    }
+
+    /// <summary>A move start as the request side saves it: the row and the conditional take of the baby's row, in one transaction.</summary>
+    private async Task<DataStoreMoveSave> TryStartMoveAsync(Guid babyId, Guid storeId, DateTimeOffset now)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var moves = scope.ServiceProvider.GetRequiredService<IDataStoreMoveRepository>();
+        moves.Add(DataStoreMove.Start(babyId, DataStoreMoveDirection.In, storeId, "test-worker", now, TimeSpan.FromMinutes(10)));
+        return await moves.TrySaveUnlessDeletingAsync(babyId, now);
+    }
+
+    private async Task<StoreWriteBlock> WriteBlockAsync(Guid babyId, DateTimeOffset now)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IDataStoreMoveRepository>().WriteBlockAsync(babyId, now);
+    }
+
+    private Task<DateTimeOffset?> DeletionStartedAtAsync(Guid babyId) =>
+        _factory.QueryAsync(context => context.BabyStoreAssignments.Where(row => row.BabyId == babyId).Select(row => row.AccountDeletionStartedAt).SingleAsync());
 
     private static IReadOnlyList<Guid> Ids(JsonElement body, string property) =>
         [.. body.GetProperty(property).EnumerateArray().Select(item => item.ValueKind == JsonValueKind.Object ? item.GetProperty("id").GetGuid() : item.GetGuid())];

@@ -47,6 +47,17 @@ internal sealed class DataStoreMoves(
         return await StartAsync(babyId, DataStoreMoveDirection.Out, storeId, cancellationToken);
     }
 
+    private static void EnsureSaved(DataStoreMoveSave save)
+    {
+        switch (save)
+        {
+            case DataStoreMoveSave.AccountDeleting:
+                throw new AccountDeletionInProgressException();
+            case DataStoreMoveSave.Conflict:
+                throw new DataStoreMoveInProgressException();
+        }
+    }
+
     private static void EnsureHosted(Guid? pointer)
     {
         if (pointer is not null)
@@ -67,7 +78,8 @@ internal sealed class DataStoreMoves(
 
     /// <summary>
     /// Saves the move (new, or replacing the baby's earlier one), which blocks the baby's writes from now on, then hands it to this
-    /// process's worker. A start that races another start or a worker on the same row loses (<c>store_move_in_progress</c>).
+    /// process's worker. A start that races another start or a worker on the same row loses (<c>store_move_in_progress</c>); a baby
+    /// whose account is being deleted cannot start a move (<c>account_deletion_in_progress</c>, task T10).
     /// </summary>
     private async Task<DataStoreMoveStatus> StartAsync(Guid babyId, DataStoreMoveDirection direction, Guid ownStoreId, CancellationToken cancellationToken)
     {
@@ -83,11 +95,7 @@ internal sealed class DataStoreMoves(
             move.Restart(direction, ownStoreId, worker.Value, now, options.Lease);
         }
 
-        if (!await moves.TrySaveAsync(cancellationToken))
-        {
-            throw new DataStoreMoveInProgressException();
-        }
-
+        EnsureSaved(await moves.TrySaveUnlessDeletingAsync(babyId, now, cancellationToken));
         queue.Enqueue(babyId);
         logger.LogInformation("Started a move of a baby's records ({Direction})", direction);
         return DataStoreViews.Move(move, now);

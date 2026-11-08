@@ -98,7 +98,10 @@ export function DeleteAccountSection({ variant = 'family' }: { variant?: Account
   const engine = useSyncEngine();
   const queryClient = useQueryClient();
   const { signOut } = useSignOut();
-  const action = useServerAction();
+  const action = useServerAction({
+    store_move_in_progress: () => t('account.moveRunning'),
+    account_deletion_in_progress: () => t('account.deletionRunning'),
+  });
   const [open, setOpen] = useState(false);
   const [understood, setUnderstood] = useState(false);
   const [wipeOwnDatabase, setWipeOwnDatabase] = useState(false);

@@ -43,7 +43,7 @@ internal static class StoreFailureResponses
     private static TimeSpan DefaultFor(StoreFailureClass failure) => failure switch
     {
         StoreFailureClass.Timeout or StoreFailureClass.RateLimited or StoreFailureClass.Migrating => ShortRetry,
-        StoreFailureClass.Moving => MovingRetry,
+        StoreFailureClass.Moving or StoreFailureClass.AccountDeleting => MovingRetry,
         _ => DefaultRetry,
     };
 }

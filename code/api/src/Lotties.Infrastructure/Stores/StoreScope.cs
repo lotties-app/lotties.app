@@ -23,10 +23,11 @@ namespace Lotties.Infrastructure.Stores;
 /// the records of the babies that point at it. With <c>Stores:Enabled</c> off no external store is ever opened: a baby whose
 /// pointer names one gets <c>store_unavailable</c>, never the built-in store. An external store is opened only through its circuit
 /// breaker (task T8): while it is open the request fails at once with the store's last failure class, without touching the network.
-/// While <c>Stores:Enabled</c> is on, entering a baby also reads whether a move of its records is running (task T7, one primary-key
-/// read of <c>data_store_moves</c>): such a baby's reads go on from its current store, but a save of any of its records through this
-/// scope's contexts throws <c>503 store_moving</c>. A move itself never enters the baby: it opens the two stores by name
-/// (<see cref="OpenStoreAsync"/>).
+/// While <c>Stores:Enabled</c> is on, entering a baby (also through <see cref="TryEnterBuiltInAsync"/>) also reads whether its account
+/// is being deleted (task T10, the baby row's <c>account_deletion_started_at</c>) or a move of its records is running (task T7, one
+/// primary-key read of <c>data_store_moves</c>): such a baby's reads go on from its current store, but a save of any of its records
+/// through this scope's contexts throws <c>503 store_account_deleting</c> or <c>503 store_moving</c>. A move itself never enters the
+/// baby: it opens the two stores by name (<see cref="OpenStoreAsync"/>).
 /// </remarks>
 internal sealed class StoreScope(
     IStoreResolver resolver,
@@ -44,7 +45,7 @@ internal sealed class StoreScope(
     private readonly Dictionary<Guid, StoreRoute> _routes = [];
     private readonly Dictionary<DataStoreKey, IDataStore> _stores = [];
     private readonly Dictionary<DataStoreKey, LottiesDataDbContext> _contexts = [];
-    private readonly HashSet<Guid> _moving = [];
+    private readonly Dictionary<Guid, StoreWriteBlock> _blocked = [];
 
     /// <summary>The data context of the only store this scope holds (<c>store_scope_missing</c> with none, <c>store_scope_ambiguous</c> with several).</summary>
     public LottiesDataDbContext Current => ContextOf(OnlyStore());
@@ -61,7 +62,7 @@ internal sealed class StoreScope(
 
         var route = await resolver.ResolveForBabyAsync(babyId, cancellationToken);
         await OpenAsync(route.Store, cancellationToken);
-        await NoteMoveAsync(babyId, cancellationToken);
+        await NoteWriteBlockAsync(babyId, cancellationToken);
         _routes[babyId] = route;
     }
 
@@ -90,6 +91,7 @@ internal sealed class StoreScope(
         }
 
         await OpenAsync(route.Store, cancellationToken);
+        await NoteWriteBlockAsync(babyId, cancellationToken);
         _routes[babyId] = route;
         return true;
     }
@@ -232,36 +234,61 @@ internal sealed class StoreScope(
         if (!_contexts.TryGetValue(key, out var context))
         {
             context = _stores[key].CreateContext();
-            context.SavingChanges += RefuseWritesOfMovingBabies;
+            context.SavingChanges += RefuseWritesOfBlockedBabies;
             _contexts[key] = context;
         }
 
         return context;
     }
 
-    /// <summary>Remembers that a move blocks the baby's writes (only while the feature is on: with it off, no move can exist).</summary>
-    private async Task NoteMoveAsync(Guid babyId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Remembers that a move (task T7) or the deletion of the baby's account (task T10) blocks the baby's writes; only while the feature
+    /// is on: with it off, no move can exist and no family database can be reached, so a deletion needs no block.
+    /// </summary>
+    private async Task NoteWriteBlockAsync(Guid babyId, CancellationToken cancellationToken)
     {
-        if (options.Value.Enabled && await moves.BlocksWritesAsync(babyId, time.GetUtcNow(), cancellationToken))
+        if (!options.Value.Enabled)
         {
-            _moving.Add(babyId);
+            return;
+        }
+
+        var block = await moves.WriteBlockAsync(babyId, time.GetUtcNow(), cancellationToken);
+        if (block != StoreWriteBlock.None)
+        {
+            _blocked[babyId] = block;
         }
     }
 
-    /// <summary>Refuses a save that adds, changes or deletes a record of a baby whose records are being moved (<c>store_moving</c>).</summary>
-    private void RefuseWritesOfMovingBabies(object? sender, SavingChangesEventArgs args)
+    /// <summary>
+    /// Refuses a save that adds, changes or deletes a record of a blocked baby: <c>store_account_deleting</c> while its account is being
+    /// deleted, <c>store_moving</c> while its records are being moved.
+    /// </summary>
+    private void RefuseWritesOfBlockedBabies(object? sender, SavingChangesEventArgs args)
     {
-        if (_moving.Count > 0 && sender is DbContext context && context.ChangeTracker.Entries().Any(WritesAMovingBaby))
+        if (_blocked.Count == 0 || sender is not DbContext context)
+        {
+            return;
+        }
+
+        var blocks = context.ChangeTracker.Entries().Select(BlockOf).Where(block => block != StoreWriteBlock.None).ToHashSet();
+        if (blocks.Contains(StoreWriteBlock.AccountDeleting))
+        {
+            throw new StoreAccountDeletingException();
+        }
+
+        if (blocks.Contains(StoreWriteBlock.Moving))
         {
             throw new StoreMovingException();
         }
     }
 
-    private bool WritesAMovingBaby(EntityEntry entry) =>
+    private StoreWriteBlock BlockOf(EntityEntry entry) =>
         entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
         && entry.Metadata.FindProperty(BabyIdProperty) is not null
         && entry.Property(BabyIdProperty).CurrentValue is Guid babyId
-        && _moving.Contains(babyId);
+        && _blocked.TryGetValue(babyId, out var block)
+            ? block
+            : StoreWriteBlock.None;
 
     /// <summary>The contexts this scope created on external stores; the built-in one belongs to the DI scope.</summary>
     private LottiesDataDbContext[] OwnedContexts() =>

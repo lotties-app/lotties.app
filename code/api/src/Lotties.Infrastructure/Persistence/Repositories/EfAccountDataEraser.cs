@@ -2,6 +2,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Notes;
 using Lotties.Domain.Proposals;
+using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
@@ -69,7 +70,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
         return new AccountDeletionPlan(deleted, left, blocked);
     }
 
-    public async Task<OwnStoreCopies> FindOwnStoreCopiesAsync(Guid userId, IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken = default)
+    public async Task<OwnStoreCopies> FindOwnStoreCopiesAsync(Guid userId, IReadOnlyCollection<Guid> babyIds, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(babyIds);
         var storeIds = await context.DataStores.AsNoTracking().Where(store => store.OwnerUserId == userId).Select(store => store.Id).ToListAsync(cancellationToken);
@@ -82,7 +83,58 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
             .Where(move => move.OwnStoreThatMayHoldRecords is not null)
             .Select(move => new OwnStoreCopy(move.BabyId, move.OwnStoreThatMayHoldRecords!.Value));
         IReadOnlyList<OwnStoreCopy> copies = [.. pointers.Concat(leftovers).Where(copy => storeIds.Contains(copy.StoreId)).Distinct()];
-        return new OwnStoreCopies(copies, storeIds, [.. moves.Where(move => move.IsLeased(now)).Select(move => move.BabyId)]);
+        return new OwnStoreCopies(copies, storeIds);
+    }
+
+    /// <remarks>
+    /// On PostgreSQL the update takes the babies' row locks: a move start that holds one is waited for, and the check that follows (a
+    /// new statement, so a new snapshot) then sees its committed move row; a move start that comes after waits for this transaction
+    /// and then matches nothing (<c>IDataStoreMoveRepository.TrySaveUnlessDeletingAsync</c>). A stale block (older than
+    /// <c>AccountDeletionBlock.MaxAge</c>) is taken over.
+    /// </remarks>
+    public async Task BeginDeletionAsync(IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(babyIds);
+        if (babyIds.Count == 0)
+        {
+            return;
+        }
+
+        var staleBefore = AccountDeletionBlock.StaleBefore(now);
+        DateTimeOffset? startedAt = now.ToUniversalTime();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var blocked = await context.BabyStoreAssignments
+            .Where(row => babyIds.Contains(row.BabyId) && (row.AccountDeletionStartedAt == null || row.AccountDeletionStartedAt <= staleBefore))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.AccountDeletionStartedAt, startedAt), cancellationToken);
+        EnsureAllBlocked(blocked, babyIds.Count);
+        await EnsureNoMoveRunningAsync(babyIds, now, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    public async Task CancelDeletionAsync(IReadOnlyCollection<Guid> babyIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(babyIds);
+        await context.BabyStoreAssignments
+            .Where(row => babyIds.Contains(row.BabyId))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.AccountDeletionStartedAt, (DateTimeOffset?)null), cancellationToken);
+    }
+
+    private static void EnsureAllBlocked(int blocked, int babies)
+    {
+        if (blocked != babies)
+        {
+            throw new AccountDeletionInProgressException();
+        }
+    }
+
+    /// <summary>A move whose worker holds the row (copying, verifying, or deleting an old copy or leftovers) refuses the deletion.</summary>
+    private async Task EnsureNoMoveRunningAsync(IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var at = now.ToUniversalTime();
+        if (await context.DataStoreMoves.AnyAsync(move => babyIds.Contains(move.BabyId) && move.LeaseUntil != null && move.LeaseUntil > at, cancellationToken))
+        {
+            throw new DataStoreMoveInProgressException();
+        }
     }
 
     public async Task EraseAsync(Guid userId, string anonymousName, DateTimeOffset now, ExternalStoreErasure externalStores, CancellationToken cancellationToken = default)

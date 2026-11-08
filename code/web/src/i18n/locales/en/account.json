@@ -22,6 +22,8 @@
     "ownDatabaseExplain": "Deleting your account removes what Lotties holds, including the connection details of your database, so Lotties can no longer reach it afterwards. Your database is yours: unless you tick the box below, the records in it stay there.",
     "ownDatabaseWipe": "Also delete these babies' records in my own database",
     "ownDatabaseNotWiped": "Lotties could not reach your own database, so the records of these babies are still there. You can delete them yourself in your database (for example, by removing the schema called lotties):",
+    "moveRunning": "The records of one of these babies are being moved between Lotties and your own database right now. Wait until the move ends (usually a few minutes), then delete the account again.",
+    "deletionRunning": "This account is already being deleted, from this or another device. Wait a moment and check again.",
     "understand": "I understand that this is permanent.",
     "confirm": "Delete everything",
     "doneTitle": "Account deleted",

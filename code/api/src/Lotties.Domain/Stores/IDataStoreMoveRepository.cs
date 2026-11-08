@@ -9,8 +9,11 @@ public interface IDataStoreMoveRepository
     /// <summary>The baby's move, tracked; <c>null</c> when the baby never moved.</summary>
     Task<DataStoreMove?> FindAsync(Guid babyId, CancellationToken cancellationToken = default);
 
-    /// <summary>Whether a move of the baby blocks its writes at <paramref name="now"/> (<see cref="DataStoreMove.BlocksWrites"/>), read without tracking.</summary>
-    Task<bool> BlocksWritesAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Whether the baby's writes are refused at <paramref name="now"/>, read without tracking: its account is being deleted
+    /// (<see cref="AccountDeletionBlock"/>, task T10) or a move blocks them (<see cref="DataStoreMove.BlocksWrites"/>).
+    /// </summary>
+    Task<StoreWriteBlock> WriteBlockAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The babies whose move may have work due at <paramref name="now"/> (no worker holds the row, and it is in progress, past its
@@ -27,4 +30,13 @@ public interface IDataStoreMoveRepository
     /// or added the same baby's row.
     /// </summary>
     Task<bool> TrySaveAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Like <see cref="TrySaveAsync"/> for a save that starts or resumes work on the baby's records (a new move, a worker's claim), in
+    /// one transaction that first takes the baby's row with a conditional update that matches only while no account deletion blocks it
+    /// (<see cref="AccountDeletionBlock"/>). The account eraser sets that block with the mirror update and then looks for a running move,
+    /// so of a move start and a deletion that race, exactly one goes ahead. Nothing is saved or tracked any more unless it returns
+    /// <see cref="DataStoreMoveSave.Saved"/>.
+    /// </summary>
+    Task<DataStoreMoveSave> TrySaveUnlessDeletingAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default);
 }

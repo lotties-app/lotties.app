@@ -607,7 +607,12 @@ database" (`?wipeOwnDatabase=true`, off by default): the API then deletes those 
 a baby points at, an old copy in its undo window, a failed move's leftovers), through the app role, and drops no schema or role.
 Each store gets at most 30 s; a store that is down, slow or behind an open breaker does not hold the deletion up: Lotties' side is
 erased and the app tells her which babies' records are still in her database. A deletion is refused with `409 store_move_in_progress`
-while a move of one of her babies runs (minutes). Logs carry counts and exception types only. No setting, no migration.
+while a move of one of her babies runs (minutes), and with `409 account_deletion_in_progress` while another deletion of the same
+account runs. For the time of the deletion her babies' writes answer `503 store_account_deleting` (clients retry; the babies are gone
+moments later) and no move of them can start; the wipe first waits `Stores:Moves:DrainSeconds` so requests already running finish.
+The block is the column `babies.account_deletion_started_at` (control migration `20261108135326_AccountDeletionBlock`, additive and
+empty until someone deletes an account); a failed deletion clears it, and one that nobody cleared (the instance stopped) expires after
+10 minutes. Logs carry counts and exception types only. No setting.
 
 #### Connections to user stores
 

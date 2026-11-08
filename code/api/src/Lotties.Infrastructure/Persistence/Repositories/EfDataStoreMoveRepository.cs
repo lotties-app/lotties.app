@@ -15,10 +15,19 @@ internal sealed class EfDataStoreMoveRepository(LottiesDbContext context, Unique
     public Task<DataStoreMove?> FindAsync(Guid babyId, CancellationToken cancellationToken = default) =>
         context.DataStoreMoves.SingleOrDefaultAsync(move => move.BabyId == babyId, cancellationToken);
 
-    public async Task<bool> BlocksWritesAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    public async Task<StoreWriteBlock> WriteBlockAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
+        var deletionStartedAt = await context.BabyStoreAssignments.AsNoTracking()
+            .Where(row => row.BabyId == babyId)
+            .Select(row => row.AccountDeletionStartedAt)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (AccountDeletionBlock.IsActive(deletionStartedAt, now))
+        {
+            return StoreWriteBlock.AccountDeleting;
+        }
+
         var move = await context.DataStoreMoves.AsNoTracking().SingleOrDefaultAsync(row => row.BabyId == babyId, cancellationToken);
-        return move is not null && move.BlocksWrites(now);
+        return move is not null && move.BlocksWrites(now) ? StoreWriteBlock.Moving : StoreWriteBlock.None;
     }
 
     public async Task<IReadOnlyList<Guid>> ListDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken = default) =>
@@ -33,6 +42,32 @@ internal sealed class EfDataStoreMoveRepository(LottiesDbContext context, Unique
             .ToListAsync(cancellationToken);
 
     public void Add(DataStoreMove move) => context.DataStoreMoves.Add(move);
+
+    /// <remarks>
+    /// The conditional update takes the baby's row lock (PostgreSQL waits for a deletion that holds it and then re-checks the block) and
+    /// clears a stale block on the way; it matches nothing while a deletion blocks the baby, or when the baby row is gone.
+    /// </remarks>
+    public async Task<DataStoreMoveSave> TrySaveUnlessDeletingAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var staleBefore = AccountDeletionBlock.StaleBefore(now);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var taken = await context.BabyStoreAssignments
+            .Where(row => row.BabyId == babyId && (row.AccountDeletionStartedAt == null || row.AccountDeletionStartedAt <= staleBefore))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.AccountDeletionStartedAt, (DateTimeOffset?)null), cancellationToken);
+        if (taken == 0)
+        {
+            context.ChangeTracker.Clear();
+            return DataStoreMoveSave.AccountDeleting;
+        }
+
+        if (!await TrySaveAsync(cancellationToken))
+        {
+            return DataStoreMoveSave.Conflict;
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return DataStoreMoveSave.Saved;
+    }
 
     public async Task<bool> TrySaveAsync(CancellationToken cancellationToken = default)
     {
