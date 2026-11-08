@@ -26,6 +26,7 @@ public sealed class StoppablePostgresFixture : PostgresFixture
     {
         await Container.StartAsync();
         NpgsqlConnection.ClearAllPools();
+        DataSource.Clear();
         await WaitUntilAcceptingAsync();
     }
 
