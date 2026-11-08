@@ -103,6 +103,10 @@
       "doctor": {
         "caption": "What the pediatrician sees: only what you share",
         "alt": "The doctor's summary of a baby with sleep totals for the last 7 days"
+      },
+      "data-location": {
+        "caption": "Choose where your baby's records are stored",
+        "alt": "The Where your data lives screen: Lotties hosts the records (current) or your own Postgres database, with the honest limits of each"
       }
     }
   },

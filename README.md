@@ -115,6 +115,12 @@ What the maintainers' instance (lotties.app) collects, why, who receives it and 
 operator and its own privacy terms. The audit behind it is
 [docs/design/33-privacy-audit.md](docs/design/33-privacy-audit.md).
 
+**Where your data lives (in development, off by default).** A baby's Owner will be able to keep that baby's care records in a
+Postgres database of her own (Supabase, Neon or any public Postgres) instead of Lotties' database, from Settings > Where your
+data lives; the app and the account stay the same, and Lotties' servers still read and write the data (it is not end-to-end
+encryption). Design: [docs/design/47-bring-your-own-database.md](docs/design/47-bring-your-own-database.md). The screen is
+captured for the showcase as `data-location` (tests/e2e/showcase) once the media are regenerated.
+
 ## Credits and open-source acknowledgements
 
 Lotties is free software and stands on the work of many people: the open-source libraries it ships, the public data it uses

@@ -59,6 +59,24 @@ export function countsTowardGiveUp(error: unknown): boolean {
   return !(error instanceof ApiError && UNAVAILABLE_STATUSES.has(error.status));
 }
 
+/**
+ * The data store that holds a baby's records cannot serve now (503 with a `store_*` code; the
+ * family's own database is paused, unreachable, full...; docs/SPEC.md "Store failures"). Always
+ * retriable: the outbox keeps the change and waits the server's `Retry-After`.
+ */
+export function isStoreFailure(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 503 && !!error.code?.startsWith('store_');
+}
+
+/**
+ * When to try again after a transient failure: the server's `Retry-After` when it gave one
+ * (capped at `maxMs`), else the exponential backoff delay. Milliseconds from now.
+ */
+export function retryDelay(error: unknown, backoffMs: number, maxMs: number): number {
+  const asked = error instanceof ApiError ? error.retryAfterMs : null;
+  return asked === null ? backoffMs : Math.min(Math.max(asked, 0), maxMs);
+}
+
 /** Whether the server rejected an event's payload (fields missing, hidden or out of range). */
 export function isPayloadRejection(error: unknown): error is ApiError {
   return error instanceof ApiError && error.status === 400 && error.code === 'validation_failed';

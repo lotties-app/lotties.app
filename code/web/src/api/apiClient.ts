@@ -1,4 +1,4 @@
-import { ApiError } from './ApiError';
+import { ApiError, parseRetryAfter } from './ApiError';
 
 /**
  * Dispatched on `window` when the server answers `403 consent_required`: the consent changed under a running app (a material
@@ -104,7 +104,12 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     // A 304 only answers a conditional request the caller made itself: "your copy is current".
     if (!response.ok && response.status !== 304) {
       if (response.status === 401 && !requestOptions.skipUnauthorizedHandler) onUnauthorized?.();
-      const error = new ApiError(response.status, payload);
+      const error = new ApiError(
+        response.status,
+        payload,
+        undefined,
+        parseRetryAfter(response.headers.get('Retry-After')),
+      );
       if (response.status === 403 && error.code === 'consent_required') {
         window.dispatchEvent(new Event(CONSENT_REQUIRED_EVENT));
       }

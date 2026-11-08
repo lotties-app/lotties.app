@@ -35,6 +35,8 @@ const HubCreditsPage = hubSubPage('HubCreditsPage');
 const HubVoiceCommandsPage = hubSubPage('HubVoiceCommandsPage');
 const HubInstallPage = hubSubPage('HubInstallPage');
 const HubPrivacyPage = hubSubPage('HubPrivacyPage');
+const HubDataLocationPage = hubSubPage('HubDataLocationPage');
+const HubOwnDatabaseHelpPage = hubSubPage('HubOwnDatabaseHelpPage');
 // The cry monitor's page is its own chunk; the engine loads only when monitoring starts.
 const HubCryMonitorPage = lazy(() => import('./cryMonitor/CryMonitorPage'));
 // The public credits, install, privacy and voice commands pages: outside the auth gate, so they
@@ -103,6 +105,9 @@ const DevCryMonitorPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/CryMonitorPreview'))
   : null;
 const DevBoardPreview = import.meta.env.DEV ? lazy(() => import('./dev/BoardPreview')) : null;
+const DevDataLocationPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/DataLocationPreview'))
+  : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -123,6 +128,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevUiGallery />
+            </Suspense>
+          }
+        />
+      )}
+      {DevDataLocationPreview && (
+        <Route
+          path="/dev/data-location"
+          element={
+            <Suspense fallback={null}>
+              <DevDataLocationPreview />
             </Suspense>
           }
         />
@@ -398,6 +413,8 @@ export function AppRoutes() {
               <Route path="hub/privacy" element={<HubPrivacyPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="settings/voice-commands" element={<HubVoiceCommandsPage />} />
+              <Route path="settings/data-location" element={<HubDataLocationPage />} />
+              <Route path="help/own-database" element={<HubOwnDatabaseHelpPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="vaccines" element={<VaccinesPage />} />
               <Route path="vaccines/card" element={<VaccinationCardPage />} />

@@ -3,14 +3,29 @@ import { API_PREFIX } from '../sync/contract';
 
 /*
  * The consent routes (docs/design/38-consent-and-terms.md section 4): any signed-in user of any role, open even to a person who has
- * not consented yet. `GET /me/consents`, `PUT /me/consents/core` and `PUT /me/consents/optional/{push|alexa|mcp}`.
+ * not consented yet. `GET /me/consents`, `PUT /me/consents/core` and `PUT /me/consents/optional/{push|alexa|mcp|byo_database}`.
  */
 
 export type ConsentCapacity = 'guardian' | 'authorised';
 export const CONSENT_CAPACITIES: readonly ConsentCapacity[] = ['guardian', 'authorised'];
 
-export type OptionalConsentKind = 'push' | 'alexa' | 'mcp';
-export const OPTIONAL_CONSENT_KINDS: readonly OptionalConsentKind[] = ['push', 'alexa', 'mcp'];
+/**
+ * Optional consents. `byo_database` (using one's own database, docs/design/47-bring-your-own-database.md section 10) is recorded by
+ * the setup wizard before the first save; the API answers it as `optional.byoDatabase`. It is not listed in Settings > Privacy and
+ * data yet (its wording and versions are a separate change).
+ */
+export type OptionalConsentKind = 'push' | 'alexa' | 'mcp' | 'byo_database';
+/** The optional consents Settings > Privacy and data lists. */
+export type ListedOptionalConsentKind = Exclude<OptionalConsentKind, 'byo_database'>;
+export const OPTIONAL_CONSENT_KINDS: readonly ListedOptionalConsentKind[] = [
+  'push',
+  'alexa',
+  'mcp',
+];
+const ALL_OPTIONAL_CONSENT_KINDS: readonly OptionalConsentKind[] = [
+  ...OPTIONAL_CONSENT_KINDS,
+  'byo_database',
+];
 
 export interface ConsentState {
   /** `true` while in force; `false` for an optional consent turned off. */
@@ -27,7 +42,9 @@ export interface ConsentsView {
   termsVersion: string;
   privacyPolicyVersion: string;
   core: ConsentState | null;
-  optional: Record<OptionalConsentKind, ConsentState | null>;
+  optional: Record<ListedOptionalConsentKind, ConsentState | null> & {
+    byoDatabase?: ConsentState | null;
+  };
   requiresAcceptance: boolean;
   /** The current version when only minor changes came since the accepted one (a notice), else `null`. */
   minorChangeSince: string | null;
@@ -39,7 +56,7 @@ export const CONSENTS_QUERY_KEY = ['consents'] as const;
 const base = `${API_PREFIX}/me/consents`;
 
 export const isOptionalConsentKind = (value: unknown): value is OptionalConsentKind =>
-  typeof value === 'string' && (OPTIONAL_CONSENT_KINDS as readonly string[]).includes(value);
+  typeof value === 'string' && (ALL_OPTIONAL_CONSENT_KINDS as readonly string[]).includes(value);
 
 export const isConsentCapacity = (value: unknown): value is ConsentCapacity =>
   typeof value === 'string' && (CONSENT_CAPACITIES as readonly string[]).includes(value);

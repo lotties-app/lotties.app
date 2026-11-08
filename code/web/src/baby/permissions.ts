@@ -34,6 +34,15 @@ export function isOwner(baby: Pick<Baby, 'role'>): boolean {
 }
 
 /**
+ * Only the Owner chooses where the baby's records live (Lotties' database or her own;
+ * docs/design/47-bring-your-own-database.md D11). The server also hides the feature (404) while it
+ * is off or the account is not on its allowlist.
+ */
+export function canManageDataStore(baby: Pick<Baby, 'role'>): boolean {
+  return isOwner(baby);
+}
+
+/**
  * The baby's Doctor (docs/design/16-doctor-access.md): reads like a Viewer, writes her own notes and
  * consultation measurements, logs nothing and gets no reminders.
  */
@@ -158,7 +167,9 @@ export function isRunningControlChange(
     if (!(end >= Date.parse(stored.startedAt) && end <= now + MAX_FUTURE_END_MS)) return false;
   }
   // A bottle's history may grow (a pause, a level, the stop) but never be rewritten (design 44 rule 7).
-  if (!historyOnlyExtends(getOwn(stored.payload, SEGMENTS_KEY), getOwn(next.payload, SEGMENTS_KEY))) {
+  if (
+    !historyOnlyExtends(getOwn(stored.payload, SEGMENTS_KEY), getOwn(next.payload, SEGMENTS_KEY))
+  ) {
     return false;
   }
   return Object.keys(stored.payload).every(

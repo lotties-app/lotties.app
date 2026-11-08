@@ -615,12 +615,16 @@ export type SyncEntity =
   | 'vaccinations'
   | 'notes'
   | 'proposals'
-  | 'noteReads';
+  | 'noteReads'
+  | 'storeEpoch';
 
 /** `babyId` of the `babies` marker row (not a baby id). */
 export const BABIES_LISTED_KEY = '*';
 
-/** Delta-pull cursor per baby and entity. */
+/**
+ * Delta-pull cursor per baby and entity. The `storeEpoch` row is not a cursor: its `lastSyncedAt`
+ * holds the baby's last seen `X-Sync-Epoch` (sync/storeEpoch.ts), never compared with a time.
+ */
 export interface SyncCursor {
   babyId: string;
   entity: SyncEntity;

@@ -1,0 +1,306 @@
+{
+  "byoDatabase": {
+    "title": "Where your data lives",
+    "back": "Back to Settings",
+    "intro": "You keep using the Lotties app and your account exactly as before. The only thing this changes is where your baby's care records are stored: in Lotties' database, or in a Postgres database of your own (for example Supabase or Neon), which Lotties' servers read and write for you.",
+    "offline": "Connect to the internet to see or change where your data lives.",
+    "loadFailed": "Could not load this now. Try again later.",
+    "section": {
+      "hosted": "Lotties hosts your baby's records.",
+      "own": "Your baby's records are in your own database ({{provider}}).",
+      "open": "Choose where your data lives"
+    },
+    "options": {
+      "current": "Current",
+      "hosted": {
+        "title": "Lotties hosts it",
+        "body": "Lotties keeps the records in its own database and looks after it. Nothing to set up."
+      },
+      "own": {
+        "title": "My own database",
+        "body": "The records are stored in a Postgres database you control. Lotties' servers still read and write it to run the app (insights, predictions, voice assistants). You can move back to Lotties hosting at any time."
+      }
+    },
+    "limits": {
+      "title": "Before you choose your own database",
+      "operator": "Lotties' servers read your data whenever you use the app, and the people who run Lotties could read it too. The connection details are encrypted at rest and never shown again, but the Lotties service can open them to connect.",
+      "notE2ee": "This is not end-to-end encryption.",
+      "pause": "Free plans of some providers pause a database after some days without use, or stop it when idle; the app then cannot sync until you resume it.",
+      "backups": "Free plans may have no backups or keep them only a short time. Your database, its backups and its costs are yours: check the provider's page.",
+      "ownerOnly": "In this first version only you, the Owner, can use a baby whose records are in your own database: no other family members, no doctor access and no reminders for that baby.",
+      "leave": "The database provider's terms and region apply. You can disconnect and take your data at any time."
+    },
+    "status": {
+      "lastChecked": "Last checked {{date}}",
+      "provider": "Your database: {{provider}}",
+      "savedTitle": "Your saved database"
+    },
+    "health": {
+      "ok": {
+        "title": "Your database is working",
+        "body": "Lotties reads and writes your baby's records there."
+      },
+      "checking": {
+        "title": "Getting your database ready",
+        "body": "Lotties is checking or preparing the tables. This takes a moment."
+      },
+      "notTested": {
+        "title": "Not tested yet",
+        "body": "The details are saved. Test them before you move any records."
+      },
+      "unreachable": {
+        "title": "Your database is not reachable",
+        "body": "If your project is paused for inactivity (some free plans do this), open your provider, resume it and wait a minute. Your changes wait safely on this device and sync when it is back."
+      },
+      "credentials": {
+        "title": "The database refused the password",
+        "body": "The password was changed or the role lost its rights. Set up the connection again with the current details."
+      },
+      "quotaFull": {
+        "title": "Your database is full",
+        "body": "New records cannot be saved there until you free space or change the plan at your provider. Your changes wait on this device."
+      },
+      "schemaAhead": {
+        "title": "Your database is newer than the app",
+        "body": "It was set up by a newer version of Lotties. Update the app, or wait for the update to reach the server."
+      },
+      "roleTooPowerful": {
+        "title": "The role can do too much",
+        "body": "Lotties stopped using it for your safety. Run the setup SQL again with new roles and replace the connection details."
+      },
+      "schemaConflict": {
+        "title": "Unexpected tables in your database",
+        "body": "The database holds tables Lotties did not create for this baby. Use an empty database."
+      },
+      "migrationFailed": {
+        "title": "Setup did not finish",
+        "body": "Lotties could not prepare the tables and will retry. If this stays, test the connection again."
+      },
+      "disabled": {
+        "title": "Turned off",
+        "body": "This database is turned off and is not used."
+      }
+    },
+    "actions": {
+      "setUp": "Set up my own database",
+      "replace": "Replace the connection details",
+      "backToHosted": "Move back to Lotties hosting",
+      "moveIn": "Move my records there",
+      "forget": "Forget the saved details",
+      "comingSoon": "Moving records between databases is not available yet. Your records stay where they are; nothing was changed."
+    },
+    "wizard": {
+      "progress": "Step {{step}} of {{total}}",
+      "back": "Back",
+      "next": "Next",
+      "cancel": "Cancel",
+      "steps": {
+        "provider": "Choose a provider",
+        "sql": "Prepare your database",
+        "connection": "Connection details",
+        "consent": "Your agreement",
+        "test": "Save and test"
+      }
+    },
+    "provider": {
+      "intro": "Pick where your database runs. Supabase and Neon are examples that had a free plan at the time of writing; any Postgres reachable on the internet works.",
+      "label": "Provider",
+      "prices": "Prices, limits and free plans change: check the provider's page. Lotties does not charge for this and does not recommend a provider.",
+      "options": {
+        "supabase": {
+          "name": "Supabase",
+          "hint": "Free plan with limits; free projects may pause after some days without use."
+        },
+        "neon": {
+          "name": "Neon",
+          "hint": "Free plan with limits; the database sleeps when idle, so the first sync after a quiet time can be slow."
+        },
+        "other": {
+          "name": "Other Postgres",
+          "hint": "Your own server or another host, with a public address and a certificate that can be verified."
+        }
+      }
+    },
+    "guides": {
+      "note": "Written from the providers' public pages and not yet checked on a real account: screens and names may differ. Lotties does not recommend or endorse a provider.",
+      "supabase": {
+        "title": "Supabase",
+        "step1": "Create a project at supabase.com and pick a region close to you. A free plan existed at the time of writing, with limits: check the provider's page for prices and limits.",
+        "step2": "Open the project's SQL Editor, paste the setup SQL from Lotties and run it once.",
+        "step3": "Press Connect in the project. For the everyday connection use the transaction pooler (port 6543); for the migration connection use the session pooler (port 5432) or the direct connection. Copy the host and the database name (usually postgres).",
+        "step4": "On a pooler the user name is the role, a dot and your project reference, for example lotties_app.abcdefgh. Use the passwords from the setup SQL.",
+        "step5": "Free projects may be paused after some days without use: then open the project, restore it and test again in Lotties. Free plans may keep no backups: download a backup from Lotties (Hub > Export data) from time to time."
+      },
+      "neon": {
+        "title": "Neon",
+        "step1": "Create a project at neon.com and pick a region close to you. A free plan existed at the time of writing, with limits: check the provider's page.",
+        "step2": "Open the SQL Editor, choose the database (usually neondb), paste the setup SQL from Lotties and run it once.",
+        "step3": "Open Connect. For the everyday connection you may use the pooled host (its name contains -pooler); for the migration connection turn pooling off and use the direct host. Both use port 5432.",
+        "step4": "Use the user names of the setup SQL (lotties_app and lotties_migrator) and its passwords.",
+        "step5": "Neon stops an idle database and starts it again on the next request, so the first sync after a quiet time can be slow. Over the storage limit, saving fails until you free space or change the plan."
+      },
+      "other": {
+        "title": "Other Postgres",
+        "step1": "Any Postgres reachable on the public internet works: a public address (not a home or private network), port 5432 or 6543, and TLS with a certificate Lotties can verify.",
+        "step2": "Connect as the admin user of the database you will give to Lotties and run the setup SQL once.",
+        "step3": "If your server's certificate comes from a private authority, paste that authority's certificate (PEM) in the connection step.",
+        "step4": "Use the direct or session-mode address for the migration connection: a transaction pooler breaks the table updates."
+      }
+    },
+    "sql": {
+      "intro": "Run this once in your database's SQL editor, as its admin user. It creates two roles that can reach only a schema called lotties. It was made on this device and nothing has been sent.",
+      "appRole": "Everyday role name",
+      "migratorRole": "Migration role name",
+      "roleInvalid": "Lower-case letters, digits and _ only, starting with a letter.",
+      "rolesDiffer": "Use two different role names.",
+      "passwordsCleared": "The passwords were saved and forgotten here. If you need to run the SQL again, press New passwords.",
+      "label": "Setup SQL",
+      "copy": "Copy SQL",
+      "copied": "Copied",
+      "copyFailed": "Could not copy: select the text and copy it.",
+      "regenerate": "New passwords",
+      "passwordsNote": "The passwords are random and exist only on this screen. Type them in the next step; they are not kept on this device."
+    },
+    "connection": {
+      "intro": "Copy these from your provider's connection page. Lotties uses two connections: one for everyday reading and writing, one to create and update the tables. Nothing you type here is sent until you press Save and test in the last step.",
+      "appTitle": "Everyday connection",
+      "appHint": "The role that reads and writes (lotties_app). A pooler address works here.",
+      "migratorTitle": "Migration connection",
+      "migratorHint": "The role that creates and updates the tables (lotties_migrator), on the same database. Use the direct or session-mode address, not a transaction pooler.",
+      "tlsTitle": "Secure connection",
+      "tlsMode": "Lotties always connects with TLS and checks the server's certificate. This cannot be turned off.",
+      "caHint": "Optional. Only if your provider uses a certificate from a private authority: paste that authority's certificate (PEM).",
+      "required": "Required",
+      "portHint": "Usually 5432 (direct) or 6543 (pooler); Lotties accepts only these.",
+      "fields": {
+        "appHost": "Host",
+        "appPort": "Port",
+        "appDatabase": "Database",
+        "appUsername": "User name",
+        "appPassword": "Password",
+        "migratorHost": "Migration host",
+        "migratorPort": "Migration port",
+        "migratorUsername": "Migration user name",
+        "migratorPassword": "Migration password",
+        "caPem": "Certificate authority (optional)"
+      }
+    },
+    "consent": {
+      "intro": "Please read before anything is sent. Your agreement and the connection details leave this device only when you press Save and test.",
+      "fact1": "Your baby's care records will be stored in a database you control at {{provider}}, in the region you chose there.",
+      "fact2": "Lotties' servers read and write that database to run the app. This is not end-to-end encryption.",
+      "fact3": "Lotties keeps the connection details encrypted at rest and never shows them again; the Lotties service can open them to connect.",
+      "fact4": "The terms, region, limits and costs of {{provider}} apply; free plans may pause and may keep no backups.",
+      "fact5": "Your account, your family's roles and the baby's profile stay in Lotties' database, as today.",
+      "fact6": "You can move back to Lotties hosting or disconnect at any time.",
+      "agree": "I understand and want to keep this baby's records in my own database at {{provider}}"
+    },
+    "test": {
+      "intro": "When you press Save and test, Lotties records your agreement, saves the details encrypted and tries them. The test does not move or change any records.",
+      "busy": "Testing the connection",
+      "save": "Save and test",
+      "retest": "Test again",
+      "edit": "Change the details",
+      "done": "Done",
+      "passwordsForgotten": "The passwords were saved and this screen forgot them: to change the details, type the passwords again."
+    },
+    "results": {
+      "ok": {
+        "title": "Connected",
+        "body": "Lotties reached your database with both roles, and the roles have only the rights they need. Your records stay with Lotties until you move them."
+      },
+      "checkFields": {
+        "title": "Check the details",
+        "body": "Some details are missing or not in the expected form. Copy them again from your provider's connection page."
+      },
+      "port": {
+        "title": "Port not accepted",
+        "body": "Lotties connects only on port 5432 or 6543. Use the address your provider gives for one of them."
+      },
+      "unresolvable": {
+        "title": "Address not found",
+        "body": "That host name does not exist. Check for a typo and copy it again from your provider."
+      },
+      "blockedAddress": {
+        "title": "Address not allowed",
+        "body": "That address is in a private or local network. Lotties connects only to databases on the public internet."
+      },
+      "tls": {
+        "title": "Secure connection failed",
+        "body": "The server's certificate could not be verified. Use the address your provider gives; if it uses a private authority, paste its certificate."
+      },
+      "ca": {
+        "title": "Certificate not readable",
+        "body": "The pasted certificate is not a valid PEM certificate. Paste the whole block, including the BEGIN and END lines."
+      },
+      "unreachable": {
+        "title": "Database not reachable",
+        "body": "Nothing answered at that address. If your project is paused (some free plans pause after some days without use), resume it at your provider, then test again."
+      },
+      "timeout": {
+        "title": "No answer in time",
+        "body": "The database took too long to answer. A database that was asleep can be slow to start: wait a minute and test again."
+      },
+      "credentials": {
+        "title": "User name or password rejected",
+        "body": "The database refused the user name or password. Check them (on a pooler the user name may include your project reference) and type them again."
+      },
+      "roleTooPowerful": {
+        "title": "The role can do too much",
+        "body": "For your safety Lotties needs a role that can only read and write its own tables. Run the setup SQL again with new roles, and never give Lotties your admin user."
+      },
+      "schemaConflict": {
+        "title": "Database already in use",
+        "body": "That database holds tables Lotties did not create for this baby. Use an empty database, or a new one."
+      },
+      "schemaAhead": {
+        "title": "Newer data format",
+        "body": "That database was set up by a newer version of Lotties. Update the app, or wait for the update to reach the server."
+      },
+      "quotaFull": {
+        "title": "Database full",
+        "body": "Your database has reached its storage limit. Free space or change the plan at your provider."
+      },
+      "busy": {
+        "title": "Too many connections",
+        "body": "Your database refused new connections for now. Wait a moment and test again."
+      },
+      "migrating": {
+        "title": "Setting up",
+        "body": "Lotties is preparing the tables. Try again in a minute."
+      },
+      "migrationFailed": {
+        "title": "Setup did not finish",
+        "body": "Lotties could not finish preparing the tables. It will retry; you can also test again later."
+      },
+      "consent": {
+        "title": "Agreement needed",
+        "body": "Lotties needs your agreement before it saves or tests a database. Go back one step and tick the box."
+      },
+      "rateLimited": {
+        "title": "Too many tries",
+        "body": "You saved or tested several times in a short while. Wait an hour and try again."
+      },
+      "notConfigured": {
+        "title": "Nothing saved yet",
+        "body": "Save the connection details first."
+      },
+      "unknown": {
+        "title": "Something went wrong",
+        "body": "Lotties could not check the database. Try again later."
+      }
+    },
+    "findings": {
+      "superuser_like": "The role has administrator rights.",
+      "owns_objects": "The role owns tables or other objects.",
+      "creates_in_public": "The role can create objects in the public schema.",
+      "creates_in_store_schema": "The role can create objects in the lotties schema."
+    },
+    "help": {
+      "title": "Your own database: provider guides",
+      "back": "Back to Where your data lives",
+      "link": "Step-by-step guides for each provider",
+      "intro": "How to prepare a Postgres database for your baby's records. You keep using Lotties as before; only where the records are stored changes."
+    }
+  }
+}
