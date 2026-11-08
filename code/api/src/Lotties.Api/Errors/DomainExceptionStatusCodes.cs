@@ -32,6 +32,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(EventTypeNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(AccountDeletionBlockedException)] = StatusCodes.Status409Conflict,
         [typeof(LastOwnerException)] = StatusCodes.Status409Conflict,
+        [typeof(StoreOwnerOnlyException)] = StatusCodes.Status409Conflict,
         [typeof(EventTypeKeyTakenException)] = StatusCodes.Status409Conflict,
         [typeof(EventTypeInUseException)] = StatusCodes.Status409Conflict,
         [typeof(MedicationBabyMismatchException)] = StatusCodes.Status409Conflict,
@@ -108,7 +109,10 @@ internal static class DomainExceptionStatusCodes
         [typeof(DataStoreNotConfiguredException)] = StatusCodes.Status409Conflict,
         [typeof(DataStoreInUseException)] = StatusCodes.Status409Conflict,
         [typeof(ByoDatabaseConsentRequiredException)] = StatusCodes.Status403Forbidden,
-        [typeof(DataStoreMoveNotImplementedException)] = StatusCodes.Status501NotImplemented,
+        [typeof(DataStoreMoveInProgressException)] = StatusCodes.Status409Conflict,
+        [typeof(DataStoreMoveNotNeededException)] = StatusCodes.Status409Conflict,
+        [typeof(DataStoreMoveStateException)] = StatusCodes.Status500InternalServerError,
+        [typeof(DataStoreMoveLeaseLostException)] = StatusCodes.Status500InternalServerError,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

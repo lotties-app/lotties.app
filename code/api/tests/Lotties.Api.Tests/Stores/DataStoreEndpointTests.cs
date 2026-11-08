@@ -13,7 +13,8 @@ namespace Lotties.Api.Tests.Stores;
 
 /// <summary>
 /// The Owner's data-store routes (docs/design/47-bring-your-own-database.md, task T6) on a host with the feature on, an allowlist and
-/// no network (<see cref="StoresApiFactory"/>): status, save (guard, seal, pending), test, remove, the move routes (501 until T7),
+/// no network (<see cref="StoresApiFactory"/>): status, save (guard, seal, pending), test, remove, the move routes' first checks (the
+/// moves themselves are <see cref="DataStoreMoveEndpointTests"/>),
 /// the BYO consent, the hourly rate limits, and that no typed field ever comes back in a response or reaches a log line.
 /// </summary>
 public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFixture<StoresApiFactory>
@@ -399,7 +400,7 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
     }
 
     [Fact]
-    public async Task MoveInAndMoveOut_NotBuiltYet_Are501NotImplemented()
+    public async Task MoveIn_SavedStoreNotReachable_Is503AndMoveOutOfAHostedBabyIs409()
     {
         var (client, baby) = await AllowedOwnerAsync(consent: true);
         await client.PutAsync(Route(baby), Body());
@@ -407,8 +408,8 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
         var moveIn = await client.PostAsync(Route(baby, "/move-in"), null);
         var moveOut = await client.PostAsync(Route(baby, "/move-out"), null);
 
-        await moveIn.AssertProblemAsync(HttpStatusCode.NotImplemented, "not_implemented");
-        await moveOut.AssertProblemAsync(HttpStatusCode.NotImplemented, "not_implemented");
+        await moveIn.AssertProblemAsync(HttpStatusCode.ServiceUnavailable, "store_unavailable");
+        await moveOut.AssertProblemAsync(HttpStatusCode.Conflict, "store_move_not_needed");
     }
 
     [Fact]

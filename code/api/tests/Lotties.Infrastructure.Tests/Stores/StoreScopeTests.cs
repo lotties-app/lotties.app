@@ -14,7 +14,8 @@ namespace Lotties.Infrastructure.Tests.Stores;
 /// The fail-closed scope of docs/design/47-bring-your-own-database.md section 3.6, with a fake resolver and fake external stores (no
 /// connection is ever opened): a data context only for an entered baby, never the built-in store for a baby of another store, no
 /// external store at all while <c>Stores:Enabled</c> is off, and an external store only after the store migrator (task T5) found it
-/// ready. The flag is on unless a test turns it off before the first entry.
+/// ready. The flag is on unless a test turns it off before the first entry. A baby whose records are being moved (task T7, a fake move
+/// repository) is entered as usual, but a save of one of its records throws <c>store_moving</c> before anything reaches a database.
 /// </summary>
 public sealed class StoreScopeTests : IDisposable
 {
@@ -38,6 +39,7 @@ public sealed class StoreScopeTests : IDisposable
     private readonly FakeStores _externals = new(StoreX, StoreY);
     private readonly StoreRoutingOptions _routing = new() { Enabled = true };
     private readonly FakeMigrator _migrator = new();
+    private readonly FakeMoves _moves = new();
     private readonly ServiceProvider _provider;
     private readonly IServiceScope _scope;
 
@@ -47,6 +49,7 @@ public sealed class StoreScopeTests : IDisposable
         services.AddScoped<IStoreResolver>(_ => _resolver);
         services.AddSingleton<IExternalDataStores>(_externals);
         services.AddSingleton<IStoreMigrator>(_migrator);
+        services.AddScoped<IDataStoreMoveRepository>(_ => _moves);
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(_routing));
         _provider = services.BuildServiceProvider();
         _scope = _provider.CreateScope();
@@ -242,6 +245,63 @@ public sealed class StoreScopeTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveChanges_RecordOfABabyBeingMoved_ThrowsStoreMovingBeforeTheDatabase()
+    {
+        _moves.Moving.Add(BabyInX);
+        await Stores.EnterAsync(BabyInX);
+        var context = Stores.ContextFor(BabyInX);
+        context.Events.Add(Diaper(BabyInX));
+
+        var error = await Assert.ThrowsAsync<StoreMovingException>(() => context.SaveChangesAsync());
+
+        Assert.Equal(("store_moving", StoreFailureClass.Moving), (error.Code, error.Failure));
+        Assert.Equal([BabyInX], _moves.Asked);
+    }
+
+    [Fact]
+    public async Task SaveChanges_SynchronousSaveOfABabyBeingMoved_Throws()
+    {
+        _moves.Moving.Add(BabyInY);
+        await Stores.EnterAsync(BabyInY);
+        var context = Stores.ContextFor(BabyInY);
+
+        context.Events.Add(Diaper(BabyInY));
+
+        Assert.Throws<StoreMovingException>(() => context.SaveChanges());
+    }
+
+    [Fact]
+    public async Task EnterAsync_FlagOff_NeverAsksWhetherAMoveRuns()
+    {
+        _routing.Enabled = false;
+
+        await Stores.EnterAsync(HostedBaby);
+
+        Assert.Empty(_moves.Asked);
+    }
+
+    [Fact]
+    public async Task OpenStoreAsync_NamedStores_GivesTheirContextsWithoutEnteringABaby()
+    {
+        var external = await Stores.OpenStoreAsync(DataStoreKey.External(StoreX));
+        var builtIn = await Stores.OpenStoreAsync(DataStoreKey.BuiltIn);
+
+        Assert.Same(_externals.ContextsOf(StoreX).Single(), external);
+        Assert.Same(_scope.ServiceProvider.GetRequiredService<LottiesDataDbContext>(), builtIn);
+        Assert.Equal([StoreX], _migrator.Asked);
+        Assert.Throws<StoreScopeMissingException>(() => Stores.Current);
+        Assert.Empty(_moves.Asked);
+    }
+
+    [Fact]
+    public async Task OpenStoreAsync_FlagOff_ExternalStoreIsUnavailable()
+    {
+        _routing.Enabled = false;
+
+        await Assert.ThrowsAsync<StoreUnavailableException>(() => Stores.OpenStoreAsync(DataStoreKey.External(StoreX)));
+    }
+
+    [Fact]
     public async Task Dispose_DisposesTheExternalContextsOnly()
     {
         await Stores.EnterAsync(HostedBaby);
@@ -297,6 +357,32 @@ public sealed class StoreScopeTests : IDisposable
         }
 
         Assert.Equal(5, _migrator.Asked.Count);
+    }
+
+    private static Event Diaper(Guid babyId) =>
+        Event.Create(Guid.NewGuid(), babyId, BuiltInEventTypes.DiaperId, Guid.NewGuid(), DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, EventPayload.From("""{"content":"WET"}"""), null, DateTimeOffset.UnixEpoch);
+
+    /// <summary>Moves of no database: <see cref="Moving"/> are the babies whose writes are blocked; every question is remembered.</summary>
+    private sealed class FakeMoves : IDataStoreMoveRepository
+    {
+        public HashSet<Guid> Moving { get; } = [];
+
+        public List<Guid> Asked { get; } = [];
+
+        public Task<DataStoreMove?> FindAsync(Guid babyId, CancellationToken cancellationToken = default) => Task.FromResult<DataStoreMove?>(null);
+
+        public Task<bool> BlocksWritesAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default)
+        {
+            Asked.Add(babyId);
+            return Task.FromResult(Moving.Contains(babyId));
+        }
+
+        public Task<IReadOnlyList<Guid>> ListDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Guid>>([]);
+
+        public void Add(DataStoreMove move) => throw new NotSupportedException();
+
+        public Task<bool> TrySaveAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
     private sealed class FakeResolver(IReadOnlyDictionary<Guid, StoreRoute> routes) : IStoreResolver

@@ -66,6 +66,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Lotties.Domain.Rest.IUserRestRepository, EfUserRestRepository>();
         services.AddScoped<Lotties.Domain.Consents.IUserConsentRepository, EfUserConsentRepository>();
         services.AddScoped<Lotties.Domain.Stores.IDataStoreRepository, EfDataStoreRepository>();
+        services.AddScoped<Lotties.Domain.Stores.IDataStoreMoveRepository, EfDataStoreMoveRepository>();
         services.AddScoped<Lotties.Domain.Board.IBoardRepository, EfBoardRepository>();
         services.AddScoped<Lotties.Domain.Board.IBoardApiKeyRepository, EfBoardApiKeyRepository>();
         return services;

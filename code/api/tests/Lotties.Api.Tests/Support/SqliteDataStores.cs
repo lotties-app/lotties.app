@@ -32,9 +32,11 @@ internal sealed class SqliteDataStores : IExternalDataStores, IStoreMigrator, ID
     public StoreFaults FaultsOf(Guid storeId) => _stores[storeId].Faults;
 
     /// <summary>A new, empty store database; its id is the <c>data_stores</c> id the test seeds.</summary>
-    public Guid Create()
+    public Guid Create() => Create(Guid.NewGuid());
+
+    /// <summary>A new, empty store database for the <c>data_stores</c> row <paramref name="id"/> (a store saved through the API).</summary>
+    public Guid Create(Guid id)
     {
-        var id = Guid.NewGuid();
         var store = new Store(id, Path.Combine(Path.GetTempPath(), $"lotties-store-{Guid.NewGuid():N}.db"), FailureInterceptors?.Invoke(id));
         using (var context = store.CreateDirectContext())
         {

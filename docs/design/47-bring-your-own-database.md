@@ -301,6 +301,11 @@ API does not read (section 11), and BYO is not one.
 
 ## 6. Moving data in and out (reuse design 24)
 
+*As built (task T7, see its status in section 12): writes during a move answer a retriable `503 store_moving` (not `409 baby_moving`,
+which the web outbox would drop), and the copy is a row-for-row copy of the 12 data tables between the two stores, not the backup
+file's export and import (which re-authors and re-identifies records); the verification, the switch last, the undo window and the
+failure rules below are as designed.*
+
 **Into the user's database (one-time):**
 
 1. The user finishes setup and test (state `Ready`, empty store). The baby enters state `MovingIn`: writes are queued
@@ -556,6 +561,54 @@ section 3.4 lists them as the test's results. Saving or removing a descriptor ca
 hold any character but a control character (T3 and T4 alike; the string is built by `NpgsqlConnectionStringBuilder`). Per-account
 limits: 10 saves or moves and 5 tests per hour.
 
+**Status (2026-11-08): T7 is built** (branch `feat/byo-t7-move`, not deployed; control migration `DataStoreMoves` adds the table
+`data_store_moves`, additive, empty). `POST .../move-in` and `.../move-out` now start a move and answer `202` with it; a background
+worker (`StoreMoveWorker`, registered only while `Stores:Enabled` is on) copies, verifies and switches, and `GET .../data-store` shows
+the baby's latest move (`move`: direction, state, progress, undo window, failure code). The protocol (`DataStoreMoveRunner`, state in
+the domain entity `DataStoreMove`, one row per baby): (1) the request checks the Owner (route policy), the `byo_database` consent and a
+saved store (move-in), that the baby is not already there (`store_move_not_needed`), that the Owner keeps the baby alone for move-in (no
+other member of any role, Doctor included, and no pending invite: `store_owner_only`, the exception of T11), that the store is ready
+(`IStoreMigrator.EnsureReadyAsync`: schema migrated, app role audited; a down store is its `store_*` 503) and that no move of the baby is
+running (`store_move_in_progress`), then saves the move row, which blocks the baby's writes from that moment; (2) the worker waits
+`Stores:Moves:DrainSeconds` (default 5) for requests that were already running, checks the baby still points at the source, empties
+the target's rows of the baby and copies the source's in batches (`Stores:Moves:BatchSize`, default 500), renewing a lease on the row
+and recording progress per batch; (3) it compares a digest of the source (taken after the copy) with the target's: per table, the row
+count and a SHA-256 over every row's key and change stamp (`updated_at`, the deletion time, else the only time the table has), sorted by
+key; a difference copies once more, a second difference fails the move (`store_move_verify_failed`); (4) the baby's pointer and its
+`store_epoch` switch in one control-plane transaction with the move row (`moved`), the last step; (5) the old copy stays in the source
+for `Stores:Moves:UndoWindowDays` (default 7) and is then deleted by the worker's sweep (`completed`); a store that was disconnected
+meanwhile cannot be reached, so the move completes without the delete (the copy is in the family's database, under her control); the
+opposite move during the window is the undo; (6) any failure before the switch fails the move with its code and deletes what reached
+the target (a failed delete is retried by the sweep every `CleanupRetryMinutes`); a worker that stops (restart, crash) lets its lease
+(`LeaseSeconds`, default 120) run out and the sweep starts the copy again from the beginning (the copy first empties the target, so a
+restart is clean), up to `MaxAttempts` (default 3, then `store_move_abandoned`); (7) while a move copies or verifies, `StoreScope` (only
+while the flag is on: one primary-key read of `data_store_moves` when a baby is entered) refuses any save of one of the baby's records
+with a retriable `503 store_moving` (`Retry-After` 15 s, the new failure class `Moving`; a `409` would be dropped by the web outbox), on
+every way in (routes, assistants, jobs); reads go on from the source. A write by a request that entered the baby just before the move
+started and saves after the drain is caught by the verification (copied on the second pass); the remaining window is a commit between
+the last digest and the switch (milliseconds), stated as a residual risk. **Deviation from section 6 (copy engine):** the move does not go
+through `IBackupExportService` and `BackupApplier`. That path is a merge-with-remapping built for untrusted files: it re-authors every
+record to the importer, creates custom event types with new ids, drops a doctor's provenance and the measurements' doctor marks, restamps
+`created_at`/`updated_at` (so the brief's own "ids and `updated_at` equal" verification could never pass), leaves out two of the 12
+tables (proposals, note reads), and would refuse old records that today's validators reject, leaving the owner stuck. A store move is
+the same baby in another database, so `StoreRecordCopier` copies the 12 tables (`DataPlaneTables`, in reference order; a test fails
+for a data table it does not list) row for row through the data contexts of the two stores, opened by name through
+`StoreScope.OpenStoreAsync` (flag, circuit breaker, migrator) and never resolved for the baby. What it keeps from design 24: the record
+set of a baby, references first, ids kept (the merge-into-its-own-baby rule), the change tracker emptied per page, and the file rule
+that another person's private note never reaches the Owner's hands: a move into her own database leaves out private notes of anyone
+else (and their read marks); they stay in the hosted old copy and go with it (they can only be a former member's or doctor's, since the
+move-in needs the Owner alone). Two refusals of the target are mapped to `store_move_conflict` without the database's message: a
+record id another baby holds there, and a reference the target lacks (an account in Lotties' database). A medication linked to a catalog
+product Lotties no longer has loses the link when it moves back (as the backup import does). Nothing is logged but the direction,
+counts, durations, failure codes and exception types (no baby, store or record id, no content). **Hook for T10:** account deletion
+deletes the baby's `data_store_moves` row with the baby; an old copy or leftovers that are still in the owner's own database (the source
+of a `moved` move out, the target of a `failed` move with leftovers) must be deleted there with `IStoreRecordCopier.WipeAsync` before
+the row and the descriptor go (the data-plane eraser of any store). **Open:** production still registers no `IExternalDataStores` (the
+T2 contract: Npgsql data source from the sealed descriptor, pinned, with the failure interceptor), so outside the tests every move-in
+fails `store_unavailable` until that piece lands; the Postgres container tests (`Lotties.Postgres.Tests/Stores/StoreMovePostgresTests`,
+CI only) move a baby both ways against a real external store with a fixture-built opener. `docs/DEPLOY.md` "Moving a baby between
+databases" is the operator's view.
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 
@@ -575,7 +628,7 @@ empty and the control migration is additive). The flag defaults to off in `appse
 | **T4** `IStoreEndpointGuard` (parse, allowlist, resolve, range checks, pinning) + egress NetworkPolicy manifest | careful | T0 | Pure code with an injected resolver | Table of vectors: loopback, RFC1918, CGNAT, link-local/metadata, ULA, `::ffff:10.0.0.1`, NAT64, decimal/hex/octal hosts, `0.0.0.0`, mixed A records (one private), rebinding with a fake resolver that changes answer, port allowlist, injection characters; a "no network" handler (`NoNetworkHandler` style) | Address lookup's "third parties only on button press" pattern; DemoBlockedRoutes |
 | **T5** Store migrator: lazy per-store migrate, advisory lock, state machine, backoff, `lotties.store_meta` | careful | T2, T3 | Data migration chain and history table | **Postgres container test** (below) incl. second run no-op, locked, killed mid-way, schema-ahead | `docs/DEPLOY.md` "Applying migrations" (new subsection), `Persistence/Migrations` rules |
 | **T6** Endpoints: `GET/PUT/DELETE /babies/{id}/data-store`, `POST .../test`, `POST .../move-in`, `POST .../move-out`, rate limits, optional consent route `byo_database` | medium | T3, T4, T5 | Owner only | Rows in `EndpointRoleMatrixTests` (Owner; every other role 403; Doctor scope decision), consent-gate coverage (`ConsentGateCoverageTests`), `DemoBlockedRoutes` keys, rate-limit tests | Endpoint role matrix, consent gate, demo blocked routes |
-| **T7** Move in/out via the backup file to a target store | heavy | T2, T5, T6 | Streaming copy, count + checksum verify, pointer flip last, undo window job | Container test of a full move both ways; interrupted copy leaves the baby on the source | Backup file (`BackupFile`, `BackupExportService`, `BackupApplier` + tests in `Lotties.Api.Tests/Backups`); never export credentials |
+| **T7** Move in/out to a target store (built: a row copier, not the backup file; see its status above) | heavy | T2, T5, T6 | Streaming copy, count + checksum verify, pointer flip last, undo window job | Container test of a full move both ways; interrupted copy leaves the baby on the source | Backup file (`BackupFile`, `BackupExportService`, `BackupApplier` + tests in `Lotties.Api.Tests/Backups`); never export credentials |
 | **T8** Failure behavior: circuit breaker, error classes, `store_*` codes, in-memory cache rules | careful | T2, T5 | Error taxonomy in the API contract | Container test with a killed/paused database; timeout tests | SPEC sync contract (503 retriable) |
 | **T9** Web: Settings flow, SQL generator (client-side only), provider guides, status banners, outbox handling of `store_*`, epoch re-pull | medium | T6, T8 | `code/web/src/byoDatabase/`, i18n en + pt-BR under `locales/<lang>/byoDatabase.json` | Component tests incl. "no fetch before Connect", axe; web sync test for epoch change | i18n rule, `docs/design/` showcase media (new Settings screen: `SCREENS`, `demo-video.review.ts`, `landing.*.json`, `SHOWCASE_SCREENS`, README, regenerate) |
 | **T10** Account deletion half: wipe-in-store with consent, unreachable path | careful | T7 | Eraser data-plane step | Fixture test: store with a row in every data table | `AccountErasureTests`, `EfAccountDataEraser` |

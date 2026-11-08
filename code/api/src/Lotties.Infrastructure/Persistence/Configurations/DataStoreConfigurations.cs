@@ -73,3 +73,35 @@ internal sealed class BabyStoreAssignmentConfiguration : IEntityTypeConfiguratio
         builder.HasOne<DataStore>().WithMany().HasForeignKey(assignment => assignment.DataStoreId).OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+/// <remarks>
+/// <c>data_store_moves</c> (control plane; docs/design/47-bring-your-own-database.md section 6, task T7): one row per baby, its latest
+/// move between the built-in store and the owner's store. The store ids are plain columns, not keys: a store may be removed after a
+/// move out (its old copy then stays in the family's database). The baby key is <c>RESTRICT</c> like the other per-baby rows erasure
+/// handles explicitly (<c>EfAccountDataEraser</c>). The <c>xmin</c> row version decides a race between two workers, or between a
+/// worker and the owner starting a new move (<see cref="DataStoreMove"/>'s lease is taken by an optimistic update). Enum values are
+/// stored by name.
+/// </remarks>
+internal sealed class DataStoreMoveConfiguration : IEntityTypeConfiguration<DataStoreMove>
+{
+    public const int DirectionMaxLength = 8;
+    public const int StateMaxLength = 16;
+
+    public void Configure(EntityTypeBuilder<DataStoreMove> builder)
+    {
+        builder.ToTable("data_store_moves");
+        builder.HasXminRowVersion();
+        builder.HasKey(move => move.BabyId);
+        builder.Property(move => move.BabyId).ValueGeneratedNever();
+        builder.Property(move => move.Direction).HasConversion<string>().HasMaxLength(DirectionMaxLength).IsRequired();
+        builder.Property(move => move.State).HasConversion<string>().HasMaxLength(StateMaxLength).IsRequired();
+        builder.Property(move => move.LeaseHolder).HasMaxLength(DataStoreMove.HolderMaxLength);
+        builder.Property(move => move.FailureCode).HasMaxLength(DataStoreMove.FailureCodeMaxLength);
+        builder.Property(move => move.StartedAt).IsRequired();
+        builder.Property(move => move.UpdatedAt).IsRequired();
+        builder.Ignore(move => move.Source);
+        builder.Ignore(move => move.Target);
+        builder.Ignore(move => move.IsInProgress);
+        builder.HasOne<Baby>().WithOne().HasForeignKey<DataStoreMove>(move => move.BabyId).OnDelete(DeleteBehavior.Restrict);
+    }
+}

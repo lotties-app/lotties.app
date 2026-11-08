@@ -60,6 +60,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["baby_notes.baby_id"] = Rule.Erase,
         ["baby_notification_preferences.baby_id"] = Rule.Erase,
         ["care_providers.baby_id"] = Rule.Erase,
+        ["data_store_moves.baby_id"] = Rule.Erase,
         ["event_types.baby_id"] = Rule.Erase,
         ["events.baby_id"] = Rule.Erase,
         ["formulas.baby_id"] = Rule.Erase,
@@ -490,6 +491,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             context.UserNotificationSettings.Add(UserNotificationSettings.Create(userId, new NotificationSettingsTerms(NotificationTimeZone.From("America/Sao_Paulo"), QuietHours.Default, false, false), Start));
             context.BabyNotificationPreferences.Add(BabyNotificationPreferences.Create(babyId, userId, ReminderPreferences.Default, Start));
             context.DataStores.Add(DataStore.Create(Guid.NewGuid(), userId, Start));
+            context.DataStoreMoves.Add(DataStoreMove.Start(babyId, DataStoreMoveDirection.In, Guid.NewGuid(), "erasure-test", Start, TimeSpan.FromMinutes(2)));
             return Task.CompletedTask;
         });
     }

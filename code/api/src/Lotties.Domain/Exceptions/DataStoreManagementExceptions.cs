@@ -44,12 +44,3 @@ public sealed class ByoDatabaseConsentRequiredException : DomainException
     {
     }
 }
-
-/// <summary>Moving a baby's records into or out of the family's own database is not available yet (501; task T7).</summary>
-public sealed class DataStoreMoveNotImplementedException : DomainException
-{
-    public DataStoreMoveNotImplementedException()
-        : base("not_implemented", "Moving records between databases is not available yet.")
-    {
-    }
-}

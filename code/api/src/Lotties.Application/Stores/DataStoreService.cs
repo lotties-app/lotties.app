@@ -10,14 +10,15 @@ namespace Lotties.Application.Stores;
 /// <summary>
 /// The owner's management of a baby's data store (docs/design/47-bring-your-own-database.md sections 3, 6 and 8, task T6): read the
 /// status, save or replace the connection details (checked by the egress guard, then sealed), test the connection, remove a store
-/// no baby uses, and the move routes (not built yet, task T7). Callers are the baby's Owner (the route policy) and the feature
+/// no baby uses, and start a move of the baby's records into it or back to Lotties (task T7; the copy runs in the background,
+/// <see cref="IDataStoreMoveRunner"/>). Callers are the baby's Owner (the route policy) and the feature
 /// flag and account allowlist were checked by the HTTP layer. One store per account (D11): the store of a baby is the one its
 /// pointer names, else the caller's own. Nothing here logs, returns or puts in an exception a host, a user name, a database name
 /// or a password.
 /// </summary>
 public interface IDataStoreService
 {
-    /// <summary>Where the baby's records are (<c>hosted</c> or <c>own</c>) and the store's status, never a secret.</summary>
+    /// <summary>Where the baby's records are (<c>hosted</c> or <c>own</c>), the store's status and the latest move, never a secret.</summary>
     Task<DataStoreStatusResponse> GetAsync(Guid babyId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -32,11 +33,18 @@ public interface IDataStoreService
     /// <summary>Removes the caller's store; refused (<c>store_in_use</c>) while this or any baby still points at it.</summary>
     Task RemoveAsync(Guid babyId, CancellationToken cancellationToken = default);
 
-    /// <summary>Checks the move into the store may be asked for, then answers <c>not_implemented</c> (task T7 builds the copy).</summary>
-    Task MoveInAsync(Guid babyId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Starts moving the baby's records from Lotties' database into the caller's store (BYO consent, a saved descriptor, the baby
+    /// hosted and kept by its Owner alone, the store ready) and returns the started move; the baby's writes answer
+    /// <c>store_moving</c> until it ends. Also the undo of a move out, while its old copy is kept.
+    /// </summary>
+    Task<DataStoreMoveStatus> MoveInAsync(Guid babyId, CancellationToken cancellationToken = default);
 
-    /// <summary>Answers <c>not_implemented</c> (task T7 builds the copy back to Lotties).</summary>
-    Task MoveOutAsync(Guid babyId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Starts moving the baby's records from the caller's store back to Lotties' database (the baby must be in her store, and the store
+    /// readable) and returns the started move. Also the undo of a move in, while its old copy is kept.
+    /// </summary>
+    Task<DataStoreMoveStatus> MoveOutAsync(Guid babyId, CancellationToken cancellationToken = default);
 }
 
 internal sealed class DataStoreService(
@@ -47,6 +55,7 @@ internal sealed class DataStoreService(
     IStoreCredentials credentials,
     IStoreConnectionTester tester,
     IStoreHealth health,
+    DataStoreMoves moves,
     TimeProvider time,
     ILogger<DataStoreService> logger) : IDataStoreService
 {
@@ -56,7 +65,7 @@ internal sealed class DataStoreService(
     public async Task<DataStoreStatusResponse> GetAsync(Guid babyId, CancellationToken cancellationToken = default)
     {
         var selection = await SelectAsync(babyId, cancellationToken);
-        return DataStoreViews.Status(selection.Pointer, selection.Store);
+        return DataStoreViews.Status(selection.Pointer, selection.Store, await moves.StatusAsync(babyId, cancellationToken));
     }
 
     public async Task<DataStoreStatusResponse> SaveAsync(Guid babyId, SaveDataStoreRequest request, CancellationToken cancellationToken = default)
@@ -102,18 +111,18 @@ internal sealed class DataStoreService(
         logger.LogInformation("Removed data store {StoreId}", store.Id);
     }
 
-    public async Task MoveInAsync(Guid babyId, CancellationToken cancellationToken = default)
+    public async Task<DataStoreMoveStatus> MoveInAsync(Guid babyId, CancellationToken cancellationToken = default)
     {
         var selection = await SelectAsync(babyId, cancellationToken);
         await EnsureConsentAsync(selection.User, cancellationToken);
-        ConfiguredStore(selection);
-        throw new DataStoreMoveNotImplementedException();
+        var store = ConfiguredStore(selection);
+        return await moves.StartInAsync(babyId, selection.Pointer, store, selection.User, cancellationToken);
     }
 
-    public async Task MoveOutAsync(Guid babyId, CancellationToken cancellationToken = default)
+    public async Task<DataStoreMoveStatus> MoveOutAsync(Guid babyId, CancellationToken cancellationToken = default)
     {
-        await SelectAsync(babyId, cancellationToken);
-        throw new DataStoreMoveNotImplementedException();
+        var selection = await SelectAsync(babyId, cancellationToken);
+        return await moves.StartOutAsync(babyId, selection.Pointer, cancellationToken);
     }
 
     private static StoreSealContext SealContextOf(DataStore store) => new(store.Id, store.OwnerUserId);

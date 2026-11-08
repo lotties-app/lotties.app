@@ -570,6 +570,35 @@ no `DB_*` values are read). `DataMigrationChainTests` fails until the data chain
 data table cannot reach one chain only. A store that is behind on seeds rejects events of the newer type until the API
 migrates it.
 
+#### Moving a baby between databases
+
+The Owner's `POST /babies/{id}/data-store/move-in` and `/move-out` (docs/design/47-bring-your-own-database.md section 6, task T7)
+move a baby's records between the Lotties database and her own; the control migration `DataStoreMoves` adds the table
+`data_store_moves` (one row per baby: its latest move; additive, empty until someone moves). While `Stores:Enabled` is on, each API
+instance runs a **move worker** in the background; with the flag off nothing runs, nothing sweeps and nothing is read.
+
+- A move blocks the baby's writes (`503 store_moving`, clients retry) while it copies and verifies, usually seconds to a minute;
+  reads go on. The baby's store pointer and epoch switch only after the copy matched the source, in one transaction.
+- The **old copy** stays in the source for the undo window and is then deleted by the worker's sweep. Until then the Lotties database
+  still holds a moved-in baby's records (the privacy gain starts after the window); the app shows the date.
+- A move whose instance stopped (restart, crash, deploy) is picked up by any instance's sweep once its lease runs out and starts
+  again from the beginning; after `MaxAttempts` runs it fails and the baby stays where it was. A failed move deletes what reached
+  the target, or leaves it to the sweep when the target is down.
+- Logs carry the direction, counts, durations, failure codes and exception types only: no baby, store or record id, no content.
+
+| Setting (env) | Default | Meaning |
+| --- | --- | --- |
+| `Stores__Moves__UndoWindowDays` | 7 | Days the old copy is kept (0 to 90; 0 deletes it at the next sweep) |
+| `Stores__Moves__BatchSize` | 500 | Rows per transaction of the copy (50 to 5000) |
+| `Stores__Moves__DrainSeconds` | 5 | Wait after a move starts, for requests already running (0 to 120) |
+| `Stores__Moves__LeaseSeconds` | 120 | How long a stopped instance's move waits before another resumes it (30 to 3600; more than twice the drain) |
+| `Stores__Moves__SweepSeconds` | 60 | Interval of the sweep for stopped moves, old copies and leftovers (5 to 3600) |
+| `Stores__Moves__MaxAttempts` | 3 | Runs of one move before it is given up (1 to 10) |
+| `Stores__Moves__CleanupRetryMinutes` | 60 | Wait before a failed delete of an old copy or leftovers is tried again (1 to 1440) |
+
+Values out of range fail startup (only while `Stores:Enabled` is on). Account deletion does not yet delete an old copy that is in a
+family's own database (task T10); see design 47's T7 status.
+
 #### Migrations that seed built-in event types
 
 Built-in event types are rows in `event_types` (with `baby_id` null) inserted by migrations, and clients only learn about them from `GET /babies/{id}/event-types`. Until the migration is applied the API does not serve the type, so phones show neither its tile nor its form, and the API rejects events that reference the new type id.

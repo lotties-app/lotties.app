@@ -9,7 +9,7 @@ namespace Lotties.Api.Errors;
 /// The HTTP answer to a failure of a baby's data store (docs/design/47-bring-your-own-database.md section 5, task T8; SPEC "Events
 /// sync contract"): <c>503</c> for every class, so a client keeps the change in its outbox and retries, with <c>Retry-After</c> in
 /// whole seconds: the time left on the store's open circuit breaker or migrator backoff when the server knows it, else a default
-/// per class (a few seconds for a busy store, half a minute otherwise). The body is the usual problem with the class's <c>code</c>
+/// per class (a few seconds for a busy store, 15 s while the baby's records are being moved, half a minute otherwise). The body is the usual problem with the class's <c>code</c>
 /// and a fixed sentence; nothing of the driver's error, the host, the user or an address.
 /// </summary>
 internal static class StoreFailureResponses
@@ -21,6 +21,9 @@ internal static class StoreFailureResponses
 
     /// <summary>Default wait for every other class.</summary>
     public static readonly TimeSpan DefaultRetry = TimeSpan.FromSeconds(30);
+
+    /// <summary>Default wait while the baby's records are being moved (task T7): a move of a typical baby takes seconds to a minute.</summary>
+    public static readonly TimeSpan MovingRetry = TimeSpan.FromSeconds(15);
 
     /// <summary>Whole seconds the client should wait (at least 1).</summary>
     public static int RetryAfterSeconds(StoreFailureException failure)
@@ -40,6 +43,7 @@ internal static class StoreFailureResponses
     private static TimeSpan DefaultFor(StoreFailureClass failure) => failure switch
     {
         StoreFailureClass.Timeout or StoreFailureClass.RateLimited or StoreFailureClass.Migrating => ShortRetry,
+        StoreFailureClass.Moving => MovingRetry,
         _ => DefaultRetry,
     };
 }

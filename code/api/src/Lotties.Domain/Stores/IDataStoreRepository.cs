@@ -15,6 +15,12 @@ public interface IDataStoreRepository
     /// <summary>The store the baby's records are in (<c>babies.data_store_id</c>), or <c>null</c> for the built-in store.</summary>
     Task<Guid?> StoreOfBabyAsync(Guid babyId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The baby's store pointer and epoch, tracked so a move can switch it (task T7, saved with the move in one transaction);
+    /// <c>null</c> when the baby has no row.
+    /// </summary>
+    Task<BabyStoreAssignment?> FindAssignmentAsync(Guid babyId, CancellationToken cancellationToken = default);
+
     /// <summary>Whether any baby points at <paramref name="storeId"/>.</summary>
     Task<bool> IsInUseAsync(Guid storeId, CancellationToken cancellationToken = default);
 

@@ -42,6 +42,12 @@ public enum StoreFailureClass
 
     /// <summary>Applying the data schema to the store failed and rolled back.</summary>
     MigrationFailed,
+
+    /// <summary>
+    /// The baby's records are being moved between Lotties' database and the family's own (task T7): writes wait, reads go on. Not a
+    /// failure of the store itself; never counts towards its circuit breaker.
+    /// </summary>
+    Moving,
 }
 
 /// <summary>The stable wire codes of <see cref="StoreFailureClass"/> and which classes count as connection failures.</summary>
@@ -62,6 +68,7 @@ public static class StoreFailureCodes
         StoreFailureClass.RoleTooPowerful => "store_role_too_powerful",
         StoreFailureClass.Migrating => "store_migrating",
         StoreFailureClass.MigrationFailed => "store_migration_failed",
+        StoreFailureClass.Moving => "store_moving",
         _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, null),
     };
 
