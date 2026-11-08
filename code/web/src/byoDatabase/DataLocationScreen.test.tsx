@@ -296,6 +296,42 @@ describe('a baby on her own database', () => {
     expect(screen.getByText('Your database: Supabase')).toBeTruthy();
   });
 
+  it('links a problem to the guide, and a working database to nothing but the guide entry', async () => {
+    const help = '/help/own-database#own-database-troubleshooting';
+    const first = render({
+      view: {
+        kind: 'own',
+        store: store({ state: 'unreachable', lastCheckResult: 'store_paused_or_unreachable' }),
+      },
+    });
+    const banner = (await screen.findByText('Your database is not reachable')).closest(
+      '[role="status"]',
+    ) as HTMLElement;
+    expect(
+      within(banner)
+        .getByRole('link', { name: 'What this means and what to do' })
+        .getAttribute('href'),
+    ).toBe(help);
+    first.unmount();
+
+    render({ view: { kind: 'own', store: store({ state: 'ready' }) } });
+    expect(await screen.findByText('Your database is working')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'What this means and what to do' })).toBeNull();
+    expect(
+      screen.getByRole('link', { name: /How it works, step by step/ }).getAttribute('href'),
+    ).toBe('/help/own-database');
+  });
+
+  it('explains a refused move in plain words and links the guide', async () => {
+    render({
+      view: { kind: 'own', store: store({ state: 'ready' }) },
+      moveOut: httpError(409, 'store_move_in_progress'),
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Move back to Lotties hosting' }));
+    expect(await screen.findByText(/already being moved/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'What this means and what to do' })).toBeTruthy();
+  });
+
   it('"Move back to Lotties hosting" says it is not available yet on 501, without pretending', async () => {
     const { calls } = render({ view: { kind: 'own', store: store({ state: 'ready' }) } });
     fireEvent.click(await screen.findByRole('button', { name: 'Move back to Lotties hosting' }));

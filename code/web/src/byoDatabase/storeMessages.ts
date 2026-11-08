@@ -29,6 +29,13 @@ export type ResultMessage =
   | 'consent'
   | 'rateLimited'
   | 'notConfigured'
+  | 'moving'
+  | 'moveInProgress'
+  | 'moveNotNeeded'
+  | 'ownerOnly'
+  | 'inUse'
+  | 'notOwned'
+  | 'accountDeleting'
   | 'unknown';
 
 const RESULT_MESSAGES: Readonly<Record<string, ResultMessage>> = {
@@ -56,6 +63,15 @@ const RESULT_MESSAGES: Readonly<Record<string, ResultMessage>> = {
   byo_consent_required: 'consent',
   rate_limited: 'rateLimited',
   store_not_configured: 'notConfigured',
+  // Moves, sharing and account deletion (API tasks T7, T10, T11; docs/BYO-DATABASE.md section 13).
+  store_moving: 'moving',
+  store_move_in_progress: 'moveInProgress',
+  store_move_not_needed: 'moveNotNeeded',
+  store_owner_only: 'ownerOnly',
+  store_in_use: 'inUse',
+  store_not_owned: 'notOwned',
+  store_account_deleting: 'accountDeleting',
+  account_deletion_in_progress: 'accountDeleting',
 };
 
 /** The message for a test result or a problem `code` (never the server's text). */

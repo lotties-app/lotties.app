@@ -152,6 +152,12 @@
   "beta": {
     "notice": "O Lotties está em fase de teste. Leia os [Termos de Uso](/terms)."
   },
+  "dataChoice": {
+    "title": "Seus dados, sua escolha",
+    "body": "Por padrão o Lotties guarda os registros do seu bebê no banco de dados dele e cuida disso, e isso continua sendo o padrão. Como opção, o Titular de um bebê pode guardar os registros de cuidado desse bebê num banco Postgres próprio (por exemplo Supabase ou Neon) e voltar com eles quando quiser. O app e a conta continuam exatamente iguais.",
+    "honest": "Os servidores do Lotties continuam lendo e gravando esses registros para o app funcionar, então isto é sobre onde os dados ficam, não é criptografia de ponta a ponta.",
+    "availability": "Desligado por padrão por enquanto e ainda não disponível para todas as contas."
+  },
   "openSource": {
     "title": "Feito sobre software livre",
     "body": "O Lotties se apoia no trabalho da comunidade de software livre e em dados públicos de saúde. Obrigado a cada autor e mantenedor.",

@@ -530,6 +530,87 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
 
 Do not use `EnsureCreated()` against a real database: it creates the tables without the `__EFMigrationsHistory` table, after which migrations can no longer be applied.
 
+#### Bring your own database: turning it on
+
+"Bring your own database" (docs/design/47-bring-your-own-database.md; what families read: docs/BYO-DATABASE.md) lets a
+baby's Owner keep that baby's care records in a Postgres database of her own. It is **off by default**; with it off the data
+store routes answer 404, no key is needed and nothing below runs. The sections after this one (migrations to user stores,
+moves, account deletion, connections) describe how it behaves once on.
+
+**1. Migrations first (needed even with the flag off).** The API reads each baby's store pointer on every request, so these
+control migrations must be applied before (or with) the API release that carries them, the usual way ("Applying migrations"
+above). All are additive and stay empty until someone uses the feature; none rewrites existing rows:
+
+| Migration (control chain, `LottiesDbContext`) | Adds |
+| --- | --- |
+| `20261107124403_DataStores` | table `data_stores`; columns `babies.data_store_id` (null = Lotties' database) and `babies.store_epoch` |
+| `20261107234401_DataStoreSchemaVersion` | `data_stores.schema_version` |
+| `20261108010930_DataStoreManagement` | `data_stores.provider_label`, `last_checked_at`, `last_check_result` |
+| `20261108025621_DataStoreMoves` | table `data_store_moves` |
+| `20261108135326_AccountDeletionBlock` | `babies.account_deletion_started_at` |
+
+The data chain (`LottiesDataDbContext`, baseline `20261107234416_DataBaseline`) is never applied to the Lotties database:
+the API applies it to each family's database itself (next section). After applying, re-run the app role grants if your
+default privileges do not cover new tables (`docs/sql/grant-app-role.sql`).
+
+**2. The keys (a Secret).** Connection details are sealed with AES-256-GCM under a data key wrapped by a key-encryption key
+(KEK) from configuration, never from the database. Each KEK is base64 of 32 random bytes with an id of 1 to 32 lower-case
+letters, digits or dashes:
+
+```bash
+openssl rand -base64 32    # one KEK; keep it in your secret store, never in the repository or a log
+```
+
+| Setting (env) | Meaning |
+| --- | --- |
+| `Stores__Enabled` | `true` turns the feature on (default `false`) |
+| `Stores__Allowlist__0`, `__1`, ... | Accounts that may use it: a `users.id` guid or an OIDC `sub` (not an e-mail; at most 100). Empty = nobody |
+| `Stores__KeyEncryptionKeys__<id>` | A KEK, for example `Stores__KeyEncryptionKeys__k1=<base64>`. Secret |
+| `Stores__CurrentKeyId` | The KEK id every new seal uses; must be one of the configured ids |
+| `StoreEndpointGuard__DeniedNetworks__0` | Extra refused network, at least the lab's public address (`<ip>/32`) |
+
+With the flag on, startup fails on a missing current key, an unknown current key id, a malformed id or a key that is not
+32 bytes (the messages name ids only). Put the KEKs in the API's Secret, never in a ConfigMap or `values` file. **The
+home-lab kit does not carry these keys yet**: `deploy/homelab/deploy.sh` builds `lotties-secrets` from a fixed list of keys
+(no `Stores__*`), so turning the feature on there needs that list extended (or a second Secret added to the API's
+environment) first. Back up the KEKs with the database backups' secrets: without the KEK that sealed a row, that family's
+baby is unreachable (`store_unavailable`; the seal failure kind is logged) until she enters her details again, and the app
+offers that only while the records are with Lotties.
+
+**3. Rotating a key.** Add the new KEK beside the old one, point `Stores__CurrentKeyId` at it and restart. New saves are
+sealed under the new key; existing rows keep opening with the old one. **No job re-wraps existing rows yet**
+(`IStoreCredentials.Rewrap` exists but nothing calls it), and a row is re-sealed only when its Owner saves new connection
+details, so keep every old KEK configured while any row still uses it. Rows per key id (the id is in the sealed header:
+magic, version, id length, id):
+
+```sql
+SELECT convert_from(substring(sealed_descriptor FROM 6 FOR get_byte(sealed_descriptor, 4)), 'UTF8') AS key_id, count(*)
+FROM data_stores WHERE sealed_descriptor IS NOT NULL GROUP BY 1;
+```
+
+Only remove a KEK when that query no longer lists it. A **leaked KEK** cannot be fixed by rotation alone (the stored blobs
+still open with it): rotate, then ask the affected Owners to change their roles' passwords at their provider and save the
+new details (which re-seals them under the new key).
+
+**4. Allowlist and egress.** Allowlist the owner first. Before allowlisting anyone else, check and apply the egress
+`NetworkPolicy` template by hand (`deploy/homelab/optional/api-egress-networkpolicy.yaml`, not applied by `deploy.sh`; steps in
+its header; see "Connections to user stores" below) and set `StoreEndpointGuard__DeniedNetworks__0`.
+
+**5. Kill switches.**
+
+- One store: set its `data_stores.state` to `Disabled` (see "Connections to user stores"). Nothing is deleted; only the
+  operator changes it back.
+- Everything: `Stores__Enabled=false` and restart. The data store routes answer 404, the move worker stops, and every baby
+  whose records are in a family's database answers `503 store_unavailable` on every way in (the app keeps their changes in
+  its outbox); nothing falls back to the Lotties database. Hosted babies are not affected. A move that was running stays in its row and is
+  picked up by the worker's sweep once the flag is on again (lease and attempt rules in "Moving a baby between databases").
+- One account: remove it from `Stores__Allowlist`. Its routes answer 404, so it can no longer save, test or move, but a baby
+  already on its own database keeps being served there (the allowlist guards the data store routes, not the routing).
+
+**6. Consent and policy.** Setting up a store requires the optional consent `byo_database` (the app asks for it). The privacy
+policy (version 13) already has the "Your own database" section; its sentence about the opt-in wipe at account deletion
+waits for the next material policy version (docs/design/33-privacy-audit.md section 17).
+
 #### Applying migrations to user stores
 
 A family that brings its own database (docs/design/47-bring-your-own-database.md; off unless `Stores:Enabled=true`, and only
@@ -580,7 +661,8 @@ instance runs a **move worker** in the background; with the flag off nothing run
 - A move blocks the baby's writes (`503 store_moving`, clients retry) while it copies and verifies, usually seconds to a minute;
   reads go on. The baby's store pointer and epoch switch only after the copy matched the source, in one transaction.
 - The **old copy** stays in the source for the undo window and is then deleted by the worker's sweep. Until then the Lotties database
-  still holds a moved-in baby's records (the privacy gain starts after the window); the app shows the date.
+  still holds a moved-in baby's records (the privacy gain starts after the window). `GET .../data-store` returns the date
+  (`move.oldCopyKeptUntil`); the web app does not show it yet.
 - A move whose instance stopped (restart, crash, deploy) is picked up by any instance's sweep once its lease runs out and starts
   again from the beginning; after `MaxAttempts` runs it fails and the baby stays where it was. A failed move deletes what reached
   the target, or leaves it to the sweep when the target is down.

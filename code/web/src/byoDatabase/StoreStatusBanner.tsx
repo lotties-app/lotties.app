@@ -3,18 +3,21 @@ import { Alert, AlertTitle, Typography } from '@mui/material';
 import { formatDateTime } from '../i18n/format';
 import { useLocale } from '../i18n/useLocale';
 import type { DataStoreStatus } from './dataStoreApi';
+import { OwnDatabaseHelpLink } from './OwnDatabaseHelpLink';
 import { HEALTH_SEVERITY, storeHealthOf } from './storeMessages';
 
 /**
  * How the family's own database is doing (docs/design/47-bring-your-own-database.md section 5): the
- * state in plain words and what to do next. Never a host, a user or the server's own text.
+ * state in plain words and what to do next (a problem links to the guide's troubleshooting). Never
+ * a host, a user or the server's own text.
  */
 export function StoreStatusBanner({ store }: { store: DataStoreStatus }) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const health = storeHealthOf(store);
+  const severity = HEALTH_SEVERITY[health];
   return (
-    <Alert severity={HEALTH_SEVERITY[health]} role="status">
+    <Alert severity={severity} role="status">
       <AlertTitle>{t(`byoDatabase.health.${health}.title`)}</AlertTitle>
       <Typography variant="body2">{t(`byoDatabase.health.${health}.body`)}</Typography>
       {store.lastCheckedAt && (
@@ -24,6 +27,7 @@ export function StoreStatusBanner({ store }: { store: DataStoreStatus }) {
           })}
         </Typography>
       )}
+      {(severity === 'warning' || severity === 'error') && <OwnDatabaseHelpLink />}
     </Alert>
   );
 }

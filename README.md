@@ -115,11 +115,23 @@ What the maintainers' instance (lotties.app) collects, why, who receives it and 
 operator and its own privacy terms. The audit behind it is
 [docs/design/33-privacy-audit.md](docs/design/33-privacy-audit.md).
 
-**Where your data lives (in development, off by default).** A baby's Owner will be able to keep that baby's care records in a
-Postgres database of her own (Supabase, Neon or any public Postgres) instead of Lotties' database, from Settings > Where your
-data lives; the app and the account stay the same, and Lotties' servers still read and write the data (it is not end-to-end
-encryption). Design: [docs/design/47-bring-your-own-database.md](docs/design/47-bring-your-own-database.md). The screen is
-captured for the showcase as `data-location` (tests/e2e/showcase) once the media are regenerated.
+### Your data, your choice (optional, off by default for now)
+
+Lotties hosting stays the default, and nothing changes for anyone who does not choose otherwise. As an **option**, a
+baby's Owner can keep that baby's care records in a Postgres database of her own (Supabase, Neon or any public Postgres)
+instead of Lotties' database, from Settings > Where your data lives, per baby, and move them back at any time. The app and
+the account stay exactly the same, and everything still goes through the Lotties API: Lotties' servers read and write the
+records to run the app, and the connection details are stored sealed but can be opened by the service (and so by its
+operator) to connect. It is control over where the data lives, not end-to-end encryption. In this first version it is for a
+baby with no other members, without reminders or doctor access, and it is off on the server unless the operator turns it
+on for listed accounts; the provider steps have not yet been tested on a real Supabase or Neon account.
+
+- User guide: [docs/BYO-DATABASE.md](docs/BYO-DATABASE.md) (also in the app at `/help/own-database`).
+- Setup SQL for `psql`: [docs/sql/byo-setup.sql](docs/sql/byo-setup.sql) (the app generates the same SQL for you).
+- Operators: [docs/DEPLOY.md](docs/DEPLOY.md) ("Bring your own database: turning it on" and the sections after it).
+- Design: [docs/design/47-bring-your-own-database.md](docs/design/47-bring-your-own-database.md).
+
+The screen is captured for the showcase as `data-location` (tests/e2e/showcase) once the media are regenerated.
 
 ## Credits and open-source acknowledgements
 

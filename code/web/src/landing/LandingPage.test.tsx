@@ -12,6 +12,9 @@ import type { AuthApi } from '../auth/AuthContext';
 import { AuthTestWrapper } from '../test/AuthTestWrapper';
 import { fakeAuth } from '../test/fakeAuth';
 import summary from '../credits/third-party-summary.generated.json';
+import landingEn from '../i18n/locales/landing.en.json';
+import landingPtBR from '../i18n/locales/landing.pt-BR.json';
+import { findForbiddenClaims } from '../legal/forbiddenClaims';
 import LandingPage from './LandingPage';
 import { SHOWCASE_SCREENS } from './features';
 import { repoUrl } from './repoUrl';
@@ -73,6 +76,7 @@ describe('LandingPage', () => {
       'What it does',
       'See it in action',
       'How it works',
+      'Your data, your choice',
       'Not a medical device',
       'Built on open source',
     ]);
@@ -422,6 +426,24 @@ describe.each(['light', 'dark', 'night'] as const)('LandingPage in the %s scheme
 });
 
 describe('claims', () => {
+  it('offers your own database as an option, off by default, without claiming secrecy from Lotties', async () => {
+    renderLanding();
+    const section = (
+      await screen.findByRole('heading', { level: 2, name: 'Your data, your choice' })
+    ).closest('section') as HTMLElement;
+    const text = section.textContent ?? '';
+    expect(text).toMatch(/stays the default/);
+    expect(text).toMatch(/Off by default for now/);
+    expect(text).toMatch(/not end-to-end encryption/);
+    expect(findForbiddenClaims(text, 'en')).toEqual([]);
+    for (const [locale, catalog] of [
+      ['en', landingEn],
+      ['pt-BR', landingPtBR],
+    ] as const) {
+      expect(findForbiddenClaims(JSON.stringify(catalog.dataChoice), locale)).toEqual([]);
+    }
+  });
+
   it('claims "no tracking" only while the web app has no analytics or telemetry dependency', async () => {
     const manifest = JSON.parse(readFileSync('package.json', 'utf-8')) as {
       dependencies: Record<string, string>;

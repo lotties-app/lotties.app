@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Stack } from '@mui/material';
+import { Alert, Box, Button, Stack } from '@mui/material';
 import { useApiClient } from '../api/ApiClientContext';
 import {
   dataStoreQueryKey,
@@ -10,6 +10,7 @@ import {
   moveOutOfDataStore,
   removeDataStore,
 } from './dataStoreApi';
+import { OwnDatabaseHelpLink } from './OwnDatabaseHelpLink';
 import { errorMessageOf, type ResultMessage } from './storeMessages';
 
 type Outcome = { kind: 'comingSoon' } | { kind: 'failed'; message: ResultMessage } | null;
@@ -51,6 +52,9 @@ function OutcomeNotice({ outcome }: { outcome: Outcome }) {
   return (
     <Alert severity="warning" role="status">
       {t(`byoDatabase.results.${outcome.message}.body`)}
+      <Box>
+        <OwnDatabaseHelpLink />
+      </Box>
     </Alert>
   );
 }
