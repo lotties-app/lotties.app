@@ -42,7 +42,8 @@ import { pullDoctorPatient } from '../doctor/doctorSync';
 import { pullNotes } from '../notes/noteSync';
 import { syncCareProviders } from './careProviderSync';
 import { pullNoteReads, pullProposals } from '../proposals/proposalSync';
-import { classifyFailure, describeFailure } from './failures';
+import { classifyFailure, describeFailure, isStoreFailure } from './failures';
+import { adoptStoreEpoch, readStoreEpoch } from './storeEpoch';
 import { syncRequest, syncRequestWithMeta, type SyncContext } from './syncContext';
 
 function get<T>(ctx: SyncContext, path: string) {
@@ -77,13 +78,15 @@ export async function refreshBabies(ctx: SyncContext): Promise<string[]> {
 /**
  * Replaces a baby's event types (custom + built-in templates) and medication catalog. Medications
  * with a queued local change are left alone until it is pushed, so an offline edit or delete is
- * not undone by a pull that runs before the push succeeded.
+ * not undone by a pull that runs before the push succeeded. Resolves with the baby's store epoch
+ * (`X-Sync-Epoch`, `null` when the server sent none).
  */
-export async function refreshCatalogs(ctx: SyncContext, babyId: string): Promise<void> {
-  const [types, medications] = await Promise.all([
-    get<EventTypeDto[]>(ctx, apiPaths.eventTypes(babyId)),
+export async function refreshCatalogs(ctx: SyncContext, babyId: string): Promise<string | null> {
+  const [typesResponse, medications] = await Promise.all([
+    syncRequestWithMeta<EventTypeDto[]>(ctx, apiPaths.eventTypes(babyId)),
     get<MedicationDto[]>(ctx, apiPaths.medications(babyId)),
   ]);
+  const types = typesResponse.data;
   const { db } = ctx;
   await db.transaction('rw', db.eventTypes, db.medications, db.outbox, async () => {
     const pending = await pendingEntityIds(db, babyId);
@@ -98,6 +101,7 @@ export async function refreshCatalogs(ctx: SyncContext, babyId: string): Promise
       (medications ?? []).filter((m) => !pending.has(m.id)).map(fromMedicationDto),
     );
   });
+  return readStoreEpoch(typesResponse.headers);
 }
 
 /** Newest raw `updatedAt` among `items` and the current cursor (never moves backwards). */
@@ -431,9 +435,9 @@ export async function pullSuggestions(ctx: SyncContext, babyId: string): Promise
 
 /**
  * Refreshes babies, then each baby's catalogs and events; a baby the user follows as its Doctor
- * gets the lean pull instead (`pullDoctorPatient`). A permanent (4xx) failure or a paging
- * loop for one baby is collected and the others continue; network/401/transient failures are
- * rethrown.
+ * gets the lean pull instead (`pullDoctorPatient`). A permanent (4xx) failure, a store failure
+ * (503 `store_*`: that baby's own database) or a paging loop for one baby is collected and the
+ * others continue; network/401/other transient failures are rethrown.
  */
 export async function pullAll(ctx: SyncContext): Promise<string[]> {
   const errors: string[] = [];
@@ -445,7 +449,9 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
         await pullDoctorPatient(ctx, baby, { pullPrescriptions, refreshLatestWeight });
         continue;
       }
-      await refreshCatalogs(ctx, babyId);
+      // The first baby request carries the store epoch: a change drops the cursors, so the
+      // pulls below fetch everything again from the baby's new store.
+      await adoptStoreEpoch(ctx.db, babyId, await refreshCatalogs(ctx, babyId));
       await refreshLinkedProducts(ctx, babyId);
       await pullPrescriptions(ctx, babyId);
       await pullFormulas(ctx, babyId);
@@ -457,8 +463,11 @@ export async function pullAll(ctx: SyncContext): Promise<string[]> {
       await refreshLatestWeight(ctx, babyId);
       await pullSuggestions(ctx, babyId);
     } catch (error) {
+      // A baby whose own database is down (503 `store_*`) must not stop the other babies' pulls.
       const perBaby =
-        error instanceof RepeatedCursorError || classifyFailure(error) === 'permanent';
+        error instanceof RepeatedCursorError ||
+        isStoreFailure(error) ||
+        classifyFailure(error) === 'permanent';
       if (!perBaby) throw error;
       errors.push(describeFailure(error));
     }

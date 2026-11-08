@@ -242,6 +242,11 @@ export const apiPaths = {
 
 /** Response header carrying the delta paging cursor; absent on the last page. */
 export const NEXT_CURSOR_HEADER = 'X-Next-Cursor';
+/**
+ * The baby's store epoch on every baby route (docs/SPEC.md "Store epoch"): it changes only when the
+ * baby's records move to another data store; a client holding another value pulls everything again.
+ */
+export const SYNC_EPOCH_HEADER = 'X-Sync-Epoch';
 
 function query(params: Record<string, string | undefined>): string {
   const parts = Object.entries(params)

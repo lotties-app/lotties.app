@@ -31,10 +31,16 @@ import {
   getConsents,
   OPTIONAL_CONSENT_KINDS,
   type ConsentState,
-  type OptionalConsentKind,
+  type ListedOptionalConsentKind,
 } from './consentApi';
 
-function OptionalState({ kind, state }: { kind: OptionalConsentKind; state: ConsentState | null }) {
+function OptionalState({
+  kind,
+  state,
+}: {
+  kind: ListedOptionalConsentKind;
+  state: ConsentState | null;
+}) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   let text = t('consent.settings.optional.never');

@@ -1,0 +1,308 @@
+{
+  "byoDatabase": {
+    "title": "Onde seus dados ficam",
+    "back": "Voltar aos Ajustes",
+    "intro": "Você continua usando o app Lotties e sua conta exatamente como antes. A única coisa que muda é onde os registros de cuidado do seu bebê ficam guardados: no banco de dados do Lotties ou em um banco Postgres seu (por exemplo Supabase ou Neon), que os servidores do Lotties leem e gravam por você.",
+    "offline": "Conecte-se à internet para ver ou mudar onde seus dados ficam.",
+    "loadFailed": "Não foi possível carregar agora. Tente de novo mais tarde.",
+    "section": {
+      "hosted": "O Lotties guarda os registros do seu bebê.",
+      "own": "Os registros do seu bebê estão no seu próprio banco de dados ({{provider}}).",
+      "open": "Escolher onde seus dados ficam"
+    },
+    "options": {
+      "current": "Atual",
+      "hosted": {
+        "title": "O Lotties guarda",
+        "body": "O Lotties mantém os registros no próprio banco de dados e cuida dele. Nada para configurar."
+      },
+      "own": {
+        "title": "Meu próprio banco de dados",
+        "body": "Os registros ficam em um banco Postgres que você controla. Os servidores do Lotties continuam lendo e gravando nele para o app funcionar (análises, previsões, assistentes de voz). Você pode voltar para o Lotties a qualquer momento."
+      }
+    },
+    "limits": {
+      "title": "Antes de escolher seu próprio banco",
+      "operator": "Os servidores do Lotties leem seus dados sempre que você usa o app, e as pessoas que operam o Lotties também poderiam lê-los. Os dados de conexão ficam criptografados no armazenamento e nunca mais são mostrados, mas o serviço do Lotties consegue abri-los para se conectar.",
+      "notE2ee": "Isto não é criptografia de ponta a ponta.",
+      "pause": "Planos gratuitos de alguns provedores pausam o banco depois de alguns dias sem uso, ou o desligam quando ocioso; aí o app não sincroniza até você retomá-lo.",
+      "backups": "Planos gratuitos podem não ter backups ou guardá-los por pouco tempo. O banco, os backups dele e os custos são seus: confira a página do provedor.",
+      "ownerOnly": "Nesta primeira versão só você, como Titular, pode usar um bebê cujos registros estão no seu banco: sem outros membros da família, sem acesso de médica e sem lembretes para esse bebê.",
+      "leave": "Valem os termos e a região do provedor do banco. Você pode desconectar e levar seus dados a qualquer momento."
+    },
+    "status": {
+      "lastChecked": "Última verificação {{date}}",
+      "provider": "Seu banco: {{provider}}",
+      "savedTitle": "Seu banco salvo"
+    },
+    "health": {
+      "ok": {
+        "title": "Seu banco está funcionando",
+        "body": "O Lotties lê e grava os registros do seu bebê lá."
+      },
+      "checking": {
+        "title": "Preparando seu banco",
+        "body": "O Lotties está verificando ou preparando as tabelas. Isso leva um momento."
+      },
+      "notTested": {
+        "title": "Ainda não testado",
+        "body": "Os dados estão salvos. Teste antes de mover qualquer registro."
+      },
+      "unreachable": {
+        "title": "Seu banco não está acessível",
+        "body": "Se o projeto foi pausado por falta de uso (alguns planos gratuitos fazem isso), abra o provedor, retome o projeto e espere um minuto. Suas alterações ficam guardadas neste aparelho e sincronizam quando ele voltar."
+      },
+      "credentials": {
+        "title": "O banco recusou a senha",
+        "body": "A senha mudou ou a função perdeu permissões. Configure a conexão de novo com os dados atuais."
+      },
+      "quotaFull": {
+        "title": "Seu banco está cheio",
+        "body": "Novos registros não podem ser salvos lá até você liberar espaço ou mudar de plano no provedor. Suas alterações esperam neste aparelho."
+      },
+      "schemaAhead": {
+        "title": "Seu banco é mais novo que o app",
+        "body": "Ele foi preparado por uma versão mais nova do Lotties. Atualize o app ou espere a atualização chegar ao servidor."
+      },
+      "roleTooPowerful": {
+        "title": "A função pode fazer demais",
+        "body": "O Lotties parou de usá-la para sua segurança. Rode o SQL de configuração de novo com funções novas e troque os dados de conexão."
+      },
+      "schemaConflict": {
+        "title": "Tabelas inesperadas no seu banco",
+        "body": "O banco tem tabelas que o Lotties não criou para este bebê. Use um banco vazio."
+      },
+      "migrationFailed": {
+        "title": "A preparação não terminou",
+        "body": "O Lotties não conseguiu preparar as tabelas e vai tentar de novo. Se continuar assim, teste a conexão de novo."
+      },
+      "disabled": {
+        "title": "Desligado",
+        "body": "Este banco está desligado e não é usado."
+      }
+    },
+    "actions": {
+      "setUp": "Configurar meu próprio banco",
+      "replace": "Trocar os dados de conexão",
+      "backToHosted": "Voltar para o Lotties guardar",
+      "moveIn": "Mover meus registros para lá",
+      "forget": "Esquecer os dados salvos",
+      "comingSoon": "Mover registros entre bancos ainda não está disponível. Seus registros continuam onde estão; nada foi alterado."
+    },
+    "wizard": {
+      "progress": "Passo {{step}} de {{total}}",
+      "back": "Voltar",
+      "next": "Próximo",
+      "cancel": "Cancelar",
+      "steps": {
+        "provider": "Escolha um provedor",
+        "sql": "Prepare seu banco",
+        "connection": "Dados de conexão",
+        "consent": "Sua concordância",
+        "test": "Salvar e testar"
+      }
+    },
+    "provider": {
+      "intro": "Escolha onde seu banco roda. Supabase e Neon são exemplos que tinham plano gratuito quando este texto foi escrito; qualquer Postgres acessível pela internet funciona.",
+      "label": "Provedor",
+      "prices": "Preços, limites e planos gratuitos mudam: confira a página do provedor. O Lotties não cobra por isso e não recomenda nenhum provedor.",
+      "options": {
+        "supabase": {
+          "name": "Supabase",
+          "hint": "Plano gratuito com limites; projetos gratuitos podem ser pausados depois de alguns dias sem uso."
+        },
+        "neon": {
+          "name": "Neon",
+          "hint": "Plano gratuito com limites; o banco dorme quando ocioso, então a primeira sincronização depois de um tempo parado pode demorar."
+        },
+        "other": {
+          "name": "Outro Postgres",
+          "hint": "Seu próprio servidor ou outro provedor, com endereço público e um certificado que possa ser verificado."
+        }
+      }
+    },
+    "guides": {
+      "note": "Escrito a partir das páginas públicas dos provedores e ainda não conferido em uma conta real: telas e nomes podem ser diferentes. O Lotties não recomenda nem endossa nenhum provedor.",
+      "supabase": {
+        "title": "Supabase",
+        "step1": "Crie um projeto em supabase.com e escolha uma região perto de você. Havia um plano gratuito quando este texto foi escrito, com limites: confira preços e limites na página do provedor.",
+        "step2": "Abra o SQL Editor do projeto, cole o SQL de configuração do Lotties e rode uma vez.",
+        "step3": "Toque em Connect no projeto. Para a conexão do dia a dia use o transaction pooler (porta 6543); para a conexão de migração use o session pooler (porta 5432) ou a conexão direta. Copie o host e o nome do banco (geralmente postgres).",
+        "step4": "No pooler, o nome de usuário é a função, um ponto e a referência do projeto, por exemplo lotties_app.abcdefgh. Use as senhas do SQL de configuração.",
+        "step5": "Projetos gratuitos podem ser pausados depois de alguns dias sem uso: nesse caso abra o projeto, restaure e teste de novo no Lotties. Planos gratuitos podem não ter backups: baixe um backup pelo Lotties (Hub > Exportar dados) de tempos em tempos."
+      },
+      "neon": {
+        "title": "Neon",
+        "step1": "Crie um projeto em neon.com e escolha uma região perto de você. Havia um plano gratuito quando este texto foi escrito, com limites: confira a página do provedor.",
+        "step2": "Abra o SQL Editor, escolha o banco (geralmente neondb), cole o SQL de configuração do Lotties e rode uma vez.",
+        "step3": "Abra Connect. Para a conexão do dia a dia você pode usar o host com pool (o nome tem -pooler); para a conexão de migração desligue o pooling e use o host direto. Os dois usam a porta 5432.",
+        "step4": "Use os nomes de usuário do SQL de configuração (lotties_app e lotties_migrator) e as senhas dele.",
+        "step5": "O Neon desliga um banco ocioso e liga de novo na próxima requisição, então a primeira sincronização depois de um tempo parado pode demorar. Acima do limite de armazenamento, salvar falha até você liberar espaço ou mudar de plano."
+      },
+      "other": {
+        "title": "Outro Postgres",
+        "step1": "Qualquer Postgres acessível pela internet pública funciona: endereço público (não uma rede doméstica ou privada), porta 5432 ou 6543 e TLS com um certificado que o Lotties consiga verificar.",
+        "step2": "Conecte como administrador do banco que você vai dar ao Lotties e rode o SQL de configuração uma vez.",
+        "step3": "Se o certificado do seu servidor vem de uma autoridade privada, cole o certificado dessa autoridade (PEM) no passo de conexão.",
+        "step4": "Use o endereço direto ou em modo sessão na conexão de migração: um transaction pooler quebra as atualizações das tabelas."
+      }
+    },
+    "sql": {
+      "intro": "Rode isto uma vez no editor SQL do seu banco, como administrador. Ele cria duas funções que só alcançam um schema chamado lotties. Foi gerado neste aparelho e nada foi enviado.",
+      "appRole": "Nome da função do dia a dia",
+      "migratorRole": "Nome da função de migração",
+      "roleInvalid": "Só letras minúsculas, números e _, começando com uma letra.",
+      "rolesDiffer": "Use dois nomes de função diferentes.",
+      "passwordsCleared": "As senhas foram salvas e esquecidas aqui. Se precisar rodar o SQL de novo, toque em Novas senhas.",
+      "label": "SQL de configuração",
+      "copy": "Copiar SQL",
+      "copied": "Copiado",
+      "copyFailed": "Não foi possível copiar: selecione o texto e copie.",
+      "regenerate": "Novas senhas",
+      "passwordsNote": "As senhas são aleatórias e existem só nesta tela. Digite-as no próximo passo; elas não ficam guardadas neste aparelho."
+    },
+    "connection": {
+      "intro": "Copie estes dados da página de conexão do seu provedor. O Lotties usa duas conexões: uma para ler e gravar no dia a dia, outra para criar e atualizar as tabelas. Nada do que você digita aqui é enviado até você tocar em Salvar e testar no último passo.",
+      "appTitle": "Conexão do dia a dia",
+      "appHint": "A função que lê e grava (lotties_app). Um endereço de pooler funciona aqui.",
+      "migratorTitle": "Conexão de migração",
+      "migratorHint": "A função que cria e atualiza as tabelas (lotties_migrator), no mesmo banco. Use o endereço direto ou em modo sessão, não um transaction pooler.",
+      "tlsTitle": "Conexão segura",
+      "tlsMode": "O Lotties sempre se conecta com TLS e verifica o certificado do servidor. Isso não pode ser desligado.",
+      "caHint": "Opcional. Só se o seu provedor usa um certificado de uma autoridade privada: cole o certificado dessa autoridade (PEM).",
+      "required": "Obrigatório",
+      "portHint": "Geralmente 5432 (direta) ou 6543 (pooler); o Lotties aceita só essas.",
+      "fields": {
+        "appHost": "Host",
+        "appPort": "Porta",
+        "appDatabase": "Banco de dados",
+        "appUsername": "Nome de usuário",
+        "appPassword": "Senha",
+        "migratorHost": "Host de migração",
+        "migratorPort": "Porta de migração",
+        "migratorUsername": "Usuário de migração",
+        "migratorPassword": "Senha de migração",
+        "caPem": "Autoridade certificadora (opcional)"
+      }
+    },
+    "consent": {
+      "intro": "Leia antes de qualquer envio. Sua concordância e os dados de conexão só saem deste aparelho quando você tocar em Salvar e testar.",
+      "fact1": "Os registros de cuidado do seu bebê vão ficar em um banco que você controla no {{provider}}, na região que você escolheu lá.",
+      "fact2": "Os servidores do Lotties leem e gravam nesse banco para o app funcionar. Isto não é criptografia de ponta a ponta.",
+      "fact3": "O Lotties guarda os dados de conexão criptografados e nunca mais os mostra; o serviço do Lotties consegue abri-los para se conectar.",
+      "fact4": "Valem os termos, a região, os limites e os custos do {{provider}}; planos gratuitos podem pausar e podem não ter backups.",
+      "fact5": "Sua conta, os papéis da sua família e o perfil do bebê continuam no banco do Lotties, como hoje.",
+      "fact6": "Você pode voltar para o Lotties ou desconectar a qualquer momento.",
+      "agree": "Entendo e quero guardar os registros deste bebê no meu próprio banco no {{provider}}"
+    },
+    "test": {
+      "intro": "Ao tocar em Salvar e testar, o Lotties registra sua concordância, salva os dados criptografados e testa a conexão. O teste não move nem altera nenhum registro.",
+      "busy": "Testando a conexão",
+      "save": "Salvar e testar",
+      "retest": "Testar de novo",
+      "edit": "Mudar os dados",
+      "done": "Concluir",
+      "passwordsForgotten": "As senhas foram salvas e esta tela as esqueceu: para mudar os dados, digite as senhas de novo.",
+      "retryIn_one": "Você pode testar de novo em cerca de {{count}} segundo.",
+      "retryIn_other": "Você pode testar de novo em cerca de {{count}} segundos."
+    },
+    "results": {
+      "ok": {
+        "title": "Conectado",
+        "body": "O Lotties alcançou seu banco com as duas funções, e elas têm só as permissões necessárias. Seus registros continuam com o Lotties até você movê-los."
+      },
+      "checkFields": {
+        "title": "Confira os dados",
+        "body": "Algum dado está faltando ou não está no formato esperado. Copie de novo da página de conexão do provedor."
+      },
+      "port": {
+        "title": "Porta não aceita",
+        "body": "O Lotties só se conecta nas portas 5432 ou 6543. Use o endereço que o provedor dá para uma delas."
+      },
+      "unresolvable": {
+        "title": "Endereço não encontrado",
+        "body": "Esse nome de host não existe. Confira se há erro de digitação e copie de novo do provedor."
+      },
+      "blockedAddress": {
+        "title": "Endereço não permitido",
+        "body": "Esse endereço é de uma rede privada ou local. O Lotties só se conecta a bancos na internet pública."
+      },
+      "tls": {
+        "title": "A conexão segura falhou",
+        "body": "Não foi possível verificar o certificado do servidor. Use o endereço que o provedor dá; se ele usa uma autoridade privada, cole o certificado dela."
+      },
+      "ca": {
+        "title": "Certificado ilegível",
+        "body": "O certificado colado não é um certificado PEM válido. Cole o bloco inteiro, com as linhas BEGIN e END."
+      },
+      "unreachable": {
+        "title": "Banco inacessível",
+        "body": "Nada respondeu nesse endereço. Se o projeto está pausado (alguns planos gratuitos pausam depois de alguns dias sem uso), retome-o no provedor e teste de novo."
+      },
+      "timeout": {
+        "title": "Sem resposta a tempo",
+        "body": "O banco demorou demais para responder. Um banco que estava dormindo pode demorar para ligar: espere um minuto e teste de novo."
+      },
+      "credentials": {
+        "title": "Usuário ou senha recusados",
+        "body": "O banco recusou o usuário ou a senha. Confira (no pooler o usuário pode incluir a referência do projeto) e digite de novo."
+      },
+      "roleTooPowerful": {
+        "title": "A função pode fazer demais",
+        "body": "Para sua segurança o Lotties precisa de uma função que só leia e grave as próprias tabelas. Rode o SQL de configuração de novo com funções novas e nunca dê ao Lotties o usuário administrador."
+      },
+      "schemaConflict": {
+        "title": "Banco já em uso",
+        "body": "Esse banco tem tabelas que o Lotties não criou para este bebê. Use um banco vazio ou um novo."
+      },
+      "schemaAhead": {
+        "title": "Formato de dados mais novo",
+        "body": "Esse banco foi preparado por uma versão mais nova do Lotties. Atualize o app ou espere a atualização chegar ao servidor."
+      },
+      "quotaFull": {
+        "title": "Banco cheio",
+        "body": "Seu banco atingiu o limite de armazenamento. Libere espaço ou mude de plano no provedor."
+      },
+      "busy": {
+        "title": "Conexões demais",
+        "body": "Seu banco recusou novas conexões por enquanto. Espere um pouco e teste de novo."
+      },
+      "migrating": {
+        "title": "Preparando",
+        "body": "O Lotties está preparando as tabelas. Tente de novo em um minuto."
+      },
+      "migrationFailed": {
+        "title": "A preparação não terminou",
+        "body": "O Lotties não conseguiu terminar de preparar as tabelas. Ele vai tentar de novo; você também pode testar mais tarde."
+      },
+      "consent": {
+        "title": "Concordância necessária",
+        "body": "O Lotties precisa da sua concordância antes de salvar ou testar um banco. Volte um passo e marque a caixa."
+      },
+      "rateLimited": {
+        "title": "Tentativas demais",
+        "body": "Você salvou ou testou várias vezes em pouco tempo. Espere uma hora e tente de novo."
+      },
+      "notConfigured": {
+        "title": "Nada salvo ainda",
+        "body": "Salve os dados de conexão primeiro."
+      },
+      "unknown": {
+        "title": "Algo deu errado",
+        "body": "O Lotties não conseguiu verificar o banco. Tente de novo mais tarde."
+      }
+    },
+    "findings": {
+      "superuser_like": "A função tem permissões de administrador.",
+      "owns_objects": "A função é dona de tabelas ou outros objetos.",
+      "creates_in_public": "A função pode criar objetos no schema public.",
+      "creates_in_store_schema": "A função pode criar objetos no schema lotties."
+    },
+    "help": {
+      "title": "Seu próprio banco: guias por provedor",
+      "back": "Voltar para Onde seus dados ficam",
+      "link": "Guias passo a passo para cada provedor",
+      "intro": "Como preparar um banco Postgres para os registros do seu bebê. Você continua usando o Lotties como antes; só muda onde os registros ficam guardados."
+    }
+  }
+}

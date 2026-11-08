@@ -8,7 +8,7 @@ import { CreditsContent } from '../credits/CreditsContent';
 import { InstallContent } from '../install/InstallContent';
 import { AboutScreen } from '../hub/AboutScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
-import { canSeeFamilyRecords, canWrite } from '../baby/permissions';
+import { canManageDataStore, canSeeFamilyRecords, canWrite } from '../baby/permissions';
 import { ProvidersScreen } from '../providers/ProvidersScreen';
 import { FormulasSection } from '../settings/FormulasSection';
 import { MedicationsSection } from '../settings/MedicationsSection';
@@ -25,6 +25,13 @@ const ImportBackupSection = lazy(() =>
 );
 const ImportSection = lazy(() =>
   import('../import/ImportSection').then((m) => ({ default: m.ImportSection })),
+);
+// Where the baby's records live (bring your own database): only for the Owners the server offers it to.
+const DataLocationScreen = lazy(() =>
+  import('../byoDatabase/DataLocationScreen').then((m) => ({ default: m.DataLocationScreen })),
+);
+const OwnDatabaseGuide = lazy(() =>
+  import('../byoDatabase/OwnDatabaseGuide').then((m) => ({ default: m.OwnDatabaseGuide })),
 );
 // The policy text (both languages) is its own chunk, loaded only when the page opens.
 const PrivacyContent = lazy(() =>
@@ -229,6 +236,46 @@ export function HubInstallPage() {
   return (
     <HubSubPage title={t('install.title')}>
       <InstallContent />
+    </HubSubPage>
+  );
+}
+
+/**
+ * Settings > Where your data lives (docs/design/47-bring-your-own-database.md): Lotties' database or
+ * the family's own. The Owner only; the screen itself goes back to Settings when the server hides
+ * the feature (404).
+ */
+export function HubDataLocationPage() {
+  const { t } = useTranslation();
+  const { babies, baby } = useSelectedBaby();
+  if (babies && (!baby || !canManageDataStore(baby))) return <Navigate to="/settings" replace />;
+  return (
+    <HubSubPage
+      title={t('byoDatabase.title')}
+      back={{ to: '/settings#data-location', label: t('byoDatabase.back') }}
+    >
+      {baby ? (
+        <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+          <DataLocationScreen key={baby.id} baby={baby} />
+        </Suspense>
+      ) : (
+        <CircularProgress aria-label={t('common.loading')} />
+      )}
+    </HubSubPage>
+  );
+}
+
+/** `/help/own-database`: how to set up a database of one's own with each provider (static text). */
+export function HubOwnDatabaseHelpPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage
+      title={t('byoDatabase.help.title')}
+      back={{ to: '/settings/data-location', label: t('byoDatabase.help.back') }}
+    >
+      <Suspense fallback={<CircularProgress aria-label={t('common.loading')} />}>
+        <OwnDatabaseGuide />
+      </Suspense>
     </HubSubPage>
   );
 }

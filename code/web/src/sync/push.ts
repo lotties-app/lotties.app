@@ -31,6 +31,7 @@ import { t } from '../i18n/i18n';
 import {
   classifyFailure,
   countsTowardGiveUp,
+  retryDelay,
   describeFailure,
   isNotOwnedRejection,
   isPayloadRejection,
@@ -312,7 +313,9 @@ async function recordTransient(
     });
     return null;
   }
-  const retryAt = ctx.now() + backoffDelay(attempts, ctx.backoff);
+  // A store failure (503 `store_*`) or a rate limit says when to come back: wait that long.
+  const retryAt =
+    ctx.now() + retryDelay(error, backoffDelay(attempts, ctx.backoff), ctx.backoff.maxMs);
   await ctx.db.outbox.update(mutation.id, {
     attempts,
     failureCount,

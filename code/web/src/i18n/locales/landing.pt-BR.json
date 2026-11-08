@@ -103,6 +103,10 @@
       "doctor": {
         "caption": "O que o pediatra vê: só o que você compartilha",
         "alt": "O resumo do médico de um bebê com os totais de sono dos últimos 7 dias"
+      },
+      "data-location": {
+        "caption": "Escolha onde os registros do seu bebê ficam",
+        "alt": "A tela Onde seus dados ficam: o Lotties guarda os registros (atual) ou seu próprio banco Postgres, com os limites de cada opção"
       }
     }
   },

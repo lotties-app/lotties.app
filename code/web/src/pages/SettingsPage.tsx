@@ -24,6 +24,7 @@ import { NotificationsSection } from '../notifications/ui/NotificationsSection';
 import { VersionLine } from '../ui/VersionLine';
 import { babyShownName } from '../baby/shownName';
 import { ProfileSection } from '../settings/ProfileSection';
+import { DataLocationSection } from '../byoDatabase/DataLocationSection';
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -164,6 +165,7 @@ export function SettingsPage() {
       >
         <SyncSection />
       </SettingsSection>
+      {baby && <DataLocationSection baby={baby} expanded={wants('data-location')} />}
       <SettingsSection
         id="privacy"
         title={t('consent.settings.title')}
