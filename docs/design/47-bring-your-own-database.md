@@ -630,6 +630,33 @@ pointer, never from the store), so no member or doctor can join; there is no oth
 linking is per account). Not covered here: refusing to move a baby that has members onto a store belongs to the move-in (T7; T6's route answers 501); the web has no message for
 `store_owner_only` yet (T9).
 
+**Status (2026-11-08): the production external store is built** (branch `feat/byo-external-store-impl`, not deployed; no migration).
+Until now `IExternalDataStores` had test implementations only, so a baby on an own database was always `store_unavailable`. With
+`Stores:Enabled` on, `AddStoreMigrator` now replaces the empty fallback with `ExternalDataStores` (with the flag off nothing is
+registered and the hosted path is unchanged). After `StoreScope` passed the breaker and the migrator (unchanged, not duplicated), it
+reads the store's `data_stores` row (one primary-key read per request and store): a `Disabled` row or one without a descriptor is not
+found (`store_unavailable`); a row that is not `Ready` although this instance's migrator trusted it (another instance found it
+unreachable or saved new credentials) is `store_migrating`, and the migrator checks it again on the next request. Otherwise it uses the
+store's pool or builds one: the descriptor is opened for that row (AAD = store id + owner id), the **app** endpoint goes through the
+egress guard again (resolve, every address checked, one pinned; the migrator role is used only by the migrator's own sessions) and
+`PinnedStoreDataSourceFactory.Create` builds the pooled data source (TLS verified against the typed name, the 5 s connect and 15 s
+command timeouts, at most 5 connections). A guard refusal or an unreadable seal is a `store_*` failure (503, logged with the store id and
+an `endpoint_*` code or the seal failure kind only). Each request's context is a new `LottiesDataDbContext` (never pooled) in the
+`ExternalStoreSchema` shape, on a connection of the pool that the context owns (the connection is not part of EF's service-provider key,
+so every store shares one model), carrying `StoreFailureInterceptors.For(storeId)`; the model's default schema `lotties` qualifies every
+statement, so no `search_path` is needed. Pools are keyed by store id and a SHA-256 of the sealed bytes (never by host) and closed when
+`IStoreHealth.Forget` is called (`StoreHealth` now also forgets the pool), when the descriptor changes, when the row stops serving, after
+`Stores:DataSources:IdleMinutes` (default 10) without use and, past `Stores:DataSources:MaxCount` (default 50) live pools, the least
+recently used. A closed pool is retired first (its idle connections close at once) and its data source is disposed once every context
+made on it was disposed (at least 1 minute after, at most 30); the next request builds a new pool, so the name is resolved and checked
+again and a DNS rebinding to a private address is refused. Tests: `Lotties.Infrastructure.Tests/Stores/ExternalDataStoresTests.cs`
+(AAD, app endpoint only, cache per store and version, `Forget`, rebinding refused on rebuild with a fake resolver, idle, capacity,
+leases, states, log redaction) and the container test `Lotties.Postgres.Tests/Stores/ExternalDataStorePostgresTests.cs` (CI only: a
+descriptor sealed for a real store behind an in-process TLS front door with the family's own CA, loopback allowed only through the guard's
+`AllowLoopbackForTests` set in code; an event written and read through `IStoreScope` and the event service is in the family's database
+and not in Lotties', the runtime sessions are the app role's, two babies on two stores never read each other's records, a stopped store
+opens the breaker). The egress `NetworkPolicy` (section 3.2 step 7) is still not applied: see `docs/DEPLOY.md`.
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 

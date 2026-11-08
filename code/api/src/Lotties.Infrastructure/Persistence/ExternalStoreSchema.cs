@@ -24,10 +24,18 @@ public static class ExternalStoreSchema
     public const string MetaTable = "store_meta";
 
     /// <summary>Options of a data context on an external store, on a connection the caller owns (the migrator's or a request's).</summary>
-    public static DbContextOptions<LottiesDataDbContext> Options(DbConnection connection)
+    public static DbContextOptions<LottiesDataDbContext> Options(DbConnection connection) => Options(connection, contextOwnsConnection: false);
+
+    /// <summary>
+    /// Options of a data context on an external store, on <paramref name="connection"/>; with <paramref name="contextOwnsConnection"/>
+    /// the context disposes the connection with itself (a request's context on a store's pooled data source: disposing the connection
+    /// hands its physical connection back to the store's pool). The connection is not part of EF's internal service provider key, so
+    /// every external store shares one internal service provider and one cached model.
+    /// </summary>
+    public static DbContextOptions<LottiesDataDbContext> Options(DbConnection connection, bool contextOwnsConnection)
     {
         ArgumentNullException.ThrowIfNull(connection);
-        return Configure(new DbContextOptionsBuilder<LottiesDataDbContext>(), builder => builder.UseNpgsql(connection, Npgsql)).Options;
+        return Configure(new DbContextOptionsBuilder<LottiesDataDbContext>(), builder => builder.UseNpgsql(connection, contextOwnsConnection, Npgsql)).Options;
     }
 
     /// <summary>Same as <see cref="Options(DbConnection)"/> on a connection string (design time: <c>dotnet ef migrations add</c>).</summary>
