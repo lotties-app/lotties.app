@@ -547,6 +547,8 @@ public sealed class StoreMigratorTests
 
         public Task<StoreMetaSnapshot?> ReadMetaAsync(CancellationToken cancellationToken = default) => Task.FromResult(settings.Meta);
 
+        public Task<Guid?> ReadAppStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(settings.Meta?.StoreId);
+
         public async Task MigrateAsync(CancellationToken cancellationToken = default)
         {
             if (settings.MigrateGate is { } gate)

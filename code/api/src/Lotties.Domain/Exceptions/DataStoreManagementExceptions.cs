@@ -34,6 +34,19 @@ public sealed class DataStoreInUseException : DomainException
 }
 
 /// <summary>
+/// New connection details for a database that holds a baby's records open another database (an empty one, one set up for another
+/// store, or one Lotties cannot recognize): refused before anything is created there, and the saved details stay as they were (409).
+/// To really switch databases the records go back to Lotties hosting first (docs/BYO-DATABASE.md).
+/// </summary>
+public sealed class StoreNotSameDatabaseException : DomainException
+{
+    public StoreNotSameDatabaseException()
+        : base("store_not_same_database", "These details open a different database from the one that holds this baby's records.")
+    {
+    }
+}
+
+/// <summary>
 /// The person has not given the optional <c>byo_database</c> consent (docs/design/47-bring-your-own-database.md section 10), which
 /// connecting a database of her own and moving records into it require (403).
 /// </summary>

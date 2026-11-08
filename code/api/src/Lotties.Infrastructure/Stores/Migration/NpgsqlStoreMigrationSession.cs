@@ -47,6 +47,10 @@ internal sealed class NpgsqlStoreMigrationSession : IStoreMigrationSession
         SELECT store_id, epoch, schema_version, state FROM lotties.store_meta WHERE id = 1
         """;
 
+    private const string HasMetaTableSql = $"SELECT to_regclass('{ExternalStoreSchema.Schema}.{ExternalStoreSchema.MetaTable}') IS NOT NULL";
+
+    private const string ReadStoreIdSql = $"SELECT store_id FROM {ExternalStoreSchema.Schema}.{ExternalStoreSchema.MetaTable} WHERE id = 1";
+
     private const string WriteMetaSql = """
         INSERT INTO lotties.store_meta (id, store_id, epoch, schema_version, state, updated_at)
         VALUES (1, @store_id, @epoch, @schema_version, @state, now())
@@ -117,6 +121,17 @@ internal sealed class NpgsqlStoreMigrationSession : IStoreMigrationSession
             : null;
     }
 
+    public async Task<Guid?> ReadAppStoreIdAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await PinnedStoreDataSourceFactory.OpenAsync(_connections.App, cancellationToken);
+        if (await ScalarAsync(HasMetaTableSql, connection, cancellationToken) is not true)
+        {
+            return null;
+        }
+
+        return await ScalarAsync(ReadStoreIdSql, connection, cancellationToken) is Guid storeId ? storeId : null;
+    }
+
     public Task MigrateAsync(CancellationToken cancellationToken = default) => _context.Database.MigrateAsync(cancellationToken);
 
     public async Task WriteMetaAsync(Guid storeId, DataStoreState state, string schemaVersion, CancellationToken cancellationToken = default)
@@ -155,11 +170,13 @@ internal sealed class NpgsqlStoreMigrationSession : IStoreMigrationSession
     }
 
     private async Task<bool> HasMetaTableAsync(CancellationToken cancellationToken) =>
-        await ScalarAsync($"SELECT to_regclass('{ExternalStoreSchema.Schema}.{ExternalStoreSchema.MetaTable}') IS NOT NULL", cancellationToken) is true;
+        await ScalarAsync(HasMetaTableSql, cancellationToken) is true;
 
-    private async Task<object?> ScalarAsync(string sql, CancellationToken cancellationToken)
+    private Task<object?> ScalarAsync(string sql, CancellationToken cancellationToken) => ScalarAsync(sql, _connection, cancellationToken);
+
+    private static async Task<object?> ScalarAsync(string sql, NpgsqlConnection connection, CancellationToken cancellationToken)
     {
-        await using var command = new NpgsqlCommand(sql, _connection);
+        await using var command = new NpgsqlCommand(sql, connection);
         return await command.ExecuteScalarAsync(cancellationToken);
     }
 }

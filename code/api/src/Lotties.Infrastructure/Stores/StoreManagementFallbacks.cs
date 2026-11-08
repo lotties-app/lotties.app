@@ -44,5 +44,8 @@ public static class StoreManagementFallbacks
     {
         public Task<StoreCheckResult> TestAsync(DataStore store, CancellationToken cancellationToken = default) =>
             Task.FromException<StoreCheckResult>(new StoreUnavailableException());
+
+        public Task<StoreDatabaseIdentity> ReadIdentityAsync(DataStore candidate, CancellationToken cancellationToken = default) =>
+            Task.FromException<StoreDatabaseIdentity>(new StoreUnavailableException());
     }
 }

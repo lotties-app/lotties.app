@@ -32,6 +32,17 @@ internal sealed class StoreMigratorHarness
         return row.Id;
     }
 
+    /// <summary>
+    /// Points the row <paramref name="storeId"/> at other endpoints, as new connection details typed for the same store would (the
+    /// owner's replace): the row keeps its id, so <c>store_meta</c> written for it still names it.
+    /// </summary>
+    public void Repoint(Guid storeId, string migratorConnectionString, string appConnectionString) =>
+        _endpoints[storeId] = (migratorConnectionString, appConnectionString);
+
+    /// <summary>The owner's connection test and identity check (task T6) on the same sessions as the migrator.</summary>
+    public StoreConnectionTester Tester() =>
+        new(new NpgsqlStoreMigrationSessionFactory(new FixtureConnectionSource(_endpoints)), NullLogger<StoreConnectionTester>.Instance);
+
     /// <summary>A migrator as one API process would hold it (its own ready cache, failure backoff and in-process gate).</summary>
     public StoreMigrator Migrator(int lockWaitSeconds = 30, params IInterceptor[] interceptors) =>
         new(

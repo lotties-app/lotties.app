@@ -722,6 +722,28 @@ descriptor sealed for a real store behind an in-process TLS front door with the 
 and not in Lotties', the runtime sessions are the app role's, two babies on two stores never read each other's records, a stopped store
 opens the breaker). The egress `NetworkPolicy` (section 3.2 step 7) is still not applied: see `docs/DEPLOY.md`.
 
+**Status (2026-11-08): the wrong-database guard is built** (branch `feat/byo-wrong-db-guard`, not deployed; no migration, no new
+route, no consent change). It closes the known limit below. Rule: when `PUT /data-store` replaces the details of a store that a
+baby points at (this baby or another one of the Owner: the same "in use" test as `DELETE`), the new descriptor is sealed, then
+checked before anything is saved: `IStoreConnectionTester.ReadIdentityAsync` opens an untracked copy of the row carrying the new
+descriptor (`DataStore.WithCandidateDescriptor`, same seal context) through the usual session factory (egress guard, pinned
+endpoints, unpooled connections, the 10 s test budget) and reads `lotties.store_meta.store_id` as the migrator role and as the app
+role (`to_regclass` first, then one `SELECT`: nothing is created, locked or written); `StoreDatabaseIdentity.IsOf(store.Id)` needs
+both to name the store. An empty database, a Lotties control database, a database set up for another store, or an app endpoint on
+a different database than the migrator's answers 409 `store_not_same_database` and the descriptor, state, pointer, breaker and
+ready flag stay as they were; a connection failure answers its `endpoint_*` 422 or `store_*` 503 like a test would. A new password,
+user, host or pooler of the same database passes (`store_meta` is per database, not per address). Why the pointer and not
+`state`/`schema_version`: the harm is a baby reading an empty database, which needs a pointer; a store no baby points at (first
+save, never moved in, or all records moved back, including the 7-day undo window of a move out) takes any database, so the way to
+really switch databases stays move out, replace, move in (docs/BYO-DATABASE.md FAQ); the old copy of a move out then stays in the
+old database for the family to drop. The cross-store protection is unchanged (the migrator and the test still refuse a database
+of another store with `store_schema_conflict`). Tests: `DataStoreEndpointTests` (refusals for empty / other store / either
+endpoint elsewhere leave the row untouched, the new-address case passes after the check, a sibling baby in the store triggers it,
+a store no baby uses skips it, connection failures), `StoreConnectionTesterTests` (identity read, failures classified, nothing
+written), `DataStoreTests` (`IsOf`, the candidate copy), `StoreIdentityPostgresTests` (container: new logins of the same database
+pass; an empty database and another store's database are refused and their catalog is unchanged; an app endpoint elsewhere is
+refused); web `store_not_same_database` maps to a plain-language message (en, pt-BR).
+
 **Status (2026-11-08): "Update connection details" is built** (branch `feat/byo-replace-credentials`, not deployed; no migration, no new
 route). Section 8.1 item 7's "Replace credentials" for a baby whose records already live in the Owner's database: the API needed no
 change (`PUT /data-store` already replaces the sealed descriptor of the same store, keeps the store id, the baby's pointer and epoch and

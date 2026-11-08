@@ -26,7 +26,7 @@ namespace Lotties.Api.Tests.Support;
 /// </summary>
 public class StoresApiFactory : ApiFactory
 {
-    public const int AllowedSubjects = 40;
+    public const int AllowedSubjects = 60;
 
     private const string TestKeyId = "t6-test";
 
@@ -115,7 +115,11 @@ public sealed class FakeStoreHostResolver : IHostResolver
         Task.FromResult<IReadOnlyList<IPAddress>>(hostName.EndsWith(PrivateSuffix, StringComparison.Ordinal) ? [IPAddress.Parse("10.1.2.3")] : [PublicAddress]);
 }
 
-/// <summary>A connection test that answers <see cref="Result"/> without connecting, counting its calls.</summary>
+/// <summary>
+/// A connection test that answers <see cref="Result"/> without connecting, counting its calls. The identity check answers, per store,
+/// what a test put in <see cref="Identities"/> or the failure in <see cref="IdentityFailures"/>, else "the same database" (the store's
+/// own id on both endpoints), and records the candidate descriptors it was asked about.
+/// </summary>
 public sealed class FakeStoreConnectionTester : IStoreConnectionTester
 {
     private int _calls;
@@ -124,10 +128,27 @@ public sealed class FakeStoreConnectionTester : IStoreConnectionTester
 
     public int Calls => _calls;
 
+    public ConcurrentDictionary<Guid, StoreDatabaseIdentity> Identities { get; } = new();
+
+    public ConcurrentDictionary<Guid, Exception> IdentityFailures { get; } = new();
+
+    public ConcurrentQueue<Guid> IdentityChecks { get; } = new();
+
     public Task<StoreCheckResult> TestAsync(DataStore store, CancellationToken cancellationToken = default)
     {
         Interlocked.Increment(ref _calls);
         return Task.FromResult(Result);
+    }
+
+    public Task<StoreDatabaseIdentity> ReadIdentityAsync(DataStore candidate, CancellationToken cancellationToken = default)
+    {
+        IdentityChecks.Enqueue(candidate.Id);
+        if (IdentityFailures.TryGetValue(candidate.Id, out var failure))
+        {
+            return Task.FromException<StoreDatabaseIdentity>(failure);
+        }
+
+        return Task.FromResult(Identities.GetValueOrDefault(candidate.Id) ?? new StoreDatabaseIdentity(candidate.Id, candidate.Id));
     }
 }
 

@@ -34,6 +34,7 @@ export type ResultMessage =
   | 'moveNotNeeded'
   | 'ownerOnly'
   | 'inUse'
+  | 'notSameDatabase'
   | 'notOwned'
   | 'accountDeleting'
   | 'unknown';
@@ -69,6 +70,8 @@ const RESULT_MESSAGES: Readonly<Record<string, ResultMessage>> = {
   store_move_not_needed: 'moveNotNeeded',
   store_owner_only: 'ownerOnly',
   store_in_use: 'inUse',
+  // New details of a database that holds a baby's records open another database (409; nothing saved).
+  store_not_same_database: 'notSameDatabase',
   store_not_owned: 'notOwned',
   store_account_deleting: 'accountDeleting',
   account_deletion_in_progress: 'accountDeleting',

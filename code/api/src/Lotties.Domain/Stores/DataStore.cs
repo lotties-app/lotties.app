@@ -93,6 +93,17 @@ public sealed class DataStore
         UpdatedAt = UtcTime.Normalize(now);
     }
 
+    /// <summary>
+    /// A copy of this store carrying <paramref name="descriptor"/> instead of the saved one (same id and owner, so it opens with the
+    /// same seal context): what new connection details would connect to, for a read-only check before they replace the saved ones.
+    /// Never saved or tracked; this row is left as it is.
+    /// </summary>
+    public DataStore WithCandidateDescriptor(SealedDescriptor descriptor)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        return new DataStore(Id, OwnerUserId, CreatedAt) { State = State, SchemaVersion = SchemaVersion, SealedDescriptor = descriptor.ToArray() };
+    }
+
     /// <summary>Records the coarse outcome of the owner's connection test; the state is the migrator's and stays as it is.</summary>
     public void RecordCheck(string resultCode, DateTimeOffset now)
     {

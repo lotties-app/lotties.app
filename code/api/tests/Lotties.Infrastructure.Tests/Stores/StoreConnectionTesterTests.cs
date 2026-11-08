@@ -140,6 +140,84 @@ public sealed class StoreConnectionTesterTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Tester().TestAsync(_store, cancelled.Token));
     }
 
+    [Fact]
+    public async Task ReadIdentity_SameDatabase_ReturnsTheStoreIdOnBothEndpointsAndChangesNothing()
+    {
+        _sessions.Meta = new StoreMetaSnapshot(_store.Id, Guid.NewGuid(), Known, "Ready");
+        _sessions.AppStoreId = _store.Id;
+
+        var identity = await Tester().ReadIdentityAsync(_store);
+
+        Assert.Equal(new StoreDatabaseIdentity(_store.Id, _store.Id), identity);
+        Assert.True(identity.IsOf(_store.Id));
+        Assert.Equal((0, 0, true), (_sessions.Session!.Locks, _sessions.Session.Writes, _sessions.Session.Disposed));
+    }
+
+    [Fact]
+    public async Task ReadIdentity_EmptyDatabase_ReturnsNoIdentityAndCreatesNothing()
+    {
+        var identity = await Tester().ReadIdentityAsync(_store);
+
+        Assert.Equal(StoreDatabaseIdentity.None, identity);
+        Assert.Equal((0, 0), (_sessions.Session!.Locks, _sessions.Session.Writes));
+    }
+
+    [Fact]
+    public async Task ReadIdentity_AppEndpointOnAnotherDatabase_ReportsWhatEachEndpointSees()
+    {
+        _sessions.Meta = new StoreMetaSnapshot(_store.Id, Guid.NewGuid(), Known, "Ready");
+
+        var identity = await Tester().ReadIdentityAsync(_store);
+
+        Assert.Equal(new StoreDatabaseIdentity(_store.Id, null), identity);
+        Assert.False(identity.IsOf(_store.Id));
+    }
+
+    [Fact]
+    public async Task ReadIdentity_WrongPassword_ThrowsTheStoreFailureWithoutTheServerText()
+    {
+        _sessions.OpenFailure = new PostgresException("password authentication failed for user \"secret_user\" at db.secret-host.com", "FATAL", "FATAL", PostgresErrorCodes.InvalidPassword);
+
+        var failure = await Assert.ThrowsAsync<StoreCredentialsRejectedException>(() => Tester().ReadIdentityAsync(_store));
+
+        Assert.Null(failure.InnerException);
+        Assert.DoesNotContain("secret", failure.Message, StringComparison.OrdinalIgnoreCase);
+        AssertNoLeak();
+    }
+
+    [Fact]
+    public async Task ReadIdentity_AppRoleCannotLogIn_ThrowsCredentialsRejected()
+    {
+        _sessions.Meta = new StoreMetaSnapshot(_store.Id, Guid.NewGuid(), Known, "Ready");
+        _sessions.AppReadFailure = new NpgsqlException("wrapper", new PostgresException("no pg_hba.conf entry for host secret_user", "FATAL", "FATAL", PostgresErrorCodes.InvalidAuthorizationSpecification));
+
+        await Assert.ThrowsAsync<StoreCredentialsRejectedException>(() => Tester().ReadIdentityAsync(_store));
+        AssertNoLeak();
+    }
+
+    [Theory]
+    [InlineData(StoreEndpointFailure.BlockedAddress, "endpoint_blocked_address")]
+    [InlineData(StoreEndpointFailure.TlsFailed, "store_tls_failed")]
+    [InlineData(StoreEndpointFailure.Unresolvable, "store_paused_or_unreachable")]
+    public async Task ReadIdentity_EndpointFailure_ThrowsTheGuardCodeOrTheStoreFailureClass(StoreEndpointFailure failure, string code)
+    {
+        _sessions.OpenFailure = new StoreEndpointRejectedException(failure);
+
+        var thrown = await Assert.ThrowsAnyAsync<DomainException>(() => Tester().ReadIdentityAsync(_store));
+
+        Assert.Equal(code, thrown.Code);
+    }
+
+    [Fact]
+    public async Task ReadIdentity_Cancelled_Propagates()
+    {
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+        _sessions.OpenFailure = new OperationCanceledException(cancelled.Token);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Tester().ReadIdentityAsync(_store, cancelled.Token));
+    }
+
     private StoreConnectionTester Tester() => new(_sessions, _logger);
 
     private void AssertNoLeak()
@@ -164,6 +242,10 @@ public sealed class StoreConnectionTesterTests
         public string[] Applied { get; set; } = [];
 
         public StoreMetaSnapshot? Meta { get; set; }
+
+        public Guid? AppStoreId { get; set; }
+
+        public Exception? AppReadFailure { get; set; }
 
         public Task<IStoreMigrationSession> OpenAsync(DataStore store, CancellationToken cancellationToken = default)
         {
@@ -204,6 +286,9 @@ public sealed class StoreConnectionTesterTests
             Task.FromResult<IReadOnlyList<string>>(settings.Applied);
 
         public Task<StoreMetaSnapshot?> ReadMetaAsync(CancellationToken cancellationToken = default) => Task.FromResult(settings.Meta);
+
+        public Task<Guid?> ReadAppStoreIdAsync(CancellationToken cancellationToken = default) =>
+            settings.AppReadFailure is { } failure ? Task.FromException<Guid?>(failure) : Task.FromResult(settings.AppStoreId);
 
         public Task MigrateAsync(CancellationToken cancellationToken = default)
         {

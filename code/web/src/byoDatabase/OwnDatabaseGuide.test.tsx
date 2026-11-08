@@ -106,6 +106,7 @@ describe('links into the guide', () => {
     ['store_move_not_needed', 'moveNotNeeded'],
     ['store_owner_only', 'ownerOnly'],
     ['store_in_use', 'inUse'],
+    ['store_not_same_database', 'notSameDatabase'],
     ['store_not_owned', 'notOwned'],
     ['store_account_deleting', 'accountDeleting'],
     ['account_deletion_in_progress', 'accountDeleting'],
