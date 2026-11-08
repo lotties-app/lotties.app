@@ -3,6 +3,7 @@ using System.Reflection;
 using Lotties.Application.Stores;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Stores;
+using Lotties.Infrastructure.Stores.Migration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -70,6 +71,48 @@ public sealed class StoreRoutingRulesTests
     }
 
     [Fact]
+    public void AddStoreMigrator_FlagOn_ReplacesTheEmptyExternalStoresWithThePooledOnes()
+    {
+        var configuration = Configuration(("Stores:Enabled", "true"), ("Stores:CurrentKeyId", "k1"), ("Stores:KeyEncryptionKeys:k1", StoreTestKit.RandomKey()));
+        using var provider = WithStores(configuration).BuildServiceProvider();
+
+        var limits = provider.GetRequiredService<IOptions<ExternalDataStoreOptions>>().Value;
+
+        Assert.IsType<ExternalDataStores>(provider.GetRequiredService<IExternalDataStores>());
+        Assert.Equal((50, 10), (limits.MaxCount, limits.IdleMinutes));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("false")]
+    public void AddStoreMigrator_FlagOff_KeepsTheExternalStoresThatOpenNothing(string? value)
+    {
+        var configuration = Configuration(("Stores:Enabled", value));
+        using var provider = WithStores(configuration).BuildServiceProvider();
+
+        Assert.IsType<NoExternalDataStores>(provider.GetRequiredService<IExternalDataStores>());
+    }
+
+    [Theory]
+    [InlineData("MaxCount", "0")]
+    [InlineData("MaxCount", "1001")]
+    [InlineData("IdleMinutes", "0")]
+    [InlineData("IdleMinutes", "1441")]
+    public void AddStoreMigrator_PoolLimitOutOfRange_FailsValidation(string setting, string value)
+    {
+        var configuration = Configuration(
+            ("Stores:Enabled", "true"),
+            ("Stores:CurrentKeyId", "k1"),
+            ("Stores:KeyEncryptionKeys:k1", StoreTestKit.RandomKey()),
+            ($"{ExternalDataStoreOptions.SectionName}:{setting}", value));
+        using var provider = WithStores(configuration).BuildServiceProvider();
+
+        var error = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<ExternalDataStoreOptions>>().Value);
+
+        Assert.Contains(setting, error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ResolveForBabyAsync_FlagOff_StillReadsTheBabysPointer()
     {
         var connections = new FailingConnections();
@@ -83,6 +126,18 @@ public sealed class StoreRoutingRulesTests
 
         Assert.Equal(1, connections.Count);
     }
+
+    private static IServiceCollection WithStores(IConfiguration configuration) =>
+        new ServiceCollection()
+            .AddInfrastructure(Options)
+            .AddDataStoreRouting(configuration)
+            .AddStoreCredentials(configuration)
+            .AddStoreMigrator(configuration);
+
+    private static IConfiguration Configuration(params (string Key, string? Value)[] settings) =>
+        new ConfigurationBuilder()
+            .AddInMemoryCollection(settings.Where(setting => setting.Value is not null).ToDictionary(setting => setting.Key, setting => setting.Value))
+            .Build();
 
     /// <summary>Fails (and counts) every attempt to open a connection: proves that a query was issued without reaching a database.</summary>
     private sealed class FailingConnections : DbConnectionInterceptor

@@ -532,8 +532,8 @@ Do not use `EnsureCreated()` against a real database: it creates the tables with
 
 #### Applying migrations to user stores
 
-A family that brings its own database (docs/design/47-bring-your-own-database.md; off unless `Stores:Enabled=true`, and no
-store can be created yet) gets the data tables in schema `lotties` of that database, from a **separate migration chain**:
+A family that brings its own database (docs/design/47-bring-your-own-database.md; off unless `Stores:Enabled=true`, and only
+for accounts on `Stores:Allowlist`) gets the data tables in schema `lotties` of that database, from a **separate migration chain**:
 `code/api/src/Lotties.Infrastructure/Persistence/DataMigrations/` (context `LottiesDataDbContext` in its external-store
 shape, history table `lotties.__ef_data_migrations`). Its baseline `DataBaseline` creates the 12 data tables and
 `lotties.store_meta` (the store's own row: store id, epoch, schema version, state) without any foreign key to a control
@@ -598,6 +598,32 @@ instance runs a **move worker** in the background; with the flag off nothing run
 
 Values out of range fail startup (only while `Stores:Enabled` is on). Account deletion does not yet delete an old copy that is in a
 family's own database (task T10); see design 47's T7 status.
+
+#### Connections to user stores
+
+With `Stores:Enabled=true` (still off by default, and only accounts on `Stores:Allowlist` can save a store) a baby whose records
+live in a family's database is served from that database: requests no longer answer `store_unavailable` just because the store is
+external. Nothing changes for hosted babies, and with the flag off nothing of this is registered.
+
+- Runtime queries use the store's **app** role only, through one pooled connection source per store and API instance (at most 5
+  connections each, 5 s connect and 15 s command timeouts, `Application Name=lotties`); the migrator role is used only by the
+  migrator above. Each pool is built from the store's `data_stores` row: the sealed descriptor is opened (it needs the same
+  `Stores__KeyEncryptionKeys__*` / `Stores__CurrentKeyId` as the API that sealed it), the app host is resolved and checked by the
+  egress guard again (`StoreEndpointGuard__*` applies) and the connection goes to the pinned address with TLS verified against the
+  typed host name.
+- A pool is closed after `Stores:DataSources:IdleMinutes` (env `Stores__DataSources__IdleMinutes`, 1 to 1440, default 10) without
+  use, when the owner saves new credentials or removes the store, when the store stops being `Ready` and, past
+  `Stores:DataSources:MaxCount` (1 to 1000, default 50) live pools per instance, the least recently used one. Work in flight
+  finishes first. A new pool resolves and checks the host again. Budget the families' connection limits with this: up to 5
+  connections per store **per API replica**.
+- To stop using a store at once without deleting anything, set its `data_stores.state` to `Disabled` (the kill switch): the next
+  request answers `store_unavailable` and the instance closes the pool. Only the operator changes it back.
+- Logs carry the store id, the coarse failure class and, for a refused host or an unreadable descriptor, an `endpoint_*` code or the
+  seal failure kind; never a host, address, database, user, password or connection string.
+- **Egress policy (manual, optional):** the application guard is the only control that runs today. The Kubernetes egress policy
+  that would back it up (`deploy/homelab/optional/api-egress-networkpolicy.yaml`, design 47 section 3.2 step 7) is a template that
+  `deploy.sh` does not apply; check and apply it by hand (the steps are in its header) before allowlisting anyone but the owner, and
+  set `StoreEndpointGuard__DeniedNetworks__0=<lab public IP>/32` either way.
 
 #### Migrations that seed built-in event types
 
