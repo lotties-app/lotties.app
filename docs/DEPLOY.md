@@ -506,8 +506,12 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
 
    The design-time factory reads `DB_HOST`, `DB_PORT`, `DB_NAME` and `DB_MIGRATOR_USER` / `DB_MIGRATOR_PASSWORD` (falling back to `DB_APP_*`).
    `--context LottiesDbContext` is required: the project has a second context, `LottiesDataDbContext` (the data plane of
-   docs/design/47-bring-your-own-database.md), which has no migrations of its own yet, and without the option `dotnet ef`
-   stops with "More than one DbContext was found" before it touches the database. `LottiesDbContext` still owns every table.
+   docs/design/47-bring-your-own-database.md), and without the option `dotnet ef` stops with "More than one DbContext was
+   found" before it touches the database. `LottiesDbContext` owns every table of the Lotties database, the data tables
+   included. `LottiesDataDbContext` has its own chain for user stores only (see "Applying migrations to user stores"
+   below): never run `dotnet ef database update --context LottiesDataDbContext` against the Lotties database (its
+   design-time connection points at a `.invalid` host on purpose, and the chain's first step refuses a database that
+   holds the Lotties control tables).
 
 2. **SQL for a DBA.** Generate the idempotent script on demand and review/apply it with `psql` as the migrator (do not commit the output):
 
@@ -525,6 +529,46 @@ The migrations are the EF Core code-first migrations in `code/api/src/Lotties.In
    - It is skipped when the runtime database is not PostgreSQL (the SQLite integration-test host creates its schema itself).
 
 Do not use `EnsureCreated()` against a real database: it creates the tables without the `__EFMigrationsHistory` table, after which migrations can no longer be applied.
+
+#### Applying migrations to user stores
+
+A family that brings its own database (docs/design/47-bring-your-own-database.md; off unless `Stores:Enabled=true`, and no
+store can be created yet) gets the data tables in schema `lotties` of that database, from a **separate migration chain**:
+`code/api/src/Lotties.Infrastructure/Persistence/DataMigrations/` (context `LottiesDataDbContext` in its external-store
+shape, history table `lotties.__ef_data_migrations`). Its baseline `DataBaseline` creates the 12 data tables and
+`lotties.store_meta` (the store's own row: store id, epoch, schema version, state) without any foreign key to a control
+table, and seeds the built-in event types as they are today. The Lotties database is never migrated with this chain: it
+keeps its own (above), the data chain's design-time connection never resolves, and the baseline's first statement stops on
+a database that holds the Lotties control tables.
+
+There is nothing to run by hand. The API migrates a store **lazily**, the first time a request needs it after a release
+(never at startup, so a store that is down cannot block a deploy):
+
+- It connects with the store's **migrator** role on the store's migrator endpoint (the direct one: a transaction pooler
+  breaks the session advisory lock), pinned and TLS-checked like every store connection, unpooled.
+- It refuses an **app role** that can do more than read and write the data tables (superuser-like, owns objects in `lotties`,
+  may create in `public` or `lotties`): state `RoleTooPowerful`, error `store_role_too_powerful`.
+- It refuses a database that holds the Lotties control tables or a `lotties` schema set up for another store: state
+  `SchemaConflict`, error `store_schema_conflict`.
+- It takes a session advisory lock in that database; another API instance migrating the same store makes a request wait
+  (exponential backoff with jitter, up to `Stores:Migrator:LockWaitSeconds`, default 5) and then answer `store_migrating`.
+- It refuses a store that holds a data migration this API does not know (a release was rolled back): state `SchemaAhead`,
+  error `store_schema_ahead`; deploy the newer API again. Data migrations stay additive, like the control chain's.
+- It applies the pending data migrations, each in its own transaction (a killed connection rolls the step back; the next
+  run applies it again), then records `Ready` in `lotties.store_meta` and in `data_stores.state` / `schema_version`. A
+  failure records `MigrationFailed` (`store_migration_failed`); a store that cannot be reached records `Unreachable`
+  (`store_unavailable`).
+- A store found ready is trusted for `Stores:Migrator:ReadyRecheckSeconds` (default 300); after a failure the instance leaves
+  the store alone for `Stores:Migrator:FailureRetryInitialSeconds` (default 5), doubling up to `FailureRetryMaxSeconds`
+  (default 300), and answers the same error meanwhile. Every `store_*` error is a 503 the clients retry.
+- Logs carry the store id, the state and the error's type, never a host, a user name or the database's own error text.
+
+A data migration that seeds a new built-in event type must be added to **both** chains: the control chain for the Lotties
+database and the data chain for user stores (`dotnet ef migrations add <Name> --project src/Lotties.Infrastructure --context
+LottiesDataDbContext --output-dir Persistence/DataMigrations --namespace Lotties.Infrastructure.Persistence.DataMigrations`;
+no `DB_*` values are read). `DataMigrationChainTests` fails until the data chain matches the data model, so a change to a
+data table cannot reach one chain only. A store that is behind on seeds rejects events of the newer type until the API
+migrates it.
 
 #### Migrations that seed built-in event types
 

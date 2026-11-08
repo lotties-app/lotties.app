@@ -484,6 +484,25 @@ baby that points at one gets `store_unavailable` on every way in (routes, assist
 database. The epoch reaches clients in the additive header `X-Sync-Epoch` (SPEC "Events sync contract"). The cross-plane unit
 of work refuses an external store (T7 moves data through the backup file instead).
 
+**Status (2026-11-07): T5 is built** (branch `feat/byo-t5-store-migrator`, stacked on T2, not deployed; control migration
+`DataStoreSchemaVersion` adds `data_stores.schema_version`, additive, empty table). A **separate data migration chain**
+(`Persistence/DataMigrations`, `--context LottiesDataDbContext`, history `lotties.__ef_data_migrations`) is generated from the
+data context in its external-store shape (`ExternalStoreSchema`: default schema `lotties` plus `lotties.store_meta`, a model of
+its own in EF's cache). Its baseline creates the 12 data tables and `store_meta` with no key to a control table and seeds the
+built-in event types from the current model. It never runs on the Lotties database, which keeps its own chain and its tables
+in `public` (section 4's first bullet is therefore not followed: no rename, no second chain on the built-in database): the
+design-time factory points at a `.invalid` host, the baseline's first statement raises on a database that holds the control
+tables, and the migrator refuses one too (`SchemaConflict`). `IStoreMigrator` (one per process) migrates a store lazily when
+`StoreScope` opens it, after the flag check and before handing it out: migrator endpoint (pinned, unpooled), app role audit
+(`RoleTooPowerful`), control/other-store check (`SchemaConflict`, new state; `store_meta.store_id` must be this store),
+advisory lock with exponential backoff then `store_migrating`, `SchemaAhead` when the history holds an unknown migration,
+`Migrating` then `Ready` or `MigrationFailed`, `Unreachable` for connection failures; states are mirrored in `store_meta` and
+`data_stores`, a ready store is trusted for 5 minutes, a failed one backs off (5 s doubling to 5 min). With `Stores:Enabled` off
+(the default) a migrator that refuses every store is registered and never reached. Postgres container tests
+(`Lotties.Postgres.Tests/Stores`) cover baseline, second run, concurrency, a held lock, schema-ahead, a killed connection, the
+too-powerful role, the app role's limits and the control-database refusal; `docs/DEPLOY.md` "Applying migrations to user
+stores" is the operator's view.
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 
