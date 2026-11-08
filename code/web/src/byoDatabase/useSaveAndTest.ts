@@ -10,7 +10,7 @@ import {
   type DataStoreTestResult,
   type SaveDataStoreRequest,
 } from './dataStoreApi';
-import { errorMessageOf, type ResultMessage } from './storeMessages';
+import { errorMessageOf, retryAfterSecondsOf, type ResultMessage } from './storeMessages';
 
 export type SavePhase =
   | { kind: 'idle' }
@@ -19,8 +19,11 @@ export type SavePhase =
   | { kind: 'saveFailed'; message: ResultMessage }
   /** Saved; the test answered (ok or a coarse code). */
   | { kind: 'tested'; result: DataStoreTestResult }
-  /** Saved; the test request itself failed (rate limit, offline...). */
-  | { kind: 'testFailed'; message: ResultMessage };
+  /**
+   * Saved; the test request itself failed: a store that is down for now (503 `store_*` with
+   * `Retry-After`), the rate limit, offline... `retryAfterSeconds` when the server said when.
+   */
+  | { kind: 'testFailed'; message: ResultMessage; retryAfterSeconds: number | null };
 
 /**
  * The only network calls of the setup wizard, in the order the server needs (docs/design/47
@@ -41,7 +44,11 @@ export function useSaveAndTest(babyId: string, onSaved: () => void) {
     try {
       setPhase({ kind: 'tested', result: await testDataStore(api, babyId) });
     } catch (error) {
-      setPhase({ kind: 'testFailed', message: errorMessageOf(error) });
+      setPhase({
+        kind: 'testFailed',
+        message: errorMessageOf(error),
+        retryAfterSeconds: retryAfterSecondsOf(error),
+      });
     }
     await refresh();
   };

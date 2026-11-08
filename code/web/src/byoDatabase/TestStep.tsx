@@ -56,6 +56,11 @@ export function TestStep({
       <Typography variant="body2">{t('byoDatabase.test.intro')}</Typography>
       {phase.kind === 'saveFailed' && <ResultAlert message={phase.message} />}
       {phase.kind === 'testFailed' && <ResultAlert message={phase.message} />}
+      {phase.kind === 'testFailed' && phase.retryAfterSeconds !== null && (
+        <Typography variant="body2" color="text.secondary">
+          {t('byoDatabase.test.retryIn', { count: phase.retryAfterSeconds })}
+        </Typography>
+      )}
       {phase.kind === 'tested' && (
         <ResultAlert
           message={resultMessageOf(phase.result.result)}

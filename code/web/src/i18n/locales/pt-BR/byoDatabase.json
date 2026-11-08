@@ -202,7 +202,9 @@
       "retest": "Testar de novo",
       "edit": "Mudar os dados",
       "done": "Concluir",
-      "passwordsForgotten": "As senhas foram salvas e esta tela as esqueceu: para mudar os dados, digite as senhas de novo."
+      "passwordsForgotten": "As senhas foram salvas e esta tela as esqueceu: para mudar os dados, digite as senhas de novo.",
+      "retryIn_one": "Você pode testar de novo em cerca de {{count}} segundo.",
+      "retryIn_other": "Você pode testar de novo em cerca de {{count}} segundos."
     },
     "results": {
       "ok": {

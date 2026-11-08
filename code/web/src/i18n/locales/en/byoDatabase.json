@@ -202,7 +202,9 @@
       "retest": "Test again",
       "edit": "Change the details",
       "done": "Done",
-      "passwordsForgotten": "The passwords were saved and this screen forgot them: to change the details, type the passwords again."
+      "passwordsForgotten": "The passwords were saved and this screen forgot them: to change the details, type the passwords again.",
+      "retryIn_one": "You can test again in about {{count}} second.",
+      "retryIn_other": "You can test again in about {{count}} seconds."
     },
     "results": {
       "ok": {

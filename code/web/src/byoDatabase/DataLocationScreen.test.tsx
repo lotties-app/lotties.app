@@ -239,6 +239,36 @@ describe('the setup wizard', () => {
     expect(document.body.textContent).not.toContain('unknown_thing');
   });
 
+  it.each([
+    ['store_paused_or_unreachable', 'Database not reachable'],
+    ['store_timeout', 'No answer in time'],
+    ['store_rate_limited', 'Too many connections'],
+    ['store_migrating', 'Setting up'],
+    ['store_unavailable', 'Database not reachable'],
+  ])('a store down for now (503 %s) says "%s" and when to try again', async (code, title) => {
+    render({ test: new ApiError(503, { code, title: 'Service Unavailable' }, undefined, 30_000) });
+    await screen.findByRole('heading', { name: 'Lotties hosts it' });
+    await walkToTest();
+    click('Save and test');
+    expect(await screen.findByText(title)).toBeTruthy();
+    expect(screen.getByText('You can test again in about 30 seconds.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Test again' })).toBeTruthy();
+    expect(document.body.textContent).not.toContain('Service Unavailable');
+  });
+
+  it.each([
+    ['store_tls_failed', 'Secure connection failed'],
+    ['store_quota_full', 'Database full'],
+    ['store_migration_failed', 'Setup did not finish'],
+    ['endpoint_unresolvable', 'Address not found'],
+  ])('an expected setup outcome (200 %s) says "%s"', async (code, title) => {
+    render({ test: { ok: false, result: code, findings: [], checkedAt: '2026-11-07T10:00:00Z' } });
+    await screen.findByRole('heading', { name: 'Lotties hosts it' });
+    await walkToTest();
+    click('Save and test');
+    expect(await screen.findByText(title)).toBeTruthy();
+  });
+
   it('keeps the details when the save is refused (blocked address), so they can be fixed', async () => {
     render({ save: httpError(422, 'endpoint_blocked_address') });
     await screen.findByRole('heading', { name: 'Lotties hosts it' });

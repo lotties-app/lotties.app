@@ -70,6 +70,12 @@ export function errorMessageOf(error: unknown): ResultMessage {
   return resultMessageOf(error.code);
 }
 
+/** When the server asked to wait before trying again (503 `store_*`, 429), in whole seconds. */
+export function retryAfterSecondsOf(error: unknown): number | null {
+  if (!(error instanceof ApiError) || error.retryAfterMs === null) return null;
+  return Math.max(1, Math.ceil(error.retryAfterMs / 1000));
+}
+
 const FINDINGS = [
   'superuser_like',
   'owns_objects',
@@ -112,6 +118,8 @@ const BY_LAST_CHECK: Readonly<Record<string, StoreHealth>> = {
   store_role_too_powerful: 'roleTooPowerful',
   store_schema_ahead: 'schemaAhead',
   store_schema_conflict: 'schemaConflict',
+  store_migrating: 'checking',
+  store_migration_failed: 'migrationFailed',
 };
 
 /**
