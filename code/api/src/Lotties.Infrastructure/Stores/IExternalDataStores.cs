@@ -7,6 +7,13 @@ namespace Lotties.Infrastructure.Stores;
 /// <see cref="NoExternalDataStores"/>, so a baby on an external store gets <c>store_unavailable</c>. Tests register stores of
 /// their own (two SQLite databases) to prove the routing.
 /// </summary>
+/// <remarks>
+/// Contract of every implementation (task T8): each data context an external <see cref="IDataStore"/> creates carries the store's
+/// <see cref="Failures.StoreFailureInterceptor"/> (<c>StoreFailureInterceptors.For(storeId)</c>, added with <c>AddInterceptors</c>),
+/// so its connection failures feed the store's circuit breaker and reach clients as a retriable <c>503 store_*</c>, never as the
+/// driver's error; and the Npgsql data source keeps the fixed connect and command timeouts of
+/// <see cref="PinnedStoreDataSourceFactory"/> (the context sets no command timeout of its own).
+/// </remarks>
 public interface IExternalDataStores
 {
     /// <summary>The store, or <c>null</c> when it cannot be used now (unknown, not ready, unreachable).</summary>

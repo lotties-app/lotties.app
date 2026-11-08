@@ -4,6 +4,7 @@ using System.Text.Json;
 using Lotties.Api.Tests.Assistants;
 using Lotties.Api.Tests.Backups;
 using Lotties.Api.Tests.Support;
+using Lotties.Application.Assistants;
 using Lotties.Domain.Assistants;
 using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
@@ -84,12 +85,13 @@ public sealed class StoreRoutingFlagOffTests(StoreRoutingFlagOffHost routing) : 
     }
 
     [Fact]
-    public async Task AssistantCommand_BabyOnAnExternalStore_IsUnavailableAndWritesNothing()
+    public async Task AssistantCommand_BabyOnAnExternalStore_IsTemporarilyUnavailableAndWritesNothing()
     {
         var (baby, _, storeId) = await SeedExternalBabyAsync();
 
-        await Assert.ThrowsAsync<StoreUnavailableException>(() =>
-            Host.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogDiaperAsync(AssistantTestKit.Invocation(babyId: baby.BabyId), DiaperKind.Wet)));
+        var result = await Host.RunAsAsync(baby.OwnerSubject, assistant => assistant.LogDiaperAsync(AssistantTestKit.Invocation(babyId: baby.BabyId), DiaperKind.Wet));
+
+        Assert.Equal(AssistantResultCode.TemporarilyUnavailable, result.Code);
 
         Assert.False(await Factory.QueryAsync(context => context.Events.IgnoreQueryFilters().AnyAsync(item => item.BabyId == baby.BabyId)));
         Assert.Empty(await Stores.QueryAsync(storeId, context => context.EventsIncludingDeleted.Select(item => item.Id).ToArrayAsync()));

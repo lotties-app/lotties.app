@@ -6,10 +6,10 @@ namespace Lotties.Domain.Exceptions;
 /// The baby's store is being migrated by another request or another API instance and did not finish within the wait
 /// (docs/design/47-bring-your-own-database.md section 4): 503, retriable; the client keeps the change queued.
 /// </summary>
-public sealed class StoreMigratingException : DomainException
+public sealed class StoreMigratingException : StoreFailureException
 {
-    public StoreMigratingException()
-        : base("store_migrating", "The database that holds this baby's records is being updated. Try again in a moment.")
+    public StoreMigratingException(TimeSpan? retryAfter = null)
+        : base(StoreFailureClass.Migrating, "The database that holds this baby's records is being updated. Try again in a moment.", retryAfter)
     {
     }
 }
@@ -18,10 +18,10 @@ public sealed class StoreMigratingException : DomainException
 /// The baby's store holds a newer data schema than this API knows (a release was rolled back): refused, never served, because
 /// the code must not read or write a schema it does not know (503 until a newer API runs).
 /// </summary>
-public sealed class StoreSchemaAheadException : DomainException
+public sealed class StoreSchemaAheadException : StoreFailureException
 {
-    public StoreSchemaAheadException()
-        : base("store_schema_ahead", "The database that holds this baby's records was updated by a newer version of Lotties.")
+    public StoreSchemaAheadException(TimeSpan? retryAfter = null)
+        : base(StoreFailureClass.SchemaAhead, "The database that holds this baby's records was updated by a newer version of Lotties.", retryAfter)
     {
     }
 }
@@ -30,10 +30,10 @@ public sealed class StoreSchemaAheadException : DomainException
 /// The app role of the baby's store can do more than read and write the data tables (docs/design/47-bring-your-own-database.md
 /// section 3.3): the store is refused until the owner fixes the role (503). <see cref="Findings"/> are machine codes only.
 /// </summary>
-public sealed class StoreRoleTooPowerfulException : DomainException
+public sealed class StoreRoleTooPowerfulException : StoreFailureException
 {
-    public StoreRoleTooPowerfulException(IReadOnlyList<StoreRoleFinding> findings)
-        : base("store_role_too_powerful", "The database role Lotties uses for this baby's records has more rights than it should.")
+    public StoreRoleTooPowerfulException(IReadOnlyList<StoreRoleFinding> findings, TimeSpan? retryAfter = null)
+        : base(StoreFailureClass.RoleTooPowerful, "The database role Lotties uses for this baby's records has more rights than it should.", retryAfter)
     {
         Findings = findings;
     }
@@ -45,10 +45,10 @@ public sealed class StoreRoleTooPowerfulException : DomainException
 /// The baby's store holds something Lotties did not create or that belongs to another store: the control tables of a Lotties
 /// database, or a schema set up for another store (503). Never migrated, never served.
 /// </summary>
-public sealed class StoreSchemaConflictException : DomainException
+public sealed class StoreSchemaConflictException : StoreFailureException
 {
-    public StoreSchemaConflictException()
-        : base("store_schema_conflict", "The database for this baby's records holds data Lotties did not expect.")
+    public StoreSchemaConflictException(TimeSpan? retryAfter = null)
+        : base(StoreFailureClass.SchemaConflict, "The database for this baby's records holds data Lotties did not expect.", retryAfter)
     {
     }
 }
@@ -57,10 +57,10 @@ public sealed class StoreSchemaConflictException : DomainException
 /// Applying the data schema to the baby's store failed (the migration rolled back); retried with backoff (503, retriable). The
 /// message never carries the database's own text.
 /// </summary>
-public sealed class StoreMigrationFailedException : DomainException
+public sealed class StoreMigrationFailedException : StoreFailureException
 {
-    public StoreMigrationFailedException()
-        : base("store_migration_failed", "The database that holds this baby's records could not be updated. Try again later.")
+    public StoreMigrationFailedException(TimeSpan? retryAfter = null)
+        : base(StoreFailureClass.MigrationFailed, "The database that holds this baby's records could not be updated. Try again later.", retryAfter)
     {
     }
 }

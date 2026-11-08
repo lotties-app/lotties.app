@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Lotties.Application.Stores;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
+using Lotties.Infrastructure.Stores.Failures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -17,10 +18,12 @@ namespace Lotties.Infrastructure.Stores.Migration;
 /// then <see cref="DataStoreState.Ready"/> or <see cref="DataStoreState.MigrationFailed"/>) and records the state in
 /// <c>lotties.store_meta</c> and in <c>data_stores</c>. A store found ready is trusted for
 /// <see cref="StoreMigratorOptions.ReadyRecheckSeconds"/>; after a failure the store is left alone for a backoff that doubles per
-/// failure, and requests in between get the same error at once. A second run on a ready store applies nothing.
+/// failure, and requests in between get the same error at once (with the time left as <c>Retry-After</c>). A second run on a ready
+/// store applies nothing. A connection failure is classified (task T8, <see cref="StoreFailureClassifier"/>: timeout, refused
+/// credentials, paused or unreachable, too many connections, TLS) and recorded as <see cref="DataStoreState.Unreachable"/>.
 /// Logs carry the store id, the state and the error's type only: never a host, a user or the database's own text.
 /// </summary>
-internal sealed class StoreMigrator : IStoreMigrator
+internal sealed class StoreMigrator : IStoreMigrator, IStoreMemory
 {
     private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _runs = new();
     private readonly ConcurrentDictionary<Guid, DateTimeOffset> _readyUntil = new();
@@ -285,9 +288,10 @@ internal sealed class StoreMigrator : IStoreMigrator
 
     private async Task<DomainException> UnreachableAsync(DataStore store, Exception exception)
     {
-        _logger.LogWarning("Store {StoreId} could not be reached by the migrator ({ErrorType})", store.Id, exception.GetType().Name);
+        var failure = StoreFailureClassifier.Classify(exception) ?? StoreFailureClass.Unavailable;
+        _logger.LogWarning("Store {StoreId} could not be reached by the migrator: {StoreFailure} ({ErrorType})", store.Id, failure, exception.GetType().Name);
         await RecordAsync(store, DataStoreState.Unreachable, null);
-        return new StoreUnavailableException();
+        return StoreFailureException.Of(failure);
     }
 
     /// <summary>Mirrors a state into <c>data_stores</c>; a failure there is logged and never hides the store's own outcome.</summary>
@@ -332,10 +336,18 @@ internal sealed class StoreMigrator : IStoreMigrator
 
     private void ThrowIfBackingOff(Guid storeId)
     {
-        if (_failures.TryGetValue(storeId, out var failure) && _time.GetUtcNow() < failure.RetryAt)
+        var now = _time.GetUtcNow();
+        if (_failures.TryGetValue(storeId, out var failure) && now < failure.RetryAt)
         {
-            throw failure.Replay();
+            throw failure.Replay(failure.RetryAt - now);
         }
+    }
+
+    /// <summary>Forgets the store's ready flag and failure backoff (its descriptor was replaced or removed).</summary>
+    public void Forget(Guid storeId)
+    {
+        _readyUntil.TryRemove(storeId, out _);
+        _failures.TryRemove(storeId, out _);
     }
 
     private void RememberFailure(Guid storeId, DomainException error)
@@ -349,14 +361,15 @@ internal sealed class StoreMigrator : IStoreMigrator
     /// <summary>The last failure of a store and when this process may try it again.</summary>
     private sealed record StoreFailure(int Attempts, DateTimeOffset RetryAt, DomainException Error)
     {
-        /// <summary>A new exception like <see cref="Error"/> (one exception object is never thrown by two requests).</summary>
-        public DomainException Replay() => Error switch
+        /// <summary>
+        /// A new exception like <see cref="Error"/> (one exception object is never thrown by two requests), telling when the store
+        /// is tried again.
+        /// </summary>
+        public DomainException Replay(TimeSpan retryAfter) => Error switch
         {
-            StoreRoleTooPowerfulException tooPowerful => new StoreRoleTooPowerfulException(tooPowerful.Findings),
-            StoreSchemaAheadException => new StoreSchemaAheadException(),
-            StoreSchemaConflictException => new StoreSchemaConflictException(),
-            StoreMigrationFailedException => new StoreMigrationFailedException(),
-            _ => new StoreUnavailableException(),
+            StoreRoleTooPowerfulException tooPowerful => new StoreRoleTooPowerfulException(tooPowerful.Findings, retryAfter),
+            StoreFailureException failure => StoreFailureException.Of(failure.Failure, retryAfter),
+            _ => new StoreUnavailableException(retryAfter),
         };
     }
 }

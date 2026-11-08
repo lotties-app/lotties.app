@@ -139,6 +139,12 @@ internal sealed class AssistantSubjects(
         return subscriptions.Where(subscription => subscription.IsActiveAt(now)).MaxBy(subscription => subscription.LastSeenAt)?.Locale.Value;
     }
 
+    /// <summary>
+    /// The answer when the baby's data store cannot serve (task T8): <see cref="AssistantResultCode.TemporarilyUnavailable"/>, with no
+    /// baby, no store and no reason in it.
+    /// </summary>
+    public AssistantResult Unavailable() => new() { Code = AssistantResultCode.TemporarilyUnavailable, AsOf = timeProvider.GetUtcNow() };
+
     private static TimeZoneInfo? ZoneOf(string? zoneId) => zoneId is null ? null : TimeZoneInfo.FindSystemTimeZoneById(zoneId);
 
     private static bool Allows(BabyRole role, AssistantAccess access) =>

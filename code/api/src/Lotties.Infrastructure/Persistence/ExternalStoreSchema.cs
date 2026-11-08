@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,11 +44,30 @@ public static class ExternalStoreSchema
         modelBuilder.Entity<StoreMetaRow>(StoreMetaRow.Configure);
     }
 
+    /// <remarks>
+    /// EF's connection events and the error events of a failed connect, command, transaction, query or save are not logged for an
+    /// external store (task T8): their text carries the server's address or the driver's message. The store's failure interceptor still
+    /// sees every connection and failure (an ignored event only stops the log line) and logs the store id and a coarse class instead.
+    /// </remarks>
     private static DbContextOptionsBuilder<LottiesDataDbContext> Configure(
         DbContextOptionsBuilder<LottiesDataDbContext> builder,
         Action<DbContextOptionsBuilder<LottiesDataDbContext>> provider)
     {
         provider(builder);
+        builder.ConfigureWarnings(warnings => warnings.Ignore(
+            RelationalEventId.ConnectionCreating,
+            RelationalEventId.ConnectionCreated,
+            RelationalEventId.ConnectionOpening,
+            RelationalEventId.ConnectionOpened,
+            RelationalEventId.ConnectionClosing,
+            RelationalEventId.ConnectionClosed,
+            RelationalEventId.ConnectionDisposing,
+            RelationalEventId.ConnectionDisposed,
+            RelationalEventId.ConnectionError,
+            RelationalEventId.CommandError,
+            RelationalEventId.TransactionError,
+            CoreEventId.QueryIterationFailed,
+            CoreEventId.SaveChangesFailed));
         builder.UseSnakeCaseNamingConvention();
         builder.ReplaceService<IModelCacheKeyFactory, ExternalStoreModelCacheKeyFactory>();
         ((IDbContextOptionsBuilderInfrastructure)builder).AddOrUpdateExtension(new ExternalStoreSchemaExtension());

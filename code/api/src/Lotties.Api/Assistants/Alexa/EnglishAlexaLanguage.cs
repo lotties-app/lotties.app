@@ -48,6 +48,7 @@ internal sealed partial class EnglishAlexaLanguage : IAlexaLanguage
         [AssistantResultCode.NoBaby] = _ => "There's no baby in your Lotties account yet. Add one in the app first.",
         [AssistantResultCode.ChooseBaby] = _ => "You have more than one baby in Lotties. Choose the one for voice commands in the app, in Settings, Voice assistants.",
         [AssistantResultCode.RateLimited] = _ => "That's a lot of requests. Please try again in a minute.",
+        [AssistantResultCode.TemporarilyUnavailable] = _ => "Lotties is temporarily unavailable. Please try again in a few minutes.",
         [AssistantResultCode.InvalidAmount] = InvalidAmount,
         [AssistantResultCode.SleepStarted] = result => $"Got it. {Subject(result)} fell asleep {When(result, result.At)}.",
         [AssistantResultCode.SleepAlreadyRunning] = result => $"{Subject(result)} is already sleeping{SinceClause(result)}.",

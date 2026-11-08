@@ -7,6 +7,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.CareProviders;
 using Lotties.Domain.Clinical;
 using Lotties.Domain.Events;
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Formulas;
 using Lotties.Domain.Measurements;
@@ -181,12 +182,41 @@ AssistantForecasts forecasts,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(invocation);
-        var lookup = await subjects.LoadAsync(invocation, access, cancellationToken);
-        var result = lookup.Subject is { } subject
-            ? await work(subject) with { Units = await unitPreferences.ResolveAsync(invocation.Locale, cancellationToken) }
-            : lookup.Refusal!;
+        var result = await RunOrUnavailableAsync(invocation, access, work, cancellationToken);
         Log(invocation, command, result);
         return result;
+    }
+
+    /// <summary>
+    /// Runs the command; when the baby's data store cannot serve (any <c>store_*</c> failure, also one EF wrapped in a failed save)
+    /// the answer is <see cref="AssistantResultCode.TemporarilyUnavailable"/>, never the failure's detail (design 47 section 2.2).
+    /// </summary>
+    private async Task<AssistantResult> RunOrUnavailableAsync(
+        AssistantInvocation invocation,
+        AssistantAccess access,
+        Func<AssistantSubject, Task<AssistantResult>> work,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await RunForSubjectAsync(invocation, access, work, cancellationToken);
+        }
+        catch (Exception exception) when (StoreFailureException.FindIn(exception) is not null)
+        {
+            return subjects.Unavailable();
+        }
+    }
+
+    private async Task<AssistantResult> RunForSubjectAsync(
+        AssistantInvocation invocation,
+        AssistantAccess access,
+        Func<AssistantSubject, Task<AssistantResult>> work,
+        CancellationToken cancellationToken)
+    {
+        var lookup = await subjects.LoadAsync(invocation, access, cancellationToken);
+        return lookup.Subject is { } subject
+            ? await work(subject) with { Units = await unitPreferences.ResolveAsync(invocation.Locale, cancellationToken) }
+            : lookup.Refusal!;
     }
 
     /// <summary>

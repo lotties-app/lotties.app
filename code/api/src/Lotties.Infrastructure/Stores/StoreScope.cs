@@ -2,6 +2,7 @@ using Lotties.Application.Stores;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 using Lotties.Infrastructure.Persistence;
+using Lotties.Infrastructure.Stores.Failures;
 using Microsoft.Extensions.Options;
 
 namespace Lotties.Infrastructure.Stores;
@@ -18,13 +19,15 @@ namespace Lotties.Infrastructure.Stores;
 /// A call by record id finds a record only in the scope's store. On the built-in store that is every hosted baby's records, as
 /// before; the services already check the record's baby against the one they were called for. An external store holds only
 /// the records of the babies that point at it. With <c>Stores:Enabled</c> off no external store is ever opened: a baby whose
-/// pointer names one gets <c>store_unavailable</c>, never the built-in store.
+/// pointer names one gets <c>store_unavailable</c>, never the built-in store. An external store is opened only through its circuit
+/// breaker (task T8): while it is open the request fails at once with the store's last failure class, without touching the network.
 /// </remarks>
 internal sealed class StoreScope(
     IStoreResolver resolver,
     BuiltInDataStore builtIn,
     IExternalDataStores externals,
     IStoreMigrator migrator,
+    StoreCircuitBreakers breakers,
     IOptions<StoreRoutingOptions> options) : IStoreScope, IAsyncDisposable, IDisposable
 {
     private readonly Dictionary<Guid, StoreRoute> _routes = [];
@@ -141,8 +144,10 @@ internal sealed class StoreScope(
     }
 
     /// <summary>
-    /// An external store, only while the feature is on, once the migrator found its schema ready (task T5; it throws the store's
-    /// <c>store_*</c> error otherwise) and when the store can be opened; <c>store_unavailable</c> otherwise.
+    /// An external store, only while the feature is on, when its circuit breaker admits the request (task T8; an open breaker throws
+    /// the store's last failure class at once), once the migrator found its schema ready (task T5; it throws the store's
+    /// <c>store_*</c> error otherwise) and when the store can be opened; <c>store_unavailable</c> otherwise. A connection failure on
+    /// the way counts towards the breaker; a success is reported by the store's connection layer (<see cref="StoreFailureInterceptor"/>).
     /// </summary>
     private async Task<IDataStore> OpenExternalAsync(Guid storeId, CancellationToken cancellationToken)
     {
@@ -151,6 +156,20 @@ internal sealed class StoreScope(
             throw new StoreUnavailableException();
         }
 
+        breakers.Admit(storeId);
+        try
+        {
+            return await ReadyExternalAsync(storeId, cancellationToken);
+        }
+        catch (StoreFailureException failure)
+        {
+            breakers.RecordFailure(storeId, failure.Failure);
+            throw;
+        }
+    }
+
+    private async Task<IDataStore> ReadyExternalAsync(Guid storeId, CancellationToken cancellationToken)
+    {
         await migrator.EnsureReadyAsync(storeId, cancellationToken);
         return await externals.FindAsync(storeId, cancellationToken) ?? throw new StoreUnavailableException();
     }

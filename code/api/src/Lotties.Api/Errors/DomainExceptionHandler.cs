@@ -8,6 +8,8 @@ namespace Lotties.Api.Errors;
 /// Writes a <see cref="DomainException"/> as an RFC 7807 problem: status from <see cref="DomainExceptionStatusCodes"/>,
 /// <c>detail</c> = the exception message, extension <c>code</c> = <see cref="DomainException.Code"/> and, for
 /// <see cref="DomainValidationException"/>, extension <c>field</c>; any <see cref="DomainException.Details"/> become extensions too. Other exceptions are left to the default handler (500).
+/// A <see cref="StoreFailureException"/> is also found inside another exception (EF wraps a failed save of an external store in
+/// <c>DbUpdateException</c>) and gets <c>Retry-After</c> (<see cref="StoreFailureResponses"/>).
 /// </summary>
 internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetails, ILogger<DomainExceptionHandler> logger) : IExceptionHandler
 {
@@ -16,7 +18,7 @@ internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetai
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        if (exception is not DomainException domainException)
+        if ((exception as DomainException ?? StoreFailureException.FindIn(exception)) is not { } domainException)
         {
             return false;
         }
@@ -24,12 +26,21 @@ internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetai
         var status = DomainExceptionStatusCodes.For(domainException);
         logger.LogInformation("Request rejected with {StatusCode}: {ErrorCode}", status, domainException.Code);
         httpContext.Response.StatusCode = status;
+        AddRetryAfter(httpContext.Response, domainException);
         return await problemDetails.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
-            Exception = exception,
+            Exception = domainException,
             ProblemDetails = BuildProblem(domainException, status),
         });
+    }
+
+    private static void AddRetryAfter(HttpResponse response, DomainException exception)
+    {
+        if (exception is StoreFailureException failure)
+        {
+            StoreFailureResponses.AddRetryAfter(response, failure);
+        }
     }
 
     private static ProblemDetails BuildProblem(DomainException exception, int status)

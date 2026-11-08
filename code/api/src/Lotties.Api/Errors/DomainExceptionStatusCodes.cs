@@ -6,7 +6,8 @@ namespace Lotties.Api.Errors;
 /// <summary>
 /// The single place that maps <see cref="DomainException"/> types to HTTP status codes. Invalid input is 400, a
 /// write the caller's role does not cover for this resource 403, a missing resource 404, a state conflict 409, a well-formed request the rules reject 422 (also the fallback for
-/// domain exceptions not listed here). Add a new exception type here when it needs a different status.
+/// domain exceptions not listed here). Add a new exception type here when it needs a different status. Every failure of a
+/// baby's data store (<see cref="StoreFailureException"/>, any <c>store_*</c> code) is one rule, <see cref="StoreFailureResponses"/>.
 /// </summary>
 internal static class DomainExceptionStatusCodes
 {
@@ -101,18 +102,14 @@ internal static class DomainExceptionStatusCodes
         [typeof(DemoCapacityException)] = StatusCodes.Status503ServiceUnavailable,
         [typeof(StoreScopeMissingException)] = StatusCodes.Status500InternalServerError,
         [typeof(StoreScopeAmbiguousException)] = StatusCodes.Status500InternalServerError,
-        [typeof(StoreUnavailableException)] = StatusCodes.Status503ServiceUnavailable,
-        [typeof(StoreMigratingException)] = StatusCodes.Status503ServiceUnavailable,
-        [typeof(StoreSchemaAheadException)] = StatusCodes.Status503ServiceUnavailable,
-        [typeof(StoreRoleTooPowerfulException)] = StatusCodes.Status503ServiceUnavailable,
-        [typeof(StoreSchemaConflictException)] = StatusCodes.Status503ServiceUnavailable,
-        [typeof(StoreMigrationFailedException)] = StatusCodes.Status503ServiceUnavailable,
         [typeof(DataStoreStateTransitionException)] = StatusCodes.Status500InternalServerError,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        return ByType.GetValueOrDefault(exception.GetType(), Fallback);
+        return exception is StoreFailureException
+            ? StoreFailureResponses.Status
+            : ByType.GetValueOrDefault(exception.GetType(), Fallback);
     }
 }

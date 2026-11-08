@@ -32,14 +32,12 @@ public sealed class StoreScopeAmbiguousException : DomainException
 }
 
 /// <summary>
-/// The baby's records are in a data store this server cannot use right now (503, retriable: the client keeps the change queued).
-/// Today that is every external store, because none can be connected yet (docs/design/47-bring-your-own-database.md, tasks T5
-/// and T8); the request never falls back to the built-in store.
+/// The baby's records are in a data store this server cannot use right now (503, retriable: the client keeps the change queued):
+/// the connection was lost, the server is shutting down or starting, the store's circuit breaker is open, the feature flag is off
+/// or the store has no descriptor (docs/design/47-bring-your-own-database.md, tasks T5 and T8). The request never falls back to
+/// the built-in store.
 /// </summary>
-public sealed class StoreUnavailableException : DomainException
+public sealed class StoreUnavailableException(TimeSpan? retryAfter = null)
+    : StoreFailureException(Stores.StoreFailureClass.Unavailable, "The database that holds this baby's records is not reachable right now. Try again later.", retryAfter)
 {
-    public StoreUnavailableException()
-        : base("store_unavailable", "The database that holds this baby's records is not reachable right now. Try again later.")
-    {
-    }
 }

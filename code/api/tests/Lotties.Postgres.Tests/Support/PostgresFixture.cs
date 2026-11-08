@@ -6,9 +6,10 @@ namespace Lotties.Postgres.Tests.Support;
 /// <summary>
 /// One postgres:17 container per test collection, with helpers to run SQL, open data sources and create a second
 /// database with its own role set (<see cref="CreateExternalStoreAsync"/>). Starts nothing where no container runtime
-/// is reachable: the tests are skipped there by <see cref="PostgresFactAttribute"/>.
+/// is reachable: the tests are skipped there by <see cref="PostgresFactAttribute"/>. A suite that needs a container of its own with
+/// another setup derives from it (<see cref="Configure"/>, e.g. <see cref="StoppablePostgresFixture"/>).
 /// </summary>
-public sealed class PostgresFixture : IAsyncLifetime
+public class PostgresFixture : IAsyncLifetime
 {
     public const string Image = "postgres:17";
 
@@ -22,13 +23,17 @@ public sealed class PostgresFixture : IAsyncLifetime
     /// <summary>Superuser data source on the container's default database.</summary>
     public NpgsqlDataSource DataSource => _dataSource ?? throw NotStarted();
 
-    private PostgreSqlContainer Container => _container ?? throw NotStarted();
+    /// <summary>The running container.</summary>
+    protected PostgreSqlContainer Container => _container ?? throw NotStarted();
+
+    /// <summary>Extra container setup of a derived fixture.</summary>
+    protected virtual PostgreSqlBuilder Configure(PostgreSqlBuilder builder) => builder;
 
     public async Task InitializeAsync()
     {
         if (!ContainerRuntime.IsAvailable)
             return;
-        _container = new PostgreSqlBuilder(Image).Build();
+        _container = Configure(new PostgreSqlBuilder(Image)).Build();
         await _container.StartAsync();
         _dataSource = NpgsqlDataSource.Create(_container.GetConnectionString());
     }

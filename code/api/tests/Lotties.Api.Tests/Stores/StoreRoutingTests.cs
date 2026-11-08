@@ -13,6 +13,7 @@ using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 using Lotties.Infrastructure.Stores;
+using Lotties.Infrastructure.Stores.Failures;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ public sealed class StoreRoutingHost : IDisposable
                 services.AddSingleton<IStoreMigrator>(Stores);
             });
         });
+        Stores.FailureInterceptors = storeId => Host.Services.GetRequiredService<StoreFailureInterceptors>().For(storeId);
     }
 
     public ApiFactory Factory { get; } = new();
