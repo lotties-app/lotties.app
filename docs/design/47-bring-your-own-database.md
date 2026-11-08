@@ -503,6 +503,40 @@ advisory lock with exponential backoff then `store_migrating`, `SchemaAhead` whe
 too-powerful role, the app role's limits and the control-database refusal; `docs/DEPLOY.md` "Applying migrations to user
 stores" is the operator's view.
 
+**Status (2026-11-07): T8 is built** (branch `feat/byo-t8-store-failures`, stacked on T5, not deployed; no migration). Failures of an
+external store are classified by type and SQLSTATE only (`StoreFailureClassifier`, `StoreSqlStates`; never the driver's message, host,
+user or address) into `store_unavailable`, `store_timeout`, `store_credentials_rejected`, `store_paused_or_unreachable`, `store_quota_full`
+(53100, and 25006: the providers' read-only over-quota mode), `store_rate_limited` (53300), `store_tls_failed`, plus the T5 codes
+(`store_schema_ahead`, `store_schema_conflict` also for a missing table or column, `store_role_too_powerful`, `store_migrating`,
+`store_migration_failed`); every one is a `StoreFailureException` and one rule (`Api/Errors/StoreFailureResponses`) answers it as a
+retriable `503` with `Retry-After` (SPEC "Events sync contract"). The design's `store_full` and `auth_failed` names of section 5 became
+`store_quota_full` and `store_credentials_rejected`. A per-store circuit breaker (`StoreCircuit`, pure, with `StoreCircuitBreakers` per
+process; `Stores:CircuitBreaker`: 3 connection failures, 30 s window doubling to 5 min with 20 % jitter, one probe per 15 s lease)
+gates `StoreScope.OpenExternalAsync` (an open breaker throws the opening class at once, without the migrator or the network) and every
+new physical connection (`StoreFailureInterceptor.ConnectionOpening`); only unreachable/timeout/credentials/too-many-connections/TLS
+failures count, a full store keeps serving reads. Every external store's contexts must carry `StoreFailureInterceptors.For(storeId)`
+(contract on `IExternalDataStores`; production still has no external store, so the future implementation must add it): it reports
+successes and failures to the breaker and replaces a classified driver error with the class's exception (no inner exception), so a
+failed save is the usual rolled-back EF transaction wrapped in `DbUpdateException`, which `DomainExceptionHandler` unwraps; errors
+without a class (unique violations) pass through unchanged. `ExternalStoreSchema` turns off EF's connection and error log events
+for external stores (they name the server and carry the driver text). The migrator classifies its connection failures the same way
+(still state `Unreachable`) and replays its backoff with `Retry-After`. Command timeouts are the data source's (15 s app, 120 s
+migrator; the contexts set none). The assistants' command layer answers any store failure with `temporarily_unavailable`
+(`AssistantResultCode.TemporarilyUnavailable`, Alexa en/pt-BR, MCP refusal); no voice command changed. `IStoreHealth.Forget(storeId)`
+drops the breaker, ready flag and backoff of a store: the endpoints that replace or delete a descriptor (T6) must call it. **In-process caches
+(audit)**: nothing read from a store outlives its request. What the process keeps per store is the migrator's 5-minute ready flag and
+failure backoff (`StoreMigrator`, by store id) and the breaker (by store id: counters and the last class); a baby that moves gets a new
+store id, so neither applies to its new store, and a replaced descriptor is forgotten through `IStoreHealth`. Other process-wide state,
+none of it baby data or keyed by baby: `AnswerCache` (address lookup answers, by typed text, design 23), `AlexaCertificateChains`
+(Amazon signing certificates by URL), `AssistantRateLimiter` (per-user counters), `PushMetrics` (counters), `NotificationTickRunner`
+(next housekeeping time), the embedded vaccine schedule and age norms, EF's model cache (models only, external keyed apart). There is
+no prediction or aggregation cache in the API (predictions are computed per request). Not covered: a connection lost while the rows of
+an already started query stream in surfaces as the driver's exception (a 500), because EF has no interceptor for row reads; a real
+"disk full" is not simulated in the container tests (it needs a size-limited volume under the data directory); its SQLSTATE is in the
+classification table and the providers' read-only over-quota mode is simulated instead. Container tests (CI only):
+`Lotties.Postgres.Tests/Stores/StoreFailurePostgresTests.cs` (paused database: timeout, breaker, recovery; stopped and restarted
+database; killed backend; role connection limit; wrong password; command and statement timeouts; read-only database).
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 
