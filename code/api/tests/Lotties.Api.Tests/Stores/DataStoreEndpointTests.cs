@@ -213,6 +213,72 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task Test_StoreDown_Is503WithRetryAfterAndRecordsTheCode()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+        await client.PutAsync(Route(baby), Body());
+        factory.Tester.Result = StoreCheckResult.Of(StoreFailureClass.PausedOrUnreachable);
+
+        try
+        {
+            var response = await client.PostAsync(Route(baby, "/test"), null);
+
+            await response.AssertProblemAsync(HttpStatusCode.ServiceUnavailable, "store_paused_or_unreachable");
+            Assert.NotNull(response.Headers.RetryAfter);
+            var status = await (await client.GetAsync(Route(baby))).ReadAsync<DataStoreStatusResponse>();
+            Assert.Equal("store_paused_or_unreachable", status.Store!.LastCheckResult);
+        }
+        finally
+        {
+            factory.Tester.Result = StoreCheckResult.Ok;
+        }
+    }
+
+    [Fact]
+    public async Task Test_CredentialsRejected_Is200WithTheCode()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+        await client.PutAsync(Route(baby), Body());
+        factory.Tester.Result = StoreCheckResult.Of(StoreFailureClass.CredentialsRejected);
+
+        try
+        {
+            var result = await (await client.PostAsync(Route(baby, "/test"), null)).ReadAsync<DataStoreTestResponse>();
+
+            Assert.Equal((false, "store_credentials_rejected"), (result.Ok, result.Result));
+        }
+        finally
+        {
+            factory.Tester.Result = StoreCheckResult.Ok;
+        }
+    }
+
+    [Fact]
+    public async Task Put_SimultaneousFirstSaves_CreateOneStore()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => client.PutAsync(Route(baby), Body())));
+
+        Assert.All(responses, response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        var ids = await factory.QueryAsync(context => context.DataStores.Where(store => store.OwnerUserId == ownerId).Select(store => store.Id).ToListAsync());
+        Assert.Equal([DataStore.FirstStoreIdOf(ownerId)], ids);
+    }
+
+    [Fact]
+    public async Task TryAdd_FirstStoreOfAnOwnerAddedTwice_TheSecondIsRefusedWithoutAnError()
+    {
+        var (_, baby) = await AllowedOwnerAsync(consent: false);
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+
+        var first = await TryAddFirstStoreAsync(ownerId);
+        var second = await TryAddFirstStoreAsync(ownerId);
+
+        Assert.Equal((true, false), (first, second));
+    }
+
+    [Fact]
     public async Task Test_SixthInAnHour_Is429RateLimited()
     {
         var (client, baby) = await AllowedOwnerAsync(consent: true);
@@ -411,6 +477,13 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
         }
 
         return (factory.CreateClientFor(subject), baby);
+    }
+
+    private async Task<bool> TryAddFirstStoreAsync(Guid ownerId)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var stores = scope.ServiceProvider.GetRequiredService<IDataStoreRepository>();
+        return await stores.TryAddAsync(DataStore.Create(DataStore.FirstStoreIdOf(ownerId), ownerId, TestUsers.Now));
     }
 
     private async Task<bool> StoreExistsForAsync(string subject)

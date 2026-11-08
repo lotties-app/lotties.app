@@ -18,8 +18,11 @@ public interface IDataStoreRepository
     /// <summary>Whether any baby points at <paramref name="storeId"/>.</summary>
     Task<bool> IsInUseAsync(Guid storeId, CancellationToken cancellationToken = default);
 
-    /// <summary>Adds a new store (saved by the next <see cref="SaveChangesAsync"/>).</summary>
-    void Add(DataStore store);
+    /// <summary>
+    /// Adds a store in one save. Returns <c>false</c>, leaving nothing tracked, when a row with its id exists already (a concurrent
+    /// first save of the same owner, whose store id is derived from her: <see cref="DataStore.FirstStoreIdOf"/>).
+    /// </summary>
+    Task<bool> TryAddAsync(DataStore store, CancellationToken cancellationToken = default);
 
     /// <summary>Removes the row (saved by the next <see cref="SaveChangesAsync"/>).</summary>
     void Remove(DataStore store);

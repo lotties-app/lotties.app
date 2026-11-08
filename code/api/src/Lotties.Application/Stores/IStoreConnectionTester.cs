@@ -1,3 +1,4 @@
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 
 namespace Lotties.Application.Stores;
@@ -14,24 +15,36 @@ public interface IStoreConnectionTester
 }
 
 /// <summary>
-/// The outcome of a connection test: <see cref="Code"/> is <see cref="OkCode"/> or the code of what failed (the egress guard's
-/// <c>endpoint_*</c> codes, or <c>store_unavailable</c>, <c>store_timeout</c>, <c>store_credentials_rejected</c>, <c>store_role_too_powerful</c>,
-/// <c>store_schema_conflict</c>, <c>store_schema_ahead</c>); <see cref="Findings"/> are the role audit's machine codes. Nothing in it
-/// comes from the database's own text or names an address.
+/// The outcome of a connection test: <see cref="Code"/> is <see cref="OkCode"/>, an egress guard code (<c>endpoint_*</c>: the typed
+/// host, port or CA is refused) or the wire code of a store failure class (task T8, <see cref="StoreFailureCodes"/>, with
+/// <see cref="Failure"/> set); <see cref="Findings"/> are the role audit's machine codes. Nothing in it comes from the database's own
+/// text or names an address.
 /// </summary>
-public sealed record StoreCheckResult(string Code, IReadOnlyList<StoreRoleFinding> Findings)
+public sealed record StoreCheckResult(string Code, IReadOnlyList<StoreRoleFinding> Findings, StoreFailureClass? Failure = null)
 {
     public const string OkCode = "ok";
-
-    /// <summary>The database refused the user name or password (the code of task T8's <c>StoreFailureClass.CredentialsRejected</c>).</summary>
-    public const string AuthFailedCode = "store_credentials_rejected";
-
-    /// <summary>The test did not finish within its budget (the code of task T8's <c>StoreFailureClass.Timeout</c>).</summary>
-    public const string TimeoutCode = "store_timeout";
 
     public static StoreCheckResult Ok { get; } = new(OkCode, []);
 
     public bool IsOk => Code == OkCode;
 
-    public static StoreCheckResult Failed(string code) => new(code, []);
+    /// <summary>A failure of class <paramref name="failure"/>.</summary>
+    public static StoreCheckResult Of(StoreFailureClass failure, IReadOnlyList<StoreRoleFinding>? findings = null) =>
+        new(StoreFailureCodes.Of(failure), findings ?? [], failure);
+
+    /// <summary>An egress guard refusal (<c>endpoint_*</c>): the typed details are not allowed.</summary>
+    public static StoreCheckResult Rejected(StoreEndpointFailure failure) => new(StoreEndpointRejectedException.CodeOf(failure), []);
+
+    /// <summary>
+    /// Whether a test that ended in <paramref name="failure"/> says "try again later" rather than "fix your setup": the store is down,
+    /// paused, slow, busy or being migrated. Those answer 503 with <c>Retry-After</c> like any store failure (task T8); the rest
+    /// (refused credentials, TLS, a too powerful role, a foreign or newer schema, a full database, a failed migration) are answers
+    /// about the setup the owner asked to check, so they come back as a 200 with their code (docs/design/47 section 3.4).
+    /// </summary>
+    public static bool IsTransient(StoreFailureClass failure) =>
+        failure is StoreFailureClass.Unavailable
+            or StoreFailureClass.Timeout
+            or StoreFailureClass.PausedOrUnreachable
+            or StoreFailureClass.RateLimited
+            or StoreFailureClass.Migrating;
 }

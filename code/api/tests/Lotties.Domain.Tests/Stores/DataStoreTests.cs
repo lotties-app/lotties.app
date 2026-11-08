@@ -143,4 +143,12 @@ public sealed class DataStoreTests
         Assert.Equal((DataStoreState.Pending, "store_credentials_rejected"), (store.State, store.LastCheckResult));
         Assert.Equal(new DateTimeOffset(2026, 1, 10, 12, 0, 0, TimeSpan.Zero), store.LastCheckedAt);
     }
+
+    [Fact]
+    public void FirstStoreIdOf_SameOwner_SameIdAndDifferentPerOwner()
+    {
+        Assert.Equal(DataStore.FirstStoreIdOf(BabyId), DataStore.FirstStoreIdOf(BabyId));
+        Assert.NotEqual(DataStore.FirstStoreIdOf(BabyId), DataStore.FirstStoreIdOf(StoreX));
+        Assert.Throws<ArgumentException>(() => DataStore.FirstStoreIdOf(Guid.Empty));
+    }
 }

@@ -86,7 +86,7 @@ public sealed class StoreConnectionTesterTests
 
         var result = await Tester().TestAsync(_store);
 
-        Assert.Equal(StoreCheckResult.AuthFailedCode, result.Code);
+        Assert.Equal("store_credentials_rejected", result.Code);
         AssertNoLeak();
     }
 
@@ -95,7 +95,7 @@ public sealed class StoreConnectionTesterTests
     {
         _sessions.AuditFailure = new NpgsqlException("wrapper", new PostgresException("no pg_hba.conf entry for host secret_user", "FATAL", "FATAL", PostgresErrorCodes.InvalidAuthorizationSpecification));
 
-        Assert.Equal(StoreCheckResult.AuthFailedCode, (await Tester().TestAsync(_store)).Code);
+        Assert.Equal("store_credentials_rejected", (await Tester().TestAsync(_store)).Code);
         AssertNoLeak();
     }
 
@@ -106,6 +106,28 @@ public sealed class StoreConnectionTesterTests
 
         Assert.Equal("store_unavailable", (await Tester().TestAsync(_store)).Code);
         AssertNoLeak();
+    }
+
+    [Theory]
+    [InlineData(StoreEndpointFailure.TlsFailed, "store_tls_failed")]
+    [InlineData(StoreEndpointFailure.Unresolvable, "store_paused_or_unreachable")]
+    [InlineData(StoreEndpointFailure.PortNotAllowed, "endpoint_port_not_allowed")]
+    [InlineData(StoreEndpointFailure.InvalidCertificate, "endpoint_invalid_ca")]
+    public async Task Test_EndpointFailure_KeepsTheGuardCodeOrTheStoreFailureClass(StoreEndpointFailure failure, string code)
+    {
+        _sessions.OpenFailure = new StoreEndpointRejectedException(failure);
+
+        Assert.Equal(code, (await Tester().TestAsync(_store)).Code);
+    }
+
+    [Fact]
+    public async Task Test_SocketTimeout_IsTheTimeoutClass()
+    {
+        _sessions.OpenFailure = new NpgsqlException("Exception while connecting to secret-host", new TimeoutException());
+
+        var result = await Tester().TestAsync(_store);
+
+        Assert.Equal(("store_timeout", StoreFailureClass.Timeout), (result.Code, result.Failure));
     }
 
     [Fact]

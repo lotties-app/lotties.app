@@ -66,7 +66,7 @@ internal sealed class DataStoreService(
         await EnsureConsentAsync(selection.User, cancellationToken);
         var descriptor = (StoreDescriptor)request;
         await descriptorGuard.CheckAsync(descriptor, cancellationToken);
-        var store = selection.Store ?? AddStore(selection.User);
+        var store = selection.Store ?? await AddStoreAsync(selection.User, cancellationToken);
         store.ReplaceDescriptor(credentials.Seal(descriptor, SealContextOf(store)), descriptor.ProviderLabel, time.GetUtcNow());
         await stores.SaveChangesAsync(cancellationToken);
         health.Forget(store.Id);
@@ -83,6 +83,7 @@ internal sealed class DataStoreService(
         store.RecordCheck(result.Code, time.GetUtcNow());
         await stores.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Connection test of data store {StoreId}: {Result}", store.Id, result.Code);
+        ThrowIfTransient(result);
         return DataStoreViews.Test(result, store.LastCheckedAt!.Value);
     }
 
@@ -156,12 +157,20 @@ internal sealed class DataStoreService(
         }
     }
 
-    /// <summary>The owner's first store (one per account in the MVP: every later save replaces its descriptor).</summary>
-    private DataStore AddStore(User user)
+    /// <summary>
+    /// The owner's first store (one per account in the MVP: every later save replaces its descriptor). Its id is derived from the
+    /// owner, so when two first saves race, the second finds the row the first added and replaces its descriptor.
+    /// </summary>
+    private async Task<DataStore> AddStoreAsync(User user, CancellationToken cancellationToken)
     {
-        var created = DataStore.Create(Guid.NewGuid(), user.Id, time.GetUtcNow());
-        stores.Add(created);
-        return created;
+        var created = DataStore.Create(DataStore.FirstStoreIdOf(user.Id), user.Id, time.GetUtcNow());
+        if (await stores.TryAddAsync(created, cancellationToken))
+        {
+            return created;
+        }
+
+        return await stores.FindAsync(created.Id, cancellationToken)
+            ?? throw new InvalidOperationException("A concurrently created data store could not be loaded.");
     }
 
     private async Task<StoreCheckResult> RunTestAsync(DataStore store, CancellationToken cancellationToken)
@@ -174,7 +183,16 @@ internal sealed class DataStoreService(
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return StoreCheckResult.Failed(StoreCheckResult.TimeoutCode);
+            return StoreCheckResult.Of(StoreFailureClass.Timeout);
+        }
+    }
+
+    /// <summary>A store that is down for now (not a setup problem) is answered like any store failure: 503 with <c>Retry-After</c>.</summary>
+    private static void ThrowIfTransient(StoreCheckResult result)
+    {
+        if (result.Failure is { } failure && StoreCheckResult.IsTransient(failure))
+        {
+            throw StoreFailureException.Of(failure);
         }
     }
 

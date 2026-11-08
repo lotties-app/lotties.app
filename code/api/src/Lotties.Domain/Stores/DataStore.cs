@@ -60,6 +60,17 @@ public sealed class DataStore
     /// <summary>Whether the owner saved a descriptor.</summary>
     public bool HasDescriptor => SealedDescriptor is not null;
 
+    /// <summary>Namespace of derived store ids. Never change it: existing first stores would no longer be found by their id.</summary>
+    public static readonly Guid IdNamespace = new("b7c1e0d4-5a2f-4c39-9e81-3f6d2a7b9c05");
+
+    /// <summary>
+    /// The id of an account's first store (UUID v5 of the owner): two simultaneous first saves of one owner create the same row, so
+    /// the primary key lets only one of them in (one store per account in the MVP, D11) without a unique index on the owner that
+    /// would forbid per-baby stores later.
+    /// </summary>
+    public static Guid FirstStoreIdOf(Guid ownerUserId) =>
+        DeterministicGuid.Create(IdNamespace, $"first-store|{Ids.Required(ownerUserId, nameof(ownerUserId)):N}");
+
     /// <summary>A new store of <paramref name="ownerUserId"/>, <see cref="DataStoreState.Pending"/> and without a descriptor.</summary>
     public static DataStore Create(Guid id, Guid ownerUserId, DateTimeOffset now) =>
         new(Ids.Required(id, nameof(id)), Ids.Required(ownerUserId, nameof(ownerUserId)), UtcTime.Normalize(now));
